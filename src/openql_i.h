@@ -1,7 +1,5 @@
-/**
- * @file   openql.h
- * @author Imran Ashraf
- * @brief  header file for python interface
+/** \file
+ * Header for Python interface.
  */
 
 #pragma once
@@ -24,9 +22,9 @@ void print_options();
  */
 class Platform {
 public:
-    std::string            name;
-    std::string            config_file;
-    ql::quantum_platform * platform;
+    std::string name;
+    std::string config_file;
+    ql::quantum_platform *platform;
     Platform();
     Platform(const std::string &name, const std::string &config_file);
     size_t get_qubit_number() const;
@@ -44,7 +42,7 @@ public:
     ql::operation *operation;
     Operation(const CReg &lop, const std::string &op, const CReg &rop);
     Operation(const std::string &op, const CReg &rop);
-    Operation(const CReg& lop);
+    Operation(const CReg &lop);
     Operation(int val);
     ~Operation();
 };
@@ -57,7 +55,7 @@ typedef std::complex<double> Complex;
 class Unitary {
 public:
     std::string name;
-    ql::unitary * unitary;
+    ql::unitary *unitary;
 
     Unitary(const std::string &name, const std::vector<std::complex<double>> &matrix);
     ~Unitary();

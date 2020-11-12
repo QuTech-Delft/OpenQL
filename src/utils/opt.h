@@ -32,12 +32,12 @@ public:
      * Initialization method, used to fill an empty container after
      * construction. The container is expected to be empty initially.
      */
-    template<class... Args>
-    void emplace(Args... args) {
+    template<typename S = T, class... Args>
+    void emplace(Args&&... args) {
         if (v) {
             throw Exception("Opt has already been initialized", false);
         }
-        v = std::unique_ptr<T>(new T(args...));
+        v = std::unique_ptr<T>(new S(std::forward<Args>(args)...));
     }
 
     /**
@@ -60,8 +60,8 @@ public:
      * trick std::optional uses to avoid this is not implemented here.
      */
     template<class Arg1, class... Args>
-    Opt(Arg1 arg1, Args... args) {
-        emplace(arg1, args...);
+    Opt(Arg1 arg1, Args&&... args) {
+        emplace(arg1, std::forward<Args>(args)...);
     }
 
     /**

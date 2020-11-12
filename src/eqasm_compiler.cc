@@ -1,3 +1,7 @@
+/** \file
+ * Interface for architecture-specific executable QASM backends.
+ */
+
 #include "eqasm_compiler.h"
 
 #include <fstream>

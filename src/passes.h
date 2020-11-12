@@ -1,8 +1,5 @@
-/**
- * @file   passes.h
- * @date   04/2020
- * @author Razvan Nane
- * @brief  OpenQL Passes
+/** \file
+ * OpenQL Passes.
  */
 
 #pragma once

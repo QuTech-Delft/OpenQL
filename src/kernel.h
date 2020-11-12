@@ -1,10 +1,5 @@
-﻿/**
- * @file   kernel.h
- * @date   04/2017
- * @author Nader Khammassi
- *         Imran Ashraf
- *         Anneriet Krol
- * @brief  openql kernel
+﻿/** \file
+ * Quantum kernel abstraction implementation.
  */
 
 #pragma once

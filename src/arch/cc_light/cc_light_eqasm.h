@@ -1,9 +1,5 @@
-/**
- * @file   cc_light_eqasm.h
- * @date   07/2017
- * @author Nader Khammassi
- *         Imran Ashraf
- * @brief  cc_light_eqasm code emitter
+/** \name
+ * CC-light eQASM code emitter.
  */
 
 #pragma once

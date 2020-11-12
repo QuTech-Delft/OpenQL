@@ -1,3 +1,7 @@
+/** \file
+ * Circuit (i.e. gate container) implementation.
+ */
+
 #include "circuit.h"
 
 #include <iostream>

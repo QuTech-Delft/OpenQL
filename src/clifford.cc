@@ -1,8 +1,5 @@
-/**
- * @file   clifford.cc
- * @brief  clifford sequence optimizer
- * @date   05/2019
- * @author Hans van Someren
+/** \file
+ * Clifford sequence optimizer.
  */
 
 #include "clifford.h"

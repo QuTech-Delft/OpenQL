@@ -1,3 +1,7 @@
+/** \name
+ * CC-light eQASM code emitter.
+ */
+
 #include "arch/cc_light/cc_light_eqasm.h"
 
 namespace ql {

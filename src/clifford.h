@@ -1,8 +1,5 @@
-/**
- * @file   clifford.h
- * @date   05/2019
- * @author Hans van Someren
- * @brief  clifford sequence optimizer
+/** \file
+ * Clifford sequence optimizer.
  */
 
 #pragma once

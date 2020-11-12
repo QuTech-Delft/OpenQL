@@ -1,3 +1,7 @@
+/** \file
+ * Quantum gate abstraction implementation.
+ */
+
 #include "gate.h"
 
 #include <cctype>
@@ -634,7 +638,7 @@ void custom_gate::load(nlohmann::json &instr) {
             Str qid = instr["qubits"][i];
             if (!is_qubit_id(qid)) {
                 QL_EOUT("invalid qubit id in attribute 'qubits' !");
-                throw utils::Exception(
+                throw Exception(
                     "[x] error : ql::custom_gate() : error while loading instruction '" +
                     name + "' : attribute 'qubits' : invalid qubit id !",
                     false);
@@ -652,10 +656,10 @@ void custom_gate::load(nlohmann::json &instr) {
         m.m[1] = complex_t(mat[1][0], mat[1][1]);
         m.m[2] = complex_t(mat[2][0], mat[2][1]);
         m.m[3] = complex_t(mat[3][0], mat[3][1]);
-    } catch (utils::Json::exception &e) {
+    } catch (Json::exception &e) {
         QL_EOUT("while loading instruction '" << name << "' (attr: " << l_attr
                                               << ") : " << e.what());
-        throw utils::Exception(
+        throw Exception(
             "[x] error : ql::custom_gate() : error while loading instruction '" +
             name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
     }
@@ -669,7 +673,7 @@ void custom_gate::load(nlohmann::json &instr) {
 void custom_gate::print_info() const {
     QL_PRINTLN("[-] custom gate : ");
     QL_PRINTLN("    |- name     : " << name);
-    QL_PRINTLN("    |- qubits   : " << utils::to_string(operands));
+    QL_PRINTLN("    |- qubits   : " << to_string(operands));
     QL_PRINTLN("    |- duration : " << duration);
     QL_PRINTLN("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
 }

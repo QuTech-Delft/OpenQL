@@ -1,26 +1,25 @@
-/**
- * @file   platform.cc
- * @date   11/2016
- * @author Nader Khammassi
- * @brief  platform header for target-specific compilation
+/** \file
+ * Platform header for target-specific compilation.
  */
 
 #include "platform.h"
 
 namespace ql {
 
+using namespace utils;
+
 // FIXME: constructed object is not usable
 quantum_platform::quantum_platform() : name("default") {
 }
 
 quantum_platform::quantum_platform(
-    const std::string &name,
-    const std::string &configuration_file_name
+    const Str &name,
+    const Str &configuration_file_name
 ) :
     name(name),
     configuration_file_name(configuration_file_name)
 {
-    ql::hardware_configuration hwc(configuration_file_name);
+    hardware_configuration hwc(configuration_file_name);
     hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology, aliases);
     eqasm_compiler_name = hwc.eqasm_compiler_name;
     QL_DOUT("eqasm_compiler_name= " << eqasm_compiler_name);
@@ -59,7 +58,7 @@ size_t quantum_platform::get_qubit_number() const {
 }
 
 // find settings for custom gate, preventing JSON exceptions
-const utils::Json &quantum_platform::find_instruction(const std::string &iname) const {
+const Json &quantum_platform::find_instruction(const Str &iname) const {
     // search the JSON defined instructions, to prevent JSON exception if key does not exist
     if (!QL_JSON_EXISTS(instruction_settings, iname)) {
         QL_FATAL("JSON file: instruction not found: '" << iname << "'");
@@ -69,8 +68,8 @@ const utils::Json &quantum_platform::find_instruction(const std::string &iname) 
 
 
 // find instruction type for custom gate
-std::string quantum_platform::find_instruction_type(const std::string &iname) const {
-    const utils::Json &instruction = find_instruction(iname);
+Str quantum_platform::find_instruction_type(const Str &iname) const {
+    const Json &instruction = find_instruction(iname);
     if (!QL_JSON_EXISTS(instruction, "type")) {
         QL_FATAL("JSON file: field 'type' not defined for instruction '" << iname << "'");
     }

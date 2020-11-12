@@ -1,8 +1,5 @@
-/**
- * @file   eqasm_compiler.h
- * @date   07/2017
- * @author Nader Khammassi
- * @brief  executable qasm compiler interface
+/** \file
+ * Interface for architecture-specific executable QASM backends.
  */
 
 #pragma once

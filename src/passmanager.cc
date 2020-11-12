@@ -1,8 +1,5 @@
-/**
- * @file   passmanager.cc
- * @date   04/2020
- * @author Razvan Nane
- * @brief  OpenQL Pass Manager
+/** \file
+ * OpenQL pass manager implementation.
  */
 
 #include "passmanager.h"
@@ -10,18 +7,20 @@
 
 namespace ql {
 
+using namespace utils;
+
 /**
  * @brief   PassManager constructor
  * @param   name Name of the pass manager
  */
-PassManager::PassManager(const std::string &name) : name(name) {
+PassManager::PassManager(const Str &name) : name(name) {
 }
 
-    /**
-     * @brief   Applies the sequence of compiler passes to the given program
-     * @param   program   Object reference to the program to be compiled
-     */
-void PassManager::compile(ql::quantum_program *program) const {
+/**
+ * @brief   Applies the sequence of compiler passes to the given program
+ * @param   program   Object reference to the program to be compiled
+ */
+void PassManager::compile(quantum_program *program) const {
 
     QL_DOUT("In PassManager::compile ... ");
     for (auto pass : passes) {
@@ -36,8 +35,8 @@ void PassManager::compile(ql::quantum_program *program) const {
 
         //If the old interface is used, platform is already set, so it is not needed to look for platform option and configure the platform from there
         if (!program->platformInitialized) {
-            std::string hwconfig = pass->getPassOptions()->getOption("hwconfig");
-            program->platform = *(new ql::quantum_platform("testPlatform",hwconfig));
+            Str hwconfig = pass->getPassOptions()->getOption("hwconfig");
+            program->platform = *(new quantum_platform("testPlatform",hwconfig));
         }
 
         if (!pass->getSkip()) {
@@ -49,14 +48,14 @@ void PassManager::compile(ql::quantum_program *program) const {
     }
 
     // generate sweep_points file ==> TOOD: delete?
-    ql::write_sweep_points(program, program->platform, "write_sweep_points");
+    write_sweep_points(program, program->platform, "write_sweep_points");
 }
 
 /**
  * @brief   Adds a compiler pass to the pass manager
  * @param   pass Object reference to the pass to be added
  */
-void PassManager::addPassNamed(const std::string &realPassName, const std::string &symbolicPassName) {
+void PassManager::addPassNamed(const Str &realPassName, const Str &symbolicPassName) {
     QL_DOUT("In PassManager::addPassNamed ");
 
     // search for pass after its name
@@ -73,7 +72,7 @@ void PassManager::addPassNamed(const std::string &realPassName, const std::strin
  * @param   aliasName String representing the name of the pass to be used internally for searching
  * @return   AbstracPass Object reference to the pass
  */
-AbstractPass *PassManager::createPass(const std::string &passName, const std::string &aliasName) {
+AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName) {
     QL_DOUT("In PassManager::createPass");
 
     /// @todo-rn: check that aliasname has not been used before!
@@ -130,7 +129,7 @@ AbstractPass *PassManager::createPass(const std::string &passName, const std::st
  * @param   passName String representing the name of the pass to be found
  * @return   AbstracPass Object reference to the pass
  */
-AbstractPass* PassManager::findPass(const std::string &passName) {
+AbstractPass* PassManager::findPass(const Str &passName) {
     QL_DOUT("In PassManager::findPass");
 
     for (auto pass : passes) {
@@ -149,7 +148,7 @@ AbstractPass* PassManager::findPass(const std::string &passName) {
  * @param   optionName String option name
  * @param   optionValue String value of the option
  */
-void PassManager::setPassOptionAll(const std::string &optionName, const std::string &optionValue) {
+void PassManager::setPassOptionAll(const Str &optionName, const Str &optionValue) {
     QL_DOUT("In PassManager::setPassOptionAll");
 
     for (auto pass : passes) {

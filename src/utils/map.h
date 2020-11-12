@@ -66,13 +66,13 @@ public:
      * all constructors of the STL container can be used.
      */
     template <class... Args>
-    explicit Map(Args... args) : Stl(std::forward<Args>(args)...) {
+    explicit Map(Args&&... args) : Stl(std::forward<Args>(args)...) {
     }
 
     /**
      * Implicit conversion for initializer lists.
      */
-    Map(std::initializer_list<T> init) : Stl(init) {
+    Map(std::initializer_list<typename Stl::value_type> init) : Stl(init) {
     }
 
     /**

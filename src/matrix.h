@@ -1,9 +1,7 @@
-/**
- * @file   matrix.h
- * @date   11/2016
- * @author Nader Khammassi
- * @brief  unitary matrix implementation (taken from qx simulator)
+/** \file
+ * Unitary matrix implementation, originally taken from qx simulator.
  */
+
 #pragma once
 
 #include <iostream>

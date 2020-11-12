@@ -1,3 +1,7 @@
+/** \file
+ * Quantum kernel abstraction implementation.
+ */
+
 #include "kernel.h"
 
 #include <sstream>
@@ -55,12 +59,12 @@ quantum_kernel::quantum_kernel(
 void quantum_kernel::set_condition(const operation &oper) {
     if ((oper.operands[0])->as_creg().id >= creg_count || (oper.operands[1]->as_creg().id >= creg_count)) {
         QL_EOUT("Out of range operand(s) for '" << oper.operation_name);
-        throw utils::Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
+        throw Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
     }
 
     if (oper.operation_type != operation_type_t::RELATIONAL) {
         QL_EOUT("Relational operator not used for conditional '" << oper.operation_name);
-        throw utils::Exception("Relational operator not used for conditional '" + oper.operation_name + "' !", false);
+        throw Exception("Relational operator not used for conditional '" + oper.operation_name + "' !", false);
     }
 
     br_condition = oper;
@@ -543,7 +547,7 @@ void quantum_kernel::get_decomposed_ins(
         if (it != instruction_map.end()) {
             sub_instructions.push_back(sub_ins);
         } else {
-            throw utils::Exception("[x] error : kernel::gate() : gate decomposition not available for '" + sub_ins + "'' in the target platform !", false);
+            throw Exception("[x] error : kernel::gate() : gate decomposition not available for '" + sub_ins + "'' in the target platform !", false);
         }
     }
 }
@@ -625,11 +629,11 @@ bool quantum_kernel::add_spec_decomposed_gate_if_available(
                         QL_DOUT("added default gate '" << sub_ins_name << "' with qubits " << this_gate_qubits); // // NB: changed WOUT to DOUT, since this is common for 'barrier', spamming log
                     } else {
                         QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
-                        throw utils::Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
+                        throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
                     }
                 } else {
                     QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
-                    throw utils::Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
+                    throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
                 }
             }
         }
@@ -721,11 +725,11 @@ bool quantum_kernel::add_param_decomposed_gate_if_available(
                         QL_WOUT("added default gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
                     } else {
                         QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
-                        throw utils::Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
+                        throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
                     }
                 } else {
                     QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
-                    throw utils::Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
+                    throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
                 }
             }
         }
@@ -794,7 +798,7 @@ bool quantum_kernel::gate_nonfatal(
     // if not, check if a default gate is available
     // if not, then error
 
-    auto gname_lower = utils::to_lower(gname);
+    auto gname_lower = to_lower(gname);
     QL_DOUT("Adding gate : " << gname_lower << " with qubits " << qubits);
 
     // specialized composite gate check
@@ -846,13 +850,13 @@ void quantum_kernel::gate(
     double u_size = uint64_log2((int)u.size())/2;
     if (u_size != qubits.size()) {
         QL_EOUT("Unitary " << u.name << " has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
-        throw utils::Exception("Unitary '" + u.name + "' has been applied to the wrong number of qubits. Cannot be added to kernel! " + std::to_string(qubits.size()) + " and not " + std::to_string(u_size), false);
+        throw Exception("Unitary '" + u.name + "' has been applied to the wrong number of qubits. Cannot be added to kernel! " + std::to_string(qubits.size()) + " and not " + std::to_string(u_size), false);
     }
     for (uint64_t i = 0; i < qubits.size()-1; i++) {
         for (uint64_t j = i + 1; j < qubits.size(); j++) {
             if (qubits[i] == qubits[j]) {
                 QL_EOUT("Qubit numbers used more than once in Unitary: " << u.name << ". Double qubit is number " << qubits[j]);
-                throw utils::Exception("Qubit numbers used more than once in Unitary: " + u.name + ". Double qubit is number " + std::to_string(qubits[j]), false);
+                throw Exception("Qubit numbers used more than once in Unitary: " + u.name + ". Double qubit is number " + std::to_string(qubits[j]), false);
             }
         }
     }
@@ -861,13 +865,13 @@ void quantum_kernel::gate(
     if (u.is_decomposed) {
         QL_DOUT("Adding decomposed unitary to kernel ...");
         QL_IOUT("The list is this many items long: " << u.instructionlist.size());
-        //COUT("Instructionlist" << utils::to_string(u.instructionlist));
+        //COUT("Instructionlist" << to_string(u.instructionlist));
         cycles_valid = false;
         int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
         QL_DOUT("Total number of gates added: " << end_index);
     } else {
         QL_EOUT("Unitary " << u.name << " not decomposed. Cannot be added to kernel!");
-        throw utils::Exception("Unitary '" + u.name + "' not decomposed. Cannot be added to kernel!", false);
+        throw Exception("Unitary '" + u.name + "' not decomposed. Cannot be added to kernel!", false);
     }
 }
 
@@ -880,7 +884,7 @@ int quantum_kernel::recursiveRelationsForUnitaryDecomposition(
     int n,
     int i
 ) {
-    // DOUT("Adding a new unitary starting at index: "<< i << ", to " << n << utils::to_string(qubits, " qubits: "));
+    // DOUT("Adding a new unitary starting at index: "<< i << ", to " << n << to_string(qubits, " qubits: "));
     if (n > 1) {
         // Need to be checked here because it changes the structure of the decomposition.
         // This checks whether the first qubit is affected, if not, it applies a unitary to the all qubits except the first one.
@@ -946,7 +950,7 @@ void quantum_kernel::multicontrolled_rz(
     int end_index,
     const Vec<size_t> &qubits
 ) {
-    // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << utils::to_string(qubits, "qubits: "));
+    // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << to_string(qubits, "qubits: "));
     int idx;
     //The first one is always controlled from the last to the first qubit.
     c.push_back(new ql::rz(qubits.back(),-instruction_list[start_index]));
@@ -969,7 +973,7 @@ void quantum_kernel::multicontrolled_ry(
     int end_index,
     const Vec<size_t> &qubits
 ) {
-    // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << utils::to_string(qubits, "qubits: "));
+    // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << to_string(qubits, "qubits: "));
     int idx;
 
     //The first one is always controlled from the last to the first qubit.
@@ -1061,7 +1065,7 @@ void quantum_kernel::classical(const creg &destination, const operation &oper) {
     // check sanity of destination
     if (destination.id >= creg_count) {
         QL_EOUT("Out of range operand(s) for '" << oper.operation_name);
-        throw utils::Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
+        throw Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
     }
 
     // check sanity of other operands
@@ -1069,7 +1073,7 @@ void quantum_kernel::classical(const creg &destination, const operation &oper) {
         if (op->type() == operand_type_t::CREG) {
             if (op->as_creg().id >= creg_count) {
                 QL_EOUT("Out of range operand(s) for '" << oper.operation_name);
-                throw utils::Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
+                throw Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
             }
         }
     }
@@ -1424,7 +1428,7 @@ void quantum_kernel::controlled_single(
             // controlled_y(tq, cq);
         } else {
             QL_EOUT("Controlled version of gate '" << gname << "' not defined !");
-            throw utils::Exception("[x] error : kernel::controlled : Controlled version of gate '" + gname + "' not defined ! ", false);
+            throw Exception("[x] error : kernel::controlled : Controlled version of gate '" + gname + "' not defined ! ", false);
         }
     }
 }
@@ -1440,7 +1444,7 @@ void quantum_kernel::controlled(
 
     if (ncq == 0) {
         QL_EOUT("At least one control_qubits should be specified !");
-        throw utils::Exception("[x] error : kernel::controlled : At least one control_qubits should be specified !", false);
+        throw Exception("[x] error : kernel::controlled : At least one control_qubits should be specified !", false);
     } else if (ncq == 1) {
         //                      control               ancilla
         controlled_single(k, control_qubits[0], ancilla_qubits[0]);
@@ -1465,7 +1469,7 @@ void quantum_kernel::controlled(
             toffoli(control_qubits[0], control_qubits[1], ancilla_qubits[0]);
         } else {
             QL_EOUT("No. of control qubits should be equal to No. of ancilla qubits!");
-            throw utils::Exception("[x] error : kernel::controlled : No. of control qubits should be equal to No. of ancilla qubits!", false);
+            throw Exception("[x] error : kernel::controlled : No. of control qubits should be equal to No. of ancilla qubits!", false);
         }
     }
 
@@ -1527,7 +1531,7 @@ void quantum_kernel::conjugate(const quantum_kernel *k) {
             gate("toffoli", g->operands, {}, g->duration, g->angle);
         } else {
             QL_EOUT("Conjugate version of gate '" << gname << "' not defined !");
-            throw utils::Exception("[x] error : kernel::conjugate : Conjugate version of gate '" + gname + "' not defined ! ", false);
+            throw Exception("[x] error : kernel::conjugate : Conjugate version of gate '" + gname + "' not defined ! ", false);
         }
     }
     QL_COUT("Generating conjugate kernel [Done]");

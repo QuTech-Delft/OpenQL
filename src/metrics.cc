@@ -1,6 +1,12 @@
+/** \file
+ * OpenQl circuit fidelity estimator.
+ */
+
 #include "metrics.h"
 
 namespace ql {
+
+using namespace utils;
 
 #define CYCLE_TIME 20 //TODO: gate duration is hardcoded for now
 
@@ -8,8 +14,8 @@ namespace ql {
 
 template<typename T>
 
-void my_print(std::vector<T> const &input, const char *id_name) {
-    std::stringstream output;
+void my_print(Vec<T> const &input, const char *id_name) {
+    StrStrm output;
     output << id_name << "(" << input.size() << ")= ";
     for (auto const &i: input) {
         output << i << " ";
@@ -29,11 +35,11 @@ Metrics::Metrics(
     double gatefid_1,
     double gatefid_2,
     double decoherence_time,
-    const std::string &estimator,
-    const std::string &output_mode
+    const Str &estimator,
+    const Str &output_mode
 ) {
-    // fidelity_estimator = ql::options::get("metrics_fidelity_estimator");
-    // output_mode = ql::options::get("metrics_output_mode");
+    // fidelity_estimator = options::get("metrics_fidelity_estimator");
+    // output_mode = options::get("metrics_output_mode");
     this->Nqubits = Nqubits;
     this->output_mode = output_mode;
 
@@ -44,12 +50,12 @@ Metrics::Metrics(
     // else
 
     // EOUT("Invalid metrics_fidelity_estimator provided: " << fidelity_estimator);
-    // throw ql::exception("invalid metrics_fidelity_estimator", false);
+    // throw exception("invalid metrics_fidelity_estimator", false);
 
     if (output_mode != "worst" && output_mode != "gaussian" &&
         output_mode != "average") {
         QL_EOUT("Invalid metrics_output_method provided: " << output_mode);
-        throw utils::Exception("invalid metrics_output_mode", false);
+        throw Exception("invalid metrics_output_mode", false);
     }
 
     this->gatefid_1 = gatefid_1;
@@ -57,7 +63,7 @@ Metrics::Metrics(
     this->decoherence_time = decoherence_time;
 }
 
-void Metrics::Init(size_t Nqubits, ql::quantum_platform *platform) {
+void Metrics::Init(size_t Nqubits, quantum_platform *platform) {
     this->Nqubits = Nqubits;
 
     //TODO test if json has qubit relaxation times / gate error rate in this function
@@ -68,14 +74,14 @@ void Metrics::Init(size_t Nqubits, ql::quantum_platform *platform) {
     // if (qubit_attributes.count("relaxation_times") == 0 || qubit_attributes.count("gate_error_rates") == 0)
     // {
     // 	EOUT("'qubit_attributes' section on hardware config file doesn't contain qubit relaxation times or gate error rates!");
-    //     throw ql::exception("[x] error : ql::hardware_configuration::load() : 'relaxation_times' or 'gate_error_rates' sections not specified in the hardware config file !",false);
+    //     throw exception("[x] error : hardware_configuration::load() : 'relaxation_times' or 'gate_error_rates' sections not specified in the hardware config file !",false);
     // }
 
 }
 
-double Metrics::create_output(const std::vector<double> &fids) {
+double Metrics::create_output(const Vec<double> &fids) {
     QL_IOUT("Creating output");
-    std::vector<double> result_vector;
+    Vec<double> result_vector;
     result_vector = fids;
     QL_IOUT("Creating output2");
 
@@ -130,7 +136,7 @@ double Metrics::create_output(const std::vector<double> &fids) {
 
 }
 
-double Metrics::bounded_fidelity(const ql::circuit &circ, std::vector<double> &fids) {
+double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
     //this function considers the primitive gates! each operand undergoing a 2-qubit operation is always considered to have the same latency
     //same end fidelity considered for the two operands of the same 2-qubit gate
     //TODO - URGENT!! Check if gate->cycle starts in zero;
@@ -143,7 +149,7 @@ double Metrics::bounded_fidelity(const ql::circuit &circ, std::vector<double> &f
         //TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
     }
 
-    std::vector<size_t> last_op_endtime(Nqubits, 1); //First cycle has index 1
+    Vec<size_t> last_op_endtime(Nqubits, 1); //First cycle has index 1
 
     PRINTER(fids);
     PRINTER(last_op_endtime);
@@ -165,7 +171,7 @@ double Metrics::bounded_fidelity(const ql::circuit &circ, std::vector<double> &f
 
         if (gate->duration > CYCLE_TIME*2 && gate->name != "prep_z" && gate->name != "measure") {
             QL_EOUT("Gate with duration larger than CYCLE_TIME*20 detected! Non primitive?: " << gate->name );
-            throw utils::Exception("Check for non primitive gates at cycle " + std::to_string(gate->cycle) + "!", false);
+            throw Exception("Check for non primitive gates at cycle " + std::to_string(gate->cycle) + "!", false);
         }
 
         unsigned char type_op = gate->operands.size(); // type of operation (1-qubit/2-qubit)
@@ -233,27 +239,27 @@ double Metrics::bounded_fidelity(const ql::circuit &circ, std::vector<double> &f
     return create_output(fids);
 }
 
-double quick_fidelity(const std::list<ql::gate*> &gate_list) {
-    ql::Metrics estimator(17);
-    std::vector<double> previous_fids;
-    ql::circuit circuit;
+double quick_fidelity(const List<gate*> &gate_list) {
+    Metrics estimator(17);
+    Vec<double> previous_fids;
+    circuit circuit;
     std::copy(std::begin(gate_list), std::end(gate_list), std::back_inserter(circuit));
     double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
     fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
     return fidelity;
 }
 
-double quick_fidelity_circuit(const ql::circuit &circuit) {
-    ql::Metrics estimator(17);
-    std::vector<double> previous_fids;
+double quick_fidelity_circuit(const circuit &circuit) {
+    Metrics estimator(17);
+    Vec<double> previous_fids;
     double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
     fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
     return fidelity;
 }
 
-double quick_fidelity(const ql::circuit &circuit) {
-    ql::Metrics estimator(17);
-    std::vector<double> previous_fids;
+double quick_fidelity(const circuit &circuit) {
+    Metrics estimator(17);
+    Vec<double> previous_fids;
     double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
     fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
     return fidelity;
@@ -274,12 +280,12 @@ double quick_fidelity(const ql::circuit &circuit) {
 // {
 // 	//Each physical qubit should be associated to only one QubitSet
 // 	private:
-// 		std::map<std::string, double> error_map; //the string contains the error status of each Qubit. Ex: IIXYXXI for a qubit set with 7 qubits
+// 		Map<Str, double> error_map; //the string contains the error status of each Qubit. Ex: IIXYXXI for a qubit set with 7 qubits
 // 	public:
-// 		std::vector<size_t> qubits; //Contains the qubits ordered as they would appear in a error string
+// 		Vec<size_t> qubits; //Contains the qubits ordered as they would appear in a error string
 // 		static double new_error_threshold;
 
-// 		QubitSet( std::vector<size_t> qubits )
+// 		QubitSet( Vec<size_t> qubits )
 // 		{
 // 			// error_map.reserve( qubits.size() );
 // 			this->qubits = qubits;
@@ -318,7 +324,7 @@ double quick_fidelity(const ql::circuit &circuit) {
 
 // 		void reset()
 // 		{
-// 			std::string initial_state(qubits.size(), 0);
+// 			Str initial_state(qubits.size(), 0);
 // 			error_map[initial_state] = 1.0;
 // 		}
 
@@ -331,7 +337,7 @@ double quick_fidelity(const ql::circuit &circuit) {
 // 			{
 // 				//Since map is ordered by string, this can probably be optimized, by checking the next 3 keys and verifying if they are variations
 // 				//^ This would probably be faster than map::find()
-// 				std::string error_string = error.first;
+// 				Str error_string = error.first;
 // 				unsigned char original = error.first.at(q_index);
 // 				unsigned char variations[3];
 
@@ -377,24 +383,24 @@ double quick_fidelity(const ql::circuit &circuit) {
 // 		size_t get_qubit_index(size_t qubit)
 // 		{
 
-// 			std::vector<size_t>::iterator it = std::find(qubits.begin(), qubits.end(), 22);
+// 			Vec<size_t>::iterator it = std::find(qubits.begin(), qubits.end(), 22);
 
 // 			if (it == qubits.end())
 // 			{
 // 				DOUT("Qubit not found in expected QubitSet \n");
-// 				throw ql::exception("Qubit not found in expected QubitSet", false);
+// 				throw exception("Qubit not found in expected QubitSet", false);
 // 			}
 
 // 			return std::distance(qubits.begin(), it);
 // 		}
 
-// 		void single_qubit_gate(size_t qubit, double fid, const std::string &name)
+// 		void single_qubit_gate(size_t qubit, double fid, const Str &name)
 // 		{
 // 			//TODO: Transform previous errors first
 // 			introduce_single_qubit_error(qubit, fid);
 // 		}
 
-// 		void two_qubit_gate(size_t qubit, double fid, const std::string &name, int control_target)
+// 		void two_qubit_gate(size_t qubit, double fid, const Str &name, int control_target)
 // 		{
 // 			//TODO: Transform previous errors first
 // 			introduce_single_qubit_error(qubit, fid);
@@ -403,7 +409,7 @@ double quick_fidelity(const ql::circuit &circuit) {
 // 		void introduce_single_qubit_error(size_t qubit, double fid)
 // 		{
 // 			double axis_flip_prob = (1-fid)/3;
-// 			std::map< std::string, double> new_error_map;
+// 			Map< Str, double> new_error_map;
 
 // 			for (auto & error : error_map)
 // 			{
@@ -411,22 +417,22 @@ double quick_fidelity(const ql::circuit &circuit) {
 // 				char current_state = error.first.at( get_qubit_index(qubit) ); //Gets error status for qubit at a error string. Replace .at() for [] for optimization
 
 
-// 				// new_error_map.insert(std::pair<std::string, double>(error, error.second * fid)); //Inserts the new states for a 'I' injected error
+// 				// new_error_map.insert(Pair<Str, double>(error, error.second * fid)); //Inserts the new states for a 'I' injected error
 // 				// use pointers and the new char instead of the string?
 
-// 				new_error_map.insert(std::pair<std::string, double>(error.first, error.second * fid));
+// 				new_error_map.insert(Pair<Str, double>(error.first, error.second * fid));
 
 // 				for (auto new_error = 1; new_error < 4; new_error++)
 // 				{
 // 					unsigned char new_state = new_state_calc(current_state, new_error);
 // 					double new_state_prob = error.second * axis_flip_prob;
 
-// 					std::string new_error_string(error.first);
+// 					Str new_error_string(error.first);
 // 					new_error_string.at( get_qubit_index(qubit) ) = new_state; //string with the new error syndrome, for each case
 
 // 					if (new_state_prob > new_error_threshold )
 // 					{
-// 						auto ret = new_error_map.insert(std::pair<std::string, double>(new_error_string, new_state_prob)); //only adds if error syndrome not on the list
+// 						auto ret = new_error_map.insert(Pair<Str, double>(new_error_string, new_state_prob)); //only adds if error syndrome not on the list
 // 						if (ret.second == false) //If a key already existed, then
 // 							error_map[new_error_string] += new_state_prob;
 // 					}
@@ -443,7 +449,7 @@ double quick_fidelity(const ql::circuit &circuit) {
 // class Depolarizing_model
 // {
 // 	private:
-// 		std::vector< QubitSet * > qubit_partition;
+// 		Vec< QubitSet * > qubit_partition;
 // 		double gatefid1;
 // 		double gatefid2;
 // 		size_t Nqubits;
@@ -456,7 +462,7 @@ double quick_fidelity(const ql::circuit &circuit) {
 
 // 			for (size_t i = 0; i<Nqubits; i++)
 // 			{
-// 				std::vector<size_t> initial_qubit (1, (size_t)1);
+// 				Vec<size_t> initial_qubit (1, (size_t)1);
 // 				qubit_partition.push_back(new QubitSet(  initial_qubit ));
 // 			}
 // 			this->Nqubits = Nqubits;
@@ -499,7 +505,7 @@ double quick_fidelity(const ql::circuit &circuit) {
 // 			return;
 // 		}
 
-// 		double run_circuit(ql::circuit &circ)
+// 		double run_circuit(circuit &circ)
 // {
 // 		//this function considers the primitive gates! each operand undergoing a 2-qubit operation is always considered to have the same latency
 // 		//same end fidelity considered for the two operands of the same 2-qubit gate
@@ -513,7 +519,7 @@ double quick_fidelity(const ql::circuit &circuit) {
 // 		// 	//TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
 // 		// }
 
-// 		std::vector<size_t> last_op_endtime(Nqubits, 1); //First cycle has index 1
+// 		Vec<size_t> last_op_endtime(Nqubits, 1); //First cycle has index 1
 
 // 		PRINTER(last_op_endtime);
 // 		IOUT("\n\n");
@@ -535,7 +541,7 @@ double quick_fidelity(const ql::circuit &circuit) {
 // 			if (gate->duration > CYCLE_TIME*2 && gate->name!="prep_z" && gate->name!="measure" )
 // 			{
 // 				EOUT("Gate with duration larger than CYCLE_TIME*20 detected! Non primitive?: " << output_mode);
-//     			throw ql::exception("Check for non primitive gates at cycle "  + std::to_string(gate->cycle) + "!", false);
+//     			throw exception("Check for non primitive gates at cycle "  + std::to_string(gate->cycle) + "!", false);
 // 			}
 
 
@@ -636,7 +642,7 @@ double quick_fidelity(const ql::circuit &circuit) {
 // 		{
 // 			DOUT("\n\n")
 // 			DOUT("QUBIT_SET: ");
-// 			std::string output;
+// 			Str output;
 // 			for(auto qubit : q_set->qubits)
 // 				output += std::to_string(qubit) + ",";
 // 			DOUT(output)

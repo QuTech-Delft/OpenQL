@@ -1,27 +1,22 @@
-/**
- * @file   platform.h
- * @date   11/2016
- * @author Nader Khammassi
- * @brief  platform header for target-specific compilation
+/** \file
+ * Platform header for target-specific compilation.
  */
 
 #pragma once
 
-#include <string>
-#include <tuple>
-
 #include "utils/json.h"
+#include "utils/str.h"
 #include "hardware_configuration.h"
 
 namespace ql {
 
 class quantum_platform {
 public:
-    std::string             name;                     // platform name
-    std::string             eqasm_compiler_name;      // eqasm backend
+    utils::Str              name;                     // platform name
+    utils::Str              eqasm_compiler_name;      // eqasm backend
     size_t                  qubit_number;             // number of qubits
     size_t                  cycle_time;               // in [ns]
-    std::string             configuration_file_name;  // configuration file name
+    utils::Str              configuration_file_name;  // configuration file name
     instruction_map_t       instruction_map;          // supported operations
     utils::Json             instruction_settings;     // instruction settings (to use by the eqasm backend)
     utils::Json             hardware_settings;        // additional hardware settings (to use by the eqasm backend)
@@ -32,7 +27,7 @@ public:
 
     // FIXME: constructed object is not usable
     quantum_platform();
-    quantum_platform(const std::string &name, const std::string &configuration_file_name);
+    quantum_platform(const utils::Str &name, const utils::Str &configuration_file_name);
     void print_info() const;
     size_t get_qubit_number() const;  // FIXME: qubit_number is public anyway
 
@@ -48,10 +43,10 @@ public:
      */
 
     // find settings for custom gate, preventing JSON exceptions
-    const utils::Json& find_instruction(const std::string &iname) const;
+    const utils::Json &find_instruction(const utils::Str &iname) const;
 
     // find instruction type for custom gate
-    std::string find_instruction_type(const std::string &iname) const;
+    utils::Str find_instruction_type(const utils::Str &iname) const;
 
     size_t time_to_cycles(float time_ns) const;     // FIXME: prefer unsigned int, or double parameter
 };

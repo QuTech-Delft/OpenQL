@@ -1,7 +1,5 @@
-/**
- * @file   decompose_toffoli.cc
- * @date   11/2016
- * @author Nader Khammassi
+/** \file
+ * Toffoli gate decomposer pass implementation.
  */
 
 #include "utils/vec.h"

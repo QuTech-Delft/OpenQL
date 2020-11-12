@@ -1,12 +1,10 @@
-/**
- * @file   unitary.cc
- * @date   12/2018
- * @author Imran Ashraf
- * @author Anneriet Krol
- * @brief  unitary matrix (decomposition) implementation
+/** \file
+ * Unitary matrix (decomposition) implementation.
  */
 
-#include <unitary.h>
+#include "unitary.h"
+
+#include "utils/exception.h"
 
 #ifndef WITHOUT_UNITARY_DECOMPOSITION
 #include <Eigen/MatrixFunctions>
@@ -22,6 +20,8 @@ typedef unsigned int uint;
 
 namespace ql {
 
+using namespace utils;
+
 unitary::unitary() :
     name(""),
     is_decomposed(false)
@@ -29,8 +29,8 @@ unitary::unitary() :
 }
 
 unitary::unitary(
-    const std::string &name,
-    const std::vector<std::complex<double>> &array
+    const Str &name,
+    const Vec<std::complex<double>> &array
 ) :
     name(name),
     array(array),
@@ -71,23 +71,23 @@ private:
     Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> _matrix;
 
 public:
-    std::string name;
-    std::vector<std::complex<double>> array;
-    std::vector<std::complex<double>> SU;
+    Str name;
+    Vec<std::complex<double>> array;
+    Vec<std::complex<double>> SU;
     double delta;
     double alpha;
     double beta;
     double gamma;
     bool is_decomposed;
-    std::vector<double> instructionlist;
+    Vec<double> instructionlist;
 
     typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> complex_matrix;
 
     UnitaryDecomposer() : name(""), is_decomposed(false) {}
 
     UnitaryDecomposer(
-        const std::string &name,
-        const std::vector<std::complex<double>> &array
+        const Str &name,
+        const Vec<std::complex<double>> &array
     ) :
         name(name),
         array(array),
@@ -142,10 +142,10 @@ public:
         is_decomposed = true;
     }
 
-    std::string to_string(
+    Str to_string(
         const complex_matrix &m,
-        const std::string &vector_prefix = "",
-        const std::string &elem_sep = ", "
+        const Str &vector_prefix = "",
+        const Str &elem_sep = ", "
     ) {
         std::ostringstream ss;
         ss << m << "\n";
@@ -285,8 +285,8 @@ public:
 
 
 
-        std::vector<int> c_ind;
-        std::vector<int> s_ind;
+        Vec<int> c_ind;
+        Vec<int> s_ind;
         for (int j = 0; j < p; j++) {
             if (c(j,j).real() < 0) {
                 c_ind.push_back(j);
@@ -325,11 +325,11 @@ public:
         complex_matrix tmp_s = u1.adjoint()*U.topRightCorner(p,p);
         complex_matrix tmp_c = u2.adjoint()*U.bottomRightCorner(p,p);
 
-        // std::vector<int> c_ind_row;
-        // std::vector<int> s_ind_row;
+        // Vec<int> c_ind_row;
+        // Vec<int> s_ind_row;
         for (int i = 0; i < p; i++) {
             if (std::abs(s(i,i)) > std::abs(c(i,i))) {
-                // std::vector<int> s_ind_row;
+                // Vec<int> s_ind_row;
                 v2.row(i).noalias() = tmp_s.row(i)/s(i,i);
             } else {
                 // c_ind_row.push_back(i);
@@ -439,7 +439,7 @@ public:
 
     }
 
-    std::vector<Eigen::MatrixXd> genMk_lookuptable;
+    Vec<Eigen::MatrixXd> genMk_lookuptable;
 
     // returns M^k = (-1)^(b_(i-1)*g_(i-1)), where * is bitwise inner product, g = binary gray code, b = binary code.
     void genMk() {

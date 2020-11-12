@@ -1,3 +1,7 @@
+/** \file
+ * CC-light eQASM compiler implementation.
+ */
+
 #include "cc_light_eqasm_compiler.h"
 
 #include "scheduler.h"
@@ -187,7 +191,7 @@ classical_cc::classical_cc(
     QL_DOUT("...... ivalue= " << ivalue);
 
     // DOUT("adding classical_cc " << operation);
-    name = utils::to_lower(operation);
+    name = to_lower(operation);
     duration = 20;
     creg_operands=opers;
     int sz = creg_operands.size();
@@ -220,7 +224,7 @@ classical_cc::classical_cc(
         QL_DOUT("Adding 0 operand operation: " << name);
     } else {
         QL_EOUT("Unknown cclight classical operation '" << name << "' with '" << sz << "' operands!");
-        throw utils::Exception("Unknown cclight classical operation'" + name + "' with'" + std::to_string(sz) + "' operands!", false);
+        throw Exception("Unknown cclight classical operation'" + name + "' with'" + std::to_string(sz) + "' operands!", false);
     }
     QL_DOUT("adding classical_cc [DONE]");
 }
@@ -295,7 +299,7 @@ Str classical_instruction2qisa(classical_cc *classical_ins) {
         ssclassical << "fbr " << "GE, r" << iopers[0];
     } else {
         QL_EOUT("Unknown CClight classical operation '" << iname << "' with '" << iopers_count << "' operands!");
-        throw utils::Exception("Unknown classical operation'" + iname + "' with'" + std::to_string(iopers_count) + "' operands!", false);
+        throw Exception("Unknown classical operation'" + iname + "' with'" + std::to_string(iopers_count) + "' operands!", false);
     }
 
     return ssclassical.str();
@@ -455,7 +459,7 @@ Str ir2qisa(
                             auto &op2 = (*insIt)->operands[1];
                             dqubits.push_back(qubit_pair_t(op1, op2));
                         } else {
-                            throw utils::Exception("Error : only 1 and 2 operand instructions are supported by cc light masks !", false);
+                            throw Exception("Error : only 1 and 2 operand instructions are supported by cc light masks !", false);
                         }
                     }
 
@@ -465,7 +469,7 @@ Str ir2qisa(
                     } else if (nOperands == 2) {
                         rname = gMaskManager.getRegName(dqubits);
                     } else {
-                        throw utils::Exception("Error : only 1 and 2 operand instructions are supported by cc light masks !", false);
+                        throw Exception("Error : only 1 and 2 operand instructions are supported by cc light masks !", false);
                     }
 
                     ssinst << cc_light_instr_name << " " << rname;
@@ -778,11 +782,11 @@ void cc_light_eqasm_compiler::map(
         StrStrm ss;
         ss << "# ----- swaps added: " << mapper.nswapsadded << std::endl;
         ss << "# ----- of which moves added: " << mapper.nmovesadded << std::endl;
-        ss << "# ----- virt2real map before mapper:" << utils::to_string(mapper.v2r_in) << std::endl;
-        ss << "# ----- virt2real map after initial placement:" << utils::to_string(mapper.v2r_ip) << std::endl;
-        ss << "# ----- virt2real map after mapper:" << utils::to_string(mapper.v2r_out) << std::endl;
-        ss << "# ----- realqubit states before mapper:" << utils::to_string(mapper.rs_in) << std::endl;
-        ss << "# ----- realqubit states after mapper:" << utils::to_string(mapper.rs_out) << std::endl;
+        ss << "# ----- virt2real map before mapper:" << to_string(mapper.v2r_in) << std::endl;
+        ss << "# ----- virt2real map after initial placement:" << to_string(mapper.v2r_ip) << std::endl;
+        ss << "# ----- virt2real map after mapper:" << to_string(mapper.v2r_out) << std::endl;
+        ss << "# ----- realqubit states before mapper:" << to_string(mapper.rs_in) << std::endl;
+        ss << "# ----- realqubit states after mapper:" << to_string(mapper.rs_out) << std::endl;
         ss << "# ----- time taken: " << timetaken << std::endl;
         report_string(ofs, ss.str());
 
@@ -813,8 +817,8 @@ void cc_light_eqasm_compiler::ccl_prep_code_generation(
     const quantum_platform &platform,
     const Str &passname
 ) {
-    const utils::Json &instruction_settings = platform.instruction_settings;
-    for (const utils::Json &i : instruction_settings) {
+    const Json &instruction_settings = platform.instruction_settings;
+    for (const Json &i : instruction_settings) {
         if (i.count("cc_light_instr") <= 0) {
             QL_FATAL("cc_light_instr not found for " << i);
         }
@@ -957,13 +961,13 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
 
     QL_DOUT("decomposing instructions...");
     for (auto ins : kernel.c) {
-        auto iname = utils::to_lower(ins->name);
+        auto iname = to_lower(ins->name);
         QL_DOUT("decomposing instruction " << iname << "...");
         auto & icopers = ins->creg_operands;
         auto & iqopers = ins->operands;
         int icopers_count = icopers.size();
         int iqopers_count = iqopers.size();
-        QL_DOUT("decomposing instruction " << iname << " operands=" << utils::to_string(iqopers) << " creg_operands=" << utils::to_string(icopers));
+        QL_DOUT("decomposing instruction " << iname << " operands=" << to_string(iqopers) << " creg_operands=" << to_string(icopers));
         auto itype = ins->type();
         if (itype == __classical_gate__) {
             QL_DOUT("    classical instruction: " << ins->qasm());
@@ -1000,20 +1004,20 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
                 QL_DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
             } else {
                 QL_EOUT("Unknown decomposition of classical operation '" << iname << "' with '" << icopers_count << "' operands!");
-                throw utils::Exception("Unknown classical operation '" + iname + "' with'" + std::to_string(icopers_count) + "' operands!", false);
+                throw Exception("Unknown classical operation '" + iname + "' with'" + std::to_string(icopers_count) + "' operands!", false);
             }
         } else {
             if (iname == "wait") {
                 QL_DOUT("    wait instruction ");
                 decomp_ckt.push_back(ins);
             } else {
-                const utils::Json &instruction_settings = platform.instruction_settings;
+                const Json &instruction_settings = platform.instruction_settings;
                 Str operation_type;
                 if (instruction_settings.find(iname) != instruction_settings.end()) {
                     operation_type = instruction_settings[iname]["type"].get<Str>();
                 } else {
                     QL_EOUT("instruction settings not found for '" << iname << "' with '" << iqopers_count << "' operands!");
-                    throw utils::Exception("instruction settings not found for '" + iname + "' with'" + std::to_string(iqopers_count) + "' operands!", false);
+                    throw Exception("instruction settings not found for '" + iname + "' with'" + std::to_string(iqopers_count) + "' operands!", false);
                 }
                 bool is_measure = (operation_type == "readout");
                 if (is_measure) {
@@ -1033,7 +1037,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
                         }
                     } else {
                         QL_EOUT("Unknown decomposition of measure/readout operation: '" << iname << "!");
-                        throw utils::Exception("Unknown decomposition of measure/readout operation '" + iname + "'!", false);
+                        throw Exception("Unknown decomposition of measure/readout operation '" + iname + "'!", false);
                     }
                 } else {
                     QL_DOUT("    quantum instruction ");
@@ -1185,24 +1189,24 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
 
     QL_DOUT("Adding qubits to Quantumsim program");
     fout << std::endl << "    # add qubits" << std::endl;
-    utils::Json config;
+    Json config;
     try {
-        config = utils::load_json(platform.configuration_file_name);
-    } catch (utils::Json::exception e) {
-        throw utils::Exception("[x] error : quantumsim_compiler::load() :  failed to load the hardware config file : malformed json file ! : \n    " +
+        config = load_json(platform.configuration_file_name);
+    } catch (Json::exception e) {
+        throw Exception("[x] error : quantumsim_compiler::load() :  failed to load the hardware config file : malformed json file ! : \n    " +
                         Str(e.what()), false);
     }
 
     // load qubit attributes
-    utils::Json qubit_attributes = config["qubit_attributes"];
+    Json qubit_attributes = config["qubit_attributes"];
     if (qubit_attributes.is_null()) {
         QL_EOUT("qubit_attributes is not specified in the hardware config file !");
-        throw utils::Exception("[x] error: quantumsim_compiler: qubit_attributes is not specified in the hardware config file !", false);
+        throw Exception("[x] error: quantumsim_compiler: qubit_attributes is not specified in the hardware config file !", false);
     }
-    utils::Json relaxation_times = qubit_attributes["relaxation_times"];
+    Json relaxation_times = qubit_attributes["relaxation_times"];
     if (relaxation_times.is_null()) {
         QL_EOUT("relaxation_times is not specified in the hardware config file !");
-        throw utils::Exception("[x] error: quantumsim_compiler: relaxation_times is not specified in the hardware config file !", false);
+        throw Exception("[x] error: quantumsim_compiler: relaxation_times is not specified in the hardware config file !", false);
     }
     size_t count = platform.hardware_settings["qubit_number"];
 
@@ -1228,7 +1232,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
         size_t q = stoi(it.key());
         if (q >= count) {
             QL_EOUT("qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform");
-            throw utils::Exception("[x] error: qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform", false);
+            throw Exception("[x] error: qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform", false);
         }
         if (check_usecount[q] == 0) {
             QL_DOUT("... qubit " << q << " is not used; skipping it");
@@ -1237,7 +1241,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
         auto & rt = it.value();
         if (rt.size() < 2) {
             QL_EOUT("each qubit must have at least two relaxation times");
-            throw utils::Exception("[x] error: each qubit must have at least two relaxation times", false);
+            throw Exception("[x] error: each qubit must have at least two relaxation times", false);
         }
         // fout << "    c.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")" << std::endl;
         fout << "    c.add_qubit(\"q" << q << "\", t1=t1, t2=t2)" << std::endl;

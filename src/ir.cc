@@ -1,3 +1,7 @@
+/** \file
+ * Common IR implementation.
+ */
+
 #include "ir.h"
 
 #include "options.h"
@@ -5,12 +9,14 @@
 namespace ql {
 namespace ir {
 
+using namespace utils;
+
 /**
  * Create a circuit with valid cycle values from the bundled internal
  * representation.
  */
-ql::circuit circuiter(const bundles_t &bundles) {
-    ql::circuit circ;
+circuit circuiter(const bundles_t &bundles) {
+    circuit circ;
 
     for (const bundle_t &abundle : bundles) {
         for (auto sec_it = abundle.parallel_sections.begin(); sec_it != abundle.parallel_sections.end(); ++sec_it) {
@@ -31,11 +37,11 @@ ql::circuit circuiter(const bundles_t &bundles) {
  * Create a bundled-qasm external representation from the bundled internal
  * representation.
  */
-std::string qasm(const bundles_t &bundles) {
-    std::stringstream ssqasm;
+Str qasm(const bundles_t &bundles) {
+    StrStrm ssqasm;
     size_t curr_cycle=1;        // FIXME HvS prefer to start at 0; also see depgraph creation
-    std::string skipgate = "wait";
-    if (ql::options::get("issue_skip_319") == "yes") {
+    Str skipgate = "wait";
+    if (options::get("issue_skip_319") == "yes") {
         skipgate = "skip";
     }
 
@@ -90,7 +96,7 @@ std::string qasm(const bundles_t &bundles) {
  *
  * FIXME HvS cycles_valid must be true before each call to this bundler
  */
-bundles_t bundler(const ql::circuit &circ, size_t cycle_time) {
+bundles_t bundler(const circuit &circ, size_t cycle_time) {
     bundles_t bundles;          // result bundles
 
     bundle_t    currBundle;     // current bundle at currCycle that is being filled
@@ -103,8 +109,8 @@ bundles_t bundler(const ql::circuit &circ, size_t cycle_time) {
 
     for (auto &gp : circ) {
         QL_DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
-        if (gp->type() == ql::gate_type_t::__wait_gate__ ||    // FIXME HvS: wait must be written as well
-            gp->type() == ql::gate_type_t::__dummy_gate__
+        if (gp->type() == gate_type_t::__wait_gate__ ||    // FIXME HvS: wait must be written as well
+            gp->type() == gate_type_t::__dummy_gate__
         ) {
             QL_DOUT("... ignoring: " << gp->qasm());
             continue;
@@ -173,7 +179,7 @@ bundles_t bundler(const ql::circuit &circ, size_t cycle_time) {
  * Print the bundles with an indication (taken from 'at') from where this
  * function was called.
  */
-void DebugBundles(const std::string &at, const bundles_t &bundles) {
+void DebugBundles(const Str &at, const bundles_t &bundles) {
     QL_DOUT("DebugBundles at: " << at << " showing " << bundles.size() << " bundles");
     for (const auto& abundle : bundles) {
         QL_DOUT("... bundle with nsections: " << abundle.parallel_sections.size());

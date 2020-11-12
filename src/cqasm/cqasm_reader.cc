@@ -1,18 +1,23 @@
+/** \file
+ * Implementation for converting cQASM files to OpenQL's IR.
+ */
+
+#include "cqasm_reader.h"
+
 #include <cmath>
 #include <cstdio>
-#include <string>
-#include <vector>
 #include "libQasm.hpp"
 #include "platform.h"
 #include "kernel.h"
 #include "program.h"
-#include "cqasm_reader.h"
 
 namespace ql {
 
+using namespace utils;
+
 cqasm_reader::cqasm_reader(
     const quantum_platform &q_platform,
-    quantum_program& q_program
+    quantum_program &q_program
 ) :
     platform(q_platform),
     program(q_program),
@@ -22,7 +27,7 @@ cqasm_reader::cqasm_reader(
     //Empty
 }
 
-void cqasm_reader::string2circuit(const std::string &cqasm_str) {
+void cqasm_reader::string2circuit(const Str &cqasm_str) {
     libQasm libqasm{};
     libqasm.parse_string(cqasm_str.c_str());
     int result = libqasm.getParseResult();
@@ -33,7 +38,7 @@ void cqasm_reader::string2circuit(const std::string &cqasm_str) {
     }
 }
 
-void cqasm_reader::file2circuit(const std::string &cqasm_file_path) {
+void cqasm_reader::file2circuit(const Str &cqasm_file_path) {
     libQasm libqasm{};
     libqasm.parse_file(cqasm_file_path.c_str());
     int result = libqasm.getParseResult();
@@ -57,7 +62,7 @@ void cqasm_reader::add_cqasm(compiler::QasmRepresentation cqasm_repr) {
     }
 
     for (auto subcircuit : cqasm_repr.getSubCircuits().getAllSubCircuits()) {
-        std::string sc_name = subcircuit.nameSubCircuit();
+        Str sc_name = subcircuit.nameSubCircuit();
 
         // make the kernel name unique
         sc_name.append("_" + std::to_string(sub_circuits_default_nr++));
@@ -88,10 +93,10 @@ void cqasm_reader::add_cqasm(compiler::QasmRepresentation cqasm_repr) {
 
 void cqasm_reader::add_single_bit_kernel_operation(
     quantum_kernel &kernel,
-    const std::string &gate_type,
+    const Str &gate_type,
     const compiler::Operation &operation
 ) {
-    std::vector<size_t> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
+    Vec<size_t> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
     for (size_t qubit : qubits) {
         kernel.gate(gate_type, {qubit});
     }
@@ -99,11 +104,11 @@ void cqasm_reader::add_single_bit_kernel_operation(
 
 void cqasm_reader::add_parameterized_single_bit_kernel_operation(
     quantum_kernel &kernel,
-    const std::string &gate_type,
+    const Str &gate_type,
     const compiler::Operation &operation
 ) {
     double angle = operation.getRotationAngle();
-    std::vector<size_t> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
+    Vec<size_t> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
     for (size_t qubit : qubits) {
         kernel.gate(gate_type, {qubit}, {}, 0, angle);
     }
@@ -111,7 +116,7 @@ void cqasm_reader::add_parameterized_single_bit_kernel_operation(
 
 void cqasm_reader::add_dual_bit_kernel_operation(
     quantum_kernel &kernel,
-    const std::string &gate_type,
+    const Str &gate_type,
     const compiler::Operation &operation
 ) {
     size_t sgmq_indices = operation.getQubitsInvolved(1).getSelectedQubits().getIndices().size();
@@ -124,11 +129,11 @@ void cqasm_reader::add_dual_bit_kernel_operation(
 
 void cqasm_reader::add_parameterized_dual_bit_kernel_operation(
     quantum_kernel &kernel,
-    const std::string &gate_type,
+    const Str &gate_type,
     const compiler::Operation &operation
 ) {
     double angle;
-    std::string kernel_type(gate_type);
+    Str kernel_type(gate_type);
     if (kernel_type == "crk") {
         //convert crk to cr
         double k = operation.getRotationAngle();
@@ -147,7 +152,7 @@ void cqasm_reader::add_parameterized_dual_bit_kernel_operation(
 
 void cqasm_reader::add_triple_bit_kernel_operation(
     quantum_kernel &kernel,
-    const std::string &gate_type,
+    const Str &gate_type,
     const compiler::Operation &operation
 ) {
     size_t sgmq_indices = operation.getQubitsInvolved(1).getSelectedQubits().getIndices().size();
@@ -159,8 +164,8 @@ void cqasm_reader::add_triple_bit_kernel_operation(
     }
 }
 
-std::string cqasm_reader::translate_gate_type(const std::string &gate_type) {
-    std::string kernel_type(gate_type);
+Str cqasm_reader::translate_gate_type(const Str &gate_type) {
+    Str kernel_type(gate_type);
 
     if (gate_type == "prep" || gate_type == "prep_z") {
         kernel_type = "prepz";
@@ -187,7 +192,7 @@ void cqasm_reader::add_kernel_operation(
     const compiler::Operation &operation,
     int number_of_qubits
 ) {
-    std::string gate_type = operation.getType();
+    Str gate_type = operation.getType();
 
     if (operation.isBitControlled()) {
         //are these supported by OpenQL??
@@ -222,14 +227,14 @@ void cqasm_reader::add_kernel_operation(
     } else if (gate_type == "display") {
         kernel.display();
     } else if (gate_type == "display_binary") {
-        std::vector<size_t> classical_bits = operation.getDisplayBits().getSelectedBits().getIndices();
+        Vec<size_t> classical_bits = operation.getDisplayBits().getSelectedBits().getIndices();
         //not supported by OpenQL??
     } else if (gate_type == "measure_parity") {
         auto measureParityProperties = operation.getMeasureParityQubitsAndAxis();
-        std::vector<size_t> bits1 = measureParityProperties.first.first.getSelectedQubits().getIndices();
-        std::string axis1 = measureParityProperties.second.first;
-        std::vector<size_t> bits2 = measureParityProperties.first.second.getSelectedQubits().getIndices();
-        std::string axis2 = measureParityProperties.second.second;
+        Vec<size_t> bits1 = measureParityProperties.first.first.getSelectedQubits().getIndices();
+        Str axis1 = measureParityProperties.second.first;
+        Vec<size_t> bits2 = measureParityProperties.first.second.getSelectedQubits().getIndices();
+        Str axis2 = measureParityProperties.second.second;
         //not supported by OpenQL??
     }
 }

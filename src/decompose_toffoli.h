@@ -1,7 +1,5 @@
-/**
- * @file   decompose_toffoli.h
- * @date   11/2016
- * @author Nader Khammassi
+/** \file
+ * Toffoli gate decomposer pass implementation.
  */
 
 #pragma once

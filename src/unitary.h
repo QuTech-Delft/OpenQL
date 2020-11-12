@@ -1,35 +1,30 @@
-/**
- * @file   unitary.h
- * @date   12/2018
- * @author Imran Ashraf
- * @author Anneriet Krol
- * @brief  unitary matrix (decomposition) implementation
+/** \file
+ * Unitary matrix (decomposition) implementation.
  */
 
 #pragma once
 
 #include <complex>
-#include <string>
-
+#include "utils/str.h"
+#include "utils/vec.h"
 #include "gate.h"
-#include "utils/exception.h"
 
 namespace ql {
 
 class unitary {
 public:
-    std::string name;
-    std::vector<std::complex<double>> array;
-    std::vector<std::complex<double>> SU;
+    utils::Str name;
+    utils::Vec<std::complex<double>> array;
+    utils::Vec<std::complex<double>> SU;
     double delta; // JvS: is this even used?
     double alpha;
     double beta;
     double gamma;
     bool is_decomposed;
-    std::vector<double> instructionlist;
+    utils::Vec<double> instructionlist;
 
     unitary();
-    unitary(const std::string &name, const std::vector<std::complex<double>> &array);
+    unitary(const utils::Str &name, const utils::Vec<std::complex<double>> &array);
     double size() const;
     void decompose();
     static bool is_decompose_support_enabled();

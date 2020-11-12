@@ -1,21 +1,18 @@
-/**
- * @file   options.h
- * @date   05/2018
- * @author Imran Ashraf
- * @brief  Options class implementing parsing of supported options
+/** \file
+ * Option-parsing and storage implementation.
  */
 
 #pragma once
 
-#include <string>
+#include "utils/str.h"
 
 namespace ql {
 namespace options {
 
 void print();
 void print_current_values();
-void set(const std::string &opt_name, const std::string &opt_value);
-std::string get(const std::string &opt_name);
+void set(const utils::Str &opt_name, const utils::Str &opt_value);
+utils::Str get(const utils::Str &opt_name);
 void reset_options();
 
 } // namespace options

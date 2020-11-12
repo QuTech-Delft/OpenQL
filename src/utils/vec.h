@@ -182,6 +182,7 @@ public:
      */
     Vec &operator=(const Stl &other) {
         get_data().get_mut().operator=(other);
+        return *this;
     }
 
     /**
@@ -189,6 +190,7 @@ public:
      */
     Vec &operator=(Stl &&other) {
         get_data().get_mut().operator=(std::move(other));
+        return *this;
     }
 
     /**
@@ -269,7 +271,7 @@ public:
      */
     typename Stl::reference at(typename Stl::size_type pos) {
         auto &v = get_data().get_mut_element_only();
-        if (pos > v.size()) {
+        if (pos >= v.size()) {
             throw ContainerException(
                 "index " + std::to_string(pos) + " is out of range, "
                 "size is " + std::to_string(v.size())
@@ -285,7 +287,7 @@ public:
      */
     typename Stl::const_reference at(typename Stl::size_type pos) const {
         auto &v = get_data().get_const();
-        if (pos > v.size()) {
+        if (pos >= v.size()) {
             throw ContainerException(
                 "index " + std::to_string(pos) + " is out of range, "
                 "size is " + std::to_string(v.size())
@@ -799,7 +801,7 @@ public:
     template <class... Args>
     Iter emplace(const ConstIter &pos, Args&&... args) {
         pos.check(data_ptr);
-        return Iter(get_data().get_mut().emplace(pos.iter, std::forward(args)...), data_ptr);
+        return Iter(get_data().get_mut().emplace(pos.iter, std::forward<Args>(args)...), data_ptr);
     }
 
     /**
@@ -871,7 +873,7 @@ public:
      */
     template <class... Args>
     void emplace_back(Args&&... args) {
-        return get_data().get_mut().emplace_back(std::forward(args)...);
+        return get_data().get_mut().emplace_back(std::forward<Args>(args)...);
     }
 
     /**

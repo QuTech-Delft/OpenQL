@@ -1,8 +1,5 @@
-/**
- * @file   compiler.cc
- * @date   04/2020
- * @author Razvan Nane
- * @brief  OpenQL Compiler
+/** \file
+ * Modular entry point class for the OpenQL Compiler.
  */
 
 #include "compiler.h"

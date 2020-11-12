@@ -1,9 +1,5 @@
-/**
- * @file   gate.h
- * @date   11/2016
- * @author Nader Khammassi
- *         Imran Ashraf
- * @brief  gates implementation
+/** \file
+ * Quantum gate abstraction implementation.
  */
 
 #pragma once

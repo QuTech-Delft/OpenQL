@@ -1,3 +1,7 @@
+/** \file
+ * OpenQL virtual to real qubit mapping and routing.
+ */
+
 #include "mapper.h"
 
 #include "utils/filesystem.h"
@@ -200,7 +204,7 @@ void Grid::ComputeDist() {
 }
 
 void Grid::DPRINTGrid() const {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         PrintGrid();
     }
 }
@@ -499,7 +503,7 @@ void Virt2Real::Swap(size_t r0, size_t r1) {
 }
 
 void Virt2Real::DPRINTReal(size_t r) const {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         PrintReal(r);
     }
 }
@@ -551,7 +555,7 @@ void Virt2Real::PrintVirt(size_t v) const {
 }
 
 void Virt2Real::DPRINTReal(const Str &s, size_t r0, size_t r1) const {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         PrintReal(s, r0, r1);
     }
 }
@@ -567,7 +571,7 @@ void Virt2Real::PrintReal(const Str &s, size_t r0, size_t r1) const {
 }
 
 void Virt2Real::DPRINT(const Str &s) const {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         Print(s);
     }
 }
@@ -660,7 +664,7 @@ size_t FreeCycle::Max() const {
 }
 
 void FreeCycle::DPRINT(const Str &s) const {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         Print(s);
     }
 }
@@ -824,7 +828,7 @@ void Past::ExportV2r(Virt2Real &v2r_destination) const {
 }
 
 void Past::DFcPrint() const {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         fc.Print("");
     }
 }
@@ -1372,7 +1376,7 @@ void Alter::partialPrint(const Str &hd, const Vec<size_t> &pp) {
 }
 
 void Alter::DPRINT(const Str &s) const {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         Print(s);
     }
 }
@@ -1394,7 +1398,7 @@ void Alter::Print(const Str &s) const {
 }
 
 void Alter::DPRINT(const Str &s, const Vec<Alter> &va) {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         Print(s, va);
     }
 }
@@ -1414,7 +1418,7 @@ void Alter::Print(const Str &s, const Vec<Alter> &va) {
 }
 
 void Alter::DPRINT(const Str &s, const List<Alter> &la) {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         Print(s, la);
     }
 }
@@ -1610,7 +1614,7 @@ void Future::SetCircuit(quantum_kernel &kernel, Scheduler &sched, size_t nq, siz
 
             fname << options::get("output_dir") << "/" << kernel.name << "_" << "mapper" << ".dot";
             QL_IOUT("writing " << "mapper" << " dependence graph dot file to '" << fname.str() << "' ...");
-            utils::write_file(fname.str(), map_dot);
+            write_file(fname.str(), map_dot);
         }
     }
     QL_DOUT("Future::SetCircuit [DONE]");
@@ -2620,7 +2624,7 @@ bool Mapper::MapMappableGates(Future &future, Past &past, List<gate*> &lg, bool 
         }
         // avlist (qlg) only contains 2q gates (when alsoNN2q: only non-NN ones; otherwise also perhaps NN ones)
         lg = qlg;
-        if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+        if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
             for (auto gp : lg) {
                 QL_DOUT("... 2q gate returned: " << gp->qasm());
             }

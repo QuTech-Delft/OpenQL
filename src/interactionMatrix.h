@@ -1,14 +1,11 @@
-/**
- * @file   interactionMatrix.h
- * @date   06/2017
- * @author Imran Ashraf
- * @brief  qubit interaction matrix
+/** \file
+ * Qubit interaction matrix generator.
  */
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "utils/str.h"
+#include "utils/vec.h"
 
 #include "circuit.h"
 
@@ -16,13 +13,12 @@ namespace ql {
 
 class InteractionMatrix {
 private:
-    std::vector<std::vector<size_t>> Matrix;
+    utils::Vec<utils::Vec<size_t>> Matrix;
     size_t Size;
 
 public:
-    InteractionMatrix();
-    InteractionMatrix(ql::circuit ckt, size_t nqubits);
-    std::string getString() const;
+    InteractionMatrix(const circuit &ckt, size_t nqubits);
+    utils::Str getString() const;
 };
 
 } // namespace ql

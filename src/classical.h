@@ -1,8 +1,5 @@
-/**
- * @file   classical.h
- * @date   05/2018
- * @author Imran Ashraf
- * @brief  classical operation implementation
+/** \file
+ * Classical operation implementation.
  */
 
 #pragma once

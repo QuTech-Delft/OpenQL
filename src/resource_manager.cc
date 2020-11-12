@@ -1,3 +1,7 @@
+/** \file
+ * Resource manager interface for the scheduler.
+ */
+
 #include "resource_manager.h"
 
 #include "arch/cc_light/cc_light_resource_manager.h"
@@ -6,8 +10,10 @@
 namespace ql {
 namespace arch {
 
+using namespace utils;
+
 resource_t::resource_t(
-    const std::string &n,
+    const Str &n,
     scheduling_direction_t dir
 ) :
     name(n),
@@ -16,7 +22,7 @@ resource_t::resource_t(
     QL_DOUT("constructing resource: " << n << " for direction (0:fwd,1:bwd): " << dir);
 }
 
-void resource_t::Print(const std::string &s) {
+void resource_t::Print(const Str &s) {
     QL_DOUT(s);
     QL_DOUT("resource name=" << name << "; count=" << count);
 }
@@ -28,7 +34,7 @@ platform_resource_manager_t::platform_resource_manager_t(
     // DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
 }
 
-void platform_resource_manager_t::Print(const std::string &s) {
+void platform_resource_manager_t::Print(const Str &s) {
     QL_DOUT(s);
 }
 
@@ -46,7 +52,7 @@ platform_resource_manager_t::platform_resource_manager_t(const platform_resource
 // follow pattern to use tmp copy to allow self-assignment and to be exception safe
 platform_resource_manager_t &platform_resource_manager_t::operator=(const platform_resource_manager_t &rhs) {
     // DOUT("Copy assigning platform_resource_manager_t");
-    std::vector<resource_t *> new_resource_ptrs;
+    Vec<resource_t *> new_resource_ptrs;
     for (auto org_resource_ptr : rhs.resource_ptrs) {
         // DOUT("... clone one of the contained resource_ptr");
         new_resource_ptrs.push_back(org_resource_ptr->clone());
@@ -112,7 +118,7 @@ resource_manager_t::resource_manager_t(
     scheduling_direction_t dir
 ) {
     // DOUT("Constructing (platform,dir) parameterized resource_manager_t");
-    std::string eqasm_compiler_name = platform.eqasm_compiler_name;
+    Str eqasm_compiler_name = platform.eqasm_compiler_name;
 
     if (eqasm_compiler_name == "cc_light_compiler") {
         platform_resource_manager_ptr = new cc_light_resource_manager_t(platform, dir);
@@ -154,8 +160,7 @@ bool resource_manager_t::available(
     const quantum_platform &platform
 ) {
     // DOUT("resource_manager.available()");
-    return platform_resource_manager_ptr->available(op_start_cycle, ins,
-                                                    platform);
+    return platform_resource_manager_ptr->available(op_start_cycle, ins, platform);
 }
 
 void resource_manager_t::reserve(

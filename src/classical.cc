@@ -1,3 +1,7 @@
+/** \file
+ * Classical operation implementation.
+ */
+
 #include "classical.h"
 
 #include "utils/exception.h"
@@ -10,7 +14,7 @@ cval &coperand::as_cval() {
     try {
         return dynamic_cast<cval &>(*this);
     } catch (std::bad_cast &e) {
-        throw utils::Exception("coperand is not a cval");
+        throw Exception("coperand is not a cval");
     }
 }
 
@@ -18,7 +22,7 @@ const cval &coperand::as_cval() const {
     try {
         return dynamic_cast<const cval &>(*this);
     } catch (std::bad_cast &e) {
-        throw utils::Exception("coperand is not a cval");
+        throw Exception("coperand is not a cval");
     }
 }
 
@@ -26,7 +30,7 @@ creg &coperand::as_creg() {
     try {
         return dynamic_cast<creg &>(*this);
     } catch (std::bad_cast &e) {
-        throw utils::Exception("coperand is not a creg");
+        throw Exception("coperand is not a creg");
     }
 }
 
@@ -34,7 +38,7 @@ const creg &coperand::as_creg() const {
     try {
         return dynamic_cast<const creg &>(*this);
     } catch (std::bad_cast &e) {
-        throw utils::Exception("coperand is not a creg");
+        throw Exception("coperand is not a creg");
     }
 }
 
@@ -112,7 +116,7 @@ operation::operation(const creg &l, const Str &op, const creg &r) {
         operation_type = ql::operation_type_t::RELATIONAL;
     } else {
         QL_EOUT("Unknown binary operation '" << op);
-        throw utils::Exception("Unknown binary operation '" + op + "' !", false);
+        throw Exception("Unknown binary operation '" + op + "' !", false);
     }
 }
 
@@ -144,7 +148,7 @@ operation::operation(const Str &op, const creg &r) {
         operands.push_back(new ql::creg(r));
     } else {
         QL_EOUT("Unknown unary operation '" << op);
-        throw utils::Exception("Unknown unary operation '" + op + "' !", false);
+        throw Exception("Unknown unary operation '" + op + "' !", false);
     }
 }
 
@@ -167,14 +171,14 @@ classical::classical(const creg &dest, const operation &oper) {
 
 classical::classical(const Str &operation) {
     QL_DOUT("Classical gate constructor for " << operation);
-    auto operation_lower = utils::to_lower(operation);
+    auto operation_lower = to_lower(operation);
     if ((operation_lower == "nop")) {
         name = operation_lower;
         duration = 20;
         QL_DOUT("Adding 0 operand operation: " << name);
     } else {
         QL_EOUT("Unknown classical operation '" << name << "' with '0' operands!");
-        throw utils::Exception(
+        throw Exception(
             "Unknown classical operation'" + name + "' with'0' operands!",
             false);
     }

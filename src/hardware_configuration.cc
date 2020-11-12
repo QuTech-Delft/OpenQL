@@ -1,9 +1,14 @@
+/** \file
+ * JSON hardware configuration loader.
+ */
+
 #include "hardware_configuration.h"
 
 #include <regex>
-#include "utils/str.h"
 
 namespace ql {
+
+using namespace utils;
 
 static const std::regex trim_pattern("^(\\s)+|(\\s)+$");
 static const std::regex multiple_space_pattern("(\\s)+");
@@ -12,15 +17,15 @@ static const std::regex multiple_space_pattern("(\\s)+");
  * Sanitizes the name of an instruction by converting to lower case and removing
  * the unnecessary spaces.
  */
-static std::string sanitize_instruction_name(std::string name) {
-    name = utils::to_lower(name);
+static Str sanitize_instruction_name(Str name) {
+    name = to_lower(name);
     name = std::regex_replace(name, trim_pattern, "");
     name = std::regex_replace(name, multiple_space_pattern, " ");
     return name;
 }
 
-static ql::custom_gate *load_instruction(const std::string &name, utils::Json &instr) {
-    custom_gate * g = new custom_gate(name);
+static custom_gate *load_instruction(const Str &name, Json &instr) {
+    custom_gate *g = new custom_gate(name);
     // skip alias fo now
     if (instr.count("alias") > 0) {
         // todo : look for the target aliased gate
@@ -30,7 +35,7 @@ static ql::custom_gate *load_instruction(const std::string &name, utils::Json &i
     }
     try {
         g->load(instr);
-    } catch (utils::Exception &e) {
+    } catch (Exception &e) {
         QL_EOUT("error while loading instruction '" << name << "' : " << e.what());
         throw;
         // ql::exception("[x] error : hardware_configuration::load_instruction() : error while loading instruction '" + name + "' : " + e.what(),false);
@@ -40,32 +45,32 @@ static ql::custom_gate *load_instruction(const std::string &name, utils::Json &i
 }
 
 hardware_configuration::hardware_configuration(
-    const std::string &config_file_name
+    const Str &config_file_name
 ) : config_file_name(config_file_name) {
 }
 
 void hardware_configuration::load(
     ql::instruction_map_t &instruction_map,
-    utils::Json &instruction_settings,
-    utils::Json &hardware_settings,
-    utils::Json &resources,
-    utils::Json &topology,
-    utils::Json &aliases
+    Json &instruction_settings,
+    Json &hardware_settings,
+    Json &resources,
+    Json &topology,
+    Json &aliases
 ) {
-    utils::Json config;
+    Json config;
     try {
-        config = utils::load_json(config_file_name);
-    } catch (utils::Json::exception &e) {
+        config = load_json(config_file_name);
+    } catch (Json::exception &e) {
         QL_FATAL(
             "failed to load the hardware config file : malformed json file: \n\t"
-                << std::string(e.what()));
+                << Str(e.what()));
     }
 
     // load eqasm compiler backend
     if (config.count("eqasm_compiler") <= 0) {
         QL_FATAL("'eqasm_compiler' is not specified in the hardware config file");
     } else {
-        eqasm_compiler_name = config["eqasm_compiler"].get<std::string>();
+        eqasm_compiler_name = config["eqasm_compiler"].get<Str>();
     }
 
     // load hardware_settings
@@ -101,12 +106,12 @@ void hardware_configuration::load(
     }
 
     // load instructions
-    const utils::Json &instructions = config["instructions"];
+    const Json &instructions = config["instructions"];
     static const std::regex comma_space_pattern("\\s*,\\s*");
 
     for (auto it = instructions.begin(); it != instructions.end(); ++it) {
-        std::string name = it.key();
-        utils::Json attr = *it; //.value();
+        Str name = it.key();
+        Json attr = *it; //.value();
 
         name = sanitize_instruction_name(name);
         name = std::regex_replace(name, comma_space_pattern, ",");
@@ -124,7 +129,7 @@ void hardware_configuration::load(
         // format of key and value (which is a custom_gate)'s name in instruction_map:
         //  "^(token|(token token(,token)*))$"
         //  so with a comma between any operands
-        instruction_map[name] = load_instruction(name, attr);
+        instruction_map.set(name) = load_instruction(name, attr);
         QL_DOUT("instruction " << name << " loaded.");
     }
 
@@ -134,11 +139,11 @@ void hardware_configuration::load(
     // - Specialized gate-decomposition:  "rx180 q0" : ["x q0"]
 
     if (config.count("gate_decomposition") > 0) {
-        const utils::Json &gate_decomposition = config["gate_decomposition"];
+        const Json &gate_decomposition = config["gate_decomposition"];
         for (auto it = gate_decomposition.begin();
              it != gate_decomposition.end(); ++it) {
             // standardize instruction name
-            std::string comp_ins = it.key();
+            Str comp_ins = it.key();
             QL_DOUT("");
             QL_DOUT("Adding composite instr : " << comp_ins);
             comp_ins = sanitize_instruction_name(comp_ins);
@@ -160,37 +165,37 @@ void hardware_configuration::load(
             }
 
             // check that we're looking at array
-            utils::Json sub_instructions = *it;
+            Json sub_instructions = *it;
             if (!sub_instructions.is_array()) {
                 QL_FATAL(
                     "ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"
                         << comp_ins << "' is malformed (not an array)");
             }
 
-            std::vector<gate *> gs;
+            Vec<gate *> gs;
             for (size_t i = 0; i < sub_instructions.size(); i++) {
                 // standardize name of sub instruction
-                std::string sub_ins = sub_instructions[i];
+                Str sub_ins = sub_instructions[i];
                 QL_DOUT("Adding sub instr: " << sub_ins);
                 sub_ins = sanitize_instruction_name(sub_ins);
                 sub_ins = std::regex_replace(sub_ins, comma_space_pattern, ",");
                 if (instruction_map.find(sub_ins) != instruction_map.end()) {
                     // using existing sub ins, e.g. "x q0" or "x %0"
                     QL_DOUT("using existing sub instr : " << sub_ins);
-                    gs.push_back(instruction_map[sub_ins]);
+                    gs.push_back(instruction_map.at(sub_ins));
                 } else if (sub_ins.find("%") !=
-                           std::string::npos) {              // parameterized composite gate? FIXME: no syntax check
+                           Str::npos) {              // parameterized composite gate? FIXME: no syntax check
                     // adding new sub ins if not already available, e.g. "x %0"
                     QL_DOUT("adding new sub instr : " << sub_ins);
-                    instruction_map[sub_ins] = new custom_gate(sub_ins);
-                    gs.push_back(instruction_map[sub_ins]);
+                    instruction_map.set(sub_ins) = new custom_gate(sub_ins);
+                    gs.push_back(instruction_map.at(sub_ins));
                 } else {
 #if OPT_DECOMPOSE_WAIT_BARRIER   // allow wait/barrier, e.g. "barrier q2,q3,q4"
                     // FIXME: just save whatever we find as a *custom* gate (there is no better alternative)
                     // FIXME: also see additions (hacks) to kernel.h
                     QL_DOUT("adding new sub instr : " << sub_ins);
-                    instruction_map[sub_ins] = new custom_gate(sub_ins);
-                    gs.push_back(instruction_map[sub_ins]);
+                    instruction_map.set(sub_ins) = new custom_gate(sub_ins);
+                    gs.push_back(instruction_map.at(sub_ins));
 #else
                     // for specialized custom instructions, raise error if instruction
                     // is not already available
@@ -198,7 +203,7 @@ void hardware_configuration::load(
 #endif
                 }
             }
-            instruction_map[comp_ins] = new composite_gate(comp_ins, gs);
+            instruction_map.set(comp_ins) = new composite_gate(comp_ins, gs);
         }
     }
 }

@@ -1,8 +1,92 @@
+/** \file
+ * ASAP/ALAP critical path and UNIFORM scheduling with and without resource
+ * constraint.
+ *
+ * Below there really are two classes: the dependence graph definition and the
+ * scheduler definition. All schedulers require dependence graph creation as
+ * preprocessor, and don't modify it. For each kernel's circuit a private
+ * dependence graph is created. The schedulers modify the order of gates in the
+ * circuit, initialize the cycle field of each gate, and generate/return the
+ * bundles, a list of bundles in which gates starting in the same cycle are
+ * grouped.
+ *
+ * The dependence graph (represented by the graph field below) is created in the
+ * Init method, and the graph is constructed from and referring to the gates in
+ * the sequence of gates in the kernel's circuit. In this graph, the nodes refer
+ * to the gates in the circuit, and the edges represent the dependences between
+ * two gates. Init scans the gates of the circuit from start to end, inspects
+ * their parameters, and for each gate depending on the gate type and parameter
+ * value and previous gates operating on the same parameters, it creates a
+ * dependence of the current gate on that previous gate. Such a dependence has a
+ * type (RAW, WAW, etc.), cause (the qubit or classical register used as
+ * parameter), and a weight (the cycles the previous gate takes to complete its
+ * execution, after which the current gate can start execution).
+ *
+ * In dependence graph creation, each qubit/classical register (creg) use in
+ * each gate is seen as an "event". The following events are distinguished:
+ *
+ *  - W for Write: such a use must sequentialize with any previous and later
+ *    uses of the same qubit/creg. This is the default for qubits in a gate and
+ *    for assignment/modifications in classical code.
+ *
+ *  - R for Read: such uses can be arbitrarily reordered (as long as other
+ *    dependencies allow that). This event applies to all operands of CZ, the
+ *    first operand of CNOT gates, and to all reads in classical code. It also
+ *    applies in general to the control operand of Control Unitaries. It
+ *    represents commutativity between the gates which such use: CU(a,b),
+ *    CZ(a,c), CZ(d,a) and CNOT(a,e) all commute.
+ *  - D: such uses can be arbitrarily reordered but are sequentialized with W
+ *    and R events on the same qubit. This event applies to the second operand
+ *    of CNOT gates: CNOT(a,d) and CNOT(b,d) commute.
+ *
+ * With this, we effectively get the following table of event transitions (from
+ * left-bottom to right-up), in which 'no' indicates no dependence from left
+ * event to top event and '/' indicates a dependence from left to top.
+ *
+ * ```
+ *      W   R   D                  w   R   D
+ * W    /   /   /              W   WAW RAW DAW
+ * R    /   no  /              R   WAR RAR DAR
+ * D    /   /   no             D   WAD RAD DAD
+ * ```
+ *
+ * When the 'no' dependences are created (RAR and/or DAD), the respective
+ * commutatable gates are sequentialized according to the original circuit's
+ * order. With all 'no's replaced by '/', all event types become equivalent
+ * (i.e. as if they were Write).
+ *
+ * Schedulers come essentially in the following forms:
+ *
+ *  - ASAP: a plain forward scheduler using dependences only, aiming at
+ *    execution each gate as soon as possible.
+ *  - ASAP with resource constraints: similar but taking resource constraints of
+ *    the gates of the platform into account.
+ *  - ALAP: as ASAP but then aiming at execution of each gate as late as
+ *    possible.
+ *  - ALAP with resource constraints: similar but taking resource constraints of
+ *    the gates of the platform into account.
+ *  - ALAP with UNIFORM bundle lengths: using dependences only, aim at ALAP but
+ *    with equally length bundles.
+ *
+ * ASAP/ALAP can be controlled by the "scheduler" option. Similarly for UNIFORM
+ * ("scheduler_uniform"). With/out resource constraints are separate method
+ * calls.
+ *
+ * Commutation support during scheduling in general produces more
+ * efficient/shorter scheduled circuits. It is enabled by option
+ * "scheduler_commute".
+ */
+
 #include "scheduler.h"
 
+#include "utils/vec.h"
 #include "utils/filesystem.h"
 
 namespace ql {
+
+using namespace utils;
+using ListDigraph = lemon::ListDigraph;
+using ListDigraphPath = lemon::Path<ListDigraph>;
 
 Scheduler::Scheduler() :
     instruction(graph),
@@ -14,9 +98,9 @@ Scheduler::Scheduler() :
 }
 
 // ins->name may contain parameters, so must be stripped first before checking it for gate's name
-void Scheduler::stripname(std::string &name) {
+void Scheduler::stripname(Str &name) {
     size_t p = name.find(' ');
-    if (p != std::string::npos) {
+    if (p != Str::npos) {
         name = name.substr(0,p);
     }
 }
@@ -56,12 +140,12 @@ void Scheduler::init(
     // - the previous gates that D qubit q in LastDs[q]; this is a list
     // - the previous gate that Wrote r in LastWriter[r]; this can only be one
     // operands can be a qubit or a classical register
-    typedef std::vector<int> ReadersListType;
+    typedef Vec<int> ReadersListType;
 
-    std::vector<ReadersListType> LastReaders;
+    Vec<ReadersListType> LastReaders;
     LastReaders.resize(qubit_creg_count);
 
-    std::vector<ReadersListType> LastDs;
+    Vec<ReadersListType> LastDs;
     LastDs.resize(qubit_creg_count);
 
     // start filling the dependence graph by creating the s node, the top of the graph
@@ -74,7 +158,7 @@ void Scheduler::init(
         s = srcNode;
     }
     int srcID = graph.id(s);
-    std::vector<int> LastWriter(qubit_creg_count, srcID);     // it implicitly writes to all qubits and class. regs
+    Vec<int> LastWriter(qubit_creg_count, srcID);     // it implicitly writes to all qubits and class. regs
 
     // for each gate pointer ins in the circuit, add a node and add dependences from previous gates to it
     for (auto ins : ckt) {
@@ -91,7 +175,7 @@ void Scheduler::init(
         stripname(iname);
 
         // Add node
-        lemon::ListDigraph::Node consNode = graph.addNode();
+        ListDigraph::Node consNode = graph.addNode();
         int consID = graph.id(consNode);
         instruction[consNode] = ins;
         node.set(ins) = consNode;
@@ -204,7 +288,7 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[consNode] << " as display");
             // no operands, display all qubits and cregs
             // Read+Write each operand
-            std::vector<size_t> qubits(qubit_creg_count);
+            Vec<size_t> qubits(qubit_creg_count);
             std::iota(qubits.begin(), qubits.end(), 0);
             for (auto operand : qubits) {
                 QL_DOUT(".. Operand: " << operand);
@@ -399,7 +483,7 @@ void Scheduler::init(
     // finish filling the dependence graph by creating the t node, the bottom of the graph
     {
         // add dummy target node
-        lemon::ListDigraph::Node consNode = graph.addNode();
+        ListDigraph::Node consNode = graph.addNode();
         int consID = graph.id(consNode);
         instruction[consNode] = new SINK();    // so SINK is defined as instruction[t], not unique in itself
         node.set(instruction[consNode]) = consNode;
@@ -417,7 +501,7 @@ void Scheduler::init(
         // guaranteed that on a jump and on start of target circuit, the source circuit completed).
         //
         // note that there always is a LastWriter: the dummy source node wrote to every qubit and class. reg
-        std::vector<size_t> operands(qubit_creg_count);
+        Vec<size_t> operands(qubit_creg_count);
         std::iota(operands.begin(), operands.end(), 0);
         for (auto operand : operands) {
             QL_DOUT(".. Sink operand, adding dep: " << operand);
@@ -465,7 +549,7 @@ void Scheduler::print() const {
 void Scheduler::write_dependence_matrix() const {
     QL_COUT("Printing Dependence Matrix ...");
     std::ofstream fout;
-    std::string datfname( options::get("output_dir") + "/dependenceMatrix.dat");
+    Str datfname( options::get("output_dir") + "/dependenceMatrix.dat");
     fout.open(datfname, std::ios::binary);
     if (fout.fail()) {
         QL_EOUT("opening file " << datfname << std::endl
@@ -474,10 +558,10 @@ void Scheduler::write_dependence_matrix() const {
     }
 
     size_t totalInstructions = countNodes(graph);
-    std::vector<std::vector<bool> > Matrix(totalInstructions, std::vector<bool>(totalInstructions));
+    Vec<Vec<bool> > Matrix(totalInstructions, Vec<bool>(totalInstructions));
 
     // now print the edges
-    for (lemon::ListDigraph::ArcIt arc(graph); arc != lemon::INVALID; ++arc) {
+    for (ListDigraph::ArcIt arc(graph); arc != lemon::INVALID; ++arc) {
         auto srcNode = graph.source(arc);
         auto dstNode = graph.target(arc);
         size_t srcID = graph.id( srcNode );
@@ -500,16 +584,16 @@ void Scheduler::write_dependence_matrix() const {
 // set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
 // please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
 void Scheduler::set_cycle_gate(gate *gp, scheduling_direction_t dir) {
-    lemon::ListDigraph::Node currNode = node.at(gp);
+    ListDigraph::Node currNode = node.at(gp);
     size_t  currCycle;
     if (forward_scheduling == dir) {
         currCycle = 0;
-        for (lemon::ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+        for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
             currCycle = std::max(currCycle, instruction[graph.source(arc)]->cycle + weight[arc]);
         }
     } else {
         currCycle = MAX_CYCLE;
-        for (lemon::ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+        for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
             currCycle = std::min(currCycle, instruction[graph.target(arc)]->cycle - weight[arc]);
         }
     }
@@ -575,13 +659,13 @@ void Scheduler::sort_by_cycle(circuit *cp) {
 }
 
 // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-void Scheduler::schedule_asap(std::string &sched_dot) {
+void Scheduler::schedule_asap(Str &sched_dot) {
     QL_DOUT("Scheduling ASAP ...");
     set_cycle(forward_scheduling);
     sort_by_cycle(circp);
 
     if (options::get("print_dot_graphs") == "yes") {
-        std::stringstream ssdot;
+        StrStrm ssdot;
         get_dot(false, true, ssdot);
         sched_dot = ssdot.str();
     }
@@ -590,13 +674,13 @@ void Scheduler::schedule_asap(std::string &sched_dot) {
 }
 
 // ALAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-void Scheduler::schedule_alap(std::string &sched_dot) {
+void Scheduler::schedule_alap(Str &sched_dot) {
     QL_DOUT("Scheduling ALAP ...");
     set_cycle(backward_scheduling);
     sort_by_cycle(circp);
 
     if (options::get("print_dot_graphs") == "yes") {
-        std::stringstream ssdot;
+        StrStrm ssdot;
         get_dot(false, true, ssdot);
         sched_dot = ssdot.str();
     }
@@ -609,11 +693,11 @@ void Scheduler::set_remaining_gate(gate* gp, scheduling_direction_t dir) {
     auto currNode = node.at(gp);
     size_t currRemain = 0;
     if (forward_scheduling == dir) {
-        for (lemon::ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+        for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
             currRemain = std::max(currRemain, remaining.at(graph.target(arc)) + weight[arc]);
         }
     } else {
-        for (lemon::ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+        for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
             currRemain = std::max(currRemain, remaining.at(graph.source(arc)) + weight[arc]);
         }
     }
@@ -650,7 +734,7 @@ void Scheduler::set_remaining(scheduling_direction_t dir) {
     }
 }
 
-gate *Scheduler::find_mostcritical(std::list<gate*> &lg) {
+gate *Scheduler::find_mostcritical(List<gate*> &lg) {
     size_t maxRemain = 0;
     gate *mostCriticalGate = nullptr;
     for (auto gp : lg) {
@@ -667,7 +751,7 @@ gate *Scheduler::find_mostcritical(std::list<gate*> &lg) {
 // Set the curr_cycle of the scheduling algorithm to start at the appropriate end as well;
 // note that the cycle attributes will be shifted down to start at 1 after backward scheduling.
 void Scheduler::init_available(
-    std::list<lemon::ListDigraph::Node> &avlist,
+    List<ListDigraph::Node> &avlist,
     scheduling_direction_t dir,
     size_t &curr_cycle
 ) {
@@ -688,12 +772,12 @@ void Scheduler::init_available(
 // dependences that are duplicates from the perspective of the scheduler
 // may be present in the dependence graph because the scheduler ignores dependence type and cause
 void Scheduler::get_depending_nodes(
-    lemon::ListDigraph::Node n,
+    ListDigraph::Node n,
     scheduling_direction_t dir,
-    std::list<lemon::ListDigraph::Node> &ln
+    List<ListDigraph::Node> &ln
 ) {
     if (forward_scheduling == dir) {
-        for (lemon::ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
+        for (ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
             auto succNode = graph.target(succArc);
             // DOUT("...... succ of " << instruction[n]->qasm() << " : " << instruction[succNode]->qasm());
             bool found = false;             // filter out duplicates
@@ -709,8 +793,8 @@ void Scheduler::get_depending_nodes(
         }
         // ln contains depending nodes of n without duplicates
     } else {
-        for (lemon::ListDigraph::InArcIt predArc(graph,n); predArc != lemon::INVALID; ++predArc) {
-            lemon::ListDigraph::Node predNode = graph.source(predArc);
+        for (ListDigraph::InArcIt predArc(graph,n); predArc != lemon::INVALID; ++predArc) {
+            ListDigraph::Node predNode = graph.source(predArc);
             // DOUT("...... pred of " << instruction[n]->qasm() << " : " << instruction[predNode]->qasm());
             bool found = false;             // filter out duplicates
             for (auto anyPredNode : ln) {
@@ -733,8 +817,8 @@ void Scheduler::get_depending_nodes(
 // this function is used to order the avlist in an order from highest deep-criticality to lowest deep-criticality;
 // it is the core of the heuristics of the critical path list scheduler.
 bool Scheduler::criticality_lessthan(
-    lemon::ListDigraph::Node n1,
-    lemon::ListDigraph::Node n2,
+    ListDigraph::Node n1,
+    ListDigraph::Node n2,
     scheduling_direction_t dir
 ) {
     if (n1 == n2) return false;             // because not <
@@ -743,8 +827,8 @@ bool Scheduler::criticality_lessthan(
     if (remaining.at(n1) > remaining.at(n2)) return false;
     // so: remaining[n1] == remaining[n2]
 
-    std::list<lemon::ListDigraph::Node> ln1;
-    std::list<lemon::ListDigraph::Node> ln2;
+    List<ListDigraph::Node> ln1;
+    List<ListDigraph::Node> ln2;
 
     get_depending_nodes(n1, dir, ln1);
     get_depending_nodes(n2, dir, ln2);
@@ -752,8 +836,8 @@ bool Scheduler::criticality_lessthan(
     if (ln1.empty()) return true;           // so when both empty, it is equal, so not strictly <, so false
     // so: ln1.non_empty && ln2.non_empty
 
-    ln1.sort([this](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
-    ln2.sort([this](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
+    ln1.sort([this](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
+    ln2.sort([this](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
 
     size_t crit_dep_n1 = remaining.at(ln1.back());    // the last of the list is the one with the largest remaining value
     size_t crit_dep_n2 = remaining.at(ln2.back());
@@ -762,16 +846,16 @@ bool Scheduler::criticality_lessthan(
     if (crit_dep_n1 > crit_dep_n2) return false;
     // so: crit_dep_n1 == crit_dep_n2, call this crit_dep
 
-    ln1.remove_if([this,crit_dep_n1](lemon::ListDigraph::Node n) { return remaining.at(n) < crit_dep_n1; });
-    ln2.remove_if([this,crit_dep_n2](lemon::ListDigraph::Node n) { return remaining.at(n) < crit_dep_n2; });
+    ln1.remove_if([this,crit_dep_n1](ListDigraph::Node n) { return remaining.at(n) < crit_dep_n1; });
+    ln2.remove_if([this,crit_dep_n2](ListDigraph::Node n) { return remaining.at(n) < crit_dep_n2; });
     // because both contain element with remaining == crit_dep: ln1.non_empty && ln2.non_empty
 
     if (ln1.size() < ln2.size()) return true;
     if (ln1.size() > ln2.size()) return false;
     // so: ln1.size() == ln2.size() >= 1
 
-    ln1.sort([this,dir](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
-    ln2.sort([this,dir](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
+    ln1.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
+    ln2.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
     return criticality_lessthan(ln1.back(), ln2.back(), dir);
 }
 
@@ -783,13 +867,13 @@ bool Scheduler::criticality_lessthan(
 // avlist is initialized with s or t as first element by init_available
 // avlist is kept ordered on deep-criticality, non-increasing (i.e. highest deep-criticality first)
 void Scheduler::MakeAvailable(
-    lemon::ListDigraph::Node n,
-    std::list<lemon::ListDigraph::Node> &avlist,
+    ListDigraph::Node n,
+    List<ListDigraph::Node> &avlist,
     scheduling_direction_t dir
 ) {
     bool already_in_avlist = false;  // check whether n is already in avlist
     // originates from having multiple arcs between pair of nodes
-    std::list<lemon::ListDigraph::Node>::iterator first_lower_criticality_inp; // for keeping avlist ordered
+    List<ListDigraph::Node>::iterator first_lower_criticality_inp; // for keeping avlist ordered
     bool first_lower_criticality_found = false;                          // for keeping avlist ordered
 
     QL_DOUT(".... making available node " << name[n] << " remaining: " << remaining.dbg(n));
@@ -844,20 +928,20 @@ void Scheduler::MakeAvailable(
 // because from then on that value is compared to the curr_cycle to check
 // whether a node has completed execution and thus is available for scheduling in curr_cycle
 void Scheduler::TakeAvailable(
-    lemon::ListDigraph::Node n,
-    std::list<lemon::ListDigraph::Node> &avlist,
-    utils::Map<gate*,bool> &scheduled,
+    ListDigraph::Node n,
+    List<ListDigraph::Node> &avlist,
+    Map<gate*,bool> &scheduled,
     scheduling_direction_t dir
 ) {
     scheduled.set(instruction[n]) = true;
     avlist.remove(n);
 
     if (forward_scheduling == dir) {
-        for (lemon::ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
+        for (ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
             auto succNode = graph.target(succArc);
             bool schedulable = true;
-            for (lemon::ListDigraph::InArcIt predArc(graph,succNode); predArc != lemon::INVALID; ++predArc) {
-                lemon::ListDigraph::Node predNode = graph.source(predArc);
+            for (ListDigraph::InArcIt predArc(graph,succNode); predArc != lemon::INVALID; ++predArc) {
+                ListDigraph::Node predNode = graph.source(predArc);
                 if (!scheduled.at(instruction[predNode])) {
                     schedulable = false;
                     break;
@@ -868,10 +952,10 @@ void Scheduler::TakeAvailable(
             }
         }
     } else {
-        for (lemon::ListDigraph::InArcIt predArc(graph,n); predArc != lemon::INVALID; ++predArc) {
+        for (ListDigraph::InArcIt predArc(graph,n); predArc != lemon::INVALID; ++predArc) {
             auto predNode = graph.source(predArc);
             bool schedulable = true;
-            for (lemon::ListDigraph::OutArcIt succArc(graph,predNode); succArc != lemon::INVALID; ++succArc) {
+            for (ListDigraph::OutArcIt succArc(graph,predNode); succArc != lemon::INVALID; ++succArc) {
                 auto succNode = graph.target(succArc);
                 if (!scheduled.at(instruction[succNode])) {
                     schedulable = false;
@@ -903,7 +987,7 @@ void Scheduler::AdvanceCurrCycle(scheduling_direction_t dir, size_t &curr_cycle)
 // return true when immediately schedulable
 // when returning false, isres indicates whether resource occupation was the reason or operand completion (for debugging)
 bool Scheduler::immediately_schedulable(
-    lemon::ListDigraph::Node n,
+    ListDigraph::Node n,
     scheduling_direction_t dir,
     const size_t curr_cycle,
     const quantum_platform& platform,
@@ -939,8 +1023,8 @@ bool Scheduler::immediately_schedulable(
 
 // select a node from the avlist
 // the avlist is deep-ordered from high to low criticality (see criticality_lessthan above)
-lemon::ListDigraph::Node Scheduler::SelectAvailable(
-    std::list<lemon::ListDigraph::Node> &avlist,
+ListDigraph::Node Scheduler::SelectAvailable(
+    List<ListDigraph::Node> &avlist,
     scheduling_direction_t dir,
     const size_t curr_cycle,
     const quantum_platform &platform,
@@ -984,19 +1068,19 @@ void Scheduler::schedule(
     scheduling_direction_t dir,
     const quantum_platform &platform,
     arch::resource_manager_t &rm,
-    std::string &sched_dot
+    Str &sched_dot
 ) {
     QL_DOUT("Scheduling " << (forward_scheduling == dir ? "ASAP" : "ALAP") << " with RC ...");
 
     // scheduled[gp] :=: whether gate *gp has been scheduled, init all false
-    utils::Map<gate*, bool> scheduled;
+    Map<gate*, bool> scheduled;
     // avlist :=: list of schedulable nodes, initially (see below) just s or t
-    std::list<lemon::ListDigraph::Node> avlist;
+    List<ListDigraph::Node> avlist;
 
     // initializations for this scheduler
     // note that dependence graph is not modified by a scheduler, so it can be reused
     QL_DOUT("... initialization");
-    for (lemon::ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
+    for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
         scheduled.set(instruction[n]) = false;   // none were scheduled, including SOURCE/SINK
     }
     size_t  curr_cycle;         // current cycle for which instructions are sought
@@ -1006,7 +1090,7 @@ void Scheduler::schedule(
     QL_DOUT("... loop over avlist until it is empty");
     while (!avlist.empty()) {
         bool success;
-        lemon::ListDigraph::Node selected_node;
+        ListDigraph::Node selected_node;
 
         selected_node = SelectAvailable(avlist, dir, curr_cycle, platform, rm, success);
         if (!success) {
@@ -1050,7 +1134,7 @@ void Scheduler::schedule(
     // FIXME HvS cycles_valid now
 
     if (options::get("print_dot_graphs") == "yes") {
-        std::stringstream ssdot;
+        StrStrm ssdot;
         get_dot(false, true, ssdot);
         sched_dot = ssdot.str();
     }
@@ -1063,7 +1147,7 @@ void Scheduler::schedule(
 void Scheduler::schedule_asap(
     arch::resource_manager_t &rm,
     const quantum_platform &platform,
-    std::string &sched_dot
+    Str &sched_dot
 ) {
     QL_DOUT("Scheduling ASAP");
     schedule(circp, forward_scheduling, platform, rm, sched_dot);
@@ -1073,7 +1157,7 @@ void Scheduler::schedule_asap(
 void Scheduler::schedule_alap(
     arch::resource_manager_t &rm,
     const quantum_platform &platform,
-    std::string &sched_dot
+    Str &sched_dot
 ) {
     QL_DOUT("Scheduling ALAP");
     schedule(circp, backward_scheduling, platform, rm, sched_dot);
@@ -1122,7 +1206,7 @@ void Scheduler::schedule_alap_uniform() {
     // DOUT("Creating gates_per_cycle");
     // create gates_per_cycle[cycle] = for each cycle the list of gates at cycle cycle
     // this is the basic map to be operated upon by the uniforming scheduler below;
-    utils::Map<size_t, std::list<gate*>> gates_per_cycle;
+    Map<size_t, List<gate*>> gates_per_cycle;
     for (auto gp : *circp) {
         gates_per_cycle.set(gp->cycle).push_back(gp);
     }
@@ -1195,7 +1279,7 @@ void Scheduler::schedule_alap_uniform() {
             for (auto predgp : gates_per_cycle.get(pred_cycle)) {
                 bool forward_predgp = true;
                 size_t predgp_completion_cycle;
-                lemon::ListDigraph::Node pred_node = node.at(predgp);
+                ListDigraph::Node pred_node = node.at(predgp);
                 QL_DOUT("... considering: " << predgp->qasm() << " @cycle=" << predgp->cycle << " remaining=" << remaining.dbg(pred_node));
 
                 // candidate's result, when moved, must be ready before end-of-circuit and before used
@@ -1205,7 +1289,7 @@ void Scheduler::schedule_alap_uniform() {
                     forward_predgp = false;
                     QL_DOUT("... ... rejected (after circuit): " << predgp->qasm() << " would complete @" << predgp_completion_cycle << " SINK @" << cycle_count + 1);
                 } else {
-                    for (lemon::ListDigraph::OutArcIt arc(graph,pred_node); arc != lemon::INVALID; ++arc) {
+                    for (ListDigraph::OutArcIt arc(graph,pred_node); arc != lemon::INVALID; ++arc) {
                         gate *target_gp = instruction[graph.target(arc)];
                         size_t target_cycle = target_gp->cycle;
                         if (predgp_completion_cycle > target_cycle) {
@@ -1303,12 +1387,12 @@ void Scheduler::get_dot(
     std::ostream &dotout
 ) {
     QL_DOUT("Get_dot");
-    lemon::Path<lemon::ListDigraph> p;
-    lemon::ListDigraph::ArcMap<bool> isInCritical{graph};
+    ListDigraphPath p;
+    ListDigraph::ArcMap<bool> isInCritical{graph};
     if (WithCritical) {
-        for (lemon::ListDigraph::ArcIt a(graph); a != lemon::INVALID; ++a) {
+        for (ListDigraph::ArcIt a(graph); a != lemon::INVALID; ++a) {
             isInCritical[a] = false;
-            for (lemon::Path<lemon::ListDigraph>::ArcIt ap(p); ap != lemon::INVALID; ++ap) {
+            for (ListDigraphPath::ArcIt ap(p); ap != lemon::INVALID; ++ap) {
                 if (a == ap) {
                     isInCritical[a] = true;
                     break;
@@ -1317,17 +1401,17 @@ void Scheduler::get_dot(
         }
     }
 
-    std::string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
-    std::string EdgeStyle1(" color=black");
-    std::string EdgeStyle2(" color=red");
-    std::string EdgeStyle = EdgeStyle1;
+    Str NodeStyle(" fontcolor=black, style=filled, fontsize=16");
+    Str EdgeStyle1(" color=black");
+    Str EdgeStyle2(" color=red");
+    Str EdgeStyle = EdgeStyle1;
 
     dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
            << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
            << std::endl;
 
     // first print the nodes
-    for (lemon::ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
+    for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
         dotout  << "\"" << graph.id(n) << "\""
                 << " [label=\" " << name[n] <<" \""
                 << NodeStyle
@@ -1361,7 +1445,7 @@ void Scheduler::get_dot(
     }
 
     // now print the edges
-    for (lemon::ListDigraph::ArcIt arc(graph); arc != lemon::INVALID; ++arc) {
+    for (ListDigraph::ArcIt arc(graph); arc != lemon::INVALID; ++arc) {
         auto srcNode = graph.source(arc);
         auto dstNode = graph.target(arc);
         int srcID = graph.id( srcNode );
@@ -1389,11 +1473,11 @@ void Scheduler::get_dot(
     QL_DOUT("Get_dot[DONE]");
 }
 
-void Scheduler::get_dot(std::string &dot) {
+void Scheduler::get_dot(Str &dot) {
     set_cycle(forward_scheduling);
     sort_by_cycle(circp);
 
-    std::stringstream ssdot;
+    StrStrm ssdot;
     get_dot(false, true, ssdot);
     dot = ssdot.str();
 }
@@ -1402,11 +1486,11 @@ void Scheduler::get_dot(std::string &dot) {
 void schedule_kernel(
     quantum_kernel &kernel,
     const quantum_platform &platform,
-    std::string &dot,
-    std::string &sched_dot
+    Str &dot,
+    Str &sched_dot
 ) {
-    std::string scheduler = options::get("scheduler");
-    std::string scheduler_uniform = options::get("scheduler_uniform");
+    Str scheduler = options::get("scheduler");
+    Str scheduler_uniform = options::get("scheduler_uniform");
 
     QL_IOUT(scheduler << " scheduling the quantum kernel '" << kernel.name << "'...");
 
@@ -1436,7 +1520,7 @@ void schedule_kernel(
 void schedule(
     quantum_program *programp,
     const quantum_platform &platform,
-    const std::string &passname
+    const Str &passname
 ) {
     if (options::get("prescheduler") == "yes") {
         report_statistics(programp, platform, "in", passname, "# ");
@@ -1444,20 +1528,20 @@ void schedule(
 
         QL_IOUT("scheduling the quantum program");
         for (auto &k : programp->kernels) {
-            std::string dot;
-            std::string kernel_sched_dot;
+            Str dot;
+            Str kernel_sched_dot;
             schedule_kernel(k, platform, dot, kernel_sched_dot);
 
             if (options::get("print_dot_graphs") == "yes") {
-                std::string fname;
+                Str fname;
                 fname = options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
                 QL_IOUT("writing scheduled dot to '" << fname << "' ...");
-                utils::write_file(fname, dot);
+                write_file(fname, dot);
 
-                std::string scheduler_opt = options::get("scheduler");
+                Str scheduler_opt = options::get("scheduler");
                 fname = options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
                 QL_IOUT("writing scheduled dot to '" << fname << "' ...");
-                utils::write_file(fname, kernel_sched_dot);
+                write_file(fname, kernel_sched_dot);
             }
         }
 
@@ -1469,13 +1553,13 @@ void schedule(
 void rcschedule_kernel(
     quantum_kernel &kernel,
     const quantum_platform &platform,
-    std::string &dot,
+    Str &dot,
     size_t nqubits,
     size_t ncreg
 ) {
     QL_IOUT("Resource constraint scheduling ...");
 
-    std::string schedopt = options::get("scheduler");
+    Str schedopt = options::get("scheduler");
     if (schedopt == "ASAP") {
         Scheduler sched;
         sched.init(kernel.c, platform, nqubits, ncreg);
@@ -1501,7 +1585,7 @@ void rcschedule_kernel(
 void rcschedule(
     quantum_program *programp,
     const quantum_platform &platform,
-    const std::string &passname
+    const Str &passname
 ) {
     report_statistics(programp, platform, "in", passname, "# ");
     report_qasm(programp, platform, "in", passname);
@@ -1510,16 +1594,16 @@ void rcschedule(
         QL_IOUT("Scheduling kernel: " << kernel.name);
         if (!kernel.c.empty()) {
             auto num_creg = kernel.creg_count;
-            std::string sched_dot;
+            Str sched_dot;
 
             rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg);
             kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
 
             if (options::get("print_dot_graphs") == "yes") {
-                std::stringstream fname;
+                StrStrm fname;
                 fname << options::get("output_dir") << "/" << kernel.name << "_" << passname << ".dot";
                 QL_IOUT("writing " << passname << " dependence graph dot file to '" << fname.str() << "' ...");
-                utils::write_file(fname.str(), sched_dot);
+                write_file(fname.str(), sched_dot);
             }
         }
     }

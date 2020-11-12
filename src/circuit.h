@@ -1,8 +1,5 @@
-/**
- * @file   circuit.h
- * @date   11/2016
- * @author Nader Khammassi
- * @brief  circuit (i.e. gate container) implementation
+/** \file
+ * Circuit (i.e. gate container) implementation.
  */
 
 #pragma once

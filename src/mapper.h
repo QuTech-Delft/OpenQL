@@ -1,8 +1,5 @@
-/**
- * @file   mapper.h
- * @date   06/2018 - now
- * @author Hans van Someren
- * @brief  openql virtual to real qubit mapping and routing
+/** \file
+ * OpenQL virtual to real qubit mapping and routing.
  */
 
 #pragma once

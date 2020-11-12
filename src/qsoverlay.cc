@@ -1,19 +1,25 @@
+/** \file
+ * Implementation for pass that writes circuits using the qsoverlay format.
+ */
+
 #include "qsoverlay.h"
 
-#include <vector>
 #include <iostream>
 #include <fstream>
+#include "utils/map.h"
 #include "options.h"
 #include "kernel.h"
 
 namespace ql {
 
+using namespace utils;
+
 //Only support for DiCarlo setup atm
 void write_qsoverlay_program(
     quantum_program *programp,
     size_t num_qubits,
-    const ql::quantum_platform &platform,
-    const std::string &suffix,
+    const quantum_platform &platform,
+    const Str &suffix,
     size_t ns_per_cycle,
     bool compiled
 ) {
@@ -23,13 +29,13 @@ void write_qsoverlay_program(
 
     QL_IOUT("Writing scheduled QSoverlay program");
     std::ofstream fout;
-    std::string qfname(options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
+    Str qfname(options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
     QL_DOUT("Writing scheduled QSoverlay program " << qfname);
     QL_IOUT("Writing scheduled QSoverlay program " << qfname);
     fout.open( qfname, std::ios::binary);
     if (fout.fail()) {
         QL_EOUT("opening file " << qfname << std::endl
-                                << "Make sure the output directory (" << ql::options::get("output_dir") << ") exists");
+                                << "Make sure the output directory (" << options::get("output_dir") << ") exists");
         return;
     }
 
@@ -47,7 +53,7 @@ void write_qsoverlay_program(
          << "\n";
 
     // Gate correspondence
-    std::map<std::string, std::string> gate_map = {
+    Map<Str, Str> gate_map = {
         {"prepz", "prepz"},
         {"x", "X"},
         {"x45", "RX"},
@@ -64,7 +70,7 @@ void write_qsoverlay_program(
         {"measure", "Measure"},
     };
 
-    std::map<std::string, std::string> angles = {
+    Map<Str, Str> angles = {
         {"x45", "np.pi/4"},
         {"x90", "np.pi/2"},
         {"xm45", "-np.pi/4"},
@@ -76,7 +82,7 @@ void write_qsoverlay_program(
     };
 
     if (!compiled) {
-        gate_map["cnot"] = "CNOT";
+        gate_map.set("cnot") = "CNOT";
         // gate_map["t"] = "RZ";
         // angles["t"] = "np.pi/4";
         // gate_map["tdag"] = "RZ";
@@ -85,7 +91,7 @@ void write_qsoverlay_program(
 
     // Create qubit list
 
-    std::string qubit_list{};
+    Str qubit_list{};
     for (size_t qubit = 0; qubit < num_qubits; qubit++) {
         qubit_list += "'";
         qubit_list += (qubit != num_qubits-1) ? (std::to_string(qubit) + "', ") : (std::to_string(qubit) + "'");
@@ -104,13 +110,13 @@ void write_qsoverlay_program(
 
     // Circuit creation: Add gates
     for (auto & gate: programp->kernels.front().c) {
-        std::string qs_name;
+        Str qs_name;
         try {
             qs_name = gate_map.at(gate->name);
         } catch (std::exception &e) {
             // WOUT("Next gate: " + gate->name + " .... WRONG");
             QL_EOUT("Qsoverlay: unknown gate detected!: " + gate->name);
-            throw utils::Exception("Qsoverlay: unknown gate detected!:" + gate->name, false);
+            throw Exception("Qsoverlay: unknown gate detected!:" + gate->name, false);
         }
 
         // IOUT(gate->name);
@@ -130,7 +136,7 @@ void write_qsoverlay_program(
 
         // Add angles for the gates that require it
         if (qs_name == "RX" || qs_name == "RY" || qs_name == "t" || qs_name == "tdag") {
-            fout << ", angle = " << angles[gate->name];
+            fout << ", angle = " << angles.dbg(gate->name);
         }
 
         // Add gate timing, if circuit was compiled.

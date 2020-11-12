@@ -1,9 +1,5 @@
-/**
- * @file   cc_light_eqasm_compiler.h
- * @date   08/2017
- * @author Imran Ashraf
- *         Nader Khammassi
- * @brief  cclighteqasm compiler implementation
+/** \file
+ * CC-light eQASM compiler implementation.
  */
 
 #pragma once

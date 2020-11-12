@@ -1,16 +1,19 @@
+/** \file
+ * Qubit interaction matrix generator.
+ */
+
 #include "interactionMatrix.h"
 
 namespace ql {
 
-InteractionMatrix::InteractionMatrix() : Size(0) {
-}
+using namespace utils;
 
-InteractionMatrix::InteractionMatrix(circuit ckt, size_t nqubits) {
+InteractionMatrix::InteractionMatrix(const circuit &ckt, size_t nqubits) {
     Size = nqubits;
-    Matrix.resize(Size, std::vector<size_t>(Size, 0));
+    Matrix.resize(Size, Vec<size_t>(Size, 0));
     for (auto ins : ckt) {
-        std::string insName = ins->qasm();
-        if (insName.find("cnot") != std::string::npos) {
+        Str insName = ins->qasm();
+        if (insName.find("cnot") != Str::npos) {
             // for now the interaction matrix only for cnot
             auto operands = ins->operands;
             if (operands.size() == 2) {
@@ -23,8 +26,8 @@ InteractionMatrix::InteractionMatrix(circuit ckt, size_t nqubits) {
     }
 }
 
-std::string InteractionMatrix::getString() const {
-    std::stringstream ss;
+Str InteractionMatrix::getString() const {
+    StrStrm ss;
 
     // Use the following for properly aligned matrix print for visual inspection
     // This can be problematic of width not set properly to be processed by gnuplot script

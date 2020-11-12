@@ -1,3 +1,7 @@
+/** \file
+ * Implementation for Python interface classes.
+ */
+
 #include "openql_i.h"
 
 #include "version.h"
@@ -291,7 +295,7 @@ void Program::set_sweep_points(const std::vector<float> &sweep_points) {
 
 std::vector<float> Program::get_sweep_points() const {
     QL_WOUT("This will soon be deprecated according to issue #76");
-    return program->sweep_points;
+    return std::vector<float>(program->sweep_points.begin(), program->sweep_points.end());
 }
 
 void Program::add_kernel(const Kernel &k) {
