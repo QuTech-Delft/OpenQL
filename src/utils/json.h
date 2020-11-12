@@ -9,6 +9,7 @@
 #include <string>
 #include "utils/logger.h"
 #include "utils/exception.h"
+#include "utils/str.h"
 
 // check existence of JSON key within node, see PR #194
 #define QL_JSON_EXISTS(node, key)  ((node).count(key) > 0)
@@ -27,12 +28,12 @@ namespace utils {
 
 using Json = nlohmann::json;
 
-Json load_json(const std::string &file_name);
+Json load_json(const Str &file_name);
 
 // get json value with error notification
 // based on: https://github.com/nlohmann/json/issues/932
 template<class T>
-T json_get(const Json &j, const std::string &key, const std::string &nodePath = "") {
+T json_get(const Json &j, const Str &key, const Str &nodePath = "") {
     // first check existence of key
     auto it = j.find(key);
     if (it == j.end()) {

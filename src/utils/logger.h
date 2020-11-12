@@ -5,12 +5,12 @@
 #pragma once
 
 #include <iostream>
-#include <sstream>
 #include "utils/compat.h"
+#include "utils/str.h"
 
 // helper macro: stringstream to string
 // based on https://stackoverflow.com/questions/21924156/how-to-initialize-a-stdstringstream
-#define QL_SS2S(values) ::std::string(static_cast<::std::ostringstream&&>(::std::ostringstream() << values).str())
+#define QL_SS2S(values) ::ql::utils::Str(static_cast<::ql::utils::StrStrm&&>(::ql::utils::StrStrm() << values).str())
 
 #define QL_PRINTLN(x) \
     do {                                                                                                    \
@@ -52,9 +52,9 @@
 
 #define QL_FATAL(content) \
     do {                                                                                                    \
-        ::std::ostringstream fatal_ss{};                                                                    \
+        ::ql::utils::StrStrm fatal_ss{};                                                                    \
         fatal_ss << content;                                                                                \
-        ::std::string fatal_s = fatal_ss.str();                                                             \
+        ::ql::utils::Str fatal_s = fatal_ss.str();                                                             \
         QL_EOUT(fatal_s);                                                                                   \
         throw ::ql::utils::Exception("Error : " + fatal_s);                                                 \
     } while (false)
@@ -81,8 +81,8 @@ enum LogLevel {
 
 QL_GLOBAL extern LogLevel log_level;
 
-LogLevel log_level_from_string(const std::string &level);
-void set_log_level(const std::string &level);
+LogLevel log_level_from_string(const Str &level);
+void set_log_level(const Str &level);
 
 } // namespace logger
 } // namespace utils

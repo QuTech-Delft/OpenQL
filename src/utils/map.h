@@ -6,11 +6,13 @@
 #pragma once
 
 #include <map>
-#include "utils/strings.h"
+#include "utils/str.h"
 #include "utils/exception.h"
 
 namespace ql {
 namespace utils {
+
+// TODO: complete safety using container_base.h
 
 /**
  * Wrapper for `std::map` with additional error detection and handling.
@@ -169,7 +171,7 @@ public:
      * `"<EMPTY>"` if there is no value for the given key. A stream << overload
      * must exist for the value type.
      */
-    std::string dbg(const Key &key) const {
+    Str dbg(const Key &key) const {
         auto it = this->find(key);
         if (it != this->end()) {
             return utils::to_string(it->second);
@@ -182,13 +184,13 @@ public:
      * Returns a string representation of the entire contents of the map. Stream
      * << overloads must exist for both the key and value type.
      */
-    std::string to_string(
-        const std::string &prefix = "{",
-        const std::string &key_value_separator = ": ",
-        const std::string &element_separator = ", ",
-        const std::string &suffix = "}"
+    Str to_string(
+        const Str &prefix = "{",
+        const Str &key_value_separator = ": ",
+        const Str &element_separator = ", ",
+        const Str &suffix = "}"
     ) const {
-        std::ostringstream ss{};
+        StrStrm ss{};
         ss << prefix;
         bool first = true;
         for (const auto &kv : *this) {

@@ -1619,7 +1619,7 @@ bool Future::GetNonQuantumGates(std::list<ql::gate*> &nonqlg) const {
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if (maplookaheadopt == "no") {
         ql::gate* gp = *input_gatepp;
-        if (input_gatepp != input_gatepv.end()) {
+        if (ql::circuit::const_iterator(input_gatepp) != input_gatepv.end()) {
             if (
                 gp->type() == ql::__classical_gate__
                 || gp->type() == ql::__dummy_gate__

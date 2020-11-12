@@ -6,7 +6,7 @@
 #include "utils/json.h"
 
 #include <fstream>
-#include "utils/strings.h"
+#include "utils/str.h"
 
 namespace ql {
 namespace utils {
@@ -14,17 +14,17 @@ namespace utils {
 /**
  * Loads a JSON file that may include // comments.
  */
-Json load_json(const std::string &path) {
+Json load_json(const Str &path) {
     std::ifstream fs(path);
     Json j;
     if (fs.is_open()) {
         std::stringstream stripped; // file contents with comments stripped
-        std::string line;
+        Str line;
 
         // strip comments
         while (getline(fs, line)) {
-            std::string::size_type n = line.find("//");
-            if (n != std::string::npos) line.erase(n);
+            Str::size_type n = line.find("//");
+            if (n != Str::npos) line.erase(n);
             std::istringstream iss(line);
             stripped << line;
         }
@@ -41,8 +41,8 @@ Json load_json(const std::string &path) {
                 fs.clear();
                 fs.seekg(0, std::ios::beg);
                 while (getline(fs, line)) {
-                    std::string::size_type n = line.find("//");
-                    if (n != std::string::npos) line.erase(n);
+                    Str::size_type n = line.find("//");
+                    if (n != Str::npos) line.erase(n);
                     if (e.byte >= absPos && e.byte < absPos + line.size()) {
                         unsigned int relPos = e.byte - absPos;
                         line = utils::replace_all(line, "\t", " "); // make a TAB take one position
@@ -50,7 +50,7 @@ Json load_json(const std::string &path) {
                             "in line " << lineNr
                                        << " at position " << relPos << ":" << std::endl
                                        << line << std::endl
-                                       << std::string(relPos > 0 ? relPos - 1 : 0, ' ')
+                                       << Str(relPos > 0 ? relPos - 1 : 0, ' ')
                                        << "^" << std::endl);
                     }
                     lineNr++;

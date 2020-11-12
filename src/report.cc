@@ -9,7 +9,7 @@
 
 #include <fstream>
 #include "utils/filesystem.h"
-#include "utils/strings.h"
+#include "utils/str.h"
 #include "options.h"
 #include "ir.h"
 

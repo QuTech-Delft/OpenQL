@@ -7,22 +7,22 @@
 
 #pragma once
 
-#include <vector>
-
+#include "utils/str.h"
+#include "utils/vec.h"
 #include "gate.h"
 
 namespace ql {
 
-typedef std::vector<gate*> circuit;
+typedef utils::Vec<gate*> circuit;
 
 void print(const circuit &c);
 
 /**
  * generate qasm for a given circuit
  */
-std::string qasm(const circuit &c);
+utils::Str qasm(const circuit &c);
 
-std::vector<circuit*> split_circuit(circuit &x);
+utils::Vec<circuit*> split_circuit(circuit &x);
 
 /**
  * detect measurements and qubit preparations

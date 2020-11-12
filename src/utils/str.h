@@ -20,19 +20,24 @@ namespace utils {
  */
 using Str = std::string;
 
+/**
+ * Shorthand for std::ostringstream.
+ */
+using StrStrm = std::ostringstream;
+
 // Anonymous namespace to make the SFINAE and overload resolution of the
 // debug_str_internal() function "private". Use debug_str().
 namespace {
 
 template <typename T, typename = decltype(std::declval<std::ostream&>() << std::declval<T>())>
-std::string try_to_string_internal(T val) {
-    std::ostringstream ss{};
+Str try_to_string_internal(T val) {
+    StrStrm ss{};
     ss << val;
     return ss.str();
 }
 
 template <typename T, typename... X>
-std::string try_to_string_internal(T val, X... vals) {
+Str try_to_string_internal(T val, X... vals) {
     std::ostringstream ss{};
     ss << "<unknown value of type " << typeid(T).name() << ">";
     return ss.str();
@@ -46,7 +51,7 @@ std::string try_to_string_internal(T val, X... vals) {
  * is returned, where ... is derived using typeid::name().
  */
 template <typename T>
-std::string try_to_string(T val) {
+Str try_to_string(T val) {
     return try_to_string_internal(val);
 }
 
@@ -54,21 +59,21 @@ std::string try_to_string(T val) {
  * Convert the given value to a string using its stream operator<< overload.
  */
 template <typename T>
-std::string to_string(T arg) {
-    std::stringstream ss;
+Str to_string(T arg) {
+    StrStrm ss;
     ss << arg;
     return ss.str ();
 }
 
-std::string to_lower(std::string str);
-std::string replace_all(std::string str, const std::string &from, const std::string &to);
+Str to_lower(Str str);
+Str replace_all(Str str, const Str &from, const Str &to);
 
 // TODO: remove (should be method on Vec)
 template<class T>
-std::string to_string(
+Str to_string(
     const std::vector<T> &v,
-    const std::string &vector_prefix = "",
-    const std::string &elem_sep = ", "
+    const Str &vector_prefix = "",
+    const Str &elem_sep = ", "
 ) {
     std::ostringstream ss;
     ss << vector_prefix << " [";

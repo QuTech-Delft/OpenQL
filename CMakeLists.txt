@@ -172,7 +172,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/exception.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/logger.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/strings.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/str.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/filesystem.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/json.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/eqasm_backend_cc.cc"

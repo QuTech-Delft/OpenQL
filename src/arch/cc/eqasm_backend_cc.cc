@@ -25,7 +25,7 @@
 
 #include "eqasm_backend_cc.h"
 
-#include <utils/strings.h>
+#include <utils/str.h>
 #include <utils/filesystem.h>
 #include <options.h>
 #include <platform.h>

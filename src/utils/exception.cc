@@ -2,7 +2,7 @@
  * Provides the base exception class for OpenQL.
  */
 
-#include "exception.h"
+#include "utils/exception.h"
 
 #include <cstring>
 #include <cerrno>
@@ -14,14 +14,14 @@ namespace utils {
 /**
  * Builds the message for Exception.
  */
-static std::string make_message(
-    const std::string &msg,
+static Str make_message(
+    const Str &msg,
     bool system = false
 ) noexcept {
     try {
 
         // Form the message string.
-        std::ostringstream ss{};
+        StrStrm ss{};
         ss << msg;
         if (system) {
             ss << ": " << std::strerror(errno);
@@ -43,8 +43,8 @@ static std::string make_message(
                 for (size_t i = 0; i < trace.size(); i++) {
                     auto fn = tr.resolve(trace[i]);
                     if (
-                        (fn.source.filename.find("exception.cc") == std::string::npos)
-                        && (fn.source.filename.find("backward.hpp") == std::string::npos)
+                        (fn.source.filename.find("exception.cc") == Str::npos)
+                        && (fn.source.filename.find("backward.hpp") == Str::npos)
                     ) {
                         trace.skip_n_firsts(i);
                         break;
@@ -84,7 +84,7 @@ static std::string make_message(
  * performed and appended to the message after a newline.
  */
 Exception::Exception(
-    const std::string &msg,
+    const Str &msg,
     bool system
 ) noexcept : std::runtime_error(make_message(msg, system)) {
 }

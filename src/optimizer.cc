@@ -13,6 +13,8 @@
 
 namespace ql {
 
+using namespace utils;
+
 /**
  * optimizer interface
  */
@@ -161,8 +163,8 @@ inline void rotation_optimize_kernel(ql::quantum_kernel &kernel, const ql::quant
     if (contains_measurements(kernel.c)) {
         QL_DOUT("kernel contains measurements ...");
         // decompose the circuit
-        std::vector<circuit*> cs = split_circuit(kernel.c);
-        std::vector<circuit> cs_opt;
+        Vec<circuit*> cs = split_circuit(kernel.c);
+        Vec<circuit> cs_opt;
         for (auto c : cs)
         {
             if (!contains_measurements(*c)) {

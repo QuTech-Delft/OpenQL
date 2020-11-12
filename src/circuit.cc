@@ -4,6 +4,8 @@
 
 namespace ql {
 
+using namespace utils;
+
 void print(const circuit &c) {
     std::cout << "-------------------" << std::endl;
     for (auto gate : c) {
@@ -15,17 +17,17 @@ void print(const circuit &c) {
 /**
  * generate qasm for a given circuit
  */
-std::string qasm(const circuit& c) {
-    std::stringstream ss;
+Str qasm(const circuit& c) {
+    StrStrm ss;
     for (auto gate : c) {
         ss << gate->qasm() << "\n";
     }
     return ss.str();
 }
 
-std::vector<circuit*> split_circuit(circuit &x) {
+Vec<circuit*> split_circuit(circuit &x) {
     QL_IOUT("circuit decomposition in basic blocks ... ");
-    std::vector<circuit *> cs;
+    Vec<circuit *> cs;
     cs.push_back(new circuit());
     for (auto gate : x) {
         if ((gate->type() == __prepz_gate__) ||

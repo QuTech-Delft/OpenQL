@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "utils/strings.h"
+#include "utils/str.h"
 #include "program.h"
 #include "platform.h"
 

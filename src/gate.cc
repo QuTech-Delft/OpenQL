@@ -1,7 +1,7 @@
 #include "gate.h"
 
 #include <cctype>
-#include "utils/strings.h"
+#include "utils/str.h"
 
 namespace ql {
 

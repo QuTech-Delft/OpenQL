@@ -28,7 +28,7 @@ namespace utils {
 /**
  * Returns whether the given path exists and is a directory.
  */
-bool is_dir(const std::string &path) {
+bool is_dir(const Str &path) {
     struct stat info{};
     if (stat(path.c_str(), &info) != 0) {
         return false;
@@ -39,7 +39,7 @@ bool is_dir(const std::string &path) {
 /**
  * Returns whether the given path exists and is a regular file.
  */
-bool is_file(const std::string &path) {
+bool is_file(const Str &path) {
     struct stat info{};
     if (stat(path.c_str(), &info) != 0) {
         return false;
@@ -50,7 +50,7 @@ bool is_file(const std::string &path) {
 /**
  * Returns whether the given path exists.
  */
-bool path_exists(const std::string &path) {
+bool path_exists(const Str &path) {
     struct stat info{};
     return !stat(path.c_str(), &info);
 }
@@ -60,14 +60,14 @@ bool path_exists(const std::string &path) {
  * to dirname() from libgen.h. On Windows, the string is stripped from the last
  * backslash or slash onward, if any.
  */
-std::string dir_name(const std::string &path) {
+Str dir_name(const Str &path) {
 #ifdef _WIN32
     auto last_slash = path.find_last_of('/');
-    if (last_slash == std::string::npos) {
+    if (last_slash == Str::npos) {
         last_slash = 0;
     }
     auto last_backslash = path.find_last_of('\\');
-    if (last_backslash == std::string::npos) {
+    if (last_backslash == Str::npos) {
         last_backslash = 0;
     }
     auto new_length = std::max(last_slash, last_backslash);
@@ -76,8 +76,8 @@ std::string dir_name(const std::string &path) {
     }
     return path.substr(0, new_length);
 #else
-    std::string path_copy{path};
-    return std::string(dirname(&path_copy[0]));
+    Str path_copy{path};
+    return Str(dirname(&path_copy[0]));
 #endif
 }
 
@@ -85,7 +85,7 @@ std::string dir_name(const std::string &path) {
  * (Recursively) creates a new directory if it does not already exist. Throws
  * an Exception if creation of the directory fails.
  */
-void make_dirs(const std::string &path) {
+void make_dirs(const Str &path) {
 
     // If the given path is already an existing directory, we don't need to do
     // anything.
@@ -113,7 +113,7 @@ void make_dirs(const std::string &path) {
  * the specified path does not exist, it is first created. Throws an Exception
  * if writing the file fails.
  */
-void write_file(const std::string &path, const std::string &content) {
+void write_file(const Str &path, const Str &content) {
 
     // If the parent path does not exist yet, recursively try to create a
     // directory for it.

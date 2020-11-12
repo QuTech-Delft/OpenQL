@@ -165,9 +165,12 @@ class Vec;
  * Wrapper for standard iterators to detect undefined behavior and throw an
  * exception.
  */
-template <typename Data, typename Iter, typename EndpointAdapter>
+template <typename D, typename I, typename EP>
 class WrappedIterator {
 public:
+    using Data = D;
+    using Iter = I;
+    using EndpointAdapter = EP;
     using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
     using value_type = typename std::iterator_traits<Iter>::value_type;
     using difference_type = typename std::iterator_traits<Iter>::difference_type;
@@ -175,16 +178,20 @@ public:
     using reference = typename std::iterator_traits<Iter>::reference;
     using size_type = typename Data::Stl::size_type;
 
-    /**
-     * The wrapped iterator.
-     */
-    Iter iter;
-
 private:
+
+    // All types of WrappedIterators are friends.
+    template <typename D2, typename I2, typename EP2>
+    friend class WrappedIterator;
 
     // Containers must be able to use the private methods of this class.
     template <typename T, typename Alloc>
     friend class Vec;
+
+    /**
+     * The wrapped iterator.
+     */
+    Iter iter;
 
     /**
      * Pointer to the data block. Prevents the data block from being deleted
@@ -266,6 +273,42 @@ public:
      * nevertheless, such an iterator is not usable in any context.
      */
     WrappedIterator() : iter(), data_ptr(), version(0) {}
+
+    /**
+     * Conversion copy constructor from a compatible iterator.
+     */
+    template <
+        typename D2, typename I2, typename EP2,
+        typename = typename std::enable_if<
+            std::is_convertible<D2, Data>::value
+            && std::is_convertible<I2, Iter>::value
+        >::type
+    >
+    WrappedIterator(
+        const WrappedIterator<D2, I2, EP2> &src
+    ) :
+        iter(src.iter),
+        data_ptr(src.data_ptr),
+        version(src.version)
+    {}
+
+    /**
+     * Conversion move constructor from a compatible iterator.
+     */
+    template <
+        typename D2, typename I2, typename EP2,
+        typename = typename std::enable_if<
+            std::is_convertible<D2, Data>::value
+            && std::is_convertible<I2, Iter>::value
+        >::type
+    >
+    WrappedIterator(
+        WrappedIterator<D2, I2, EP2> &&src
+    ) :
+        iter(src.iter),
+        data_ptr(src.data_ptr),
+        version(src.version)
+    {}
 
     /**
      * Copy constructor.
@@ -350,7 +393,7 @@ public:
      * Advances the iterator by the given delta.
      */
     friend WrappedIterator operator+(const WrappedIterator &lhs, difference_type rhs) {
-        WrappedIterator retval = lhs;
+        WrappedIterator retval{lhs};
         retval += rhs;
         return retval;
     }

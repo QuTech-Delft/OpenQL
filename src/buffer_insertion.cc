@@ -14,7 +14,7 @@
  * functionality and use, it can be rewritten and corrected.
  */
 
-#include "utils/strings.h"
+#include "utils/str.h"
 #include "utils/map.h"
 #include "utils/vec.h"
 #include "utils/pair.h"

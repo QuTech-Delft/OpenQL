@@ -3,7 +3,7 @@
  * satisfactorily provide.
  */
 
-#include "utils/strings.h"
+#include "utils/str.h"
 
 #include <algorithm>
 #include <cctype>

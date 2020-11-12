@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <string>
 #include <stdexcept>
+#include "utils/str.h"
 
 namespace ql {
 namespace utils {
@@ -21,7 +21,7 @@ namespace utils {
 class Exception : public std::runtime_error {
 public:
     explicit Exception(
-        const std::string &msg,
+        const Str &msg,
         bool system = false
     ) noexcept;
 };

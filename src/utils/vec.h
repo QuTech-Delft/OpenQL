@@ -6,7 +6,7 @@
 #pragma once
 
 #include <vector>
-#include "utils/strings.h"
+#include "utils/str.h"
 #include "utils/container_base.h"
 
 namespace ql {
@@ -41,7 +41,7 @@ public:
     /**
      * Forward iterator with const access to the values.
      */
-    using ConstIter = WrappedIterator<Data, typename Stl::const_iterator, ConstEndpointAdapter>;
+    using ConstIter = WrappedIterator<const Data, typename Stl::const_iterator, ConstEndpointAdapter>;
 
     /**
      * Backward iterator with mutable access to the values.
@@ -51,7 +51,13 @@ public:
     /**
      * Backward iterator with const access to the values.
      */
-    using ConstReverseIter = WrappedIterator<Data, typename Stl::const_reverse_iterator, ConstReverseEndpointAdapter>;
+    using ConstReverseIter = WrappedIterator<const Data, typename Stl::const_reverse_iterator, ConstReverseEndpointAdapter>;
+
+    using value_type = typename Stl::value_type;
+    using iterator = Iter;
+    using const_iterator = ConstIter;
+    using reverse_iterator = ReverseIter;
+    using reverse_const_iterator = ReverseIter;
 
 private:
 
@@ -130,7 +136,7 @@ public:
      * Copy constructor. Constructs the container with the copy of the contents
      * of other.
      */
-    Vec(const Vec &other) : data_ptr(std::make_shared<Data>(other.get_data().as_const())) {}
+    Vec(const Vec &other) : data_ptr(std::make_shared<Data>(other.get_data().get_const())) {}
 
     /**
      * Copy constructor. Constructs the container with the copy of the contents
@@ -536,7 +542,7 @@ public:
      * attempting to access it results in an exception.
      */
     ConstReverseIter rend() const {
-        return ConstReverseIter(get_data().get_const().rcend(), data_ptr);
+        return ConstReverseIter(get_data().get_const().crend(), data_ptr);
     }
 
     /**
@@ -546,7 +552,7 @@ public:
      * attempting to access it results in an exception.
      */
     ConstReverseIter crend() const {
-        return ConstReverseIter(get_data().get_const().rcend(), data_ptr);
+        return ConstReverseIter(get_data().get_const().crend(), data_ptr);
     }
 
     /**
@@ -630,7 +636,7 @@ public:
      * before the insertion point remain valid. The past-the-end iterator is
      * also invalidated.
      */
-    Iter insert(const Iter &pos, const T &value) {
+    Iter insert(const ConstIter &pos, const T &value) {
         pos.check(data_ptr);
         return Iter(get_data().get_mut().insert(pos.iter, value), data_ptr);
     }
@@ -644,7 +650,7 @@ public:
      * before the insertion point remain valid. The past-the-end iterator is
      * also invalidated.
      */
-    Iter insert(const Iter &pos, T &&value) {
+    Iter insert(const ConstIter &pos, T &&value) {
         pos.check(data_ptr);
         return Iter(get_data().get_mut().insert(pos.iter, value), data_ptr);
     }
@@ -658,7 +664,7 @@ public:
      * before the insertion point remain valid. The past-the-end iterator is
      * also invalidated.
      */
-    Iter insert(const Iter &pos, typename Stl::size_type count, const T &value) {
+    Iter insert(const ConstIter &pos, typename Stl::size_type count, const T &value) {
         pos.check(data_ptr);
         return Iter(get_data().get_mut().insert(pos.iter, count, value), data_ptr);
     }
@@ -679,7 +685,7 @@ public:
             std::input_iterator_tag
         >::value>::type
     >
-    Iter insert(const Iter &pos, const InputIt &first, const InputIt &last) {
+    Iter insert(const ConstIter &pos, const InputIt &first, const InputIt &last) {
         pos.check(data_ptr);
         return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
     }
@@ -694,25 +700,7 @@ public:
      * before the insertion point remain valid. The past-the-end iterator is
      * also invalidated.
      */
-    Iter insert(const Iter &pos, const Iter &first, const Iter &last) {
-        pos.check(data_ptr);
-        if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same vector");
-        }
-        return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
-    }
-
-    /**
-     * Inserts elements from range [first, last) before pos. A
-     * ContainerException is thrown if first and last belong to this vector.
-     *
-     * Causes reallocation if the new size() is greater than the old capacity().
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
-     */
-    Iter insert(const Iter &pos, const ConstIter &first, const ConstIter &last) {
+    Iter insert(const ConstIter &pos, const Iter &first, const Iter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
             throw ContainerException("inserting from same vector");
@@ -730,7 +718,7 @@ public:
      * before the insertion point remain valid. The past-the-end iterator is
      * also invalidated.
      */
-    Iter insert(const Iter &pos, const ReverseIter &first, const ReverseIter &last) {
+    Iter insert(const ConstIter &pos, const ConstIter &first, const ConstIter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
             throw ContainerException("inserting from same vector");
@@ -748,7 +736,25 @@ public:
      * before the insertion point remain valid. The past-the-end iterator is
      * also invalidated.
      */
-    Iter insert(const Iter &pos, const ConstReverseIter &first, const ConstReverseIter &last) {
+    Iter insert(const ConstIter &pos, const ReverseIter &first, const ReverseIter &last) {
+        pos.check(data_ptr);
+        if (first.data_ptr == data_ptr) {
+            throw ContainerException("inserting from same vector");
+        }
+        return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
+    }
+
+    /**
+     * Inserts elements from range [first, last) before pos. A
+     * ContainerException is thrown if first and last belong to this vector.
+     *
+     * Causes reallocation if the new size() is greater than the old capacity().
+     * If the new size() is greater than capacity(), all iterators and
+     * references are invalidated. Otherwise, only the iterators and references
+     * before the insertion point remain valid. The past-the-end iterator is
+     * also invalidated.
+     */
+    Iter insert(const ConstIter &pos, const ConstReverseIter &first, const ConstReverseIter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
             throw ContainerException("inserting from same vector");
@@ -765,7 +771,7 @@ public:
      * before the insertion point remain valid. The past-the-end iterator is
      * also invalidated.
      */
-    Iter insert(const Iter &pos, std::initializer_list<T> ilist) {
+    Iter insert(const ConstIter &pos, std::initializer_list<T> ilist) {
         pos.check(data_ptr);
         return Iter(get_data().get_mut().insert(pos.iter, ilist), data_ptr);
     }
@@ -790,7 +796,7 @@ public:
      * also invalidated.
      */
     template <class... Args>
-    Iter emplace(const Iter &pos, Args&&... args) {
+    Iter emplace(const ConstIter &pos, Args&&... args) {
         pos.check(data_ptr);
         return Iter(get_data().get_mut().emplace(pos.iter, std::forward(args)...), data_ptr);
     }
@@ -802,7 +808,7 @@ public:
      * iterator (which is valid, but is not dereferenceable) cannot be used as a
      * value for pos.
      */
-    Iter erase(const Iter &pos) {
+    Iter erase(const ConstIter &pos) {
         pos.check(data_ptr);
         *pos;
         return Iter(get_data().get_mut().erase(pos.iter), data_ptr);
@@ -818,7 +824,7 @@ public:
      * The iterator first does not need to be dereferenceable if first==last:
      * erasing an empty range is a no-op.
      */
-    Iter erase(const Iter &first, const Iter &last) {
+    Iter erase(const ConstIter &first, const Iter &last) {
         first.check(last);
         first.check(data_ptr);
         if (first != last) {
