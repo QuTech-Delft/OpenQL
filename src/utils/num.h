@@ -40,11 +40,7 @@ using Real = double;
 /**
  * Complex number. This maps to std::complex<double>.
  */
-class Complex : public std::complex<double> {
-public:
-    Complex(Real re = 0.0, Real im = 0.0) noexcept : complex(re, im) {}
-    Complex(const complex &other) noexcept : complex(other.real(), other.imag()) {}
-};
+using Complex = std::complex<double>;
 
 /**
  * Maximum value for an Int.

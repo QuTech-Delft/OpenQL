@@ -357,7 +357,7 @@ public:
     void zyz_decomp(const Eigen::Ref<const complex_matrix> &matrix) {
         // auto start = std::chrono::steady_clock::now();
 
-        ql::complex_t det = matrix.determinant();// matrix(0,0)*matrix(1,1)-matrix(1,0)*matrix(0,1);
+        Complex det = matrix.determinant();// matrix(0,0)*matrix(1,1)-matrix(1,0)*matrix(0,1);
 
         Real delta = atan2(det.imag(), det.real())/matrix.rows();
         Complex A = exp(Complex(0,-1)*delta)*matrix(0,0);
