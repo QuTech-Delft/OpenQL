@@ -1,91 +1,19 @@
 /**
- * @file   visualizer_internal.h
- * @date   09/2020
+ * @file   visualizer_circuit.h
+ * @date   11/2020
  * @author Tim van der Meer
- * @brief  declaration of the visualizer's internals
+ * @brief  definition of the visualizer
  */
 
 #pragma once
 
 #ifdef WITH_VISUALIZER
-
+ 
 #include "visualizer.h"
+#include "visualizer_common.h"
 #include "CImg.h"
 
-// These undefs are necessary to avoid name collisions between CImg and Lemon.
-#undef cimg_use_opencv
-#undef True
-
-#undef False
-#undef IN
-#undef OUT
-
 namespace ql {
-
-enum BitType {CLASSICAL, QUANTUM};
-
-struct Position4 {
-    long x0;
-    long y0;
-    long x1;
-    long y1;
-
-    Position4() = delete;
-};
-
-struct Position2 {
-    long x;
-    long y;
-
-    Position2() = delete;
-};
-
-struct Cell {
-    const int col;
-    const int row;
-    const int chunkOffset;
-    const BitType bitType;
-};
-
-struct EndPoints {
-    const int start;
-    const int end;
-};
-
-struct Dimensions {
-    const int width;
-    const int height;
-};
-
-struct GateOperand {
-    BitType bitType;
-    int index;
-
-    friend bool operator<(const GateOperand &lhs, const GateOperand &rhs) {
-        if (lhs.bitType == QUANTUM && rhs.bitType == CLASSICAL) return true;
-        if (lhs.bitType == CLASSICAL && rhs.bitType == QUANTUM) return false;
-        return lhs.index < rhs.index;
-    }
-
-    friend bool operator>(const GateOperand &lhs, const GateOperand &rhs) {return operator<(rhs, lhs);}
-    friend bool operator<=(const GateOperand &lhs, const GateOperand &rhs) {return !operator>(lhs, rhs);}
-    friend bool operator>=(const GateOperand &lhs, const GateOperand &rhs) {return !operator<(lhs, rhs);}
-
-    GateOperand() = delete;
-};
-
-struct GateProperties {
-    std::string name;
-    std::vector<int> operands;
-    std::vector<int> creg_operands;
-    int duration;
-    int cycle;
-    gate_type_t type;
-    std::vector<int> codewords;
-    std::string visual_type;
-
-    GateProperties() = delete;
-};
 
 struct Cycle {
     int index;
@@ -94,6 +22,13 @@ struct Cycle {
     std::vector<std::vector<std::reference_wrapper<GateProperties>>> gates;
 
     Cycle() = delete;
+};
+
+struct Cell {
+    const int col;
+    const int row;
+    const int chunkOffset;
+    const BitType bitType;
 };
 
 enum LineSegmentType {FLAT, PULSE, CUT};
@@ -142,7 +77,6 @@ class CircuitData {
     std::vector<Cycle> cycles;
     std::vector<EndPoints> cutCycleRangeIndices;
 
-    int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) const;
     int calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const;
     std::vector<Cycle> generateCycles(std::vector<GateProperties> &gates, const int cycleDuration) const;
     std::vector<EndPoints> findCuttableEmptyRanges(const Layout layout) const;
@@ -208,24 +142,13 @@ class Structure {
     void printProperties() const;
 };
 
-Layout parseConfiguration(const std::string &configPath);
+void visualizeCircuit(std::vector<GateProperties> gates, const Layout layout, const int cycleDuration, const std::string &waveformMappingPath);
+
 PulseVisualization parseWaveformMapping(const std::string &waveformMappingPath);
-void validateLayout(Layout &layout);
-
-std::vector<GateProperties> parseGates(const ql::quantum_program* program);
-
-int calculateAmountOfGateOperands(const GateProperties gate);
-std::vector<GateOperand> getGateOperands(const GateProperties gate);
-std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<GateOperand> operands, const int amountOfQubits);
-
-void fixMeasurementOperands(std::vector<GateProperties> &gates);
-bool isMeasurement(const GateProperties gate);
 
 std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gates, const PulseVisualization pulseVisualization, const CircuitData circuitData);
 double calculateMaxAmplitude(const std::vector<LineSegment> lineSegments);
 void insertFlatLineSegments(std::vector<LineSegment> &existingLineSegments, const int amountOfCycles);
-
-Dimensions calculateTextDimensions(const std::string &text, const int fontHeight, const Layout layout);
 
 void drawCycleLabels(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
 void drawCycleEdges(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
@@ -245,9 +168,6 @@ void drawGateNode(cimg_library::CImg<unsigned char> &image, const Layout layout,
 void drawControlNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
 void drawNotNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
 void drawCrossNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
-
-void printGates(const std::vector<GateProperties> gates);
-int safe_int_cast(const size_t argument);
 
 } // namespace ql
 

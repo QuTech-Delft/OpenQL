@@ -338,7 +338,11 @@ VisualizerPass::VisualizerPass(const std::string &name) : AbstractPass(name) {
  */
 void VisualizerPass::runOnProgram(ql::quantum_program *program) {
     DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
-    ql::visualize(program, getPassOptions()->getOption("visualizer_config_path"), getPassOptions()->getOption("visualizer_waveform_mapping_path"));
+    
+    ql::visualize(program, getPassOptions()->getOption("visualizer_type"), {
+        getPassOptions()->getOption("visualizer_config_path"),
+        getPassOptions()->getOption("visualizer_waveform_mapping_path")
+    });
 }
 
 /**
@@ -536,6 +540,7 @@ PassOptions::PassOptions(std::string app_name) {
     opt_name2opt_val["hwconfig"] = "none";
     opt_name2opt_val["nqubits"] = "100";
     opt_name2opt_val["eqasm_compiler_name"] = "cc_light_compiler";
+    opt_name2opt_val["visualizer_type"] = "CIRCUIT";
     opt_name2opt_val["visualizer_config_path"] = "visualizer_config.json";
     opt_name2opt_val["visualizer_waveform_mapping_path"] = "waveform_mapping.json";
 
@@ -547,6 +552,7 @@ PassOptions::PassOptions(std::string app_name) {
     app->add_option("--hwconfig", opt_name2opt_val["hwconfig"], "path to the platform configuration file", true);
     app->add_option("--nqubits", opt_name2opt_val["nqubits"], "number of qubits used by the program", true);
     app->add_set_ignore_case("--eqasm_compiler_name", opt_name2opt_val["eqasm_compiler_name"], {"cc_light_compiler", "eqasm_backend_cc"}, "Set the compiler backend", true);
+    app->add_option("--visualizer_type", opt_name2opt_val["visualizer_type"], "the type of visualization performed", true);
     app->add_option("--visualizer_config_path", opt_name2opt_val["visualizer_config_path"], "path to the visualizer configuration file", true);
     app->add_option("--visualizer_waveform_mapping_path", opt_name2opt_val["visualizer_waveform_mapping_path"], "path to the visualizer waveform mapping file", true);
 }
