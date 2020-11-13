@@ -1,8 +1,8 @@
 /**
- * @file   visualizer_internal.h
- * @date   09/2020
+ * @file   visualizer_common.h
+ * @date   11/2020
  * @author Tim van der Meer
- * @brief  declaration of the visualizer's internals
+ * @brief  declaration of the visualizer's shared functionalities
  */
 
 #pragma once
@@ -91,6 +91,8 @@ void validateLayout(Layout &layout);
 
 std::vector<GateProperties> parseGates(const ql::quantum_program* program);
 
+int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType);
+
 int calculateAmountOfGateOperands(const GateProperties gate);
 std::vector<GateOperand> getGateOperands(const GateProperties gate);
 std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<GateOperand> operands, const int amountOfQubits);
@@ -98,7 +100,7 @@ std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<Gate
 void fixMeasurementOperands(std::vector<GateProperties> &gates);
 bool isMeasurement(const GateProperties gate);
 
-Dimensions calculateTextDimensions(const std::string &text, const int fontHeight, const Layout layout);
+Dimensions calculateTextDimensions(const std::string &text, const int fontHeight);
 
 void printGates(const std::vector<GateProperties> gates);
 int safe_int_cast(const size_t argument);

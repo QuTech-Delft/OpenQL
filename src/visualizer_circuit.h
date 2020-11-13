@@ -75,7 +75,6 @@ class CircuitData {
     std::vector<Cycle> cycles;
     std::vector<EndPoints> cutCycleRangeIndices;
 
-    int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) const;
     int calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const;
     std::vector<Cycle> generateCycles(std::vector<GateProperties> &gates, const int cycleDuration) const;
     std::vector<EndPoints> findCuttableEmptyRanges(const Layout layout) const;

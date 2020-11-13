@@ -8,6 +8,7 @@
 #include "visualizer.h"
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
+#include "visualizer_interaction.h"
 #include "json.h"
 
 #include <iostream>
@@ -41,18 +42,20 @@ namespace ql {
 // [CIRCUIT] check for negative/invalid values during layout validation
 // [CIRCUIT] GateProperties validation on construction (test with visualizer pass called at different points (during different passes) during compilation)
 // [GENERAL] update code style
+// [GENERAL] merge with develop
+// [GENERAL] split visualizer.cc into multiple files
 
 // -- IN PROGRESS ---
+// [CIRCUIT] visualize before scheduler has been ran, no duration should be shown, just circuit in user-defined order
 // [GENERAL] update documentation
-// [GENERAL] merge with develop
+// [INTERACTION] output dot files for graphing software, default circle graph will also be shown
 
 // --- FUTURE WORK ---
-// [GENERAL] split visualizer.cc into multiple files, one for Structure, one for CircuitData and one for free code and new Visualizer class
 // [GENERAL] add generating random circuits for visualization testing
 // [CIRCUIT] allow collapsing the three qubit lines into one with an option
 // [CIRCUIT] implement cycle cutting for pulse visualization
 // [CIRCUIT] what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
-//       comprising the entire range?
+//           comprising the entire range?
 // [CIRCUIT] when measurement connections are not shown, allow overlap of measurement gates
 // [CIRCUIT] when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
 // [CIRCUIT] display wait/barrier gate (need wait gate fix first)
@@ -74,18 +77,18 @@ void visualize(const ql::quantum_program* program, const std::string &visualizat
     IOUT("Starting visualization...");
     IOUT("Visualization type: " << visualizationType);
 
+    // Get the gate list from the program.
+    DOUT("Getting gate list...");
+    std::vector<GateProperties> gates = parseGates(program);
+    if (gates.size() == 0) {
+        FATAL("Quantum program contains no gates!");
+    }
+
     // Choose the proper visualization based on the visualization type.
     if (visualizationType == "CIRCUIT") {
         // Parse and validate the layout and instruction configuration file.
         Layout layout = parseConfiguration(configurationPaths.config);
         validateLayout(layout);
-
-        // Get the gate list from the program.
-        DOUT("Getting gate list...");
-        std::vector<GateProperties> gates = parseGates(program);
-        if (gates.size() == 0) {
-            FATAL("Quantum program contains no gates!");
-        }
 
         // Calculate circuit properties.
         DOUT("Calculating circuit properties...");
@@ -96,7 +99,7 @@ void visualize(const ql::quantum_program* program, const std::string &visualizat
 
         visualizeCircuit(gates, layout, cycleDuration, configurationPaths.waveformMapping);
     } else if (visualizationType == "INTERACTION_GRAPH") {
-        WOUT("Interaction graph visualization not yet implemented.");
+        visualizeInteractionGraph(gates);
     } else if (visualizationType == "MAPPING_GRAPH") {
         WOUT("Mapping graph visualization not yet implemented.");
     } else {
@@ -403,6 +406,36 @@ std::vector<GateProperties> parseGates(const ql::quantum_program* program) {
     return gates;
 }
 
+int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) {
+    DOUT("Calculating amount of bits...");
+
+    //TODO: handle circuits not starting at a c- or qbit with index 0
+    int minAmount = std::numeric_limits<int>::max();
+    int maxAmount = 0;
+
+    // Find the minimum and maximum index of the operands.
+    for (const GateProperties &gate : gates)
+    {
+        std::vector<int>::const_iterator begin = (gate.*operandType).begin();
+        const std::vector<int>::const_iterator end = (gate.*operandType).end();
+
+        for (; begin != end; ++begin) {
+            const int number = *begin;
+            if (number < minAmount) minAmount = number;
+            if (number > maxAmount) maxAmount = number;
+        }
+    }
+
+    // If both minAmount and maxAmount are at their original values, the list of 
+    // operands for all the gates was empty.This means there are no operands of 
+    // the given type for these gates and we return 0.
+    if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0) {
+        return 0;
+    } else {
+        return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
+    }
+}
+
 int calculateAmountOfGateOperands(const GateProperties gate) {
     return safe_int_cast(gate.operands.size() + gate.creg_operands.size());
 }
@@ -456,7 +489,7 @@ bool isMeasurement(const GateProperties gate) {
     return (gate.name.find("measure") != std::string::npos);
 }
 
-Dimensions calculateTextDimensions(const std::string &text, const int fontHeight, const Layout layout) {
+Dimensions calculateTextDimensions(const std::string &text, const int fontHeight) {
     const char* chars = text.c_str();
     cimg_library::CImg<unsigned char> imageTextDimensions;
     const char color = 1;

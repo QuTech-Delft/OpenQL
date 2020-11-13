@@ -31,36 +31,6 @@ CircuitData::CircuitData(std::vector<GateProperties> &gates, const Layout layout
     if (layout.cycles.cutting.isEnabled())  cutEmptyCycles(layout);
 }
 
-int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) const {
-    DOUT("Calculating amount of bits...");
-
-    //TODO: handle circuits not starting at a c- or qbit with index 0
-    int minAmount = std::numeric_limits<int>::max();
-    int maxAmount = 0;
-
-    // Find the minimum and maximum index of the operands.
-    for (const GateProperties &gate : gates)
-    {
-        std::vector<int>::const_iterator begin = (gate.*operandType).begin();
-        const std::vector<int>::const_iterator end = (gate.*operandType).end();
-
-        for (; begin != end; ++begin) {
-            const int number = *begin;
-            if (number < minAmount) minAmount = number;
-            if (number > maxAmount) maxAmount = number;
-        }
-    }
-
-    // If both minAmount and maxAmount are at their original values, the list of 
-    // operands for all the gates was empty.This means there are no operands of 
-    // the given type for these gates and we return 0.
-    if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0) {
-        return 0;
-    } else {
-        return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
-    }
-}
-
 int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const {
     DOUT("Calculating amount of cycles...");
 
@@ -999,7 +969,7 @@ void drawCycleLabels(cimg_library::CImg<unsigned char> &image,
             }
         }
 
-        Dimensions textDimensions = calculateTextDimensions(cycleLabel, layout.cycles.labels.getFontHeight(), layout);
+        Dimensions textDimensions = calculateTextDimensions(cycleLabel, layout.cycles.labels.getFontHeight());
 
         const int xGap = (cellWidth - textDimensions.width) / 2;
         const int yGap = (layout.cycles.labels.getRowHeight() - textDimensions.height) / 2;
@@ -1037,7 +1007,7 @@ void drawBitLineLabels(cimg_library::CImg<unsigned char> &image,
 
     for (int bitIndex = 0; bitIndex < circuitData.amountOfQubits; bitIndex++) {
         const std::string label = "q" + std::to_string(bitIndex);
-        const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight(), layout);
+        const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight());
 
         const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
         const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
@@ -1050,7 +1020,7 @@ void drawBitLineLabels(cimg_library::CImg<unsigned char> &image,
     if (layout.bitLines.classical.isEnabled()) {
         if (layout.bitLines.classical.isGrouped()) {
             const std::string label = "C";
-            const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight(), layout);
+            const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight());
 
             const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
             const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
@@ -1061,7 +1031,7 @@ void drawBitLineLabels(cimg_library::CImg<unsigned char> &image,
         } else {
             for (int bitIndex = 0; bitIndex < circuitData.amountOfClassicalBits; bitIndex++) {
                 const std::string label = "c" + std::to_string(bitIndex);
-                const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight(), layout);
+                const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight());
 
                 const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
                 const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
@@ -1480,7 +1450,7 @@ void drawGateNode(cimg_library::CImg<unsigned char> &image,
     image.draw_rectangle(position.x0, position.y0, position.x1, position.y1, node.outlineColor.data(), 1, 0xFFFFFFFF);
 
     // Draw the gate symbol. The width and height of the symbol are calculated first to correctly position the symbol within the gate.
-    Dimensions textDimensions = calculateTextDimensions(node.displayName, node.fontHeight, layout);
+    Dimensions textDimensions = calculateTextDimensions(node.displayName, node.fontHeight);
     image.draw_text(position.x0 + (node.radius * 2 - textDimensions.width) / 2, position.y0 + (node.radius * 2 - textDimensions.height) / 2,
         node.displayName.c_str(), node.fontColor.data(), 0, 1, node.fontHeight);
 }
