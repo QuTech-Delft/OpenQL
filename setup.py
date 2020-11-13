@@ -3,6 +3,7 @@
 import os, platform, shutil, sys, re
 from setuptools import setup, Extension
 from distutils.dir_util import copy_tree
+from distutils import log
 
 from distutils.command.clean        import clean        as _clean
 from setuptools.command.build_ext   import build_ext    as _build_ext
@@ -115,6 +116,52 @@ class build_ext(_build_ext):
                 # Build type can be set using an environment variable.
                 ['-DCMAKE_BUILD_TYPE=' + build_type]
             )
+
+            # If we're on Windows, we're probably building with MSVC. In that
+            # case, we might have to tell CMake whether we want to build for
+            # x86 or x64, but depending on how MSVC is configured, that same
+            # command-line option could also return an error. So we need to be
+            # careful here.
+            if platform.system() == 'Windows':
+                log.info('Trying to figure out bitness...')
+
+                # Figure out what CMake is doing by default.
+                if not os.path.exists('test-cmake-config'):
+                    os.makedirs('test-cmake-config')
+                with local.cwd('test-cmake-config'):
+                    local['cmake'][pysrc_dir + os.sep + 'compat' + os.sep + 'test-cmake-config'] & FG
+                    with open('values.cfg', 'r') as f:
+                        void_ptr_size, generator, *_ = f.read().split('\n')
+                        cmake_is_64 = int(void_ptr_size.strip()) == 8
+                        cmake_is_msvc = 'Visual Studio' in generator
+                        msvc_is_fixed_to_64 = cmake_is_msvc and ('Win64' in generator or 'IA64' in generator)
+
+                # Figure out what Python needs.
+                python_is_64 = sys.maxsize > 2**32
+
+                log.info('Figured out the following things:')
+                log.info(' - Python is {}-bit'.format(64 if python_is_64 else 32))
+                log.info(' - CMake is building {}-bit by default'.format(64 if cmake_is_64 else 32))
+                log.info(' - CMake {} building using MSVC'.format('IS' if cmake_is_msvc else 'is NOT'))
+                log.info(' - MSVC {} fixed to 64-bit'.format('IS' if msvc_is_fixed_to_64 else 'is NOT'))
+
+                # If there's a mismatch, see what we can do.
+                if python_is_64 != cmake_is_64:
+                    if msvc_is_fixed_to_64 and not python_is_64:
+                        raise RuntimeError('MSVC is configured to build 64-bit binaries, but Python is 32-bit!')
+                    if not cmake_is_msvc:
+                        raise RuntimeError('Mismatch in 32-bit/64-bit between CMake defaults ({}) and Python install ({})!'.format(
+                            '64-bit' if cmake_is_64 else '32-bit',
+                            '64-bit' if python_is_64 else '32-bit'
+                        ))
+
+                    # Looks like we're compiling with MSVC, and MSVC is merely
+                    # defaulting to the wrong bitness, which means we should be
+                    # able to change it with the -A flag.
+                    if python_is_64:
+                        cmd = cmd['-A']['x64']
+                    else:
+                        cmd = cmd['-A']['win32']
 
             # Unitary decomposition can be disabled using an environment
             # variable.
