@@ -18,6 +18,135 @@ namespace utils {
  * Unlike the STL variant, iterators detect accidental undefined behavior and
  * throw an exception instead.
  */
+template <typename T, typename Allocator = std::allocator<T>>
+class UncheckedList : public std::list<T, Allocator> {
+public:
+
+    /**
+     * Shorthand for the STL component being wrapped.
+     */
+    using Stl = std::list<T, Allocator>;
+
+    // Member types expected by the standard library.
+    using value_type = T;
+    using allocator_type = Allocator;
+    using size_type = typename Stl::size_type;
+    using difference_type = typename Stl::difference_type;
+    using reference = typename Stl::reference;
+    using const_reference = typename Stl::const_reference;
+    using pointer = typename Stl::pointer;
+    using const_pointer = typename Stl::const_pointer;
+    using iterator = typename Stl::iterator;
+    using const_iterator = typename Stl::const_iterator;
+    using reverse_iterator = typename Stl::reverse_iterator;
+    using const_reverse_iterator = typename Stl::const_reverse_iterator;
+
+    /**
+     *  Default constructor. Constructs an empty container with a
+     *  default-constructed allocator.
+     */
+    UncheckedList() : Stl() {}
+
+    /**
+     * Constructs an empty container with the given allocator alloc.
+     */
+    explicit UncheckedList(const Allocator &alloc) : Stl(alloc) {}
+
+    /**
+     * Constructs the container with count copies of elements with value value.
+     */
+    UncheckedList(size_type count, const T &value, const Allocator &alloc = Allocator()) : Stl(count, value, alloc) {}
+
+    /**
+     * Constructs the container with count default-inserted instances of T. No
+     * copies are made.
+     */
+    explicit UncheckedList(size_type count) : Stl(count) {};
+
+    /**
+     * Constructs the container with the contents of the range [first, last).
+     *
+     * This constructor has the same effect as
+     * list(static_cast<size_type>(first), static_cast<value_type>(last), a) if
+     * InputIt is an integral type.
+     *
+     * This overload only participates in overload resolution if InputIt
+     * satisfies LegacyInputIterator, to avoid ambiguity with other overloads.
+     */
+    template <
+        typename InputIt,
+        typename = typename std::enable_if<std::is_convertible<
+            typename std::iterator_traits<InputIt>::iterator_category,
+            std::input_iterator_tag
+        >::value>::type
+    >
+    UncheckedList(InputIt first, InputIt last, const Allocator &alloc = Allocator()) : Stl(first, last, alloc) {}
+
+    /**
+     * Copy constructor. Constructs the container with the copy of the contents
+     * of other.
+     */
+    UncheckedList(const Stl &other) : Stl(other) {}
+
+    /**
+     * Constructs the container with the copy of the contents of other, using
+     * alloc as the allocator.
+     */
+    UncheckedList(const Stl &other, const Allocator &alloc) : Stl(other, alloc) {}
+
+    /**
+     * Move constructor. Constructs the container with the contents of other
+     * using move semantics. Allocator is obtained by move-construction from
+     * the allocator belonging to other. After the move, other is guaranteed to
+     * be empty().
+     */
+    UncheckedList(Stl &&other) : Stl(std::forward<Stl>(other)) {}
+
+    /**
+     * Allocator-extended move constructor. Using alloc as the allocator for the
+     * new container, moving the contents from other; if
+     * alloc != other.get_allocator(), this results in an element-wise move.
+     * (in that case, other is not guaranteed to be empty after the move)
+     */
+    UncheckedList(Stl &&other, const Allocator &alloc) : Stl(std::forward<Stl>(other), alloc) {}
+
+    /**
+     * Constructs the container with the contents of the initializer list init.
+     */
+    UncheckedList(std::initializer_list<T> init, const Allocator &alloc = Allocator()) : Stl(init, alloc) {};
+
+    /**
+     * Returns a string representation of the entire contents of the list. A
+     * stream << overload must exist for the value type.
+     */
+    std::string to_string(
+        const std::string &prefix = "[",
+        const std::string &separator = ", ",
+        const std::string &suffix = "]"
+    ) const {
+        std::ostringstream ss{};
+        ss << prefix;
+        bool first = true;
+        for (const auto &val : *this) {
+            if (first) {
+                first = false;
+            } else {
+                ss << separator;
+            }
+            ss << val;
+        }
+        ss << suffix;
+        return ss.str();
+    }
+
+};
+
+/**
+ * Wrapper for `std::list` with additional error detection and handling.
+ *
+ * Unlike the STL variant, iterators detect accidental undefined behavior and
+ * throw an exception instead.
+ */
 template <typename T, typename Allocator>
 class CheckedList {
 public:
@@ -64,7 +193,7 @@ public:
     using iterator = Iter;
     using const_iterator = ConstIter;
     using reverse_iterator = ReverseIter;
-    using reverse_const_iterator = ReverseIter;
+    using const_reverse_iterator = ConstReverseIter;
 
 private:
 
@@ -297,55 +426,55 @@ public:
     }
 
     /**
-     * Returns a reference to the first element in the container. If the vector
+     * Returns a reference to the first element in the container. If the list
      * is empty, an exception of type ContainerException is thrown.
      */
     reference front() {
         auto &v = get_data().get_mut_element_only();
         if (v.empty()) {
-            throw ContainerException("front() called on empty vector");
+            throw ContainerException("front() called on empty list");
         }
         return v.front();
     }
 
     /**
-     * Returns a reference to the first element in the container. If the vector
+     * Returns a reference to the first element in the container. If the list
      * is empty, an exception of type ContainerException is thrown.
      */
     const_reference front() const {
         auto &v = get_data().get_const();
         if (v.empty()) {
-            throw ContainerException("front() called on empty vector");
+            throw ContainerException("front() called on empty list");
         }
         return v.front();
     }
 
     /**
-     * Returns a reference to the last element in the container. If the vector
+     * Returns a reference to the last element in the container. If the list
      * is empty, an exception of type ContainerException is thrown.
      */
     reference back() {
         auto &v = get_data().get_mut_element_only();
         if (v.empty()) {
-            throw ContainerException("back() called on empty vector");
+            throw ContainerException("back() called on empty list");
         }
         return v.back();
     }
 
     /**
-     * Returns a reference to the last element in the container. If the vector
+     * Returns a reference to the last element in the container. If the list
      * is empty, an exception of type ContainerException is thrown.
      */
     const_reference back() const {
         auto &v = get_data().get_const();
         if (v.empty()) {
-            throw ContainerException("back() called on empty vector");
+            throw ContainerException("back() called on empty list");
         }
         return v.back();
     }
 
     /**
-     * Returns an iterator to the first element of the vector. If the vector is
+     * Returns an iterator to the first element of the list. If the list is
      * empty, the returned iterator will be equal to end().
      */
     Iter begin() {
@@ -353,7 +482,7 @@ public:
     }
 
     /**
-     * Returns an iterator to the first element of the vector. If the vector is
+     * Returns an iterator to the first element of the list. If the list is
      * empty, the returned iterator will be equal to end().
      */
     ConstIter begin() const {
@@ -361,7 +490,7 @@ public:
     }
 
     /**
-     * Returns an iterator to the first element of the vector. If the vector is
+     * Returns an iterator to the first element of the list. If the list is
      * empty, the returned iterator will be equal to end().
      */
     ConstIter cbegin() const {
@@ -370,7 +499,7 @@ public:
 
     /**
      * Returns an iterator to the element following the last element of the
-     * vector. This element acts as a placeholder; attempting to access it
+     * list. This element acts as a placeholder; attempting to access it
      * results in an exception.
      */
     Iter end() {
@@ -379,7 +508,7 @@ public:
 
     /**
      * Returns an iterator to the element following the last element of the
-     * vector. This element acts as a placeholder; attempting to access it
+     * list. This element acts as a placeholder; attempting to access it
      * results in an exception.
      */
     ConstIter end() const {
@@ -388,7 +517,7 @@ public:
 
     /**
      * Returns an iterator to the element following the last element of the
-     * vector. This element acts as a placeholder; attempting to access it
+     * list. This element acts as a placeholder; attempting to access it
      * results in an exception.
      */
     ConstIter cend() const {
@@ -396,27 +525,27 @@ public:
     }
 
     /**
-     * Returns a reverse iterator to the first element of the reversed vector.
-     * It corresponds to the last element of the non-reversed vector. If the
-     * vector is empty, the returned iterator is equal to rend().
+     * Returns a reverse iterator to the first element of the reversed list.
+     * It corresponds to the last element of the non-reversed list. If the
+     * list is empty, the returned iterator is equal to rend().
      */
     ReverseIter rbegin() {
         return ReverseIter(end());
     }
 
     /**
-     * Returns a reverse iterator to the first element of the reversed vector.
-     * It corresponds to the last element of the non-reversed vector. If the
-     * vector is empty, the returned iterator is equal to rend().
+     * Returns a reverse iterator to the first element of the reversed list.
+     * It corresponds to the last element of the non-reversed list. If the
+     * list is empty, the returned iterator is equal to rend().
      */
     ConstReverseIter rbegin() const {
         return ConstReverseIter(end());
     }
 
     /**
-     * Returns a reverse iterator to the first element of the reversed vector.
-     * It corresponds to the last element of the non-reversed vector. If the
-     * vector is empty, the returned iterator is equal to rend().
+     * Returns a reverse iterator to the first element of the reversed list.
+     * It corresponds to the last element of the non-reversed list. If the
+     * list is empty, the returned iterator is equal to rend().
      */
     ConstReverseIter crbegin() const {
         return ConstReverseIter(end());
@@ -424,8 +553,8 @@ public:
 
     /**
      * Returns a reverse iterator to the element following the last element of
-     * the reversed vector. It corresponds to the element preceding the first
-     * element of the non-reversed vector. This element acts as a placeholder;
+     * the reversed list. It corresponds to the element preceding the first
+     * element of the non-reversed list. This element acts as a placeholder;
      * attempting to access it results in an exception.
      */
     ReverseIter rend() {
@@ -434,8 +563,8 @@ public:
 
     /**
      * Returns a reverse iterator to the element following the last element of
-     * the reversed vector. It corresponds to the element preceding the first
-     * element of the non-reversed vector. This element acts as a placeholder;
+     * the reversed list. It corresponds to the element preceding the first
+     * element of the non-reversed list. This element acts as a placeholder;
      * attempting to access it results in an exception.
      */
     ConstReverseIter rend() const {
@@ -444,8 +573,8 @@ public:
 
     /**
      * Returns a reverse iterator to the element following the last element of
-     * the reversed vector. It corresponds to the element preceding the first
-     * element of the non-reversed vector. This element acts as a placeholder;
+     * the reversed list. It corresponds to the element preceding the first
+     * element of the non-reversed list. This element acts as a placeholder;
      * attempting to access it results in an exception.
      */
     ConstReverseIter crend() const {
@@ -540,7 +669,7 @@ public:
 
     /**
      * Inserts elements from range [first, last) before pos. A
-     * ContainerException is thrown if first and last belong to this vector.
+     * ContainerException is thrown if first and last belong to this list.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
      * All iterators and references are invalidated.
@@ -548,14 +677,14 @@ public:
     Iter insert(const ConstIter &pos, const Iter &first, const Iter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same vector");
+            throw ContainerException("inserting from same list");
         }
         return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
     }
 
     /**
      * Inserts elements from range [first, last) before pos. A
-     * ContainerException is thrown if first and last belong to this vector.
+     * ContainerException is thrown if first and last belong to this list.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
      * All iterators and references are invalidated.
@@ -563,14 +692,14 @@ public:
     Iter insert(const ConstIter &pos, const ConstIter &first, const ConstIter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same vector");
+            throw ContainerException("inserting from same list");
         }
         return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
     }
 
     /**
      * Inserts elements from range [first, last) before pos. A
-     * ContainerException is thrown if first and last belong to this vector.
+     * ContainerException is thrown if first and last belong to this list.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
      * All iterators and references are invalidated.
@@ -578,14 +707,14 @@ public:
     Iter insert(const ConstIter &pos, const ReverseIter &first, const ReverseIter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same vector");
+            throw ContainerException("inserting from same list");
         }
         return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
     }
 
     /**
      * Inserts elements from range [first, last) before pos. A
-     * ContainerException is thrown if first and last belong to this vector.
+     * ContainerException is thrown if first and last belong to this list.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
      * All iterators and references are invalidated.
@@ -593,7 +722,7 @@ public:
     Iter insert(const ConstIter &pos, const ConstReverseIter &first, const ConstReverseIter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same vector");
+            throw ContainerException("inserting from same list");
         }
         return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
     }
@@ -707,7 +836,7 @@ public:
     void pop_back() {
         auto &v = get_data().get_mut();
         if (v.empty()) {
-            throw ContainerException("pop_back() called on empty vector");
+            throw ContainerException("pop_back() called on empty list");
         }
         return v.pop_back();
     }
@@ -757,7 +886,7 @@ public:
     void pop_front() {
         auto &v = get_data().get_mut();
         if (v.empty()) {
-            throw ContainerException("pop_back() called on empty vector");
+            throw ContainerException("pop_back() called on empty list");
         }
         return v.pop_front();
     }
@@ -992,10 +1121,7 @@ public:
 
 };
 
-// TODO: add an unchecked list type similar to the above, make conversion
-//  constructors in either direction, and make a CMake flag that selects which
-//  of them is the default for List. Performance of CheckedList is actually
-//  significantly lower (3-4x).
+// TODO: make a CMake flag that selects between CheckedList and UncheckedList.
 template <typename T, typename Allocator = std::allocator<T>>
 using List = CheckedList<T, Allocator>;
 
@@ -1003,10 +1129,19 @@ using List = CheckedList<T, Allocator>;
 } // namespace ql
 
 /**
- * Stream << overload for Vec<>.
+ * Stream << overload for UncheckedList<>.
  */
 template <class T>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::List<T> &list) {
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedList<T> &list) {
+    os << list.to_string();
+    return os;
+}
+
+/**
+ * Stream << overload for CheckedList<>.
+ */
+template <class T>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedList<T> &list) {
     os << list.to_string();
     return os;
 }

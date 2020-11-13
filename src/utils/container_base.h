@@ -130,6 +130,13 @@ template <typename T, typename Alloc = std::allocator<T>>
 class CheckedVec;
 template <typename T, typename Alloc = std::allocator<T>>
 class CheckedList;
+template <
+    typename Key,
+    typename T,
+    typename Compare = std::less<Key>,
+    typename Allocator = std::allocator<std::pair<const Key, T>>
+>
+class CheckedMap;
 
 /**
  * Wrapper for standard iterators to detect undefined behavior and throw an
@@ -159,6 +166,8 @@ private:
     friend class CheckedVec;
     template <typename T, typename Alloc>
     friend class CheckedList;
+    template <typename Key, typename T, typename Compare, typename Allocator>
+    friend class CheckedMap;
 
     /**
      * The wrapped iterator.
