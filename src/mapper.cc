@@ -1338,7 +1338,7 @@ Alter::Alter() {
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
 void Alter::Init(const quantum_platform *p, quantum_kernel *k, Grid *g) {
-    QL_DOUT("Alter::Init(number of qubits=" << nq);
+    QL_DOUT("Alter::Init(number of qubits=" << p->qubit_number);
     platformp = p;
     kernelp = k;
     gridp = g;

@@ -436,7 +436,6 @@ void codegen_cc::customGate(
         std::string signalValueString;
         unsigned int operandIdx;
         settings_cc::tSignalInfo si;
-        settings_cc::tInstrumentInfo ii;
         {   // limit scope
             std::string signalSPath = QL_SS2S(sd.path << "[" << s << "]");           // for JSON error reporting
 
@@ -485,8 +484,8 @@ ___________________ Test_central_controller.test_qi_example ____________________
             // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and
             // provide codewordTable to downstream software to assign waveforms to the codewords
 
-            comment(QL_SS2S("  # slot=" << ii.slot
-                                        << ", instrument='" << ii.instrumentName << "'"
+            comment(QL_SS2S("  # slot=" << si.ic.ii.slot
+                                        << ", instrument='" << si.ic.ii.instrumentName << "'"
                                         << ", group=" << si.group
                                         << "': signalValue='" << signalValueString << "'"
                     ));
