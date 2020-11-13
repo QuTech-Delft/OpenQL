@@ -39,15 +39,19 @@ namespace ql {
 enum BitType {CLASSICAL, QUANTUM};
 
 struct Position4 {
-    long x0 = 0;
-    long y0 = 0;
-    long x1 = 0;
-    long y1 = 0;
+    long x0;
+    long y0;
+    long x1;
+    long y1;
+
+    Position4() = delete;
 };
 
 struct Position2 {
-    long x = 0;
-    long y = 0;
+    long x;
+    long y;
+
+    Position2() = delete;
 };
 
 struct EndPoints {
@@ -61,8 +65,8 @@ struct Dimensions {
 };
 
 struct GateOperand {
-    BitType bitType = QUANTUM;
-    int index = 0;
+    BitType bitType;
+    int index;
 
     friend bool operator<(const GateOperand &lhs, const GateOperand &rhs) {
         if (lhs.bitType == QUANTUM && rhs.bitType == CLASSICAL) return true;
@@ -73,17 +77,21 @@ struct GateOperand {
     friend bool operator>(const GateOperand &lhs, const GateOperand &rhs) {return operator<(rhs, lhs);}
     friend bool operator<=(const GateOperand &lhs, const GateOperand &rhs) {return !operator>(lhs, rhs);}
     friend bool operator>=(const GateOperand &lhs, const GateOperand &rhs) {return !operator<(lhs, rhs);}
+
+    GateOperand() = delete;
 };
 
 struct GateProperties {
     std::string name;
     std::vector<int> operands;
     std::vector<int> creg_operands;
-    int duration = 0;
-    int cycle = 0;
-    gate_type_t type = __custom_gate__;
+    int duration;
+    int cycle;
+    gate_type_t type;
     std::vector<int> codewords;
     std::string visual_type;
+
+    GateProperties() = delete;
 };
 
 Layout parseConfiguration(const std::string &configPath);

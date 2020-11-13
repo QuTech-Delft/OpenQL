@@ -16,10 +16,12 @@
 namespace ql {
 
 struct Cycle {
-    int index = 0;
-    bool empty = false;
-    bool cut = false;
+    int index;
+    bool empty;
+    bool cut;
     std::vector<std::vector<std::reference_wrapper<GateProperties>>> gates;
+
+    Cycle() = delete;
 };
 
 struct Cell {
@@ -78,7 +80,7 @@ class CircuitData {
     int calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const;
     std::vector<Cycle> generateCycles(std::vector<GateProperties> &gates, const int cycleDuration) const;
     std::vector<EndPoints> findCuttableEmptyRanges(const Layout layout) const;
-    
+
     void compressCycles();
     void partitionCyclesWithOverlap();
     void cutEmptyCycles(const Layout layout);
@@ -90,7 +92,7 @@ class CircuitData {
 
     CircuitData(std::vector<GateProperties> &gates, const Layout layout, const int cycleDuration);
 
-    Cycle getCycle(const int index) const;
+    Cycle getCycle(const size_t index) const;
     int getAmountOfCycles() const;
     bool isCycleCut(const int cycleIndex) const;
     bool isCycleFirstInCutRange(const int cycleIndex) const;
@@ -134,7 +136,7 @@ class Structure {
     int getCircuitBotY() const;
 
     Dimensions getCellDimensions() const;
-    Position4 getCellPosition(const int column, const int row, const BitType bitType) const;
+    Position4 getCellPosition(const size_t column, const size_t row, const BitType bitType) const;
     std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
 
     void printProperties() const;

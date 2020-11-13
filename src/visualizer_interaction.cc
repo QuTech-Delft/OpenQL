@@ -53,11 +53,12 @@ void visualizeInteractionGraph(const std::vector<GateProperties> gates) {
         const Position2 center{borderWidth + interactionCircleRadius, borderWidth + interactionCircleRadius};
 
         // Calculate the qubit coordinates on the interaction circle.
-        std::vector<std::pair<Qubit, Position2>> qubitPositions(amountOfQubits);
+        std::vector<std::pair<Qubit, Position2>> qubitPositions;//(amountOfQubits);
         for (const Qubit &qubit : qubits) {
             const double theta = qubit.qubitIndex * thetaSpacing;
             const Position2 position = calculateQubitPosition(interactionCircleRadius, theta, center);
-            qubitPositions[qubit.qubitIndex] = {qubit, position};
+            qubitPositions.push_back( {qubit, position} );
+            // qubitPositions[qubit.qubitIndex] = {qubit, position};
         }
 
         // Initialize the image.

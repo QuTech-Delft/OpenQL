@@ -46,6 +46,7 @@ namespace ql {
 // [GENERAL] split visualizer.cc into multiple files
 
 // -- IN PROGRESS ---
+// [INTERACTION] add number indicating amount of interactions for edges
 // [CIRCUIT] visualize before scheduler has been ran, no duration should be shown, just circuit in user-defined order
 // [GENERAL] update documentation
 // [INTERACTION] output dot files for graphing software, default circle graph will also be shown
