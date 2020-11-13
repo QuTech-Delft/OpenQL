@@ -39,11 +39,11 @@ void visualizeInteractionGraph(const std::vector<GateProperties> gates) {
 
     if (qubits.size() > 1) {
         // --------------------------- REMOVE WHEN DONE --------------------------- //
-        const int amountOfTestQubits = 7;
-        for (int i = 0; i < amountOfTestQubits; i++) {
-            qubits.push_back({amountOfQubits + i, {}});
-        }
-        amountOfQubits += amountOfTestQubits;
+        // const int amountOfTestQubits = 7;
+        // for (int i = 0; i < amountOfTestQubits; i++) {
+        //     qubits.push_back({amountOfQubits + i, {}});
+        // }
+        // amountOfQubits += amountOfTestQubits;
         // --------------------------- REMOVE WHEN DONE --------------------------- //
 
         // Calculate the interaction circle properties.
@@ -132,6 +132,7 @@ Position2 calculateQubitPosition(const int radius, const double theta, const Pos
 }
 
 std::vector<Qubit> findQubitInteractions(const std::vector<GateProperties> gates, const int amountOfQubits) {
+    // Initialize the qubit vector.
     std::vector<Qubit> qubits(amountOfQubits);
     for (int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
         qubits[qubitIndex] = {qubitIndex, {}};
