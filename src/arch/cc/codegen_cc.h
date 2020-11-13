@@ -102,12 +102,6 @@ private:    // vars
 
 	// codegen state, bundle scope
     std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group]
-    bool bundleHasReadout;
-
-#if OPT_FEEDBACK
-    json inputLutTable;                                         // input LUT usage per instrument group
-#endif
-
 
 private:    // funcs
     // Some helpers to ease nice assembly formatting

@@ -257,8 +257,6 @@ void codegen_cc::kernelFinish(const std::string &kernelName, size_t durationInCy
 // bundleStart: see 'strategy' above
 void codegen_cc::bundleStart(const std::string &cmnt)
 {
-	bundleHasReadout = false;
-
     // create 'matrix' of tBundleInfo with proper vector size per instrument
 	bundleInfo.clear();
     tBundleInfo empty = {"", 0, settings_cc::NO_STATIC_CODEWORD_OVERRIDE, -1, -1};	// FIXME: create proper constructor
@@ -290,6 +288,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         comment(SS2S(" # last bundle of kernel, will pad outputs to match durations"));
     }
 
+	bool bundleHasReadout = false;
+
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
@@ -300,10 +300,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
         // collect code generation info from all groups within one instrument
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
-        bool isInstrUsed = false;
+        bool instrHasOutput = false;
+		bool instrHasReadout = false;
         uint32_t digOut = 0;                                                // the digital output value sent over the instrument interface
-        uint32_t digIn = 0;
-        uint32_t maxDurationInCycles = 0;                                   // maximum duration over groups that are used, one instrument
+        int maxDurationInCycles = 0;                                   		// maximum duration over groups that are used, one instrument
 
 		// iterate over groups of instrument
         size_t nrGroups = bundleInfo[instrIdx].size();
@@ -321,7 +321,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
                 vcd.bundleFinishGroup(startCycle, bi->durationInCycles, gdo.groupDigOut, bi->signalValue, instrIdx, group);
 
-                isInstrUsed = true;
+                instrHasOutput = true;
             } // if(signal defined)
 
 #if OPT_FEEDBACK   // FIXME: WIP
@@ -331,54 +331,62 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // FIXME: check consistency between measure instruction and result_bits
             // FIXME: also generate VCD
 
-            if(JSON_EXISTS(ic.controlMode, "result_bits")) {  	// this instrument mode produces results (i.e. it is a measurement device)
-                const json &resultBits = ic.controlMode["result_bits"][group];
-                size_t nrResultBits = resultBits.size();
-                if(nrResultBits == 1) {                     // single bit (NB: per group)
-					const json qubits = json_get<const json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const json&> unavailable
-					size_t qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
-					int qubit = qubits[group];		// FIXME: protect against exceptions
-					if(bi->readoutQubit == qubit) {				// this instrument group handles requested qubit
-						bundleHasReadout = true;
-						int bit = (int)resultBits[0];       	// bit on digital interface. NB: we assume the result is active high, which is correct for UHF-QC
-						digIn |= 1<<(int)resultBits[0];			// mask of all bits read (for bundle)
-
-						// get classic operand
-						if(bi->readoutCop >= 0) {
-							WOUT("ignoring explicit assignment to classic operand for measurement");
+			if(bi->readoutQubit >= 0) { // readout requested
+				if (JSON_EXISTS(ic.controlMode, "result_bits")) {    // this instrument mode produces results (i.e. it is a measurement device)
+					const json &resultBits = ic.controlMode["result_bits"][group];
+					size_t nrResultBits = resultBits.size();
+					if (nrResultBits == 1) {                     // single bit (NB: per group)
+						// get our qubit
+						const json qubits = json_get<const json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const json&> unavailable
+						size_t qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
+						if (group >= qubitGroupCnt) {
+							FATAL("group " << group << " not defined in '" << ic.ii.instrumentName << "/qubits'");
 						}
-						int cop = qubit;						// implicit cop for qubit
+						const json qubitsOfGroup = qubits[group];
+						if (qubitsOfGroup.size() != 1) {
+							FATAL("group " << group << " of '" << ic.ii.instrumentName << "/qubits' should define 1 qubit, not " << qubitsOfGroup.size());
+						}
+						int qubit = qubitsOfGroup[0];
 
-						// allocate SM bit for cop
-						int smBit = allocateSmBit(cop, instrIdx);
+						if (bi->readoutQubit == qubit) {          	// this instrument group handles requested qubit
+							bundleHasReadout = true;
+							instrHasReadout = true;
+							
+							int bit = (int) resultBits[0];        	// bit on digital interface. NB: we assume the result is active high, which is correct for UHF-QC
 
-						// remind mapping of bit -> smBit for setting MUX
+							// get classic operand
+							if (bi->readoutCop >= 0) {
+								WOUT("ignoring explicit assignment to classic operand for measurement");
+							}
+							int cop = qubit;                        // implicit cop for qubit
 
+							// allocate SM bit for cop
+							int smBit = allocateSmBit(cop, instrIdx);
+
+							// remind mapping of bit -> smBit for setting MUX
+
+						}
+					} else {
+						JSON_FATAL("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrResultBits);
 					}
-
-
-#if 0
-
-                    // FIXME: save bi->readoutCop in inputLutTable
-                    if(JSON_EXISTS(inputLutTable, ic.ii.instrumentName) &&                  // instrument exists
-                                    inputLutTable[ic.ii.instrumentName].size() > group) {   // group exists
-                    } else {    // new instrument or group
-                        // FIXME: old code:
-                        //codeword = 1;
-                        //inputLutTable[ic.ii.instrumentName][group][0] = "";                 // code word 0 is empty
-                        //inputLutTable[uc.ii.instrumentName][group][codeword] = signalValue; // NB: structure created on demand
-                    }
-#endif
-                } else {
-                    JSON_FATAL("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrResultBits);
-                }
-            }
+				}
+			}
 #endif
         } // for(group)
 
+#if OPT_FEEDBACK
+		// FIXME: terrible hack to preserve timeline while injecting time for feedback below
+		if(instrHasReadout) {
+			int smWait = 3;    // FIXME: get from config
+			maxDurationInCycles -= 1+smWait;
+			if(maxDurationInCycles <= 1) {
+				FATAL("maxDurationInCycles adjusted to " << maxDurationInCycles);
+			}
+		}
+#endif
 
         // generate code for instrument output
-        if(isInstrUsed) {
+        if(instrHasOutput) {
             comment(SS2S("  # slot=" << ic.ii.slot
                     << ", instrument='" << ic.ii.instrumentName << "'"
                     << ": lastEndCycle=" << lastEndCycle[instrIdx]
@@ -406,7 +414,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 #if OPT_FEEDBACK
         if(1) {		// FIXME: allow runtime selection
 			// generate code for instrument input of readout results
-			if(digIn) { // readout input performed in this bundle
+			if(instrHasReadout) {
 				comment(SS2S("# readout"));
 
 				// FIXME:
@@ -427,7 +435,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 				// emit datapath code
 
-			} else if (bundleHasReadout) {
+			} else if(bundleHasReadout) {
 				// FIXME:
 				int smAddr = 0;
 				int smTotalSize = 6;
@@ -457,7 +465,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 		// for last bundle, pad end of bundle to align durations
         if(isLastBundle) {
-            padToCycle(lastEndCycle[instrIdx], startCycle+durationInCycles, ic.ii.slot, ic.ii.instrumentName);
+            padToCycle(lastEndCycle[instrIdx], startCycle+durationInCycles, ic.ii.slot, ic.ii.instrumentName);		// FIXME: use maxDurationInCycles and/or check consistency
         }
 
         vcd.bundleFinish(startCycle, digOut, maxDurationInCycles, instrIdx);
@@ -492,6 +500,7 @@ void codegen_cc::customGate(
         would be nice if custom gates could mimic gate_type_t
     */
     // FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL, so we need a better criterion
+    // FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
     bool isReadout = "readout" == platform->find_instruction_type(iname);
 
     // generate comment (also performs some checks)
