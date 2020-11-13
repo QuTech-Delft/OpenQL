@@ -12,6 +12,8 @@ namespace ql {
 
 void settings_cc::loadBackendSettings(const quantum_platform &platform)
 {
+	this->platform = &platform;
+
     // remind some main JSON areas
     JSON_ASSERT(platform.hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
     const json &jsonBackendSettings = platform.hardware_settings["eqasm_backend_cc"];
@@ -56,6 +58,26 @@ void settings_cc::loadBackendSettings(const quantum_platform &platform)
         DOUT("found instrument: name='" << instrumentName << "', signal type='" << signalType << "'");
     }
 #endif
+}
+
+
+bool settings_cc::isReadout(const std::string &iname)
+{
+	/*  determine whether this is a readout instruction
+		NB: we only use the instruction_type "readout" and don't care about the rest
+		because the terms "mw" and "flux" don't fully cover gate functionality. It
+		would be nice if custom gates could mimic gate_type_t
+	*/
+	// FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL, so we need a better criterion
+	// FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
+	// FIXME: gate semantics should be handled at the OpenQL core
+	return "readout" == platform->find_instruction_type(iname);
+}
+
+
+int settings_cc::getSmWait()
+{
+	return 3;	// FIXME: make configurable
 }
 
 

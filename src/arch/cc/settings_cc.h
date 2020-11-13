@@ -55,7 +55,9 @@ public: // functions
     ~settings_cc() = default;
 
     void loadBackendSettings(const quantum_platform &platform);
-    tSignalDef findSignalDefinition(const json &instruction, const std::string &iname) const;
+	bool isReadout(const std::string &iname);
+	int getSmWait();
+	tSignalDef findSignalDefinition(const json &instruction, const std::string &iname) const;
     tInstrumentInfo getInstrumentInfo(size_t instrIdx) const;
     tInstrumentControl getInstrumentControl(size_t instrIdx) const;
 
@@ -69,6 +71,7 @@ public: // functions
     size_t getInstrumentsSize() const { return jsonInstruments->size(); }
 
 private:    // vars
+	const quantum_platform *platform;                           // remind platform
     const json *jsonInstrumentDefinitions;
     const json *jsonControlModes;
     const json *jsonInstruments;

@@ -328,7 +328,6 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // handle readout
             // NB: we allow for instruments that perform the input side of readout only, without signal generation by the
             // same instrument, which might be needed in the future
-            // FIXME: check consistency between measure instruction and result_bits
             // FIXME: also generate VCD
 
 			if(bi->readoutQubit >= 0) { // readout requested
@@ -369,6 +368,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 					} else {
 						JSON_FATAL("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrResultBits);
 					}
+				} else {
+					JSON_FATAL("readout requested on instrument '" << ic.ii.instrumentName << "', but key '" << ic.refControlMode << "/result_bits is not present");
 				}
 			}
 #endif
@@ -376,11 +377,13 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 #if OPT_FEEDBACK
 		// FIXME: terrible hack to preserve timeline while injecting time for feedback below
-		if(instrHasReadout) {
-			int smWait = 3;    // FIXME: get from config
-			maxDurationInCycles -= 1+smWait;
-			if(maxDurationInCycles <= 1) {
-				FATAL("maxDurationInCycles adjusted to " << maxDurationInCycles);
+		if(1) {		// FIXME: allow runtime selection
+			if(instrHasReadout) {
+				int smWait = settings.getSmWait();
+				maxDurationInCycles -= 1+smWait;	// adjust gate duration (Ugh)
+				if(maxDurationInCycles <= 1) {
+					FATAL("maxDurationInCycles adjusted to " << maxDurationInCycles);
+				}
 			}
 		}
 #endif
@@ -450,7 +453,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 			// code generation common to paths above
 			if(bundleHasReadout) {
-				int smWait = 3;    // FIXME: get from config
+				int smWait = settings.getSmWait();
 
 				emit(SS2S("[" << ic.ii.slot << "]").c_str(),      // CCIO selector
 					"seq_wait",
@@ -494,14 +497,8 @@ void codegen_cc::customGate(
     vcd.customGate(iname, qops, startCycle, durationInCycles);
 
 
-    /*  determine whether this is a readout instruction
-        NB: we only use the instruction_type "readout" and don't care about the rest
-        because the terms "mw" and "flux" don't fully cover gate functionality. It
-        would be nice if custom gates could mimic gate_type_t
-    */
-    // FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL, so we need a better criterion
-    // FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
-    bool isReadout = "readout" == platform->find_instruction_type(iname);
+    //  determine whether this is a readout instruction
+    bool isReadout = settings.isReadout(iname);
 
     // generate comment (also performs some checks)
     if(isReadout) {
