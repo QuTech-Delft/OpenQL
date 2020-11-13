@@ -169,6 +169,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/clifford.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passmanager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/exception.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/eqasm_backend_cc.cc"
@@ -321,6 +322,27 @@ target_link_libraries(ql PRIVATE eigen)
 option(LIBQASM_COMPAT "" ON)
 add_subdirectory(deps/libqasm)
 target_link_libraries(ql PUBLIC cqasm)
+
+
+# X11 -------------------------------------------------------------------------
+
+# Only enable the visualizer if building on Windows or the X11 library is found when building on Linux or Mac.
+if(WIN32)
+    target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+else()
+    find_package(X11)
+    if($(X11_FOUND))
+        target_link_libraries(ql PUBLIC X11)
+        target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+    endif()
+endif()
+
+
+# backward-cpp ----------------------------------------------------------------
+
+# Stack trace helper library, nothing functional here.
+add_subdirectory(deps/backward-cpp)
+add_backward(ql)
 
 
 #=============================================================================#

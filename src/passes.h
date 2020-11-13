@@ -123,13 +123,26 @@ public:
 /**
  * Report Statistics Pass
  */
-class ReportStatisticsPass: public AbstractPass {
+class ReportStatisticsPass : public AbstractPass {
 public:
     /**
      * @brief  Statistics pass constructor
      * @param  Name of the scheduler pass
      */
     explicit ReportStatisticsPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
+};
+
+/**
+ * Visualizer Pass
+ */
+class VisualizerPass : public AbstractPass  {
+public:
+    /**
+     * @brief  Visualizer pass constructor
+     * @param  Name of the visualizer pass
+     */
+    explicit VisualizerPass(const std::string &name);
     void runOnProgram(ql::quantum_program *program) override;
 };
 
