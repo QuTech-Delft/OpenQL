@@ -158,7 +158,7 @@ class CircuitData {
 
     CircuitData(std::vector<GateProperties> &gates, const Layout layout, const int cycleDuration);
 
-    Cycle getCycle(const int index) const;
+    Cycle getCycle(const size_t index) const;
     int getAmountOfCycles() const;
     bool isCycleCut(const int cycleIndex) const;
     bool isCycleFirstInCutRange(const int cycleIndex) const;
@@ -202,7 +202,7 @@ class Structure {
     int getCircuitBotY() const;
 
     Dimensions getCellDimensions() const;
-    Position4 getCellPosition(const int column, const int row, const BitType bitType) const;
+    Position4 getCellPosition(const size_t column, const size_t row, const BitType bitType) const;
     std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
 
     void printProperties() const;
