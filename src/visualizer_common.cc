@@ -56,18 +56,18 @@ namespace ql {
 // [INTERACTION] output dot files for graphing software, default circle graph will also be shown
 
 // --- FUTURE WORK ---
+// [GENERAL] add option to save the image and/or open the window
 // [GENERAL] add generating random circuits for visualization testing
 // [CIRCUIT] allow collapsing the three qubit lines into one with an option
 // [CIRCUIT] implement cycle cutting for pulse visualization
 // [CIRCUIT] what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
 //           comprising the entire range?
 // [CIRCUIT] when measurement connections are not shown, allow overlap of measurement gates
-// [CIRCUIT] when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
-// [CIRCUIT] display wait/barrier gate (need wait gate fix first)
+// [CIRCUIT] when gate is skipped due to whatever reason, show a dummy gate outline with a question mark, indicating where the gate is (maybe)
+// [CIRCUIT] display wait/barrier gate (need wait/barrier gate fix first)
 // [CIRCUIT] add classical bit number to measurement connection when classical lines are grouped
 // [CIRCUIT] implement measurement symbol (to replace the M on measurement gates)
 // [CIRCUIT] generate default gate visuals from the configuration file
-// [GENERAL] add option to save the image and/or open the window
 
 #ifndef WITH_VISUALIZER
 

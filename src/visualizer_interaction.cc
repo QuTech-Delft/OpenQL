@@ -32,7 +32,7 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
     const int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
     // Prepare the interaction list per qubit.
     const std::vector<Qubit> qubits = findQubitInteractions(gates, amountOfQubits);
-    printInteractionList(qubits);
+    // printInteractionList(qubits);
 
     if (qubits.size() > 1) {
 
@@ -60,14 +60,43 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
 
         // Draw the edges between interacting qubits.
         //TODO: edges are drawn twice between qubits
+        std::vector<std::pair<int, int>> drawnEdges;
         for (const std::pair<Qubit, Position2> &qubit : qubitPositions) {
             const Position2 qubitPosition = qubit.second;
             for (const InteractionsWithQubit &interactionsWithQubit : qubit.first.interactions) {
+                if (edgeAlreadyDrawn(drawnEdges, qubit.first.qubitIndex, interactionsWithQubit.qubitIndex))
+                    continue;
+                
+                drawnEdges.push_back( {qubit.first.qubitIndex,interactionsWithQubit.qubitIndex } );
+
+                // Draw the edge.
                 const double theta = interactionsWithQubit.qubitIndex * thetaSpacing;
                 const Position2 interactionPosition = calculateQubitPosition(interactionCircleRadius, theta, center);
-                const std::string label = std::to_string(qubit.first.qubitIndex);
-                const Dimensions labelDimensions = calculateTextDimensions(label, layout.getLabelFontHeight());
                 image.draw_line(qubitPosition.x, qubitPosition.y, interactionPosition.x, interactionPosition.y, layout.getEdgeColor().data());
+
+                // Draw the number of interactions.
+                const std::string label = std::to_string(interactionsWithQubit.amountOfInteractions);
+                const Dimensions labelDimensions = calculateTextDimensions(label, layout.getLabelFontHeight());
+                const int hDiff = qubitPosition.x - interactionPosition.x;
+                const int vDiff = qubitPosition.y - interactionPosition.y;
+                int x = 0;
+                int y = 0;
+                if (hDiff > 0) {
+                    x = qubitPosition.x - layout.getQubitRadius() - labelDimensions.width;
+                    if (vDiff > 0) {
+                        y = qubitPosition.y - layout.getQubitRadius() - labelDimensions.height;
+                    } else {
+                        y = qubitPosition.y + layout.getQubitRadius();
+                    }
+                } else {
+                    x = qubitPosition.x + layout.getQubitRadius();
+                    if (vDiff > 0) {
+                        y = qubitPosition.y - layout.getQubitRadius() - labelDimensions.height;
+                    } else {
+                        y = qubitPosition.y + layout.getQubitRadius();
+                    }
+                }
+                image.draw_text(x, y, label.c_str(), layout.getLabelColor().data(), 0, 1, layout.getLabelFontHeight());
             }
         }
         // Draw the qubits.
@@ -130,12 +159,12 @@ InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath
 
 double calculateQubitCircleRadius(const int qubitRadius, const double theta) {
     // - Distance between the centers of two adjacent qubits should be at
-    //   least 2 * qubit radius.
+    //   least 2 times the qubit radius.
     // - We know the angle (theta) of the iscosceles triangle formed between the
     //   center of the circumferent circle and the two centers of the adjacent
     //   qubit circles, and we know the length of the base of that triangle.
-    // - The unknown we want to calculate is the length of the two
-    //   equisized sides of the triangle.
+    // - The unknown we want to calculate is the length of the two equisized
+    //   sides of the triangle.
     // - That length is the minimum required radius of the circumferent circle,
     //   such that the qubit circles do not overlap.
 
@@ -198,6 +227,17 @@ std::vector<Qubit> findQubitInteractions(const std::vector<GateProperties> gates
     }
 
     return qubits;
+}
+
+bool edgeAlreadyDrawn(const std::vector<std::pair<int, int>> drawnEdges, const int first, const int second) {
+    // Check if the edge already exists.
+    for (const std::pair<int, int> &drawnEdge : drawnEdges) {
+        if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void printInteractionList(const std::vector<Qubit> qubits) {
