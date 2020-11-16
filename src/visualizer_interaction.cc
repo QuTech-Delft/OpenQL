@@ -17,7 +17,7 @@
 
 namespace ql {
 
-void visualizeInteractionGraph(const ql::quantum_program* program) {
+void visualizeInteractionGraph(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths) {
     IOUT("Visualizing qubit interaction graph...");
 
     // Get the gate list from the program.
@@ -27,46 +27,34 @@ void visualizeInteractionGraph(const ql::quantum_program* program) {
         FATAL("Quantum program contains no gates!");
     }
 
-    //TODO: load these from a file
-    const int borderWidth = 32;
-    const int minInteractionCircleRadius = 100;
-    const double interactionCircleRadiusModifier = 3.0;
-    const int qubitRadius = 17;
-    const int labelFontHeight = 13;
-    const Color circleOutlineColor = black;
-    const Color circleFillColor = white;
-    const Color labelColor = black;
-    const Color edgeColor = black;
+    InteractionGraphLayout layout = parseInteractionGraphLayout(configurationPaths.config);
 
-    // const int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
-    int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
+    const int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
     // Prepare the interaction list per qubit.
-    // const std::vector<QubitInteractions> qubitInteractionList = findQubitInteractions(gates, amountOfQubits);
-    std::vector<Qubit> qubits = findQubitInteractions(gates, amountOfQubits);
+    const std::vector<Qubit> qubits = findQubitInteractions(gates, amountOfQubits);
     printInteractionList(qubits);
 
     if (qubits.size() > 1) {
 
         // Calculate the interaction circle properties.
         const double thetaSpacing = 2 * M_PI / amountOfQubits;
-        const int interactionCircleRadius = std::max(minInteractionCircleRadius,
-            (int) (interactionCircleRadiusModifier * calculateQubitCircleRadius(qubitRadius, thetaSpacing)));
-        const Position2 center{borderWidth + interactionCircleRadius, borderWidth + interactionCircleRadius};
+        const int interactionCircleRadius = std::max(layout.getMinInteractionCircleRadius(),
+            (int) (layout.getInteractionCircleRadiusModifier() * calculateQubitCircleRadius(layout.getQubitRadius(), thetaSpacing)));
+        const Position2 center{layout.getBorderWidth() + interactionCircleRadius, layout.getBorderWidth() + interactionCircleRadius};
 
         // Calculate the qubit coordinates on the interaction circle.
-        std::vector<std::pair<Qubit, Position2>> qubitPositions;//(amountOfQubits);
+        std::vector<std::pair<Qubit, Position2>> qubitPositions;
         for (const Qubit &qubit : qubits) {
             const double theta = qubit.qubitIndex * thetaSpacing;
             const Position2 position = calculateQubitPosition(interactionCircleRadius, theta, center);
             qubitPositions.push_back( {qubit, position} );
-            // qubitPositions[qubit.qubitIndex] = {qubit, position};
         }
 
         // Initialize the image.
         DOUT("Initializing image...");
         const int numberOfChannels = 3;
-        const int imageWidth = 2 * (borderWidth + interactionCircleRadius);
-        const int imageHeight = 2 * (borderWidth + interactionCircleRadius);
+        const int imageWidth = 2 * (layout.getBorderWidth() + interactionCircleRadius);
+        const int imageHeight = 2 * (layout.getBorderWidth() + interactionCircleRadius);
         cimg_library::CImg<unsigned char> image(imageWidth, imageHeight, 1, numberOfChannels);
         image.fill(255);
 
@@ -78,21 +66,21 @@ void visualizeInteractionGraph(const ql::quantum_program* program) {
                 const double theta = interactionsWithQubit.qubitIndex * thetaSpacing;
                 const Position2 interactionPosition = calculateQubitPosition(interactionCircleRadius, theta, center);
                 const std::string label = std::to_string(qubit.first.qubitIndex);
-                const Dimensions labelDimensions = calculateTextDimensions(label, labelFontHeight);
-                image.draw_line(qubitPosition.x, qubitPosition.y, interactionPosition.x, interactionPosition.y, edgeColor.data());
+                const Dimensions labelDimensions = calculateTextDimensions(label, layout.getLabelFontHeight());
+                image.draw_line(qubitPosition.x, qubitPosition.y, interactionPosition.x, interactionPosition.y, layout.getEdgeColor().data());
             }
         }
         // Draw the qubits.
         for (const std::pair<Qubit, Position2> &qubit : qubitPositions) {
             // Draw the circle outline.
-            image.draw_circle(qubit.second.x, qubit.second.y, qubitRadius, circleFillColor.data());
-            image.draw_circle(qubit.second.x, qubit.second.y, qubitRadius, circleOutlineColor.data(), 1, 0xFFFFFFFF);
+            image.draw_circle(qubit.second.x, qubit.second.y, layout.getQubitRadius(), layout.getCircleFillColor().data());
+            image.draw_circle(qubit.second.x, qubit.second.y, layout.getQubitRadius(), layout.getCircleOutlineColor().data(), 1, 0xFFFFFFFF);
             // Draw the qubit label.
             const std::string label = std::to_string(qubit.first.qubitIndex);
-            const Dimensions labelDimensions = calculateTextDimensions(label, labelFontHeight);
-            const int xGap = (2 * qubitRadius - labelDimensions.width) / 2;
-            const int yGap = (2 * qubitRadius - labelDimensions.height) / 2;
-            image.draw_text(qubit.second.x - qubitRadius + xGap, qubit.second.y - qubitRadius + yGap, label.c_str(), labelColor.data(), 0, 1, labelFontHeight);
+            const Dimensions labelDimensions = calculateTextDimensions(label, layout.getLabelFontHeight());
+            const int xGap = (2 * layout.getQubitRadius() - labelDimensions.width) / 2;
+            const int yGap = (2 * layout.getQubitRadius() - labelDimensions.height) / 2;
+            image.draw_text(qubit.second.x - layout.getQubitRadius() + xGap, qubit.second.y - layout.getQubitRadius() + yGap, label.c_str(), layout.getLabelColor().data(), 0, 1, layout.getLabelFontHeight());
         }
 
         // Display the image.
@@ -104,6 +92,40 @@ void visualizeInteractionGraph(const ql::quantum_program* program) {
     } else {
         FATAL("Quantum program contains no qubits. Unable to visualize qubit interaction graph!");
     }
+}
+
+InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath) {
+    DOUT("Parsing visualizer configuration file for interaction graph visualization...");
+
+    json fullConfig;
+    try {
+        fullConfig = load_json(configPath);
+    } catch (json::exception &e) {
+        FATAL("Failed to load the visualization config file: \n\t" << std::string(e.what()));
+    }
+
+    json config;
+    if (fullConfig.count("interaction_graph") == 1) {
+        config = fullConfig["interaction_graph"];
+    } else {
+        WOUT("Could not find interaction graph configuration in visualizer configuration file. Is it named correctly?");
+    }
+
+    // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
+    InteractionGraphLayout layout;
+
+    if (config.count("borderWidth") == 1)                       layout.setBorderWidth(config["borderWidth"]);
+    if (config.count("minInteractionCircleRadius") == 1)        layout.setMinInteractionCircleRadius(config["minInteractionCircleRadius"]);
+    if (config.count("interactionCircleRadiusModifier") == 1)   layout.setInteractionCircleRadiusModifier(config["interactionCircleRadiusModifier"]);
+    if (config.count("qubitRadius") == 1)                       layout.setQubitRadius(config["qubitRadius"]);
+    if (config.count("labelFontHeight") == 1)                   layout.setLabelFontHeight(config["labelFontHeight"]);
+    
+    if (config.count("circleOutlineColor") == 1)    layout.setCircleOutlineColor(config["circleOutlineColor"]);
+    if (config.count("circleFillColor") == 1)       layout.setCircleFillColor(config["circleFillColor"]);
+    if (config.count("labelColor") == 1)            layout.setLabelColor(config["labelColor"]);
+    if (config.count("edgeColor") == 1)             layout.setEdgeColor(config["edgeColor"]);
+
+    return layout;
 }
 
 double calculateQubitCircleRadius(const int qubitRadius, const double theta) {

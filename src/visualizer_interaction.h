@@ -24,7 +24,9 @@ struct Qubit {
     std::vector<InteractionsWithQubit> interactions;
 };
 
-void visualizeInteractionGraph(const ql::quantum_program* program);
+void visualizeInteractionGraph(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths);
+
+InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath);
 
 double calculateQubitCircleRadius(const int qubitRadius, const double theta);
 Position2 calculateQubitPosition(const int radius, const double theta, const Position2 center);

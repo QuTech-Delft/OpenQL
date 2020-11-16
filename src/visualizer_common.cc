@@ -45,10 +45,13 @@ namespace ql {
 // [GENERAL] update code style
 // [GENERAL] merge with develop
 // [GENERAL] split visualizer.cc into multiple files
+// [GENERAL] split Layout into multiple, one for each visualization type
+// [INTERACTION] add interaction graph layout object and load it from a file
 
 // -- IN PROGRESS ---
 // [INTERACTION] add number indicating amount of interactions for edges
 // [CIRCUIT] visualize before scheduler has been ran, no duration should be shown, just circuit in user-defined order
+// [MAPPING] add pseudogate containing virtual > real qubit mapping
 // [GENERAL] update documentation
 // [INTERACTION] output dot files for graphing software, default circle graph will also be shown
 
@@ -83,7 +86,7 @@ void visualize(const ql::quantum_program* program, const std::string &visualizat
     if (visualizationType == "CIRCUIT") {
         visualizeCircuit(program, configurationPaths);
     } else if (visualizationType == "INTERACTION_GRAPH") {
-        visualizeInteractionGraph(program);
+        visualizeInteractionGraph(program, configurationPaths);
     } else if (visualizationType == "MAPPING_GRAPH") {
         WOUT("Mapping graph visualization not yet implemented.");
     } else {

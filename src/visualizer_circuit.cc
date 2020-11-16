@@ -684,7 +684,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
 }
 
 CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
-    DOUT("Parsing visualizer configuration file.");
+    DOUT("Parsing visualizer configuration file for circuit visualization...");
 
     json fullConfig;
     try {

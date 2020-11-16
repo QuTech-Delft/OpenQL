@@ -1,7 +1,15 @@
 {
-    "interaction":
+    "interaction_graph":
     {
-        
+        "borderWidth": 32,
+        "minInteractionCircleRadius": 100,
+        "interactionCircleRadiusModifier": 3.0,
+        "qubitRadius": 17,
+        "labelFontHeight": 13,
+        "circleOutlineColor": [0, 0, 0],
+        "circleFillColor": [255, 255, 255],
+        "labelColor": [0, 0, 0],
+        "edgeColor": [0, 0, 0]
     },
     "circuit":
     {

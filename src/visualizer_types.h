@@ -99,8 +99,38 @@ struct GateProperties {
 
 // ------------- Layout declaration -------------- //
 
-struct InteractionGraphLayout {
+class InteractionGraphLayout {
+    private:
+    int borderWidth = 32;
+    int minInteractionCircleRadius = 100;
+    double interactionCircleRadiusModifier = 3.0;
+    int qubitRadius = 17;
+    int labelFontHeight = 13;
+    Color circleOutlineColor = black;
+    Color circleFillColor = white;
+    Color labelColor = black;
+    Color edgeColor = black;
 
+    public:
+    int getBorderWidth() const { return borderWidth; }
+    int getMinInteractionCircleRadius() const { return minInteractionCircleRadius; }
+    double getInteractionCircleRadiusModifier() const { return interactionCircleRadiusModifier; }
+    int getQubitRadius() const { return qubitRadius; }
+    int getLabelFontHeight() const { return labelFontHeight; }
+    Color getCircleOutlineColor() const { return circleOutlineColor; }
+    Color getCircleFillColor() const { return circleFillColor; }
+    Color getLabelColor() const { return labelColor; }
+    Color getEdgeColor() const { return edgeColor; }
+    
+    void setBorderWidth(const int argument) { assertPositive(argument, "borderWidth"); borderWidth = argument; }
+    void setMinInteractionCircleRadius(const int argument) { assertPositive(argument, "minInteractionCircleRadius"); minInteractionCircleRadius = argument; }
+    void setInteractionCircleRadiusModifier(const double argument) { assertPositive(argument, "interactionCircleRadiusModifier"); interactionCircleRadiusModifier = argument; }
+    void setQubitRadius(const int argument) { assertPositive(argument, "qubitRadius"); qubitRadius = argument; }
+    void setLabelFontHeight(const int argument) { assertPositive(argument, "labelFontHeight"); labelFontHeight = argument; }
+    void setCircleOutlineColor(const Color argument) { circleOutlineColor = argument; }
+    void setCircleFillColor(const Color argument) { circleFillColor = argument; }
+    void setLabelColor(const Color argument) { labelColor = argument; }
+    void setEdgeColor(const Color argument) { edgeColor = argument; }
 };
 
 // ----------------------------------------------- //
