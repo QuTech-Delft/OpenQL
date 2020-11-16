@@ -17,8 +17,15 @@
 
 namespace ql {
 
-void visualizeInteractionGraph(const std::vector<GateProperties> gates) {
+void visualizeInteractionGraph(const ql::quantum_program* program) {
     IOUT("Visualizing qubit interaction graph...");
+
+    // Get the gate list from the program.
+    DOUT("Getting gate list...");
+    std::vector<GateProperties> gates = parseGates(program);
+    if (gates.size() == 0) {
+        FATAL("Quantum program contains no gates!");
+    }
 
     //TODO: load these from a file
     const int borderWidth = 32;
@@ -39,13 +46,6 @@ void visualizeInteractionGraph(const std::vector<GateProperties> gates) {
     printInteractionList(qubits);
 
     if (qubits.size() > 1) {
-        // --------------------------- REMOVE WHEN DONE --------------------------- //
-        // const int amountOfTestQubits = 7;
-        // for (int i = 0; i < amountOfTestQubits; i++) {
-        //     qubits.push_back({amountOfQubits + i, {}});
-        // }
-        // amountOfQubits += amountOfTestQubits;
-        // --------------------------- REMOVE WHEN DONE --------------------------- //
 
         // Calculate the interaction circle properties.
         const double thetaSpacing = 2 * M_PI / amountOfQubits;

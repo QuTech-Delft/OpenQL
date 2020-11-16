@@ -22,9 +22,6 @@
 
 namespace ql {
 
-Layout parseConfiguration(const std::string &configPath);
-void validateLayout(Layout &layout);
-
 std::vector<GateProperties> parseGates(const ql::quantum_program* program);
 
 int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType);

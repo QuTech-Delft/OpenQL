@@ -99,6 +99,10 @@ struct GateProperties {
 
 // ------------- Layout declaration -------------- //
 
+struct InteractionGraphLayout {
+
+};
+
 // ----------------------------------------------- //
 // -                    CYCLES                   - //
 // ----------------------------------------------- //
@@ -348,10 +352,10 @@ struct Pulses {
 };
 
 // ----------------------------------------------- //
-// -                    LAYOUT                   - //
+// -                CIRCUIT LAYOUT               - //
 // ----------------------------------------------- //
 
-struct Layout {
+struct CircuitLayout {
     Cycles cycles;
     BitLines bitLines;
     Grid grid;

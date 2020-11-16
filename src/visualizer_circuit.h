@@ -79,18 +79,18 @@ class CircuitData {
 
     int calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const;
     std::vector<Cycle> generateCycles(std::vector<GateProperties> &gates, const int cycleDuration) const;
-    std::vector<EndPoints> findCuttableEmptyRanges(const Layout layout) const;
+    std::vector<EndPoints> findCuttableEmptyRanges(const CircuitLayout layout) const;
 
     void compressCycles();
     void partitionCyclesWithOverlap();
-    void cutEmptyCycles(const Layout layout);
+    void cutEmptyCycles(const CircuitLayout layout);
 
     public:
     const int amountOfQubits;
     const int amountOfClassicalBits;
     const int cycleDuration;
 
-    CircuitData(std::vector<GateProperties> &gates, const Layout layout, const int cycleDuration);
+    CircuitData(std::vector<GateProperties> &gates, const CircuitLayout layout, const int cycleDuration);
 
     Cycle getCycle(const size_t index) const;
     int getAmountOfCycles() const;
@@ -102,7 +102,7 @@ class CircuitData {
 
 class Structure {
     private:
-    const Layout layout;
+    const CircuitLayout layout;
 
     const Dimensions cellDimensions;
 
@@ -116,7 +116,7 @@ class Structure {
     std::vector<std::vector<Position4>> cbitCellPositions;
     std::vector<std::pair<EndPoints, bool>> bitLineSegments;
 
-    int calculateCellHeight(const Layout layout) const;
+    int calculateCellHeight(const CircuitLayout layout) const;
     int calculateImageWidth(const CircuitData circuitData) const;
     int calculateImageHeight(const CircuitData circuitData) const;
 
@@ -124,7 +124,7 @@ class Structure {
     void generateCellPositions(const CircuitData circuitData);
 
     public:
-    Structure(const Layout layout, const CircuitData circuitData);
+    Structure(const CircuitLayout layout, const CircuitData circuitData);
 
     int getImageWidth() const;
     int getImageHeight() const;
@@ -142,32 +142,34 @@ class Structure {
     void printProperties() const;
 };
 
-void visualizeCircuit(std::vector<GateProperties> gates, const Layout layout, const int cycleDuration, const std::string &waveformMappingPath);
+void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths);
 
+CircuitLayout parseCircuitConfiguration(const std::string &configPath);
+void validateCircuitLayout(CircuitLayout &layout);
 PulseVisualization parseWaveformMapping(const std::string &waveformMappingPath);
 
 std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gates, const PulseVisualization pulseVisualization, const CircuitData circuitData);
 double calculateMaxAmplitude(const std::vector<LineSegment> lineSegments);
 void insertFlatLineSegments(std::vector<LineSegment> &existingLineSegments, const int amountOfCycles);
 
-void drawCycleLabels(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
-void drawCycleEdges(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
-void drawBitLineLabels(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
-void drawBitLineEdges(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
+void drawCycleLabels(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const CircuitData circuitData, const Structure structure);
+void drawCycleEdges(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const CircuitData circuitData, const Structure structure);
+void drawBitLineLabels(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const CircuitData circuitData, const Structure structure);
+void drawBitLineEdges(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const CircuitData circuitData, const Structure structure);
 
-void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure);
-void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
+void drawBitLine(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure);
+void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const CircuitData circuitData, const Structure structure);
 
 void drawWiggle(cimg_library::CImg<unsigned char> &image, const int x0, const int x1, const int y, const int width, const int height, const Color color);
 
 void drawLine(cimg_library::CImg<unsigned char> &image, const Structure structure, const int cycleDuration, const Line line, const int qubitIndex, const int y, const int maxLineHeight, const Color color);
 
-void drawCycle(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure, const Cycle cycle);
-void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const GateProperties gate, const Structure structure, const int chunkOffset);
-void drawGateNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
-void drawControlNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
-void drawNotNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
-void drawCrossNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
+void drawCycle(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const CircuitData circuitData, const Structure structure, const Cycle cycle);
+void drawGate(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const CircuitData circuitData, const GateProperties gate, const Structure structure, const int chunkOffset);
+void drawGateNode(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const Structure structure, const Node node, const Cell cell);
+void drawControlNode(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const Structure structure, const Node node, const Cell cell);
+void drawNotNode(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const Structure structure, const Node node, const Cell cell);
+void drawCrossNode(cimg_library::CImg<unsigned char> &image, const CircuitLayout layout, const Structure structure, const Node node, const Cell cell);
 
 } // namespace ql
 

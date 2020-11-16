@@ -21,7 +21,7 @@ namespace ql {
 // =                     CircuitData                     = //
 // ======================================================= //
 
-CircuitData::CircuitData(std::vector<GateProperties> &gates, const Layout layout, const int cycleDuration) :
+CircuitData::CircuitData(std::vector<GateProperties> &gates, const CircuitLayout layout, const int cycleDuration) :
     cycles(generateCycles(gates, cycleDuration)),
     amountOfQubits(calculateAmountOfBits(gates, &GateProperties::operands)),
     amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands)),
@@ -184,7 +184,7 @@ void CircuitData::partitionCyclesWithOverlap()
     }
 }
 
-void CircuitData::cutEmptyCycles(const Layout layout) {
+void CircuitData::cutEmptyCycles(const CircuitLayout layout) {
     DOUT("Cutting empty cycles...");
 
     if (layout.pulses.areEnabled()) {
@@ -206,7 +206,7 @@ void CircuitData::cutEmptyCycles(const Layout layout) {
     }
 }
 
-std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout layout) const {
+std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const CircuitLayout layout) const {
     DOUT("Finding cuttable empty cycle ranges...");
 
     // Calculate the empty cycle ranges.
@@ -293,7 +293,7 @@ void CircuitData::printProperties() const {
 // =                      Structure                      = //
 // ======================================================= //
 
-Structure::Structure(const Layout layout, const CircuitData circuitData) :
+Structure::Structure(const CircuitLayout layout, const CircuitData circuitData) :
     layout(layout),
     cellDimensions({layout.grid.getCellSize(), calculateCellHeight(layout)}),
     cycleLabelsY(layout.grid.getBorderSize()),
@@ -306,7 +306,7 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
     imageHeight = calculateImageHeight(circuitData);
 }
 
-int Structure::calculateCellHeight(const Layout layout) const {
+int Structure::calculateCellHeight(const CircuitLayout layout) const {
     DOUT("Calculating cell height...");
 
     if (layout.pulses.areEnabled()) {
@@ -519,8 +519,26 @@ void Structure::printProperties() const {
     }
 }
 
-void visualizeCircuit(std::vector<GateProperties> gates, const Layout layout, const int cycleDuration, const std::string &waveformMappingPath)
+void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths)
 {
+    // Get the gate list from the program.
+    DOUT("Getting gate list...");
+    std::vector<GateProperties> gates = parseGates(program);
+    if (gates.size() == 0) {
+        FATAL("Quantum program contains no gates!");
+    }
+
+    // Parse and validate the layout and instruction configuration file.
+    CircuitLayout layout = parseCircuitConfiguration(configurationPaths.config);
+    validateCircuitLayout(layout);
+
+    // Calculate circuit properties.
+    DOUT("Calculating circuit properties...");
+    const int cycleDuration = safe_int_cast(program->platform.cycle_time);
+    DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
+    // Fix measurement gates without classical operands.
+    fixMeasurementOperands(gates);
+
     // Initialize the circuit properties.
     CircuitData circuitData(gates, layout, cycleDuration);
     circuitData.printProperties();
@@ -558,7 +576,7 @@ void visualizeCircuit(std::vector<GateProperties> gates, const Layout layout, co
 
     // Draw the circuit as pulses if enabled.
     if (layout.pulses.areEnabled()) {
-        PulseVisualization pulseVisualization = parseWaveformMapping(waveformMappingPath);
+        PulseVisualization pulseVisualization = parseWaveformMapping(configurationPaths.waveformMapping);
         const std::vector<QubitLines> linesPerQubit = generateQubitLines(gates, pulseVisualization, circuitData);
 
         // Draw the lines of each qubit.
@@ -663,6 +681,276 @@ void visualizeCircuit(std::vector<GateProperties> gates, const Layout layout, co
     // Display the image.
     DOUT("Displaying image...");
     image.display("Quantum Circuit");
+}
+
+CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
+    DOUT("Parsing visualizer configuration file.");
+
+    json fullConfig;
+    try {
+        fullConfig = load_json(configPath);
+    } catch (json::exception &e) {
+        FATAL("Failed to load the visualization config file: \n\t" << std::string(e.what()));
+    }
+
+    json config;
+    if (fullConfig.count("circuit") == 1) {
+        config = fullConfig["circuit"];
+    } else {
+        WOUT("Could not find circuit configuration in visualizer configuration file. Is it named correctly?");
+    }
+
+    // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
+    CircuitLayout layout;
+
+    // -------------------------------------- //
+    // -               CYCLES               - //
+    // -------------------------------------- //
+    if (config.count("cycles") == 1) {
+        json cycles = config["cycles"];
+
+        // LABELS
+        if (cycles.count("labels") == 1) {
+            json labels = cycles["labels"];
+
+            if (labels.count("show") == 1)          layout.cycles.labels.setEnabled(labels["show"]);
+            if (labels.count("inNanoSeconds") == 1) layout.cycles.labels.setInNanoSeconds(labels["inNanoSeconds"]);
+            if (labels.count("rowHeight") == 1)     layout.cycles.labels.setRowHeight(labels["rowHeight"]);
+            if (labels.count("fontHeight") == 1)    layout.cycles.labels.setFontHeight(labels["fontHeight"]);
+            if (labels.count("fontColor") == 1)     layout.cycles.labels.setFontColor(labels["fontColor"]);
+        }
+
+        // EDGES
+        if (cycles.count("edges") == 1) {
+            json edges = cycles["edges"];
+
+            if (edges.count("show") == 1)   layout.cycles.edges.setEnabled(edges["show"]);
+            if (edges.count("color") == 1)  layout.cycles.edges.setColor(edges["color"]);
+            if (edges.count("alpha") == 1)  layout.cycles.edges.setAlpha(edges["alpha"]);
+        }
+
+        // CUTTING
+        if (cycles.count("cutting") == 1) {
+            json cutting = cycles["cutting"];
+
+            if (cutting.count("cut") == 1)                      layout.cycles.cutting.setEnabled(cutting["cut"]);
+            if (cutting.count("emptyCycleThreshold") == 1)      layout.cycles.cutting.setEmptyCycleThreshold(cutting["emptyCycleThreshold"]);
+            if (cutting.count("cutCycleWidth") == 1)            layout.cycles.cutting.setCutCycleWidth(cutting["cutCycleWidth"]);
+            if (cutting.count("cutCycleWidthModifier") == 1)    layout.cycles.cutting.setCutCycleWidthModifier(cutting["cutCycleWidthModifier"]);
+        }
+        
+        if (cycles.count("compress") == 1)                      layout.cycles.setCompressed(cycles["compress"]);
+        if (cycles.count("partitionCyclesWithOverlap") == 1)    layout.cycles.setPartitioned(cycles["partitionCyclesWithOverlap"]);
+    }
+
+    // -------------------------------------- //
+    // -              BIT LINES             - //
+    // -------------------------------------- //
+    if (config.count("bitLines") == 1)
+    {
+        json bitLines = config["bitLines"];
+
+        // LABELS
+        if (bitLines.count("labels") == 1) {
+            json labels = bitLines["labels"];
+
+            if (labels.count("show") == 1)          layout.bitLines.labels.setEnabled(labels["show"]);
+            if (labels.count("columnWidth") == 1)   layout.bitLines.labels.setColumnWidth(labels["columnWidth"]);
+            if (labels.count("fontHeight") == 1)    layout.bitLines.labels.setFontHeight(labels["fontHeight"]);
+            if (labels.count("qbitColor") == 1)     layout.bitLines.labels.setQbitColor(labels["qbitColor"]);
+            if (labels.count("cbitColor") == 1)     layout.bitLines.labels.setCbitColor(labels["cbitColor"]);
+        }
+
+        // QUANTUM
+        if (bitLines.count("quantum") == 1) {
+            json quantum = bitLines["quantum"];
+
+            if (quantum.count("color") == 1) layout.bitLines.quantum.setColor(quantum["color"]);
+        }
+
+        // CLASSICAL
+        if (bitLines.count("classical") == 1) {
+            json classical = bitLines["classical"];
+
+            if (classical.count("show") == 1)           layout.bitLines.classical.setEnabled(classical["show"]);
+            if (classical.count("group") == 1)          layout.bitLines.classical.setGrouped(classical["group"]);
+            if (classical.count("groupedLineGap") == 1) layout.bitLines.classical.setGroupedLineGap(classical["groupedLineGap"]);
+            if (classical.count("color") == 1)          layout.bitLines.classical.setColor(classical["color"]);
+        }
+
+        // EDGES
+        if (bitLines.count("edges") == 1) {
+            json edges = bitLines["edges"];
+
+            if (edges.count("show") == 1)       layout.bitLines.edges.setEnabled(edges["show"]);
+            if (edges.count("thickness") == 1)  layout.bitLines.edges.setThickness(edges["thickness"]);
+            if (edges.count("color") == 1)      layout.bitLines.edges.setColor(edges["color"]);
+            if (edges.count("alpha") == 1)      layout.bitLines.edges.setAlpha(edges["alpha"]);
+        }
+    }
+
+    // -------------------------------------- //
+    // -                GRID                - //
+    // -------------------------------------- //
+    if (config.count("grid") == 1) {
+        json grid = config["grid"];
+
+        if (grid.count("cellSize") == 1)    layout.grid.setCellSize(grid["cellSize"]);
+        if (grid.count("borderSize") == 1)  layout.grid.setBorderSize(grid["borderSize"]);
+    }
+
+    // -------------------------------------- //
+    // -       GATE DURATION OUTLINES       - //
+    // -------------------------------------- //
+    if (config.count("gateDurationOutlines") == 1) {
+        json gateDurationOutlines = config["gateDurationOutlines"];
+
+        if (gateDurationOutlines.count("show") == 1)         layout.gateDurationOutlines.setEnabled(gateDurationOutlines["show"]);
+        if (gateDurationOutlines.count("gap") == 1)          layout.gateDurationOutlines.setGap(gateDurationOutlines["gap"]);
+        if (gateDurationOutlines.count("fillAlpha") == 1)    layout.gateDurationOutlines.setFillAlpha(gateDurationOutlines["fillAlpha"]);
+        if (gateDurationOutlines.count("outlineAlpha") == 1) layout.gateDurationOutlines.setOutlineAlpha(gateDurationOutlines["outlineAlpha"]);
+        if (gateDurationOutlines.count("outlineColor") == 1) layout.gateDurationOutlines.setOutlineColor(gateDurationOutlines["outlineColor"]);
+    }
+
+    // -------------------------------------- //
+    // -            MEASUREMENTS            - //
+    // -------------------------------------- //
+    if (config.count("measurements") == 1) {
+        json measurements = config["measurements"];
+
+        if (measurements.count("drawConnection") == 1)  layout.measurements.enableDrawConnection(measurements["drawConnection"]);
+        if (measurements.count("lineSpacing") == 1)     layout.measurements.setLineSpacing(measurements["lineSpacing"]);
+        if (measurements.count("arrowSize") == 1)       layout.measurements.setArrowSize(measurements["arrowSize"]);
+    }
+
+    // -------------------------------------- //
+    // -               PULSES               - //
+    // -------------------------------------- //
+    if (config.count("pulses") == 1) {
+        json pulses = config["pulses"];
+
+        if (pulses.count("displayGatesAsPulses") == 1)      layout.pulses.setEnabled(pulses["displayGatesAsPulses"]);
+        if (pulses.count("pulseRowHeightMicrowave") == 1)   layout.pulses.setPulseRowHeightMicrowave(pulses["pulseRowHeightMicrowave"]);
+        if (pulses.count("pulseRowHeightFlux") == 1)        layout.pulses.setPulseRowHeightFlux(pulses["pulseRowHeightFlux"]);
+        if (pulses.count("pulseRowHeightReadout") == 1)     layout.pulses.setPulseRowHeightReadout(pulses["pulseRowHeightReadout"]);
+        if (pulses.count("pulseColorMicrowave") == 1)       layout.pulses.setPulseColorMicrowave(pulses["pulseColorMicrowave"]);
+        if (pulses.count("pulseColorFlux") == 1)            layout.pulses.setPulseColorFlux(pulses["pulseColorFlux"]);
+        if (pulses.count("pulseColorReadout") == 1)         layout.pulses.setPulseColorReadout(pulses["pulseColorReadout"]);
+    }
+
+    // Load the custom instruction visualization parameters.
+    if (config.count("instructions") == 1) {
+        for (const auto &instruction : config["instructions"].items()) {
+            try {
+                GateVisual gateVisual;
+                json content = instruction.value();
+
+                // Load the connection color.
+                json connectionColor = content["connectionColor"];
+                gateVisual.connectionColor[0] = connectionColor[0];
+                gateVisual.connectionColor[1] = connectionColor[1];
+                gateVisual.connectionColor[2] = connectionColor[2];
+                DOUT("Connection color: [" 
+                    << (int)gateVisual.connectionColor[0] << ","
+                    << (int)gateVisual.connectionColor[1] << ","
+                    << (int)gateVisual.connectionColor[2] << "]");
+
+                // Load the individual nodes.
+                json nodes = content["nodes"];
+                for (size_t i = 0; i < nodes.size(); i++) {
+                    json node = nodes[i];
+                    
+                    Color fontColor = {node["fontColor"][0], node["fontColor"][1], node["fontColor"][2]};
+                    Color backgroundColor = {node["backgroundColor"][0], node["backgroundColor"][1], node["backgroundColor"][2]};
+                    Color outlineColor = {node["outlineColor"][0], node["outlineColor"][1], node["outlineColor"][2]};
+                    
+                    NodeType nodeType;
+                    if (node["type"] == "NONE") {
+                        nodeType = NONE;
+                    } else if (node["type"] == "GATE") {
+                        nodeType = GATE;
+                    } else if (node["type"] == "CONTROL") {
+                        nodeType = CONTROL;
+                    } else if (node["type"] == "NOT") {
+                        nodeType = NOT;
+                    } else if (node["type"] == "CROSS") {
+                        nodeType = CROSS;
+                    } else {
+                        WOUT("Unknown gate display node type! Defaulting to type NONE...");
+                        nodeType = NONE;
+                    }
+                    
+                    Node loadedNode = {
+                        nodeType,
+                        node["radius"],
+                        node["displayName"],
+                        node["fontHeight"],
+                        fontColor,
+                        backgroundColor,
+                        outlineColor
+                    };
+                    
+                    gateVisual.nodes.push_back(loadedNode);
+                    
+                    DOUT("[type: " << node["type"] << "] "
+                        << "[radius: " << gateVisual.nodes.at(i).radius << "] "
+                        << "[displayName: " << gateVisual.nodes.at(i).displayName << "] "
+                        << "[fontHeight: " << gateVisual.nodes.at(i).fontHeight << "] "
+                        << "[fontColor: "
+                            << (int)gateVisual.nodes.at(i).fontColor[0] << ","
+                            << (int)gateVisual.nodes.at(i).fontColor[1] << ","
+                            << (int)gateVisual.nodes.at(i).fontColor[2] << "] "
+                        << "[backgroundColor: "
+                            << (int)gateVisual.nodes.at(i).backgroundColor[0] << ","
+                            << (int)gateVisual.nodes.at(i).backgroundColor[1] << ","
+                            << (int)gateVisual.nodes.at(i).backgroundColor[2] << "] "
+                        << "[outlineColor: "
+                            << (int)gateVisual.nodes.at(i).outlineColor[0] << ","
+                            << (int)gateVisual.nodes.at(i).outlineColor[1] << ","
+                            << (int)gateVisual.nodes.at(i).outlineColor[2] << "]");
+                }
+
+                layout.customGateVisuals.insert({instruction.key(), gateVisual});
+            } catch (json::exception &e) {
+                WOUT("Failed to load visualization parameters for instruction: '" << instruction.key()
+                    << "' \n\t" << std::string(e.what()));
+            }
+        }
+    } else {
+        WOUT("Did not find 'instructions' attribute! The visualizer will try to fall back on default gate visualizations.");
+    }
+
+    return layout;
+}
+
+void validateCircuitLayout(CircuitLayout &layout) {
+    DOUT("Validating layout...");
+
+    //TODO: add more validation
+    
+    if (layout.cycles.cutting.getEmptyCycleThreshold() < 1) {
+        WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to "
+            << layout.cycles.cutting.getEmptyCycleThreshold() << ".");
+        layout.cycles.cutting.setEmptyCycleThreshold(1);
+    }
+
+    if (layout.pulses.areEnabled()) {
+        if (layout.bitLines.classical.isEnabled()) {
+            WOUT("Adjusting 'showClassicalLines' to false. Unable to show classical lines when 'displayGatesAsPulses' is true!");
+            layout.bitLines.classical.setEnabled(false);
+        }
+        if (layout.cycles.arePartitioned()) {
+            WOUT("Adjusting 'partitionCyclesWithOverlap' to false. It is unnecessary to partition cycles when 'displayGatesAsPulses' is true!");
+            layout.cycles.setPartitioned(false);
+        }
+        if (layout.cycles.areCompressed()) {
+            WOUT("Adjusting 'compressCycles' to false. Cannot compress cycles when 'displayGatesAsPulses' is true!");
+            layout.cycles.setCompressed(false);
+        }	
+    }
+
+    if (!layout.bitLines.labels.areEnabled())   layout.bitLines.labels.setColumnWidth(0);
+    if (!layout.cycles.labels.areEnabled())     layout.cycles.labels.setRowHeight(0);
 }
 
 PulseVisualization parseWaveformMapping(const std::string &waveformMappingPath) {
@@ -946,7 +1234,7 @@ void insertFlatLineSegments(std::vector<LineSegment> &existingLineSegments, cons
 }
 
 void drawCycleLabels(cimg_library::CImg<unsigned char> &image,
-                     const Layout layout,
+                     const CircuitLayout layout,
                      const CircuitData circuitData,
                      const Structure structure) {
     DOUT("Drawing cycle labels...");
@@ -982,7 +1270,7 @@ void drawCycleLabels(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawCycleEdges(cimg_library::CImg<unsigned char> &image,
-                    const Layout layout,
+                    const CircuitLayout layout,
                     const CircuitData circuitData,
                     const Structure structure) {
     DOUT("Drawing cycle edges...");
@@ -1000,7 +1288,7 @@ void drawCycleEdges(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawBitLineLabels(cimg_library::CImg<unsigned char> &image,
-                       const Layout layout,
+                       const CircuitLayout layout,
                        const CircuitData circuitData,
                        const Structure structure)
 {
@@ -1046,7 +1334,7 @@ void drawBitLineLabels(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawBitLineEdges(cimg_library::CImg<unsigned char> &image,
-                      const Layout layout,
+                      const CircuitLayout layout,
                       const CircuitData circuitData,
                       const Structure structure)
 {
@@ -1085,7 +1373,7 @@ void drawBitLineEdges(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawBitLine(cimg_library::CImg<unsigned char> &image,
-                 const Layout layout,
+                 const CircuitLayout layout,
                  const BitType bitType,
                  const int row,
                  const CircuitData circuitData,
@@ -1118,7 +1406,7 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char> &image,
-                                 const Layout layout,
+                                 const CircuitLayout layout,
                                  const CircuitData circuitData,
                                  const Structure structure) {
     DOUT("Drawing grouped classical bit lines...");
@@ -1257,7 +1545,7 @@ void drawLine(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawCycle(cimg_library::CImg<unsigned char> &image,
-               const Layout layout,
+               const CircuitLayout layout,
                const CircuitData circuitData,
                const Structure structure,
                const Cycle cycle)
@@ -1276,7 +1564,7 @@ void drawCycle(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawGate(cimg_library::CImg<unsigned char> &image,
-              const Layout layout,
+              const CircuitLayout layout,
               const CircuitData circuitData,
               const GateProperties gate,
               const Structure structure,
@@ -1431,7 +1719,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawGateNode(cimg_library::CImg<unsigned char> &image,
-                  const Layout layout,
+                  const CircuitLayout layout,
                   const Structure structure,
                   const Node node,
                   const Cell cell) {
@@ -1457,7 +1745,7 @@ void drawGateNode(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawControlNode(cimg_library::CImg<unsigned char> &image,
-                     const Layout layout,
+                     const CircuitLayout layout,
                      const Structure structure,
                      const Node node,
                      const Cell cell) {
@@ -1471,7 +1759,7 @@ void drawControlNode(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawNotNode(cimg_library::CImg<unsigned char> &image,
-                 const Layout layout,
+                 const CircuitLayout layout,
                  const Structure structure,
                  const Node node,
                  const Cell cell) {
@@ -1500,7 +1788,7 @@ void drawNotNode(cimg_library::CImg<unsigned char> &image,
 }
 
 void drawCrossNode(cimg_library::CImg<unsigned char> &image,
-                   const Layout layout,
+                   const CircuitLayout layout,
                    const Structure structure,
                    const Node node,
                    const Cell cell) {
