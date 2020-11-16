@@ -10,7 +10,7 @@
 #ifdef WITH_VISUALIZER
  
 #include "visualizer.h"
-#include "visualizer_common.h"
+#include "visualizer_types.h"
 #include "CImg.h"
 
 namespace ql {

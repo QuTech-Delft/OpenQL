@@ -10,6 +10,7 @@
 #ifdef WITH_VISUALIZER
 
 #include "visualizer.h"
+#include "visualizer_types.h"
 
 // These undefs are necessary to avoid name collisions between CImg and Lemon.
 #undef cimg_use_opencv
@@ -20,79 +21,6 @@
 #undef OUT
 
 namespace ql {
-
-// enum class VisualizationType {
-
-//     /**
-//      * Visualize the quantum program as a circuit composed of abstract gates, or
-//      * waveforms acting on qubits and classical registers
-//      */
-//     CIRCUIT,
-
-//     /**
-//      * Visualize the quantum program as a qubit interaction graph, with the
-//      * labels of edges between qubits indicating the number of interactions.
-//      */
-//     INTERACTION_GRAPH
-// };
-
-enum BitType {CLASSICAL, QUANTUM};
-
-struct Position4 {
-    long x0;
-    long y0;
-    long x1;
-    long y1;
-
-    Position4() = delete;
-};
-
-struct Position2 {
-    long x;
-    long y;
-
-    Position2() = delete;
-};
-
-struct EndPoints {
-    const int start;
-    const int end;
-};
-
-struct Dimensions {
-    const int width;
-    const int height;
-};
-
-struct GateOperand {
-    BitType bitType;
-    int index;
-
-    friend bool operator<(const GateOperand &lhs, const GateOperand &rhs) {
-        if (lhs.bitType == QUANTUM && rhs.bitType == CLASSICAL) return true;
-        if (lhs.bitType == CLASSICAL && rhs.bitType == QUANTUM) return false;
-        return lhs.index < rhs.index;
-    }
-
-    friend bool operator>(const GateOperand &lhs, const GateOperand &rhs) {return operator<(rhs, lhs);}
-    friend bool operator<=(const GateOperand &lhs, const GateOperand &rhs) {return !operator>(lhs, rhs);}
-    friend bool operator>=(const GateOperand &lhs, const GateOperand &rhs) {return !operator<(lhs, rhs);}
-
-    GateOperand() = delete;
-};
-
-struct GateProperties {
-    std::string name;
-    std::vector<int> operands;
-    std::vector<int> creg_operands;
-    int duration;
-    int cycle;
-    gate_type_t type;
-    std::vector<int> codewords;
-    std::string visual_type;
-
-    GateProperties() = delete;
-};
 
 Layout parseConfiguration(const std::string &configPath);
 void validateLayout(Layout &layout);

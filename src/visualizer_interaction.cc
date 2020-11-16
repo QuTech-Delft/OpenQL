@@ -8,6 +8,7 @@
 #ifdef WITH_VISUALIZER
 
 #include "visualizer.h"
+#include "visualizer_types.h"
 #include "visualizer_common.h"
 #include "visualizer_interaction.h"
 #include "CImg.h"
