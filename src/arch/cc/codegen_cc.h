@@ -106,7 +106,8 @@ private:    // vars
 private:    // funcs
     // Some helpers to ease nice assembly formatting
     void emit(const char *labelOrComment, const char *instr="");
-    void emit(const char *label, const char *instr, const std::string &qops, const char *comment="");
+    void emit(const char *label, const char *instr, const std::string &ops, const char *comment="");
+	void emitDp(const std::string &sel, const std::string &statement, const std::string &comment="");
 
     // helpers
     void emitProgramStart();
