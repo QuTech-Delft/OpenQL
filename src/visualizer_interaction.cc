@@ -73,7 +73,7 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
                 if (isEdgeAlreadyDrawn(drawnEdges, qubit.first.qubitIndex, interactionsWithQubit.qubitIndex))
                     continue;
                 
-                drawnEdges.push_back( {qubit.first.qubitIndex,interactionsWithQubit.qubitIndex } );
+                drawnEdges.push_back( {qubit.first.qubitIndex, interactionsWithQubit.qubitIndex } );
 
                 // Draw the edge.
                 const double theta = interactionsWithQubit.qubitIndex * thetaSpacing;
@@ -135,16 +135,34 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
 }
 
 void generateAndSaveDOTFile(const std::vector<Qubit> qubits) {
-    IOUT("Generating DOT file for qubit interaction graph...");
-    std::string output = "graph qubit_interaction_graph {\n";
-    output += "    TEST TEST TEST\n";
-    output += "}";
-    const std::string filename = generateFilePath("qubit_interaction_graph", "dot");
-    IOUT(filename);
-    std::ofstream file(filename);
-    file << output;
-    file.close();
-    IOUT("DOT file saved!");
+    try
+    {
+        IOUT("Generating DOT file for qubit interaction graph...");
+
+        std::ofstream output(generateFilePath("qubit_interaction_graph", "dot"));
+        output << "graph qubit_interaction_graph {\n";
+        output << "    node [shape=circle];\n";
+
+        std::vector<std::pair<int, int>> drawnEdges;
+        for (const Qubit &qubit : qubits) {
+            for (const InteractionsWithQubit &target : qubit.interactions) {
+                if (isEdgeAlreadyDrawn(drawnEdges, qubit.qubitIndex, target.qubitIndex))
+                    continue;
+                drawnEdges.push_back( {qubit.qubitIndex, target.qubitIndex } );
+
+                output << "    " << qubit.qubitIndex << " -- " << target.qubitIndex << " [label=" << target.amountOfInteractions << "];\n";
+            }
+        }
+
+        output << "}";
+        output.close();
+
+        IOUT("DOT file saved!");
+    }
+    catch(const std::exception& e)
+    {
+        WOUT("Could not save DOT file for qubit interaction graph: " << e.what());
+    }
 }
 
 InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath) {
