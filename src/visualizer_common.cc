@@ -10,6 +10,7 @@
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
 #include "visualizer_interaction.h"
+#include "options.h"
 #include "json.h"
 
 #include <iostream>
@@ -43,7 +44,6 @@ namespace ql {
 // [CIRCUIT] check for negative/invalid values during layout validation
 // [CIRCUIT] GateProperties validation on construction (test with visualizer pass called at different points (during different passes) during compilation)
 // [GENERAL] update code style
-// [GENERAL] merge with develop
 // [GENERAL] split visualizer.cc into multiple files
 // [GENERAL] split Layout into multiple, one for each visualization type
 // [INTERACTION] add interaction graph layout object and load it from a file
@@ -64,10 +64,10 @@ namespace ql {
 //           comprising the entire range?
 // [CIRCUIT] when measurement connections are not shown, allow overlap of measurement gates
 // [CIRCUIT] when gate is skipped due to whatever reason, show a dummy gate outline with a question mark, indicating where the gate is (maybe)
-// [CIRCUIT] display wait/barrier gate (need wait/barrier gate fix first)
+// [CIRCUIT] display barriers (need barrier fix first)
 // [CIRCUIT] add classical bit number to measurement connection when classical lines are grouped
 // [CIRCUIT] implement measurement symbol (to replace the M on measurement gates)
-// [CIRCUIT] generate default gate visuals from the configuration file
+// [CIRCUIT] generate default gate visuals from the hardware configuration file if none are supplied in the instruction section of the visualizer config file
 
 #ifndef WITH_VISUALIZER
 
@@ -252,6 +252,10 @@ void printGates(const std::vector<GateProperties> gates) {
 
         IOUT("\tvisual_type: " << gate.visual_type);
     }
+}
+
+std::string generateFilePath(const std::string &filename, const std::string &extension) {
+    return ql::options::get("output_dir") + "/" + filename + "." + extension;
 }
 
 int safe_int_cast(const size_t argument) {

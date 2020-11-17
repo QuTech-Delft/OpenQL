@@ -35,6 +35,11 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
     const std::vector<Qubit> qubits = findQubitInteractions(gates, amountOfQubits);
     // printInteractionList(qubits);
 
+    // Generate the DOT file if enabled.
+    if (layout.isDotFileOutputEnabled()) {
+        generateAndSaveDOTFile(qubits);
+    }
+
     if (qubits.size() > 1) {
 
         // Calculate the interaction circle properties.
@@ -65,7 +70,7 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
         for (const std::pair<Qubit, Position2> &qubit : qubitPositions) {
             const Position2 qubitPosition = qubit.second;
             for (const InteractionsWithQubit &interactionsWithQubit : qubit.first.interactions) {
-                if (edgeAlreadyDrawn(drawnEdges, qubit.first.qubitIndex, interactionsWithQubit.qubitIndex))
+                if (isEdgeAlreadyDrawn(drawnEdges, qubit.first.qubitIndex, interactionsWithQubit.qubitIndex))
                     continue;
                 
                 drawnEdges.push_back( {qubit.first.qubitIndex,interactionsWithQubit.qubitIndex } );
@@ -129,6 +134,19 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
     }
 }
 
+void generateAndSaveDOTFile(const std::vector<Qubit> qubits) {
+    IOUT("Generating DOT file for qubit interaction graph...");
+    std::string output = "graph qubit_interaction_graph {\n";
+    output += "    TEST TEST TEST\n";
+    output += "}";
+    const std::string filename = generateFilePath("qubit_interaction_graph", "dot");
+    IOUT(filename);
+    std::ofstream file(filename);
+    file << output;
+    file.close();
+    IOUT("DOT file saved!");
+}
+
 InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath) {
     DOUT("Parsing visualizer configuration file for interaction graph visualization...");
 
@@ -155,6 +173,8 @@ InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath
     }
 
     // Load the parameters.
+    if (config.count("outputDotFile") == 1)     layout.enableDotFileOutput(config["outputDotFile"]);
+
     if (config.count("borderWidth") == 1)                       layout.setBorderWidth(config["borderWidth"]);
     if (config.count("minInteractionCircleRadius") == 1)        layout.setMinInteractionCircleRadius(config["minInteractionCircleRadius"]);
     if (config.count("interactionCircleRadiusModifier") == 1)   layout.setInteractionCircleRadiusModifier(config["interactionCircleRadiusModifier"]);
@@ -241,7 +261,7 @@ std::vector<Qubit> findQubitInteractions(const std::vector<GateProperties> gates
     return qubits;
 }
 
-bool edgeAlreadyDrawn(const std::vector<std::pair<int, int>> drawnEdges, const int first, const int second) {
+bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> drawnEdges, const int first, const int second) {
     // Check if the edge already exists.
     for (const std::pair<int, int> &drawnEdge : drawnEdges) {
         if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {

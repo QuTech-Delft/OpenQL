@@ -26,13 +26,15 @@ struct Qubit {
 
 void visualizeInteractionGraph(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths);
 
+void generateAndSaveDOTFile(const std::vector<Qubit> qubits);
+
 InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath);
 
 double calculateQubitCircleRadius(const int qubitRadius, const double theta);
 Position2 calculateQubitPosition(const int radius, const double theta, const Position2 center);
 std::vector<Qubit> findQubitInteractions(const std::vector<GateProperties> gates, const int amountOfQubits);
 
-bool edgeAlreadyDrawn(const std::vector<std::pair<int, int>> drawnEdges, const int first, const int second);
+bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> drawnEdges, const int first, const int second);
 
 void printInteractionList(const std::vector<Qubit> qubits);
 

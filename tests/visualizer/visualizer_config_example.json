@@ -2,6 +2,7 @@
     "saveImage": true,
     "interactionGraph":
     {
+        "outputDotFile": true,
         "borderWidth": 32,
         "minInteractionCircleRadius": 100,
         "interactionCircleRadiusModifier": 3.0,

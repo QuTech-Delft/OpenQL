@@ -101,6 +101,7 @@ struct GateProperties {
 
 class InteractionGraphLayout {
     private:
+    bool outputDotFile = false;
     int borderWidth = 32;
     int minInteractionCircleRadius = 100;
     double interactionCircleRadiusModifier = 3.0;
@@ -114,6 +115,7 @@ class InteractionGraphLayout {
     public:
     bool saveImage = false;
 
+    bool isDotFileOutputEnabled() const { return outputDotFile; }
     int getBorderWidth() const { return borderWidth; }
     int getMinInteractionCircleRadius() const { return minInteractionCircleRadius; }
     double getInteractionCircleRadiusModifier() const { return interactionCircleRadiusModifier; }
@@ -124,6 +126,7 @@ class InteractionGraphLayout {
     Color getLabelColor() const { return labelColor; }
     Color getEdgeColor() const { return edgeColor; }
     
+    void enableDotFileOutput(const bool argument) { outputDotFile = argument; }
     void setBorderWidth(const int argument) { assertPositive(argument, "borderWidth"); borderWidth = argument; }
     void setMinInteractionCircleRadius(const int argument) { assertPositive(argument, "minInteractionCircleRadius"); minInteractionCircleRadius = argument; }
     void setInteractionCircleRadiusModifier(const double argument) { assertPositive(argument, "interactionCircleRadiusModifier"); interactionCircleRadiusModifier = argument; }

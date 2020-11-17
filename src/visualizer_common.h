@@ -35,6 +35,8 @@ bool isMeasurement(const GateProperties gate);
 
 Dimensions calculateTextDimensions(const std::string &text, const int fontHeight);
 
+std::string generateFilePath(const std::string &filename, const std::string &extension);
+
 void printGates(const std::vector<GateProperties> gates);
 int safe_int_cast(const size_t argument);
 

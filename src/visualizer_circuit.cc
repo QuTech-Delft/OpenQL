@@ -697,7 +697,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
 
     // Save the image if enabled.
     if (layout.saveImage) {
-        image.save("circuit_visualization.bmp");
+        image.save(generateFilePath("circuit_visualization", "bmp").c_str());
     }
 
     // Display the image.
