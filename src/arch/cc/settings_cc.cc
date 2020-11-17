@@ -91,7 +91,7 @@ settings_cc::tSignalDef settings_cc::findSignalDefinition(const json &instructio
     if(JSON_EXISTS(instruction["cc"], "ref_signal")) {                          // optional syntax: "ref_signal"
         std::string refSignal = instruction["cc"]["ref_signal"];
         ret.signal = (*jsonSignals)[refSignal];                                 // poor man's JSON pointer
-        if(ret.signal.size() == 0) {
+        if(ret.signal.empty()) {
             JSON_FATAL("instruction '" << iname <<
                   "': ref_signal '" << refSignal << "' does not resolve");
         }

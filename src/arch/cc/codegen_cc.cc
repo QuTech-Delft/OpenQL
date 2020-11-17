@@ -50,7 +50,7 @@ void codegen_cc::init(const quantum_platform &platform)
 
     // optionally preload codewordTable
     std::string map_input_file = options::get("backend_cc_map_input_file");
-    if(map_input_file != "") {
+    if(!map_input_file.empty()) {
         DOUT("loading map_input_file='" << map_input_file << "'");
         json map = load_json(map_input_file);
         codewordTable = map["codeword_table"];      // FIXME: use json_get
@@ -172,8 +172,8 @@ void codegen_cc::bundleStart(const std::string &cmnt)
     tBundleInfo empty = {"", 0, settings_cc::NO_STATIC_CODEWORD_OVERRIDE, -1, -1};	// FIXME: create proper constructor
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
-        bundleInfo.push_back(std::vector<tBundleInfo>(ic.controlModeGroupCnt,   // one tBundleInfo per group in the control mode selected for instrument
-                                                      empty));  				// empty tBundleInfo
+        bundleInfo.emplace_back(ic.controlModeGroupCnt,   	// one tBundleInfo per group in the control mode selected for instrument
+								empty);  					// empty tBundleInfo
     }
 
     comment(cmnt);
@@ -351,7 +351,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             tBundleInfo *bi = &bundleInfo[instrIdx][group];                 // shorthand
 
             // handle output
-            if(bi->signalValue != "") {                                     // signal defined, i.e.: we need to output something
+            if(!bi->signalValue.empty()) {                                  // signal defined, i.e.: we need to output something
                 // compute maximum duration over all groups
                 if(bi->durationInCycles > maxDurationInCycles) maxDurationInCycles = bi->durationInCycles;
 
@@ -364,8 +364,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                 instrHasOutput = true;
             } // if(signal defined)
 
-#if OPT_FEEDBACK   // FIXME: WIP
-            // handle readout
+#if OPT_FEEDBACK
+            // handle readout (i.e. when necessary, create readoutMap entry, and set flags bundleHasReadout and instrHasReadout)
             // NB: we allow for instruments that perform the input side of readout only, without signal generation by the
             // same instrument, which might be needed in the future
             // FIXME: also generate VCD
@@ -482,18 +482,16 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 					int group = readout.first;
 					tReadoutInfo ri = readout.second;
 
-					emitDp(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+					emitDp(SS2S("[" << ic.ii.slot << "]"),      	// CCIO selector
 							SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
 							SS2S("# cop " << ri.cop << " = readout(q" << ri.qubit << ")"));
 
 					int mySmAddr = ri.smBit/8;
 				}
 
-				// compute DSM transfer size tag (for 'seq_in_sm' instruction)
-				int sizeTag = getSizeTag(readoutMap.size());
-
 				// emit code for slot input
-				emit(SS2S("[" << ic.ii.slot << "]").c_str(),      // CCIO selector
+				int sizeTag = getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
+				emit(SS2S("[" << ic.ii.slot << "]").c_str(),      	// CCIO selector
 					"seq_in_sm",
 					SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
 					SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": readout on '" << ic.ii.instrumentName+"'").c_str());
@@ -501,10 +499,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			} else {
 				// FIXME:
 				int smAddr = 0;
-				int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle
+				int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
 
 				// emit code for non-participating instrument
-				emit(SS2S("[" << ic.ii.slot << "]").c_str(),      // CCIO selector
+				emit(SS2S("[" << ic.ii.slot << "]").c_str(),      	// CCIO selector
 					"seq_inv_sm",
 					SS2S("S" << smAddr << ","  << smTotalSize),
 					SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": no readout on '" << ic.ii.instrumentName+"'").c_str());
@@ -513,7 +511,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 			// code generation common to paths above
 			int smWait = settings.getSmWait();
-			emit(SS2S("[" << ic.ii.slot << "]").c_str(),      // CCIO selector
+			emit(SS2S("[" << ic.ii.slot << "]").c_str(),      		// CCIO selector
 				"seq_wait",
 				SS2S(smWait),
 				SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+smWait << ": wait for DSM data distribution on '" << ic.ii.instrumentName+"'").c_str());
@@ -562,7 +560,7 @@ void codegen_cc::customGate(
     if(isReadout) {
         // FIXME: check qops.size()
 
-        if(cops.size() == 0) {
+        if(cops.empty()) {
             /*  NB: existing code uses empty cops, i.e. no explicit classical register.
                 On the one hand this historically seems to imply assignment to an
                 implicit 'register' in the CC-light that can be used for conditional
@@ -601,7 +599,7 @@ void codegen_cc::customGate(
 
         // store signal value, checking for conflicts
         tBundleInfo *bi = &bundleInfo[csv.si.instrIdx][csv.si.group];       // shorthand
-        if(bi->signalValue == "") {                                         // signal not yet used
+        if(bi->signalValue.empty()) {                                       // signal not yet used
             bi->signalValue = csv.signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
             // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
@@ -623,7 +621,7 @@ void codegen_cc::customGate(
 #if OPT_FEEDBACK
 		// store operands used for readout, actual work is postponed to bundleFinish()
         if(isReadout) {
-            int cop = cops.size()>0 ? cops[0] : IMPLICIT_COP;
+            int cop = !cops.empty() ? cops[0] : IMPLICIT_COP;
             bi->readoutCop = cop;   // FIXME: naming, we do use cop, but rename qop to qubit below
 
             // store qubit

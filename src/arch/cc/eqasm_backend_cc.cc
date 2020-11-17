@@ -282,8 +282,7 @@ void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_plat
                  * NB: our strategy differs from cc_light_eqasm_compiler, we have no special treatment of first instruction
                  * and don't require all instructions to be identical
                  */
-                for(auto insIt = section->begin(); insIt != section->end(); ++insIt) {
-                    gate *instr = *insIt;
+                for(auto instr : *section) {
                     gate_type_t itype = instr->type();
                     std::string iname = instr->name;
                     DOUT(SS2S("Bundle section: instr='" << iname << "'"));
