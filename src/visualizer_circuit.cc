@@ -11,7 +11,7 @@
 #include "visualizer_types.h"
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
-#include "Cimg.h"
+#include "CImg.h"
 #include "json.h"
 
 using json = nlohmann::json;
