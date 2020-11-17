@@ -320,6 +320,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
+    	// get control info from instrument settings
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
         if(ic.ii.slot >= MAX_SLOTS) {
             JSON_FATAL("illegal slot " << ic.ii.slot <<
@@ -342,7 +343,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			int cop;	// classic operand as annotation
 			int qubit;	// annotation
 		} tReadoutInfo;
-		std::map<int, tReadoutInfo> readoutMap;
+		std::map<int, tReadoutInfo> readoutMap;								// NB: key is instrIdx
 #endif
 
 		// iterate over groups of instrument
@@ -371,46 +372,53 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // FIXME: also generate VCD
 
 			if(bi->readoutQubit >= 0) { // readout requested
-				if (JSON_EXISTS(ic.controlMode, "result_bits")) {    // this instrument mode produces results (i.e. it is a measurement device)
-					const json &resultBits = ic.controlMode["result_bits"][group];
-					size_t nrResultBits = resultBits.size();
-					if (nrResultBits == 1) {                     // single bit (NB: per group)
-						// get our qubit
-						const json qubits = json_get<const json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const json&> unavailable
-						size_t qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
-						if (group >= qubitGroupCnt) {
-							FATAL("group " << group << " not defined in '" << ic.ii.instrumentName << "/qubits'");
-						}
-						const json qubitsOfGroup = qubits[group];
-						if (qubitsOfGroup.size() != 1) {
-							FATAL("group " << group << " of '" << ic.ii.instrumentName << "/qubits' should define 1 qubit, not " << qubitsOfGroup.size());
-						}
-						int qubit = qubitsOfGroup[0];
-
-						if (bi->readoutQubit == qubit) {          	// this instrument group handles requested qubit
-							bundleHasReadout = true;
-							instrHasReadout = true;
-							
-							int bit = (int) resultBits[0];        	// bit on digital interface. NB: we assume the result is active high, which is correct for UHF-QC
-
-							// get classic operand
-							if (bi->readoutCop >= 0) {
-								WOUT("ignoring explicit assignment to classic operand" << bi->readoutCop << "for measurement of qubit" << bi->readoutQubit);
-							}
-							int cop = qubit;                        // implicit cop for qubit
-
-							// allocate SM bit for cop
-							int smBit = allocateSmBit(cop, instrIdx);
-
-							// remind mapping of bit -> smBit for setting MUX
-							readoutMap.emplace(group, tReadoutInfo{smBit, bit, cop, qubit});
-						}
-					} else {
-						JSON_FATAL("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrResultBits);
-					}
-				} else {
+				// FIXME: test similar to settings_cc::getInstrumentControl, move
+				// check existence of key 'result_bits'
+				if (!JSON_EXISTS(ic.controlMode, "result_bits")) {    // this instrument mode produces results (i.e. it is a measurement device)
 					JSON_FATAL("readout requested on instrument '" << ic.ii.instrumentName << "', but key '" << ic.refControlMode << "/result_bits is not present");
 				}
+
+				// check existence of key 'result_bits[group]'
+				const json &groupResultBits = ic.controlMode["result_bits"][group];
+				size_t nrGroupResultBits = groupResultBits.size();
+				if (nrGroupResultBits != 1) {                     // single bit (NB: per group)
+					JSON_FATAL("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrGroupResultBits);
+				}
+
+#if 1	// FIXME: redundant, inherent in bi??
+				// get our qubit
+				const json qubits = json_get<const json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const json&> unavailable
+				size_t qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
+				if (group >= qubitGroupCnt) {
+					FATAL("group " << group << " not defined in '" << ic.ii.instrumentName << "/qubits'");
+				}
+				const json qubitsOfGroup = qubits[group];
+				if (qubitsOfGroup.size() != 1) {
+					FATAL("group " << group << " of '" << ic.ii.instrumentName << "/qubits' should define 1 qubit, not " << qubitsOfGroup.size());
+				}
+				int qubit = qubitsOfGroup[0];
+#endif
+
+				if (bi->readoutQubit == qubit) {          	// this instrument group handles requested qubit
+					bundleHasReadout = true;
+					instrHasReadout = true;
+
+					int bit = (int) groupResultBits[0];        	// bit on digital interface. NB: we assume the result is active high, which is correct for UHF-QC
+
+					// get classic operand
+					if (bi->readoutCop >= 0) {
+						WOUT("ignoring explicit assignment to classic operand" << bi->readoutCop << "for measurement of qubit" << bi->readoutQubit);
+					}
+					int cop = qubit;                        // implicit cop for qubit
+
+					// allocate SM bit for cop
+					int smBit = allocateSmBit(cop, instrIdx);
+
+					// remind mapping of bit -> smBit for setting MUX
+					readoutMap.emplace(group, tReadoutInfo{smBit, bit, cop, qubit});
+				} else {
+					FATAL("inconsistency FIXME");
+				};
 			}
 #endif
         } // for(group)
@@ -537,7 +545,9 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 \************************************************************************/
 
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
-// combines instruction plus parameters with JSON configuration to internal 'waveform' representation (tBundleInfo per instrument and group)
+// translates 'gate' representation to 'waveform' representation (tBundleInfo) and maps qubits to instruments & group.
+// Does not deal with the control mode and digital interface of the instrument.
+
 void codegen_cc::customGate(
         const std::string &iname,
         const std::vector<size_t> &qops,
@@ -558,8 +568,6 @@ void codegen_cc::customGate(
 
     // generate comment (also performs some checks)
     if(isReadout) {
-        // FIXME: check qops.size()
-
         if(cops.empty()) {
             /*  NB: existing code uses empty cops, i.e. no explicit classical register.
                 On the one hand this historically seems to imply assignment to an
@@ -619,6 +627,7 @@ void codegen_cc::customGate(
         bi->durationInCycles = durationInCycles;
 
 #if OPT_FEEDBACK
+        // FIXME: assumes that group configuration for readout matches that of output
 		// store operands used for readout, actual work is postponed to bundleFinish()
         if(isReadout) {
             int cop = !cops.empty() ? cops[0] : IMPLICIT_COP;
@@ -844,7 +853,7 @@ uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instr
 #endif
 
 
-// compute signalValueString, and some meta information
+// compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
 codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const std::vector<size_t> &qops, const std::string &iname)
 {   tCalcSignalValue ret;
     std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");                   // for JSON error reporting
