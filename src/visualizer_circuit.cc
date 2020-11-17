@@ -11,6 +11,7 @@
 #include "visualizer_types.h"
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
+#include "Cimg.h"
 #include "json.h"
 
 using json = nlohmann::json;
@@ -694,6 +695,11 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
         }
     }
 
+    // Save the image if enabled.
+    if (layout.saveImage) {
+        image.save("circuit_visualization.bmp");
+    }
+
     // Display the image.
     DOUT("Displaying image...");
     image.display("Quantum Circuit");
@@ -718,6 +724,11 @@ CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
 
     // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
     CircuitLayout layout;
+
+    // Check if the image should be saved to disk.
+    if (fullConfig.count("saveImage") == 1) {
+        layout.saveImage = fullConfig["saveImage"];
+    }
 
     // -------------------------------------- //
     // -               CYCLES               - //

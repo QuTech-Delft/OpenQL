@@ -1,5 +1,6 @@
 {
-    "interaction_graph":
+    "saveImage": true,
+    "interactionGraph":
     {
         "borderWidth": 32,
         "minInteractionCircleRadius": 100,

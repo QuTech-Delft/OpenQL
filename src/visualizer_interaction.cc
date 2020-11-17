@@ -12,6 +12,7 @@
 #include "visualizer_common.h"
 #include "visualizer_interaction.h"
 #include "CImg.h"
+#include "json.h"
 
 #include <math.h>
 
@@ -112,6 +113,11 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
             image.draw_text(qubit.second.x - layout.getQubitRadius() + xGap, qubit.second.y - layout.getQubitRadius() + yGap, label.c_str(), layout.getLabelColor().data(), 0, 1, layout.getLabelFontHeight());
         }
 
+        // Save the image if enabled.
+        if (layout.saveImage) {
+            image.save("qubit_interaction_graph.bmp");
+        }
+
         // Display the image.
         DOUT("Displaying image...");
         image.display("Qubit Interaction Graph");
@@ -134,8 +140,8 @@ InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath
     }
 
     json config;
-    if (fullConfig.count("interaction_graph") == 1) {
-        config = fullConfig["interaction_graph"];
+    if (fullConfig.count("interactionGraph") == 1) {
+        config = fullConfig["interactionGraph"];
     } else {
         WOUT("Could not find interaction graph configuration in visualizer configuration file. Is it named correctly?");
     }
@@ -143,6 +149,12 @@ InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath
     // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
     InteractionGraphLayout layout;
 
+    // Check if the image should be saved to disk.
+    if (fullConfig.count("saveImage") == 1) {
+        layout.saveImage = fullConfig["saveImage"];
+    }
+
+    // Load the parameters.
     if (config.count("borderWidth") == 1)                       layout.setBorderWidth(config["borderWidth"]);
     if (config.count("minInteractionCircleRadius") == 1)        layout.setMinInteractionCircleRadius(config["minInteractionCircleRadius"]);
     if (config.count("interactionCircleRadiusModifier") == 1)   layout.setInteractionCircleRadiusModifier(config["interactionCircleRadiusModifier"]);

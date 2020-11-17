@@ -112,6 +112,8 @@ class InteractionGraphLayout {
     Color edgeColor = black;
 
     public:
+    bool saveImage = false;
+
     int getBorderWidth() const { return borderWidth; }
     int getMinInteractionCircleRadius() const { return minInteractionCircleRadius; }
     double getInteractionCircleRadiusModifier() const { return interactionCircleRadiusModifier; }
@@ -386,6 +388,8 @@ struct Pulses {
 // ----------------------------------------------- //
 
 struct CircuitLayout {
+    bool saveImage = false;
+
     Cycles cycles;
     BitLines bitLines;
     Grid grid;
