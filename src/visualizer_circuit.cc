@@ -38,14 +38,19 @@ int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates
     // Find the highest cycle in the gate vector.
     int amountOfCycles = 0;
     for (const GateProperties &gate : gates) {
-        const int gateCycle = gate.cycle;
-        if (gateCycle < 0 || gateCycle > MAX_ALLOWED_VISUALIZER_CYCLE) {
-            FATAL("Found gate with cycle index: " << gateCycle << ". Only indices between 0 and " 
-               << MAX_ALLOWED_VISUALIZER_CYCLE << " are allowed!"
-               << "\nMake sure gates are scheduled before calling the visualizer pass!");
+        if (gate.cycle == MAX_CYCLE) {
+            IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
+            return MAX_CYCLE;
         }
-        if (gateCycle > amountOfCycles)
-            amountOfCycles = gateCycle;
+
+        // if (gate.cycle < 0 || gate.cycle > VISUALIZER_CYCLE_WARNING_THRESHOLD) {
+        //     FATAL("Found gate with cycle index: " << gate.cycle << ". Only indices between 0 and " 
+        //        << MAX_ALLOWED_VISUALIZER_CYCLE << " are allowed!"
+        //        << "\nMake sure gates are scheduled before calling the visualizer pass!");
+        // }
+
+        if (gate.cycle > amountOfCycles)
+            amountOfCycles = gate.cycle;
     }
 
     // The last gate requires a different approach, because it might have a
@@ -63,9 +68,20 @@ int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates
 std::vector<Cycle> CircuitData::generateCycles(std::vector<GateProperties> &gates, const int cycleDuration) const {
     DOUT("Generating cycles...");
 
-    // Generate the cycles.
+    // Calculate the amount of cycles. If there are gates with undefined cycle
+    // indices, visualize the circuit sequentially.
     std::vector<Cycle> cycles;
-    const int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    if (amountOfCycles == MAX_CYCLE) {
+        // Add a sequential cycle to each gate.
+        amountOfCycles = 0;
+        for (GateProperties &gate : gates) {
+            gate.cycle = amountOfCycles;
+            amountOfCycles += gate.duration / cycleDuration;
+        }
+    }
+
+    // Generate the cycles.
     for (int i = 0; i < amountOfCycles; i++) {
         // Generate the first chunk of the gate partition for this cycle.
         // All gates in this cycle will be added to this chunk first, later on
@@ -664,7 +680,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
         }
 
         // Draw the cycles.
-        DOUT("Drawing cycles...");
+        IOUT("Drawing cycles...");
         for (int i = 0; i < circuitData.getAmountOfCycles(); i++) {
             // Only draw a cut cycle if its the first in its cut range.
             if (circuitData.isCycleCut(i)) {

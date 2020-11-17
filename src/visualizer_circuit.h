@@ -15,6 +15,8 @@
 
 namespace ql {
 
+// static const int VISUALIZER_CYCLE_WARNING_THRESHOLD = 100;
+
 struct Cycle {
     int index;
     bool empty;

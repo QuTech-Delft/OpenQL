@@ -47,16 +47,16 @@ namespace ql {
 // [GENERAL] split visualizer.cc into multiple files
 // [GENERAL] split Layout into multiple, one for each visualization type
 // [INTERACTION] add interaction graph layout object and load it from a file
-
-// -- IN PROGRESS ---
 // [INTERACTION] add number indicating amount of interactions for edges
 // [CIRCUIT] visualize before scheduler has been ran, no duration should be shown, just circuit in user-defined order
+
+// -- IN PROGRESS ---
+// [GENERAL] add option to save the image and/or open the window
+// [INTERACTION] output dot files for graphing software, default circle graph will also be shown
 // [MAPPING] add pseudogate containing virtual > real qubit mapping
 // [GENERAL] update documentation
-// [INTERACTION] output dot files for graphing software, default circle graph will also be shown
 
 // --- FUTURE WORK ---
-// [GENERAL] add option to save the image and/or open the window
 // [GENERAL] add generating random circuits for visualization testing
 // [CIRCUIT] allow collapsing the three qubit lines into one with an option
 // [CIRCUIT] implement cycle cutting for pulse visualization

@@ -22,8 +22,6 @@ void visualize(const ql::quantum_program* program, const std::string &visualizat
 
 #ifdef WITH_VISUALIZER
 
-static const int MAX_ALLOWED_VISUALIZER_CYCLE = 2000;
-
 void assertPositive(const int argument, const std::string &parameter);
 void assertPositive(const double argument, const std::string &parameter);
 
