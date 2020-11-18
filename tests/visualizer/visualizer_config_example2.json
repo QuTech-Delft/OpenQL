@@ -33,7 +33,7 @@
             },
             "cutting":
             {
-                "cut": true,
+                "cut": false,
                 "emptyCycleThreshold": 2,
                 "cutCycleWidth": 16,
                 "cutCycleWidthModifier": 0.5
@@ -91,7 +91,7 @@
         },
         "pulses":
         {
-            "displayGatesAsPulses": true,
+            "displayGatesAsPulses": false,
             "pulseRowHeightMicrowave": 32,
             "pulseRowHeightFlux": 32,
             "pulseRowHeightReadout": 32,

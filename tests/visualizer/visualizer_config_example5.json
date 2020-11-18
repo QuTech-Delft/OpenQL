@@ -20,7 +20,7 @@
             "labels":
             {
                 "show": true,
-                "inNanoSeconds": true,
+                "inNanoSeconds": false,
                 "rowHeight": 24,
                 "fontHeight": 13,
                 "fontColor": [0, 0, 0]
@@ -34,7 +34,7 @@
             "cutting":
             {
                 "cut": true,
-                "emptyCycleThreshold": 5,
+                "emptyCycleThreshold": 2,
                 "cutCycleWidth": 16,
                 "cutCycleWidthModifier": 0.5
             },
@@ -57,7 +57,7 @@
             },
             "classical":
             {
-                "show": false,
+                "show": true,
                 "group": false,
                 "groupedLineGap": 2,
                 "color": [128, 128, 128]
@@ -152,8 +152,8 @@
                         "displayName": "ry90",
                         "fontHeight": 13,
                         "fontColor": [255, 255, 255],
-                        "backgroundColor": [210, 210, 20],
-                        "outlineColor": [240, 240, 40]
+                        "backgroundColor": [70, 210, 230],
+                        "outlineColor": [70, 210, 230]
                     }
                 ]
             },
