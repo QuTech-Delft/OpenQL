@@ -52,7 +52,7 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
         std::vector<std::pair<Qubit, Position2>> qubitPositions;
         for (const Qubit &qubit : qubits) {
             const double theta = qubit.qubitIndex * thetaSpacing;
-            const Position2 position = calculateQubitPosition(interactionCircleRadius, theta, center);
+            const Position2 position = calculatePositionOnCircle(interactionCircleRadius, theta, center);
             qubitPositions.push_back( {qubit, position} );
         }
 
@@ -77,32 +77,22 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
 
                 // Draw the edge.
                 const double theta = interactionsWithQubit.qubitIndex * thetaSpacing;
-                const Position2 interactionPosition = calculateQubitPosition(interactionCircleRadius, theta, center);
+                const Position2 interactionPosition = calculatePositionOnCircle(interactionCircleRadius, theta, center);
                 image.draw_line(qubitPosition.x, qubitPosition.y, interactionPosition.x, interactionPosition.y, layout.getEdgeColor().data());
 
                 // Draw the number of interactions.
                 const std::string label = std::to_string(interactionsWithQubit.amountOfInteractions);
                 const Dimensions labelDimensions = calculateTextDimensions(label, layout.getLabelFontHeight());
-                const int hDiff = qubitPosition.x - interactionPosition.x;
-                const int vDiff = qubitPosition.y - interactionPosition.y;
-                int x = 0;
-                int y = 0;
-                if (hDiff > 0) {
-                    x = qubitPosition.x - layout.getQubitRadius() - labelDimensions.width;
-                    if (vDiff > 0) {
-                        y = qubitPosition.y - layout.getQubitRadius() - labelDimensions.height;
-                    } else {
-                        y = qubitPosition.y + layout.getQubitRadius();
-                    }
-                } else {
-                    x = qubitPosition.x + layout.getQubitRadius();
-                    if (vDiff > 0) {
-                        y = qubitPosition.y - layout.getQubitRadius() - labelDimensions.height;
-                    } else {
-                        y = qubitPosition.y + layout.getQubitRadius();
-                    }
-                }
-                image.draw_text(x, y, label.c_str(), layout.getLabelColor().data(), 0, 1, layout.getLabelFontHeight());
+                const int a = labelDimensions.width;
+                const int b = labelDimensions.height;
+                const int labelRadius = sqrt(a * a + b * b);
+
+                const int deltaX = interactionPosition.x - qubitPosition.x;
+                const int deltaY = interactionPosition.y - qubitPosition.y;
+                const double angle = atan2(deltaY, deltaX);
+                const Position2 labelPosition = calculatePositionOnCircle(layout.getQubitRadius() + labelRadius, angle, qubitPosition);
+
+                image.draw_text(labelPosition.x, labelPosition.y, label.c_str(), layout.getLabelColor().data(), 0, 1, layout.getLabelFontHeight());
             }
         }
         // Draw the qubits.
@@ -227,7 +217,7 @@ double calculateQubitCircleRadius(const int qubitRadius, const double theta) {
     return R;
 }
 
-Position2 calculateQubitPosition(const int radius, const double theta, const Position2 center) {
+Position2 calculatePositionOnCircle(const int radius, const double theta, const Position2 center) {
     const long x = (long) (radius * cos(theta) + center.x);
     const long y = (long) (radius * sin(theta) + center.y);
 

@@ -1,5 +1,5 @@
 {
-    "saveImage": true,
+    "saveImage": false,
     "interactionGraph":
     {
         "outputDotFile": true,
@@ -20,7 +20,7 @@
             "labels":
             {
                 "show": true,
-                "inNanoSeconds": false,
+                "inNanoSeconds": true,
                 "rowHeight": 24,
                 "fontHeight": 13,
                 "fontColor": [0, 0, 0]
@@ -34,7 +34,7 @@
             "cutting":
             {
                 "cut": true,
-                "emptyCycleThreshold": 2,
+                "emptyCycleThreshold": 5,
                 "cutCycleWidth": 16,
                 "cutCycleWidthModifier": 0.5
             },
@@ -57,7 +57,7 @@
             },
             "classical":
             {
-                "show": true,
+                "show": false,
                 "group": false,
                 "groupedLineGap": 2,
                 "color": [128, 128, 128]
@@ -143,6 +143,20 @@
                     }
                 ]
             },
+            "ry90": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "ry90",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [210, 210, 20],
+                        "outlineColor": [240, 240, 40]
+                    }
+                ]
+            },
             "cz": {
                 "connectionColor": [0, 0, 0],
                 "nodes": [
@@ -166,7 +180,30 @@
                     }
                 ]
             },
-            "measure": {
+            "cnot": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "CONTROL",
+                        "radius": 3,
+                        "displayName": "",
+                        "fontHeight": 13,
+                        "fontColor": [0, 0, 0],
+                        "backgroundColor": [170, 50, 50],
+                        "outlineColor": [170, 50, 50]
+                    },
+                    {
+                        "type": "NOT",
+                        "radius": 7,
+                        "displayName": "",
+                        "fontHeight": 13,
+                        "fontColor": [0, 0, 0],
+                        "backgroundColor": [170, 50, 50],
+                        "outlineColor": [170, 50, 50]
+                    }
+                ]
+            },
+            "measz": {
                 "connectionColor": [225, 118, 225],
                 "nodes": [
                     {

@@ -53,8 +53,9 @@ namespace ql {
 // [INTERACTION] output dot files for graphing software, default circle graph will also be shown
 
 // -- IN PROGRESS ---
-// [MAPPING] add pseudogate containing virtual > real qubit mapping
+// [INTERACTION] calculate angle to target qubit and place amount of interactions label accordingly
 // [GENERAL] update documentation
+// [MAPPING] add pseudogate containing virtual > real qubit mapping
 
 // --- FUTURE WORK ---
 // [GENERAL] add generating random circuits for visualization testing
