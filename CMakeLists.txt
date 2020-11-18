@@ -169,7 +169,9 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/clifford.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passmanager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_common.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_circuit.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_interaction.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/exception.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/eqasm_backend_cc.cc"
@@ -331,7 +333,7 @@ if(WIN32)
     target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
 else()
     find_package(X11)
-    if($(X11_FOUND))
+    if(X11_FOUND)
         target_link_libraries(ql PUBLIC X11)
         target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
     endif()
@@ -343,6 +345,11 @@ endif()
 # Stack trace helper library, nothing functional here.
 add_subdirectory(deps/backward-cpp)
 add_backward(ql)
+
+# add_backward doesn't set INTERFACE_LINK_LIBRARIES, only LINK_LIBRARIES. That
+# goes wrong when we're compiling statically, because said libraries are shared
+# and need to be included in the final link.
+set_property(TARGET ql APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${BACKWARD_LIBRARIES})
 
 
 #=============================================================================#

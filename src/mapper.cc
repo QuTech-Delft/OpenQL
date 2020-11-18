@@ -8,6 +8,7 @@
 #endif
 
 namespace ql {
+namespace mapper {
 
 // Grid initializer
 // initialize mapper internal grid maps from configuration
@@ -2951,4 +2952,5 @@ void Mapper::Init(const ql::quantum_platform *p) {
     // DOUT("Mapping initialization [DONE]");
 }
 
+} // namespace mapper
 } // namespace ql
