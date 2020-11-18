@@ -124,7 +124,7 @@ class Test_central_controller(unittest.TestCase):
         k.barrier([])
 
         k.gate("measure", [x], rdX)
-        k.wait([x], 0)
+        k.barrier([])
 
         # Z stabilizers
         k.gate("rym90", [z])

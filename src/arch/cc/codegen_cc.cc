@@ -775,7 +775,7 @@ void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, co
     int prePadding = startCycle - lastEndCycle;
     if(prePadding < 0) {
         EOUT("Inconsistency detected in bundle contents: printing code generated so far");
-        EOUT(codeSection.str());        // show what we made. FIXME: limit # lines
+        EOUT(codeSection.str());        // show what we made. FIXME: limit # lines (tail -100)
         FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
               ", startCycle=" << startCycle <<
               ", lastEndCycle=" << lastEndCycle <<
