@@ -441,11 +441,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             padToCycle(lastEndCycle[instrIdx], startCycle, ic.ii.slot, ic.ii.instrumentName);
 
             // emit code for slot output
-            emit(SS2S("[" << ic.ii.slot << "]").c_str(),      // CCIO selector
+            emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
                  "seq_out",
-                 SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec <<
-                      "," << maxDurationInCycles),
-                 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName+"'").c_str());
+                 SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << maxDurationInCycles),
+                 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName+"'"));
 
             // update lastEndCycle
             lastEndCycle[instrIdx] = startCycle + maxDurationInCycles;
@@ -484,10 +483,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 				// emit code for slot input
 				int sizeTag = getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
-				emit(SS2S("[" << ic.ii.slot << "]").c_str(),      	// CCIO selector
+				emit(SS2S("[" << ic.ii.slot << "]"),      			// CCIO selector
 					"seq_in_sm",
 					SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
-					SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": readout on '" << ic.ii.instrumentName+"'").c_str());
+					SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": readout on '" << ic.ii.instrumentName+"'"));
 				lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
 			} else {
 				// FIXME:
@@ -495,19 +494,19 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
 
 				// emit code for non-participating instrument
-				emit(SS2S("[" << ic.ii.slot << "]").c_str(),      	// CCIO selector
+				emit(SS2S("[" << ic.ii.slot << "]"),      			// CCIO selector
 					"seq_inv_sm",
 					SS2S("S" << smAddr << ","  << smTotalSize),
-					SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": no readout on '" << ic.ii.instrumentName+"'").c_str());
+					SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": no readout on '" << ic.ii.instrumentName+"'"));
 				lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
 			}
 
 			// code generation common to paths above
 			int smWait = settings.getSmWait();
-			emit(SS2S("[" << ic.ii.slot << "]").c_str(),      		// CCIO selector
+			emit(SS2S("[" << ic.ii.slot << "]"),      				// CCIO selector
 				"seq_wait",
 				SS2S(smWait),
-				SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+smWait << ": wait for DSM data distribution on '" << ic.ii.instrumentName+"'").c_str());
+				SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+smWait << ": wait for DSM data distribution on '" << ic.ii.instrumentName+"'"));
 
 			// update lastEndCycle
 			lastEndCycle[instrIdx] += smWait;	// FIXME: this time has not been scheduled, but is interjected here at the backend level
@@ -612,7 +611,7 @@ void codegen_cc::customGate(
         bi->durationInCycles = durationInCycles;
 
 #if OPT_FEEDBACK
-        // FIXME: assumes that group configuration for readout matches that of output
+        // FIXME: assumes that group configuration for readout input matches that of output
 		// store operands used for readout, actual work is postponed to bundleFinish()
         if(isReadout) {
             int cop = !cops.empty() ? cops[0] : IMPLICIT_COP;
@@ -627,7 +626,7 @@ void codegen_cc::customGate(
         }
 
         // store expression for conditional gates
-        // FIXME: implement
+        // FIXME: implement when expressions are implemented
 #endif
 
         DOUT("customGate(): iname='" << iname <<
@@ -647,7 +646,7 @@ void codegen_cc::nopGate()
 
 void codegen_cc::comment(const std::string &c)
 {
-    if(verboseCode) emit(c.c_str());
+    if(verboseCode) emit(c);
 }
 
 /************************************************************************\
@@ -671,7 +670,7 @@ void codegen_cc::forStart(const std::string &label, int iterations)
     comment(SS2S("# FOR_START(" << iterations << ")"));
     // FIXME: reserve register
     emit("", "move", SS2S(iterations << ",R62"), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
-    emit((label+":").c_str(), "", SS2S(""), "# ");        // just a label
+    emit((label+":"), "", SS2S(""), "# ");        // just a label
 }
 
 void codegen_cc::forEnd(const std::string &label)
@@ -684,7 +683,7 @@ void codegen_cc::forEnd(const std::string &label)
 void codegen_cc::doWhileStart(const std::string &label)
 {
     comment("# DO_WHILE_START");
-    emit((label+":").c_str(), "", SS2S(""), "# ");                              // NB: just a label
+    emit((label+":"), "", SS2S(""), "# ");                              // NB: just a label
 }
 
 void codegen_cc::doWhileEnd(const std::string &label, size_t op0, const std::string &opName, size_t op1)
@@ -703,13 +702,15 @@ void codegen_cc::doWhileEnd(const std::string &label, size_t op0, const std::str
 | Some helpers to ease nice assembly formatting
 \************************************************************************/
 
-void codegen_cc::emit(const char *labelOrComment, const char *instr)
+// FIXME: assure space between fields!
+
+void codegen_cc::emit(const std::string &labelOrComment, const std::string &instr)
 {
-    if(!labelOrComment || strlen(labelOrComment)==0) {  // no label
+    if(labelOrComment.length()==0) {  					// no label
         codeSection << "        " << instr << std::endl;
-    } else if(strlen(labelOrComment)<8) {               // label fits before instr
+    } else if(labelOrComment.length()<8) {              // label fits before instr
         codeSection << std::setw(8) << labelOrComment << instr << std::endl;
-    } else if(strlen(instr)==0) {                       // no instr
+    } else if(instr.length()==0) {                      // no instr
         codeSection << labelOrComment << std::endl;
     } else {
         codeSection << labelOrComment << std::endl << "        " << instr << std::endl;
@@ -717,12 +718,11 @@ void codegen_cc::emit(const char *labelOrComment, const char *instr)
 }
 
 
-// @param   label       must include trailing ":"
-// @param   comment     must include leading "#"
-// FIXME: label is also used for CCIO selector
-void codegen_cc::emit(const char *label, const char *instr, const std::string &ops, const char *comment)
+// @param   labelOrSel      label must include trailing ":"
+// @param   comment     	must include leading "#"
+void codegen_cc::emit(const std::string &labelOrSel, const std::string &instr, const std::string &ops, const std::string &comment)
 {
-    codeSection << std::setw(16) << label << std::setw(16) << instr << std::setw(24) << ops << comment << std::endl;
+    codeSection << std::setw(16) << labelOrSel << std::setw(16) << instr << std::setw(24) << ops << comment << std::endl;
 }
 
 
@@ -730,12 +730,6 @@ void codegen_cc::emitDp(const std::string &sel, const std::string &statement, co
 {
     datapathSection << std::setw(16) << sel << std::setw(16) << statement << std::setw(24) << comment << std::endl;
 }
-
-
-
-
-// FIXME: assure space between fields!
-// FIXME: also provide the above with std::string parameters
 
 /************************************************************************\
 | helpers
@@ -789,53 +783,6 @@ void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, co
             SS2S("# cycle " << lastEndCycle << "-" << startCycle << ": padding on '" << instrumentName+"'").c_str());
     }
 }
-
-
-#if !OPT_SUPPORT_STATIC_CODEWORDS
-uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instrIdx, int group)
-{
-    uint32_t codeword;
-    std::string signalValue = bi->signalValue;
-
-    if(JSON_EXISTS(codewordTable, instrumentName) &&                    // instrument exists
-                    codewordTable[instrumentName].size() > group) {     // group exists
-        bool cwFound = false;
-        // try to find signalValue
-        json &myCodewordArray = codewordTable[instrumentName][group];
-        for(codeword=0; codeword<myCodewordArray.size() && !cwFound; codeword++) {   // NB: JSON find() doesn't work for arrays
-            if(myCodewordArray[codeword] == signalValue) {
-                DOUT("signal value found at cw=" << codeword);
-                cwFound = true;
-            }
-        }
-        if(!cwFound) {
-            std::string msg = SS2S("signal value '" << signalValue
-                    << "' not found in group " << group
-                    << ", which contains " << myCodewordArray);
-            if(mapPreloaded) {
-                FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
-            } else {
-                DOUT(msg);
-                // NB: codeword already contains last used value + 1
-                // FIXME: check that number is available
-                myCodewordArray[codeword] = signalValue;                    // NB: structure created on demand
-            }
-        }
-    } else {    // new instrument or group
-        if(mapPreloaded) {
-            FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements: instrument '"
-                  << instrumentName << "', group "
-                  << group
-                  << " not present in file");
-        } else {
-            codeword = 1;
-            codewordTable[instrumentName][group][0] = "";                   // code word 0 is empty
-            codewordTable[instrumentName][group][codeword] = signalValue;   // NB: structure created on demand
-        }
-    }
-    return codeword;
-}
-#endif
 
 
 // compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
@@ -893,5 +840,51 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     return ret;
 }
 
+
+#if !OPT_SUPPORT_STATIC_CODEWORDS
+uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instrIdx, int group)
+{
+    uint32_t codeword;
+    std::string signalValue = bi->signalValue;
+
+    if(JSON_EXISTS(codewordTable, instrumentName) &&                    // instrument exists
+                    codewordTable[instrumentName].size() > group) {     // group exists
+        bool cwFound = false;
+        // try to find signalValue
+        json &myCodewordArray = codewordTable[instrumentName][group];
+        for(codeword=0; codeword<myCodewordArray.size() && !cwFound; codeword++) {   // NB: JSON find() doesn't work for arrays
+            if(myCodewordArray[codeword] == signalValue) {
+                DOUT("signal value found at cw=" << codeword);
+                cwFound = true;
+            }
+        }
+        if(!cwFound) {
+            std::string msg = SS2S("signal value '" << signalValue
+                    << "' not found in group " << group
+                    << ", which contains " << myCodewordArray);
+            if(mapPreloaded) {
+                FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
+            } else {
+                DOUT(msg);
+                // NB: codeword already contains last used value + 1
+                // FIXME: check that number is available
+                myCodewordArray[codeword] = signalValue;                    // NB: structure created on demand
+            }
+        }
+    } else {    // new instrument or group
+        if(mapPreloaded) {
+            FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements: instrument '"
+                  << instrumentName << "', group "
+                  << group
+                  << " not present in file");
+        } else {
+            codeword = 1;
+            codewordTable[instrumentName][group][0] = "";                   // code word 0 is empty
+            codewordTable[instrumentName][group][codeword] = signalValue;   // NB: structure created on demand
+        }
+    }
+    return codeword;
+}
+#endif
 
 } // namespace ql

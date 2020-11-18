@@ -105,15 +105,17 @@ private:    // vars
 
 private:    // funcs
     // Some helpers to ease nice assembly formatting
-    void emit(const char *labelOrComment, const char *instr="");
-    void emit(const char *label, const char *instr, const std::string &ops, const char *comment="");
+    void emit(const std::string &labelOrComment, const std::string &instr="");
+    void emit(const std::string &label, const std::string &instr, const std::string &ops, const std::string &comment="");
 	void emitDp(const std::string &sel, const std::string &statement, const std::string &comment="");
 
     // helpers
     void emitProgramStart();
     void padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName);
-    uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
     tCalcSignalValue calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const std::vector<size_t> &qops, const std::string &iname);
+#if !OPT_SUPPORT_STATIC_CODEWORDS
+    uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
+#endif
 }; // class
 
 } // namespace ql
