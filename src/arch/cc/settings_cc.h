@@ -60,6 +60,7 @@ public: // functions
 	tSignalDef findSignalDefinition(const json &instruction, const std::string &iname) const;
     tInstrumentInfo getInstrumentInfo(size_t instrIdx) const;
     tInstrumentControl getInstrumentControl(size_t instrIdx) const;
+	int getResultBit(const tInstrumentControl &ic, int group) const;
 
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit) const;

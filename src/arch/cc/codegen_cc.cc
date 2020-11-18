@@ -372,53 +372,38 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // FIXME: also generate VCD
 
 			if(bi->readoutQubit >= 0) { // readout requested
-				// FIXME: test similar to settings_cc::getInstrumentControl, move
-				// check existence of key 'result_bits'
-				if (!JSON_EXISTS(ic.controlMode, "result_bits")) {    // this instrument mode produces results (i.e. it is a measurement device)
-					JSON_FATAL("readout requested on instrument '" << ic.ii.instrumentName << "', but key '" << ic.refControlMode << "/result_bits is not present");
-				}
+				int resultBit = settings.getResultBit(ic, group);
 
-				// check existence of key 'result_bits[group]'
-				const json &groupResultBits = ic.controlMode["result_bits"][group];
-				size_t nrGroupResultBits = groupResultBits.size();
-				if (nrGroupResultBits != 1) {                     // single bit (NB: per group)
-					JSON_FATAL("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrGroupResultBits);
-				}
-
-#if 1	// FIXME: redundant, inherent in bi??
+#if 0	// FIXME: redundant
 				// get our qubit
 				const json qubits = json_get<const json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const json&> unavailable
 				size_t qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
-				if (group >= qubitGroupCnt) {
+				if (group >= qubitGroupCnt) {	// FIXME: also tested in settings_cc::findSignalInfoForQubit
 					FATAL("group " << group << " not defined in '" << ic.ii.instrumentName << "/qubits'");
 				}
 				const json qubitsOfGroup = qubits[group];
-				if (qubitsOfGroup.size() != 1) {
+				if (qubitsOfGroup.size() != 1) {	// FIXME: not tested elsewhere
 					FATAL("group " << group << " of '" << ic.ii.instrumentName << "/qubits' should define 1 qubit, not " << qubitsOfGroup.size());
 				}
 				int qubit = qubitsOfGroup[0];
-#endif
-
-				if (bi->readoutQubit == qubit) {          	// this instrument group handles requested qubit
-					bundleHasReadout = true;
-					instrHasReadout = true;
-
-					int bit = (int) groupResultBits[0];        	// bit on digital interface. NB: we assume the result is active high, which is correct for UHF-QC
-
-					// get classic operand
-					if (bi->readoutCop >= 0) {
-						WOUT("ignoring explicit assignment to classic operand" << bi->readoutCop << "for measurement of qubit" << bi->readoutQubit);
-					}
-					int cop = qubit;                        // implicit cop for qubit
-
-					// allocate SM bit for cop
-					int smBit = allocateSmBit(cop, instrIdx);
-
-					// remind mapping of bit -> smBit for setting MUX
-					readoutMap.emplace(group, tReadoutInfo{smBit, bit, cop, qubit});
-				} else {
+				if (bi->readoutQubit != qubit) {          	// this instrument group handles requested qubit. FIXM: inherently true
 					FATAL("inconsistency FIXME");
 				};
+#endif
+				bundleHasReadout = true;
+				instrHasReadout = true;
+
+				// get classic operand
+				if (bi->readoutCop >= 0) {
+					WOUT("ignoring explicit assignment to classic operand" << bi->readoutCop << "for measurement of qubit" << bi->readoutQubit);
+				}
+				int cop = bi->readoutQubit;                	// implicit cop for qubit
+
+				// allocate SM bit for cop
+				int smBit = allocateSmBit(cop, instrIdx);
+
+				// remind mapping of bit -> smBit for setting MUX
+				readoutMap.emplace(group, tReadoutInfo{smBit, resultBit, cop, bi->readoutQubit});
 			}
 #endif
         } // for(group)
@@ -428,7 +413,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 		| turn code generation info collected above into actual code
 		\************************************************************************/
 
-		if(isLastBundle) {
+		if(isLastBundle && instrIdx==0) {
 			comment(SS2S(" # last bundle of kernel, will pad outputs to match durations"));
 		}
 

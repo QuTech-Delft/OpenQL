@@ -172,6 +172,24 @@ settings_cc::tInstrumentControl settings_cc::getInstrumentControl(size_t instrId
 }
 
 
+int settings_cc::getResultBit(const tInstrumentControl &ic, int group) const
+{
+	// FIXME: test similar to settings_cc::getInstrumentControl, move
+	// check existence of key 'result_bits'
+	if (!JSON_EXISTS(ic.controlMode, "result_bits")) {    	// this instrument mode produces results (i.e. it is a measurement device)
+		JSON_FATAL("readout requested on instrument '" << ic.ii.instrumentName << "', but key '" << ic.refControlMode << "/result_bits is not present");
+	}
+
+	// check existence of key 'result_bits[group]'
+	const json &groupResultBits = ic.controlMode["result_bits"][group];
+	size_t nrGroupResultBits = groupResultBits.size();
+	if (nrGroupResultBits != 1) {                     		// single bit (NB: per group)
+		JSON_FATAL("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrGroupResultBits);
+	}
+	return (int) groupResultBits[0];        				// bit on digital interface. NB: we assume the result is active high, which is correct for UHF-QC
+}
+
+
 // find instrument&group given instructionSignalType for qubit
 // NB: this implies that we map signal *vectors* to groups, i.e. it is not possible to map individual channels
 settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit) const
