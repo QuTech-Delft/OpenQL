@@ -51,9 +51,9 @@ namespace ql {
 // [CIRCUIT] visualize before scheduler has been ran, no duration should be shown, just circuit in user-defined order
 // [GENERAL] add option to save the image and/or open the window
 // [INTERACTION] output dot files for graphing software, default circle graph will also be shown
+// [INTERACTION] calculate angle to target qubit and place amount of interactions label accordingly
 
 // -- IN PROGRESS ---
-// [INTERACTION] calculate angle to target qubit and place amount of interactions label accordingly
 // [GENERAL] update documentation
 // [MAPPING] add pseudogate containing virtual > real qubit mapping
 
