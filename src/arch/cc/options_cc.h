@@ -19,4 +19,3 @@
 #define OPT_VECTOR_MODE                 0   // 1=generate single code word for all output groups together (requires codewords allocated by backend)
 #define OPT_OLD_SEQBAR_SEMANTICS        0   // support old semantics of seqbar instruction. Will be deprecated
 #define OPT_FEEDBACK                    1   // feedback support. New feature in being developed
-#define OPT_CROSSCHECK_INSTRUMENT_DEF   1   // check signal dimensions against instrument definition. Will be always on after testing against configuration files of hardware setup

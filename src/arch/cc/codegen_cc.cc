@@ -828,7 +828,6 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     // get signal value
     const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
 
-#if OPT_CROSSCHECK_INSTRUMENT_DEF
     // verify signal dimensions
     size_t channelsPergroup = ret.si.ic.controlModeGroupSize;
     if(instructionSignalValue.size() != channelsPergroup) {
@@ -838,7 +837,6 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
                    " signals, but signal '" << signalSPath+"/value" <<
                    "' provides " << instructionSignalValue.size());
     }
-#endif
 
     // expand macros
     ret.signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
