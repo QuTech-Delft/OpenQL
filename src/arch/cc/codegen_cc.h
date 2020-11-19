@@ -10,6 +10,7 @@
 #pragma once
 
 #include "options_cc.h"
+#include "datapath_cc.h"
 #include "settings_cc.h"
 #include "vcd_cc.h"
 #include "platform.h"
@@ -46,8 +47,6 @@ public: //  functions
             double angle, size_t startCycle, size_t durationInCycles);
     void nopGate();
 
-    void comment(const std::string &c);
-
     // Classical operations on kernels
     void ifStart(size_t op0, const std::string &opName, size_t op1);
     void elseStart(size_t op0, const std::string &opName, size_t op1);
@@ -56,6 +55,7 @@ public: //  functions
     void doWhileStart(const std::string &label);
     void doWhileEnd(const std::string &label, size_t op0, const std::string &opName, size_t op1);
 
+    void comment(const std::string &c);
 
 private:    // types
     typedef struct {
@@ -86,6 +86,7 @@ private:    // vars
 
     const quantum_platform *platform;                           // remind platform
     settings_cc settings;                                       // handling of JSON settings
+    datapath_cc dp;												// ahndling of CC datapath
     vcd_cc vcd;                                                 // handling of VCD file output
 
     bool verboseCode = true;                                    // option to output extra comments in generated code. FIXME: not yet configurable
@@ -94,9 +95,6 @@ private:    // vars
 	// codegen state, program scope
 	json codewordTable;                                         // codewords versus signals per instrument group
 	std::stringstream codeSection;                              // the code generated
-#if OPT_FEEDBACK
-	std::stringstream datapathSection;                          // the data path configuration generated
-#endif
 
 	// codegen state, kernel scope FIXME: create class
     unsigned int lastEndCycle[MAX_INSTRS];                      // vector[instrIdx], maintain where we got per slot
@@ -108,7 +106,6 @@ private:    // funcs
     // Some helpers to ease nice assembly formatting
     void emit(const std::string &labelOrComment, const std::string &instr="");
     void emit(const std::string &label, const std::string &instr, const std::string &ops, const std::string &comment="");
-	void emitDp(const std::string &sel, const std::string &statement, const std::string &comment="");
 
     // helpers
     void emitProgramStart();

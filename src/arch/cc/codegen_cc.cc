@@ -73,7 +73,7 @@ void codegen_cc::init(const quantum_platform &platform)
 std::string codegen_cc::getProgram()
 {
 #if OPT_FEEDBACK
-	return codeSection.str() + datapathSection.str();
+	return codeSection.str() + dp.getDatapathSection();
 #else
     return codeSection.str();
 #endif
@@ -104,8 +104,7 @@ void codegen_cc::programStart(const std::string &progName)
     codeSection << "#" << std::endl;
     emitProgramStart();
 
-    datapathSection << std::left;    // assumed by emitDp()
-	emitDp(".DATAPATH", "");
+	dp.programStart();
 
     vcd.programStart(platform->qubit_number, platform->cycle_time, MAX_GROUPS, settings);
 }
@@ -121,11 +120,10 @@ void codegen_cc::programFinish(const std::string &progName)
          "@mainLoop",
          "# loop indefinitely");
 #endif
-#if OPT_FEEDBACK
+
     emit(".END");   // end .CODE section
 
-	emitDp(".END", "");
-#endif
+	dp.emit(".END", "");
 
     vcd.programFinish(progName);
 }
@@ -177,37 +175,7 @@ void codegen_cc::bundleStart(const std::string &cmnt)
     }
 
     comment(cmnt);
-    datapathSection << cmnt << std::endl;	// FIXME: comment is not full appropriate, but at least allows matching with .CODE section
-}
-
-
-// FIXME: helper, move to class datapath_cc
-int allocateSmBit(size_t cop, size_t instrIdx)
-{
-	static int smBit = 0;
-
-	smBit++;	// FIXME
-
-	return smBit;
-}
-
-
-// FIXME: helper, move to class datapath_cc
-static int getSizeTag(int numReadouts) {
-	int sizeTag;
-
-	if(numReadouts == 0) {
-		FATAL("inconsistency in number of readouts");
-	} else if(numReadouts <= 8) {
-		sizeTag = 0;			// 0=byte
-	} else if(numReadouts <= 16) {
-		sizeTag = 1;
-	} else if(numReadouts <= 32) {	// NB: should currently not occur since we have a maximum of 16 inputs on UHF
-		sizeTag = 2;
-	} else {
-		FATAL("inconsistency detected: too many readouts");
-	}
-	return sizeTag;
+    dp.comment(cmnt);		// FIXME: comment is not full appropriate, but at least allows matching with .CODE section
 }
 
 
@@ -411,7 +379,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				int cop = bi->readoutQubit;                	// implicit cop for qubit
 
 				// allocate SM bit for cop
-				int smBit = allocateSmBit(cop, instrIdx);
+				int smBit = dp.allocateSmBit(cop, instrIdx);
 
 				// remind mapping of bit -> smBit for setting MUX
 				readoutMap.emplace(group, tReadoutInfo{smBit, resultBit, cop, bi->readoutQubit});
@@ -484,12 +452,12 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				int mux = 0;				// get/assign LUT
 
 				// emit datapath code
-				emitDp(SS2S("[" << ic.ii.slot << "]"), SS2S(".MUX " << mux));
+				dp.emit(SS2S("[" << ic.ii.slot << "]"), SS2S(".MUX " << mux));
 				for(auto readout : readoutMap) {
 					int group = readout.first;
 					tReadoutInfo ri = readout.second;
 
-					emitDp(SS2S("[" << ic.ii.slot << "]"),      	// CCIO selector
+					dp.emit(SS2S("[" << ic.ii.slot << "]"),      	// CCIO selector
 							SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
 							SS2S("# cop " << ri.cop << " = readout(q" << ri.qubit << ")"));
 
@@ -497,7 +465,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				}
 
 				// emit code for slot input
-				int sizeTag = getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
+				int sizeTag = dp.getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
 				emit(SS2S("[" << ic.ii.slot << "]"),      			// CCIO selector
 					"seq_in_sm",
 					SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
@@ -660,11 +628,6 @@ void codegen_cc::nopGate()
     FATAL("FIXME: NOP gate not implemented");
 }
 
-void codegen_cc::comment(const std::string &c)
-{
-    if(verboseCode) emit(c);
-}
-
 /************************************************************************\
 | Classical operations on kernels
 \************************************************************************/
@@ -708,6 +671,11 @@ void codegen_cc::doWhileEnd(const std::string &label, size_t op0, const std::str
     emit("", "jmp", SS2S("@" << label), "# FIXME: we don't support conditions, just an endless loop'");        // FIXME: just endless loop
 }
 
+void codegen_cc::comment(const std::string &c)
+{
+    if(verboseCode) emit(c);
+}
+
 /************************************************************************\
 |
 | private functions
@@ -739,13 +707,6 @@ void codegen_cc::emit(const std::string &labelOrComment, const std::string &inst
 void codegen_cc::emit(const std::string &labelOrSel, const std::string &instr, const std::string &ops, const std::string &comment)
 {
     codeSection << std::setw(16) << labelOrSel << std::setw(16) << instr << std::setw(24) << ops << comment << std::endl;
-}
-
-
-// FIXME: helper, move to class datapath_cc
-void codegen_cc::emitDp(const std::string &sel, const std::string &statement, const std::string &comment)
-{
-    datapathSection << std::setw(16) << sel << std::setw(16) << statement << std::setw(24) << comment << std::endl;
 }
 
 /************************************************************************\
