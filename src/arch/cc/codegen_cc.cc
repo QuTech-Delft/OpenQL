@@ -830,7 +830,7 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     }
 
     // expand macros
-    ret.signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
+    ret.signalValueString = SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
     utils::replace(ret.signalValueString, std::string("\""), std::string(""));   // get rid of quotes
     utils::replace(ret.signalValueString, std::string("{gateName}"), iname);
     utils::replace(ret.signalValueString, std::string("{instrumentName}"), ret.si.ic.ii.instrumentName);

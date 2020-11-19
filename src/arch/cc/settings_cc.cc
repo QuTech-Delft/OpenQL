@@ -149,24 +149,22 @@ settings_cc::tInstrumentControl settings_cc::getInstrumentControl(size_t instrId
     // how many groups of control bits does the control mode specify (NB: 0 on missing key)
     ret.controlModeGroupCnt = ret.controlMode["control_bits"].size();
 
-#if OPT_CROSSCHECK_INSTRUMENT_DEF   // FIXME: WIP
+
+
     // get instrument definition reference for for instrument
     std::string refInstrumentDefinition = json_get<std::string>(*ret.ii.instrument, "ref_instrument_definition", ret.ii.instrumentName);
-
     // get instrument definition for our instrument
     const json instrumentDefinition = json_get<const json>(*jsonInstrumentDefinitions, refInstrumentDefinition, "instrument_definitions");
-
     // get number of channels of instrument
     int channels = json_get<int>(instrumentDefinition, "channels", refInstrumentDefinition);
-
     // calculate groups size (#channels) of control mode
     ret.controlModeGroupSize = channels / ret.controlModeGroupCnt;  // FIXME: handle 0 div, and rounding
 
     // verify that group size is allowed
     const json controlGroupSizes = json_get<const json>(instrumentDefinition, "control_group_sizes", refInstrumentDefinition);
-    // FIXME: find channels
 
-#endif
+    // FIXME: unfinished: find channels
+
 
     return ret;
 }
