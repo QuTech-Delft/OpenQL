@@ -65,7 +65,6 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
         image.fill(255);
 
         // Draw the edges between interacting qubits.
-        //TODO: edges are drawn twice between qubits
         std::vector<std::pair<int, int>> drawnEdges;
         for (const std::pair<Qubit, Position2> &qubit : qubitPositions) {
             const Position2 qubitPosition = qubit.second;
@@ -80,18 +79,20 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
                 const Position2 interactionPosition = calculatePositionOnCircle(interactionCircleRadius, theta, center);
                 image.draw_line(qubitPosition.x, qubitPosition.y, interactionPosition.x, interactionPosition.y, layout.getEdgeColor().data());
 
-                // Draw the number of interactions.
+                // Calculate label dimensions.
                 const std::string label = std::to_string(interactionsWithQubit.amountOfInteractions);
                 const Dimensions labelDimensions = calculateTextDimensions(label, layout.getLabelFontHeight());
                 const int a = labelDimensions.width;
                 const int b = labelDimensions.height;
                 const int labelRadius = sqrt(a * a + b * b);
 
+                // Calculate position of label.
                 const int deltaX = interactionPosition.x - qubitPosition.x;
                 const int deltaY = interactionPosition.y - qubitPosition.y;
                 const double angle = atan2(deltaY, deltaX);
                 const Position2 labelPosition = calculatePositionOnCircle(layout.getQubitRadius() + labelRadius, angle, qubitPosition);
 
+                // Draw the number of interactions.
                 image.draw_text(labelPosition.x, labelPosition.y, label.c_str(), layout.getLabelColor().data(), 0, 1, layout.getLabelFontHeight());
             }
         }

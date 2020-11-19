@@ -54,8 +54,8 @@ namespace ql {
 // [INTERACTION] calculate angle to target qubit and place amount of interactions label accordingly
 
 // -- IN PROGRESS ---
-// [GENERAL] update documentation
 // [MAPPING] add pseudogate containing virtual > real qubit mapping
+// [GENERAL] update documentation
 
 // --- FUTURE WORK ---
 // [GENERAL] add generating random circuits for visualization testing

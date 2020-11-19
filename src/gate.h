@@ -52,7 +52,8 @@ typedef enum __gate_type_t
     __dummy_gate__,
     __swap_gate__,
     __wait_gate__,
-    __classical_gate__
+    __classical_gate__,
+    __v2r_mapping_gate__
 } gate_type_t;
 
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
@@ -487,6 +488,15 @@ public:
     std::vector<gate *> gs;
     explicit composite_gate(const std::string &name);
     composite_gate(const std::string &name, const std::vector<gate*> &seq);
+    instruction_t qasm() const override;
+    gate_type_t type() const override;
+    cmat_t mat() const override;
+};
+
+class v2r_mapping : public gate {
+    cmat_t m;
+    size_t virtual_qubit_index;
+    v2r_mapping(const size_t v_index);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
