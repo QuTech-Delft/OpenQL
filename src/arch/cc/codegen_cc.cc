@@ -181,7 +181,7 @@ void codegen_cc::bundleStart(const std::string &cmnt)
 }
 
 
-// FIXME: helper, relocate
+// FIXME: helper, move to class datapath_cc
 int allocateSmBit(size_t cop, size_t instrIdx)
 {
 	static int smBit = 0;
@@ -192,6 +192,7 @@ int allocateSmBit(size_t cop, size_t instrIdx)
 }
 
 
+// FIXME: helper, move to class datapath_cc
 static int getSizeTag(int numReadouts) {
 	int sizeTag;
 
@@ -334,7 +335,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
         bool instrHasOutput = false;
         uint32_t digOut = 0;                                                // the digital output value sent over the instrument interface
-        int maxDurationInCycles = 0;                                   		// maximum duration over groups that are used, one instrument
+        unsigned int maxDurationInCycles = 0;                               // maximum duration over groups that are used, one instrument
 #if OPT_FEEDBACK
 		bool instrHasReadout = false;
 		typedef struct {
@@ -359,6 +360,16 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                 tCalcGroupDigOut gdo = calcGroupDigOut(instrIdx, group, nrGroups, ic, bi->staticCodewordOverride);
                 digOut |= gdo.groupDigOut;
                 comment(gdo.comment);
+#if OPT_FEEDBACK
+				// conditional gates
+				// store condition and groupDigOut in condMap, if all groups are unconditional we use old scheme, otherwise
+				// datapath is configured to generate proper digital output
+                if(bi->condition == cond_always) {
+                	// nothing to do, just use digOut
+                } else {
+
+                }
+#endif
 
                 vcd.bundleFinishGroup(startCycle, bi->durationInCycles, gdo.groupDigOut, bi->signalValue, instrIdx, group);
 
@@ -441,11 +452,15 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             padToCycle(lastEndCycle[instrIdx], startCycle, ic.ii.slot, ic.ii.instrumentName);
 
             // emit code for slot output
-            emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
-                 "seq_out",
-                 SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << maxDurationInCycles),
-                 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName+"'"));
+            if (1) {	// FIXME: all groups unconditional
+				emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+					 "seq_out",
+					 SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << maxDurationInCycles),
+					 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName+"'"));
+			} else {	// some group conditional
+				// configure datapath PL
 
+            }
             // update lastEndCycle
             lastEndCycle[instrIdx] = startCycle + maxDurationInCycles;
 
@@ -626,6 +641,7 @@ void codegen_cc::customGate(
         }
 
         // store expression for conditional gates
+        bi->condition = cond_always;
         // FIXME: implement when expressions are implemented
 #endif
 
@@ -726,6 +742,7 @@ void codegen_cc::emit(const std::string &labelOrSel, const std::string &instr, c
 }
 
 
+// FIXME: helper, move to class datapath_cc
 void codegen_cc::emitDp(const std::string &sel, const std::string &statement, const std::string &comment)
 {
     datapathSection << std::setw(16) << sel << std::setw(16) << statement << std::setw(24) << comment << std::endl;
@@ -800,16 +817,19 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     }
     unsigned int qubit = qops[ret.operandIdx];
 
-    // get signalInfo via signal type (e.g. "mw", "flux", etc. NB: this is different from
-    // the type provided by find_instruction_type, although some identical strings are used) FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL
+	// get instruction signal type (e.g. "mw", "flux", etc)
+    // NB: instructionSignalType is different from the type provided by find_instruction_type, although some identical strings are used) FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL
     std::string instructionSignalType = json_get<std::string>(sd.signal[s], "type", signalSPath);
+
+    // get signalInfo, i.e. map signal type for qubit to instrument & group
     ret.si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
+
 
     // get signal value
     const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
 
 #if OPT_CROSSCHECK_INSTRUMENT_DEF
-    // verify dimensions
+    // verify signal dimensions
     size_t channelsPergroup = ret.si.ic.controlModeGroupSize;
     if(instructionSignalValue.size() != channelsPergroup) {
         JSON_FATAL("signal dimension mismatch on instruction '" << iname <<

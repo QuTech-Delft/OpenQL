@@ -67,6 +67,7 @@ private:    // types
 #if OPT_FEEDBACK
         int readoutCop;                 // classic operand for readout. NB: we encode an implicit cop as -1
         int readoutQubit;
+        int condition;
 #endif
     } tBundleInfo;                      // information for an instrument group (of channels), for a single instruction
     // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR?

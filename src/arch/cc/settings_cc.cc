@@ -192,6 +192,8 @@ int settings_cc::getResultBit(const tInstrumentControl &ic, int group) const
 
 // find instrument&group given instructionSignalType for qubit
 // NB: this implies that we map signal *vectors* to groups, i.e. it is not possible to map individual channels
+// Conceptually, this is were we map an abstract signal definition, eg: {"flux", q3} (which may also be
+// interpreted as port "q3.flux") onto an instrument & group
 settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit) const
 {
     tSignalInfo ret;
