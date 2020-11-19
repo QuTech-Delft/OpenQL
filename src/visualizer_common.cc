@@ -59,6 +59,9 @@ namespace ql {
 
 // --- FUTURE WORK ---
 // [GENERAL] add generating random circuits for visualization testing
+// [CIRCUIT] add background color option
+// [CIRCUIT] add connection line thickness parameter
+// [CIRCUIT] add bitline thickness parameter (maybe)
 // [CIRCUIT] allow collapsing the three qubit lines into one with an option
 // [CIRCUIT] implement cycle cutting for pulse visualization
 // [CIRCUIT] what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
