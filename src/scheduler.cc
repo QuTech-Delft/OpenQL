@@ -921,6 +921,7 @@ bool Scheduler::immediately_schedulable(
             || gp->type() == gate_type_t::__dummy_gate__
             || gp->type() == gate_type_t::__classical_gate__
             || gp->type() == gate_type_t::__wait_gate__
+            || gp->type() == gate_type_t::__remap_gate__
             ) {
             return true;
         }
@@ -1024,6 +1025,7 @@ void Scheduler::schedule(
             && gp->type() != gate_type_t::__dummy_gate__
             && gp->type() != gate_type_t::__classical_gate__
             && gp->type() != gate_type_t::__wait_gate__
+            && gp->type() != gate_type_t::__remap_gate__
             ) {
             rm.reserve(curr_cycle, gp, platform);
         }

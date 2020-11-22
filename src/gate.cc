@@ -767,21 +767,20 @@ cmat_t composite_gate::mat() const {
     return m;   // FIXME: never initialized
 }
 
-v2r_mapping::v2r_mapping(const size_t v_index) : m(nop_c) {
-    name = "v2r_mapping";
+remap::remap(const size_t v_index) : m(nop_c) {
+    name = "remap";
     virtual_qubit_index = v_index;
 }
 
-instruction_t v2r_mapping::qasm() const {
-    return instruction_t("v2r v[" + virtual_qubit_index + "]"
-                          + ",r[" + std::to_string(operands[0]) +  "]");
+instruction_t remap::qasm() const {
+    return instruction_t("remap v[" + std::to_string(virtual_qubit_index) + "]" + ",r[" + std::to_string(operands[0]) +  "]");
 }
 
-gate_type_t v2r_mapping::type() const {
-    return __v2r_mapping_gate__;
+gate_type_t remap::type() const {
+    return __remap_gate__;
 }
 
-cmat_t v2r_mapping::mat() const {
+cmat_t remap::mat() const {
     return m;
 }
 

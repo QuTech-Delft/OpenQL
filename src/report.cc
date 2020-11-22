@@ -57,6 +57,8 @@ static size_t get_classical_operations_count(
                 break;
             case __wait_gate__:
                 break;
+            case __remap_gate__:
+                break;
             default:    // quantum gate
                 break;
         }
@@ -99,6 +101,8 @@ static void get_qubit_usecount(
             case __classical_gate__:
             case __wait_gate__:
                 break;
+            case __remap_gate__:
+                break;
             default:    // quantum gate
                 for (auto v : gp->operands) {
                     usecount[v]++;
@@ -123,6 +127,8 @@ static void get_qubit_usedcyclecount(
                 break;
             case __wait_gate__:
                 break;
+            case __remap_gate__:
+                break;
             default:    // quantum gate
                 for (auto v : gp->operands) {
                     usedcyclecount[v] += (gp->duration+cycle_time-1)/cycle_time;
@@ -144,6 +150,8 @@ static size_t get_quantum_gates_count(
             case __classical_gate__:
                 break;
             case __wait_gate__:
+                break;
+            case __remap_gate__:
                 break;
             default:    // quantum gate
                 quantum_gates++;
