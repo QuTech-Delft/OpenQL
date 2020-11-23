@@ -18,7 +18,7 @@
 
 namespace ql {
 
-void visualizeInteractionGraph(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths) {
+void visualizeInteractionGraph(const ql::quantum_program* program, const VisualizerConfiguration configuration) {
     IOUT("Visualizing qubit interaction graph...");
 
     // Get the gate list from the program.
@@ -28,7 +28,7 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
         FATAL("Quantum program contains no gates!");
     }
 
-    InteractionGraphLayout layout = parseInteractionGraphLayout(configurationPaths.config);
+    InteractionGraphLayout layout = parseInteractionGraphLayout(configuration.visualizerConfigPath);
 
     const int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
     // Prepare the interaction list per qubit.

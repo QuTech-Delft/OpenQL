@@ -75,29 +75,29 @@ namespace ql {
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfigurationPaths configurationPaths) {
+void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfiguration configuration) {
     WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
         << "might be missing and the visualizer has disabled itself.");
 }
 
 #else
 
-void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfigurationPaths configurationPaths) {
+void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfiguration configuration) {
     IOUT("Starting visualization...");
     IOUT("Visualization type: " << visualizationType);
 
-    printGates(parseGates(program));
+    // printGates(parseGates(program));
 
-    // // Choose the proper visualization based on the visualization type.
-    // if (visualizationType == "CIRCUIT") {
-    //     visualizeCircuit(program, configurationPaths);
-    // } else if (visualizationType == "INTERACTION_GRAPH") {
-    //     visualizeInteractionGraph(program, configurationPaths);
-    // } else if (visualizationType == "MAPPING_GRAPH") {
-    //     WOUT("Mapping graph visualization not yet implemented.");
-    // } else {
-    //     FATAL("Unknown visualization type: " << visualizationType << "!");
-    // }
+    // Choose the proper visualization based on the visualization type.
+    if (visualizationType == "CIRCUIT") {
+        visualizeCircuit(program, configuration);
+    } else if (visualizationType == "INTERACTION_GRAPH") {
+        visualizeInteractionGraph(program, configuration);
+    } else if (visualizationType == "MAPPING_GRAPH") {
+        WOUT("Mapping graph visualization not yet implemented.");
+    } else {
+        FATAL("Unknown visualization type: " << visualizationType << "!");
+    }
 
     IOUT("Visualization complete...");
 }
@@ -108,11 +108,11 @@ std::vector<GateProperties> parseGates(const ql::quantum_program* program) {
     for (ql::quantum_kernel kernel : program->kernels) {
         for (ql::gate* const gate : kernel.get_circuit()) {
             std::vector<int> codewords;
-            if (gate->type() == __custom_gate__) {
-                for (const size_t codeword : dynamic_cast<ql::custom_gate*>(gate)->codewords) {
-                    codewords.push_back(safe_int_cast(codeword));
-                }
-            }
+            // if (gate->type() == __custom_gate__) {
+            //     for (const size_t codeword : dynamic_cast<ql::custom_gate*>(gate)->codewords) {
+            //         codewords.push_back(safe_int_cast(codeword));
+            //     }
+            // }
 
             std::vector<int> operands;
             std::vector<int> creg_operands;
@@ -125,8 +125,10 @@ std::vector<GateProperties> parseGates(const ql::quantum_program* program) {
                 safe_int_cast(gate->duration),
                 safe_int_cast(gate->cycle),
                 gate->type(),
-                codewords,
-                gate->visual_type
+                {},
+                "UNDEFINED"
+                // codewords,
+                // gate->visual_type
             };
             gates.push_back(gateProperties);
         }

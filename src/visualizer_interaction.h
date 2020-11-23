@@ -24,7 +24,7 @@ struct Qubit {
     std::vector<InteractionsWithQubit> interactions;
 };
 
-void visualizeInteractionGraph(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths);
+void visualizeInteractionGraph(const ql::quantum_program* program, const VisualizerConfiguration configuration);
 
 void generateAndSaveDOTFile(const std::vector<Qubit> qubits);
 

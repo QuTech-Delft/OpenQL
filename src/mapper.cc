@@ -1168,7 +1168,7 @@ void Past::AddSwap(size_t r0, size_t r1) {
     }
     nswapsadded++;                       // for reporting at the end
     // new_gate(circ, "remap", {r0});
-    gl.push_back(new remap(qubit, virtindex));
+    // gl.push_back(new remap(qubit, virtindex));
     for (auto &gp : circ) {
         Add(gp);
     }

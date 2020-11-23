@@ -14,6 +14,8 @@
 #include "CImg.h"
 #include "json.h"
 
+#include <regex>
+
 using json = nlohmann::json;
 
 namespace ql {
@@ -536,7 +538,7 @@ void Structure::printProperties() const {
     }
 }
 
-void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths)
+void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration configuration)
 {
     // Get the gate list from the program.
     DOUT("Getting gate list...");
@@ -546,7 +548,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     }
 
     // Parse and validate the layout and instruction configuration file.
-    CircuitLayout layout = parseCircuitConfiguration(configurationPaths.config);
+    CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program->platform.instruction_settings);
     validateCircuitLayout(layout);
 
     // Calculate circuit properties.
@@ -593,7 +595,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
 
     // Draw the circuit as pulses if enabled.
     if (layout.pulses.areEnabled()) {
-        PulseVisualization pulseVisualization = parseWaveformMapping(configurationPaths.waveformMapping);
+        PulseVisualization pulseVisualization = parseWaveformMapping(configuration.waveformMappingPath);
         const std::vector<QubitLines> linesPerQubit = generateQubitLines(gates, pulseVisualization, circuitData);
 
         // Draw the lines of each qubit.
@@ -705,19 +707,85 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     image.display("Quantum Circuit");
 }
 
-CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
+CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
+                                        const std::string &visualizerConfigPath,
+                                        const json platformInstructions) {
     DOUT("Parsing visualizer configuration file for circuit visualization...");
 
-    json fullConfig;
+    // Load the relevant instruction parameters.
+    static const std::regex comma_space_pattern("\\s*,\\s*");
+    static const std::regex trim_pattern("^(\\s)+|(\\s)+$");
+    static const std::regex multiple_space_pattern("(\\s)+");
+
+    struct VisualParameters {
+        std::string visual_type;
+        std::vector<int> codewords;
+    };
+
+    std::map<std::string, VisualParameters> parameterMapping;
+    for (auto it = platformInstructions.begin(); it != platformInstructions.end(); ++it) {
+        std::string gateName = it.key();
+        json instruction = *it; //.value();
+
+        gateName = utils::to_lower(gateName);
+        gateName = std::regex_replace(gateName, trim_pattern, "");
+        gateName = std::regex_replace(gateName, multiple_space_pattern, " ");
+        gateName = std::regex_replace(gateName, comma_space_pattern, ",");
+
+        // Load the visual type of the instruction if provided.
+        std::string visual_type;
+        if (instruction.count("visual_type") == 1) {
+            visual_type = instruction["visual_type"].get<std::string>();
+            DOUT("visual_type: '" << visual_type);
+        } else {
+            WOUT("Did not find 'visual_type' attribute for instruction: '" << gateName << "'!");
+        }
+
+        std::vector<int> codewords;
+        // Load the codewords of the instruction if provided.
+        if (instruction.count("cc_light_codeword") == 1) {
+            codewords.push_back(instruction["cc_light_codeword"]);
+            DOUT("codewords: " << codewords[0]);
+        } else {
+            if (instruction.count("cc_light_right_codeword") == 1 && instruction.count("cc_light_left_codeword") == 1) {
+                codewords.push_back(instruction["cc_light_right_codeword"]);
+                codewords.push_back(instruction["cc_light_left_codeword"]);
+                DOUT("codewords: " << codewords[0] << "," << codewords[1]);
+            } else {
+                WOUT("Did not find any codeword attributes for instruction: '" << gateName << "'!");
+            }
+        }
+
+        parameterMapping[gateName] = {visual_type, codewords};
+    }
+
+    // Match the visualization parameters from the hardware configuration with the existing gates.
+    for (GateProperties &gate : gates) {
+        bool found = false;
+        for (const std::pair<std::string, VisualParameters> &mapping : parameterMapping) {
+            if (mapping.first == gate.name) {
+                found = true;
+                gate.visual_type = mapping.second.visual_type;
+                gate.codewords = mapping.second.codewords;
+            }
+        }
+        if (!found) {
+            WOUT("Did not find visual type and codewords for gate: " << gate.name << "!");
+        }
+    }
+
+    // Load the visualizer configuration file.
+    json visualizerConfig;
     try {
-        fullConfig = load_json(configPath);
+        visualizerConfig = load_json(visualizerConfigPath);
     } catch (json::exception &e) {
         FATAL("Failed to load the visualization config file: \n\t" << std::string(e.what()));
     }
 
-    json config;
-    if (fullConfig.count("circuit") == 1) {
-        config = fullConfig["circuit"];
+    // Load the circuit visualization parameters.
+    json circuitConfig;
+    if (visualizerConfig.count("circuit") == 1) {
+        circuitConfig = visualizerConfig["circuit"];
     } else {
         WOUT("Could not find circuit configuration in visualizer configuration file. Is it named correctly?");
     }
@@ -726,15 +794,15 @@ CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
     CircuitLayout layout;
 
     // Check if the image should be saved to disk.
-    if (fullConfig.count("saveImage") == 1) {
-        layout.saveImage = fullConfig["saveImage"];
+    if (visualizerConfig.count("saveImage") == 1) {
+        layout.saveImage = visualizerConfig["saveImage"];
     }
 
     // -------------------------------------- //
     // -               CYCLES               - //
     // -------------------------------------- //
-    if (config.count("cycles") == 1) {
-        json cycles = config["cycles"];
+    if (circuitConfig.count("cycles") == 1) {
+        json cycles = circuitConfig["cycles"];
 
         // LABELS
         if (cycles.count("labels") == 1) {
@@ -773,9 +841,9 @@ CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
     // -------------------------------------- //
     // -              BIT LINES             - //
     // -------------------------------------- //
-    if (config.count("bitLines") == 1)
+    if (circuitConfig.count("bitLines") == 1)
     {
-        json bitLines = config["bitLines"];
+        json bitLines = circuitConfig["bitLines"];
 
         // LABELS
         if (bitLines.count("labels") == 1) {
@@ -819,8 +887,8 @@ CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
     // -------------------------------------- //
     // -                GRID                - //
     // -------------------------------------- //
-    if (config.count("grid") == 1) {
-        json grid = config["grid"];
+    if (circuitConfig.count("grid") == 1) {
+        json grid = circuitConfig["grid"];
 
         if (grid.count("cellSize") == 1)    layout.grid.setCellSize(grid["cellSize"]);
         if (grid.count("borderSize") == 1)  layout.grid.setBorderSize(grid["borderSize"]);
@@ -829,8 +897,8 @@ CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
     // -------------------------------------- //
     // -       GATE DURATION OUTLINES       - //
     // -------------------------------------- //
-    if (config.count("gateDurationOutlines") == 1) {
-        json gateDurationOutlines = config["gateDurationOutlines"];
+    if (circuitConfig.count("gateDurationOutlines") == 1) {
+        json gateDurationOutlines = circuitConfig["gateDurationOutlines"];
 
         if (gateDurationOutlines.count("show") == 1)         layout.gateDurationOutlines.setEnabled(gateDurationOutlines["show"]);
         if (gateDurationOutlines.count("gap") == 1)          layout.gateDurationOutlines.setGap(gateDurationOutlines["gap"]);
@@ -842,8 +910,8 @@ CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
     // -------------------------------------- //
     // -            MEASUREMENTS            - //
     // -------------------------------------- //
-    if (config.count("measurements") == 1) {
-        json measurements = config["measurements"];
+    if (circuitConfig.count("measurements") == 1) {
+        json measurements = circuitConfig["measurements"];
 
         if (measurements.count("drawConnection") == 1)  layout.measurements.enableDrawConnection(measurements["drawConnection"]);
         if (measurements.count("lineSpacing") == 1)     layout.measurements.setLineSpacing(measurements["lineSpacing"]);
@@ -853,8 +921,8 @@ CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
     // -------------------------------------- //
     // -               PULSES               - //
     // -------------------------------------- //
-    if (config.count("pulses") == 1) {
-        json pulses = config["pulses"];
+    if (circuitConfig.count("pulses") == 1) {
+        json pulses = circuitConfig["pulses"];
 
         if (pulses.count("displayGatesAsPulses") == 1)      layout.pulses.setEnabled(pulses["displayGatesAsPulses"]);
         if (pulses.count("pulseRowHeightMicrowave") == 1)   layout.pulses.setPulseRowHeightMicrowave(pulses["pulseRowHeightMicrowave"]);
@@ -866,8 +934,8 @@ CircuitLayout parseCircuitConfiguration(const std::string &configPath) {
     }
 
     // Load the custom instruction visualization parameters.
-    if (config.count("instructions") == 1) {
-        for (const auto &instruction : config["instructions"].items()) {
+    if (circuitConfig.count("instructions") == 1) {
+        for (const auto &instruction : circuitConfig["instructions"].items()) {
             try {
                 GateVisual gateVisual;
                 json content = instruction.value();

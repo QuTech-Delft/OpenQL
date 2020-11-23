@@ -12,6 +12,7 @@
 #include "visualizer.h"
 #include "visualizer_types.h"
 #include "CImg.h"
+#include "json.h"
 
 namespace ql {
 
@@ -144,9 +145,9 @@ class Structure {
     void printProperties() const;
 };
 
-void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths);
+void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration configuration);
 
-CircuitLayout parseCircuitConfiguration(const std::string &configPath);
+CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates, const std::string &configPath, const json platformInstructions);
 void validateCircuitLayout(CircuitLayout &layout);
 PulseVisualization parseWaveformMapping(const std::string &waveformMappingPath);
 

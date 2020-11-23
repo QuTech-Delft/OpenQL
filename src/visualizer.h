@@ -13,12 +13,12 @@
 
 namespace ql {
 
-struct VisualizerConfigurationPaths {
-    const std::string &config;
-    const std::string &waveformMapping;
+struct VisualizerConfiguration {
+    const std::string &visualizerConfigPath;
+    const std::string &waveformMappingPath;
 };
 
-void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfigurationPaths configurationPaths);
+void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfiguration configuration);
 
 #ifdef WITH_VISUALIZER
 
