@@ -6,6 +6,7 @@
 #pragma once
 
 #include <map>
+#include "ql_config.h"
 #include "utils/str.h"
 #include "utils/container_base.h"
 
@@ -1081,9 +1082,12 @@ public:
 
 };
 
-// TODO: make a CMake flag that selects between CheckedMap and UncheckedMap.
 template <class Key, class T, class Compare = std::less<Key>>
+#ifdef QL_CHECKED_MAP
 using Map = CheckedMap<Key, T, Compare>;
+#else
+using Map = UncheckedMap<Key, T, Compare>;
+#endif
 
 } // namespace utils
 } // namespace ql

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <list>
+#include "ql_config.h"
 #include "utils/str.h"
 #include "utils/container_base.h"
 
@@ -1121,9 +1122,12 @@ public:
 
 };
 
-// TODO: make a CMake flag that selects between CheckedList and UncheckedList.
 template <typename T, typename Allocator = std::allocator<T>>
+#ifdef QL_CHECKED_LIST
 using List = CheckedList<T, Allocator>;
+#else
+using List = UncheckedList<T, Allocator>;
+#endif
 
 } // namespace utils
 } // namespace ql

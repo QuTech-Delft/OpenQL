@@ -6,6 +6,7 @@
 #pragma once
 
 #include <vector>
+#include "ql_config.h"
 #include "utils/str.h"
 #include "utils/container_base.h"
 
@@ -1168,9 +1169,12 @@ public:
 
 };
 
-// TODO: make a CMake flag that selects between CheckedVec and UncheckedVec.
 template <typename T, typename Allocator = std::allocator<T>>
+#ifdef QL_CHECKED_VEC
 using Vec = CheckedVec<T, Allocator>;
+#else
+using Vec = UncheckedVec<T, Allocator>;
+#endif
 
 } // namespace utils
 } // namespace ql
