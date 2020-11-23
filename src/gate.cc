@@ -652,6 +652,7 @@ void custom_gate::load(nlohmann::json &instr) {
         m.m[2] = complex_t(mat[2][0], mat[2][1]);
         m.m[3] = complex_t(mat[3][0], mat[3][1]);
 
+#ifdef WITH_VISUALIZER
         // Load the cc-light codeword(s).
         l_attr = "cc_light_codeword";
         if (instr.count("cc_light_codeword") == 1) {
@@ -663,7 +664,7 @@ void custom_gate::load(nlohmann::json &instr) {
                 codewords.push_back(instr["cc_light_left_codeword"]);
                 DOUT("codewords: " << codewords[0] << "," << codewords[1]);
             } else {
-                WOUT("Did not find any codeword attributes for instruction: '" << name << "'!");
+                DOUT("Did not find any codeword attributes for instruction: '" << name << "'!");
             }
         }
 
@@ -673,8 +674,9 @@ void custom_gate::load(nlohmann::json &instr) {
             visual_type = instr["visual_type"].get<std::string>();
             DOUT("visual_type: '" << visual_type);
         } else {
-            WOUT("Did not find 'visual_type' attribute for instruction: '" << name << "'!");
+            DOUT("Did not find 'visual_type' attribute for instruction: '" << name << "'!");
         }
+#endif // WITH_VISUALIZER
 
     } catch (json::exception &e) {
         EOUT("while loading instruction '" << name << "' (attr: " << l_attr
@@ -767,8 +769,9 @@ cmat_t composite_gate::mat() const {
     return m;   // FIXME: never initialized
 }
 
-remap::remap(const size_t v_index) : m(nop_c) {
+remap::remap(const size_t r_index, const size_t v_index) : m(nop_c) {
     name = "remap";
+    operands.push_back(r_index);
     virtual_qubit_index = v_index;
 }
 
