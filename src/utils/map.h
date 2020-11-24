@@ -10,11 +10,6 @@
 #include "utils/str.h"
 #include "utils/container_base.h"
 
-template <class Key, class T, class Compare>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedMap<Key, T, Compare> &map);
-template <class Key, class T, class Compare>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedMap<Key, T, Compare> &map);
-
 namespace ql {
 namespace utils {
 
@@ -205,6 +200,15 @@ public:
     T &operator[](const Key &key) = delete;
 
 };
+
+/**
+ * Stream << overload for UncheckedMap<>.
+ */
+template <class Key, class T, class Compare>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedMap<Key, T, Compare> &map) {
+    os << map.to_string();
+    return os;
+}
 
 /**
  * Wrapper for `std::map` that guards against undefined behavior and replaces
@@ -1082,6 +1086,15 @@ public:
 
 };
 
+/**
+ * Stream << overload for CheckedMap<>.
+ */
+template <class Key, class T, class Compare>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedMap<Key, T, Compare> &map) {
+    os << map.to_string();
+    return os;
+}
+
 template <class Key, class T, class Compare = std::less<Key>>
 #ifdef QL_CHECKED_MAP
 using Map = CheckedMap<Key, T, Compare>;
@@ -1091,21 +1104,3 @@ using Map = UncheckedMap<Key, T, Compare>;
 
 } // namespace utils
 } // namespace ql
-
-/**
- * Stream << overload for UncheckedMap<>.
- */
-template <class Key, class T, class Compare>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedMap<Key, T, Compare> &map) {
-    os << map.to_string();
-    return os;
-}
-
-/**
- * Stream << overload for CheckedMap<>.
- */
-template <class Key, class T, class Compare>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedMap<Key, T, Compare> &map) {
-    os << map.to_string();
-    return os;
-}

@@ -10,11 +10,6 @@
 #include "utils/str.h"
 #include "utils/container_base.h"
 
-template <class T>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedList<T> &list);
-template <class T>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedList<T> &list);
-
 namespace ql {
 namespace utils {
 
@@ -146,6 +141,15 @@ public:
     }
 
 };
+
+/**
+ * Stream << overload for UncheckedList<>.
+ */
+template <class T>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedList<T> &list) {
+    os << list.to_string();
+    return os;
+}
 
 /**
  * Wrapper for `std::list` with additional error detection and handling.
@@ -1127,6 +1131,15 @@ public:
 
 };
 
+/**
+ * Stream << overload for CheckedList<>.
+ */
+template <class T>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedList<T> &list) {
+    os << list.to_string();
+    return os;
+}
+
 template <typename T, typename Allocator = std::allocator<T>>
 #ifdef QL_CHECKED_LIST
 using List = CheckedList<T, Allocator>;
@@ -1136,21 +1149,3 @@ using List = UncheckedList<T, Allocator>;
 
 } // namespace utils
 } // namespace ql
-
-/**
- * Stream << overload for UncheckedList<>.
- */
-template <class T>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedList<T> &list) {
-    os << list.to_string();
-    return os;
-}
-
-/**
- * Stream << overload for CheckedList<>.
- */
-template <class T>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedList<T> &list) {
-    os << list.to_string();
-    return os;
-}

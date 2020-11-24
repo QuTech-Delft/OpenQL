@@ -10,11 +10,6 @@
 #include "utils/str.h"
 #include "utils/container_base.h"
 
-template <class T>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedVec<T> &vec);
-template <class T>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedVec<T> &vec);
-
 namespace ql {
 namespace utils {
 
@@ -240,6 +235,15 @@ public:
     }
 
 };
+
+/**
+ * Stream << overload for UncheckedVec<>.
+ */
+template <class T>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedVec<T> &vec) {
+    os << vec.to_string();
+    return os;
+}
 
 /**
  * Wrapper for `std::vector` with additional error detection and handling.
@@ -1174,6 +1178,15 @@ public:
 
 };
 
+/**
+ * Stream << overload for CheckedVec<>.
+ */
+template <class T>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedVec<T> &vec) {
+    os << vec.to_string();
+    return os;
+}
+
 template <typename T, typename Allocator = std::allocator<T>>
 #ifdef QL_CHECKED_VEC
 using Vec = CheckedVec<T, Allocator>;
@@ -1183,21 +1196,3 @@ using Vec = UncheckedVec<T, Allocator>;
 
 } // namespace utils
 } // namespace ql
-
-/**
- * Stream << overload for UncheckedVec<>.
- */
-template <class T>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedVec<T> &vec) {
-    os << vec.to_string();
-    return os;
-}
-
-/**
- * Stream << overload for CheckedVec<>.
- */
-template <class T>
-std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedVec<T> &vec) {
-    os << vec.to_string();
-    return os;
-}
