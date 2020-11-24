@@ -9,7 +9,6 @@
 
 #pragma once
 
-#define _USE_MATH_DEFINES
 #include <cinttypes>
 #include <cmath>
 #include <complex>
@@ -56,12 +55,12 @@ const Int MAX = std::numeric_limits<Int>::max();
 /**
  * Constant for pi.
  */
-const Real PI = M_PI;
+const Real PI = 3.14159265358979323846;
 
 /**
  * Euler's constant.
  */
-const Real EU = M_E;
+const Real EU = 2.7182818284590452354;
 
 /**
  * Imaginary constant.
