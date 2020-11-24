@@ -179,6 +179,10 @@ void Kernel::measure(size_t q0) {
     kernel->measure(q0);
 }
 
+void Kernel::measure(size_t q0, size_t b0) {
+    kernel->measure(q0, b0);
+}
+
 void Kernel::prepz(size_t q0) {
     kernel->prepz(q0);
 }

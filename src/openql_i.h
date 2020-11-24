@@ -103,6 +103,7 @@ public:
     void ry(size_t q0, double angle);
     void rz(size_t q0, double angle);
     void measure(size_t q0);
+    void measure(size_t q0, size_t b0);
     void prepz(size_t q0);
     void cnot(size_t q0, size_t q1);
     void cphase(size_t q0, size_t q1);

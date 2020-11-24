@@ -177,6 +177,10 @@ void quantum_kernel::measure(size_t qubit) {
     gate("measure", qubit);
 }
 
+void quantum_kernel::measure(size_t qubit, size_t bit) {
+    gate("measure", {qubit}, {}, {bit});
+}
+
 void quantum_kernel::prepz(size_t qubit) {
     gate("prepz", qubit);
 }

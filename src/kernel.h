@@ -80,6 +80,7 @@ public:
     void mry90(size_t qubit);
     void ry180(size_t qubit);
     void measure(size_t qubit);
+    void measure(size_t qubit, size_t bit);
     void prepz(size_t qubit);
     void cnot(size_t qubit1, size_t qubit2);
     void cz(size_t qubit1, size_t qubit2);
