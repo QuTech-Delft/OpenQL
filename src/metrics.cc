@@ -24,16 +24,16 @@ void my_print(Vec<T> const &input, const char *id_name) {
     QL_IOUT(output.str());
 }
 
-double Metrics::gaussian_pdf(double x, double mean, double sigma) {
+Real Metrics::gaussian_pdf(Real x, Real mean, Real sigma) {
     return (1.0 / (sigma * sqrt(2 * PI))) *
            exp(-0.5 * (x - mean) / sigma * (x - mean) / sigma);
 }
 
 Metrics::Metrics(
-    size_t Nqubits,
-    double gatefid_1,
-    double gatefid_2,
-    double decoherence_time,
+    UInt Nqubits,
+    Real gatefid_1,
+    Real gatefid_2,
+    Real decoherence_time,
     const Str &estimator,
     const Str &output_mode
 ) {
@@ -62,7 +62,7 @@ Metrics::Metrics(
     this->decoherence_time = decoherence_time;
 }
 
-void Metrics::Init(size_t Nqubits, quantum_platform *platform) {
+void Metrics::Init(UInt Nqubits, quantum_platform *platform) {
     this->Nqubits = Nqubits;
 
     //TODO test if json has qubit relaxation times / gate error rate in this function
@@ -78,17 +78,17 @@ void Metrics::Init(size_t Nqubits, quantum_platform *platform) {
 
 }
 
-double Metrics::create_output(const Vec<double> &fids) {
+Real Metrics::create_output(const Vec<Real> &fids) {
     QL_IOUT("Creating output");
-    Vec<double> result_vector;
+    Vec<Real> result_vector;
     result_vector = fids;
     QL_IOUT("Creating output2");
 
     PRINTER(result_vector);
     QL_IOUT("Creating output2.5");
     //We take out negative fidelities
-    // size_t dimension = result_vector.size();
-    // for (size_t element = dimension-1; element >=0 ; element--)
+    // UInt dimension = result_vector.size();
+    // for (UInt element = dimension-1; element >=0 ; element--)
     // {
     // 	if (result_vector.at(element) <= 0)
     // 		result_vector.erase(result_vector.begin() + element);
@@ -103,22 +103,22 @@ double Metrics::create_output(const Vec<double> &fids) {
         return *std::min_element(fids.begin(), fids.end());
     } else if (output_mode == "average") { //DOES NOT WORK
         PRINTER(fids);
-        // double sum= std::accumulate(fids.begin(), fids.end(), 0);
-        double sum = 0;
+        // Real sum= std::accumulate(fids.begin(), fids.end(), 0);
+        Real sum = 0;
         for (auto x : fids)
         {
             sum += x;
         }
         QL_DOUT("Sum fidelities :" + to_string(sum));
-        double average = sum / fids.size();
+        Real average = sum / fids.size();
         QL_DOUT("Average fidelity:" + to_string(average));
         return average;
     // } else if (output_mode == "gaussian") { //DOES NOT WORK
         // 	IOUT("\nOutput mode: gaussian");
-        // 	double min = *std::min_element(fids.begin(),fids.end());
-        // 	double sigma = (1.0 - min)/2;
+        // 	Real min = *std::min_element(fids.begin(),fids.end());
+        // 	Real sigma = (1.0 - min)/2;
         // 	IOUT("\nOutput mode: gaussian2");
-        // 	double sum = 0;
+        // 	Real sum = 0;
         // 	for (auto x : fids)
         // 	{
         // 		IOUT("\nOutput mode: gaussian3");
@@ -135,7 +135,7 @@ double Metrics::create_output(const Vec<double> &fids) {
 
 }
 
-double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
+Real Metrics::bounded_fidelity(const circuit &circ, Vec<Real> &fids) {
     //this function considers the primitive gates! each operand undergoing a 2-qubit operation is always considered to have the same latency
     //same end fidelity considered for the two operands of the same 2-qubit gate
     //TODO - URGENT!! Check if gate->cycle starts in zero;
@@ -148,7 +148,7 @@ double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
         //TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
     }
 
-    Vec<size_t> last_op_endtime(Nqubits, 1); //First cycle has index 1
+    Vec<UInt> last_op_endtime(Nqubits, 1); //First cycle has index 1
 
     PRINTER(fids);
     PRINTER(last_op_endtime);
@@ -162,7 +162,7 @@ double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
         if (gate->name == "measure") {
             continue;
         } else if (gate->name == "prepz") {
-            size_t qubit = gate->operands[0];
+            UInt qubit = gate->operands[0];
             fids[qubit] = 1.0;
             last_op_endtime[qubit] = gate->cycle + gate->duration / CYCLE_TIME;
             continue;
@@ -175,30 +175,30 @@ double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
 
         unsigned char type_op = gate->operands.size(); // type of operation (1-qubit/2-qubit)
         if (type_op == 1) {
-            size_t qubit = gate->operands[0];
-            size_t last_time = last_op_endtime[qubit];
+            UInt qubit = gate->operands[0];
+            UInt last_time = last_op_endtime[qubit];
             QL_IOUT("Gate " + gate->name + "(" + to_string(gate->operands[0]) + ") at cycle " + to_string(gate->cycle) + " with duration " + to_string(gate->duration));
-            size_t idled_time = gate->cycle - last_time; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
+            UInt idled_time = gate->cycle - last_time; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
             last_op_endtime[qubit] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
             QL_IOUT("Idled time:" + to_string(idled_time));
 
 
-            fids[qubit] *= exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
+            fids[qubit] *= exp(-((Real)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
 
             fids[qubit] *= gatefid_1; //Update fidelity after gate
             QL_IOUT("METRICS - one qubit gate - END");
 
         } else if (type_op == 2) {
             QL_IOUT("METRICS - TWO qubit gate");
-            size_t qubit_c = gate->operands[0];
-            size_t qubit_t = gate->operands[1];
+            UInt qubit_c = gate->operands[0];
+            UInt qubit_t = gate->operands[1];
 
-            size_t last_time_c = last_op_endtime[qubit_c];
-            size_t last_time_t = last_op_endtime[qubit_t];
-            size_t idled_time_c = gate->cycle - last_time_c;
-            size_t idled_time_t = gate->cycle - last_time_t; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
+            UInt last_time_c = last_op_endtime[qubit_c];
+            UInt last_time_t = last_op_endtime[qubit_t];
+            UInt idled_time_c = gate->cycle - last_time_c;
+            UInt idled_time_t = gate->cycle - last_time_t; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
             last_op_endtime[qubit_c] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
             last_op_endtime[qubit_t] = gate->cycle  + gate->duration / CYCLE_TIME ; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
@@ -206,8 +206,8 @@ double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
             QL_IOUT("Idled time q_c:" + to_string(idled_time_c));
             QL_IOUT("Idled time q_t:" + to_string(idled_time_t) + " gate cycle=" + to_string(gate->cycle) + ". last_time_t=" + to_string(last_time_t));
 
-            fids[qubit_c] *= exp(-(double) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
-            fids[qubit_t] *= exp(-(double)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
+            fids[qubit_c] *= exp(-(Real) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
+            fids[qubit_t] *= exp(-(Real)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
 
             QL_IOUT("Fidelity after idlying: ");
             PRINTER(fids);
@@ -223,10 +223,10 @@ double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
         QL_IOUT("\n NEXT GATE");
 
     }
-    size_t end_cycle = circ.back()->cycle + circ.back()->duration/CYCLE_TIME;
-    for (size_t i = 0; i < Nqubits; i++) {
-        size_t idled_time_final = end_cycle - last_op_endtime[i];
-        fids[i] *= exp(-(double) idled_time_final/decoherence_time);
+    UInt end_cycle = circ.back()->cycle + circ.back()->duration/CYCLE_TIME;
+    for (UInt i = 0; i < Nqubits; i++) {
+        UInt idled_time_final = end_cycle - last_op_endtime[i];
+        fids[i] *= exp(-(Real) idled_time_final/decoherence_time);
     }
 
     //Now we should still add decoherence effect in case the last gate was a two-qubit gate (the other qubits still decohere in the meantime!)
@@ -238,28 +238,28 @@ double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
     return create_output(fids);
 }
 
-double quick_fidelity(const List<gate*> &gate_list) {
+Real quick_fidelity(const List<gate*> &gate_list) {
     Metrics estimator(17);
-    Vec<double> previous_fids;
+    Vec<Real> previous_fids;
     circuit circuit;
     std::copy(std::begin(gate_list), std::end(gate_list), std::back_inserter(circuit));
-    double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
+    Real fidelity = estimator.bounded_fidelity(circuit, previous_fids);
     fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
     return fidelity;
 }
 
-double quick_fidelity_circuit(const circuit &circuit) {
+Real quick_fidelity_circuit(const circuit &circuit) {
     Metrics estimator(17);
-    Vec<double> previous_fids;
-    double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
+    Vec<Real> previous_fids;
+    Real fidelity = estimator.bounded_fidelity(circuit, previous_fids);
     fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
     return fidelity;
 }
 
-double quick_fidelity(const circuit &circuit) {
+Real quick_fidelity(const circuit &circuit) {
     Metrics estimator(17);
-    Vec<double> previous_fids;
-    double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
+    Vec<Real> previous_fids;
+    Real fidelity = estimator.bounded_fidelity(circuit, previous_fids);
     fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
     return fidelity;
 }
@@ -279,19 +279,19 @@ double quick_fidelity(const circuit &circuit) {
 // {
 // 	//Each physical qubit should be associated to only one QubitSet
 // 	private:
-// 		Map<Str, double> error_map; //the string contains the error status of each Qubit. Ex: IIXYXXI for a qubit set with 7 qubits
+// 		Map<Str, Real> error_map; //the string contains the error status of each Qubit. Ex: IIXYXXI for a qubit set with 7 qubits
 // 	public:
-// 		Vec<size_t> qubits; //Contains the qubits ordered as they would appear in a error string
-// 		static double new_error_threshold;
+// 		Vec<UInt> qubits; //Contains the qubits ordered as they would appear in a error string
+// 		static Real new_error_threshold;
 
-// 		QubitSet( Vec<size_t> qubits )
+// 		QubitSet( Vec<UInt> qubits )
 // 		{
 // 			// error_map.reserve( qubits.size() );
 // 			this->qubits = qubits;
 // 			reset();
 // 		}
 
-// 		QubitSet( size_t qubit )
+// 		QubitSet( UInt qubit )
 // 		{
 // 			// error_map.reserve( qubits.size() );
 // 			this->qubits.push_back(qubit);
@@ -308,7 +308,7 @@ double quick_fidelity(const circuit &circuit) {
 // 			{
 // 				for (auto & error2 : qubit_set2->error_map )
 // 				{
-// 					double joint_probability = error1.second * error2.second;
+// 					Real joint_probability = error1.second * error2.second;
 // 					if ( joint_probability > 0.01)
 // 						error_map[error1.first + error2.first] = joint_probability;
 // 				}
@@ -328,9 +328,9 @@ double quick_fidelity(const circuit &circuit) {
 // 		}
 
 
-// 		void remove_qubit(size_t qubit)
+// 		void remove_qubit(UInt qubit)
 // 		{
-// 			size_t q_index = get_qubit_index(qubit)
+// 			UInt q_index = get_qubit_index(qubit)
 
 // 			for (auto & error : error_map)
 // 			{
@@ -371,18 +371,18 @@ double quick_fidelity(const circuit &circuit) {
 // 		}
 
 
-// 	// void introduce_wait_cycles(size_t cycles, size_t qubit)
+// 	// void introduce_wait_cycles(UInt cycles, UInt qubit)
 // 	// {
-// 	// 	for (int i = 0 ; i<cycles ; i++)
+// 	// 	for (Int i = 0 ; i<cycles ; i++)
 // 	// 	{
 // 	// 		single_qubit_gate(qubit, fid_dec);
 // 	// 	}
 // 	// }
 
-// 		size_t get_qubit_index(size_t qubit)
+// 		UInt get_qubit_index(UInt qubit)
 // 		{
 
-// 			Vec<size_t>::iterator it = std::find(qubits.begin(), qubits.end(), 22);
+// 			Vec<UInt>::iterator it = std::find(qubits.begin(), qubits.end(), 22);
 
 // 			if (it == qubits.end())
 // 			{
@@ -393,22 +393,22 @@ double quick_fidelity(const circuit &circuit) {
 // 			return std::distance(qubits.begin(), it);
 // 		}
 
-// 		void single_qubit_gate(size_t qubit, double fid, const Str &name)
+// 		void single_qubit_gate(UInt qubit, Real fid, const Str &name)
 // 		{
 // 			//TODO: Transform previous errors first
 // 			introduce_single_qubit_error(qubit, fid);
 // 		}
 
-// 		void two_qubit_gate(size_t qubit, double fid, const Str &name, int control_target)
+// 		void two_qubit_gate(UInt qubit, Real fid, const Str &name, Int control_target)
 // 		{
 // 			//TODO: Transform previous errors first
 // 			introduce_single_qubit_error(qubit, fid);
 // 		}
 
-// 		void introduce_single_qubit_error(size_t qubit, double fid)
+// 		void introduce_single_qubit_error(UInt qubit, Real fid)
 // 		{
-// 			double axis_flip_prob = (1-fid)/3;
-// 			Map< Str, double> new_error_map;
+// 			Real axis_flip_prob = (1-fid)/3;
+// 			Map< Str, Real> new_error_map;
 
 // 			for (auto & error : error_map)
 // 			{
@@ -416,22 +416,22 @@ double quick_fidelity(const circuit &circuit) {
 // 				char current_state = error.first.at( get_qubit_index(qubit) ); //Gets error status for qubit at a error string. Replace .at() for [] for optimization
 
 
-// 				// new_error_map.insert(Pair<Str, double>(error, error.second * fid)); //Inserts the new states for a 'I' injected error
+// 				// new_error_map.insert(Pair<Str, Real>(error, error.second * fid)); //Inserts the new states for a 'I' injected error
 // 				// use pointers and the new char instead of the string?
 
-// 				new_error_map.insert(Pair<Str, double>(error.first, error.second * fid));
+// 				new_error_map.insert(Pair<Str, Real>(error.first, error.second * fid));
 
 // 				for (auto new_error = 1; new_error < 4; new_error++)
 // 				{
 // 					unsigned char new_state = new_state_calc(current_state, new_error);
-// 					double new_state_prob = error.second * axis_flip_prob;
+// 					Real new_state_prob = error.second * axis_flip_prob;
 
 // 					Str new_error_string(error.first);
 // 					new_error_string.at( get_qubit_index(qubit) ) = new_state; //string with the new error syndrome, for each case
 
 // 					if (new_state_prob > new_error_threshold )
 // 					{
-// 						auto ret = new_error_map.insert(Pair<Str, double>(new_error_string, new_state_prob)); //only adds if error syndrome not on the list
+// 						auto ret = new_error_map.insert(Pair<Str, Real>(new_error_string, new_state_prob)); //only adds if error syndrome not on the list
 // 						if (ret.second == false) //If a key already existed, then
 // 							error_map[new_error_string] += new_state_prob;
 // 					}
@@ -449,25 +449,25 @@ double quick_fidelity(const circuit &circuit) {
 // {
 // 	private:
 // 		Vec< QubitSet * > qubit_partition;
-// 		double gatefid1;
-// 		double gatefid2;
-// 		size_t Nqubits;
+// 		Real gatefid1;
+// 		Real gatefid2;
+// 		UInt Nqubits;
 
 // 	public:
-// 		Depolarizing_model(size_t Nqubits, double gatefid1, double gatefid2, double new_error_threshold): gatefid1(gatefid1), gatefid2(gatefid2)
+// 		Depolarizing_model(UInt Nqubits, Real gatefid1, Real gatefid2, Real new_error_threshold): gatefid1(gatefid1), gatefid2(gatefid2)
 // 		{
 // 			qubit_partition.reserve(Nqubits);
 // 			QubitSet::new_error_threshold = new_error_threshold;
 
-// 			for (size_t i = 0; i<Nqubits; i++)
+// 			for (UInt i = 0; i<Nqubits; i++)
 // 			{
-// 				Vec<size_t> initial_qubit (1, (size_t)1);
+// 				Vec<UInt> initial_qubit (1, (UInt)1);
 // 				qubit_partition.push_back(new QubitSet(  initial_qubit ));
 // 			}
 // 			this->Nqubits = Nqubits;
 // 		}
 
-// 		void merge_sets(size_t qubit1, size_t qubit2)
+// 		void merge_sets(UInt qubit1, UInt qubit2)
 // 		{
 // 			QubitSet* qubit_set1 = qubit_partition.at(qubit1);
 // 			QubitSet* qubit_set2 = qubit_partition.at(qubit2);
@@ -483,7 +483,7 @@ double quick_fidelity(const circuit &circuit) {
 // 			}
 // 		}
 
-// 		void split_sets(size_t qubit1)
+// 		void split_sets(UInt qubit1)
 // 		{
 // 			QubitSet* qubit_set1 = qubit_partition.at(qubit1);
 
@@ -504,7 +504,7 @@ double quick_fidelity(const circuit &circuit) {
 // 			return;
 // 		}
 
-// 		double run_circuit(circuit &circ)
+// 		Real run_circuit(circuit &circ)
 // {
 // 		//this function considers the primitive gates! each operand undergoing a 2-qubit operation is always considered to have the same latency
 // 		//same end fidelity considered for the two operands of the same 2-qubit gate
@@ -518,7 +518,7 @@ double quick_fidelity(const circuit &circuit) {
 // 		// 	//TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
 // 		// }
 
-// 		Vec<size_t> last_op_endtime(Nqubits, 1); //First cycle has index 1
+// 		Vec<UInt> last_op_endtime(Nqubits, 1); //First cycle has index 1
 
 // 		PRINTER(last_op_endtime);
 // 		IOUT("\n\n");
@@ -530,7 +530,7 @@ double quick_fidelity(const circuit &circuit) {
 // 				continue;
 // 			else if (gate->name == "prep_z")
 // 			{
-// 				size_t qubit = gate->operands[0];
+// 				UInt qubit = gate->operands[0];
 // 				// fids[qubit] = 1.0;
 // 				split_qubits(qubit);
 // 				last_op_endtime[qubit] = gate->cycle + gate->duration / CYCLE_TIME;
@@ -547,23 +547,23 @@ double quick_fidelity(const circuit &circuit) {
 // 			unsigned char type_op = gate->operands.size(); // type of operation (1-qubit/2-qubit)
 // 			if (type_op == 1)
 // 			{
-// 				size_t qubit = gate->operands[0];
-// 				size_t last_time = last_op_endtime[qubit];
+// 				UInt qubit = gate->operands[0];
+// 				UInt last_time = last_op_endtime[qubit];
 // 				IOUT("Gate " + gate->name + "("+ to_string(gate->operands[0]) +") at cycle " + to_string(gate->cycle) + " with duration " + to_string(gate->duration));
-// 				size_t idled_time = gate->cycle - last_time; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
+// 				UInt idled_time = gate->cycle - last_time; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
 // 				last_op_endtime[qubit] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
 // 				IOUT("Idled time:" + to_string(idled_time));
 
 
-// 				// fids[qubit] *= exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
+// 				// fids[qubit] *= exp(-((Real)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
 // 				// fids[qubit] *= gatefid_1; //Update fidelity after gate
 
 // 				//TODO: OPTIMIZE THE DECOHERENCE PART?
 // 				for (auto i = 0; i < idled_time; i++)
 // 				{
-// 					qubit_partition[qubit]->introduce_single_qubit_error(qubit, exp(-(double)1.0/decoherence_time)); //Introduces wait gates
+// 					qubit_partition[qubit]->introduce_single_qubit_error(qubit, exp(-(Real)1.0/decoherence_time)); //Introduces wait gates
 // 				}
 // 				qubit_partition[qubit]->single_qubit_gate(qubit, gatefid_1, gate->name); //Introduces gate fidelity
 
@@ -576,13 +576,13 @@ double quick_fidelity(const circuit &circuit) {
 // 			else if (type_op == 2)
 // 			{
 // 				IOUT("METRICS - TWO qubit gate");
-// 				size_t qubit_c = gate->operands[0];
-// 				size_t qubit_t = gate->operands[1];
+// 				UInt qubit_c = gate->operands[0];
+// 				UInt qubit_t = gate->operands[1];
 
-// 				size_t last_time_c = last_op_endtime[qubit_c];
-// 				size_t last_time_t = last_op_endtime[qubit_t];
-// 				size_t idled_time_c = gate->cycle - last_time_c;
-// 				size_t idled_time_t = gate->cycle - last_time_t; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
+// 				UInt last_time_c = last_op_endtime[qubit_c];
+// 				UInt last_time_t = last_op_endtime[qubit_t];
+// 				UInt idled_time_c = gate->cycle - last_time_c;
+// 				UInt idled_time_t = gate->cycle - last_time_t; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 // 				last_op_endtime[qubit_c] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 // 				last_op_endtime[qubit_t] = gate->cycle  + gate->duration / CYCLE_TIME ; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
@@ -591,13 +591,13 @@ double quick_fidelity(const circuit &circuit) {
 // 				IOUT("Idled time q_t:" + to_string(idled_time_t));
 // 				IOUT("Decoherence time: " + to_string(decoherence_time));
 
-// 				// fids[qubit_c] *= exp(-(double) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
-// 				// fids[qubit_t] *= exp(-(double)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
+// 				// fids[qubit_c] *= exp(-(Real) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
+// 				// fids[qubit_t] *= exp(-(Real)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
 
 // 				for (auto i = 0; i < idled_time_c; i++)
-// 					qubit_partition[qubit_c]->introduce_single_qubit_error(qubit_c, exp(-(double)1.0/decoherence_time)); //Introduces wait gates
+// 					qubit_partition[qubit_c]->introduce_single_qubit_error(qubit_c, exp(-(Real)1.0/decoherence_time)); //Introduces wait gates
 // 				for (auto i = 0; i < idled_time_t; i++)
-// 					qubit_partition[qubit_t]->introduce_single_qubit_error(qubit_t, exp(-(double)1.0/decoherence_time)); //Introduces wait gates
+// 					qubit_partition[qubit_t]->introduce_single_qubit_error(qubit_t, exp(-(Real)1.0/decoherence_time)); //Introduces wait gates
 
 // 				// IOUT("Error status after idlying: ");
 // 				// PRINTER(fids);
@@ -619,12 +619,12 @@ double quick_fidelity(const circuit &circuit) {
 // 				IOUT("\n NEXT GATE");
 
 // 		}
-// 		size_t end_cycle = circ.back()->cycle + circ.back()->duration/CYCLE_TIME;
+// 		UInt end_cycle = circ.back()->cycle + circ.back()->duration/CYCLE_TIME;
 // 		for (auto qubit=0; qubit < Nqubits; qubit++ )
 // 		{
-// 			size_t idled_time_final = end_cycle - last_op_endtime[i];
+// 			UInt idled_time_final = end_cycle - last_op_endtime[i];
 // 			for(auto wait=0; wait < idled_time_final; wait++)
-// 				qubit_partition[qubit]->introduce_single_qubit_error(qubit, exp(-(double)1.0/decoherence_time)); //Introduces wait gates
+// 				qubit_partition[qubit]->introduce_single_qubit_error(qubit, exp(-(Real)1.0/decoherence_time)); //Introduces wait gates
 
 // 		}
 

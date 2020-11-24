@@ -589,12 +589,12 @@ void Scheduler::set_cycle_gate(gate *gp, scheduling_direction_t dir) {
     if (forward_scheduling == dir) {
         currCycle = 0;
         for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currCycle = max(currCycle, instruction[graph.source(arc)]->cycle + weight[arc]);
+            currCycle = max<UInt>(currCycle, instruction[graph.source(arc)]->cycle + weight[arc]);
         }
     } else {
         currCycle = MAX_CYCLE;
         for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currCycle = min(currCycle, instruction[graph.target(arc)]->cycle - weight[arc]);
+            currCycle = min<UInt>(currCycle, instruction[graph.target(arc)]->cycle - weight[arc]);
         }
     }
     gp->cycle = currCycle;
@@ -694,11 +694,11 @@ void Scheduler::set_remaining_gate(gate* gp, scheduling_direction_t dir) {
     UInt currRemain = 0;
     if (forward_scheduling == dir) {
         for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currRemain = max(currRemain, remaining.at(graph.target(arc)) + weight[arc]);
+            currRemain = max<UInt>(currRemain, remaining.at(graph.target(arc)) + weight[arc]);
         }
     } else {
         for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currRemain = max(currRemain, remaining.at(graph.source(arc)) + weight[arc]);
+            currRemain = max<UInt>(currRemain, remaining.at(graph.source(arc)) + weight[arc]);
         }
     }
     remaining.set(currNode) = currRemain;
@@ -1220,7 +1220,7 @@ void Scheduler::schedule_alap_uniform() {
     UInt non_empty_bundle_count = 0;
     UInt gate_count = 0;
     for (UInt curr_cycle = 1; curr_cycle <= cycle_count; curr_cycle++) {
-        max_gates_per_cycle = max(max_gates_per_cycle, gates_per_cycle.get(curr_cycle).size());
+        max_gates_per_cycle = max<UInt>(max_gates_per_cycle, gates_per_cycle.get(curr_cycle).size());
         if (!gates_per_cycle.get(curr_cycle).empty()) {
             non_empty_bundle_count++;
         }
@@ -1359,7 +1359,7 @@ void Scheduler::schedule_alap_uniform() {
     gate_count = 0;
     // cycle_count was not changed
     for (UInt curr_cycle = 1; curr_cycle <= cycle_count; curr_cycle++) {
-        max_gates_per_cycle = max(max_gates_per_cycle, gates_per_cycle.get(curr_cycle).size());
+        max_gates_per_cycle = max<UInt>(max_gates_per_cycle, gates_per_cycle.get(curr_cycle).size());
         if (!gates_per_cycle.get(curr_cycle).empty()) {
             non_empty_bundle_count++;
         }

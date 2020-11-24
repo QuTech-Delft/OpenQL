@@ -110,7 +110,7 @@ void vcd_cc::bundleFinish(size_t startCycle, uint32_t digOut, size_t maxDuration
 }
 
 
-void vcd_cc::customGate(const std::string &iname, const utils::Vec<size_t> &qops, size_t startCycle, size_t durationInCycles)
+void vcd_cc::customGate(const std::string &iname, const utils::Vec<utils::UInt> &qops, size_t startCycle, size_t durationInCycles)
 {
     // generate qubit VCD output
     unsigned int startTime = kernelStartTime + startCycle*cycleTime;

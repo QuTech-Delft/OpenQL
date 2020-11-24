@@ -208,11 +208,11 @@ void Kernel::clifford(int id, size_t q0) {
 }
 
 void Kernel::wait(const std::vector<size_t> &qubits, size_t duration) {
-    kernel->wait(qubits, duration);
+    kernel->wait({qubits.begin(), qubits.end()}, duration);
 }
 
 void Kernel::barrier(const std::vector<size_t> &qubits) {
-    kernel->wait(qubits, 0);
+    kernel->wait({qubits.begin(), qubits.end()}, 0);
 }
 
 std::string Kernel::get_custom_instructions() const {
@@ -229,7 +229,7 @@ void Kernel::gate(
     size_t duration,
     double angle
 ) {
-    kernel->gate(name, qubits, {}, duration, angle);
+    kernel->gate(name, {qubits.begin(), qubits.end()}, {}, duration, angle);
 }
 
 void Kernel::gate(
@@ -237,11 +237,11 @@ void Kernel::gate(
     const std::vector<size_t> &qubits,
     const CReg &destination
 ) {
-    kernel->gate(name, qubits, {(destination.creg)->id} );
+    kernel->gate(name, {qubits.begin(), qubits.end()}, {(destination.creg)->id} );
 }
 
 void Kernel::gate(const Unitary &u, const std::vector<size_t> &qubits) {
-    kernel->gate(*(u.unitary), qubits);
+    kernel->gate(*(u.unitary), {qubits.begin(), qubits.end()});
 }
 
 void Kernel::classical(const CReg &destination, const Operation &operation) {
@@ -257,7 +257,7 @@ void Kernel::controlled(
     const std::vector<size_t> &control_qubits,
     const std::vector<size_t> &ancilla_qubits
 ) {
-    kernel->controlled(k.kernel, control_qubits, ancilla_qubits);
+    kernel->controlled(k.kernel, {control_qubits.begin(), control_qubits.end()}, {ancilla_qubits.begin(), ancilla_qubits.end()});
 }
 
 void Kernel::conjugate(const Kernel &k) {

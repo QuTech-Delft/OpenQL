@@ -96,7 +96,7 @@ void cqasm_reader::add_single_bit_kernel_operation(
     const Str &gate_type,
     const compiler::Operation &operation
 ) {
-    Vec<UInt> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
+    auto qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
     for (UInt qubit : qubits) {
         kernel.gate(gate_type, {qubit});
     }
@@ -108,7 +108,7 @@ void cqasm_reader::add_parameterized_single_bit_kernel_operation(
     const compiler::Operation &operation
 ) {
     Real angle = operation.getRotationAngle();
-    Vec<UInt> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
+    auto qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
     for (UInt qubit : qubits) {
         kernel.gate(gate_type, {qubit}, {}, 0, angle);
     }
@@ -227,13 +227,13 @@ void cqasm_reader::add_kernel_operation(
     } else if (gate_type == "display") {
         kernel.display();
     } else if (gate_type == "display_binary") {
-        Vec<UInt> classical_bits = operation.getDisplayBits().getSelectedBits().getIndices();
+        auto classical_bits = operation.getDisplayBits().getSelectedBits().getIndices();
         //not supported by OpenQL??
     } else if (gate_type == "measure_parity") {
         auto measureParityProperties = operation.getMeasureParityQubitsAndAxis();
-        Vec<UInt> bits1 = measureParityProperties.first.first.getSelectedQubits().getIndices();
+        auto bits1 = measureParityProperties.first.first.getSelectedQubits().getIndices();
         Str axis1 = measureParityProperties.second.first;
-        Vec<UInt> bits2 = measureParityProperties.first.second.getSelectedQubits().getIndices();
+        auto bits2 = measureParityProperties.first.second.getSelectedQubits().getIndices();
         Str axis2 = measureParityProperties.second.second;
         //not supported by OpenQL??
     }

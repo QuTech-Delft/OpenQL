@@ -55,8 +55,8 @@ public:
     // Quantum instructions
     void customGate(
             const std::string &iname,
-            const utils::Vec<size_t> &qops,
-            const utils::Vec<size_t> &cops,
+            const utils::Vec<utils::UInt> &qops,
+            const utils::Vec<utils::UInt> &cops,
             double angle, size_t startCycle, size_t durationInCycles);
     void nopGate();
 
