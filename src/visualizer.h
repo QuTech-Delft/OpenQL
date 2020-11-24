@@ -1,6 +1,6 @@
 /**
  * @file   visualizer.h
- * @date   08/2020
+ * @date   11/2020
  * @author Tim van der Meer
  * @brief  declaration of the public visualizer interface
  */
@@ -28,7 +28,13 @@ namespace ql {
 
 static const int MAX_ALLOWED_VISUALIZER_CYCLE = 2000;
 
-void visualize(const ql::quantum_program* program, const std::string &configPath, const std::string &waveformMappingPath);
+struct VisualizerConfigurationPaths {
+    const std::string &config;
+    const std::string &waveformMapping;
+};
+
+void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfigurationPaths configurationPaths);
+
 void assertPositive(const int argument, const std::string &parameter);
 void assertPositive(const double argument, const std::string &parameter);
 
