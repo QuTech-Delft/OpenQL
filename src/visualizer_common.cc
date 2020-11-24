@@ -67,7 +67,7 @@ using namespace utils;
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfigurationPaths configurationPaths) {
+void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfigurationPaths &configurationPaths) {
     QL_WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
         << "might be missing and the visualizer has disabled itself.");
 }
@@ -537,6 +537,8 @@ Int safe_int_cast(const UInt argument) {
     return static_cast<Int>(argument);
 }
 
+#endif //WITH_VISUALIZER
+
 void assertPositive(const Int argument, const Str &parameter) {
     if (argument < 0) QL_FATAL(parameter << " is negative. Only positive values are allowed!");
 }
@@ -544,7 +546,5 @@ void assertPositive(const Int argument, const Str &parameter) {
 void assertPositive(const double argument, const Str &parameter) {
     if (argument < 0) QL_FATAL(parameter << " is negative. Only positive values are allowed!");
 }
-
-#endif //WITH_VISUALIZER
 
 } // namespace ql
