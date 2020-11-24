@@ -64,8 +64,6 @@ jobs:
   python:
     name: Python
     runs-on: ${{ matrix.os }}
-    env:
-      OPENQL_BUILD_TYPE: 'Debug'
     strategy:
       fail-fast: false
       matrix:
@@ -110,7 +108,13 @@ jobs:
       run: |
         choco install winflexbison3 --version 2.5.18.20190508
         choco install swig --version 4.0.1
-        echo "OPENQL_BUILD_TYPE=Release" >> $GITHUB_ENV
+    - name: Select build type
+      if: matrix.os == 'windows-latest'
+      shell: powershell
+      run: echo "OPENQL_BUILD_TYPE=Release" >> $GITHUB_ENV
+    - name: Select build type
+      if: matrix.os != 'windows-latest'
+      run: echo "OPENQL_BUILD_TYPE=Debug" >> $GITHUB_ENV
     - name: Build
       env:
         NPROCS: 100
