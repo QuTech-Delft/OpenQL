@@ -63,8 +63,10 @@ if(NOT PYTHON_INCLUDE_DIRS)
     endif()
 endif()
 
-# Print the directory we found for reference.
+# Print the info we found for reference.
 message(STATUS "Found python3 include directory at ${PYTHON_INCLUDE_DIRS}")
+message(STATUS "Found python3 executable at ${PYTHON_EXECUTABLE}")
+message(STATUS "Found python3 libraries at ${PYTHON_LIBRARIES}")
 
 
 # SWIG ------------------------------------------------------------------------
