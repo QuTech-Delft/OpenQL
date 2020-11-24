@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Install dependencies
       if: matrix.os == 'macos-latest'
       run: |
@@ -51,7 +51,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Configure
       run: |
         mkdir cbuild
@@ -81,7 +81,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python }}
@@ -131,7 +131,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Set up conda
       uses: goanpeca/setup-miniconda@v1
       with:

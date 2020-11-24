@@ -22,7 +22,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python }}
@@ -75,7 +75,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Install dependencies
       run: |
         yum install -y bison-$BISON_VERSION swig3-$SWIG_VERSION
@@ -127,7 +127,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python }}
@@ -182,7 +182,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Set up conda
       uses: goanpeca/setup-miniconda@v1
       with:
