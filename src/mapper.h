@@ -467,6 +467,7 @@ public:
         const std::string &gname,
         const std::vector<size_t> &qubits,
         const std::vector<size_t> &cregs = {},
+        const std::vector<size_t> &bregs = {},
         size_t duration = 0,
         double angle = 0.0
     ) const;
@@ -717,9 +718,9 @@ public:
     void Init(const ql::quantum_platform *p);
 
     // Set/switch input to the provided circuit
-    // nq and nc are parameters because nc may not be provided by platform but by kernel
+    // nq, nc and nb are parameters because nc/nb may not be provided by platform but by kernel
     // the latter should be updated when mapping multiple kernels
-    void SetCircuit(ql::quantum_kernel &kernel, Scheduler &sched, size_t nq, size_t nc);
+    void SetCircuit(ql::quantum_kernel &kernel, Scheduler &sched, size_t nq, size_t nc, size_t nb);
 
     // Get from avlist all gates that are non-quantum into nonqlg
     // Non-quantum gates include: classical, and dummy (SOURCE/SINK)
@@ -817,6 +818,7 @@ private:
 
     size_t          nq;             // number of qubits in the platform, number of real qubits
     size_t          nc;             // number of cregs in the platform, number of classical registers
+    size_t          nb;             // number of bregs in the platform, number of bit registers
     size_t          cycle_time;     // length in ns of a single cycle of the platform
                                     // is divisor of duration in ns to convert it to cycles
     Grid            grid;           // current grid

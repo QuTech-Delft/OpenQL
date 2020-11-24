@@ -34,12 +34,14 @@ quantum_kernel::quantum_kernel(
     const std::string &name,
     const ql::quantum_platform& platform,
     size_t qcount,
-    size_t ccount
+    size_t ccount,
+    size_t bcount
 ) :
     name(name),
     iterations(1),
     qubit_count(qcount),
     creg_count(ccount),
+    breg_count(bcount),
     type(kernel_type_t::STATIC)
 {
     instruction_map = platform.instruction_map;
@@ -202,7 +204,7 @@ void quantum_kernel::swap(size_t qubit1, size_t qubit2) {
 }
 
 void quantum_kernel::wait(const std::vector<size_t> &qubits, size_t duration) {
-    gate("wait", qubits, {}, duration);
+    gate("wait", qubits, {}, {}, duration);
 }
 
 void quantum_kernel::display() {
@@ -313,6 +315,7 @@ bool quantum_kernel::add_default_gate_if_available(
     const std::string &gname,
     const std::vector<size_t> &qubits,
     const std::vector<size_t> &cregs,
+    const std::vector<size_t> &bregs,
     size_t duration,
     double angle
 ) {
@@ -477,6 +480,7 @@ bool quantum_kernel::add_custom_gate_if_available(
     const std::string &gname,
     const std::vector<size_t> &qubits,
     const std::vector<size_t> &cregs,
+    const std::vector<size_t> &bregs,
     size_t duration,
     double angle
 ) {
@@ -512,6 +516,9 @@ bool quantum_kernel::add_custom_gate_if_available(
     }
     for (auto &cop : cregs) {
         g->creg_operands.push_back(cop);
+    }
+    for (auto &bop : bregs) {
+        g->breg_operands.push_back(bop);
     }
     if (duration > 0) {
         g->duration = duration;
@@ -554,7 +561,8 @@ void quantum_kernel::get_decomposed_ins(
 bool quantum_kernel::add_spec_decomposed_gate_if_available(
     const std::string &gate_name,
     const std::vector<size_t> &all_qubits,
-    const std::vector<size_t> &cregs
+    const std::vector<size_t> &cregs,
+    const std::vector<size_t> &bregs
 ) {
     bool added = false;
     DOUT("Checking if specialized decomposition is available for " << gate_name);
@@ -612,12 +620,12 @@ bool quantum_kernel::add_spec_decomposed_gate_if_available(
 
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-            bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+            bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, bregs);
             if (!custom_added) {
                 if(ql::options::get("use_default_gates") == "yes") {
                     // default gate check
                     DOUT("adding default gate for " << sub_ins_name);
-                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, bregs);
                     if (default_available) {
                         DOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") ); // // NB: changed WOUT to DOUT, since this is common for 'barrier', spamming log
                     } else {
@@ -647,7 +655,8 @@ bool quantum_kernel::add_spec_decomposed_gate_if_available(
 bool quantum_kernel::add_param_decomposed_gate_if_available(
     const std::string &gate_name,
     const std::vector<size_t> &all_qubits,
-    const std::vector<size_t> &cregs
+    const std::vector<size_t> &cregs,
+    const std::vector<size_t> &bregs
 ) {
     bool added = false;
     DOUT("Checking if parameterized composite gate is available for " << gate_name);
@@ -707,13 +716,13 @@ bool quantum_kernel::add_param_decomposed_gate_if_available(
             // FIXME: following code block exists several times in this file
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-            bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+            bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, bregs);
             if (!custom_added)
             {
                 if (ql::options::get("use_default_gates") == "yes") {
                     // default gate check
                     DOUT("adding default gate for " << sub_ins_name);
-                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, bregs);
                     if (default_available) {
                         WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
                     } else {
@@ -751,6 +760,7 @@ void quantum_kernel::gate(
     const std::string &gname,
     const std::vector<size_t> &qubits,
     const std::vector<size_t> &cregs,
+    const std::vector<size_t> &bregs,
     size_t duration,
     double angle
 ) {
@@ -767,7 +777,13 @@ void quantum_kernel::gate(
         }
     }
 
-    if (!gate_nonfatal(gname, qubits, cregs, duration, angle)) {
+    for (auto & bno : bregs) {
+        if (bno >= breg_count) {
+            FATAL("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(bregs,"bregs") );
+        }
+    }
+
+    if (!gate_nonfatal(gname, qubits, cregs, bregs, duration, angle)) {
         FATAL("Unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
     }
 }
@@ -780,6 +796,7 @@ bool quantum_kernel::gate_nonfatal(
     const std::string &gname,
     const std::vector<size_t> &qubits,
     const std::vector<size_t> &cregs,
+    const std::vector<size_t> &bregs,
     size_t duration,
     double angle
 ) {
@@ -811,7 +828,7 @@ bool quantum_kernel::gate_nonfatal(
             // specialized/parameterized custom gate check
             DOUT("adding custom gate for " << gname_lower);
             // when found, custom_added is true, and the gate was added to the circuit
-            bool custom_added = add_custom_gate_if_available(gname_lower, qubits, cregs, duration, angle);
+            bool custom_added = add_custom_gate_if_available(gname_lower, qubits, cregs, bregs, duration, angle);
             if (custom_added) {
                 added = true;
                 DOUT("custom gate added for " << gname_lower);
@@ -820,7 +837,7 @@ bool quantum_kernel::gate_nonfatal(
                     // default gate check (which is always parameterized)
                     DOUT("adding default gate for " << gname_lower);
 
-                    bool default_available = add_default_gate_if_available(gname_lower, qubits, cregs, duration);
+                    bool default_available = add_default_gate_if_available(gname_lower, qubits, cregs, bregs, duration);
                     if (default_available) {
                         added = true;
                         DOUT("default gate added for " << gname_lower);   // FIXME: used to be WOUT, but that gives a warning for every "wait" and spams the log
@@ -1479,49 +1496,49 @@ void quantum_kernel::conjugate(const ql::quantum_kernel *k) {
         DOUT("Generating conjugate gate for " << gname);
         DOUT("Type : " << gtype);
         if (gtype == __pauli_x_gate__ || gtype == __rx180_gate__) {
-            gate("x", g->operands, {}, g->duration, g->angle);
+            gate("x", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __pauli_y_gate__ || gtype == __ry180_gate__) {
-            gate("y", g->operands, {}, g->duration, g->angle);
+            gate("y", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __pauli_z_gate__) {
-            gate("z", g->operands, {}, g->duration, g->angle);
+            gate("z", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __hadamard_gate__) {
-            gate("hadamard", g->operands, {}, g->duration, g->angle);
+            gate("hadamard", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __identity_gate__) {
-            gate("identity", g->operands, {}, g->duration, g->angle);
+            gate("identity", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __t_gate__) {
-            gate("tdag", g->operands, {}, g->duration, g->angle);
+            gate("tdag", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __tdag_gate__) {
-            gate("t", g->operands, {}, g->duration, g->angle);
+            gate("t", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __phase_gate__) {
-            gate("sdag", g->operands, {}, g->duration, g->angle);
+            gate("sdag", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __phasedag_gate__) {
-            gate("s", g->operands, {}, g->duration, g->angle);
+            gate("s", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __cnot_gate__) {
-            gate("cnot", g->operands, {}, g->duration, g->angle);
+            gate("cnot", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __swap_gate__) {
-            gate("swap", g->operands, {}, g->duration, g->angle);
+            gate("swap", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __rx_gate__) {
-            gate("rx", g->operands, {}, g->duration, -(g->angle) );
+            gate("rx", g->operands, {}, {}, g->duration, -(g->angle) );
         } else if (gtype == __ry_gate__) {
-            gate("ry", g->operands, {}, g->duration, -(g->angle) );
+            gate("ry", g->operands, {}, {}, g->duration, -(g->angle) );
         } else if (gtype == __rz_gate__) {
-            gate("rz", g->operands, {}, g->duration, -(g->angle) );
+            gate("rz", g->operands, {}, {}, g->duration, -(g->angle) );
         } else if (gtype == __rx90_gate__) {
-            gate("mrx90", g->operands, {}, g->duration, g->angle);
+            gate("mrx90", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __mrx90_gate__) {
-            gate("rx90", g->operands, {}, g->duration, g->angle);
+            gate("rx90", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __rx180_gate__) {
-            gate("x", g->operands, {}, g->duration, g->angle);
+            gate("x", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __ry90_gate__) {
-            gate("mry90", g->operands, {}, g->duration, g->angle);
+            gate("mry90", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __mry90_gate__) {
-            gate("ry90", g->operands, {}, g->duration, g->angle);
+            gate("ry90", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __ry180_gate__) {
-            gate("y", g->operands, {}, g->duration, g->angle);
+            gate("y", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __cphase_gate__) {
-            gate("cphase", g->operands, {}, g->duration, g->angle);
+            gate("cphase", g->operands, {}, {}, g->duration, g->angle);
         } else if (gtype == __toffoli_gate__) {
-            gate("toffoli", g->operands, {}, g->duration, g->angle);
+            gate("toffoli", g->operands, {}, {}, g->duration, g->angle);
         } else {
             EOUT("Conjugate version of gate '" << gname << "' not defined !");
             throw ql::exception("[x] error : ql::kernel::conjugate : Conjugate version of gate '" + gname + "' not defined ! ", false);

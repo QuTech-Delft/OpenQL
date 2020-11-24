@@ -31,6 +31,7 @@ public: // FIXME: should be private
     size_t        iterations;
     size_t        qubit_count;
     size_t        creg_count;
+    size_t        breg_count;
     kernel_type_t type;
     circuit       c;
     bool          cycles_valid; // used in bundler to check if kernel has been scheduled
@@ -44,7 +45,8 @@ public:
         const std::string &name,
         const ql::quantum_platform &platform,
         size_t qcount,
-        size_t ccount=0
+        size_t ccount=0,
+        size_t bcount=0
     );
 
     // FIXME: add constructor which allows setting iterations and type, and use that in program.h::add_for(), etc
@@ -98,6 +100,7 @@ private:
         const std::string &gname,
         const std::vector<size_t> &qubits,
         const std::vector<size_t> &cregs = {},
+        const std::vector<size_t> &bregs = {},
         size_t duration=0,
         double angle=0.0
     );
@@ -110,6 +113,7 @@ private:
         const std::string &gname,
         const std::vector<size_t> &qubits,
         const std::vector<size_t> &cregs = {},
+        const std::vector<size_t> &bregs = {},
         size_t duration=0,
         double angle=0.0
     );
@@ -131,7 +135,8 @@ private:
     bool add_spec_decomposed_gate_if_available(
         const std::string &gate_name,
         const std::vector<size_t> &all_qubits,
-        const std::vector<size_t> &cregs = {}
+        const std::vector<size_t> &cregs = {},
+        const std::vector<size_t> &bregs = {}
     );
 
     // if composite gate: "e.g. cz %0 %1" available, return true;
@@ -143,7 +148,8 @@ private:
     bool add_param_decomposed_gate_if_available(
         const std::string &gate_name,
         const std::vector<size_t> &all_qubits,
-        const std::vector<size_t> &cregs = {}
+        const std::vector<size_t> &cregs = {},
+        const std::vector<size_t> &bregs = {}
     );
 
 public:
@@ -154,6 +160,7 @@ public:
         const std::string &gname,
         const std::vector<size_t> &qubits = {},
         const std::vector<size_t> &cregs = {},
+        const std::vector<size_t> &bregs = {},
         size_t duration = 0,
         double angle = 0.0
     );
@@ -188,6 +195,7 @@ public:
         const std::string &gname,
         const std::vector<size_t> &qubits = {},
         const std::vector<size_t> &cregs = {},
+        const std::vector<size_t> &bregs = {},
         size_t duration = 0,
         double angle = 0.0
     );

@@ -225,7 +225,7 @@ void Kernel::gate(
     size_t duration,
     double angle
 ) {
-    kernel->gate(name, qubits, {}, duration, angle);
+    kernel->gate(name, qubits, {}, {}, duration, angle);
 }
 
 void Kernel::gate(

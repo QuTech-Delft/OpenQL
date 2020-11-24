@@ -26,9 +26,9 @@
     Such a dependence has a type (RAW, WAW, etc.), cause (the qubit or classical register used as parameter), and a weight
     (the cycles the previous gate takes to complete its execution, after which the current gate can start execution).
 
-    In dependence graph creation, each qubit/classical register (creg) use in each gate is seen as an "event".
+    In dependence graph creation, each qubit/classical register (creg,breg) use in each gate is seen as an "event".
     The following events are distinguished:
-    - W for Write: such a use must sequentialize with any previous and later uses of the same qubit/creg.
+    - W for Write: such a use must sequentialize with any previous and later uses of the same qubit/creg/breg.
         This is the default for qubits in a gate and for assignment/modifications in classical code.
     - R for Read: such uses can be arbitrarily reordered (as long as other dependences allow that).
         This event applies to all operands of CZ, the first operand of CNOT gates, and to all reads in classical code.
@@ -93,7 +93,7 @@ public:
     // attributes
     lemon::ListDigraph::NodeMap<std::string> name;     // name[n] == qasm string
     lemon::ListDigraph::ArcMap<int> weight;            // number of cycles of dependence
-    lemon::ListDigraph::ArcMap<int> cause;             // qubit/creg index of dependence
+    lemon::ListDigraph::ArcMap<int> cause;             // qubit/creg/breg index of dependence
     lemon::ListDigraph::ArcMap<int> depType;           // RAW, WAW, ...
 
     // s and t nodes are the top and bottom of the dependence graph
@@ -103,6 +103,7 @@ public:
     size_t          cycle_time;                        // to convert durations to cycles as weight of dependence
     size_t          qubit_count;                       // number of qubits, to check/represent qubit as cause of dependence
     size_t          creg_count;                        // number of cregs, to check/represent creg as cause of dependence
+    size_t          breg_count;                        // number of bregs, to check/represent breg as cause of dependence
     circuit*    circp;                             // current and result circuit, passed from Init to each scheduler
 
     // scheduler support
@@ -115,7 +116,7 @@ public:
     static void stripname(std::string &name);
 
     // factored out code from Init to add a dependence between two nodes
-    // operand is in qubit_creg combined index space
+    // operand is in qubit_creg_breg combined index space with size qcount+ccount+bcount
     void add_dep(int srcID, int tgtID, enum DepTypes deptype, int operand);
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
@@ -123,7 +124,8 @@ public:
         circuit &ckt,
         const quantum_platform &platform,
         size_t qcount,
-        size_t ccount
+        size_t ccount,
+        size_t bcount
     );
 
     void print() const;
@@ -384,7 +386,8 @@ void rcschedule_kernel(
     const quantum_platform &platform,
     std::string &dot,
     size_t nqubits,
-    size_t ncreg = 0
+    size_t ncreg = 0,
+    size_t nbreg = 0
 );
 
 /*

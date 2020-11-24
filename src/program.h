@@ -30,13 +30,14 @@ public:
     bool                  platformInitialized;
     size_t                qubit_count;
     size_t                creg_count;
+    size_t                breg_count;
     std::string           eqasm_compiler_name;
     bool                  needs_backend_compiler;
     ql::eqasm_compiler    *backend_compiler;
 
 public:
     quantum_program(const std::string &n);
-    quantum_program(const std::string &n, const quantum_platform &platf, size_t nqubits, size_t ncregs = 0);
+    quantum_program(const std::string &n, const quantum_platform &platf, size_t nqubits, size_t ncregs = 0, size_t nbregs = 0);
 
     void add(const ql::quantum_kernel &k);
     void add_program(const ql::quantum_program &p);

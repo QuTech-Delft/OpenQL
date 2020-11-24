@@ -20,7 +20,7 @@ void Scheduler::stripname(std::string &name) {
 }
 
 // factored out code from Init to add a dependence between two nodes
-// operand is in qubit_creg combined index space
+// operand is in qubit/creg/breg combined index space
 void Scheduler::add_dep(int srcID, int tgtID, enum DepTypes deptype, int operand) {
     DOUT(".. adddep ... from srcID " << srcID << " to tgtID " << tgtID << "   opnd=" << operand << ", dep=" << DepTypesNames[deptype]);
     auto srcNode = graph.nodeFromId(srcID);
@@ -38,13 +38,15 @@ void Scheduler::init(
     circuit &ckt,
     const quantum_platform &platform,
     size_t qcount,
-    size_t ccount
+    size_t ccount,
+    size_t bcount
 ) {
     DOUT("Dependence graph creation ... #qubits = " << platform.qubit_number);
     qubit_count = qcount; ///@todo-rn: DDG creation should not depend on #qubits
     creg_count = ccount; ///@todo-rn: DDG creation should not depend on #cregs
-    size_t qubit_creg_count = qubit_count + creg_count;
-    DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", total=" << qubit_creg_count);
+    breg_count = bcount; ///@todo-rn: DDG creation should not depend on #bregs
+    size_t total_reg_count = qubit_count + creg_count + breg_count;
+    DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", breg_count=" << breg_count << ", total=" << total_reg_count);
     cycle_time = platform.cycle_time;
     circp = &ckt;
 
@@ -57,10 +59,10 @@ void Scheduler::init(
     typedef std::vector<int> ReadersListType;
 
     std::vector<ReadersListType> LastReaders;
-    LastReaders.resize(qubit_creg_count);
+    LastReaders.resize(total_reg_count);
 
     std::vector<ReadersListType> LastDs;
-    LastDs.resize(qubit_creg_count);
+    LastDs.resize(total_reg_count);
 
     // start filling the dependence graph by creating the s node, the top of the graph
     {
@@ -72,7 +74,7 @@ void Scheduler::init(
         s = srcNode;
     }
     int srcID = graph.id(s);
-    std::vector<int> LastWriter(qubit_creg_count, srcID);     // it implicitly writes to all qubits and class. regs
+    std::vector<int> LastWriter(total_reg_count, srcID);     // it implicitly writes to all qubits and class. regs
 
     // for each gate pointer ins in the circuit, add a node and add dependences from previous gates to it
     for (auto ins : ckt) {
@@ -83,6 +85,9 @@ void Scheduler::init(
         }
         for (auto coperand : ins->creg_operands) {
             DOUT(".. Classical operand: `" << coperand << "'");
+        }
+        for (auto boperand : ins->breg_operands) {
+            DOUT(".. Bit operand: `" << boperand << "'");
         }
 
         auto iname = ins->name; // copy!!!!
@@ -202,7 +207,7 @@ void Scheduler::init(
             DOUT(". considering " << name[consNode] << " as display");
             // no operands, display all qubits and cregs
             // Read+Write each operand
-            std::vector<size_t> qubits(qubit_creg_count);
+            std::vector<size_t> qubits(total_reg_count);
             std::iota(qubits.begin(), qubits.end(), 0);
             for (auto operand : qubits) {
                 DOUT(".. Operand: " << operand);
@@ -405,7 +410,7 @@ void Scheduler::init(
         t = consNode;
 
         // add deps to the dummy target node to close the dependence chains
-        // it behaves as a W to every qubit and creg
+        // it behaves as a W to every qubit, creg and breg
         //
         // to guarantee that exactly at start of execution of dummy SINK,
         // all still executing nodes complete, give arc weight of those nodes;
@@ -415,7 +420,7 @@ void Scheduler::init(
         // guaranteed that on a jump and on start of target circuit, the source circuit completed).
         //
         // note that there always is a LastWriter: the dummy source node wrote to every qubit and class. reg
-        std::vector<size_t> operands(qubit_creg_count);
+        std::vector<size_t> operands(total_reg_count);
         std::iota(operands.begin(), operands.end(), 0);
         for (auto operand : operands) {
             DOUT(".. Sink operand, adding dep: " << operand);
@@ -1409,7 +1414,7 @@ void schedule_kernel(
     IOUT(scheduler << " scheduling the quantum kernel '" << kernel.name << "'...");
 
     Scheduler sched;
-    sched.init(kernel.c, platform, kernel.qubit_count, kernel.creg_count);
+    sched.init(kernel.c, platform, kernel.qubit_count, kernel.creg_count, kernel.breg_count);
 
     if (options::get("print_dot_graphs") == "yes") {
         sched.get_dot(dot);
@@ -1469,20 +1474,21 @@ void rcschedule_kernel(
     const quantum_platform &platform,
     std::string &dot,
     size_t nqubits,
-    size_t ncreg
+    size_t ncreg,
+    size_t nbreg
 ) {
     IOUT("Resource constraint scheduling ...");
 
     std::string schedopt = options::get("scheduler");
     if (schedopt == "ASAP") {
         Scheduler sched;
-        sched.init(kernel.c, platform, nqubits, ncreg);
+        sched.init(kernel.c, platform, nqubits, ncreg, nbreg);
 
         arch::resource_manager_t rm(platform, forward_scheduling);
         sched.schedule_asap(rm, platform, dot);
     } else if (schedopt == "ALAP") {
         Scheduler sched;
-        sched.init(kernel.c, platform, nqubits, ncreg);
+        sched.init(kernel.c, platform, nqubits, ncreg, nbreg);
 
         arch::resource_manager_t rm(platform, backward_scheduling);
         sched.schedule_alap(rm, platform, dot);
@@ -1508,9 +1514,10 @@ void rcschedule(
         IOUT("Scheduling kernel: " << kernel.name);
         if (!kernel.c.empty()) {
             auto num_creg = kernel.creg_count;
+            auto num_breg = kernel.breg_count;
             std::string sched_dot;
 
-            rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg);
+            rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg, num_breg);
             kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
 
             if (options::get("print_dot_graphs") == "yes") {

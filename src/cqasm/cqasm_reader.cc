@@ -105,7 +105,7 @@ void cqasm_reader::add_parameterized_single_bit_kernel_operation(
     double angle = operation.getRotationAngle();
     std::vector<size_t> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
     for (size_t qubit : qubits) {
-        kernel.gate(gate_type, {qubit}, {}, 0, angle);
+        kernel.gate(gate_type, {qubit}, {}, {}, 0, angle);
     }
 }
 
@@ -141,7 +141,7 @@ void cqasm_reader::add_parameterized_dual_bit_kernel_operation(
     for (size_t index = 0; index < sgmq_indices; index++) {
         size_t qubit1 = operation.getQubitsInvolved(1).getSelectedQubits().getIndices()[index];
         size_t qubit2 = operation.getQubitsInvolved(2).getSelectedQubits().getIndices()[index];
-        kernel.gate(kernel_type, {qubit1, qubit2}, {}, 0, angle);
+        kernel.gate(kernel_type, {qubit1, qubit2}, {}, {}, 0, angle);
     }
 }
 
@@ -218,7 +218,7 @@ void cqasm_reader::add_kernel_operation(
         ///@note: skip instruction called, i.e., inserts empty cycles, possibly restarting filling cycles without waiting for all previous cycle instructions to be finished. That is, skip is different than wait that behaves as barrier+skip <X> cycles.
     } else if (gate_type == "wait") {
         size_t wait_time = operation.getWaitTime();
-        kernel.gate(translate_gate_type("wait"), {}, {}, wait_time);
+        kernel.gate(translate_gate_type("wait"), {}, {}, {}, wait_time);
     } else if (gate_type == "display") {
         kernel.display();
     } else if (gate_type == "display_binary") {
