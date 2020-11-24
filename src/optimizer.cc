@@ -5,6 +5,7 @@
 #include "optimizer.h"
 
 #include "utils/vec.h"
+#include "utils/num.h"
 #include "circuit.h"
 #include "kernel.h"
 #include "options.h"
@@ -73,14 +74,14 @@ protected:
     static bool is_id(const cmat_t &mat) {
         // mat.dump();
         const Complex *m = mat.m;
-        if ((std::abs(std::abs(m[0].real())-1.0))>__epsilon__) return false;
-        if ((std::abs(m[0].imag())  )>__epsilon__) return false;
-        if ((std::abs(m[1].real())  )>__epsilon__) return false;
-        if ((std::abs(m[1].imag())  )>__epsilon__) return false;
-        if ((std::abs(m[2].real())  )>__epsilon__) return false;
-        if ((std::abs(m[2].imag())  )>__epsilon__) return false;
-        if ((std::abs(std::abs(m[3].real())-1.0))>__epsilon__) return false;
-        if ((std::abs(m[3].imag())  )>__epsilon__) return false;
+        if ((abs(abs(m[0].real())-1.0))>__epsilon__) return false;
+        if ((abs(m[0].imag())  )>__epsilon__) return false;
+        if ((abs(m[1].real())  )>__epsilon__) return false;
+        if ((abs(m[1].imag())  )>__epsilon__) return false;
+        if ((abs(m[2].real())  )>__epsilon__) return false;
+        if ((abs(m[2].imag())  )>__epsilon__) return false;
+        if ((abs(abs(m[3].real())-1.0))>__epsilon__) return false;
+        if ((abs(m[3].imag())  )>__epsilon__) return false;
         return true;
     }
 

@@ -7,7 +7,6 @@
 #include "passes.h"
 
 #include <iostream>
-#include "utils/str.h"
 #include "utils/opt.h"
 #include "report.h"
 #include "optimizer.h"
@@ -490,22 +489,22 @@ PassOptions::PassOptions(Str app_name) {
 
     ///@todo-rn: update this list with meaningful pass options
     // default values
-    opt_name2opt_val["skip"] = "no";
-    opt_name2opt_val["write_report_files"] = "no";
-    opt_name2opt_val["write_qasm_files"] = "no";
-    opt_name2opt_val["read_qasm_files"] = "no";
-    opt_name2opt_val["hwconfig"] = "none";
-    opt_name2opt_val["nqubits"] = "100";
-    opt_name2opt_val["eqasm_compiler_name"] = "cc_light_compiler";
+    opt_name2opt_val.set("skip") = "no";
+    opt_name2opt_val.set("write_report_files") = "no";
+    opt_name2opt_val.set("write_qasm_files") = "no";
+    opt_name2opt_val.set("read_qasm_files") = "no";
+    opt_name2opt_val.set("hwconfig") = "none";
+    opt_name2opt_val.set("nqubits") = "100";
+    opt_name2opt_val.set("eqasm_compiler_name") = "cc_light_compiler";
 
     // add options with default values and list of possible values
-    app->add_set_ignore_case("--skip", opt_name2opt_val["skip"], {"yes", "no"}, "skip running the pass", true);
-    app->add_set_ignore_case("--write_report_files", opt_name2opt_val["write_report_files"], {"yes", "no"}, "report compiler statistics", true);
-    app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val["write_qasm_files"], {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
-    app->add_set_ignore_case("--read_qasm_files", opt_name2opt_val["read_qasm_files"], {"yes", "no"}, "read (un-)scheduled (with and without resource-constraint) qasm files", true);
-    app->add_option("--hwconfig", opt_name2opt_val["hwconfig"], "path to the platform configuration file", true);
-    app->add_option("--nqubits", opt_name2opt_val["nqubits"], "number of qubits used by the program", true);
-    app->add_set_ignore_case("--eqasm_compiler_name", opt_name2opt_val["eqasm_compiler_name"], {"cc_light_compiler", "eqasm_backend_cc"}, "Set the compiler backend", true);
+    app->add_set_ignore_case("--skip", opt_name2opt_val.at("skip"), {"yes", "no"}, "skip running the pass", true);
+    app->add_set_ignore_case("--write_report_files", opt_name2opt_val.at("write_report_files"), {"yes", "no"}, "report compiler statistics", true);
+    app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val.at("write_qasm_files"), {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
+    app->add_set_ignore_case("--read_qasm_files", opt_name2opt_val.at("read_qasm_files"), {"yes", "no"}, "read (un-)scheduled (with and without resource-constraint) qasm files", true);
+    app->add_option("--hwconfig", opt_name2opt_val.at("hwconfig"), "path to the platform configuration file", true);
+    app->add_option("--nqubits", opt_name2opt_val.at("nqubits"), "number of qubits used by the program", true);
+    app->add_set_ignore_case("--eqasm_compiler_name", opt_name2opt_val.at("eqasm_compiler_name"), {"cc_light_compiler", "eqasm_backend_cc"}, "Set the compiler backend", true);
 }
 
 /**

@@ -12,6 +12,7 @@
 #include "utils/vec.h"
 #include "utils/list.h"
 #include "utils/str.h"
+#include "utils/num.h"
 #include "platform.h"
 #include "kernel.h"
 #include "resource_manager.h"
@@ -116,8 +117,8 @@ public:
 
     // distance between two qubits
     // formulae for convex (hole free) topologies with underlying grid and with bidirectional edges:
-    //      gf_cross:   std::max( std::abs( x[to_realqi] - x[from_realqi] ), std::abs( y[to_realqi] - y[from_realqi] ))
-    //      gf_plus:    std::abs( x[to_realqi] - x[from_realqi] ) + std::abs( y[to_realqi] - y[from_realqi] )
+    //      gf_cross:   max( abs( x[to_realqi] - x[from_realqi] ), abs( y[to_realqi] - y[from_realqi] ))
+    //      gf_plus:    abs( x[to_realqi] - x[from_realqi] ) + abs( y[to_realqi] - y[from_realqi] )
     // when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
     utils::UInt Distance(utils::UInt from_realqi, utils::UInt to_realqi) const;
 

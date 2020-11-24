@@ -145,7 +145,7 @@ public:
         const Str &vector_prefix = "",
         const Str &elem_sep = ", "
     ) {
-        std::ostringstream ss;
+        StrStrm ss;
         ss << m << "\n";
         return ss.str();
     }

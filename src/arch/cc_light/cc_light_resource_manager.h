@@ -24,10 +24,10 @@ utils::UInt ccl_get_operation_duration(gate *ins, const quantum_platform &platfo
 
 // operation type is "mw" (for microwave), "flux", or "readout"
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
-std::string ccl_get_operation_type(gate *ins, const quantum_platform &platform);
+utils::Str ccl_get_operation_type(gate *ins, const quantum_platform &platform);
 
 // operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
-std::string ccl_get_operation_name(gate *ins, const quantum_platform &platform);
+utils::Str ccl_get_operation_name(gate *ins, const quantum_platform &platform);
 
 
 // ============ classes of resources that _may_ appear in a configuration file
@@ -62,7 +62,7 @@ public:
     // but a new y must wait until the last x has finished;
     // the bug was that a new x was always ok (so also when starting earlier than cycle i)
 
-    utils::Vec<std::string> operations;    // with operation_name==operations[qwg]
+    utils::Vec<utils::Str> operations;    // with operation_name==operations[qwg]
     utils::Map<utils::UInt,utils::UInt> qubit2qwg;      // on qwg==qubit2qwg[q]
 
     ccl_qwg_resource_t(const quantum_platform & platform, scheduling_direction_t dir);
@@ -146,7 +146,7 @@ class ccl_detuned_qubits_resource_t : public resource_t {
 public:
     utils::Vec<utils::UInt> fromcycle;                              // qubit q is busy from cycle fromcycle[q]
     utils::Vec<utils::UInt> tocycle;                                // till cycle tocycle[q]
-    utils::Vec<std::string> operations;                        // with an operation of operation_type==operations[q]
+    utils::Vec<utils::Str> operations;                        // with an operation of operation_type==operations[q]
 
     typedef utils::Pair<utils::UInt, utils::UInt> qubits_pair_t;
     utils::Map<qubits_pair_t, utils::UInt> qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)

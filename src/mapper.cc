@@ -70,8 +70,8 @@ Bool Grid::IsInterCoreHop(UInt qs, UInt qt) const {
 
 // distance between two qubits
 // formulae for convex (hole free) topologies with underlying grid and with bidirectional edges:
-//      gf_cross:   std::max( std::abs( x[to_realqi] - x[from_realqi] ), std::abs( y[to_realqi] - y[from_realqi] ))
-//      gf_plus:    std::abs( x[to_realqi] - x[from_realqi] ) + std::abs( y[to_realqi] - y[from_realqi] )
+//      gf_cross:   max( abs( x[to_realqi] - x[from_realqi] ), abs( y[to_realqi] - y[from_realqi] ))
+//      gf_plus:    abs( x[to_realqi] - x[from_realqi] ) + abs( y[to_realqi] - y[from_realqi] )
 // when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
 UInt Grid::Distance(UInt from_realqi, UInt to_realqi) const {
     return dist[from_realqi][to_realqi];
@@ -191,11 +191,11 @@ void Grid::ComputeDist() {
     for (UInt i = 0; i < nq; i++) {
         for (UInt j = 0; j < nq; j++) {
             if (form == gf_cross) {
-                QL_ASSERT (dist[i][j] == (std::max(std::abs(x[i] - x[j]),
-                                                      std::abs(y[i] - y[j]))));
+                QL_ASSERT (dist[i][j] == (max(abs(x[i] - x[j]),
+                                                      abs(y[i] - y[j]))));
             } else if (form == gf_plus) {
                 QL_ASSERT (dist[i][j] ==
-                              (std::abs(x[i] - x[j]) + std::abs(y[i] - y[j])));
+                              (abs(x[i] - x[j]) + abs(y[i] - y[j])));
             }
 
         }
