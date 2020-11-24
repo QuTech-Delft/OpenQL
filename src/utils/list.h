@@ -10,6 +10,11 @@
 #include "utils/str.h"
 #include "utils/container_base.h"
 
+template <class T>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedList<T> &list);
+template <class T>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedList<T> &list);
+
 namespace ql {
 namespace utils {
 
@@ -19,7 +24,7 @@ namespace utils {
  * Unlike the STL variant, iterators detect accidental undefined behavior and
  * throw an exception instead.
  */
-template <typename T, typename Allocator = std::allocator<T>>
+template <typename T, typename Allocator>
 class UncheckedList : public std::list<T, Allocator> {
 public:
 

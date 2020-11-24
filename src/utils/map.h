@@ -10,6 +10,11 @@
 #include "utils/str.h"
 #include "utils/container_base.h"
 
+template <class Key, class T, class Compare>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedMap<Key, T, Compare> &map);
+template <class Key, class T, class Compare>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedMap<Key, T, Compare> &map);
+
 namespace ql {
 namespace utils {
 
@@ -40,12 +45,7 @@ namespace utils {
  *    gracefully return "<EMPTY>" if there is no value in the map for the given
  *    key. The map is not modified, making it `const`.
  */
-template <
-    class Key,
-    class T,
-    class Compare = std::less<Key>,
-    class Allocator = std::allocator<std::pair<const Key, T>>
->
+template <class Key, class T, class Compare, class Allocator>
 class UncheckedMap : public std::map<Key, T, Compare, Allocator> {
 public:
 

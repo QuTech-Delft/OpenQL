@@ -10,6 +10,11 @@
 #include "utils/str.h"
 #include "utils/container_base.h"
 
+template <class T>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::UncheckedVec<T> &vec);
+template <class T>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::CheckedVec<T> &vec);
+
 namespace ql {
 namespace utils {
 
@@ -21,7 +26,7 @@ namespace utils {
  * like at(). The iterators are also wrapped to detect accidental undefined
  * behavior.
  */
-template <class T, class Allocator = std::allocator<T>>
+template <class T, class Allocator>
 class UncheckedVec : public std::vector<T, Allocator> {
 public:
 
