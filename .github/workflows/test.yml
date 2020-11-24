@@ -25,8 +25,8 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         brew install bison flex
-        echo "::add-path::/usr/local/opt/bison/bin"
-        echo "::add-path::/usr/local/opt/flex/bin"
+        echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+        echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
     - uses: actions/cache@v2
       if: matrix.os == 'windows-latest'
       with:
@@ -94,8 +94,8 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         brew install bison flex swig
-        echo "::add-path::/usr/local/opt/bison/bin"
-        echo "::add-path::/usr/local/opt/flex/bin"
+        echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+        echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
     - uses: actions/cache@v2
       if: matrix.os == 'windows-latest'
       with:
@@ -110,7 +110,7 @@ jobs:
       run: |
         choco install winflexbison3 --version 2.5.18.20190508
         choco install swig --version 4.0.1
-        echo "::set-env name=OPENQL_BUILD_TYPE::Release"
+        echo "OPENQL_BUILD_TYPE=Release" >> $GITHUB_ENV
     - name: Build
       env:
         NPROCS: 100
