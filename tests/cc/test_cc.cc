@@ -347,7 +347,7 @@ void test_qi_example( std::string scheduler, std::string scheduler_uniform)
     ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs);
 
 	for(size_t i=0; i<5; i++) {
-		k.gate("prepz", {i});
+		k.gate("prepz", i);
 	}
 	k.wait({}, 0);      // help scheduler
     k.gate("ry180", {0, 2});     // FIXME: "y" does not work, but gate decomposition should handle?
@@ -358,7 +358,7 @@ void test_qi_example( std::string scheduler, std::string scheduler_uniform)
 
 	k.wait({}, 0);      // help scheduler
 	for(size_t i=0; i<5; i++) {
-		k.gate("measure", {i});
+		k.gate("measure", i);
 	}
 	k.wait({}, 0);      // help scheduler
 

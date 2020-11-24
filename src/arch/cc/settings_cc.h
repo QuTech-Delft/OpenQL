@@ -28,7 +28,7 @@ public: // types
         std::string instrumentName; // key 'instruments[]/name'
         int slot;                   // key 'instruments[]/controller/slot'
 #if OPT_FEEDBACK
-        bool forceCondGatesOn;      // optional key 'instruments[]/force_cond_gates_on'
+        bool forceCondGatesOn;      // optional key 'instruments[]/force_cond_gates_on', can be used to always enable AWG if gate execution is controlled by VSM
 #endif
     } tInstrumentInfo;              // information from key 'instruments'
 

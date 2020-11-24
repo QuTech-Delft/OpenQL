@@ -123,7 +123,7 @@ void codegen_cc::programFinish(const std::string &progName)
 
     emit(".END");   // end .CODE section
 
-	dp.emit(".END", "");
+	dp.programFinish();
 
     vcd.programFinish(progName);
 }
@@ -167,13 +167,26 @@ void codegen_cc::bundleStart(const std::string &cmnt)
 {
     // create 'matrix' of tBundleInfo with proper vector size per instrument
 	bundleInfo.clear();
-    tBundleInfo empty = {"", 0, settings_cc::NO_STATIC_CODEWORD_OVERRIDE, -1, -1};	// FIXME: create proper constructor
+    tBundleInfo empty = {
+#if OPT_FEEDBACK
+		.readoutCop = IMPLICIT_COP,		// FIXME: keep explicit in IR?
+		.readoutQubit = -1,
+        .condition = cond_always,
+        // FIXME: add cops
+#endif
+		.signalValue = "",
+		.durationInCycles = 0,
+#if OPT_SUPPORT_STATIC_CODEWORDS
+		.staticCodewordOverride = settings_cc::NO_STATIC_CODEWORD_OVERRIDE
+#endif
+	};
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
         bundleInfo.emplace_back(ic.controlModeGroupCnt,   	// one tBundleInfo per group in the control mode selected for instrument
 								empty);  					// empty tBundleInfo
     }
 
+	// generate source code comments
     comment(cmnt);
     dp.comment(cmnt);		// FIXME: comment is not full appropriate, but at least allows matching with .CODE section
 }
@@ -250,12 +263,10 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 									   << ", group=" << group
 									   << ": codeword=" << codeword
 									   << std::string(codewordOverriden ? " (static override)" : "")
-									   << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << ret.groupDigOut
-		);
+									   << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << ret.groupDigOut);
 	} else {    // nrGroupControlBits < 1
-		JSON_FATAL("key 'control_bits' empty for group " <<
-														 controlModeGroup << " on instrument '" <<
-														 ic.ii.instrumentName << "'");
+		JSON_FATAL("key 'control_bits' empty for group " << controlModeGroup
+					<< " on instrument '" << ic.ii.instrumentName << "'");
 	}
 
 	// add trigger to digOut
@@ -264,7 +275,7 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 		// do nothing
 	} else if(nrTriggerBits == 1) {                             // single trigger for all groups (NB: will possibly assigned multiple times)
 		ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][0];
-#if 1   // FIXME: trigger per group, nrGroups always 32
+#if 1   // FIXME: trigger per group
 	} else if(nrTriggerBits == nrGroups) {                      // trigger per group
 		ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][group];
 #endif
@@ -274,8 +285,7 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 								  << " groups, but control mode '" << ic.refControlMode
 								  << "' defines " << nrTriggerBits
 								  << " trigger bits in 'trigger_bits' (must be 1 or #groups)");
-// FIXME: 20200924 error shows 32: "E       TypeError: Error : instrument 'mw_0' uses 32 groups, but control mode 'awg8-mw-direct-iq' defines 2 trigger bits in 'trigger_bits' (must be 1 or #groups)"
-	} // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG required 2 trigger bits
+	} // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG requires 2 trigger bits
 
 	return ret;
 }
@@ -305,12 +315,18 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         uint32_t digOut = 0;                                                // the digital output value sent over the instrument interface
         unsigned int maxDurationInCycles = 0;                               // maximum duration over groups that are used, one instrument
 #if OPT_FEEDBACK
+		typedef struct {
+			int condition;	// FIXME: get from bundleInfo?
+			// FIXME: cop
+			uint32_t groupDigOut;
+		} tCondGateInfo;
+		std::map<int, tCondGateInfo> condGateMap;							// NB: key is instrIdx
 		bool instrHasReadout = false;
 		typedef struct {
 			int smBit;
 			int bit;
-			int cop;	// classic operand as annotation
-			int qubit;	// annotation
+			int cop;	// classic operand as annotation only FIXME: get from bundleInfo?
+			int qubit;	// annotation only
 		} tReadoutInfo;
 		std::map<int, tReadoutInfo> readoutMap;								// NB: key is instrIdx
 #endif
@@ -332,10 +348,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				// conditional gates
 				// store condition and groupDigOut in condMap, if all groups are unconditional we use old scheme, otherwise
 				// datapath is configured to generate proper digital output
-                if(bi->condition == cond_always) {
+                if(bi->condition==cond_always || ic.ii.forceCondGatesOn) {
                 	// nothing to do, just use digOut
                 } else {
-
+					// remind mapping for setting PL
+					condGateMap.emplace(group, tCondGateInfo{bi->condition, gdo.groupDigOut});
                 }
 #endif
 
@@ -373,7 +390,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				instrHasReadout = true;
 
 				// get classic operand
-				if (bi->readoutCop >= 0) {
+				if (bi->readoutCop >= 0) {	// i.e. not IMPLICIT_COP
 					WOUT("ignoring explicit assignment to classic operand" << bi->readoutCop << "for measurement of qubit" << bi->readoutQubit);
 				}
 				int cop = bi->readoutQubit;                	// implicit cop for qubit
@@ -397,8 +414,9 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 		}
 
 #if OPT_FEEDBACK
-		// FIXME: terrible hack
-		if(instrHasReadout) {	// FIXME: also allow runtime selection by option
+		// FIXME: terrible hack.
+		// Alternatively, we could ignore startCycle and compute it ourselves. No, startCycle is also used to insert 'wait'
+		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
 			// shorten output to preserve timeline while injecting time for feedback below
 			int smWait = settings.getSmWait();
 			maxDurationInCycles -= 1+smWait;	// adjust gate duration (Ugh)
@@ -420,25 +438,64 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             padToCycle(lastEndCycle[instrIdx], startCycle, ic.ii.slot, ic.ii.instrumentName);
 
             // emit code for slot output
-            if (1) {	// FIXME: all groups unconditional
+            if(condGateMap.empty()) {	// all groups unconditional
 				emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
 					 "seq_out",
 					 SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << maxDurationInCycles),
 					 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName+"'"));
 			} else {	// some group conditional
 				// configure datapath PL
+				int smAddr = 0;		// FIXME:
+				int pl = dp.getOrAssignPl(instrIdx);
 
+				dp.emit(SS2S("[" << ic.ii.slot << "]"), SS2S(".PL " << pl));
+				for(auto &cg : condGateMap) {
+					int group = cg.first;
+					tCondGateInfo cgi = cg.second;
+
+#if 1				// FIXME: implement PL output
+					for(int bit=0; bit<32; bit++) {
+						if(1<<bit & cgi.groupDigOut) {
+							// FIXME:
+							cgi.condition;
+							int smBit0 = 0;
+							int smBit1 = 0;
+							std::string expression;
+							dp.emit(SS2S("[" << ic.ii.slot << "]"),      	// CCIO selector
+									SS2S("O[" << bit << "] := I[" << smBit0 << "]"),		// FIXME: depend on condition
+									SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", expression=" << expression));
+						}
+					}
+#endif
+				}
+
+				// emit code for conditional gate
+				emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+					 "seq_out_sm",
+					 SS2S("S" << smAddr << "," << pl << "," << maxDurationInCycles),
+					 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": consitional code word/mask on '" << ic.ii.instrumentName+"'"));
+				// FIXME
             }
+
             // update lastEndCycle
             lastEndCycle[instrIdx] = startCycle + maxDurationInCycles;
-
         } else {    // !isInstrUsed
             // nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
         }
 
+#if OPT_PRAGMA	// FIXME: pragma handling
+		if(bundleHasPragma) {
+        	if(instrHasPragma) {
+
+        	} else {
+
+        	}
+        }
+#endif
+
+
 
 #if OPT_FEEDBACK
-        // FIXME: move to emitReadout()
 		// generate code for instrument input of readout results
 		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
 			if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
@@ -447,13 +504,12 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 			// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
 			if(instrHasReadout) {
-				// FIXME:
-				int smAddr = 0;
-				int mux = 0;				// get/assign LUT
+				int smAddr = 0;		// FIXME:
+				int mux = dp.getOrAssignMux(instrIdx);
 
 				// emit datapath code
 				dp.emit(SS2S("[" << ic.ii.slot << "]"), SS2S(".MUX " << mux));
-				for(auto readout : readoutMap) {
+				for(auto &readout : readoutMap) {
 					int group = readout.first;
 					tReadoutInfo ri = readout.second;
 
@@ -529,7 +585,6 @@ void codegen_cc::customGate(
 
     vcd.customGate(iname, qops, startCycle, durationInCycles);
 
-
     //  determine whether this is a readout instruction
     bool isReadout = settings.isReadout(iname);
 
@@ -578,12 +633,12 @@ void codegen_cc::customGate(
             bi->signalValue = csv.signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
             // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
-            bi->staticCodewordOverride = settings.findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
+            bi->staticCodewordOverride = ql::settings_cc::findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
 #endif
         } else if(bi->signalValue == csv.signalValueString) {               // signal unchanged
             // do nothing
         } else {
-            EOUT("Code so far:\n" << codeSection.str());                    // provide context to help finding reason. FIXME: not great
+            EOUT("Code so far:\n" << codeSection.str());                    // provide context to help finding reason. FIXME: limit # lines
             FATAL("Signal conflict on instrument='" << csv.si.ic.ii.instrumentName <<
                   "', group=" << csv.si.group <<
                   ", between '" << bi->signalValue <<
@@ -597,7 +652,7 @@ void codegen_cc::customGate(
         // FIXME: assumes that group configuration for readout input matches that of output
 		// store operands used for readout, actual work is postponed to bundleFinish()
         if(isReadout) {
-            int cop = !cops.empty() ? cops[0] : IMPLICIT_COP;
+            int cop = !cops.empty() ? cops[0] : IMPLICIT_COP;	// FIXME: make explicit here?
             bi->readoutCop = cop;   // FIXME: naming, we do use cop, but rename qop to qubit below
 
             // store qubit
@@ -609,8 +664,8 @@ void codegen_cc::customGate(
         }
 
         // store expression for conditional gates
-        bi->condition = cond_always;
-        // FIXME: implement when expressions are implemented
+        bi->condition = cond_always;	// FIXME: implement correctly when expressions are implemented
+        // FIXME: add cops
 #endif
 
         DOUT("customGate(): iname='" << iname <<
@@ -687,6 +742,7 @@ void codegen_cc::comment(const std::string &c)
 \************************************************************************/
 
 // FIXME: assure space between fields!
+// FIXME: make comment output depend on verboseCode
 
 void codegen_cc::emit(const std::string &labelOrComment, const std::string &instr)
 {
@@ -759,6 +815,10 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
 {   tCalcSignalValue ret;
     std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");                   // for JSON error reporting
 
+	/************************************************************************\
+	| get signal properties, mapping operand index to qubit
+	\************************************************************************/
+
     // get the operand index & qubit to work on
     ret.operandIdx = json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
     if(ret.operandIdx >= qops.size()) {
@@ -769,16 +829,20 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     }
     unsigned int qubit = qops[ret.operandIdx];
 
+    // get signal value
+    const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
+    ret.signalValueString = SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
+
 	// get instruction signal type (e.g. "mw", "flux", etc)
     // NB: instructionSignalType is different from the type provided by find_instruction_type, although some identical strings are used) FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL
     std::string instructionSignalType = json_get<std::string>(sd.signal[s], "type", signalSPath);
 
-    // get signalInfo, i.e. map signal type for qubit to instrument & group
+	/************************************************************************\
+	| map signal type for qubit to instrument & group
+	\************************************************************************/
+
+    // find signalInfo, i.e. perform the mapping
     ret.si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
-
-
-    // get signal value
-    const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
 
     // verify signal dimensions
     size_t channelsPergroup = ret.si.ic.controlModeGroupSize;
@@ -791,7 +855,6 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     }
 
     // expand macros
-    ret.signalValueString = SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
     utils::replace(ret.signalValueString, std::string("\""), std::string(""));   // get rid of quotes
     utils::replace(ret.signalValueString, std::string("{gateName}"), iname);
     utils::replace(ret.signalValueString, std::string("{instrumentName}"), ret.si.ic.ii.instrumentName);

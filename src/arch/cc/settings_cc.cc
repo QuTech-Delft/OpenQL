@@ -124,7 +124,7 @@ settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) con
     // FIXME: also return controller/"io_module"?
 
 #if OPT_FEEDBACK
-    // optional key 'instruments[]/force_cond_gates_on'
+    // optional key 'instruments[]/force_cond_gates_on', can be used to always enable AWG if gate execution is controlled by VSM
     if(JSON_EXISTS(*ret.instrument, "force_cond_gates_on")) {
         ret.forceCondGatesOn = json_get<bool>((*ret.instrument), "force_cond_gates_on", ret.instrumentName+"/force_cond_gates_on"); // key will exist, but type may be wrong
     }
