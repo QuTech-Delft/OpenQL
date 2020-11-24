@@ -14,7 +14,7 @@ namespace ql {
 
 class InteractionMatrix {
 private:
-    utils::Vec<utils::Vec<size_t>> Matrix;
+    utils::Vec<utils::Vec<utils::UInt>> Matrix;
     utils::UInt Size;
 
 public:
