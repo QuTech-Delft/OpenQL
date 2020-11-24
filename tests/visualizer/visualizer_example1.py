@@ -29,28 +29,41 @@ c.set_pass_option("Visualizer", "visualizer_type", "CIRCUIT")
 c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config_example1.json"))
 c.set_pass_option("Visualizer", "visualizer_waveform_mapping_path", os.path.join(curdir, "waveform_mapping.json"))
 
-platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'hardware_config_cc_light_visualizer2.json'))
-nqubits = 4
+platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'hardware_config_cc_light_visualizer.json'))
+#platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'test_remap_gate.json'))
+nqubits = 7
 p = ql.Program("testProgram1", platformCustomGates, nqubits, 0)
 k = ql.Kernel("aKernel1", platformCustomGates, nqubits, 0)
-k.gate('x', [0])
-for i in range(nqubits):
-    k.gate('prepz', [i])
-k.gate('wait', [1], 40)
-k.gate('wait', [2], 40)
-k.gate('wait', [3], 40)
-k.gate('x', [0])
-k.gate('x', [0])
-k.gate('x', [0])
-k.gate('wait', [2], 40)
-k.gate('h', [2])
-k.gate('cz', [3, 1])
-k.gate('cz', [2, 0])
-k.gate('cz', [2, 0])
-k.gate('wait', [3], 40)
-k.gate('measure', [3])
-k.gate('measure', [0])
-k.gate('measure', [1])
-k.gate('measure', [2])
+
+for j in range(7):
+    k.gate("x", [j])
+
+for i in range(7):
+    for j in range(7):
+        if (i != j):
+            k.gate("cnot", [i,j])
+
+for j in range(7):
+    k.gate("x", [j])
+
+# k.gate('x', [0])
+# for i in range(nqubits):
+#     k.gate('prepz', [i])
+# k.gate('wait', [1], 40)
+# k.gate('wait', [2], 40)
+# k.gate('wait', [3], 40)
+# k.gate('x', [0])
+# k.gate('x', [0])
+# k.gate('x', [0])
+# k.gate('wait', [2], 40)
+# k.gate('h', [2])
+# k.gate('cz', [3, 1])
+# k.gate('cz', [2, 0])
+# k.gate('cz', [2, 0])
+# k.gate('wait', [3], 40)
+# k.gate('measure', [3])
+# k.gate('measure', [0])
+# k.gate('measure', [1])
+# k.gate('measure', [2])
 p.add_kernel(k)
 c.compile(p)

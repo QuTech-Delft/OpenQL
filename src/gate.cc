@@ -587,8 +587,6 @@ custom_gate::custom_gate(const custom_gate &g) {
     duration = g.duration;
     // angle = g.angle; FIXME
     // cycle = g.cycle; FIXME
-    // codewords = g.codewords;
-    // visual_type = g.visual_type;
     m.m[0] = g.m.m[0];
     m.m[1] = g.m.m[1];
     m.m[2] = g.m.m[2];

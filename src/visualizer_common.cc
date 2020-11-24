@@ -89,15 +89,15 @@ void visualize(const ql::quantum_program* program, const std::string &visualizat
     // printGates(parseGates(program));
 
     // Choose the proper visualization based on the visualization type.
-    if (visualizationType == "CIRCUIT") {
-        visualizeCircuit(program, configuration);
-    } else if (visualizationType == "INTERACTION_GRAPH") {
-        visualizeInteractionGraph(program, configuration);
-    } else if (visualizationType == "MAPPING_GRAPH") {
-        WOUT("Mapping graph visualization not yet implemented.");
-    } else {
-        FATAL("Unknown visualization type: " << visualizationType << "!");
-    }
+    // if (visualizationType == "CIRCUIT") {
+    //     visualizeCircuit(program, configuration);
+    // } else if (visualizationType == "INTERACTION_GRAPH") {
+    //     visualizeInteractionGraph(program, configuration);
+    // } else if (visualizationType == "MAPPING_GRAPH") {
+    //     WOUT("Mapping graph visualization not yet implemented.");
+    // } else {
+    //     FATAL("Unknown visualization type: " << visualizationType << "!");
+    // }
 
     IOUT("Visualization complete...");
 }

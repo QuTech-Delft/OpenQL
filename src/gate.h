@@ -492,6 +492,7 @@ public:
 };
 
 class remap : public gate {
+public:
     cmat_t m;
     size_t virtual_qubit_index;
     remap(const size_t r_index, const size_t v_index);

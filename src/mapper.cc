@@ -1167,15 +1167,15 @@ void Past::AddSwap(size_t r0, size_t r1) {
         }
     }
     nswapsadded++;                       // for reporting at the end
-    // new_gate(circ, "remap", {r0});
-    // gl.push_back(new remap(qubit, virtindex));
     for (auto &gp : circ) {
         Add(gp);
     }
-    // new_gate(circ, "remap", {r0});
-    // for (auto &gp : circ) {
-    //     Add(gp);
-    // }
+    
+    Add(new remap(r0, v2r.GetVirt(r1)));
+    Add(new remap(r1, v2r.GetVirt(r0)));
+    IOUT("added remap gate: [" << r0 << ", " << v2r.GetVirt(r1) << "]");
+    IOUT("added remap gate: [" << r1 << ", " << v2r.GetVirt(r0) << "]");
+
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }
 
