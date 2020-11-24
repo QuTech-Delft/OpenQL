@@ -468,9 +468,9 @@ public:
         const std::string &gname,
         const std::vector<size_t> &qubits,
         const std::vector<size_t> &cregs = {},
-        const std::vector<size_t> &bregs = {},
         size_t duration = 0,
-        double angle = 0.0
+        double angle = 0.0,
+        const std::vector<size_t> &bregs = {}
     ) const;
 
     // return number of swaps added to this past

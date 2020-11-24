@@ -101,9 +101,9 @@ private:
         const std::string &gname,
         const std::vector<size_t> &qubits,
         const std::vector<size_t> &cregs = {},
-        const std::vector<size_t> &bregs = {},
         size_t duration=0,
-        double angle=0.0
+        double angle=0.0,
+        const std::vector<size_t> &bregs = {}
     );
 
     // if a specialized custom gate ("e.g. cz q0,q4") is available, add it to circuit and return true
@@ -114,9 +114,9 @@ private:
         const std::string &gname,
         const std::vector<size_t> &qubits,
         const std::vector<size_t> &cregs = {},
-        const std::vector<size_t> &bregs = {},
         size_t duration=0,
-        double angle=0.0
+        double angle=0.0,
+        const std::vector<size_t> &bregs = {}
     );
 
     // FIXME: move to class composite_gate?
@@ -161,9 +161,9 @@ public:
         const std::string &gname,
         const std::vector<size_t> &qubits = {},
         const std::vector<size_t> &cregs = {},
-        const std::vector<size_t> &bregs = {},
         size_t duration = 0,
-        double angle = 0.0
+        double angle = 0.0,
+        const std::vector<size_t> &bregs = {}
     );
 
     // terminology:
@@ -196,9 +196,9 @@ public:
         const std::string &gname,
         const std::vector<size_t> &qubits = {},
         const std::vector<size_t> &cregs = {},
-        const std::vector<size_t> &bregs = {},
         size_t duration = 0,
-        double angle = 0.0
+        double angle = 0.0,
+        const std::vector<size_t> &bregs = {}
     );
 
     // to add unitary to kernel

@@ -959,14 +959,14 @@ bool Past::new_gate(
     const std::string &gname,
     const std::vector<size_t> &qubits,
     const std::vector<size_t> &cregs,
-    const std::vector<size_t> &bregs,
     size_t duration,
-    double angle
+    double angle,
+    const std::vector<size_t> &bregs
 ) const {
     bool added;
     ASSERT(circ.empty());
     ASSERT(kernelp->c.empty());
-    added = kernelp->gate_nonfatal(gname, qubits, cregs, bregs, duration, angle);   // creates gates in kernelp->c
+    added = kernelp->gate_nonfatal(gname, qubits, cregs, duration, angle, bregs);   // creates gates in kernelp->c
     circ = kernelp->c;
     kernelp->c.clear();
     for (auto gp : circ) {
@@ -1253,9 +1253,9 @@ void Past::MakeReal(ql::gate *gp, ql::circuit &circ) {
         real_gname.append("_real");
     }
 
-    bool created = new_gate(circ, real_gname, real_qubits, gp->creg_operands, gp->breg_operands, gp->duration, gp->angle);
+    bool created = new_gate(circ, real_gname, real_qubits, gp->creg_operands, gp->duration, gp->angle, gp->breg_operands);
     if (!created) {
-        created = new_gate(circ, gname, real_qubits, gp->creg_operands, gp->breg_operands, gp->duration, gp->angle);
+        created = new_gate(circ, gname, real_qubits, gp->creg_operands, gp->duration, gp->angle, gp->breg_operands);
         if (!created) {
             FATAL("MakeReal: failed creating gate " << real_gname << " or " << gname);
         }
@@ -1271,9 +1271,9 @@ void Past::MakePrimitive(ql::gate *gp, ql::circuit &circ) const {
     stripname(gname);
     std::string prim_gname = gname;
     prim_gname.append("_prim");
-    bool created = new_gate(circ, prim_gname, gp->operands, gp->creg_operands, gp->breg_operands, gp->duration, gp->angle);
+    bool created = new_gate(circ, prim_gname, gp->operands, gp->creg_operands, gp->duration, gp->angle, gp->breg_operands);
     if (!created) {
-        created = new_gate(circ, gname, gp->operands, gp->creg_operands, gp->breg_operands, gp->duration, gp->angle);
+        created = new_gate(circ, gname, gp->operands, gp->creg_operands, gp->duration, gp->angle, gp->breg_operands);
         if (!created) {
             FATAL("MakePrimtive: failed creating gate " << prim_gname << " or " << gname);
         }
