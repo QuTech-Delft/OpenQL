@@ -595,6 +595,8 @@ custom_gate::custom_gate(const custom_gate &g) {
     duration = g.duration;
     // angle = g.angle; FIXME
     // cycle = g.cycle; FIXME
+    codewords = g.codewords;
+    visual_type = g.visual_type;
     m.m[0] = g.m.m[0];
     m.m[1] = g.m.m[1];
     m.m[2] = g.m.m[2];
@@ -657,6 +659,31 @@ void custom_gate::load(nlohmann::json &instr) {
         m.m[1] = Complex(mat[1][0], mat[1][1]);
         m.m[2] = Complex(mat[2][0], mat[2][1]);
         m.m[3] = Complex(mat[3][0], mat[3][1]);
+
+        // Load the cc-light codeword(s).
+        l_attr = "cc_light_codeword";
+        if (instr.count("cc_light_codeword") == 1) {
+            codewords.push_back(instr["cc_light_codeword"]);
+            QL_DOUT("codewords: " << codewords[0]);
+        } else {
+            if (instr.count("cc_light_right_codeword") == 1 && instr.count("cc_light_left_codeword") == 1) {
+                codewords.push_back(instr["cc_light_right_codeword"]);
+                codewords.push_back(instr["cc_light_left_codeword"]);
+                QL_DOUT("codewords: " << codewords[0] << "," << codewords[1]);
+            } else {
+                QL_WOUT("Did not find any codeword attributes for instruction: '" << name << "'!");
+            }
+        }
+
+        // Load the visual type of the instruction if provided.
+        l_attr = "visual_type";
+        if (instr.count("visual_type") == 1) {
+            visual_type = instr["visual_type"].get<std::string>();
+            QL_DOUT("visual_type: '" << visual_type);
+        } else {
+            QL_WOUT("Did not find 'visual_type' attribute for instruction: '" << name << "'!");
+        }
+
     } catch (Json::exception &e) {
         QL_EOUT("while loading instruction '" << name << "' (attr: " << l_attr
                                               << ") : " << e.what());

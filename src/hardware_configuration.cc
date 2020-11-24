@@ -130,7 +130,7 @@ void hardware_configuration::load(
         //  "^(token|(token token(,token)*))$"
         //  so with a comma between any operands
         instruction_map.set(name) = load_instruction(name, attr);
-        QL_DOUT("instruction " << name << " loaded.");
+        QL_DOUT("instruction '" << name << "' loaded.");
     }
 
     // load optional section gate_decomposition

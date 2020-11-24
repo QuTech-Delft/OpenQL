@@ -198,6 +198,9 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/clifford.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passmanager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_common.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_circuit.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_interaction.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/exception.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/logger.cc"
@@ -370,6 +373,20 @@ target_link_libraries(ql PUBLIC nlohmann_json::nlohmann_json)
 option(LIBQASM_COMPAT "" ON)
 add_subdirectory(deps/libqasm)
 target_link_libraries(ql PUBLIC cqasm)
+
+
+# X11 -------------------------------------------------------------------------
+
+# Only enable the visualizer if building on Windows or the X11 library is found when building on Linux or Mac.
+if(WIN32)
+    target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+else()
+    find_package(X11)
+    if(X11_FOUND)
+        target_link_libraries(ql PUBLIC X11)
+        target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+    endif()
+endif()
 
 
 # backward-cpp ----------------------------------------------------------------

@@ -84,7 +84,7 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
 
     if (passName == "Reader") {
         pass = new ReaderPass(aliasName);
-    } else  if (passName == "Writer") {
+    } else if (passName == "Writer") {
         pass = new WriterPass(aliasName);
     } else if (passName == "RotationOptimizer") {
         pass = new RotationOptimizerPass(aliasName);
@@ -116,6 +116,8 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
         pass = new CCLDecomposePostSchedulePass(aliasName);
     } else if (passName == "QisaCodeGeneration") {
         pass = new QisaCodeGenerationPass(aliasName);
+    } else if (passName == "Visualizer") {
+        pass = new VisualizerPass(aliasName);
     } else {
         QL_EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
         exit(1);

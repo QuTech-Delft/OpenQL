@@ -750,7 +750,7 @@ void cc_light_eqasm_compiler::map(
     report_statistics(programp, platform, "in", passname, "# ");
     report_qasm(programp, platform, "in", passname);
 
-    Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+    mapper::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
     mapper.Init(&platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
 
     std::ofstream ofs;

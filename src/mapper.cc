@@ -14,6 +14,7 @@
 #endif
 
 namespace ql {
+namespace mapper {
 
 using namespace utils;
 
@@ -2964,4 +2965,5 @@ void Mapper::Init(const quantum_platform *p) {
     // DOUT("Mapping initialization [DONE]");
 }
 
+} // namespace mapper
 } // namespace ql

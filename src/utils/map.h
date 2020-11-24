@@ -703,7 +703,7 @@ public:
      */
     std::pair<iterator, bool> insert(const value_type &value) {
         auto p = get_data().get_mut_element_only().insert(value);
-        return std::make_pair(iterator(p.first, data_ptr), p.second);
+        return std::make_pair<iterator, bool>(iterator(std::move(p.first), data_ptr), std::move(p.second));
     }
 
     /**
@@ -720,9 +720,9 @@ public:
             std::is_constructible<value_type, P&&>::value
         >::type
     >
-    std::pair<iterator,bool> insert(P &&value) {
+    std::pair<iterator, bool> insert(P &&value) {
         auto p = get_data().get_mut_element_only().insert(value);
-        return std::make_pair(iterator(p.first, data_ptr), p.second);
+        return std::make_pair<iterator, bool>(iterator(std::move(p.first), data_ptr), std::move(p.second));
     }
 
     /**
@@ -861,7 +861,7 @@ public:
     template <class... Args>
     std::pair<iterator, bool> emplace(Args&&... args) {
         auto p = get_data().get_mut_element_only().emplace(std::forward<Args>(args)...);
-        return std::make_pair(iterator(p.first, data_ptr), p.second);
+        return std::make_pair<iterator, bool>(iterator(std::move(p.first), data_ptr), std::move(p.second));
     }
 
     /**
@@ -879,7 +879,7 @@ public:
     std::pair<iterator, bool> emplace_hint(const ConstIter &pos, Args&&... args) {
         pos.check(data_ptr);
         auto p = get_data().get_mut_element_only().emplace_hint(std::forward<Args>(args)...);
-        return std::make_pair(iterator(p.first, data_ptr), p.second);
+        return std::make_pair<iterator, bool>(iterator(std::move(p.first), data_ptr), std::move(p.second));
     }
 
     /**

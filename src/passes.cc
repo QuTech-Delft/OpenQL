@@ -16,6 +16,7 @@
 #include "latency_compensation.h"
 #include "buffer_insertion.h"
 #include "scheduler.h"
+#include "visualizer.h"
 
 #include "arch/cc_light/cc_light_eqasm_compiler.h"
 #include "arch/cc/eqasm_backend_cc.h"
@@ -324,6 +325,26 @@ void ReportStatisticsPass::runOnProgram(quantum_program *program) {
 }
 
 /**
+ * @brief  Visualizer pass constructor
+ * @param  Name of the visualizer pass
+ */
+VisualizerPass::VisualizerPass(const Str &name) : AbstractPass(name) {
+}
+
+/**
+ * @brief  Visualize the quantum program
+ * @param  Program object to be read
+ */
+void VisualizerPass::runOnProgram(quantum_program *program) {
+    QL_DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
+    
+    ql::visualize(program, getPassOptions()->getOption("visualizer_type"), {
+        getPassOptions()->getOption("visualizer_config_path"),
+        getPassOptions()->getOption("visualizer_waveform_mapping_path")
+    });
+}
+
+/**
  * @brief  CCL Preparation for Code Generation pass constructor
  * @param  Name of the preparation pass
  */
@@ -496,6 +517,9 @@ PassOptions::PassOptions(Str app_name) {
     opt_name2opt_val.set("hwconfig") = "none";
     opt_name2opt_val.set("nqubits") = "100";
     opt_name2opt_val.set("eqasm_compiler_name") = "cc_light_compiler";
+    opt_name2opt_val.set("visualizer_type") = "CIRCUIT";
+    opt_name2opt_val.set("visualizer_config_path") = "visualizer_config.json";
+    opt_name2opt_val.set("visualizer_waveform_mapping_path") = "waveform_mapping.json";
 
     // add options with default values and list of possible values
     app->add_set_ignore_case("--skip", opt_name2opt_val.at("skip"), {"yes", "no"}, "skip running the pass", true);
@@ -505,6 +529,9 @@ PassOptions::PassOptions(Str app_name) {
     app->add_option("--hwconfig", opt_name2opt_val.at("hwconfig"), "path to the platform configuration file", true);
     app->add_option("--nqubits", opt_name2opt_val.at("nqubits"), "number of qubits used by the program", true);
     app->add_set_ignore_case("--eqasm_compiler_name", opt_name2opt_val.at("eqasm_compiler_name"), {"cc_light_compiler", "eqasm_backend_cc"}, "Set the compiler backend", true);
+    app->add_option("--visualizer_type", opt_name2opt_val.at("visualizer_type"), "the type of visualization performed", true);
+    app->add_option("--visualizer_config_path", opt_name2opt_val.at("visualizer_config_path"), "path to the visualizer configuration file", true);
+    app->add_option("--visualizer_waveform_mapping_path", opt_name2opt_val.at("visualizer_waveform_mapping_path"), "path to the visualizer waveform mapping file", true);
 }
 
 /**

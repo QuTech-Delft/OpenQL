@@ -21,6 +21,7 @@
 //#include "metrics.h"
 
 namespace ql {
+namespace mapper {
 
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
@@ -956,4 +957,5 @@ public:
 
 };
 
+} // namespace mapper
 } // namespace ql

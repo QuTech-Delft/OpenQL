@@ -18,9 +18,14 @@ namespace ql {
 namespace utils {
 
 /**
- * Typedef for doubles. This just maps to a primitive bool.
+ * Typedef for booleans. This just maps to a primitive bool.
  */
 using Bool = bool;
+
+/**
+ * Typedef for (unsigned) bytes. This is based on uint8_t.
+ */
+using Byte = uint8_t;
 
 /**
  * Shorthand for unsigned integers. This is based on uint64_t.
@@ -28,7 +33,7 @@ using Bool = bool;
 using UInt = uint64_t;
 
 /**
- * Shorthand for unsigned integers. This is based on int64_t.
+ * Shorthand for signed integers. This is based on int64_t.
  */
 using Int = int64_t;
 
