@@ -35,9 +35,7 @@
 
 #include "report.h"
 
-#include <fstream>
 #include "utils/num.h"
-#include "utils/filesystem.h"
 #include "utils/str.h"
 #include "options.h"
 #include "ir.h"
@@ -185,7 +183,7 @@ static UInt get_circuit_latency(
  * - writing out as bundles writes the bundles, one by one in order on separate lines, each line representing a next cycle
  */
 static void report_write_qasm(
-    StrStrm &fname,
+    const Str &fname,
     const quantum_program *programp,
     const quantum_platform &platform
 ) {
@@ -211,7 +209,7 @@ static void report_write_qasm(
             out_qasm << kernel.qasm();
         }
     }
-    write_file(fname.str(), out_qasm.str());
+    OutFile(fname).write(out_qasm.str());
     // DOUT("... reporting report_write_qasm [done]");
 }
 
@@ -219,14 +217,14 @@ static void report_write_qasm(
  * composes the write file's name
  * that contains the program name and the extension
  */
-static StrStrm report_compose_write_name(
+static Str report_compose_write_name(
     const Str &unique_name,
     const Str &extension
 ) {
     StrStrm fname;
     fname << options::get("output_dir") << "/"
       << unique_name << extension;
-    return fname;
+    return fname.str();
 }
 
 /*
@@ -238,9 +236,83 @@ static void write_qasm_extension(
     const quantum_platform &platform,
     const Str &extension
 ) {
+    report_write_qasm(report_compose_write_name(programp->unique_name, extension), programp, platform);
+}
+
+/*
+ * composes the report file's name
+ * that contains the program name and the place from where the report is done
+ */
+static Str report_compose_report_name(
+    const Str &unique_name,
+    const Str &in_or_out,
+    const Str &pass_name,
+    const Str &extension
+) {
     StrStrm fname;
-    fname = report_compose_write_name(programp->unique_name, extension);
-    report_write_qasm(fname, programp, platform);
+    fname << options::get("output_dir") << "/"
+      << unique_name << "_" << pass_name << "_" << in_or_out << "." << extension;
+    return fname.str();
+}
+
+/**
+ * Opens an appropriately-named report file for writing if write_report_files
+ * if set to yes.
+ */
+ReportFile::ReportFile(
+    const quantum_program *programp,
+    const utils::Str &in_or_out,
+    const utils::Str &pass_name
+) {
+    if (options::get("write_report_files") == "yes") {
+        auto fname = report_compose_report_name(programp->unique_name, in_or_out, pass_name, "report");
+        of.emplace(fname);
+    }
+}
+
+/**
+ * Writes a string to the report file.
+ */
+void ReportFile::write(const utils::Str &content) {
+    if (of) {
+        *of << content;
+    }
+}
+
+/**
+ * Writes kernel statistics for the given kernel to the report file.
+ */
+void ReportFile::write_kernel_statistics(
+    const quantum_kernel &k,
+    const quantum_platform &platform,
+    const Str &comment_prefix
+) {
+    if (of) {
+        report_kernel_statistics(of->unwrap(), k, platform, comment_prefix);
+    }
+}
+
+/**
+ * Writes combined statistics for the given vector of kernels to the report
+ * file.
+ */
+void ReportFile::write_totals_statistics(
+    const utils::Vec<quantum_kernel> &kernels,
+    const quantum_platform &platform,
+    const Str &comment_prefix
+) {
+    if (of) {
+        report_totals_statistics(of->unwrap(), kernels, platform, comment_prefix);
+    }
+}
+
+/**
+ * Closes the report file.
+ */
+void ReportFile::close() {
+    if (of) {
+        of->close();
+    }
 }
 
 /*
@@ -263,22 +335,6 @@ void write_qasm(
 }
 
 /*
- * composes the report file's name
- * that contains the program name and the place from where the report is done
- */
-static StrStrm report_compose_report_name(
-    const Str &unique_name,
-    const Str &in_or_out,
-    const Str &pass_name,
-    const Str &extension
-) {
-    StrStrm fname;
-    fname << options::get("output_dir") << "/"
-      << unique_name << "_" << pass_name << "_" << in_or_out << "." << extension;
-    return fname;
-}
-
-/*
  * reports the qasm
  * in a file with a name that contains the program name and the place from where the report is done
  */
@@ -289,127 +345,16 @@ void report_qasm(
     const Str &pass_name
 ) {
     if (options::get("write_qasm_files") == "yes") {
-        StrStrm fname;
-        fname = report_compose_report_name(programp->unique_name, in_or_out, pass_name, "qasm");
+        auto fname = report_compose_report_name(programp->unique_name, in_or_out, pass_name, "qasm");
         report_write_qasm(fname, programp, platform);
     }
-}
-
-/*
- * create a report file for the given program and place, and open it
- * return an ofstream to it
- */
-std::ofstream report_open(
-    const quantum_program *programp,
-    const Str &in_or_out,
-    const Str &pass_name
-) {
-    std::ofstream ofs;
-
-    // DOUT("report_open: " << programp->unique_name << " in_or_out: " << in_or_out << " pass_name: " << pass_name);
-    if (options::get("write_report_files") != "yes") {
-        ofs.setstate(std::ios::badbit);
-        // DOUT("report_open no report [done]");
-        return ofs;
-    }
-    StrStrm fname;
-    fname = report_compose_report_name(programp->unique_name, in_or_out, pass_name, "report");
-    ofs.open(fname.str(), std::ofstream::trunc);
-    if (ofs.fail()) {
-        QL_FATAL("[x] error opening file '" << fname.str() << "' !" << std::endl
-                                            << "    make sure the output directory exists for '" << fname.str() << "'" << std::endl);
-    }
-    // DOUT("report_open [done]");
-    return ofs;
-}
-
-/*
- * close the report file again
- */
-void report_close(std::ofstream &ofs) {
-    // DOUT("report_close");
-    if (options::get("write_report_files") != "yes") {
-        // DOUT("report_close no report [done]");
-        return;
-    }
-    ofs.close();
-    // DOUT("report_close [done]");
-}
-
-/*
- * report statistics of the circuit of the given kernel
- */
-void report_kernel_statistics(
-    std::ofstream &ofs,
-    const quantum_kernel &k,
-    const quantum_platform &platform,
-    const Str &comment_prefix
-) {
-    if (options::get("write_report_files") != "yes") {
-        return;
-    }
-
-    // DOUT("... reporting report_kernel_statistics");
-    Vec<UInt> usecount;
-    usecount.resize(platform.qubit_number, 0);
-    get_qubit_usecount(k.c, platform, usecount);
-    UInt qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } }
-
-    Vec<UInt> usedcyclecount;
-    usedcyclecount.resize(platform.qubit_number, 0);
-    get_qubit_usedcyclecount(k.c, platform, usedcyclecount);
-
-    UInt  circuit_latency = get_circuit_latency(k.c, platform);
-    ofs << comment_prefix << "kernel: " << k.name << "\n";
-    ofs << comment_prefix << "----- circuit_latency: " << circuit_latency << "\n";
-    ofs << comment_prefix << "----- quantum gates: " << get_quantum_gates_count(k.c, platform) << "\n";
-    ofs << comment_prefix << "----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count(k.c, platform) << "\n";
-    ofs << comment_prefix << "----- classical operations: " << get_classical_operations_count(k.c, platform) << "\n";
-    ofs << comment_prefix << "----- qubits used: " << qubits_used << "\n";
-    ofs << comment_prefix << "----- qubit cycles use:" << to_string(usedcyclecount) << "\n";
-    // DOUT("... reporting report_kernel_statistics [done]");
-}
-
-/*
- * report statistics of the circuit of the given kernel
- */
-void get_kernel_statistics(
-    Str *ofs,
-    const quantum_kernel &k,
-    const quantum_platform &platform,
-    const Str &comment_prefix
-) {
-    if (options::get("write_report_files") != "yes") {
-        return;
-    }
-
-    // DOUT("... reporting report_kernel_statistics");
-    Vec<UInt> usecount;
-    usecount.resize(platform.qubit_number, 0);
-    get_qubit_usecount(k.c, platform, usecount);
-    UInt qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } }
-
-    Vec<UInt> usedcyclecount;
-    usedcyclecount.resize(platform.qubit_number, 0);
-    get_qubit_usedcyclecount(k.c, platform, usedcyclecount);
-
-    UInt  circuit_latency = get_circuit_latency(k.c, platform);
-    *ofs += comment_prefix; *ofs += "kernel: " ; *ofs += k.name ; *ofs += "\n";
-    *ofs += comment_prefix ; *ofs += "----- circuit_latency: " ; *ofs += to_string(circuit_latency) ; *ofs += "\n";
-    *ofs += comment_prefix ; *ofs += "----- quantum gates: " ; *ofs += to_string(get_quantum_gates_count(k.c, platform)) ; *ofs += "\n";
-    *ofs += comment_prefix; *ofs += "----- non single qubit gates: " ; *ofs += to_string(get_non_single_qubit_quantum_gates_count(k.c, platform)) ; *ofs += "\n";
-    *ofs += comment_prefix; *ofs +=  "----- classical operations: "; *ofs += to_string(get_classical_operations_count(k.c, platform)); *ofs +=  "\n";
-    *ofs += comment_prefix; *ofs += "----- qubits used: "; *ofs += to_string(qubits_used); *ofs += "\n";
-    *ofs += comment_prefix; *ofs += "----- qubit cycles use:"; *ofs += to_string(usedcyclecount); *ofs += "\n";
-
-    // DOUT("... reporting report_kernel_statistics [done]");
 }
 
 /*
  * report given string which is assumed to be closed by an endl by the caller
  */
 void report_string(
-    std::ofstream &ofs,
+    std::ostream &os,
     const Str &s
 ) {
     // DOUT("... reporting string");
@@ -418,15 +363,49 @@ void report_string(
         return;
     }
 
-    ofs << s;
+    os << s;
     // DOUT("... reporting string [done]");
+}
+
+/*
+ * report statistics of the circuit of the given kernel
+ */
+void report_kernel_statistics(
+    std::ostream &os,
+    const quantum_kernel &k,
+    const quantum_platform &platform,
+    const Str &comment_prefix
+) {
+    if (options::get("write_report_files") != "yes") {
+        return;
+    }
+
+    // DOUT("... reporting report_kernel_statistics");
+    Vec<UInt> usecount;
+    usecount.resize(platform.qubit_number, 0);
+    get_qubit_usecount(k.c, platform, usecount);
+    UInt qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } }
+
+    Vec<UInt> usedcyclecount;
+    usedcyclecount.resize(platform.qubit_number, 0);
+    get_qubit_usedcyclecount(k.c, platform, usedcyclecount);
+
+    UInt  circuit_latency = get_circuit_latency(k.c, platform);
+    os << comment_prefix << "kernel: " << k.name << "\n";
+    os << comment_prefix << "----- circuit_latency: " << circuit_latency << "\n";
+    os << comment_prefix << "----- quantum gates: " << get_quantum_gates_count(k.c, platform) << "\n";
+    os << comment_prefix << "----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count(k.c, platform) << "\n";
+    os << comment_prefix << "----- classical operations: " << get_classical_operations_count(k.c, platform) << "\n";
+    os << comment_prefix << "----- qubits used: " << qubits_used << "\n";
+    os << comment_prefix << "----- qubit cycles use:" << usedcyclecount << "\n";
+    // DOUT("... reporting report_kernel_statistics [done]");
 }
 
 /*
  * reports only the total statistics of the circuits of the given kernels
  */
 void report_totals_statistics(
-    std::ofstream &ofs,
+    std::ostream &os,
     const Vec<quantum_kernel> &kernels,
     const quantum_platform &platform,
     const Str &comment_prefix
@@ -455,55 +434,13 @@ void report_totals_statistics(
     UInt qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } }
 
     // report totals
-    ofs << "\n";
-    ofs << comment_prefix << "Total circuit_latency: " << total_circuit_latency << "\n";
-    ofs << comment_prefix << "Total no. of quantum gates: " << total_quantum_gates << "\n";
-    ofs << comment_prefix << "Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
-    ofs << comment_prefix << "Total no. of classical operations: " << total_classical_operations << "\n";
-    ofs << comment_prefix << "Qubits used: " << qubits_used << "\n";
-    ofs << comment_prefix << "No. kernels: " << kernels.size() << "\n";
-    // DOUT("... reporting report_totals_statistics [done]");
-}
-
-/*
- * reports only the total statistics of the circuits of the given kernels
- */
-void get_totals_statistics(
-    Str *ofs,
-    const Vec<quantum_kernel> &kernels,
-    const quantum_platform &platform,
-    const Str &comment_prefix
-) {
-    if (options::get("write_report_files") != "yes") {
-        return;
-    }
-
-    // DOUT("... reporting report_totals_statistics");
-    // totals reporting, collect info from all kernels
-    Vec<UInt> usecount;
-    usecount.resize(platform.qubit_number, 0);
-    UInt total_circuit_latency = 0;
-    UInt total_classical_operations = 0;
-    UInt total_quantum_gates = 0;
-    UInt total_non_single_qubit_gates= 0;
-    for (auto &k : kernels) {
-        get_qubit_usecount(k.c, platform, usecount);
-
-        total_circuit_latency += get_circuit_latency(k.c, platform);
-        total_classical_operations += get_classical_operations_count(k.c, platform);
-        total_quantum_gates += get_quantum_gates_count(k.c, platform);
-        total_non_single_qubit_gates += get_non_single_qubit_quantum_gates_count(k.c, platform);
-    }
-    UInt qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } }
-
-    // report totals
-    *ofs += "\n";
-    *ofs += comment_prefix; *ofs += "Total circuit_latency: "; *ofs += total_circuit_latency; *ofs += "\n";
-    *ofs += comment_prefix; *ofs += "Total no. of quantum gates: "; *ofs += total_quantum_gates; *ofs += "\n";
-    *ofs += comment_prefix; *ofs += "Total no. of non single qubit gates: "; *ofs += total_non_single_qubit_gates; *ofs += "\n";
-    *ofs += comment_prefix; *ofs += "Total no. of classical operations: "; *ofs += total_classical_operations; *ofs += "\n";
-    *ofs += comment_prefix; *ofs += "Qubits used: "; *ofs += qubits_used; *ofs += "\n";
-    *ofs += comment_prefix; *ofs += "No. kernels: "; *ofs += kernels.size(); *ofs += "\n";
+    os << "\n";
+    os << comment_prefix << "Total circuit_latency: " << total_circuit_latency << "\n";
+    os << comment_prefix << "Total no. of quantum gates: " << total_quantum_gates << "\n";
+    os << comment_prefix << "Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
+    os << comment_prefix << "Total no. of classical operations: " << total_classical_operations << "\n";
+    os << comment_prefix << "Qubits used: " << qubits_used << "\n";
+    os << comment_prefix << "No. kernels: " << kernels.size() << "\n";
     // DOUT("... reporting report_totals_statistics [done]");
 }
 
@@ -520,32 +457,6 @@ void report_statistics(
     const quantum_platform &platform,
     const Str &in_or_out,
     const Str &pass_name,
-    const Str &comment_prefix
-) {
-    if (options::get("write_report_files") != "yes") {
-        return;
-    }
-
-    // DOUT("... reporting report_statistics");
-    std::ofstream ofs;
-    ofs = report_open(programp, in_or_out, pass_name);
-
-    // per kernel reporting
-    for (auto &k : programp->kernels) {
-        report_kernel_statistics(ofs, k, platform, comment_prefix);
-    }
-
-    // and total collecting and reporting
-    report_totals_statistics(ofs, programp->kernels, platform, comment_prefix);
-    report_close(ofs);
-    // DOUT("... reporting report_statistics [done]");
-}
-
-void report_statistics(
-    const quantum_program *programp,
-    const quantum_platform &platform,
-    const Str &in_or_out,
-    const Str &pass_name,
     const Str &comment_prefix,
     const Str &additionalStatistics
 ) {
@@ -554,20 +465,20 @@ void report_statistics(
     }
 
     // DOUT("... reporting report_statistics");
-    std::ofstream   ofs;
-    ofs = report_open(programp, in_or_out, pass_name);
+    auto rf = ReportFile(programp, in_or_out, pass_name);
 
     // per kernel reporting
     for (auto &k : programp->kernels) {
-        report_kernel_statistics(ofs, k, platform, comment_prefix);
+        rf.write_kernel_statistics(k, platform, comment_prefix);
     }
 
     // and total collecting and reporting
-    report_totals_statistics(ofs, programp->kernels, platform, comment_prefix);
+    rf.write_totals_statistics(programp->kernels, platform, comment_prefix);
 
-    ofs << " \n\n" << additionalStatistics;
+    if (!additionalStatistics.empty()) {
+        rf << " \n\n" << additionalStatistics;
+    }
 
-    report_close(ofs);
     // DOUT("... reporting report_statistics [done]");
 }
 
@@ -580,33 +491,19 @@ void report_statistics(
  * since this may be the first time that the output_dir is used, it warns when that doesn't exist
  */
 static UInt report_bump_unique_file_version(const quantum_program *programp) {
-    StrStrm ss_unique;
-    ss_unique << options::get("output_dir") << "/" << programp->name << ".unique";
+    Str version_file = QL_SS2S(options::get("output_dir") << "/" << programp->name << ".unique");
 
-    std::fstream ufs;
-    UInt vers;
-
-    // retrieve old version number
-    ufs.open (ss_unique.str(), std::fstream::in);
-    if (!ufs.is_open()) {
-        // no file there, initialize old version number to 0
-        ufs.open(ss_unique.str(), std::fstream::out);
-        if (!ufs.is_open()) {
-            QL_FATAL("Cannot create: " << ss_unique.str() << ". Probably output directory " << options::get("output_dir") << " does not exist");
-        }
-        ufs << 0 << std::endl;
-        vers = 0;
-    } else {
-        // read stored number
-        ufs >> vers;
+    // Retrieve old version number, if one exists.
+    UInt vers = 0;
+    if (is_file(version_file)) {
+        InFile(version_file) >> vers;
     }
-    ufs.close();
 
-    // increment to get new one, store it for a later run (so in a file) and return
+    // Increment to get new one.
     vers++;
-    ufs.open(ss_unique.str(), std::fstream::out);
-    ufs << vers << std::endl;
-    ufs.close();
+
+    // Store version for a later run.
+    OutFile(version_file) << vers;
 
     return vers;
 }
@@ -629,7 +526,7 @@ void report_init(
     if (options::get("unique_output") == "yes") {
         UInt vers = report_bump_unique_file_version(programp);
         if (vers > 1) {
-            programp->unique_name = ( programp->name + to_string(vers) );
+            programp->unique_name = programp->name + to_string(vers);
             QL_DOUT("Unique program name after bump_unique_file_version: " << programp->unique_name << " based on version: " << vers);
         }
     }

@@ -8,7 +8,6 @@
 #include <fstream>
 #include <cerrno>
 #include <algorithm>
-#include "utils/exception.h"
 
 #ifdef _WIN32
 #include <direct.h>
@@ -108,12 +107,11 @@ void make_dirs(const Str &path) {
 }
 
 /**
- * Writes the given string to a file, creating a new file if it didn't already
- * exist, or otherwise overwriting the existing file. If the parent directory of
- * the specified path does not exist, it is first created. Throws an Exception
- * if writing the file fails.
+ * Tries to create a file (if it doesn't already exist) and opens it for
+ * writing. If the directory that path is contained by does not exists, it is
+ * first created.
  */
-void write_file(const Str &path, const Str &content) {
+OutFile::OutFile(const Str &path) : ofs(), path(path) {
 
     // If the parent path does not exist yet, recursively try to create a
     // directory for it.
@@ -122,17 +120,80 @@ void write_file(const Str &path, const Str &content) {
         make_dirs(parent);
     }
 
-    // Try to write the file.
-    try {
-        std::ofstream file;
-        file.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-        file.open(path);
-        file << content;
-        file.close();
-    } catch (std::ios_base::failure &e) {
-        throw Exception("failed to write file \"" + path + "\": " + e.what(), true);
-    }
+    // Open the file.
+    ofs.open(path);
+    check();
 
+}
+
+/**
+ * Writes to the file.
+ */
+void OutFile::write(const Str &content) {
+    ofs << content;
+    check();
+}
+
+/**
+ * Closes the file prior to destruction. This is not necessary for correct
+ * filesystem behavior (the file is always closed on destruction), but allows
+ * any exceptions from the close() syscall to be caught.
+ */
+void OutFile::close() {
+    ofs.close();
+    check();
+}
+
+/**
+ * Throws an exception if badbit or failbit are set.
+ */
+void OutFile::check() {
+    if (ofs.fail()) {
+        throw Exception("failed to write file \"" + path + "\"", true);
+    }
+}
+
+/**
+ * Provides unchecked access to the underlying std::ofstream object.
+ */
+std::ofstream &OutFile::unwrap() {
+    return ofs;
+}
+
+/**
+ * Tries to open a file for reading.
+ */
+InFile::InFile(const Str &path) : ifs(), path(path) {
+    ifs.open(path);
+    check();
+}
+
+/**
+ * Reads the entire (remainder of the) file to a string.
+ */
+Str InFile::read() {
+    Str s{(std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>()};
+    check();
+    return s;
+}
+
+/**
+ * Closes the file prior to destruction. This is not necessary for correct
+ * filesystem behavior (the file is always closed on destruction), but allows
+ * any exceptions from the close() syscall to be caught.
+ */
+void InFile::close() {
+    ifs.close();
+    check();
+}
+
+/**
+ * Throws an exception if badbit or failbit are set.
+ */
+void InFile::check() {
+    if (ifs.fail()) {
+        throw Exception("failed to write file \"" + path + "\"", true);
+    }
 }
 
 } // namespace utils

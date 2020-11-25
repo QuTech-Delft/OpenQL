@@ -1617,7 +1617,7 @@ void Future::SetCircuit(quantum_kernel &kernel, Scheduler &sched, UInt nq, UInt 
 
             fname << options::get("output_dir") << "/" << kernel.name << "_" << "mapper" << ".dot";
             QL_IOUT("writing " << "mapper" << " dependence graph dot file to '" << fname.str() << "' ...");
-            write_file(fname.str(), map_dot);
+            OutFile(fname.str()).write(map_dot);
         }
     }
     QL_DOUT("Future::SetCircuit [DONE]");

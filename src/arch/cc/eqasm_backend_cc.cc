@@ -105,14 +105,14 @@ void eqasm_backend_cc::compile(quantum_program *program, const quantum_platform 
     // write program to file
     std::string file_name(options::get("output_dir") + "/" + program->unique_name + ".vq1asm");
     QL_IOUT("Writing Central Controller program to " << file_name);
-    utils::write_file(file_name, codegen.getProgram());
+    utils::OutFile(file_name).write(codegen.getProgram());
 
     // write instrument map to file (unless we were using input file)
     std::string map_input_file = options::get("backend_cc_map_input_file");
     if(map_input_file != "") {
         std::string file_name_map(options::get("output_dir") + "/" + program->unique_name + ".map");
         QL_IOUT("Writing instrument map to " << file_name_map);
-        utils::write_file(file_name_map, codegen.getMap());
+        utils::OutFile(file_name_map).write(codegen.getMap());
     }
 
     QL_DOUT("Compiling Central Controller program [Done]");

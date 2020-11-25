@@ -72,7 +72,7 @@ void vcd_cc::programFinish(const std::string &progName)
     // write VCD to file
     std::string file_name(options::get("output_dir") + "/" + progName + ".vcd");
     QL_IOUT("Writing Value Change Dump to " << file_name);
-    utils::write_file(file_name, vcd.getVcd());
+    utils::OutFile(file_name).write(vcd.getVcd());
 }
 
 

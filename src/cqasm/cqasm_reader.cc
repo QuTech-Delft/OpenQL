@@ -65,7 +65,7 @@ void cqasm_reader::add_cqasm(compiler::QasmRepresentation cqasm_repr) {
         Str sc_name = subcircuit.nameSubCircuit();
 
         // make the kernel name unique
-        sc_name.append("_" + std::to_string(sub_circuits_default_nr++));
+        sc_name.append("_" + to_string(sub_circuits_default_nr++));
         Int numIterations = subcircuit.numberIterations();
 
         //kernel_name must be unique

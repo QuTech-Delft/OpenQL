@@ -10,6 +10,7 @@
 #include "latency_compensation.h"
 #include "buffer_insertion.h"
 #include "qsoverlay.h"
+#include "utils/filesystem.h"
 
 namespace ql {
 namespace arch {
@@ -753,8 +754,7 @@ void cc_light_eqasm_compiler::map(
     mapper::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
     mapper.Init(&platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
 
-    std::ofstream ofs;
-    ofs = report_open(programp, "out", passname);
+    auto rf = ReportFile(programp, "out", passname);
 
     UInt total_swaps = 0;        // for reporting, data is mapper specific
     UInt total_moves = 0;        // for reporting, data is mapper specific
@@ -778,37 +778,34 @@ void cc_light_eqasm_compiler::map(
         duration<Real> time_span = t2 - t1;
         timetaken = time_span.count();
 
-        report_kernel_statistics(ofs, kernel, platform, "# ");
         StrStrm ss;
+        report_kernel_statistics(ss, kernel, platform, "# ");
         ss << "# ----- swaps added: " << mapper.nswapsadded << std::endl;
         ss << "# ----- of which moves added: " << mapper.nmovesadded << std::endl;
-        ss << "# ----- virt2real map before mapper:" << to_string(mapper.v2r_in) << std::endl;
-        ss << "# ----- virt2real map after initial placement:" << to_string(mapper.v2r_ip) << std::endl;
-        ss << "# ----- virt2real map after mapper:" << to_string(mapper.v2r_out) << std::endl;
-        ss << "# ----- realqubit states before mapper:" << to_string(mapper.rs_in) << std::endl;
-        ss << "# ----- realqubit states after mapper:" << to_string(mapper.rs_out) << std::endl;
+        ss << "# ----- virt2real map before mapper:" << mapper.v2r_in << std::endl;
+        ss << "# ----- virt2real map after initial placement:" << mapper.v2r_ip << std::endl;
+        ss << "# ----- virt2real map after mapper:" << mapper.v2r_out << std::endl;
+        ss << "# ----- realqubit states before mapper:" << mapper.rs_in << std::endl;
+        ss << "# ----- realqubit states after mapper:" << mapper.rs_out << std::endl;
         ss << "# ----- time taken: " << timetaken << std::endl;
-        report_string(ofs, ss.str());
+        rf << ss.str();
 
         total_swaps += mapper.nswapsadded;
         total_moves += mapper.nmovesadded;
         total_timetaken += timetaken;
 
-        get_kernel_statistics(mapStatistics, kernel, platform, "# ");
         *mapStatistics += ss.str();
     }
-    report_totals_statistics(ofs, programp->kernels, platform, "# ");
     StrStrm ss;
+    report_totals_statistics(ss, programp->kernels, platform, "# ");
     ss << "# Total no. of swaps: " << total_swaps << std::endl;
     ss << "# Total no. of moves of swaps: " << total_moves << std::endl;
     ss << "# Total time taken: " << total_timetaken << std::endl;
-    report_string(ofs, ss.str());
-    report_close(ofs);
+    rf << ss.str();
 
     report_qasm(programp, platform, "out", passname);
 
     // add total statistics
-    get_totals_statistics(mapStatistics, programp->kernels, platform, "# ");
     *mapStatistics += ss.str();
 }
 
@@ -932,14 +929,12 @@ void cc_light_eqasm_compiler::compile(quantum_program *programp, const quantum_p
 
     // reporting to be moved to write_statistics pass
     // report totals over all kernels, over all eqasm passes contributing to mapping
-    std::ofstream ofs;
-    ofs = report_open(programp, "out", "cc_light_compiler");
-    for (auto& k : programp->kernels) { report_kernel_statistics(ofs, k, platform, "# "); }
-    report_totals_statistics(ofs, programp->kernels, platform, "# ");
-    StrStrm ss;
-    ss << "# Total time taken: " << total_timetaken << std::endl;
-    report_string(ofs, ss.str());
-    report_close(ofs);
+    auto rf = ReportFile(programp, "out", "cc_light_compiler");
+    for (const auto &k : programp->kernels) {
+        rf.write_kernel_statistics(k, platform, "# ");
+    }
+    rf.write_totals_statistics(programp->kernels, platform, "# ");
+    rf << "# Total time taken: " << total_timetaken << "\n";
     report_qasm(programp, platform, "out", "cc_light_compiler");
 
     QL_DOUT("Compiling CCLight eQASM [Done]");
@@ -1078,18 +1073,11 @@ void cc_light_eqasm_compiler::qisa_code_generation(
     // std::cout << ssqisa.str();
 
     // write cc-light qisa file
-    std::ofstream fout;
     Str unique_name = programp->unique_name;
     Str qisafname(options::get("output_dir") + "/" + unique_name + ".qisa");
     QL_IOUT("Writing CC-Light QISA to " << qisafname);
-    fout.open( qisafname, std::ios::binary);
-    if (fout.fail()) {
-        QL_EOUT("opening file " << qisafname << std::endl
-                                << "Make sure the output directory (" << options::get("output_dir") << ") exists");
-        return;
-    }
-    fout << ssqisa.str() << std::endl;
-    fout.close();
+    ssqisa << std::endl;
+    OutFile(qisafname).write(ssqisa.str());
     // end qisa_generation pass
 }
 
@@ -1102,93 +1090,87 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
     const Str &suffix
 ) {
     QL_IOUT("Writing scheduled Quantumsim program");
-    std::ofstream fout;
     Str qfname( options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
     QL_DOUT("Writing scheduled Quantumsim program to " << qfname);
     QL_IOUT("Writing scheduled Quantumsim program to " << qfname);
-    fout.open( qfname, std::ios::binary);
-    if (fout.fail()) {
-        QL_EOUT("opening file " << qfname << std::endl
-                                << "Make sure the output directory (" << options::get("output_dir") << ") exists");
-        return;
-    }
+    OutFile fout(qfname);
 
-    fout << "# Quantumsim program generated OpenQL" << std::endl
-         << "# Please modify at your will to obtain extra information from Quantumsim" << std::endl << std::endl;
+    fout << "# Quantumsim program generated OpenQL\n"
+         << "# Please modify at your will to obtain extra information from Quantumsim\n\n";
 
-    fout << "import numpy as np" << std::endl
-         << "from quantumsim.circuit import Circuit" << std::endl
-         << "from quantumsim.circuit import uniform_noisy_sampler" << std::endl
-         << "from quantumsim.circuit import ButterflyGate" << std::endl
-         << std::endl;
+    fout << "import numpy as np\n"
+         << "from quantumsim.circuit import Circuit\n"
+         << "from quantumsim.circuit import uniform_noisy_sampler\n"
+         << "from quantumsim.circuit import ButterflyGate\n"
+         << "\n";
 
-    fout << "from quantumsim.circuit import IdlingGate as i" << std::endl
-         << "from quantumsim.circuit import RotateY as ry" << std::endl
-         << "from quantumsim.circuit import RotateX as rx" << std::endl
-         << "from quantumsim.circuit import RotateZ as rz" << std::endl
-         << "from quantumsim.circuit import Hadamard as h" << std::endl
-         << "from quantumsim.circuit import NoisyCPhase as cz" << std::endl
-         << "from quantumsim.circuit import CNOT as cnot" << std::endl
-         << "from quantumsim.circuit import Swap as swap" << std::endl
-         << "from quantumsim.circuit import CPhaseRotation as cr" << std::endl
-         << "from quantumsim.circuit import ConditionalGate as ConditionalGate" << std::endl
-         << "from quantumsim.circuit import RotateEuler as RotateEuler" << std::endl
-         << "from quantumsim.circuit import ResetGate as ResetGate" << std::endl
-         << "from quantumsim.circuit import Measurement as measure" << std::endl
-         << "import quantumsim.sparsedm as sparsedm" << std::endl
-         << std::endl
-         << "# print('GPU is used:', sparsedm.using_gpu)" << std::endl
-         << std::endl
-         << std::endl
-         << "def t(q, time):" << std::endl
-         << "    return RotateEuler(q, time=time, theta=0, phi=np.pi/4, lamda=0)" << std::endl
-         << std::endl
-         << "def tdag(q, time):" << std::endl
-         << "    return RotateEuler(q, time=time, theta=0, phi=-np.pi/4, lamda=0)" << std::endl
-         << std::endl
-         << "def measure_z(q, time, sampler):" << std::endl
-         << "    return measure(q, time, sampler)" << std::endl
-         << std::endl
-         << "def z(q, time):" << std::endl
-         << "    return rz(q, time, angle=np.pi)" << std::endl
-         << std::endl
-         << "def x(q, time, dephasing_axis, dephasing_angle):" << std::endl
-         << "    return rx(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)" << std::endl
-         << std::endl
-         << "def y(q, time, dephasing_axis, dephasing_angle):" << std::endl
-         << "    return ry(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)" << std::endl
-         << std::endl
-         << "def x90(q, time, dephasing_axis, dephasing_angle):" << std::endl
-         << "    return rx(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)" << std::endl
-         << std::endl
-         << "def y90(q, time, dephasing_axis, dephasing_angle):" << std::endl
-         << "    return ry(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)" << std::endl
-         << std::endl
-         << "def xm90(q, time, dephasing_axis, dephasing_angle):" << std::endl
-         << "    return rx(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)" << std::endl
-         << std::endl
-         << "def ym90(q, time, dephasing_axis, dephasing_angle):" << std::endl
-         << "    return ry(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)" << std::endl
-         << std::endl
-         << "def x45(q, time):" << std::endl
-         << "    return rx(q, time, angle=np.pi/4)" << std::endl
-         << std::endl
-         << "def xm45(q, time):" << std::endl
-         << "    return rx(q, time, angle=-np.pi/4)" << std::endl
-         << std::endl
-         //<< "def cz(q, time, dephase_var):" << std::endl
-         //<< "    return cphase(q, time, dephase_var=dephase_var)" << std::endl
-         << std::endl
-         << "def prepz(q, time):" << std::endl
-         << "    return ResetGate(q, time, state=0)" << std::endl << std::endl
-         << std::endl;
+    fout << "from quantumsim.circuit import IdlingGate as i\n"
+         << "from quantumsim.circuit import RotateY as ry\n"
+         << "from quantumsim.circuit import RotateX as rx\n"
+         << "from quantumsim.circuit import RotateZ as rz\n"
+         << "from quantumsim.circuit import Hadamard as h\n"
+         << "from quantumsim.circuit import NoisyCPhase as cz\n"
+         << "from quantumsim.circuit import CNOT as cnot\n"
+         << "from quantumsim.circuit import Swap as swap\n"
+         << "from quantumsim.circuit import CPhaseRotation as cr\n"
+         << "from quantumsim.circuit import ConditionalGate as ConditionalGate\n"
+         << "from quantumsim.circuit import RotateEuler as RotateEuler\n"
+         << "from quantumsim.circuit import ResetGate as ResetGate\n"
+         << "from quantumsim.circuit import Measurement as measure\n"
+         << "import quantumsim.sparsedm as sparsedm\n"
+         << "\n"
+         << "# print('GPU is used:', sparsedm.using_gpu)\n"
+         << "\n"
+         << "\n"
+         << "def t(q, time):\n"
+         << "    return RotateEuler(q, time=time, theta=0, phi=np.pi/4, lamda=0)\n"
+         << "\n"
+         << "def tdag(q, time):\n"
+         << "    return RotateEuler(q, time=time, theta=0, phi=-np.pi/4, lamda=0)\n"
+         << "\n"
+         << "def measure_z(q, time, sampler):\n"
+         << "    return measure(q, time, sampler)\n"
+         << "\n"
+         << "def z(q, time):\n"
+         << "    return rz(q, time, angle=np.pi)\n"
+         << "\n"
+         << "def x(q, time, dephasing_axis, dephasing_angle):\n"
+         << "    return rx(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+         << "\n"
+         << "def y(q, time, dephasing_axis, dephasing_angle):\n"
+         << "    return ry(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+         << "\n"
+         << "def x90(q, time, dephasing_axis, dephasing_angle):\n"
+         << "    return rx(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+         << "\n"
+         << "def y90(q, time, dephasing_axis, dephasing_angle):\n"
+         << "    return ry(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+         << "\n"
+         << "def xm90(q, time, dephasing_axis, dephasing_angle):\n"
+         << "    return rx(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+         << "\n"
+         << "def ym90(q, time, dephasing_axis, dephasing_angle):\n"
+         << "    return ry(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+         << "\n"
+         << "def x45(q, time):\n"
+         << "    return rx(q, time, angle=np.pi/4)\n"
+         << "\n"
+         << "def xm45(q, time):\n"
+         << "    return rx(q, time, angle=-np.pi/4)\n"
+         << "\n"
+         //<< "def cz(q, time, dephase_var):\n"
+         //<< "    return cphase(q, time, dephase_var=dephase_var)\n"
+         << "\n"
+         << "def prepz(q, time):\n"
+         << "    return ResetGate(q, time, state=0)\n\n"
+         << "\n";
 
-    fout << std::endl << "# create a circuit" << std::endl;
-    fout << "def circuit_generated(t1=np.inf, t2=np.inf, dephasing_axis=None, dephasing_angle=None, dephase_var=0, readout_error=0.0) :" << std::endl;
-    fout << "    c = Circuit(title=\"" << programp->unique_name << "\")" << std::endl;
+    fout << "\n" << "# create a circuit\n";
+    fout << "def circuit_generated(t1=np.inf, t2=np.inf, dephasing_axis=None, dephasing_angle=None, dephase_var=0, readout_error=0.0) :\n";
+    fout << "    c = Circuit(title=\"" << programp->unique_name << "\")\n";
 
     QL_DOUT("Adding qubits to Quantumsim program");
-    fout << std::endl << "    # add qubits" << std::endl;
+    fout << "\n    # add qubits\n";
     Json config;
     try {
         config = load_json(platform.configuration_file_name);
@@ -1243,8 +1225,8 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
             QL_EOUT("each qubit must have at least two relaxation times");
             throw Exception("[x] error: each qubit must have at least two relaxation times", false);
         }
-        // fout << "    c.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")" << std::endl;
-        fout << "    c.add_qubit(\"q" << q << "\", t1=t1, t2=t2)" << std::endl;
+        // fout << "    c.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")\n";
+        fout << "    c.add_qubit(\"q" << q << "\", t1=t1, t2=t2)\n";
     }
 
     QL_DOUT("Adding Gates to Quantumsim program");
@@ -1342,13 +1324,13 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
                 fout << ssqs.str();
             }
             fout << "    return c";
-            fout << "    " << std::endl << std::endl;
-            report_kernel_statistics(fout, kernel, platform, "    # ");
+            fout << "    \n\n";
+            report_kernel_statistics(fout.unwrap(), kernel, platform, "    # ");
         }
     }
-    report_string(fout, "    \n");
-    report_string(fout, "    # Program-wide statistics:\n");
-    report_totals_statistics(fout, programp->kernels, platform, "    # ");
+    report_string(fout.unwrap(), "    \n");
+    report_string(fout.unwrap(), "    # Program-wide statistics:\n");
+    report_totals_statistics(fout.unwrap(), programp->kernels, platform, "    # ");
     fout << "    return c";
 
     fout.close();

@@ -6,12 +6,48 @@
 
 #pragma once
 
+#include "utils/opt.h"
 #include "utils/str.h"
 #include "utils/vec.h"
+#include "utils/filesystem.h"
 #include "platform.h"
 #include "program.h"
 
 namespace ql {
+
+/**
+ * Wraps OutFile such that the file is only created and written if the
+ * write_report_files option is set.
+ */
+class ReportFile {
+private:
+    utils::Opt<utils::OutFile> of;
+public:
+    ReportFile(
+        const quantum_program *programp,
+        const utils::Str &in_or_out,
+        const utils::Str &pass_name
+    );
+    void write(const utils::Str &content);
+    void write_kernel_statistics(
+        const quantum_kernel &k,
+        const quantum_platform &platform,
+        const utils::Str &comment_prefix=""
+    );
+    void write_totals_statistics(
+        const utils::Vec<quantum_kernel> &kernels,
+        const quantum_platform &platform,
+        const utils::Str &comment_prefix=""
+    );
+    void close();
+    template <typename T>
+    ReportFile &operator<<(T &&rhs) {
+        if (of) {
+            *of << std::forward<T>(rhs);
+        }
+        return *this;
+    }
+};
 
 /**
  * write qasm
@@ -35,63 +71,28 @@ void report_qasm(
 );
 
 /**
- * create a report file for the given program and place, and open it
- * return an ofstream to it
+ * report given string which is assumed to be closed by an endl by the caller
  */
-std::ofstream report_open(
-    const quantum_program *programp,
-    const utils::Str &in_or_out,
-    const utils::Str &pass_name
+void report_string(
+    std::ostream &os,
+    const utils::Str &s
 );
-
-/**
- * close the report file again
- */
-void report_close(std::ofstream &ofs);
 
 /**
  * report statistics of the circuit of the given kernel
  */
 void report_kernel_statistics(
-    std::ofstream &ofs,
+    std::ostream &os,
     const quantum_kernel &k,
     const quantum_platform &platform,
     const utils::Str &comment_prefix
-);
-
-/**
- * get statistics of the circuit of the given kernel for the mapper pass
- */
-void get_kernel_statistics(
-    utils::Str *ofs,
-    const quantum_kernel &k,
-    const quantum_platform &platform,
-    const utils::Str &comment_prefix
-);
-
-/**
- * report given string which is assumed to be closed by an endl by the caller
- */
-void report_string(
-    std::ofstream &ofs,
-    const utils::Str &s
 );
 
 /**
  * reports only the totals of the statistics of the circuits of the given kernels
  */
 void report_totals_statistics(
-    std::ofstream &ofs,
-    const utils::Vec<quantum_kernel> &kernels,
-    const quantum_platform &platform,
-    const utils::Str &comment_prefix
-);
-
-/**
- * get only the totals of the statistics of the circuits of the given kernels
- */
-void get_totals_statistics(
-    utils::Str *ofs,
+    std::ostream &os,
     const utils::Vec<quantum_kernel> &kernels,
     const quantum_platform &platform,
     const utils::Str &comment_prefix
@@ -110,16 +111,8 @@ void report_statistics(
     const quantum_platform &platform,
     const utils::Str &in_or_out,
     const utils::Str &pass_name,
-    const utils::Str &comment_prefix
-);
-
-void report_statistics(
-    const quantum_program *programp,
-    const quantum_platform &platform,
-    const utils::Str &in_or_out,
-    const utils::Str &pass_name,
     const utils::Str &comment_prefix,
-    const utils::Str &additionalStatistics
+    const utils::Str &additionalStatistics = ""
 );
 
 /**

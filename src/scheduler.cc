@@ -548,14 +548,8 @@ void Scheduler::print() const {
 
 void Scheduler::write_dependence_matrix() const {
     QL_COUT("Printing Dependence Matrix ...");
-    std::ofstream fout;
     Str datfname( options::get("output_dir") + "/dependenceMatrix.dat");
-    fout.open(datfname, std::ios::binary);
-    if (fout.fail()) {
-        QL_EOUT("opening file " << datfname << std::endl
-                                << "Make sure the output directory (" << options::get("output_dir") << ") exists");
-        return;
-    }
+    OutFile fout(datfname);
 
     UInt totalInstructions = countNodes(graph);
     Vec<Vec<Bool> > Matrix(totalInstructions, Vec<Bool>(totalInstructions));
@@ -573,10 +567,8 @@ void Scheduler::write_dependence_matrix() const {
         for (UInt j = 1; j < totalInstructions - 1; j++) {
             fout << Matrix[j][i] << "\t";
         }
-        fout << std::endl;
+        fout << "\n";
     }
-
-    fout.close();
 }
 
 // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
@@ -1536,12 +1528,12 @@ void schedule(
                 Str fname;
                 fname = options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
                 QL_IOUT("writing scheduled dot to '" << fname << "' ...");
-                write_file(fname, dot);
+                OutFile(fname).write(dot);
 
                 Str scheduler_opt = options::get("scheduler");
                 fname = options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
                 QL_IOUT("writing scheduled dot to '" << fname << "' ...");
-                write_file(fname, kernel_sched_dot);
+                OutFile(fname).write(kernel_sched_dot);
             }
         }
 
@@ -1603,7 +1595,7 @@ void rcschedule(
                 StrStrm fname;
                 fname << options::get("output_dir") << "/" << kernel.name << "_" << passname << ".dot";
                 QL_IOUT("writing " << passname << " dependence graph dot file to '" << fname.str() << "' ...");
-                write_file(fname.str(), sched_dot);
+                OutFile(fname.str()).write(sched_dot);
             }
         }
     }

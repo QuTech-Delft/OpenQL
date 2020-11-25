@@ -439,7 +439,7 @@ void quantum_program::write_interaction_matrix() const {
 
         Str fname = options::get("output_dir") + "/" + k.get_name() + "InteractionMatrix.dat";
         QL_IOUT("writing interaction matrix to '" << fname << "' ...");
-        write_file(fname, mstr);
+        OutFile(fname).write(mstr);
     }
 }
 

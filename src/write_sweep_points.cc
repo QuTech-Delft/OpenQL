@@ -36,7 +36,7 @@ void write_sweep_points(
         Str conf_file_name = ss_config.str();
 
         QL_IOUT("writing sweep points to '" << conf_file_name << "'...");
-        write_file(conf_file_name, config);
+        OutFile(conf_file_name).write(config);
     } else {
         QL_IOUT("sweep points file not generated as sweep point array is empty !");
     }
