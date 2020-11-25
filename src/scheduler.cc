@@ -21,7 +21,7 @@ void Scheduler::stripname(std::string &name) {
 
 // factored out code from Init to add a dependence between two nodes
 // operand is in qubit/creg/breg combined index space
-void Scheduler::add_dep(int srcID, int tgtID, enum DepTypes deptype, int operand) {
+void Scheduler::add_dep(int srcID, int tgtID, enum DepTypes deptype, size_t operand) {
     DOUT(".. adddep ... from srcID " << srcID << " to tgtID " << tgtID << "   opnd=" << operand << ", dep=" << DepTypesNames[deptype]);
     auto srcNode = graph.nodeFromId(srcID);
     auto tgtNode = graph.nodeFromId(tgtID);
@@ -30,7 +30,15 @@ void Scheduler::add_dep(int srcID, int tgtID, enum DepTypes deptype, int operand
     // weight[arc] = (instruction[srcNode]->duration + cycle_time -1)/cycle_time;
     cause[arc] = operand;
     depType[arc] = deptype;
-    DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
+    if (operand < qubit_count) {
+        DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=q[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
+    } else if (operand < qubit_count + creg_count) {
+        operand -= qubit_count;
+        DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=c[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
+    } else {
+        operand -= qubit_count + creg_count;
+        DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=b[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
+    }
 }
 
 // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
@@ -45,6 +53,8 @@ void Scheduler::init(
     qubit_count = qcount; ///@todo-rn: DDG creation should not depend on #qubits
     creg_count = ccount; ///@todo-rn: DDG creation should not depend on #cregs
     breg_count = bcount; ///@todo-rn: DDG creation should not depend on #bregs
+    size_t creg_base = qubit_count;
+    size_t breg_base = qubit_count + creg_count;
     size_t total_reg_count = qubit_count + creg_count + breg_count;
     DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", breg_count=" << breg_count << ", total=" << total_reg_count);
     cycle_time = platform.cycle_time;
@@ -74,20 +84,23 @@ void Scheduler::init(
         s = srcNode;
     }
     int srcID = graph.id(s);
-    std::vector<int> LastWriter(total_reg_count, srcID);     // it implicitly writes to all qubits and class. regs
+    std::vector<int> LastWriter(total_reg_count, srcID);     // it implicitly writes to all qubits/cregs/bregs
 
     // for each gate pointer ins in the circuit, add a node and add dependences from previous gates to it
     for (auto ins : ckt) {
         DOUT("Current instruction's name: `" << ins->name << "'");
         DOUT(".. Qasm(): " << ins->qasm());
         for (auto operand : ins->operands) {
-            DOUT(".. Operand: `" << operand << "'");
+            DOUT(".. Operand: `q[" << operand << "]'");
         }
         for (auto coperand : ins->creg_operands) {
-            DOUT(".. Classical operand: `" << coperand << "'");
+            DOUT(".. Classical operand: `c[" << coperand << "]'");
         }
         for (auto boperand : ins->breg_operands) {
-            DOUT(".. Bit operand: `" << boperand << "'");
+            DOUT(".. Bit operand: `b[" << boperand << "]'");
+        }
+        if (ins->condition != cond_always) {
+            DOUT(".. Condition: `" << ins->cond_qasm() << "'");
         }
 
         auto iname = ins->name; // copy!!!!
@@ -180,9 +193,9 @@ void Scheduler::init(
 
             for (auto coperand : ins->creg_operands) {
                 DOUT(".. Classical operand: " << coperand);
-                add_dep(LastWriter[qubit_count+coperand], consID, WAW, qubit_count+coperand);
-                for (auto &readerID : LastReaders[qubit_count+coperand]) {
-                    add_dep(readerID, consID, WAR, qubit_count+coperand);
+                add_dep(LastWriter[creg_base+coperand], consID, WAW, creg_base+coperand);
+                for (auto &readerID : LastReaders[creg_base+coperand]) {
+                    add_dep(readerID, consID, WAR, creg_base+coperand);
                 }
             }
 
@@ -197,9 +210,9 @@ void Scheduler::init(
             }
             for (auto coperand : ins->creg_operands) {
                 DOUT(".. Update LastWriter for coperand: " << coperand);
-                LastWriter[qubit_count+coperand] = consID;
+                LastWriter[creg_base+coperand] = consID;
                 DOUT(".. Clearing LastReaders for coperand: " << coperand);
-                LastReaders[qubit_count+coperand].clear();
+                LastReaders[creg_base+coperand].clear();
                 DOUT(".. Update LastWriter done");
             }
             DOUT(". measure done");
@@ -231,20 +244,20 @@ void Scheduler::init(
             // Read+Write each classical operand
             for (auto coperand : ins->creg_operands) {
                 DOUT("... Classical operand: " << coperand);
-                add_dep(LastWriter[qubit_count+coperand], consID, WAW, qubit_count+coperand);
-                for (auto &readerID : LastReaders[qubit_count+coperand]) {
-                    add_dep(readerID, consID, WAR, qubit_count+coperand);
+                add_dep(LastWriter[creg_base+coperand], consID, WAW, creg_base+coperand);
+                for (auto &readerID : LastReaders[creg_base+coperand]) {
+                    add_dep(readerID, consID, WAR, creg_base+coperand);
                 }
-                for (auto &readerID : LastDs[qubit_count+coperand]) {
-                    add_dep(readerID, consID, WAD, qubit_count+coperand);
+                for (auto &readerID : LastDs[creg_base+coperand]) {
+                    add_dep(readerID, consID, WAD, creg_base+coperand);
                 }
             }
 
             // now update LastWriter and so clear LastReaders/LastDs
             for (auto coperand : ins->creg_operands) {
-                LastWriter[qubit_count+coperand] = consID;
-                LastReaders[qubit_count+coperand].clear();
-                LastDs[qubit_count+coperand].clear();
+                LastWriter[creg_base+coperand] = consID;
+                LastReaders[creg_base+coperand].clear();
+                LastDs[creg_base+coperand].clear();
             }
         } else if (iname == "cnot") {
             DOUT(". considering " << name[consNode] << " as cnot");
@@ -381,18 +394,18 @@ void Scheduler::init(
             // Read+Write each classical operand
             for (auto coperand : ins->creg_operands) {
                 DOUT("... Classical operand: " << coperand);
-                add_dep(LastWriter[qubit_count+coperand], consID, WAW, qubit_count+coperand);
-                for (auto &readerID : LastReaders[qubit_count+coperand]) {
-                    add_dep(readerID, consID, WAR, qubit_count+coperand);
+                add_dep(LastWriter[creg_base+coperand], consID, WAW, creg_base+coperand);
+                for (auto &readerID : LastReaders[creg_base+coperand]) {
+                    add_dep(readerID, consID, WAR, creg_base+coperand);
                 }
-                for (auto &readerID : LastDs[qubit_count+coperand]) {
-                    add_dep(readerID, consID, WAD, qubit_count+coperand);
+                for (auto &readerID : LastDs[creg_base+coperand]) {
+                    add_dep(readerID, consID, WAD, creg_base+coperand);
                 }
 
                 // now update LastWriter and so clear LastReaders/LastDs
-                LastWriter[qubit_count+coperand] = consID;
-                LastReaders[qubit_count+coperand].clear();
-                LastDs[qubit_count+coperand].clear();
+                LastWriter[creg_base+coperand] = consID;
+                LastReaders[creg_base+coperand].clear();
+                LastDs[creg_base+coperand].clear();
             } // end of coperand for
         } // end of if/else
         DOUT(". instruction done: " << ins->qasm());

@@ -321,7 +321,9 @@ bool quantum_kernel::add_default_gate_if_available(
     const std::vector<size_t> &cregs,
     size_t duration,
     double angle,
-    const std::vector<size_t> &bregs
+    const std::vector<size_t> &bregs,
+    const cond_type_t &cond,
+    const std::vector<size_t> &condregs
 ) {
     bool result = false;
 
@@ -470,6 +472,8 @@ bool quantum_kernel::add_default_gate_if_available(
     }
 
     if (result) {
+        c.back()->condition = cond;
+        c.back()->cond_operands = condregs;
         cycles_valid = false;
     }
 
@@ -486,7 +490,9 @@ bool quantum_kernel::add_custom_gate_if_available(
     const std::vector<size_t> &cregs,
     size_t duration,
     double angle,
-    const std::vector<size_t> &bregs
+    const std::vector<size_t> &bregs,
+    const cond_type_t &cond,
+    const std::vector<size_t> &condregs
 ) {
 #if OPT_DECOMPOSE_WAIT_BARRIER  // hack to skip wait/barrier
     if (gname=="wait" || gname=="barrier") {
@@ -528,6 +534,8 @@ bool quantum_kernel::add_custom_gate_if_available(
         g->duration = duration;
     }
     g->angle = angle;
+    g->condition = cond;
+    g->cond_operands = condregs;
     c.push_back(g);
 
     DOUT("custom gate added for " << gname);
@@ -566,7 +574,9 @@ bool quantum_kernel::add_spec_decomposed_gate_if_available(
     const std::string &gate_name,
     const std::vector<size_t> &all_qubits,
     const std::vector<size_t> &cregs,
-    const std::vector<size_t> &bregs
+    const std::vector<size_t> &bregs,
+    const cond_type_t &cond,
+    const std::vector<size_t> &condregs
 ) {
     bool added = false;
     DOUT("Checking if specialized decomposition is available for " << gate_name);
@@ -624,12 +634,12 @@ bool quantum_kernel::add_spec_decomposed_gate_if_available(
 
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-            bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs);
+            bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
             if (!custom_added) {
                 if(ql::options::get("use_default_gates") == "yes") {
                     // default gate check
                     DOUT("adding default gate for " << sub_ins_name);
-                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs);
+                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
                     if (default_available) {
                         DOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") ); // // NB: changed WOUT to DOUT, since this is common for 'barrier', spamming log
                     } else {
@@ -660,7 +670,9 @@ bool quantum_kernel::add_param_decomposed_gate_if_available(
     const std::string &gate_name,
     const std::vector<size_t> &all_qubits,
     const std::vector<size_t> &cregs,
-    const std::vector<size_t> &bregs
+    const std::vector<size_t> &bregs,
+    const cond_type_t &cond,
+    const std::vector<size_t> &condregs
 ) {
     bool added = false;
     DOUT("Checking if parameterized composite gate is available for " << gate_name);
@@ -720,13 +732,13 @@ bool quantum_kernel::add_param_decomposed_gate_if_available(
             // FIXME: following code block exists several times in this file
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-            bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs);
+            bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
             if (!custom_added)
             {
                 if (ql::options::get("use_default_gates") == "yes") {
                     // default gate check
                     DOUT("adding default gate for " << sub_ins_name);
-                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs);
+                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
                     if (default_available) {
                         WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
                     } else {
@@ -766,28 +778,34 @@ void quantum_kernel::gate(
     const std::vector<size_t> &cregs,
     size_t duration,
     double angle,
-    const std::vector<size_t> &bregs
+    const std::vector<size_t> &bregs,
+    const cond_type_t &cond,
+    const std::vector<size_t> &condregs
 ) {
-    /// @todo-rn: move these check to a platform-specific backend after qubits are initialized
     for (auto &qno : qubits) {
         if (qno >= qubit_count) {
             FATAL("Number of qubits in platform: " << std::to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
         }
     }
-
     for (auto & cno : cregs) {
         if (cno >= creg_count) {
             FATAL("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
         }
     }
-
     for (auto & bno : bregs) {
         if (bno >= breg_count) {
             FATAL("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(bregs,"bregs") );
         }
     }
-
-    if (!gate_nonfatal(gname, qubits, cregs, duration, angle, bregs)) {
+    if (!gate::is_valid_cond(cond, condregs)) {
+        FATAL("Condition " << cond << " of '" << gname << "' incompatible with " << ql::utils::to_string(condregs,"condregs") );
+    }
+    for (auto & cbno : condregs) {
+        if (cbno >= breg_count) {
+            FATAL("Out of range condition operand(s) for '" << gname << "' with " << ql::utils::to_string(condregs,"condregs") );
+        }
+    }
+    if (!gate_nonfatal(gname, qubits, cregs, duration, angle, bregs, cond, condregs)) {
         FATAL("Unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
     }
 }
@@ -802,7 +820,9 @@ bool quantum_kernel::gate_nonfatal(
     const std::vector<size_t> &cregs,
     size_t duration,
     double angle,
-    const std::vector<size_t> &bregs
+    const std::vector<size_t> &bregs,
+    const cond_type_t &cond,
+    const std::vector<size_t> &condregs
 ) {
     bool added = false;
     // check if specialized composite gate is available
@@ -817,14 +837,14 @@ bool quantum_kernel::gate_nonfatal(
 
     // specialized composite gate check
     DOUT("trying to add specialized composite gate for: " << gname_lower);
-    bool spec_decom_added = add_spec_decomposed_gate_if_available(gname_lower, qubits);
+    bool spec_decom_added = add_spec_decomposed_gate_if_available(gname_lower, qubits, cregs, bregs, cond, condregs);
     if (spec_decom_added) {
         added = true;
         DOUT("specialized decomposed gates added for " << gname_lower);
     } else {
         // parameterized composite gate check
         DOUT("trying to add parameterized composite gate for: " << gname_lower);
-        bool param_decom_added = add_param_decomposed_gate_if_available(gname_lower, qubits);
+        bool param_decom_added = add_param_decomposed_gate_if_available(gname_lower, qubits, cregs, bregs, cond, condregs);
         if (param_decom_added) {
             added = true;
             DOUT("decomposed gates added for " << gname_lower);
@@ -832,7 +852,7 @@ bool quantum_kernel::gate_nonfatal(
             // specialized/parameterized custom gate check
             DOUT("adding custom gate for " << gname_lower);
             // when found, custom_added is true, and the gate was added to the circuit
-            bool custom_added = add_custom_gate_if_available(gname_lower, qubits, cregs, duration, angle, bregs);
+            bool custom_added = add_custom_gate_if_available(gname_lower, qubits, cregs, duration, angle, bregs, cond, condregs);
             if (custom_added) {
                 added = true;
                 DOUT("custom gate added for " << gname_lower);
@@ -841,7 +861,7 @@ bool quantum_kernel::gate_nonfatal(
                     // default gate check (which is always parameterized)
                     DOUT("adding default gate for " << gname_lower);
 
-                    bool default_available = add_default_gate_if_available(gname_lower, qubits, cregs, duration, angle, bregs);
+                    bool default_available = add_default_gate_if_available(gname_lower, qubits, cregs, duration, angle, bregs, cond, condregs);
                     if (default_available) {
                         added = true;
                         DOUT("default gate added for " << gname_lower);   // FIXME: used to be WOUT, but that gives a warning for every "wait" and spams the log

@@ -4,6 +4,52 @@
 
 namespace ql {
 
+bool gate::is_valid_cond(cond_type_t condition, std::vector<size_t> cond_operands) {
+    switch (condition) {
+    case cond_always:
+    case cond_never:
+        return (cond_operands.size()==0);
+    case cond:
+    case cond_not:
+        return (cond_operands.size()==1);
+    case cond_and:
+    case cond_nand:
+    case cond_or:
+    case cond_nor:
+    case cond_xor:
+    case cond_nxor:
+        return (cond_operands.size()==2);
+    }
+    return false;
+}
+
+instruction_t gate::cond_qasm() const {
+    ASSERT(gate::is_valid_cond(condition, cond_operands));
+    switch (condition) {
+    case cond_always:
+        return "";
+    case cond_never:
+        return instruction_t("cond(0) ");
+    case cond:
+        return instruction_t("cond(b[" + std::to_string(cond_operands[0]) + "]) ");
+    case cond_not:
+        return instruction_t("cond(!b[" + std::to_string(cond_operands[0]) + "]) ");
+    case cond_and:
+        return instruction_t("cond(b[" + std::to_string(cond_operands[0]) + "]&&b[" + std::to_string(cond_operands[1]) + ") ");
+    case cond_nand:
+        return instruction_t("cond(!(b[" + std::to_string(cond_operands[0]) + "]&&b[" + std::to_string(cond_operands[1]) + ")) ");
+    case cond_or:
+        return instruction_t("cond(b[" + std::to_string(cond_operands[0]) + "]||b[" + std::to_string(cond_operands[1]) + ") ");
+    case cond_nor:
+        return instruction_t("cond(!(b[" + std::to_string(cond_operands[0]) + "]||b[" + std::to_string(cond_operands[1]) + ")) ");
+    case cond_xor:
+        return instruction_t("cond(b[" + std::to_string(cond_operands[0]) + "]^^b[" + std::to_string(cond_operands[1]) + ") ");
+    case cond_nxor:
+        return instruction_t("cond(!(b[" + std::to_string(cond_operands[0]) + "]^^b[" + std::to_string(cond_operands[1]) + ")) ");
+    }
+    return "";
+}
+
 identity::identity(size_t q) : m(identity_c) {
     name = "i";
     duration = 40;
@@ -11,7 +57,7 @@ identity::identity(size_t q) : m(identity_c) {
 }
 
 instruction_t identity::qasm() const {
-    return instruction_t("i q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "i q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t identity::type() const {
@@ -29,7 +75,7 @@ hadamard::hadamard(size_t q) : m(hadamard_c) {
 }
 
 instruction_t hadamard::qasm() const {
-    return instruction_t("h q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "h q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t hadamard::type() const {
@@ -47,7 +93,7 @@ phase::phase(size_t q) : m(phase_c) {
 }
 
 instruction_t phase::qasm() const {
-    return instruction_t("s q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "s q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t phase::type() const {
@@ -68,7 +114,7 @@ phasedag::phasedag(size_t q) : m(phasedag_c) {
 }
 
 instruction_t phasedag::qasm() const {
-    return instruction_t("sdag q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "sdag q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t phasedag::type() const {
@@ -91,7 +137,7 @@ rx::rx(size_t q, double theta) {
 }
 
 instruction_t rx::qasm() const {
-    return instruction_t("rx q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
+    return instruction_t(cond_qasm() + "rx q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
 }
 
 gate_type_t rx::type() const {
@@ -114,7 +160,7 @@ ry::ry(size_t q, double theta) {
 }
 
 instruction_t ry::qasm() const {
-    return instruction_t("ry q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
+    return instruction_t(cond_qasm() + "ry q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
 }
 
 gate_type_t ry::type() const {
@@ -137,7 +183,7 @@ rz::rz(size_t q, double theta) {
 }
 
 instruction_t rz::qasm() const {
-    return instruction_t("rz q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
+    return instruction_t(cond_qasm() + "rz q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
 }
 
 gate_type_t rz::type() const {
@@ -155,7 +201,7 @@ t::t(size_t q) : m(t_c) {
 }
 
 instruction_t t::qasm() const {
-    return instruction_t("t q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "t q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t t::type() const {
@@ -173,7 +219,7 @@ tdag::tdag(size_t q) : m(tdag_c) {
 }
 
 instruction_t tdag::qasm() const {
-    return instruction_t("tdag q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "tdag q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t tdag::type() const {
@@ -191,7 +237,7 @@ pauli_x::pauli_x(size_t q) : m(pauli_x_c) {
 }
 
 instruction_t pauli_x::qasm() const {
-    return instruction_t("x q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "x q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t pauli_x::type() const {
@@ -209,7 +255,7 @@ pauli_y::pauli_y(size_t q) : m(pauli_y_c) {
 }
 
 instruction_t pauli_y::qasm() const {
-    return instruction_t("y q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "y q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t pauli_y::type() const {
@@ -227,7 +273,7 @@ pauli_z::pauli_z(size_t q) : m(pauli_z_c) {
 }
 
 instruction_t pauli_z::qasm() const {
-    return instruction_t("z q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "z q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t pauli_z::type() const {
@@ -245,7 +291,7 @@ rx90::rx90(size_t q) : m(rx90_c) {
 }
 
 instruction_t rx90::qasm() const {
-    return instruction_t("x90 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "x90 q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t rx90::type() const {
@@ -263,7 +309,7 @@ mrx90::mrx90(size_t q) : m(mrx90_c) {
 }
 
 instruction_t mrx90::qasm() const {
-    return instruction_t("mx90 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "mx90 q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t mrx90::type() const {
@@ -281,7 +327,7 @@ rx180::rx180(size_t q) : m(rx180_c) {
 }
 
 instruction_t rx180::qasm() const {
-    return instruction_t("x180 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "x180 q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t rx180::type() const {
@@ -299,7 +345,7 @@ ry90::ry90(size_t q) : m(ry90_c) {
 }
 
 instruction_t ry90::qasm() const {
-    return instruction_t("y90 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "y90 q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t ry90::type() const {
@@ -317,7 +363,7 @@ mry90::mry90(size_t q) : m(mry90_c) {
 }
 
 instruction_t mry90::qasm() const {
-    return instruction_t("my90 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "my90 q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t mry90::type() const {
@@ -335,7 +381,7 @@ ry180::ry180(size_t q) : m(ry180_c) {
 }
 
 instruction_t ry180::qasm() const {
-    return instruction_t("y180 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t(cond_qasm() + "y180 q[" + std::to_string(operands[0]) + "]");
 }
 
 gate_type_t ry180::type() const {
@@ -385,7 +431,7 @@ prepz::prepz(size_t q) : m(identity_c) {
 }
 
 instruction_t prepz::qasm() const {
-    return instruction_t("prep_z q[" + std::to_string(operands[0]) +"]");
+    return instruction_t(cond_qasm() + "prep_z q[" + std::to_string(operands[0]) +"]");
 }
 
 gate_type_t prepz::type() const {
@@ -404,7 +450,7 @@ cnot::cnot(size_t q1, size_t q2) : m(cnot_c) {
 }
 
 instruction_t cnot::qasm() const {
-    return instruction_t("cnot q[" + std::to_string(operands[0]) + "]"
+    return instruction_t(cond_qasm() + "cnot q[" + std::to_string(operands[0]) + "]"
                          + ",q[" + std::to_string(operands[1]) + "]");
 }
 
@@ -424,7 +470,7 @@ cphase::cphase(size_t q1, size_t q2) : m(cphase_c) {
 }
 
 instruction_t cphase::qasm() const {
-    return instruction_t("cz q[" + std::to_string(operands[0]) + "]"
+    return instruction_t(cond_qasm() + "cz q[" + std::to_string(operands[0]) + "]"
                          + ",q[" + std::to_string(operands[1]) + "]");
 }
 
@@ -445,7 +491,7 @@ toffoli::toffoli(size_t q1, size_t q2, size_t q3) : m(ctoffoli_c) {
 }
 
 instruction_t toffoli::qasm() const {
-    return instruction_t("toffoli q[" + std::to_string(operands[0]) + "]"
+    return instruction_t(cond_qasm() + "toffoli q[" + std::to_string(operands[0]) + "]"
                          + ",q[" + std::to_string(operands[1]) + "]"
                          + ",q[" + std::to_string(operands[2]) + "]");
 }
@@ -483,7 +529,7 @@ swap::swap(size_t q1, size_t q2) : m(swap_c) {
 }
 
 instruction_t swap::qasm() const {
-    return instruction_t("swap q[" + std::to_string(operands[0]) + "]"
+    return instruction_t(cond_qasm() + "swap q[" + std::to_string(operands[0]) + "]"
                          + ",q[" + std::to_string(operands[1]) + "]");
 }
 
@@ -702,6 +748,7 @@ instruction_t custom_gate::qasm() const {
     std::stringstream ss;
     size_t p = name.find(' ');
     std::string gate_name = name.substr(0, p);
+    ss << cond_qasm();
     if (operands.empty()) {
         ss << gate_name;
     } else if (operands.size() == 1) {

@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "gate.h"
 #include "circuit.h"
 #include "classical.h"
 #include "hardware_configuration.h"
@@ -100,10 +101,12 @@ private:
     bool add_default_gate_if_available(
         const std::string &gname,
         const std::vector<size_t> &qubits,
-        const std::vector<size_t> &cregs = {},
-        size_t duration=0,
-        double angle=0.0,
-        const std::vector<size_t> &bregs = {}
+        const std::vector<size_t> &cregs,
+        size_t duration,
+        double angle,
+        const std::vector<size_t> &bregs,
+        const cond_type_t &cond,
+        const std::vector<size_t> &condregs
     );
 
     // if a specialized custom gate ("e.g. cz q0,q4") is available, add it to circuit and return true
@@ -113,10 +116,12 @@ private:
     bool add_custom_gate_if_available(
         const std::string &gname,
         const std::vector<size_t> &qubits,
-        const std::vector<size_t> &cregs = {},
-        size_t duration=0,
-        double angle=0.0,
-        const std::vector<size_t> &bregs = {}
+        const std::vector<size_t> &cregs,
+        size_t duration,
+        double angle,
+        const std::vector<size_t> &bregs,
+        const cond_type_t &cond,
+        const std::vector<size_t> &condregs
     );
 
     // FIXME: move to class composite_gate?
@@ -136,8 +141,10 @@ private:
     bool add_spec_decomposed_gate_if_available(
         const std::string &gate_name,
         const std::vector<size_t> &all_qubits,
-        const std::vector<size_t> &cregs = {},
-        const std::vector<size_t> &bregs = {}
+        const std::vector<size_t> &cregs,
+        const std::vector<size_t> &bregs,
+        const cond_type_t &cond,
+        const std::vector<size_t> &condregs
     );
 
     // if composite gate: "e.g. cz %0 %1" available, return true;
@@ -149,8 +156,10 @@ private:
     bool add_param_decomposed_gate_if_available(
         const std::string &gate_name,
         const std::vector<size_t> &all_qubits,
-        const std::vector<size_t> &cregs = {},
-        const std::vector<size_t> &bregs = {}
+        const std::vector<size_t> &cregs,
+        const std::vector<size_t> &bregs,
+        const cond_type_t &cond,
+        const std::vector<size_t> &condregs
     );
 
 public:
@@ -163,7 +172,9 @@ public:
         const std::vector<size_t> &cregs = {},
         size_t duration = 0,
         double angle = 0.0,
-        const std::vector<size_t> &bregs = {}
+        const std::vector<size_t> &bregs = {},
+        const cond_type_t &cond = cond_always,
+        const std::vector<size_t> &condregs = {}
     );
 
     // terminology:
@@ -187,7 +198,7 @@ public:
     //      e.g. whether "cz" is in gate_definition as non-composite gate
     // if not, check if a default gate is available
     //      e.g. whether "cz" is available as default gate
-    // if not, then error
+    // if not, then FATAL (for gate()) or return false (for gate_nonfatal())
     /**
      * custom gate with arbitrary number of operands
      * as gate above but return whether gate was successfully matched in gate_definition, next to gate in kernel.c
@@ -198,7 +209,9 @@ public:
         const std::vector<size_t> &cregs = {},
         size_t duration = 0,
         double angle = 0.0,
-        const std::vector<size_t> &bregs = {}
+        const std::vector<size_t> &bregs = {},
+        const cond_type_t &cond = cond_always,
+        const std::vector<size_t> &condregs = {}
     );
 
     // to add unitary to kernel

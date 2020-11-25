@@ -176,11 +176,11 @@ const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ =
  */
 typedef enum e_cond_type {
     // 0 operands:
-    cond_always,
+    cond_always, cond_never,
     // 1 operand:
     cond, cond_not,
     // 2 operands
-    cond_and, cond_nand, cond_or, cond_nor, cond_xor, cond_xnor
+    cond_and, cond_nand, cond_or, cond_nor, cond_xor, cond_nxor
 } cond_type_t;
 
 /**
@@ -189,20 +189,24 @@ typedef enum e_cond_type {
 class gate {
 public:
     std::string name;
-    std::vector<size_t> operands;
+    std::vector<size_t> operands;           // qubit operands
     std::vector<size_t> creg_operands;
-    std::vector<size_t> breg_operands;
+    std::vector<size_t> breg_operands;      // bit operands e.g. assigned to by measure
     int int_operand = 0;
     size_t duration = 0;
     double angle = 0.0;                     // for arbitrary rotations
-    cond_type_t condition;                  // defines conditionality and, if so, number of bit operands
     size_t  cycle = MAX_CYCLE;              // cycle after scheduling; MAX_CYCLE indicates undefined
     virtual ~gate() = default;
     virtual instruction_t qasm() const = 0;
     virtual gate_type_t   type() const = 0;
-    virtual cmat_t        mat()  const = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
+    virtual cmat_t        mat()  const = 0; // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
     std::string visual_type = ""; // holds the visualization type of this gate that will be linked to a specific configuration in the visualizer
+    std::vector<size_t> cond_operands;      // 0, 1 or 2 bit operands of condition
+    cond_type_t condition = cond_always;    // defines condition and by that number of bit operands of condition
+    instruction_t cond_qasm() const;        // returns the condition expression in qasm layout
+    static bool is_valid_cond(cond_type_t condition, std::vector<size_t> cond_operands);
 };
+
 
 
 /****************************************************************************\
