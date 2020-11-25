@@ -36,7 +36,7 @@ Int parse_int(const Str &str) {
     }
 }
 
-Real parse_double(const Str &str) {
+Real parse_real(const Str &str) {
     try {
         return std::stod(str);
     } catch (std::invalid_argument &e) {

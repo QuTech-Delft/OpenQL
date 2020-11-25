@@ -65,7 +65,7 @@ Str to_string(T arg) {
 
 UInt parse_uint(const Str &str);
 Int parse_int(const Str &str);
-Real parse_double(const Str &str);
+Real parse_real(const Str &str);
 
 Str to_lower(Str str);
 Str replace_all(Str str, const Str &from, const Str &to);
