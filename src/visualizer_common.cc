@@ -12,7 +12,6 @@
 #include "utils/pair.h"
 
 #include <iostream>
-#include <limits>
 
 namespace ql {
 
@@ -93,8 +92,8 @@ void visualize(const quantum_program* program, const Str &visualizationType, con
 
         // Calculate circuit properties.
         QL_DOUT("Calculating circuit properties...");
-        const Int cycleDuration = safe_int_cast(program->platform.cycle_time);
-        QL_DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
+        const Int cycleDuration = utoi(program->platform.cycle_time);
+        QL_DOUT("Cycle duration is: " + to_string(cycleDuration) + " ns.");
         // Fix measurement gates without classical operands.
         fixMeasurementOperands(gates);
 
@@ -382,20 +381,20 @@ Vec<GateProperties> parseGates(const quantum_program *program) {
             Vec<Int> codewords;
             if (gate->type() == __custom_gate__) {
                 for (const UInt codeword : dynamic_cast<custom_gate*>(gate)->codewords) {
-                    codewords.push_back(safe_int_cast(codeword));
+                    codewords.push_back(utoi(codeword));
                 }
             }
 
             Vec<Int> operands;
             Vec<Int> creg_operands;
-            for (const UInt operand : gate->operands) { operands.push_back(safe_int_cast(operand)); }
-            for (const UInt operand : gate->creg_operands) { creg_operands.push_back(safe_int_cast(operand)); }
+            for (const UInt operand : gate->operands) { operands.push_back(utoi(operand)); }
+            for (const UInt operand : gate->creg_operands) { creg_operands.push_back(utoi(operand)); }
             GateProperties gateProperties {
                 gate->name,
                 operands,
                 creg_operands,
-                safe_int_cast(gate->duration),
-                safe_int_cast(gate->cycle),
+                utoi(gate->duration),
+                utoi(gate->cycle),
                 gate->type(),
                 codewords,
                 gate->visual_type
@@ -411,7 +410,7 @@ Int calculateAmountOfBits(const Vec<GateProperties> &gates, const Vec<Int> GateP
     QL_DOUT("Calculating amount of bits...");
 
     //TODO: handle circuits not starting at a c- or qbit with index 0
-    Int minAmount = std::numeric_limits<Int>::max();
+    Int minAmount = MAX;
     Int maxAmount = 0;
 
     // Find the minimum and maximum index of the operands.
@@ -430,7 +429,7 @@ Int calculateAmountOfBits(const Vec<GateProperties> &gates, const Vec<Int> GateP
     // If both minAmount and maxAmount are at their original values, the list of 
     // operands for all the gates was empty.This means there are no operands of 
     // the given type for these gates and we return 0.
-    if (minAmount == std::numeric_limits<Int>::max() && maxAmount == 0) {
+    if (minAmount == MAX && maxAmount == 0) {
         return 0;
     } else {
         return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
@@ -438,7 +437,7 @@ Int calculateAmountOfBits(const Vec<GateProperties> &gates, const Vec<Int> GateP
 }
 
 Int calculateAmountOfGateOperands(const GateProperties &gate) {
-    return safe_int_cast(gate.operands.size() + gate.creg_operands.size());
+    return utoi(gate.operands.size() + gate.creg_operands.size());
 }
 
 Vec<GateOperand> getGateOperands(const GateProperties &gate) {
@@ -505,14 +504,14 @@ void printGates(const Vec<GateProperties> &gates) {
 
         Str operands = "[";
         for (UInt i = 0; i < gate.operands.size(); i++) {
-            operands += std::to_string(gate.operands[i]);
+            operands += to_string(gate.operands[i]);
             if (i != gate.operands.size() - 1) operands += ", ";
         }
         QL_IOUT("\toperands: " << operands << "]");
 
         Str creg_operands = "[";
         for (UInt i = 0; i < gate.creg_operands.size(); i++) {
-            creg_operands += std::to_string(gate.creg_operands[i]);
+            creg_operands += to_string(gate.creg_operands[i]);
             if (i != gate.creg_operands.size() - 1) creg_operands += ", ";
         }
         QL_IOUT("\tcreg_operands: " << creg_operands << "]");
@@ -523,18 +522,13 @@ void printGates(const Vec<GateProperties> &gates) {
 
         Str codewords = "[";
         for (UInt i = 0; i < gate.codewords.size(); i++) {
-            codewords += std::to_string(gate.codewords[i]);
+            codewords += to_string(gate.codewords[i]);
             if (i != gate.codewords.size() - 1) codewords += ", ";
         }
         QL_IOUT("\tcodewords: " << codewords << "]");
 
         QL_IOUT("\tvisual_type: " << gate.visual_type);
     }
-}
-
-Int safe_int_cast(const UInt argument) {
-    if (argument > std::numeric_limits<Int>::max()) QL_FATAL("Failed cast to Int: UInt argument is too large!");
-    return static_cast<Int>(argument);
 }
 
 #endif //WITH_VISUALIZER

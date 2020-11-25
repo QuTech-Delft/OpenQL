@@ -678,7 +678,7 @@ void custom_gate::load(nlohmann::json &instr) {
         // Load the visual type of the instruction if provided.
         l_attr = "visual_type";
         if (instr.count("visual_type") == 1) {
-            visual_type = instr["visual_type"].get<std::string>();
+            visual_type = instr["visual_type"].get<Str>();
             QL_DOUT("visual_type: '" << visual_type);
         } else {
             QL_WOUT("Did not find 'visual_type' attribute for instruction: '" << name << "'!");

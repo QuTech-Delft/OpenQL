@@ -118,15 +118,15 @@ Real calculateQubitCircleRadius(const Int qubitRadius, const Real theta) {
     // Here be trigonometry.
     const Real r = qubitRadius;
     const Real alpha = PI - PI / 2.0 - theta / 2.0;
-    const Real h = r * std::tan(alpha);
+    const Real h = r * tan(alpha);
     const Real R = sqrt(h * h + r * r);
 
     return R;
 }
 
 Position2 calculateQubitPosition(const Int radius, const Real theta, const Position2 &center) {
-    const Int x = (Int) (radius * std::cos(theta) + center.x);
-    const Int y = (Int) (radius * std::sin(theta) + center.y);
+    const Int x = (Int) (radius * cos(theta) + center.x);
+    const Int y = (Int) (radius * sin(theta) + center.y);
 
     return {x, y};
 }

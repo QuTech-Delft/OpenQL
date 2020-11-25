@@ -71,7 +71,7 @@ const Complex IM = Complex(0.0, 1.0);
  * Returns the sign of the given number.
  */
 template<typename T>
-int sign_of(T val) noexcept {
+inline int sign_of(T val) noexcept {
     return (T(0) < val) - (val < T(0));
 }
 
@@ -165,6 +165,13 @@ inline Complex expi(Real e) noexcept {
 }
 
 /**
+ * Exponentiation.
+ */
+inline Real pow(Real b, Real e) noexcept {
+    return std::pow(b, e);
+}
+
+/**
  * Natural logarithm.
  */
 inline Real log(Real e) noexcept {
@@ -184,6 +191,30 @@ inline Real sqr(Real e) noexcept {
 inline Real sqrt(Real e) noexcept {
     return std::sqrt(e);
 }
+
+/**
+ * Sine.
+ */
+inline Real sin(Real a) noexcept {
+    return std::sin(a);
+}
+
+/**
+ * Cosine.
+ */
+inline Real cos(Real a) noexcept {
+    return std::cos(a);
+}
+
+/**
+ * Tangent.
+ */
+inline Real tan(Real a) noexcept {
+    return std::tan(a);
+}
+
+UInt itou(Int x);
+Int utoi(UInt x);
 
 } // namespace utils
 } // namespace ql

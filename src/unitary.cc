@@ -447,7 +447,7 @@ public:
             Eigen::MatrixXd Mk(size,size);
             for (Int i = 0; i < size; i++) {
                 for (Int j = 0; j < size ;j++) {
-                    Mk(i,j) = std::pow(-1, bitParity(i&(j^(j>>1))));
+                    Mk(i,j) = pow(-1, bitParity(i&(j^(j>>1))));
                 }
             }
             genMk_lookuptable.push_back(Mk);

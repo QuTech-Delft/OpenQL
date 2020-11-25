@@ -598,7 +598,7 @@ Bool quantum_kernel::add_spec_decomposed_gate_if_available(
             };
 
             Vec<UInt> this_gate_qubits;
-            Str & sub_ins_name = tokens[0];
+            Str &sub_ins_name = tokens[0];
 
             for (UInt i = 1; i < tokens.size(); i++) {
                 QL_DOUT("tokens[i] : " << tokens[i]);

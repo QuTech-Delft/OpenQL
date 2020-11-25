@@ -94,7 +94,7 @@ void CircuitData::compressCycles() {
         // attributes.
         if (!cycles[i].empty) {
             Cycle &cycle = cycles[i];
-            cycle.index = safe_int_cast(i) - amountOfCompressions;
+            cycle.index = utoi(i) - amountOfCompressions;
             // Update the gates in the cycle with the new cycle index.
             for (UInt j = 0; j < cycle.gates.size(); j++) {
                 for (GateProperties &gate : cycle.gates[j]) {
@@ -210,14 +210,14 @@ Vec<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout &layout) const 
     for (UInt i = 0; i < cycles.size(); i++) {
         // If an empty cycle has been found...
         if (cycles[i].empty) {
-            const Int start = safe_int_cast(i);
-            Int end = safe_int_cast(cycles.size()) - 1;
+            const Int start = utoi(i);
+            Int end = utoi(cycles.size()) - 1;
 
             UInt j = i;
             // ... add cycles to the range until a non-empty cycle is found.
             while (j < cycles.size()) {
                 if (!cycles[j].empty) {
-                    end = safe_int_cast(j) - 1;
+                    end = utoi(j) - 1;
                     break;
                 }
                 j++;
@@ -249,7 +249,7 @@ Cycle CircuitData::getCycle(const UInt index) const {
 }
 
 Int CircuitData::getAmountOfCycles() const {
-    return safe_int_cast(cycles.size());
+    return utoi(cycles.size());
 }
 
 Bool CircuitData::isCycleCut(const Int cycleIndex) const {
@@ -317,7 +317,7 @@ Int Structure::calculateCellHeight(const Layout &layout) const {
 Int Structure::calculateImageWidth(const CircuitData &circuitData) const {
     QL_DOUT("Calculating image width...");
 
-    const Int amountOfCells = safe_int_cast(qbitCellPositions.size());
+    const Int amountOfCells = utoi(qbitCellPositions.size());
     const Int left = amountOfCells > 0 ? getCellPosition(0, 0, QUANTUM).x0 : 0;
     const Int right = amountOfCells > 0 ? getCellPosition(amountOfCells - 1, 0, QUANTUM).x1 : 0;
     const Int imageWidthFromCells = right - left;
@@ -347,7 +347,7 @@ void Structure::generateCellPositions(const CircuitData &circuitData) {
     // Calculate cell positions.
     Int widthFromCycles = 0;
     for (Int column = 0; column < circuitData.getAmountOfCycles(); column++) {
-        const Int amountOfChunks = safe_int_cast(circuitData.getCycle(column).gates.size());
+        const Int amountOfChunks = utoi(circuitData.getCycle(column).gates.size());
         const Int cycleWidth = (circuitData.isCycleCut(column) ? layout.cycles.cutting.getCutCycleWidth() : (cellDimensions.width * amountOfChunks));
 
         const Int x0 = layout.grid.getBorderSize() + layout.bitLines.labels.getColumnWidth() + widthFromCycles;
@@ -763,7 +763,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
     //         Str microwaveString = "[ ";
     //         for (const Int amplitude : gatePulses.microwave)
     //         {
-    //             microwaveString += std::to_string(amplitude) + " ";
+    //             microwaveString += to_string(amplitude) + " ";
     //         }
     //         microwaveString += "]";
     //         IOUT("\t\tmicrowave: " << microwaveString);
@@ -771,7 +771,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
     //         Str fluxString = "[ ";
     //         for (const Int amplitude : gatePulses.flux)
     //         {
-    //             fluxString += std::to_string(amplitude) + " ";
+    //             fluxString += to_string(amplitude) + " ";
     //         }
     //         fluxString += "]";
     //         IOUT("\t\tflux: " << fluxString);
@@ -779,7 +779,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
     //         Str readoutString = "[ ";
     //         for (const Int amplitude : gatePulses.readout)
     //         {
-    //             readoutString += std::to_string(amplitude) + " ";
+    //             readoutString += to_string(amplitude) + " ";
     //         }
     //         readoutString += "]";
     //         IOUT("\t\treadout: " << readoutString);
@@ -856,7 +856,7 @@ Vec<QubitLines> generateQubitLines(const Vec<GateProperties> &gates,
         //         case PULSE: type = "PULSE"; break;
         //         case CUT: type = "CUT"; break;
         //     }
-        //     microwaveOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
+        //     microwaveOutput += " [" + type + " (" + to_string(segment.range.start) + "," + to_string(segment.range.end) + ")]";
         // }
         // QL_DOUT(microwaveOutput);
 
@@ -870,7 +870,7 @@ Vec<QubitLines> generateQubitLines(const Vec<GateProperties> &gates,
         //         case PULSE: type = "PULSE"; break;
         //         case CUT: type = "CUT"; break;
         //     }
-        //     fluxOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
+        //     fluxOutput += " [" + type + " (" + to_string(segment.range.start) + "," + to_string(segment.range.end) + ")]";
         // }
         // QL_DOUT(fluxOutput);
 
@@ -884,7 +884,7 @@ Vec<QubitLines> generateQubitLines(const Vec<GateProperties> &gates,
         //         case PULSE: type = "PULSE"; break;
         //         case CUT: type = "CUT"; break;
         //     }
-        //     readoutOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
+        //     readoutOutput += " [" + type + " (" + to_string(segment.range.start) + "," + to_string(segment.range.end) + ")]";
         // }
         // QL_DOUT(readoutOutput);
     }
@@ -899,7 +899,7 @@ Real calculateMaxAmplitude(const Vec<LineSegment> &lineSegments) {
         const Vec<Real> waveform = segment.pulse.waveform;
         Real maxAmplitudeInSegment = 0;
         for (const Real amplitude : waveform) {
-            const Real absAmplitude = std::abs(amplitude);
+            const Real absAmplitude = abs(amplitude);
             if (absAmplitude > maxAmplitudeInSegment)
                 maxAmplitudeInSegment = absAmplitude;
         }
@@ -960,9 +960,9 @@ void drawCycleLabels(cimg_library::CImg<Byte> &image,
             const Position4 cellPosition = structure.getCellPosition(i, 0, QUANTUM);
             cellWidth = cellPosition.x1 - cellPosition.x0;
             if (layout.cycles.labels.areInNanoSeconds()) {
-                cycleLabel = std::to_string(i * circuitData.cycleDuration);
+                cycleLabel = to_string(i * circuitData.cycleDuration);
             } else {
-                cycleLabel = std::to_string(i);
+                cycleLabel = to_string(i);
             }
         }
 
@@ -1003,7 +1003,7 @@ void drawBitLineLabels(cimg_library::CImg<Byte> &image,
     QL_DOUT("Drawing bit line labels...");
 
     for (Int bitIndex = 0; bitIndex < circuitData.amountOfQubits; bitIndex++) {
-        const Str label = "q" + std::to_string(bitIndex);
+        const Str label = "q" + to_string(bitIndex);
         const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight());
 
         const Int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
@@ -1027,7 +1027,7 @@ void drawBitLineLabels(cimg_library::CImg<Byte> &image,
             image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
         } else {
             for (Int bitIndex = 0; bitIndex < circuitData.amountOfClassicalBits; bitIndex++) {
-                const Str label = "c" + std::to_string(bitIndex);
+                const Str label = "c" + to_string(bitIndex);
                 const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight());
 
                 const Int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
@@ -1133,10 +1133,10 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<Byte> &image,
             drawWiggle(image, segment.first.start, segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(),
                 width, height, layout.bitLines.classical.getColor());
         } else {
-            image.draw_line(segment.first.start, y - layout.bitLines.classical.getGroupedLineGap(), 
+            image.draw_line(segment.first.start, y - layout.bitLines.classical.getGroupedLineGap(),
                 segment.first.end, y - layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor().data());
-            image.draw_line(segment.first.start, y + layout.bitLines.classical.getGroupedLineGap(), 
-                segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor().data());    
+            image.draw_line(segment.first.start, y + layout.bitLines.classical.getGroupedLineGap(),
+                segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor().data());
         }
     }
 
@@ -1146,7 +1146,7 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<Byte> &image,
     //TODO: store the dashed line parameters in the layout object
     image.draw_line(firstSegment.first.start + 8, y + layout.bitLines.classical.getGroupedLineGap() + 2,
         firstSegment.first.start + 12, y - layout.bitLines.classical.getGroupedLineGap() - 3, layout.bitLines.classical.getColor().data());
-    const Str label = std::to_string(circuitData.amountOfClassicalBits);
+    const Str label = to_string(circuitData.amountOfClassicalBits);
     //TODO: fix these hardcoded parameters
     const Int xLabel = firstSegment.first.start + 8;
     const Int yLabel = y - layout.bitLines.classical.getGroupedLineGap() - 3 - 13;
@@ -1197,10 +1197,10 @@ void drawLine(cimg_library::CImg<Byte> &image,
                 QL_DOUT("\tsegment length in cycles: " << segmentLengthInCycles);
                 QL_DOUT("\tsegment length in nanoseconds: " << segmentLengthInNanoSeconds);
 
-                const Int amountOfSamples = safe_int_cast(segment.pulse.waveform.size());
+                const Int amountOfSamples = utoi(segment.pulse.waveform.size());
                 const Int sampleRate = segment.pulse.sampleRate; // MHz
                 const Real samplePeriod = 1000.0f * (1.0f / (Real) sampleRate); // nanoseconds
-                const Int samplePeriodWidth = (Int) std::floor(samplePeriod / (Real) segmentLengthInNanoSeconds * (Real) segmentWidth); // pixels
+                const Int samplePeriodWidth = (Int) floor(samplePeriod / (Real) segmentLengthInNanoSeconds * (Real) segmentWidth); // pixels
                 const Int waveformWidthInPixels = samplePeriodWidth * amountOfSamples;
                 QL_DOUT("\tamount of samples: " << amountOfSamples);
                 QL_DOUT("\tsample period in nanoseconds: " << samplePeriod);
@@ -1216,11 +1216,11 @@ void drawLine(cimg_library::CImg<Byte> &image,
                 const Real amplitudeUnitHeight = (Real) maxLineHeight / (maxAmplitude * 2.0f);
                 Vec<Position2> samplePositions;
                 for (UInt i = 0; i < segment.pulse.waveform.size(); i++) {
-                    const Int xSample = x0 + safe_int_cast(i) * samplePeriodWidth;
+                    const Int xSample = x0 + utoi(i) * samplePeriodWidth;
 
                     const Real amplitude = segment.pulse.waveform[i];
                     const Real adjustedAmplitude = amplitude + maxAmplitude;
-                    const Int ySample = std::max(y, y + maxLineHeight - 1 - (Int) std::floor(adjustedAmplitude * amplitudeUnitHeight));
+                    const Int ySample = max(y, y + maxLineHeight - 1 - (Int) floor(adjustedAmplitude * amplitudeUnitHeight));
 
                     samplePositions.push_back( {xSample, ySample} );
                 }
@@ -1261,7 +1261,7 @@ void drawCycle(cimg_library::CImg<Byte> &image,
     // Draw each of the chunks in the cycle's gate partition.
     for (UInt chunkIndex = 0; chunkIndex < cycle.gates.size(); chunkIndex++)
     {
-        const Int chunkOffset = safe_int_cast(chunkIndex) * structure.getCellDimensions().width;
+        const Int chunkOffset = utoi(chunkIndex) * structure.getCellDimensions().width;
 
         // Draw each of the gates in the current chunk.
         for (const GateProperties &gate : cycle.gates[chunkIndex])
@@ -1400,7 +1400,7 @@ void drawGate(cimg_library::CImg<Byte> &image,
         try {
             const Node node = gateVisual.nodes.at(i);
             const BitType operandType = (i >= gate.operands.size()) ? CLASSICAL : QUANTUM;
-            const Int index = safe_int_cast((operandType == QUANTUM) ? i : (i - gate.operands.size()));
+            const Int index = utoi((operandType == QUANTUM) ? i : (i - gate.operands.size()));
 
             const Cell cell = {
                 gate.cycle,

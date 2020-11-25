@@ -188,7 +188,7 @@ public:
     virtual instruction_t qasm() const = 0;
     virtual gate_type_t   type() const = 0;
     virtual cmat_t        mat()  const = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
-    std::string visual_type = ""; // holds the visualization type of this gate that will be linked to a specific configuration in the visualizer
+    utils::Str visual_type = ""; // holds the visualization type of this gate that will be linked to a specific configuration in the visualizer
 };
 
 

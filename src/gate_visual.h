@@ -19,7 +19,7 @@ struct Node {
 
     utils::Int radius;
 
-    std::string displayName;
+    utils::Str displayName;
     utils::Int fontHeight;
     Color fontColor;
 

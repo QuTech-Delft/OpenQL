@@ -104,7 +104,6 @@ utils::Bool isMeasurement(const GateProperties &gate);
 Dimensions calculateTextDimensions(const utils::Str &text, utils::Int fontHeight);
 
 void printGates(const utils::Vec<GateProperties> &gates);
-utils::Int safe_int_cast(utils::UInt argument);
 
 } // namespace ql
 
