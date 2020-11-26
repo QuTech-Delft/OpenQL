@@ -203,6 +203,7 @@ public:
     std::string visual_type = ""; // holds the visualization type of this gate that will be linked to a specific configuration in the visualizer
     std::vector<size_t> cond_operands;      // 0, 1 or 2 bit operands of condition
     cond_type_t condition = cond_always;    // defines condition and by that number of bit operands of condition
+    bool is_conditional() const;            // whether gate has condition that is NOT cond_always
     instruction_t cond_qasm() const;        // returns the condition expression in qasm layout
     static bool is_valid_cond(cond_type_t condition, std::vector<size_t> cond_operands);
 };

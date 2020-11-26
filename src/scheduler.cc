@@ -108,7 +108,7 @@ void Scheduler::init(
         for (auto boperand : ins->breg_operands) {
             DOUT(".. Bit operand: `b[" << boperand << "]'");
         }
-        if (ins->condition != cond_always) {
+        if (ins->is_conditional()) {
             DOUT(".. Condition: `" << ins->cond_qasm() << "'");
         }
 

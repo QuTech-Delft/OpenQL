@@ -4,6 +4,10 @@
 
 namespace ql {
 
+bool gate::is_conditional() const {
+    return condition != cond_always;
+}
+
 bool gate::is_valid_cond(cond_type_t condition, std::vector<size_t> cond_operands) {
     switch (condition) {
     case cond_always:
