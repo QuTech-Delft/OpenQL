@@ -19,26 +19,34 @@ void Scheduler::stripname(std::string &name) {
     }
 }
 
-// factored out code from Init to add a dependence between two nodes
-// operand is in qubit/creg/breg combined index space
-void Scheduler::add_dep(int srcID, int tgtID, enum DepTypes deptype, size_t operand) {
-    DOUT(".. adddep ... from srcID " << srcID << " to tgtID " << tgtID << "   opnd=" << operand << ", dep=" << DepTypesNames[deptype]);
-    auto srcNode = graph.nodeFromId(srcID);
-    auto tgtNode = graph.nodeFromId(tgtID);
-    auto arc = graph.addArc(srcNode, tgtNode);
-    weight[arc] = int(std::ceil(static_cast<float>(instruction[srcNode]->duration) / cycle_time));
-    // weight[arc] = (instruction[srcNode]->duration + cycle_time -1)/cycle_time;
-    cause[arc] = operand;
+// Add a dependence between two nodes: from node fromID to node toID
+// deptype is one of {RAW, WAW, WAR, RAR, RAD, DAR, DAD, WAD, DAW};
+// combo is the operand encoded in a qubit+creg+breg combined index space:
+// - 0 <= combo < qubit_count:                        combo is a qubit index
+// - 0 <= combo-qubit_count < creg_count:             combo-qubit_count is a classical register index
+// - 0 <= combo-qubit_count-creg_count < breg_count:  combo-qubit_count-creg_count is a bit register index
+void Scheduler::add_dep(int fromID, int toID, enum DepTypes deptype, size_t combo) {
+    DOUT(".. adddep ... from fromID " << fromID << " to toID " << toID << "   opnd=" << combo << ", dep=" << DepTypesNames[deptype]);
+    auto fromNode = graph.nodeFromId(fromID);
+    auto toNode = graph.nodeFromId(toID);
+    auto arc = graph.addArc(fromNode, toNode);
+    weight[arc] = int(std::ceil(static_cast<float>(instruction[fromNode]->duration) / cycle_time));
+    // weight[arc] = (instruction[fromNode]->duration + cycle_time -1)/cycle_time;
+    cause[arc] = combo;
+    size_t operand;
     depType[arc] = deptype;
-    if (operand < qubit_count) {
-        DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=q[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
-    } else if (operand < qubit_count + creg_count) {
-        operand -= qubit_count;
-        DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=c[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
+    std::string s;
+    if (combo < qubit_count) {
+        s = "q";
+        operand = combo;
+    } else if (combo - qubit_count < creg_count) {
+        operand = combo - qubit_count;
+        s = "c";
     } else {
-        operand -= qubit_count + creg_count;
-        DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=b[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
+        operand = combo - (qubit_count + creg_count);
+        s = "b";
     }
+    DOUT("... dep " << name[fromNode] << " -> " << name[toNode] << " (opnd=" << s << "[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
 }
 
 // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
@@ -61,11 +69,12 @@ void Scheduler::init(
     circp = &ckt;
 
     // dependences are created with a current gate as target
-    // and with those previous gates as source that have an operand match:
-    // - the previous gates that Read r in LastReaders[r]; this is a list
-    // - the previous gates that D qubit q in LastDs[q]; this is a list
-    // - the previous gate that Wrote r in LastWriter[r]; this can only be one
-    // operands can be a qubit or a classical register
+    // and with those previous gates as source that have an operand match with the current gate:
+    // - the previous gates that Read operand r in LastReaders[r]; this is a list because reading commutes
+    // - the previous gates that D qubit operand q in LastDs[q]; this is a list because D'ing  commutes
+    // - the previous gate that Wrote operand r in LastWriter[r]; this can only be one because writing never commutes
+    // operands can be a qubit, a classical register or a bit register
+    // the indices in LastReaders, LastDs and LastWriter are operand indices in the combined index space (see add_dep)
     typedef std::vector<int> ReadersListType;
 
     std::vector<ReadersListType> LastReaders;
@@ -86,7 +95,7 @@ void Scheduler::init(
     int srcID = graph.id(s);
     std::vector<int> LastWriter(total_reg_count, srcID);     // it implicitly writes to all qubits/cregs/bregs
 
-    // for each gate pointer ins in the circuit, add a node and add dependences from previous gates to it
+    // for each gate pointer ins in the circuit, add a node and add dependences on previous gates to it
     for (auto ins : ckt) {
         DOUT("Current instruction's name: `" << ins->name << "'");
         DOUT(".. Qasm(): " << ins->qasm());
@@ -107,11 +116,11 @@ void Scheduler::init(
         stripname(iname);
 
         // Add node
-        lemon::ListDigraph::Node consNode = graph.addNode();
-        int consID = graph.id(consNode);
-        instruction[consNode] = ins;
-        node[ins] = consNode;
-        name[consNode] = ins->qasm();
+        lemon::ListDigraph::Node currNode = graph.addNode();
+        int currID = graph.id(currNode);
+        instruction[currNode] = ins;
+        node[ins] = currNode;
+        name[currNode] = ins->qasm();   // and this includes any condition!
 
         // Add edges (arcs)
         // In quantum computing there are no real Reads and Writes on qubits because they cannot be cloned.
@@ -170,121 +179,137 @@ void Scheduler::init(
         // of gates available for being scheduled because they are not blocked by dependences on non-scheduled gates.
         // Therefore, the schedulers are able to select the best one from a set of commutable gates.
 
-        // TODO: define signature in .json file similar to how gcc defines instructions
+        // FIXME: define signature in .json file similar to how llvm/scaffold/gcc defines instructions
         // and then have a signature interpreter here; then we don't have this long if-chain
         // and, more importantly, we don't have the knowledge of particular gates here;
         // the default signature would be that of a default gate, modifying each qubit operand.
 
+        // every gate can have a condition with condition operands (which are bit register indices) that are read
+        for (auto operand : ins->cond_operands) {
+            DOUT(".. Condition operand: " << operand);
+            add_dep(LastWriter[breg_base+operand], currID, RAW, breg_base+operand);
+            LastReaders[breg_base+operand].push_back(currID);
+        }
+
         // each type of gate has a different 'signature' of events; switch out to each one
         if (iname == "measure") {
-            DOUT(". considering " << name[consNode] << " as measure");
-            // Read+Write each qubit operand + Write corresponding creg
+            DOUT(". considering " << name[currNode] << " as measure");
+            // Read+Write each qubit operand + Write each classical operand + Write each bit operand
             auto operands = ins->operands;
             for (auto operand : operands) {
                 DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], consID, WAW, operand);
+                add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
-                    add_dep(readerID, consID, WAR, operand);
+                    add_dep(readerID, currID, WAR, operand);
                 }
                 for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, consID, WAD, operand);
+                    add_dep(readerID, currID, WAD, operand);
                 }
             }
-
             for (auto coperand : ins->creg_operands) {
                 DOUT(".. Classical operand: " << coperand);
-                add_dep(LastWriter[creg_base+coperand], consID, WAW, creg_base+coperand);
+                add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
                 for (auto &readerID : LastReaders[creg_base+coperand]) {
-                    add_dep(readerID, consID, WAR, creg_base+coperand);
+                    add_dep(readerID, currID, WAR, creg_base+coperand);
+                }
+            }
+            for (auto boperand : ins->breg_operands) {
+                DOUT(".. Bit operand: " << boperand);
+                add_dep(LastWriter[breg_base+boperand], currID, WAW, breg_base+boperand);
+                for (auto &readerID : LastReaders[breg_base+boperand]) {
+                    add_dep(readerID, currID, WAR, breg_base+boperand);
                 }
             }
 
             // update LastWriter and so clear LastReaders
             for (auto operand : operands) {
-                DOUT(".. Update LastWriter for operand: " << operand);
-                LastWriter[operand] = consID;
-                DOUT(".. Clearing LastReaders for operand: " << operand);
+                DOUT(".. Update LastWriter for qubit operand register: " << operand);
+                LastWriter[operand] = currID;
+                DOUT(".. Clearing LastReaders for qubit operand register: " << operand);
                 LastReaders[operand].clear();
                 LastDs[operand].clear();
-                DOUT(".. Update LastWriter done");
+                DOUT(".. Update LastWriter for qubit operand done");
             }
             for (auto coperand : ins->creg_operands) {
-                DOUT(".. Update LastWriter for coperand: " << coperand);
-                LastWriter[creg_base+coperand] = consID;
-                DOUT(".. Clearing LastReaders for coperand: " << coperand);
+                DOUT(".. Update LastWriter for classical operand register: " << coperand);
+                LastWriter[creg_base+coperand] = currID;
+                DOUT(".. Clearing LastReaders for classical operand register: " << coperand);
                 LastReaders[creg_base+coperand].clear();
-                DOUT(".. Update LastWriter done");
+                DOUT(".. Update LastWriter for classical operand done");
+            }
+            for (auto boperand : ins->breg_operands) {
+                DOUT(".. Update LastWriter for bit operand register: " << boperand);
+                LastWriter[breg_base+boperand] = currID;
+                DOUT(".. Clearing LastReaders for bit operand register: " << boperand);
+                LastReaders[breg_base+boperand].clear();
+                DOUT(".. Update LastWriter for bit operand done");
             }
             DOUT(". measure done");
         } else if (iname == "display") {
-            DOUT(". considering " << name[consNode] << " as display");
+            DOUT(". considering " << name[currNode] << " as display");
             // no operands, display all qubits and cregs
             // Read+Write each operand
             std::vector<size_t> qubits(total_reg_count);
             std::iota(qubits.begin(), qubits.end(), 0);
             for (auto operand : qubits) {
                 DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], consID, WAW, operand);
+                add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
-                    add_dep(readerID, consID, WAR, operand);
+                    add_dep(readerID, currID, WAR, operand);
                 }
                 for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, consID, WAD, operand);
+                    add_dep(readerID, currID, WAD, operand);
                 }
             }
 
             // now update LastWriter and so clear LastReaders/LastDs
             for (auto operand : qubits) {
-                LastWriter[operand] = consID;
+                LastWriter[operand] = currID;
                 LastReaders[operand].clear();
                 LastDs[operand].clear();
             }
         } else if (ins->type() == gate_type_t::__classical_gate__) {
-            DOUT(". considering " << name[consNode] << " as classical gate");
+            DOUT(". considering " << name[currNode] << " as classical gate");
             // Read+Write each classical operand
             for (auto coperand : ins->creg_operands) {
                 DOUT("... Classical operand: " << coperand);
-                add_dep(LastWriter[creg_base+coperand], consID, WAW, creg_base+coperand);
+                add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
                 for (auto &readerID : LastReaders[creg_base+coperand]) {
-                    add_dep(readerID, consID, WAR, creg_base+coperand);
-                }
-                for (auto &readerID : LastDs[creg_base+coperand]) {
-                    add_dep(readerID, consID, WAD, creg_base+coperand);
+                    add_dep(readerID, currID, WAR, creg_base+coperand);
                 }
             }
 
-            // now update LastWriter and so clear LastReaders/LastDs
+            // now update LastWriter and so clear LastReaders
             for (auto coperand : ins->creg_operands) {
-                LastWriter[creg_base+coperand] = consID;
+                LastWriter[creg_base+coperand] = currID;
                 LastReaders[creg_base+coperand].clear();
-                LastDs[creg_base+coperand].clear();
             }
         } else if (iname == "cnot") {
-            DOUT(". considering " << name[consNode] << " as cnot");
+            DOUT(". considering " << name[currNode] << " as cnot");
             // CNOTs Read the first operands, and Ds the second operand
             size_t operandNo=0;
             auto operands = ins->operands;
             for (auto operand : operands) {
                 DOUT(".. Operand: " << operand);
                 if (operandNo == 0) {
-                    add_dep(LastWriter[operand], consID, RAW, operand);
+                    add_dep(LastWriter[operand], currID, RAW, operand);
                     if (options::get("scheduler_commute") == "no") {
                         for (auto &readerID : LastReaders[operand]) {
-                            add_dep(readerID, consID, RAR, operand);
+                            add_dep(readerID, currID, RAR, operand);
                         }
                     }
                     for (auto &readerID : LastDs[operand]) {
-                        add_dep(readerID, consID, RAD, operand);
+                        add_dep(readerID, currID, RAD, operand);
                     }
                 } else {
-                    add_dep(LastWriter[operand], consID, DAW, operand);
+                    add_dep(LastWriter[operand], currID, DAW, operand);
                     if (options::get("scheduler_commute") == "no") {
                         for (auto &readerID : LastDs[operand]) {
-                            add_dep(readerID, consID, DAD, operand);
+                            add_dep(readerID, currID, DAD, operand);
                         }
                     }
                     for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, consID, DAR, operand);
+                        add_dep(readerID, currID, DAR, operand);
                     }
                 }
                 operandNo++;
@@ -295,16 +320,16 @@ void Scheduler::init(
             for (auto operand : operands) {
                 if (operandNo == 0) {
                     // update LastReaders for this operand 0
-                    LastReaders[operand].push_back(consID);
+                    LastReaders[operand].push_back(currID);
                     LastDs[operand].clear();
                 } else {
-                    LastDs[operand].push_back(consID);
+                    LastDs[operand].push_back(currID);
                     LastReaders[operand].clear();
                 }
                 operandNo++;
             }
         } else if (iname == "cz" || iname == "cphase") {
-            DOUT(". considering " << name[consNode] << " as cz");
+            DOUT(". considering " << name[currNode] << " as cz");
             // CZs Read all operands
             size_t operandNo = 0;
             auto operands = ins->operands;
@@ -312,12 +337,12 @@ void Scheduler::init(
                 DOUT(".. Operand: " << operand);
                 if (options::get("scheduler_commute") == "no") {
                     for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, consID, RAR, operand);
+                        add_dep(readerID, currID, RAR, operand);
                     }
                 }
-                add_dep(LastWriter[operand], consID, RAW, operand);
+                add_dep(LastWriter[operand], currID, RAW, operand);
                 for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, consID, RAD, operand);
+                    add_dep(readerID, currID, RAD, operand);
                 }
                 operandNo++;
             } // end of operand for
@@ -326,7 +351,7 @@ void Scheduler::init(
             operandNo = 0;
             for (auto operand : operands) {
                 LastDs[operand].clear();
-                LastReaders[operand].push_back(consID);
+                LastReaders[operand].push_back(currID);
                 operandNo++;
             }
 #ifdef HAVEGENERALCONTROLUNITARIES
@@ -335,36 +360,36 @@ void Scheduler::init(
             // Read on all operands, Write on last operand
             // before implementing it, check whether all commutativity on Reads above hold for this Control Unitary
         ) {
-            DOUT(". considering " << name[consNode] << " as Control Unitary");
+            DOUT(". considering " << name[currNode] << " as Control Unitary");
             // Control Unitaries Read all operands, and Write the last operand
             size_t operandNo=0;
             auto operands = ins->operands;
             size_t op_count = operands.size();
             for (auto operand : operands) {
                 DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], consID, RAW, operand);
+                add_dep(LastWriter[operand], currID, RAW, operand);
                 if (options::get("scheduler_commute") == "no") {
                     for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, consID, RAR, operand);
+                        add_dep(readerID, currID, RAR, operand);
                     }
                 }
                 for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, consID, RAD, operand);
+                    add_dep(readerID, currID, RAD, operand);
                 }
 
                 if (operandNo < op_count-1) {
-                    LastReaders[operand].push_back(consID);
+                    LastReaders[operand].push_back(currID);
                     LastDs[operand].clear();
                 } else {
-                    add_dep(LastWriter[operand], consID, WAW, operand);
+                    add_dep(LastWriter[operand], currID, WAW, operand);
                     for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, consID, WAR, operand);
+                        add_dep(readerID, currID, WAR, operand);
                     }
                     for (auto &readerID : LastDs[operand]) {
-                        add_dep(readerID, consID, WAD, operand);
+                        add_dep(readerID, currID, WAD, operand);
                     }
 
-                    LastWriter[operand] = consID;
+                    LastWriter[operand] = currID;
                     LastReaders[operand].clear();
                     LastDs[operand].clear();
                 }
@@ -372,21 +397,22 @@ void Scheduler::init(
             } // end of operand for
 #endif  // HAVEGENERALCONTROLUNITARIES
         } else {
-            DOUT(". considering " << name[consNode] << " as no special gate (catch-all, generic rules)");
+            DOUT(". considering " << name[currNode] << " as no special gate (catch-all, generic rules)");
             // Read+Write on each quantum operand
             // Read+Write on each classical operand
+            // Read+Write on each bit operand
             auto operands = ins->operands;
             for (auto operand : operands) {
                 DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], consID, WAW, operand);
+                add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
-                    add_dep(readerID, consID, WAR, operand);
+                    add_dep(readerID, currID, WAR, operand);
                 }
                 for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, consID, WAD, operand);
+                    add_dep(readerID, currID, WAD, operand);
                 }
-
-                LastWriter[operand] = consID;
+                // now update LastWriter and so clear LastReaders/LastDs
+                LastWriter[operand] = currID;
                 LastReaders[operand].clear();
                 LastDs[operand].clear();
             } // end of operand for
@@ -394,19 +420,26 @@ void Scheduler::init(
             // Read+Write each classical operand
             for (auto coperand : ins->creg_operands) {
                 DOUT("... Classical operand: " << coperand);
-                add_dep(LastWriter[creg_base+coperand], consID, WAW, creg_base+coperand);
+                add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
                 for (auto &readerID : LastReaders[creg_base+coperand]) {
-                    add_dep(readerID, consID, WAR, creg_base+coperand);
+                    add_dep(readerID, currID, WAR, creg_base+coperand);
                 }
-                for (auto &readerID : LastDs[creg_base+coperand]) {
-                    add_dep(readerID, consID, WAD, creg_base+coperand);
-                }
-
-                // now update LastWriter and so clear LastReaders/LastDs
-                LastWriter[creg_base+coperand] = consID;
+                // now update LastWriter and so clear LastReaders
+                LastWriter[creg_base+coperand] = currID;
                 LastReaders[creg_base+coperand].clear();
-                LastDs[creg_base+coperand].clear();
             } // end of coperand for
+
+            // Read+Write each bit operand
+            for (auto boperand : ins->breg_operands) {
+                DOUT("... Bit operand: " << boperand);
+                add_dep(LastWriter[breg_base+boperand], currID, WAW, breg_base+boperand);
+                for (auto &readerID : LastReaders[breg_base+boperand]) {
+                    add_dep(readerID, currID, WAR, breg_base+boperand);
+                }
+                // now update LastWriter and so clear LastReaders
+                LastWriter[breg_base+boperand] = currID;
+                LastReaders[breg_base+boperand].clear();
+            } // end of boperand for
         } // end of if/else
         DOUT(". instruction done: " << ins->qasm());
     } // end of instruction for
@@ -415,12 +448,12 @@ void Scheduler::init(
     // finish filling the dependence graph by creating the t node, the bottom of the graph
     {
         // add dummy target node
-        lemon::ListDigraph::Node consNode = graph.addNode();
-        int consID = graph.id(consNode);
-        instruction[consNode] = new SINK();    // so SINK is defined as instruction[t], not unique in itself
-        node[instruction[consNode]] = consNode;
-        name[consNode] = instruction[consNode]->qasm();
-        t = consNode;
+        lemon::ListDigraph::Node currNode = graph.addNode();
+        int currID = graph.id(currNode);
+        instruction[currNode] = new SINK();    // so SINK is defined as instruction[t], not unique in itself
+        node[instruction[currNode]] = currNode;
+        name[currNode] = instruction[currNode]->qasm();
+        t = currNode;
 
         // add deps to the dummy target node to close the dependence chains
         // it behaves as a W to every qubit, creg and breg
@@ -437,19 +470,19 @@ void Scheduler::init(
         std::iota(operands.begin(), operands.end(), 0);
         for (auto operand : operands) {
             DOUT(".. Sink operand, adding dep: " << operand);
-            add_dep(LastWriter[operand], consID, WAW, operand);
+            add_dep(LastWriter[operand], currID, WAW, operand);
             for (auto &readerID : LastReaders[operand]) {
-                add_dep(readerID, consID, WAR, operand);
+                add_dep(readerID, currID, WAR, operand);
             }
             for (auto &readerID : LastDs[operand]) {
-                add_dep(readerID, consID, WAD, operand);
+                add_dep(readerID, currID, WAD, operand);
             }
         }
 
         // useless because there is nothing after t but destruction
         for (auto operand : operands) {
             DOUT(".. Sink operand, clearing: " << operand);
-            LastWriter[operand] = consID;
+            LastWriter[operand] = currID;
             LastReaders[operand].clear();
             LastDs[operand].clear();
         }

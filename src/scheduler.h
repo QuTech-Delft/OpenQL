@@ -117,7 +117,7 @@ public:
 
     // factored out code from Init to add a dependence between two nodes
     // operand is in qubit_creg_breg combined index space with size qcount+ccount+bcount
-    void add_dep(int srcID, int tgtID, enum DepTypes deptype, size_t operand);
+    void add_dep(int fromID, int toID, enum DepTypes deptype, size_t comboperand);
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(
