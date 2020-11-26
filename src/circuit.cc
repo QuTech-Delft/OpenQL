@@ -1,8 +1,14 @@
+/** \file
+ * Circuit (i.e. gate container) implementation.
+ */
+
 #include "circuit.h"
 
 #include <iostream>
 
 namespace ql {
+
+using namespace utils;
 
 void print(const circuit &c) {
     std::cout << "-------------------" << std::endl;
@@ -15,17 +21,17 @@ void print(const circuit &c) {
 /**
  * generate qasm for a given circuit
  */
-std::string qasm(const circuit& c) {
-    std::stringstream ss;
+Str qasm(const circuit& c) {
+    StrStrm ss;
     for (auto gate : c) {
         ss << gate->qasm() << "\n";
     }
     return ss.str();
 }
 
-std::vector<circuit*> split_circuit(circuit &x) {
-    IOUT("circuit decomposition in basic blocks ... ");
-    std::vector<circuit *> cs;
+Vec<circuit*> split_circuit(circuit &x) {
+    QL_IOUT("circuit decomposition in basic blocks ... ");
+    Vec<circuit *> cs;
     cs.push_back(new circuit());
     for (auto gate : x) {
         if ((gate->type() == __prepz_gate__) ||
@@ -37,9 +43,9 @@ std::vector<circuit*> split_circuit(circuit &x) {
             cs.back()->push_back(gate);
         }
     }
-    IOUT("circuit decomposition done (" << cs.size() << ").");
+    QL_IOUT("circuit decomposition done (" << cs.size() << ").");
     /*
-       for (int i=0; i<cs.size(); ++i)
+       for (Int i=0; i<cs.size(); ++i)
        {
        println(" |-- circuit " << i);
        print(*(cs[i]));
@@ -51,7 +57,7 @@ std::vector<circuit*> split_circuit(circuit &x) {
 /**
  * detect measurements and qubit preparations
  */
-bool contains_measurements(const circuit &x) {
+Bool contains_measurements(const circuit &x) {
     for (auto gate : x) {
         if (gate->type() == __measure_gate__) {
             return true;

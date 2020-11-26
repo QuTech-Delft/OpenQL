@@ -16,6 +16,7 @@ for entry in os.listdir(libdir):
     flags = s[1] if len(s) > 1 else ''
     entry_debug = 'd' in flags
     if debug != entry_debug:
+        print('note: %s was not considered as Python library due to debug flag mismatch' % entry, file=sys.stderr)
         continue
     options.append(entry)
 
@@ -24,4 +25,4 @@ if not options:
 else:
     # if there are multiple, no idea how to choose which.
     options.sort()
-    print(os.path.join(libdir, options[0]))
+    print(os.path.join(libdir, options[0]).replace('\\','/'))

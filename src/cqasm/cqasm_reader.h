@@ -1,6 +1,11 @@
+/** \file
+ * Implementation for converting cQASM files to OpenQL's IR.
+ */
+
 #pragma once
 
-#include <string>
+#include "utils/num.h"
+#include "utils/str.h"
 #include "qasm_semantic.hpp"
 
 namespace ql {
@@ -14,26 +19,26 @@ public:
     cqasm_reader(const quantum_platform &q_platform, quantum_program &q_program);
     ~cqasm_reader() = default;
 
-    void string2circuit(const std::string &cqasm_str);
-    void file2circuit(const std::string &cqasm_file_path);
+    void string2circuit(const utils::Str &cqasm_str);
+    void file2circuit(const utils::Str &cqasm_file_path);
 
 private:
     void add_cqasm(compiler::QasmRepresentation cqasm_repr);
-    static void add_kernel_operation(quantum_kernel &kernel, const compiler::Operation &operation, int number_of_qubits);
-    static void add_single_bit_kernel_operation(quantum_kernel &kernel, const std::string &gate_type, const compiler::Operation &operation);
-    static void add_parameterized_single_bit_kernel_operation(quantum_kernel &kernel, const std::string &gate_type, const compiler::Operation &operation);
-    static void add_dual_bit_kernel_operation(quantum_kernel &kernel, const std::string &gate_type, const compiler::Operation &op);
-    static void add_parameterized_dual_bit_kernel_operation(quantum_kernel &kernel, const std::string &gate_type, const compiler::Operation &operation);
-    static void add_triple_bit_kernel_operation(quantum_kernel &kernel, const std::string &gate_type, const compiler::Operation &op);
+    static void add_kernel_operation(quantum_kernel &kernel, const compiler::Operation &operation, utils::Int number_of_qubits);
+    static void add_single_bit_kernel_operation(quantum_kernel &kernel, const utils::Str &gate_type, const compiler::Operation &operation);
+    static void add_parameterized_single_bit_kernel_operation(quantum_kernel &kernel, const utils::Str &gate_type, const compiler::Operation &operation);
+    static void add_dual_bit_kernel_operation(quantum_kernel &kernel, const utils::Str &gate_type, const compiler::Operation &op);
+    static void add_parameterized_dual_bit_kernel_operation(quantum_kernel &kernel, const utils::Str &gate_type, const compiler::Operation &operation);
+    static void add_triple_bit_kernel_operation(quantum_kernel &kernel, const utils::Str &gate_type, const compiler::Operation &op);
 
-    static std::string translate_gate_type(const std::string &gate_type);
+    static utils::Str translate_gate_type(const utils::Str &gate_type);
 
-    bool test_translate_gate_type();
+    utils::Bool test_translate_gate_type();
 
     const quantum_platform &platform;
     quantum_program &program;
-    int number_of_qubits;
-    size_t sub_circuits_default_nr;
+    utils::Int number_of_qubits;
+    utils::UInt sub_circuits_default_nr;
 };
 
 } // namespace ql

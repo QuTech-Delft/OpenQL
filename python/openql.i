@@ -42,20 +42,15 @@ def set_output_dir(path):
 */
 
 
-%exception
-{
-    try
-    {
+%exception {
+    try {
         $action
         if (PyErr_Occurred()) SWIG_fail;
-    }
-    catch(ql::exception & e )
-    {
-        SWIG_exception(SWIG_TypeError, e.what());
+    } catch (ql::utils::Exception &e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
     }
     SWIG_CATCH_STDEXCEPT
-    catch(...)
-    {
+    catch (...) {
         SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
     }
 }

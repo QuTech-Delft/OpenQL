@@ -1,22 +1,21 @@
-/**
- * @file   visualizer_common.cc
- * @date   11/2020
- * @author Tim van der Meer
- * @brief  definition of the visualizer
+/** \file
+ * Declaration of the visualizer's shared functionalities.
  */
  
 #include "visualizer.h"
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
 #include "visualizer_interaction.h"
-#include "json.h"
+#include "utils/str.h"
+#include "utils/json.h"
+#include "utils/vec.h"
+#include "utils/pair.h"
 
 #include <iostream>
-#include <limits>
-
-using json = nlohmann::json;
 
 namespace ql {
+
+using namespace utils;
 
 // --- DONE ---
 // [CIRCUIT] visualization of custom gates
@@ -67,22 +66,22 @@ namespace ql {
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfigurationPaths configurationPaths) {
-    WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
+void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfigurationPaths &configurationPaths) {
+    QL_WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
         << "might be missing and the visualizer has disabled itself.");
 }
 
 #else
 
-void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfigurationPaths configurationPaths) {
-    IOUT("Starting visualization...");
-    IOUT("Visualization type: " << visualizationType);
+void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfigurationPaths &configurationPaths) {
+    QL_IOUT("Starting visualization...");
+    QL_IOUT("Visualization type: " << visualizationType);
 
     // Get the gate list from the program.
-    DOUT("Getting gate list...");
-    std::vector<GateProperties> gates = parseGates(program);
-    if (gates.size() == 0) {
-        FATAL("Quantum program contains no gates!");
+    QL_DOUT("Getting gate list...");
+    Vec<GateProperties> gates = parseGates(program);
+    if (gates.empty()) {
+        QL_FATAL("Quantum program contains no gates!");
     }
 
     // Choose the proper visualization based on the visualization type.
@@ -92,9 +91,9 @@ void visualize(const ql::quantum_program* program, const std::string &visualizat
         validateLayout(layout);
 
         // Calculate circuit properties.
-        DOUT("Calculating circuit properties...");
-        const int cycleDuration = safe_int_cast(program->platform.cycle_time);
-        DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
+        QL_DOUT("Calculating circuit properties...");
+        const Int cycleDuration = utoi(program->platform.cycle_time);
+        QL_DOUT("Cycle duration is: " + to_string(cycleDuration) + " ns.");
         // Fix measurement gates without classical operands.
         fixMeasurementOperands(gates);
 
@@ -102,22 +101,22 @@ void visualize(const ql::quantum_program* program, const std::string &visualizat
     } else if (visualizationType == "INTERACTION_GRAPH") {
         visualizeInteractionGraph(gates);
     } else if (visualizationType == "MAPPING_GRAPH") {
-        WOUT("Mapping graph visualization not yet implemented.");
+        QL_WOUT("Mapping graph visualization not yet implemented.");
     } else {
-        FATAL("Unknown visualization type: " << visualizationType << "!");
+        QL_FATAL("Unknown visualization type: " << visualizationType << "!");
     }
 
-    IOUT("Visualization complete...");
+    QL_IOUT("Visualization complete...");
 }
 
-Layout parseConfiguration(const std::string &configPath) {
-    DOUT("Parsing visualizer configuration file.");
+Layout parseConfiguration(const Str &configPath) {
+    QL_DOUT("Parsing visualizer configuration file.");
 
-    json config;
+    Json config;
     try {
         config = load_json(configPath);
-    } catch (json::exception &e) {
-        FATAL("Failed to load the visualization config file: \n\t" << std::string(e.what()));
+    } catch (Json::exception &e) {
+        QL_FATAL("Failed to load the visualization config file: \n\t" << Str(e.what()));
     }
 
     Layout layout;
@@ -128,11 +127,11 @@ Layout parseConfiguration(const std::string &configPath) {
     // -               CYCLES               - //
     // -------------------------------------- //
     if (config.count("cycles") == 1) {
-        json cycles = config["cycles"];
+        Json cycles = config["cycles"];
 
         // LABELS
         if (cycles.count("labels") == 1) {
-            json labels = cycles["labels"];
+            Json labels = cycles["labels"];
 
             if (labels.count("show") == 1)          layout.cycles.labels.setEnabled(labels["show"]);
             if (labels.count("inNanoSeconds") == 1) layout.cycles.labels.setInNanoSeconds(labels["inNanoSeconds"]);
@@ -143,7 +142,7 @@ Layout parseConfiguration(const std::string &configPath) {
 
         // EDGES
         if (cycles.count("edges") == 1) {
-            json edges = cycles["edges"];
+            Json edges = cycles["edges"];
 
             if (edges.count("show") == 1)   layout.cycles.edges.setEnabled(edges["show"]);
             if (edges.count("color") == 1)  layout.cycles.edges.setColor(edges["color"]);
@@ -152,7 +151,7 @@ Layout parseConfiguration(const std::string &configPath) {
 
         // CUTTING
         if (cycles.count("cutting") == 1) {
-            json cutting = cycles["cutting"];
+            Json cutting = cycles["cutting"];
 
             if (cutting.count("cut") == 1)                      layout.cycles.cutting.setEnabled(cutting["cut"]);
             if (cutting.count("emptyCycleThreshold") == 1)      layout.cycles.cutting.setEmptyCycleThreshold(cutting["emptyCycleThreshold"]);
@@ -169,11 +168,11 @@ Layout parseConfiguration(const std::string &configPath) {
     // -------------------------------------- //
     if (config.count("bitLines") == 1)
     {
-        json bitLines = config["bitLines"];
+        Json bitLines = config["bitLines"];
 
         // LABELS
         if (bitLines.count("labels") == 1) {
-            json labels = bitLines["labels"];
+            Json labels = bitLines["labels"];
 
             if (labels.count("show") == 1)          layout.bitLines.labels.setEnabled(labels["show"]);
             if (labels.count("columnWidth") == 1)   layout.bitLines.labels.setColumnWidth(labels["columnWidth"]);
@@ -184,14 +183,14 @@ Layout parseConfiguration(const std::string &configPath) {
 
         // QUANTUM
         if (bitLines.count("quantum") == 1) {
-            json quantum = bitLines["quantum"];
+            Json quantum = bitLines["quantum"];
 
             if (quantum.count("color") == 1) layout.bitLines.quantum.setColor(quantum["color"]);
         }
 
         // CLASSICAL
         if (bitLines.count("classical") == 1) {
-            json classical = bitLines["classical"];
+            Json classical = bitLines["classical"];
 
             if (classical.count("show") == 1)           layout.bitLines.classical.setEnabled(classical["show"]);
             if (classical.count("group") == 1)          layout.bitLines.classical.setGrouped(classical["group"]);
@@ -201,7 +200,7 @@ Layout parseConfiguration(const std::string &configPath) {
 
         // EDGES
         if (bitLines.count("edges") == 1) {
-            json edges = bitLines["edges"];
+            Json edges = bitLines["edges"];
 
             if (edges.count("show") == 1)       layout.bitLines.edges.setEnabled(edges["show"]);
             if (edges.count("thickness") == 1)  layout.bitLines.edges.setThickness(edges["thickness"]);
@@ -214,7 +213,7 @@ Layout parseConfiguration(const std::string &configPath) {
     // -                GRID                - //
     // -------------------------------------- //
     if (config.count("grid") == 1) {
-        json grid = config["grid"];
+        Json grid = config["grid"];
 
         if (grid.count("cellSize") == 1)    layout.grid.setCellSize(grid["cellSize"]);
         if (grid.count("borderSize") == 1)  layout.grid.setBorderSize(grid["borderSize"]);
@@ -224,7 +223,7 @@ Layout parseConfiguration(const std::string &configPath) {
     // -       GATE DURATION OUTLINES       - //
     // -------------------------------------- //
     if (config.count("gateDurationOutlines") == 1) {
-        json gateDurationOutlines = config["gateDurationOutlines"];
+        Json gateDurationOutlines = config["gateDurationOutlines"];
 
         if (gateDurationOutlines.count("show") == 1)         layout.gateDurationOutlines.setEnabled(gateDurationOutlines["show"]);
         if (gateDurationOutlines.count("gap") == 1)          layout.gateDurationOutlines.setGap(gateDurationOutlines["gap"]);
@@ -237,7 +236,7 @@ Layout parseConfiguration(const std::string &configPath) {
     // -            MEASUREMENTS            - //
     // -------------------------------------- //
     if (config.count("measurements") == 1) {
-        json measurements = config["measurements"];
+        Json measurements = config["measurements"];
 
         if (measurements.count("drawConnection") == 1)  layout.measurements.enableDrawConnection(measurements["drawConnection"]);
         if (measurements.count("lineSpacing") == 1)     layout.measurements.setLineSpacing(measurements["lineSpacing"]);
@@ -248,7 +247,7 @@ Layout parseConfiguration(const std::string &configPath) {
     // -               PULSES               - //
     // -------------------------------------- //
     if (config.count("pulses") == 1) {
-        json pulses = config["pulses"];
+        Json pulses = config["pulses"];
 
         if (pulses.count("displayGatesAsPulses") == 1)      layout.pulses.setEnabled(pulses["displayGatesAsPulses"]);
         if (pulses.count("pulseRowHeightMicrowave") == 1)   layout.pulses.setPulseRowHeightMicrowave(pulses["pulseRowHeightMicrowave"]);
@@ -264,22 +263,22 @@ Layout parseConfiguration(const std::string &configPath) {
         for (const auto &instruction : config["instructions"].items()) {
             try {
                 GateVisual gateVisual;
-                json content = instruction.value();
+                Json content = instruction.value();
 
                 // Load the connection color.
-                json connectionColor = content["connectionColor"];
+                Json connectionColor = content["connectionColor"];
                 gateVisual.connectionColor[0] = connectionColor[0];
                 gateVisual.connectionColor[1] = connectionColor[1];
                 gateVisual.connectionColor[2] = connectionColor[2];
-                DOUT("Connection color: [" 
-                    << (int)gateVisual.connectionColor[0] << ","
-                    << (int)gateVisual.connectionColor[1] << ","
-                    << (int)gateVisual.connectionColor[2] << "]");
+                QL_DOUT("Connection color: [" 
+                    << (Int)gateVisual.connectionColor[0] << ","
+                    << (Int)gateVisual.connectionColor[1] << ","
+                    << (Int)gateVisual.connectionColor[2] << "]");
 
                 // Load the individual nodes.
-                json nodes = content["nodes"];
-                for (size_t i = 0; i < nodes.size(); i++) {
-                    json node = nodes[i];
+                Json nodes = content["nodes"];
+                for (UInt i = 0; i < nodes.size(); i++) {
+                    Json node = nodes[i];
                     
                     Color fontColor = {node["fontColor"][0], node["fontColor"][1], node["fontColor"][2]};
                     Color backgroundColor = {node["backgroundColor"][0], node["backgroundColor"][1], node["backgroundColor"][2]};
@@ -297,7 +296,7 @@ Layout parseConfiguration(const std::string &configPath) {
                     } else if (node["type"] == "CROSS") {
                         nodeType = CROSS;
                     } else {
-                        WOUT("Unknown gate display node type! Defaulting to type NONE...");
+                        QL_WOUT("Unknown gate display node type! Defaulting to type NONE...");
                         nodeType = NONE;
                     }
                     
@@ -313,89 +312,89 @@ Layout parseConfiguration(const std::string &configPath) {
                     
                     gateVisual.nodes.push_back(loadedNode);
                     
-                    DOUT("[type: " << node["type"] << "] "
+                    QL_DOUT("[type: " << node["type"] << "] "
                         << "[radius: " << gateVisual.nodes.at(i).radius << "] "
                         << "[displayName: " << gateVisual.nodes.at(i).displayName << "] "
                         << "[fontHeight: " << gateVisual.nodes.at(i).fontHeight << "] "
                         << "[fontColor: "
-                            << (int)gateVisual.nodes.at(i).fontColor[0] << ","
-                            << (int)gateVisual.nodes.at(i).fontColor[1] << ","
-                            << (int)gateVisual.nodes.at(i).fontColor[2] << "] "
+                            << (Int)gateVisual.nodes.at(i).fontColor[0] << ","
+                            << (Int)gateVisual.nodes.at(i).fontColor[1] << ","
+                            << (Int)gateVisual.nodes.at(i).fontColor[2] << "] "
                         << "[backgroundColor: "
-                            << (int)gateVisual.nodes.at(i).backgroundColor[0] << ","
-                            << (int)gateVisual.nodes.at(i).backgroundColor[1] << ","
-                            << (int)gateVisual.nodes.at(i).backgroundColor[2] << "] "
+                            << (Int)gateVisual.nodes.at(i).backgroundColor[0] << ","
+                            << (Int)gateVisual.nodes.at(i).backgroundColor[1] << ","
+                            << (Int)gateVisual.nodes.at(i).backgroundColor[2] << "] "
                         << "[outlineColor: "
-                            << (int)gateVisual.nodes.at(i).outlineColor[0] << ","
-                            << (int)gateVisual.nodes.at(i).outlineColor[1] << ","
-                            << (int)gateVisual.nodes.at(i).outlineColor[2] << "]");
+                            << (Int)gateVisual.nodes.at(i).outlineColor[0] << ","
+                            << (Int)gateVisual.nodes.at(i).outlineColor[1] << ","
+                            << (Int)gateVisual.nodes.at(i).outlineColor[2] << "]");
                 }
 
                 layout.customGateVisuals.insert({instruction.key(), gateVisual});
-            } catch (json::exception &e) {
-                WOUT("Failed to load visualization parameters for instruction: '" << instruction.key()
-                    << "' \n\t" << std::string(e.what()));
+            } catch (Json::exception &e) {
+                QL_WOUT("Failed to load visualization parameters for instruction: '" << instruction.key()
+                    << "' \n\t" << Str(e.what()));
             }
         }
     } else {
-        WOUT("Did not find 'instructions' attribute! The visualizer will try to fall back on default gate visualizations.");
+        QL_WOUT("Did not find 'instructions' attribute! The visualizer will try to fall back on default gate visualizations.");
     }
 
     return layout;
 }
 
 void validateLayout(Layout &layout) {
-    DOUT("Validating layout...");
+    QL_DOUT("Validating layout...");
 
     //TODO: add more validation
     
     if (layout.cycles.cutting.getEmptyCycleThreshold() < 1) {
-        WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to "
+        QL_WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to "
             << layout.cycles.cutting.getEmptyCycleThreshold() << ".");
         layout.cycles.cutting.setEmptyCycleThreshold(1);
     }
 
     if (layout.pulses.areEnabled()) {
         if (layout.bitLines.classical.isEnabled()) {
-            WOUT("Adjusting 'showClassicalLines' to false. Unable to show classical lines when 'displayGatesAsPulses' is true!");
+            QL_WOUT("Adjusting 'showClassicalLines' to false. Unable to show classical lines when 'displayGatesAsPulses' is true!");
             layout.bitLines.classical.setEnabled(false);
         }
         if (layout.cycles.arePartitioned()) {
-            WOUT("Adjusting 'partitionCyclesWithOverlap' to false. It is unnecessary to partition cycles when 'displayGatesAsPulses' is true!");
+            QL_WOUT("Adjusting 'partitionCyclesWithOverlap' to false. It is unnecessary to partition cycles when 'displayGatesAsPulses' is true!");
             layout.cycles.setPartitioned(false);
         }
         if (layout.cycles.areCompressed()) {
-            WOUT("Adjusting 'compressCycles' to false. Cannot compress cycles when 'displayGatesAsPulses' is true!");
+            QL_WOUT("Adjusting 'compressCycles' to false. Cannot compress cycles when 'displayGatesAsPulses' is true!");
             layout.cycles.setCompressed(false);
-        }	
+        }
     }
 
     if (!layout.bitLines.labels.areEnabled())   layout.bitLines.labels.setColumnWidth(0);
     if (!layout.cycles.labels.areEnabled())     layout.cycles.labels.setRowHeight(0);
 }
 
-std::vector<GateProperties> parseGates(const ql::quantum_program* program) {
-    std::vector<GateProperties> gates;
+Vec<GateProperties> parseGates(const quantum_program *program) {
+    Vec<GateProperties> gates;
 
-    for (ql::quantum_kernel kernel : program->kernels) {
-        for (ql::gate* const gate : kernel.get_circuit()) {
-            std::vector<int> codewords;
+    for (quantum_kernel kernel : program->kernels) {
+        for (gate* const gate : kernel.get_circuit()) {
+            Vec<Int> codewords;
             if (gate->type() == __custom_gate__) {
-                for (const size_t codeword : dynamic_cast<ql::custom_gate*>(gate)->codewords) {
-                    codewords.push_back(safe_int_cast(codeword));
+                for (const UInt codeword : dynamic_cast<custom_gate*>(gate)->codewords) {
+                    codewords.push_back(utoi(codeword));
                 }
             }
 
-            std::vector<int> operands;
-            std::vector<int> creg_operands;
-            for (const size_t operand : gate->operands) { operands.push_back(safe_int_cast(operand)); }
-            for (const size_t operand : gate->creg_operands) { creg_operands.push_back(safe_int_cast(operand)); }
+            Vec<Int> operands;
+            Vec<Int> creg_operands;
+            for (const UInt operand : gate->operands) { operands.push_back(utoi(operand)); }
+            for (const UInt operand : gate->creg_operands) { creg_operands.push_back(utoi(operand)); }
             GateProperties gateProperties {
                 gate->name,
                 operands,
                 creg_operands,
-                safe_int_cast(gate->duration),
-                safe_int_cast(gate->cycle),
+                utoi(gate->duration),
+                utoi(gate->cycle),
                 gate->type(),
                 codewords,
                 gate->visual_type
@@ -407,21 +406,21 @@ std::vector<GateProperties> parseGates(const ql::quantum_program* program) {
     return gates;
 }
 
-int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) {
-    DOUT("Calculating amount of bits...");
+Int calculateAmountOfBits(const Vec<GateProperties> &gates, const Vec<Int> GateProperties::* operandType) {
+    QL_DOUT("Calculating amount of bits...");
 
     //TODO: handle circuits not starting at a c- or qbit with index 0
-    int minAmount = std::numeric_limits<int>::max();
-    int maxAmount = 0;
+    Int minAmount = MAX;
+    Int maxAmount = 0;
 
     // Find the minimum and maximum index of the operands.
     for (const GateProperties &gate : gates)
     {
-        std::vector<int>::const_iterator begin = (gate.*operandType).begin();
-        const std::vector<int>::const_iterator end = (gate.*operandType).end();
+        Vec<Int>::const_iterator begin = (gate.*operandType).begin();
+        const Vec<Int>::const_iterator end = (gate.*operandType).end();
 
         for (; begin != end; ++begin) {
-            const int number = *begin;
+            const Int number = *begin;
             if (number < minAmount) minAmount = number;
             if (number > maxAmount) maxAmount = number;
         }
@@ -430,35 +429,35 @@ int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::ve
     // If both minAmount and maxAmount are at their original values, the list of 
     // operands for all the gates was empty.This means there are no operands of 
     // the given type for these gates and we return 0.
-    if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0) {
+    if (minAmount == MAX && maxAmount == 0) {
         return 0;
     } else {
         return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
     }
 }
 
-int calculateAmountOfGateOperands(const GateProperties gate) {
-    return safe_int_cast(gate.operands.size() + gate.creg_operands.size());
+Int calculateAmountOfGateOperands(const GateProperties &gate) {
+    return utoi(gate.operands.size() + gate.creg_operands.size());
 }
 
-std::vector<GateOperand> getGateOperands(const GateProperties gate) {
-    std::vector<GateOperand> operands;
+Vec<GateOperand> getGateOperands(const GateProperties &gate) {
+    Vec<GateOperand> operands;
 
-    for (const int operand : gate.operands)      { operands.push_back({QUANTUM, operand});   }
-    for (const int operand : gate.creg_operands) { operands.push_back({CLASSICAL, operand}); }
+    for (const Int operand : gate.operands)      { operands.push_back({QUANTUM, operand});   }
+    for (const Int operand : gate.creg_operands) { operands.push_back({CLASSICAL, operand}); }
 
     return operands;
 }
 
-std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<GateOperand> operands, const int amountOfQubits) {
+Pair<GateOperand, GateOperand> calculateEdgeOperands(const Vec<GateOperand> &operands, const Int amountOfQubits) {
     if (operands.size() < 2) {
-        FATAL("Gate operands vector does not have multiple operands!");
+        QL_FATAL("Gate operands vector does not have multiple operands!");
     }
 
     GateOperand minOperand = operands[0];
     GateOperand maxOperand = operands[operands.size() - 1];
     for (const GateOperand &operand : operands) {
-        const int row = (operand.bitType == QUANTUM) ? operand.index : operand.index + amountOfQubits;
+        const Int row = (operand.bitType == QUANTUM) ? operand.index : operand.index + amountOfQubits;
         if (row < minOperand.index) minOperand = operand;
         if (row > maxOperand.index) maxOperand = operand;
     }
@@ -466,8 +465,8 @@ std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<Gate
     return {minOperand, maxOperand};
 }
 
-void fixMeasurementOperands(std::vector<GateProperties> &gates) {
-    DOUT("Fixing measurement gates with no classical operand...");
+void fixMeasurementOperands(Vec<GateProperties> &gates) {
+    QL_DOUT("Fixing measurement gates with no classical operand...");
 
     for (GateProperties &gate : gates) {
         // Check for a measurement gate without explicitly specified classical
@@ -476,21 +475,21 @@ void fixMeasurementOperands(std::vector<GateProperties> &gates) {
             if (calculateAmountOfGateOperands(gate) == 1) {
                 // Set classical measurement operand to the bit corresponding to
                 // the measurements qubit index.
-                DOUT("Found measurement gate with no classical operand. Assuming default classical operand.");
-                const int cbit = gate.operands[0];
+                QL_DOUT("Found measurement gate with no classical operand. Assuming default classical operand.");
+                const Int cbit = gate.operands[0];
                 gate.creg_operands.push_back(cbit);
             }
         }
     }
 }
 
-bool isMeasurement(const GateProperties gate) {
+bool isMeasurement(const GateProperties &gate) {
     //TODO: this method of checking for measurements is not robust and relies
     //      entirely on the user naming their instructions in a certain way!
-    return (gate.name.find("measure") != std::string::npos);
+    return (gate.name.find("measure") != Str::npos);
 }
 
-Dimensions calculateTextDimensions(const std::string &text, const int fontHeight) {
+Dimensions calculateTextDimensions(const Str &text, const Int fontHeight) {
     const char* chars = text.c_str();
     cimg_library::CImg<unsigned char> imageTextDimensions;
     const char color = 1;
@@ -499,52 +498,47 @@ Dimensions calculateTextDimensions(const std::string &text, const int fontHeight
     return Dimensions { imageTextDimensions.width(), imageTextDimensions.height() };
 }
 
-void printGates(const std::vector<GateProperties> gates) {
+void printGates(const Vec<GateProperties> &gates) {
     for (const GateProperties &gate : gates) {
-        IOUT(gate.name);
+        QL_IOUT(gate.name);
 
-        std::string operands = "[";
-        for (size_t i = 0; i < gate.operands.size(); i++) {
-            operands += std::to_string(gate.operands[i]);
+        Str operands = "[";
+        for (UInt i = 0; i < gate.operands.size(); i++) {
+            operands += to_string(gate.operands[i]);
             if (i != gate.operands.size() - 1) operands += ", ";
         }
-        IOUT("\toperands: " << operands << "]");
+        QL_IOUT("\toperands: " << operands << "]");
 
-        std::string creg_operands = "[";
-        for (size_t i = 0; i < gate.creg_operands.size(); i++) {
-            creg_operands += std::to_string(gate.creg_operands[i]);
+        Str creg_operands = "[";
+        for (UInt i = 0; i < gate.creg_operands.size(); i++) {
+            creg_operands += to_string(gate.creg_operands[i]);
             if (i != gate.creg_operands.size() - 1) creg_operands += ", ";
         }
-        IOUT("\tcreg_operands: " << creg_operands << "]");
+        QL_IOUT("\tcreg_operands: " << creg_operands << "]");
 
-        IOUT("\tduration: " << gate.duration);
-        IOUT("\tcycle: " << gate.cycle);
-        IOUT("\ttype: " << gate.type);
+        QL_IOUT("\tduration: " << gate.duration);
+        QL_IOUT("\tcycle: " << gate.cycle);
+        QL_IOUT("\ttype: " << gate.type);
 
-        std::string codewords = "[";
-        for (size_t i = 0; i < gate.codewords.size(); i++) {
-            codewords += std::to_string(gate.codewords[i]);
+        Str codewords = "[";
+        for (UInt i = 0; i < gate.codewords.size(); i++) {
+            codewords += to_string(gate.codewords[i]);
             if (i != gate.codewords.size() - 1) codewords += ", ";
         }
-        IOUT("\tcodewords: " << codewords << "]");
+        QL_IOUT("\tcodewords: " << codewords << "]");
 
-        IOUT("\tvisual_type: " << gate.visual_type);
+        QL_IOUT("\tvisual_type: " << gate.visual_type);
     }
 }
 
-int safe_int_cast(const size_t argument) {
-    if (argument > std::numeric_limits<int>::max()) FATAL("Failed cast to int: size_t argument is too large!");
-    return static_cast<int>(argument);
-}
-
-void assertPositive(const int argument, const std::string &parameter) {
-    if (argument < 0) FATAL(parameter << " is negative. Only positive values are allowed!");
-}
-
-void assertPositive(const double argument, const std::string &parameter) {
-    if (argument < 0) FATAL(parameter << " is negative. Only positive values are allowed!");
-}
-
 #endif //WITH_VISUALIZER
+
+void assertPositive(const Int argument, const Str &parameter) {
+    if (argument < 0) QL_FATAL(parameter << " is negative. Only positive values are allowed!");
+}
+
+void assertPositive(const double argument, const Str &parameter) {
+    if (argument < 0) QL_FATAL(parameter << " is negative. Only positive values are allowed!");
+}
 
 } // namespace ql

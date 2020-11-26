@@ -1,41 +1,52 @@
-/**
- * @file   visualizer_circuit.h
- * @date   11/2020
- * @author Tim van der Meer
- * @brief  definition of the visualizer
+/** \file
+ * Definition of the visualizer.
  */
 
 #pragma once
 
 #ifdef WITH_VISUALIZER
- 
+
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/vec.h"
+#include "utils/pair.h"
+#include "utils/map.h"
 #include "visualizer.h"
 #include "visualizer_common.h"
+
 #include "CImg.h"
+
+// These undefs are necessary to avoid name collisions.
+#undef cimg_use_opencv
+#undef Bool
+#undef True
+#undef False
+#undef IN
+#undef OUT
 
 namespace ql {
 
 struct Cycle {
-    int index;
-    bool empty;
-    bool cut;
-    std::vector<std::vector<std::reference_wrapper<GateProperties>>> gates;
+    utils::Int index;
+    utils::Bool empty;
+    utils::Bool cut;
+    utils::Vec<utils::Vec<std::reference_wrapper<GateProperties>>> gates;
 
     Cycle() = delete;
 };
 
 struct Cell {
-    const int col;
-    const int row;
-    const int chunkOffset;
+    const utils::Int col;
+    const utils::Int row;
+    const utils::Int chunkOffset;
     const BitType bitType;
 };
 
 enum LineSegmentType {FLAT, PULSE, CUT};
 
 struct Pulse {
-    const std::vector<double> waveform;
-    const int sampleRate;
+    const utils::Vec<utils::Real> waveform;
+    const utils::Int sampleRate;
 };
 
 struct LineSegment {
@@ -48,8 +59,8 @@ struct LineSegment {
 
 struct Line {
     // LineType type = MICROWAVE;
-    std::vector<LineSegment> segments;
-    double maxAmplitude = 0;
+    utils::Vec<LineSegment> segments;
+    utils::Real maxAmplitude = 0;
 };
 
 struct QubitLines {
@@ -59,115 +70,115 @@ struct QubitLines {
 };
 
 struct GatePulses {
-    std::vector<double> microwave;
-    std::vector<double> flux;
-    std::vector<double> readout;
+    utils::Vec<utils::Real> microwave;
+    utils::Vec<utils::Real> flux;
+    utils::Vec<utils::Real> readout;
 };
 
 struct PulseVisualization {
-    int sampleRateMicrowave = 0;
-    int sampleRateFlux = 0;
-    int sampleRateReadout = 0;
+    utils::Int sampleRateMicrowave = 0;
+    utils::Int sampleRateFlux = 0;
+    utils::Int sampleRateReadout = 0;
 
-    std::map<int, std::map<int, GatePulses>> mapping;
+    utils::Map<utils::Int, utils::Map<utils::Int, GatePulses>> mapping;
 };
 
 class CircuitData {
-    private:
-    std::vector<Cycle> cycles;
-    std::vector<EndPoints> cutCycleRangeIndices;
+private:
+    utils::Vec<Cycle> cycles;
+    utils::Vec<EndPoints> cutCycleRangeIndices;
 
-    int calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const;
-    std::vector<Cycle> generateCycles(std::vector<GateProperties> &gates, const int cycleDuration) const;
-    std::vector<EndPoints> findCuttableEmptyRanges(const Layout layout) const;
+    utils::Int calculateAmountOfCycles(const utils::Vec<GateProperties> &gates, utils::Int cycleDuration) const;
+    utils::Vec<Cycle> generateCycles(utils::Vec<GateProperties> &gates, utils::Int cycleDuration) const;
+    utils::Vec<EndPoints> findCuttableEmptyRanges(const Layout &layout) const;
 
     void compressCycles();
     void partitionCyclesWithOverlap();
-    void cutEmptyCycles(const Layout layout);
+    void cutEmptyCycles(const Layout &layout);
 
-    public:
-    const int amountOfQubits;
-    const int amountOfClassicalBits;
-    const int cycleDuration;
+public:
+    const utils::Int amountOfQubits;
+    const utils::Int amountOfClassicalBits;
+    const utils::Int cycleDuration;
 
-    CircuitData(std::vector<GateProperties> &gates, const Layout layout, const int cycleDuration);
+    CircuitData(utils::Vec<GateProperties> &gates, const Layout &layout, utils::Int cycleDuration);
 
-    Cycle getCycle(const size_t index) const;
-    int getAmountOfCycles() const;
-    bool isCycleCut(const int cycleIndex) const;
-    bool isCycleFirstInCutRange(const int cycleIndex) const;
+    Cycle getCycle(utils::UInt index) const;
+    utils::Int getAmountOfCycles() const;
+    utils::Bool isCycleCut(utils::Int cycleIndex) const;
+    utils::Bool isCycleFirstInCutRange(utils::Int cycleIndex) const;
 
     void printProperties() const;
 };
 
 class Structure {
-    private:
+private:
     const Layout layout;
 
     const Dimensions cellDimensions;
 
-    const int cycleLabelsY;
-    const int bitLabelsX;
+    const utils::Int cycleLabelsY;
+    const utils::Int bitLabelsX;
 
-    int imageWidth = 0;
-    int imageHeight = 0;
+    utils::Int imageWidth = 0;
+    utils::Int imageHeight = 0;
 
-    std::vector<std::vector<Position4>> qbitCellPositions;
-    std::vector<std::vector<Position4>> cbitCellPositions;
-    std::vector<std::pair<EndPoints, bool>> bitLineSegments;
+    utils::Vec<utils::Vec<Position4>> qbitCellPositions;
+    utils::Vec<utils::Vec<Position4>> cbitCellPositions;
+    utils::Vec<utils::Pair<EndPoints, utils::Bool>> bitLineSegments;
 
-    int calculateCellHeight(const Layout layout) const;
-    int calculateImageWidth(const CircuitData circuitData) const;
-    int calculateImageHeight(const CircuitData circuitData) const;
+    utils::Int calculateCellHeight(const Layout &layout) const;
+    utils::Int calculateImageWidth(const CircuitData &circuitData) const;
+    utils::Int calculateImageHeight(const CircuitData &circuitData) const;
 
-    void generateBitLineSegments(const CircuitData circuitData);
-    void generateCellPositions(const CircuitData circuitData);
+    void generateBitLineSegments(const CircuitData &circuitData);
+    void generateCellPositions(const CircuitData &circuitData);
 
-    public:
-    Structure(const Layout layout, const CircuitData circuitData);
+public:
+    Structure(const Layout &layout, const CircuitData &circuitData);
 
-    int getImageWidth() const;
-    int getImageHeight() const;
+    utils::Int getImageWidth() const;
+    utils::Int getImageHeight() const;
 
-    int getCycleLabelsY() const;
-    int getBitLabelsX() const;
+    utils::Int getCycleLabelsY() const;
+    utils::Int getBitLabelsX() const;
 
-    int getCircuitTopY() const;
-    int getCircuitBotY() const;
+    utils::Int getCircuitTopY() const;
+    utils::Int getCircuitBotY() const;
 
     Dimensions getCellDimensions() const;
-    Position4 getCellPosition(const size_t column, const size_t row, const BitType bitType) const;
-    std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
+    Position4 getCellPosition(utils::UInt column, utils::UInt row, BitType bitType) const;
+    utils::Vec<utils::Pair<EndPoints, utils::Bool>> getBitLineSegments() const;
 
     void printProperties() const;
 };
 
-void visualizeCircuit(std::vector<GateProperties> gates, const Layout layout, const int cycleDuration, const std::string &waveformMappingPath);
+void visualizeCircuit(utils::Vec<GateProperties> gates, const Layout &layout, utils::Int cycleDuration, const utils::Str &waveformMappingPath);
 
-PulseVisualization parseWaveformMapping(const std::string &waveformMappingPath);
+PulseVisualization parseWaveformMapping(const utils::Str &waveformMappingPath);
 
-std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gates, const PulseVisualization pulseVisualization, const CircuitData circuitData);
-double calculateMaxAmplitude(const std::vector<LineSegment> lineSegments);
-void insertFlatLineSegments(std::vector<LineSegment> &existingLineSegments, const int amountOfCycles);
+utils::Vec<QubitLines> generateQubitLines(const utils::Vec<GateProperties> &gates, const PulseVisualization &pulseVisualization, const CircuitData &circuitData);
+utils::Real calculateMaxAmplitude(const utils::Vec<LineSegment> &lineSegments);
+void insertFlatLineSegments(utils::Vec<LineSegment> &existingLineSegments, utils::Int amountOfCycles);
 
-void drawCycleLabels(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
-void drawCycleEdges(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
-void drawBitLineLabels(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
-void drawBitLineEdges(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
+void drawCycleLabels(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const CircuitData &circuitData, const Structure &structure);
+void drawCycleEdges(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const CircuitData &circuitData, const Structure &structure);
+void drawBitLineLabels(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const CircuitData &circuitData, const Structure &structure);
+void drawBitLineEdges(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const CircuitData &circuitData, const Structure &structure);
 
-void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure);
-void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure);
+void drawBitLine(cimg_library::CImg<utils::Byte> &image, const Layout &layout, BitType bitType, utils::Int row, const CircuitData &circuitData, const Structure &structure);
+void drawGroupedClassicalBitLine(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const CircuitData &circuitData, const Structure &structure);
 
-void drawWiggle(cimg_library::CImg<unsigned char> &image, const int x0, const int x1, const int y, const int width, const int height, const Color color);
+void drawWiggle(cimg_library::CImg<utils::Byte> &image, utils::Int x0, utils::Int x1, utils::Int y, utils::Int width, utils::Int height, Color color);
 
-void drawLine(cimg_library::CImg<unsigned char> &image, const Structure structure, const int cycleDuration, const Line line, const int qubitIndex, const int y, const int maxLineHeight, const Color color);
+void drawLine(cimg_library::CImg<utils::Byte> &image, const Structure &structure, utils::Int cycleDuration, const Line &line, utils::Int qubitIndex, utils::Int y, utils::Int maxLineHeight, Color color);
 
-void drawCycle(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const Structure structure, const Cycle cycle);
-void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const GateProperties gate, const Structure structure, const int chunkOffset);
-void drawGateNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
-void drawControlNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
-void drawNotNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
-void drawCrossNode(cimg_library::CImg<unsigned char> &image, const Layout layout, const Structure structure, const Node node, const Cell cell);
+void drawCycle(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const CircuitData &circuitData, const Structure &structure, const Cycle &cycle);
+void drawGate(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const CircuitData &circuitData, const GateProperties &gate, const Structure &structure, utils::Int chunkOffset);
+void drawGateNode(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const Structure &structure, const Node &node, const Cell &cell);
+void drawControlNode(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const Structure &structure, const Node &node, const Cell &cell);
+void drawNotNode(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const Structure &structure, const Node &node, const Cell &cell);
+void drawCrossNode(cimg_library::CImg<utils::Byte> &image, const Layout &layout, const Structure &structure, const Node &node, const Cell &cell);
 
 } // namespace ql
 

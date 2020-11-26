@@ -28,7 +28,7 @@ C++):
  - class and type names are written in `TitleCase`.
  - variables, fields, and namespaces (compare to modules) are written in
    `snake_case`.
- - constants and preprocessor definitions are written in `UPPER_CASE`.
+ - constants and macros are written in `UPPER_CASE`.
 
 This is already the standard in most popular languages (aside from some
 deciding to use `mixedCase` in places). C++ is the only serious language
@@ -36,6 +36,85 @@ that remains that maintains sort of its own style, but it's also the one
 largest amount of conflicting styles. Therefore, it makes more sense to just
 stick to Python. The only annoying conflict is that the standard library
 types are lowercase.
+
+Since OpenQL is a library, it's important not to pollute the global namespace
+with stuff. Imagine, for instance, if OpenQL would define the type `Bit` to
+represent a classical bit in the global namespace, and someone using the library
+from C++ also includes a bit manipulation library that happens to also define
+`Bit`; this would be a naming conflict that's impossible to resolve for the
+user. Therefore, everything defined by OpenQL should be in the `ql` namespace,
+and all preprocessor macros (which can't be namespaced) should start with `QL_`.
+
+## Utils types and functions
+
+The `ql::utils` namespace provides a bunch of typedefs and wrappers for C++
+standard library stuff, modified to improve safety, reduce undefined behavior,
+simplify stuff where OpenQL doesn't need the full expressive power of the
+standard library, improve consistency in terms of naming conventions, or just
+to reduce typing. In cc files there is usually a `using namespace utils` to
+reduce typing further (but don't do this in header files!). You should use
+types and functions from here as much as possible. Here are the important ones.
+
+ - From `utils/num.h`:
+    - `Bool` for booleans;
+    - `Byte` for (unsigned) bytes;
+    - `UInt` for unsigned integers (maps to 64-bit unsigned);
+    - `Int` for signed integers (maps to 64-bit signed);
+    - `Real` for real numbers (maps to `double`);
+    - `Complex` for complex numbers;
+    - `MAX` as an "undefined" value for Int or UInt;
+    - `PI` for pi;
+    - `EU` for Euler's constant;
+    - `IM` for the imaginary unit;
+    - a bunch of common math subroutines from std are copied into utils, so
+      you don't need to type `std::`.
+ - From `utils/str.h`:
+    - `Str` for strings (maps to `std::string`);
+    - `StrStrm` for string streams (maps to `std::ostringstream`);
+    - `to_string()` for converting things to string (this uses the << stream
+      operator, so it can be overloaded, and IS overloaded for the wrapped
+      container types for instance);
+    - `parse_uint()`, `parse_int()`, and `parse_real()` for parsing numbers
+      (these throw better exceptions than the STL counterparts);
+    - a couple additional string utility functions are defined here.
+ - From `utils/json.h`:
+    - `Json` for JSON values (from `nlohmann::json`);
+    - `load_json()` for loading JSON files with better contextual errors and
+      allowance for `//` comments.
+ - From `utils/pair.h`:
+    - `Pair<A, B>` for `std::pair`; includes stream << overload.
+ - From `utils/vec.h`:
+    - `Vec<T>` for a wrapper of `std::vector<T>` with additional safety.
+ - From `utils/list.h`:
+    - `List<T>` for a wrapper of `std::list<T>` with additional safety.
+ - From `utils/map.h`:
+    - `Map<K, V>` for a wrapper of `std::map<K, V>` with additional safety.
+ - From `utils/opt.h`:
+    - `Opt<V>` for a more-or-less equivalent of `std::optional`, implemented
+      using a smart pointer. Primarily intended for places where you need to
+      own a value but can't construct it immediately (replacing the "virgin
+      constructor" antipattern).
+ - From `utils/tree.h`:
+    - `Maybe<T>` for an optional tree node reference;
+    - `One<T>` for a mandatory tree node reference;
+    - `Any<T>` for zero or more tree node references;
+    - `Many<T>` for one or more tree node references;
+    - `OptLink<T>` for an optional link to a tree node elsewhere in a tree;
+    - `Link<T>` for a mandatory link to a tree node elsewhere in a tree;
+    - `make<T>()` for constructing tree nodes.
+ - From `utils/exception.h`:
+    - `Exception` for exceptions that are unlikely to be caught. This exception
+      automatically adds contextual information, such as a stack trace.
+ - From `utils/logger.h`:
+    - macros for logging to stdout; these are preferred over streaming to
+      `std::cout` directly.
+ - From `utils/filesystem.h`:
+    - `OutFile` for writing files (wraps `std::ofstream` with automatic
+      error-checking, and also ensures directories are created recursively if
+      the path to the file doesn't exist yet);
+    - `InFile` for reading files (wraps `std::ifstream` with automatic
+      error-checking);
+    - a couple additional FS utilities.
 
 ## Indentation
 

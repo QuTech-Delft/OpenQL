@@ -1,3 +1,7 @@
+/** \file
+ * Quantum kernel abstraction implementation.
+ */
+
 #include "kernel.h"
 
 #include <sstream>
@@ -6,8 +10,9 @@
 
 
 #define K_PI 3.141592653589793238462643383279502884197169399375105820974944592307816406L
-#include "json.h"
-#include "utils.h"
+#include "utils/json.h"
+#include "utils/str.h"
+#include "utils/vec.h"
 #include "options.h"
 #include "gate.h"
 #include "classical.h"
@@ -17,24 +22,18 @@
 
 namespace ql {
 
-// source: https://stackoverflow.com/questions/994593/how-to-do-an-integer-log2-in-c user Todd Lehman
-static int uint64_log2(uint64_t n) {
-#define S(k) if (n >= (UINT64_C(1) << k)) { i += k; n >>= k; }
-    int i = -(n == 0); S(32); S(16); S(8); S(4); S(2); S(1); return i;
-#undef S
-}
+using namespace utils;
 
-
-quantum_kernel::quantum_kernel(const std::string &name) :
+quantum_kernel::quantum_kernel(const Str &name) :
     name(name), iterations(1), type(kernel_type_t::STATIC)
 {
 }
 
 quantum_kernel::quantum_kernel(
-    const std::string &name,
-    const ql::quantum_platform& platform,
-    size_t qcount,
-    size_t ccount
+    const Str &name,
+    const quantum_platform& platform,
+    UInt qcount,
+    UInt ccount
 ) :
     name(name),
     iterations(1),
@@ -50,14 +49,14 @@ quantum_kernel::quantum_kernel(
 }
 
 void quantum_kernel::set_condition(const operation &oper) {
-    if ((oper.operands[0])->id >= creg_count || (oper.operands[1]->id >= creg_count)) {
-        EOUT("Out of range operand(s) for '" << oper.operation_name);
-        throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
+    if ((oper.operands[0])->as_creg().id >= creg_count || (oper.operands[1]->as_creg().id >= creg_count)) {
+        QL_EOUT("Out of range operand(s) for '" << oper.operation_name);
+        throw Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
     }
 
-    if (oper.operation_type != ql::operation_type_t::RELATIONAL) {
-        EOUT("Relational operator not used for conditional '" << oper.operation_name);
-        throw ql::exception("Relational operator not used for conditional '"+oper.operation_name+"' !",false);
+    if (oper.operation_type != operation_type_t::RELATIONAL) {
+        QL_EOUT("Relational operator not used for conditional '" << oper.operation_name);
+        throw Exception("Relational operator not used for conditional '" + oper.operation_name + "' !", false);
     }
 
     br_condition = oper;
@@ -67,8 +66,8 @@ void quantum_kernel::set_kernel_type(kernel_type_t typ) {
     type = typ;
 }
 
-std::string quantum_kernel::get_gates_definition() const {
-    std::stringstream ss;
+Str quantum_kernel::get_gates_definition() const {
+    StrStrm ss;
 
     for (auto i = instruction_map.begin(); i != instruction_map.end(); i++) {
         ss << i->first << std::endl;
@@ -76,7 +75,7 @@ std::string quantum_kernel::get_gates_definition() const {
     return ss.str();
 }
 
-std::string quantum_kernel::get_name() const {
+Str quantum_kernel::get_name() const {
     return name;
 }
 
@@ -88,120 +87,120 @@ const circuit &quantum_kernel::get_circuit() const {
     return c;
 }
 
-void quantum_kernel::identity(size_t qubit) {
+void quantum_kernel::identity(UInt qubit) {
     gate("identity", qubit);
 }
 
-void quantum_kernel::i(size_t qubit) {
+void quantum_kernel::i(UInt qubit) {
     gate("identity", qubit);
 }
 
-void quantum_kernel::hadamard(size_t qubit) {
+void quantum_kernel::hadamard(UInt qubit) {
     gate("hadamard", qubit);
 }
 
-void quantum_kernel::h(size_t qubit) {
+void quantum_kernel::h(UInt qubit) {
     hadamard(qubit);
 }
 
-void quantum_kernel::rx(size_t qubit, double angle) {
+void quantum_kernel::rx(UInt qubit, Real angle) {
     c.push_back(new ql::rx(qubit,angle));
     cycles_valid = false;
 }
 
-void quantum_kernel::ry(size_t qubit, double angle) {
+void quantum_kernel::ry(UInt qubit, Real angle) {
     c.push_back(new ql::ry(qubit,angle));
     cycles_valid = false;
 }
 
-void quantum_kernel::rz(size_t qubit, double angle) {
+void quantum_kernel::rz(UInt qubit, Real angle) {
     c.push_back(new ql::rz(qubit,angle));
     cycles_valid = false;
 }
 
-void quantum_kernel::s(size_t qubit) {
+void quantum_kernel::s(UInt qubit) {
     gate("s", qubit);
 }
 
-void quantum_kernel::sdag(size_t qubit) {
+void quantum_kernel::sdag(UInt qubit) {
     gate("sdag", qubit);
 }
 
-void quantum_kernel::t(size_t qubit) {
+void quantum_kernel::t(UInt qubit) {
     gate("t", qubit);
 }
 
-void quantum_kernel::tdag(size_t qubit) {
+void quantum_kernel::tdag(UInt qubit) {
     gate("tdag", qubit);
 }
 
-void quantum_kernel::x(size_t qubit) {
+void quantum_kernel::x(UInt qubit) {
     gate("x", qubit);
 }
 
-void quantum_kernel::y(size_t qubit) {
+void quantum_kernel::y(UInt qubit) {
     gate("y", qubit);
 }
 
-void quantum_kernel::z(size_t qubit) {
+void quantum_kernel::z(UInt qubit) {
     gate("z", qubit);
 }
 
-void quantum_kernel::rx90(size_t qubit) {
+void quantum_kernel::rx90(UInt qubit) {
     gate("rx90", qubit);
 }
 
-void quantum_kernel::mrx90(size_t qubit) {
+void quantum_kernel::mrx90(UInt qubit) {
     gate("mrx90", qubit);
 }
 
-void quantum_kernel::rx180(size_t qubit) {
+void quantum_kernel::rx180(UInt qubit) {
     gate("rx180", qubit);
 }
 
-void quantum_kernel::ry90(size_t qubit) {
+void quantum_kernel::ry90(UInt qubit) {
     gate("ry90", qubit);
 }
 
-void quantum_kernel::mry90(size_t qubit) {
+void quantum_kernel::mry90(UInt qubit) {
     gate("mry90", qubit);
 }
 
-void quantum_kernel::ry180(size_t qubit) {
+void quantum_kernel::ry180(UInt qubit) {
     gate("ry180", qubit);
 }
 
-void quantum_kernel::measure(size_t qubit) {
+void quantum_kernel::measure(UInt qubit) {
     gate("measure", qubit);
 }
 
-void quantum_kernel::prepz(size_t qubit) {
+void quantum_kernel::prepz(UInt qubit) {
     gate("prepz", qubit);
 }
 
-void quantum_kernel::cnot(size_t qubit1, size_t qubit2) {
+void quantum_kernel::cnot(UInt qubit1, UInt qubit2) {
     gate("cnot", {qubit1, qubit2});
 }
 
-void quantum_kernel::cz(size_t qubit1, size_t qubit2) {
+void quantum_kernel::cz(UInt qubit1, UInt qubit2) {
     gate("cz", {qubit1, qubit2});
 }
 
-void quantum_kernel::cphase(size_t qubit1, size_t qubit2) {
+void quantum_kernel::cphase(UInt qubit1, UInt qubit2) {
     gate("cphase", {qubit1, qubit2});
 }
 
-void quantum_kernel::toffoli(size_t qubit1, size_t qubit2, size_t qubit3) {
+void quantum_kernel::toffoli(UInt qubit1, UInt qubit2, UInt qubit3) {
     // TODO add custom gate check if needed
     c.push_back(new ql::toffoli(qubit1, qubit2, qubit3));
     cycles_valid = false;
 }
 
-void quantum_kernel::swap(size_t qubit1, size_t qubit2) {
+void quantum_kernel::swap(UInt qubit1, UInt qubit2) {
     gate("swap", {qubit1, qubit2});
 }
 
-void quantum_kernel::wait(const std::vector<size_t> &qubits, size_t duration) {
+void quantum_kernel::wait(const Vec<UInt> &qubits, UInt duration) {
     gate("wait", qubits, {}, duration);
 }
 
@@ -210,7 +209,7 @@ void quantum_kernel::display() {
     cycles_valid = false;
 }
 
-void quantum_kernel::clifford(int id, size_t qubit) {
+void quantum_kernel::clifford(Int id, UInt qubit) {
     switch (id) {
         case 0 :
             break;              //  ['I']
@@ -309,16 +308,16 @@ void quantum_kernel::clifford(int id, size_t qubit) {
     }
 }
 
-bool quantum_kernel::add_default_gate_if_available(
-    const std::string &gname,
-    const std::vector<size_t> &qubits,
-    const std::vector<size_t> &cregs,
-    size_t duration,
-    double angle
+Bool quantum_kernel::add_default_gate_if_available(
+    const Str &gname,
+    const Vec<UInt> &qubits,
+    const Vec<UInt> &cregs,
+    UInt duration,
+    Real angle
 ) {
-    bool result = false;
+    Bool result = false;
 
-    bool is_one_qubit_gate = (gname == "identity") || (gname == "i")
+    Bool is_one_qubit_gate = (gname == "identity") || (gname == "i")
                              || (gname == "hadamard") || (gname == "h")
                              || (gname == "pauli_x") || (gname == "pauli_y") || (gname == "pauli_z")
                              || (gname == "x") || (gname == "y") || (gname == "z")
@@ -329,11 +328,11 @@ bool quantum_kernel::add_default_gate_if_available(
                              || (gname == "ry90") || (gname == "mry90") || (gname == "ry180")
                              || (gname == "measure") || (gname == "prepz");
 
-    bool is_two_qubit_gate = (gname == "cnot")
+    Bool is_two_qubit_gate = (gname == "cnot")
                              || (gname == "cz") || (gname == "cphase")
                              || (gname == "swap");
 
-    bool is_multi_qubit_gate = (gname == "toffoli")
+    Bool is_multi_qubit_gate = (gname == "toffoli")
                                || (gname == "wait") || (gname == "barrier");
 
     if (is_one_qubit_gate) {
@@ -358,19 +357,19 @@ bool quantum_kernel::add_default_gate_if_available(
         c.push_back(new ql::hadamard(qubits[0]));
         result = true;
     } else if (gname == "pauli_x" || gname == "x") {
-        c.push_back(new ql::pauli_x(qubits[0]));
+        c.push_back(new pauli_x(qubits[0]));
         result = true;
     } else if( gname == "pauli_y" || gname == "y") {
-        c.push_back(new ql::pauli_y(qubits[0]));
+        c.push_back(new pauli_y(qubits[0]));
         result = true;
     } else if (gname == "pauli_z" || gname == "z") {
-        c.push_back(new ql::pauli_z(qubits[0]));
+        c.push_back(new pauli_z(qubits[0]));
         result = true;
     } else if (gname == "s" || gname == "phase") {
-        c.push_back(new ql::phase(qubits[0]));
+        c.push_back(new phase(qubits[0]));
         result = true;
     } else if (gname == "sdag" || gname == "phasedag") {
-        c.push_back(new ql::phasedag(qubits[0]));
+        c.push_back(new phasedag(qubits[0]));
         result = true;
     } else if (gname == "t") {
         c.push_back(new ql::t(qubits[0]));
@@ -433,8 +432,8 @@ bool quantum_kernel::add_default_gate_if_available(
         if no qubits are specified, then wait/barrier is applied on all qubits
         */
         if (qubits.empty()) {
-            std::vector<size_t> all_qubits;
-            for (size_t q = 0; q < qubit_count; q++) {
+            Vec<UInt> all_qubits;
+            for (UInt q = 0; q < qubit_count; q++) {
                 all_qubits.push_back(q);
             }
             c.push_back(new ql::wait(all_qubits, 0, 0));
@@ -447,10 +446,10 @@ bool quantum_kernel::add_default_gate_if_available(
         wait/barrier is applied on the qubits specified as arguments.
         if no qubits are specified, then wait/barrier is applied on all qubits
         */
-        size_t duration_in_cycles = std::ceil(static_cast<float>(duration) / cycle_time);
+        UInt duration_in_cycles = ceil(static_cast<float>(duration) / cycle_time);
         if (qubits.empty()) {
-            std::vector<size_t> all_qubits;
-            for (size_t q = 0; q < qubit_count; q++) {
+            Vec<UInt> all_qubits;
+            for (UInt q = 0; q < qubit_count; q++) {
                 all_qubits.push_back(q);
             }
             c.push_back(new ql::wait(all_qubits, duration, duration_in_cycles));
@@ -473,12 +472,12 @@ bool quantum_kernel::add_default_gate_if_available(
 // if a parameterized custom gate ("e.g. cz") is available, add it to circuit and return true
 //
 // note that there is no check for the found gate being a composite gate
-bool quantum_kernel::add_custom_gate_if_available(
-    const std::string &gname,
-    const std::vector<size_t> &qubits,
-    const std::vector<size_t> &cregs,
-    size_t duration,
-    double angle
+Bool quantum_kernel::add_custom_gate_if_available(
+    const Str &gname,
+    const Vec<UInt> &qubits,
+    const Vec<UInt> &cregs,
+    UInt duration,
+    Real angle
 ) {
 #if OPT_DECOMPOSE_WAIT_BARRIER  // hack to skip wait/barrier
     if (gname=="wait" || gname=="barrier") {
@@ -486,12 +485,12 @@ bool quantum_kernel::add_custom_gate_if_available(
     }
 #endif
     // construct canonical name
-    std::string instr = "";
+    Str instr = "";
     for (auto qubit : qubits) {
         if (!instr.empty()) {
             instr += ",";
         }
-        instr += "q" + std::to_string(qubit);
+        instr += "q" + to_string(qubit);
     }
     instr = gname + " " + instr;
 
@@ -502,7 +501,7 @@ bool quantum_kernel::add_custom_gate_if_available(
         it = instruction_map.find(gname);
     }
     if (it == instruction_map.end()) {
-        DOUT("custom gate not added for " << gname);
+        QL_DOUT("custom gate not added for " << gname);
         return false;
     }
 
@@ -519,7 +518,7 @@ bool quantum_kernel::add_custom_gate_if_available(
     g->angle = angle;
     c.push_back(g);
 
-    DOUT("custom gate added for " << gname);
+    QL_DOUT("custom gate added for " << gname);
     cycles_valid = false;
     return true;
 }
@@ -528,19 +527,19 @@ bool quantum_kernel::add_custom_gate_if_available(
 // return the subinstructions of a composite gate
 // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
 void quantum_kernel::get_decomposed_ins(
-    const ql::composite_gate *gptr,
-    std::vector<std::string> &sub_instructions
+    const composite_gate *gptr,
+    Vec<Str> &sub_instructions
 ) const {
     auto &sub_gates = gptr->gs;
-    DOUT("composite ins: " << gptr->name);
+    QL_DOUT("composite ins: " << gptr->name);
     for (auto &agate : sub_gates) {
-        std::string &sub_ins = agate->name;
-        DOUT("  sub ins: " << sub_ins);
+        Str &sub_ins = agate->name;
+        QL_DOUT("  sub ins: " << sub_ins);
         auto it = instruction_map.find(sub_ins);
         if (it != instruction_map.end()) {
             sub_instructions.push_back(sub_ins);
         } else {
-            throw ql::exception("[x] error : ql::kernel::gate() : gate decomposition not available for '" + sub_ins + "'' in the target platform !", false);
+            throw Exception("[x] error : kernel::gate() : gate decomposition not available for '" + sub_ins + "'' in the target platform !", false);
         }
     }
 }
@@ -551,88 +550,88 @@ void quantum_kernel::get_decomposed_ins(
 // don't add anything to circuit
 //
 // add specialized decomposed gate, example JSON definition: "cl_14 q1": ["rx90 %0", "rym90 %0", "rxm90 %0"]
-bool quantum_kernel::add_spec_decomposed_gate_if_available(
-    const std::string &gate_name,
-    const std::vector<size_t> &all_qubits,
-    const std::vector<size_t> &cregs
+Bool quantum_kernel::add_spec_decomposed_gate_if_available(
+    const Str &gate_name,
+    const Vec<UInt> &all_qubits,
+    const Vec<UInt> &cregs
 ) {
-    bool added = false;
-    DOUT("Checking if specialized decomposition is available for " << gate_name);
+    Bool added = false;
+    QL_DOUT("Checking if specialized decomposition is available for " << gate_name);
 
     // construct canonical name
-    std::string instr_parameterized = "";
+    Str instr_parameterized = "";
     for (auto qubit : all_qubits) {
         if (!instr_parameterized.empty()) {
             instr_parameterized += ",";
         }
-        instr_parameterized += "q" + std::to_string(qubit);
+        instr_parameterized += "q" + to_string(qubit);
     }
     instr_parameterized = gate_name + " " + instr_parameterized;
-    DOUT("specialized instruction name: " << instr_parameterized);
+    QL_DOUT("specialized instruction name: " << instr_parameterized);
 
     // find the name
     auto it = instruction_map.find(instr_parameterized);
     if (it != instruction_map.end()) {
         // check gate type
-        DOUT("specialized composite gate found for " << instr_parameterized);
+        QL_DOUT("specialized composite gate found for " << instr_parameterized);
         composite_gate * gptr = (composite_gate *)(it->second);
         if (gptr->type() == __composite_gate__) {
-            DOUT("composite gate type");
+            QL_DOUT("composite gate type");
         } else {
-            DOUT("not a composite gate type");
+            QL_DOUT("not a composite gate type");
             return false;
         }
 
         // perform decomposition
-        std::vector<std::string> sub_instructions;
+        Vec<Str> sub_instructions;
         get_decomposed_ins(gptr, sub_instructions);
         for (auto &sub_ins : sub_instructions) {
             // extract name and qubits
-            DOUT("Adding sub ins: " << sub_ins);
+            QL_DOUT("Adding sub ins: " << sub_ins);
             std::replace(sub_ins.begin(), sub_ins.end(), ',', ' ');    // FIXME: perform all conversions in sanitize_instruction_name()
-            DOUT(" after comma removal, sub ins: " << sub_ins);
+            QL_DOUT(" after comma removal, sub ins: " << sub_ins);
             std::istringstream iss(sub_ins);
 
-            std::vector<std::string> tokens{
-                std::istream_iterator<std::string>{iss},
-                std::istream_iterator<std::string>{}
+            Vec<Str> tokens{
+                std::istream_iterator<Str>{iss},
+                std::istream_iterator<Str>{}
             };
 
-            std::vector<size_t> this_gate_qubits;
-            std::string & sub_ins_name = tokens[0];
+            Vec<UInt> this_gate_qubits;
+            Str &sub_ins_name = tokens[0];
 
-            for (size_t i = 1; i < tokens.size(); i++) {
-                DOUT("tokens[i] : " << tokens[i]);
+            for (UInt i = 1; i < tokens.size(); i++) {
+                QL_DOUT("tokens[i] : " << tokens[i]);
                 auto sub_str_token = tokens[i].substr(1);
-                DOUT("sub_str_token[i] : " << sub_str_token);
+                QL_DOUT("sub_str_token[i] : " << sub_str_token);
                 this_gate_qubits.push_back(stoi(tokens[i].substr(1)));
             }
 
-            DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:"));
+            QL_DOUT("actual qubits of this gate:" << this_gate_qubits);
 
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-            bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+            Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
             if (!custom_added) {
-                if(ql::options::get("use_default_gates") == "yes") {
+                if(options::get("use_default_gates") == "yes") {
                     // default gate check
-                    DOUT("adding default gate for " << sub_ins_name);
-                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+                    QL_DOUT("adding default gate for " << sub_ins_name);
+                    Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                     if (default_available) {
-                        DOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") ); // // NB: changed WOUT to DOUT, since this is common for 'barrier', spamming log
+                        QL_DOUT("added default gate '" << sub_ins_name << "' with qubits " << this_gate_qubits); // // NB: changed WOUT to DOUT, since this is common for 'barrier', spamming log
                     } else {
-                        EOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
-                        throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
+                        QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
+                        throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
                     }
                 } else {
-                    EOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
-                    throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
+                    QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
+                    throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
                 }
             }
         }
         added = true;
     } else {
-        DOUT("composite gate not found for " << instr_parameterized);
+        QL_DOUT("composite gate not found for " << instr_parameterized);
     }
 
     return added;
@@ -644,101 +643,101 @@ bool quantum_kernel::add_spec_decomposed_gate_if_available(
 // don't add anything to circuit
 //
 // add parameterized decomposed gate, example JSON definition: "cl_14 %0": ["rx90 %0", "rym90 %0", "rxm90 %0"]
-bool quantum_kernel::add_param_decomposed_gate_if_available(
-    const std::string &gate_name,
-    const std::vector<size_t> &all_qubits,
-    const std::vector<size_t> &cregs
+Bool quantum_kernel::add_param_decomposed_gate_if_available(
+    const Str &gate_name,
+    const Vec<UInt> &all_qubits,
+    const Vec<UInt> &cregs
 ) {
-    bool added = false;
-    DOUT("Checking if parameterized composite gate is available for " << gate_name);
+    Bool added = false;
+    QL_DOUT("Checking if parameterized composite gate is available for " << gate_name);
 
     // construct instruction name from gate_name and actual qubit parameters
-    std::string instr_parameterized = "";
-    for (size_t i = 0; i < all_qubits.size(); i++) {
+    Str instr_parameterized = "";
+    for (UInt i = 0; i < all_qubits.size(); i++) {
         if (!instr_parameterized.empty()) {
             instr_parameterized += ",";
         }
-        instr_parameterized += "%" + std::to_string(i);
+        instr_parameterized += "%" + to_string(i);
     }
     instr_parameterized = gate_name + " " + instr_parameterized;
-    DOUT("parameterized instruction name: " << instr_parameterized);
+    QL_DOUT("parameterized instruction name: " << instr_parameterized);
 
     // check for composite ins
     auto it = instruction_map.find(instr_parameterized);
     if (it != instruction_map.end()) {
-        DOUT("parameterized gate found for " << instr_parameterized);
+        QL_DOUT("parameterized gate found for " << instr_parameterized);
         composite_gate * gptr = (composite_gate *)(it->second);
         if (gptr->type() == __composite_gate__) {
-            DOUT("composite gate type");
+            QL_DOUT("composite gate type");
         } else {
-            DOUT("Not a composite gate type");
+            QL_DOUT("Not a composite gate type");
             return false;
         }
 
-        std::vector<std::string> sub_instructions;
+        Vec<Str> sub_instructions;
         get_decomposed_ins(gptr, sub_instructions);
         for (auto &sub_ins : sub_instructions) {
-            DOUT("Adding sub ins: " << sub_ins);
+            QL_DOUT("Adding sub ins: " << sub_ins);
             std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
-            DOUT(" after comma removal, sub ins: " << sub_ins);
+            QL_DOUT(" after comma removal, sub ins: " << sub_ins);
 
             // tokenize sub_ins into sub_ins_name and this_gate_qubits
             // FIXME: similar code in add_spec_decomposed_gate_if_available()
             std::istringstream iss(sub_ins);
-            std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
-                                             std::istream_iterator<std::string>{} };
+            Vec<Str> tokens{ std::istream_iterator<Str>{iss},
+                                             std::istream_iterator<Str>{} };
 
-            std::vector<size_t> this_gate_qubits;
-            std::string & sub_ins_name = tokens[0];
+            Vec<UInt> this_gate_qubits;
+            Str & sub_ins_name = tokens[0];
 
-            for (size_t i = 1; i < tokens.size(); i++) {
+            for (UInt i = 1; i < tokens.size(); i++) {
                 auto sub_str_token = tokens[i].substr(1);   // example: tokens[i] equals "%1" -> sub_str_token equals "1"
-                size_t qubit_idx = stoi(sub_str_token);
+                UInt qubit_idx = stoi(sub_str_token);
                 if (qubit_idx >= all_qubits.size()) {
-                    FATAL("Illegal qubit parameter index " << sub_str_token
-                                                           << " exceeds actual number of parameters given (" << all_qubits.size()
-                                                           << ") while adding sub ins '" << sub_ins
-                                                           << "' in parameterized instruction '" << instr_parameterized << "'");
+                    QL_FATAL("Illegal qubit parameter index " << sub_str_token
+                                                              << " exceeds actual number of parameters given (" << all_qubits.size()
+                                                              << ") while adding sub ins '" << sub_ins
+                                                              << "' in parameterized instruction '" << instr_parameterized << "'");
                 }
                 this_gate_qubits.push_back(all_qubits[qubit_idx]);
             }
-            DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
+            QL_DOUT("actual qubits of this gate: " << this_gate_qubits);
 
             // FIXME: following code block exists several times in this file
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-            bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+            Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
             if (!custom_added)
             {
-                if (ql::options::get("use_default_gates") == "yes") {
+                if (options::get("use_default_gates") == "yes") {
                     // default gate check
-                    DOUT("adding default gate for " << sub_ins_name);
-                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+                    QL_DOUT("adding default gate for " << sub_ins_name);
+                    Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                     if (default_available) {
-                        WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                        QL_WOUT("added default gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
                     } else {
-                        EOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
-                        throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
+                        QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
+                        throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
                     }
                 } else {
-                    EOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
-                    throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
+                    QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
+                    throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
                 }
             }
         }
         added = true;
     } else {
-        DOUT("composite gate not found for " << instr_parameterized);
+        QL_DOUT("composite gate not found for " << instr_parameterized);
     }
     return added;
 }
 
-void quantum_kernel::gate(const std::string &gname, size_t q0) {
-    gate(gname, std::vector<size_t> {q0});
+void quantum_kernel::gate(const Str &gname, UInt q0) {
+    gate(gname, Vec<UInt> {q0});
 }
 
-void quantum_kernel::gate(const std::string &gname, size_t q0, size_t q1) {
-    gate(gname, std::vector<size_t> {q0, q1});
+void quantum_kernel::gate(const Str &gname, UInt q0, UInt q1) {
+    gate(gname, Vec<UInt> {q0, q1});
 }
 
 /**
@@ -748,27 +747,27 @@ void quantum_kernel::gate(const std::string &gname, size_t q0, size_t q1) {
  * return the gate (or its decomposition) by appending it to kernel.c, the current kernel's circuit
  */
 void quantum_kernel::gate(
-    const std::string &gname,
-    const std::vector<size_t> &qubits,
-    const std::vector<size_t> &cregs,
-    size_t duration,
-    double angle
+    const Str &gname,
+    const Vec<UInt> &qubits,
+    const Vec<UInt> &cregs,
+    UInt duration,
+    Real angle
 ) {
     /// @todo-rn: move these check to a platform-specific backend after qubits are initialized
     for (auto &qno : qubits) {
         if (qno >= qubit_count) {
-            FATAL("Number of qubits in platform: " << std::to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+            QL_FATAL("Number of qubits in platform: " << to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with qubits " << qubits);
         }
     }
 
     for (auto & cno : cregs) {
         if (cno >= creg_count) {
-            FATAL("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
+            QL_FATAL("Out of range operand(s) for '" << gname << "' with cregs " << cregs);
         }
     }
 
     if (!gate_nonfatal(gname, qubits, cregs, duration, angle)) {
-        FATAL("Unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+        QL_FATAL("Unknown gate '" << gname << "' with qubits " << qubits);
     }
 }
 
@@ -776,14 +775,14 @@ void quantum_kernel::gate(
  * custom gate with arbitrary number of operands
  * as gate above but return whether gate was successfully matched in gate_definition, next to gate in kernel.c
  */
-bool quantum_kernel::gate_nonfatal(
-    const std::string &gname,
-    const std::vector<size_t> &qubits,
-    const std::vector<size_t> &cregs,
-    size_t duration,
-    double angle
+Bool quantum_kernel::gate_nonfatal(
+    const Str &gname,
+    const Vec<UInt> &qubits,
+    const Vec<UInt> &cregs,
+    UInt duration,
+    Real angle
 ) {
-    bool added = false;
+    Bool added = false;
     // check if specialized composite gate is available
     // if not, check if parameterized composite gate is available
     // if not, check if a specialized custom gate is available
@@ -791,39 +790,39 @@ bool quantum_kernel::gate_nonfatal(
     // if not, check if a default gate is available
     // if not, then error
 
-    auto gname_lower = utils::to_lower(gname);
-    DOUT("Adding gate : " << gname_lower << " with " << ql::utils::to_string(qubits, "qubits"));
+    auto gname_lower = to_lower(gname);
+    QL_DOUT("Adding gate : " << gname_lower << " with qubits " << qubits);
 
     // specialized composite gate check
-    DOUT("trying to add specialized composite gate for: " << gname_lower);
-    bool spec_decom_added = add_spec_decomposed_gate_if_available(gname_lower, qubits);
+    QL_DOUT("trying to add specialized composite gate for: " << gname_lower);
+    Bool spec_decom_added = add_spec_decomposed_gate_if_available(gname_lower, qubits);
     if (spec_decom_added) {
         added = true;
-        DOUT("specialized decomposed gates added for " << gname_lower);
+        QL_DOUT("specialized decomposed gates added for " << gname_lower);
     } else {
         // parameterized composite gate check
-        DOUT("trying to add parameterized composite gate for: " << gname_lower);
-        bool param_decom_added = add_param_decomposed_gate_if_available(gname_lower, qubits);
+        QL_DOUT("trying to add parameterized composite gate for: " << gname_lower);
+        Bool param_decom_added = add_param_decomposed_gate_if_available(gname_lower, qubits);
         if (param_decom_added) {
             added = true;
-            DOUT("decomposed gates added for " << gname_lower);
+            QL_DOUT("decomposed gates added for " << gname_lower);
         } else {
             // specialized/parameterized custom gate check
-            DOUT("adding custom gate for " << gname_lower);
+            QL_DOUT("adding custom gate for " << gname_lower);
             // when found, custom_added is true, and the gate was added to the circuit
-            bool custom_added = add_custom_gate_if_available(gname_lower, qubits, cregs, duration, angle);
+            Bool custom_added = add_custom_gate_if_available(gname_lower, qubits, cregs, duration, angle);
             if (custom_added) {
                 added = true;
-                DOUT("custom gate added for " << gname_lower);
+                QL_DOUT("custom gate added for " << gname_lower);
             } else {
-                if (ql::options::get("use_default_gates") == "yes") {
+                if (options::get("use_default_gates") == "yes") {
                     // default gate check (which is always parameterized)
-                    DOUT("adding default gate for " << gname_lower);
+                    QL_DOUT("adding default gate for " << gname_lower);
 
-                    bool default_available = add_default_gate_if_available(gname_lower, qubits, cregs, duration);
+                    Bool default_available = add_default_gate_if_available(gname_lower, qubits, cregs, duration);
                     if (default_available) {
                         added = true;
-                        DOUT("default gate added for " << gname_lower);   // FIXME: used to be WOUT, but that gives a warning for every "wait" and spams the log
+                        QL_DOUT("default gate added for " << gname_lower);   // FIXME: used to be WOUT, but that gives a warning for every "wait" and spams the log
                     }
                 }
             }
@@ -837,71 +836,71 @@ bool quantum_kernel::gate_nonfatal(
 
 // to add unitary to kernel
 void quantum_kernel::gate(
-    const ql::unitary &u,
-    const std::vector<size_t> &qubits
+    const unitary &u,
+    const Vec<UInt> &qubits
 ) {
-    double u_size = uint64_log2((int)u.size())/2;
+    UInt u_size = log2(u.size()) / 2;
     if (u_size != qubits.size()) {
-        EOUT("Unitary " << u.name <<" has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
-        throw ql::exception("Unitary '"+u.name+"' has been applied to the wrong number of qubits. Cannot be added to kernel! "  + std::to_string(qubits.size()) +" and not "+ std::to_string(u_size), false);
+        QL_EOUT("Unitary " << u.name << " has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
+        throw Exception("Unitary '" + u.name + "' has been applied to the wrong number of qubits. Cannot be added to kernel! " + to_string(qubits.size()) + " and not " + to_string(u_size), false);
     }
     for (uint64_t i = 0; i < qubits.size()-1; i++) {
         for (uint64_t j = i + 1; j < qubits.size(); j++) {
             if (qubits[i] == qubits[j]) {
-                EOUT("Qubit numbers used more than once in Unitary: " << u.name << ". Double qubit is number " << qubits[j]);
-                throw ql::exception("Qubit numbers used more than once in Unitary: " + u.name + ". Double qubit is number " + std::to_string(qubits[j]), false);
+                QL_EOUT("Qubit numbers used more than once in Unitary: " << u.name << ". Double qubit is number " << qubits[j]);
+                throw Exception("Qubit numbers used more than once in Unitary: " + u.name + ". Double qubit is number " + to_string(qubits[j]), false);
             }
         }
     }
     // applying unitary to gates
-    COUT("Applying unitary '" << u.name << "' to " << ql::utils::to_string(qubits, "qubits: ") );
+    QL_COUT("Applying unitary '" << u.name << "' to qubits: " << qubits);
     if (u.is_decomposed) {
-        DOUT("Adding decomposed unitary to kernel ...");
-        IOUT("The list is this many items long: " << u.instructionlist.size());
-        //COUT("Instructionlist" << ql::utils::to_string(u.instructionlist));
+        QL_DOUT("Adding decomposed unitary to kernel ...");
+        QL_IOUT("The list is this many items long: " << u.instructionlist.size());
+        //COUT("Instructionlist" << to_string(u.instructionlist));
         cycles_valid = false;
-        int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
-        DOUT("Total number of gates added: " << end_index);
+        Int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
+        QL_DOUT("Total number of gates added: " << end_index);
     } else {
-        EOUT("Unitary " << u.name <<" not decomposed. Cannot be added to kernel!");
-        throw ql::exception("Unitary '"+u.name+"' not decomposed. Cannot be added to kernel!", false);
+        QL_EOUT("Unitary " << u.name << " not decomposed. Cannot be added to kernel!");
+        throw Exception("Unitary '" + u.name + "' not decomposed. Cannot be added to kernel!", false);
     }
 }
 
 //recursive gate count function
 //n is number of qubits
 //i is the start point for the instructionlist
-int quantum_kernel::recursiveRelationsForUnitaryDecomposition(
-    const ql::unitary &u,
-    const std::vector<size_t> &qubits,
-    int n,
-    int i
+Int quantum_kernel::recursiveRelationsForUnitaryDecomposition(
+    const unitary &u,
+    const Vec<UInt> &qubits,
+    UInt n,
+    UInt i
 ) {
-    // DOUT("Adding a new unitary starting at index: "<< i << ", to " << n << ql::utils::to_string(qubits, " qubits: "));
+    // DOUT("Adding a new unitary starting at index: "<< i << ", to " << n << to_string(qubits, " qubits: "));
     if (n > 1) {
         // Need to be checked here because it changes the structure of the decomposition.
         // This checks whether the first qubit is affected, if not, it applies a unitary to the all qubits except the first one.
-        int numberforcontrolledrotation = std::pow(2, n - 1);                     //number of gates per rotation
+        UInt numberforcontrolledrotation = pow2(n - 1);                     //number of gates per rotation
 
         // code for last one not affected
         if (u.instructionlist[i] == 100.0) {
-            DOUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion. New start_index: " << i+1);
-            std::vector<size_t> subvector(qubits.begin() + 1, qubits.end());
+            QL_DOUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion. New start_index: " << i + 1);
+            Vec<UInt> subvector(qubits.begin() + 1, qubits.end());
             return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, i + 1) + 1; // for the number 10.0
         } else if (u.instructionlist[i] == 200.0) {
-            std::vector<size_t> subvector(qubits.begin(), qubits.end() - 1);
+            Vec<UInt> subvector(qubits.begin(), qubits.end() - 1);
 
             // This is a special case of only demultiplexing
             if (u.instructionlist[i+1] == 300.0) {
 
                 // Two numbers that aren't rotation gate angles
-                int start_counter = i + 2;
-                DOUT("[kernel.h] Optimization: first qubit not affected, skip one step in the recursion. New start_index: " << start_counter);
+                UInt start_counter = i + 2;
+                QL_DOUT("[kernel.h] Optimization: first qubit not affected, skip one step in the recursion. New start_index: " << start_counter);
 
                 return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter) + 2; //for the numbers 20 and 30
             } else {
-                int start_counter = i + 1;
-                DOUT("[kernel.h] Optimization: only demultiplexing will be performed. New start_index: " << start_counter);
+                UInt start_counter = i + 1;
+                QL_DOUT("[kernel.h] Optimization: only demultiplexing will be performed. New start_index: " << start_counter);
 
                 start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
                 multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
@@ -911,8 +910,8 @@ int quantum_kernel::recursiveRelationsForUnitaryDecomposition(
             }
         } else {
             // The new qubit vector that is passed to the recursive function
-            std::vector<size_t> subvector(qubits.begin(), qubits.end() - 1);
-            int start_counter = i;
+            Vec<UInt> subvector(qubits.begin(), qubits.end() - 1);
+            UInt start_counter = i;
             start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
             multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
             start_counter += numberforcontrolledrotation;
@@ -938,18 +937,18 @@ int quantum_kernel::recursiveRelationsForUnitaryDecomposition(
 
 //controlled qubit is the first in the list.
 void quantum_kernel::multicontrolled_rz(
-    const std::vector<double> &instruction_list,
-    int start_index,
-    int end_index,
-    const std::vector<size_t> &qubits
+    const Vec<Real> &instruction_list,
+    UInt start_index,
+    UInt end_index,
+    const Vec<UInt> &qubits
 ) {
-    // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
-    int idx;
+    // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << to_string(qubits, "qubits: "));
+    UInt idx;
     //The first one is always controlled from the last to the first qubit.
     c.push_back(new ql::rz(qubits.back(),-instruction_list[start_index]));
     c.push_back(new ql::cnot(qubits[0], qubits.back()));
-    for (int i = 1; i < end_index - start_index; i++) {
-        idx = uint64_log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
+    for (UInt i = 1; i < end_index - start_index; i++) {
+        idx = log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
         c.push_back(new ql::rz(qubits.back(),-instruction_list[i+start_index]));
         c.push_back(new ql::cnot(qubits[idx], qubits.back()));
     }
@@ -961,20 +960,20 @@ void quantum_kernel::multicontrolled_rz(
 
 //controlled qubit is the first in the list.
 void quantum_kernel::multicontrolled_ry(
-    const std::vector<double> &instruction_list,
-    int start_index,
-    int end_index,
-    const std::vector<size_t> &qubits
+    const Vec<Real> &instruction_list,
+    UInt start_index,
+    UInt end_index,
+    const Vec<UInt> &qubits
 ) {
-    // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
-    int idx;
+    // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << to_string(qubits, "qubits: "));
+    UInt idx;
 
     //The first one is always controlled from the last to the first qubit.
     c.push_back(new ql::ry(qubits.back(),-instruction_list[start_index]));
     c.push_back(new ql::cnot(qubits[0], qubits.back()));
 
-    for (int i = 1; i < end_index - start_index; i++) {
-        idx = uint64_log2 (((i)^((i)>>1))^((i+1)^((i+1)>>1)));
+    for (UInt i = 1; i < end_index - start_index; i++) {
+        idx = log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
         c.push_back(new ql::ry(qubits.back(),-instruction_list[i+start_index]));
         c.push_back(new ql::cnot(qubits[idx], qubits.back()));
     }
@@ -988,20 +987,20 @@ void quantum_kernel::multicontrolled_ry(
  * qasm output
  */
 // FIXME: create a separate QASM backend?
-std::string quantum_kernel::get_prologue() const  {
-    std::stringstream ss;
+Str quantum_kernel::get_prologue() const  {
+    StrStrm ss;
     ss << "\n";
     ss << "." << name << "\n";
     // ss << name << ":\n";
 
     if (type == kernel_type_t::IF_START) {
-        ss << "    b" << br_condition.inv_operation_name <<" r" << (br_condition.operands[0])->id
-           <<", r" << (br_condition.operands[1])->id << ", " << name << "_end\n";
+        ss << "    b" << br_condition->inv_operation_name <<" r" << (br_condition->operands[0])->as_creg().id
+           <<", r" << (br_condition->operands[1])->as_creg().id << ", " << name << "_end\n";
     }
 
     if (type == kernel_type_t::ELSE_START) {
-        ss << "    b" << br_condition.operation_name <<" r" << (br_condition.operands[0])->id
-           <<", r" << (br_condition.operands[1])->id << ", " << name << "_end\n";
+        ss << "    b" << br_condition->operation_name <<" r" << (br_condition->operands[0])->as_creg().id
+           <<", r" << (br_condition->operands[1])->as_creg().id << ", " << name << "_end\n";
     }
 
     if (type == kernel_type_t::FOR_START) {
@@ -1014,20 +1013,20 @@ std::string quantum_kernel::get_prologue() const  {
     return ss.str();
 }
 
-std::string quantum_kernel::get_epilogue() const {
-    std::stringstream ss;
+Str quantum_kernel::get_epilogue() const {
+    StrStrm ss;
 
     if (type == kernel_type_t::DO_WHILE_END) {
-        ss << "    b" << br_condition.operation_name <<" r" << (br_condition.operands[0])->id
-           <<", r" << (br_condition.operands[1])->id << ", " << name << "_start\n";
+        ss << "    b" << br_condition->operation_name <<" r" << (br_condition->operands[0])->as_creg().id
+           <<", r" << (br_condition->operands[1])->as_creg().id << ", " << name << "_start\n";
     }
 
     if (type == kernel_type_t::FOR_END) {
-        std::string kname(name);
+        Str kname(name);
         std::replace( kname.begin(), kname.end(), '_', ' ');
         std::istringstream iss(kname);
-        std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
-                                         std::istream_iterator<std::string>{} };
+        Vec<Str> tokens{ std::istream_iterator<Str>{iss},
+                                         std::istream_iterator<Str>{} };
 
         // TODO for now r29, r30, r31 are used, fix it
         ss << "    add r31, r31, r30\n";
@@ -1037,12 +1036,12 @@ std::string quantum_kernel::get_epilogue() const {
     return ss.str();
 }
 
-std::string quantum_kernel::qasm() const {
-    std::stringstream ss;
+Str quantum_kernel::qasm() const {
+    StrStrm ss;
 
     ss << get_prologue();
 
-    for (size_t i = 0; i < c.size(); ++i) {
+    for (UInt i = 0; i < c.size(); ++i) {
         ss << "    " << c[i]->qasm() << "\n";
     }
 
@@ -1057,16 +1056,16 @@ std::string quantum_kernel::qasm() const {
 void quantum_kernel::classical(const creg &destination, const operation &oper) {
     // check sanity of destination
     if (destination.id >= creg_count) {
-        EOUT("Out of range operand(s) for '" << oper.operation_name);
-        throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
+        QL_EOUT("Out of range operand(s) for '" << oper.operation_name);
+        throw Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
     }
 
     // check sanity of other operands
     for (auto &op : oper.operands) {
         if (op->type() == operand_type_t::CREG) {
-            if (op->id >= creg_count) {
-                EOUT("Out of range operand(s) for '" << oper.operation_name);
-                throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
+            if (op->as_creg().id >= creg_count) {
+                QL_EOUT("Out of range operand(s) for '" << oper.operation_name);
+                throw Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
             }
         }
     }
@@ -1075,19 +1074,19 @@ void quantum_kernel::classical(const creg &destination, const operation &oper) {
     cycles_valid = false;
 }
 
-void quantum_kernel::classical(const std::string &operation) {
+void quantum_kernel::classical(const Str &operation) {
     c.push_back(new ql::classical(operation));
     cycles_valid = false;
 }
 
-void quantum_kernel::controlled_x(size_t tq, size_t cq) {
+void quantum_kernel::controlled_x(UInt tq, UInt cq) {
     // from: https://arxiv.org/pdf/1206.0758v3.pdf
     // A meet-in-the-middle algorithm for fast synthesis
     // of depth-optimal quantum circuits
     cnot(cq, tq);
 }
 
-void quantum_kernel::controlled_y(size_t tq, size_t cq) {
+void quantum_kernel::controlled_y(UInt tq, UInt cq) {
     // from: https://arxiv.org/pdf/1206.0758v3.pdf
     // A meet-in-the-middle algorithm for fast synthesis
     // of depth-optimal quantum circuits
@@ -1096,7 +1095,7 @@ void quantum_kernel::controlled_y(size_t tq, size_t cq) {
     s(tq);
 }
 
-void quantum_kernel::controlled_z(size_t tq, size_t cq) {
+void quantum_kernel::controlled_z(UInt tq, UInt cq) {
     // from: https://arxiv.org/pdf/1206.0758v3.pdf
     // A meet-in-the-middle algorithm for fast synthesis
     // of depth-optimal quantum circuits
@@ -1105,7 +1104,7 @@ void quantum_kernel::controlled_z(size_t tq, size_t cq) {
     hadamard(tq);
 }
 
-void quantum_kernel::controlled_h(size_t tq, size_t cq) {
+void quantum_kernel::controlled_h(UInt tq, UInt cq) {
     // from: https://arxiv.org/pdf/1206.0758v3.pdf
     // A meet-in-the-middle algorithm for fast synthesis
     // of depth-optimal quantum circuits
@@ -1118,11 +1117,11 @@ void quantum_kernel::controlled_h(size_t tq, size_t cq) {
     sdag(tq);
 }
 
-void quantum_kernel::controlled_i(size_t tq, size_t cq) {
+void quantum_kernel::controlled_i(UInt tq, UInt cq) {
     // well, basically you dont need to do anything for it :‑)
 }
 
-void quantum_kernel::controlled_s(size_t tq, size_t cq) {
+void quantum_kernel::controlled_s(UInt tq, UInt cq) {
     // cphase(cq, tq);
 
     // from: https://arxiv.org/pdf/1206.0758v3.pdf
@@ -1136,7 +1135,7 @@ void quantum_kernel::controlled_s(size_t tq, size_t cq) {
     t(tq);
 }
 
-void quantum_kernel::controlled_sdag(size_t tq, size_t cq) {
+void quantum_kernel::controlled_sdag(UInt tq, UInt cq) {
     // based on: https://arxiv.org/pdf/1206.0758v3.pdf
     // A meet-in-the-middle algorithm for fast synthesis
     // of depth-optimal quantum circuits
@@ -1148,10 +1147,10 @@ void quantum_kernel::controlled_sdag(size_t tq, size_t cq) {
     cnot(tq, cq);
 }
 
-void quantum_kernel::controlled_t(size_t tq, size_t cq, size_t aq) {
-    WOUT("Controlled-T implementation requires an ancilla");
-    WOUT("At the moment, Qubit 0 is used as ancilla");
-    WOUT("This will change when Qubit allocater is implemented");
+void quantum_kernel::controlled_t(UInt tq, UInt cq, UInt aq) {
+    QL_WOUT("Controlled-T implementation requires an ancilla");
+    QL_WOUT("At the moment, Qubit 0 is used as ancilla");
+    QL_WOUT("This will change when Qubit allocater is implemented");
     // from: https://arxiv.org/pdf/1206.0758v3.pdf
     // A meet-in-the-middle algorithm for fast synthesis
     // of depth-optimal quantum circuits
@@ -1184,10 +1183,10 @@ void quantum_kernel::controlled_t(size_t tq, size_t cq, size_t aq) {
     h(aq);
 }
 
-void quantum_kernel::controlled_tdag(size_t tq, size_t cq, size_t aq) {
-    WOUT("Controlled-Tdag implementation requires an ancilla");
-    WOUT("At the moment, Qubit 0 is used as ancilla");
-    WOUT("This will change when Qubit allocater is implemented");
+void quantum_kernel::controlled_tdag(UInt tq, UInt cq, UInt aq) {
+    QL_WOUT("Controlled-Tdag implementation requires an ancilla");
+    QL_WOUT("At the moment, Qubit 0 is used as ancilla");
+    QL_WOUT("This will change when Qubit allocater is implemented");
     // from: https://arxiv.org/pdf/1206.0758v3.pdf
     // A meet-in-the-middle algorithm for fast synthesis
     // of depth-optimal quantum circuits
@@ -1220,7 +1219,7 @@ void quantum_kernel::controlled_tdag(size_t tq, size_t cq, size_t aq) {
     hadamard(aq);
 }
 
-void quantum_kernel::controlled_ix(size_t tq, size_t cq) {
+void quantum_kernel::controlled_ix(UInt tq, UInt cq) {
     // from: https://arxiv.org/pdf/1210.0974.pdf
     // Quantum circuits of T-depth one
     cnot(cq, tq);
@@ -1230,7 +1229,7 @@ void quantum_kernel::controlled_ix(size_t tq, size_t cq) {
 // toffoli decomposition
 // from: https://arxiv.org/pdf/1210.0974.pdf
 // Quantum circuits of T-depth one
-void quantum_kernel::controlled_cnot_AM(size_t tq, size_t cq1, size_t cq2) {
+void quantum_kernel::controlled_cnot_AM(UInt tq, UInt cq1, UInt cq2) {
     h(tq);
     t(cq1);
     t(cq2);
@@ -1251,7 +1250,7 @@ void quantum_kernel::controlled_cnot_AM(size_t tq, size_t cq1, size_t cq2) {
 
 // toffoli decomposition
 // Neilsen and Chuang
-void quantum_kernel::controlled_cnot_NC(size_t tq, size_t cq1, size_t cq2) {
+void quantum_kernel::controlled_cnot_NC(UInt tq, UInt cq1, UInt cq2) {
     h(tq);
     cnot(cq2,tq);
     tdag(tq);
@@ -1270,7 +1269,7 @@ void quantum_kernel::controlled_cnot_NC(size_t tq, size_t cq1, size_t cq2) {
     s(cq2);
 }
 
-void quantum_kernel::controlled_swap(size_t tq1, size_t tq2, size_t cq) {
+void quantum_kernel::controlled_swap(UInt tq1, UInt tq2, UInt cq) {
     // from: https://arxiv.org/pdf/1210.0974.pdf
     // Quantum circuits of T-depth one
     cnot(tq2, tq1);
@@ -1292,21 +1291,21 @@ void quantum_kernel::controlled_swap(size_t tq1, size_t tq2, size_t cq) {
     cnot(tq2, tq1);
 }
 
-void quantum_kernel::controlled_rx(size_t tq, size_t cq, double theta) {
+void quantum_kernel::controlled_rx(UInt tq, UInt cq, Real theta) {
     rx(tq, theta/2);
     cz(cq, tq);
     rx(tq, -theta/2);
     cz(cq, tq);
 }
 
-void quantum_kernel::controlled_ry(size_t tq, size_t cq, double theta) {
+void quantum_kernel::controlled_ry(UInt tq, UInt cq, Real theta) {
     ry(tq, theta/2);
     cnot(cq, tq);
     ry(tq, -theta/2);
     cnot(cq, tq);
 }
 
-void quantum_kernel::controlled_rz(size_t tq, size_t cq, double theta) {
+void quantum_kernel::controlled_rz(UInt tq, UInt cq, Real theta) {
     rz(tq, theta/2);
     cnot(cq, tq);
     rz(tq, -theta/2);
@@ -1314,61 +1313,61 @@ void quantum_kernel::controlled_rz(size_t tq, size_t cq, double theta) {
 }
 
 void quantum_kernel::controlled_single(
-    const ql::quantum_kernel *k,
-    size_t control_qubit,
-    size_t ancilla_qubit
+    const quantum_kernel *k,
+    UInt control_qubit,
+    UInt ancilla_qubit
 ) {
-    const ql::circuit &ckt = k->get_circuit();
+    const circuit &ckt = k->get_circuit();
     for (auto &g : ckt) {
-        std::string gname = g->name;
-        ql::gate_type_t gtype = g->type();
-        std::vector<size_t> goperands = g->operands;
-        DOUT("Generating controlled gate for " << gname);
-        DOUT("Type : " << gtype);
+        Str gname = g->name;
+        gate_type_t gtype = g->type();
+        Vec<UInt> goperands = g->operands;
+        QL_DOUT("Generating controlled gate for " << gname);
+        QL_DOUT("Type : " << gtype);
         if (gtype == __pauli_x_gate__ || gtype == __rx180_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_x(tq, cq);
         } else if (gtype == __pauli_y_gate__ || gtype == __ry180_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_y(tq, cq);
         } else if (gtype == __pauli_z_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_z(tq, cq);
         } else if (gtype == __hadamard_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_h(tq, cq);
         } else if (gtype == __identity_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_i(tq, cq);
         } else if (gtype == __t_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
-            size_t aq = ancilla_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
+            UInt aq = ancilla_qubit;
             controlled_t(tq, cq, aq);
         } else if (gtype == __tdag_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
-            size_t aq = ancilla_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
+            UInt aq = ancilla_qubit;
             controlled_tdag(tq, cq, aq);
         } else if (gtype == __phase_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_s(tq, cq);
         } else if (__phasedag_gate__ == gtype) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_sdag(tq, cq);
         } else if (__cnot_gate__ == gtype) {
-            size_t cq1 = goperands[0];
-            size_t cq2 = control_qubit;
-            size_t tq = goperands[1];
+            UInt cq1 = goperands[0];
+            UInt cq2 = control_qubit;
+            UInt tq = goperands[1];
 
-            auto opt = ql::options::get("decompose_toffoli");
+            auto opt = options::get("decompose_toffoli");
             if (opt == "AM") {
                 controlled_cnot_AM(tq, cq1, cq2);
             } else if (opt == "NC") {
@@ -1377,67 +1376,67 @@ void quantum_kernel::controlled_single(
                 toffoli(cq1, cq2, tq);
             }
         } else if (gtype == __swap_gate__) {
-            size_t tq1 = goperands[0];
-            size_t tq2 = goperands[1];
-            size_t cq = control_qubit;
+            UInt tq1 = goperands[0];
+            UInt tq2 = goperands[1];
+            UInt cq = control_qubit;
             controlled_swap(tq1, tq2, cq);
         } else if (gtype == __rx_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_rx(tq, cq, g->angle);
         } else if (gtype == __ry_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_ry(tq, cq, g->angle);
         } else if (gtype == __rz_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_rz(tq, cq, g->angle);
         } else if (gtype == __rx90_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_rx(tq, cq, K_PI/2);
         } else if (gtype == __mrx90_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_rx(tq, cq, -1*K_PI/2);
         } else if (gtype == __rx180_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_rx(tq, cq, K_PI);
             // controlled_x(tq, cq);
         } else if (gtype == __ry90_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_ry(tq, cq, K_PI/4);
         } else if (gtype == __mry90_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_ry(tq, cq, -1*K_PI/4);
         } else if (gtype == __ry180_gate__) {
-            size_t tq = goperands[0];
-            size_t cq = control_qubit;
+            UInt tq = goperands[0];
+            UInt cq = control_qubit;
             controlled_ry(tq, cq, K_PI);
             // controlled_y(tq, cq);
         } else {
-            EOUT("Controlled version of gate '" << gname << "' not defined !");
-            throw ql::exception("[x] error : ql::kernel::controlled : Controlled version of gate '"+gname+"' not defined ! ",false);
+            QL_EOUT("Controlled version of gate '" << gname << "' not defined !");
+            throw Exception("[x] error : kernel::controlled : Controlled version of gate '" + gname + "' not defined ! ", false);
         }
     }
 }
 
 void quantum_kernel::controlled(
-    const ql::quantum_kernel *k,
-    const std::vector<size_t> &control_qubits,
-    const std::vector<size_t> &ancilla_qubits
+    const quantum_kernel *k,
+    const Vec<UInt> &control_qubits,
+    const Vec<UInt> &ancilla_qubits
 ) {
-    DOUT("Generating controlled kernel ... ");
-    int ncq = control_qubits.size();
-    int naq = ancilla_qubits.size();
+    QL_DOUT("Generating controlled kernel ... ");
+    Int ncq = control_qubits.size();
+    Int naq = ancilla_qubits.size();
 
     if (ncq == 0) {
-        EOUT("At least one control_qubits should be specified !");
-        throw ql::exception("[x] error : ql::kernel::controlled : At least one control_qubits should be specified !",false);
+        QL_EOUT("At least one control_qubits should be specified !");
+        throw Exception("[x] error : kernel::controlled : At least one control_qubits should be specified !", false);
     } else if (ncq == 1) {
         //                      control               ancilla
         controlled_single(k, control_qubits[0], ancilla_qubits[0]);
@@ -1448,36 +1447,36 @@ void quantum_kernel::controlled(
         if (naq == ncq) {
             toffoli(control_qubits[0], control_qubits[1], ancilla_qubits[0]);
 
-            for (int n = 0; n <= naq - 3; n++) {
+            for (Int n = 0; n <= naq - 3; n++) {
                 toffoli(control_qubits[n+2], ancilla_qubits[n], ancilla_qubits[n+1]);
             }
 
             //                      control               ancilla
             controlled_single(k, ancilla_qubits[naq-2], ancilla_qubits[naq-1]);
 
-            for (int n = naq - 3; n >= 0; n--) {
+            for (Int n = naq - 3; n >= 0; n--) {
                 toffoli(control_qubits[n+2], ancilla_qubits[n], ancilla_qubits[n+1]);
             }
 
             toffoli(control_qubits[0], control_qubits[1], ancilla_qubits[0]);
         } else {
-            EOUT("No. of control qubits should be equal to No. of ancilla qubits!");
-            throw ql::exception("[x] error : ql::kernel::controlled : No. of control qubits should be equal to No. of ancilla qubits!",false);
+            QL_EOUT("No. of control qubits should be equal to No. of ancilla qubits!");
+            throw Exception("[x] error : kernel::controlled : No. of control qubits should be equal to No. of ancilla qubits!", false);
         }
     }
 
-    DOUT("Generating controlled kernel [Done]");
+    QL_DOUT("Generating controlled kernel [Done]");
 }
 
-void quantum_kernel::conjugate(const ql::quantum_kernel *k) {
-    COUT("Generating conjugate kernel");
-    const ql::circuit &ckt = k->get_circuit();
+void quantum_kernel::conjugate(const quantum_kernel *k) {
+    QL_COUT("Generating conjugate kernel");
+    const circuit &ckt = k->get_circuit();
     for (auto rgit = ckt.rbegin(); rgit != ckt.rend(); ++rgit) {
         auto g = *rgit;
-        std::string gname = g->name;
-        ql::gate_type_t gtype = g->type();
-        DOUT("Generating conjugate gate for " << gname);
-        DOUT("Type : " << gtype);
+        Str gname = g->name;
+        gate_type_t gtype = g->type();
+        QL_DOUT("Generating conjugate gate for " << gname);
+        QL_DOUT("Type : " << gtype);
         if (gtype == __pauli_x_gate__ || gtype == __rx180_gate__) {
             gate("x", g->operands, {}, g->duration, g->angle);
         } else if (gtype == __pauli_y_gate__ || gtype == __ry180_gate__) {
@@ -1523,11 +1522,11 @@ void quantum_kernel::conjugate(const ql::quantum_kernel *k) {
         } else if (gtype == __toffoli_gate__) {
             gate("toffoli", g->operands, {}, g->duration, g->angle);
         } else {
-            EOUT("Conjugate version of gate '" << gname << "' not defined !");
-            throw ql::exception("[x] error : ql::kernel::conjugate : Conjugate version of gate '" + gname + "' not defined ! ", false);
+            QL_EOUT("Conjugate version of gate '" << gname << "' not defined !");
+            throw Exception("[x] error : kernel::conjugate : Conjugate version of gate '" + gname + "' not defined ! ", false);
         }
     }
-    COUT("Generating conjugate kernel [Done]");
+    QL_COUT("Generating conjugate kernel [Done]");
 }
 
 } // namespace ql

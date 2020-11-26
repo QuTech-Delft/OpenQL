@@ -1,3 +1,7 @@
+/** \file
+ * Common IR implementation.
+ */
+
 #include "ir.h"
 
 #include "options.h"
@@ -5,12 +9,14 @@
 namespace ql {
 namespace ir {
 
+using namespace utils;
+
 /**
  * Create a circuit with valid cycle values from the bundled internal
  * representation.
  */
-ql::circuit circuiter(const bundles_t &bundles) {
-    ql::circuit circ;
+circuit circuiter(const bundles_t &bundles) {
+    circuit circ;
 
     for (const bundle_t &abundle : bundles) {
         for (auto sec_it = abundle.parallel_sections.begin(); sec_it != abundle.parallel_sections.end(); ++sec_it) {
@@ -31,11 +37,11 @@ ql::circuit circuiter(const bundles_t &bundles) {
  * Create a bundled-qasm external representation from the bundled internal
  * representation.
  */
-std::string qasm(const bundles_t &bundles) {
-    std::stringstream ssqasm;
-    size_t curr_cycle=1;        // FIXME HvS prefer to start at 0; also see depgraph creation
-    std::string skipgate = "wait";
-    if (ql::options::get("issue_skip_319") == "yes") {
+Str qasm(const bundles_t &bundles) {
+    StrStrm ssqasm;
+    UInt curr_cycle=1;        // FIXME HvS prefer to start at 0; also see depgraph creation
+    Str skipgate = "wait";
+    if (options::get("issue_skip_319") == "yes") {
         skipgate = "skip";
     }
 
@@ -69,7 +75,7 @@ std::string qasm(const bundles_t &bundles) {
 
     if (!bundles.empty()) {
         auto &last_bundle = bundles.back();
-        int lsduration = last_bundle.duration_in_cycles;
+        UInt lsduration = last_bundle.duration_in_cycles;
         if (lsduration > 1) {
             ssqasm << "    " << skipgate << " " << lsduration - 1 << std::endl;
         }
@@ -90,28 +96,28 @@ std::string qasm(const bundles_t &bundles) {
  *
  * FIXME HvS cycles_valid must be true before each call to this bundler
  */
-bundles_t bundler(const ql::circuit &circ, size_t cycle_time) {
+bundles_t bundler(const circuit &circ, UInt cycle_time) {
     bundles_t bundles;          // result bundles
 
     bundle_t    currBundle;     // current bundle at currCycle that is being filled
-    size_t      currCycle = 0;  // cycle at which bundle is to be scheduled
+    UInt      currCycle = 0;  // cycle at which bundle is to be scheduled
 
     currBundle.start_cycle = currCycle; // starts off as empty bundle starting at currCycle
     currBundle.duration_in_cycles = 0;
 
-    DOUT("bundler ...");
+    QL_DOUT("bundler ...");
 
     for (auto &gp : circ) {
-        DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
-        if (gp->type() == ql::gate_type_t::__wait_gate__ ||    // FIXME HvS: wait must be written as well
-            gp->type() == ql::gate_type_t::__dummy_gate__
+        QL_DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
+        if (gp->type() == gate_type_t::__wait_gate__ ||    // FIXME HvS: wait must be written as well
+            gp->type() == gate_type_t::__dummy_gate__
         ) {
-            DOUT("... ignoring: " << gp->qasm());
+            QL_DOUT("... ignoring: " << gp->qasm());
             continue;
         }
-        size_t newCycle = gp->cycle;        // taking cycle values from circuit, so excludes SOURCE and SINK!
+        UInt newCycle = gp->cycle;        // taking cycle values from circuit, so excludes SOURCE and SINK!
         if (newCycle < currCycle) {
-            FATAL("Error: circuit not ordered by cycle value");
+            QL_FATAL("Error: circuit not ordered by cycle value");
         }
         if (newCycle > currCycle) {
             if (!currBundle.parallel_sections.empty()) {
@@ -125,7 +131,7 @@ bundles_t bundler(const ql::circuit &circ, size_t cycle_time) {
                 //     }
                 // }
                 bundles.push_back(currBundle);
-                DOUT(".. ready with bundle at cycle " << currCycle);
+                QL_DOUT(".. ready with bundle at cycle " << currCycle);
                 currBundle.parallel_sections.clear();
             }
 
@@ -141,7 +147,7 @@ bundles_t bundler(const ql::circuit &circ, size_t cycle_time) {
         asec.push_back(gp);
         currBundle.parallel_sections.push_back(asec);
         // DOUT("... gate: " << gp->qasm() << " in private parallel section");
-        currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time);
+        currBundle.duration_in_cycles = max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time);
     }
     if (!currBundle.parallel_sections.empty()) {
         // finish currBundle (which is last bundle) at currCycle
@@ -154,18 +160,18 @@ bundles_t bundler(const ql::circuit &circ, size_t cycle_time) {
         //     }
         // }
         bundles.push_back(currBundle);
-        DOUT(".. ready with bundle at cycle " << currCycle);
+        QL_DOUT(".. ready with bundle at cycle " << currCycle);
     }
 
     // currCycle == cycle of last gate of circuit scheduled
     // duration_in_cycles later the system starts idling
     // depth is the difference between the cycle in which it starts idling and the cycle it started execution
     if (bundles.empty()) {
-        DOUT("Depth: " << 0);
+        QL_DOUT("Depth: " << 0);
     } else {
-        DOUT("Depth: " << currCycle + currBundle.duration_in_cycles - bundles.front().start_cycle);
+        QL_DOUT("Depth: " << currCycle + currBundle.duration_in_cycles - bundles.front().start_cycle);
     }
-    DOUT("bundler [DONE]");
+    QL_DOUT("bundler [DONE]");
     return bundles;
 }
 
@@ -173,15 +179,15 @@ bundles_t bundler(const ql::circuit &circ, size_t cycle_time) {
  * Print the bundles with an indication (taken from 'at') from where this
  * function was called.
  */
-void DebugBundles(const std::string &at, const bundles_t &bundles) {
-    DOUT("DebugBundles at: " << at << " showing " << bundles.size() << " bundles");
+void DebugBundles(const Str &at, const bundles_t &bundles) {
+    QL_DOUT("DebugBundles at: " << at << " showing " << bundles.size() << " bundles");
     for (const auto& abundle : bundles) {
-        DOUT("... bundle with nsections: " << abundle.parallel_sections.size());
+        QL_DOUT("... bundle with nsections: " << abundle.parallel_sections.size());
         for (auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt) {
-            DOUT("... section with ngates: " << secIt->size());
+            QL_DOUT("... section with ngates: " << secIt->size());
             for (auto gp : *secIt) {
                 // auto n = get_cc_light_instruction_name(gp->name, platform);
-                DOUT("... ... gate: " << gp->qasm() << " name: " << gp->name << " cc_light_iname: " << "?");
+                QL_DOUT("... ... gate: " << gp->qasm() << " name: " << gp->name << " cc_light_iname: " << "?");
             }
         }
     }

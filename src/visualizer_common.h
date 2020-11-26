@@ -1,23 +1,16 @@
-/**
- * @file   visualizer_common.h
- * @date   11/2020
- * @author Tim van der Meer
- * @brief  declaration of the visualizer's shared functionalities
+/** \file
+ * Declaration of the visualizer's shared functionalities.
  */
 
 #pragma once
 
 #ifdef WITH_VISUALIZER
 
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/vec.h"
+#include "utils/pair.h"
 #include "visualizer.h"
-
-// These undefs are necessary to avoid name collisions between CImg and Lemon.
-#undef cimg_use_opencv
-#undef True
-
-#undef False
-#undef IN
-#undef OUT
 
 namespace ql {
 
@@ -39,34 +32,34 @@ namespace ql {
 enum BitType {CLASSICAL, QUANTUM};
 
 struct Position4 {
-    long x0;
-    long y0;
-    long x1;
-    long y1;
+    utils::Int x0;
+    utils::Int y0;
+    utils::Int x1;
+    utils::Int y1;
 
     Position4() = delete;
 };
 
 struct Position2 {
-    long x;
-    long y;
+    utils::Int x;
+    utils::Int y;
 
     Position2() = delete;
 };
 
 struct EndPoints {
-    const int start;
-    const int end;
+    const utils::Int start;
+    const utils::Int end;
 };
 
 struct Dimensions {
-    const int width;
-    const int height;
+    const utils::Int width;
+    const utils::Int height;
 };
 
 struct GateOperand {
     BitType bitType;
-    int index;
+    utils::Int index;
 
     friend bool operator<(const GateOperand &lhs, const GateOperand &rhs) {
         if (lhs.bitType == QUANTUM && rhs.bitType == CLASSICAL) return true;
@@ -82,36 +75,35 @@ struct GateOperand {
 };
 
 struct GateProperties {
-    std::string name;
-    std::vector<int> operands;
-    std::vector<int> creg_operands;
-    int duration;
-    int cycle;
+    utils::Str name;
+    utils::Vec<utils::Int> operands;
+    utils::Vec<utils::Int> creg_operands;
+    utils::Int duration;
+    utils::Int cycle;
     gate_type_t type;
-    std::vector<int> codewords;
-    std::string visual_type;
+    utils::Vec<utils::Int> codewords;
+    utils::Str visual_type;
 
     GateProperties() = delete;
 };
 
-Layout parseConfiguration(const std::string &configPath);
+Layout parseConfiguration(const utils::Str &configPath);
 void validateLayout(Layout &layout);
 
-std::vector<GateProperties> parseGates(const ql::quantum_program* program);
+utils::Vec<GateProperties> parseGates(const ql::quantum_program *program);
 
-int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType);
+utils::Int calculateAmountOfBits(const utils::Vec<GateProperties> &gates, const utils::Vec<utils::Int> GateProperties::* operandType);
 
-int calculateAmountOfGateOperands(const GateProperties gate);
-std::vector<GateOperand> getGateOperands(const GateProperties gate);
-std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<GateOperand> operands, const int amountOfQubits);
+utils::Int calculateAmountOfGateOperands(const GateProperties &gate);
+utils::Vec<GateOperand> getGateOperands(const GateProperties &gate);
+utils::Pair<GateOperand, GateOperand> calculateEdgeOperands(const utils::Vec<GateOperand> &operands, utils::Int amountOfQubits);
 
-void fixMeasurementOperands(std::vector<GateProperties> &gates);
-bool isMeasurement(const GateProperties gate);
+void fixMeasurementOperands(utils::Vec<GateProperties> &gates);
+utils::Bool isMeasurement(const GateProperties &gate);
 
-Dimensions calculateTextDimensions(const std::string &text, const int fontHeight);
+Dimensions calculateTextDimensions(const utils::Str &text, utils::Int fontHeight);
 
-void printGates(const std::vector<GateProperties> gates);
-int safe_int_cast(const size_t argument);
+void printGates(const utils::Vec<GateProperties> &gates);
 
 } // namespace ql
 

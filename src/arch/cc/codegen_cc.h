@@ -16,6 +16,7 @@
 
 #include <string>
 #include <cstddef>  // for size_t etc.
+#include "utils/vec.h"
 
 namespace ql {
 
@@ -54,8 +55,8 @@ public:
     // Quantum instructions
     void customGate(
             const std::string &iname,
-            const std::vector<size_t> &qops,
-            const std::vector<size_t> &cops,
+            const utils::Vec<utils::UInt> &qops,
+            const utils::Vec<utils::UInt> &cops,
             double angle, size_t startCycle, size_t durationInCycles);
     void nopGate();
 
@@ -89,9 +90,9 @@ private:    // vars
     // codegen state
     unsigned int lastEndCycle[MAX_INSTRS];                      // vector[instrIdx], maintain where we got per slot, kernel scope
     std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group], bundle scope
-    json codewordTable;                                         // codewords versus signals per instrument group
+    utils::Json codewordTable;                                  // codewords versus signals per instrument group
 #if OPT_FEEDBACK
-    json inputLutTable;                                         // input LUT usage per instrument group
+    Json inputLutTable;                                         // input LUT usage per instrument group
 #endif
 
 
