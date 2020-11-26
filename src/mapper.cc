@@ -733,7 +733,8 @@ size_t FreeCycle::StartCycle(ql::gate *g) {
 
         while (startCycle < MAX_CYCLE) {
             // DOUT("Startcycle for " << g->qasm() << ": available? at startCycle=" << startCycle);
-            if (rm.available(startCycle, g, *platformp)) {
+            // remap gates do not have resource constraints
+            if (g->type() == __remap_gate__ || rm.available(startCycle, g, *platformp)) {
                 // DOUT(" ... [" << startCycle << "] resources available for " << g->qasm());
                 break;
             } else {
@@ -776,7 +777,9 @@ void FreeCycle::Add(ql::gate *g, size_t startCycle) {
 
     auto mapopt = ql::options::get("mapper");
     if (mapopt == "baserc" || mapopt == "minextendrc") {
-        rm.reserve(startCycle, g, *platformp);
+        if (g->type() != __remap_gate__) {
+            rm.reserve(startCycle, g, *platformp);
+        }
     }
 }
 
@@ -1170,11 +1173,32 @@ void Past::AddSwap(size_t r0, size_t r1) {
     for (auto &gp : circ) {
         Add(gp);
     }
+
+    circuit remaps1;
+    new_gate(remaps1, "remap", {r0});
+    for (auto &gp : remaps1) {
+        Add(gp);
+    }
+    circuit remaps2;
+    new_gate(remaps2, "remap", {r1});
+    for (auto &gp : remaps2) {
+        Add(gp);
+    }
+
+    // ql::gate *remap1 = new remap(r0, v2r.GetVirt(r1));
+    // ql::gate *remap2 = new remap(r1, v2r.GetVirt(r0));
+
+    // IOUT("remap 1 v_index: " << dynamic_cast<remap*>(remap1)->virtual_qubit_index);
+    // IOUT("remap 1 v_index: " << dynamic_cast<remap*>(remap2)->virtual_qubit_index);
+
+    // Add(new wait({0}, 0, 0));
+    // Add(remap1);
+    // Add(remap2);
     
-    Add(new remap(r0, v2r.GetVirt(r1)));
-    Add(new remap(r1, v2r.GetVirt(r0)));
-    IOUT("added remap gate: [" << r0 << ", " << v2r.GetVirt(r1) << "]");
-    IOUT("added remap gate: [" << r1 << ", " << v2r.GetVirt(r0) << "]");
+    // Add(new remap(r0, v2r.GetVirt(r1)));
+    // Add(new remap(r1, v2r.GetVirt(r0)));
+    // IOUT("added remap gate: [" << r0 << ", " << v2r.GetVirt(r1) << "]");
+    // IOUT("added remap gate: [" << r1 << ", " << v2r.GetVirt(r0) << "]");
 
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }

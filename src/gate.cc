@@ -747,8 +747,14 @@ remap::remap(const size_t r_index, const size_t v_index) : m(nop_c) {
     virtual_qubit_index = v_index;
 }
 
+remap::remap(const size_t r_index) : m(nop_c) {
+    name = "remap";
+    operands.push_back(r_index);
+    virtual_qubit_index = 13;
+}
+
 instruction_t remap::qasm() const {
-    return instruction_t("remap v[" + std::to_string(virtual_qubit_index) + "]" + ",r[" + std::to_string(operands[0]) +  "]");
+    return instruction_t("remap q[" + std::to_string(operands[0]) + "v[" + std::to_string(virtual_qubit_index) + "]");
 }
 
 gate_type_t remap::type() const {

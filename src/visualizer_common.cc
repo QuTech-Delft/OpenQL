@@ -86,7 +86,7 @@ void visualize(const ql::quantum_program* program, const std::string &visualizat
     IOUT("Starting visualization...");
     IOUT("Visualization type: " << visualizationType);
 
-    // printGates(parseGates(program));
+    printGates(parseGates(program));
 
     // Choose the proper visualization based on the visualization type.
     // if (visualizationType == "CIRCUIT") {

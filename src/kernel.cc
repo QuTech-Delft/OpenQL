@@ -327,7 +327,7 @@ bool quantum_kernel::add_default_gate_if_available(
                              || (gname == "rx") || (gname == "ry") || (gname == "rz")
                              || (gname == "rx90") || (gname == "mrx90") || (gname == "rx180")
                              || (gname == "ry90") || (gname == "mry90") || (gname == "ry180")
-                             || (gname == "measure") || (gname == "prepz");
+                             || (gname == "measure") || (gname == "prepz") || (gname == "remap");
 
     bool is_two_qubit_gate = (gname == "cnot")
                              || (gname == "cz") || (gname == "cphase")
@@ -457,6 +457,9 @@ bool quantum_kernel::add_default_gate_if_available(
         } else {
             c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
         }
+        result = true;
+    } else if (gname == "remap") {
+        c.push_back(new ql::remap(qubits[0]));
         result = true;
     } else {
         result = false;
