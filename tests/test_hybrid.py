@@ -10,14 +10,14 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_hybrid_classical_quantum(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
 
     def test_classical(self):
-        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
@@ -67,7 +67,6 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
 
     def test_if(self):
-        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
@@ -101,7 +100,6 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_if_else(self):
-        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
@@ -135,7 +133,6 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
 
     def test_for(self):
-        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
@@ -169,7 +166,6 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
 
     def test_do_while(self):
-        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
@@ -203,7 +199,6 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
 
     def test_do_while_nested_for(self):
-        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5

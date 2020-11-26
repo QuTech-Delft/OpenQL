@@ -356,8 +356,6 @@ void quantum_program::compile() {
     write_sweep_points(this, platform, "write_sweep_points");
 
     QL_IOUT("compilation of program '" << name << "' done.");
-
-    options::reset_options();
 }
 
 void quantum_program::compile_modular() {
@@ -416,8 +414,6 @@ void quantum_program::compile_modular() {
     compiler->compile(this);
 
     QL_IOUT("compilation of program '" << name << "' done.");
-
-    options::reset_options();
 
     compiler.reset();
 }
