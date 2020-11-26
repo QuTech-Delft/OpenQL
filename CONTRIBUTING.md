@@ -505,14 +505,22 @@ int *name(int a, const std::string &s) {
 
 // Methods (functions on a class) should be static if they don't use any
 // fields,
-static void func();
+class Cls {
+    ...
+    static void func();
+    ...
+};
 
 void Cls::func() {
     ...
 }
 
 // or const if they only read fields:
-void func() const;
+class Cls {
+    ...
+    void func() const;
+    ...
+};
 
 void Cls::func() const {
     ...
@@ -520,14 +528,22 @@ void Cls::func() const {
 
 // If you're intending to override methods, the method in the ancestor class
 // should be marked virtual:
-virtual void func();
+class Cls {
+    ...
+    virtual void func();
+    ...
+}
 
 void Cls::func() {
     ...
 }
 
 // and the overrides should be marked with override:
-void func() override;
+class Cls {
+    ...
+    void func() override;
+    ...
+}
 
 void ClsImpl::func() {
     ...
@@ -537,9 +553,9 @@ void ClsImpl::func() {
 // for some reason, and the position of the statements is arbitrary at best.
 // This is just how C++ works, unfortunately.
 
-// Pass nontrivial argument types (anything that isn't a primitive) by const
-// reference unless you have a good reason not to. That is, when passing some
-// random string, it should be done like
+// Pass nontrivial argument types (anything that's larger than a pointer) by
+// const reference unless you have a good reason not to. That is, when passing
+// some random string, it should be done like
 void print(const std::string &str);
 
 // If you really know what you're doing you can deviate (rvalue references,
