@@ -810,6 +810,16 @@ private:
                 for (const auto &insn : bundle->items) {
                     const auto &gcr = insn->instruction->get_annotation<GateConversionRule::Ptr>();
 
+                    // Handle gate conditions.
+                    if (auto ccb = insn->condition->as_const_bool()) {
+                        if (!ccb->value) {
+                            continue;
+                        }
+                    } else {
+                        // TODO conditional gate support
+                        throw Exception("conditional gates are not supported by OpenQL");
+                    }
+
                     // Figure out if this instruction uses
                     // single-gate-multiple-qubit (SGMQ) notation.
                     UInt sgmq_count = 0;
