@@ -6,39 +6,36 @@
 
 #include "utils/num.h"
 #include "utils/str.h"
+#include "utils/opt.h"
+#include "kernel.h"
+#include "platform.h"
+#include "program.h"
 #include "qasm_semantic.hpp"
 
 namespace ql {
+namespace cqasm {
 
-class quantum_kernel;
-class quantum_platform;
-class quantum_program;
+// Opaque forward declaration for the actual implementation of the reader, to
+// keep the header file clean.
+class ReaderImpl;
 
-class cqasm_reader {
-public:
-    cqasm_reader(const quantum_platform &q_platform, quantum_program &q_program);
-    ~cqasm_reader() = default;
-
-    void string2circuit(const utils::Str &cqasm_str);
-    void file2circuit(const utils::Str &cqasm_file_path);
-
+/**
+ * Class for converting cQASM files to OpenQL circuits.
+ */
+class Reader {
 private:
-    void add_cqasm(compiler::QasmRepresentation cqasm_repr);
-    static void add_kernel_operation(quantum_kernel &kernel, const compiler::Operation &operation, utils::Int number_of_qubits);
-    static void add_single_bit_kernel_operation(quantum_kernel &kernel, const utils::Str &gate_type, const compiler::Operation &operation);
-    static void add_parameterized_single_bit_kernel_operation(quantum_kernel &kernel, const utils::Str &gate_type, const compiler::Operation &operation);
-    static void add_dual_bit_kernel_operation(quantum_kernel &kernel, const utils::Str &gate_type, const compiler::Operation &op);
-    static void add_parameterized_dual_bit_kernel_operation(quantum_kernel &kernel, const utils::Str &gate_type, const compiler::Operation &operation);
-    static void add_triple_bit_kernel_operation(quantum_kernel &kernel, const utils::Str &gate_type, const compiler::Operation &op);
-
-    static utils::Str translate_gate_type(const utils::Str &gate_type);
-
-    utils::Bool test_translate_gate_type();
-
-    const quantum_platform &platform;
-    quantum_program &program;
-    utils::Int number_of_qubits;
-    utils::UInt sub_circuits_default_nr;
+    utils::Opt<ReaderImpl> impl;
+public:
+    Reader(const quantum_platform &platform, quantum_program &program);
+    Reader(const quantum_platform &platform, quantum_program &program, const utils::Json &gateset);
+    Reader(const quantum_platform &platform, quantum_program &program, const utils::Str &gateset_fname);
+    void string2circuit(const utils::Str &cqasm_str);
+    void file2circuit(const utils::Str &cqasm_fname);
 };
+
+} // namespace cqasm
+
+// TODO: backward-compatibility for now, should probably just be removed.
+using cqasm_reader = cqasm::Reader;
 
 } // namespace ql
