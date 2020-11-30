@@ -10,7 +10,6 @@
 #include "kernel.h"
 #include "platform.h"
 #include "program.h"
-#include "qasm_semantic.hpp"
 
 namespace ql {
 namespace cqasm {
