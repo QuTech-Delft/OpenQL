@@ -524,8 +524,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			int pragmaBreakVal = json_get<int>(*pragma, "break", "pragma of unknown instruction");		// FIXME we don't know which instruction we're dealing with, so better move
 			int smAddr = pragmaSmBit/32;	// 'seq_cl_sm' is addressable in 32 bit words
 			unsigned int mask = 1 << (pragmaSmBit%32);
-			// FIXME:
-			std::string label = "loopExit";
+			std::string label = pragmaForLabel+"_end";		// FIXME: must match label set in forEnd(), assumes we are actually inside a for loop
 
 			// emit code for pragma "break". NB: code is identical for all instruments
 /*
@@ -535,27 +534,15 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             nop								; register dependency R1
             jlt         R1,1,@loop
 */
-			emit(ic.ii.slot,
-				 "seq_cl_sm",
-				 SS2S("S" << smAddr),
-				 SS2S("#  on '" << ic.ii.instrumentName << "'"));
-			emit(ic.ii.slot,
-				 "move_sm",
-				 "R0",
-				 "");
-			emit(ic.ii.slot,
-				 "and",
-				 SS2S("R0," << mask << "," << "R1"),
-				 "");	// results in '0' for 'bit==0' and 'mask' for 'bit==1'
-			emit(ic.ii.slot,
-				 "nop",
-				 "",
-				 "");
-			emit(ic.ii.slot,
-				 "jlt",
-				 SS2S("R1,1,@" << label),
-				 "");
-
+			emit(ic.ii.slot, "seq_cl_sm", SS2S("S" << smAddr), SS2S("#  on '" << ic.ii.instrumentName << "'"));
+			emit(ic.ii.slot, "move_sm", "R0", "");
+			emit(ic.ii.slot, "and", SS2S("R0," << mask << "," << "R1"), "");	// results in '0' for 'bit==0' and 'mask' for 'bit==1'
+			emit(ic.ii.slot, "nop", "", "");
+			if(pragmaBreakVal==0) {
+				emit(ic.ii.slot, "jlt", SS2S("R1,1,@" << label), "");
+			} else {
+				emit(ic.ii.slot, "jgt", SS2S("R1,0,@" << label), "");
+			}
         }
 #endif
 
@@ -583,7 +570,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 							SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
 							SS2S("# cop " << ri.cop << " = readout(q" << ri.qubit << ")"));
 
-					int mySmAddr = ri.smBit/8;
+					int mySmAddr = ri.smBit/8;	// byte addressable
 				}
 
 				// emit code for slot input
@@ -793,7 +780,10 @@ void codegen_cc::forStart(const std::string &label, int iterations)
     comment(SS2S("# FOR_START(" << iterations << ")"));
     // FIXME: reserve register
     emit("", "move", SS2S(iterations << ",R62"), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
-    emit((label+":"), "", SS2S(""), "# ");        // just a label
+    emit((label+":"), "", "", "# ");        // just a label
+#if OPT_PRAGMA
+    pragmaForLabel = label;		// remind label for pragma/break FIXME: implement properly later on
+#endif
 }
 
 void codegen_cc::forEnd(const std::string &label)
@@ -801,12 +791,15 @@ void codegen_cc::forEnd(const std::string &label)
     comment("# FOR_END");
     // FIXME: free register
     emit("", "loop", SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
+#if OPT_PRAGMA
+    emit((label+"_end:"), "", "", "# ");                              // NB: just a label
+#endif
 }
 
 void codegen_cc::doWhileStart(const std::string &label)
 {
     comment("# DO_WHILE_START");
-    emit((label+":"), "", SS2S(""), "# ");                              // NB: just a label
+    emit((label+":"), "", "", "# ");                              // NB: just a label
 }
 
 void codegen_cc::doWhileEnd(const std::string &label, size_t op0, const std::string &opName, size_t op1)

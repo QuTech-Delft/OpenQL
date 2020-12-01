@@ -371,6 +371,29 @@ void test_qi_example( std::string scheduler, std::string scheduler_uniform)
 }
 
 
+void test_break( std::string scheduler, std::string scheduler_uniform)
+{
+    // create and set platform
+    ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
+
+    const int num_qubits = 5;
+    const int num_cregs = 5;
+    ql::quantum_program prog(("test_break_" + scheduler + "_uniform_" + scheduler_uniform), s5, num_qubits, num_cregs);
+    ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs);
+
+    k.gate("prepz", 1);	// FIXME: program makes no sense
+    k.gate("measure", 1);
+    k.gate("if_1_break", 1);
+
+    prog.add_for(k, 100);
+
+    ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
+    ql::options::set("write_qasm_files", "yes");    	// so we can see bundles
+    prog.compile();
+}
+
+
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_INFO");      // LOG_DEBUG, LOG_INFO
@@ -385,6 +408,7 @@ int main(int argc, char ** argv)
 
 #if 1
     test_qi_example("ALAP", "no");
+    test_break("ALAP", "no");
 #endif
 
     return 0;

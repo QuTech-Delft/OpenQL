@@ -562,6 +562,19 @@
 			}
 		},
 
+		"if_1_break": {
+			"duration": 0,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+			"type": "none",
+			"cc_light_instr": "none",
+			"cc": {
+				"signal": [],
+				"pragma": {
+                    "break": 1
+				}
+			}
+		},
+
         // additions for pycQED::test_single_qubit_oql_CC.py
         // FIXME: contents untested
         "square": {

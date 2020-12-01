@@ -110,6 +110,9 @@ private:    // vars
 
 	// codegen state, kernel scope FIXME: create class
     unsigned int lastEndCycle[MAX_INSTRS];                      // vector[instrIdx], maintain where we got per slot
+#if OPT_PRAGMA
+	std::string pragmaForLabel;
+#endif
 
 	// codegen state, bundle scope
     std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group]
