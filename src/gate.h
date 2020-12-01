@@ -497,7 +497,7 @@ public:
     size_t virtual_qubit_index;
 
     remap(const size_t r_index, const size_t v_index);
-    remap(const size_t r_index);
+    // remap(const size_t r_index);
     
     instruction_t qasm() const override;
     gate_type_t type() const override;

@@ -458,9 +458,9 @@ bool quantum_kernel::add_default_gate_if_available(
             c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
         }
         result = true;
-    } else if (gname == "remap") {
-        c.push_back(new ql::remap(qubits[0]));
-        result = true;
+    // } else if (gname == "remap") {
+    //     c.push_back(new ql::remap(qubits[0]));
+    //     result = true;
     } else {
         result = false;
     }

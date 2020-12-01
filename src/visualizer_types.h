@@ -93,6 +93,7 @@ struct GateProperties {
     gate_type_t type;
     std::vector<int> codewords; // std::vector<size_t> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
     std::string visual_type;
+    int virtual_qubit_index; // only used for remap gates
 
     GateProperties() = delete;
 };

@@ -1174,16 +1174,26 @@ void Past::AddSwap(size_t r0, size_t r1) {
         Add(gp);
     }
 
-    circuit remaps1;
-    new_gate(remaps1, "remap", {r0});
-    for (auto &gp : remaps1) {
-        Add(gp);
-    }
-    circuit remaps2;
-    new_gate(remaps2, "remap", {r1});
-    for (auto &gp : remaps2) {
-        Add(gp);
-    }
+    // add the remap gates
+    // IOUT("adding swap for qubits: [" << r0 << ", " << v2r.GetVirt(r0) << "] and [" << r1 << ", " << v2r.GetVirt(r1) << "]");
+    // IOUT("after swap contents will be: [" << r0 << ", " << v2r.GetVirt(r1) << "] and [" << r1 << ", " << v2r.GetVirt(r0) << "]");
+    // IOUT("real qubit " << r0 << " was mapped to virtual qubit " << v2r.GetVirt(r0));
+    // IOUT("real qubit " << r1 << " was mapped to virtual qubit " << v2r.GetVirt(r1));
+    IOUT("mapping v " << v2r.GetVirt(r1) << " to q " << r0);
+    IOUT("mapping v " << v2r.GetVirt(r0) << " to q " << r1);
+    Add(new remap(r0, v2r.GetVirt(r1)));
+    Add(new remap(r1, v2r.GetVirt(r0)));
+
+    // circuit remaps1;
+    // new_gate(remaps1, "remap", {r0});
+    // for (auto &gp : remaps1) {
+    //     Add(gp);
+    // }
+    // circuit remaps2;
+    // new_gate(remaps2, "remap", {r1});
+    // for (auto &gp : remaps2) {
+    //     Add(gp);
+    // }
 
     // ql::gate *remap1 = new remap(r0, v2r.GetVirt(r1));
     // ql::gate *remap2 = new remap(r1, v2r.GetVirt(r0));
@@ -1296,6 +1306,11 @@ void Past::MakeReal(ql::gate *gp, ql::circuit &circ) {
 // make primitives of all gates that also have an entry with _prim appended to its name
 // and decomposing it according to the .json file gate decomposition
 void Past::MakePrimitive(ql::gate *gp, ql::circuit &circ) const {
+    // remap gates are added here to preserve the virtual qubit index parameter (which can not be added through new_gate)
+    if (gp->type() == __remap_gate__) {
+        circ.push_back(gp);
+        return;
+    }
     std::string gname = gp->name;
     stripname(gname);
     std::string prim_gname = gname;

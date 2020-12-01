@@ -86,6 +86,15 @@ void visualize(const ql::quantum_program* program, const std::string &visualizat
     IOUT("Starting visualization...");
     IOUT("Visualization type: " << visualizationType);
 
+    // for (ql::quantum_kernel kernel : program->kernels) {
+    //     for (ql::gate* const gate : kernel.get_circuit()) {
+    //         if (gate->type() == __remap_gate__) {
+    //             const ql::remap *remap_p = dynamic_cast<ql::remap*>(gate);
+    //             IOUT("remap gate: [" << remap_p->operands[0] << ", " << remap_p->virtual_qubit_index << "]");
+    //         }
+    //     }
+    // }
+
     printGates(parseGates(program));
 
     // Choose the proper visualization based on the visualization type.
@@ -126,7 +135,8 @@ std::vector<GateProperties> parseGates(const ql::quantum_program* program) {
                 safe_int_cast(gate->cycle),
                 gate->type(),
                 {},
-                "UNDEFINED"
+                "UNDEFINED",
+                gate->type() == __remap_gate__ ? dynamic_cast<ql::remap*>(gate)->virtual_qubit_index : std::numeric_limits<int>::max()
                 // codewords,
                 // gate->visual_type
             };
@@ -259,6 +269,10 @@ void printGates(const std::vector<GateProperties> gates) {
         IOUT("\tcodewords: " << codewords << "]");
 
         IOUT("\tvisual_type: " << gate.visual_type);
+
+        if (gate.type == __remap_gate__) {
+            IOUT("\tvirtual_qubit_index: " << gate.virtual_qubit_index);
+        }
     }
 }
 
