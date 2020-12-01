@@ -458,6 +458,7 @@ bool quantum_kernel::add_default_gate_if_available(
             c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
         }
         result = true;
+    // TvdM: commented out because this does not preserve the original remap gate's virtual_qubit_parameter
     // } else if (gname == "remap") {
     //     c.push_back(new ql::remap(qubits[0]));
     //     result = true;
