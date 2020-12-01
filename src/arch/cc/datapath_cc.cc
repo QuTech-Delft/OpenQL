@@ -33,6 +33,12 @@ int datapath_cc::allocateSmBit(size_t cop, size_t instrIdx)
 }
 
 
+int datapath_cc::getSmBit(size_t cop, size_t instrIdx)
+{
+	return 0;	// FIXME
+}
+
+
 int datapath_cc::getOrAssignMux(size_t instrIdx)
 {
 	return 0;	// FIXME

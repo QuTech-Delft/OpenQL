@@ -177,7 +177,10 @@ void codegen_cc::bundleStart(const std::string &cmnt)
 		.signalValue = "",
 		.durationInCycles = 0,
 #if OPT_SUPPORT_STATIC_CODEWORDS
-		.staticCodewordOverride = settings_cc::NO_STATIC_CODEWORD_OVERRIDE
+		.staticCodewordOverride = settings_cc::NO_STATIC_CODEWORD_OVERRIDE,
+#endif
+#if OPT_PRAGMA
+		.pragma = nullptr,
 #endif
 	};
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
@@ -188,8 +191,10 @@ void codegen_cc::bundleStart(const std::string &cmnt)
 
 	// generate source code comments
     comment(cmnt);
-    dp.comment(cmnt);		// FIXME: comment is not full appropriate, but at least allows matching with .CODE section
+    dp.comment(cmnt);		// FIXME: comment is not fully appropriate, but at least allows matching with .CODE section
 }
+
+
 
 
 // Static helper function for bundleFinish()
@@ -291,11 +296,16 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 }
 
 
+
+
 // bundleFinish: see 'strategy' above
 // FIXME: split into smaller parts
 void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
 {
 	bool bundleHasReadout = false;
+#if OPT_PRAGMA
+	bool bundleHasPragma = false;
+#endif
 
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
@@ -330,8 +340,12 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 		} tReadoutInfo;
 		std::map<int, tReadoutInfo> readoutMap;								// NB: key is instrIdx
 #endif
+#if OPT_PRAGMA
+		const json *pragma = nullptr;
+		int pragmaSmBit = 0;
+#endif
 
-		// iterate over groups of instrument
+		// now collect code generation info from all groups of instrument
         size_t nrGroups = bundleInfo[instrIdx].size();
         for(size_t group=0; group<nrGroups; group++) {
             tBundleInfo *bi = &bundleInfo[instrIdx][group];                 // shorthand
@@ -360,6 +374,22 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
                 instrHasOutput = true;
             } // if(signal defined)
+
+
+			// handle pragma
+#if OPT_PRAGMA
+			if(bi->pragma) {
+				// FIXME: enforce single pragma per bundle (currently by design)
+				// FIXME: enforce no other work
+            	bundleHasPragma = true;
+            	pragma = bi->pragma;
+
+				int cop = bi->pragmaQops[0];                	// implicit cop for qubit. FIXME: perform checks
+				// get SM bit for cop (allocated during readout)
+				pragmaSmBit = dp.getSmBit(cop, instrIdx);
+            }
+#endif
+
 
 #if OPT_FEEDBACK
             // handle readout (i.e. when necessary, create readoutMap entry, and set flags bundleHasReadout and instrHasReadout)
@@ -416,10 +446,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 #if OPT_FEEDBACK
 		// FIXME: terrible hack.
 		// Alternatively, we could ignore startCycle and compute it ourselves. No, startCycle is also used to insert 'wait'
+		// Or better, decompose measure into measure+getResults, where getResults does the wait for UHF latency + DSM distribution
 		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
 			// shorten output to preserve timeline while injecting time for feedback below
-			int smWait = settings.getSmWait();
-			maxDurationInCycles -= 1+smWait;	// adjust gate duration (Ugh)
+			int readoutWait = settings.getReadoutWait();
+			maxDurationInCycles -= 1+readoutWait;	// adjust gate duration (Ugh)
 			if(maxDurationInCycles <= 1) {
 				FATAL("maxDurationInCycles adjusted to " << maxDurationInCycles);
 			}
@@ -473,7 +504,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
 					 "seq_out_sm",
 					 SS2S("S" << smAddr << "," << pl << "," << maxDurationInCycles),
-					 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": consitional code word/mask on '" << ic.ii.instrumentName+"'"));
+					 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": consitional code word/mask on '" << ic.ii.instrumentName << "'"));
 				// FIXME
             }
 
@@ -484,12 +515,47 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         }
 
 #if OPT_PRAGMA	// FIXME: pragma handling
-		if(bundleHasPragma) {
-        	if(instrHasPragma) {
+		if(pragma) {	// NB: note that this will only work because we set the pragma for all instruments, and thus already encounter this for the first instrument
+			if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
+				padToCycle(lastEndCycle[instrIdx], startCycle, ic.ii.slot, ic.ii.instrumentName);
+			}
 
-        	} else {
+			// FIXME: the only pragma possible is "break" for now
+			int pragmaBreakVal = json_get<int>(*pragma, "break", "pragma of unknown instruction");		// FIXME we don't know which instruction we're dealing with, so better move
+			int smAddr = pragmaSmBit/32;	// 'seq_cl_sm' is addressable in 32 bit words
+			unsigned int mask = 1 << (pragmaSmBit%32);
+			// FIXME:
+			std::string label = "loopExit";
 
-        	}
+			// emit code for pragma "break". NB: code is identical for all instruments
+/*
+  			seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 (address depends on mapping of variable c) ...
+            move_sm     R0                  ; ... and move to register
+            and         R0,<mask>,R1        ; mask also depends on mapping of c
+            nop								; register dependency R1
+            jlt         R1,1,@loop
+*/
+			emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+				 "seq_cl_sm",
+				 SS2S("S" << smAddr),
+				 SS2S("#  on '" << ic.ii.instrumentName << "'"));
+			emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+				 "move_sm",
+				 "R0",
+				 "");
+			emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+				 "and",
+				 SS2S("R0," << mask << "," << "R1"),
+				 "");	// results in '0' for 'bit==0' and 'mask' for 'bit==1'
+			emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+				 "nop",
+				 "",
+				 "");
+			emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+				 "jlt",
+				 SS2S("R1,1,@" << label),
+				 "");
+
         }
 #endif
 
@@ -541,14 +607,14 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			}
 
 			// code generation common to paths above
-			int smWait = settings.getSmWait();
+			int readoutWait = settings.getReadoutWait();
 			emit(SS2S("[" << ic.ii.slot << "]"),      				// CCIO selector
 				"seq_wait",
-				SS2S(smWait),
-				SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+smWait << ": wait for DSM data distribution on '" << ic.ii.instrumentName+"'"));
+				SS2S(readoutWait),
+				SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+readoutWait << ": wait for instrument latency and DSM data distribution on '" << ic.ii.instrumentName+"'"));
 
 			// update lastEndCycle
-			lastEndCycle[instrIdx] += smWait;	// FIXME: this time has not been scheduled, but is interjected here at the backend level
+			lastEndCycle[instrIdx] += readoutWait;	// FIXME: this time has not been scheduled, but is interjected here at the backend level
 		}
 #endif
 
@@ -566,6 +632,18 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 /************************************************************************\
 | Quantum instructions
 \************************************************************************/
+
+// helper FIXME: make QASM compatible, use library function?
+std::string toQasm(const std::string &iname, const std::vector<size_t> &qops, const std::vector<size_t> &cops)
+{
+	std::stringstream s;
+	s << iname << " ";
+	for(size_t i=0; i<qops.size(); i++) {
+		s << qops[i];
+		if(i<qops.size()-1) s << ",";
+	}
+	return s.str();
+}
 
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
 // translates 'gate' representation to 'waveform' representation (tBundleInfo) and maps qubits to instruments & group.
@@ -585,8 +663,7 @@ void codegen_cc::customGate(
 
     vcd.customGate(iname, qops, startCycle, durationInCycles);
 
-    //  determine whether this is a readout instruction
-    bool isReadout = settings.isReadout(iname);
+    bool isReadout = settings.isReadout(iname);    	//  determine whether this is a readout instruction
 
     // generate comment (also performs some checks)
     if(isReadout) {
@@ -602,20 +679,13 @@ void codegen_cc::customGate(
             // FIXME: define meaning: no classical target, or implied target (classical register matching qubit)
             comment(SS2S(" # READOUT: " << iname << "(q" << qops[0] << ")"));
         } else if(cops.size() == 1) {
-            comment(SS2S(" # READOUT: " << iname << "(c" << cops[0] << ",q" << qops[0] << ")"));
+            comment(SS2S(" # READOUT: " << iname << "(c" << cops[0] << ",q" << qops[0] << ")"));	// FIXME use toQasm()
         } else {
-            FATAL("Readout instruction requires 0 or 1 classical operands, not " << cops.size());   // FIXME: provide context
+            FATAL("Readout instruction requires 0 or 1 classical operands, not " << cops.size());   // FIXME: provide context, move check
         }
     } else { // handle all other instruction types than "readout"
         // generate comment. NB: we don't have a particular limit for the number of operands
-        std::stringstream cmnt;
-        cmnt << " # gate '" << iname << " ";    // FIXME: make QASM compatible, use library function?
-        for(size_t i=0; i<qops.size(); i++) {
-            cmnt << qops[i];
-            if(i<qops.size()-1) cmnt << ",";
-        }
-        cmnt << "'";
-        comment(cmnt.str());
+        comment(std::string(" # gate '") + toQasm(iname, qops, cops) + "'");
     }
 
     // find instruction (gate definition)
@@ -650,6 +720,7 @@ void codegen_cc::customGate(
 
 #if OPT_FEEDBACK
         // FIXME: assumes that group configuration for readout input matches that of output
+        // FIXME: not reached if we don't define signals, so here we need output, whereas bundleFinish doesn't
 		// store operands used for readout, actual work is postponed to bundleFinish()
         if(isReadout) {
             int cop = !cops.empty() ? cops[0] : IMPLICIT_COP;	// FIXME: make explicit here?
@@ -675,6 +746,24 @@ void codegen_cc::customGate(
 
         // NB: code is generated in bundleFinish()
     }   // for(signal)
+
+#if OPT_PRAGMA
+	const json *pragma = settings.getPragma(iname);
+	if(pragma) {
+		for(std::vector<tBundleInfo> &vbi : bundleInfo) {
+			// FIXME: for now we just store the JSON of the pragma statement in bundleInfo[*][0]
+			if(vbi[0].pragma) {
+				FATAL("Bundle contains more than one gate with 'pragma' key");	// FIXME: provide context
+			}
+			vbi[0].pragma = pragma;
+
+			// store cops and qubits
+			vbi[0].pragmaCops = cops;
+			vbi[0].pragmaQops = qops;
+		}
+
+	}
+#endif
 }
 
 void codegen_cc::nopGate()
@@ -765,6 +854,11 @@ void codegen_cc::emit(const std::string &labelOrSel, const std::string &instr, c
     codeSection << std::setw(16) << labelOrSel << std::setw(16) << instr << std::setw(24) << ops << comment << std::endl;
 }
 
+void codegen_cc::emit(int sel, const std::string &instr, const std::string &ops, const std::string &comment)
+{
+	emit(SS2S("[" << sel << "]"),      // CCIO selector
+		instr, ops, comment);
+}
 /************************************************************************\
 | helpers
 \************************************************************************/
@@ -802,10 +896,10 @@ void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, co
     }
 
     if(prePadding > 0) {     // we need to align
-        emit(SS2S("[" << slot << "]").c_str(),      // CCIO selector
+        emit(SS2S("[" << slot << "]"),      // CCIO selector
             "seq_out",
             SS2S("0x00000000," << prePadding),
-            SS2S("# cycle " << lastEndCycle << "-" << startCycle << ": padding on '" << instrumentName+"'").c_str());
+            SS2S("# cycle " << lastEndCycle << "-" << startCycle << ": padding on '" << instrumentName+"'"));
     }
 }
 

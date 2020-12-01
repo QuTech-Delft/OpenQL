@@ -54,7 +54,9 @@ public: // functions
 
     void loadBackendSettings(const quantum_platform &platform);
 	bool isReadout(const std::string &iname);
-	int getSmWait();
+	bool isPragma(const std::string &iname);
+	const json *getPragma(const std::string &iname);
+	int getReadoutWait();
 	tSignalDef findSignalDefinition(const json &instruction, const std::string &iname) const;
     tInstrumentInfo getInstrumentInfo(size_t instrIdx) const;
     tInstrumentControl getInstrumentControl(size_t instrIdx) const;

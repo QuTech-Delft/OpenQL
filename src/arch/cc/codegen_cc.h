@@ -68,20 +68,27 @@ private:    // types
         int condition;
         // FIXME: add cops
 #endif
-    	// output
+    	// output gates
         std::string signalValue;
         unsigned int durationInCycles;
 #if OPT_SUPPORT_STATIC_CODEWORDS
         int staticCodewordOverride;
 #endif
-    } tBundleInfo;                      // information for an instrument group (of channels), for a single instruction
-    // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR?
+#if OPT_PRAGMA
+        // pragma 'gates'
+		const json *pragma;
+		std::vector<size_t> pragmaCops;
+		std::vector<size_t> pragmaQops;		// FIXME: naming, integrate with readout(Cop,Qubit}
+#endif
+    } tBundleInfo; // information for an instrument group (of channels), for a single instruction
+    // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with custmGate(), bundleStart(), bundleFinish()?
+
 
     typedef struct {
         std::string signalValueString;
         unsigned int operandIdx;
         settings_cc::tSignalInfo si;
-    } tCalcSignalValue;
+    } tCalcSignalValue;	// return type for calcSignalValue()
 
 
 private:    // vars
@@ -91,7 +98,7 @@ private:    // vars
 
     const quantum_platform *platform;                           // remind platform
     settings_cc settings;                                       // handling of JSON settings
-    datapath_cc dp;												// ahndling of CC datapath
+    datapath_cc dp;												// handling of CC datapath
     vcd_cc vcd;                                                 // handling of VCD file output
 
     bool verboseCode = true;                                    // option to output extra comments in generated code. FIXME: not yet configurable
@@ -111,6 +118,7 @@ private:    // funcs
     // Some helpers to ease nice assembly formatting
     void emit(const std::string &labelOrComment, const std::string &instr="");
     void emit(const std::string &label, const std::string &instr, const std::string &ops, const std::string &comment="");
+	void emit(int sel, const std::string &instr, const std::string &ops, const std::string &comment="");
 
     // helpers
     void emitProgramStart();

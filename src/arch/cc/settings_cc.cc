@@ -75,9 +75,29 @@ bool settings_cc::isReadout(const std::string &iname)
 }
 
 
-int settings_cc::getSmWait()
+bool settings_cc::isPragma(const std::string &iname)
 {
-	return 3;	// FIXME: make configurable
+	return getPragma(iname) != nullptr;
+}
+
+
+const json *settings_cc::getPragma(const std::string &iname)
+{
+	const json &instruction = platform->find_instruction(iname);
+    std::string instructionPath = "instructions/"+iname;
+    JSON_ASSERT(instruction, "cc", instructionPath);
+    if(JSON_EXISTS(instruction["cc"], "pragma")) {
+    	return &instruction["cc"]["pragma"];
+    } else {
+		return nullptr;
+    }
+}
+
+
+// return wait for instrument latency + SM data distribution
+int settings_cc::getReadoutWait()
+{
+	return 20+3;	// FIXME: make configurable
 }
 
 
