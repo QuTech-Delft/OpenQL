@@ -889,8 +889,8 @@ void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, co
 
     if(prePadding > 0) {     // we need to align
         emit(SS2S("[" << slot << "]"),      // CCIO selector
-            "seq_out",
-            SS2S("0x00000000," << prePadding),
+            "seq_wait",
+            SS2S(prePadding),
             SS2S("# cycle " << lastEndCycle << "-" << startCycle << ": padding on '" << instrumentName+"'"));
     }
 }
