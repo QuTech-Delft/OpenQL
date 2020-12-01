@@ -43,6 +43,9 @@ public: // functions
 	void emit(const std::string &sel, const std::string &statement, const std::string &comment="") {
 		datapathSection << std::setw(16) << sel << std::setw(16) << statement << std::setw(24) << comment << std::endl;
 	}
+	void emit(int sel, const std::string &statement, const std::string &comment="") {
+		emit(SS2S("[" << sel << "]"), statement, comment);
+	}
 
 private:    // vars
 	std::stringstream datapathSection;                          // the data path configuration generated

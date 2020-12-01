@@ -470,7 +470,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
             // emit code for slot output
             if(condGateMap.empty()) {	// all groups unconditional
-				emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+				emit(ic.ii.slot,
 					 "seq_out",
 					 SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << maxDurationInCycles),
 					 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName+"'"));
@@ -479,7 +479,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				int smAddr = 0;		// FIXME:
 				int pl = dp.getOrAssignPl(instrIdx);
 
-				dp.emit(SS2S("[" << ic.ii.slot << "]"), SS2S(".PL " << pl));
+				dp.emit(ic.ii.slot, SS2S(".PL " << pl));
 				for(auto &cg : condGateMap) {
 					int group = cg.first;
 					tCondGateInfo cgi = cg.second;
@@ -492,7 +492,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 							int smBit0 = 0;
 							int smBit1 = 0;
 							std::string expression;
-							dp.emit(SS2S("[" << ic.ii.slot << "]"),      	// CCIO selector
+							dp.emit(ic.ii.slot,
 									SS2S("O[" << bit << "] := I[" << smBit0 << "]"),		// FIXME: depend on condition
 									SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", expression=" << expression));
 						}
@@ -501,7 +501,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				}
 
 				// emit code for conditional gate
-				emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+				emit(ic.ii.slot,
 					 "seq_out_sm",
 					 SS2S("S" << smAddr << "," << pl << "," << maxDurationInCycles),
 					 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": consitional code word/mask on '" << ic.ii.instrumentName << "'"));
@@ -535,23 +535,23 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             nop								; register dependency R1
             jlt         R1,1,@loop
 */
-			emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+			emit(ic.ii.slot,
 				 "seq_cl_sm",
 				 SS2S("S" << smAddr),
 				 SS2S("#  on '" << ic.ii.instrumentName << "'"));
-			emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+			emit(ic.ii.slot,
 				 "move_sm",
 				 "R0",
 				 "");
-			emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+			emit(ic.ii.slot,
 				 "and",
 				 SS2S("R0," << mask << "," << "R1"),
 				 "");	// results in '0' for 'bit==0' and 'mask' for 'bit==1'
-			emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+			emit(ic.ii.slot,
 				 "nop",
 				 "",
 				 "");
-			emit(SS2S("[" << ic.ii.slot << "]"),      // CCIO selector
+			emit(ic.ii.slot,
 				 "jlt",
 				 SS2S("R1,1,@" << label),
 				 "");
@@ -574,12 +574,12 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				int mux = dp.getOrAssignMux(instrIdx);
 
 				// emit datapath code
-				dp.emit(SS2S("[" << ic.ii.slot << "]"), SS2S(".MUX " << mux));
+				dp.emit(ic.ii.slot, SS2S(".MUX " << mux));
 				for(auto &readout : readoutMap) {
 					int group = readout.first;
 					tReadoutInfo ri = readout.second;
 
-					dp.emit(SS2S("[" << ic.ii.slot << "]"),      	// CCIO selector
+					dp.emit(ic.ii.slot,
 							SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
 							SS2S("# cop " << ri.cop << " = readout(q" << ri.qubit << ")"));
 
@@ -588,7 +588,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 				// emit code for slot input
 				int sizeTag = dp.getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
-				emit(SS2S("[" << ic.ii.slot << "]"),      			// CCIO selector
+				emit(ic.ii.slot,
 					"seq_in_sm",
 					SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
 					SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": readout on '" << ic.ii.instrumentName+"'"));
@@ -599,7 +599,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
 
 				// emit code for non-participating instrument
-				emit(SS2S("[" << ic.ii.slot << "]"),      			// CCIO selector
+				emit(ic.ii.slot,
 					"seq_inv_sm",
 					SS2S("S" << smAddr << ","  << smTotalSize),
 					SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": no readout on '" << ic.ii.instrumentName+"'"));
@@ -608,7 +608,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 			// code generation common to paths above
 			int readoutWait = settings.getReadoutWait();
-			emit(SS2S("[" << ic.ii.slot << "]"),      				// CCIO selector
+			emit(ic.ii.slot,
 				"seq_wait",
 				SS2S(readoutWait),
 				SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+readoutWait << ": wait for instrument latency and DSM data distribution on '" << ic.ii.instrumentName+"'"));
@@ -856,8 +856,7 @@ void codegen_cc::emit(const std::string &labelOrSel, const std::string &instr, c
 
 void codegen_cc::emit(int sel, const std::string &instr, const std::string &ops, const std::string &comment)
 {
-	emit(SS2S("[" << sel << "]"),      // CCIO selector
-		instr, ops, comment);
+	emit(SS2S("[" << sel << "]"), instr, ops, comment);
 }
 /************************************************************************\
 | helpers
