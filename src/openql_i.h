@@ -1,5 +1,5 @@
 /**
- * @file   openql.h
+ * @file   openql_i.h
  * @author Imran Ashraf
  * @brief  header file for python interface
  */
@@ -74,6 +74,7 @@ public:
     Platform platform;
     size_t qubit_count;
     size_t creg_count;
+    size_t breg_count;
     ql::quantum_kernel *kernel;
 
     Kernel(const std::string &name);
@@ -81,7 +82,8 @@ public:
         const std::string &name,
         const Platform &platform,
         size_t qubit_count,
-        size_t creg_count = 0
+        size_t creg_count = 0,
+        size_t breg_count = 0
     );
 
     void identity(size_t q0);
@@ -118,12 +120,21 @@ public:
         const std::string &name,
         const std::vector<size_t> &qubits,
         size_t duration = 0,
-        double angle = 0.0
+        double angle = 0.0,
+        const std::vector<size_t> &bregs = {},
+        const std::string &condstring = "COND_ALWAYS",
+        const std::vector<size_t> &condregs = {}
     );
     void gate(
         const std::string &name,
         const std::vector<size_t> &qubits,
         const CReg &destination
+    );
+    void condgate(
+        const std::string &name,
+        const std::vector<size_t> &qubits,
+        const std::string &condstring,
+        const std::vector<size_t> &condregs
     );
     void gate(const Unitary &u, const std::vector<size_t> &qubits);
     void classical(const CReg &destination, const Operation &operation);
@@ -148,6 +159,7 @@ public:
     Platform platform;
     size_t qubit_count;
     size_t creg_count;
+    size_t breg_count;
     ql::quantum_program *program;
 
     Program(const std::string &name);
@@ -155,7 +167,8 @@ public:
         const std::string &name,
         const Platform &platform,
         size_t qubit_count,
-        size_t creg_count = 0
+        size_t creg_count = 0,
+        size_t breg_count = 0
     );
     void set_sweep_points(const std::vector<float> &sweep_points);
     std::vector<float> get_sweep_points() const;

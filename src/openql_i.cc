@@ -92,15 +92,17 @@ Kernel::Kernel(
     const std::string &name,
     const Platform &platform,
     size_t qubit_count,
-    size_t creg_count
+    size_t creg_count,
+    size_t breg_count
 ) :
     name(name),
     platform(platform),
     qubit_count(qubit_count),
-    creg_count(creg_count)
+    creg_count(creg_count),
+    breg_count(breg_count)
 {
-    WOUT("Kernel(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
-    kernel = new ql::quantum_kernel(name, *(platform.platform), qubit_count, creg_count);
+    WOUT("Kernel(name,Platform,#qbit,#creg,#breg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
+    kernel = new ql::quantum_kernel(name, *(platform.platform), qubit_count, creg_count, breg_count);
 }
 
 void Kernel::identity(size_t q0) {
@@ -227,9 +229,26 @@ void Kernel::gate(
     const std::string &name,
     const std::vector<size_t> &qubits,
     size_t duration,
-    double angle
+    double angle,
+    const std::vector<size_t> &bregs,
+    const std::string &condstring,
+    const std::vector<size_t> &condregs
 ) {
-    kernel->gate(name, qubits, {}, duration, angle);
+    ql::cond_type_t condvalue;
+    if      (condstring == "COND_ALWAYS") condvalue = ql::cond_always;
+    else if (condstring == "COND_NEVER") condvalue = ql::cond_never;
+    else if (condstring == "COND") condvalue = ql::cond;
+    else if (condstring == "COND_NOT") condvalue = ql::cond_not;
+    else if (condstring == "COND_AND") condvalue = ql::cond_and;
+    else if (condstring == "COND_NAND") condvalue = ql::cond_nand;
+    else if (condstring == "COND_OR") condvalue = ql::cond_or;
+    else if (condstring == "COND_NOR") condvalue = ql::cond_nor;
+    else if (condstring == "COND_XOR") condvalue = ql::cond_xor;
+    else if (condstring == "COND_NXOR") condvalue = ql::cond_nxor;
+    else
+        std::cerr << "[OPENQL] " << __FILE__ << ":" << __LINE__
+                  << " Error: Unknown condition " << condstring << std::endl;
+    kernel->gate(name, qubits, {}, duration, angle, bregs, condvalue, condregs);
 }
 
 void Kernel::gate(
@@ -238,6 +257,29 @@ void Kernel::gate(
     const CReg &destination
 ) {
     kernel->gate(name, qubits, {(destination.creg)->id} );
+}
+
+void Kernel::condgate(
+    const std::string &name,
+    const std::vector<size_t> &qubits,
+    const std::string &condstring,
+    const std::vector<size_t> &condregs
+) {
+    ql::cond_type_t condvalue;
+    if      (condstring == "COND_ALWAYS") condvalue = ql::cond_always;
+    else if (condstring == "COND_NEVER") condvalue = ql::cond_never;
+    else if (condstring == "COND") condvalue = ql::cond;
+    else if (condstring == "COND_NOT") condvalue = ql::cond_not;
+    else if (condstring == "COND_AND") condvalue = ql::cond_and;
+    else if (condstring == "COND_NAND") condvalue = ql::cond_nand;
+    else if (condstring == "COND_OR") condvalue = ql::cond_or;
+    else if (condstring == "COND_NOR") condvalue = ql::cond_nor;
+    else if (condstring == "COND_XOR") condvalue = ql::cond_xor;
+    else if (condstring == "COND_NXOR") condvalue = ql::cond_nxor;
+    else
+        std::cerr << "[OPENQL] " << __FILE__ << ":" << __LINE__
+                  << " Error: Unknown condition " << condstring << std::endl;
+    kernel->gate(name, qubits, {}, 0, 0.0, {}, condvalue, condregs);
 }
 
 void Kernel::gate(const Unitary &u, const std::vector<size_t> &qubits) {
@@ -277,15 +319,17 @@ Program::Program(
     const std::string &name,
     const Platform &platform,
     size_t qubit_count,
-    size_t creg_count
+    size_t creg_count,
+    size_t breg_count
 ) :
     name(name),
     platform(platform),
     qubit_count(qubit_count),
-    creg_count(creg_count)
+    creg_count(creg_count),
+    breg_count(breg_count)
 {
-    WOUT("Program(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
-    program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count);
+    WOUT("Program(name,Platform,#qbit,#creg,#breg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
+    program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count, breg_count);
 }
 
 void Program::set_sweep_points(const std::vector<float> &sweep_points) {

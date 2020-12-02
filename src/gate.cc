@@ -770,11 +770,20 @@ instruction_t custom_gate::qasm() const {
     }
 
     if (creg_operands.size() == 1) {
-        ss << ",r" << creg_operands[0];
+        ss << ", r[" << creg_operands[0] << "]";
     } else if (creg_operands.size() > 1) {
-        ss << ",r" << creg_operands[0];
+        ss << ", r[" << creg_operands[0] << "]";
         for (size_t i = 1; i < creg_operands.size(); i++) {
-            ss << ",r" << creg_operands[i];
+            ss << ", r[" << creg_operands[i] << "]";
+        }
+    }
+
+    if (breg_operands.size() == 1) {
+        ss << ", b[" << breg_operands[0] << "]";
+    } else if (breg_operands.size() > 1) {
+        ss << ", b[" << breg_operands[0] << "]";
+        for (size_t i = 1; i < breg_operands.size(); i++) {
+            ss << ", b[" << breg_operands[i] << "]";
         }
     }
 

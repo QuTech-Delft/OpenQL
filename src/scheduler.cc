@@ -195,8 +195,7 @@ void Scheduler::init(
         if (iname == "measure") {
             DOUT(". considering " << name[currNode] << " as measure");
             // Read+Write each qubit operand + Write each classical operand + Write each bit operand
-            auto operands = ins->operands;
-            for (auto operand : operands) {
+            for (auto operand : ins->operands) {
                 DOUT(".. Operand: " << operand);
                 add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
@@ -222,7 +221,7 @@ void Scheduler::init(
             }
 
             // update LastWriter and so clear LastReaders
-            for (auto operand : operands) {
+            for (auto operand : ins->operands) {
                 DOUT(".. Update LastWriter for qubit operand register: " << operand);
                 LastWriter[operand] = currID;
                 DOUT(".. Clearing LastReaders for qubit operand register: " << operand);
@@ -288,8 +287,7 @@ void Scheduler::init(
             DOUT(". considering " << name[currNode] << " as cnot");
             // CNOTs Read the first operands, and Ds the second operand
             size_t operandNo=0;
-            auto operands = ins->operands;
-            for (auto operand : operands) {
+            for (auto operand : ins->operands) {
                 DOUT(".. Operand: " << operand);
                 if (operandNo == 0) {
                     add_dep(LastWriter[operand], currID, RAW, operand);
@@ -317,7 +315,7 @@ void Scheduler::init(
 
             // now update LastWriter and so clear LastReaders
             operandNo=0;
-            for (auto operand : operands) {
+            for (auto operand : ins->operands) {
                 if (operandNo == 0) {
                     // update LastReaders for this operand 0
                     LastReaders[operand].push_back(currID);
@@ -332,8 +330,7 @@ void Scheduler::init(
             DOUT(". considering " << name[currNode] << " as cz");
             // CZs Read all operands
             size_t operandNo = 0;
-            auto operands = ins->operands;
-            for (auto operand : operands) {
+            for (auto operand : ins->operands) {
                 DOUT(".. Operand: " << operand);
                 if (options::get("scheduler_commute") == "no") {
                     for (auto &readerID : LastReaders[operand]) {
@@ -349,7 +346,7 @@ void Scheduler::init(
 
             // update LastReaders etc.
             operandNo = 0;
-            for (auto operand : operands) {
+            for (auto operand : ins->operands) {
                 LastDs[operand].clear();
                 LastReaders[operand].push_back(currID);
                 operandNo++;
@@ -363,9 +360,8 @@ void Scheduler::init(
             DOUT(". considering " << name[currNode] << " as Control Unitary");
             // Control Unitaries Read all operands, and Write the last operand
             size_t operandNo=0;
-            auto operands = ins->operands;
-            size_t op_count = operands.size();
-            for (auto operand : operands) {
+            size_t op_count = ins->operands.size();
+            for (auto operand : ins->operands) {
                 DOUT(".. Operand: " << operand);
                 add_dep(LastWriter[operand], currID, RAW, operand);
                 if (options::get("scheduler_commute") == "no") {
@@ -401,8 +397,7 @@ void Scheduler::init(
             // Read+Write on each quantum operand
             // Read+Write on each classical operand
             // Read+Write on each bit operand
-            auto operands = ins->operands;
-            for (auto operand : operands) {
+            for (auto operand : ins->operands) {
                 DOUT(".. Operand: " << operand);
                 add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
@@ -466,9 +461,9 @@ void Scheduler::init(
         // guaranteed that on a jump and on start of target circuit, the source circuit completed).
         //
         // note that there always is a LastWriter: the dummy source node wrote to every qubit and class. reg
-        std::vector<size_t> operands(total_reg_count);
-        std::iota(operands.begin(), operands.end(), 0);
-        for (auto operand : operands) {
+        std::vector<size_t> all_operands(total_reg_count);
+        std::iota(all_operands.begin(), all_operands.end(), 0);
+        for (auto operand : all_operands) {
             DOUT(".. Sink operand, adding dep: " << operand);
             add_dep(LastWriter[operand], currID, WAW, operand);
             for (auto &readerID : LastReaders[operand]) {
@@ -480,7 +475,7 @@ void Scheduler::init(
         }
 
         // useless because there is nothing after t but destruction
-        for (auto operand : operands) {
+        for (auto operand : all_operands) {
             DOUT(".. Sink operand, clearing: " << operand);
             LastWriter[operand] = currID;
             LastReaders[operand].clear();
