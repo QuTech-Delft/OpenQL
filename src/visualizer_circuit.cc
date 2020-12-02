@@ -10,10 +10,10 @@
 #include "visualizer_circuit.h"
 #include "CImg.h"
 #include "utils/json.h"
+#include "utils/num.h"
+#include "utils/vec.h"
 
 #include <regex>
-
-using json = nlohmann::json;
 
 namespace ql {
 
@@ -23,7 +23,7 @@ using namespace utils;
 // =                     CircuitData                     = //
 // ======================================================= //
 
-CircuitData::CircuitData(Vec<GateProperties> &gates, const CircuitLayout &layout, const int cycleDuration) :
+CircuitData::CircuitData(Vec<GateProperties> &gates, const CircuitLayout &layout, const Int cycleDuration) :
     cycles(generateCycles(gates, cycleDuration)),
     amountOfQubits(calculateAmountOfBits(gates, &GateProperties::operands)),
     amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands)),
@@ -540,10 +540,10 @@ void Structure::printProperties() const {
 void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration)
 {
     // Get the gate list from the program.
-    DOUT("Getting gate list...");
-    std::vector<GateProperties> gates = parseGates(program);
+    QL_DOUT("Getting gate list...");
+    Vec<GateProperties> gates = parseGates(program);
     if (gates.size() == 0) {
-        FATAL("Quantum program contains no gates!");
+        QL_FATAL("Quantum program contains no gates!");
     }
 
     // Parse and validate the layout and instruction configuration file.
@@ -551,9 +551,9 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     validateCircuitLayout(layout);
 
     // Calculate circuit properties.
-    DOUT("Calculating circuit properties...");
-    const int cycleDuration = safe_int_cast(program->platform.cycle_time);
-    DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
+    QL_DOUT("Calculating circuit properties...");
+    const Int cycleDuration = utoi(program->platform.cycle_time);
+    QL_DOUT("Cycle duration is: " + to_string(cycleDuration) + " ns.");
     // Fix measurement gates without classical operands.
     fixMeasurementOperands(gates);
 
@@ -706,10 +706,10 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     image.display("Quantum Circuit");
 }
 
-CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
-                                        const std::string &visualizerConfigPath,
-                                        const json platformInstructions) {
-    DOUT("Parsing visualizer configuration file for circuit visualization...");
+CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
+                                        const Str &visualizerConfigPath,
+                                        const Json platformInstructions) {
+    QL_DOUT("Parsing visualizer configuration file for circuit visualization...");
 
     // Load the relevant instruction parameters.
     static const std::regex comma_space_pattern("\\s*,\\s*");
@@ -717,14 +717,14 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
     static const std::regex multiple_space_pattern("(\\s)+");
 
     struct VisualParameters {
-        std::string visual_type;
-        std::vector<int> codewords;
+        Str visual_type;
+        Vec<Int> codewords;
     };
 
-    std::map<std::string, VisualParameters> parameterMapping;
+    std::map<Str, VisualParameters> parameterMapping;
     for (auto it = platformInstructions.begin(); it != platformInstructions.end(); ++it) {
-        std::string gateName = it.key();
-        json instruction = *it; //.value();
+        Str gateName = it.key();
+        Json instruction = *it; //.value();
 
         gateName = utils::to_lower(gateName);
         gateName = std::regex_replace(gateName, trim_pattern, "");
@@ -732,26 +732,26 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
         gateName = std::regex_replace(gateName, comma_space_pattern, ",");
 
         // Load the visual type of the instruction if provided.
-        std::string visual_type;
+        Str visual_type;
         if (instruction.count("visual_type") == 1) {
-            visual_type = instruction["visual_type"].get<std::string>();
-            DOUT("visual_type: '" << visual_type);
+            visual_type = instruction["visual_type"].get<Str>();
+            QL_DOUT("visual_type: '" << visual_type);
         } else {
-            WOUT("Did not find 'visual_type' attribute for instruction: '" << gateName << "'!");
+            QL_WOUT("Did not find 'visual_type' attribute for instruction: '" << gateName << "'!");
         }
 
-        std::vector<int> codewords;
+        Vec<Int> codewords;
         // Load the codewords of the instruction if provided.
         if (instruction.count("cc_light_codeword") == 1) {
             codewords.push_back(instruction["cc_light_codeword"]);
-            DOUT("codewords: " << codewords[0]);
+            QL_DOUT("codewords: " << codewords[0]);
         } else {
             if (instruction.count("cc_light_right_codeword") == 1 && instruction.count("cc_light_left_codeword") == 1) {
                 codewords.push_back(instruction["cc_light_right_codeword"]);
                 codewords.push_back(instruction["cc_light_left_codeword"]);
-                DOUT("codewords: " << codewords[0] << "," << codewords[1]);
+                QL_DOUT("codewords: " << codewords[0] << "," << codewords[1]);
             } else {
-                WOUT("Did not find any codeword attributes for instruction: '" << gateName << "'!");
+                QL_WOUT("Did not find any codeword attributes for instruction: '" << gateName << "'!");
             }
         }
 
@@ -761,7 +761,7 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
     // Match the visualization parameters from the hardware configuration with the existing gates.
     for (GateProperties &gate : gates) {
         bool found = false;
-        for (const std::pair<std::string, VisualParameters> &mapping : parameterMapping) {
+        for (const std::pair<Str, VisualParameters> &mapping : parameterMapping) {
             if (mapping.first == gate.name) {
                 found = true;
                 gate.visual_type = mapping.second.visual_type;
@@ -769,24 +769,24 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
             }
         }
         if (!found) {
-            WOUT("Did not find visual type and codewords for gate: " << gate.name << "!");
+            QL_WOUT("Did not find visual type and codewords for gate: " << gate.name << "!");
         }
     }
 
     // Load the visualizer configuration file.
-    json visualizerConfig;
+    Json visualizerConfig;
     try {
         visualizerConfig = load_json(visualizerConfigPath);
-    } catch (json::exception &e) {
-        FATAL("Failed to load the visualization config file: \n\t" << std::string(e.what()));
+    } catch (Json::exception &e) {
+        QL_FATAL("Failed to load the visualization config file: \n\t" << Str(e.what()));
     }
 
     // Load the circuit visualization parameters.
-    json circuitConfig;
+    Json circuitConfig;
     if (visualizerConfig.count("circuit") == 1) {
         circuitConfig = visualizerConfig["circuit"];
     } else {
-        WOUT("Could not find circuit configuration in visualizer configuration file. Is it named correctly?");
+        QL_WOUT("Could not find circuit configuration in visualizer configuration file. Is it named correctly?");
     }
 
     // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
@@ -801,11 +801,11 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
     // -               CYCLES               - //
     // -------------------------------------- //
     if (circuitConfig.count("cycles") == 1) {
-        json cycles = circuitConfig["cycles"];
+        Json cycles = circuitConfig["cycles"];
 
         // LABELS
         if (cycles.count("labels") == 1) {
-            json labels = cycles["labels"];
+            Json labels = cycles["labels"];
 
             if (labels.count("show") == 1)          layout.cycles.labels.setEnabled(labels["show"]);
             if (labels.count("inNanoSeconds") == 1) layout.cycles.labels.setInNanoSeconds(labels["inNanoSeconds"]);
@@ -816,7 +816,7 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
 
         // EDGES
         if (cycles.count("edges") == 1) {
-            json edges = cycles["edges"];
+            Json edges = cycles["edges"];
 
             if (edges.count("show") == 1)   layout.cycles.edges.setEnabled(edges["show"]);
             if (edges.count("color") == 1)  layout.cycles.edges.setColor(edges["color"]);
@@ -825,7 +825,7 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
 
         // CUTTING
         if (cycles.count("cutting") == 1) {
-            json cutting = cycles["cutting"];
+            Json cutting = cycles["cutting"];
 
             if (cutting.count("cut") == 1)                      layout.cycles.cutting.setEnabled(cutting["cut"]);
             if (cutting.count("emptyCycleThreshold") == 1)      layout.cycles.cutting.setEmptyCycleThreshold(cutting["emptyCycleThreshold"]);
@@ -842,11 +842,11 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
     // -------------------------------------- //
     if (circuitConfig.count("bitLines") == 1)
     {
-        json bitLines = circuitConfig["bitLines"];
+        Json bitLines = circuitConfig["bitLines"];
 
         // LABELS
         if (bitLines.count("labels") == 1) {
-            json labels = bitLines["labels"];
+            Json labels = bitLines["labels"];
 
             if (labels.count("show") == 1)          layout.bitLines.labels.setEnabled(labels["show"]);
             if (labels.count("columnWidth") == 1)   layout.bitLines.labels.setColumnWidth(labels["columnWidth"]);
@@ -857,14 +857,14 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
 
         // QUANTUM
         if (bitLines.count("quantum") == 1) {
-            json quantum = bitLines["quantum"];
+            Json quantum = bitLines["quantum"];
 
             if (quantum.count("color") == 1) layout.bitLines.quantum.setColor(quantum["color"]);
         }
 
         // CLASSICAL
         if (bitLines.count("classical") == 1) {
-            json classical = bitLines["classical"];
+            Json classical = bitLines["classical"];
 
             if (classical.count("show") == 1)           layout.bitLines.classical.setEnabled(classical["show"]);
             if (classical.count("group") == 1)          layout.bitLines.classical.setGrouped(classical["group"]);
@@ -874,7 +874,7 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
 
         // EDGES
         if (bitLines.count("edges") == 1) {
-            json edges = bitLines["edges"];
+            Json edges = bitLines["edges"];
 
             if (edges.count("show") == 1)       layout.bitLines.edges.setEnabled(edges["show"]);
             if (edges.count("thickness") == 1)  layout.bitLines.edges.setThickness(edges["thickness"]);
@@ -887,7 +887,7 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
     // -                GRID                - //
     // -------------------------------------- //
     if (circuitConfig.count("grid") == 1) {
-        json grid = circuitConfig["grid"];
+        Json grid = circuitConfig["grid"];
 
         if (grid.count("cellSize") == 1)    layout.grid.setCellSize(grid["cellSize"]);
         if (grid.count("borderSize") == 1)  layout.grid.setBorderSize(grid["borderSize"]);
@@ -897,7 +897,7 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
     // -       GATE DURATION OUTLINES       - //
     // -------------------------------------- //
     if (circuitConfig.count("gateDurationOutlines") == 1) {
-        json gateDurationOutlines = circuitConfig["gateDurationOutlines"];
+        Json gateDurationOutlines = circuitConfig["gateDurationOutlines"];
 
         if (gateDurationOutlines.count("show") == 1)         layout.gateDurationOutlines.setEnabled(gateDurationOutlines["show"]);
         if (gateDurationOutlines.count("gap") == 1)          layout.gateDurationOutlines.setGap(gateDurationOutlines["gap"]);
@@ -910,7 +910,7 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
     // -            MEASUREMENTS            - //
     // -------------------------------------- //
     if (circuitConfig.count("measurements") == 1) {
-        json measurements = circuitConfig["measurements"];
+        Json measurements = circuitConfig["measurements"];
 
         if (measurements.count("drawConnection") == 1)  layout.measurements.enableDrawConnection(measurements["drawConnection"]);
         if (measurements.count("lineSpacing") == 1)     layout.measurements.setLineSpacing(measurements["lineSpacing"]);
@@ -921,7 +921,7 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
     // -               PULSES               - //
     // -------------------------------------- //
     if (circuitConfig.count("pulses") == 1) {
-        json pulses = circuitConfig["pulses"];
+        Json pulses = circuitConfig["pulses"];
 
         if (pulses.count("displayGatesAsPulses") == 1)      layout.pulses.setEnabled(pulses["displayGatesAsPulses"]);
         if (pulses.count("pulseRowHeightMicrowave") == 1)   layout.pulses.setPulseRowHeightMicrowave(pulses["pulseRowHeightMicrowave"]);
@@ -937,22 +937,22 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
         for (const auto &instruction : circuitConfig["instructions"].items()) {
             try {
                 GateVisual gateVisual;
-                json content = instruction.value();
+                Json content = instruction.value();
 
                 // Load the connection color.
-                json connectionColor = content["connectionColor"];
+                Json connectionColor = content["connectionColor"];
                 gateVisual.connectionColor[0] = connectionColor[0];
                 gateVisual.connectionColor[1] = connectionColor[1];
                 gateVisual.connectionColor[2] = connectionColor[2];
-                DOUT("Connection color: [" 
+                QL_DOUT("Connection color: [" 
                     << (int)gateVisual.connectionColor[0] << ","
                     << (int)gateVisual.connectionColor[1] << ","
                     << (int)gateVisual.connectionColor[2] << "]");
 
                 // Load the individual nodes.
-                json nodes = content["nodes"];
+                Json nodes = content["nodes"];
                 for (size_t i = 0; i < nodes.size(); i++) {
-                    json node = nodes[i];
+                    Json node = nodes[i];
                     
                     Color fontColor = {node["fontColor"][0], node["fontColor"][1], node["fontColor"][2]};
                     Color backgroundColor = {node["backgroundColor"][0], node["backgroundColor"][1], node["backgroundColor"][2]};
@@ -970,7 +970,7 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
                     } else if (node["type"] == "CROSS") {
                         nodeType = CROSS;
                     } else {
-                        WOUT("Unknown gate display node type! Defaulting to type NONE...");
+                        QL_WOUT("Unknown gate display node type! Defaulting to type NONE...");
                         nodeType = NONE;
                     }
                     
@@ -986,7 +986,7 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
                     
                     gateVisual.nodes.push_back(loadedNode);
                     
-                    DOUT("[type: " << node["type"] << "] "
+                    QL_DOUT("[type: " << node["type"] << "] "
                         << "[radius: " << gateVisual.nodes.at(i).radius << "] "
                         << "[displayName: " << gateVisual.nodes.at(i).displayName << "] "
                         << "[fontHeight: " << gateVisual.nodes.at(i).fontHeight << "] "
@@ -1005,40 +1005,40 @@ CircuitLayout parseCircuitConfiguration(std::vector<GateProperties> &gates,
                 }
 
                 layout.customGateVisuals.insert({instruction.key(), gateVisual});
-            } catch (json::exception &e) {
-                WOUT("Failed to load visualization parameters for instruction: '" << instruction.key()
-                    << "' \n\t" << std::string(e.what()));
+            } catch (Json::exception &e) {
+                QL_WOUT("Failed to load visualization parameters for instruction: '" << instruction.key()
+                    << "' \n\t" << Str(e.what()));
             }
         }
     } else {
-        WOUT("Did not find 'instructions' attribute! The visualizer will try to fall back on default gate visualizations.");
+        QL_WOUT("Did not find 'instructions' attribute! The visualizer will try to fall back on default gate visualizations.");
     }
 
     return layout;
 }
 
 void validateCircuitLayout(CircuitLayout &layout) {
-    DOUT("Validating layout...");
+    QL_DOUT("Validating layout...");
 
     //TODO: add more validation
     
     if (layout.cycles.cutting.getEmptyCycleThreshold() < 1) {
-        WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to "
+        QL_WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to "
             << layout.cycles.cutting.getEmptyCycleThreshold() << ".");
         layout.cycles.cutting.setEmptyCycleThreshold(1);
     }
 
     if (layout.pulses.areEnabled()) {
         if (layout.bitLines.classical.isEnabled()) {
-            WOUT("Adjusting 'showClassicalLines' to false. Unable to show classical lines when 'displayGatesAsPulses' is true!");
+            QL_WOUT("Adjusting 'showClassicalLines' to false. Unable to show classical lines when 'displayGatesAsPulses' is true!");
             layout.bitLines.classical.setEnabled(false);
         }
         if (layout.cycles.arePartitioned()) {
-            WOUT("Adjusting 'partitionCyclesWithOverlap' to false. It is unnecessary to partition cycles when 'displayGatesAsPulses' is true!");
+            QL_WOUT("Adjusting 'partitionCyclesWithOverlap' to false. It is unnecessary to partition cycles when 'displayGatesAsPulses' is true!");
             layout.cycles.setPartitioned(false);
         }
         if (layout.cycles.areCompressed()) {
-            WOUT("Adjusting 'compressCycles' to false. Cannot compress cycles when 'displayGatesAsPulses' is true!");
+            QL_WOUT("Adjusting 'compressCycles' to false. Cannot compress cycles when 'displayGatesAsPulses' is true!");
             layout.cycles.setCompressed(false);
         }	
     }

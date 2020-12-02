@@ -4,35 +4,39 @@
 
 #ifdef WITH_VISUALIZER
 
-#include <cmath>
-#include "utils/pair.h"
-#include "visualizer.h"
 #include "visualizer_types.h"
 #include "visualizer_common.h"
 #include "visualizer_interaction.h"
-#include "CImg.h"
-#include "json.h"
+#include "visualizer_cimg.h"
+#include "utils/json.h"
+#include "utils/num.h"
+#include "utils/vec.h"
+#include "utils/pair.h"
 
-#include <math.h>
+#include <fstream>
+
+// #include <cmath>
+// #include <math.h>
 
 namespace ql {
 
-void visualizeInteractionGraph(const ql::quantum_program* program, const VisualizerConfiguration configuration) {
-    IOUT("Visualizing qubit interaction graph...");
+using namespace utils;
+
+void visualizeInteractionGraph(const quantum_program* program, const VisualizerConfiguration &configuration) {
+    QL_IOUT("Visualizing qubit interaction graph...");
 
     // Get the gate list from the program.
-    DOUT("Getting gate list...");
-    std::vector<GateProperties> gates = parseGates(program);
+    QL_DOUT("Getting gate list...");
+    const Vec<GateProperties> gates = parseGates(program);
     if (gates.size() == 0) {
-        FATAL("Quantum program contains no gates!");
+        QL_FATAL("Quantum program contains no gates!");
     }
 
     InteractionGraphLayout layout = parseInteractionGraphLayout(configuration.visualizerConfigPath);
 
-    const int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
+    const Int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
     // Prepare the interaction list per qubit.
-    const std::vector<Qubit> qubits = findQubitInteractions(gates, amountOfQubits);
-    // printInteractionList(qubits);
+    const Vec<Qubit> qubits = findQubitInteractions(gates, amountOfQubits);
 
     // Generate the DOT file if enabled.
     if (layout.isDotFileOutputEnabled()) {
@@ -42,30 +46,31 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
     if (qubits.size() > 1) {
 
         // Calculate the interaction circle properties.
-        const double thetaSpacing = 2 * M_PI / amountOfQubits;
-        const int interactionCircleRadius = std::max(layout.getMinInteractionCircleRadius(),
-            (int) (layout.getInteractionCircleRadiusModifier() * calculateQubitCircleRadius(layout.getQubitRadius(), thetaSpacing)));
+        const Real thetaSpacing = 2 * M_PI / amountOfQubits;
+        const Int interactionCircleRadius = max(layout.getMinInteractionCircleRadius(),
+            (Int) (layout.getInteractionCircleRadiusModifier() * calculateQubitCircleRadius(layout.getQubitRadius(), thetaSpacing)));
         const Position2 center{layout.getBorderWidth() + interactionCircleRadius, layout.getBorderWidth() + interactionCircleRadius};
 
         // Calculate the qubit coordinates on the interaction circle.
-        std::vector<std::pair<Qubit, Position2>> qubitPositions;
+        Vec<Pair<Qubit, Position2>> qubitPositions;
         for (const Qubit &qubit : qubits) {
-            const double theta = qubit.qubitIndex * thetaSpacing;
+            const Real theta = qubit.qubitIndex * thetaSpacing;
             const Position2 position = calculatePositionOnCircle(interactionCircleRadius, theta, center);
             qubitPositions.push_back( {qubit, position} );
         }
 
         // Initialize the image.
-        DOUT("Initializing image...");
-        const int numberOfChannels = 3;
-        const int imageWidth = 2 * (layout.getBorderWidth() + interactionCircleRadius);
-        const int imageHeight = 2 * (layout.getBorderWidth() + interactionCircleRadius);
-        cimg_library::CImg<unsigned char> image(imageWidth, imageHeight, 1, numberOfChannels);
+        QL_DOUT("Initializing image...");
+        const Int numberOfChannels = 3;
+        const Int imageWidth = 2 * (layout.getBorderWidth() + interactionCircleRadius);
+        const Int imageHeight = 2 * (layout.getBorderWidth() + interactionCircleRadius);
+        // cimg_library::CImg<unsigned char> image(imageWidth, imageHeight, 1, numberOfChannels);
+        Image image(imageWidth, imageHeight, numberOfChannels);
         image.fill(255);
 
         // Draw the edges between interacting qubits.
-        std::vector<std::pair<int, int>> drawnEdges;
-        for (const std::pair<Qubit, Position2> &qubit : qubitPositions) {
+        Vec<Pair<Int, Int>> drawnEdges;
+        for (const Pair<Qubit, Position2> &qubit : qubitPositions) {
             const Position2 qubitPosition = qubit.second;
             for (const InteractionsWithQubit &interactionsWithQubit : qubit.first.interactions) {
                 if (isEdgeAlreadyDrawn(drawnEdges, qubit.first.qubitIndex, interactionsWithQubit.qubitIndex))
@@ -74,38 +79,38 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
                 drawnEdges.push_back( {qubit.first.qubitIndex, interactionsWithQubit.qubitIndex } );
 
                 // Draw the edge.
-                const double theta = interactionsWithQubit.qubitIndex * thetaSpacing;
+                const Real theta = interactionsWithQubit.qubitIndex * thetaSpacing;
                 const Position2 interactionPosition = calculatePositionOnCircle(interactionCircleRadius, theta, center);
-                image.draw_line(qubitPosition.x, qubitPosition.y, interactionPosition.x, interactionPosition.y, layout.getEdgeColor().data());
+                image.drawLine(qubitPosition.x, qubitPosition.y, interactionPosition.x, interactionPosition.y, layout.getEdgeColor());
 
                 // Calculate label dimensions.
-                const std::string label = std::to_string(interactionsWithQubit.amountOfInteractions);
+                const Str label = to_string(interactionsWithQubit.amountOfInteractions);
                 const Dimensions labelDimensions = calculateTextDimensions(label, layout.getLabelFontHeight());
-                const int a = labelDimensions.width;
-                const int b = labelDimensions.height;
-                const int labelRadius = sqrt(a * a + b * b);
+                const Int a = labelDimensions.width;
+                const Int b = labelDimensions.height;
+                const Int labelRadius = sqrt(a * a + b * b);
 
                 // Calculate position of label.
-                const int deltaX = interactionPosition.x - qubitPosition.x;
-                const int deltaY = interactionPosition.y - qubitPosition.y;
-                const double angle = atan2(deltaY, deltaX);
+                const Int deltaX = interactionPosition.x - qubitPosition.x;
+                const Int deltaY = interactionPosition.y - qubitPosition.y;
+                const Real angle = atan2(deltaY, deltaX);
                 const Position2 labelPosition = calculatePositionOnCircle(layout.getQubitRadius() + labelRadius, angle, qubitPosition);
 
                 // Draw the number of interactions.
-                image.draw_text(labelPosition.x, labelPosition.y, label.c_str(), layout.getLabelColor().data(), 0, 1, layout.getLabelFontHeight());
+                image.drawText(labelPosition.x, labelPosition.y, label, layout.getLabelColor(), layout.getLabelFontHeight());
             }
         }
         // Draw the qubits.
         for (const Pair<Qubit, Position2> &qubit : qubitPositions) {
             // Draw the circle outline.
-            image.draw_circle(qubit.second.x, qubit.second.y, layout.getQubitRadius(), layout.getCircleFillColor().data());
-            image.draw_circle(qubit.second.x, qubit.second.y, layout.getQubitRadius(), layout.getCircleOutlineColor().data(), 1, 0xFFFFFFFF);
+            image.drawFilledCircle(qubit.second.x, qubit.second.y, layout.getQubitRadius(), layout.getCircleFillColor(), 1);
+            image.drawOutlinedCircle(qubit.second.x, qubit.second.y, layout.getQubitRadius(), layout.getCircleOutlineColor(), 1, LinePattern::UNBROKEN);
             // Draw the qubit label.
-            const std::string label = std::to_string(qubit.first.qubitIndex);
+            const Str label = to_string(qubit.first.qubitIndex);
             const Dimensions labelDimensions = calculateTextDimensions(label, layout.getLabelFontHeight());
-            const int xGap = (2 * layout.getQubitRadius() - labelDimensions.width) / 2;
-            const int yGap = (2 * layout.getQubitRadius() - labelDimensions.height) / 2;
-            image.draw_text(qubit.second.x - layout.getQubitRadius() + xGap, qubit.second.y - layout.getQubitRadius() + yGap, label.c_str(), layout.getLabelColor().data(), 0, 1, layout.getLabelFontHeight());
+            const Int xGap = (2 * layout.getQubitRadius() - labelDimensions.width) / 2;
+            const Int yGap = (2 * layout.getQubitRadius() - labelDimensions.height) / 2;
+            image.drawText(qubit.second.x - layout.getQubitRadius() + xGap, qubit.second.y - layout.getQubitRadius() + yGap, label, layout.getLabelColor(), layout.getLabelFontHeight());
         }
 
         // Save the image if enabled.
@@ -124,16 +129,16 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
     }
 }
 
-void generateAndSaveDOTFile(const std::vector<Qubit> qubits) {
+void generateAndSaveDOTFile(const std::vector<Qubit> &qubits) {
     try
     {
-        IOUT("Generating DOT file for qubit interaction graph...");
+        QL_IOUT("Generating DOT file for qubit interaction graph...");
 
         std::ofstream output(generateFilePath("qubit_interaction_graph", "dot"));
         output << "graph qubit_interaction_graph {\n";
         output << "    node [shape=circle];\n";
 
-        std::vector<std::pair<int, int>> drawnEdges;
+        Vec<Pair<Int, Int>> drawnEdges;
         for (const Qubit &qubit : qubits) {
             for (const InteractionsWithQubit &target : qubit.interactions) {
                 if (isEdgeAlreadyDrawn(drawnEdges, qubit.qubitIndex, target.qubitIndex))
@@ -147,29 +152,29 @@ void generateAndSaveDOTFile(const std::vector<Qubit> qubits) {
         output << "}";
         output.close();
 
-        IOUT("DOT file saved!");
+        QL_IOUT("DOT file saved!");
     }
-    catch(const std::exception& e)
+    catch(const Exception& e)
     {
-        WOUT("Could not save DOT file for qubit interaction graph: " << e.what());
+        QL_WOUT("Could not save DOT file for qubit interaction graph: " << e.what());
     }
 }
 
-InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath) {
-    DOUT("Parsing visualizer configuration file for interaction graph visualization...");
+InteractionGraphLayout parseInteractionGraphLayout(const Str &configPath) {
+    QL_DOUT("Parsing visualizer configuration file for interaction graph visualization...");
 
-    json fullConfig;
+    Json fullConfig;
     try {
         fullConfig = load_json(configPath);
-    } catch (json::exception &e) {
-        FATAL("Failed to load the visualization config file: \n\t" << std::string(e.what()));
+    } catch (Json::exception &e) {
+        QL_FATAL("Failed to load the visualization config file: \n\t" << std::string(e.what()));
     }
 
-    json config;
+    Json config;
     if (fullConfig.count("interactionGraph") == 1) {
         config = fullConfig["interactionGraph"];
     } else {
-        WOUT("Could not find interaction graph configuration in visualizer configuration file. Is it named correctly?");
+        QL_WOUT("Could not find interaction graph configuration in visualizer configuration file. Is it named correctly?");
     }
 
     // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
@@ -197,7 +202,7 @@ InteractionGraphLayout parseInteractionGraphLayout(const std::string &configPath
     return layout;
 }
 
-double calculateQubitCircleRadius(const int qubitRadius, const double theta) {
+Real calculateQubitCircleRadius(const Int qubitRadius, const Real theta) {
     // - Distance between the centers of two adjacent qubits should be at
     //   least 2 times the qubit radius.
     // - We know the angle (theta) of the iscosceles triangle formed between the
@@ -217,14 +222,14 @@ double calculateQubitCircleRadius(const int qubitRadius, const double theta) {
     return R;
 }
 
-Position2 calculatePositionOnCircle(Int radius, Real theta, const Position2 &center) {
-    const long x = (long) (radius * cos(theta) + center.x);
-    const long y = (long) (radius * sin(theta) + center.y);
+Position2 calculatePositionOnCircle(const Int radius, const Real theta, const Position2 &center) {
+    const Int x = (Int) (radius * cos(theta) + center.x);
+    const Int y = (Int) (radius * sin(theta) + center.y);
 
     return {x, y};
 }
 
-Vec<Qubit> findQubitInteractions(const Vec<GateProperties> &gates, Int amountOfQubits) {
+Vec<Qubit> findQubitInteractions(const Vec<GateProperties> &gates, const Int amountOfQubits) {
     // Initialize the qubit vector.
     Vec<Qubit> qubits(amountOfQubits);
     for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
@@ -269,9 +274,9 @@ Vec<Qubit> findQubitInteractions(const Vec<GateProperties> &gates, Int amountOfQ
     return qubits;
 }
 
-bool isEdgeAlreadyDrawn(const Vec<std::pair<Int, Int>> &drawnEdges, Int first, Int second) {
+Bool isEdgeAlreadyDrawn(const Vec<std::pair<Int, Int>> &drawnEdges, const Int first, const Int second) {
     // Check if the edge already exists.
-    for (const std::pair<int, int> &drawnEdge : drawnEdges) {
+    for (const Pair<Int, Int> &drawnEdge : drawnEdges) {
         if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {
             return true;
         }

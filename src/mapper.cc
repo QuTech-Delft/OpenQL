@@ -1188,40 +1188,10 @@ void Past::AddSwap(UInt r0, UInt r1) {
     }
 
     // add the remap gates
-    // IOUT("adding swap for qubits: [" << r0 << ", " << v2r.GetVirt(r0) << "] and [" << r1 << ", " << v2r.GetVirt(r1) << "]");
-    // IOUT("after swap contents will be: [" << r0 << ", " << v2r.GetVirt(r1) << "] and [" << r1 << ", " << v2r.GetVirt(r0) << "]");
-    // IOUT("real qubit " << r0 << " was mapped to virtual qubit " << v2r.GetVirt(r0));
-    // IOUT("real qubit " << r1 << " was mapped to virtual qubit " << v2r.GetVirt(r1));
-    IOUT("mapping v " << v2r.GetVirt(r1) << " to q " << r0);
-    IOUT("mapping v " << v2r.GetVirt(r0) << " to q " << r1);
+    QL_DOUT("mapping v " << v2r.GetVirt(r1) << " to q " << r0 << " in remap gate");
+    QL_DOUT("mapping v " << v2r.GetVirt(r0) << " to q " << r1 << " in remap gate");
     Add(new remap(r0, v2r.GetVirt(r1)));
     Add(new remap(r1, v2r.GetVirt(r0)));
-
-    // circuit remaps1;
-    // new_gate(remaps1, "remap", {r0});
-    // for (auto &gp : remaps1) {
-    //     Add(gp);
-    // }
-    // circuit remaps2;
-    // new_gate(remaps2, "remap", {r1});
-    // for (auto &gp : remaps2) {
-    //     Add(gp);
-    // }
-
-    // ql::gate *remap1 = new remap(r0, v2r.GetVirt(r1));
-    // ql::gate *remap2 = new remap(r1, v2r.GetVirt(r0));
-
-    // IOUT("remap 1 v_index: " << dynamic_cast<remap*>(remap1)->virtual_qubit_index);
-    // IOUT("remap 1 v_index: " << dynamic_cast<remap*>(remap2)->virtual_qubit_index);
-
-    // Add(new wait({0}, 0, 0));
-    // Add(remap1);
-    // Add(remap2);
-    
-    // Add(new remap(r0, v2r.GetVirt(r1)));
-    // Add(new remap(r1, v2r.GetVirt(r0)));
-    // IOUT("added remap gate: [" << r0 << ", " << v2r.GetVirt(r1) << "]");
-    // IOUT("added remap gate: [" << r1 << ", " << v2r.GetVirt(r0) << "]");
 
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }

@@ -9,6 +9,8 @@
 
 #ifdef WITH_VISUALIZER
 
+#include "visualizer.h"
+#include "gate.h"
 #include "gate_visual.h"
 #include "utils/num.h"
 #include "utils/str.h"
@@ -32,7 +34,7 @@ namespace ql {
 //     INTERACTION_GRAPH
 // };
 
-typedef std::array<unsigned char, 3> Color;
+typedef std::array<utils::Byte, 3> Color;
 
 const Color white = {{ 255, 255, 255 }};
 const Color black = {{ 0, 0, 0 }};
@@ -46,44 +48,40 @@ const Color red = {{ 255, 105, 97 }};
 enum BitType {CLASSICAL, QUANTUM};
 
 struct Position4 {
-    long x0;
-    long y0;
-    long x1;
-    long y1;
-
-    Position4() = delete;
+    utils::Int x0;
+    utils::Int y0;
+    utils::Int x1;
+    utils::Int y1;
 };
 
 struct Position2 {
-    long x;
-    long y;
-
-    Position2() = delete;
+    utils::Int x;
+    utils::Int y;
 };
 
 struct EndPoints {
-    const utils::Int start;
-    const utils::Int end;
+    utils::Int start;
+    utils::Int end;
 };
 
 struct Dimensions {
-    const utils::Int width;
-    const utils::Int height;
+    utils::Int width;
+    utils::Int height;
 };
 
 struct GateOperand {
     BitType bitType;
     utils::Int index;
 
-    friend bool operator<(const GateOperand &lhs, const GateOperand &rhs) {
+    friend utils::Bool operator<(const GateOperand &lhs, const GateOperand &rhs) {
         if (lhs.bitType == QUANTUM && rhs.bitType == CLASSICAL) return true;
         if (lhs.bitType == CLASSICAL && rhs.bitType == QUANTUM) return false;
         return lhs.index < rhs.index;
     }
 
-    friend bool operator>(const GateOperand &lhs, const GateOperand &rhs) {return operator<(rhs, lhs);}
-    friend bool operator<=(const GateOperand &lhs, const GateOperand &rhs) {return !operator>(lhs, rhs);}
-    friend bool operator>=(const GateOperand &lhs, const GateOperand &rhs) {return !operator<(lhs, rhs);}
+    friend utils::Bool operator>(const GateOperand &lhs, const GateOperand &rhs) {return operator<(rhs, lhs);}
+    friend utils::Bool operator<=(const GateOperand &lhs, const GateOperand &rhs) {return !operator>(lhs, rhs);}
+    friend utils::Bool operator>=(const GateOperand &lhs, const GateOperand &rhs) {return !operator<(lhs, rhs);}
 
     GateOperand() = delete;
 };
@@ -105,11 +103,11 @@ struct GateProperties {
 // ------------- Layout declaration -------------- //
 
 class InteractionGraphLayout {
-    private:
-    bool outputDotFile = false;
+private:
+    utils::Bool outputDotFile = false;
     utils::Int borderWidth = 32;
     utils::Int minInteractionCircleRadius = 100;
-    double interactionCircleRadiusModifier = 3.0;
+    utils::Real interactionCircleRadiusModifier = 3.0;
     utils::Int qubitRadius = 17;
     utils::Int labelFontHeight = 13;
     Color circleOutlineColor = black;
@@ -117,13 +115,13 @@ class InteractionGraphLayout {
     Color labelColor = black;
     Color edgeColor = black;
 
-    public:
-    bool saveImage = false;
+public:
+    utils::Bool saveImage = false;
 
-    bool isDotFileOutputEnabled() const { return outputDotFile; }
+    utils::Bool isDotFileOutputEnabled() const { return outputDotFile; }
     utils::Int getBorderWidth() const { return borderWidth; }
     utils::Int getMinInteractionCircleRadius() const { return minInteractionCircleRadius; }
-    double getInteractionCircleRadiusModifier() const { return interactionCircleRadiusModifier; }
+    utils::Real getInteractionCircleRadiusModifier() const { return interactionCircleRadiusModifier; }
     utils::Int getQubitRadius() const { return qubitRadius; }
     utils::Int getLabelFontHeight() const { return labelFontHeight; }
     Color getCircleOutlineColor() const { return circleOutlineColor; }
@@ -131,12 +129,12 @@ class InteractionGraphLayout {
     Color getLabelColor() const { return labelColor; }
     Color getEdgeColor() const { return edgeColor; }
     
-    void enableDotFileOutput(const bool argument) { outputDotFile = argument; }
-    void setBorderWidth(utils::Int argument) { assertPositive(argument, "borderWidth"); borderWidth = argument; }
-    void setMinInteractionCircleRadius(utils::Int argument) { assertPositive(argument, "minInteractionCircleRadius"); minInteractionCircleRadius = argument; }
-    void setInteractionCircleRadiusModifier(const double argument) { assertPositive(argument, "interactionCircleRadiusModifier"); interactionCircleRadiusModifier = argument; }
-    void setQubitRadius(utils::Int argument) { assertPositive(argument, "qubitRadius"); qubitRadius = argument; }
-    void setLabelFontHeight(utils::Int argument) { assertPositive(argument, "labelFontHeight"); labelFontHeight = argument; }
+    void enableDotFileOutput(const utils::Bool argument) { outputDotFile = argument; }
+    void setBorderWidth(const utils::Int argument) { assertPositive(argument, "borderWidth"); borderWidth = argument; }
+    void setMinInteractionCircleRadius(const utils::Int argument) { assertPositive(argument, "minInteractionCircleRadius"); minInteractionCircleRadius = argument; }
+    void setInteractionCircleRadiusModifier(const utils::Real argument) { assertPositive(argument, "interactionCircleRadiusModifier"); interactionCircleRadiusModifier = argument; }
+    void setQubitRadius(const utils::Int argument) { assertPositive(argument, "qubitRadius"); qubitRadius = argument; }
+    void setLabelFontHeight(const utils::Int argument) { assertPositive(argument, "labelFontHeight"); labelFontHeight = argument; }
     void setCircleOutlineColor(const Color argument) { circleOutlineColor = argument; }
     void setCircleFillColor(const Color argument) { circleFillColor = argument; }
     void setLabelColor(const Color argument) { labelColor = argument; }
@@ -148,77 +146,77 @@ class InteractionGraphLayout {
 // ----------------------------------------------- //
 
 class CycleLabels {
-    private:
-    bool enabled = true;
-    bool inNanoSeconds = false;
+private:
+    utils::Bool enabled = true;
+    utils::Bool inNanoSeconds = false;
     utils::Int rowHeight = 24;
     utils::Int fontHeight = 13;
     Color fontColor = black;
 
-    public:
-    bool areEnabled() const { return enabled; }
-    bool areInNanoSeconds() const { return inNanoSeconds; }
+public:
+    utils::Bool areEnabled() const { return enabled; }
+    utils::Bool areInNanoSeconds() const { return inNanoSeconds; }
     utils::Int getRowHeight() const { return rowHeight; }
     utils::Int getFontHeight() const { return fontHeight; }
     Color getFontColor() const { return fontColor; }
     
-    void setEnabled(const bool argument) { enabled = argument; }
-    void setInNanoSeconds(const bool argument) { inNanoSeconds = argument; }
-    void setRowHeight(utils::Int argument) { assertPositive(argument, "cycles.labels.rowHeight"); rowHeight = argument; }
-    void setFontHeight(utils::Int argument) { assertPositive(argument, "cycles.labels.fontHeight"); fontHeight = argument; }
+    void setEnabled(const utils::Bool argument) { enabled = argument; }
+    void setInNanoSeconds(const utils::Bool argument) { inNanoSeconds = argument; }
+    void setRowHeight(const utils::Int argument) { assertPositive(argument, "cycles.labels.rowHeight"); rowHeight = argument; }
+    void setFontHeight(const utils::Int argument) { assertPositive(argument, "cycles.labels.fontHeight"); fontHeight = argument; }
     void setFontColor(const Color argument) { fontColor = argument; }
 };
 
 class CycleEdges {
-    private:
-    bool enabled = true;
+private:
+    utils::Bool enabled = true;
     std::array<unsigned char, 3> color = {{ 0, 0, 0 }};
-    double alpha = 0.2;
+    utils::Real alpha = 0.2;
 
-    public:
-    bool areEnabled() const { return enabled; }
+public:
+    utils::Bool areEnabled() const { return enabled; }
     Color getColor() const { return color; }
-    double getAlpha() const { return alpha; }
+    utils::Real getAlpha() const { return alpha; }
     
-    void setEnabled(const bool argument) { enabled = argument; }
+    void setEnabled(const utils::Bool argument) { enabled = argument; }
     void setColor(const Color argument) { color = argument; }
-    void setAlpha(const double argument) { assertPositive(argument, "cycles.edges.alpha"); alpha = argument; }
+    void setAlpha(const utils::Real argument) { assertPositive(argument, "cycles.edges.alpha"); alpha = argument; }
 };
 
 class CycleCutting {
-    private:
-    bool enabled = true;
+private:
+    utils::Bool enabled = true;
     utils::Int emptyCycleThreshold = 2;
     utils::Int cutCycleWidth = 16;
-    double cutCycleWidthModifier = 0.5;
+    utils::Real cutCycleWidthModifier = 0.5;
 
-    public:
-    bool isEnabled() const { return enabled; }
+public:
+    utils::Bool isEnabled() const { return enabled; }
     utils::Int getEmptyCycleThreshold() const { return emptyCycleThreshold; }
     utils::Int getCutCycleWidth() const { return cutCycleWidth; }
-    double getCutCycleWidthModifier() const { return cutCycleWidthModifier; }
+    utils::Real getCutCycleWidthModifier() const { return cutCycleWidthModifier; }
 
-    void setEnabled(const bool argument) { enabled = argument; }
-    void setEmptyCycleThreshold(utils::Int argument) { assertPositive(argument, "cycles.cutting.emptyCycleThreshold"); emptyCycleThreshold = argument; }
-    void setCutCycleWidth(utils::Int argument) { assertPositive(argument, "cycles.cutting.cutCycleWidth"); cutCycleWidth = argument; }
-    void setCutCycleWidthModifier(const double argument) { assertPositive(argument, "cycles.cutting.cutCycleWidthModifier"); cutCycleWidthModifier = argument; }
+    void setEnabled(const utils::Bool argument) { enabled = argument; }
+    void setEmptyCycleThreshold(const utils::Int argument) { assertPositive(argument, "cycles.cutting.emptyCycleThreshold"); emptyCycleThreshold = argument; }
+    void setCutCycleWidth(const utils::Int argument) { assertPositive(argument, "cycles.cutting.cutCycleWidth"); cutCycleWidth = argument; }
+    void setCutCycleWidthModifier(const utils::Real argument) { assertPositive(argument, "cycles.cutting.cutCycleWidthModifier"); cutCycleWidthModifier = argument; }
 };
 
 class Cycles {
-    private:
-    bool compress = false;
-    bool partitionCyclesWithOverlap = true;
+private:
+    utils::Bool compress = false;
+    utils::Bool partitionCyclesWithOverlap = true;
 
     public:
     CycleLabels labels;
     CycleEdges edges;
     CycleCutting cutting;
 
-    bool areCompressed() const { return compress; }
-    bool arePartitioned() const { return partitionCyclesWithOverlap; }
+    utils::Bool areCompressed() const { return compress; }
+    utils::Bool arePartitioned() const { return partitionCyclesWithOverlap; }
 
-    void setCompressed(const bool argument) { compress = argument; }
-    void setPartitioned(const bool argument) { partitionCyclesWithOverlap = argument; }
+    void setCompressed(const utils::Bool argument) { compress = argument; }
+    void setPartitioned(const utils::Bool argument) { partitionCyclesWithOverlap = argument; }
 };
 
 // ----------------------------------------------- //
@@ -226,78 +224,78 @@ class Cycles {
 // ----------------------------------------------- //
 
 class BitLineLabels {
-    private:
-    bool enabled = true;
+private:
+    utils::Bool enabled = true;
     utils::Int columnWidth = 32;
     utils::Int fontHeight = 13;
     Color qbitColor = {{ 0, 0, 0 }};
     Color cbitColor = {{ 128, 128, 128 }};
 
-    public:
-    bool areEnabled() const { return enabled; }
+public:
+    utils::Bool areEnabled() const { return enabled; }
     utils::Int getColumnWidth() const { return columnWidth; }
     utils::Int getFontHeight() const { return fontHeight; }
     Color getQbitColor() const { return qbitColor; }
     Color getCbitColor() const { return cbitColor; }
     
-    void setEnabled(const bool argument) { enabled = argument; }
-    void setColumnWidth(utils::Int argument) { assertPositive(argument, "bitLines.labels.columnWidth"); columnWidth = argument; }
-    void setFontHeight(utils::Int argument) { assertPositive(argument, "bitLines.labels.fontHeight"); fontHeight = argument; }
+    void setEnabled(const utils::Bool argument) { enabled = argument; }
+    void setColumnWidth(const utils::Int argument) { assertPositive(argument, "bitLines.labels.columnWidth"); columnWidth = argument; }
+    void setFontHeight(const utils::Int argument) { assertPositive(argument, "bitLines.labels.fontHeight"); fontHeight = argument; }
     void setQbitColor(const Color argument) { qbitColor = argument; }
     void setCbitColor(const Color argument) { cbitColor = argument; }
 };
 
 class QuantumLines {
-    private:
+private:
     Color color = {{ 0, 0, 0 }};
 
-    public:
+public:
     Color getColor() const { return color; }
 
     void setColor(const Color argument) { color = argument; }
 };
 
 class ClassicalLines {
-    private:
-    bool enabled = true;
-    bool group = true;
+private:
+    utils::Bool enabled = true;
+    utils::Bool group = true;
     utils::Int groupedLineGap = 2;
     Color color = {{ 128, 128, 128 }};
 
-    public:
-    bool isEnabled() const { return enabled; }
-    bool isGrouped() const { return group; }
+public:
+    utils::Bool isEnabled() const { return enabled; }
+    utils::Bool isGrouped() const { return group; }
     utils::Int getGroupedLineGap() const { return groupedLineGap; }
     Color getColor() const { return color; }
     
-    void setEnabled(const bool argument) { enabled = argument; }
-    void setGrouped(const bool argument) { group = argument; }
-    void setGroupedLineGap(utils::Int argument) { assertPositive(argument, "bitLines.classical.groupedLineGap"); groupedLineGap = argument; }
+    void setEnabled(const utils::Bool argument) { enabled = argument; }
+    void setGrouped(const utils::Bool argument) { group = argument; }
+    void setGroupedLineGap(const utils::Int argument) { assertPositive(argument, "bitLines.classical.groupedLineGap"); groupedLineGap = argument; }
     void setColor(const Color argument) { color = argument; }
 };
 
 class BitLineEdges {
-    private:
-    bool enabled = true;
+private:
+    utils::Bool enabled = true;
     utils::Int thickness = 3;
     Color color = {{ 0, 0, 0 }};
-    double alpha = 0.4;
+    utils::Real alpha = 0.4;
 
-    public:
-    bool areEnabled() const { return enabled; }
+public:
+    utils::Bool areEnabled() const { return enabled; }
     utils::Int getThickness() const { return thickness; }
     Color getColor() const { return color; }
-    double getAlpha() const { return alpha; }
+    utils::Real getAlpha() const { return alpha; }
     
-    void setEnabled(const bool argument) { enabled = argument; }
-    void setThickness(utils::Int argument) { assertPositive(argument, "bitLines.edges.thickness"); thickness = argument; }
+    void setEnabled(const utils::Bool argument) { enabled = argument; }
+    void setThickness(const utils::Int argument) { assertPositive(argument, "bitLines.edges.thickness"); thickness = argument; }
     void setColor(const Color argument) { color = argument; }
-    void setAlpha(const double argument) { assertPositive(argument, "bitLines.edges.alpha"); alpha = argument; }
+    void setAlpha(const utils::Real argument) { assertPositive(argument, "bitLines.edges.alpha"); alpha = argument; }
 
 };
 
 class BitLines {
-    public:
+public:
     BitLineLabels labels;
     QuantumLines quantum;
     ClassicalLines classical;
@@ -309,54 +307,54 @@ class BitLines {
 // ----------------------------------------------- //
 
 struct Grid {
-    private:
+private:
     utils::Int cellSize = 32;
     utils::Int borderSize = 32;
 
-    public:
+public:
     utils::Int getCellSize() const { return cellSize; }
     utils::Int getBorderSize() const { return borderSize; }
 
-    void setCellSize(utils::Int argument) { assertPositive(argument, "grid.cellSize"); cellSize = argument; }
-    void setBorderSize(utils::Int argument) { assertPositive(argument, "grid.borderSize"); borderSize = argument; }
+    void setCellSize(const utils::Int argument) { assertPositive(argument, "grid.cellSize"); cellSize = argument; }
+    void setBorderSize(const utils::Int argument) { assertPositive(argument, "grid.borderSize"); borderSize = argument; }
 };
 
 struct GateDurationOutlines {
-    private:
-    bool enabled = true;
+private:
+    utils::Bool enabled = true;
     utils::Int gap = 2;
-    double fillAlpha = 0.1;
-    double outlineAlpha = 0.3;
+    utils::Real fillAlpha = 0.1;
+    utils::Real outlineAlpha = 0.3;
     Color outlineColor = black;
 
-    public:
-    bool areEnabled() const { return enabled; }
+public:
+    utils::Bool areEnabled() const { return enabled; }
     utils::Int getGap() const { return gap; }
-    double getFillAlpha() const { return fillAlpha; }
-    double getOutlineAlpha() const { return outlineAlpha; }
+    utils::Real getFillAlpha() const { return fillAlpha; }
+    utils::Real getOutlineAlpha() const { return outlineAlpha; }
     Color getOutlineColor() const { return outlineColor; }
 
-    void setEnabled(const bool argument) { enabled = argument; }
-    void setGap(utils::Int argument) { assertPositive(argument, "gateDurationOutlines.gap"); gap = argument; }
-    void setFillAlpha(const double argument) { assertPositive(argument, "gateDurationOutlines.fillAlpha"); fillAlpha = argument; }
-    void setOutlineAlpha(const double argument) { assertPositive(argument, "gateDurationOutlines.outlineAlpha"); outlineAlpha = argument; }
+    void setEnabled(const utils::Bool argument) { enabled = argument; }
+    void setGap(const utils::Int argument) { assertPositive(argument, "gateDurationOutlines.gap"); gap = argument; }
+    void setFillAlpha(const utils::Real argument) { assertPositive(argument, "gateDurationOutlines.fillAlpha"); fillAlpha = argument; }
+    void setOutlineAlpha(const utils::Real argument) { assertPositive(argument, "gateDurationOutlines.outlineAlpha"); outlineAlpha = argument; }
     void setOutlineColor(const Color argument) { outlineColor = argument; }
 };
 
 struct Measurements {
-    private:
-    bool enableConnection = true;
+private:
+    utils::Bool enableConnection = true;
     utils::Int lineSpacing = 2;
     utils::Int arrowSize = 10;
 
-    public:
-    bool isConnectionEnabled() const { return enableConnection; }
+public:
+    utils::Bool isConnectionEnabled() const { return enableConnection; }
     utils::Int getLineSpacing() const { return lineSpacing; }
     utils::Int getArrowSize() const { return arrowSize; }
 
-    void enableDrawConnection(const bool argument) { enableConnection = argument; }
-    void setLineSpacing(utils::Int argument) { assertPositive(argument, "measurements.lineSpacing"); lineSpacing = argument; }
-    void setArrowSize(utils::Int argument) { assertPositive(argument, "measurements.arrowSize"); arrowSize = argument; }
+    void enableDrawConnection(const utils::Bool argument) { enableConnection = argument; }
+    void setLineSpacing(const utils::Int argument) { assertPositive(argument, "measurements.lineSpacing"); lineSpacing = argument; }
+    void setArrowSize(const utils::Int argument) { assertPositive(argument, "measurements.arrowSize"); arrowSize = argument; }
 };
 
 // ----------------------------------------------- //
@@ -364,8 +362,8 @@ struct Measurements {
 // ----------------------------------------------- //
 
 struct Pulses {
-    private:
-    bool enabled = false;
+private:
+    utils::Bool enabled = false;
     utils::Int pulseRowHeightMicrowave = 32;
     utils::Int pulseRowHeightFlux = 32;
     utils::Int pulseRowHeightReadout = 32;
@@ -373,8 +371,8 @@ struct Pulses {
     Color pulseColorFlux = {{ 255, 0, 0 }};
     Color pulseColorReadout = {{ 0, 255, 0 }};
 
-    public:
-    bool areEnabled() const { return enabled; }
+public:
+    utils::Bool areEnabled() const { return enabled; }
     utils::Int getPulseRowHeightMicrowave() const { return pulseRowHeightMicrowave; }
     utils::Int getPulseRowHeightFlux() const { return pulseRowHeightFlux; }
     utils::Int getPulseRowHeightReadout() const { return pulseRowHeightReadout; }
@@ -382,10 +380,10 @@ struct Pulses {
     Color getPulseColorFlux() const { return pulseColorFlux; }
     Color getPulseColorReadout() const { return pulseColorReadout; }
 
-    void setEnabled(const bool argument) { enabled = argument; }
-    void setPulseRowHeightMicrowave(utils::Int argument) { assertPositive(argument, "pulses.pulseRowHeightMicrowave"); pulseRowHeightMicrowave = argument; }
-    void setPulseRowHeightFlux(utils::Int argument) { assertPositive(argument, "pulses.pulseRowHeightFlux"); pulseRowHeightFlux = argument; }
-    void setPulseRowHeightReadout(utils::Int argument) { assertPositive(argument, "pulses.pulseRowHeightReadout"); pulseRowHeightReadout = argument; }
+    void setEnabled(const utils::Bool argument) { enabled = argument; }
+    void setPulseRowHeightMicrowave(const utils::Int argument) { assertPositive(argument, "pulses.pulseRowHeightMicrowave"); pulseRowHeightMicrowave = argument; }
+    void setPulseRowHeightFlux(const utils::Int argument) { assertPositive(argument, "pulses.pulseRowHeightFlux"); pulseRowHeightFlux = argument; }
+    void setPulseRowHeightReadout(const utils::Int argument) { assertPositive(argument, "pulses.pulseRowHeightReadout"); pulseRowHeightReadout = argument; }
     void setPulseColorMicrowave(const Color argument) { pulseColorMicrowave = argument; }
     void setPulseColorFlux(const Color argument) { pulseColorFlux = argument; }
     void setPulseColorReadout(const Color argument) { pulseColorReadout = argument; }
@@ -396,7 +394,7 @@ struct Pulses {
 // ----------------------------------------------- //
 
 struct CircuitLayout {
-    bool saveImage = false;
+    utils::Bool saveImage = false;
 
     Cycles cycles;
     BitLines bitLines;

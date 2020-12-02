@@ -7,6 +7,7 @@
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
 #include "visualizer_interaction.h"
+#include "options.h"
 #include "utils/str.h"
 #include "utils/json.h"
 #include "utils/vec.h"
@@ -53,9 +54,9 @@ using namespace utils;
 // [MAPPING] add pseudogate containing virtual > real qubit mapping
 
 // -- IN PROGRESS ---
-// [GENERAL] replace std::map with utils::Map
 // [GENERAL] replace primitives and containers with the ones specified in utils (int, double, bool, vector, map, string, etc.)
 // [GENERAL] fix compilation error due to merge
+// [GENERAL] replace cimg calls with cimg wrapper calls
 // [GENERAL] update documentation
 
 // --- FUTURE WORK ---
@@ -112,18 +113,11 @@ void visualize(const quantum_program* program, const Str &visualizationType, con
     QL_IOUT("Visualization complete...");
 }
 
-Vec<GateProperties> parseGates(const ql::quantum_program* program) {
+Vec<GateProperties> parseGates(const quantum_program* program) {
     Vec<GateProperties> gates;
 
-    for (ql::quantum_kernel kernel : program->kernels) {
-        for (ql::gate* const gate : kernel.get_circuit()) {
-            Vec<int> codewords;
-            // if (gate->type() == __custom_gate__) {
-            //     for (const size_t codeword : dynamic_cast<ql::custom_gate*>(gate)->codewords) {
-            //         codewords.push_back(safe_int_cast(codeword));
-            //     }
-            // }
-
+    for (quantum_kernel kernel : program->kernels) {
+        for (gate* const gate : kernel.get_circuit()) {
             Vec<Int> operands;
             Vec<Int> creg_operands;
             for (const UInt operand : gate->operands) { operands.push_back(utoi(operand)); }
@@ -137,9 +131,7 @@ Vec<GateProperties> parseGates(const ql::quantum_program* program) {
                 gate->type(),
                 {},
                 "UNDEFINED",
-                gate->type() == __remap_gate__ ? dynamic_cast<ql::remap*>(gate)->virtual_qubit_index : std::numeric_limits<int>::max()
-                // codewords,
-                // gate->visual_type
+                gate->type() == __remap_gate__ ? dynamic_cast<ql::remap*>(gate)->virtual_qubit_index : MAX
             };
             gates.push_back(gateProperties);
         }
@@ -225,7 +217,7 @@ void fixMeasurementOperands(Vec<GateProperties> &gates) {
     }
 }
 
-bool isMeasurement(const GateProperties &gate) {
+Bool isMeasurement(const GateProperties &gate) {
     //TODO: this method of checking for measurements is not robust and relies
     //      entirely on the user naming their instructions in a certain way!
     return (gate.name.find("measure") != Str::npos);
@@ -277,16 +269,18 @@ void printGates(const Vec<GateProperties> &gates) {
     }
 }
 
-std::string generateFilePath(const std::string &filename, const std::string &extension) {
-    return ql::options::get("output_dir") + "/" + filename + "." + extension;
+Str generateFilePath(const Str &filename, const Str &extension) {
+    return options::get("output_dir") + "/" + filename + "." + extension;
 }
 
-void assertPositive(const Int argument, const Str &parameter) {
-    if (argument < 0) QL_FATAL(parameter << " is negative. Only positive values are allowed!");
+void assertPositive(const Int parameterValue, const Str &parameterName) {
+    if (parameterValue < 0) QL_FATAL(parameterName << " is negative. Only positive values are allowed!");
 }
 
-void assertPositive(const double argument, const Str &parameter) {
-    if (argument < 0) QL_FATAL(parameter << " is negative. Only positive values are allowed!");
+void assertPositive(const Real parameterValue, const Str &parameterName) {
+    if (parameterValue < 0) QL_FATAL(parameterName << " is negative. Only positive values are allowed!");
 }
+
+#endif //WITH_VISUALIZER
 
 } // namespace ql

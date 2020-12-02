@@ -6,15 +6,15 @@
 
 #ifdef WITH_VISUALIZER
 
+#include "visualizer.h"
+#include "visualizer_types.h"
+#include "CImg.h"
+#include "utils/json.h"
 #include "utils/num.h"
 #include "utils/str.h"
 #include "utils/vec.h"
 #include "utils/pair.h"
 #include "utils/map.h"
-#include "visualizer.h"
-#include "visualizer_types.h"
-#include "CImg.h"
-#include "json.h"
 
 // These undefs are necessary to avoid name collisions.
 #undef cimg_use_opencv
@@ -90,8 +90,8 @@ private:
     utils::Vec<Cycle> cycles;
     utils::Vec<EndPoints> cutCycleRangeIndices;
 
-    utils::Int calculateAmountOfCycles(const utils::Vec<GateProperties> &gates, utils::Int cycleDuration) const;
-    utils::Vec<Cycle> generateCycles(utils::Vec<GateProperties> &gates, utils::Int cycleDuration) const;
+    utils::Int calculateAmountOfCycles(const utils::Vec<GateProperties> &gates, const utils::Int cycleDuration) const;
+    utils::Vec<Cycle> generateCycles(utils::Vec<GateProperties> &gates, const utils::Int cycleDuration) const;
     utils::Vec<EndPoints> findCuttableEmptyRanges(const CircuitLayout &layout) const;
 
     void compressCycles();
@@ -103,7 +103,7 @@ public:
     const utils::Int amountOfClassicalBits;
     const utils::Int cycleDuration;
 
-    CircuitData(utils::Vec<GateProperties> &gates, const CircuitLayout &layout, utils::Int cycleDuration);
+    CircuitData(utils::Vec<GateProperties> &gates, const CircuitLayout &layout, const utils::Int cycleDuration);
 
     Cycle getCycle(utils::UInt index) const;
     utils::Int getAmountOfCycles() const;
@@ -149,7 +149,7 @@ public:
     utils::Int getCircuitBotY() const;
 
     Dimensions getCellDimensions() const;
-    Position4 getCellPosition(utils::UInt column, utils::UInt row, BitType bitType) const;
+    Position4 getCellPosition(const utils::UInt column, const utils::UInt row, const BitType bitType) const;
     utils::Vec<utils::Pair<EndPoints, utils::Bool>> getBitLineSegments() const;
 
     void printProperties() const;
@@ -157,8 +157,9 @@ public:
 
 void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration);
 
-CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const json platformInstructions);
+CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const utils::Json platformInstructions);
 void validateCircuitLayout(CircuitLayout &layout);
+PulseVisualization parseWaveformMapping(const utils::Str &waveformMappingPath);
 
 utils::Vec<QubitLines> generateQubitLines(const utils::Vec<GateProperties> &gates, const PulseVisualization &pulseVisualization, const CircuitData &circuitData);
 utils::Real calculateMaxAmplitude(const utils::Vec<LineSegment> &lineSegments);

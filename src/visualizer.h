@@ -4,13 +4,10 @@
  
 #pragma once
 
+#include "program.h"
 #include "utils/num.h"
 #include "utils/str.h"
 #include "utils/vec.h"
-#include "utils/map.h"
-#include "program.h"
-
-#include <cstdint>
 
 namespace ql {
 
@@ -23,8 +20,8 @@ void visualize(const quantum_program* program, const utils::Str &visualizationTy
 
 #ifdef WITH_VISUALIZER
 
-void assertPositive(utils::Int argument, const utils::Str &parameter);
-void assertPositive(utils::Real argument, const utils::Str &parameter);
+void assertPositive(const utils::Int parameterValue, const utils::Str &parameterName);
+void assertPositive(const utils::Real parameterValue, const utils::Str &parameterName);
 
 #endif //WITH_VISUALIZER
 
