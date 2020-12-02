@@ -534,7 +534,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             nop								; register dependency R1
             jlt         R1,1,@loop
 */
-			emit(ic.ii.slot, "seq_cl_sm", SS2S("S" << smAddr), SS2S("# 'break if " << pragmaBreakVal << " 'on '" << ic.ii.instrumentName << "'"));
+			emit(ic.ii.slot, "seq_cl_sm", SS2S("S" << smAddr), SS2S("# 'break if " << pragmaBreakVal << "' on '" << ic.ii.instrumentName << "'"));
 			emit(ic.ii.slot, "move_sm", "R0", "");
 			emit(ic.ii.slot, "and", SS2S("R0," << mask << "," << "R1"), "");	// results in '0' for 'bit==0' and 'mask' for 'bit==1'
 			emit(ic.ii.slot, "nop", "", "");
@@ -589,7 +589,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				emit(ic.ii.slot,
 					"seq_inv_sm",
 					SS2S("S" << smAddr << ","  << smTotalSize),
-					SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": no readout on '" << ic.ii.instrumentName+"'"));
+					SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": invalidate SM on '" << ic.ii.instrumentName+"'"));
 				lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
 			}
 
