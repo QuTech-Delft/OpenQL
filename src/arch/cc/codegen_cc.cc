@@ -466,7 +466,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                     << ", maxDurationInCycles=" << maxDurationInCycles
                     ));
 
-            padToCycle(lastEndCycle[instrIdx], startCycle, ic.ii.slot, ic.ii.instrumentName);
+            padToCycle(instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
 
             // emit code for slot output
             if(condGateMap.empty()) {	// all groups unconditional
@@ -517,7 +517,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 #if OPT_PRAGMA	// FIXME: pragma handling
 		if(pragma) {	// NB: note that this will only work because we set the pragma for all instruments, and thus already encounter this for the first instrument
 			if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
-				padToCycle(lastEndCycle[instrIdx], startCycle, ic.ii.slot, ic.ii.instrumentName);
+				padToCycle(instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
 			}
 
 			// FIXME: the only pragma possible is "break" for now
@@ -534,7 +534,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             nop								; register dependency R1
             jlt         R1,1,@loop
 */
-			emit(ic.ii.slot, "seq_cl_sm", SS2S("S" << smAddr), SS2S("#  on '" << ic.ii.instrumentName << "'"));
+			emit(ic.ii.slot, "seq_cl_sm", SS2S("S" << smAddr), SS2S("# 'break if " << pragmaBreakVal << " 'on '" << ic.ii.instrumentName << "'"));
 			emit(ic.ii.slot, "move_sm", "R0", "");
 			emit(ic.ii.slot, "and", SS2S("R0," << mask << "," << "R1"), "");	// results in '0' for 'bit==0' and 'mask' for 'bit==1'
 			emit(ic.ii.slot, "nop", "", "");
@@ -552,7 +552,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 		// generate code for instrument input of readout results
 		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
 			if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
-				padToCycle(lastEndCycle[instrIdx], startCycle, ic.ii.slot, ic.ii.instrumentName);
+				padToCycle(instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
 			}
 
 			// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
@@ -607,7 +607,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 		// for last bundle, pad end of bundle to align durations
         if(isLastBundle) {
-            padToCycle(lastEndCycle[instrIdx], startCycle+durationInCycles, ic.ii.slot, ic.ii.instrumentName);		// FIXME: use maxDurationInCycles and/or check consistency
+            padToCycle(instrIdx, startCycle+durationInCycles, ic.ii.slot, ic.ii.instrumentName);		// FIXME: use maxDurationInCycles and/or check consistency
         }
 
         vcd.bundleFinish(startCycle, digOut, maxDurationInCycles, instrIdx);
@@ -792,7 +792,7 @@ void codegen_cc::forEnd(const std::string &label)
     // FIXME: free register
     emit("", "loop", SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
 #if OPT_PRAGMA
-    emit((label+"_end:"), "", "", "# ");                              // NB: just a label
+    emit((label+"_end:"), "", "", "# ");                          // NB: just a label
 #endif
 }
 
@@ -874,16 +874,16 @@ void codegen_cc::emitProgramStart()
 }
 
 
-void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName)
+void codegen_cc::padToCycle(size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
 {
     // compute prePadding: time to bridge to align timing
-    int prePadding = startCycle - lastEndCycle;
+    int prePadding = startCycle - lastEndCycle[instrIdx];
     if(prePadding < 0) {
         EOUT("Inconsistency detected in bundle contents: printing code generated so far");
         EOUT(codeSection.str());        // show what we made. FIXME: limit # lines (tail -100)
         FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
               ", startCycle=" << startCycle <<
-              ", lastEndCycle=" << lastEndCycle <<
+              ", lastEndCycle=" << lastEndCycle[instrIdx] <<
               ", instrumentName='" << instrumentName << "'");
     }
 
@@ -891,8 +891,11 @@ void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, co
         emit(SS2S("[" << slot << "]"),      // CCIO selector
             "seq_wait",
             SS2S(prePadding),
-            SS2S("# cycle " << lastEndCycle << "-" << startCycle << ": padding on '" << instrumentName+"'"));
+            SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << startCycle << ": padding on '" << instrumentName+"'"));
     }
+
+    // update lastEndCycle
+    lastEndCycle[instrIdx] = startCycle;
 }
 
 
