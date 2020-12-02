@@ -1,8 +1,5 @@
-/**
- * @file   visualizer_common.cc
- * @date   11/2020
- * @author Tim van der Meer
- * @brief  definition of the visualizer
+/** \file
+ * Declaration of the visualizer's shared functionalities.
  */
  
 #include "visualizer.h"
@@ -10,15 +7,16 @@
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
 #include "visualizer_interaction.h"
-#include "options.h"
-#include "json.h"
+#include "utils/str.h"
+#include "utils/json.h"
+#include "utils/vec.h"
+#include "utils/pair.h"
 
 #include <iostream>
-#include <limits>
-
-using json = nlohmann::json;
 
 namespace ql {
+
+using namespace utils;
 
 // --- DONE ---
 // [CIRCUIT] visualization of custom gates
@@ -52,9 +50,12 @@ namespace ql {
 // [GENERAL] add option to save the image and/or open the window
 // [INTERACTION] output dot files for graphing software, default circle graph will also be shown
 // [INTERACTION] calculate angle to target qubit and place amount of interactions label accordingly
+// [MAPPING] add pseudogate containing virtual > real qubit mapping
 
 // -- IN PROGRESS ---
-// [MAPPING] add pseudogate containing virtual > real qubit mapping
+// [GENERAL] replace std::map with utils::Map
+// [GENERAL] replace primitives and containers with the ones specified in utils (int, double, bool, vector, map, string, etc.)
+// [GENERAL] fix compilation error due to merge
 // [GENERAL] update documentation
 
 // --- FUTURE WORK ---
@@ -75,16 +76,16 @@ namespace ql {
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfiguration configuration) {
-    WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
-        << "might be missing and the visualizer has disabled itself.");
+void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfiguration &configuration) {
+    QL_WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
+         << "might be missing and the visualizer has disabled itself.");
 }
 
 #else
 
-void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfiguration configuration) {
-    IOUT("Starting visualization...");
-    IOUT("Visualization type: " << visualizationType);
+void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfiguration &configuration) {
+    QL_IOUT("Starting visualization...");
+    QL_IOUT("Visualization type: " << visualizationType);
 
     // for (ql::quantum_kernel kernel : program->kernels) {
     //     for (ql::gate* const gate : kernel.get_circuit()) {
@@ -103,36 +104,36 @@ void visualize(const ql::quantum_program* program, const std::string &visualizat
     // } else if (visualizationType == "INTERACTION_GRAPH") {
     //     visualizeInteractionGraph(program, configuration);
     // } else if (visualizationType == "MAPPING_GRAPH") {
-    //     WOUT("Mapping graph visualization not yet implemented.");
+    //     QL_WOUT("Mapping graph visualization not yet implemented.");
     // } else {
-    //     FATAL("Unknown visualization type: " << visualizationType << "!");
+    //     QL_FATAL("Unknown visualization type: " << visualizationType << "!");
     // }
 
-    IOUT("Visualization complete...");
+    QL_IOUT("Visualization complete...");
 }
 
-std::vector<GateProperties> parseGates(const ql::quantum_program* program) {
-    std::vector<GateProperties> gates;
+Vec<GateProperties> parseGates(const ql::quantum_program* program) {
+    Vec<GateProperties> gates;
 
     for (ql::quantum_kernel kernel : program->kernels) {
         for (ql::gate* const gate : kernel.get_circuit()) {
-            std::vector<int> codewords;
+            Vec<int> codewords;
             // if (gate->type() == __custom_gate__) {
             //     for (const size_t codeword : dynamic_cast<ql::custom_gate*>(gate)->codewords) {
             //         codewords.push_back(safe_int_cast(codeword));
             //     }
             // }
 
-            std::vector<int> operands;
-            std::vector<int> creg_operands;
-            for (const size_t operand : gate->operands) { operands.push_back(safe_int_cast(operand)); }
-            for (const size_t operand : gate->creg_operands) { creg_operands.push_back(safe_int_cast(operand)); }
+            Vec<Int> operands;
+            Vec<Int> creg_operands;
+            for (const UInt operand : gate->operands) { operands.push_back(utoi(operand)); }
+            for (const UInt operand : gate->creg_operands) { creg_operands.push_back(utoi(operand)); }
             GateProperties gateProperties {
                 gate->name,
                 operands,
                 creg_operands,
-                safe_int_cast(gate->duration),
-                safe_int_cast(gate->cycle),
+                utoi(gate->duration),
+                utoi(gate->cycle),
                 gate->type(),
                 {},
                 "UNDEFINED",
@@ -147,21 +148,21 @@ std::vector<GateProperties> parseGates(const ql::quantum_program* program) {
     return gates;
 }
 
-int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) {
-    DOUT("Calculating amount of bits...");
+Int calculateAmountOfBits(const Vec<GateProperties> &gates, const Vec<Int> GateProperties::* operandType) {
+    QL_DOUT("Calculating amount of bits...");
 
     //TODO: handle circuits not starting at a c- or qbit with index 0
-    int minAmount = std::numeric_limits<int>::max();
-    int maxAmount = 0;
+    Int minAmount = MAX;
+    Int maxAmount = 0;
 
     // Find the minimum and maximum index of the operands.
     for (const GateProperties &gate : gates)
     {
-        std::vector<int>::const_iterator begin = (gate.*operandType).begin();
-        const std::vector<int>::const_iterator end = (gate.*operandType).end();
+        Vec<Int>::const_iterator begin = (gate.*operandType).begin();
+        const Vec<Int>::const_iterator end = (gate.*operandType).end();
 
         for (; begin != end; ++begin) {
-            const int number = *begin;
+            const Int number = *begin;
             if (number < minAmount) minAmount = number;
             if (number > maxAmount) maxAmount = number;
         }
@@ -170,35 +171,35 @@ int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::ve
     // If both minAmount and maxAmount are at their original values, the list of 
     // operands for all the gates was empty.This means there are no operands of 
     // the given type for these gates and we return 0.
-    if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0) {
+    if (minAmount == MAX && maxAmount == 0) {
         return 0;
     } else {
         return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
     }
 }
 
-int calculateAmountOfGateOperands(const GateProperties gate) {
-    return safe_int_cast(gate.operands.size() + gate.creg_operands.size());
+Int calculateAmountOfGateOperands(const GateProperties &gate) {
+    return utoi(gate.operands.size() + gate.creg_operands.size());
 }
 
-std::vector<GateOperand> getGateOperands(const GateProperties gate) {
-    std::vector<GateOperand> operands;
+Vec<GateOperand> getGateOperands(const GateProperties &gate) {
+    Vec<GateOperand> operands;
 
-    for (const int operand : gate.operands)      { operands.push_back({QUANTUM, operand});   }
-    for (const int operand : gate.creg_operands) { operands.push_back({CLASSICAL, operand}); }
+    for (const Int operand : gate.operands)      { operands.push_back({QUANTUM, operand});   }
+    for (const Int operand : gate.creg_operands) { operands.push_back({CLASSICAL, operand}); }
 
     return operands;
 }
 
-std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<GateOperand> operands, const int amountOfQubits) {
+Pair<GateOperand, GateOperand> calculateEdgeOperands(const Vec<GateOperand> &operands, const Int amountOfQubits) {
     if (operands.size() < 2) {
-        FATAL("Gate operands vector does not have multiple operands!");
+        QL_FATAL("Gate operands vector does not have multiple operands!");
     }
 
     GateOperand minOperand = operands[0];
     GateOperand maxOperand = operands[operands.size() - 1];
     for (const GateOperand &operand : operands) {
-        const int row = (operand.bitType == QUANTUM) ? operand.index : operand.index + amountOfQubits;
+        const Int row = (operand.bitType == QUANTUM) ? operand.index : operand.index + amountOfQubits;
         if (row < minOperand.index) minOperand = operand;
         if (row > maxOperand.index) maxOperand = operand;
     }
@@ -206,8 +207,8 @@ std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<Gate
     return {minOperand, maxOperand};
 }
 
-void fixMeasurementOperands(std::vector<GateProperties> &gates) {
-    DOUT("Fixing measurement gates with no classical operand...");
+void fixMeasurementOperands(Vec<GateProperties> &gates) {
+    QL_DOUT("Fixing measurement gates with no classical operand...");
 
     for (GateProperties &gate : gates) {
         // Check for a measurement gate without explicitly specified classical
@@ -216,21 +217,21 @@ void fixMeasurementOperands(std::vector<GateProperties> &gates) {
             if (calculateAmountOfGateOperands(gate) == 1) {
                 // Set classical measurement operand to the bit corresponding to
                 // the measurements qubit index.
-                DOUT("Found measurement gate with no classical operand. Assuming default classical operand.");
-                const int cbit = gate.operands[0];
+                QL_DOUT("Found measurement gate with no classical operand. Assuming default classical operand.");
+                const Int cbit = gate.operands[0];
                 gate.creg_operands.push_back(cbit);
             }
         }
     }
 }
 
-bool isMeasurement(const GateProperties gate) {
+bool isMeasurement(const GateProperties &gate) {
     //TODO: this method of checking for measurements is not robust and relies
     //      entirely on the user naming their instructions in a certain way!
-    return (gate.name.find("measure") != std::string::npos);
+    return (gate.name.find("measure") != Str::npos);
 }
 
-Dimensions calculateTextDimensions(const std::string &text, const int fontHeight) {
+Dimensions calculateTextDimensions(const Str &text, const Int fontHeight) {
     const char* chars = text.c_str();
     cimg_library::CImg<unsigned char> imageTextDimensions;
     const char color = 1;
@@ -239,39 +240,39 @@ Dimensions calculateTextDimensions(const std::string &text, const int fontHeight
     return Dimensions { imageTextDimensions.width(), imageTextDimensions.height() };
 }
 
-void printGates(const std::vector<GateProperties> gates) {
+void printGates(const Vec<GateProperties> &gates) {
     for (const GateProperties &gate : gates) {
-        IOUT(gate.name);
+        QL_IOUT(gate.name);
 
-        std::string operands = "[";
-        for (size_t i = 0; i < gate.operands.size(); i++) {
-            operands += std::to_string(gate.operands[i]);
+        Str operands = "[";
+        for (UInt i = 0; i < gate.operands.size(); i++) {
+            operands += to_string(gate.operands[i]);
             if (i != gate.operands.size() - 1) operands += ", ";
         }
-        IOUT("\toperands: " << operands << "]");
+        QL_IOUT("\toperands: " << operands << "]");
 
-        std::string creg_operands = "[";
-        for (size_t i = 0; i < gate.creg_operands.size(); i++) {
-            creg_operands += std::to_string(gate.creg_operands[i]);
+        Str creg_operands = "[";
+        for (UInt i = 0; i < gate.creg_operands.size(); i++) {
+            creg_operands += to_string(gate.creg_operands[i]);
             if (i != gate.creg_operands.size() - 1) creg_operands += ", ";
         }
-        IOUT("\tcreg_operands: " << creg_operands << "]");
+        QL_IOUT("\tcreg_operands: " << creg_operands << "]");
 
-        IOUT("\tduration: " << gate.duration);
-        IOUT("\tcycle: " << gate.cycle);
-        IOUT("\ttype: " << gate.type);
+        QL_IOUT("\tduration: " << gate.duration);
+        QL_IOUT("\tcycle: " << gate.cycle);
+        QL_IOUT("\ttype: " << gate.type);
 
-        std::string codewords = "[";
-        for (size_t i = 0; i < gate.codewords.size(); i++) {
-            codewords += std::to_string(gate.codewords[i]);
+        Str codewords = "[";
+        for (UInt i = 0; i < gate.codewords.size(); i++) {
+            codewords += to_string(gate.codewords[i]);
             if (i != gate.codewords.size() - 1) codewords += ", ";
         }
-        IOUT("\tcodewords: " << codewords << "]");
+        QL_IOUT("\tcodewords: " << codewords << "]");
 
-        IOUT("\tvisual_type: " << gate.visual_type);
+        QL_IOUT("\tvisual_type: " << gate.visual_type);
 
         if (gate.type == __remap_gate__) {
-            IOUT("\tvirtual_qubit_index: " << gate.virtual_qubit_index);
+            QL_IOUT("\tvirtual_qubit_index: " << gate.virtual_qubit_index);
         }
     }
 }
@@ -280,19 +281,12 @@ std::string generateFilePath(const std::string &filename, const std::string &ext
     return ql::options::get("output_dir") + "/" + filename + "." + extension;
 }
 
-int safe_int_cast(const size_t argument) {
-    if (argument > std::numeric_limits<int>::max()) FATAL("Failed cast to int: size_t argument is too large!");
-    return static_cast<int>(argument);
+void assertPositive(const Int argument, const Str &parameter) {
+    if (argument < 0) QL_FATAL(parameter << " is negative. Only positive values are allowed!");
 }
 
-void assertPositive(const int argument, const std::string &parameter) {
-    if (argument < 0) FATAL(parameter << " is negative. Only positive values are allowed!");
+void assertPositive(const double argument, const Str &parameter) {
+    if (argument < 0) QL_FATAL(parameter << " is negative. Only positive values are allowed!");
 }
-
-void assertPositive(const double argument, const std::string &parameter) {
-    if (argument < 0) FATAL(parameter << " is negative. Only positive values are allowed!");
-}
-
-#endif //WITH_VISUALIZER
 
 } // namespace ql

@@ -109,8 +109,8 @@ int main(int argc, char ** argv)
       different  = (argv[2][0] == 'd');
    }
 
-   int   num_circuits       = 1;
-   float sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };  // sizes of the clifford circuits per randomization
+   int    num_circuits       = 1;
+   double sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };  // sizes of the clifford circuits per randomization
 
    std::cout << "[+] num_qubits    : " << num_qubits << std::endl;
    std::cout << "[+] num_cliffords : " << num_cliffords<< std::endl;

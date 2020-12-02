@@ -1,22 +1,18 @@
-/**
- * @file   gate.h
- * @date   11/2016
- * @author Nader Khammassi
- *         Imran Ashraf
- * @brief  gates implementation
+/** \file
+ * Quantum gate abstraction implementation.
  */
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include "json.h"
+#include "utils/str.h"
+#include "utils/vec.h"
+#include "utils/json.h"
+#include "utils/misc.h"
 #include "matrix.h"
-#include "utils.h"
 
 namespace ql {
 
-typedef std::string instruction_t;
+typedef utils::Str instruction_t;
 
 // gate types
 typedef enum __gate_type_t
@@ -56,122 +52,125 @@ typedef enum __gate_type_t
     __remap_gate__
 } gate_type_t;
 
-#define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
-#define rsqrt_2 (0.7071067811865475244008443621048490392848359376884740365883398690f)
+const utils::Complex identity_c[] = {
+    1.0, 0.0,
+    0.0, 1.0
+};
 
-#define __c(r,i) complex_t(r,i)
+const utils::Complex pauli_x_c[] {
+    0.0, 1.0,
+    1.0, 0.0
+};
 
-const complex_t identity_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0), __c(1.0, 0.0)
-                                                                   };     /* I */
+const utils::Complex pauli_y_c[] {
+    0.0, -utils::IM,
+    utils::IM, 0.0
+};
 
-const complex_t pauli_x_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0), __c(1.0, 0.0),
-                                                                     __c(1.0, 0.0), __c(0.0, 0.0)
-                                                                   };      /* X */
+const utils::Complex pauli_z_c[] {
+    1.0, 0.0,
+    0.0, -1.0
+};
 
-const complex_t pauli_y_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0), __c(0.0,-1.0),
-                                                                     __c(0.0, 1.0), __c(0.0, 0.0)
-                                                                   };      /* Y */
+const utils::Complex hadamard_c[] = {
+    utils::sqrt(0.5), utils::sqrt(0.5),
+    utils::sqrt(0.5), -utils::sqrt(0.5)
+};
 
-const complex_t pauli_z_c  [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0), __c(-1.0,0.0)
-                                                                   };      /* Z */
+const utils::Complex phase_c[] {
+    1.0, 0.0,
+    0.0, utils::IM
+};
 
-const complex_t hadamard_c [] /* __attribute__((aligned(64))) */  = { rsqrt_2,  rsqrt_2,
-                                                                      rsqrt_2, -rsqrt_2
-                                                                    };            /* H */
+const utils::Complex phasedag_c[] = {
+    1.0, 0.0,
+    0.0, -utils::IM
+};
 
-const complex_t phase_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0), __c(0.0, 1.0)
-                                                                   };        /* S */
+const utils::Complex t_c[] = {
+    1.0, 0.0,
+    0.0, utils::expi(0.25 * utils::PI)
+};
 
-const complex_t phasedag_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0), __c(0.0, -1.0)
-                                                                   };        /* S */
+const utils::Complex tdag_c[] = {
+    1.0, 0.0,
+    0.0, utils::expi(-0.25 * utils::PI)
+};
 
-const complex_t t_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
-                                                                 __c(0.0, 0.0), __c(0.707106781, 0.707106781)
-                                                               };        /* T */
+const utils::Complex rx90_c[] = {
+    utils::sqrt(0.5), -utils::IM * utils::sqrt(0.5),
+    -utils::IM * utils::sqrt(0.5), utils::sqrt(0.5)
+};
 
-const complex_t tdag_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
-                                                                    __c(0.0, 0.0), __c(0.707106781, -0.707106781)
-                                                                  };        /* Tdag */
+const utils::Complex ry90_c[] = {
+    utils::sqrt(0.5), -utils::sqrt(0.5),
+    utils::sqrt(0.5), utils::sqrt(0.5)
+};
 
-const complex_t rx90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0), __c(0.0, -rsqrt_2),
-                                                                  __c(0.0, -rsqrt_2), __c(rsqrt_2,  0.0)
-                                                                };   /* rx90  */
+const utils::Complex mrx90_c[] = {
+    utils::sqrt(0.5), utils::IM * utils::sqrt(0.5),
+    utils::IM * utils::sqrt(0.5), utils::sqrt(0.5)
+};
 
-const complex_t ry90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0), __c(-rsqrt_2, 0.0),
-                                                                  __c(rsqrt_2, 0.0 ), __c( rsqrt_2, 0.0)
-                                                                };   /* ry90  */
+const utils::Complex mry90_c[] = {
+    utils::sqrt(0.5), utils::sqrt(0.5),
+    -utils::sqrt(0.5), utils::sqrt(0.5)
+};
 
-const complex_t mrx90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0), __c(0.0,  rsqrt_2),
-                                                                  __c(0.0, rsqrt_2), __c(rsqrt_2,  0.0)
-                                                                };   /* mrx90 */
+const utils::Complex rx180_c[] = {
+    0.0, -utils::IM,
+    -utils::IM, 0.0
+};
 
-const complex_t mry90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0), __c(rsqrt_2, 0.0),
-                                                                  __c(-rsqrt_2, 0.0), __c(rsqrt_2, 0.0)
-                                                                };   /* ry90  */
-
-const complex_t rx180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0), __c(0.0,-1.0),
-                                                                  __c(0.0,-1.0), __c(0.0, 0.0)
-                                                                };   /* rx180 */
-
-const complex_t ry180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0), __c(-1.0, 0.0),
-                                                                  __c(1.0, 0.0), __c( 0.0, 0.0)
-                                                                };   /* ry180 */
+const utils::Complex ry180_c[] = {
+    0.0, -utils::IM,
+    -utils::IM, 0.0
+};
 
 /**
  * to do : multi-qubit gates should not be represented by their matrix (the matrix depends on the ctrl/target qubit locations, the simulation using such matrix is inefficient as well...)
  */
 
-const complex_t cnot_c [] /* __attribute__((aligned(64))) */ =
-{
-    __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
-};  /* cnot  */
-
-// TODO correct it, for now copied from cnot
-const complex_t cphase_c [] /* __attribute__((aligned(64))) */ =
-{
-    __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(-1.0, 0.0)
-}; /* cz */
-
-const complex_t swap_c [] /* __attribute__((aligned(64))) */ =
-{
-    __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
-};  /* swap  */
-
-// TODO correct it, for now copied from toffoli
-const complex_t ctoffoli_c[] /* __attribute__((aligned(64))) */ =
-{
-    __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0),
-    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0)
+const utils::Complex cnot_c[] = {
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 0.0
 };
 
-const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ =
-{
-    __c(1.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0), __c(1.0, 0.0)
+const utils::Complex cphase_c[] = {
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, -1.0
 };
 
-#undef __c
+const utils::Complex swap_c[] = {
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 1.0
+};
+
+const utils::Complex toffoli_c[] = {
+    1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+};
+
+const utils::Complex nop_c[] = {
+    1.0, 0.0,
+    0.0, 1.0
+};
 
 
+
+const utils::UInt MAX_CYCLE = utils::MAX;
 
 
 /**
@@ -179,13 +178,13 @@ const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ =
  */
 class gate {
 public:
-    std::string name;
-    std::vector<size_t> operands;
-    std::vector<size_t> creg_operands;
-    int int_operand = 0;
-    size_t duration = 0;
-    double angle = 0.0;                      // for arbitrary rotations
-    size_t  cycle = MAX_CYCLE;               // cycle after scheduling; MAX_CYCLE indicates undefined
+    utils::Str name;
+    utils::Vec<utils::UInt> operands;
+    utils::Vec<utils::UInt> creg_operands;
+    utils::Int int_operand = 0;
+    utils::UInt duration = 0;
+    utils::Real angle = 0.0;                      // for arbitrary rotations
+    utils::UInt cycle = MAX_CYCLE;                // cycle after scheduling; MAX_CYCLE indicates undefined
     virtual ~gate() = default;
     virtual instruction_t qasm() const = 0;
     virtual gate_type_t   type() const = 0;
@@ -200,7 +199,7 @@ public:
 class identity : public gate {
 public:
     cmat_t m;
-    explicit identity(size_t q);
+    explicit identity(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -209,7 +208,7 @@ public:
 class hadamard : public gate {
 public:
     cmat_t m;
-    explicit hadamard(size_t q);
+    explicit hadamard(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -218,7 +217,7 @@ public:
 class phase : public gate {
 public:
     cmat_t m;
-    explicit phase(size_t q);
+    explicit phase(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -227,7 +226,7 @@ public:
 class phasedag : public gate {
 public:
     cmat_t m;
-    explicit phasedag(size_t q);
+    explicit phasedag(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -236,7 +235,7 @@ public:
 class rx : public gate {
 public:
     cmat_t m;
-    rx(size_t q, double theta);
+    rx(utils::UInt q, utils::Real theta);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -245,7 +244,7 @@ public:
 class ry : public gate {
 public:
     cmat_t m;
-    ry(size_t q, double theta);
+    ry(utils::UInt q, utils::Real theta);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -254,7 +253,7 @@ public:
 class rz : public gate {
 public:
     cmat_t m;
-    rz(size_t q, double theta);
+    rz(utils::UInt q, utils::Real theta);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -263,7 +262,7 @@ public:
 class t : public gate {
 public:
     cmat_t m;
-    explicit t(size_t q);
+    explicit t(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -272,7 +271,7 @@ public:
 class tdag : public gate {
 public:
     cmat_t m;
-    explicit tdag(size_t q);
+    explicit tdag(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -281,7 +280,7 @@ public:
 class pauli_x : public gate {
 public:
     cmat_t m;
-    explicit pauli_x(size_t q);
+    explicit pauli_x(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -290,7 +289,7 @@ public:
 class pauli_y : public gate {
 public:
     cmat_t m;
-    explicit pauli_y(size_t q);
+    explicit pauli_y(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -299,7 +298,7 @@ public:
 class pauli_z : public gate {
 public:
     cmat_t m;
-    explicit pauli_z(size_t q);
+    explicit pauli_z(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -308,7 +307,7 @@ public:
 class rx90 : public gate {
 public:
     cmat_t m;
-    explicit rx90(size_t q);
+    explicit rx90(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -317,7 +316,7 @@ public:
 class mrx90 : public gate {
 public:
     cmat_t m;
-    explicit mrx90(size_t q);
+    explicit mrx90(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -326,7 +325,7 @@ public:
 class rx180 : public gate {
 public:
     cmat_t m;
-    explicit rx180(size_t q);
+    explicit rx180(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -335,7 +334,7 @@ public:
 class ry90 : public gate {
 public:
     cmat_t m;
-    explicit ry90(size_t q);
+    explicit ry90(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -344,7 +343,7 @@ public:
 class mry90 : public gate {
 public:
     cmat_t m;
-    explicit mry90(size_t q);
+    explicit mry90(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -353,7 +352,7 @@ public:
 class ry180 : public gate {
 public:
     cmat_t m;
-    explicit ry180(size_t q);
+    explicit ry180(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -362,8 +361,8 @@ public:
 class measure : public gate {
 public:
     cmat_t m;
-    explicit measure(size_t q);
-    measure(size_t q, size_t c);
+    explicit measure(utils::UInt q);
+    measure(utils::UInt q, utils::UInt c);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -372,7 +371,7 @@ public:
 class prepz : public gate {
 public:
     cmat_t m;
-    explicit prepz(size_t q);
+    explicit prepz(utils::UInt q);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -381,7 +380,7 @@ public:
 class cnot : public gate {
 public:
     cmat_t m;
-    cnot(size_t q1, size_t q2);
+    cnot(utils::UInt q1, utils::UInt q2);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -390,7 +389,7 @@ public:
 class cphase : public gate {
 public:
     cmat_t m;
-    cphase(size_t q1, size_t q2);
+    cphase(utils::UInt q1, utils::UInt q2);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -399,7 +398,7 @@ public:
 class toffoli : public gate {
 public:
     cmat_t m;
-    toffoli(size_t q1, size_t q2, size_t q3);
+    toffoli(utils::UInt q1, utils::UInt q2, utils::UInt q3);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -417,7 +416,7 @@ public:
 class swap : public gate {
 public:
     cmat_t m;
-    swap(size_t q1, size_t q2);
+    swap(utils::UInt q1, utils::UInt q2);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -430,9 +429,9 @@ public:
 class wait : public gate {
 public:
     cmat_t m;
-    size_t duration_in_cycles;
+    utils::UInt duration_in_cycles;
 
-    wait(std::vector<size_t> qubits, size_t d, size_t dc);
+    wait(utils::Vec<utils::UInt> qubits, utils::UInt d, utils::UInt dc);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -467,12 +466,12 @@ public:
 
 class custom_gate : public gate {
 public:
-    cmat_t              m;                // matrix representation
-    std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
-    explicit custom_gate(const std::string &name);
+    cmat_t m; // matrix representation
+    utils::Str arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
+    explicit custom_gate(const utils::Str &name);
     custom_gate(const custom_gate &g);
-    static bool is_qubit_id(const std::string &str);
-    static size_t qubit_id(const std::string &qubit);
+    static bool is_qubit_id(const utils::Str &str);
+    static utils::UInt qubit_id(const utils::Str &qubit);
     void load(nlohmann::json &instr);
     void print_info() const;
     instruction_t qasm() const override;
@@ -483,9 +482,9 @@ public:
 class composite_gate : public custom_gate {
 public:
     cmat_t m;
-    std::vector<gate *> gs;
-    explicit composite_gate(const std::string &name);
-    composite_gate(const std::string &name, const std::vector<gate*> &seq);
+    utils::Vec<gate *> gs;
+    explicit composite_gate(const utils::Str &name);
+    composite_gate(const utils::Str &name, const utils::Vec<gate*> &seq);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;

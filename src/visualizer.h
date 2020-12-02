@@ -1,12 +1,13 @@
-/**
- * @file   visualizer.h
- * @date   11/2020
- * @author Tim van der Meer
- * @brief  declaration of the public visualizer interface
+/** \file
+ * Declaration of the public visualizer interface.
  */
  
 #pragma once
 
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/vec.h"
+#include "utils/map.h"
 #include "program.h"
 
 #include <cstdint>
@@ -14,16 +15,16 @@
 namespace ql {
 
 struct VisualizerConfiguration {
-    const std::string &visualizerConfigPath;
-    const std::string &waveformMappingPath;
+    const utils::Str &visualizerConfigPath;
+    const utils::Str &waveformMappingPath;
 };
 
-void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfiguration configuration);
+void visualize(const quantum_program* program, const utils::Str &visualizationType, const VisualizerConfiguration &configuration);
 
 #ifdef WITH_VISUALIZER
 
-void assertPositive(const int argument, const std::string &parameter);
-void assertPositive(const double argument, const std::string &parameter);
+void assertPositive(utils::Int argument, const utils::Str &parameter);
+void assertPositive(utils::Real argument, const utils::Str &parameter);
 
 #endif //WITH_VISUALIZER
 

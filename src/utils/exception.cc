@@ -1,19 +1,27 @@
-#include "exception.h"
+/** \file
+ * Provides the base exception class for OpenQL.
+ */
+
+#include "utils/exception.h"
 
 #include <cstring>
 #include <cerrno>
 #include "backward.hpp"
 
 namespace ql {
+namespace utils {
 
-static std::string make_message(
-    const std::string &msg,
+/**
+ * Builds the message for Exception.
+ */
+static Str make_message(
+    const Str &msg,
     bool system = false
 ) noexcept {
     try {
 
         // Form the message string.
-        std::ostringstream ss{};
+        StrStrm ss{};
         ss << msg;
         if (system) {
             ss << ": " << std::strerror(errno);
@@ -35,8 +43,8 @@ static std::string make_message(
                 for (size_t i = 0; i < trace.size(); i++) {
                     auto fn = tr.resolve(trace[i]);
                     if (
-                        (fn.source.filename.find("exception.cc") == std::string::npos)
-                        && (fn.source.filename.find("backward.hpp") == std::string::npos)
+                        (fn.source.filename.find("exception.cc") == Str::npos)
+                        && (fn.source.filename.find("backward.hpp") == Str::npos)
                     ) {
                         trace.skip_n_firsts(i);
                         break;
@@ -69,10 +77,17 @@ static std::string make_message(
     }
 }
 
-exception::exception(
-    const std::string &msg,
+/**
+ * Creates a new exception object with the given message. If system is set,
+ * the standard library is queried for the string representation of the current
+ * value of errno, and this is appended to the message. Finally, a backtrace is
+ * performed and appended to the message after a newline.
+ */
+Exception::Exception(
+    const Str &msg,
     bool system
 ) noexcept : std::runtime_error(make_message(msg, system)) {
 }
 
+} // namespace utils
 } // namespace ql

@@ -1,12 +1,11 @@
-/**
- * @file   visualizer_interaction.cc
- * @date   11/2020
- * @author Tim van der Meer
- * @brief  definition of the visualizer qubit interaction graph
+/** \file
+ * Definition of the visualizer qubit interaction graph.
  */
 
 #ifdef WITH_VISUALIZER
 
+#include <cmath>
+#include "utils/pair.h"
 #include "visualizer.h"
 #include "visualizer_types.h"
 #include "visualizer_common.h"
@@ -97,7 +96,7 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
             }
         }
         // Draw the qubits.
-        for (const std::pair<Qubit, Position2> &qubit : qubitPositions) {
+        for (const Pair<Qubit, Position2> &qubit : qubitPositions) {
             // Draw the circle outline.
             image.draw_circle(qubit.second.x, qubit.second.y, layout.getQubitRadius(), layout.getCircleFillColor().data());
             image.draw_circle(qubit.second.x, qubit.second.y, layout.getQubitRadius(), layout.getCircleOutlineColor().data(), 1, 0xFFFFFFFF);
@@ -115,13 +114,13 @@ void visualizeInteractionGraph(const ql::quantum_program* program, const Visuali
         }
 
         // Display the image.
-        DOUT("Displaying image...");
+        QL_DOUT("Displaying image...");
         image.display("Qubit Interaction Graph");
     } else if (qubits.size() == 1) {
         // Draw the single qubit in the middle of the circle.
         //TODO
     } else {
-        FATAL("Quantum program contains no qubits. Unable to visualize qubit interaction graph!");
+        QL_FATAL("Quantum program contains no qubits. Unable to visualize qubit interaction graph!");
     }
 }
 
@@ -210,33 +209,33 @@ double calculateQubitCircleRadius(const int qubitRadius, const double theta) {
     //   such that the qubit circles do not overlap.
 
     // Here be trigonometry.
-    const double r = qubitRadius;
-    const double alpha = M_PI - M_PI / 2.0 - theta / 2.0;
-    const double h = r * tan(alpha);
-    const double R = sqrt(h * h + r * r);
+    const Real r = qubitRadius;
+    const Real alpha = PI - PI / 2.0 - theta / 2.0;
+    const Real h = r * tan(alpha);
+    const Real R = sqrt(h * h + r * r);
 
     return R;
 }
 
-Position2 calculatePositionOnCircle(const int radius, const double theta, const Position2 center) {
+Position2 calculatePositionOnCircle(Int radius, Real theta, const Position2 &center) {
     const long x = (long) (radius * cos(theta) + center.x);
     const long y = (long) (radius * sin(theta) + center.y);
 
     return {x, y};
 }
 
-std::vector<Qubit> findQubitInteractions(const std::vector<GateProperties> gates, const int amountOfQubits) {
+Vec<Qubit> findQubitInteractions(const Vec<GateProperties> &gates, Int amountOfQubits) {
     // Initialize the qubit vector.
-    std::vector<Qubit> qubits(amountOfQubits);
-    for (int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+    Vec<Qubit> qubits(amountOfQubits);
+    for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
         qubits[qubitIndex] = {qubitIndex, {}};
     }
 
     for (const GateProperties &gate : gates) {
-        const std::vector<GateOperand> operands = getGateOperands(gate);
+        const Vec<GateOperand> operands = getGateOperands(gate);
         if (operands.size() > 1) {
             // Find the qubits the current gate interacts with.
-            std::vector<int> qubitIndices;
+            Vec<Int> qubitIndices;
             for (const GateOperand &operand : operands) {
                 if (operand.bitType == QUANTUM) {
                     qubitIndices.push_back(operand.index);
@@ -244,13 +243,13 @@ std::vector<Qubit> findQubitInteractions(const std::vector<GateProperties> gates
             }
 
             // Add the interaction indices to the qubits.
-            for (int i = 0; i < qubitIndices.size(); i++) {
-                for (int j = 0; j < qubitIndices.size(); j++) {
+            for (UInt i = 0; i < qubitIndices.size(); i++) {
+                for (UInt j = 0; j < qubitIndices.size(); j++) {
                     // Do not add an interaction between a qubit and itself.
                     if (i != j) {
-                        std::vector<InteractionsWithQubit> &interactions = qubits[qubitIndices[i]].interactions;
+                        Vec<InteractionsWithQubit> &interactions = qubits[qubitIndices[i]].interactions;
                         // Find the existing interaction count with the current qubit if it exists.
-                        bool found = false;
+                        Bool found = false;
                         for (InteractionsWithQubit &interactionsWithQubit : interactions) {
                             if (interactionsWithQubit.qubitIndex == qubitIndices[j]) {
                                 found = true;
@@ -270,7 +269,7 @@ std::vector<Qubit> findQubitInteractions(const std::vector<GateProperties> gates
     return qubits;
 }
 
-bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> drawnEdges, const int first, const int second) {
+bool isEdgeAlreadyDrawn(const Vec<std::pair<Int, Int>> &drawnEdges, Int first, Int second) {
     // Check if the edge already exists.
     for (const std::pair<int, int> &drawnEdge : drawnEdges) {
         if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {
@@ -281,12 +280,12 @@ bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> drawnEdges, const
     return false;
 }
 
-void printInteractionList(const std::vector<Qubit> qubits) {
+void printInteractionList(const Vec<Qubit> &qubits) {
     // Print the qubit interaction list.
     for (const Qubit &qubit : qubits) {
-        IOUT("qubit " << qubit.qubitIndex << " interacts with:");
+        QL_IOUT("qubit " << qubit.qubitIndex << " interacts with:");
         for (const InteractionsWithQubit &interactionsWithQubit : qubit.interactions) {
-            IOUT("\tqubit " << interactionsWithQubit.qubitIndex << ": " << interactionsWithQubit.amountOfInteractions << " times");
+            QL_IOUT("\tqubit " << interactionsWithQubit.qubitIndex << ": " << interactionsWithQubit.amountOfInteractions << " times");
         }
     }
 }

@@ -1,9 +1,7 @@
-/**
- * @file   openql.h
- * @date   11/2016
- * @author Nader Khammassi
- * @brief  main openql header
+/** \file
+ * Main OpenQL header.
  */
+
 #pragma once
 
 #include "options.h"

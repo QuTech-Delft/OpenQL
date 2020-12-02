@@ -20,12 +20,12 @@ test_cnot_mixedcommute(std::string v, std::string schedopt, std::string sched_po
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    float sweep_points[] = { 1 };
+    double sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<7; j++) { k.gate("x", j); }
 
@@ -64,12 +64,12 @@ test_cnot_controlcommute(std::string v, std::string schedopt, std::string sched_
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    float sweep_points[] = { 1 };
+    double sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k.gate("cnot", 3,0);
     k.gate("cnot", 3,6);
@@ -103,12 +103,12 @@ test_cnot_targetcommute(std::string v, std::string schedopt, std::string sched_p
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    float sweep_points[] = { 1 };
+    double sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k.gate("cnot", 0,3);
     k.gate("cnot", 6,3);
@@ -142,12 +142,12 @@ test_cz_anycommute(std::string v, std::string schedopt, std::string sched_post17
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    float sweep_points[] = { 1 };
+    double sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k.gate("cz", 0,3);
     k.gate("cz", 3,6);
@@ -176,7 +176,7 @@ test_cz_anycommute(std::string v, std::string schedopt, std::string sched_post17
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
-    
+
 test_cnot_controlcommute("cnot_controlcommute", "ASAP", "no");
 test_cnot_controlcommute("cnot_controlcommute", "ASAP", "yes");
 test_cnot_controlcommute("cnot_controlcommute", "ALAP", "no");
