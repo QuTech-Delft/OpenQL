@@ -7,6 +7,7 @@
  */
 
 #include "datapath_cc.h"
+#include <utils/exception.h>	// FIXME: required for FATAL
 
 namespace ql {
 
@@ -55,7 +56,7 @@ int datapath_cc::getSizeTag(int numReadouts) {
 	int sizeTag;
 
 	if(numReadouts == 0) {
-		FATAL("inconsistency in number of readouts");	// FIXME: message refers to caller, this assumes particular semantics for calling this function
+		QL_FATAL("inconsistency in number of readouts");	// FIXME: message refers to caller, this assumes particular semantics for calling this function
 	} else if(numReadouts <= 8) {
 		sizeTag = 0;			// 0=byte
 	} else if(numReadouts <= 16) {
@@ -63,7 +64,7 @@ int datapath_cc::getSizeTag(int numReadouts) {
 	} else if(numReadouts <= 32) {	// NB: should currently not occur since we have a maximum of 16 inputs on UHF
 		sizeTag = 2;
 	} else {
-		FATAL("inconsistency detected: too many readouts");
+		QL_FATAL("inconsistency detected: too many readouts");
 	}
 	return sizeTag;
 }

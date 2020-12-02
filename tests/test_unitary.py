@@ -103,7 +103,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             k.gate(u, [1,2])
 
-        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 2 and not 1.000000')
+        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 2 and not 1')
     
     def test_unitary_wrongnumberofqubits_toofew(self):
         self.setUpClass()
@@ -120,7 +120,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             k.gate(u, [0])
 
-        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 1 and not 2.000000')
+        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 1 and not 2')
 
     @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_I(self):

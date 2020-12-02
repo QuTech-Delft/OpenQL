@@ -1,20 +1,13 @@
-/**
- * @file   resource_manager.h
- * @date   09/2017
- * @author Imran Ashraf
- * @date   09/2018
- * @author Hans van Someren
- * @date   04/2020
- * @author Hans van Someren
- * @brief  Resource management for cc light platform
+/** \file
+ * Resource manager interface for the scheduler.
  */
 
 #pragma once
 
-#include <vector>
-#include <string>
-
-#include <platform.h>
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/vec.h"
+#include "platform.h"
 
 namespace ql {
 
@@ -27,26 +20,26 @@ namespace arch {
 
 class resource_t {
 public:
-    std::string name;
-    size_t count;
+    utils::Str name;
+    utils::UInt count;
     scheduling_direction_t direction;
 
-    resource_t(const std::string &n, scheduling_direction_t dir);
+    resource_t(const utils::Str &n, scheduling_direction_t dir);
     virtual ~resource_t() = default;
 
-    virtual bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform) = 0;
-    virtual void reserve(size_t op_start_cycle, gate *ins, const quantum_platform &platform) = 0;
+    virtual utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) = 0;
+    virtual void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) = 0;
 
     virtual resource_t *clone() const & = 0;
     virtual resource_t *clone() && = 0;
 
-    void Print(const std::string &s);
+    void Print(const utils::Str &s);
 };
 
 class platform_resource_manager_t {
 public:
 
-    std::vector<resource_t*> resource_ptrs;
+    utils::Vec<resource_t*> resource_ptrs;
 
     // constructor needed by mapper::FreeCycle to bridge time from its construction to its Init
     // see the note on the use of constructors and Init functions at the start of mapper.h
@@ -59,7 +52,7 @@ public:
     virtual platform_resource_manager_t *clone() const & = 0;
     virtual platform_resource_manager_t *clone() && = 0;
 
-    void Print(const std::string &s);
+    void Print(const utils::Str &s);
 
     // copy constructor doing a deep copy
     // *org_resource_ptr->clone() does the trick to create a copy of the actual derived class' object
@@ -69,8 +62,8 @@ public:
     // follow pattern to use tmp copy to allow self-assignment and to be exception safe
     platform_resource_manager_t &operator=(const platform_resource_manager_t &rhs);
 
-    bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform);
-    void reserve(size_t op_start_cycle, gate *ins, const quantum_platform &platform);
+    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform);
+    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform);
 
     // destructor destroying deep resource_t's
     // runs before shallow destruction which is done by synthesized platform_resource_manager_t destructor
@@ -97,8 +90,8 @@ public:
     // follow pattern to use tmp copy to allow self-assignment and to be exception safe
     resource_manager_t &operator=(const resource_manager_t &rhs);
 
-    bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform);
-    void reserve(size_t op_start_cycle, gate *ins, const quantum_platform &platform);
+    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform);
+    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform);
 
     // destructor destroying deep platform_resource_managert_t
     // runs before shallow destruction which is done by synthesized resource_manager_t destructor

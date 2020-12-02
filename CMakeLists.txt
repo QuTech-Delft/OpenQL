@@ -107,6 +107,35 @@ if(WITH_INITIAL_PLACEMENT AND DEFINED ENV{WINGLPK_ROOT_DIR})
     set(WITHOUT_GLPK_INSTALL YES)
 endif()
 
+# Definitions for checked vs unchecked STL containers w.r.t. iterator safety.
+# The checked versions can be considerably slower than the unchecked ones, so
+# by default they are only checked in debug builds.
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    set(OPENQL_DEBUG OFF)
+else()
+    set(OPENQL_DEBUG ON)
+endif()
+option(
+    OPENQL_CHECKED_STL
+    "Whether STL containers should be guarded against undefined behavior."
+    ${OPENQL_DEBUG}
+)
+option(
+    OPENQL_CHECKED_VEC
+    "Whether ql::utils::Vec should guard against undefined behavior."
+    ${OPENQL_CHECKED_STL}
+)
+option(
+    OPENQL_CHECKED_LIST
+    "Whether ql::utils::Vec should guard against undefined behavior."
+    ${OPENQL_CHECKED_STL}
+)
+option(
+    OPENQL_CHECKED_MAP
+    "Whether ql::utils::Vec should guard against undefined behavior."
+    ${OPENQL_CHECKED_STL}
+)
+
 
 #=============================================================================#
 # CMake weirdness and compatibility                                           #
@@ -173,7 +202,12 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_circuit.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_interaction.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/exception.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/exception.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/logger.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/str.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/num.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/filesystem.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/json.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/eqasm_backend_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/codegen_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/datapath_cc.cc"
@@ -195,7 +229,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/options.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm_compiler.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/qsoverlay.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/resource_manager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/scheduler.cc"
@@ -203,19 +236,30 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_resource_manager.cc"
 )
 
+# Generate a header file with configuration options that cannot be compiled
+# (entirely) into the shared/static library due to use of templates.
+set(QL_CHECKED_VEC ${OPENQL_CHECKED_VEC})
+set(QL_CHECKED_LIST ${OPENQL_CHECKED_LIST})
+set(QL_CHECKED_MAP ${OPENQL_CHECKED_MAP})
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql_config.h.template"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/ql_config.h"
+)
+
 # This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
 # https://docs.microsoft.com/en-us/cpp/cpp/declspec?view=vs-2019
-TARGET_COMPILE_DEFINITIONS(ql PRIVATE BUILDING_OPENQL)
+target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
 
 # TODO: this was taken from compile_options.h, but I'm not sure what its purpose
 # is.
-TARGET_COMPILE_DEFINITIONS(ql PUBLIC OPT_DECOMPOSE_WAIT_BARRIER)
+target_compile_definitions(ql PUBLIC OPT_DECOMPOSE_WAIT_BARRIER)
 
 # There is no distinction between public and private header files right now,
 # and they'r all in the source directory. Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
 )
 
 # Configure compilation.
@@ -223,7 +267,7 @@ set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ql PRIVATE -Wall -Wfatal-errors -ggdb)
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    target_compile_options(ql PRIVATE -Wall -Wfatal-errors -ggdb -Wno-unused-local-typedef )
+    target_compile_options(ql PRIVATE -Wall -Wfatal-errors -ggdb -Wno-unused-local-typedef)
 elseif(MSVC)
     target_compile_options(ql PRIVATE /MP /D_USE_MATH_DEFINES /EHsc /bigobj)
 else()
@@ -241,8 +285,7 @@ if(NOT WITH_UNITARY_DECOMPOSITION)
     target_compile_definitions(ql PRIVATE WITHOUT_UNITARY_DECOMPOSITION)
 endif()
 
-# Use a mock version of unitary.cc if WITH_UNITARY_DECOMPOSITION is false.
-# This speeds up the build, but of course breaks unitary decomposition.
+# Enable GPL-based initial placement code if requested.
 if(WITH_INITIAL_PLACEMENT)
     target_compile_definitions(ql PRIVATE INITIALPLACE)
 endif()
@@ -317,6 +360,13 @@ target_include_directories(eigen INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/deps/eigen/unsupported"
 )
 target_link_libraries(ql PRIVATE eigen)
+
+
+# nlohmann::json --------------------------------------------------------------
+
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory(deps/json)
+target_link_libraries(ql PUBLIC nlohmann_json::nlohmann_json)
 
 
 # libqasm ---------------------------------------------------------------------

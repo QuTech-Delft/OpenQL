@@ -12,7 +12,7 @@
 #include <cstddef>
 #include <iomanip>
 #include <sstream>
-#include <utils.h>
+#include <utils/logger.h>
 
 namespace ql {
 
@@ -44,7 +44,7 @@ public: // functions
 		datapathSection << std::setw(16) << sel << std::setw(16) << statement << std::setw(24) << comment << std::endl;
 	}
 	void emit(int sel, const std::string &statement, const std::string &comment="") {
-		emit(SS2S("[" << sel << "]"), statement, comment);
+		emit(QL_SS2S("[" << sel << "]"), statement, comment);
 	}
 
 private:    // vars

@@ -7,7 +7,7 @@
 */
 
 #include "openql.h"
-#include "utils.h"
+//#include "utils.h"
 
 #include <string>
 #include <vector>
@@ -63,14 +63,14 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
 #endif
 	k.wait({}, 0);      // help scheduler
 
-    k.gate("cz_park", std::vector<size_t> {6, 7, 11});
-    k.gate("cz_park", std::vector<size_t> {12, 13, 15});
-    k.gate("cz_park1", std::vector<size_t> {10, 15, 16});   // FIXME:
-	k.wait({}, 0);      // help scheduler
+    k.gate("cz_park", {6, 7, 11});
+    k.gate("cz_park", {12, 13, 15});
+    k.gate("cz_park1", {10, 15, 16});   // FIXME:
+    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
 
     // gate with angle parameter
     double angle = 1.23456; // just some number
-    k.gate("x", std::vector<size_t> {6}, std::vector<size_t> {}, 0, angle);
+    k.gate("x", {6}, {}, 0, angle);
 #if 0    // FIXME: drops angle
 [OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:762 Adding gate : x with qubits [6]
 [OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:765 trying to add specialized decomposed gate for: x
@@ -109,7 +109,7 @@ $2 = 0
 (gdb)
 #endif
 
-    k.gate("rx180", std::vector<size_t> {6}, std::vector<size_t> {}, 0, angle);     // NB: works
+    k.gate("rx180", {6}, {}, 0, angle);     // NB: works
 
 
     // create classical registers
@@ -141,8 +141,8 @@ $2 = 0
     // measure
     k.gate("measure", [0], rs1)
 #endif
-    k.gate("measure", std::vector<size_t> {7}, std::vector<size_t> {0});
-    k.gate("measure", std::vector<size_t> {8}, std::vector<size_t> {1});
+    k.gate("measure", {7}, {0});
+    k.gate("measure", {8}, {1});
 
     prog.add(k);
 
@@ -214,7 +214,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     //      + duration?
     //      + possible in parallel without doing 2 qubits gate?
 
-    k.gate("measure", std::vector<size_t> {x}, std::vector<size_t> {0});
+    k.gate("measure", {x}, {0});
 	k.wait({}, 0);      // help scheduler
 
     // Z stabilizers
@@ -226,7 +226,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     k.gate("cz", z, zW);
 
     k.gate("ry90", z);
-    k.gate("measure", std::vector<size_t> {z}, std::vector<size_t> {1});
+    k.gate("measure", {z}, {1});
 
     prog.add(k);
 
@@ -296,7 +296,7 @@ void test_rabi( std::string scheduler, std::string scheduler_uniform)
     size_t qubit = 10;     // connects to uhfqa-0 and awg8-mw-0
 
     k1.gate("x", qubit);
-    k1.gate("measure", std::vector<size_t> {qubit}, std::vector<size_t> {1});
+    k1.gate("measure", {(ql::utils::UInt)qubit}, {1});
 
     ql::operation op1 = ql::operation(rs1, std::string(">="), rs2); // FIXME: bogus condition, endless loop
     sp1.add_do_while(k1, op1);
@@ -323,7 +323,7 @@ void test_wait( std::string scheduler, std::string scheduler_uniform)
 
     for(int delay=1; delay<=10; delay++) {
         k.gate("x", qubit);
-        k.wait({qubit}, delay*20);
+        k.wait({(ql::utils::UInt)qubit}, delay*20);
         k.gate("y", qubit);
     }
 
@@ -335,7 +335,7 @@ void test_wait( std::string scheduler, std::string scheduler_uniform)
 }
 
 // FIXME: test to find quantum inspire problems 20200325
-void test_qi_example( std::string scheduler, std::string scheduler_uniform)
+void test_qi_example(const std::string &scheduler, const std::string &scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
@@ -371,7 +371,7 @@ void test_qi_example( std::string scheduler, std::string scheduler_uniform)
 }
 
 
-void test_break( std::string scheduler, std::string scheduler_uniform)
+void test_break(const std::string &scheduler, const std::string &scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
@@ -398,7 +398,7 @@ int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_INFO");      // LOG_DEBUG, LOG_INFO
 
-#if 0
+#if 0	// FIXME
     test_classical("ALAP", "no");
     test_qec_pipelined("ALAP", "no");
     test_do_while_nested_for("ALAP", "no");

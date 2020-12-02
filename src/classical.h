@@ -1,14 +1,12 @@
-/**
- * @file   classical.h
- * @date   05/2018
- * @author Imran Ashraf
- * @brief  classical operation implementation
+/** \file
+ * Classical operation implementation.
  */
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/vec.h"
 
 #include "gate.h"
 
@@ -22,40 +20,46 @@ enum class operand_type_t {
     CREG, CVAL
 };
 
+class cval;
+class creg;
+
 class coperand {
 public:
-    size_t id;
-    int value;
-    virtual ql::operand_type_t type() const = 0;
+    virtual operand_type_t type() const = 0;
     virtual void print() const = 0;
     virtual ~coperand() = default;
+    cval &as_cval();
+    const cval &as_cval() const;
+    creg &as_creg();
+    const creg &as_creg() const;
 };
 
-class cval: public coperand {
+class cval : public coperand {
 public:
-    cval(int val);
+    utils::Int value;
+    cval(utils::Int val);
     cval(const cval &cv);
-    ql::operand_type_t type() const override;
+    operand_type_t type() const override;
     void print() const override;
 };
 
-class creg: public coperand {
+class creg : public coperand {
 public:
-    creg(size_t id);
+    utils::UInt id;
+    creg(utils::UInt id);
     creg(const creg &c);
-    ql::operand_type_t type() const override;
+    operand_type_t type() const override;
     void print() const override;
 };
 
 class operation {
 public:
-    std::string operation_name;
-    std::string inv_operation_name;
+    utils::Str operation_name;
+    utils::Str inv_operation_name;
     operation_type_t operation_type;
-    std::vector<coperand*> operands;
+    utils::Vec<coperand*> operands;
 
-    operation() = default;
-    operation(const creg &l, const std::string &op, const creg &r);
+    operation(const creg &l, const utils::Str &op, const creg &r);
 
     // used for assign
     operation(const creg &l);
@@ -64,18 +68,18 @@ public:
     operation(const cval &v);
 
     // used for initializing with an imm
-    operation(int val);
+    operation(utils::Int val);
 
-    operation(const std::string &op, const creg &r);
+    operation(const utils::Str &op, const creg &r);
 };
 
 class classical : public gate {
 public:
-    // int imm_value;
+    // utils::Int imm_value;
     cmat_t m;
 
     classical(const creg &dest, const operation &oper);
-    classical(const std::string &operation);
+    classical(const utils::Str &operation);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;

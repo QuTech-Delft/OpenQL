@@ -17,6 +17,8 @@
 
 #include <string>
 #include <cstddef>  // for size_t etc.
+#include "utils/vec.h"
+#include "utils/json.h"
 
 namespace ql {
 
@@ -42,8 +44,8 @@ public: //  functions
     // Quantum instructions
     void customGate(
             const std::string &iname,
-            const std::vector<size_t> &qops,
-            const std::vector<size_t> &cops,
+            const utils::Vec<utils::UInt> &qops,
+            const utils::Vec<utils::UInt> &cops,
             double angle, size_t startCycle, size_t durationInCycles);
     void nopGate();
 
@@ -76,9 +78,9 @@ private:    // types
 #endif
 #if OPT_PRAGMA
         // pragma 'gates'
-		const json *pragma;
-		std::vector<size_t> pragmaCops;
-		std::vector<size_t> pragmaQops;		// FIXME: naming, integrate with readout(Cop,Qubit}
+		const utils::Json *pragma;
+		utils::Vec<utils::UInt> pragmaCops;
+		utils::Vec<utils::UInt> pragmaQops;		// FIXME: naming, integrate with readout(Cop,Qubit}
 #endif
     } tBundleInfo; // information for an instrument group (of channels), for a single instruction
     // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with custmGate(), bundleStart(), bundleFinish()?
@@ -105,13 +107,19 @@ private:    // vars
     bool mapPreloaded = false;
 
 	// codegen state, program scope
-	json codewordTable;                                         // codewords versus signals per instrument group
+	utils::Json codewordTable;                                  // codewords versus signals per instrument group
 	std::stringstream codeSection;                              // the code generated
 
+//<<<<<<< HEAD
 	// codegen state, kernel scope FIXME: create class
     unsigned int lastEndCycle[MAX_INSTRS];                      // vector[instrIdx], maintain where we got per slot
 #if OPT_PRAGMA
 	std::string pragmaForLabel;
+//=======
+//    utils::Json codewordTable;                                  // codewords versus signals per instrument group
+//#if OPT_FEEDBACK
+//    Json inputLutTable;                                         // input LUT usage per instrument group
+//>>>>>>> 907ac3dd0fe546f7bd507b0f5a6ccc4c476d7bf1
 #endif
 
 	// codegen state, bundle scope
@@ -126,7 +134,7 @@ private:    // funcs
     // helpers
     void emitProgramStart();
     void padToCycle(size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
-    tCalcSignalValue calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const std::vector<size_t> &qops, const std::string &iname);
+    tCalcSignalValue calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const utils::Vec<utils::UInt> &qops, const std::string &iname);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
 #endif

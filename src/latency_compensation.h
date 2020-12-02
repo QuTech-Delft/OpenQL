@@ -1,11 +1,10 @@
-/**
- * @file   latency_compensation.h
- * @date   11/2016
- * @author Nader Khammassi
- * @author Hans van Someren
+/** \file
+ * Latency compensation?
  */
+
 #pragma once
 
+#include "utils/str.h"
 #include "program.h"
 #include "platform.h"
 
@@ -13,9 +12,9 @@ namespace ql {
 
 // buffer_delay_insertion pass
 void latency_compensation(
-    ql::quantum_program *programp,
-    const ql::quantum_platform &platform,
-    const std::string &passname
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const utils::Str &passname
 );
 
 }

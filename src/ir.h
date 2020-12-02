@@ -1,43 +1,40 @@
-/**
- * @file   ir.h
- * @date   02/2018
- * @author Imran Ashraf
- * @brief  common IR implementation
+/** \file
+ * Common IR implementation.
  */
 
 #pragma once
 
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/list.h"
 #include "gate.h"
 #include "circuit.h"
-
-#include <vector>
-#include <list>
 
 namespace ql {
 namespace ir {
 
-typedef std::list<ql::gate *>section_t;
+typedef utils::List<gate *>section_t;
 
 class bundle_t {
 public:
-    size_t start_cycle;                         // start cycle for all gates in parallel_sections
-    size_t duration_in_cycles;                  // the maximum gate duration in parallel_sections
-    std::list<section_t> parallel_sections;
+    utils::UInt start_cycle;                         // start cycle for all gates in parallel_sections
+    utils::UInt duration_in_cycles;                  // the maximum gate duration in parallel_sections
+    utils::List<section_t> parallel_sections;
 };
 
-typedef std::list<bundle_t> bundles_t;          // note that subsequent bundles can overlap in time
+typedef utils::List<bundle_t> bundles_t;          // note that subsequent bundles can overlap in time
 
 /**
  * Create a circuit with valid cycle values from the bundled internal
  * representation.
  */
-ql::circuit circuiter(const bundles_t &bundles);
+circuit circuiter(const bundles_t &bundles);
 
 /**
  * Create a bundled-qasm external representation from the bundled internal
  * representation.
  */
-std::string qasm(const bundles_t &bundles);
+utils::Str qasm(const bundles_t &bundles);
 
 /**
  * Create a bundled internal representation from the circuit with valid cycle
@@ -51,13 +48,13 @@ std::string qasm(const bundles_t &bundles);
  *
  * FIXME HvS cycles_valid must be true before each call to this bundler
  */
-bundles_t bundler(const ql::circuit &circ, size_t cycle_time);
+bundles_t bundler(const circuit &circ, utils::UInt cycle_time);
 
 /**
  * Print the bundles with an indication (taken from 'at') from where this
  * function was called.
  */
-void DebugBundles(const std::string &at, const bundles_t &bundles);
+void DebugBundles(const utils::Str &at, const bundles_t &bundles);
 
 } // namespace ir
 } // namespace ql
