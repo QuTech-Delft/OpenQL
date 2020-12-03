@@ -378,6 +378,17 @@ cQasmReader::cQasmReader(
     cqasm_reader_ = new ql::cqasm_reader(*(platform.platform), *(program.program));
 }
 
+cQasmReader::cQasmReader(
+    const Platform &q_platform,
+    const Program &q_program,
+    const std::string &gateset_fname
+) :
+    platform(q_platform),
+    program(q_program)
+{
+    cqasm_reader_ = new ql::cqasm_reader(*(platform.platform), *(program.program), gateset_fname);
+}
+
 void cQasmReader::string2circuit(const std::string &cqasm_str) {
     cqasm_reader_->string2circuit(cqasm_str);
 }
