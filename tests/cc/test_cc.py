@@ -29,11 +29,11 @@ class Test_central_controller(unittest.TestCase):
         platform = ql.Platform(platform_name, config_fn)
 
         p = ql.Program('test_classical', platform, num_qubits, num_cregs)
-        k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
+        k = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
 
         # quantum operations
-        k1.gate('x', [6])
-        k1.gate('cz', [6, 7])
+        k.gate('x', [6])
+        k.gate('cz', [6, 7])
 
         # create classical registers
         rd = ql.CReg(1)
@@ -42,27 +42,27 @@ class Test_central_controller(unittest.TestCase):
 
         if 0:
             # add/sub/and/or/xor
-            k1.classical(rd, ql.Operation(rs1, '+', rs2))
+            k.classical(rd, ql.Operation(rs1, '+', rs2))
 
             # not
-            k1.classical(rd, ql.Operation('~', rs2))
+            k.classical(rd, ql.Operation('~', rs2))
 
             # comparison
-            k1.classical(rd, ql.Operation(rs1, '==', rs2))
+            k.classical(rd, ql.Operation(rs1, '==', rs2))
 
             # initialize (r1 = 2)
-            k1.classical(rs1, ql.Operation(2))
+            k.classical(rs1, ql.Operation(2))
 
             # assign (r1 = r2)
-            k1.classical(rs1, ql.Operation(rs2))
+            k.classical(rs1, ql.Operation(rs2))
 
         # measure
         k.barrier([])
-        k1.gate('measure', [6], rs1)
-        k1.gate('measure', [7], rs2)
+        k.gate('measure', [6], rs1)
+        k.gate('measure', [7], rs2)
 
         # add kernel
-        p.add_kernel(k1)
+        p.add_kernel(k)
         p.compile()
 
     # Quantum Error Correction cycle

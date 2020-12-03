@@ -456,11 +456,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 		// Or better, decompose measure into measure+getResults, where getResults does the wait for UHF latency + DSM distribution
 		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
 			// shorten output to preserve timeline while injecting time for feedback below
-			int readoutWait = settings.getReadoutWait();
-			maxDurationInCycles -= 1+readoutWait;	// adjust gate duration (Ugh)
-			if(maxDurationInCycles <= 1) {
-				QL_FATAL("maxDurationInCycles adjusted to " << maxDurationInCycles);
+			int totalWait = 1 + settings.getReadoutWait();	// 1 because of 'seq_in' that is also generated, Yuk
+			if(maxDurationInCycles <= totalWait) {
+				QL_FATAL("maxDurationInCycles " << maxDurationInCycles << "smaller than totalWait " << totalWait);
 			}
+			maxDurationInCycles -= totalWait;	// adjust gate duration (Ugh)
 		}
 #endif
 
@@ -887,7 +887,7 @@ void codegen_cc::padToCycle(size_t instrIdx, size_t startCycle, int slot, const 
     int prePadding = startCycle - lastEndCycle[instrIdx];
     if(prePadding < 0) {
         QL_EOUT("Inconsistency detected in bundle contents: printing code generated so far");
-        QL_EOUT(codeSection.str());        // show what we made. FIXME: limit # lines (tail -100)
+        QL_EOUT("Code so far:\n"+codeSection.str());        // show what we made. FIXME: limit # lines (tail -100)
         QL_FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
               ", startCycle=" << startCycle <<
               ", lastEndCycle=" << lastEndCycle[instrIdx] <<
@@ -895,7 +895,7 @@ void codegen_cc::padToCycle(size_t instrIdx, size_t startCycle, int slot, const 
     }
 
     if(prePadding > 0) {     // we need to align
-        emit(QL_SS2S("[" << slot << "]"),      // CCIO selector
+        emit(slot,
             "seq_wait",
             QL_SS2S(prePadding),
             QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << startCycle << ": padding on '" << instrumentName+"'"));
