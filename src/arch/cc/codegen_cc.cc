@@ -429,7 +429,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 				// get classic operand
 				if (bi->readoutCop >= 0) {	// i.e. not IMPLICIT_COP
-					QL_WOUT("ignoring explicit assignment to classic operand" << bi->readoutCop << "for measurement of qubit" << bi->readoutQubit);
+					QL_WOUT("ignoring explicit assignment to classic operand " << bi->readoutCop << " for measurement of qubit " << bi->readoutQubit);
 				}
 				int cop = bi->readoutQubit;                	// implicit cop for qubit
 
