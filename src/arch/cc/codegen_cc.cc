@@ -330,7 +330,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
         bool instrHasOutput = false;
         uint32_t digOut = 0;                                                // the digital output value sent over the instrument interface
-        unsigned int maxDurationInCycles = 0;                               // maximum duration over groups that are used, one instrument
+        unsigned int instrMaxDurationInCycles = 0;                          // maximum duration over groups that are used, one instrument
 #if OPT_FEEDBACK
 		typedef struct {
 			int condition;	// FIXME: get from bundleInfo?
@@ -338,6 +338,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			uint32_t groupDigOut;
 		} tCondGateInfo;
 		std::map<int, tCondGateInfo> condGateMap;							// NB: key is instrIdx
+
 		bool instrHasReadout = false;
 		typedef struct {
 			int smBit;
@@ -360,7 +361,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // handle output
             if(!bi->signalValue.empty()) {                                  // signal defined, i.e.: we need to output something
                 // compute maximum duration over all groups
-                if(bi->durationInCycles > maxDurationInCycles) maxDurationInCycles = bi->durationInCycles;
+                if(bi->durationInCycles > instrMaxDurationInCycles) instrMaxDurationInCycles = bi->durationInCycles;
 
                 tCalcGroupDigOut gdo = calcGroupDigOut(instrIdx, group, nrGroups, ic, bi->staticCodewordOverride);
                 digOut |= gdo.groupDigOut;
@@ -454,23 +455,25 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 		// FIXME: terrible hack.
 		// Alternatively, we could ignore startCycle and compute it ourselves. No, startCycle is also used to insert 'wait'
 		// Or better, decompose measure into measure+getResults, where getResults does the wait for UHF latency + DSM distribution
-		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
+		if(bundleHasReadout && instrMaxDurationInCycles>0) {	// FIXME: also allow runtime selection by option. NB: bundleHasReadout does not reflect subsequent instruments
 			// shorten output to preserve timeline while injecting time for feedback below
 			int totalWait = 1 + settings.getReadoutWait();	// 1 because of 'seq_in' that is also generated, Yuk
-			if(maxDurationInCycles <= totalWait) {
-				QL_FATAL("maxDurationInCycles " << maxDurationInCycles << "smaller than totalWait " << totalWait);
+			if(instrMaxDurationInCycles <= totalWait) {
+		        showCodeSoFar();
+				QL_FATAL("instrMaxDurationInCycles " << instrMaxDurationInCycles << " smaller than totalWait " << totalWait <<
+												"(instrIdx=" << instrIdx << ", startCycle=" << startCycle << ")");
 			}
-			maxDurationInCycles -= totalWait;	// adjust gate duration (Ugh)
+			instrMaxDurationInCycles -= totalWait;	// adjust gate duration (Ugh)
 		}
 #endif
 
         // generate code for instrument output
         if(instrHasOutput) {
             comment(QL_SS2S("  # slot=" << ic.ii.slot
-                    << ", instrument='" << ic.ii.instrumentName << "'"
-                    << ": lastEndCycle=" << lastEndCycle[instrIdx]
-                    << ", startCycle=" << startCycle
-                    << ", maxDurationInCycles=" << maxDurationInCycles
+										<< ", instrument='" << ic.ii.instrumentName << "'"
+										<< ": lastEndCycle=" << lastEndCycle[instrIdx]
+										<< ", startCycle=" << startCycle
+										<< ", instrMaxDurationInCycles=" << instrMaxDurationInCycles
                     ));
 
             padToCycle(instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
@@ -479,8 +482,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             if(condGateMap.empty()) {	// all groups unconditional
 				emit(ic.ii.slot,
 					 "seq_out",
-					 QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << maxDurationInCycles),
-					 QL_SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName+"'"));
+					 QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << instrMaxDurationInCycles),
+					 QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName + "'"));
 			} else {	// some group conditional
 				// configure datapath PL
 				int smAddr = 0;		// FIXME:
@@ -510,13 +513,13 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				// emit code for conditional gate
 				emit(ic.ii.slot,
 					 "seq_out_sm",
-					 QL_SS2S("S" << smAddr << "," << pl << "," << maxDurationInCycles),
-					 QL_SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": consitional code word/mask on '" << ic.ii.instrumentName << "'"));
+					 QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
+					 QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": consitional code word/mask on '" << ic.ii.instrumentName << "'"));
 				// FIXME
             }
 
             // update lastEndCycle
-            lastEndCycle[instrIdx] = startCycle + maxDurationInCycles;
+            lastEndCycle[instrIdx] = startCycle + instrMaxDurationInCycles;
         } else {    // !isInstrUsed
             // nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
         }
@@ -614,10 +617,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 		// for last bundle, pad end of bundle to align durations
         if(isLastBundle) {
-            padToCycle(instrIdx, startCycle+durationInCycles, ic.ii.slot, ic.ii.instrumentName);		// FIXME: use maxDurationInCycles and/or check consistency
+            padToCycle(instrIdx, startCycle+durationInCycles, ic.ii.slot, ic.ii.instrumentName);		// FIXME: use instrMaxDurationInCycles and/or check consistency
         }
 
-        vcd.bundleFinish(startCycle, digOut, maxDurationInCycles, instrIdx);
+        vcd.bundleFinish(startCycle, digOut, instrMaxDurationInCycles, instrIdx);
     } // for(instrIdx)
 
     comment("");    // blank line to separate bundles
@@ -702,7 +705,7 @@ void codegen_cc::customGate(
         } else if(bi->signalValue == csv.signalValueString) {               // signal unchanged
             // do nothing
         } else {
-            QL_EOUT("Code so far:\n" << codeSection.str());                    // provide context to help finding reason. FIXME: limit # lines
+        	showCodeSoFar();
             QL_FATAL("Signal conflict on instrument='" << csv.si.ic.ii.instrumentName <<
                   "', group=" << csv.si.group <<
                   ", between '" << bi->signalValue <<
@@ -887,7 +890,7 @@ void codegen_cc::padToCycle(size_t instrIdx, size_t startCycle, int slot, const 
     int prePadding = startCycle - lastEndCycle[instrIdx];
     if(prePadding < 0) {
         QL_EOUT("Inconsistency detected in bundle contents: printing code generated so far");
-        QL_EOUT("Code so far:\n"+codeSection.str());        // show what we made. FIXME: limit # lines (tail -100)
+        showCodeSoFar();
         QL_FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
               ", startCycle=" << startCycle <<
               ", lastEndCycle=" << lastEndCycle[instrIdx] <<

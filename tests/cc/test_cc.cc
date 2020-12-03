@@ -7,23 +7,15 @@
 */
 
 #include "openql.h"
-//#include "utils.h"
 
 #include <string>
-#include <vector>
-#include <iostream>
-#include <fstream>
 #include <algorithm>
-#include <sstream>
-#include <cassert>
-
-#include <time.h>
 
 #define CFG_FILE_JSON   "test_cfg_cc.json"
 
 
 // based on tests/test_hybrid.py
-void test_classical(std::string scheduler, std::string scheduler_uniform)
+void test_classical(const std::string &scheduler, const std::string &scheduler_uniform)
 {
     const int num_qubits = 17;
     const int num_cregs = 3;
@@ -141,8 +133,8 @@ $2 = 0
     // measure
     k.gate("measure", [0], rs1)
 #endif
-    k.gate("measure", {7}, {0});
-    k.gate("measure", {8}, {1});
+    k.gate("measure", 7, 0);
+    k.gate("measure", 8, 1);
 
     prog.add(k);
 
@@ -155,7 +147,7 @@ $2 = 0
 }
 
 
-void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
+void test_qec_pipelined(const std::string &scheduler, const std::string &scheduler_uniform)
 {
     const int num_qubits = 17;
     const int num_cregs = 3;
@@ -214,7 +206,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     //      + duration?
     //      + possible in parallel without doing 2 qubits gate?
 
-    k.gate("measure", {x}, {0});
+    k.gate("measure", x, 0);
 	k.wait({}, 0);      // help scheduler
 
     // Z stabilizers
@@ -226,7 +218,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     k.gate("cz", z, zW);
 
     k.gate("ry90", z);
-    k.gate("measure", {z}, {1});
+    k.gate("measure", z, 1);
 
     prog.add(k);
 
@@ -236,7 +228,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
 }
 
 
-void test_do_while_nested_for(std::string scheduler, std::string scheduler_uniform)
+void test_do_while_nested_for(const std::string &scheduler, const std::string &scheduler_uniform)
 {
    // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
@@ -280,7 +272,7 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
 
 
 
-void test_rabi( std::string scheduler, std::string scheduler_uniform)
+void test_rabi(const std::string &scheduler, const std::string &scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", "test_cfg_cc_demo.json");
@@ -296,7 +288,7 @@ void test_rabi( std::string scheduler, std::string scheduler_uniform)
     size_t qubit = 10;     // connects to uhfqa-0 and awg8-mw-0
 
     k1.gate("x", qubit);
-    k1.gate("measure", {(ql::utils::UInt)qubit}, {1});
+    k1.gate("measure", qubit, 1);
 
     ql::operation op1 = ql::operation(rs1, std::string(">="), rs2); // FIXME: bogus condition, endless loop
     sp1.add_do_while(k1, op1);
@@ -308,7 +300,7 @@ void test_rabi( std::string scheduler, std::string scheduler_uniform)
 }
 
 
-void test_wait( std::string scheduler, std::string scheduler_uniform)
+void test_wait(const std::string &scheduler, const std::string &scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);

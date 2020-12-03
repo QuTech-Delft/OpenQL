@@ -131,6 +131,7 @@ private:    // funcs
 
     // helpers
     void emitProgramStart();
+	void showCodeSoFar() { QL_EOUT("Code so far:\n" << codeSection.str()); }     // provide context to help finding reason. FIXME: limit # lines
     void padToCycle(size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
     tCalcSignalValue calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const utils::Vec<utils::UInt> &qops, const std::string &iname);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
