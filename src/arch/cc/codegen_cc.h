@@ -87,7 +87,7 @@ private:    // types
 		utils::Vec<utils::UInt> pragmaQops;		// FIXME: naming, integrate with readout(Cop,Qubit}
 #endif
     }; // information for an instrument group (of channels), for a single instruction
-    // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with custmGate(), bundleStart(), bundleFinish()?
+    // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?
 
 
     typedef struct {

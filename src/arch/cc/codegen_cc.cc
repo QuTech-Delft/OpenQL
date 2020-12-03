@@ -38,7 +38,7 @@ typedef std::vector<int> tBitVars;
 #endif
 
 /************************************************************************\
-| Generic
+| Class BundleInfo
 \************************************************************************/
 
 codegen_cc::BundleInfo::BundleInfo() {
@@ -927,7 +927,7 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
 
     // get signal value
     const utils::Json instructionSignalValue = utils::json_get<const utils::Json>(sd.signal[s], "value", signalSPath);   // NB: utils::json_get<const utils::Json&> unavailable
-    ret.signalValueString = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
+    std::string sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
 
 	// get instruction signal type (e.g. "mw", "flux", etc)
     // NB: instructionSignalType is different from the type provided by find_instruction_type, although some identical strings are used) FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL
@@ -951,12 +951,13 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     }
 
     // expand macros
-    utils::replace_all(ret.signalValueString, "\"", "");   // get rid of quotes
-    utils::replace_all(ret.signalValueString, "{gateName}", iname);
-    utils::replace_all(ret.signalValueString, "{instrumentName}", ret.si.ic.ii.instrumentName);
-    utils::replace_all(ret.signalValueString, "{instrumentGroup}", std::to_string(ret.si.group));
+    sv = utils::replace_all(sv, "\"", "");   // get rid of quotes
+    sv = utils::replace_all(sv, "{gateName}", iname);
+    sv = utils::replace_all(sv, "{instrumentName}", ret.si.ic.ii.instrumentName);
+    sv = utils::replace_all(sv, "{instrumentGroup}", std::to_string(ret.si.group));
     // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
-    utils::replace_all(ret.signalValueString, "{qubit}", std::to_string(qubit));
+    sv = utils::replace_all(sv, "{qubit}", std::to_string(qubit));
+	ret.signalValueString = sv;
 
     // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
 
