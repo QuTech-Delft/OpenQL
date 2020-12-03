@@ -8,7 +8,8 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_modularity(unittest.TestCase):
 
   @classmethod
-  def setUpClass(self):
+  def setUp(self):
+      ql.initialize()
       ql.set_option('output_dir', output_dir)
       ql.set_option('optimize', 'no')
       ql.set_option('scheduler', 'ASAP')
@@ -19,7 +20,6 @@ class Test_modularity(unittest.TestCase):
       ql.set_option('mapper', 'minextendrc')
 
   def test_modularity(self):
-      self.setUpClass()
       config_fn = os.path.join(curdir, 'hwcfg_cc_light_modular.json')
 
       c = ql.Compiler("testCompiler")

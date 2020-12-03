@@ -23,7 +23,8 @@ def file_compare(fn1, fn2):
 class Test_cqasm(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
@@ -32,7 +33,6 @@ class Test_cqasm(unittest.TestCase):
 
 
     def test_cqasm_default_gates(self):
-        self.setUpClass() 
         ql.set_option('use_default_gates', 'yes')
 
         nqubits = 4
@@ -77,7 +77,6 @@ class Test_cqasm(unittest.TestCase):
 
     # @unittest.skip
     def test_cqasm_custom_gates(self):
-        self.setUpClass() 
         ql.set_option('use_default_gates', 'no')
 
         nqubits = 4

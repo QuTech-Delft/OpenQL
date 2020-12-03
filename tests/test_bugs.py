@@ -10,7 +10,8 @@ output_dir = os.path.join(curdir, 'test_output')
 
 class Test_bugs(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('use_default_gates', 'yes')
         ql.set_option('log_level', 'LOG_WARNING')
@@ -18,7 +19,6 @@ class Test_bugs(unittest.TestCase):
     # @unittest.expectedFailure
     # @unittest.skip
     def test_typecast(self):
-        self.setUpClass()
         sweep_points = [1,2]
         num_circuits = 1
         num_qubits = 2
@@ -44,7 +44,6 @@ class Test_bugs(unittest.TestCase):
 
 
     def test_operation_order_190(self):
-        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform("myPlatform", config_fn)
 
@@ -86,7 +85,6 @@ class Test_bugs(unittest.TestCase):
     # depending on stuff like Python's garbage collection to free a register.
     # The register numbers have to be hardcoded now for that reason.
     def test_stateful_behavior(self):
-        self.setUpClass()
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
 

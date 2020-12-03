@@ -10,6 +10,7 @@
 #include "compiler.h"
 #include "options.h"
 
+void initialize();
 
 std::string get_version();
 

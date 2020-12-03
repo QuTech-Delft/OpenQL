@@ -12,6 +12,7 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_dependence(unittest.TestCase):
 
     def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
@@ -19,13 +20,9 @@ class Test_dependence(unittest.TestCase):
         ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('write_qasm_files', 'yes')
 
-    def tearDown(self):
-        ql.set_option('scheduler', 'ALAP')
-
     # @unittest.expectedFailure
     # @unittest.skip
     def test_independent(self):
-        self.setUp()
         nqubits = 4
         # populate kernel
         k = ql.Kernel("aKernel", platf, nqubits)
@@ -54,7 +51,6 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_WAW(self):
-        self.setUp()
         nqubits = 4
         # populate kernel
         k = ql.Kernel("aKernel", platf, nqubits)
@@ -84,7 +80,6 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_RAR_Control(self):
-        self.setUp()
         nqubits = 4
 
         # populate kernel
@@ -114,7 +109,6 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_RAW(self):
-        self.setUp()
 
         nqubits = 4
 
@@ -146,7 +140,6 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_WAR(self):
-        self.setUp()
 
         nqubits = 4
 
@@ -178,7 +171,6 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_swap_single(self):
-        self.setUp()
 
         nqubits = 4
 
@@ -203,7 +195,6 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_swap_multi(self):
-        self.setUp()
 
         nqubits = 5
 

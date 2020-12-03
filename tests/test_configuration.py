@@ -9,7 +9,8 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_Configuration(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
@@ -83,7 +84,6 @@ class Test_Configuration(unittest.TestCase):
 
 
     def test_missing_cc_light_instr(self):
-        self.setUpClass()
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         p = ql.Program("aProgram", platform, platform.get_qubit_number())

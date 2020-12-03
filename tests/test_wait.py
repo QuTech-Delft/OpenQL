@@ -10,6 +10,7 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_wait(unittest.TestCase):
 
     def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('use_default_gates', 'no')
         ql.set_option('log_level', 'LOG_WARNING')
