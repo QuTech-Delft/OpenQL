@@ -22,6 +22,7 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_mapper(unittest.TestCase):
 
     def setUp(self):
+        ql.initialize()
         # uses defaults of options in mapper branch except for output_dir and for maptiebreak
         ql.set_option('output_dir', output_dir)     # this uses output_dir set above
         ql.set_option('maptiebreak', 'first')       # this makes behavior deterministic to cmp with golden

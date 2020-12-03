@@ -53,8 +53,8 @@ int main(int argc, char ** argv)
 {
    srand(0);
 
-   int   num_circuits       = 4;
-   float sweep_points[]   = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
+   int    num_circuits       = 4;
+   double sweep_points[]   = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
 
    // create platform
    ql::quantum_platform qx_platform("qx_simulator","hardware_config_qx.json");

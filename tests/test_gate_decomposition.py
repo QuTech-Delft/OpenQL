@@ -12,6 +12,10 @@ ql.set_option('log_level', 'LOG_WARNING')
 
 class Tester(unittest.TestCase):
 
+    @classmethod
+    def setUp(self):
+        ql.initialize()
+
     def test_decomposition(self):
         config_fn = os.path.join(curdir, 'test_cfg_none.json')
         platform  = ql.Platform('platform_none', config_fn)

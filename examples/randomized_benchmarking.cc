@@ -59,9 +59,9 @@ int main(int argc, char ** argv)
     // print info
     qx_platform.print_info();
 
-       int   num_randomizations = 3;
-    int   num_circuits       = 13;
-    float sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
+    int    num_randomizations = 3;
+    int    num_circuits       = 13;
+    double sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
 
     for (int r=0; r<num_randomizations; r++)
     {

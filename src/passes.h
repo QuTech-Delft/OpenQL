@@ -1,15 +1,13 @@
-/**
- * @file   passes.h
- * @date   04/2020
- * @author Razvan Nane
- * @brief  OpenQL Passes
+/** \file
+ * OpenQL Passes.
  */
 
 #pragma once
 
-#include "program.h"
-
 #include <CLI/CLI.hpp>
+#include "utils/str.h"
+#include "utils/map.h"
+#include "program.h"
 
 namespace ql {
 
@@ -20,25 +18,25 @@ class PassOptions;
  */
 class AbstractPass {
 public:
-    virtual void runOnProgram(ql::quantum_program *program) = 0;
+    virtual void runOnProgram(quantum_program *program) = 0;
 
-    explicit AbstractPass(const std::string &name);
-    std::string getPassName() const;
-    void setPassName(const std::string &name);
-    void setPassOption(const std::string &optionName, const std::string &optionValue);
+    explicit AbstractPass(const utils::Str &name);
+    utils::Str getPassName() const;
+    void setPassName(const utils::Str &name);
+    void setPassOption(const utils::Str &optionName, const utils::Str &optionValue);
     PassOptions *getPassOptions();
     const PassOptions *getPassOptions() const;
     void createPassOptions();
-    bool getSkip() const;
-    void initPass(ql::quantum_program *program);
-    void finalizePass(ql::quantum_program *program);
-    void appendStatistics(const std::string &statistic);
-    std::string getPassStatistics() const;
+    utils::Bool getSkip() const;
+    void initPass(quantum_program *program);
+    void finalizePass(quantum_program *program);
+    void appendStatistics(const utils::Str &statistic);
+    utils::Str getPassStatistics() const;
     void resetStatistics();
 
 private:
-    std::string passName;
-    std::string statistics;
+    utils::Str passName;
+    utils::Str statistics;
     PassOptions *passOptions;
 };
 
@@ -51,8 +49,8 @@ public:
      * @brief  Reader pass constructor
      * @param  Name of the read pass
      */
-    explicit ReaderPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit ReaderPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -64,8 +62,8 @@ public:
      * @brief  Writer pass constructor
      * @param  Name of the read pass
      */
-    explicit WriterPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit WriterPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -77,8 +75,8 @@ public:
      * @brief  Rotation optimizer pass constructor
      * @param  Name of the optimized pass
      */
-    explicit RotationOptimizerPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit RotationOptimizerPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -90,8 +88,8 @@ public:
      * @brief  Rotation optimizer pass constructor
      * @param  Name of the optimized pass
      */
-    explicit DecomposeToffoliPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit DecomposeToffoliPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -103,8 +101,8 @@ public:
      * @brief  Scheduler pass constructor
      * @param  Name of the scheduler pass
      */
-    explicit SchedulerPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit SchedulerPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -116,21 +114,34 @@ public:
      * @brief  Scheduler pass constructor
      * @param  Name of the scheduler pass
      */
-    explicit BackendCompilerPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit BackendCompilerPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
  * Report Statistics Pass
  */
-class ReportStatisticsPass: public AbstractPass {
+class ReportStatisticsPass : public AbstractPass {
 public:
     /**
      * @brief  Statistics pass constructor
      * @param  Name of the scheduler pass
      */
-    explicit ReportStatisticsPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit ReportStatisticsPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
+};
+
+/**
+ * Visualizer Pass
+ */
+class VisualizerPass : public AbstractPass  {
+public:
+    /**
+     * @brief  Visualizer pass constructor
+     * @param  Name of the visualizer pass
+     */
+    explicit VisualizerPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -142,8 +153,8 @@ public:
      * @brief  CCL Preparation for Code Generation pass constructor
      * @param  Name of the preparation pass
      */
-    explicit CCLPrepCodeGeneration(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit CCLPrepCodeGeneration(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -155,8 +166,8 @@ public:
      * @brief  CCL Decompose PreSchedule pass constructor
      * @param  Name of the decomposer pass
      */
-    explicit CCLDecomposePreSchedule(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit CCLDecomposePreSchedule(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -168,8 +179,8 @@ public:
      * @brief  Mapper pass constructor
      * @param  Name of the mapper pass
      */
-    explicit MapPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit MapPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -181,8 +192,8 @@ public:
      * @brief  Clifford Optimize pass constructor
      * @param  Name of the optimizer pass (premapper or postmapper)
      */
-    explicit CliffordOptimizePass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit CliffordOptimizePass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -194,8 +205,8 @@ public:
      * @brief  Commute variation pass constructor
      * @param  Name of the commute variation pass
      */
-    explicit CommuteVariationPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit CommuteVariationPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -207,8 +218,8 @@ public:
      * @brief  Resource Constraint Scheduler pass constructor
      * @param  Name of the scheduler pass
      */
-    explicit RCSchedulePass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit RCSchedulePass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -220,8 +231,8 @@ public:
      * @brief  Latency compensation pass constructor
      * @param  Name of the latency compensation pass
      */
-    explicit LatencyCompensationPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit LatencyCompensationPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -233,8 +244,8 @@ public:
      * @brief  Insert Buffer Delays pass  constructor
      * @param  Name of the buffer delay insertion pass
      */
-    explicit InsertBufferDelaysPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit InsertBufferDelaysPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -246,8 +257,8 @@ public:
      * @brief  Decomposer Post Schedule  Pass
      * @param  Name of the decomposer pass
      */
-    explicit CCLDecomposePostSchedulePass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit CCLDecomposePostSchedulePass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -259,8 +270,8 @@ public:
      * @brief  QuantumSim Writer Pass constructor
      * @param  Name of the writer pass
      */
-    explicit WriteQuantumSimPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit WriteQuantumSimPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -272,8 +283,8 @@ public:
      * @brief  QISA generation pass constructor
      * @param  Name of the QISA generator pass
      */
-    explicit QisaCodeGenerationPass(const std::string &name);
-    void runOnProgram(ql::quantum_program *program) override;
+    explicit QisaCodeGenerationPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
 };
 
 /**
@@ -281,15 +292,15 @@ public:
  */
 class PassOptions {
 public:
-      explicit PassOptions(std::string app_name="passOpts");
+      explicit PassOptions(utils::Str app_name="passOpts");
       void print_current_values() const;
       void help() const;
-      void setOption(const std::string &opt_name, const std::string &opt_value);
-      std::string getOption(const std::string &opt_name) const;
+      void setOption(const utils::Str &opt_name, const utils::Str &opt_value);
+      utils::Str getOption(const utils::Str &opt_name) const;
 
 private:
-      CLI::App * app;
-      std::map<std::string, std::string> opt_name2opt_val;
+      CLI::App *app;
+      utils::Map<utils::Str, utils::Str> opt_name2opt_val;
 };
 
 } // namespace ql

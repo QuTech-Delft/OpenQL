@@ -9,7 +9,9 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_basic(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
+
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('log_level', 'LOG_WARNING')

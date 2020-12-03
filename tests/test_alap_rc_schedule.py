@@ -13,12 +13,12 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
     config = os.path.join(curdir, "hardware_config_cc_light.json")
 
     def setUp(self):
+        ql.initialize()
         ql.set_option('scheduler', self._SCHEDULER)
         ql.set_option('output_dir', output_dir)
         ql.set_option('log_level', "LOG_NOTHING")
 
     def test_qwg(self):
-        self.setUp()
         # parameters
         v = 'qwg'
 
@@ -43,7 +43,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_qwg2(self):
-        self.setUp()
         # parameters
         v = 'qwg2'
         scheduler = self._SCHEDULER
@@ -78,7 +77,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_issue179(self):
-        self.setUp()
         # parameters
         v = 'issue179'
         scheduler = self._SCHEDULER
@@ -115,7 +113,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_edge(self):
-        self.setUp()
         # parameters
         v = 'edge'
         scheduler = self._SCHEDULER
@@ -143,7 +140,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_detuned(self):
-        self.setUp()
         # parameters
         v = 'detuned'
         scheduler = self._SCHEDULER
@@ -176,7 +172,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_detuned2(self):
-        self.setUp()
         # parameters
         v = 'detuned2'
         scheduler = self._SCHEDULER
@@ -209,7 +204,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_adriaan(self):
-        self.setUp()
         # parameters
         v = 'adriaan'
         scheduler = self._SCHEDULER
@@ -242,7 +236,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_1(self):
-        self.setUp()
         # parameters
         v = '1'
         scheduler = self._SCHEDULER
@@ -287,7 +280,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_7(self):
-        self.setUp()
         # parameters
         v = '7'
         scheduler = self._SCHEDULER

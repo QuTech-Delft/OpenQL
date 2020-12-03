@@ -1,47 +1,46 @@
-/**
- * @file   passmanager.cc
- * @date   04/2020
- * @author Razvan Nane
- * @brief  OpenQL Pass Manager
+/** \file
+ * OpenQL pass manager implementation.
  */
 
+#include "utils/num.h"
 #include "passmanager.h"
 #include "write_sweep_points.h"
 
 namespace ql {
 
+using namespace utils;
+
 /**
  * @brief   PassManager constructor
  * @param   name Name of the pass manager
  */
-PassManager::PassManager(const std::string &name) : name(name) {
+PassManager::PassManager(const Str &name) : name(name) {
 }
 
-    /**
-     * @brief   Applies the sequence of compiler passes to the given program
-     * @param   program   Object reference to the program to be compiled
-     */
-void PassManager::compile(ql::quantum_program *program) const {
+/**
+ * @brief   Applies the sequence of compiler passes to the given program
+ * @param   program   Object reference to the program to be compiled
+ */
+void PassManager::compile(quantum_program *program) const {
 
-    DOUT("In PassManager::compile ... ");
+    QL_DOUT("In PassManager::compile ... ");
     for (auto pass : passes) {
         ///@todo-rn: implement option to check if following options are actually needed for a pass
         ///@note-rn: currently(0.8.1.dev), all passes require platform as API parameter, and some passes depend on the nqubits internally. Therefore, these are passed through by setting the program with these fields here. However, this should change in the future since compiling for a simulator might not require a platform, and the number of qubits could be optional.
 
         if (!program->qubit_count) {
-            program->qubit_count = (size_t)(std::stoi(
-                pass->getPassOptions()->getOption("nqubits")));
+            program->qubit_count = parse_uint(pass->getPassOptions()->getOption("nqubits"));
         }
         assert(program->qubit_count);
 
         //If the old interface is used, platform is already set, so it is not needed to look for platform option and configure the platform from there
         if (!program->platformInitialized) {
-            std::string hwconfig = pass->getPassOptions()->getOption("hwconfig");
-            program->platform = *(new ql::quantum_platform("testPlatform",hwconfig));
+            Str hwconfig = pass->getPassOptions()->getOption("hwconfig");
+            program->platform = *(new quantum_platform("testPlatform",hwconfig));
         }
 
         if (!pass->getSkip()) {
-            DOUT(" Calling pass: " << pass->getPassName());
+            QL_DOUT(" Calling pass: " << pass->getPassName());
             pass->initPass(program);
             pass->runOnProgram(program);
             pass->finalizePass(program);
@@ -49,15 +48,15 @@ void PassManager::compile(ql::quantum_program *program) const {
     }
 
     // generate sweep_points file ==> TOOD: delete?
-    ql::write_sweep_points(program, program->platform, "write_sweep_points");
+    write_sweep_points(program, program->platform, "write_sweep_points");
 }
 
 /**
  * @brief   Adds a compiler pass to the pass manager
  * @param   pass Object reference to the pass to be added
  */
-void PassManager::addPassNamed(const std::string &realPassName, const std::string &symbolicPassName) {
-    DOUT("In PassManager::addPassNamed ");
+void PassManager::addPassNamed(const Str &realPassName, const Str &symbolicPassName) {
+    QL_DOUT("In PassManager::addPassNamed ");
 
     // search for pass after its name
     AbstractPass* pass = createPass(realPassName,symbolicPassName);
@@ -73,8 +72,8 @@ void PassManager::addPassNamed(const std::string &realPassName, const std::strin
  * @param   aliasName String representing the name of the pass to be used internally for searching
  * @return   AbstracPass Object reference to the pass
  */
-AbstractPass *PassManager::createPass(const std::string &passName, const std::string &aliasName) {
-    DOUT("In PassManager::createPass");
+AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName) {
+    QL_DOUT("In PassManager::createPass");
 
     /// @todo-rn: check that aliasname has not been used before!
     AbstractPass *pass = nullptr;
@@ -85,7 +84,7 @@ AbstractPass *PassManager::createPass(const std::string &passName, const std::st
 
     if (passName == "Reader") {
         pass = new ReaderPass(aliasName);
-    } else  if (passName == "Writer") {
+    } else if (passName == "Writer") {
         pass = new WriterPass(aliasName);
     } else if (passName == "RotationOptimizer") {
         pass = new RotationOptimizerPass(aliasName);
@@ -119,8 +118,10 @@ AbstractPass *PassManager::createPass(const std::string &passName, const std::st
         pass = new CCLDecomposePostSchedulePass(aliasName);
     } else if (passName == "QisaCodeGeneration") {
         pass = new QisaCodeGenerationPass(aliasName);
+    } else if (passName == "Visualizer") {
+        pass = new VisualizerPass(aliasName);
     } else {
-        EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
+        QL_EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
         exit(1);
     }
 
@@ -132,17 +133,17 @@ AbstractPass *PassManager::createPass(const std::string &passName, const std::st
  * @param   passName String representing the name of the pass to be found
  * @return   AbstracPass Object reference to the pass
  */
-AbstractPass* PassManager::findPass(const std::string &passName) {
-    DOUT("In PassManager::findPass");
+AbstractPass* PassManager::findPass(const Str &passName) {
+    QL_DOUT("In PassManager::findPass");
 
     for (auto pass : passes) {
         if (pass->getPassName() == passName) {
-            DOUT(" Found pass " << passName);
+            QL_DOUT(" Found pass " << passName);
             return pass;
         }
     }
 
-    EOUT("!!!Error: Pass " << passName << " not found!");
+    QL_EOUT("!!!Error: Pass " << passName << " not found!");
     exit(1);
 }
 
@@ -151,11 +152,11 @@ AbstractPass* PassManager::findPass(const std::string &passName) {
  * @param   optionName String option name
  * @param   optionValue String value of the option
  */
-void PassManager::setPassOptionAll(const std::string &optionName, const std::string &optionValue) {
-    DOUT("In PassManager::setPassOptionAll");
+void PassManager::setPassOptionAll(const Str &optionName, const Str &optionValue) {
+    QL_DOUT("In PassManager::setPassOptionAll");
 
     for (auto pass : passes) {
-        DOUT(" Pass: " << pass->getPassName() << " --> set option " << optionName << " to " << optionValue << std::endl);
+        QL_DOUT(" Pass: " << pass->getPassName() << " --> set option " << optionName << " to " << optionValue << std::endl);
         pass->setPassOption(optionName, optionValue);
     }
 }
@@ -165,7 +166,7 @@ void PassManager::setPassOptionAll(const std::string &optionName, const std::str
  * @param   pass Object reference to the pass to be added
  */
 void PassManager::addPass(AbstractPass *pass) {
-    DOUT("In PassManager::addPass");
+    QL_DOUT("In PassManager::addPass");
     passes.push_back(pass);
 }
 

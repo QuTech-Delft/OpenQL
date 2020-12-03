@@ -15,6 +15,8 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_skip(unittest.TestCase):
 
     def setUp(self):
+        ql.initialize()
+
         ql.set_option('output_dir', output_dir)     # this uses output_dir set above
 
         ql.set_option('log_level', 'LOG_NOTHING')
@@ -34,7 +36,6 @@ class Test_skip(unittest.TestCase):
         ql.set_option('mapper', 'no')
 
     def test_skip_yes(self):
-        self.setUp()
         # just check whether skip works for trivial case
         # parameters
         ql.set_option('issue_skip_319', 'yes')

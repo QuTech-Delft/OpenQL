@@ -1,12 +1,42 @@
+/** \file
+ * Implementation for Python interface classes.
+ */
+
 #include "openql_i.h"
 
 #include "version.h"
+
+static bool initialized = false;
+
+/**
+ * Initializes the OpenQL library, for as far as this must be done. This should
+ * be called by the user (in Python) before anything else.
+ *
+ * Currently this just resets the options to their default values to give the
+ * user a clean slate to work with in terms of global variables (in case someone
+ * else has used the library in the same interpreter before them, for instance,
+ * as might happen with ipython/Jupyter in a shared notebook server, or during
+ * test suites), but it may initialize more things in the future.
+ */
+void initialize() {
+    if (initialized) {
+        QL_IOUT("re-initializing OpenQL library");
+    } else {
+        QL_IOUT("initializing OpenQL library");
+    }
+    initialized = true;
+    ql::options::reset_options();
+}
 
 std::string get_version() {
     return OPENQL_VERSION_STRING;
 }
 
 void set_option(const std::string &option_name, const std::string &option_value) {
+    if (!initialized) {
+        QL_WOUT("option set before initialize()! In the future, please call initialize() before anything else!");
+        initialize();
+    }
     ql::options::set(option_name, option_value);
 }
 
@@ -27,6 +57,10 @@ Platform::Platform(
     name(name),
     config_file(config_file)
 {
+    if (!initialized) {
+        QL_WOUT("platform constructed before initialize()! In the future, please call initialize() before anything else!");
+        initialize();
+    }
     platform = new ql::quantum_platform(name, config_file);
 }
 
@@ -68,7 +102,7 @@ Unitary::Unitary(
 ) :
     name(name)
 {
-    unitary = new ql::unitary(name, matrix);
+    unitary = new ql::unitary(name, {matrix.begin(), matrix.end()});
 }
 
 Unitary::~Unitary() {
@@ -84,7 +118,7 @@ bool Unitary::is_decompose_support_enabled() {
 }
 
 Kernel::Kernel(const std::string &name) : name(name) {
-    DOUT(" API::Kernel named: " << name);
+    QL_DOUT(" API::Kernel named: " << name);
     kernel = new ql::quantum_kernel(name);
 }
 
@@ -99,7 +133,7 @@ Kernel::Kernel(
     qubit_count(qubit_count),
     creg_count(creg_count)
 {
-    WOUT("Kernel(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
+    QL_WOUT("Kernel(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
     kernel = new ql::quantum_kernel(name, *(platform.platform), qubit_count, creg_count);
 }
 
@@ -204,11 +238,11 @@ void Kernel::clifford(int id, size_t q0) {
 }
 
 void Kernel::wait(const std::vector<size_t> &qubits, size_t duration) {
-    kernel->wait(qubits, duration);
+    kernel->wait({qubits.begin(), qubits.end()}, duration);
 }
 
 void Kernel::barrier(const std::vector<size_t> &qubits) {
-    kernel->wait(qubits, 0);
+    kernel->wait({qubits.begin(), qubits.end()}, 0);
 }
 
 std::string Kernel::get_custom_instructions() const {
@@ -225,7 +259,7 @@ void Kernel::gate(
     size_t duration,
     double angle
 ) {
-    kernel->gate(name, qubits, {}, duration, angle);
+    kernel->gate(name, {qubits.begin(), qubits.end()}, {}, duration, angle);
 }
 
 void Kernel::gate(
@@ -233,11 +267,11 @@ void Kernel::gate(
     const std::vector<size_t> &qubits,
     const CReg &destination
 ) {
-    kernel->gate(name, qubits, {(destination.creg)->id} );
+    kernel->gate(name, {qubits.begin(), qubits.end()}, {(destination.creg)->id} );
 }
 
 void Kernel::gate(const Unitary &u, const std::vector<size_t> &qubits) {
-    kernel->gate(*(u.unitary), qubits);
+    kernel->gate(*(u.unitary), {qubits.begin(), qubits.end()});
 }
 
 void Kernel::classical(const CReg &destination, const Operation &operation) {
@@ -253,7 +287,7 @@ void Kernel::controlled(
     const std::vector<size_t> &control_qubits,
     const std::vector<size_t> &ancilla_qubits
 ) {
-    kernel->controlled(k.kernel, control_qubits, ancilla_qubits);
+    kernel->controlled(k.kernel, {control_qubits.begin(), control_qubits.end()}, {ancilla_qubits.begin(), ancilla_qubits.end()});
 }
 
 void Kernel::conjugate(const Kernel &k) {
@@ -265,7 +299,7 @@ Kernel::~Kernel() {
 }
 
 Program::Program(const std::string &name) : name(name) {
-    DOUT("SWIG Program(name) constructor for name: " << name);
+    QL_DOUT("SWIG Program(name) constructor for name: " << name);
     program = new ql::quantum_program(name);
 }
 
@@ -280,18 +314,18 @@ Program::Program(
     qubit_count(qubit_count),
     creg_count(creg_count)
 {
-    WOUT("Program(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
+    QL_WOUT("Program(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
     program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count);
 }
 
-void Program::set_sweep_points(const std::vector<float> &sweep_points) {
-    WOUT("This will soon be deprecated according to issue #76");
+void Program::set_sweep_points(const std::vector<double> &sweep_points) {
+    QL_WOUT("This will soon be deprecated according to issue #76");
     program->sweep_points = sweep_points;
 }
 
-std::vector<float> Program::get_sweep_points() const {
-    WOUT("This will soon be deprecated according to issue #76");
-    return program->sweep_points;
+std::vector<double> Program::get_sweep_points() const {
+    QL_WOUT("This will soon be deprecated according to issue #76");
+    return std::vector<double>(program->sweep_points.begin(), program->sweep_points.end());
 }
 
 void Program::add_kernel(const Kernel &k) {
@@ -374,6 +408,17 @@ cQasmReader::cQasmReader(
     cqasm_reader_ = new ql::cqasm_reader(*(platform.platform), *(program.program));
 }
 
+cQasmReader::cQasmReader(
+    const Platform &q_platform,
+    const Program &q_program,
+    const std::string &gateset_fname
+) :
+    platform(q_platform),
+    program(q_program)
+{
+    cqasm_reader_ = new ql::cqasm_reader(*(platform.platform), *(program.program), gateset_fname);
+}
+
 void cQasmReader::string2circuit(const std::string &cqasm_str) {
     cqasm_reader_->string2circuit(cqasm_str);
 }
@@ -395,17 +440,17 @@ Compiler::Compiler(const std::string &name) : name(name) {
 }
 
 void Compiler::compile(Program &program) {
-    DOUT(" Compiler " << name << " compiles program  " << program.name);
+    QL_DOUT(" Compiler " << name << " compiles program  " << program.name);
     compiler->compile(program.program);
 }
 
 void Compiler::add_pass_alias(const std::string &realPassName, const std::string &symbolicPassName) {
-    DOUT(" Add pass " << realPassName << " under alias name  " << symbolicPassName);
+    QL_DOUT(" Add pass " << realPassName << " under alias name  " << symbolicPassName);
     compiler->addPass(realPassName,symbolicPassName);
 }
 
 void Compiler::add_pass(const std::string &realPassName) {
-    DOUT(" Add pass " << realPassName << " with no alias");
+    QL_DOUT(" Add pass " << realPassName << " with no alias");
     compiler->addPass(realPassName);
 }
 
@@ -414,6 +459,6 @@ void Compiler::set_pass_option(
     const std::string &optionName,
     const std::string &optionValue
 ) {
-    DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName);
+    QL_DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName);
     compiler->setPassOption(passName,optionName, optionValue);
 }

@@ -1,18 +1,22 @@
-/**
- * @file   commute_variation.cc
- * @date   02/2019
- * @author Hans van Someren
- * @brief  find circuit variations from commutable sets of gates and select shortest
+/** \file
+ * Find circuit variations from commutable sets of gates and select shortest.
+ *
+ * \see commute_variation.h
  */
 
 #include "commute_variation.h"
 
-#include "utils.h"
+#include "utils/num.h"
+#include "utils/list.h"
+#include "utils/map.h"
+#include "utils/filesystem.h"
 #include "scheduler.h"
 #include "options.h"
 #include "report.h"
 
 namespace ql {
+
+using namespace utils;
 
 /*
     The generation of all variations is done as follows:
@@ -52,39 +56,39 @@ namespace ql {
 */
 
 // each variation is encoded in a number
-typedef unsigned long   vc_t;
+typedef UInt VarCode;
 
 // Scheduler class extension with entries to find the variations based on the dependence graph.
 class Depgraph : public Scheduler {
 private:
     // variation encoding multiply function aiming to catch overflow
-    vc_t mult(vc_t a, vc_t b) {
-        vc_t    r = a * b;
+    VarCode mult(VarCode a, VarCode b) {
+        VarCode    r = a * b;
         if (r < a || r < b) {
-            FATAL("Error: number of variations more than fits in unsigned long");
+            QL_FATAL("Error: number of variations more than fits in unsigned long");
         }
         return r;
     }
 
 public:
     // after scheduling, delete the added arcs (RAR/DAD) from the depgraph to restore it to the original state
-    void clean_variation( std::list<lemon::ListDigraph::Arc>& newarcslist) {
-        for ( auto a : newarcslist) {
-            // DOUT("...... erasing arc from " << instruction[graph.source(a)]->qasm() << " to " << instruction[graph.target(a)]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+    void clean_variation( List<lemon::ListDigraph::Arc>& newarcslist) {
+        for (auto a : newarcslist) {
+            // QL_DOUT("...... erasing arc from " << instruction[graph.source(a)]->qasm() << " to " << instruction[graph.target(a)]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
             graph.erase(a);
         }
         newarcslist.clear();
     }
 
     // return encoding of variation var as a string for debugging output
-    std::string varstring(
-        std::list<std::list<lemon::ListDigraph::Arc>>& varslist,
-        vc_t var
+    Str varstring(
+        List<List<lemon::ListDigraph::Arc>>& varslist,
+        VarCode var
     ) {
-        std::ostringstream ss;
+        StrStrm ss;
 
-        int varslist_index = 1;
-        for ( auto subvarslist : varslist ) {
+        Int varslist_index = 1;
+        for (auto subvarslist : varslist) {
             if (varslist_index != 1) {
                 ss << "|";
             }
@@ -106,33 +110,33 @@ public:
     // those are kept for removal again from the depgraph after scheduling
     // the original varslist is copied locally to a recipe_varslist that is gradually reduced to empty while generating
     void gen_variation(
-        std::list<std::list<lemon::ListDigraph::Arc>>& varslist,
-        std::list<lemon::ListDigraph::Arc>& newarcslist,
-        vc_t var
+        List<List<lemon::ListDigraph::Arc>>& varslist,
+        List<lemon::ListDigraph::Arc>& newarcslist,
+        VarCode var
     ) {
-        std::list<std::list<lemon::ListDigraph::Arc>> recipe_varslist = varslist;  // deepcopy, i.e. must copy each sublist of list as well
-        DOUT("... variation " << var << " (" << varstring(varslist,var) << "):");
-        // DOUT("... recipe_varslist.size()=" << recipe_varslist.size());
-        int varslist_index = 1;
-        for ( auto subvarslist : recipe_varslist ) {
-            // DOUT("... subvarslist index=" << varslist_index << " subvarslist.size()=" << subvarslist.size());
-            bool prevvalid = false;             // add arc between each pair of nodes so skip 1st arc in subvarslist
+        List<List<lemon::ListDigraph::Arc>> recipe_varslist = varslist;  // deepcopy, i.e. must copy each sublist of list as well
+        QL_DOUT("... variation " << var << " (" << varstring(varslist,var) << "):");
+        // QL_DOUT("... recipe_varslist.size()=" << recipe_varslist.size());
+        Int varslist_index = 1;
+        for (auto subvarslist : recipe_varslist) {
+            // QL_DOUT("... subvarslist index=" << varslist_index << " subvarslist.size()=" << subvarslist.size());
+            Bool prevvalid = false;             // add arc between each pair of nodes so skip 1st arc in subvarslist
             lemon::ListDigraph::Node    prevn = s;     // previous node when prevvalid==true; fake initialization by s
             for (auto svs = subvarslist.size(); svs != 0; svs--) {
                 auto thisone = var % svs;     // gives 0 <= thisone < subvarslist.size()
-                // DOUT("...... var=" << var << " svs=" << svs << " thisone=var%svs=" << thisone << " nextvar=var/svs=" << var/svs);
+                // QL_DOUT("...... var=" << var << " svs=" << svs << " thisone=var%svs=" << thisone << " nextvar=var/svs=" << var/svs);
                 auto li = subvarslist.begin();
                 std::advance(li, thisone);
                 lemon::ListDigraph::Arc a = *li;   // i.e. select the thisone's element in this subvarslist
                 lemon::ListDigraph::Node n  = graph.source(a);
-                // DOUT("...... set " << varslist_index << " take " << thisone << ": " << instruction[n]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+                // QL_DOUT("...... set " << varslist_index << " take " << thisone << ": " << instruction[n]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
                 if (prevvalid) {
-                    // DOUT("...... adding arc from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm());
+                    // QL_DOUT("...... adding arc from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm());
                     auto newarc = graph.addArc(prevn, n);
                     weight[newarc] = weight[a];
                     cause[newarc] = cause[a];
                     depType[newarc] = (depType[a] == WAR ? RAR : DAD);
-                    // DOUT("...... added arc from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm() << " as " << DepTypesNames[depType[newarc]] << " by q" << cause[newarc]);
+                    // QL_DOUT("...... added arc from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm() << " as " << DepTypesNames[depType[newarc]] << " by q" << cause[newarc]);
                     newarcslist.push_back(newarc);
                 }
                 prevvalid = true;
@@ -150,22 +154,22 @@ public:
     // the individual sets are added as separate lists to varlist, which is a list of those individual sets
     // the individual sets are implemented as lists and are called subvarslist here
     void add_variations(
-        std::list<lemon::ListDigraph::Arc>& arclist,
-        std::list<std::list<lemon::ListDigraph::Arc>>& varslist,
-        vc_t& var_count
+        List<lemon::ListDigraph::Arc>& arclist,
+        List<List<lemon::ListDigraph::Arc>>& varslist,
+        VarCode& var_count
     ) {
         while (arclist.size() > 1) {
-            std::list<lemon::ListDigraph::Arc> TMParclist = arclist;
-            int  operand = cause[arclist.front()];
+            List<lemon::ListDigraph::Arc> TMParclist = arclist;
+            Int  operand = cause[arclist.front()];
             TMParclist.remove_if([this,operand](lemon::ListDigraph::Arc a) { return cause[a] != operand; });
             if (TMParclist.size() > 1) {
-                // DOUT("At " << instruction[graph.target(TMParclist.front())]->qasm() << " found commuting gates on q" << operand << ":");
-                int perm_index = 0;
-                vc_t perm_count = 1;
-                std::list<lemon::ListDigraph::Arc> subvarslist;
-                for ( auto a : TMParclist ) {
-                    lemon::ListDigraph::Node srcNode  = graph.source(a);
-                    // DOUT("... " << instruction[srcNode]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+                // QL_DOUT("At " << instruction[graph.target(TMParclist.front())]->qasm() << " found commuting gates on q" << operand << ":");
+                Int perm_index = 0;
+                VarCode perm_count = 1;
+                List<lemon::ListDigraph::Arc> subvarslist;
+                for (auto a : TMParclist) {
+                    //lemon::ListDigraph::Node srcNode  = graph.source(a);
+                    // QL_DOUT("... " << instruction[srcNode]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
                     perm_index++;
                     perm_count = mult(perm_count, perm_index);
                     subvarslist.push_back(a);
@@ -178,24 +182,24 @@ public:
     }
 
     // show the sets of commutable gates for debugging
-    void show_sets(std::list<std::list<lemon::ListDigraph::Arc>>& varslist) {
-        vc_t var_count = 1;
+    void show_sets(List<List<lemon::ListDigraph::Arc>>& varslist) {
+        VarCode var_count = 1;
         auto list_index = 1;
         for ( auto subvarslist : varslist ) {
-            DOUT("Commuting set " << list_index << ":");
-            int perm_index = 0;
-            vc_t perm_count = 1;
+            QL_DOUT("Commuting set " << list_index << ":");
+            Int perm_index = 0;
+            VarCode perm_count = 1;
             for (auto a : subvarslist) {
                 lemon::ListDigraph::Node srcNode  = graph.source(a);
-                DOUT("... " << instruction[srcNode]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+                QL_DOUT("... " << instruction[srcNode]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
                 perm_index++;
                 perm_count *= perm_index;
             }
-            DOUT("Giving rise to " << perm_count << " variations");
+            QL_DOUT("Giving rise to " << perm_count << " variations");
             var_count *= perm_count;
             list_index++;
         }
-        DOUT("Total " << var_count << " variations");
+        QL_DOUT("Total " << var_count << " variations");
     }
 
     // for each node scan all incoming dependences
@@ -204,15 +208,15 @@ public:
     // - when WAD/RAD then we have commutation on a D operand (2nd operand of CNOT);
     //   those incoming dependences are collected in Darclist and further split by their cause in add_variations
     void find_variations(
-        std::list<std::list<lemon::ListDigraph::Arc>>& varslist,
-        vc_t& total
+        List<List<lemon::ListDigraph::Arc>>& varslist,
+        VarCode& total
     ) {
         for (lemon::ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
-            // DOUT("Incoming unfiltered dependences of node " << ": " << instruction[n]->qasm() << " :");
-            std::list<lemon::ListDigraph::Arc> Rarclist;
-            std::list<lemon::ListDigraph::Arc> Darclist;
+            // QL_DOUT("Incoming unfiltered dependences of node " << ": " << instruction[n]->qasm() << " :");
+            List<lemon::ListDigraph::Arc> Rarclist;
+            List<lemon::ListDigraph::Arc> Darclist;
             for( lemon::ListDigraph::InArcIt arc(graph,n); arc != lemon::INVALID; ++arc ) {
-                lemon::ListDigraph::Node srcNode  = graph.source(arc);
+                // lemon::ListDigraph::Node srcNode  = graph.source(arc);
                 if (
                     depType[arc] == WAW
                     ||  depType[arc] == RAW
@@ -220,7 +224,7 @@ public:
                 ) {
                     continue;
                 }
-                // DOUT("... Encountering relevant " << DepTypesNames[depType[arc]] << " by q" << cause[arc] << " from " << instruction[srcNode]->qasm());
+                // QL_DOUT("... Encountering relevant " << DepTypesNames[depType[arc]] << " by q" << cause[arc] << " from " << instruction[srcNode]->qasm());
                 if (
                     depType[arc] == WAR
                     ||  depType[arc] == DAR
@@ -240,9 +244,9 @@ public:
     }
 
     // schedule the constructed depgraph for the platform with resource constraints and return the resulting depth
-    size_t schedule_rc(const ql::quantum_platform& platform) {
-        std::string schedopt = ql::options::get("scheduler");
-        std::string dot;
+    UInt schedule_rc(const quantum_platform& platform) {
+        Str schedopt = options::get("scheduler");
+        Str dot;
         if ("ASAP" == schedopt) {
             arch::resource_manager_t rm(platform, forward_scheduling);
             schedule_asap(rm, platform, dot);
@@ -251,174 +255,170 @@ public:
             arch::resource_manager_t rm(platform, backward_scheduling);
             schedule_alap(rm, platform, dot);
         } else {
-            FATAL("Unknown scheduler");
+            QL_FATAL("Unknown scheduler");
         }
 
         // next code is copy of report::get_circuit_latency(); this function should be a circuit method
-	    size_t cycle_time = platform.cycle_time;
-	    size_t depth;;
-	    if (circp->empty() || circp->back()->cycle == MAX_CYCLE) {
-	        depth = 0;
-	    } else {
-	        depth = circp->back()->cycle + (circp->back()->duration+cycle_time-1)/cycle_time - circp->front()->cycle;
-	    }
+        UInt cycle_time = platform.cycle_time;
+        UInt depth;;
+        if (circp->empty() || circp->back()->cycle == MAX_CYCLE) {
+            depth = 0;
+        } else {
+            depth = circp->back()->cycle + (circp->back()->duration+cycle_time-1)/cycle_time - circp->front()->cycle;
+        }
         return depth;
     }
 };
 
 // generate variations and keep the one with the least depth in the current kernel's circuit
-class commute_variation_c
-{
+class commute_variation_c {
 private:
 
     // print current circuit to a file in qasm format
     // use the variation number to create the file name
     // note that the scheduler has reordered the circuit's gates according to their assigned cycle value
-	void print(
-	    const ql::quantum_program *programp,
-	    quantum_kernel& kernel,
-	    vc_t varno
-	) {
+    void print(
+        const quantum_program *programp,
+        quantum_kernel& kernel,
+        VarCode varno
+    ) {
         // next code is copy of what report::write_qasm does for one kernel; should be a circuit method
-	    std::stringstream ss_output_file;
-	    ss_output_file << ql::options::get("output_dir") << "/" << kernel.name << "_" << varno << ".qasm";
-	    DOUT("... writing variation to '" << ss_output_file.str() << "' ...");
-	    std::stringstream ss_qasm;
-	    ss_qasm << "." << kernel.name << "_" << varno << '\n';
-	    ql::circuit& ckt = kernel.c;
-	    for (auto gp : ckt) {
-	        ss_qasm << '\t' << gp->qasm();
-	        // ss_qasm << "\t# " << gp->cycle
-	        ss_qasm << '\n';
-	    }
-
+        StrStrm ss_output_file;
+        ss_output_file << options::get("output_dir") << "/" << kernel.name << "_" << varno << ".qasm";
+        QL_DOUT("... writing variation to '" << ss_output_file.str() << "' ...");
+        StrStrm ss_qasm;
+        ss_qasm << "." << kernel.name << "_" << varno << '\n';
+        circuit &ckt = kernel.c;
+        for (auto gp : ckt) {
+            ss_qasm << '\t' << gp->qasm();
+            // ss_qasm << "\t# " << gp->cycle
+            ss_qasm << '\n';
+        }
+    
         // next code is copy of report::get_circuit_latency(); this function should be a circuit method
-	    size_t cycle_time = kernel.cycle_time;
-	    size_t depth;;
-	    if (ckt.empty() || ckt.back()->cycle == MAX_CYCLE) {
-	        depth = 0;
-	    } else {
-	        depth = ckt.back()->cycle + (ckt.back()->duration+cycle_time-1)/cycle_time - ckt.front()->cycle;
-	    }
-	    ss_qasm <<  "# Depth=" << depth << '\n';
-	    ql::utils::write_file(ss_output_file.str(), ss_qasm.str());
-	}
+        UInt cycle_time = kernel.cycle_time;
+        UInt depth;;
+        if (ckt.empty() || ckt.back()->cycle == MAX_CYCLE) {
+            depth = 0;
+        } else {
+            depth = ckt.back()->cycle + (ckt.back()->duration+cycle_time-1)/cycle_time - ckt.front()->cycle;
+        }
+        ss_qasm <<  "# Depth=" << depth << '\n';
+        OutFile(ss_output_file.str()).write(ss_qasm.str());
+    }
 
 public:
 
-	void generate(
-	    const ql::quantum_program *programp,
-	    quantum_kernel& kernel,
-	    const ql::quantum_platform & platform
-	) {
-	    DOUT("Generate commutable variations of kernel circuit ...");
-	    ql::circuit& ckt = kernel.c;
-	    if (ckt.empty()) {
-	        DOUT("Empty kernel " << kernel.name);
-	        return;
-	    }
-	    if (ql::options::get("scheduler_commute") == "no") {
-	        COUT("Scheduler_commute option is \"no\": don't generate commutation variations");
-	        DOUT("Scheduler_commute option is \"no\": don't generate commutation variations");
-	        return;
-	    }
-	
-	    DOUT("Create a dependence graph and recognize commutation");
-	    Depgraph sched;
-	    sched.init(ckt, platform, platform.qubit_number, kernel.creg_count);
-	
-	    DOUT("Finding sets of commutable gates ...");
-	    std::list<std::list<lemon::ListDigraph::Arc>> varslist;
-	    vc_t total = 1;
-	    sched.find_variations(varslist, total);
-	    sched.show_sets(varslist);
-	
-	    DOUT("Start enumerating " << total << " variations ...");
-	    DOUT("=========================\n\n");
-	
-	    std::list<lemon::ListDigraph::Arc> newarcslist;        // new deps generated
-	    std::map<size_t,std::list<vc_t>> vars_per_depth;
-	
-	    for (vc_t varno = 0; varno < total; varno++) {
-	        // generate additional (RAR or DAD) dependences to sequentialize this variation
-	        sched.gen_variation(varslist, newarcslist, varno);
-	        if ( !dag(sched.graph))
-	        {
-	            // there are cycles among the dependences so this variation is infeasible
-	            DOUT("... variation " << varno << " (" << sched.varstring(varslist,varno) << ") results in a dependence cycle, skip it");
-	        }
-	        else
-	        {
-	            // DOUT("... schedule variation " << varno << " (" << sched.varstring(varslist,varno) << ")");
-	            auto depth = sched.schedule_rc(platform);
-	            vars_per_depth[depth].push_back(varno);
-	            DOUT("... scheduled variation " << varno << " (" << sched.varstring(varslist,varno) << "), depth=" << depth);
-	
-	            // DOUT("... printing qasm code for this variation " << varno << " (" << sched.varstring(varslist,varno) << ")");
-	            // print(programp, kernel, varno);
-	        }
-	        // delete additional dependences generated so restore old depgraph with all commutation
-	        sched.clean_variation(newarcslist);
-	        // DOUT("... ready with variation " << varno << " (" << sched.varstring(varslist,varno) << ")");
-	        // DOUT("=========================\n");
-	    }
-	    DOUT("Generate commutable variations of kernel circuit [Done]");
-	
-	    DOUT("Find circuit with minimum depth while exploiting commutation");
-	    for (auto vit = vars_per_depth.begin(); vit != vars_per_depth.end(); ++vit) {
-	        DOUT("... depth " << vit->first << ": " << vit->second.size() << " variations");
-	    }
-	    auto mit = vars_per_depth.begin();
-	    auto min_depth = mit->first;
-	    auto vars = mit->second;
-	    auto result_varno = vars.front();       // just the first one, could be more sophisticated
-	    DOUT("Min depth=" << min_depth << ", number of variations=" << vars.size() << ", selected varno=" << result_varno);
-	
-	    // Find out which depth heuristics would find
-	    auto hdepth = sched.schedule_rc(platform);
-	    DOUT("Note that heuristics would find a schedule of the circuit with depth " << hdepth);
-	
-	    // Set kernel.c representing result variation by regenerating it and scheduling it ...
-	    sched.gen_variation(varslist, newarcslist, result_varno);
-	    (void) sched.schedule_rc(platform); // sets kernel.c reflecting the additional deps of the variation
-	    sched.clean_variation(newarcslist);
-	    DOUT("Find circuit with minimum depth while exploiting commutation [Done]");
-	
-	    ql::options::set("scheduler_commute", "no");    // next schedulers will respect the commutation order found
-	}
+    void generate(
+        const quantum_program *programp,
+        quantum_kernel& kernel,
+        const quantum_platform & platform
+    ) {
+        QL_DOUT("Generate commutable variations of kernel circuit ...");
+        circuit &ckt = kernel.c;
+        if (ckt.empty()) {
+            QL_DOUT("Empty kernel " << kernel.name);
+            return;
+        }
+        if (options::get("scheduler_commute") == "no") {
+            QL_COUT("Scheduler_commute option is \"no\": don't generate commutation variations");
+            QL_DOUT("Scheduler_commute option is \"no\": don't generate commutation variations");
+            return;
+        }
+    
+        QL_DOUT("Create a dependence graph and recognize commutation");
+        Depgraph sched;
+        sched.init(ckt, platform, platform.qubit_number, kernel.creg_count);
+    
+        QL_DOUT("Finding sets of commutable gates ...");
+        List<List<lemon::ListDigraph::Arc>> varslist;
+        VarCode total = 1;
+        sched.find_variations(varslist, total);
+        sched.show_sets(varslist);
+    
+        QL_DOUT("Start enumerating " << total << " variations ...");
+        QL_DOUT("=========================\n\n");
+    
+        List<lemon::ListDigraph::Arc> newarcslist;        // new deps generated
+        Map<UInt, List<VarCode>> vars_per_depth;
+    
+        for (VarCode varno = 0; varno < total; varno++) {
+            // generate additional (RAR or DAD) dependences to sequentialize this variation
+            sched.gen_variation(varslist, newarcslist, varno);
+            if (!dag(sched.graph)) {
+                // there are cycles among the dependences so this variation is infeasible
+                QL_DOUT("... variation " << varno << " (" << sched.varstring(varslist,varno) << ") results in a dependence cycle, skip it");
+            } else {
+                // QL_DOUT("... schedule variation " << varno << " (" << sched.varstring(varslist,varno) << ")");
+                auto depth = sched.schedule_rc(platform);
+                vars_per_depth.set(depth).push_back(varno);
+                QL_DOUT("... scheduled variation " << varno << " (" << sched.varstring(varslist,varno) << "), depth=" << depth);
+    
+                // QL_DOUT("... printing qasm code for this variation " << varno << " (" << sched.varstring(varslist,varno) << ")");
+                // print(programp, kernel, varno);
+            }
+            // delete additional dependences generated so restore old depgraph with all commutation
+            sched.clean_variation(newarcslist);
+            // QL_DOUT("... ready with variation " << varno << " (" << sched.varstring(varslist,varno) << ")");
+            // QL_DOUT("=========================\n");
+        }
+        QL_DOUT("Generate commutable variations of kernel circuit [Done]");
+    
+        QL_DOUT("Find circuit with minimum depth while exploiting commutation");
+        for (auto vit = vars_per_depth.begin(); vit != vars_per_depth.end(); ++vit) {
+            QL_DOUT("... depth " << vit->first << ": " << vit->second.size() << " variations");
+        }
+        auto mit = vars_per_depth.begin();
+        auto min_depth = mit->first;
+        auto vars = mit->second;
+        auto result_varno = vars.front();       // just the first one, could be more sophisticated
+        QL_DOUT("Min depth=" << min_depth << ", number of variations=" << vars.size() << ", selected varno=" << result_varno);
+    
+        // Find out which depth heuristics would find
+        auto hdepth = sched.schedule_rc(platform);
+        QL_DOUT("Note that heuristics would find a schedule of the circuit with depth " << hdepth);
+    
+        // Set kernel.c representing result variation by regenerating it and scheduling it ...
+        sched.gen_variation(varslist, newarcslist, result_varno);
+        (void) sched.schedule_rc(platform); // sets kernel.c reflecting the additional deps of the variation
+        sched.clean_variation(newarcslist);
+        QL_DOUT("Find circuit with minimum depth while exploiting commutation [Done]");
+    
+        options::set("scheduler_commute", "no");    // next schedulers will respect the commutation order found
+    }
 };
 
 static void commute_variation_kernel(
-    ql::quantum_program *programp,
-    ql::quantum_kernel &kernel,
-    const ql::quantum_platform &platform
+    quantum_program *programp,
+    quantum_kernel &kernel,
+    const quantum_platform &platform
 ) {
-    DOUT("Commute variation ...");
-    if (! kernel.c.empty()) {
-        if( ql::options::get("vary_commutations") == "yes" ) {
+    QL_DOUT("Commute variation ...");
+    if (!kernel.c.empty()) {
+        if( options::get("vary_commutations") == "yes" ) {
             // find the shortest circuit by varying on gate commutation; replace kernel.c by it
             commute_variation_c   cv;
             cv.generate(programp, kernel, platform);
         }
     }
 
-    DOUT("Commute variation [DONE]");
+    QL_DOUT("Commute variation [DONE]");
 }
 
 void commute_variation(
-    ql::quantum_program *programp,              // updates the circuits of the program
-    const ql::quantum_platform &platform,
-    const std::string &passname
+    quantum_program *programp,              // updates the circuits of the program
+    const quantum_platform &platform,
+    const Str &passname
 ) {
-    ql::report_statistics(programp, platform, "in", passname, "# ");
-    ql::report_qasm(programp, platform, "in", passname);
+    report_statistics(programp, platform, "in", passname, "# ");
+    report_qasm(programp, platform, "in", passname);
 
-    for (size_t k = 0; k < programp->kernels.size(); ++k) {
+    for (UInt k = 0; k < programp->kernels.size(); ++k) {
         commute_variation_kernel(programp, programp->kernels[k], platform);
     }
 
-    ql::report_statistics(programp, platform, "out", passname, "# ");
-    ql::report_qasm(programp, platform, "out", passname);
+    report_statistics(programp, platform, "out", passname, "# ");
+    report_qasm(programp, platform, "out", passname);
 }
 
 } // namespace ql

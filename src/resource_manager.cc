@@ -1,3 +1,7 @@
+/** \file
+ * Resource manager interface for the scheduler.
+ */
+
 #include "resource_manager.h"
 
 #include "arch/cc_light/cc_light_resource_manager.h"
@@ -6,19 +10,21 @@
 namespace ql {
 namespace arch {
 
+using namespace utils;
+
 resource_t::resource_t(
-    const std::string &n,
+    const Str &n,
     scheduling_direction_t dir
 ) :
     name(n),
     direction(dir)
 {
-    DOUT("constructing resource: " << n << " for direction (0:fwd,1:bwd): " << dir);
+    QL_DOUT("constructing resource: " << n << " for direction (0:fwd,1:bwd): " << dir);
 }
 
-void resource_t::Print(const std::string &s) {
-    DOUT(s);
-    DOUT("resource name=" << name << "; count=" << count);
+void resource_t::Print(const Str &s) {
+    QL_DOUT(s);
+    QL_DOUT("resource name=" << name << "; count=" << count);
 }
 
 platform_resource_manager_t::platform_resource_manager_t(
@@ -28,8 +34,8 @@ platform_resource_manager_t::platform_resource_manager_t(
     // DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
 }
 
-void platform_resource_manager_t::Print(const std::string &s) {
-    DOUT(s);
+void platform_resource_manager_t::Print(const Str &s) {
+    QL_DOUT(s);
 }
 
 // copy constructor doing a deep copy
@@ -46,7 +52,7 @@ platform_resource_manager_t::platform_resource_manager_t(const platform_resource
 // follow pattern to use tmp copy to allow self-assignment and to be exception safe
 platform_resource_manager_t &platform_resource_manager_t::operator=(const platform_resource_manager_t &rhs) {
     // DOUT("Copy assigning platform_resource_manager_t");
-    std::vector<resource_t *> new_resource_ptrs;
+    Vec<resource_t *> new_resource_ptrs;
     for (auto org_resource_ptr : rhs.resource_ptrs) {
         // DOUT("... clone one of the contained resource_ptr");
         new_resource_ptrs.push_back(org_resource_ptr->clone());
@@ -61,8 +67,8 @@ platform_resource_manager_t &platform_resource_manager_t::operator=(const platfo
     return *this;
 }
 
-bool platform_resource_manager_t::available(
-    size_t op_start_cycle,
+utils::Bool platform_resource_manager_t::available(
+    utils::UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
@@ -79,7 +85,7 @@ bool platform_resource_manager_t::available(
 }
 
 void platform_resource_manager_t::reserve(
-    size_t op_start_cycle,
+    utils::UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
@@ -112,15 +118,15 @@ resource_manager_t::resource_manager_t(
     scheduling_direction_t dir
 ) {
     // DOUT("Constructing (platform,dir) parameterized resource_manager_t");
-    std::string eqasm_compiler_name = platform.eqasm_compiler_name;
+    Str eqasm_compiler_name = platform.eqasm_compiler_name;
 
     if (eqasm_compiler_name == "cc_light_compiler") {
         platform_resource_manager_ptr = new cc_light_resource_manager_t(platform, dir);
 //  } else if (eqasm_compiler_name == "cc_compiler") {
 //      platform_resource_manager_ptr = new cc_resource_manager_t(platform, dir);
     } else {
-        FATAL("the '" << eqasm_compiler_name
-                      << "' eqasm compiler backend is not supported !");
+        QL_FATAL("the '" << eqasm_compiler_name
+                         << "' eqasm compiler backend is not supported !");
     }
 }
 
@@ -148,18 +154,17 @@ resource_manager_t &resource_manager_t::operator=(const resource_manager_t &rhs)
     return *this;
 }
 
-bool resource_manager_t::available(
-    size_t op_start_cycle,
+utils::Bool resource_manager_t::available(
+    utils::UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     // DOUT("resource_manager.available()");
-    return platform_resource_manager_ptr->available(op_start_cycle, ins,
-                                                    platform);
+    return platform_resource_manager_ptr->available(op_start_cycle, ins, platform);
 }
 
 void resource_manager_t::reserve(
-    size_t op_start_cycle,
+    utils::UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
