@@ -57,6 +57,7 @@ class Test_central_controller(unittest.TestCase):
             k1.classical(rs1, ql.Operation(rs2))
 
         # measure
+        k.barrier([])
         k1.gate('measure', [6], rs1)
         k1.gate('measure', [7], rs2)
 
@@ -128,11 +129,13 @@ class Test_central_controller(unittest.TestCase):
 
         # Z stabilizers
         k.gate("rym90", [z])
+        k.barrier([])
 
         k.gate("cz", [z, zE])
         k.gate("cz", [z, zS])
         k.gate("cz", [z, zN])
         k.gate("cz", [z, zW])
+        k.barrier([])
 
         k.gate("ry90", [z])
         k.gate("measure", [z], rdZ)
