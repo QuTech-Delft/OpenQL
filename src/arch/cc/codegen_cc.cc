@@ -41,6 +41,28 @@ typedef std::vector<int> tBitVars;
 | Generic
 \************************************************************************/
 
+codegen_cc::BundleInfo::BundleInfo() {
+#if OPT_FEEDBACK
+	readoutCop = IMPLICIT_COP;		// FIXME: keep explicit in IR?
+	readoutQubit = -1;
+	condition = cond_always;
+	// FIXME: add cops
+#endif
+	signalValue = "";
+	durationInCycles = 0;
+#if OPT_SUPPORT_STATIC_CODEWORDS
+	staticCodewordOverride = settings_cc::NO_STATIC_CODEWORD_OVERRIDE;
+#endif
+#if OPT_PRAGMA
+	pragma = nullptr;
+#endif
+}
+
+
+/************************************************************************\
+| Generic
+\************************************************************************/
+
 void codegen_cc::init(const quantum_platform &platform)
 {
     // NB: a new eqasm_backend_cc is instantiated per call to compile, and
@@ -165,28 +187,13 @@ void codegen_cc::kernelFinish(const std::string &kernelName, size_t durationInCy
 // bundleStart: see 'strategy' above
 void codegen_cc::bundleStart(const std::string &cmnt)
 {
-    // create 'matrix' of tBundleInfo with proper vector size per instrument
+    // create 'matrix' of BundleInfo with proper vector size per instrument
 	bundleInfo.clear();
-    tBundleInfo empty = {
-#if OPT_FEEDBACK
-		.readoutCop = IMPLICIT_COP,		// FIXME: keep explicit in IR?
-		.readoutQubit = -1,
-        .condition = cond_always,
-        // FIXME: add cops
-#endif
-		.signalValue = "",
-		.durationInCycles = 0,
-#if OPT_SUPPORT_STATIC_CODEWORDS
-		.staticCodewordOverride = settings_cc::NO_STATIC_CODEWORD_OVERRIDE,
-#endif
-#if OPT_PRAGMA
-		.pragma = nullptr,
-#endif
-	};
+    BundleInfo empty;
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
-        bundleInfo.emplace_back(ic.controlModeGroupCnt,   	// one tBundleInfo per group in the control mode selected for instrument
-								empty);  					// empty tBundleInfo
+        bundleInfo.emplace_back(ic.controlModeGroupCnt,   	// one BundleInfo per group in the control mode selected for instrument
+								empty);  					// empty BundleInfo
     }
 
 	// generate source code comments
@@ -348,7 +355,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 		// now collect code generation info from all groups of instrument
         size_t nrGroups = bundleInfo[instrIdx].size();
         for(size_t group=0; group<nrGroups; group++) {
-            tBundleInfo *bi = &bundleInfo[instrIdx][group];                 // shorthand
+            BundleInfo *bi = &bundleInfo[instrIdx][group];                 	// shorthand
 
             // handle output
             if(!bi->signalValue.empty()) {                                  // signal defined, i.e.: we need to output something
@@ -633,7 +640,7 @@ std::string toQasm(const std::string &iname, const utils::Vec<utils::UInt> &qops
 }
 
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
-// translates 'gate' representation to 'waveform' representation (tBundleInfo) and maps qubits to instruments & group.
+// translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
 // Does not deal with the control mode and digital interface of the instrument.
 
 void codegen_cc::customGate(
@@ -685,7 +692,7 @@ void codegen_cc::customGate(
         tCalcSignalValue csv = calcSignalValue(sd, s, qops, iname);
 
         // store signal value, checking for conflicts
-        tBundleInfo *bi = &bundleInfo[csv.si.instrIdx][csv.si.group];       // shorthand
+        BundleInfo *bi = &bundleInfo[csv.si.instrIdx][csv.si.group];       	// shorthand
         if(bi->signalValue.empty()) {                                       // signal not yet used
             bi->signalValue = csv.signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
@@ -737,7 +744,7 @@ void codegen_cc::customGate(
 #if OPT_PRAGMA
 	const utils::Json *pragma = settings.getPragma(iname);
 	if(pragma) {
-		for(std::vector<tBundleInfo> &vbi : bundleInfo) {
+		for(std::vector<BundleInfo> &vbi : bundleInfo) {
 			// FIXME: for now we just store the JSON of the pragma statement in bundleInfo[*][0]
 			if(vbi[0].pragma) {
 				QL_FATAL("Bundle contains more than one gate with 'pragma' key");	// FIXME: provide context

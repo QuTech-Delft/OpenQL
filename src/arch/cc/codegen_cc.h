@@ -60,7 +60,11 @@ public: //  functions
     void comment(const std::string &c);
 
 private:    // types
-    typedef struct {
+    class BundleInfo {
+    public:
+    	BundleInfo();
+
+    public:	// vars
 #if OPT_FEEDBACK
         // readout
         int readoutCop;                 // classic operand for readout. NB: we encode an implicit cop as -1
@@ -82,7 +86,7 @@ private:    // types
 		utils::Vec<utils::UInt> pragmaCops;
 		utils::Vec<utils::UInt> pragmaQops;		// FIXME: naming, integrate with readout(Cop,Qubit}
 #endif
-    } tBundleInfo; // information for an instrument group (of channels), for a single instruction
+    }; // information for an instrument group (of channels), for a single instruction
     // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with custmGate(), bundleStart(), bundleFinish()?
 
 
@@ -110,20 +114,14 @@ private:    // vars
 	utils::Json codewordTable;                                  // codewords versus signals per instrument group
 	std::stringstream codeSection;                              // the code generated
 
-//<<<<<<< HEAD
 	// codegen state, kernel scope FIXME: create class
     unsigned int lastEndCycle[MAX_INSTRS];                      // vector[instrIdx], maintain where we got per slot
 #if OPT_PRAGMA
 	std::string pragmaForLabel;
-//=======
-//    utils::Json codewordTable;                                  // codewords versus signals per instrument group
-//#if OPT_FEEDBACK
-//    Json inputLutTable;                                         // input LUT usage per instrument group
-//>>>>>>> 907ac3dd0fe546f7bd507b0f5a6ccc4c476d7bf1
 #endif
 
 	// codegen state, bundle scope
-    std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group]
+    std::vector<std::vector<BundleInfo>> bundleInfo;           	// matrix[instrIdx][group]
 
 private:    // funcs
     // Some helpers to ease nice assembly formatting
