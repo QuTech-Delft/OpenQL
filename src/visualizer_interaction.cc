@@ -4,6 +4,7 @@
 
 #ifdef WITH_VISUALIZER
 
+#include "visualizer.h"
 #include "visualizer_types.h"
 #include "visualizer_common.h"
 #include "visualizer_interaction.h"
@@ -14,9 +15,6 @@
 #include "utils/pair.h"
 
 #include <fstream>
-
-// #include <cmath>
-// #include <math.h>
 
 namespace ql {
 
@@ -129,7 +127,7 @@ void visualizeInteractionGraph(const quantum_program* program, const VisualizerC
     }
 }
 
-void generateAndSaveDOTFile(const std::vector<Qubit> &qubits) {
+void generateAndSaveDOTFile(const Vec<Qubit> &qubits) {
     try
     {
         QL_IOUT("Generating DOT file for qubit interaction graph...");
@@ -274,7 +272,7 @@ Vec<Qubit> findQubitInteractions(const Vec<GateProperties> &gates, const Int amo
     return qubits;
 }
 
-Bool isEdgeAlreadyDrawn(const Vec<std::pair<Int, Int>> &drawnEdges, const Int first, const Int second) {
+Bool isEdgeAlreadyDrawn(const Vec<Pair<Int, Int>> &drawnEdges, const Int first, const Int second) {
     // Check if the edge already exists.
     for (const Pair<Int, Int> &drawnEdge : drawnEdges) {
         if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {
