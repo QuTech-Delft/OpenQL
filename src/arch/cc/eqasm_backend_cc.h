@@ -22,7 +22,7 @@ class eqasm_backend_cc : public eqasm_compiler
 {
 public:
     eqasm_backend_cc() = default;
-    ~eqasm_backend_cc() = default;
+    ~eqasm_backend_cc() override = default;
 
     void compile(quantum_program *program, const quantum_platform &platform) override;
 
