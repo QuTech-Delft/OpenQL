@@ -273,6 +273,7 @@ Vec<Qubit> findQubitInteractions(const Vec<GateProperties> &gates, const Int amo
 }
 
 Bool isEdgeAlreadyDrawn(const Vec<Pair<Int, Int>> &drawnEdges, const Int first, const Int second) {
+// bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> &drawnEdges, const int first, const int second) {
     // Check if the edge already exists.
     for (const Pair<Int, Int> &drawnEdge : drawnEdges) {
         if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {

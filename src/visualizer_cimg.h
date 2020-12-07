@@ -6,6 +6,7 @@
 
 #ifdef WITH_VISUALIZER
 
+#include "visualizer_types.h"
 #include "CImg.h"
 #include "utils/num.h"
 #include "utils/str.h"
@@ -15,7 +16,8 @@ namespace ql {
 typedef std::array<utils::Byte, 3> Color;
 
 enum class LinePattern : unsigned int {
-    UNBROKEN = 0xFFFFFFFF
+    UNBROKEN = 0xFFFFFFFF,
+    DASHED = 0xF0F0F0F0
 };
 
 class Image {
@@ -23,40 +25,25 @@ private:
     cimg_library::CImg<unsigned char> cimg;
 
 public:
-    Image(const utils::Int imageWidth, const utils::Int imageHeight, const utils::Int numberOfChannels) {
-        cimg((int) imageWidth, (int) imageHeight, 1, (int) numberOfChannels);
-    }
+    Image(const utils::Int imageWidth, const utils::Int imageHeight, const utils::Int numberOfChannels);
 
-    void fill(const utils::Int rgb) {
-        cimg.fill((int) rgb);
-    }
+    void fill(const utils::Int rgb);
+    void drawLine(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1,
+                  const Color color = black, const utils::Real alpha = 1, const LinePattern pattern = LinePattern::UNBROKEN);
+    void drawText(const utils::Int x, const utils::Int y, const utils::Str &text, const utils::Int height, const Color color = black);
 
-    void drawLine(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const Color color) {
-        cimg.draw_line((int) x0, (int) y0, (int) x1, (int) y1, color.data());
-    }
+    void drawCircle(centerX, centerY, radius, color, alpha, )
 
-    void drawText(const utils::Int x, const utils::Int y, const utils::Str &text, const Color color, const utils::Int height) {
-        cimg.draw_text((int) x, (int) y, text.c_str(), color.data(), 0, 1, (int) height);
-    }
-
-    void drawFilledCircle(const utils::Int centerX, const utils::Int centerY, const utils::Int radius,
-                          const Color color, const utils::Real opacity) {
-        cimg.draw_circle((int) centerX, (int) centerY, (int) radius, color.data(), (float) opacity);
-    }
-
-    void drawOutlinedCircle(const utils::Int centerX, const utils::Int centerY, const utils::Int radius,
-                            const Color color, const utils::Real opacity, const LinePattern pattern) {
-        cimg.draw_circle((int) centerX, (int) centerY, (int) radius, color.data(), (float) opacity, static_cast<unsigned int>(pattern));
-    }
-
-    void save(const utils::Str &filename) {
-        cimg.save(static_cast<std::string>(filename).c_str());
-    }
-
-    void display(const utils::Str &caption) {
-        cimg.display(static_cast<std::string>(caption).c_str());
-    }
+    void drawFilledCircle(const utils::Int centerX, const utils::Int centerY, const utils::Int radius, const Color color, const utils::Real opacity);
+    void drawOutlinedCircle(const utils::Int centerX, const utils::Int centerY, const utils::Int radius, const Color color, const utils::Real opacity, const LinePattern pattern);
+    void drawTriangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const utils::Int x2, const utils::Int y2, const Color color);
+    void drawFilledRectangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const Color color, const utils::Real alpha);
+    void drawOutlinedRectangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const Color color, const utils::Real alpha, const LinePattern pattern);
+    void save(const utils::Str &filename);
+    void display(const utils::Str &caption);
 };
+
+Dimensions calculateTextDimensions(const utils::Str &text, const utils::Int fontHeight);
 
 } // namespace ql
 

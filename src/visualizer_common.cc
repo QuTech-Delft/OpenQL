@@ -7,6 +7,7 @@
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
 #include "visualizer_interaction.h"
+#include "visualizer_cimg.h"
 #include "options.h"
 #include "utils/str.h"
 #include "utils/json.h"
@@ -57,6 +58,7 @@ using namespace utils;
 // [GENERAL] replace primitives and containers with the ones specified in utils (int, double, bool, vector, map, string, etc.)
 // [GENERAL] fix compilation error due to merge
 // [GENERAL] replace cimg calls with cimg wrapper calls
+// [GENERAL] delete default constructors in position types in visualizer_types.h
 // [GENERAL] update documentation
 
 // --- FUTURE WORK ---
@@ -221,15 +223,6 @@ Bool isMeasurement(const GateProperties &gate) {
     //TODO: this method of checking for measurements is not robust and relies
     //      entirely on the user naming their instructions in a certain way!
     return (gate.name.find("measure") != Str::npos);
-}
-
-Dimensions calculateTextDimensions(const Str &text, const Int fontHeight) {
-    const char* chars = text.c_str();
-    cimg_library::CImg<unsigned char> imageTextDimensions;
-    const char color = 1;
-    imageTextDimensions.draw_text(0, 0, chars, &color, 0, 1, fontHeight);
-
-    return Dimensions { imageTextDimensions.width(), imageTextDimensions.height() };
 }
 
 void printGates(const Vec<GateProperties> &gates) {

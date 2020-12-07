@@ -170,7 +170,7 @@ public:
 class CycleEdges {
 private:
     utils::Bool enabled = true;
-    std::array<unsigned char, 3> color = {{ 0, 0, 0 }};
+    Color color = black;
     utils::Real alpha = 0.2;
 
 public:
@@ -207,7 +207,7 @@ private:
     utils::Bool compress = false;
     utils::Bool partitionCyclesWithOverlap = true;
 
-    public:
+public:
     CycleLabels labels;
     CycleEdges edges;
     CycleCutting cutting;
@@ -228,8 +228,8 @@ private:
     utils::Bool enabled = true;
     utils::Int columnWidth = 32;
     utils::Int fontHeight = 13;
-    Color qbitColor = {{ 0, 0, 0 }};
-    Color cbitColor = {{ 128, 128, 128 }};
+    Color qbitColor = black;
+    Color cbitColor = gray;
 
 public:
     utils::Bool areEnabled() const { return enabled; }
@@ -247,7 +247,7 @@ public:
 
 class QuantumLines {
 private:
-    Color color = {{ 0, 0, 0 }};
+    Color color = black;
 
 public:
     Color getColor() const { return color; }
@@ -260,7 +260,7 @@ private:
     utils::Bool enabled = true;
     utils::Bool group = true;
     utils::Int groupedLineGap = 2;
-    Color color = {{ 128, 128, 128 }};
+    Color color = gray;
 
 public:
     utils::Bool isEnabled() const { return enabled; }
@@ -278,7 +278,7 @@ class BitLineEdges {
 private:
     utils::Bool enabled = true;
     utils::Int thickness = 3;
-    Color color = {{ 0, 0, 0 }};
+    Color color = black;
     utils::Real alpha = 0.4;
 
 public:
@@ -403,9 +403,9 @@ struct CircuitLayout {
     Measurements measurements;
     Pulses pulses;
 
-    std::map<utils::Str, GateVisual> customGateVisuals;
+    utils::Map<utils::Str, GateVisual> customGateVisuals;
 
-    const std::map<ql::gate_type_t, GateVisual> defaultGateVisuals {
+    const utils::Map<gate_type_t, GateVisual> defaultGateVisuals {
         // TODO: use the proper symbol for dagger gates
         // TODO: use the proper symbol for measurement gates
 

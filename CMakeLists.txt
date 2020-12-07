@@ -198,6 +198,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/clifford.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passmanager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_cimg.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_common.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_circuit.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_interaction.cc"

@@ -8,10 +8,13 @@
 #include "visualizer_types.h"
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
-#include "CImg.h"
+#include "visualizer_cimg.h"
 #include "utils/json.h"
 #include "utils/num.h"
 #include "utils/vec.h"
+#include "utils/map.h"
+#include "utils/pair.h"
+#include "utils/exception.h"
 
 #include <regex>
 
@@ -569,7 +572,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     // Initialize image.
     QL_DOUT("Initializing image...");
     const Int numberOfChannels = 3;
-    cimg_library::CImg<Byte> image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
+    Image image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
     image.fill(255);
 
     // Draw the cycle labels if the option has been set.
@@ -698,7 +701,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
 
     // Save the image if enabled.
     if (layout.saveImage) {
-        image.save(generateFilePath("circuit_visualization", "bmp").c_str());
+        image.save(generateFilePath("circuit_visualization", "bmp"));
     }
 
     // Display the image.
@@ -721,7 +724,7 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
         Vec<Int> codewords;
     };
 
-    std::map<Str, VisualParameters> parameterMapping;
+    Map<Str, VisualParameters> parameterMapping;
     for (auto it = platformInstructions.begin(); it != platformInstructions.end(); ++it) {
         Str gateName = it.key();
         Json instruction = *it; //.value();
@@ -755,13 +758,13 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
             }
         }
 
-        parameterMapping[gateName] = {visual_type, codewords};
+        parameterMapping.set(gateName) = {visual_type, codewords};
     }
 
     // Match the visualization parameters from the hardware configuration with the existing gates.
     for (GateProperties &gate : gates) {
         bool found = false;
-        for (const std::pair<Str, VisualParameters> &mapping : parameterMapping) {
+        for (const Pair<Str, VisualParameters> &mapping : parameterMapping) {
             if (mapping.first == gate.name) {
                 found = true;
                 gate.visual_type = mapping.second.visual_type;
@@ -1077,7 +1080,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
                 pulseVisualization.sampleRateReadout = waveformMapping["samplerates"]["readout"];
             else
                 QL_FATAL("Missing 'samplerateReadout' attribute in waveform mapping file!");
-        } catch (std::exception &e) {
+        } catch (const Exception &e) {
             QL_FATAL("Exception while parsing sample rates from waveform mapping file:\n\t" << e.what()
                  << "\n\tMake sure the sample rates are Integers!" );
         }
@@ -1093,7 +1096,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
             Int codewordIndex = 0;
             try {
                 codewordIndex = parse_int(codewordMapping.key());
-            } catch (std::exception &e) {
+            } catch (const Exception &e) {
                 QL_FATAL("Exception while parsing key to codeword mapping " << codewordMapping.key()
                      << " in waveform mapping file:\n\t" << e.what() << "\n\tKey should be an Integer!");
             }
@@ -1105,7 +1108,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
                 Int qubitIndex = 0;
                 try {
                     qubitIndex = parse_int(qubitMap.key());
-                } catch (std::exception &e) {
+                } catch (const Exception &e) {
                     QL_FATAL("Exception while parsing key to qubit mapping " << qubitMap.key() << " in waveform mapping file:\n\t"
                          << e.what() << "\n\tKey should be an Integer!");
                 }
@@ -1119,7 +1122,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
                     if (gatePulsesMapping.contains("microwave")) microwave = gatePulsesMapping["microwave"].get<Vec<Real>>();
                     if (gatePulsesMapping.contains("flux")) flux = gatePulsesMapping["flux"].get<Vec<Real>>();
                     if (gatePulsesMapping.contains("readout")) readout = gatePulsesMapping["readout"].get<Vec<Real>>();
-                } catch (std::exception &e) {
+                } catch (const Exception &e) {
                     QL_FATAL("Exception while parsing waveforms from waveform mapping file:\n\t" << e.what()
                          << "\n\tMake sure the waveforms are arrays of Integers!" );
                 }
@@ -1212,7 +1215,7 @@ Vec<QubitLines> generateQubitLines(const Vec<GateProperties> &gates,
 
                 if (!gatePulses.readout.empty())
                     readoutLine.segments.push_back({PULSE, gateCycles, {gatePulses.readout, pulseVisualization.sampleRateReadout}});
-            } catch (std::exception &e) {
+            } catch (const Exception &e) {
                 QL_WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
                      "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex << "\n\texception: " << e.what());
             }
@@ -1327,7 +1330,7 @@ void insertFlatLineSegments(Vec<LineSegment> &existingLineSegments, const Int am
     }
 }
 
-void drawCycleLabels(cimg_library::CImg<Byte> &image,
+void drawCycleLabels(Image &image,
                      const CircuitLayout &layout,
                      const CircuitData &circuitData,
                      const Structure &structure) {
@@ -1359,11 +1362,11 @@ void drawCycleLabels(cimg_library::CImg<Byte> &image,
         const Int xCycle = structure.getCellPosition(i, 0, QUANTUM).x0 + xGap;
         const Int yCycle = structure.getCycleLabelsY() + yGap;
 
-        image.draw_text(xCycle, yCycle, cycleLabel.c_str(), layout.cycles.labels.getFontColor().data(), 0, 1, layout.cycles.labels.getFontHeight());
+        image.drawText(xCycle, yCycle, cycleLabel, layout.cycles.labels.getFontHeight(), layout.cycles.labels.getFontColor());
     }
 }
 
-void drawCycleEdges(cimg_library::CImg<Byte> &image,
+void drawCycleEdges(Image &image,
                     const CircuitLayout &layout,
                     const CircuitData &circuitData,
                     const Structure &structure) {
@@ -1377,11 +1380,11 @@ void drawCycleEdges(cimg_library::CImg<Byte> &image,
         const Int y0 = structure.getCircuitTopY();
         const Int y1 = structure.getCircuitBotY();
 
-        image.draw_line(xCycle, y0, xCycle, y1, layout.cycles.edges.getColor().data(), layout.cycles.edges.getAlpha(), 0xF0F0F0F0);
+        image.drawLine(xCycle, y0, xCycle, y1, layout.cycles.edges.getColor(), layout.cycles.edges.getAlpha(), LinePattern::DASHED);
     }
 }
 
-void drawBitLineLabels(cimg_library::CImg<Byte> &image,
+void drawBitLineLabels(Image &image,
                        const CircuitLayout &layout,
                        const CircuitData &circuitData,
                        const Structure &structure)
@@ -1397,7 +1400,7 @@ void drawBitLineLabels(cimg_library::CImg<Byte> &image,
         const Int xLabel = structure.getBitLabelsX() + xGap;
         const Int yLabel = structure.getCellPosition(0, bitIndex, QUANTUM).y0 + yGap;
 
-        image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getQbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
+        image.drawText(xLabel, yLabel, label, layout.bitLines.labels.getFontHeight(), layout.bitLines.labels.getQbitColor());
     }
 
     if (layout.bitLines.classical.isEnabled()) {
@@ -1410,7 +1413,7 @@ void drawBitLineLabels(cimg_library::CImg<Byte> &image,
             const Int xLabel = structure.getBitLabelsX() + xGap;
             const Int yLabel = structure.getCellPosition(0, 0, CLASSICAL).y0 + yGap;
 
-            image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
+            image.drawText(xLabel, yLabel, label, layout.bitLines.labels.getFontHeight(), layout.bitLines.labels.getCbitColor());
         } else {
             for (Int bitIndex = 0; bitIndex < circuitData.amountOfClassicalBits; bitIndex++) {
                 const Str label = "c" + to_string(bitIndex);
@@ -1421,13 +1424,13 @@ void drawBitLineLabels(cimg_library::CImg<Byte> &image,
                 const Int xLabel = structure.getBitLabelsX() + xGap;
                 const Int yLabel = structure.getCellPosition(0, bitIndex, CLASSICAL).y0 + yGap;
 
-                image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
+                image.drawText(xLabel, yLabel, label, layout.bitLines.labels.getFontHeight(), layout.bitLines.labels.getCbitColor());
             }
         }
     }
 }
 
-void drawBitLineEdges(cimg_library::CImg<Byte> &image,
+void drawBitLineEdges(Image &image,
                       const CircuitLayout &layout,
                       const CircuitData &circuitData,
                       const Structure &structure)
@@ -1443,7 +1446,7 @@ void drawBitLineEdges(cimg_library::CImg<Byte> &image,
 
         const Int y = structure.getCellPosition(0, bitIndex, QUANTUM).y0;
         for (Int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.getThickness(); yOffset++) {
-            image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor().data(), layout.bitLines.edges.getAlpha());
+            image.drawLine(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor(), layout.bitLines.edges.getAlpha());
         }
     }
 
@@ -1451,7 +1454,7 @@ void drawBitLineEdges(cimg_library::CImg<Byte> &image,
         if (layout.bitLines.classical.isGrouped()) {
             const Int y = structure.getCellPosition(0, 0, CLASSICAL).y0;
             for (Int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.getThickness(); yOffset++) {
-                image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor().data(), layout.bitLines.edges.getAlpha());
+                image.drawLine(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor(), layout.bitLines.edges.getAlpha());
             }
         } else {
             for (Int bitIndex = 0; bitIndex < circuitData.amountOfClassicalBits; bitIndex++) {
@@ -1459,14 +1462,14 @@ void drawBitLineEdges(cimg_library::CImg<Byte> &image,
 
                 const Int y = structure.getCellPosition(0, bitIndex, CLASSICAL).y0;
                 for (Int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.getThickness(); yOffset++) {
-                    image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor().data(), layout.bitLines.edges.getAlpha());
+                    image.drawLine(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor(), layout.bitLines.edges.getAlpha());
                 }
             }
         }
     }
 }
 
-void drawBitLine(cimg_library::CImg<Byte> &image,
+void drawBitLine(Image &image,
                  const CircuitLayout &layout,
                  const BitType bitType,
                  const Int row,
@@ -1494,12 +1497,12 @@ void drawBitLine(cimg_library::CImg<Byte> &image,
 
             drawWiggle(image, segment.first.start, segment.first.end, y, width, height, bitLineColor);
         } else {
-            image.draw_line(segment.first.start, y, segment.first.end, y, bitLineColor.data());
+            image.drawLine(segment.first.start, y, segment.first.end, y, bitLineColor.data());
         }
     }
 }
 
-void drawGroupedClassicalBitLine(cimg_library::CImg<Byte> &image,
+void drawGroupedClassicalBitLine(Image &image,
                                  const CircuitLayout &layout,
                                  const CircuitData &circuitData,
                                  const Structure &structure) {
@@ -1519,10 +1522,10 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<Byte> &image,
             drawWiggle(image, segment.first.start, segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(),
                 width, height, layout.bitLines.classical.getColor());
         } else {
-            image.draw_line(segment.first.start, y - layout.bitLines.classical.getGroupedLineGap(),
-                segment.first.end, y - layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor().data());
-            image.draw_line(segment.first.start, y + layout.bitLines.classical.getGroupedLineGap(),
-                segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor().data());
+            image.drawLine(segment.first.start, y - layout.bitLines.classical.getGroupedLineGap(),
+                segment.first.end, y - layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor());
+            image.drawLine(segment.first.start, y + layout.bitLines.classical.getGroupedLineGap(),
+                segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor());
         }
     }
 
@@ -1530,28 +1533,28 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<Byte> &image,
     // segment.
     Pair<EndPoints, Bool> firstSegment = structure.getBitLineSegments()[0];
     //TODO: store the dashed line parameters in the layout object
-    image.draw_line(firstSegment.first.start + 8, y + layout.bitLines.classical.getGroupedLineGap() + 2,
-        firstSegment.first.start + 12, y - layout.bitLines.classical.getGroupedLineGap() - 3, layout.bitLines.classical.getColor().data());
+    image.drawLine(firstSegment.first.start + 8, y + layout.bitLines.classical.getGroupedLineGap() + 2,
+        firstSegment.first.start + 12, y - layout.bitLines.classical.getGroupedLineGap() - 3, layout.bitLines.classical.getColor());
     const Str label = to_string(circuitData.amountOfClassicalBits);
     //TODO: fix these hardcoded parameters
     const Int xLabel = firstSegment.first.start + 8;
     const Int yLabel = y - layout.bitLines.classical.getGroupedLineGap() - 3 - 13;
-    image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
+    image.drawText(xLabel, yLabel, label, layout.bitLines.labels.getFontHeight(), layout.bitLines.labels.getCbitColor());
 }
 
-void drawWiggle(cimg_library::CImg<Byte> &image,
+void drawWiggle(Image &image,
                 const Int x0,
                 const Int x1,
                 const Int y,
                 const Int width,
                 const Int height,
                 const Color color) {
-    image.draw_line(x0,    y, x0 + width / 3, y - height, color.data());
-    image.draw_line(x0 + width / 3,        y - height,    x0 + width / 3 * 2,    y + height,    color.data());
-    image.draw_line(x0 + width / 3 * 2,    y + height,    x1, y, color.data());
+    image.drawLine(x0,                  y,          x0 + width / 3,     y - height, color));
+    image.drawLine(x0 + width / 3,      y - height, x0 + width / 3 * 2, y + height, color);
+    image.drawLine(x0 + width / 3 * 2,  y + height, x1,                 y,          color);
 }
 
-void drawLine(cimg_library::CImg<Byte> &image,
+void drawLine(Image &image,
               const Structure &structure,
               const Int cycleDuration,
               const Line &line,
@@ -1566,7 +1569,7 @@ void drawLine(cimg_library::CImg<Byte> &image,
 
         switch (segment.type) {
             case FLAT: {
-                image.draw_line(x0, yMiddle, x1, yMiddle, color.data());
+                image.drawLine(x0, yMiddle, x1, yMiddle, color);
             }
             break;
 
@@ -1616,11 +1619,11 @@ void drawLine(cimg_library::CImg<Byte> &image,
                     const Position2 currentSample = samplePositions[i];
                     const Position2 nextSample = samplePositions[i + 1];
 
-                    image.draw_line(currentSample.x, currentSample.y, nextSample.x, nextSample.y, color.data());
+                    image.drawLine(currentSample.x, currentSample.y, nextSample.x, nextSample.y, color);
                 }
                 // Draw line from last sample to next segment.
                 const Position2 lastSample = samplePositions[samplePositions.size() - 1];
-                image.draw_line(lastSample.x, lastSample.y, x1, yMiddle, color.data());
+                image.drawLine(lastSample.x, lastSample.y, x1, yMiddle, color);
             }
             break;
 
@@ -1638,7 +1641,7 @@ void drawLine(cimg_library::CImg<Byte> &image,
     }
 }
 
-void drawCycle(cimg_library::CImg<Byte> &image,
+void drawCycle(Image &image,
                const CircuitLayout &layout,
                const CircuitData &circuitData,
                const Structure &structure,
@@ -1657,7 +1660,7 @@ void drawCycle(cimg_library::CImg<Byte> &image,
     }
 }
 
-void drawGate(cimg_library::CImg<Byte> &image,
+void drawGate(Image &image,
               const CircuitLayout &layout,
               const CircuitData &circuitData,
               const GateProperties &gate,
@@ -1724,17 +1727,17 @@ void drawGate(cimg_library::CImg<Byte> &image,
             if (layout.measurements.isConnectionEnabled() && layout.bitLines.classical.isEnabled()) {
                 const Int groupedClassicalLineOffset = layout.bitLines.classical.isGrouped() ? layout.bitLines.classical.getGroupedLineGap() : 0;
 
-                image.draw_line(connectionPosition.x0 - layout.measurements.getLineSpacing(),
+                image.drawLine(connectionPosition.x0 - layout.measurements.getLineSpacing(),
                     connectionPosition.y0,
                     connectionPosition.x1 - layout.measurements.getLineSpacing(),
                     connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset,
-                    gateVisual.connectionColor.data());
+                    gateVisual.connectionColor);
 
-                image.draw_line(connectionPosition.x0 + layout.measurements.getLineSpacing(),
+                image.drawLine(connectionPosition.x0 + layout.measurements.getLineSpacing(),
                     connectionPosition.y0,
                     connectionPosition.x1 + layout.measurements.getLineSpacing(),
                     connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset,
-                    gateVisual.connectionColor.data());
+                    gateVisual.connectionColor);
 
                 const Int x0 = connectionPosition.x1 - layout.measurements.getArrowSize() / 2;
                 const Int y0 = connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset;
@@ -1742,10 +1745,10 @@ void drawGate(cimg_library::CImg<Byte> &image,
                 const Int y1 = connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset;
                 const Int x2 = connectionPosition.x1;
                 const Int y2 = connectionPosition.y1 - groupedClassicalLineOffset;
-                image.draw_triangle(x0, y0, x1, y1, x2, y2, gateVisual.connectionColor.data(), 1);
+                image.drawTriangle(x0, y0, x1, y1, x2, y2, gateVisual.connectionColor, 1);
             }
         } else {
-            image.draw_line(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateVisual.connectionColor.data());
+            image.drawLine(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateVisual.connectionColor);
         }
         QL_DOUT("Finished setting up multi-operand gate");
     }
@@ -1769,8 +1772,8 @@ void drawGate(cimg_library::CImg<Byte> &image,
 
                 // Draw the outline in the colors of the node.
                 const Node node = gateVisual.nodes.at(i);
-                image.draw_rectangle(x0, y0, x1, y1, node.backgroundColor.data(), layout.gateDurationOutlines.getFillAlpha());
-                image.draw_rectangle(x0, y0, x1, y1, node.outlineColor.data(), layout.gateDurationOutlines.getOutlineAlpha(), 0xF0F0F0F0);
+                image.drawRectangle(x0, y0, x1, y1, node.backgroundColor, layout.gateDurationOutlines.getFillAlpha());
+                image.drawRectangle(x0, y0, x1, y1, node.outlineColor, layout.gateDurationOutlines.getOutlineAlpha(), LinePattern::DASHED);
                 
                 //image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationAlpha);
                 //image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationOutLineAlpha, 0xF0F0F0F0);
@@ -1796,14 +1799,14 @@ void drawGate(cimg_library::CImg<Byte> &image,
             };
 
             switch (node.type) {
-                case NONE:        QL_DOUT("node.type = NONE"); break; // Do nothing.
-                case GATE:        QL_DOUT("node.type = GATE"); drawGateNode(image, layout, structure, node, cell); break;
-                case CONTROL:    QL_DOUT("node.type = CONTROL"); drawControlNode(image, layout, structure, node, cell); break;
-                case NOT:        QL_DOUT("node.type = NOT"); drawNotNode(image, layout, structure, node, cell); break;
-                case CROSS:        QL_DOUT("node.type = CROSS"); drawCrossNode(image, layout, structure, node, cell); break;
+                case NONE:      QL_DOUT("node.type = NONE"); break; // Do nothing.
+                case GATE:      QL_DOUT("node.type = GATE"); drawGateNode(image, layout, structure, node, cell); break;
+                case CONTROL:   QL_DOUT("node.type = CONTROL"); drawControlNode(image, layout, structure, node, cell); break;
+                case NOT:       QL_DOUT("node.type = NOT"); drawNotNode(image, layout, structure, node, cell); break;
+                case CROSS:     QL_DOUT("node.type = CROSS"); drawCrossNode(image, layout, structure, node, cell); break;
                 default:        QL_WOUT("Unknown gate display node type!"); break;
             }
-        } catch (const std::out_of_range &e) {
+        } catch (const Exception &e) {
             QL_WOUT(Str(e.what()));
             return;
         }
@@ -1812,7 +1815,7 @@ void drawGate(cimg_library::CImg<Byte> &image,
     }
 }
 
-void drawGateNode(cimg_library::CImg<Byte> &image,
+void drawGateNode(Image &image,
                   const CircuitLayout &layout,
                   const Structure &structure,
                   const Node &node,
@@ -1829,16 +1832,16 @@ void drawGateNode(cimg_library::CImg<Byte> &image,
     };
 
     // Draw the gate background.
-    image.draw_rectangle(position.x0, position.y0, position.x1, position.y1, node.backgroundColor.data());
-    image.draw_rectangle(position.x0, position.y0, position.x1, position.y1, node.outlineColor.data(), 1, 0xFFFFFFFF);
+    image.drawRectangle(position.x0, position.y0, position.x1, position.y1, node.backgroundColor, 1);
+    image.drawRectangle(position.x0, position.y0, position.x1, position.y1, node.outlineColor, 1, LinePattern::UNBROKEN);
 
     // Draw the gate symbol. The width and height of the symbol are calculated first to correctly position the symbol within the gate.
     Dimensions textDimensions = calculateTextDimensions(node.displayName, node.fontHeight);
-    image.draw_text(position.x0 + (node.radius * 2 - textDimensions.width) / 2, position.y0 + (node.radius * 2 - textDimensions.height) / 2,
-        node.displayName.c_str(), node.fontColor.data(), 0, 1, node.fontHeight);
+    image.drawText(position.x0 + (node.radius * 2 - textDimensions.width) / 2, position.y0 + (node.radius * 2 - textDimensions.height) / 2,
+        node.displayName, node.fontHeight, node.fontColor);
 }
 
-void drawControlNode(cimg_library::CImg<Byte> &image,
+void drawControlNode(Image &image,
                      const CircuitLayout &layout,
                      const Structure &structure,
                      const Node &node,
@@ -1849,10 +1852,10 @@ void drawControlNode(cimg_library::CImg<Byte> &image,
         cellPosition.y0 + cell.chunkOffset + structure.getCellDimensions().height / 2
     };
 
-    image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data());
+    image.drawOutlinedCircle(position.x, position.y, node.radius, node.backgroundColor, 1, LinePattern::UNBROKEN);
 }
 
-void drawNotNode(cimg_library::CImg<Byte> &image,
+void drawNotNode(Image &image,
                  const CircuitLayout &layout,
                  const Structure &structure,
                  const Node &node,
@@ -1866,7 +1869,7 @@ void drawNotNode(cimg_library::CImg<Byte> &image,
     };
 
     // Draw the outlined circle.
-    image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data(), 1, 0xFFFFFFFF);
+    image.drawOutlinedCircle(position.x, position.y, node.radius, node.backgroundColor, 1, LinePattern::UNBROKEN);
 
     // Draw two lines to represent the plus sign.
     const Int xHor0 = position.x - node.radius;
@@ -1877,11 +1880,11 @@ void drawNotNode(cimg_library::CImg<Byte> &image,
     const Int yVer0 = position.y - node.radius;
     const Int yVer1 = position.y + node.radius;
 
-    image.draw_line(xHor0, yHor, xHor1, yHor, node.backgroundColor.data());
-    image.draw_line(xVer, yVer0, xVer, yVer1, node.backgroundColor.data());
+    image.drawLine(xHor0, yHor, xHor1, yHor, node.backgroundColor);
+    image.drawLine(xVer, yVer0, xVer, yVer1, node.backgroundColor);
 }
 
-void drawCrossNode(cimg_library::CImg<Byte> &image,
+void drawCrossNode(Image &image,
                    const CircuitLayout &layout,
                    const Structure &structure,
                    const Node &node,
@@ -1898,8 +1901,8 @@ void drawCrossNode(cimg_library::CImg<Byte> &image,
     const Int x1 = position.x + node.radius;
     const Int y1 = position.y + node.radius;
 
-    image.draw_line(x0, y0, x1, y1, node.backgroundColor.data());
-    image.draw_line(x0, y1, x1, y0, node.backgroundColor.data());
+    image.drawLine(x0, y0, x1, y1, node.backgroundColor);
+    image.drawLine(x0, y1, x1, y0, node.backgroundColor);
 }
 
 } // namespace ql
