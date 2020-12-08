@@ -52,21 +52,29 @@ struct Position4 {
     utils::Int y0;
     utils::Int x1;
     utils::Int y1;
+
+    Position4() = delete;
 };
 
 struct Position2 {
     utils::Int x;
     utils::Int y;
+
+    Position2() = delete;
 };
 
 struct EndPoints {
     utils::Int start;
     utils::Int end;
+
+    EndPoints() = delete;
 };
 
 struct Dimensions {
     utils::Int width;
     utils::Int height;
+
+    Dimensions() = delete;
 };
 
 struct GateOperand {

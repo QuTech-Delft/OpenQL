@@ -53,12 +53,12 @@ using namespace utils;
 // [INTERACTION] output dot files for graphing software, default circle graph will also be shown
 // [INTERACTION] calculate angle to target qubit and place amount of interactions label accordingly
 // [MAPPING] add pseudogate containing virtual > real qubit mapping
-
-// -- IN PROGRESS ---
 // [GENERAL] replace primitives and containers with the ones specified in utils (int, double, bool, vector, map, string, etc.)
 // [GENERAL] fix compilation error due to merge
 // [GENERAL] replace cimg calls with cimg wrapper calls
 // [GENERAL] delete default constructors in position types in visualizer_types.h
+
+// -- IN PROGRESS ---
 // [GENERAL] update documentation
 
 // --- FUTURE WORK ---

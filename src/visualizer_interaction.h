@@ -18,10 +18,12 @@ namespace ql {
 struct InteractionsWithQubit {
     utils::Int qubitIndex;
     utils::Int amountOfInteractions;
+
+    InteractionsWithQubit() = delete;
 };
 
 struct Qubit {
-    utils::Int qubitIndex;
+    utils::Int qubitIndex = 0;
     utils::Vec<InteractionsWithQubit> interactions;
 };
 

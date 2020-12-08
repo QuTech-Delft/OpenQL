@@ -55,10 +55,7 @@ struct LineSegment {
     const Pulse pulse;
 };
 
-// enum PulseType {MICROWAVE, FLUX, READOUT};
-
 struct Line {
-    // LineType type = MICROWAVE;
     utils::Vec<LineSegment> segments;
     utils::Real maxAmplitude = 0;
 };
@@ -73,6 +70,8 @@ struct GatePulses {
     utils::Vec<utils::Real> microwave;
     utils::Vec<utils::Real> flux;
     utils::Vec<utils::Real> readout;
+
+    GatePulses() = delete;
 };
 
 struct PulseVisualization {
