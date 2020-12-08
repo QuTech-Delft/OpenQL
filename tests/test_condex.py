@@ -50,10 +50,10 @@ class Test_condex(unittest.TestCase):
         qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
-    def test_condex_mCx(self):
+    def test_condex_mccx(self):
         # check whether condex works with conditional gate created with base gate interface
         # parameters
-        v = 'mCx'
+        v = 'mccx'
         config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
         num_bregs = num_qubits
