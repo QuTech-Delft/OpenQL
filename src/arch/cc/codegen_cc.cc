@@ -8,7 +8,7 @@
  */
 
 #include "codegen_cc.h"
-#include "eqasm_backend_cc.h"
+//#include "eqasm_backend_cc.h"
 
 #include <version.h>
 #include <options.h>
@@ -23,6 +23,7 @@ namespace ql {
 #if OPT_FEEDBACK
 // FIXME: preliminary support based on '20200929_openql_feedback_design.docx'
 
+#if 0	// FIXME
 // temporary definitions for condition type that will be added to class gate
 enum {
     // 0 operands:
@@ -32,6 +33,7 @@ enum {
     // 2 operands
     cond_and, cond_nand, cond_or, cond_nor, cond_xor, cond_xnor
 };
+#endif
 
 typedef std::vector<int> tBitVars;
 

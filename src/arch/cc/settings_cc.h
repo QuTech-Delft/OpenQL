@@ -20,7 +20,7 @@ class settings_cc
 {
 public: // types
     typedef struct {
-        Json signal;         // a copy of the signal node found
+        Json signal;         		// a copy of the signal node found
         std::string path;           // path of the node, for reporting purposes
     } tSignalDef;
 
