@@ -19,7 +19,7 @@ struct InteractionsWithQubit {
     utils::Int qubitIndex;
     utils::Int amountOfInteractions;
 
-    InteractionsWithQubit() = delete;
+    // InteractionsWithQubit() = delete;
 };
 
 struct Qubit {
