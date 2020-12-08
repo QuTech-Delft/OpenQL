@@ -17,10 +17,24 @@ namespace cqasm {
 namespace lqt { using namespace ::cqasm::tree; }
 namespace lqs { using namespace ::cqasm::semantic; }
 namespace lqv { using namespace ::cqasm::values; }
+namespace lqtyp { using namespace ::cqasm::types; }
 namespace lqi { using namespace ::cqasm::instruction; }
 namespace lqa { using namespace ::cqasm::analyzer; }
+namespace lqp { using namespace ::cqasm::parser; }
 
 using namespace utils;
+
+/**
+ * Extracts the location annotation from a node and returns it as a string.
+ */
+static Str location(const lqt::Annotatable &node) {
+    auto loc = node.get_annotation_ptr<lqp::SourceLocation>();
+    if (loc) {
+        return to_string(*loc);
+    } else {
+        return "<unknown>";
+    }
+}
 
 /**
  * Annotation type for Variable nodes, used to store the mapping from cQASM
@@ -148,7 +162,7 @@ public:
             return itou(b->index[sgmq_index]->value);
 
         } else {
-            throw Exception("no known conversion for operand node to unsigned integer");
+            throw Exception("unexpected operand type at " + location(*operands[index]));
         }
     }
 };
@@ -177,7 +191,7 @@ public:
         } else if (auto r = operands[index]->as_const_int()) {
             val = r->value;
         } else {
-            throw Exception("no known conversion for operand node to real");
+            throw Exception("expected a real number at " + location(*operands[index]));
         }
         return convert_angle(val, method);
     }
@@ -573,6 +587,135 @@ public:
 };
 
 /**
+ * Asserts that the given value is a condition register, and returns its index.
+ */
+static UInt expect_condition_reg(const lqv::Value &val) {
+    if (auto v = val->as_variable_ref()) {
+        return v->variable->get_annotation<VarIndex>().index;
+    } else if (auto b = val->as_bit_refs()) {
+        if (b->index.size() != 1) {
+            throw Exception("expected a single condition at " + location(*val) + ", multiple found");
+        }
+        return itou(b->index[0]->value);
+    } else {
+        throw Exception("expected a condition variable " + location(*val));
+    }
+}
+
+/**
+ * Assign location information to the given node from the given set of values.
+ * FIXME: this should really be in libqasm itself, and be used in its default
+ *  function set.
+ */
+static void assign_location_from(lqt::Annotatable &node, const lqv::Values &vs) {
+    Opt<lqp::SourceLocation> loc;
+    for (const auto &v : vs) {
+        if (auto newloc = v->get_annotation_ptr<lqp::SourceLocation>()) {
+            if (loc) {
+                loc->expand_to_include(newloc->first_line, newloc->first_column);
+                loc->expand_to_include(newloc->last_line, newloc->last_column);
+            } else {
+                loc.emplace(*newloc);
+            }
+        }
+    }
+    if (loc) {
+        node.set_annotation<lqp::SourceLocation>(*loc);
+    }
+}
+
+/**
+ * Boolean NOT operator for conditions.
+ */
+static lqv::Value op_linv_b(const lqv::Values &v) {
+    lqv::Value retval;
+    if (auto c = v[0]->as_const_bool()) {
+        retval = lqt::make<lqv::ConstBool>(!c->value);
+    } else {
+        retval = lqt::make<lqv::Function>("operator!", v, lqt::make<lqtyp::Bool>());
+    }
+    assign_location_from(*retval, v);
+    return retval;
+}
+
+/**
+ * Boolean AND operator for conditions.
+ */
+static lqv::Value op_land_bb(const lqv::Values &v) {
+    lqv::Value retval;
+    auto a = v[0];
+    auto b = v[1];
+    if (b->as_const_bool()) {
+        std::swap(a, b);
+    }
+    if (auto ca = a->as_const_bool()) {
+        if (auto cb = b->as_const_bool()) {
+            retval = lqt::make<lqv::ConstBool>(ca->value && cb->value);
+        } else if (ca->value) {
+            retval = b;
+        } else {
+            retval = lqt::make<lqv::ConstBool>(false);
+        }
+    } else {
+        retval = lqt::make<lqv::Function>("operator&&", v, lqt::make<lqtyp::Bool>());
+    }
+    assign_location_from(*retval, v);
+    return retval;
+}
+
+/**
+ * Boolean OR operator for conditions.
+ */
+static lqv::Value op_lor_bb(const lqv::Values &v) {
+    lqv::Value retval;
+    auto a = v[0];
+    auto b = v[1];
+    if (b->as_const_bool()) {
+        std::swap(a, b);
+    }
+    if (auto ca = a->as_const_bool()) {
+        if (auto cb = b->as_const_bool()) {
+            retval = lqt::make<lqv::ConstBool>(ca->value || cb->value);
+        } else if (ca->value) {
+            retval = lqt::make<lqv::ConstBool>(true);
+        } else {
+            retval = b;
+        }
+    } else {
+        retval = lqt::make<lqv::Function>("operator||", v, lqt::make<lqtyp::Bool>());
+    }
+    assign_location_from(*retval, v);
+    return retval;
+}
+
+/**
+ * Boolean XOR operator for conditions.
+ */
+static lqv::Value op_lxor_bb(const lqv::Values &v) {
+    lqv::Value retval;
+    auto a = v[0];
+    auto b = v[1];
+    if (b->as_const_bool()) {
+        std::swap(a, b);
+    }
+    if (auto ca = a->as_const_bool()) {
+        if (auto cb = b->as_const_bool()) {
+            retval = lqt::make<lqv::ConstBool>(ca->value || cb->value);
+        } else if (ca->value) {
+            lqv::Values vs;
+            vs.add(b);
+            retval = lqt::make<lqv::Function>("operator!", vs, lqt::make<lqtyp::Bool>());
+        } else {
+            retval = b;
+        }
+    } else {
+        retval = lqt::make<lqv::Function>("operator^^", v, lqt::make<lqtyp::Bool>());
+    }
+    assign_location_from(*retval, v);
+    return retval;
+}
+
+/**
  * Private implementation for the opaque public Reader class; as in it's not in
  * public headers, reducing compile time.
  */
@@ -684,6 +827,10 @@ private:
         // Construct the actual analyzer.
         auto a = lqa::Analyzer("1.1");
         a.register_default_functions_and_mappings();
+        a.register_function("operator!", "b", op_linv_b);
+        a.register_function("operator&&", "bb", op_land_bb);
+        a.register_function("operator^^", "bb", op_lxor_bb);
+        a.register_function("operator||", "bb", op_lor_bb);
         for (const auto &gate : gateset) {
             a.register_instruction(gate->cq_insn);
             a.register_instruction("skip", "i", false, false);
@@ -740,7 +887,7 @@ private:
             } else if (var->typ->as_bool()) {
                 var->set_annotation(VarIndex{num_bregs++});
             } else {
-                throw Exception("only int, bool, and qubit variables are supported by OpenQL");
+                throw Exception("only int, bool, and qubit variables are supported by OpenQL (" + location(*var) + ")");
             }
         }
         if (num_qubits > platform.qubit_number) {
@@ -754,11 +901,10 @@ private:
             QL_IOUT("increasing program creg count from " << program.creg_count << " to " << num_cregs);
             program.creg_count = num_cregs;
         }
-        /* TODO: breg support
         if (num_bregs > program.breg_count) {
             QL_IOUT("increasing program breg count from " << program.breg_count << " to " << num_bregs);
             program.breg_count = num_bregs;
-        } */
+        }
 
         // Add the subcircuits one by one.
         for (const auto &sc : ar.root->subcircuits) {
@@ -772,8 +918,8 @@ private:
                 sc->name + "_" + to_string(subcircuit_count++),
                 platform,
                 num_qubits,
-                num_cregs/*, TODO
-                num_bregs*/
+                num_cregs,
+                num_bregs
             );
 
             // Set the cycle numbers in the OpenQL circuit based on cQASM's
@@ -797,10 +943,10 @@ private:
                     QL_ASSERT(ops.size() == 1);
                     auto ci = ops.at(0)->as_const_int();
                     if (!ci) {
-                        throw Exception("skip durations must be constant");
+                        throw Exception("skip durations must be constant at " + location(*ops.at(0)));
                     }
                     if (ci->value < 1) {
-                        throw Exception("skip durations must be positive");
+                        throw Exception("skip durations must be positive at " + location(*ops.at(0)));
                     }
                     cycle += ci->value;
                     continue;
@@ -811,13 +957,52 @@ private:
                     const auto &gcr = insn->instruction->get_annotation<GateConversionRule::Ptr>();
 
                     // Handle gate conditions.
+                    cond_type_t cond;
+                    Vec<UInt> cond_bregs;
                     if (auto ccb = insn->condition->as_const_bool()) {
-                        if (!ccb->value) {
-                            continue;
+                        if (ccb->value) {
+                            cond = e_cond_type::cond_always;
+                        } else {
+                            cond = e_cond_type::cond_never;
                         }
+                    } else if (auto fun = insn->condition->as_function()) {
+                        Bool invert = false;
+                        while (fun->name == "operator!") {
+                            fun = fun->operands[0]->as_function();
+                            invert = !invert;
+                            if (!fun) {
+                                cond_bregs.push_back(expect_condition_reg(fun->operands[0]));
+                                if (invert) {
+                                    cond = e_cond_type::cond_not;
+                                } else {
+                                    cond = e_cond_type::cond;
+                                }
+                            }
+                        }
+                        if (fun->name == "operator&&") {
+                            if (invert) {
+                                cond = e_cond_type::cond_nand;
+                            } else {
+                                cond = e_cond_type::cond_and;
+                            }
+                        } else if (fun->name == "operator||") {
+                            if (invert) {
+                                cond = e_cond_type::cond_nor;
+                            } else {
+                                cond = e_cond_type::cond_or;
+                            }
+                        } else if (fun->name == "operator^^") {
+                            if (invert) {
+                                cond = e_cond_type::cond_nxor;
+                            } else {
+                                cond = e_cond_type::cond_xor;
+                            }
+                        }
+                        cond_bregs.push_back(expect_condition_reg(fun->operands[0]));
+                        cond_bregs.push_back(expect_condition_reg(fun->operands[1]));
                     } else {
-                        // TODO conditional gate support
-                        throw Exception("conditional gates are not supported by OpenQL");
+                        cond_bregs.push_back(expect_condition_reg(insn->condition));
+                        cond = e_cond_type::cond;
                     }
 
                     // Figure out if this instruction uses
@@ -902,7 +1087,7 @@ private:
                             }
 
                             // Add the gate to the kernel.
-                            kernel.gate(gcr->ql_name, cur_qubits, cregs, duration, angle /*, bregs TODO */);
+                            kernel.gate(gcr->ql_name, cur_qubits, cregs, duration, angle, bregs, cond, cond_bregs);
 
                             // If that added more than one gate, invalidate
                             // timing information.
