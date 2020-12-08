@@ -59,6 +59,7 @@ using namespace utils;
 // [GENERAL] delete default constructors in position types in visualizer_types.h
 
 // -- IN PROGRESS ---
+// [GENERAL] fix isEdgeAlreadyDrawn() build error on CI
 // [GENERAL] update documentation
 
 // --- FUTURE WORK ---
