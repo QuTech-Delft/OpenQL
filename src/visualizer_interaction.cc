@@ -69,8 +69,7 @@ void visualizeInteractionGraph(const quantum_program* program, const VisualizerC
         for (const Pair<Qubit, Position2> &qubit : qubitPositions) {
             const Position2 qubitPosition = qubit.second;
             for (const InteractionsWithQubit &interactionsWithQubit : qubit.first.interactions) {
-                // if (isEdgeAlreadyDrawn(drawnEdges, qubit.first.qubitIndex, interactionsWithQubit.qubitIndex))
-                if (isEdgeAlreadyDrawn(qubit.first.qubitIndex, interactionsWithQubit.qubitIndex))
+                if (isEdgeAlreadyDrawn(drawnEdges, qubit.first.qubitIndex, interactionsWithQubit.qubitIndex))
                     continue;
                 
                 drawnEdges.push_back( {qubit.first.qubitIndex, interactionsWithQubit.qubitIndex } );
@@ -138,8 +137,7 @@ void generateAndSaveDOTFile(const Vec<Qubit> &qubits) {
         Vec<Pair<Int, Int>> drawnEdges;
         for (const Qubit &qubit : qubits) {
             for (const InteractionsWithQubit &target : qubit.interactions) {
-                // if (isEdgeAlreadyDrawn(drawnEdges, qubit.qubitIndex, target.qubitIndex))
-                if (isEdgeAlreadyDrawn(qubit.qubitIndex, target.qubitIndex))
+                if (isEdgeAlreadyDrawn(drawnEdges, qubit.qubitIndex, target.qubitIndex))
                     continue;
                 drawnEdges.push_back( {qubit.qubitIndex, target.qubitIndex } );
 
@@ -284,7 +282,8 @@ Vec<Qubit> findQubitInteractions(const Vec<GateProperties> &gates, const Int amo
 //     return false;
 // }
 
-Bool isEdgeAlreadyDrawn(const Int first, const Int second) {
+Bool isEdgeAlreadyDrawn(const Vec<Pair<Int, Int>> &drawnEdges, const Int first, const Int second) {
+    QL_IOUT(drawnEdges.size());
     return false;
 }
 
