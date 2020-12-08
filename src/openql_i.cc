@@ -319,10 +319,19 @@ void Kernel::condgate(
     else if (condstring == "COND_NOR") condvalue = ql::cond_nor;
     else if (condstring == "COND_XOR") condvalue = ql::cond_xor;
     else if (condstring == "COND_NXOR") condvalue = ql::cond_nxor;
-    else
-        std::cerr << "[OPENQL] " << __FILE__ << ":" << __LINE__
-                  << " Error: Unknown condition " << condstring << std::endl;
-    kernel->gate(name, qubits, {}, 0, 0.0, {}, condvalue, condregs);
+    else {
+        throw std::runtime_error("Error: Unknown condition " + condstring);
+    }
+    kernel->gate(
+        name,
+        {qubits.begin(), qubits.end()},
+        {},
+        0,
+        0.0,
+        {},
+        condvalue,
+        {condregs.begin(), condregs.end()}
+    );
 }
 
 void Kernel::gate(const Unitary &u, const std::vector<size_t> &qubits) {
