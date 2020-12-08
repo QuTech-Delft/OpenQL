@@ -3,6 +3,8 @@ version 1.0
 qubits 7
 
 ._0
+    measz q[1], b[8]
+    measz q[0], b[7]
     x q[1]
     cond(b[8]) z q[1]
     y q[1]

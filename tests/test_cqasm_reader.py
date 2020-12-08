@@ -126,14 +126,17 @@ class TestcQasmReader(unittest.TestCase):
 
     def test_conditions(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+        cqasm_config_fn = os.path.join(curdir, 'cqasm_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         number_qubits = platform.get_qubit_number()
         name = 'test_cqasm_conditions'
         program = ql.Program(name, platform, number_qubits)
-        qasm_rdr = ql.cQasmReader(platform, program)
+        qasm_rdr = ql.cQasmReader(platform, program, cqasm_config_fn)
         qasm_str = "version 1.1\n"                  \
                    "var qa, qb: qubit\n"            \
                    "var ca, cb: bool\n"             \
+                   "measure qa, ca\n"               \
+                   "measure qb, cb\n"               \
                    "cond(true) x qa\n"              \
                    "cond(false) y qa\n"             \
                    "cond(ca) z qa\n"                \

@@ -376,6 +376,7 @@ private:
         args.reset();
         if (json.is_string() && json.get<Str>() == "all") {
             all_args = true;
+            return;
         } else if (!json.is_array()) {
             throw Exception("invalid value for ql_qubits/ql_cregs/ql_bregs: " + to_string(json));
         }
@@ -957,7 +958,7 @@ private:
                     const auto &gcr = insn->instruction->get_annotation<GateConversionRule::Ptr>();
 
                     // Handle gate conditions.
-                    cond_type_t cond;
+                    cond_type_t cond = e_cond_type::cond_always;
                     Vec<UInt> cond_bregs;
                     if (auto ccb = insn->condition->as_const_bool()) {
                         if (ccb->value) {
