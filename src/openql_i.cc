@@ -282,7 +282,16 @@ void Kernel::gate(
     else
         std::cerr << "[OPENQL] " << __FILE__ << ":" << __LINE__
                   << " Error: Unknown condition " << condstring << std::endl;
-    kernel->gate(name, {qubits.begin(), qubits.end()}, {}, duration, angle, bregs, condvalue, condregs);
+    kernel->gate(
+        name,
+        {qubits.begin(), qubits.end()},
+        {},
+        duration,
+        angle,
+        {bregs.begin(), bregs.end()},
+        condvalue,
+        {condregs.begin(), condregs.end()}
+    );
 }
 
 void Kernel::gate(
