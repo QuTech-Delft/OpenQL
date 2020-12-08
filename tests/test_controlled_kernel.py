@@ -13,6 +13,10 @@ ql.set_option('log_level', 'LOG_WARNING')
 
 class Test_controlled_kernel(unittest.TestCase):
 
+    @classmethod
+    def setUp(self):
+        ql.initialize()
+
     def test_controlled_single_qubit_gates(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)

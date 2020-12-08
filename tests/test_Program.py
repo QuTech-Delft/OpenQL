@@ -11,7 +11,8 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_program(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
@@ -85,7 +86,6 @@ class Test_program(unittest.TestCase):
 
 
     def test_simple_program(self):
-        self.setUpClass()
         nqubits = 2
         k = ql.Kernel("kernel1", platf, nqubits)
         k.prepz(0)
@@ -105,7 +105,6 @@ class Test_program(unittest.TestCase):
 
 
     def test_5qubit_program(self):
-        self.setUpClass()
         nqubits=5
         p = ql.Program("a_program", platf, nqubits)
         k = ql.Kernel("a_kernel", platf, nqubits)
@@ -128,7 +127,6 @@ class Test_program(unittest.TestCase):
 
     # @unittest.skip('Gate by name not implemented')
     def test_allxy_program(self):
-        self.setUpClass()
         nqubits=7
         p = ql.Program('AllXY', platf, nqubits)
         k = ql.Kernel('AllXY_q0', platf, nqubits)

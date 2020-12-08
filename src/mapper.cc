@@ -973,12 +973,13 @@ Bool Past::new_gate(
     const Vec<UInt> &qubits,
     const Vec<UInt> &cregs,
     UInt duration,
-    Real angle
+    Real angle,
+    const Vec<UInt> &bregs
 ) const {
     Bool added;
     QL_ASSERT(circ.empty());
     QL_ASSERT(kernelp->c.empty());
-    added = kernelp->gate_nonfatal(gname, qubits, cregs, duration, angle);   // creates gates in kernelp->c
+    added = kernelp->gate_nonfatal(gname, qubits, cregs, duration, angle, bregs);   // creates gates in kernelp->c
     circ = kernelp->c;
     kernelp->c.clear();
     for (auto gp : circ) {
@@ -1265,9 +1266,9 @@ void Past::MakeReal(gate *gp, circuit &circ) {
         real_gname.append("_real");
     }
 
-    Bool created = new_gate(circ, real_gname, real_qubits, gp->creg_operands, gp->duration, gp->angle);
+    Bool created = new_gate(circ, real_gname, real_qubits, gp->creg_operands, gp->duration, gp->angle, gp->breg_operands);
     if (!created) {
-        created = new_gate(circ, gname, real_qubits, gp->creg_operands, gp->duration, gp->angle);
+        created = new_gate(circ, gname, real_qubits, gp->creg_operands, gp->duration, gp->angle, gp->breg_operands);
         if (!created) {
             QL_FATAL("MakeReal: failed creating gate " << real_gname << " or " << gname);
         }
@@ -1283,9 +1284,9 @@ void Past::MakePrimitive(gate *gp, circuit &circ) const {
     stripname(gname);
     Str prim_gname = gname;
     prim_gname.append("_prim");
-    Bool created = new_gate(circ, prim_gname, gp->operands, gp->creg_operands, gp->duration, gp->angle);
+    Bool created = new_gate(circ, prim_gname, gp->operands, gp->creg_operands, gp->duration, gp->angle, gp->breg_operands);
     if (!created) {
-        created = new_gate(circ, gname, gp->operands, gp->creg_operands, gp->duration, gp->angle);
+        created = new_gate(circ, gname, gp->operands, gp->creg_operands, gp->duration, gp->angle, gp->breg_operands);
         if (!created) {
             QL_FATAL("MakePrimtive: failed creating gate " << prim_gname << " or " << gname);
         }
@@ -1588,9 +1589,9 @@ void Future::Init(const quantum_platform *p) {
 }
 
 // Set/switch input to the provided circuit
-// nq and nc are parameters because nc may not be provided by platform but by kernel
+// nq, nc and nb are parameters because nc/nb may not be provided by platform but by kernel
 // the latter should be updated when mapping multiple kernels
-void Future::SetCircuit(quantum_kernel &kernel, Scheduler &sched, UInt nq, UInt nc) {
+void Future::SetCircuit(quantum_kernel &kernel, Scheduler &sched, UInt nq, UInt nc, UInt nb) {
     QL_DOUT("Future::SetCircuit ...");
     schedp = &sched;
     Str maplookaheadopt = options::get("maplookahead");
@@ -1598,7 +1599,7 @@ void Future::SetCircuit(quantum_kernel &kernel, Scheduler &sched, UInt nq, UInt 
         input_gatepv = kernel.c;                                // copy to free original circuit to allow outputing to
         input_gatepp = input_gatepv.begin();                    // iterator set to start of input circuit copy
     } else {
-        schedp->init(kernel.c, *platformp, nq, nc);             // fills schedp->graph (dependence graph) from all of circuit
+        schedp->init(kernel.c, *platformp, nq, nc, nb);         // fills schedp->graph (dependence graph) from all of circuit
         // and so also the original circuit can be output to after this
         for (auto &gp : kernel.c) {
             scheduled.set(gp) = false;   // none were scheduled
@@ -2839,7 +2840,7 @@ void Mapper::MapCircuit(quantum_kernel &kernel, Virt2Real &v2r) {
     Scheduler sched;        // new scheduler instance (from src/scheduler.h) used for its dependence graph
 
     future.Init(platformp);
-    future.SetCircuit(kernel, sched, nq, nc); // constructs depgraph, initializes avlist, ready for producing gates
+    future.SetCircuit(kernel, sched, nq, nc, nb); // constructs depgraph, initializes avlist, ready for producing gates
     kernel.c.clear();       // future has copied kernel.c to private data; kernel.c ready for use by new_gate
     kernelp = &kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
@@ -2894,6 +2895,7 @@ void Mapper::Map(quantum_kernel& kernel) {
     QL_COUT("Mapping kernel " << kernel.name << " [START]");
     QL_DOUT("... kernel original virtual number of qubits=" << kernel.qubit_count);
     nc = kernel.creg_count;     // in absence of platform creg_count, take it from kernel, i.e. from OpenQL program
+    nb = kernel.breg_count;     // in absence of platform breg_count, take it from kernel, i.e. from OpenQL program
     kernelp = NULL;             // no new_gates until kernel.c has been copied
 
     Virt2Real   v2r;            // current mapping while mapping this kernel
@@ -2956,6 +2958,7 @@ void Mapper::Init(const quantum_platform *p) {
     platformp = p;
     nq = p->qubit_number;
     // nc = p->creg_number;  // nc should come from platform, but doesn't; is taken from kernel in Map
+    // nb = p->breg_number;  // nb should come from platform, but doesn't; is taken from kernel in Map
     RandomInit();
     // DOUT("... platform/real number of qubits=" << nq << ");
     cycle_time = p->cycle_time;

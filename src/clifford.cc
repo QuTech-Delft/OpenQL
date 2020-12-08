@@ -67,16 +67,15 @@ public:
         for (auto gp : input_circuit) {
             QL_DOUT("... gate: " << gp->qasm());
 
-            if (gp->type() == gate_type_t::__classical_gate__ || gp->operands.empty()) {
-                // classical gates
-                // and quantum gates like wait/display without operands
-                // interpret cliffstate and create corresponding gate sequence, for all qubits
+            if (
+                gp->type() == ql::gate_type_t::__classical_gate__   // classical gates (really being pessimistic here about these)
+                || gp->operands.empty()                             // gates without operands which may affect ALL qubits
+            ) {
+                // sync all qubits: create gate sequences corresponding to what was accumulated in cliffstate, for all qubits
                 sync_all(kernel);
                 kernel.c.push_back(gp);
-            } else if (gp->operands.size() != 1) {                    // gates like CNOT/CZ/TOFFOLI
-                // non-unary quantum gates like wait/cnot/cz/toffoli
-                // interpret cliffstate and emit corresponding gate sequence, for each operand qubit
-                // and then emit new gate
+            } else if (gp->operands.size() != 1) {                 // gates like CNOT/CZ/TOFFOLI
+                // sync particular qubits: create gate sequences corresponding to what was accumulated in cliffstate, for those particular operand qubits
                 for (auto q : gp->operands) {
                     sync(kernel, q);
                 }
@@ -86,7 +85,15 @@ public:
                 UInt q = gp->operands[0];
                 Str gname = gp->name;
                 Int cs = string2cs(gname);
-                if (cs != -1) {
+                if (
+                    cs == -1                                        // non-clifford unary gates (wait, meas, prepz, ...)
+                    || gp->is_conditional()                         // conditional unary (clifford) gates
+                ) {
+                    // sync particular single qubit: create gate sequence corresponding to what was accumulated in cliffstate, for this particular operand qubit
+                    QL_DOUT("... unary gate not a clifford gate or conditional: " << gp->qasm());
+                    sync(kernel, q);
+                    kernel.c.push_back(gp);
+                } else {
                     // unary quantum clifford gates like x/y/z/h/xm90/y90/s/...
                     // don't emit gate but accumulate gate in cliffstate
                     // also record accumulated cycles to compute savings
@@ -94,19 +101,12 @@ public:
                     Int csq = cliffstate[q];
                     QL_DOUT("... from " << cs2string(csq) << " to " << cs2string(clifftrans[csq][cs]));
                     cliffstate[q] = clifftrans[csq][cs];
-                } else {
-                    // unary quantum non-clifford gates like wait/meas/prepz/...
-                    // interpret cliffstate and create corresponding gate sequence, for this operand qubit
-                    // before new gate is emitted
-                    QL_DOUT("... unary gate not a clifford gate: " << gp->qasm());
-                    sync(kernel, q);
-                    kernel.c.push_back(gp);
                 }
             }
             QL_DOUT("... gate: " << gp->qasm() << " DONE");
         }
         sync_all(kernel);
-	    kernel.cycles_valid = false;
+        kernel.cycles_valid = false;
 
         QL_DOUT("Clifford " << passname << " on kernel " << kernel.name << " saved " << total_saved << " cycles [DONE]");
     }
@@ -262,7 +262,7 @@ private:
         }
     }
 
-};	// class Clifford
+}; // class Clifford
 
 /**
  * Clifford sequence optimizer.

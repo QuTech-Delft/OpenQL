@@ -8,6 +8,7 @@
 #include "utils/str.h"
 #include "utils/vec.h"
 #include "utils/opt.h"
+#include "gate.h"
 #include "circuit.h"
 #include "classical.h"
 #include "hardware_configuration.h"
@@ -30,6 +31,7 @@ public: // FIXME: should be private
     utils::UInt             iterations;
     utils::UInt             qubit_count;
     utils::UInt             creg_count;
+    utils::UInt             breg_count;
     kernel_type_t           type;
     circuit                 c;
     utils::Bool             cycles_valid; // used in bundler to check if kernel has been scheduled
@@ -43,7 +45,8 @@ public:
         const utils::Str &name,
         const quantum_platform &platform,
         utils::UInt qcount,
-        utils::UInt ccount=0
+        utils::UInt ccount=0,
+        utils::UInt bcount=0
     );
 
     // FIXME: add constructor which allows setting iterations and type, and use that in program.h::add_for(), etc
@@ -77,6 +80,7 @@ public:
     void mry90(utils::UInt qubit);
     void ry180(utils::UInt qubit);
     void measure(utils::UInt qubit);
+    void measure(utils::UInt qubit, utils::UInt bit);
     void prepz(utils::UInt qubit);
     void cnot(utils::UInt qubit1, utils::UInt qubit2);
     void cz(utils::UInt qubit1, utils::UInt qubit2);
@@ -97,8 +101,11 @@ private:
         const utils::Str &gname,
         const utils::Vec<utils::UInt> &qubits,
         const utils::Vec<utils::UInt> &cregs = {},
-        utils::UInt duration=0,
-        utils::Real angle=0.0
+        utils::UInt duration = 0,
+        utils::Real angle = 0.0,
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
     // if a specialized custom gate ("e.g. cz q0,q4") is available, add it to circuit and return true
@@ -109,8 +116,11 @@ private:
         const utils::Str &gname,
         const utils::Vec<utils::UInt> &qubits,
         const utils::Vec<utils::UInt> &cregs = {},
-        utils::UInt duration=0,
-        utils::Real angle=0.0
+        utils::UInt duration = 0,
+        utils::Real angle = 0.0,
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
     // FIXME: move to class composite_gate?
@@ -130,7 +140,10 @@ private:
     utils::Bool add_spec_decomposed_gate_if_available(
         const utils::Str &gate_name,
         const utils::Vec<utils::UInt> &all_qubits,
-        const utils::Vec<utils::UInt> &cregs = {}
+        const utils::Vec<utils::UInt> &cregs = {},
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
     // if composite gate: "e.g. cz %0 %1" available, return true;
@@ -142,7 +155,10 @@ private:
     utils::Bool add_param_decomposed_gate_if_available(
         const utils::Str &gate_name,
         const utils::Vec<utils::UInt> &all_qubits,
-        const utils::Vec<utils::UInt> &cregs = {}
+        const utils::Vec<utils::UInt> &cregs = {},
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
 public:
@@ -154,7 +170,10 @@ public:
         const utils::Vec<utils::UInt> &qubits = {},
         const utils::Vec<utils::UInt> &cregs = {},
         utils::UInt duration = 0,
-        utils::Real angle = 0.0
+        utils::Real angle = 0.0,
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
     // terminology:
@@ -178,7 +197,7 @@ public:
     //      e.g. whether "cz" is in gate_definition as non-composite gate
     // if not, check if a default gate is available
     //      e.g. whether "cz" is available as default gate
-    // if not, then error
+    // if not, then FATAL (for gate()) or return false (for gate_nonfatal())
     /**
      * custom gate with arbitrary number of operands
      * as gate above but return whether gate was successfully matched in gate_definition, next to gate in kernel.c
@@ -188,7 +207,10 @@ public:
         const utils::Vec<utils::UInt> &qubits = {},
         const utils::Vec<utils::UInt> &cregs = {},
         utils::UInt duration = 0,
-        utils::Real angle = 0.0
+        utils::Real angle = 0.0,
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
     // to add unitary to kernel

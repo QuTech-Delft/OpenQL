@@ -7,14 +7,9 @@ output_dir = os.path.join(curdir, 'test_output')
 
 class Test_options(unittest.TestCase):
 
-    def tearDown(self):
-        ql.set_option('log_level', 'LOG_NOTHING')
-        ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ALAP')
-        ql.set_option('scheduler_uniform', 'no')
-        ql.set_option('use_default_gates', 'yes')
-        ql.set_option('decompose_toffoli', 'no')
-
+    @classmethod
+    def setUp(self):
+        ql.initialize()
 
     def test_set_all_options(self):
         # try to set all legal values of options

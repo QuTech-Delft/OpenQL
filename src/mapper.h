@@ -471,7 +471,8 @@ public:
         const utils::Vec<utils::UInt> &qubits,
         const utils::Vec<utils::UInt> &cregs = {},
         utils::UInt duration = 0,
-        utils::Real angle = 0.0
+        utils::Real angle = 0.0,
+        const utils::Vec<utils::UInt> &bregs = {}
     ) const;
 
     // return number of swaps added to this past
@@ -720,9 +721,9 @@ public:
     void Init(const quantum_platform *p);
 
     // Set/switch input to the provided circuit
-    // nq and nc are parameters because nc may not be provided by platform but by kernel
+    // nq, nc and nb are parameters because nc/nb may not be provided by platform but by kernel
     // the latter should be updated when mapping multiple kernels
-    void SetCircuit(quantum_kernel &kernel, Scheduler &sched, utils::UInt nq, utils::UInt nc);
+    void SetCircuit(quantum_kernel &kernel, Scheduler &sched, utils::UInt nq, utils::UInt nc, utils::UInt nb);
 
     // Get from avlist all gates that are non-quantum into nonqlg
     // Non-quantum gates include: classical, and dummy (SOURCE/SINK)
@@ -820,6 +821,7 @@ private:
 
     utils::UInt             nq;             // number of qubits in the platform, number of real qubits
     utils::UInt             nc;             // number of cregs in the platform, number of classical registers
+    utils::UInt             nb;             // number of bregs in the platform, number of bit registers
     utils::UInt             cycle_time;     // length in ns of a single cycle of the platform
                                             // is divisor of duration in ns to convert it to cycles
     Grid                    grid;           // current grid

@@ -1,34 +1,33 @@
 /** \file
  * ASAP/ALAP critical path and UNIFORM scheduling with and without resource
  * constraint.
- *
- * Below there really are two classes: the dependence graph definition and the
- * scheduler definition. All schedulers require dependence graph creation as
+ * 
+ * Below there really are two classes: the dependency graph definition and the
+ * scheduler definition. All schedulers require dependency graph creation as
  * preprocessor, and don't modify it. For each kernel's circuit a private
- * dependence graph is created. The schedulers modify the order of gates in the
+ * dependency graph is created. The schedulers modify the order of gates in the
  * circuit, initialize the cycle field of each gate, and generate/return the
  * bundles, a list of bundles in which gates starting in the same cycle are
  * grouped.
  *
- * The dependence graph (represented by the graph field below) is created in the
+ * The dependency graph (represented by the graph field below) is created in the
  * Init method, and the graph is constructed from and referring to the gates in
  * the sequence of gates in the kernel's circuit. In this graph, the nodes refer
- * to the gates in the circuit, and the edges represent the dependences between
+ * to the gates in the circuit, and the edges represent the dependencies between
  * two gates. Init scans the gates of the circuit from start to end, inspects
  * their parameters, and for each gate depending on the gate type and parameter
  * value and previous gates operating on the same parameters, it creates a
- * dependence of the current gate on that previous gate. Such a dependence has a
+ * dependency of the current gate on that previous gate. Such a dependency has a
  * type (RAW, WAW, etc.), cause (the qubit or classical register used as
  * parameter), and a weight (the cycles the previous gate takes to complete its
  * execution, after which the current gate can start execution).
  *
- * In dependence graph creation, each qubit/classical register (creg) use in
- * each gate is seen as an "event". The following events are distinguished:
+ * In dependency graph creation, each qubit/classical register (creg,breg) use
+ * in each gate is seen as an "event". The following events are distinguished:
  *
  *  - W for Write: such a use must sequentialize with any previous and later
- *    uses of the same qubit/creg. This is the default for qubits in a gate and
- *    for assignment/modifications in classical code.
- *
+ *    uses of the same qubit/creg/breg. This is the default for qubits in a gate
+ *    and for assignment/modifications in classical code.
  *  - R for Read: such uses can be arbitrarily reordered (as long as other
  *    dependencies allow that). This event applies to all operands of CZ, the
  *    first operand of CNOT gates, and to all reads in classical code. It also
@@ -37,36 +36,32 @@
  *    CZ(a,c), CZ(d,a) and CNOT(a,e) all commute.
  *  - D: such uses can be arbitrarily reordered but are sequentialized with W
  *    and R events on the same qubit. This event applies to the second operand
- *    of CNOT gates: CNOT(a,d) and CNOT(b,d) commute.
+ *    of CNOT gates: CNOT(a,d) and CNOT(b,d) commute. With this, we effectively
+ *    get the following table of event transitions (from left-bottom to
+ *    right-up), in which 'no' indicates no dependency from left event to top
+ *    event and '/' indicates a dependency from left to top.
  *
- * With this, we effectively get the following table of event transitions (from
- * left-bottom to right-up), in which 'no' indicates no dependence from left
- * event to top event and '/' indicates a dependence from left to top.
+ *             W   R   D                  w   R   D
+ *        W    /   /   /              W   WAW RAW DAW
+ *        R    /   no  /              R   WAR RAR DAR
+ *        D    /   /   no             D   WAD RAD DAD
  *
- * ```
- *      W   R   D                  w   R   D
- * W    /   /   /              W   WAW RAW DAW
- * R    /   no  /              R   WAR RAR DAR
- * D    /   /   no             D   WAD RAD DAD
- * ```
- *
- * When the 'no' dependences are created (RAR and/or DAD), the respective
+ * When the 'no' dependencies are created (RAR and/or DAD), the respective
  * commutatable gates are sequentialized according to the original circuit's
  * order. With all 'no's replaced by '/', all event types become equivalent
  * (i.e. as if they were Write).
  *
  * Schedulers come essentially in the following forms:
- *
- *  - ASAP: a plain forward scheduler using dependences only, aiming at
- *    execution each gate as soon as possible.
+ *  - ASAP: a plain forward scheduler using dependencies only, aiming at
+ *    execution each gate as soon as possible
  *  - ASAP with resource constraints: similar but taking resource constraints of
- *    the gates of the platform into account.
+ *    the gates of the platform into account
  *  - ALAP: as ASAP but then aiming at execution of each gate as late as
- *    possible.
+ *    possible
  *  - ALAP with resource constraints: similar but taking resource constraints of
- *    the gates of the platform into account.
- *  - ALAP with UNIFORM bundle lengths: using dependences only, aim at ALAP but
- *    with equally length bundles.
+ *    the gates of the platform into account
+ *  - ALAP with UNIFORM bundle lengths: using dependencies only, aim at ALAP but
+ *    with equally length bundles
  *
  * ASAP/ALAP can be controlled by the "scheduler" option. Similarly for UNIFORM
  * ("scheduler_uniform"). With/out resource constraints are separate method
@@ -105,50 +100,71 @@ void Scheduler::stripname(Str &name) {
     }
 }
 
-// factored out code from Init to add a dependence between two nodes
-// operand is in qubit_creg combined index space
-void Scheduler::add_dep(Int srcID, Int tgtID, enum DepTypes deptype, Int operand) {
-    QL_DOUT(".. adddep ... from srcID " << srcID << " to tgtID " << tgtID << "   opnd=" << operand << ", dep=" << DepTypesNames[deptype]);
-    auto srcNode = graph.nodeFromId(srcID);
-    auto tgtNode = graph.nodeFromId(tgtID);
-    auto arc = graph.addArc(srcNode, tgtNode);
-    weight[arc] = Int(ceil(static_cast<Real>(instruction[srcNode]->duration) / cycle_time));
-    // weight[arc] = (instruction[srcNode]->duration + cycle_time -1)/cycle_time;
-    cause[arc] = operand;
+// Add a dependency between two nodes: from node fromID to node toID
+// deptype is one of {RAW, WAW, WAR, RAR, RAD, DAR, DAD, WAD, DAW};
+// combo is the operand encoded in a qubit+creg+breg combined index space:
+// - 0 <= combo < qubit_count:                        combo is a qubit index
+// - 0 <= combo-qubit_count < creg_count:             combo-qubit_count is a classical register index
+// - 0 <= combo-qubit_count-creg_count < breg_count:  combo-qubit_count-creg_count is a bit register index
+void Scheduler::add_dep(Int fromID, Int toID, enum DepTypes deptype, UInt comboperand) {
+    QL_DOUT(".. adddep ... from fromID " << fromID << " to toID " << toID << "   opnd=" << comboperand << ", dep=" << DepTypesNames[deptype]);
+    auto fromNode = graph.nodeFromId(fromID);
+    auto toNode = graph.nodeFromId(toID);
+    auto arc = graph.addArc(fromNode, toNode);
+    weight[arc] = Int(ceil(static_cast<Real>(instruction[fromNode]->duration) / cycle_time));
+    // weight[arc] = (instruction[fromNode]->duration + cycle_time -1)/cycle_time;
+    cause[arc] = comboperand;
+    UInt operand;
     depType[arc] = deptype;
-    QL_DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
+    Str s;
+    if (comboperand < qubit_count) {
+        s = "q";
+        operand = comboperand;
+    } else if (comboperand - qubit_count < creg_count) {
+        operand = comboperand - qubit_count;
+        s = "c";
+    } else {
+        operand = comboperand - (qubit_count + creg_count);
+        s = "b";
+    }
+    QL_DOUT("... dep " << name[fromNode] << " -> " << name[toNode] << " (opnd=" << s << "[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
 }
 
-// fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
+// fill the dependency graph ('graph') with nodes from the circuit and adding arcs for their dependencies
 void Scheduler::init(
     circuit &ckt,
     const quantum_platform &platform,
     UInt qcount,
-    UInt ccount
+    UInt ccount,
+    UInt bcount
 ) {
-    QL_DOUT("Dependence graph creation ... #qubits = " << platform.qubit_number);
+    QL_DOUT("dependency graph creation ... #qubits = " << platform.qubit_number);
     qubit_count = qcount; ///@todo-rn: DDG creation should not depend on #qubits
     creg_count = ccount; ///@todo-rn: DDG creation should not depend on #cregs
-    UInt qubit_creg_count = qubit_count + creg_count;
-    QL_DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", total=" << qubit_creg_count);
+    breg_count = bcount; ///@todo-rn: DDG creation should not depend on #bregs
+    UInt creg_base = qubit_count;
+    UInt breg_base = qubit_count + creg_count;
+    UInt total_reg_count = qubit_count + creg_count + breg_count;
+    QL_DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", breg_count=" << breg_count << ", total=" << total_reg_count);
     cycle_time = platform.cycle_time;
     circp = &ckt;
 
-    // dependences are created with a current gate as target
-    // and with those previous gates as source that have an operand match:
-    // - the previous gates that Read r in LastReaders[r]; this is a list
-    // - the previous gates that D qubit q in LastDs[q]; this is a list
-    // - the previous gate that Wrote r in LastWriter[r]; this can only be one
-    // operands can be a qubit or a classical register
+    // dependencies are created with a current gate as target
+    // and with those previous gates as source that have an operand match with the current gate:
+    // - the previous gates that Read operand r in LastReaders[r]; this is a list because reading commutes
+    // - the previous gates that D qubit operand q in LastDs[q]; this is a list because D'ing  commutes
+    // - the previous gate that Wrote operand r in LastWriter[r]; this can only be one because writing never commutes
+    // operands can be a qubit, a classical register or a bit register
+    // the indices in LastReaders, LastDs and LastWriter are operand indices in the combined index space (see add_dep)
     typedef Vec<Int> ReadersListType;
 
     Vec<ReadersListType> LastReaders;
-    LastReaders.resize(qubit_creg_count);
+    LastReaders.resize(total_reg_count);
 
     Vec<ReadersListType> LastDs;
-    LastDs.resize(qubit_creg_count);
+    LastDs.resize(total_reg_count);
 
-    // start filling the dependence graph by creating the s node, the top of the graph
+    // start filling the dependency graph by creating the s node, the top of the graph
     {
         // add dummy source node
         auto srcNode = graph.addNode();
@@ -158,54 +174,60 @@ void Scheduler::init(
         s = srcNode;
     }
     Int srcID = graph.id(s);
-    Vec<Int> LastWriter(qubit_creg_count, srcID);     // it implicitly writes to all qubits and class. regs
+    Vec<Int> LastWriter(total_reg_count, srcID);     // it implicitly writes to all qubits/cregs/bregs
 
-    // for each gate pointer ins in the circuit, add a node and add dependences from previous gates to it
+    // for each gate pointer ins in the circuit, add a node and add dependencies on previous gates to it
     for (auto ins : ckt) {
         QL_DOUT("Current instruction's name: `" << ins->name << "'");
         QL_DOUT(".. Qasm(): " << ins->qasm());
         for (auto operand : ins->operands) {
-            QL_DOUT(".. Operand: `" << operand << "'");
+            QL_DOUT(".. Operand: `q[" << operand << "]'");
         }
         for (auto coperand : ins->creg_operands) {
-            QL_DOUT(".. Classical operand: `" << coperand << "'");
+            QL_DOUT(".. Classical operand: `c[" << coperand << "]'");
+        }
+        for (auto boperand : ins->breg_operands) {
+            QL_DOUT(".. Bit operand: `b[" << boperand << "]'");
+        }
+        if (ins->is_conditional()) {
+            QL_DOUT(".. Condition: `" << ins->cond_qasm() << "'");
         }
 
         auto iname = ins->name; // copy!!!!
         stripname(iname);
 
         // Add node
-        ListDigraph::Node consNode = graph.addNode();
-        Int consID = graph.id(consNode);
-        instruction[consNode] = ins;
-        node.set(ins) = consNode;
-        name[consNode] = ins->qasm();
+        ListDigraph::Node currNode = graph.addNode();
+        int currID = graph.id(currNode);
+        instruction[currNode] = ins;
+        node.set(ins) = currNode;
+        name[currNode] = ins->qasm();   // and this includes any condition!
 
         // Add edges (arcs)
         // In quantum computing there are no real Reads and Writes on qubits because they cannot be cloned.
         // Every qubit use influences the qubit, updates it, so would be considered a Read+Write at the same time.
-        // In dependence graph construction, this leads to WAW-dependence chains of all uses of the same qubit,
+        // In dependency graph construction, this leads to WAW-dependency chains of all uses of the same qubit,
         // and hence in a scheduler using this graph to a sequentialization of those uses in the original program order.
         //
-        // For a scheduler, only the presence of a dependence counts, not its type (RAW/WAW/etc.).
-        // A dependence graph also has other uses apart from the scheduler: e.g. to find chains of live qubits,
+        // For a scheduler, only the presence of a dependency counts, not its type (RAW/WAW/etc.).
+        // A dependency graph also has other uses apart from the scheduler: e.g. to find chains of live qubits,
         // from their creation (Prep etc.) to their destruction (Measure, etc.) in allocation of virtual to real qubits.
         // For those uses it makes sense to make a difference with a gate doing a Read+Write, just a Write or just a Read:
         // a Prep creates a new 'value' (Write); wait, display, x, swap, cnot, all pass this value on (so Read+Write),
         // while a Measure 'destroys' the 'value' (Read+Write of the qubit, Write of the creg),
         // the destruction aspect of a Measure being implied by it being followed by a Prep (Write only) on the same qubit.
         // Furthermore Writes can model barriers on a qubit (see Wait, Display, etc.), because Writes sequentialize.
-        // The dependence graph creation below models a graph suitable for all functions, including chains of live qubits.
+        // The dependency graph creation below models a graph suitable for all functions, including chains of live qubits.
 
         // Control-operands of Controlled Unitaries commute, independent of the Unitary,
         // i.e. these gates need not be kept in order.
         // But, of course, those qubit uses should be ordered after (/before) the last (/next) non-control use of the qubit.
-        // In this way, those control-operand qubit uses would be like pure Reads in dependence graph construction.
+        // In this way, those control-operand qubit uses would be like pure Reads in dependency graph construction.
         // A problem might be that the gates with the same control-operands might be scheduled in parallel then.
         // In a non-resource scheduler that will happen but it doesn't do harm because it is not a real machine.
         // In a resource-constrained scheduler the resource constraint that prohibits more than one use
         // of the same qubit being active at the same time, will prevent this parallelism.
-        // So ignoring Read After Read (RAR) dependences enables the scheduler to take advantage
+        // So ignoring Read After Read (RAR) dependencies enables the scheduler to take advantage
         // of the commutation property of Controlled Unitaries without disadvantages.
         //
         // In more detail:
@@ -221,7 +243,7 @@ void Scheduler::init(
         // - Of any other Control Unitary, the control operand is Read and the target operand is Write (not D!)
         // - Of any other gate the operands are Read+Write or just Write (as usual to represent flow).
         // With this, we effectively get the following table of event transitions (from left-bottom to right-up),
-        // in which 'no' indicates no dependence from left event to top event and '/' indicates a dependence from left to top.
+        // in which 'no' indicates no dependency from left event to top event and '/' indicates a dependency from left to top.
         //
         //             W   R   D                  w   R   D
         //        W    /   /   /              W   WAW RAW DAW
@@ -229,130 +251,144 @@ void Scheduler::init(
         //        D    /   /   no             D   WAD RAD DAD
         //
         // In addition to LastReaders, we introduce LastDs.
-        // Either one is cleared when dependences are generated from them, and extended otherwise.
+        // Either one is cleared when dependencies are generated from them, and extended otherwise.
         // From the table it can be seen that the D 'behaves' as a Write to Read, and as a Read to Write,
         // that there is no order among Ds nor among Rs, but D after R and R after D sequentialize.
-        // With this, the dependence graph is claimed to represent the commutations as above.
+        // With this, the dependency graph is claimed to represent the commutations as above.
         //
         // The schedulers are list schedulers, i.e. they maintain a list of gates in their algorithm,
-        // of gates available for being scheduled because they are not blocked by dependences on non-scheduled gates.
+        // of gates available for being scheduled because they are not blocked by dependencies on non-scheduled gates.
         // Therefore, the schedulers are able to select the best one from a set of commutable gates.
 
-        // TODO: define signature in .json file similar to how gcc defines instructions
+        // FIXME: define signature in .json file similar to how llvm/scaffold/gcc defines instructions
         // and then have a signature interpreter here; then we don't have this long if-chain
         // and, more importantly, we don't have the knowledge of particular gates here;
         // the default signature would be that of a default gate, modifying each qubit operand.
 
+        // every gate can have a condition with condition operands (which are bit register indices) that are read
+        for (auto operand : ins->cond_operands) {
+            QL_DOUT(".. Condition operand: " << operand);
+            add_dep(LastWriter[breg_base+operand], currID, RAW, breg_base+operand);
+            LastReaders[breg_base+operand].push_back(currID);
+        }
+
         // each type of gate has a different 'signature' of events; switch out to each one
         if (iname == "measure") {
-            QL_DOUT(". considering " << name[consNode] << " as measure");
-            // Read+Write each qubit operand + Write corresponding creg
-            auto operands = ins->operands;
-            for (auto operand : operands) {
+            QL_DOUT(". considering " << name[currNode] << " as measure");
+            // Read+Write each qubit operand + Write each classical operand + Write each bit operand
+            for (auto operand : ins->operands) {
                 QL_DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], consID, WAW, operand);
+                add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
-                    add_dep(readerID, consID, WAR, operand);
+                    add_dep(readerID, currID, WAR, operand);
                 }
                 for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, consID, WAD, operand);
+                    add_dep(readerID, currID, WAD, operand);
                 }
             }
-
             for (auto coperand : ins->creg_operands) {
                 QL_DOUT(".. Classical operand: " << coperand);
-                add_dep(LastWriter[qubit_count+coperand], consID, WAW, qubit_count+coperand);
-                for (auto &readerID : LastReaders[qubit_count+coperand]) {
-                    add_dep(readerID, consID, WAR, qubit_count+coperand);
+                add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
+                for (auto &readerID : LastReaders[creg_base+coperand]) {
+                    add_dep(readerID, currID, WAR, creg_base+coperand);
+                }
+            }
+            for (auto boperand : ins->breg_operands) {
+                QL_DOUT(".. Bit operand: " << boperand);
+                add_dep(LastWriter[breg_base+boperand], currID, WAW, breg_base+boperand);
+                for (auto &readerID : LastReaders[breg_base+boperand]) {
+                    add_dep(readerID, currID, WAR, breg_base+boperand);
                 }
             }
 
             // update LastWriter and so clear LastReaders
-            for (auto operand : operands) {
-                QL_DOUT(".. Update LastWriter for operand: " << operand);
-                LastWriter[operand] = consID;
-                QL_DOUT(".. Clearing LastReaders for operand: " << operand);
+            for (auto operand : ins->operands) {
+                QL_DOUT(".. Update LastWriter for qubit operand register: " << operand);
+                LastWriter[operand] = currID;
+                QL_DOUT(".. Clearing LastReaders for qubit operand register: " << operand);
                 LastReaders[operand].clear();
                 LastDs[operand].clear();
-                QL_DOUT(".. Update LastWriter done");
+                QL_DOUT(".. Update LastWriter for qubit operand done");
             }
             for (auto coperand : ins->creg_operands) {
-                QL_DOUT(".. Update LastWriter for coperand: " << coperand);
-                LastWriter[qubit_count+coperand] = consID;
-                QL_DOUT(".. Clearing LastReaders for coperand: " << coperand);
-                LastReaders[qubit_count+coperand].clear();
-                QL_DOUT(".. Update LastWriter done");
+                QL_DOUT(".. Update LastWriter for classical operand register: " << coperand);
+                LastWriter[creg_base+coperand] = currID;
+                QL_DOUT(".. Clearing LastReaders for classical operand register: " << coperand);
+                LastReaders[creg_base+coperand].clear();
+                QL_DOUT(".. Update LastWriter for classical operand done");
+            }
+            for (auto boperand : ins->breg_operands) {
+                QL_DOUT(".. Update LastWriter for bit operand register: " << boperand);
+                LastWriter[breg_base+boperand] = currID;
+                QL_DOUT(".. Clearing LastReaders for bit operand register: " << boperand);
+                LastReaders[breg_base+boperand].clear();
+                QL_DOUT(".. Update LastWriter for bit operand done");
             }
             QL_DOUT(". measure done");
         } else if (iname == "display") {
-            QL_DOUT(". considering " << name[consNode] << " as display");
+            QL_DOUT(". considering " << name[currNode] << " as display");
             // no operands, display all qubits and cregs
             // Read+Write each operand
-            Vec<UInt> qubits(qubit_creg_count);
+            Vec<UInt> qubits(total_reg_count);
             std::iota(qubits.begin(), qubits.end(), 0);
             for (auto operand : qubits) {
                 QL_DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], consID, WAW, operand);
+                add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
-                    add_dep(readerID, consID, WAR, operand);
+                    add_dep(readerID, currID, WAR, operand);
                 }
                 for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, consID, WAD, operand);
+                    add_dep(readerID, currID, WAD, operand);
                 }
             }
 
             // now update LastWriter and so clear LastReaders/LastDs
             for (auto operand : qubits) {
-                LastWriter[operand] = consID;
+                LastWriter[operand] = currID;
                 LastReaders[operand].clear();
                 LastDs[operand].clear();
             }
         } else if (ins->type() == gate_type_t::__classical_gate__) {
-            QL_DOUT(". considering " << name[consNode] << " as classical gate");
+            QL_DOUT(". considering " << name[currNode] << " as classical gate");
             // Read+Write each classical operand
             for (auto coperand : ins->creg_operands) {
                 QL_DOUT("... Classical operand: " << coperand);
-                add_dep(LastWriter[qubit_count+coperand], consID, WAW, qubit_count+coperand);
-                for (auto &readerID : LastReaders[qubit_count+coperand]) {
-                    add_dep(readerID, consID, WAR, qubit_count+coperand);
-                }
-                for (auto &readerID : LastDs[qubit_count+coperand]) {
-                    add_dep(readerID, consID, WAD, qubit_count+coperand);
+                add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
+                for (auto &readerID : LastReaders[creg_base+coperand]) {
+                    add_dep(readerID, currID, WAR, creg_base+coperand);
                 }
             }
 
-            // now update LastWriter and so clear LastReaders/LastDs
+            // now update LastWriter and so clear LastReaders
             for (auto coperand : ins->creg_operands) {
-                LastWriter[qubit_count+coperand] = consID;
-                LastReaders[qubit_count+coperand].clear();
-                LastDs[qubit_count+coperand].clear();
+                LastWriter[creg_base+coperand] = currID;
+                LastReaders[creg_base+coperand].clear();
             }
         } else if (iname == "cnot") {
-            QL_DOUT(". considering " << name[consNode] << " as cnot");
+            QL_DOUT(". considering " << name[currNode] << " as cnot");
             // CNOTs Read the first operands, and Ds the second operand
-            UInt operandNo=0;
-            auto operands = ins->operands;
-            for (auto operand : operands) {
+            UInt operandNo = 0;
+            for (auto operand : ins->operands) {
                 QL_DOUT(".. Operand: " << operand);
                 if (operandNo == 0) {
-                    add_dep(LastWriter[operand], consID, RAW, operand);
+                    add_dep(LastWriter[operand], currID, RAW, operand);
                     if (options::get("scheduler_commute") == "no") {
                         for (auto &readerID : LastReaders[operand]) {
-                            add_dep(readerID, consID, RAR, operand);
+                            add_dep(readerID, currID, RAR, operand);
                         }
                     }
                     for (auto &readerID : LastDs[operand]) {
-                        add_dep(readerID, consID, RAD, operand);
+                        add_dep(readerID, currID, RAD, operand);
                     }
                 } else {
-                    add_dep(LastWriter[operand], consID, DAW, operand);
+                    add_dep(LastWriter[operand], currID, DAW, operand);
                     if (options::get("scheduler_commute") == "no") {
                         for (auto &readerID : LastDs[operand]) {
-                            add_dep(readerID, consID, DAD, operand);
+                            add_dep(readerID, currID, DAD, operand);
                         }
                     }
                     for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, consID, DAR, operand);
+                        add_dep(readerID, currID, DAR, operand);
                     }
                 }
                 operandNo++;
@@ -360,41 +396,40 @@ void Scheduler::init(
 
             // now update LastWriter and so clear LastReaders
             operandNo=0;
-            for (auto operand : operands) {
+            for (auto operand : ins->operands) {
                 if (operandNo == 0) {
                     // update LastReaders for this operand 0
-                    LastReaders[operand].push_back(consID);
+                    LastReaders[operand].push_back(currID);
                     LastDs[operand].clear();
                 } else {
-                    LastDs[operand].push_back(consID);
+                    LastDs[operand].push_back(currID);
                     LastReaders[operand].clear();
                 }
                 operandNo++;
             }
         } else if (iname == "cz" || iname == "cphase") {
-            QL_DOUT(". considering " << name[consNode] << " as cz");
+            QL_DOUT(". considering " << name[currNode] << " as cz");
             // CZs Read all operands
             UInt operandNo = 0;
-            auto operands = ins->operands;
-            for (auto operand : operands) {
+            for (auto operand : ins->operands) {
                 QL_DOUT(".. Operand: " << operand);
                 if (options::get("scheduler_commute") == "no") {
                     for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, consID, RAR, operand);
+                        add_dep(readerID, currID, RAR, operand);
                     }
                 }
-                add_dep(LastWriter[operand], consID, RAW, operand);
+                add_dep(LastWriter[operand], currID, RAW, operand);
                 for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, consID, RAD, operand);
+                    add_dep(readerID, currID, RAD, operand);
                 }
                 operandNo++;
             } // end of operand for
 
             // update LastReaders etc.
             operandNo = 0;
-            for (auto operand : operands) {
+            for (auto operand : ins->operands) {
                 LastDs[operand].clear();
-                LastReaders[operand].push_back(consID);
+                LastReaders[operand].push_back(currID);
                 operandNo++;
             }
 #ifdef HAVEGENERALCONTROLUNITARIES
@@ -403,36 +438,35 @@ void Scheduler::init(
             // Read on all operands, Write on last operand
             // before implementing it, check whether all commutativity on Reads above hold for this Control Unitary
         ) {
-            QL_DOUT(". considering " << name[consNode] << " as Control Unitary");
+            QL_DOUT(". considering " << name[currNode] << " as Control Unitary");
             // Control Unitaries Read all operands, and Write the last operand
             UInt operandNo=0;
-            auto operands = ins->operands;
-            UInt op_count = operands.size();
-            for (auto operand : operands) {
-                QL_DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], consID, RAW, operand);
+            UInt op_count = ins->operands.size();
+            for (auto operand : ins->operands) {
+                DOUT(".. Operand: " << operand);
+                add_dep(LastWriter[operand], currID, RAW, operand);
                 if (options::get("scheduler_commute") == "no") {
                     for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, consID, RAR, operand);
+                        add_dep(readerID, currID, RAR, operand);
                     }
                 }
                 for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, consID, RAD, operand);
+                    add_dep(readerID, currID, RAD, operand);
                 }
 
                 if (operandNo < op_count-1) {
-                    LastReaders[operand].push_back(consID);
+                    LastReaders[operand].push_back(currID);
                     LastDs[operand].clear();
                 } else {
-                    add_dep(LastWriter[operand], consID, WAW, operand);
+                    add_dep(LastWriter[operand], currID, WAW, operand);
                     for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, consID, WAR, operand);
+                        add_dep(readerID, currID, WAR, operand);
                     }
                     for (auto &readerID : LastDs[operand]) {
-                        add_dep(readerID, consID, WAD, operand);
+                        add_dep(readerID, currID, WAD, operand);
                     }
 
-                    LastWriter[operand] = consID;
+                    LastWriter[operand] = currID;
                     LastReaders[operand].clear();
                     LastDs[operand].clear();
                 }
@@ -440,21 +474,21 @@ void Scheduler::init(
             } // end of operand for
 #endif  // HAVEGENERALCONTROLUNITARIES
         } else {
-            QL_DOUT(". considering " << name[consNode] << " as no special gate (catch-all, generic rules)");
+            QL_DOUT(". considering " << name[currNode] << " as no special gate (catch-all, generic rules)");
             // Read+Write on each quantum operand
             // Read+Write on each classical operand
-            auto operands = ins->operands;
-            for (auto operand : operands) {
+            // Read+Write on each bit operand
+            for (auto operand : ins->operands) {
                 QL_DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], consID, WAW, operand);
+                add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
-                    add_dep(readerID, consID, WAR, operand);
+                    add_dep(readerID, currID, WAR, operand);
                 }
                 for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, consID, WAD, operand);
+                    add_dep(readerID, currID, WAD, operand);
                 }
-
-                LastWriter[operand] = consID;
+                // now update LastWriter and so clear LastReaders/LastDs
+                LastWriter[operand] = currID;
                 LastReaders[operand].clear();
                 LastDs[operand].clear();
             } // end of operand for
@@ -462,36 +496,43 @@ void Scheduler::init(
             // Read+Write each classical operand
             for (auto coperand : ins->creg_operands) {
                 QL_DOUT("... Classical operand: " << coperand);
-                add_dep(LastWriter[qubit_count+coperand], consID, WAW, qubit_count+coperand);
-                for (auto &readerID : LastReaders[qubit_count+coperand]) {
-                    add_dep(readerID, consID, WAR, qubit_count+coperand);
+                add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
+                for (auto &readerID : LastReaders[creg_base+coperand]) {
+                    add_dep(readerID, currID, WAR, creg_base+coperand);
                 }
-                for (auto &readerID : LastDs[qubit_count+coperand]) {
-                    add_dep(readerID, consID, WAD, qubit_count+coperand);
-                }
-
-                // now update LastWriter and so clear LastReaders/LastDs
-                LastWriter[qubit_count+coperand] = consID;
-                LastReaders[qubit_count+coperand].clear();
-                LastDs[qubit_count+coperand].clear();
+                // now update LastWriter and so clear LastReaders
+                LastWriter[creg_base+coperand] = currID;
+                LastReaders[creg_base+coperand].clear();
             } // end of coperand for
+
+            // Read+Write each bit operand
+            for (auto boperand : ins->breg_operands) {
+                QL_DOUT("... Bit operand: " << boperand);
+                add_dep(LastWriter[breg_base+boperand], currID, WAW, breg_base+boperand);
+                for (auto &readerID : LastReaders[breg_base+boperand]) {
+                    add_dep(readerID, currID, WAR, breg_base+boperand);
+                }
+                // now update LastWriter and so clear LastReaders
+                LastWriter[breg_base+boperand] = currID;
+                LastReaders[breg_base+boperand].clear();
+            } // end of boperand for
         } // end of if/else
         QL_DOUT(". instruction done: " << ins->qasm());
     } // end of instruction for
 
     QL_DOUT("adding deps to SINK");
-    // finish filling the dependence graph by creating the t node, the bottom of the graph
+    // finish filling the dependency graph by creating the t node, the bottom of the graph
     {
         // add dummy target node
-        ListDigraph::Node consNode = graph.addNode();
-        Int consID = graph.id(consNode);
-        instruction[consNode] = new SINK();    // so SINK is defined as instruction[t], not unique in itself
-        node.set(instruction[consNode]) = consNode;
-        name[consNode] = instruction[consNode]->qasm();
-        t = consNode;
+        ListDigraph::Node currNode = graph.addNode();
+        int currID = graph.id(currNode);
+        instruction[currNode] = new SINK();    // so SINK is defined as instruction[t], not unique in itself
+        node.set(instruction[currNode]) = currNode;
+        name[currNode] = instruction[currNode]->qasm();
+        t = currNode;
 
-        // add deps to the dummy target node to close the dependence chains
-        // it behaves as a W to every qubit and creg
+        // add deps to the dummy target node to close the dependency chains
+        // it behaves as a W to every qubit, creg and breg
         //
         // to guarantee that exactly at start of execution of dummy SINK,
         // all still executing nodes complete, give arc weight of those nodes;
@@ -501,41 +542,41 @@ void Scheduler::init(
         // guaranteed that on a jump and on start of target circuit, the source circuit completed).
         //
         // note that there always is a LastWriter: the dummy source node wrote to every qubit and class. reg
-        Vec<UInt> operands(qubit_creg_count);
-        std::iota(operands.begin(), operands.end(), 0);
-        for (auto operand : operands) {
+        Vec<UInt> all_operands(total_reg_count);
+        std::iota(all_operands.begin(), all_operands.end(), 0);
+        for (auto operand : all_operands) {
             QL_DOUT(".. Sink operand, adding dep: " << operand);
-            add_dep(LastWriter[operand], consID, WAW, operand);
+            add_dep(LastWriter[operand], currID, WAW, operand);
             for (auto &readerID : LastReaders[operand]) {
-                add_dep(readerID, consID, WAR, operand);
+                add_dep(readerID, currID, WAR, operand);
             }
             for (auto &readerID : LastDs[operand]) {
-                add_dep(readerID, consID, WAD, operand);
+                add_dep(readerID, currID, WAD, operand);
             }
         }
 
         // useless because there is nothing after t but destruction
-        for (auto operand : operands) {
+        for (auto operand : all_operands) {
             QL_DOUT(".. Sink operand, clearing: " << operand);
-            LastWriter[operand] = consID;
+            LastWriter[operand] = currID;
             LastReaders[operand].clear();
             LastDs[operand].clear();
         }
     }
 
     // useless as well because by construction, there cannot be cycles
-    // but when afterwards dependences are added, cycles may be created,
+    // but when afterwards dependencies are added, cycles may be created,
     // and after doing so (a copy of) this test should certainly be done because
-    // a cyclic dependence graph cannot be scheduled;
-    // this test here is a kind of debugging aid whether dependence creation was done well
+    // a cyclic dependency graph cannot be scheduled;
+    // this test here is a kind of debugging aid whether dependency creation was done well
     if (!dag(graph)) {
-        QL_FATAL("The dependence graph is not a DAG.");
+        QL_FATAL("The dependency graph is not a DAG.");
     }
-    QL_DOUT("Dependence graph creation Done.");
+    QL_DOUT("dependency graph creation Done.");
 }
 
 void Scheduler::print() const {
-    QL_COUT("Printing Dependence Graph ");
+    QL_COUT("Printing dependency Graph ");
     digraphWriter(graph).
         nodeMap("name", name).
         arcMap("cause", cause).
@@ -547,7 +588,7 @@ void Scheduler::print() const {
 }
 
 void Scheduler::write_dependence_matrix() const {
-    QL_COUT("Printing Dependence Matrix ...");
+    QL_COUT("Printing dependency Matrix ...");
     Str datfname( options::get("output_dir") + "/dependenceMatrix.dat");
     OutFile fout(datfname);
 
@@ -573,7 +614,7 @@ void Scheduler::write_dependence_matrix() const {
 
 // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
 // without RC, this is all there is to schedule, apart from forming the bundles in ir::bundler()
-// set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
+// set_cycle iterates over the circuit's gates and set_cycle_gate over the dependencies of each gate
 // please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
 void Scheduler::set_cycle_gate(gate *gp, scheduling_direction_t dir) {
     ListDigraph::Node currNode = node.at(gp);
@@ -596,7 +637,7 @@ void Scheduler::set_cycle(scheduling_direction_t dir) {
     if (forward_scheduling == dir) {
         instruction[s]->cycle = 0;
         QL_DOUT("... set_cycle of " << instruction[s]->qasm() << " cycles " << instruction[s]->cycle);
-        // *circp is by definition in a topological order of the dependence graph
+        // *circp is by definition in a topological order of the dependency graph
         for (auto gpit = circp->begin(); gpit != circp->end(); gpit++) {
             set_cycle_gate(*gpit, dir);
             QL_DOUT("... set_cycle of " << (*gpit)->qasm() << " cycles " << (*gpit)->cycle);
@@ -605,7 +646,7 @@ void Scheduler::set_cycle(scheduling_direction_t dir) {
         QL_DOUT("... set_cycle of " << instruction[t]->qasm() << " cycles " << instruction[t]->cycle);
     } else {
         instruction[t]->cycle = ALAP_SINK_CYCLE;
-        // *circp is by definition in a topological order of the dependence graph
+        // *circp is by definition in a topological order of the dependency graph
         for (auto gpit = circp->rbegin(); gpit != circp->rend(); gpit++) {
             set_cycle_gate(*gpit, dir);
         }
@@ -702,7 +743,7 @@ void Scheduler::set_remaining(scheduling_direction_t dir) {
     if (forward_scheduling == dir) {
         // remaining until SINK (i.e. the SINK.cycle-ALAP value)
         remaining.set(t) = 0;
-        // *circp is by definition in a topological order of the dependence graph
+        // *circp is by definition in a topological order of the dependency graph
         for (auto gpit = circp->rbegin(); gpit != circp->rend(); gpit++) {
             gate *gp2 = *gpit;
             set_remaining_gate(gp2, dir);
@@ -714,7 +755,7 @@ void Scheduler::set_remaining(scheduling_direction_t dir) {
     } else {
         // remaining until SOURCE (i.e. the ASAP value)
         remaining.set(s) = 0;
-        // *circp is by definition in a topological order of the dependence graph
+        // *circp is by definition in a topological order of the dependency graph
         for (auto gpit = circp->begin(); gpit != circp->end(); gpit++) {
             gate*   gp2 = *gpit;
             set_remaining_gate(gp2, dir);
@@ -761,8 +802,8 @@ void Scheduler::init_available(
 
 // collect the list of directly depending nodes
 // (i.e. those necessarily scheduled after the given node) without duplicates;
-// dependences that are duplicates from the perspective of the scheduler
-// may be present in the dependence graph because the scheduler ignores dependence type and cause
+// dependencies that are duplicates from the perspective of the scheduler
+// may be present in the dependency graph because the scheduler ignores dependency type and cause
 void Scheduler::get_depending_nodes(
     ListDigraph::Node n,
     scheduling_direction_t dir,
@@ -855,7 +896,7 @@ Bool Scheduler::criticality_lessthan(
 // add it to the avlist because the condition for that is fulfilled:
 //  all its predecessors were scheduled (forward scheduling) or
 //  all its successors were scheduled (backward scheduling)
-// update its cycle attribute to reflect these dependences;
+// update its cycle attribute to reflect these dependencies;
 // avlist is initialized with s or t as first element by init_available
 // avlist is kept ordered on deep-criticality, non-increasing (i.e. highest deep-criticality first)
 void Scheduler::MakeAvailable(
@@ -882,7 +923,7 @@ void Scheduler::MakeAvailable(
             // consequence is that
             // when a node has same criticality as n, new node n is put after it, as last one of set of same criticality,
             // so order of calling MakeAvailable (and probably original circuit, and running other scheduler first) matters,
-            // also when all dependence sets (and so remaining values) are identical!
+            // also when all dependency sets (and so remaining values) are identical!
             if (criticality_lessthan(*inp, n, dir) && !first_lower_criticality_found) {
                 first_lower_criticality_inp = inp;
                 first_lower_criticality_found = true;
@@ -1049,7 +1090,7 @@ ListDigraph::Node Scheduler::SelectAvailable(
 
 // ASAP/ALAP scheduler with RC
 //
-// schedule the circuit that is in the dependence graph
+// schedule the circuit that is in the dependency graph
 // for the given direction, with the given platform and resource manager;
 // what is done, is:
 // - the cycle attribute of the gates will be set according to the scheduling method
@@ -1070,7 +1111,7 @@ void Scheduler::schedule(
     List<ListDigraph::Node> avlist;
 
     // initializations for this scheduler
-    // note that dependence graph is not modified by a scheduler, so it can be reused
+    // note that dependency graph is not modified by a scheduler, so it can be reused
     QL_DOUT("... initialization");
     for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
         scheduled.set(instruction[n]) = false;   // none were scheduled, including SOURCE/SINK
@@ -1175,13 +1216,13 @@ void Scheduler::schedule_alap_uniform() {
     // After this, it moves gates up in the direction of the higher cycles but, of course, at most to their ALAP cycle
     // to fill up the small bundles at the higher cycle values to the targeted uniform length, without extending the circuit.
     // It does this in a backward scan (as ALAP scheduling would do), so bundles at the highest cycles are filled up first,
-    // and such that the circuit's depth is not enlarged and the dependences/latencies are obeyed.
+    // and such that the circuit's depth is not enlarged and the dependencies/latencies are obeyed.
     // Hence, the result resembles an ALAP schedule with excess bundle lengths solved by moving nodes down ("rolling pin").
 
     QL_DOUT("Scheduling ALAP UNIFORM to get bundles ...");
 
     // initialize gp->cycle as ASAP cycles as first approximation of result;
-    // note that the circuit doesn't contain the SOURCE and SINK gates but the dependence graph does;
+    // note that the circuit doesn't contain the SOURCE and SINK gates but the dependency graph does;
     // from SOURCE is a weight 1 dep to the first nodes using each qubit and classical register, and to the SINK gate
     // is a dep from each unused qubit/classical register result with as weight the duration of the last operation.
     // SOURCE (node s) is at cycle 0 and the first circuit's gates are at cycle 1.
@@ -1252,7 +1293,7 @@ void Scheduler::schedule_alap_uniform() {
 
         // target size of each bundle is number of gates still to go divided by number of non-empty cycles to go
         // it averages over non-empty bundles instead of all bundles because the latter would be very strict
-        // it is readjusted during the scan to cater for dips in bundle size caused by local dependence chains
+        // it is readjusted during the scan to cater for dips in bundle size caused by local dependency chains
         if (non_empty_bundle_count == 0) break;     // nothing to do
         avg_gates_per_cycle = Real(gate_count)/curr_cycle;
         avg_gates_per_non_empty_cycle = Real(gate_count)/non_empty_bundle_count;
@@ -1372,7 +1413,7 @@ void Scheduler::schedule_alap_uniform() {
     QL_DOUT("Scheduling ALAP UNIFORM [DONE]");
 }
 
-// printing dot of the dependence graph
+// printing dot of the dependency graph
 void Scheduler::get_dot(
     Bool WithCritical,
     Bool WithCycles,
@@ -1487,7 +1528,7 @@ void schedule_kernel(
     QL_IOUT(scheduler << " scheduling the quantum kernel '" << kernel.name << "'...");
 
     Scheduler sched;
-    sched.init(kernel.c, platform, kernel.qubit_count, kernel.creg_count);
+    sched.init(kernel.c, platform, kernel.qubit_count, kernel.creg_count, kernel.breg_count);
 
     if (options::get("print_dot_graphs") == "yes") {
         sched.get_dot(dot);
@@ -1547,20 +1588,21 @@ void rcschedule_kernel(
     const quantum_platform &platform,
     Str &dot,
     UInt nqubits,
-    UInt ncreg
+    UInt ncreg,
+    UInt nbreg
 ) {
     QL_IOUT("Resource constraint scheduling ...");
 
     Str schedopt = options::get("scheduler");
     if (schedopt == "ASAP") {
         Scheduler sched;
-        sched.init(kernel.c, platform, nqubits, ncreg);
+        sched.init(kernel.c, platform, nqubits, ncreg, nbreg);
 
         arch::resource_manager_t rm(platform, forward_scheduling);
         sched.schedule_asap(rm, platform, dot);
     } else if (schedopt == "ALAP") {
         Scheduler sched;
-        sched.init(kernel.c, platform, nqubits, ncreg);
+        sched.init(kernel.c, platform, nqubits, ncreg, nbreg);
 
         arch::resource_manager_t rm(platform, backward_scheduling);
         sched.schedule_alap(rm, platform, dot);
@@ -1586,15 +1628,16 @@ void rcschedule(
         QL_IOUT("Scheduling kernel: " << kernel.name);
         if (!kernel.c.empty()) {
             auto num_creg = kernel.creg_count;
+            auto num_breg = kernel.breg_count;
             Str sched_dot;
 
-            rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg);
+            rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg, num_breg);
             kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
 
             if (options::get("print_dot_graphs") == "yes") {
                 StrStrm fname;
                 fname << options::get("output_dir") << "/" << kernel.name << "_" << passname << ".dot";
-                QL_IOUT("writing " << passname << " dependence graph dot file to '" << fname.str() << "' ...");
+                QL_IOUT("writing " << passname << " dependency graph dot file to '" << fname.str() << "' ...");
                 OutFile(fname.str()).write(sched_dot);
             }
         }

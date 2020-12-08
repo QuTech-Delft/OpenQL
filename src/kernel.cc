@@ -33,12 +33,14 @@ quantum_kernel::quantum_kernel(
     const Str &name,
     const quantum_platform& platform,
     UInt qcount,
-    UInt ccount
+    UInt ccount,
+    UInt bcount
 ) :
     name(name),
     iterations(1),
     qubit_count(qcount),
     creg_count(ccount),
+    breg_count(bcount),
     type(kernel_type_t::STATIC)
 {
     instruction_map = platform.instruction_map;
@@ -172,6 +174,10 @@ void quantum_kernel::ry180(UInt qubit) {
 
 void quantum_kernel::measure(UInt qubit) {
     gate("measure", qubit);
+}
+
+void quantum_kernel::measure(UInt qubit, UInt bit) {
+    gate("measure", {qubit}, {}, 0, 0.0, {bit});
 }
 
 void quantum_kernel::prepz(UInt qubit) {
@@ -313,7 +319,10 @@ Bool quantum_kernel::add_default_gate_if_available(
     const Vec<UInt> &qubits,
     const Vec<UInt> &cregs,
     UInt duration,
-    Real angle
+    Real angle,
+    const Vec<UInt> &bregs,
+    cond_type_t cond,
+    const Vec<UInt> &condregs
 ) {
     Bool result = false;
 
@@ -462,6 +471,9 @@ Bool quantum_kernel::add_default_gate_if_available(
     }
 
     if (result) {
+        c.back()->breg_operands = bregs;
+        c.back()->condition = cond;
+        c.back()->cond_operands = condregs;
         cycles_valid = false;
     }
 
@@ -477,7 +489,10 @@ Bool quantum_kernel::add_custom_gate_if_available(
     const Vec<UInt> &qubits,
     const Vec<UInt> &cregs,
     UInt duration,
-    Real angle
+    Real angle,
+    const Vec<UInt> &bregs,
+    cond_type_t cond,
+    const Vec<UInt> &condregs
 ) {
 #if OPT_DECOMPOSE_WAIT_BARRIER  // hack to skip wait/barrier
     if (gname=="wait" || gname=="barrier") {
@@ -512,10 +527,15 @@ Bool quantum_kernel::add_custom_gate_if_available(
     for (auto &cop : cregs) {
         g->creg_operands.push_back(cop);
     }
+    for (auto &bop : bregs) {
+        g->breg_operands.push_back(bop);
+    }
     if (duration > 0) {
         g->duration = duration;
     }
     g->angle = angle;
+    g->condition = cond;
+    g->cond_operands = condregs;
     c.push_back(g);
 
     QL_DOUT("custom gate added for " << gname);
@@ -553,7 +573,10 @@ void quantum_kernel::get_decomposed_ins(
 Bool quantum_kernel::add_spec_decomposed_gate_if_available(
     const Str &gate_name,
     const Vec<UInt> &all_qubits,
-    const Vec<UInt> &cregs
+    const Vec<UInt> &cregs,
+    const Vec<UInt> &bregs,
+    cond_type_t cond,
+    const Vec<UInt> &condregs
 ) {
     Bool added = false;
     QL_DOUT("Checking if specialized decomposition is available for " << gate_name);
@@ -611,12 +634,12 @@ Bool quantum_kernel::add_spec_decomposed_gate_if_available(
 
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-            Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+            Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
             if (!custom_added) {
-                if(options::get("use_default_gates") == "yes") {
+                if (options::get("use_default_gates") == "yes") {
                     // default gate check
                     QL_DOUT("adding default gate for " << sub_ins_name);
-                    Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+                    Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
                     if (default_available) {
                         QL_DOUT("added default gate '" << sub_ins_name << "' with qubits " << this_gate_qubits); // // NB: changed WOUT to DOUT, since this is common for 'barrier', spamming log
                     } else {
@@ -646,7 +669,10 @@ Bool quantum_kernel::add_spec_decomposed_gate_if_available(
 Bool quantum_kernel::add_param_decomposed_gate_if_available(
     const Str &gate_name,
     const Vec<UInt> &all_qubits,
-    const Vec<UInt> &cregs
+    const Vec<UInt> &cregs,
+    const Vec<UInt> &bregs,
+    cond_type_t cond,
+    const Vec<UInt> &condregs
 ) {
     Bool added = false;
     QL_DOUT("Checking if parameterized composite gate is available for " << gate_name);
@@ -706,13 +732,12 @@ Bool quantum_kernel::add_param_decomposed_gate_if_available(
             // FIXME: following code block exists several times in this file
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-            Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
-            if (!custom_added)
-            {
+            Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
+            if (!custom_added) {
                 if (options::get("use_default_gates") == "yes") {
                     // default gate check
                     QL_DOUT("adding default gate for " << sub_ins_name);
-                    Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+                    Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
                     if (default_available) {
                         QL_WOUT("added default gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
                     } else {
@@ -751,22 +776,35 @@ void quantum_kernel::gate(
     const Vec<UInt> &qubits,
     const Vec<UInt> &cregs,
     UInt duration,
-    Real angle
+    Real angle,
+    const Vec<UInt> &bregs,
+    cond_type_t cond,
+    const Vec<UInt> &condregs
 ) {
-    /// @todo-rn: move these check to a platform-specific backend after qubits are initialized
     for (auto &qno : qubits) {
         if (qno >= qubit_count) {
             QL_FATAL("Number of qubits in platform: " << to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with qubits " << qubits);
         }
     }
-
-    for (auto & cno : cregs) {
+    for (auto &cno : cregs) {
         if (cno >= creg_count) {
             QL_FATAL("Out of range operand(s) for '" << gname << "' with cregs " << cregs);
         }
     }
-
-    if (!gate_nonfatal(gname, qubits, cregs, duration, angle)) {
+    for (auto &bno : bregs) {
+        if (bno >= breg_count) {
+            QL_FATAL("Out of range operand(s) for '" << gname << "' with bregs " << bregs);
+        }
+    }
+    if (!gate::is_valid_cond(cond, condregs)) {
+        QL_FATAL("Condition " << cond << " of '" << gname << "' incompatible with condregs " << condregs);
+    }
+    for (auto &cbno : condregs) {
+        if (cbno >= breg_count) {
+            QL_FATAL("Out of range condition operand(s) for '" << gname << "' with condregs " << condregs);
+        }
+    }
+    if (!gate_nonfatal(gname, qubits, cregs, duration, angle, bregs, cond, condregs)) {
         QL_FATAL("Unknown gate '" << gname << "' with qubits " << qubits);
     }
 }
@@ -780,7 +818,10 @@ Bool quantum_kernel::gate_nonfatal(
     const Vec<UInt> &qubits,
     const Vec<UInt> &cregs,
     UInt duration,
-    Real angle
+    Real angle,
+    const Vec<UInt> &bregs,
+    cond_type_t cond,
+    const Vec<UInt> &condregs
 ) {
     Bool added = false;
     // check if specialized composite gate is available
@@ -795,14 +836,14 @@ Bool quantum_kernel::gate_nonfatal(
 
     // specialized composite gate check
     QL_DOUT("trying to add specialized composite gate for: " << gname_lower);
-    Bool spec_decom_added = add_spec_decomposed_gate_if_available(gname_lower, qubits);
+    Bool spec_decom_added = add_spec_decomposed_gate_if_available(gname_lower, qubits, cregs, bregs, cond, condregs);
     if (spec_decom_added) {
         added = true;
         QL_DOUT("specialized decomposed gates added for " << gname_lower);
     } else {
         // parameterized composite gate check
         QL_DOUT("trying to add parameterized composite gate for: " << gname_lower);
-        Bool param_decom_added = add_param_decomposed_gate_if_available(gname_lower, qubits);
+        Bool param_decom_added = add_param_decomposed_gate_if_available(gname_lower, qubits, cregs, bregs, cond, condregs);
         if (param_decom_added) {
             added = true;
             QL_DOUT("decomposed gates added for " << gname_lower);
@@ -810,7 +851,7 @@ Bool quantum_kernel::gate_nonfatal(
             // specialized/parameterized custom gate check
             QL_DOUT("adding custom gate for " << gname_lower);
             // when found, custom_added is true, and the gate was added to the circuit
-            Bool custom_added = add_custom_gate_if_available(gname_lower, qubits, cregs, duration, angle);
+            Bool custom_added = add_custom_gate_if_available(gname_lower, qubits, cregs, duration, angle, bregs, cond, condregs);
             if (custom_added) {
                 added = true;
                 QL_DOUT("custom gate added for " << gname_lower);
@@ -819,7 +860,7 @@ Bool quantum_kernel::gate_nonfatal(
                     // default gate check (which is always parameterized)
                     QL_DOUT("adding default gate for " << gname_lower);
 
-                    Bool default_available = add_default_gate_if_available(gname_lower, qubits, cregs, duration);
+                    Bool default_available = add_default_gate_if_available(gname_lower, qubits, cregs, duration, angle, bregs, cond, condregs);
                     if (default_available) {
                         added = true;
                         QL_DOUT("default gate added for " << gname_lower);   // FIXME: used to be WOUT, but that gives a warning for every "wait" and spams the log
@@ -1478,49 +1519,49 @@ void quantum_kernel::conjugate(const quantum_kernel *k) {
         QL_DOUT("Generating conjugate gate for " << gname);
         QL_DOUT("Type : " << gtype);
         if (gtype == __pauli_x_gate__ || gtype == __rx180_gate__) {
-            gate("x", g->operands, {}, g->duration, g->angle);
+            gate("x", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __pauli_y_gate__ || gtype == __ry180_gate__) {
-            gate("y", g->operands, {}, g->duration, g->angle);
+            gate("y", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __pauli_z_gate__) {
-            gate("z", g->operands, {}, g->duration, g->angle);
+            gate("z", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __hadamard_gate__) {
-            gate("hadamard", g->operands, {}, g->duration, g->angle);
+            gate("hadamard", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __identity_gate__) {
-            gate("identity", g->operands, {}, g->duration, g->angle);
+            gate("identity", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __t_gate__) {
-            gate("tdag", g->operands, {}, g->duration, g->angle);
+            gate("tdag", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __tdag_gate__) {
-            gate("t", g->operands, {}, g->duration, g->angle);
+            gate("t", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __phase_gate__) {
-            gate("sdag", g->operands, {}, g->duration, g->angle);
+            gate("sdag", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __phasedag_gate__) {
-            gate("s", g->operands, {}, g->duration, g->angle);
+            gate("s", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __cnot_gate__) {
-            gate("cnot", g->operands, {}, g->duration, g->angle);
+            gate("cnot", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __swap_gate__) {
-            gate("swap", g->operands, {}, g->duration, g->angle);
+            gate("swap", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __rx_gate__) {
-            gate("rx", g->operands, {}, g->duration, -(g->angle) );
+            gate("rx", g->operands, {}, g->duration, -(g->angle) , g->breg_operands);
         } else if (gtype == __ry_gate__) {
-            gate("ry", g->operands, {}, g->duration, -(g->angle) );
+            gate("ry", g->operands, {}, g->duration, -(g->angle) , g->breg_operands);
         } else if (gtype == __rz_gate__) {
-            gate("rz", g->operands, {}, g->duration, -(g->angle) );
+            gate("rz", g->operands, {}, g->duration, -(g->angle) , g->breg_operands);
         } else if (gtype == __rx90_gate__) {
-            gate("mrx90", g->operands, {}, g->duration, g->angle);
+            gate("mrx90", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __mrx90_gate__) {
-            gate("rx90", g->operands, {}, g->duration, g->angle);
+            gate("rx90", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __rx180_gate__) {
-            gate("x", g->operands, {}, g->duration, g->angle);
+            gate("x", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __ry90_gate__) {
-            gate("mry90", g->operands, {}, g->duration, g->angle);
+            gate("mry90", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __mry90_gate__) {
-            gate("ry90", g->operands, {}, g->duration, g->angle);
+            gate("ry90", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __ry180_gate__) {
-            gate("y", g->operands, {}, g->duration, g->angle);
+            gate("y", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __cphase_gate__) {
-            gate("cphase", g->operands, {}, g->duration, g->angle);
+            gate("cphase", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == __toffoli_gate__) {
-            gate("toffoli", g->operands, {}, g->duration, g->angle);
+            gate("toffoli", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else {
             QL_EOUT("Conjugate version of gate '" << gname << "' not defined !");
             throw Exception("[x] error : kernel::conjugate : Conjugate version of gate '" + gname + "' not defined ! ", false);

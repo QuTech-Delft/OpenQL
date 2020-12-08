@@ -8,6 +8,11 @@ curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_CCL_long_duration(unittest.TestCase):
+
+    @classmethod
+    def setUp(self):
+        ql.initialize()
+
     def test_AllXY(self):
         """
         Single qubit AllXY sequence.

@@ -11,6 +11,11 @@ namespace ql {
 namespace utils {
 
 /**
+ * Base type for tree nodes.
+ */
+using Node = tree::base::Base;
+
+/**
  * Wrapper for an optional, possibly polymorphic object with shared ownership.
  *
  * In a nutshell, this behaves like a pointer. However, memory management is
@@ -87,7 +92,7 @@ using Link = tree::base::Link<T>;
  */
 template <class T, typename... Args>
 One<T> make(Args&&... args) {
-    return One<T>(std::make_shared<T>(std::forward(args)...));
+    return One<T>(std::make_shared<T>(std::forward<Args>(args)...));
 }
 
 } // namespace utils

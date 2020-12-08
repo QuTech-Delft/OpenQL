@@ -45,7 +45,7 @@ public:
     // attributes
     lemon::ListDigraph::NodeMap<utils::Str> name;     // name[n] == qasm string
     lemon::ListDigraph::ArcMap<utils::Int> weight;    // number of cycles of dependence
-    lemon::ListDigraph::ArcMap<utils::Int> cause;     // qubit/creg index of dependence
+    lemon::ListDigraph::ArcMap<utils::Int> cause;     // qubit/creg/breg index of dependence
     lemon::ListDigraph::ArcMap<utils::Int> depType;   // RAW, WAW, ...
 
     // s and t nodes are the top and bottom of the dependence graph
@@ -55,6 +55,7 @@ public:
     utils::UInt cycle_time;     // to convert durations to cycles as weight of dependence
     utils::UInt qubit_count;    // number of qubits, to check/represent qubit as cause of dependence
     utils::UInt creg_count;     // number of cregs, to check/represent creg as cause of dependence
+    utils::UInt breg_count;     // number of bregs, to check/represent breg as cause of dependence
     circuit *circp;             // current and result circuit, passed from Init to each scheduler
 
     // scheduler support
@@ -67,15 +68,16 @@ public:
     static void stripname(utils::Str &name);
 
     // factored out code from Init to add a dependence between two nodes
-    // operand is in qubit_creg combined index space
-    void add_dep(utils::Int srcID, utils::Int tgtID, enum DepTypes deptype, utils::Int operand);
+    // operand is in qubit_creg_breg combined index space with size qcount+ccount+bcount
+    void add_dep(utils::Int fromID, utils::Int toID, enum DepTypes deptype, utils::UInt comboperand);
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(
         circuit &ckt,
         const quantum_platform &platform,
         utils::UInt qcount,
-        utils::UInt ccount
+        utils::UInt ccount,
+        utils::UInt bcount
     );
 
     void print() const;
@@ -336,7 +338,8 @@ void rcschedule_kernel(
     const quantum_platform &platform,
     utils::Str &dot,
     utils::UInt nqubits,
-    utils::UInt ncreg = 0
+    utils::UInt ncreg = 0,
+    utils::UInt nbreg = 0
 );
 
 /*
