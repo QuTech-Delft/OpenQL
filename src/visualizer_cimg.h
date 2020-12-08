@@ -25,20 +25,31 @@ private:
     cimg_library::CImg<unsigned char> cimg;
 
 public:
-    Image(const utils::Int imageWidth, const utils::Int imageHeight, const utils::Int numberOfChannels);
+    Image(const utils::Int imageWidth, const utils::Int imageHeight);
 
     void fill(const utils::Int rgb);
+
     void drawLine(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1,
                   const Color color = black, const utils::Real alpha = 1, const LinePattern pattern = LinePattern::UNBROKEN);
-    void drawText(const utils::Int x, const utils::Int y, const utils::Str &text, const utils::Int height, const Color color = black);
 
-    void drawCircle(centerX, centerY, radius, color, alpha, )
+    void drawText(const utils::Int x, const utils::Int y, const utils::Str &text, const utils::Int height,
+                  const Color color = black);
 
-    void drawFilledCircle(const utils::Int centerX, const utils::Int centerY, const utils::Int radius, const Color color, const utils::Real opacity);
-    void drawOutlinedCircle(const utils::Int centerX, const utils::Int centerY, const utils::Int radius, const Color color, const utils::Real opacity, const LinePattern pattern);
-    void drawTriangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const utils::Int x2, const utils::Int y2, const Color color);
-    void drawFilledRectangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const Color color, const utils::Real alpha);
-    void drawOutlinedRectangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const Color color, const utils::Real alpha, const LinePattern pattern);
+    void drawFilledCircle(const utils::Int centerX, const utils::Int centerY, const utils::Int radius,
+                          const Color color = black, const utils::Real alpha = 1);
+    void drawOutlinedCircle(const utils::Int centerX, const utils::Int centerY, const utils::Int radius,
+                            const Color color = black, const utils::Real alpha = 1, const LinePattern pattern = LinePattern::UNBROKEN);
+
+    void drawFilledTriangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const utils::Int x2, const utils::Int y2,
+                            const Color color = black, const utils::Real alpha = 1);
+    void drawOutlinedTriangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const utils::Int x2, const utils::Int y2,
+                              const Color color = black, const utils::Real alpha = 1, const LinePattern pattern = LinePattern::UNBROKEN);
+
+    void drawFilledRectangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1,
+                             const Color color = black, const utils::Real alpha = 1);
+    void drawOutlinedRectangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1,
+                               const Color color = black, const utils::Real alpha = 1, const LinePattern pattern = LinePattern::UNBROKEN);
+    
     void save(const utils::Str &filename);
     void display(const utils::Str &caption);
 };

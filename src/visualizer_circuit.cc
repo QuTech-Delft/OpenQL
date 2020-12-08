@@ -571,8 +571,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     
     // Initialize image.
     QL_DOUT("Initializing image...");
-    const Int numberOfChannels = 3;
-    Image image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
+    Image image(structure.getImageWidth(), structure.getImageHeight());
     image.fill(255);
 
     // Draw the cycle labels if the option has been set.
@@ -1497,7 +1496,7 @@ void drawBitLine(Image &image,
 
             drawWiggle(image, segment.first.start, segment.first.end, y, width, height, bitLineColor);
         } else {
-            image.drawLine(segment.first.start, y, segment.first.end, y, bitLineColor.data());
+            image.drawLine(segment.first.start, y, segment.first.end, y, bitLineColor);
         }
     }
 }
@@ -1549,7 +1548,7 @@ void drawWiggle(Image &image,
                 const Int width,
                 const Int height,
                 const Color color) {
-    image.drawLine(x0,                  y,          x0 + width / 3,     y - height, color));
+    image.drawLine(x0,                  y,          x0 + width / 3,     y - height, color);
     image.drawLine(x0 + width / 3,      y - height, x0 + width / 3 * 2, y + height, color);
     image.drawLine(x0 + width / 3 * 2,  y + height, x1,                 y,          color);
 }
@@ -1745,7 +1744,7 @@ void drawGate(Image &image,
                 const Int y1 = connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset;
                 const Int x2 = connectionPosition.x1;
                 const Int y2 = connectionPosition.y1 - groupedClassicalLineOffset;
-                image.drawTriangle(x0, y0, x1, y1, x2, y2, gateVisual.connectionColor, 1);
+                image.drawFilledTriangle(x0, y0, x1, y1, x2, y2, gateVisual.connectionColor);
             }
         } else {
             image.drawLine(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateVisual.connectionColor);
@@ -1772,8 +1771,8 @@ void drawGate(Image &image,
 
                 // Draw the outline in the colors of the node.
                 const Node node = gateVisual.nodes.at(i);
-                image.drawRectangle(x0, y0, x1, y1, node.backgroundColor, layout.gateDurationOutlines.getFillAlpha());
-                image.drawRectangle(x0, y0, x1, y1, node.outlineColor, layout.gateDurationOutlines.getOutlineAlpha(), LinePattern::DASHED);
+                image.drawFilledRectangle(x0, y0, x1, y1, node.backgroundColor, layout.gateDurationOutlines.getFillAlpha());
+                image.drawOutlinedRectangle(x0, y0, x1, y1, node.outlineColor, layout.gateDurationOutlines.getOutlineAlpha(), LinePattern::DASHED);
                 
                 //image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationAlpha);
                 //image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationOutLineAlpha, 0xF0F0F0F0);
@@ -1832,8 +1831,8 @@ void drawGateNode(Image &image,
     };
 
     // Draw the gate background.
-    image.drawRectangle(position.x0, position.y0, position.x1, position.y1, node.backgroundColor, 1);
-    image.drawRectangle(position.x0, position.y0, position.x1, position.y1, node.outlineColor, 1, LinePattern::UNBROKEN);
+    image.drawFilledRectangle(position.x0, position.y0, position.x1, position.y1, node.backgroundColor, 1);
+    image.drawOutlinedRectangle(position.x0, position.y0, position.x1, position.y1, node.outlineColor, 1, LinePattern::UNBROKEN);
 
     // Draw the gate symbol. The width and height of the symbol are calculated first to correctly position the symbol within the gate.
     Dimensions textDimensions = calculateTextDimensions(node.displayName, node.fontHeight);
@@ -1852,7 +1851,7 @@ void drawControlNode(Image &image,
         cellPosition.y0 + cell.chunkOffset + structure.getCellDimensions().height / 2
     };
 
-    image.drawOutlinedCircle(position.x, position.y, node.radius, node.backgroundColor, 1, LinePattern::UNBROKEN);
+    image.drawFilledCircle(position.x, position.y, node.radius, node.backgroundColor);
 }
 
 void drawNotNode(Image &image,

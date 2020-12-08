@@ -16,16 +16,16 @@ namespace ql {
 
 using namespace utils;
 
-Image::Image(const Int imageWidth, const Int imageHeight, const Int numberOfChannels) {
-    cimg((int) imageWidth, (int) imageHeight, 1, (int) numberOfChannels);
+Image::Image(const Int imageWidth, const Int imageHeight) : cimg((int) imageWidth, (int) imageHeight, 1, 3) {
+    // empty
 }
 
 void Image::fill(const Int rgb) {
     cimg.fill((int) rgb);
 }
 
-void Image::drawLine(const Int x0, const Int y0, const Int x1, const Int y1, const Color color, const utils::Real alpha, const LinePattern pattern) {
-    cimg.draw_line((int) x0, (int) y0, (int) x1, (int) y1, color.data(), alpha, static_cast<unsigned int>(pattern));
+void Image::drawLine(const Int x0, const Int y0, const Int x1, const Int y1, const Color color, const Real alpha, const LinePattern pattern) {
+    cimg.draw_line((int) x0, (int) y0, (int) x1, (int) y1, color.data(), (float) alpha, static_cast<unsigned int>(pattern));
 }
 
 void Image::drawText(const Int x, const Int y, const Str &text, const Int height, const Color color) {
@@ -33,25 +33,33 @@ void Image::drawText(const Int x, const Int y, const Str &text, const Int height
 }
 
 void Image::drawFilledCircle(const Int centerX, const Int centerY, const Int radius,
-                        const Color color, const Real opacity) {
-    cimg.draw_circle((int) centerX, (int) centerY, (int) radius, color.data(), (float) opacity);
+                             const Color color, const Real alpha) {
+    cimg.draw_circle((int) centerX, (int) centerY, (int) radius, color.data(), (float) alpha);
 }
 
 void Image::drawOutlinedCircle(const Int centerX, const Int centerY, const Int radius,
-                        const Color color, const Real opacity, const LinePattern pattern) {
-    cimg.draw_circle((int) centerX, (int) centerY, (int) radius, color.data(), (float) opacity, static_cast<unsigned int>(pattern));
+                               const Color color, const Real alpha, const LinePattern pattern) {
+    cimg.draw_circle((int) centerX, (int) centerY, (int) radius, color.data(), (float) alpha, static_cast<unsigned int>(pattern));
 }
 
-void Image::drawTriangle(const Int x0, const Int y0, const Int x1, const Int y1, const Int x2, const Int y2, const Color color) {
-    cimg.draw_triangle(x0, y0, x1, y1, x2, y2, color.data(), 1);
+void Image::drawFilledTriangle(const Int x0, const Int y0, const Int x1, const Int y1, const Int x2, const Int y2,
+                               const Color color, const Real alpha) {
+    cimg.draw_triangle((int) x0, (int) y0, (int) x1, (int) y1, (int) x2, (int) y2, color.data(), (float) alpha);
 }
 
-void Image::drawFilledRectangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const Color color, const utils::Real alpha) {
-    cimg.draw_rectangle(x0, y0, x1, y1, color, alpha, static_cast<unsigned int>(LinePattern::UNBROKEN));
+void Image::drawOutlinedTriangle(const Int x0, const Int y0, const Int x1, const Int y1, const Int x2, const Int y2,
+                                 const Color color, const Real alpha, const LinePattern pattern) {
+    cimg.draw_triangle((int) x0, (int) y0, (int) x1, (int) y1, (int) x2, (int) y2, color.data(), (float) alpha, static_cast<unsigned int>(pattern));
 }
 
-void Image::drawOutlinedRectangle(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1, const Color color, const utils::Real alpha, const LinePattern pattern) {
-    cimg.draw_rectangle(x0, y0, x1, y1, color, alpha, static_cast<unsigned int>(pattern));
+void Image::drawFilledRectangle(const Int x0, const Int y0, const Int x1, const Int y1,
+                                const Color color, const Real alpha) {
+    cimg.draw_rectangle((int) x0, (int) y0, (int) x1, (int) y1, color.data(), (float) alpha);
+}
+
+void Image::drawOutlinedRectangle(const Int x0, const Int y0, const Int x1, const Int y1,
+                                  const Color color, const Real alpha, const LinePattern pattern) {
+    cimg.draw_rectangle((int) x0, (int) y0, (int) x1, (int) y1, color.data(), (float) alpha, static_cast<unsigned int>(pattern));
 }
 
 void Image::save(const Str &filename) {

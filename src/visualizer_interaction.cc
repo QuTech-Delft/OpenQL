@@ -59,11 +59,9 @@ void visualizeInteractionGraph(const quantum_program* program, const VisualizerC
 
         // Initialize the image.
         QL_DOUT("Initializing image...");
-        const Int numberOfChannels = 3;
         const Int imageWidth = 2 * (layout.getBorderWidth() + interactionCircleRadius);
         const Int imageHeight = 2 * (layout.getBorderWidth() + interactionCircleRadius);
-        // cimg_library::CImg<unsigned char> image(imageWidth, imageHeight, 1, numberOfChannels);
-        Image image(imageWidth, imageHeight, numberOfChannels);
+        Image image(imageWidth, imageHeight);
         image.fill(255);
 
         // Draw the edges between interacting qubits.
@@ -95,7 +93,7 @@ void visualizeInteractionGraph(const quantum_program* program, const VisualizerC
                 const Position2 labelPosition = calculatePositionOnCircle(layout.getQubitRadius() + labelRadius, angle, qubitPosition);
 
                 // Draw the number of interactions.
-                image.drawText(labelPosition.x, labelPosition.y, label, layout.getLabelColor(), layout.getLabelFontHeight());
+                image.drawText(labelPosition.x, labelPosition.y, label, layout.getLabelFontHeight(), layout.getLabelColor());
             }
         }
         // Draw the qubits.
@@ -108,7 +106,7 @@ void visualizeInteractionGraph(const quantum_program* program, const VisualizerC
             const Dimensions labelDimensions = calculateTextDimensions(label, layout.getLabelFontHeight());
             const Int xGap = (2 * layout.getQubitRadius() - labelDimensions.width) / 2;
             const Int yGap = (2 * layout.getQubitRadius() - labelDimensions.height) / 2;
-            image.drawText(qubit.second.x - layout.getQubitRadius() + xGap, qubit.second.y - layout.getQubitRadius() + yGap, label, layout.getLabelColor(), layout.getLabelFontHeight());
+            image.drawText(qubit.second.x - layout.getQubitRadius() + xGap, qubit.second.y - layout.getQubitRadius() + yGap, label, layout.getLabelFontHeight(), layout.getLabelColor());
         }
 
         // Save the image if enabled.
