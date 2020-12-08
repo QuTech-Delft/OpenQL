@@ -1,13 +1,10 @@
-/**
- * @file   clifford.cc
- * @brief  clifford sequence optimizer
- * @date   05/2019
- * @author Hans van Someren
+/** \file
+ * Clifford sequence optimizer.
  */
 
 #include "clifford.h"
 
-#include "utils.h"
+#include "utils/num.h"
 #include "circuit.h"
 #include "report.h"
 #include "kernel.h"
@@ -15,23 +12,25 @@
 
 namespace ql {
 
+using namespace utils;
+
 class Clifford {
 public:
 
     void clifford_optimize_kernel(
-        ql::quantum_kernel &kernel,
-        const ql::quantum_platform &platform,
-        const std::string &passname
+        quantum_kernel &kernel,
+        const quantum_platform &platform,
+        const Str &passname
     ) {
-        DOUT("clifford_optimize_kernel()");
+        QL_DOUT("clifford_optimize_kernel()");
 
         nq = kernel.qubit_count;
         ct = kernel.cycle_time;
-        DOUT("Clifford " << passname << " on kernel " << kernel.name << " ...");
+        QL_DOUT("Clifford " << passname << " on kernel " << kernel.name << " ...");
 
         // copy circuit kernel.c to take input from;
         // output will fill kernel.c again
-        ql::circuit input_circuit = kernel.c;
+        circuit input_circuit = kernel.c;
         kernel.c.clear();
 
         cliffstate.resize(nq, 0);       // 0 is identity; for all qubits accumulated state is set to identity
@@ -49,12 +48,12 @@ public:
         reducing the number of cycles that the sequence takes, the circuit latency and the gate count.
 
         The clifford group is represented by:
-        - int string2cs(std::string gname): the clifford state of a gate with the given name; identity is 0
+        - Int string2cs(Str gname): the clifford state of a gate with the given name; identity is 0
         - a state diagram clifftrans[24][24] that represents for two given clifford (sequences),
           to which clifford the combination is equivalent to;
           so clifford(sequence1; sequence2) == clifftrans[clifford(sequence1)][clifford(sequence2)].
-        - size_t cs2cycles(int cs): the minimum number of cycles needed to implement a clifford of state cs
-        - void k.clifford(int csq, size_t q): generates minimal clifford sequence for state csq and qubit q
+        - UInt cs2cycles(Int cs): the minimum number of cycles needed to implement a clifford of state cs
+        - void k.clifford(Int csq, UInt q): generates minimal clifford sequence for state csq and qubit q
 
         Therefore, maintain for each qubit q while scanning:
         - cliffstate[q]:    clifford state of sequence until now per qubit; initially identity
@@ -66,12 +65,12 @@ public:
         the minimal sequence corresponding to the accumulated sequence is output before the new gate.
         */
         for (auto gp : input_circuit) {
-            DOUT("... gate: " << gp->qasm());
+            QL_DOUT("... gate: " << gp->qasm());
 
             if (
                 gp->type() == ql::gate_type_t::__classical_gate__   // classical gates (really being pessimistic here about these)
                 || gp->operands.empty()                             // gates without operands which may affect ALL qubits
-                ) {
+            ) {
                 // sync all qubits: create gate sequences corresponding to what was accumulated in cliffstate, for all qubits
                 sync_all(kernel);
                 kernel.c.push_back(gp);
@@ -83,15 +82,15 @@ public:
                 kernel.c.push_back(gp);
             } else {
                 // unary quantum gates like x/y/z/h/xm90/y90/s/wait/meas/prepz
-                size_t q = gp->operands[0];
-                std::string gname = gp->name;
-                int cs = string2cs(gname);
+                UInt q = gp->operands[0];
+                Str gname = gp->name;
+                Int cs = string2cs(gname);
                 if (
                     cs == -1                                        // non-clifford unary gates (wait, meas, prepz, ...)
                     || gp->is_conditional()                         // conditional unary (clifford) gates
-                    ) {
+                ) {
                     // sync particular single qubit: create gate sequence corresponding to what was accumulated in cliffstate, for this particular operand qubit
-                    DOUT("... unary gate not a clifford gate or conditional: " << gp->qasm());
+                    QL_DOUT("... unary gate not a clifford gate or conditional: " << gp->qasm());
                     sync(kernel, q);
                     kernel.c.push_back(gp);
                 } else {
@@ -99,46 +98,46 @@ public:
                     // don't emit gate but accumulate gate in cliffstate
                     // also record accumulated cycles to compute savings
                     cliffcycles[q] += (gp->duration + ct - 1) / ct;
-                    int csq = cliffstate[q];
-                    DOUT("... from " << cs2string(csq) << " to " << cs2string(clifftrans[csq][cs]));
+                    Int csq = cliffstate[q];
+                    QL_DOUT("... from " << cs2string(csq) << " to " << cs2string(clifftrans[csq][cs]));
                     cliffstate[q] = clifftrans[csq][cs];
                 }
             }
-            DOUT("... gate: " << gp->qasm() << " DONE");
+            QL_DOUT("... gate: " << gp->qasm() << " DONE");
         }
         sync_all(kernel);
-	    kernel.cycles_valid = false;
+        kernel.cycles_valid = false;
 
-        DOUT("Clifford " << passname << " on kernel " << kernel.name << " saved " << total_saved << " cycles [DONE]");
+        QL_DOUT("Clifford " << passname << " on kernel " << kernel.name << " saved " << total_saved << " cycles [DONE]");
     }
 
 private:
-    size_t  nq;
-    size_t  ct;
-    std::vector<int>    cliffstate;                    // current accumulated clifford state per qubit
-    std::vector<size_t> cliffcycles;                   // current accumulated clifford cycles per qubit
-    size_t  total_saved;                               // total number of cycles saved per kernel
+    UInt nq;
+    UInt ct;
+    Vec<Int> cliffstate; // current accumulated clifford state per qubit
+    Vec<UInt> cliffcycles; // current accumulated clifford cycles per qubit
+    UInt total_saved; // total number of cycles saved per kernel
 
     // create gate sequences for all accumulated cliffords, output them and reset state
     void sync_all(quantum_kernel &k) {
-        DOUT("... sync_all");
-        for (size_t q = 0; q < nq; q++) {
+        QL_DOUT("... sync_all");
+        for (UInt q = 0; q < nq; q++) {
             sync(k, q);
         }
-        DOUT("... sync_all DONE");
+        QL_DOUT("... sync_all DONE");
     }
 
     // create gate sequence for accumulated cliffords of qubit q, output it and reset state
-    void sync(quantum_kernel &k, size_t q) {
-        int csq = cliffstate[q];
+    void sync(quantum_kernel &k, UInt q) {
+        Int csq = cliffstate[q];
         if (csq != 0) {
-            DOUT("... sync q[" << q << "]: generating clifford " << cs2string(csq));
+            QL_DOUT("... sync q[" << q << "]: generating clifford " << cs2string(csq));
             k.clifford(csq, q);          // generates clifford(csq) in kernel.c
-            size_t  acc_cycles = cliffcycles[q];
-            size_t  ins_cycles = cs2cycles(csq);
-            DOUT("... qubit q[" << q << "]: accumulated: " << acc_cycles << ", inserted: " << ins_cycles);
-            if (acc_cycles > ins_cycles) DOUT("... qubit q[" << q << "]: saved " << (acc_cycles-ins_cycles) << " cycles");
-            if (acc_cycles < ins_cycles) DOUT("... qubit q[" << q << "]: additional " << (ins_cycles-acc_cycles) << " cycles");
+            UInt  acc_cycles = cliffcycles[q];
+            UInt  ins_cycles = cs2cycles(csq);
+            QL_DOUT("... qubit q[" << q << "]: accumulated: " << acc_cycles << ", inserted: " << ins_cycles);
+            if (acc_cycles > ins_cycles) QL_DOUT("... qubit q[" << q << "]: saved " << (acc_cycles - ins_cycles) << " cycles");
+            if (acc_cycles < ins_cycles) QL_DOUT("... qubit q[" << q << "]: additional " << (ins_cycles - acc_cycles) << " cycles");
             total_saved += acc_cycles-ins_cycles;
         }
         cliffstate[q] = 0;
@@ -146,7 +145,7 @@ private:
     }
 
     // clifford state transition [from state][accumulating sequence represented as state] => new state
-    const int clifftrans[24][24] = {
+    const Int clifftrans[24][24] = {
         {  0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 },
         {  1, 2, 0,10,11, 9, 4, 5, 3, 7, 8, 6,23,21,22,14,12,13,20,18,19,17,15,16 },
         {  2, 0, 1, 8, 6, 7,11, 9,10, 5, 3, 4,16,17,15,22,23,21,19,20,18,13,14,12 },
@@ -174,7 +173,7 @@ private:
     };
 
     // find the clifford state from identity to given clifford gate by name
-    static int string2cs(const std::string &gname) {
+    static Int string2cs(const Str &gname) {
         if (gname == "identity")         return 0;
         else if (gname == "i")           return 0;
         else if (gname == "pauli_x")     return 3;
@@ -202,7 +201,7 @@ private:
 
     // find the duration of the gate sequence corresponding to given clifford state
     // should be implemented using configuration file, searching for created gates and retrieving durations
-    static size_t cs2cycles(int cs) {
+    static UInt cs2cycles(Int cs) {
         switch(cs) {
             case 0 : return 0;
             case 1 : return 2;
@@ -233,7 +232,7 @@ private:
     }
 
     // return the gate sequence as string for debug output corresponding to given clifford state
-    static std::string cs2string(int cs) {
+    static Str cs2string(Int cs) {
         switch(cs) {
             case 0 : return("[id;]");
             case 1 : return("[y90; x90;]");
@@ -263,34 +262,34 @@ private:
         }
     }
 
-};	// class Clifford
+}; // class Clifford
 
 /**
  * Clifford sequence optimizer.
  */
 void clifford_optimize(
     quantum_program *programp,
-    const ql::quantum_platform &platform,
-    const std::string &passname
+    const quantum_platform &platform,
+    const Str &passname
 ) {
-    if (ql::options::get(passname) == "no") {
-        DOUT("Clifford optimization on program " << programp->name << " at "
-                                                 << passname << " not DONE");
+    if (options::get(passname) == "no") {
+        QL_DOUT("Clifford optimization on program " << programp->name << " at "
+                                                    << passname << " not DONE");
         return;
     }
-    DOUT("Clifford optimization on program " << programp->name << " at "
-                                             << passname << " ...");
+    QL_DOUT("Clifford optimization on program " << programp->name << " at "
+                                                << passname << " ...");
 
-    ql::report_statistics(programp, platform, "in", passname, "# ");
-    ql::report_qasm(programp, platform, "in", passname);
+    report_statistics(programp, platform, "in", passname, "# ");
+    report_qasm(programp, platform, "in", passname);
 
     Clifford cliff;
     for (auto &kernel : programp->kernels) {
         cliff.clifford_optimize_kernel(kernel, platform, passname);
     }
 
-    ql::report_statistics(programp, platform, "out", passname, "# ");
-    ql::report_qasm(programp, platform, "out", passname);
+    report_statistics(programp, platform, "out", passname, "# ");
+    report_qasm(programp, platform, "out", passname);
 }
 
 }

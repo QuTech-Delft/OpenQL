@@ -1,16 +1,13 @@
-/**
- * @file   passmanager.h
- * @date   04/2020
- * @author Razvan Nane
- * @brief  OpenQL Pass Manager
+/** \file
+ * OpenQL pass manager implementation.
  */
 
 #pragma once
 
+#include "utils/str.h"
+#include "utils/list.h"
 #include "passes.h"
 #include "program.h"
-#include <string>
-#include <list>
 
 namespace ql {
 
@@ -19,19 +16,19 @@ namespace ql {
  */
 class PassManager {
 public:
-    PassManager(const std::string &n);
+    PassManager(const utils::Str &n);
 
-    void compile(ql::quantum_program *program) const;
-    void addPassNamed(const std::string &realPassName, const std::string &symbolicPassName);
-    static AbstractPass *createPass(const std::string &passName, const std::string &aliasName);
-    AbstractPass *findPass(const std::string &passName);
-    void setPassOptionAll(const std::string &optionName, const std::string &optionValue);
+    void compile(quantum_program *program) const;
+    void addPassNamed(const utils::Str &realPassName, const utils::Str &symbolicPassName);
+    static AbstractPass *createPass(const utils::Str &passName, const utils::Str &aliasName);
+    AbstractPass *findPass(const utils::Str &passName);
+    void setPassOptionAll(const utils::Str &optionName, const utils::Str &optionValue);
 
 private:
     void addPass(AbstractPass *pass);
 
-    std::string name;
-    std::list<AbstractPass*> passes;
+    utils::Str name;
+    utils::List<AbstractPass*> passes;
 };
 
 } // namespace ql

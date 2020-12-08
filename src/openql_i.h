@@ -1,7 +1,5 @@
-/**
- * @file   openql_i.h
- * @author Imran Ashraf
- * @brief  header file for python interface
+/** \file
+ * Header for Python interface.
  */
 
 #pragma once
@@ -12,6 +10,7 @@
 #include "compiler.h"
 #include "options.h"
 
+void initialize();
 
 std::string get_version();
 
@@ -24,9 +23,9 @@ void print_options();
  */
 class Platform {
 public:
-    std::string            name;
-    std::string            config_file;
-    ql::quantum_platform * platform;
+    std::string name;
+    std::string config_file;
+    ql::quantum_platform *platform;
     Platform();
     Platform(const std::string &name, const std::string &config_file);
     size_t get_qubit_number() const;
@@ -44,7 +43,7 @@ public:
     ql::operation *operation;
     Operation(const CReg &lop, const std::string &op, const CReg &rop);
     Operation(const std::string &op, const CReg &rop);
-    Operation(const CReg& lop);
+    Operation(const CReg &lop);
     Operation(int val);
     ~Operation();
 };
@@ -57,7 +56,7 @@ typedef std::complex<double> Complex;
 class Unitary {
 public:
     std::string name;
-    ql::unitary * unitary;
+    ql::unitary *unitary;
 
     Unitary(const std::string &name, const std::vector<std::complex<double>> &matrix);
     ~Unitary();
@@ -170,8 +169,8 @@ public:
         size_t creg_count = 0,
         size_t breg_count = 0
     );
-    void set_sweep_points(const std::vector<float> &sweep_points);
-    std::vector<float> get_sweep_points() const;
+    void set_sweep_points(const std::vector<double> &sweep_points);
+    std::vector<double> get_sweep_points() const;
     void add_kernel(const Kernel &k);
     void add_program(const Program &p);
     void add_if(const Kernel &k, const Operation &operation);
@@ -199,6 +198,7 @@ public:
     Program program;
 
     cQasmReader(const Platform &q_platform, const Program &q_program);
+    cQasmReader(const Platform &q_platform, const Program &q_program, const std::string &gateset_fname);
     void string2circuit(const std::string &cqasm_str);
     void file2circuit(const std::string &cqasm_file_path);
     ~cQasmReader();

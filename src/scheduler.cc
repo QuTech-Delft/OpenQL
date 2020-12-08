@@ -1,6 +1,87 @@
+/** \file
+ * ASAP/ALAP critical path and UNIFORM scheduling with and without resource
+ * constraint.
+ * 
+ * Below there really are two classes: the dependency graph definition and the
+ * scheduler definition. All schedulers require dependency graph creation as
+ * preprocessor, and don't modify it. For each kernel's circuit a private
+ * dependency graph is created. The schedulers modify the order of gates in the
+ * circuit, initialize the cycle field of each gate, and generate/return the
+ * bundles, a list of bundles in which gates starting in the same cycle are
+ * grouped.
+ *
+ * The dependency graph (represented by the graph field below) is created in the
+ * Init method, and the graph is constructed from and referring to the gates in
+ * the sequence of gates in the kernel's circuit. In this graph, the nodes refer
+ * to the gates in the circuit, and the edges represent the dependencies between
+ * two gates. Init scans the gates of the circuit from start to end, inspects
+ * their parameters, and for each gate depending on the gate type and parameter
+ * value and previous gates operating on the same parameters, it creates a
+ * dependency of the current gate on that previous gate. Such a dependency has a
+ * type (RAW, WAW, etc.), cause (the qubit or classical register used as
+ * parameter), and a weight (the cycles the previous gate takes to complete its
+ * execution, after which the current gate can start execution).
+ *
+ * In dependency graph creation, each qubit/classical register (creg,breg) use
+ * in each gate is seen as an "event". The following events are distinguished:
+ *
+ *  - W for Write: such a use must sequentialize with any previous and later
+ *    uses of the same qubit/creg/breg. This is the default for qubits in a gate
+ *    and for assignment/modifications in classical code.
+ *  - R for Read: such uses can be arbitrarily reordered (as long as other
+ *    dependencies allow that). This event applies to all operands of CZ, the
+ *    first operand of CNOT gates, and to all reads in classical code. It also
+ *    applies in general to the control operand of Control Unitaries. It
+ *    represents commutativity between the gates which such use: CU(a,b),
+ *    CZ(a,c), CZ(d,a) and CNOT(a,e) all commute.
+ *  - D: such uses can be arbitrarily reordered but are sequentialized with W
+ *    and R events on the same qubit. This event applies to the second operand
+ *    of CNOT gates: CNOT(a,d) and CNOT(b,d) commute. With this, we effectively
+ *    get the following table of event transitions (from left-bottom to
+ *    right-up), in which 'no' indicates no dependency from left event to top
+ *    event and '/' indicates a dependency from left to top.
+ *
+ *             W   R   D                  w   R   D
+ *        W    /   /   /              W   WAW RAW DAW
+ *        R    /   no  /              R   WAR RAR DAR
+ *        D    /   /   no             D   WAD RAD DAD
+ *
+ * When the 'no' dependencies are created (RAR and/or DAD), the respective
+ * commutatable gates are sequentialized according to the original circuit's
+ * order. With all 'no's replaced by '/', all event types become equivalent
+ * (i.e. as if they were Write).
+ *
+ * Schedulers come essentially in the following forms:
+ *  - ASAP: a plain forward scheduler using dependencies only, aiming at
+ *    execution each gate as soon as possible
+ *  - ASAP with resource constraints: similar but taking resource constraints of
+ *    the gates of the platform into account
+ *  - ALAP: as ASAP but then aiming at execution of each gate as late as
+ *    possible
+ *  - ALAP with resource constraints: similar but taking resource constraints of
+ *    the gates of the platform into account
+ *  - ALAP with UNIFORM bundle lengths: using dependencies only, aim at ALAP but
+ *    with equally length bundles
+ *
+ * ASAP/ALAP can be controlled by the "scheduler" option. Similarly for UNIFORM
+ * ("scheduler_uniform"). With/out resource constraints are separate method
+ * calls.
+ *
+ * Commutation support during scheduling in general produces more
+ * efficient/shorter scheduled circuits. It is enabled by option
+ * "scheduler_commute".
+ */
+
 #include "scheduler.h"
 
+#include "utils/vec.h"
+#include "utils/filesystem.h"
+
 namespace ql {
+
+using namespace utils;
+using ListDigraph = lemon::ListDigraph;
+using ListDigraphPath = lemon::Path<ListDigraph>;
 
 Scheduler::Scheduler() :
     instruction(graph),
@@ -12,141 +93,141 @@ Scheduler::Scheduler() :
 }
 
 // ins->name may contain parameters, so must be stripped first before checking it for gate's name
-void Scheduler::stripname(std::string &name) {
-    size_t p = name.find(' ');
-    if (p != std::string::npos) {
+void Scheduler::stripname(Str &name) {
+    UInt p = name.find(' ');
+    if (p != Str::npos) {
         name = name.substr(0,p);
     }
 }
 
-// Add a dependence between two nodes: from node fromID to node toID
+// Add a dependency between two nodes: from node fromID to node toID
 // deptype is one of {RAW, WAW, WAR, RAR, RAD, DAR, DAD, WAD, DAW};
 // combo is the operand encoded in a qubit+creg+breg combined index space:
 // - 0 <= combo < qubit_count:                        combo is a qubit index
 // - 0 <= combo-qubit_count < creg_count:             combo-qubit_count is a classical register index
 // - 0 <= combo-qubit_count-creg_count < breg_count:  combo-qubit_count-creg_count is a bit register index
-void Scheduler::add_dep(int fromID, int toID, enum DepTypes deptype, size_t combo) {
-    DOUT(".. adddep ... from fromID " << fromID << " to toID " << toID << "   opnd=" << combo << ", dep=" << DepTypesNames[deptype]);
+void Scheduler::add_dep(Int fromID, Int toID, enum DepTypes deptype, UInt comboperand) {
+    QL_DOUT(".. adddep ... from fromID " << fromID << " to toID " << toID << "   opnd=" << comboperand << ", dep=" << DepTypesNames[deptype]);
     auto fromNode = graph.nodeFromId(fromID);
     auto toNode = graph.nodeFromId(toID);
     auto arc = graph.addArc(fromNode, toNode);
-    weight[arc] = int(std::ceil(static_cast<float>(instruction[fromNode]->duration) / cycle_time));
+    weight[arc] = Int(ceil(static_cast<Real>(instruction[fromNode]->duration) / cycle_time));
     // weight[arc] = (instruction[fromNode]->duration + cycle_time -1)/cycle_time;
-    cause[arc] = combo;
-    size_t operand;
+    cause[arc] = comboperand;
+    UInt operand;
     depType[arc] = deptype;
-    std::string s;
-    if (combo < qubit_count) {
+    Str s;
+    if (comboperand < qubit_count) {
         s = "q";
-        operand = combo;
-    } else if (combo - qubit_count < creg_count) {
-        operand = combo - qubit_count;
+        operand = comboperand;
+    } else if (comboperand - qubit_count < creg_count) {
+        operand = comboperand - qubit_count;
         s = "c";
     } else {
-        operand = combo - (qubit_count + creg_count);
+        operand = comboperand - (qubit_count + creg_count);
         s = "b";
     }
-    DOUT("... dep " << name[fromNode] << " -> " << name[toNode] << " (opnd=" << s << "[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
+    QL_DOUT("... dep " << name[fromNode] << " -> " << name[toNode] << " (opnd=" << s << "[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
 }
 
-// fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
+// fill the dependency graph ('graph') with nodes from the circuit and adding arcs for their dependencies
 void Scheduler::init(
     circuit &ckt,
     const quantum_platform &platform,
-    size_t qcount,
-    size_t ccount,
-    size_t bcount
+    UInt qcount,
+    UInt ccount,
+    UInt bcount
 ) {
-    DOUT("Dependence graph creation ... #qubits = " << platform.qubit_number);
+    QL_DOUT("dependency graph creation ... #qubits = " << platform.qubit_number);
     qubit_count = qcount; ///@todo-rn: DDG creation should not depend on #qubits
     creg_count = ccount; ///@todo-rn: DDG creation should not depend on #cregs
     breg_count = bcount; ///@todo-rn: DDG creation should not depend on #bregs
-    size_t creg_base = qubit_count;
-    size_t breg_base = qubit_count + creg_count;
-    size_t total_reg_count = qubit_count + creg_count + breg_count;
-    DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", breg_count=" << breg_count << ", total=" << total_reg_count);
+    UInt creg_base = qubit_count;
+    UInt breg_base = qubit_count + creg_count;
+    UInt total_reg_count = qubit_count + creg_count + breg_count;
+    QL_DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", breg_count=" << breg_count << ", total=" << total_reg_count);
     cycle_time = platform.cycle_time;
     circp = &ckt;
 
-    // dependences are created with a current gate as target
+    // dependencies are created with a current gate as target
     // and with those previous gates as source that have an operand match with the current gate:
     // - the previous gates that Read operand r in LastReaders[r]; this is a list because reading commutes
     // - the previous gates that D qubit operand q in LastDs[q]; this is a list because D'ing  commutes
     // - the previous gate that Wrote operand r in LastWriter[r]; this can only be one because writing never commutes
     // operands can be a qubit, a classical register or a bit register
     // the indices in LastReaders, LastDs and LastWriter are operand indices in the combined index space (see add_dep)
-    typedef std::vector<int> ReadersListType;
+    typedef Vec<Int> ReadersListType;
 
-    std::vector<ReadersListType> LastReaders;
+    Vec<ReadersListType> LastReaders;
     LastReaders.resize(total_reg_count);
 
-    std::vector<ReadersListType> LastDs;
+    Vec<ReadersListType> LastDs;
     LastDs.resize(total_reg_count);
 
-    // start filling the dependence graph by creating the s node, the top of the graph
+    // start filling the dependency graph by creating the s node, the top of the graph
     {
         // add dummy source node
         auto srcNode = graph.addNode();
         instruction[srcNode] = new SOURCE();    // so SOURCE is defined as instruction[s], not unique in itself
-        node[instruction[srcNode]] = srcNode;
+        node.set(instruction[srcNode]) = srcNode;
         name[srcNode] = instruction[srcNode]->qasm();
         s = srcNode;
     }
-    int srcID = graph.id(s);
-    std::vector<int> LastWriter(total_reg_count, srcID);     // it implicitly writes to all qubits/cregs/bregs
+    Int srcID = graph.id(s);
+    Vec<Int> LastWriter(total_reg_count, srcID);     // it implicitly writes to all qubits/cregs/bregs
 
-    // for each gate pointer ins in the circuit, add a node and add dependences on previous gates to it
+    // for each gate pointer ins in the circuit, add a node and add dependencies on previous gates to it
     for (auto ins : ckt) {
-        DOUT("Current instruction's name: `" << ins->name << "'");
-        DOUT(".. Qasm(): " << ins->qasm());
+        QL_DOUT("Current instruction's name: `" << ins->name << "'");
+        QL_DOUT(".. Qasm(): " << ins->qasm());
         for (auto operand : ins->operands) {
-            DOUT(".. Operand: `q[" << operand << "]'");
+            QL_DOUT(".. Operand: `q[" << operand << "]'");
         }
         for (auto coperand : ins->creg_operands) {
-            DOUT(".. Classical operand: `c[" << coperand << "]'");
+            QL_DOUT(".. Classical operand: `c[" << coperand << "]'");
         }
         for (auto boperand : ins->breg_operands) {
-            DOUT(".. Bit operand: `b[" << boperand << "]'");
+            QL_DOUT(".. Bit operand: `b[" << boperand << "]'");
         }
         if (ins->is_conditional()) {
-            DOUT(".. Condition: `" << ins->cond_qasm() << "'");
+            QL_DOUT(".. Condition: `" << ins->cond_qasm() << "'");
         }
 
         auto iname = ins->name; // copy!!!!
         stripname(iname);
 
         // Add node
-        lemon::ListDigraph::Node currNode = graph.addNode();
+        ListDigraph::Node currNode = graph.addNode();
         int currID = graph.id(currNode);
         instruction[currNode] = ins;
-        node[ins] = currNode;
+        node.set(ins) = currNode;
         name[currNode] = ins->qasm();   // and this includes any condition!
 
         // Add edges (arcs)
         // In quantum computing there are no real Reads and Writes on qubits because they cannot be cloned.
         // Every qubit use influences the qubit, updates it, so would be considered a Read+Write at the same time.
-        // In dependence graph construction, this leads to WAW-dependence chains of all uses of the same qubit,
+        // In dependency graph construction, this leads to WAW-dependency chains of all uses of the same qubit,
         // and hence in a scheduler using this graph to a sequentialization of those uses in the original program order.
         //
-        // For a scheduler, only the presence of a dependence counts, not its type (RAW/WAW/etc.).
-        // A dependence graph also has other uses apart from the scheduler: e.g. to find chains of live qubits,
+        // For a scheduler, only the presence of a dependency counts, not its type (RAW/WAW/etc.).
+        // A dependency graph also has other uses apart from the scheduler: e.g. to find chains of live qubits,
         // from their creation (Prep etc.) to their destruction (Measure, etc.) in allocation of virtual to real qubits.
         // For those uses it makes sense to make a difference with a gate doing a Read+Write, just a Write or just a Read:
         // a Prep creates a new 'value' (Write); wait, display, x, swap, cnot, all pass this value on (so Read+Write),
         // while a Measure 'destroys' the 'value' (Read+Write of the qubit, Write of the creg),
         // the destruction aspect of a Measure being implied by it being followed by a Prep (Write only) on the same qubit.
         // Furthermore Writes can model barriers on a qubit (see Wait, Display, etc.), because Writes sequentialize.
-        // The dependence graph creation below models a graph suitable for all functions, including chains of live qubits.
+        // The dependency graph creation below models a graph suitable for all functions, including chains of live qubits.
 
         // Control-operands of Controlled Unitaries commute, independent of the Unitary,
         // i.e. these gates need not be kept in order.
         // But, of course, those qubit uses should be ordered after (/before) the last (/next) non-control use of the qubit.
-        // In this way, those control-operand qubit uses would be like pure Reads in dependence graph construction.
+        // In this way, those control-operand qubit uses would be like pure Reads in dependency graph construction.
         // A problem might be that the gates with the same control-operands might be scheduled in parallel then.
         // In a non-resource scheduler that will happen but it doesn't do harm because it is not a real machine.
         // In a resource-constrained scheduler the resource constraint that prohibits more than one use
         // of the same qubit being active at the same time, will prevent this parallelism.
-        // So ignoring Read After Read (RAR) dependences enables the scheduler to take advantage
+        // So ignoring Read After Read (RAR) dependencies enables the scheduler to take advantage
         // of the commutation property of Controlled Unitaries without disadvantages.
         //
         // In more detail:
@@ -162,7 +243,7 @@ void Scheduler::init(
         // - Of any other Control Unitary, the control operand is Read and the target operand is Write (not D!)
         // - Of any other gate the operands are Read+Write or just Write (as usual to represent flow).
         // With this, we effectively get the following table of event transitions (from left-bottom to right-up),
-        // in which 'no' indicates no dependence from left event to top event and '/' indicates a dependence from left to top.
+        // in which 'no' indicates no dependency from left event to top event and '/' indicates a dependency from left to top.
         //
         //             W   R   D                  w   R   D
         //        W    /   /   /              W   WAW RAW DAW
@@ -170,13 +251,13 @@ void Scheduler::init(
         //        D    /   /   no             D   WAD RAD DAD
         //
         // In addition to LastReaders, we introduce LastDs.
-        // Either one is cleared when dependences are generated from them, and extended otherwise.
+        // Either one is cleared when dependencies are generated from them, and extended otherwise.
         // From the table it can be seen that the D 'behaves' as a Write to Read, and as a Read to Write,
         // that there is no order among Ds nor among Rs, but D after R and R after D sequentialize.
-        // With this, the dependence graph is claimed to represent the commutations as above.
+        // With this, the dependency graph is claimed to represent the commutations as above.
         //
         // The schedulers are list schedulers, i.e. they maintain a list of gates in their algorithm,
-        // of gates available for being scheduled because they are not blocked by dependences on non-scheduled gates.
+        // of gates available for being scheduled because they are not blocked by dependencies on non-scheduled gates.
         // Therefore, the schedulers are able to select the best one from a set of commutable gates.
 
         // FIXME: define signature in .json file similar to how llvm/scaffold/gcc defines instructions
@@ -186,17 +267,17 @@ void Scheduler::init(
 
         // every gate can have a condition with condition operands (which are bit register indices) that are read
         for (auto operand : ins->cond_operands) {
-            DOUT(".. Condition operand: " << operand);
+            QL_DOUT(".. Condition operand: " << operand);
             add_dep(LastWriter[breg_base+operand], currID, RAW, breg_base+operand);
             LastReaders[breg_base+operand].push_back(currID);
         }
 
         // each type of gate has a different 'signature' of events; switch out to each one
         if (iname == "measure") {
-            DOUT(". considering " << name[currNode] << " as measure");
+            QL_DOUT(". considering " << name[currNode] << " as measure");
             // Read+Write each qubit operand + Write each classical operand + Write each bit operand
             for (auto operand : ins->operands) {
-                DOUT(".. Operand: " << operand);
+                QL_DOUT(".. Operand: " << operand);
                 add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
                     add_dep(readerID, currID, WAR, operand);
@@ -206,14 +287,14 @@ void Scheduler::init(
                 }
             }
             for (auto coperand : ins->creg_operands) {
-                DOUT(".. Classical operand: " << coperand);
+                QL_DOUT(".. Classical operand: " << coperand);
                 add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
                 for (auto &readerID : LastReaders[creg_base+coperand]) {
                     add_dep(readerID, currID, WAR, creg_base+coperand);
                 }
             }
             for (auto boperand : ins->breg_operands) {
-                DOUT(".. Bit operand: " << boperand);
+                QL_DOUT(".. Bit operand: " << boperand);
                 add_dep(LastWriter[breg_base+boperand], currID, WAW, breg_base+boperand);
                 for (auto &readerID : LastReaders[breg_base+boperand]) {
                     add_dep(readerID, currID, WAR, breg_base+boperand);
@@ -222,36 +303,36 @@ void Scheduler::init(
 
             // update LastWriter and so clear LastReaders
             for (auto operand : ins->operands) {
-                DOUT(".. Update LastWriter for qubit operand register: " << operand);
+                QL_DOUT(".. Update LastWriter for qubit operand register: " << operand);
                 LastWriter[operand] = currID;
-                DOUT(".. Clearing LastReaders for qubit operand register: " << operand);
+                QL_DOUT(".. Clearing LastReaders for qubit operand register: " << operand);
                 LastReaders[operand].clear();
                 LastDs[operand].clear();
-                DOUT(".. Update LastWriter for qubit operand done");
+                QL_DOUT(".. Update LastWriter for qubit operand done");
             }
             for (auto coperand : ins->creg_operands) {
-                DOUT(".. Update LastWriter for classical operand register: " << coperand);
+                QL_DOUT(".. Update LastWriter for classical operand register: " << coperand);
                 LastWriter[creg_base+coperand] = currID;
-                DOUT(".. Clearing LastReaders for classical operand register: " << coperand);
+                QL_DOUT(".. Clearing LastReaders for classical operand register: " << coperand);
                 LastReaders[creg_base+coperand].clear();
-                DOUT(".. Update LastWriter for classical operand done");
+                QL_DOUT(".. Update LastWriter for classical operand done");
             }
             for (auto boperand : ins->breg_operands) {
-                DOUT(".. Update LastWriter for bit operand register: " << boperand);
+                QL_DOUT(".. Update LastWriter for bit operand register: " << boperand);
                 LastWriter[breg_base+boperand] = currID;
-                DOUT(".. Clearing LastReaders for bit operand register: " << boperand);
+                QL_DOUT(".. Clearing LastReaders for bit operand register: " << boperand);
                 LastReaders[breg_base+boperand].clear();
-                DOUT(".. Update LastWriter for bit operand done");
+                QL_DOUT(".. Update LastWriter for bit operand done");
             }
-            DOUT(". measure done");
+            QL_DOUT(". measure done");
         } else if (iname == "display") {
-            DOUT(". considering " << name[currNode] << " as display");
+            QL_DOUT(". considering " << name[currNode] << " as display");
             // no operands, display all qubits and cregs
             // Read+Write each operand
-            std::vector<size_t> qubits(total_reg_count);
+            Vec<UInt> qubits(total_reg_count);
             std::iota(qubits.begin(), qubits.end(), 0);
             for (auto operand : qubits) {
-                DOUT(".. Operand: " << operand);
+                QL_DOUT(".. Operand: " << operand);
                 add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
                     add_dep(readerID, currID, WAR, operand);
@@ -268,10 +349,10 @@ void Scheduler::init(
                 LastDs[operand].clear();
             }
         } else if (ins->type() == gate_type_t::__classical_gate__) {
-            DOUT(". considering " << name[currNode] << " as classical gate");
+            QL_DOUT(". considering " << name[currNode] << " as classical gate");
             // Read+Write each classical operand
             for (auto coperand : ins->creg_operands) {
-                DOUT("... Classical operand: " << coperand);
+                QL_DOUT("... Classical operand: " << coperand);
                 add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
                 for (auto &readerID : LastReaders[creg_base+coperand]) {
                     add_dep(readerID, currID, WAR, creg_base+coperand);
@@ -284,11 +365,11 @@ void Scheduler::init(
                 LastReaders[creg_base+coperand].clear();
             }
         } else if (iname == "cnot") {
-            DOUT(". considering " << name[currNode] << " as cnot");
+            QL_DOUT(". considering " << name[currNode] << " as cnot");
             // CNOTs Read the first operands, and Ds the second operand
-            size_t operandNo=0;
+            UInt operandNo = 0;
             for (auto operand : ins->operands) {
-                DOUT(".. Operand: " << operand);
+                QL_DOUT(".. Operand: " << operand);
                 if (operandNo == 0) {
                     add_dep(LastWriter[operand], currID, RAW, operand);
                     if (options::get("scheduler_commute") == "no") {
@@ -327,11 +408,11 @@ void Scheduler::init(
                 operandNo++;
             }
         } else if (iname == "cz" || iname == "cphase") {
-            DOUT(". considering " << name[currNode] << " as cz");
+            QL_DOUT(". considering " << name[currNode] << " as cz");
             // CZs Read all operands
-            size_t operandNo = 0;
+            UInt operandNo = 0;
             for (auto operand : ins->operands) {
-                DOUT(".. Operand: " << operand);
+                QL_DOUT(".. Operand: " << operand);
                 if (options::get("scheduler_commute") == "no") {
                     for (auto &readerID : LastReaders[operand]) {
                         add_dep(readerID, currID, RAR, operand);
@@ -357,10 +438,10 @@ void Scheduler::init(
             // Read on all operands, Write on last operand
             // before implementing it, check whether all commutativity on Reads above hold for this Control Unitary
         ) {
-            DOUT(". considering " << name[currNode] << " as Control Unitary");
+            QL_DOUT(". considering " << name[currNode] << " as Control Unitary");
             // Control Unitaries Read all operands, and Write the last operand
-            size_t operandNo=0;
-            size_t op_count = ins->operands.size();
+            UInt operandNo=0;
+            UInt op_count = ins->operands.size();
             for (auto operand : ins->operands) {
                 DOUT(".. Operand: " << operand);
                 add_dep(LastWriter[operand], currID, RAW, operand);
@@ -393,12 +474,12 @@ void Scheduler::init(
             } // end of operand for
 #endif  // HAVEGENERALCONTROLUNITARIES
         } else {
-            DOUT(". considering " << name[currNode] << " as no special gate (catch-all, generic rules)");
+            QL_DOUT(". considering " << name[currNode] << " as no special gate (catch-all, generic rules)");
             // Read+Write on each quantum operand
             // Read+Write on each classical operand
             // Read+Write on each bit operand
             for (auto operand : ins->operands) {
-                DOUT(".. Operand: " << operand);
+                QL_DOUT(".. Operand: " << operand);
                 add_dep(LastWriter[operand], currID, WAW, operand);
                 for (auto &readerID : LastReaders[operand]) {
                     add_dep(readerID, currID, WAR, operand);
@@ -414,7 +495,7 @@ void Scheduler::init(
 
             // Read+Write each classical operand
             for (auto coperand : ins->creg_operands) {
-                DOUT("... Classical operand: " << coperand);
+                QL_DOUT("... Classical operand: " << coperand);
                 add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
                 for (auto &readerID : LastReaders[creg_base+coperand]) {
                     add_dep(readerID, currID, WAR, creg_base+coperand);
@@ -426,7 +507,7 @@ void Scheduler::init(
 
             // Read+Write each bit operand
             for (auto boperand : ins->breg_operands) {
-                DOUT("... Bit operand: " << boperand);
+                QL_DOUT("... Bit operand: " << boperand);
                 add_dep(LastWriter[breg_base+boperand], currID, WAW, breg_base+boperand);
                 for (auto &readerID : LastReaders[breg_base+boperand]) {
                     add_dep(readerID, currID, WAR, breg_base+boperand);
@@ -436,21 +517,21 @@ void Scheduler::init(
                 LastReaders[breg_base+boperand].clear();
             } // end of boperand for
         } // end of if/else
-        DOUT(". instruction done: " << ins->qasm());
+        QL_DOUT(". instruction done: " << ins->qasm());
     } // end of instruction for
 
-    DOUT("adding deps to SINK");
-    // finish filling the dependence graph by creating the t node, the bottom of the graph
+    QL_DOUT("adding deps to SINK");
+    // finish filling the dependency graph by creating the t node, the bottom of the graph
     {
         // add dummy target node
-        lemon::ListDigraph::Node currNode = graph.addNode();
+        ListDigraph::Node currNode = graph.addNode();
         int currID = graph.id(currNode);
         instruction[currNode] = new SINK();    // so SINK is defined as instruction[t], not unique in itself
-        node[instruction[currNode]] = currNode;
+        node.set(instruction[currNode]) = currNode;
         name[currNode] = instruction[currNode]->qasm();
         t = currNode;
 
-        // add deps to the dummy target node to close the dependence chains
+        // add deps to the dummy target node to close the dependency chains
         // it behaves as a W to every qubit, creg and breg
         //
         // to guarantee that exactly at start of execution of dummy SINK,
@@ -461,10 +542,10 @@ void Scheduler::init(
         // guaranteed that on a jump and on start of target circuit, the source circuit completed).
         //
         // note that there always is a LastWriter: the dummy source node wrote to every qubit and class. reg
-        std::vector<size_t> all_operands(total_reg_count);
+        Vec<UInt> all_operands(total_reg_count);
         std::iota(all_operands.begin(), all_operands.end(), 0);
         for (auto operand : all_operands) {
-            DOUT(".. Sink operand, adding dep: " << operand);
+            QL_DOUT(".. Sink operand, adding dep: " << operand);
             add_dep(LastWriter[operand], currID, WAW, operand);
             for (auto &readerID : LastReaders[operand]) {
                 add_dep(readerID, currID, WAR, operand);
@@ -476,7 +557,7 @@ void Scheduler::init(
 
         // useless because there is nothing after t but destruction
         for (auto operand : all_operands) {
-            DOUT(".. Sink operand, clearing: " << operand);
+            QL_DOUT(".. Sink operand, clearing: " << operand);
             LastWriter[operand] = currID;
             LastReaders[operand].clear();
             LastDs[operand].clear();
@@ -484,18 +565,18 @@ void Scheduler::init(
     }
 
     // useless as well because by construction, there cannot be cycles
-    // but when afterwards dependences are added, cycles may be created,
+    // but when afterwards dependencies are added, cycles may be created,
     // and after doing so (a copy of) this test should certainly be done because
-    // a cyclic dependence graph cannot be scheduled;
-    // this test here is a kind of debugging aid whether dependence creation was done well
+    // a cyclic dependency graph cannot be scheduled;
+    // this test here is a kind of debugging aid whether dependency creation was done well
     if (!dag(graph)) {
-        FATAL("The dependence graph is not a DAG.");
+        QL_FATAL("The dependency graph is not a DAG.");
     }
-    DOUT("Dependence graph creation Done.");
+    QL_DOUT("dependency graph creation Done.");
 }
 
 void Scheduler::print() const {
-    COUT("Printing Dependence Graph ");
+    QL_COUT("Printing dependency Graph ");
     digraphWriter(graph).
         nodeMap("name", name).
         arcMap("cause", cause).
@@ -507,54 +588,46 @@ void Scheduler::print() const {
 }
 
 void Scheduler::write_dependence_matrix() const {
-    COUT("Printing Dependence Matrix ...");
-    std::ofstream fout;
-    std::string datfname( options::get("output_dir") + "/dependenceMatrix.dat");
-    fout.open(datfname, std::ios::binary);
-    if (fout.fail()) {
-        EOUT("opening file " << datfname << std::endl
-                             << "Make sure the output directory ("<< options::get("output_dir") << ") exists");
-        return;
-    }
+    QL_COUT("Printing dependency Matrix ...");
+    Str datfname( options::get("output_dir") + "/dependenceMatrix.dat");
+    OutFile fout(datfname);
 
-    size_t totalInstructions = countNodes(graph);
-    std::vector<std::vector<bool> > Matrix(totalInstructions, std::vector<bool>(totalInstructions));
+    UInt totalInstructions = countNodes(graph);
+    Vec<Vec<Bool> > Matrix(totalInstructions, Vec<Bool>(totalInstructions));
 
     // now print the edges
-    for (lemon::ListDigraph::ArcIt arc(graph); arc != lemon::INVALID; ++arc) {
+    for (ListDigraph::ArcIt arc(graph); arc != lemon::INVALID; ++arc) {
         auto srcNode = graph.source(arc);
         auto dstNode = graph.target(arc);
-        size_t srcID = graph.id( srcNode );
-        size_t dstID = graph.id( dstNode );
+        UInt srcID = graph.id( srcNode );
+        UInt dstID = graph.id( dstNode );
         Matrix[srcID][dstID] = true;
     }
 
-    for (size_t i = 1; i < totalInstructions - 1; i++) {
-        for (size_t j = 1; j < totalInstructions - 1; j++) {
+    for (UInt i = 1; i < totalInstructions - 1; i++) {
+        for (UInt j = 1; j < totalInstructions - 1; j++) {
             fout << Matrix[j][i] << "\t";
         }
-        fout << std::endl;
+        fout << "\n";
     }
-
-    fout.close();
 }
 
 // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
 // without RC, this is all there is to schedule, apart from forming the bundles in ir::bundler()
-// set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
+// set_cycle iterates over the circuit's gates and set_cycle_gate over the dependencies of each gate
 // please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
 void Scheduler::set_cycle_gate(gate *gp, scheduling_direction_t dir) {
-    lemon::ListDigraph::Node currNode = node[gp];
-    size_t  currCycle;
+    ListDigraph::Node currNode = node.at(gp);
+    UInt  currCycle;
     if (forward_scheduling == dir) {
         currCycle = 0;
-        for (lemon::ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currCycle = std::max(currCycle, instruction[graph.source(arc)]->cycle + weight[arc]);
+        for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+            currCycle = max<UInt>(currCycle, instruction[graph.source(arc)]->cycle + weight[arc]);
         }
     } else {
         currCycle = MAX_CYCLE;
-        for (lemon::ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currCycle = std::min(currCycle, instruction[graph.target(arc)]->cycle - weight[arc]);
+        for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+            currCycle = min<UInt>(currCycle, instruction[graph.target(arc)]->cycle - weight[arc]);
         }
     }
     gp->cycle = currCycle;
@@ -563,44 +636,44 @@ void Scheduler::set_cycle_gate(gate *gp, scheduling_direction_t dir) {
 void Scheduler::set_cycle(scheduling_direction_t dir) {
     if (forward_scheduling == dir) {
         instruction[s]->cycle = 0;
-        DOUT("... set_cycle of " << instruction[s]->qasm() << " cycles " << instruction[s]->cycle);
-        // *circp is by definition in a topological order of the dependence graph
+        QL_DOUT("... set_cycle of " << instruction[s]->qasm() << " cycles " << instruction[s]->cycle);
+        // *circp is by definition in a topological order of the dependency graph
         for (auto gpit = circp->begin(); gpit != circp->end(); gpit++) {
             set_cycle_gate(*gpit, dir);
-            DOUT("... set_cycle of " << (*gpit)->qasm() << " cycles " << (*gpit)->cycle);
+            QL_DOUT("... set_cycle of " << (*gpit)->qasm() << " cycles " << (*gpit)->cycle);
         }
         set_cycle_gate(instruction[t], dir);
-        DOUT("... set_cycle of " << instruction[t]->qasm() << " cycles " << instruction[t]->cycle);
+        QL_DOUT("... set_cycle of " << instruction[t]->qasm() << " cycles " << instruction[t]->cycle);
     } else {
         instruction[t]->cycle = ALAP_SINK_CYCLE;
-        // *circp is by definition in a topological order of the dependence graph
+        // *circp is by definition in a topological order of the dependency graph
         for (auto gpit = circp->rbegin(); gpit != circp->rend(); gpit++) {
             set_cycle_gate(*gpit, dir);
         }
         set_cycle_gate(instruction[s], dir);
 
         // readjust cycle values of gates so that SOURCE is at 0
-        size_t  SOURCECycle = instruction[s]->cycle;
-        DOUT("... readjusting cycle values by -" << SOURCECycle);
+        UInt  SOURCECycle = instruction[s]->cycle;
+        QL_DOUT("... readjusting cycle values by -" << SOURCECycle);
 
         instruction[t]->cycle -= SOURCECycle;
-        DOUT("... set_cycle of " << instruction[t]->qasm() << " cycles " << instruction[t]->cycle);
+        QL_DOUT("... set_cycle of " << instruction[t]->qasm() << " cycles " << instruction[t]->cycle);
         for (auto &gp : *circp) {
             gp->cycle -= SOURCECycle;
-            DOUT("... set_cycle of " << gp->qasm() << " cycles " << gp->cycle);
+            QL_DOUT("... set_cycle of " << gp->qasm() << " cycles " << gp->cycle);
         }
         instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
-        DOUT("... set_cycle of " << instruction[s]->qasm() << " cycles " << instruction[s]->cycle);
+        QL_DOUT("... set_cycle of " << instruction[s]->qasm() << " cycles " << instruction[s]->cycle);
     }
 }
 
-static bool cycle_lessthan(gate *gp1, gate *gp2) {
+static Bool cycle_lessthan(gate *gp1, gate *gp2) {
     return gp1->cycle < gp2->cycle;
 }
 
 // sort circuit by the gates' cycle attribute in non-decreasing order
 void Scheduler::sort_by_cycle(circuit *cp) {
-    DOUT("... before sorting on cycle value");
+    QL_DOUT("... before sorting on cycle value");
     // for ( circuit::iterator gpit = cp->begin(); gpit != cp->end(); gpit++)
     // {
     //     gate*           gp = *gpit;
@@ -610,7 +683,7 @@ void Scheduler::sort_by_cycle(circuit *cp) {
     // std::sort doesn't preserve the original order of elements that have equal values but std::stable_sort does
     std::stable_sort(cp->begin(), cp->end(), cycle_lessthan);
 
-    DOUT("... after sorting on cycle value");
+    QL_DOUT("... after sorting on cycle value");
     // for ( circuit::iterator gpit = cp->begin(); gpit != cp->end(); gpit++)
     // {
     //     gate*           gp = *gpit;
@@ -619,49 +692,49 @@ void Scheduler::sort_by_cycle(circuit *cp) {
 }
 
 // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-void Scheduler::schedule_asap(std::string &sched_dot) {
-    DOUT("Scheduling ASAP ...");
+void Scheduler::schedule_asap(Str &sched_dot) {
+    QL_DOUT("Scheduling ASAP ...");
     set_cycle(forward_scheduling);
     sort_by_cycle(circp);
 
     if (options::get("print_dot_graphs") == "yes") {
-        std::stringstream ssdot;
+        StrStrm ssdot;
         get_dot(false, true, ssdot);
         sched_dot = ssdot.str();
     }
 
-    DOUT("Scheduling ASAP [DONE]");
+    QL_DOUT("Scheduling ASAP [DONE]");
 }
 
 // ALAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-void Scheduler::schedule_alap(std::string &sched_dot) {
-    DOUT("Scheduling ALAP ...");
+void Scheduler::schedule_alap(Str &sched_dot) {
+    QL_DOUT("Scheduling ALAP ...");
     set_cycle(backward_scheduling);
     sort_by_cycle(circp);
 
     if (options::get("print_dot_graphs") == "yes") {
-        std::stringstream ssdot;
+        StrStrm ssdot;
         get_dot(false, true, ssdot);
         sched_dot = ssdot.str();
     }
 
-    DOUT("Scheduling ALAP [DONE]");
+    QL_DOUT("Scheduling ALAP [DONE]");
 }
 
 // Note that set_remaining_gate expects a caller like set_remaining that iterates gp backward over the circuit
 void Scheduler::set_remaining_gate(gate* gp, scheduling_direction_t dir) {
-    auto currNode = node[gp];
-    size_t currRemain = 0;
+    auto currNode = node.at(gp);
+    UInt currRemain = 0;
     if (forward_scheduling == dir) {
-        for (lemon::ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currRemain = std::max(currRemain, remaining[graph.target(arc)] + weight[arc]);
+        for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+            currRemain = max<UInt>(currRemain, remaining.at(graph.target(arc)) + weight[arc]);
         }
     } else {
-        for (lemon::ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currRemain = std::max(currRemain, remaining[graph.source(arc)] + weight[arc]);
+        for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+            currRemain = max<UInt>(currRemain, remaining.at(graph.source(arc)) + weight[arc]);
         }
     }
-    remaining[currNode] = currRemain;
+    remaining.set(currNode) = currRemain;
 }
 
 void Scheduler::set_remaining(scheduling_direction_t dir) {
@@ -669,51 +742,51 @@ void Scheduler::set_remaining(scheduling_direction_t dir) {
     remaining.clear();
     if (forward_scheduling == dir) {
         // remaining until SINK (i.e. the SINK.cycle-ALAP value)
-        remaining[t] = 0;
-        // *circp is by definition in a topological order of the dependence graph
+        remaining.set(t) = 0;
+        // *circp is by definition in a topological order of the dependency graph
         for (auto gpit = circp->rbegin(); gpit != circp->rend(); gpit++) {
             gate *gp2 = *gpit;
             set_remaining_gate(gp2, dir);
-            DOUT("... remaining at " << gp2->qasm() << " cycles " << remaining[node[gp2]]);
+            QL_DOUT("... remaining at " << gp2->qasm() << " cycles " << remaining.dbg(node.at(gp2)));
         }
         gp = instruction[s];
         set_remaining_gate(gp, dir);
-        DOUT("... remaining at " << gp->qasm() << " cycles " << remaining[s]);
+        QL_DOUT("... remaining at " << gp->qasm() << " cycles " << remaining.dbg(s));
     } else {
         // remaining until SOURCE (i.e. the ASAP value)
-        remaining[s] = 0;
-        // *circp is by definition in a topological order of the dependence graph
+        remaining.set(s) = 0;
+        // *circp is by definition in a topological order of the dependency graph
         for (auto gpit = circp->begin(); gpit != circp->end(); gpit++) {
             gate*   gp2 = *gpit;
             set_remaining_gate(gp2, dir);
-            DOUT("... remaining at " << gp2->qasm() << " cycles " << remaining[node[gp2]]);
+            QL_DOUT("... remaining at " << gp2->qasm() << " cycles " << remaining.dbg(node.at(gp2)));
         }
         gp = instruction[t];
         set_remaining_gate(gp, dir);
-        DOUT("... remaining at " << gp->qasm() << " cycles " << remaining[t]);
+        QL_DOUT("... remaining at " << gp->qasm() << " cycles " << remaining.dbg(t));
     }
 }
 
-gate *Scheduler::find_mostcritical(std::list<gate*> &lg) {
-    size_t maxRemain = 0;
+gate *Scheduler::find_mostcritical(List<gate*> &lg) {
+    UInt maxRemain = 0;
     gate *mostCriticalGate = nullptr;
     for (auto gp : lg) {
-        size_t gr = remaining[node[gp]];
+        UInt gr = remaining.at(node.at(gp));
         if (gr > maxRemain) {
             mostCriticalGate = gp;
             maxRemain = gr;
         }
     }
-    DOUT("... most critical gate: " << mostCriticalGate->qasm() << " with remaining=" << maxRemain);
+    QL_DOUT("... most critical gate: " << mostCriticalGate->qasm() << " with remaining=" << maxRemain);
     return mostCriticalGate;
 }
 
 // Set the curr_cycle of the scheduling algorithm to start at the appropriate end as well;
 // note that the cycle attributes will be shifted down to start at 1 after backward scheduling.
 void Scheduler::init_available(
-    std::list<lemon::ListDigraph::Node> &avlist,
+    List<ListDigraph::Node> &avlist,
     scheduling_direction_t dir,
-    size_t &curr_cycle
+    UInt &curr_cycle
 ) {
     avlist.clear();
     if (forward_scheduling == dir) {
@@ -729,18 +802,18 @@ void Scheduler::init_available(
 
 // collect the list of directly depending nodes
 // (i.e. those necessarily scheduled after the given node) without duplicates;
-// dependences that are duplicates from the perspective of the scheduler
-// may be present in the dependence graph because the scheduler ignores dependence type and cause
+// dependencies that are duplicates from the perspective of the scheduler
+// may be present in the dependency graph because the scheduler ignores dependency type and cause
 void Scheduler::get_depending_nodes(
-    lemon::ListDigraph::Node n,
+    ListDigraph::Node n,
     scheduling_direction_t dir,
-    std::list<lemon::ListDigraph::Node> &ln
+    List<ListDigraph::Node> &ln
 ) {
     if (forward_scheduling == dir) {
-        for (lemon::ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
+        for (ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
             auto succNode = graph.target(succArc);
             // DOUT("...... succ of " << instruction[n]->qasm() << " : " << instruction[succNode]->qasm());
-            bool found = false;             // filter out duplicates
+            Bool found = false;             // filter out duplicates
             for (auto anySuccNode : ln) {
                 if (succNode == anySuccNode) {
                     // DOUT("...... duplicate: " << instruction[succNode]->qasm());
@@ -753,10 +826,10 @@ void Scheduler::get_depending_nodes(
         }
         // ln contains depending nodes of n without duplicates
     } else {
-        for (lemon::ListDigraph::InArcIt predArc(graph,n); predArc != lemon::INVALID; ++predArc) {
-            lemon::ListDigraph::Node predNode = graph.source(predArc);
+        for (ListDigraph::InArcIt predArc(graph,n); predArc != lemon::INVALID; ++predArc) {
+            ListDigraph::Node predNode = graph.source(predArc);
             // DOUT("...... pred of " << instruction[n]->qasm() << " : " << instruction[predNode]->qasm());
-            bool found = false;             // filter out duplicates
+            Bool found = false;             // filter out duplicates
             for (auto anyPredNode : ln) {
                 if (predNode == anyPredNode) {
                     // DOUT("...... duplicate: " << instruction[predNode]->qasm());
@@ -776,19 +849,19 @@ void Scheduler::get_depending_nodes(
 // deep-criticality takes into account the criticality of depending nodes (in the right direction!);
 // this function is used to order the avlist in an order from highest deep-criticality to lowest deep-criticality;
 // it is the core of the heuristics of the critical path list scheduler.
-bool Scheduler::criticality_lessthan(
-    lemon::ListDigraph::Node n1,
-    lemon::ListDigraph::Node n2,
+Bool Scheduler::criticality_lessthan(
+    ListDigraph::Node n1,
+    ListDigraph::Node n2,
     scheduling_direction_t dir
 ) {
     if (n1 == n2) return false;             // because not <
 
-    if (remaining[n1] < remaining[n2]) return true;
-    if (remaining[n1] > remaining[n2]) return false;
+    if (remaining.at(n1) < remaining.at(n2)) return true;
+    if (remaining.at(n1) > remaining.at(n2)) return false;
     // so: remaining[n1] == remaining[n2]
 
-    std::list<lemon::ListDigraph::Node> ln1;
-    std::list<lemon::ListDigraph::Node> ln2;
+    List<ListDigraph::Node> ln1;
+    List<ListDigraph::Node> ln2;
 
     get_depending_nodes(n1, dir, ln1);
     get_depending_nodes(n2, dir, ln2);
@@ -796,26 +869,26 @@ bool Scheduler::criticality_lessthan(
     if (ln1.empty()) return true;           // so when both empty, it is equal, so not strictly <, so false
     // so: ln1.non_empty && ln2.non_empty
 
-    ln1.sort([this](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return remaining[d1] < remaining[d2]; });
-    ln2.sort([this](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return remaining[d1] < remaining[d2]; });
+    ln1.sort([this](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
+    ln2.sort([this](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
 
-    size_t crit_dep_n1 = remaining[ln1.back()];    // the last of the list is the one with the largest remaining value
-    size_t crit_dep_n2 = remaining[ln2.back()];
+    UInt crit_dep_n1 = remaining.at(ln1.back());    // the last of the list is the one with the largest remaining value
+    UInt crit_dep_n2 = remaining.at(ln2.back());
 
     if (crit_dep_n1 < crit_dep_n2) return true;
     if (crit_dep_n1 > crit_dep_n2) return false;
     // so: crit_dep_n1 == crit_dep_n2, call this crit_dep
 
-    ln1.remove_if([this,crit_dep_n1](lemon::ListDigraph::Node n) { return remaining[n] < crit_dep_n1; });
-    ln2.remove_if([this,crit_dep_n2](lemon::ListDigraph::Node n) { return remaining[n] < crit_dep_n2; });
+    ln1.remove_if([this,crit_dep_n1](ListDigraph::Node n) { return remaining.at(n) < crit_dep_n1; });
+    ln2.remove_if([this,crit_dep_n2](ListDigraph::Node n) { return remaining.at(n) < crit_dep_n2; });
     // because both contain element with remaining == crit_dep: ln1.non_empty && ln2.non_empty
 
     if (ln1.size() < ln2.size()) return true;
     if (ln1.size() > ln2.size()) return false;
     // so: ln1.size() == ln2.size() >= 1
 
-    ln1.sort([this,dir](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
-    ln2.sort([this,dir](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
+    ln1.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
+    ln2.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
     return criticality_lessthan(ln1.back(), ln2.back(), dir);
 }
 
@@ -823,24 +896,24 @@ bool Scheduler::criticality_lessthan(
 // add it to the avlist because the condition for that is fulfilled:
 //  all its predecessors were scheduled (forward scheduling) or
 //  all its successors were scheduled (backward scheduling)
-// update its cycle attribute to reflect these dependences;
+// update its cycle attribute to reflect these dependencies;
 // avlist is initialized with s or t as first element by init_available
 // avlist is kept ordered on deep-criticality, non-increasing (i.e. highest deep-criticality first)
 void Scheduler::MakeAvailable(
-    lemon::ListDigraph::Node n,
-    std::list<lemon::ListDigraph::Node> &avlist,
+    ListDigraph::Node n,
+    List<ListDigraph::Node> &avlist,
     scheduling_direction_t dir
 ) {
-    bool already_in_avlist = false;  // check whether n is already in avlist
+    Bool already_in_avlist = false;  // check whether n is already in avlist
     // originates from having multiple arcs between pair of nodes
-    std::list<lemon::ListDigraph::Node>::iterator first_lower_criticality_inp; // for keeping avlist ordered
-    bool first_lower_criticality_found = false;                          // for keeping avlist ordered
+    List<ListDigraph::Node>::iterator first_lower_criticality_inp; // for keeping avlist ordered
+    Bool first_lower_criticality_found = false;                          // for keeping avlist ordered
 
-    DOUT(".... making available node " << name[n] << " remaining: " << remaining[n]);
+    QL_DOUT(".... making available node " << name[n] << " remaining: " << remaining.dbg(n));
     for (auto inp = avlist.begin(); inp != avlist.end(); inp++) {
         if (*inp == n) {
             already_in_avlist = true;
-            DOUT("...... duplicate when making available: " << name[n]);
+            QL_DOUT("...... duplicate when making available: " << name[n]);
         } else {
             // scanning avlist from front to back (avlist is ordered from high to low criticality)
             // when encountering first node *inp with less criticality,
@@ -850,7 +923,7 @@ void Scheduler::MakeAvailable(
             // consequence is that
             // when a node has same criticality as n, new node n is put after it, as last one of set of same criticality,
             // so order of calling MakeAvailable (and probably original circuit, and running other scheduler first) matters,
-            // also when all dependence sets (and so remaining values) are identical!
+            // also when all dependency sets (and so remaining values) are identical!
             if (criticality_lessthan(*inp, n, dir) && !first_lower_criticality_found) {
                 first_lower_criticality_inp = inp;
                 first_lower_criticality_found = true;
@@ -866,7 +939,7 @@ void Scheduler::MakeAvailable(
             // add n to end of avlist, if none found with less criticality
             avlist.push_back(n);
         }
-        DOUT("...... made available node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
+        QL_DOUT("...... made available node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining.dbg(n));
     }
 }
 
@@ -888,21 +961,21 @@ void Scheduler::MakeAvailable(
 // because from then on that value is compared to the curr_cycle to check
 // whether a node has completed execution and thus is available for scheduling in curr_cycle
 void Scheduler::TakeAvailable(
-    lemon::ListDigraph::Node n,
-    std::list<lemon::ListDigraph::Node> &avlist,
-    std::map<gate*,bool> &scheduled,
+    ListDigraph::Node n,
+    List<ListDigraph::Node> &avlist,
+    Map<gate*,Bool> &scheduled,
     scheduling_direction_t dir
 ) {
-    scheduled[instruction[n]] = true;
+    scheduled.set(instruction[n]) = true;
     avlist.remove(n);
 
     if (forward_scheduling == dir) {
-        for (lemon::ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
+        for (ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
             auto succNode = graph.target(succArc);
-            bool schedulable = true;
-            for (lemon::ListDigraph::InArcIt predArc(graph,succNode); predArc != lemon::INVALID; ++predArc) {
-                lemon::ListDigraph::Node predNode = graph.source(predArc);
-                if (!scheduled[instruction[predNode]]) {
+            Bool schedulable = true;
+            for (ListDigraph::InArcIt predArc(graph,succNode); predArc != lemon::INVALID; ++predArc) {
+                ListDigraph::Node predNode = graph.source(predArc);
+                if (!scheduled.at(instruction[predNode])) {
                     schedulable = false;
                     break;
                 }
@@ -912,12 +985,12 @@ void Scheduler::TakeAvailable(
             }
         }
     } else {
-        for (lemon::ListDigraph::InArcIt predArc(graph,n); predArc != lemon::INVALID; ++predArc) {
+        for (ListDigraph::InArcIt predArc(graph,n); predArc != lemon::INVALID; ++predArc) {
             auto predNode = graph.source(predArc);
-            bool schedulable = true;
-            for (lemon::ListDigraph::OutArcIt succArc(graph,predNode); succArc != lemon::INVALID; ++succArc) {
+            Bool schedulable = true;
+            for (ListDigraph::OutArcIt succArc(graph,predNode); succArc != lemon::INVALID; ++succArc) {
                 auto succNode = graph.target(succArc);
-                if (!scheduled[instruction[succNode]]) {
+                if (!scheduled.at(instruction[succNode])) {
                     schedulable = false;
                     break;
                 }
@@ -934,7 +1007,7 @@ void Scheduler::TakeAvailable(
 // and try again; this makes nodes/instructions to complete execution for one more cycle,
 // and makes resources finally available in case of resource constrained scheduling
 // so it contributes to proceeding and to finally have an empty avlist
-void Scheduler::AdvanceCurrCycle(scheduling_direction_t dir, size_t &curr_cycle) {
+void Scheduler::AdvanceCurrCycle(scheduling_direction_t dir, UInt &curr_cycle) {
     if (forward_scheduling == dir) {
         curr_cycle++;
     } else {
@@ -946,13 +1019,13 @@ void Scheduler::AdvanceCurrCycle(scheduling_direction_t dir, size_t &curr_cycle)
 // and must wait until all resources required for the gate's execution are available;
 // return true when immediately schedulable
 // when returning false, isres indicates whether resource occupation was the reason or operand completion (for debugging)
-bool Scheduler::immediately_schedulable(
-    lemon::ListDigraph::Node n,
+Bool Scheduler::immediately_schedulable(
+    ListDigraph::Node n,
     scheduling_direction_t dir,
-    const size_t curr_cycle,
+    const UInt curr_cycle,
     const quantum_platform& platform,
     arch::resource_manager_t &rm,
-    bool &isres
+    Bool &isres
 ) {
     gate *gp = instruction[n];
     isres = true;
@@ -983,31 +1056,31 @@ bool Scheduler::immediately_schedulable(
 
 // select a node from the avlist
 // the avlist is deep-ordered from high to low criticality (see criticality_lessthan above)
-lemon::ListDigraph::Node Scheduler::SelectAvailable(
-    std::list<lemon::ListDigraph::Node> &avlist,
+ListDigraph::Node Scheduler::SelectAvailable(
+    List<ListDigraph::Node> &avlist,
     scheduling_direction_t dir,
-    const size_t curr_cycle,
+    const UInt curr_cycle,
     const quantum_platform &platform,
     arch::resource_manager_t &rm,
-    bool &success
+    Bool &success
 ) {
     success = false;                        // whether a node was found and returned
 
-    DOUT("avlist(@" << curr_cycle << "):");
+    QL_DOUT("avlist(@" << curr_cycle << "):");
     for (auto n : avlist) {
-        DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
+        QL_DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining.dbg(n));
     }
 
     // select the first immediately schedulable, if any
     // since avlist is deep-criticality ordered, highest first, the first is the most deep-critical
     for (auto n : avlist) {
-        bool isres;
+        Bool isres;
         if (immediately_schedulable(n, dir, curr_cycle, platform, rm, isres)) {
-            DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " immediately schedulable, remaining=" << remaining[n] << ", selected");
+            QL_DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " immediately schedulable, remaining=" << remaining.dbg(n) << ", selected");
             success = true;
             return n;
         } else {
-            DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " remaining=" << remaining[n] << ", waiting for " << (isres? "resource" : "dependent completion"));
+            QL_DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " remaining=" << remaining.dbg(n) << ", waiting for " << (isres ? "resource" : "dependent completion"));
         }
     }
 
@@ -1017,7 +1090,7 @@ lemon::ListDigraph::Node Scheduler::SelectAvailable(
 
 // ASAP/ALAP scheduler with RC
 //
-// schedule the circuit that is in the dependence graph
+// schedule the circuit that is in the dependency graph
 // for the given direction, with the given platform and resource manager;
 // what is done, is:
 // - the cycle attribute of the gates will be set according to the scheduling method
@@ -1028,29 +1101,29 @@ void Scheduler::schedule(
     scheduling_direction_t dir,
     const quantum_platform &platform,
     arch::resource_manager_t &rm,
-    std::string &sched_dot
+    Str &sched_dot
 ) {
-    DOUT("Scheduling " << (forward_scheduling == dir?"ASAP":"ALAP") << " with RC ...");
+    QL_DOUT("Scheduling " << (forward_scheduling == dir ? "ASAP" : "ALAP") << " with RC ...");
 
     // scheduled[gp] :=: whether gate *gp has been scheduled, init all false
-    std::map<gate*, bool> scheduled;
+    Map<gate*, Bool> scheduled;
     // avlist :=: list of schedulable nodes, initially (see below) just s or t
-    std::list<lemon::ListDigraph::Node> avlist;
+    List<ListDigraph::Node> avlist;
 
     // initializations for this scheduler
-    // note that dependence graph is not modified by a scheduler, so it can be reused
-    DOUT("... initialization");
-    for (lemon::ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
-        scheduled[instruction[n]] = false;   // none were scheduled, including SOURCE/SINK
+    // note that dependency graph is not modified by a scheduler, so it can be reused
+    QL_DOUT("... initialization");
+    for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
+        scheduled.set(instruction[n]) = false;   // none were scheduled, including SOURCE/SINK
     }
-    size_t  curr_cycle;         // current cycle for which instructions are sought
+    UInt  curr_cycle;         // current cycle for which instructions are sought
     init_available(avlist, dir, curr_cycle);     // first node (SOURCE/SINK) is made available and curr_cycle set
     set_remaining(dir);         // for each gate, number of cycles until end of schedule
 
-    DOUT("... loop over avlist until it is empty");
+    QL_DOUT("... loop over avlist until it is empty");
     while (!avlist.empty()) {
-        bool success;
-        lemon::ListDigraph::Node selected_node;
+        Bool success;
+        ListDigraph::Node selected_node;
 
         selected_node = SelectAvailable(avlist, dir, curr_cycle, platform, rm, success);
         if (!success) {
@@ -1062,7 +1135,7 @@ void Scheduler::schedule(
 
         // commit selected_node to the schedule
         gate* gp = instruction[selected_node];
-        DOUT("... selected " << gp->qasm() << " in cycle " << curr_cycle);
+        QL_DOUT("... selected " << gp->qasm() << " in cycle " << curr_cycle);
         gp->cycle = curr_cycle;                     // scheduler result, including s and t
         if (
             selected_node != s
@@ -1077,13 +1150,13 @@ void Scheduler::schedule(
         // more nodes that could be scheduled in this cycle, will be found in an other round of the loop
     }
 
-    DOUT("... sorting on cycle value");
+    QL_DOUT("... sorting on cycle value");
     sort_by_cycle(circp);
 
     if (dir == backward_scheduling) {
         // readjust cycle values of gates so that SOURCE is at 0
-        size_t SOURCECycle = instruction[s]->cycle;
-        DOUT("... readjusting cycle values by -" << SOURCECycle);
+        UInt SOURCECycle = instruction[s]->cycle;
+        QL_DOUT("... readjusting cycle values by -" << SOURCECycle);
 
         instruction[t]->cycle -= SOURCECycle;
         for (auto & gp : *circp) {
@@ -1094,34 +1167,34 @@ void Scheduler::schedule(
     // FIXME HvS cycles_valid now
 
     if (options::get("print_dot_graphs") == "yes") {
-        std::stringstream ssdot;
+        StrStrm ssdot;
         get_dot(false, true, ssdot);
         sched_dot = ssdot.str();
     }
 
     // end scheduling
 
-    DOUT("Scheduling " << (forward_scheduling == dir?"ASAP":"ALAP") << " with RC [DONE]");
+    QL_DOUT("Scheduling " << (forward_scheduling == dir ? "ASAP" : "ALAP") << " with RC [DONE]");
 }
 
 void Scheduler::schedule_asap(
     arch::resource_manager_t &rm,
     const quantum_platform &platform,
-    std::string &sched_dot
+    Str &sched_dot
 ) {
-    DOUT("Scheduling ASAP");
+    QL_DOUT("Scheduling ASAP");
     schedule(circp, forward_scheduling, platform, rm, sched_dot);
-    DOUT("Scheduling ASAP [DONE]");
+    QL_DOUT("Scheduling ASAP [DONE]");
 }
 
 void Scheduler::schedule_alap(
     arch::resource_manager_t &rm,
     const quantum_platform &platform,
-    std::string &sched_dot
+    Str &sched_dot
 ) {
-    DOUT("Scheduling ALAP");
+    QL_DOUT("Scheduling ALAP");
     schedule(circp, backward_scheduling, platform, rm, sched_dot);
-    DOUT("Scheduling ALAP [DONE]");
+    QL_DOUT("Scheduling ALAP [DONE]");
 }
 
 void Scheduler::schedule_alap_uniform() {
@@ -1143,19 +1216,19 @@ void Scheduler::schedule_alap_uniform() {
     // After this, it moves gates up in the direction of the higher cycles but, of course, at most to their ALAP cycle
     // to fill up the small bundles at the higher cycle values to the targeted uniform length, without extending the circuit.
     // It does this in a backward scan (as ALAP scheduling would do), so bundles at the highest cycles are filled up first,
-    // and such that the circuit's depth is not enlarged and the dependences/latencies are obeyed.
+    // and such that the circuit's depth is not enlarged and the dependencies/latencies are obeyed.
     // Hence, the result resembles an ALAP schedule with excess bundle lengths solved by moving nodes down ("rolling pin").
 
-    DOUT("Scheduling ALAP UNIFORM to get bundles ...");
+    QL_DOUT("Scheduling ALAP UNIFORM to get bundles ...");
 
     // initialize gp->cycle as ASAP cycles as first approximation of result;
-    // note that the circuit doesn't contain the SOURCE and SINK gates but the dependence graph does;
+    // note that the circuit doesn't contain the SOURCE and SINK gates but the dependency graph does;
     // from SOURCE is a weight 1 dep to the first nodes using each qubit and classical register, and to the SINK gate
     // is a dep from each unused qubit/classical register result with as weight the duration of the last operation.
     // SOURCE (node s) is at cycle 0 and the first circuit's gates are at cycle 1.
     // SINK (node t) is at the earliest cycle that all gates/operations have completed.
     set_cycle(forward_scheduling);
-    size_t cycle_count = instruction[t]->cycle - 1;
+    UInt cycle_count = instruction[t]->cycle - 1;
     // so SOURCE at cycle 0, then all circuit's gates at cycles 1 to cycle_count, and finally SINK at cycle cycle_count+1
 
     // compute remaining which is the opposite of the alap cycle value (remaining[node] :=: SINK->cycle - alapcycle[node])
@@ -1166,9 +1239,9 @@ void Scheduler::schedule_alap_uniform() {
     // DOUT("Creating gates_per_cycle");
     // create gates_per_cycle[cycle] = for each cycle the list of gates at cycle cycle
     // this is the basic map to be operated upon by the uniforming scheduler below;
-    std::map<size_t,std::list<gate*>> gates_per_cycle;
+    Map<UInt, List<gate*>> gates_per_cycle;
     for (auto gp : *circp) {
-        gates_per_cycle[gp->cycle].push_back(gp);
+        gates_per_cycle.set(gp->cycle).push_back(gp);
     }
 
     // DOUT("Displaying circuit and bundle statistics");
@@ -1176,33 +1249,33 @@ void Scheduler::schedule_alap_uniform() {
     // - the largest number of gates in a cycle in the circuit,
     // - and the average number of gates in non-empty cycles
     // this is done before and after uniform scheduling, and printed
-    size_t max_gates_per_cycle = 0;
-    size_t non_empty_bundle_count = 0;
-    size_t gate_count = 0;
-    for (size_t curr_cycle = 1; curr_cycle <= cycle_count; curr_cycle++) {
-        max_gates_per_cycle = std::max(max_gates_per_cycle, gates_per_cycle[curr_cycle].size());
-        if (int(gates_per_cycle[curr_cycle].size()) != 0) {
+    UInt max_gates_per_cycle = 0;
+    UInt non_empty_bundle_count = 0;
+    UInt gate_count = 0;
+    for (UInt curr_cycle = 1; curr_cycle <= cycle_count; curr_cycle++) {
+        max_gates_per_cycle = max<UInt>(max_gates_per_cycle, gates_per_cycle.get(curr_cycle).size());
+        if (!gates_per_cycle.get(curr_cycle).empty()) {
             non_empty_bundle_count++;
         }
-        gate_count += gates_per_cycle[curr_cycle].size();
+        gate_count += gates_per_cycle.get(curr_cycle).size();
     }
-    double avg_gates_per_cycle = double(gate_count)/cycle_count;
-    double avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
-    DOUT("... before uniform scheduling:"
+    Real avg_gates_per_cycle = Real(gate_count)/cycle_count;
+    Real avg_gates_per_non_empty_cycle = Real(gate_count)/non_empty_bundle_count;
+    QL_DOUT("... before uniform scheduling:"
              << " cycle_count=" << cycle_count
              << "; gate_count=" << gate_count
              << "; non_empty_bundle_count=" << non_empty_bundle_count
     );
-    DOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
-                                        << "; avg_gates_per_cycle=" << avg_gates_per_cycle
-                                        << "; avg_gates_per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
+    QL_DOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
+                                           << "; avg_gates_per_cycle=" << avg_gates_per_cycle
+                                           << "; avg_gates_per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
     );
 
     // in a backward scan, make non-empty bundles max avg_gates_per_non_empty_cycle long;
     // an earlier version of the algorithm aimed at making bundles max avg_gates_per_cycle long
     // but that flawed because of frequent empty bundles causing this estimate for a uniform length being too low
     // DOUT("Backward scan uniform scheduling");
-    for (size_t curr_cycle = cycle_count; curr_cycle >= 1; curr_cycle--) {
+    for (UInt curr_cycle = cycle_count; curr_cycle >= 1; curr_cycle--) {
         // Backward with pred_cycle from curr_cycle-1 down to 1, look for node(s) to fill up current too small bundle.
         // After an iteration at cycle curr_cycle, all bundles from curr_cycle to cycle_count have been filled up,
         // and all bundles from 1 to curr_cycle-1 still have to be done.
@@ -1220,49 +1293,49 @@ void Scheduler::schedule_alap_uniform() {
 
         // target size of each bundle is number of gates still to go divided by number of non-empty cycles to go
         // it averages over non-empty bundles instead of all bundles because the latter would be very strict
-        // it is readjusted during the scan to cater for dips in bundle size caused by local dependence chains
+        // it is readjusted during the scan to cater for dips in bundle size caused by local dependency chains
         if (non_empty_bundle_count == 0) break;     // nothing to do
-        avg_gates_per_cycle = double(gate_count)/curr_cycle;
-        avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
-        DOUT("Cycle=" << curr_cycle << " number of gates=" << gates_per_cycle[curr_cycle].size()
-                      << "; avg_gates_per_cycle=" << avg_gates_per_cycle
-                      << "; avg_gates_per_non_empty_cycle=" << avg_gates_per_non_empty_cycle);
+        avg_gates_per_cycle = Real(gate_count)/curr_cycle;
+        avg_gates_per_non_empty_cycle = Real(gate_count)/non_empty_bundle_count;
+        QL_DOUT("Cycle=" << curr_cycle << " number of gates=" << gates_per_cycle.get(curr_cycle).size()
+                         << "; avg_gates_per_cycle=" << avg_gates_per_cycle
+                         << "; avg_gates_per_non_empty_cycle=" << avg_gates_per_non_empty_cycle);
 
-        while (double(gates_per_cycle[curr_cycle].size()) < avg_gates_per_non_empty_cycle && pred_cycle >= 1) {
-            DOUT("pred_cycle=" << pred_cycle);
-            DOUT("gates_per_cycle[curr_cycle].size()=" << gates_per_cycle[curr_cycle].size());
-            size_t min_remaining_cycle = MAX_CYCLE;
+        while (Real(gates_per_cycle.get(curr_cycle).size()) < avg_gates_per_non_empty_cycle && pred_cycle >= 1) {
+            QL_DOUT("pred_cycle=" << pred_cycle);
+            QL_DOUT("gates_per_cycle[curr_cycle].size()=" << gates_per_cycle.get(curr_cycle).size());
+            UInt min_remaining_cycle = MAX_CYCLE;
             gate *best_predgp;
-            bool best_predgp_found = false;
+            Bool best_predgp_found = false;
 
             // scan bundle at pred_cycle to find suitable candidate to move forward to curr_cycle
-            for (auto predgp : gates_per_cycle[pred_cycle]) {
-                bool forward_predgp = true;
-                size_t predgp_completion_cycle;
-                lemon::ListDigraph::Node pred_node = node[predgp];
-                DOUT("... considering: " << predgp->qasm() << " @cycle=" << predgp->cycle << " remaining=" << remaining[pred_node]);
+            for (auto predgp : gates_per_cycle.get(pred_cycle)) {
+                Bool forward_predgp = true;
+                UInt predgp_completion_cycle;
+                ListDigraph::Node pred_node = node.at(predgp);
+                QL_DOUT("... considering: " << predgp->qasm() << " @cycle=" << predgp->cycle << " remaining=" << remaining.dbg(pred_node));
 
                 // candidate's result, when moved, must be ready before end-of-circuit and before used
-                predgp_completion_cycle = curr_cycle + size_t(std::ceil(static_cast<float>(predgp->duration)/cycle_time));
+                predgp_completion_cycle = curr_cycle + UInt(ceil(static_cast<Real>(predgp->duration)/cycle_time));
                 // predgp_completion_cycle = curr_cycle + (predgp->duration+cycle_time-1)/cycle_time;
                 if (predgp_completion_cycle > cycle_count + 1) { // at SINK is ok, later not
                     forward_predgp = false;
-                    DOUT("... ... rejected (after circuit): " << predgp->qasm() << " would complete @" << predgp_completion_cycle << " SINK @" << cycle_count+1);
+                    QL_DOUT("... ... rejected (after circuit): " << predgp->qasm() << " would complete @" << predgp_completion_cycle << " SINK @" << cycle_count + 1);
                 } else {
-                    for (lemon::ListDigraph::OutArcIt arc(graph,pred_node); arc != lemon::INVALID; ++arc) {
+                    for (ListDigraph::OutArcIt arc(graph,pred_node); arc != lemon::INVALID; ++arc) {
                         gate *target_gp = instruction[graph.target(arc)];
-                        size_t target_cycle = target_gp->cycle;
+                        UInt target_cycle = target_gp->cycle;
                         if (predgp_completion_cycle > target_cycle) {
                             forward_predgp = false;
-                            DOUT("... ... rejected (after succ): " << predgp->qasm() << " would complete @" << predgp_completion_cycle << " target=" << target_gp->qasm() << " target_cycle=" << target_cycle);
+                            QL_DOUT("... ... rejected (after succ): " << predgp->qasm() << " would complete @" << predgp_completion_cycle << " target=" << target_gp->qasm() << " target_cycle=" << target_cycle);
                         }
                     }
                 }
 
                 // when multiple nodes in bundle qualify, take the one with lowest remaining
                 // because that is the most critical one and thus deserves a cycle as high as possible (ALAP)
-                if (forward_predgp && remaining[pred_node] < min_remaining_cycle) {
-                    min_remaining_cycle = remaining[pred_node];
+                if (forward_predgp && remaining.at(pred_node) < min_remaining_cycle) {
+                    min_remaining_cycle = remaining.at(pred_node);
                     best_predgp_found = true;
                     best_predgp = predgp;
                 }
@@ -1273,26 +1346,26 @@ void Scheduler::schedule_alap_uniform() {
             if (best_predgp_found) {
                 // move predgp from pred_cycle to curr_cycle;
                 // adjust all bookkeeping that is affected by this
-                gates_per_cycle[pred_cycle].remove(best_predgp);
-                if (gates_per_cycle[pred_cycle].empty()) {
+                gates_per_cycle.at(pred_cycle).remove(best_predgp);
+                if (gates_per_cycle.at(pred_cycle).empty()) {
                     // source bundle was non-empty, now it is empty
                     non_empty_bundle_count--;
                 }
-                if (gates_per_cycle[curr_cycle].empty()) {
+                if (gates_per_cycle.get(curr_cycle).empty()) {
                     // target bundle was empty, now it will be non_empty
                     non_empty_bundle_count++;
                 }
                 best_predgp->cycle = curr_cycle;        // what it is all about
-                gates_per_cycle[curr_cycle].push_back(best_predgp);
+                gates_per_cycle.set(curr_cycle).push_back(best_predgp);
 
                 // recompute targets
                 if (non_empty_bundle_count == 0) break;     // nothing to do
-                avg_gates_per_cycle = double(gate_count)/curr_cycle;
-                avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
-                DOUT("... moved " << best_predgp->qasm() << " with remaining=" << remaining[node[best_predgp]]
-                                  << " from cycle=" << pred_cycle << " to cycle=" << curr_cycle
-                                  << "; new avg_gates_per_cycle=" << avg_gates_per_cycle
-                                  << "; avg_gates_per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
+                avg_gates_per_cycle = Real(gate_count)/curr_cycle;
+                avg_gates_per_non_empty_cycle = Real(gate_count)/non_empty_bundle_count;
+                QL_DOUT("... moved " << best_predgp->qasm() << " with remaining=" << remaining.dbg(node.at(best_predgp))
+                                     << " from cycle=" << pred_cycle << " to cycle=" << curr_cycle
+                                     << "; new avg_gates_per_cycle=" << avg_gates_per_cycle
+                                     << "; avg_gates_per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
                 );
             } else {
                 pred_cycle --;
@@ -1302,8 +1375,8 @@ void Scheduler::schedule_alap_uniform() {
         // curr_cycle ready, recompute counts for remaining cycles
         // mask current cycle and its gates from the target counts:
         // - gate_count, non_empty_bundle_count, curr_cycle (as cycles still to go)
-        gate_count -= gates_per_cycle[curr_cycle].size();
-        if (gates_per_cycle[curr_cycle].size() != 0) {
+        gate_count -= gates_per_cycle.get(curr_cycle).size();
+        if (!gates_per_cycle.get(curr_cycle).empty()) {
             // bundle is non-empty
             non_empty_bundle_count--;
         }
@@ -1318,41 +1391,41 @@ void Scheduler::schedule_alap_uniform() {
     non_empty_bundle_count = 0;
     gate_count = 0;
     // cycle_count was not changed
-    for (size_t curr_cycle = 1; curr_cycle <= cycle_count; curr_cycle++) {
-        max_gates_per_cycle = std::max(max_gates_per_cycle, gates_per_cycle[curr_cycle].size());
-        if (int(gates_per_cycle[curr_cycle].size()) != 0) {
+    for (UInt curr_cycle = 1; curr_cycle <= cycle_count; curr_cycle++) {
+        max_gates_per_cycle = max<UInt>(max_gates_per_cycle, gates_per_cycle.get(curr_cycle).size());
+        if (!gates_per_cycle.get(curr_cycle).empty()) {
             non_empty_bundle_count++;
         }
-        gate_count += gates_per_cycle[curr_cycle].size();
+        gate_count += gates_per_cycle.get(curr_cycle).size();
     }
-    avg_gates_per_cycle = double(gate_count)/cycle_count;
-    avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
-    DOUT("... after uniform scheduling:"
+    avg_gates_per_cycle = Real(gate_count)/cycle_count;
+    avg_gates_per_non_empty_cycle = Real(gate_count)/non_empty_bundle_count;
+    QL_DOUT("... after uniform scheduling:"
              << " cycle_count=" << cycle_count
              << "; gate_count=" << gate_count
              << "; non_empty_bundle_count=" << non_empty_bundle_count
     );
-    DOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
-                                        << "; avg_gates_per_cycle=" << avg_gates_per_cycle
-                                        << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
+    QL_DOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
+                                           << "; avg_gates_per_cycle=" << avg_gates_per_cycle
+                                           << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
     );
 
-    DOUT("Scheduling ALAP UNIFORM [DONE]");
+    QL_DOUT("Scheduling ALAP UNIFORM [DONE]");
 }
 
-// printing dot of the dependence graph
+// printing dot of the dependency graph
 void Scheduler::get_dot(
-    bool WithCritical,
-    bool WithCycles,
+    Bool WithCritical,
+    Bool WithCycles,
     std::ostream &dotout
 ) {
-    DOUT("Get_dot");
-    lemon::Path<lemon::ListDigraph> p;
-    lemon::ListDigraph::ArcMap<bool> isInCritical{graph};
+    QL_DOUT("Get_dot");
+    ListDigraphPath p;
+    ListDigraph::ArcMap<Bool> isInCritical{graph};
     if (WithCritical) {
-        for (lemon::ListDigraph::ArcIt a(graph); a != lemon::INVALID; ++a) {
+        for (ListDigraph::ArcIt a(graph); a != lemon::INVALID; ++a) {
             isInCritical[a] = false;
-            for (lemon::Path<lemon::ListDigraph>::ArcIt ap(p); ap != lemon::INVALID; ++ap) {
+            for (ListDigraphPath::ArcIt ap(p); ap != lemon::INVALID; ++ap) {
                 if (a == ap) {
                     isInCritical[a] = true;
                     break;
@@ -1361,17 +1434,17 @@ void Scheduler::get_dot(
         }
     }
 
-    std::string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
-    std::string EdgeStyle1(" color=black");
-    std::string EdgeStyle2(" color=red");
-    std::string EdgeStyle = EdgeStyle1;
+    Str NodeStyle(" fontcolor=black, style=filled, fontsize=16");
+    Str EdgeStyle1(" color=black");
+    Str EdgeStyle2(" color=red");
+    Str EdgeStyle = EdgeStyle1;
 
     dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
            << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
            << std::endl;
 
     // first print the nodes
-    for (lemon::ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
+    for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
         dotout  << "\"" << graph.id(n) << "\""
                 << " [label=\" " << name[n] <<" \""
                 << NodeStyle
@@ -1380,7 +1453,7 @@ void Scheduler::get_dot(
 
     if (WithCycles) {
         // Print cycle numbers as timeline, as shown below
-        size_t TotalCycles;
+        UInt TotalCycles;
         if (circp->empty()) {
             TotalCycles = 1;    // +1 is SOURCE's duration in cycles
         } else {
@@ -1388,7 +1461,7 @@ void Scheduler::get_dot(
                           - circp->front()->cycle + 1;    // +1 is SOURCE's duration in cycles
         }
         dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
-        for (size_t cn = 0; cn <= TotalCycles; ++cn) {
+        for (UInt cn = 0; cn <= TotalCycles; ++cn) {
             if (cn > 0) {
                 dotout << " -> ";
             }
@@ -1399,17 +1472,17 @@ void Scheduler::get_dot(
         // Now print ranks, as shown below
         dotout << "{ rank=same; Cycle" << instruction[s]->cycle <<"; " << graph.id(s) << "; }\n";
         for (auto gp : *circp) {
-            dotout << "{ rank=same; Cycle" << gp->cycle <<"; " << graph.id(node[gp]) << "; }\n";
+            dotout << "{ rank=same; Cycle" << gp->cycle <<"; " << graph.id(node.at(gp)) << "; }\n";
         }
         dotout << "{ rank=same; Cycle" << instruction[t]->cycle <<"; " << graph.id(t) << "; }\n";
     }
 
     // now print the edges
-    for (lemon::ListDigraph::ArcIt arc(graph); arc != lemon::INVALID; ++arc) {
+    for (ListDigraph::ArcIt arc(graph); arc != lemon::INVALID; ++arc) {
         auto srcNode = graph.source(arc);
         auto dstNode = graph.target(arc);
-        int srcID = graph.id( srcNode );
-        int dstID = graph.id( dstNode );
+        Int srcID = graph.id( srcNode );
+        Int dstID = graph.id( dstNode );
 
         if (WithCritical) {
             EdgeStyle = (isInCritical[arc] == true) ? EdgeStyle2 : EdgeStyle1;
@@ -1430,14 +1503,14 @@ void Scheduler::get_dot(
     }
 
     dotout << "}" << std::endl;
-    DOUT("Get_dot[DONE]");
+    QL_DOUT("Get_dot[DONE]");
 }
 
-void Scheduler::get_dot(std::string &dot) {
+void Scheduler::get_dot(Str &dot) {
     set_cycle(forward_scheduling);
     sort_by_cycle(circp);
 
-    std::stringstream ssdot;
+    StrStrm ssdot;
     get_dot(false, true, ssdot);
     dot = ssdot.str();
 }
@@ -1446,13 +1519,13 @@ void Scheduler::get_dot(std::string &dot) {
 void schedule_kernel(
     quantum_kernel &kernel,
     const quantum_platform &platform,
-    std::string &dot,
-    std::string &sched_dot
+    Str &dot,
+    Str &sched_dot
 ) {
-    std::string scheduler = options::get("scheduler");
-    std::string scheduler_uniform = options::get("scheduler_uniform");
+    Str scheduler = options::get("scheduler");
+    Str scheduler_uniform = options::get("scheduler_uniform");
 
-    IOUT(scheduler << " scheduling the quantum kernel '" << kernel.name << "'...");
+    QL_IOUT(scheduler << " scheduling the quantum kernel '" << kernel.name << "'...");
 
     Scheduler sched;
     sched.init(kernel.c, platform, kernel.qubit_count, kernel.creg_count, kernel.breg_count);
@@ -1468,9 +1541,9 @@ void schedule_kernel(
     } else if (scheduler == "ALAP") {
         sched.schedule_alap(sched_dot); // result in current kernel's circuit (k.c)
     } else {
-        FATAL("Not supported scheduler option: scheduler=" << scheduler);
+        QL_FATAL("Not supported scheduler option: scheduler=" << scheduler);
     }
-    DOUT(scheduler << " scheduling the quantum kernel '" << kernel.name << "' DONE");
+    QL_DOUT(scheduler << " scheduling the quantum kernel '" << kernel.name << "' DONE");
     kernel.cycles_valid = true;
 }
 
@@ -1480,28 +1553,28 @@ void schedule_kernel(
 void schedule(
     quantum_program *programp,
     const quantum_platform &platform,
-    const std::string &passname
+    const Str &passname
 ) {
     if (options::get("prescheduler") == "yes") {
         report_statistics(programp, platform, "in", passname, "# ");
         report_qasm(programp, platform, "in", passname);
 
-        IOUT("scheduling the quantum program");
+        QL_IOUT("scheduling the quantum program");
         for (auto &k : programp->kernels) {
-            std::string dot;
-            std::string kernel_sched_dot;
+            Str dot;
+            Str kernel_sched_dot;
             schedule_kernel(k, platform, dot, kernel_sched_dot);
 
             if (options::get("print_dot_graphs") == "yes") {
-                std::string fname;
+                Str fname;
                 fname = options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
-                IOUT("writing scheduled dot to '" << fname << "' ...");
-                utils::write_file(fname, dot);
+                QL_IOUT("writing scheduled dot to '" << fname << "' ...");
+                OutFile(fname).write(dot);
 
-                std::string scheduler_opt = options::get("scheduler");
+                Str scheduler_opt = options::get("scheduler");
                 fname = options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
-                IOUT("writing scheduled dot to '" << fname << "' ...");
-                utils::write_file(fname, kernel_sched_dot);
+                QL_IOUT("writing scheduled dot to '" << fname << "' ...");
+                OutFile(fname).write(kernel_sched_dot);
             }
         }
 
@@ -1513,14 +1586,14 @@ void schedule(
 void rcschedule_kernel(
     quantum_kernel &kernel,
     const quantum_platform &platform,
-    std::string &dot,
-    size_t nqubits,
-    size_t ncreg,
-    size_t nbreg
+    Str &dot,
+    UInt nqubits,
+    UInt ncreg,
+    UInt nbreg
 ) {
-    IOUT("Resource constraint scheduling ...");
+    QL_IOUT("Resource constraint scheduling ...");
 
-    std::string schedopt = options::get("scheduler");
+    Str schedopt = options::get("scheduler");
     if (schedopt == "ASAP") {
         Scheduler sched;
         sched.init(kernel.c, platform, nqubits, ncreg, nbreg);
@@ -1534,10 +1607,10 @@ void rcschedule_kernel(
         arch::resource_manager_t rm(platform, backward_scheduling);
         sched.schedule_alap(rm, platform, dot);
     } else {
-        FATAL("Not supported scheduler option: scheduler=" << schedopt);
+        QL_FATAL("Not supported scheduler option: scheduler=" << schedopt);
     }
 
-    IOUT("Resource constraint scheduling [Done].");
+    QL_IOUT("Resource constraint scheduling [Done].");
 }
 
 /*
@@ -1546,26 +1619,26 @@ void rcschedule_kernel(
 void rcschedule(
     quantum_program *programp,
     const quantum_platform &platform,
-    const std::string &passname
+    const Str &passname
 ) {
     report_statistics(programp, platform, "in", passname, "# ");
     report_qasm(programp, platform, "in", passname);
 
     for (auto &kernel : programp->kernels) {
-        IOUT("Scheduling kernel: " << kernel.name);
+        QL_IOUT("Scheduling kernel: " << kernel.name);
         if (!kernel.c.empty()) {
             auto num_creg = kernel.creg_count;
             auto num_breg = kernel.breg_count;
-            std::string sched_dot;
+            Str sched_dot;
 
             rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg, num_breg);
             kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
 
             if (options::get("print_dot_graphs") == "yes") {
-                std::stringstream fname;
+                StrStrm fname;
                 fname << options::get("output_dir") << "/" << kernel.name << "_" << passname << ".dot";
-                IOUT("writing " << passname << " dependence graph dot file to '" << fname.str() << "' ...");
-                utils::write_file(fname.str(), sched_dot);
+                QL_IOUT("writing " << passname << " dependency graph dot file to '" << fname.str() << "' ...");
+                OutFile(fname.str()).write(sched_dot);
             }
         }
     }

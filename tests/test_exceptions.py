@@ -6,6 +6,10 @@ curdir = os.path.dirname(os.path.realpath(__file__))
 
 class Test_basic(unittest.TestCase):
 
+    @classmethod
+    def setUp(self):
+        ql.initialize()
+
     # this test should raise exception as specified configuration
     # file does not exist
     def test_missing_config(self):

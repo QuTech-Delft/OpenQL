@@ -1,36 +1,36 @@
-/**
- * @file   visualizer_interaction.h
- * @date   11/2020
- * @author Tim van der Meer
- * @brief  declaration of the visualizer qubit interaction graph
+/** \file
+ * Declaration of the visualizer qubit interaction graph.
  */
 
 #pragma once
 
 #ifdef WITH_VISUALIZER
 
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/vec.h"
 #include "visualizer.h"
 #include "visualizer_common.h"
 
 namespace ql {
 
 struct InteractionsWithQubit {
-    int qubitIndex;
-    int amountOfInteractions;
+    utils::Int qubitIndex;
+    utils::Int amountOfInteractions;
 };
 
 struct Qubit {
-    int qubitIndex;
-    std::vector<InteractionsWithQubit> interactions;
+    utils::Int qubitIndex;
+    utils::Vec<InteractionsWithQubit> interactions;
 };
 
-void visualizeInteractionGraph(const std::vector<GateProperties> gates);
+void visualizeInteractionGraph(const utils::Vec<GateProperties> &gates);
 
-double calculateQubitCircleRadius(const int qubitRadius, const double theta);
-Position2 calculateQubitPosition(const int radius, const double theta, const Position2 center);
-std::vector<Qubit> findQubitInteractions(const std::vector<GateProperties> gates, const int amountOfQubits);
+utils::Real calculateQubitCircleRadius(utils::Int qubitRadius, utils::Real theta);
+Position2 calculateQubitPosition(utils::Int radius, utils::Real theta, const Position2 &center);
+utils::Vec<Qubit> findQubitInteractions(const utils::Vec<GateProperties> &gates, utils::Int amountOfQubits);
 
-void printInteractionList(const std::vector<Qubit> qubits);
+void printInteractionList(const utils::Vec<Qubit> &qubits);
 
 } // namespace ql
 

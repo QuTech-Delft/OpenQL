@@ -9,6 +9,7 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_commutation(unittest.TestCase):
 
     def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option("scheduler_uniform", "no")

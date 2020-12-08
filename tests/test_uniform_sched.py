@@ -8,6 +8,10 @@ output_dir = os.path.join(curdir, 'test_output')
 
 class Test_uniform_scheduler(unittest.TestCase):
 
+    @classmethod
+    def setUp(self):
+        ql.initialize()
+
     def test_uniform_scheduler_0(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')

@@ -1,25 +1,26 @@
-/**
- * @file   gate_visual.h
- * @date   08/2020
- * @author Tim van der Meer
- * @brief  contains the parameters used to control a gate's visualization
+/** \file
+ * Contains the parameters used to control a gate's visualization.
  */
 
 #pragma once
 
-typedef std::array<unsigned char, 3> Color;
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/vec.h"
 
 namespace ql {
+
+typedef std::array<utils::Byte, 3> Color;
 
 enum NodeType {NONE, GATE, CONTROL, NOT, CROSS};
 
 struct Node {
     NodeType type;
 
-    int radius;
+    utils::Int radius;
 
-    std::string displayName;
-    int fontHeight;
+    utils::Str displayName;
+    utils::Int fontHeight;
     Color fontColor;
 
     Color backgroundColor;
@@ -28,7 +29,7 @@ struct Node {
 
 struct GateVisual {
     Color connectionColor;
-    std::vector<Node> nodes;
+    utils::Vec<Node> nodes;
 };
 
 } // namespace ql

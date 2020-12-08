@@ -21,7 +21,7 @@ aKernel1:
     1    measz s0
     qwait 2
     fmr r2, q0 | fbr EQ, r1
-    qwait 1073741825
+    qwait 4611686018427387905
     nop
 
     br always, start

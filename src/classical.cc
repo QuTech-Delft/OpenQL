@@ -1,16 +1,51 @@
+/** \file
+ * Classical operation implementation.
+ */
+
 #include "classical.h"
 
-#include "utils.h"
-#include "exception.h"
+#include "utils/exception.h"
 
 namespace ql {
 
-cval::cval(int val) {
-    value = val;
+using namespace utils;
+
+cval &coperand::as_cval() {
+    try {
+        return dynamic_cast<cval &>(*this);
+    } catch (std::bad_cast &e) {
+        throw Exception("coperand is not a cval");
+    }
 }
 
-cval::cval(const cval &cv) {
-    value = cv.value;
+const cval &coperand::as_cval() const {
+    try {
+        return dynamic_cast<const cval &>(*this);
+    } catch (std::bad_cast &e) {
+        throw Exception("coperand is not a cval");
+    }
+}
+
+creg &coperand::as_creg() {
+    try {
+        return dynamic_cast<creg &>(*this);
+    } catch (std::bad_cast &e) {
+        throw Exception("coperand is not a creg");
+    }
+}
+
+const creg &coperand::as_creg() const {
+    try {
+        return dynamic_cast<const creg &>(*this);
+    } catch (std::bad_cast &e) {
+        throw Exception("coperand is not a creg");
+    }
+}
+
+cval::cval(Int val) : value(val) {
+}
+
+cval::cval(const cval &cv) : value(cv.value) {
 }
 
 ql::operand_type_t cval::type() const {
@@ -18,17 +53,15 @@ ql::operand_type_t cval::type() const {
 }
 
 void cval::print() const {
-    COUT("cval with value: " << value);
+    QL_COUT("cval with value: " << value);
 }
 
-creg::creg(size_t id) {
-    this->id = id;
-    DOUT("creg constructor, used id: " << id);
+creg::creg(UInt id) : id(id) {
+    QL_DOUT("creg constructor, used id: " << id);
 }
 
-creg::creg(const creg &c) {
-    id = c.id;
-    DOUT("creg copy constructor, used id: " << id);
+creg::creg(const creg &c) : id(c.id) {
+    QL_DOUT("creg copy constructor, used id: " << id);
 }
 
 ql::operand_type_t creg::type() const {
@@ -36,10 +69,10 @@ ql::operand_type_t creg::type() const {
 }
 
 void creg::print() const {
-    COUT("creg with id: " << id);
+    QL_COUT("creg with id: " << id);
 }
 
-operation::operation(const creg &l, const std::string &op, const creg &r) {
+operation::operation(const creg &l, const Str &op, const creg &r) {
     operands.push_back(new ql::creg(l));
     operands.push_back(new ql::creg(r));
     if (op == "+") {
@@ -82,8 +115,8 @@ operation::operation(const creg &l, const std::string &op, const creg &r) {
         inv_operation_name = "lt";
         operation_type = ql::operation_type_t::RELATIONAL;
     } else {
-        EOUT("Unknown binary operation '" << op);
-        throw ql::exception("Unknown binary operation '" + op + "' !", false);
+        QL_EOUT("Unknown binary operation '" << op);
+        throw Exception("Unknown binary operation '" + op + "' !", false);
     }
 }
 
@@ -102,68 +135,68 @@ operation::operation(const cval &v) {
 }
 
 // used for initializing with an imm
-operation::operation(int val) {
+operation::operation(Int val) {
     operation_name = "ldi";
     operation_type = ql::operation_type_t::ARITHMATIC;
     operands.push_back(new ql::cval(val));
 }
 
-operation::operation(const std::string &op, const creg &r) {
+operation::operation(const Str &op, const creg &r) {
     if (op == "~") {
         operation_name = "not";
         operation_type = ql::operation_type_t::BITWISE;
         operands.push_back(new ql::creg(r));
     } else {
-        EOUT("Unknown unary operation '" << op);
-        throw ql::exception("Unknown unary operation '" + op + "' !", false);
+        QL_EOUT("Unknown unary operation '" << op);
+        throw Exception("Unknown unary operation '" + op + "' !", false);
     }
 }
 
 classical::classical(const creg &dest, const operation &oper) {
-    DOUT("Classical gate constructor with destination for "
+    QL_DOUT("Classical gate constructor with destination for "
              << oper.operation_name);
     name = oper.operation_name;
     duration = 20;
     creg_operands.push_back(dest.id);
     if (name == "ldi") {
-        int_operand = (oper.operands[0])->value;
-        DOUT("... setting int_operand of " << oper.operation_name << " to "
-                                           << int_operand);
+        int_operand = oper.operands[0]->as_cval().value;
+        QL_DOUT("... setting int_operand of " << oper.operation_name << " to "
+                                              << int_operand);
     } else {
         for (auto &op : oper.operands) {
-            creg_operands.push_back(op->id);
+            creg_operands.push_back(op->as_creg().id);
         }
     }
 }
 
-classical::classical(const std::string &operation) {
-    DOUT("Classical gate constructor for " << operation);
-    auto operation_lower = utils::to_lower(operation);
+classical::classical(const Str &operation) {
+    QL_DOUT("Classical gate constructor for " << operation);
+    auto operation_lower = to_lower(operation);
     if ((operation_lower == "nop")) {
         name = operation_lower;
         duration = 20;
-        DOUT("Adding 0 operand operation: " << name);
+        QL_DOUT("Adding 0 operand operation: " << name);
     } else {
-        EOUT("Unknown classical operation '" << name << "' with '0' operands!");
-        throw ql::exception(
+        QL_EOUT("Unknown classical operation '" << name << "' with '0' operands!");
+        throw Exception(
             "Unknown classical operation'" + name + "' with'0' operands!",
             false);
     }
 }
 
 instruction_t classical::qasm() const {
-    std::string iopers;
-    int sz = creg_operands.size();
-    for (int i = 0; i < sz; ++i) {
+    Str iopers;
+    Int sz = creg_operands.size();
+    for (Int i = 0; i < sz; ++i) {
         if (i == sz - 1) {
-            iopers += " r" + std::to_string(creg_operands[i]);
+            iopers += " r" + to_string(creg_operands[i]);
         } else {
-            iopers += " r" + std::to_string(creg_operands[i]) + ",";
+            iopers += " r" + to_string(creg_operands[i]) + ",";
         }
     }
 
     if (name == "ldi") {
-        return "ldi" + iopers + ", " + std::to_string(int_operand);
+        return "ldi" + iopers + ", " + to_string(int_operand);
     } else {
         return name + iopers;
     }

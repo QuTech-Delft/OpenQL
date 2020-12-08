@@ -1,0 +1,16 @@
+/** \file
+ * Configuration file for things that have to be configured via header file
+ * versus being compile-time only.
+ */
+
+#pragma once
+
+// Whether ql::utils::Vec should guard against undefined behavior in iterators.
+#cmakedefine QL_CHECKED_VEC
+
+// Whether ql::utils::List should guard against undefined behavior in
+// iterators.
+#cmakedefine QL_CHECKED_LIST
+
+// Whether ql::utils::Map should guard against undefined behavior in iterators.
+#cmakedefine QL_CHECKED_MAP

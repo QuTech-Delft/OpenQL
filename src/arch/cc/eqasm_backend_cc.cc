@@ -25,6 +25,8 @@
 
 #include "eqasm_backend_cc.h"
 
+#include <utils/str.h>
+#include <utils/filesystem.h>
 #include <options.h>
 #include <platform.h>
 #include <ir.h>
@@ -62,7 +64,7 @@ namespace ql {
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
 void eqasm_backend_cc::compile(quantum_program *program, const quantum_platform &platform)
 {
-    DOUT("Compiling " << program->kernels.size() << " kernels to generate Central Controller program ... ");
+    QL_DOUT("Compiling " << program->kernels.size() << " kernels to generate Central Controller program ... ");
 
     // init
     loadHwSettings(platform);
@@ -82,7 +84,7 @@ void eqasm_backend_cc::compile(quantum_program *program, const quantum_platform 
 
     // generate code for all kernels
     for(auto &kernel : program->kernels) {
-        IOUT("Compiling kernel: " << kernel.name);
+        QL_IOUT("Compiling kernel: " << kernel.name);
         codegenKernelPrologue(kernel);
 
         circuit &circuit = kernel.c;
@@ -92,7 +94,7 @@ void eqasm_backend_cc::compile(quantum_program *program, const quantum_platform 
             codegenBundles(bundles, platform);
             codegen.kernelFinish(kernel.name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
         } else {
-            DOUT("Empty kernel: " << kernel.name);                      // NB: normal situation for kernels with classical control
+            QL_DOUT("Empty kernel: " << kernel.name);                      // NB: normal situation for kernels with classical control
         }
 
         codegenKernelEpilogue(kernel);
@@ -102,18 +104,18 @@ void eqasm_backend_cc::compile(quantum_program *program, const quantum_platform 
 
     // write program to file
     std::string file_name(options::get("output_dir") + "/" + program->unique_name + ".vq1asm");
-    IOUT("Writing Central Controller program to " << file_name);
-    utils::write_file(file_name, codegen.getProgram());
+    QL_IOUT("Writing Central Controller program to " << file_name);
+    utils::OutFile(file_name).write(codegen.getProgram());
 
     // write instrument map to file (unless we were using input file)
     std::string map_input_file = options::get("backend_cc_map_input_file");
     if(map_input_file != "") {
         std::string file_name_map(options::get("output_dir") + "/" + program->unique_name + ".map");
-        IOUT("Writing instrument map to " << file_name_map);
-        utils::write_file(file_name_map, codegen.getMap());
+        QL_IOUT("Writing instrument map to " << file_name_map);
+        utils::OutFile(file_name_map).write(codegen.getMap());
     }
 
-    DOUT("Compiling Central Controller program [Done]");
+    QL_DOUT("Compiling Central Controller program [Done]");
 }
 
 
@@ -131,17 +133,17 @@ void eqasm_backend_cc::codegenClassicalInstruction(gate *classical_ins)
          iname == QASM_NOP
       )
     {
-        FATAL("Classical instruction not implemented: " << iname);
+        QL_FATAL("Classical instruction not implemented: " << iname);
     }
     else if( iname == QASM_EQ || iname == QASM_NE || iname == QASM_LT ||
              iname == QASM_GT || iname == QASM_LE || iname == QASM_GE
            )
     {
-        FATAL("Classical instruction not implemented: " << iname);
+        QL_FATAL("Classical instruction not implemented: " << iname);
     }
     else
     {
-        FATAL("Unknown classical operation'" << iname << "' with'" << iopers_count << "' operands!");
+        QL_FATAL("Unknown classical operation'" << iname << "' with'" << iopers_count << "' operands!");
     }
 }
 
@@ -165,23 +167,23 @@ std::string eqasm_backend_cc::kernelLabel(quantum_kernel &k)
 // based on cc_light_eqasm_compiler.h::get_prologue
 void eqasm_backend_cc::codegenKernelPrologue(quantum_kernel &k)
 {
-    codegen.comment(SS2S("### Kernel: '" << k.name << "'"));
+    codegen.comment(QL_SS2S("### Kernel: '" << k.name << "'"));
 
     switch(k.type) {
         case kernel_type_t::IF_START:
         {
-            auto op0 = k.br_condition.operands[0]->id;
-            auto op1 = k.br_condition.operands[1]->id;
-            auto opName = k.br_condition.operation_name;
+            auto op0 = k.br_condition->operands[0]->as_creg().id;
+            auto op1 = k.br_condition->operands[1]->as_creg().id;
+            auto opName = k.br_condition->operation_name;
             codegen.ifStart(op0, opName, op1);
             break;
         }
 
         case kernel_type_t::ELSE_START:
         {
-            auto op0 = k.br_condition.operands[0]->id;
-            auto op1 = k.br_condition.operands[1]->id;
-            auto opName = k.br_condition.operation_name;
+            auto op0 = k.br_condition->operands[0]->as_creg().id;
+            auto op1 = k.br_condition->operands[1]->as_creg().id;
+            auto opName = k.br_condition->operation_name;
             codegen.elseStart(op0, opName, op1);
             break;
         }
@@ -209,7 +211,7 @@ void eqasm_backend_cc::codegenKernelPrologue(quantum_kernel &k)
             break;
 
         default:
-            FATAL("inconsistency detected: unhandled kernel type");
+            QL_FATAL("inconsistency detected: unhandled kernel type");
             break;
     }
 }
@@ -229,9 +231,9 @@ void eqasm_backend_cc::codegenKernelEpilogue(quantum_kernel &k)
 
         case kernel_type_t::DO_WHILE_END:
         {
-            auto op0 = k.br_condition.operands[0]->id;
-            auto op1 = k.br_condition.operands[1]->id;
-            auto opName = k.br_condition.operation_name;
+            auto op0 = k.br_condition->operands[0]->as_creg().id;
+            auto op1 = k.br_condition->operands[1]->as_creg().id;
+            auto opName = k.br_condition->operation_name;
             std::string label = kernelLabel(k);
             codegen.doWhileEnd(label, op0, opName, op1);
             break;
@@ -251,7 +253,7 @@ void eqasm_backend_cc::codegenKernelEpilogue(quantum_kernel &k)
             break;
 
         default:
-            FATAL("inconsistency detected: unhandled kernel type");
+            QL_FATAL("inconsistency detected: unhandled kernel type");
             break;
     }
 }
@@ -260,14 +262,14 @@ void eqasm_backend_cc::codegenKernelEpilogue(quantum_kernel &k)
 // based on cc_light_eqasm_compiler.h::bundles2qisa()
 void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_platform &platform)
 {
-    IOUT("Generating .vq1asm for bundles");
+    QL_IOUT("Generating .vq1asm for bundles");
 
     for(ir::bundle_t &bundle : bundles) {
         // generate bundle header
-        DOUT(SS2S("Bundle " << bundleIdx << ": start_cycle=" << bundle.start_cycle << ", duration_in_cycles=" << bundle.duration_in_cycles));
-        codegen.bundleStart(SS2S("## Bundle " << bundleIdx++
-                                  << ": start_cycle=" << bundle.start_cycle
-                                  << ", duration_in_cycles=" << bundle.duration_in_cycles << ":"
+        QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << bundle.start_cycle << ", duration_in_cycles=" << bundle.duration_in_cycles));
+        codegen.bundleStart(QL_SS2S("## Bundle " << bundleIdx++
+                                                 << ": start_cycle=" << bundle.start_cycle
+                                                 << ", duration_in_cycles=" << bundle.duration_in_cycles << ":"
                                   ));
         // NB: the "wait" instruction never makes it into the bundle. It is accounted for in scheduling though,
         // and if a non-zero duration is specified that duration is reflected in 'start_cycle' of the subsequent instruction
@@ -278,9 +280,9 @@ void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_plat
             gate *firstInstr = *section->begin();
             auto firstInstrType = firstInstr->type();
             if(firstInstrType == __classical_gate__) {
-                DOUT(SS2S("Classical bundle: instr='" << firstInstr->name << "'"));
+                QL_DOUT(QL_SS2S("Classical bundle: instr='" << firstInstr->name << "'"));
                 if(section->size() != 1) {
-                    FATAL("Inconsistency detected in bundle contents: classical gate with parallel sections");
+                    QL_FATAL("Inconsistency detected in bundle contents: classical gate with parallel sections");
                 }
                 codegenClassicalInstruction(firstInstr);
             } else {
@@ -292,7 +294,7 @@ void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_plat
                     gate *instr = *insIt;
                     gate_type_t itype = instr->type();
                     std::string iname = instr->name;
-                    DOUT(SS2S("Bundle section: instr='" << iname << "'"));
+                    QL_DOUT(QL_SS2S("Bundle section: instr='" << iname << "'"));
 
                     switch(itype) {
                         case __nop_gate__:       // a quantum "nop", see gate.h
@@ -300,25 +302,25 @@ void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_plat
                             break;
 
                         case __classical_gate__:
-                            FATAL("Inconsistency detected in bundle contents: classical gate found after first section (which itself was non-classical)");
+                            QL_FATAL("Inconsistency detected in bundle contents: classical gate found after first section (which itself was non-classical)");
                             break;
 
                         case __custom_gate__:
-                            DOUT(SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration) << " ns");
+                            QL_DOUT(QL_SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration) << " ns");
                             codegen.customGate(iname, instr->operands, instr->creg_operands,
                                                instr->angle, bundle.start_cycle, platform.time_to_cycles(instr->duration));
                             break;
 
                         case __display__:
-                            FATAL("Gate type __display__ not supported");           // QX specific, according to openql.pdf
+                            QL_FATAL("Gate type __display__ not supported");           // QX specific, according to openql.pdf
                             break;
 
                         case __measure_gate__:
-                            FATAL("Gate type __measure_gate__ not supported");      // no use, because there is no way to define CC-specifics
+                            QL_FATAL("Gate type __measure_gate__ not supported");      // no use, because there is no way to define CC-specifics
                             break;
 
                         default:
-                            FATAL("Unsupported gate type: " << itype);
+                            QL_FATAL("Unsupported gate type: " << itype);
                     }   // switch(itype)
                 } // for(section...)
             }
@@ -329,7 +331,7 @@ void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_plat
         codegen.bundleFinish(bundle.start_cycle, bundle.duration_in_cycles, isLastBundle);
     }   // for(bundles)
 
-    IOUT("Generating .vq1asm for bundles [Done]");
+    QL_IOUT("Generating .vq1asm for bundles [Done]");
 }
 
 
@@ -354,7 +356,7 @@ void eqasm_backend_cc::loadHwSettings(const quantum_platform &platform)
 #endif
     };
 
-    DOUT("Loading hardware settings ...");
+    QL_DOUT("Loading hardware settings ...");
     size_t i=0;
     try
     {
@@ -363,7 +365,7 @@ void eqasm_backend_cc::loadHwSettings(const quantum_platform &platform)
             *hw_settings[i].var = val;
         }
     }
-    catch (json::exception &e)
+    catch (Json::exception &e)
     {
         throw exception(
             "[x] error : eqasm_compiler::compile() : error while reading hardware settings : parameter '"

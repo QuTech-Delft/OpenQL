@@ -1,14 +1,13 @@
-﻿/**
- * @file   kernel.h
- * @date   04/2017
- * @author Nader Khammassi
- *         Imran Ashraf
- *         Anneriet Krol
- * @brief  openql kernel
+﻿/** \file
+ * Quantum kernel abstraction implementation.
  */
 
 #pragma once
 
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/vec.h"
+#include "utils/opt.h"
 #include "gate.h"
 #include "circuit.h"
 #include "classical.h"
@@ -28,26 +27,26 @@ enum class kernel_type_t {
 
 class quantum_kernel {
 public: // FIXME: should be private
-    std::string   name;
-    size_t        iterations;
-    size_t        qubit_count;
-    size_t        creg_count;
-    size_t        breg_count;
-    kernel_type_t type;
-    circuit       c;
-    bool          cycles_valid; // used in bundler to check if kernel has been scheduled
-    operation     br_condition;
-    size_t        cycle_time;   // FIXME HvS just a copy of platform.cycle_time
-    instruction_map_t instruction_map;
+    utils::Str              name;
+    utils::UInt             iterations;
+    utils::UInt             qubit_count;
+    utils::UInt             creg_count;
+    utils::UInt             breg_count;
+    kernel_type_t           type;
+    circuit                 c;
+    utils::Bool             cycles_valid; // used in bundler to check if kernel has been scheduled
+    utils::Opt<operation>   br_condition;
+    utils::UInt             cycle_time;   // FIXME HvS just a copy of platform.cycle_time
+    instruction_map_t       instruction_map;
 
 public:
-    quantum_kernel(const std::string &name);
+    quantum_kernel(const utils::Str &name);
     quantum_kernel(
-        const std::string &name,
-        const ql::quantum_platform &platform,
-        size_t qcount,
-        size_t ccount=0,
-        size_t bcount=0
+        const utils::Str &name,
+        const quantum_platform &platform,
+        utils::UInt qcount,
+        utils::UInt ccount=0,
+        utils::UInt bcount=0
     );
 
     // FIXME: add constructor which allows setting iterations and type, and use that in program.h::add_for(), etc
@@ -55,42 +54,42 @@ public:
     void set_condition(const operation &oper);
     void set_kernel_type(kernel_type_t typ);
 
-    std::string get_gates_definition() const;
-    std::string get_name() const;
+    utils::Str get_gates_definition() const;
+    utils::Str get_name() const;
     circuit &get_circuit();
     const circuit &get_circuit() const;
 
-    void identity(size_t qubit);
-    void i(size_t qubit);
-    void hadamard(size_t qubit);
-    void h(size_t qubit);
-    void rx(size_t qubit, double angle);
-    void ry(size_t qubit, double angle);
-    void rz(size_t qubit, double angle);
-    void s(size_t qubit);
-    void sdag(size_t qubit);
-    void t(size_t qubit);
-    void tdag(size_t qubit);
-    void x(size_t qubit);
-    void y(size_t qubit);
-    void z(size_t qubit);
-    void rx90(size_t qubit);
-    void mrx90(size_t qubit);
-    void rx180(size_t qubit);
-    void ry90(size_t qubit);
-    void mry90(size_t qubit);
-    void ry180(size_t qubit);
-    void measure(size_t qubit);
-    void measure(size_t qubit, size_t bit);
-    void prepz(size_t qubit);
-    void cnot(size_t qubit1, size_t qubit2);
-    void cz(size_t qubit1, size_t qubit2);
-    void cphase(size_t qubit1, size_t qubit2);
-    void toffoli(size_t qubit1, size_t qubit2, size_t qubit3);
-    void swap(size_t qubit1, size_t qubit2);
-    void wait(const std::vector<size_t> &qubits, size_t duration);
+    void identity(utils::UInt qubit);
+    void i(utils::UInt qubit);
+    void hadamard(utils::UInt qubit);
+    void h(utils::UInt qubit);
+    void rx(utils::UInt qubit, utils::Real angle);
+    void ry(utils::UInt qubit, utils::Real angle);
+    void rz(utils::UInt qubit, utils::Real angle);
+    void s(utils::UInt qubit);
+    void sdag(utils::UInt qubit);
+    void t(utils::UInt qubit);
+    void tdag(utils::UInt qubit);
+    void x(utils::UInt qubit);
+    void y(utils::UInt qubit);
+    void z(utils::UInt qubit);
+    void rx90(utils::UInt qubit);
+    void mrx90(utils::UInt qubit);
+    void rx180(utils::UInt qubit);
+    void ry90(utils::UInt qubit);
+    void mry90(utils::UInt qubit);
+    void ry180(utils::UInt qubit);
+    void measure(utils::UInt qubit);
+    void measure(utils::UInt qubit, utils::UInt bit);
+    void prepz(utils::UInt qubit);
+    void cnot(utils::UInt qubit1, utils::UInt qubit2);
+    void cz(utils::UInt qubit1, utils::UInt qubit2);
+    void cphase(utils::UInt qubit1, utils::UInt qubit2);
+    void toffoli(utils::UInt qubit1, utils::UInt qubit2, utils::UInt qubit3);
+    void swap(utils::UInt qubit1, utils::UInt qubit2);
+    void wait(const utils::Vec<utils::UInt> &qubits, utils::UInt duration);
     void display();
-    void clifford(int id, size_t qubit=0);
+    void clifford(utils::Int id, utils::UInt qubit=0);
 
 private:
     // a default gate is the last resort of user gate resolution and is of a build-in form, as below in the code;
@@ -98,38 +97,38 @@ private:
     // the use of default gates is deprecated; use the .json configuration file instead;
     //
     // if a default gate definition is available for the given gate name and qubits, add it to circuit and return true
-    bool add_default_gate_if_available(
-        const std::string &gname,
-        const std::vector<size_t> &qubits,
-        const std::vector<size_t> &cregs,
-        size_t duration,
-        double angle,
-        const std::vector<size_t> &bregs,
-        const cond_type_t &cond,
-        const std::vector<size_t> &condregs
+    utils::Bool add_default_gate_if_available(
+        const utils::Str &gname,
+        const utils::Vec<utils::UInt> &qubits,
+        const utils::Vec<utils::UInt> &cregs = {},
+        utils::UInt duration = 0,
+        utils::Real angle = 0.0,
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
     // if a specialized custom gate ("e.g. cz q0,q4") is available, add it to circuit and return true
     // if a parameterized custom gate ("e.g. cz") is available, add it to circuit and return true
     //
     // note that there is no check for the found gate being a composite gate
-    bool add_custom_gate_if_available(
-        const std::string &gname,
-        const std::vector<size_t> &qubits,
-        const std::vector<size_t> &cregs,
-        size_t duration,
-        double angle,
-        const std::vector<size_t> &bregs,
-        const cond_type_t &cond,
-        const std::vector<size_t> &condregs
+    utils::Bool add_custom_gate_if_available(
+        const utils::Str &gname,
+        const utils::Vec<utils::UInt> &qubits,
+        const utils::Vec<utils::UInt> &cregs = {},
+        utils::UInt duration = 0,
+        utils::Real angle = 0.0,
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
     // FIXME: move to class composite_gate?
     // return the subinstructions of a composite gate
     // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
     void get_decomposed_ins(
-        const ql::composite_gate *gptr,
-        std::vector<std::string> &sub_instructons
+        const composite_gate *gptr,
+        utils::Vec<utils::Str> &sub_instructons
     ) const;
 
     // if specialized composed gate: "e.g. cz q0,q3" available, with composition of subinstructions, return true
@@ -138,13 +137,13 @@ private:
     // don't add anything to circuit
     //
     // add specialized decomposed gate, example JSON definition: "cl_14 q1": ["rx90 %0", "rym90 %0", "rxm90 %0"]
-    bool add_spec_decomposed_gate_if_available(
-        const std::string &gate_name,
-        const std::vector<size_t> &all_qubits,
-        const std::vector<size_t> &cregs,
-        const std::vector<size_t> &bregs,
-        const cond_type_t &cond,
-        const std::vector<size_t> &condregs
+    utils::Bool add_spec_decomposed_gate_if_available(
+        const utils::Str &gate_name,
+        const utils::Vec<utils::UInt> &all_qubits,
+        const utils::Vec<utils::UInt> &cregs = {},
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
     // if composite gate: "e.g. cz %0 %1" available, return true;
@@ -153,28 +152,28 @@ private:
     // don't add anything to circuit
     //
     // add parameterized decomposed gate, example JSON definition: "cl_14 %0": ["rx90 %0", "rym90 %0", "rxm90 %0"]
-    bool add_param_decomposed_gate_if_available(
-        const std::string &gate_name,
-        const std::vector<size_t> &all_qubits,
-        const std::vector<size_t> &cregs,
-        const std::vector<size_t> &bregs,
-        const cond_type_t &cond,
-        const std::vector<size_t> &condregs
+    utils::Bool add_param_decomposed_gate_if_available(
+        const utils::Str &gate_name,
+        const utils::Vec<utils::UInt> &all_qubits,
+        const utils::Vec<utils::UInt> &cregs = {},
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
 public:
 
-    void gate(const std::string &gname, size_t q0);
-    void gate(const std::string &gname, size_t q0, size_t q1);
+    void gate(const utils::Str &gname, utils::UInt q0);
+    void gate(const utils::Str &gname, utils::UInt q0, utils::UInt q1);
     void gate(
-        const std::string &gname,
-        const std::vector<size_t> &qubits = {},
-        const std::vector<size_t> &cregs = {},
-        size_t duration = 0,
-        double angle = 0.0,
-        const std::vector<size_t> &bregs = {},
-        const cond_type_t &cond = cond_always,
-        const std::vector<size_t> &condregs = {}
+        const utils::Str &gname,
+        const utils::Vec<utils::UInt> &qubits = {},
+        const utils::Vec<utils::UInt> &cregs = {},
+        utils::UInt duration = 0,
+        utils::Real angle = 0.0,
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
     // terminology:
@@ -203,45 +202,45 @@ public:
      * custom gate with arbitrary number of operands
      * as gate above but return whether gate was successfully matched in gate_definition, next to gate in kernel.c
      */
-    bool gate_nonfatal(
-        const std::string &gname,
-        const std::vector<size_t> &qubits = {},
-        const std::vector<size_t> &cregs = {},
-        size_t duration = 0,
-        double angle = 0.0,
-        const std::vector<size_t> &bregs = {},
-        const cond_type_t &cond = cond_always,
-        const std::vector<size_t> &condregs = {}
+    utils::Bool gate_nonfatal(
+        const utils::Str &gname,
+        const utils::Vec<utils::UInt> &qubits = {},
+        const utils::Vec<utils::UInt> &cregs = {},
+        utils::UInt duration = 0,
+        utils::Real angle = 0.0,
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t cond = cond_always,
+        const utils::Vec<utils::UInt> &condregs = {}
     );
 
     // to add unitary to kernel
-    void gate(const ql::unitary &u, const std::vector<size_t> &qubits);
+    void gate(const unitary &u, const utils::Vec<utils::UInt> &qubits);
 
 private:
     //recursive gate count function
     //n is number of qubits
     //i is the start point for the instructionlist
-    int recursiveRelationsForUnitaryDecomposition(
-        const ql::unitary &u,
-        const std::vector<size_t> &qubits,
-        int n,
-        int i
+    utils::Int recursiveRelationsForUnitaryDecomposition(
+        const unitary &u,
+        const utils::Vec<utils::UInt> &qubits,
+        utils::UInt n,
+        utils::UInt i
     );
 
     //controlled qubit is the first in the list.
     void multicontrolled_rz(
-        const std::vector<double> &instruction_list,
-        int start_index,
-        int end_index,
-        const std::vector<size_t> &qubits
+        const utils::Vec<utils::Real> &instruction_list,
+        utils::UInt start_index,
+        utils::UInt end_index,
+        const utils::Vec<utils::UInt> &qubits
     );
 
     //controlled qubit is the first in the list.
     void multicontrolled_ry(
-        const std::vector<double> &instruction_list,
-        int start_index,
-        int end_index,
-        const std::vector<size_t> &qubits
+        const utils::Vec<utils::Real> &instruction_list,
+        utils::UInt start_index,
+        utils::UInt end_index,
+        const utils::Vec<utils::UInt> &qubits
     );
 
 public:
@@ -250,46 +249,46 @@ public:
      * qasm output
      */
     // FIXME: create a separate QASM backend?
-    std::string get_prologue() const;
-    std::string get_epilogue() const;
-    std::string qasm() const;
+    utils::Str get_prologue() const;
+    utils::Str get_epilogue() const;
+    utils::Str qasm() const;
 
     void classical(const creg &destination, const operation &oper);
-    void classical(const std::string &operation);
+    void classical(const utils::Str &operation);
 
     // Controlled gates
-    void controlled_x(size_t tq, size_t cq);
-    void controlled_y(size_t tq, size_t cq);
-    void controlled_z(size_t tq, size_t cq);
-    void controlled_h(size_t tq, size_t cq);
-    void controlled_i(size_t tq, size_t cq);
-    void controlled_s(size_t tq, size_t cq);
-    void controlled_sdag(size_t tq, size_t cq);
-    void controlled_t(size_t tq, size_t cq, size_t aq);
-    void controlled_tdag(size_t tq, size_t cq, size_t aq);
-    void controlled_ix(size_t tq, size_t cq);
-    void controlled_cnot_AM(size_t tq, size_t cq1, size_t cq2);
-    void controlled_cnot_NC(size_t tq, size_t cq1, size_t cq2);
-    void controlled_swap(size_t tq1, size_t tq2, size_t cq);
-    void controlled_rx(size_t tq, size_t cq, double theta);
-    void controlled_ry(size_t tq, size_t cq, double theta);
-    void controlled_rz(size_t tq, size_t cq, double theta);
+    void controlled_x(utils::UInt tq, utils::UInt cq);
+    void controlled_y(utils::UInt tq, utils::UInt cq);
+    void controlled_z(utils::UInt tq, utils::UInt cq);
+    void controlled_h(utils::UInt tq, utils::UInt cq);
+    void controlled_i(utils::UInt tq, utils::UInt cq);
+    void controlled_s(utils::UInt tq, utils::UInt cq);
+    void controlled_sdag(utils::UInt tq, utils::UInt cq);
+    void controlled_t(utils::UInt tq, utils::UInt cq, utils::UInt aq);
+    void controlled_tdag(utils::UInt tq, utils::UInt cq, utils::UInt aq);
+    void controlled_ix(utils::UInt tq, utils::UInt cq);
+    void controlled_cnot_AM(utils::UInt tq, utils::UInt cq1, utils::UInt cq2);
+    void controlled_cnot_NC(utils::UInt tq, utils::UInt cq1, utils::UInt cq2);
+    void controlled_swap(utils::UInt tq1, utils::UInt tq2, utils::UInt cq);
+    void controlled_rx(utils::UInt tq, utils::UInt cq, utils::Real theta);
+    void controlled_ry(utils::UInt tq, utils::UInt cq, utils::Real theta);
+    void controlled_rz(utils::UInt tq, utils::UInt cq, utils::Real theta);
 
     /************************************************************************\
     | Kernel manipulations: controlled & conjugate
     \************************************************************************/
 
     void controlled_single(
-        const ql::quantum_kernel *k,
-        size_t control_qubit,
-        size_t ancilla_qubit
+        const quantum_kernel *k,
+        utils::UInt control_qubit,
+        utils::UInt ancilla_qubit
     );
     void controlled(
-        const ql::quantum_kernel *k,
-        const std::vector<size_t> &control_qubits,
-        const std::vector<size_t> &ancilla_qubits
+        const quantum_kernel *k,
+        const utils::Vec<utils::UInt> &control_qubits,
+        const utils::Vec<utils::UInt> &ancilla_qubits
     );
-    void conjugate(const ql::quantum_kernel *k);
+    void conjugate(const quantum_kernel *k);
 
 };
 

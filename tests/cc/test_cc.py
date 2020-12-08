@@ -19,7 +19,8 @@ all_qubits = range(0, num_qubits)
 class Test_central_controller(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')

@@ -1,18 +1,18 @@
-/**
- * @file   optimizer.h
- * @date   11/2016
- * @author Nader Khammassi
- * @brief  optimizer interface and its implementation
- * @todo   implementations should be in separate files for better readability
+/** \file
+ * Rotation optimizer pass implementation.
  */
 
-#include "utils.h"
+#include "optimizer.h"
+
+#include "utils/vec.h"
+#include "utils/num.h"
 #include "circuit.h"
 #include "kernel.h"
-#include "optimizer.h"
 #include "options.h"
 
 namespace ql {
+
+using namespace utils;
 
 /**
  * optimizer interface
@@ -50,11 +50,11 @@ public:
 
 protected:
 
-    static ql::cmat_t fuse(const ql::cmat_t &m1, const ql::cmat_t &m2) {
-        ql::cmat_t res;
-        const ql::complex_t *x = m1.m;
-        const ql::complex_t *y = m2.m;
-        ql::complex_t *r = res.m;
+    static cmat_t fuse(const cmat_t &m1, const cmat_t &m2) {
+        cmat_t res;
+        const Complex *x = m1.m;
+        const Complex *y = m2.m;
+        Complex *r = res.m;
 
         // m1.dump();
         // m2.dump();
@@ -71,44 +71,44 @@ protected:
 
 #define __epsilon__ (1e-4)
 
-    static bool is_id(const ql::cmat_t &mat) {
+    static bool is_id(const cmat_t &mat) {
         // mat.dump();
-        const ql::complex_t * m = mat.m;
-        if ((std::abs(std::abs(m[0].real())-1.0))>__epsilon__) return false;
-        if ((std::abs(m[0].imag())  )>__epsilon__) return false;
-        if ((std::abs(m[1].real())  )>__epsilon__) return false;
-        if ((std::abs(m[1].imag())  )>__epsilon__) return false;
-        if ((std::abs(m[2].real())  )>__epsilon__) return false;
-        if ((std::abs(m[2].imag())  )>__epsilon__) return false;
-        if ((std::abs(std::abs(m[3].real())-1.0))>__epsilon__) return false;
-        if ((std::abs(m[3].imag())  )>__epsilon__) return false;
+        const Complex *m = mat.m;
+        if ((abs(abs(m[0].real())-1.0))>__epsilon__) return false;
+        if ((abs(m[0].imag())  )>__epsilon__) return false;
+        if ((abs(m[1].real())  )>__epsilon__) return false;
+        if ((abs(m[1].imag())  )>__epsilon__) return false;
+        if ((abs(m[2].real())  )>__epsilon__) return false;
+        if ((abs(m[2].imag())  )>__epsilon__) return false;
+        if ((abs(abs(m[3].real())-1.0))>__epsilon__) return false;
+        if ((abs(m[3].imag())  )>__epsilon__) return false;
         return true;
     }
 
-    static bool is_identity(const ql::circuit &c) {
+    static bool is_identity(const circuit &c) {
         if (c.size() == 1) {
             return false;
         }
-        ql::cmat_t m = c[0]->mat();
+        cmat_t m = c[0]->mat();
         for (size_t i = 1; i < c.size(); ++i) {
-            ql::cmat_t m2 = c[i]->mat();
+            cmat_t m2 = c[i]->mat();
             m = fuse(m,m2);
         }
         return is_id(m);
     }
 
-    static ql::circuit optimize_sliding_window(ql::circuit &c, size_t window_size) {
-        ql::circuit oc;
-        std::vector<int> id_pos;
+    static circuit optimize_sliding_window(circuit &c, size_t window_size) {
+        circuit oc;
+        Vec<int> id_pos;
         for (size_t i = 0; i < c.size() - window_size + 1; ++i) {
-            ql::circuit w;
+            circuit w;
             w.insert(w.begin(),c.begin()+i,c.begin()+i+window_size);
             if (is_identity(w)) {
                 id_pos.push_back(i);
             }
         }
         if (id_pos.empty()) {
-            return ql::circuit(c);
+            return circuit(c);
         }
         // println("id pos:");
         // for (size_t i=0; i<id_pos.size(); i++)
@@ -130,7 +130,7 @@ protected:
         }
 
         // COUT("removing overlapping windows...");
-        std::vector<int> pid;
+        Vec<int> pid;
         // int prev = id_pos[0];
         // COUT("rotation cancelling...");
         size_t pos = id_pos[0];
@@ -154,16 +154,16 @@ protected:
 
 };
 
-inline void rotation_optimize_kernel(ql::quantum_kernel &kernel, const ql::quantum_platform &platform) {
-    DOUT("kernel " << kernel.name << " optimize_kernel(): circuit before optimizing: ");
+inline void rotation_optimize_kernel(quantum_kernel &kernel, const quantum_platform &platform) {
+    QL_DOUT("kernel " << kernel.name << " optimize_kernel(): circuit before optimizing: ");
     print(kernel.c);
-    DOUT("... end circuit");
-    ql::rotations_merging rm;
+    QL_DOUT("... end circuit");
+    rotations_merging rm;
     if (contains_measurements(kernel.c)) {
-        DOUT("kernel contains measurements ...");
+        QL_DOUT("kernel contains measurements ...");
         // decompose the circuit
-        std::vector<circuit*> cs = split_circuit(kernel.c);
-        std::vector<circuit> cs_opt;
+        Vec<circuit*> cs = split_circuit(kernel.c);
+        Vec<circuit> cs_opt;
         for (auto c : cs)
         {
             if (!contains_measurements(*c)) {
@@ -185,19 +185,19 @@ inline void rotation_optimize_kernel(ql::quantum_kernel &kernel, const ql::quant
         kernel.c = rm.optimize(kernel.c);
     }
     kernel.cycles_valid = false;
-    DOUT("kernel " << kernel.name << " rotation_optimize(): circuit after optimizing: ");
+    QL_DOUT("kernel " << kernel.name << " rotation_optimize(): circuit after optimizing: ");
     print(kernel.c);
-    DOUT("... end circuit");
+    QL_DOUT("... end circuit");
 }
 
 // rotation_optimize pass
 void rotation_optimize(
-    ql::quantum_program *programp,
-    const ql::quantum_platform &platform,
-    const std::string &passname
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const Str &passname
 ) {
-    if (ql::options::get("optimize") == "yes") {
-        IOUT("optimizing quantum kernels...");
+    if (options::get("optimize") == "yes") {
+        QL_IOUT("optimizing quantum kernels...");
         for (size_t k=0; k<programp->kernels.size(); ++k) {
             rotation_optimize_kernel(programp->kernels[k], platform);
         }
