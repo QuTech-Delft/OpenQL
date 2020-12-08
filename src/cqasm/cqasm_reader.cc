@@ -968,38 +968,43 @@ private:
                     } else if (auto fun = insn->condition->as_function()) {
                         Bool invert = false;
                         while (fun->name == "operator!") {
-                            fun = fun->operands[0]->as_function();
                             invert = !invert;
-                            if (!fun) {
-                                cond_bregs.push_back(expect_condition_reg(fun->operands[0]));
+                            if (auto fun2 = fun->operands[0]->as_function()) {
+                                fun = fun2;
+                                continue;
+                            }
+                            cond_bregs.push_back(expect_condition_reg(fun->operands[0]));
+                            if (invert) {
+                                cond = e_cond_type::cond_not;
+                            } else {
+                                cond = e_cond_type::cond;
+                            }
+                            fun = nullptr;
+                            break;
+                        }
+                        if (fun) {
+                            if (fun->name == "operator&&") {
                                 if (invert) {
-                                    cond = e_cond_type::cond_not;
+                                    cond = e_cond_type::cond_nand;
                                 } else {
-                                    cond = e_cond_type::cond;
+                                    cond = e_cond_type::cond_and;
+                                }
+                            } else if (fun->name == "operator||") {
+                                if (invert) {
+                                    cond = e_cond_type::cond_nor;
+                                } else {
+                                    cond = e_cond_type::cond_or;
+                                }
+                            } else if (fun->name == "operator^^") {
+                                if (invert) {
+                                    cond = e_cond_type::cond_nxor;
+                                } else {
+                                    cond = e_cond_type::cond_xor;
                                 }
                             }
+                            cond_bregs.push_back(expect_condition_reg(fun->operands[0]));
+                            cond_bregs.push_back(expect_condition_reg(fun->operands[1]));
                         }
-                        if (fun->name == "operator&&") {
-                            if (invert) {
-                                cond = e_cond_type::cond_nand;
-                            } else {
-                                cond = e_cond_type::cond_and;
-                            }
-                        } else if (fun->name == "operator||") {
-                            if (invert) {
-                                cond = e_cond_type::cond_nor;
-                            } else {
-                                cond = e_cond_type::cond_or;
-                            }
-                        } else if (fun->name == "operator^^") {
-                            if (invert) {
-                                cond = e_cond_type::cond_nxor;
-                            } else {
-                                cond = e_cond_type::cond_xor;
-                            }
-                        }
-                        cond_bregs.push_back(expect_condition_reg(fun->operands[0]));
-                        cond_bregs.push_back(expect_condition_reg(fun->operands[1]));
                     } else {
                         cond_bregs.push_back(expect_condition_reg(insn->condition));
                         cond = e_cond_type::cond;

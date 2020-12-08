@@ -10,27 +10,27 @@ smis s8, {0, 1, 5, 6}
 smis s9, {2, 3, 4} 
 start:
 
-aKernel1_if4:
+aKernel1_if6:
     cmp r2, r3
     nop
-    br ne, aKernel1_if4_end
+    br ne, aKernel1_if6_end
 
 aKernel1:
     1    x s0
     qwait 2
 
-aKernel1_if4_end:
+aKernel1_if6_end:
 
-aKernel2_else4:
+aKernel2_else6:
     cmp r2, r3
     nop
-    br eq, aKernel2_else4_end
+    br eq, aKernel2_else6_end
 
 aKernel2:
     1    y s0
     qwait 2
 
-aKernel2_else4_end:
+aKernel2_else6_end:
 
     br always, start
     nop 
