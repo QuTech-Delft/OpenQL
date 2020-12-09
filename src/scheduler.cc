@@ -490,38 +490,47 @@ void Scheduler::init(
         name[consNode] = instruction[consNode]->qasm();
         t = consNode;
 
-        // add deps to the dummy target node to close the dependence chains
-        // it behaves as a W to every qubit and creg
-        //
-        // to guarantee that exactly at start of execution of dummy SINK,
-        // all still executing nodes complete, give arc weight of those nodes;
-        // this is relevant for ALAP (which starts backward from SINK for all these nodes);
-        // also for accurately computing the circuit's depth (which includes full completion);
-        // and also for implementing scheduling and mapping across control-flow (so that it is
-        // guaranteed that on a jump and on start of target circuit, the source circuit completed).
-        //
-        // note that there always is a LastWriter: the dummy source node wrote to every qubit and class. reg
-        Vec<UInt> operands(qubit_creg_count);
-        std::iota(operands.begin(), operands.end(), 0);
-        for (auto operand : operands) {
-            QL_DOUT(".. Sink operand, adding dep: " << operand);
-            add_dep(LastWriter[operand], consID, WAW, operand);
-            for (auto &readerID : LastReaders[operand]) {
-                add_dep(readerID, consID, WAR, operand);
+        if (ckt.empty()) {
+            add_dep(graph.id(s), consID, WAW, 0);
+        } else {
+            // add deps to the dummy target node to close the dependence chains
+            // it behaves as a W to every qubit and creg
+            //
+            // to guarantee that exactly at start of execution of dummy SINK,
+            // all still executing nodes complete, give arc weight of those nodes;
+            // this is relevant for ALAP (which starts backward from SINK for all these nodes);
+            // also for accurately computing the circuit's depth (which includes full completion);
+            // and also for implementing scheduling and mapping across control-flow (so that it is
+            // guaranteed that on a jump and on start of target circuit, the source circuit completed).
+            //
+            // note that there always is a LastWriter: the dummy source node wrote to every qubit and class. reg
+            Vec<UInt> operands(qubit_creg_count);
+            std::iota(operands.begin(), operands.end(), 0);
+            for (auto operand : operands) {
+                QL_DOUT(".. Sink operand, adding deps for: " << operand);
+                if (LastWriter[operand] != graph.id(s)) {
+                    add_dep(LastWriter[operand], consID, WAW, operand);
+                }
+                for (auto &readerID : LastReaders[operand]) {
+                    add_dep(readerID, consID, WAR, operand);
+                }
+                for (auto &readerID : LastDs[operand]) {
+                    add_dep(readerID, consID, WAD, operand);
+                }
             }
-            for (auto &readerID : LastDs[operand]) {
-                add_dep(readerID, consID, WAD, operand);
-            }
-        }
 
-        // useless because there is nothing after t but destruction
-        for (auto operand : operands) {
-            QL_DOUT(".. Sink operand, clearing: " << operand);
-            LastWriter[operand] = consID;
-            LastReaders[operand].clear();
-            LastDs[operand].clear();
+            // useless because there is nothing after t but destruction
+            for (auto operand : operands) {
+                QL_DOUT(".. Sink operand, clearing: " << operand);
+                LastWriter[operand] = consID;
+                LastReaders[operand].clear();
+                LastDs[operand].clear();
+            }
         }
     }
+
+    // when in doubt about dependence graph, enable next line to get a dump of it in debugging output
+    DPRINTDepgraph("init");
 
     // useless as well because by construction, there cannot be cycles
     // but when afterwards dependences are added, cycles may be created,
@@ -532,6 +541,27 @@ void Scheduler::init(
         QL_FATAL("The dependence graph is not a DAG.");
     }
     QL_DOUT("Dependence graph creation Done.");
+}
+
+// print depgraph for debugging with string parameter identifying where
+void Scheduler::DPRINTDepgraph(const Str &s) const {
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
+        std::cout << "Depgraph " << s << std::endl;
+        for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
+            std::cout << "Node " << graph.id(n) << " \"" << name[n] << "\" :" << std::endl;
+            std::cout << "    out:";
+            for (ListDigraph::OutArcIt arc(graph,n); arc != lemon::INVALID; ++arc) {
+                std::cout << " Arc(" << graph.id(arc) << "," << DepTypesNames[ depType[arc] ] << "," << cause[arc] << ")->node(" << graph.id(graph.target(arc)) << ")";
+            }
+            std::cout << std::endl;
+            std::cout << "    in:";
+            for (ListDigraph::InArcIt arc(graph,n); arc != lemon::INVALID; ++arc) {
+                std::cout << " Arc(" << graph.id(arc) << "," << DepTypesNames[ depType[arc] ] << "," << cause[arc] << ")<-node(" << graph.id(graph.source(arc)) << ")";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "End Depgraph" << std::endl;
+    }
 }
 
 void Scheduler::print() const {
@@ -572,42 +602,60 @@ void Scheduler::write_dependence_matrix() const {
 }
 
 // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
-// without RC, this is all there is to schedule, apart from forming the bundles in ir::bundler()
-// set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
-// please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
+// set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate,
+// without RC, this is all there is to schedule a circuit;
+// on return, cycle will have been set
+//
+// when it finds a next gate with undefined cycle value,
+// set_cycle_gate recurses to force it getting defined, and then proceeds;
+// the latter never happens when the depgraph was constructed directly from the circuit
+// but when in between the depgraph was updated (as done in commute_variation),
+// dependences may have been inserted in the opposite circuit direction and then the recursion kicks in
 void Scheduler::set_cycle_gate(gate *gp, scheduling_direction_t dir) {
     ListDigraph::Node currNode = node.at(gp);
     UInt  currCycle;
     if (forward_scheduling == dir) {
         currCycle = 0;
         for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currCycle = max<UInt>(currCycle, instruction[graph.source(arc)]->cycle + weight[arc]);
+            auto nextgp = instruction[graph.source(arc)];
+            if (nextgp->cycle == MAX_CYCLE) {
+                set_cycle_gate(nextgp, dir);
+            }
+            currCycle = max<UInt>(currCycle, nextgp->cycle + weight[arc]);
         }
     } else {
-        currCycle = MAX_CYCLE;
+        currCycle = ALAP_SINK_CYCLE;
         for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currCycle = min<UInt>(currCycle, instruction[graph.target(arc)]->cycle - weight[arc]);
+            auto nextgp = instruction[graph.target(arc)];
+            if (nextgp->cycle == MAX_CYCLE) {
+                set_cycle_gate(nextgp, dir);
+            }
+            currCycle = min<UInt>(currCycle, nextgp->cycle - weight[arc]);
         }
     }
     gp->cycle = currCycle;
+    QL_DOUT("... set_cycle of " << gp->qasm() << " cycles " << gp->cycle);
 }
 
 void Scheduler::set_cycle(scheduling_direction_t dir) {
+    // note when iterating that graph contains SOURCE and SINK whereas the circuit doesn't
+    for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
+        instruction[n]->cycle = MAX_CYCLE;       // not yet visited successfully by set_cycle_gate
+    }
     if (forward_scheduling == dir) {
-        instruction[s]->cycle = 0;
-        QL_DOUT("... set_cycle of " << instruction[s]->qasm() << " cycles " << instruction[s]->cycle);
-        // *circp is by definition in a topological order of the dependence graph
+        set_cycle_gate(instruction[s], dir);
         for (auto gpit = circp->begin(); gpit != circp->end(); gpit++) {
-            set_cycle_gate(*gpit, dir);
-            QL_DOUT("... set_cycle of " << (*gpit)->qasm() << " cycles " << (*gpit)->cycle);
+            if ((*gpit)->cycle == MAX_CYCLE) {
+                set_cycle_gate(*gpit, dir);
+            }
         }
         set_cycle_gate(instruction[t], dir);
-        QL_DOUT("... set_cycle of " << instruction[t]->qasm() << " cycles " << instruction[t]->cycle);
     } else {
-        instruction[t]->cycle = ALAP_SINK_CYCLE;
-        // *circp is by definition in a topological order of the dependence graph
+        set_cycle_gate(instruction[t], dir);
         for (auto gpit = circp->rbegin(); gpit != circp->rend(); gpit++) {
-            set_cycle_gate(*gpit, dir);
+            if ((*gpit)->cycle == MAX_CYCLE) {
+                set_cycle_gate(*gpit, dir);
+            }
         }
         set_cycle_gate(instruction[s], dir);
 
@@ -616,13 +664,10 @@ void Scheduler::set_cycle(scheduling_direction_t dir) {
         QL_DOUT("... readjusting cycle values by -" << SOURCECycle);
 
         instruction[t]->cycle -= SOURCECycle;
-        QL_DOUT("... set_cycle of " << instruction[t]->qasm() << " cycles " << instruction[t]->cycle);
         for (auto &gp : *circp) {
             gp->cycle -= SOURCECycle;
-            QL_DOUT("... set_cycle of " << gp->qasm() << " cycles " << gp->cycle);
         }
         instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
-        QL_DOUT("... set_cycle of " << instruction[s]->qasm() << " cycles " << instruction[s]->cycle);
     }
 }
 
@@ -680,49 +725,62 @@ void Scheduler::schedule_alap(Str &sched_dot) {
     QL_DOUT("Scheduling ALAP [DONE]");
 }
 
-// Note that set_remaining_gate expects a caller like set_remaining that iterates gp backward over the circuit
+// remaining[node] == cycles until end of schedule; nodes with highest remaining are most critical
+// it is without RC and depends on direction: forward:ASAP so cycles until SINK, backward:ALAP so cycles until SOURCE;
+// remaining[node] is complementary to node's cycle value,
+// so the implementation below is also a systematically modified copy of that of set_cycle_gate and set_cycle
 void Scheduler::set_remaining_gate(gate* gp, scheduling_direction_t dir) {
-    auto currNode = node.at(gp);
+    ListDigraph::Node currNode = node.at(gp);
     UInt currRemain = 0;
+    QL_DOUT("... set_remaining of node " << graph.id(currNode) << ": " << gp->qasm() << " ...");
     if (forward_scheduling == dir) {
         for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currRemain = max<UInt>(currRemain, remaining.at(graph.target(arc)) + weight[arc]);
+            auto nextNode = graph.target(arc);
+            QL_DOUT("...... target of arc " << graph.id(arc) << " to node " << graph.id(nextNode));
+            if (remaining.at(nextNode) == MAX_CYCLE) {
+                set_remaining_gate(instruction[nextNode], dir);
+            }
+            currRemain = max<UInt>(currRemain, remaining.at(nextNode) + weight[arc]);
         }
     } else {
         for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currRemain = max<UInt>(currRemain, remaining.at(graph.source(arc)) + weight[arc]);
+            auto nextNode = graph.source(arc);
+            QL_DOUT("...... source of arc " << graph.id(arc) << " from node " << graph.id(nextNode));
+            if (remaining.at(nextNode) == MAX_CYCLE) {
+                set_remaining_gate(instruction[nextNode], dir);
+            }
+            currRemain = max<UInt>(currRemain, remaining.at(nextNode) + weight[arc]);
         }
     }
     remaining.set(currNode) = currRemain;
+    QL_DOUT("... set_remaining of node " << graph.id(currNode) << ": " << gp->qasm() << " remaining " << currRemain);
 }
 
 void Scheduler::set_remaining(scheduling_direction_t dir) {
-    gate *gp;
-    remaining.clear();
+    // note when iterating that graph contains SOURCE and SINK whereas the circuit doesn't;
+    // regretfully, the order of visiting the nodes while iterating over the graph, is undefined
+    // and in set_remaining (and set_cycle) the order matters (i.e. in circuit order or reversed circuit order)
+    for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
+        remaining.set(n) = MAX_CYCLE;               // not yet visited successfully by set_remaining_gate
+    }
     if (forward_scheduling == dir) {
         // remaining until SINK (i.e. the SINK.cycle-ALAP value)
-        remaining.set(t) = 0;
-        // *circp is by definition in a topological order of the dependence graph
+        set_remaining_gate(instruction[t], dir);
         for (auto gpit = circp->rbegin(); gpit != circp->rend(); gpit++) {
-            gate *gp2 = *gpit;
-            set_remaining_gate(gp2, dir);
-            QL_DOUT("... remaining at " << gp2->qasm() << " cycles " << remaining.dbg(node.at(gp2)));
+            if (remaining.at(node.at(*gpit)) == MAX_CYCLE) {
+                set_remaining_gate(*gpit, dir);
+            }
         }
-        gp = instruction[s];
-        set_remaining_gate(gp, dir);
-        QL_DOUT("... remaining at " << gp->qasm() << " cycles " << remaining.dbg(s));
+        set_remaining_gate(instruction[s], dir);
     } else {
         // remaining until SOURCE (i.e. the ASAP value)
-        remaining.set(s) = 0;
-        // *circp is by definition in a topological order of the dependence graph
+        set_remaining_gate(instruction[s], dir);
         for (auto gpit = circp->begin(); gpit != circp->end(); gpit++) {
-            gate*   gp2 = *gpit;
-            set_remaining_gate(gp2, dir);
-            QL_DOUT("... remaining at " << gp2->qasm() << " cycles " << remaining.dbg(node.at(gp2)));
+            if (remaining.at(node.at(*gpit)) == MAX_CYCLE) {
+                set_remaining_gate(*gpit, dir);
+            }
         }
-        gp = instruction[t];
-        set_remaining_gate(gp, dir);
-        QL_DOUT("... remaining at " << gp->qasm() << " cycles " << remaining.dbg(t));
+        set_remaining_gate(instruction[t], dir);
     }
 }
 

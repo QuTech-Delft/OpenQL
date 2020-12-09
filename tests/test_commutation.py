@@ -19,10 +19,9 @@ class Test_commutation(unittest.TestCase):
         ql.set_option('write_report_files', 'yes')
 
     def test_cnot_controlcommute(self):
-        config_fn = os.path.join(curdir, 'test_179.json')
+        config_fn = os.path.join(curdir, 'test_mapper_s7.json')
         platf = ql.Platform("starmon", config_fn)
         ql.set_option("scheduler", 'ALAP');
-        ql.set_option("scheduler_post179", 'yes');
         ql.set_option("scheduler_commute", 'yes');
 
         nqubits = 7
@@ -59,10 +58,9 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_targetcommute(self):
-        config_fn = os.path.join(curdir, 'test_179.json')
+        config_fn = os.path.join(curdir, 'test_mapper_s7.json')
         platf = ql.Platform("starmon", config_fn)
         ql.set_option("scheduler", 'ALAP');
-        ql.set_option("scheduler_post179", 'yes');
         ql.set_option("scheduler_commute", 'yes');
 
         nqubits = 7
@@ -99,10 +97,9 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cz_anycommute(self):
-        config_fn = os.path.join(curdir, 'test_179.json')
+        config_fn = os.path.join(curdir, 'test_mapper_s7.json')
         platf = ql.Platform("starmon", config_fn)
         ql.set_option("scheduler", 'ALAP');
-        ql.set_option("scheduler_post179", 'yes');
         ql.set_option("scheduler_commute", 'yes');
 
         nqubits = 7
@@ -139,10 +136,9 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_mixedcommute(self):
-        config_fn = os.path.join(curdir, 'test_179.json')
+        config_fn = os.path.join(curdir, 'test_mapper_s7.json')
         platf = ql.Platform("starmon", config_fn)
         ql.set_option("scheduler", 'ALAP');
-        ql.set_option("scheduler_post179", 'yes');
         ql.set_option("scheduler_commute", 'yes');
 
         nqubits = 7
@@ -184,10 +180,9 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_variations(self):
-        config_fn = os.path.join(curdir, 'test_179.json')
+        config_fn = os.path.join(curdir, 'test_mapper_s7.json')
         platf = ql.Platform("starmon", config_fn)
         ql.set_option("scheduler", 'ALAP');
-        ql.set_option("scheduler_post179", 'yes');
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("vary_commutations", 'yes');
 

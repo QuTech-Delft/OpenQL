@@ -74,7 +74,7 @@ public:
     // after scheduling, delete the added arcs (RAR/DAD) from the depgraph to restore it to the original state
     void clean_variation( List<lemon::ListDigraph::Arc>& newarcslist) {
         for (auto a : newarcslist) {
-            // QL_DOUT("...... erasing arc from " << instruction[graph.source(a)]->qasm() << " to " << instruction[graph.target(a)]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+            QL_DOUT("...... erasing arc with id " << graph.id(a) << " from " << instruction[graph.source(a)]->qasm() << " to " << instruction[graph.target(a)]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
             graph.erase(a);
         }
         newarcslist.clear();
@@ -116,27 +116,27 @@ public:
     ) {
         List<List<lemon::ListDigraph::Arc>> recipe_varslist = varslist;  // deepcopy, i.e. must copy each sublist of list as well
         QL_DOUT("... variation " << var << " (" << varstring(varslist,var) << "):");
-        // QL_DOUT("... recipe_varslist.size()=" << recipe_varslist.size());
+        QL_DOUT("... recipe_varslist.size()=" << recipe_varslist.size());
         Int varslist_index = 1;
         for (auto subvarslist : recipe_varslist) {
-            // QL_DOUT("... subvarslist index=" << varslist_index << " subvarslist.size()=" << subvarslist.size());
+            QL_DOUT("... subvarslist index=" << varslist_index << " subvarslist.size()=" << subvarslist.size());
             Bool prevvalid = false;             // add arc between each pair of nodes so skip 1st arc in subvarslist
             lemon::ListDigraph::Node    prevn = s;     // previous node when prevvalid==true; fake initialization by s
             for (auto svs = subvarslist.size(); svs != 0; svs--) {
                 auto thisone = var % svs;     // gives 0 <= thisone < subvarslist.size()
-                // QL_DOUT("...... var=" << var << " svs=" << svs << " thisone=var%svs=" << thisone << " nextvar=var/svs=" << var/svs);
+                QL_DOUT("...... var=" << var << " svs=" << svs << " thisone=var%svs=" << thisone << " nextvar=var/svs=" << var/svs);
                 auto li = subvarslist.begin();
                 std::advance(li, thisone);
                 lemon::ListDigraph::Arc a = *li;   // i.e. select the thisone's element in this subvarslist
                 lemon::ListDigraph::Node n  = graph.source(a);
-                // QL_DOUT("...... set " << varslist_index << " take " << thisone << ": " << instruction[n]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+                QL_DOUT("...... set " << varslist_index << " take " << thisone << ": " << instruction[n]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
                 if (prevvalid) {
-                    // QL_DOUT("...... adding arc from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm());
+                    QL_DOUT("...... adding new arc from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm());
                     auto newarc = graph.addArc(prevn, n);
                     weight[newarc] = weight[a];
                     cause[newarc] = cause[a];
                     depType[newarc] = (depType[a] == WAR ? RAR : DAD);
-                    // QL_DOUT("...... added arc from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm() << " as " << DepTypesNames[depType[newarc]] << " by q" << cause[newarc]);
+                    QL_DOUT("...... added new arc with id " << graph.id(newarc) << " from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm() << " as " << DepTypesNames[depType[newarc]] << " by q" << cause[newarc]);
                     newarcslist.push_back(newarc);
                 }
                 prevvalid = true;
@@ -163,13 +163,13 @@ public:
             Int  operand = cause[arclist.front()];
             TMParclist.remove_if([this,operand](lemon::ListDigraph::Arc a) { return cause[a] != operand; });
             if (TMParclist.size() > 1) {
-                // QL_DOUT("At " << instruction[graph.target(TMParclist.front())]->qasm() << " found commuting gates on q" << operand << ":");
+                QL_DOUT("At " << instruction[graph.target(TMParclist.front())]->qasm() << " found commuting gates on q" << operand << ":");
                 Int perm_index = 0;
                 VarCode perm_count = 1;
                 List<lemon::ListDigraph::Arc> subvarslist;
                 for (auto a : TMParclist) {
-                    //lemon::ListDigraph::Node srcNode  = graph.source(a);
-                    // QL_DOUT("... " << instruction[srcNode]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+                    lemon::ListDigraph::Node srcNode  = graph.source(a);
+                    QL_DOUT("... " << instruction[srcNode]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
                     perm_index++;
                     perm_count = mult(perm_count, perm_index);
                     subvarslist.push_back(a);
@@ -212,11 +212,10 @@ public:
         VarCode& total
     ) {
         for (lemon::ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
-            // QL_DOUT("Incoming unfiltered dependences of node " << ": " << instruction[n]->qasm() << " :");
+            QL_DOUT("Incoming unfiltered dependences of node " << ": " << instruction[n]->qasm() << " :");
             List<lemon::ListDigraph::Arc> Rarclist;
             List<lemon::ListDigraph::Arc> Darclist;
             for( lemon::ListDigraph::InArcIt arc(graph,n); arc != lemon::INVALID; ++arc ) {
-                // lemon::ListDigraph::Node srcNode  = graph.source(arc);
                 if (
                     depType[arc] == WAW
                     ||  depType[arc] == RAW
@@ -224,7 +223,7 @@ public:
                 ) {
                     continue;
                 }
-                // QL_DOUT("... Encountering relevant " << DepTypesNames[depType[arc]] << " by q" << cause[arc] << " from " << instruction[srcNode]->qasm());
+                QL_DOUT("... Encountering relevant " << DepTypesNames[depType[arc]] << " by q" << cause[arc] << " from " << instruction[graph.source(arc)]->qasm());
                 if (
                     depType[arc] == WAR
                     ||  depType[arc] == DAR
@@ -349,7 +348,7 @@ public:
                 // there are cycles among the dependences so this variation is infeasible
                 QL_DOUT("... variation " << varno << " (" << sched.varstring(varslist,varno) << ") results in a dependence cycle, skip it");
             } else {
-                // QL_DOUT("... schedule variation " << varno << " (" << sched.varstring(varslist,varno) << ")");
+                QL_DOUT("... schedule variation " << varno << " (" << sched.varstring(varslist,varno) << ")");
                 auto depth = sched.schedule_rc(platform);
                 vars_per_depth.set(depth).push_back(varno);
                 QL_DOUT("... scheduled variation " << varno << " (" << sched.varstring(varslist,varno) << "), depth=" << depth);

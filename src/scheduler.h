@@ -78,6 +78,7 @@ public:
         utils::UInt ccount
     );
 
+    void DPRINTDepgraph(const utils::Str &s) const;
     void print() const;
     void write_dependence_matrix() const;
 
@@ -117,7 +118,6 @@ private:
 public:
 // use MAX_CYCLE for absolute upperbound on cycle value
 // use ALAP_SINK_CYCLE for initial cycle given to SINK in ALAP;
-// the latter allows for some growing room when doing latency compensation/buffer-delay insertion
 #define ALAP_SINK_CYCLE    (MAX_CYCLE/2)
 
     // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
@@ -314,7 +314,16 @@ public:
     void get_dot(utils::Str &dot);
 };
 
-// schedule support for program.h::schedule()
+/*
+ * main entry point of the non resource-constrained scheduler
+ */
+void schedule(
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const utils::Str &passname
+);
+
+// kernel-level entry to the non resource-constrained scheduler
 void schedule_kernel(
     quantum_kernel &kernel,
     const quantum_platform &platform,
@@ -323,29 +332,21 @@ void schedule_kernel(
 );
 
 /*
- * main entry to the non resource-constrained scheduler
+ * main entry point of the resource-constrained scheduler
  */
-void schedule(
+void rcschedule(
     quantum_program *programp,
     const quantum_platform &platform,
     const utils::Str &passname
 );
 
+// kernel-level entry to the resource-constrained scheduler
 void rcschedule_kernel(
     quantum_kernel &kernel,
     const quantum_platform &platform,
     utils::Str &dot,
     utils::UInt nqubits,
     utils::UInt ncreg = 0
-);
-
-/*
- * main entry point of the rcscheduler
- */
-void rcschedule(
-    quantum_program *programp,
-    const quantum_platform &platform,
-    const utils::Str &passname
 );
 
 } // namespace ql
