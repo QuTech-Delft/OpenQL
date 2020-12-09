@@ -229,7 +229,8 @@ Vec<Qubit> findQubitInteractions(const Vec<GateProperties> &gates, const Int amo
     // Initialize the qubit vector.
     Vec<Qubit> qubits(amountOfQubits);
     for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
-        Qubit qubit{qubitIndex, {}};
+        Qubit qubit;
+        qubit.qubitIndex = qubitIndex;
         // qubits[qubitIndex] = {qubitIndex, {}};
         qubits[qubitIndex] = qubit;
     }
