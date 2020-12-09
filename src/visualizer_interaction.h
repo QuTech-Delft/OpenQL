@@ -37,9 +37,9 @@ utils::Real calculateQubitCircleRadius(const utils::Int qubitRadius, const utils
 Position2 calculatePositionOnCircle(const utils::Int radius, utils::Real theta, const Position2 &center);
 utils::Vec<Qubit> findQubitInteractions(const utils::Vec<GateProperties> &gates, const utils::Int amountOfQubits);
 
-// bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> &drawnEdges, const int first, const int second);
+bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> &drawnEdges, const int first, const int second);
 // utils::Bool isEdgeAlreadyDrawn(const utils::Vec<utils::Pair<utils::Int, utils::Int>> &drawnEdges, const utils::Int first, const utils::Int second);
-utils::Bool isEdgeAlreadyDrawn(const utils::Int first, const utils::Int second);
+// utils::Bool isEdgeAlreadyDrawn(const utils::Int first, const utils::Int second);
 
 void printInteractionList(const utils::Vec<Qubit> &qubits);
 
