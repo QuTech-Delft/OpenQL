@@ -7,9 +7,18 @@
 #ifdef WITH_VISUALIZER
 
 #include "visualizer_types.h"
-#include "CImg.h"
 #include "utils/num.h"
 #include "utils/str.h"
+
+#include "CImg.h"
+
+// Undef garbage left behind by CImg.
+#undef cimg_use_opencv
+#undef Bool
+#undef True
+#undef False
+#undef IN
+#undef OUT
 
 namespace ql {
 

@@ -16,14 +16,6 @@
 #include "utils/pair.h"
 #include "utils/map.h"
 
-// These undefs are necessary to avoid name collisions.
-#undef cimg_use_opencv
-#undef Bool
-#undef True
-#undef False
-#undef IN
-#undef OUT
-
 namespace ql {
 
 struct Cycle {
