@@ -22,6 +22,9 @@ static void decompose_toffoli_kernel(
         gate_type_t gtype = g->type();
         Vec<UInt> goperands = g->operands;
 
+        if (g->isconditional()) {
+            QL_FATAL("Decomposing a conditional toffoli gate is not supported by the decompose_toffoli pass");
+        }
         quantum_kernel toff_kernel("toff_kernel");
         toff_kernel.instruction_map = kernel.instruction_map;
         toff_kernel.qubit_count = kernel.qubit_count;
