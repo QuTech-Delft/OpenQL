@@ -65,15 +65,15 @@ void visualizeInteractionGraph(const quantum_program* program, const VisualizerC
         image.fill(255);
 
         // Draw the edges between interacting qubits.
-        // Vec<Pair<Int, Int>> drawnEdges;
-        std::vector<std::pair<int, int>> drawnEdges;
+        Vec<Pair<Int, Int>> drawnEdges;
+        // std::vector<std::pair<int, int>> drawnEdges;
         for (const Pair<Qubit, Position2> &qubit : qubitPositions) {
             const Position2 qubitPosition = qubit.second;
             for (const InteractionsWithQubit &interactionsWithQubit : qubit.first.interactions) {
-                if (isEdgeAlreadyDrawn(drawnEdges, (int) qubit.first.qubitIndex, (int) interactionsWithQubit.qubitIndex))
+                if (isEdgeAlreadyDrawn(drawnEdges, qubit.first.qubitIndex, interactionsWithQubit.qubitIndex))
                     continue;
                 
-                drawnEdges.push_back( {(int) qubit.first.qubitIndex, (int) interactionsWithQubit.qubitIndex } );
+                drawnEdges.push_back( {qubit.first.qubitIndex, interactionsWithQubit.qubitIndex } );
 
                 // Draw the edge.
                 const Real theta = interactionsWithQubit.qubitIndex * thetaSpacing;
@@ -135,11 +135,11 @@ void generateAndSaveDOTFile(const Vec<Qubit> &qubits) {
         output << "graph qubit_interaction_graph {\n";
         output << "    node [shape=circle];\n";
 
-        // Vec<Pair<Int, Int>> drawnEdges;
-        std::vector<std::pair<int, int>> drawnEdges;
+        Vec<Pair<Int, Int>> drawnEdges;
+        // std::vector<std::pair<int, int>> drawnEdges;
         for (const Qubit &qubit : qubits) {
             for (const InteractionsWithQubit &target : qubit.interactions) {
-                if (isEdgeAlreadyDrawn(drawnEdges, (int) qubit.qubitIndex, (int) target.qubitIndex))
+                if (isEdgeAlreadyDrawn(drawnEdges, qubit.qubitIndex, target.qubitIndex))
                     continue;
                 drawnEdges.push_back( {qubit.qubitIndex, target.qubitIndex } );
 
@@ -275,20 +275,9 @@ Vec<Qubit> findQubitInteractions(const Vec<GateProperties> &gates, const Int amo
     return qubits;
 }
 
-// Bool isEdgeAlreadyDrawn(const Vec<Pair<Int, Int>> &drawnEdges, const Int first, const Int second) {
-//     // Check if the edge already exists.
-//     for (const Pair<Int, Int> &drawnEdge : drawnEdges) {
-//         if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {
-//             return true;
-//         }
-//     }
-
-//     return false;
-// }
-
-bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> &drawnEdges, const int first, const int second) {
+Bool isEdgeAlreadyDrawn(const Vec<Pair<Int, Int>> &drawnEdges, const Int first, const Int second) {
     // Check if the edge already exists.
-    for (const std::pair<int, int> &drawnEdge : drawnEdges) {
+    for (const Pair<Int, Int> &drawnEdge : drawnEdges) {
         if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {
             return true;
         }
@@ -296,6 +285,17 @@ bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> &drawnEdges, cons
 
     return false;
 }
+
+// bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> &drawnEdges, const int first, const int second) {
+//     // Check if the edge already exists.
+//     for (const std::pair<int, int> &drawnEdge : drawnEdges) {
+//         if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {
+//             return true;
+//         }
+//     }
+
+//     return false;
+// }
 
 void printInteractionList(const Vec<Qubit> &qubits) {
     // Print the qubit interaction list.
