@@ -135,6 +135,54 @@ class Test_commutation(unittest.TestCase):
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
+    def test_cnot_noncommute_RAD(self):
+        config_fn = os.path.join(curdir, 'test_mapper_s7.json')
+        platf = ql.Platform("starmon", config_fn)
+        ql.set_option("scheduler", 'ALAP');
+        ql.set_option("scheduler_commute", 'yes');
+        ql.set_option("vary_commutations", 'yes');
+
+        nqubits = 7
+        k = ql.Kernel("aKernel", platf, nqubits)
+
+        k.gate("cnot", [0,2]);  # R0, D2
+        k.gate("cnot", [2,5]);  # R2, D5
+
+        sweep_points = [2]
+
+        p = ql.Program("test_cnot_noncommute_RAD", platf, nqubits)
+        p.set_sweep_points(sweep_points)
+        p.add_kernel(k)
+        p.compile()
+
+        gold_fn = curdir + '/golden/test_cnot_noncommute_RAD.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_last.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
+    def test_cnot_noncommute_DAR(self):
+        config_fn = os.path.join(curdir, 'test_mapper_s7.json')
+        platf = ql.Platform("starmon", config_fn)
+        ql.set_option("scheduler", 'ALAP');
+        ql.set_option("scheduler_commute", 'yes');
+        ql.set_option("vary_commutations", 'yes');
+
+        nqubits = 7
+        k = ql.Kernel("aKernel", platf, nqubits)
+
+        k.gate("cnot", [2,5]);  # R2, D5
+        k.gate("cnot", [0,2]);  # R0, D2
+
+        sweep_points = [2]
+
+        p = ql.Program("test_cnot_noncommute_DAR", platf, nqubits)
+        p.set_sweep_points(sweep_points)
+        p.add_kernel(k)
+        p.compile()
+
+        gold_fn = curdir + '/golden/test_cnot_noncommute_DAR.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_last.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
     def test_cnot_mixedcommute(self):
         config_fn = os.path.join(curdir, 'test_mapper_s7.json')
         platf = ql.Platform("starmon", config_fn)

@@ -671,7 +671,8 @@ void custom_gate::load(nlohmann::json &instr) {
                 codewords.push_back(instr["cc_light_left_codeword"]);
                 QL_DOUT("codewords: " << codewords[0] << "," << codewords[1]);
             } else {
-                QL_WOUT("Did not find any codeword attributes for instruction: '" << name << "'!");
+                QL_DOUT("Did not find any codeword attributes for instruction: '" << name << "'!");
+                // QL_WOUT("Did not find any codeword attributes for instruction: '" << name << "'!");
             }
         }
 
@@ -681,7 +682,8 @@ void custom_gate::load(nlohmann::json &instr) {
             visual_type = instr["visual_type"].get<Str>();
             QL_DOUT("visual_type: '" << visual_type);
         } else {
-            QL_WOUT("Did not find 'visual_type' attribute for instruction: '" << name << "'!");
+            QL_DOUT("Did not find 'visual_type' attribute for instruction: '" << name << "'!");
+            // QL_WOUT("Did not find 'visual_type' attribute for instruction: '" << name << "'!");
         }
 
     } catch (Json::exception &e) {
