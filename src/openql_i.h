@@ -10,6 +10,7 @@
 #include "compiler.h"
 #include "options.h"
 
+void initialize();
 
 std::string get_version();
 
@@ -183,6 +184,7 @@ public:
     Program program;
 
     cQasmReader(const Platform &q_platform, const Program &q_program);
+    cQasmReader(const Platform &q_platform, const Program &q_program, const std::string &gateset_fname);
     void string2circuit(const std::string &cqasm_str);
     void file2circuit(const std::string &cqasm_file_path);
     ~cQasmReader();

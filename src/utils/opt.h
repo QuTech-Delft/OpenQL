@@ -60,8 +60,8 @@ public:
      * trick std::optional uses to avoid this is not implemented here.
      */
     template<class Arg1, class... Args>
-    Opt(Arg1 arg1, Args&&... args) {
-        emplace(arg1, std::forward<Args>(args)...);
+    Opt(Arg1 &&arg1, Args&&... args) {
+        emplace(std::forward<Arg1>(arg1), std::forward<Args>(args)...);
     }
 
     /**

@@ -6,11 +6,37 @@
 
 #include "version.h"
 
+static bool initialized = false;
+
+/**
+ * Initializes the OpenQL library, for as far as this must be done. This should
+ * be called by the user (in Python) before anything else.
+ *
+ * Currently this just resets the options to their default values to give the
+ * user a clean slate to work with in terms of global variables (in case someone
+ * else has used the library in the same interpreter before them, for instance,
+ * as might happen with ipython/Jupyter in a shared notebook server, or during
+ * test suites), but it may initialize more things in the future.
+ */
+void initialize() {
+    if (initialized) {
+        QL_IOUT("re-initializing OpenQL library");
+    } else {
+        QL_IOUT("initializing OpenQL library");
+    }
+    initialized = true;
+    ql::options::reset_options();
+}
+
 std::string get_version() {
     return OPENQL_VERSION_STRING;
 }
 
 void set_option(const std::string &option_name, const std::string &option_value) {
+    if (!initialized) {
+        QL_WOUT("option set before initialize()! In the future, please call initialize() before anything else!");
+        initialize();
+    }
     ql::options::set(option_name, option_value);
 }
 
@@ -31,6 +57,10 @@ Platform::Platform(
     name(name),
     config_file(config_file)
 {
+    if (!initialized) {
+        QL_WOUT("platform constructed before initialize()! In the future, please call initialize() before anything else!");
+        initialize();
+    }
     platform = new ql::quantum_platform(name, config_file);
 }
 
@@ -376,6 +406,17 @@ cQasmReader::cQasmReader(
     program(q_program)
 {
     cqasm_reader_ = new ql::cqasm_reader(*(platform.platform), *(program.program));
+}
+
+cQasmReader::cQasmReader(
+    const Platform &q_platform,
+    const Program &q_program,
+    const std::string &gateset_fname
+) :
+    platform(q_platform),
+    program(q_program)
+{
+    cqasm_reader_ = new ql::cqasm_reader(*(platform.platform), *(program.program), gateset_fname);
 }
 
 void cQasmReader::string2circuit(const std::string &cqasm_str) {

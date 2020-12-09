@@ -13,6 +13,10 @@ ql.set_option('write_qasm_files', 'yes')
 
 class Test_kernel(unittest.TestCase):
 
+    @classmethod
+    def setUp(self):
+        ql.initialize()
+
     def custom_gate_test(self):
         nqubits = 1
 

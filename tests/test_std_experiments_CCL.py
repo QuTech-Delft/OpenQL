@@ -18,6 +18,10 @@ ql.set_option('log_level', 'LOG_WARNING')
 @unittest.skip
 class Test_single_qubit_seqs_CCL(unittest.TestCase):
 
+    @classmethod
+    def setUp(self):
+        ql.initialize()
+
     def test_bug(self):
         p = Program("bug", platf, 1)
 

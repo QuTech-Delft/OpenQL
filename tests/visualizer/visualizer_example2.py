@@ -4,6 +4,7 @@ import os
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'visualizer_example_output')
 
+ql.initialize()
 ql.set_option('output_dir', output_dir)
 ql.set_option('optimize', 'no')
 ql.set_option('scheduler', 'ASAP')

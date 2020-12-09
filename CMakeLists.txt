@@ -372,7 +372,6 @@ target_link_libraries(ql PUBLIC nlohmann_json::nlohmann_json)
 # libqasm ---------------------------------------------------------------------
 
 # Load libqasm. libqasm's CMakeLists expose the "cqasm" target to link against.
-option(LIBQASM_COMPAT "" ON)
 add_subdirectory(deps/libqasm)
 target_link_libraries(ql PUBLIC cqasm)
 
