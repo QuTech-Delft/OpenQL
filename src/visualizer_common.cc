@@ -57,9 +57,9 @@ using namespace utils;
 // [GENERAL] fix compilation error due to merge
 // [GENERAL] replace cimg calls with cimg wrapper calls
 // [GENERAL] delete default constructors in position types in visualizer_types.h
+// [GENERAL] fix isEdgeAlreadyDrawn() build error on CI
 
 // -- IN PROGRESS ---
-// [GENERAL] fix isEdgeAlreadyDrawn() build error on CI
 // [GENERAL] update documentation
 
 // --- FUTURE WORK ---
