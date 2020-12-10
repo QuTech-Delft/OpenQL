@@ -744,8 +744,7 @@ UInt FreeCycle::StartCycle(gate *g) {
 
         while (startCycle < MAX_CYCLE) {
             // DOUT("Startcycle for " << g->qasm() << ": available? at startCycle=" << startCycle);
-            // remap gates do not have resource constraints
-            if (g->type() == __remap_gate__ || rm.available(startCycle, g, *platformp)) {
+            if (rm.available(startCycle, g, *platformp)) {
                 // DOUT(" ... [" << startCycle << "] resources available for " << g->qasm());
                 break;
             } else {
@@ -788,9 +787,7 @@ void FreeCycle::Add(gate *g, UInt startCycle) {
 
     auto mapopt = options::get("mapper");
     if (mapopt == "baserc" || mapopt == "minextendrc") {
-        if (g->type() != __remap_gate__) {
-            rm.reserve(startCycle, g, *platformp);
-        }
+        rm.reserve(startCycle, g, *platformp);
     }
 }
 
@@ -1187,12 +1184,6 @@ void Past::AddSwap(UInt r0, UInt r1) {
         Add(gp);
     }
 
-    // add the remap gates
-    QL_DOUT("mapping v " << v2r.GetVirt(r1) << " to q " << r0 << " in remap gate");
-    QL_DOUT("mapping v " << v2r.GetVirt(r0) << " to q " << r1 << " in remap gate");
-    Add(new remap(r0, v2r.GetVirt(r1)));
-    Add(new remap(r1, v2r.GetVirt(r0)));
-
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }
 
@@ -1289,11 +1280,6 @@ void Past::MakeReal(gate *gp, circuit &circ) {
 // make primitives of all gates that also have an entry with _prim appended to its name
 // and decomposing it according to the .json file gate decomposition
 void Past::MakePrimitive(gate *gp, circuit &circ) const {
-    // remap gates are added here to preserve the virtual qubit index parameter (which can not be added through new_gate)
-    if (gp->type() == __remap_gate__) {
-        circ.push_back(gp);
-        return;
-    }
     Str gname = gp->name;
     stripname(gname);
     Str prim_gname = gname;

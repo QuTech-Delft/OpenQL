@@ -354,8 +354,7 @@ Str ir2qisa(
                     auto id2 = (*insIt2)->name;
                     auto itype1 = (*insIt1)->type();
                     auto itype2 = (*insIt2)->type();
-                    if (itype1 == __classical_gate__ || itype2 == __classical_gate__ ||
-                        itype1 == __remap_gate__ || itype2 == __remap_gate__) {
+                    if (itype1 == __classical_gate__ || itype2 == __classical_gate__) {
                         QL_DOUT("Not splicing " << id1 << " and " << id2);
                         continue;
                     }
@@ -442,9 +441,7 @@ Str ir2qisa(
             iname = (*(firstInsIt))->name;
             auto itype = (*(firstInsIt))->type();
 
-            if (itype == __remap_gate__) {
-                QL_DOUT("skipping generation of qisa for remap gate");
-            } else if (itype == __classical_gate__) {
+            if (itype == __classical_gate__) {
                 classical_bundle = true;
                 ssinst << classical_instruction2qisa( (classical_cc *)(*firstInsIt) );
             } else {

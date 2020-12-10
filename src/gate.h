@@ -48,8 +48,7 @@ typedef enum __gate_type_t
     __dummy_gate__,
     __swap_gate__,
     __wait_gate__,
-    __classical_gate__,
-    __remap_gate__
+    __classical_gate__
 } gate_type_t;
 
 const utils::Complex identity_c[] = {
@@ -485,19 +484,6 @@ public:
     utils::Vec<gate *> gs;
     explicit composite_gate(const utils::Str &name);
     composite_gate(const utils::Str &name, const utils::Vec<gate*> &seq);
-    instruction_t qasm() const override;
-    gate_type_t type() const override;
-    cmat_t mat() const override;
-};
-
-class remap : public gate {
-public:
-    cmat_t m;
-    size_t virtual_qubit_index;
-
-    remap(const size_t r_index, const size_t v_index);
-    // remap(const size_t r_index);
-    
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
