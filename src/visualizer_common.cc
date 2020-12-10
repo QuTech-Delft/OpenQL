@@ -100,7 +100,7 @@ void visualize(const quantum_program* program, const Str &visualizationType, con
     //     }
     // }
 
-    printGates(parseGates(program));
+    // printGates(parseGates(program));
 
     // Choose the proper visualization based on the visualization type.
     if (visualizationType == "CIRCUIT") {
@@ -134,7 +134,8 @@ Vec<GateProperties> parseGates(const quantum_program* program) {
                 gate->type(),
                 {},
                 "UNDEFINED",
-                gate->type() == __remap_gate__ ? dynamic_cast<ql::remap*>(gate)->virtual_qubit_index : MAX
+                0
+                // gate->type() == __remap_gate__ ? dynamic_cast<ql::remap*>(gate)->virtual_qubit_index : MAX
             };
             gates.push_back(gateProperties);
         }
@@ -257,9 +258,9 @@ void printGates(const Vec<GateProperties> &gates) {
 
         QL_IOUT("\tvisual_type: " << gate.visual_type);
 
-        if (gate.type == __remap_gate__) {
-            QL_IOUT("\tvirtual_qubit_index: " << gate.virtual_qubit_index);
-        }
+        // if (gate.type == __remap_gate__) {
+        //     QL_IOUT("\tvirtual_qubit_index: " << gate.virtual_qubit_index);
+        // }
     }
 }
 
