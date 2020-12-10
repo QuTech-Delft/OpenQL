@@ -1183,6 +1183,7 @@ void Past::AddSwap(UInt r0, UInt r1) {
     for (auto &gp : circ) {
         Add(gp);
     }
+
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }
 
