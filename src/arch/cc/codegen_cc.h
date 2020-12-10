@@ -22,6 +22,8 @@
 
 namespace ql {
 
+namespace { using namespace utils; }
+
 class codegen_cc
 {
 public: //  functions
@@ -44,8 +46,11 @@ public: //  functions
     // Quantum instructions
     void customGate(
             const std::string &iname,
-            const utils::Vec<utils::UInt> &qops,
-            const utils::Vec<utils::UInt> &cops,
+            const Vec<UInt> &qops,
+            const Vec<UInt> &cops,
+			const Vec<UInt> &breg_operands, 		// bit operands e.g. assigned to by measure
+            cond_type_t condition,
+			const Vec<UInt> &cond_operands,		// 0, 1 or 2 bit operands of condition
             double angle, size_t startCycle, size_t durationInCycles);
     void nopGate();
 
@@ -82,9 +87,9 @@ private:    // types
 #endif
 #if OPT_PRAGMA
         // pragma 'gates'
-		const utils::Json *pragma;
-		utils::Vec<utils::UInt> pragmaCops;
-		utils::Vec<utils::UInt> pragmaQops;		// FIXME: naming, integrate with readout(Cop,Qubit}
+		const Json *pragma;
+		Vec<UInt> pragmaCops;
+		Vec<UInt> pragmaQops;		// FIXME: naming, integrate with readout(Cop,Qubit}
 #endif
     }; // information for an instrument group (of channels), for a single instruction
     // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?
@@ -111,7 +116,7 @@ private:    // vars
     bool mapPreloaded = false;
 
 	// codegen state, program scope
-	utils::Json codewordTable;                                  // codewords versus signals per instrument group
+	Json codewordTable;                                  // codewords versus signals per instrument group
 	std::stringstream codeSection;                              // the code generated
 
 	// codegen state, kernel scope FIXME: create class
@@ -133,7 +138,7 @@ private:    // funcs
     void emitProgramStart();
 	void showCodeSoFar() { QL_EOUT("Code so far:\n" << codeSection.str()); }     // provide context to help finding reason. FIXME: limit # lines
     void padToCycle(size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
-    tCalcSignalValue calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const utils::Vec<utils::UInt> &qops, const std::string &iname);
+    tCalcSignalValue calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const Vec<UInt> &qops, const std::string &iname);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
 #endif

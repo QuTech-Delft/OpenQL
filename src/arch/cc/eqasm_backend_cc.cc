@@ -303,8 +303,15 @@ void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_plat
 
                         case __custom_gate__:
                             QL_DOUT(QL_SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration) << " ns");
-                            codegen.customGate(iname, instr->operands, instr->creg_operands,
-                                               instr->angle, bundle.start_cycle, platform.time_to_cycles(instr->duration));
+                            codegen.customGate(
+                            	iname,
+                            	instr->operands,			// qubit operands (FKA qops)
+                            	instr->creg_operands,		// classic operands (FKA cops)
+                            	instr->breg_operands, 		// bit operands e.g. assigned to by measure
+                            	instr->condition,
+                            	instr->cond_operands,		// 0, 1 or 2 bit operands of condition
+							   	instr->angle,
+							   	bundle.start_cycle, platform.time_to_cycles(instr->duration));
                             break;
 
                         case __display__:
