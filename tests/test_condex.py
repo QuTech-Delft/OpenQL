@@ -50,6 +50,34 @@ class Test_condex(unittest.TestCase):
         qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
+    def test_condex_mpccx(self):
+        # check whether condex works with presetting condition and then creating an non-conditional gate
+        # parameters
+        v = 'mpccx'
+        config = os.path.join(curdir, "test_mapper_s7.json")
+        num_qubits = 7
+        num_bregs = num_qubits
+
+        # create and set platform
+        prog_name = "test_condex_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
+
+        k.gate("measure", [0])
+        k.gate_preset_condition('COND', [0])
+        k.gate("x", [0])
+        k.gate_clear_condition()
+        k.gate("x", [0])
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
     def test_condex_mccx(self):
         # check whether condex works with conditional gate created with base gate interface
         # parameters

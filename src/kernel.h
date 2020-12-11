@@ -38,6 +38,8 @@ public: // FIXME: should be private
     utils::Opt<operation>   br_condition;
     utils::UInt             cycle_time;   // FIXME HvS just a copy of platform.cycle_time
     instruction_map_t       instruction_map;
+    utils::Vec<utils::UInt> cond_operands;    // see gate interface: condition mode to make new gates conditional
+    cond_type_t             cond_condition;   // kernel condition mode is set by gate_preset_condition()
 
 public:
     quantum_kernel(const utils::Str &name);
@@ -175,6 +177,11 @@ public:
         cond_type_t cond = cond_always,
         const utils::Vec<utils::UInt> &condregs = {}
     );
+    void gate_preset_condition(
+        cond_type_t cond,
+        const utils::Vec<utils::UInt> &condregs
+    );
+    void gate_clear_condition();
 
     // terminology:
     // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):

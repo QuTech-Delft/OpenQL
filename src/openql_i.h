@@ -129,6 +129,11 @@ public:
         const std::vector<size_t> &qubits,
         const CReg &destination
     );
+    void gate_preset_condition(
+        const std::string &condstring,
+        const std::vector<size_t> &condregs
+    );
+    void gate_clear_condition();
     void condgate(
         const std::string &name,
         const std::vector<size_t> &qubits,
