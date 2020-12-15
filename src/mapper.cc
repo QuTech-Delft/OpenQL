@@ -1188,8 +1188,8 @@ void Past::AddSwap(UInt r0, UInt r1) {
     }
 
     // add the remap gates
-    QL_DOUT("mapping v " << v2r.GetVirt(r1) << " to q " << r0 << " in remap gate");
-    QL_DOUT("mapping v " << v2r.GetVirt(r0) << " to q " << r1 << " in remap gate");
+    // QL_DOUT("mapping v " << v2r.GetVirt(r1) << " to q " << r0 << " in remap gate");
+    // QL_DOUT("mapping v " << v2r.GetVirt(r0) << " to q " << r1 << " in remap gate");
     Add(new remap(r0, v2r.GetVirt(r1)));
     Add(new remap(r1, v2r.GetVirt(r0)));
 

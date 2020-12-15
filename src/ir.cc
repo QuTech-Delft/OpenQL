@@ -110,7 +110,8 @@ bundles_t bundler(const circuit &circ, UInt cycle_time) {
     for (auto &gp : circ) {
         QL_DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
         if (gp->type() == gate_type_t::__wait_gate__ ||    // FIXME HvS: wait must be written as well
-            gp->type() == gate_type_t::__dummy_gate__
+            gp->type() == gate_type_t::__dummy_gate__ ||
+            gp->type() == gate_type_t::__remap_gate__
         ) {
             QL_DOUT("... ignoring: " << gp->qasm());
             continue;
