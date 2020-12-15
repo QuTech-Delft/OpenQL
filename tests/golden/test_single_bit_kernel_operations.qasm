@@ -16,7 +16,7 @@ qubits 7
     xm90 q[1]
     ry90 q[0]
     { ym90 q[2] | ym90 q[3] }
-    { measz q[2] | measz q[3] }
-    { measz q[0] | measz q[1] }
-    measz q[4]
+    { measz q[2], b[2] | measz q[3], b[3] }
+    { measz q[0], b[0] | measz q[1], b[1] }
+    measz q[4], b[4]
     wait 1

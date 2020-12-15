@@ -182,6 +182,16 @@ public:
         const utils::Vec<utils::UInt> &condregs
     );
     void gate_clear_condition();
+    void gate_add_implicits(
+        const utils::Str &gname,
+        utils::Vec<utils::UInt> &qubits,
+        utils::Vec<utils::UInt> &cregs,
+        utils::UInt &duration,
+        utils::Real &angle,
+        utils::Vec<utils::UInt> &bregs,
+        cond_type_t &cond,
+        const utils::Vec<utils::UInt> &condregs
+    );
 
     // terminology:
     // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):

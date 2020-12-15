@@ -3,6 +3,6 @@ version 1.0
 qubits 7
 
 .kernel_mcnx
-    measure q[0]
+    measure q[0], b[0]
     wait 14
     cond(!b[0]) x q[0]

@@ -112,7 +112,6 @@ void Scheduler::add_dep(Int fromID, Int toID, enum DepTypes deptype, UInt combop
     auto toNode = graph.nodeFromId(toID);
     auto arc = graph.addArc(fromNode, toNode);
     weight[arc] = Int(ceil(static_cast<Real>(instruction[fromNode]->duration) / cycle_time));
-    // weight[arc] = (instruction[fromNode]->duration + cycle_time -1)/cycle_time;
     cause[arc] = comboperand;
     UInt operand;
     depType[arc] = deptype;

@@ -22,5 +22,5 @@ qubits 7
     blt r31, r29, do
 
 .do_measurement_2
-    { measz q[0] | measz q[1] | measz q[2] | measz q[3] | measz q[4] | measz q[5] }
+    { measz q[0], b[0] | measz q[1], b[1] | measz q[2], b[2] | measz q[3], b[3] | measz q[4], b[4] | measz q[5], b[5] }
     wait 1

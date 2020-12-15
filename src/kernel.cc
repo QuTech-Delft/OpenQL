@@ -27,6 +27,7 @@ using namespace utils;
 quantum_kernel::quantum_kernel(const Str &name) :
     name(name), iterations(1), type(kernel_type_t::STATIC)
 {
+    cond_condition = cond_always;
 }
 
 quantum_kernel::quantum_kernel(
@@ -174,7 +175,7 @@ void quantum_kernel::ry180(UInt qubit) {
 }
 
 void quantum_kernel::measure(UInt qubit) {
-    gate("measure", {qubit}, {}, 0, 0.0, {qubit});
+    gate("measure", {qubit}, {}, 0, 0.0, {});
 }
 
 void quantum_kernel::measure(UInt qubit, UInt bit) {
@@ -807,8 +808,12 @@ void quantum_kernel::gate(
             QL_FATAL("Out of range condition operand(s) for '" << gname << "' with condregs " << condregs);
         }
     }
-    if (!gate_nonfatal(gname, qubits, cregs, duration, angle, bregs, cond, condregs)) {
-        QL_FATAL("Unknown gate '" << gname << "' with qubits " << qubits);
+    auto lqubits = qubits;
+    auto lcregs = cregs;
+    auto lbregs = bregs;
+    gate_add_implicits(gname, lqubits, lcregs, duration, angle, lbregs, cond, condregs);
+    if (!gate_nonfatal(gname, lqubits, lcregs, duration, angle, lbregs, cond, condregs)) {
+        QL_FATAL("Unknown gate '" << gname << "' with qubits " << lqubits);
     }
 }
 
@@ -831,6 +836,28 @@ void quantum_kernel::gate_preset_condition(
 
 void quantum_kernel::gate_clear_condition() {
     gate_preset_condition(cond_always, {});
+}
+
+/**
+ * add implicit parameters to gate to match IR requirements
+ */
+void quantum_kernel::gate_add_implicits(
+    const Str &gname,
+    Vec<UInt> &qubits,
+    Vec<UInt> &cregs,
+    UInt &duration,
+    Real &angle,
+    Vec<UInt> &bregs,
+    cond_type_t &cond,
+    const Vec<UInt> &condregs
+) {
+    if (gname == "measure" || gname == "measx" || gname == "measz") {
+        QL_DOUT("gate_add_implicits:" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" cond=" << cond <<" condregs=" << condregs);
+        if (bregs.size() == 0 && qubits[0] < breg_count) {
+            bregs.push_back(qubits[0]);
+        }
+        QL_DOUT("gate_add_implicits (after):" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" cond=" << cond <<" condregs=" << condregs);
+    }
 }
 
 /**

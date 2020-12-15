@@ -3,7 +3,6 @@ version 1.0
 qubits 7
 
 .kernel_m2c2x
-    measure q[0]
-    measure q[1]
-    wait 13
+    { measure q[0], b[0] | measure q[1], b[1] }
+    wait 14
     cond(b[0]&&b[1) x q[0]
