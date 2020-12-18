@@ -35,7 +35,7 @@ codegen_cc::BundleInfo::BundleInfo() {
 	readoutCop = IMPLICIT_COP;		// FIXME: keep explicit in IR?
 	readoutQubit = -1;
 	condition = cond_always;
-	// FIXME: add cops
+	// FIXME: add creg_operands
 #endif
 	signalValue = "";
 	durationInCycles = 0;
@@ -628,13 +628,13 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 \************************************************************************/
 
 // helper FIXME: make QASM compatible, use library function?
-std::string toQasm(const std::string &iname, const Vec<UInt> &qops, const Vec<UInt> &cops)
+std::string toQasm(const std::string &iname, const Vec<UInt> &operands, const Vec<UInt> &creg_operands)
 {
 	std::stringstream s;
 	s << iname << " ";
-	for(size_t i=0; i<qops.size(); i++) {
-		s << qops[i];
-		if(i<qops.size()-1) s << ",";
+	for(size_t i=0; i < operands.size(); i++) {
+		s << operands[i];
+		if(i < operands.size() - 1) s << ",";
 	}
 	return s.str();
 }
@@ -642,11 +642,10 @@ std::string toQasm(const std::string &iname, const Vec<UInt> &qops, const Vec<UI
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
 // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
 // Does not deal with the control mode and digital interface of the instrument.
-// FIXME: cleanup naming, qops and cops were recently renamed in class gate
 void codegen_cc::customGate(
 		const std::string &iname,
-		const Vec<UInt> &qops,
-		const Vec<UInt> &cops,
+		const Vec<UInt> &operands,
+		const Vec<UInt> &creg_operands,
 		const Vec<UInt> &breg_operands,
 		cond_type_t condition,
 		const Vec<UInt> &cond_operands,
@@ -659,14 +658,14 @@ void codegen_cc::customGate(
     }
 #endif
 
-    vcd.customGate(iname, qops, startCycle, durationInCycles);
+    vcd.customGate(iname, operands, startCycle, durationInCycles);
 
     bool isReadout = settings.isReadout(iname);    	//  determine whether this is a readout instruction
 
     // generate comment (also performs some checks)
     if(isReadout) {
-        if(cops.empty()) {
-            /*  NB: existing code uses empty cops, i.e. no explicit classical register.
+        if(creg_operands.empty()) {
+            /*  NB: existing code uses empty creg_operands, i.e. no explicit classical register.
                 On the one hand this historically seems to imply assignment to an
                 implicit 'register' in the CC-light that can be used for conditional
                 gates.
@@ -675,15 +674,15 @@ void codegen_cc::customGate(
                 value
             */
             // FIXME: define meaning: no classical target, or implied target (classical register matching qubit)
-            comment(QL_SS2S(" # READOUT: " << iname << "(q" << qops[0] << ")"));
-        } else if(cops.size() == 1) {
-            comment(QL_SS2S(" # READOUT: " << iname << "(c" << cops[0] << ",q" << qops[0] << ")"));	// FIXME use toQasm()
+            comment(QL_SS2S(" # READOUT: " << iname << "(q" << operands[0] << ")"));
+        } else if(creg_operands.size() == 1) {
+            comment(QL_SS2S(" # READOUT: " << iname << "(c" << creg_operands[0] << ",q" << operands[0] << ")"));	// FIXME use toQasm()
         } else {
-            QL_FATAL("Readout instruction requires 0 or 1 classical operands, not " << cops.size());   // FIXME: provide context, move check
+            QL_FATAL("Readout instruction requires 0 or 1 classical operands, not " << creg_operands.size());   // FIXME: provide context, move check
         }
     } else { // handle all other instruction types than "readout"
         // generate comment. NB: we don't have a particular limit for the number of operands
-        comment(std::string(" # gate '") + toQasm(iname, qops, cops) + "'");
+        comment(std::string(" # gate '") + toQasm(iname, operands, creg_operands) + "'");
     }
 
     // find instruction (gate definition)
@@ -693,7 +692,7 @@ void codegen_cc::customGate(
 
     // iterate over signals defined for instruction (e.g. several operands or types, and thus instruments)
     for(size_t s=0; s<sd.signal.size(); s++) {
-        tCalcSignalValue csv = calcSignalValue(sd, s, qops, iname);
+        tCalcSignalValue csv = calcSignalValue(sd, s, operands, iname);
 
         // store signal value, checking for conflicts
         BundleInfo *bi = &bundleInfo[csv.si.instrIdx][csv.si.group];       	// shorthand
@@ -721,20 +720,20 @@ void codegen_cc::customGate(
         // FIXME: not reached if we don't define signals, so here we need output, whereas bundleFinish doesn't
 		// store operands used for readout, actual work is postponed to bundleFinish()
         if(isReadout) {
-            int cop = !cops.empty() ? cops[0] : IMPLICIT_COP;	// FIXME: make explicit here?
+            int cop = !creg_operands.empty() ? creg_operands[0] : IMPLICIT_COP;	// FIXME: make explicit here?
             bi->readoutCop = cop;   // FIXME: naming, we do use cop, but rename qop to qubit below
 
             // store qubit
-            if(qops.size() == 1) {
-                bi->readoutQubit = qops[0];
+            if(operands.size() == 1) {
+                bi->readoutQubit = operands[0];
             } else {
-                QL_FATAL("Readout instruction requires exactly 1 quantum operand, not " << qops.size());   // FIXME: provide context
+                QL_FATAL("Readout instruction requires exactly 1 quantum operand, not " << operands.size());   // FIXME: provide context
             }
         }
 
         // store expression for conditional gates
         bi->condition = cond_always;	// FIXME: implement correctly when expressions are implemented
-        // FIXME: add cops
+        // FIXME: add creg_operands
 #endif
 
         QL_DOUT("customGate(): iname='" << iname <<
@@ -755,9 +754,9 @@ void codegen_cc::customGate(
 			}
 			vbi[0].pragma = pragma;
 
-			// store cops and qubits
-			vbi[0].pragmaCops = cops;
-			vbi[0].pragmaQops = qops;
+			// store creg_operands and qubits
+			vbi[0].pragmaCops = creg_operands;
+			vbi[0].pragmaQops = operands;
 		}
 
 	}
@@ -911,7 +910,7 @@ void codegen_cc::padToCycle(size_t instrIdx, size_t startCycle, int slot, const 
 
 
 // compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
-codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const Vec<UInt> &qops, const std::string &iname)
+codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const Vec<UInt> &operands, const std::string &iname)
 {   tCalcSignalValue ret;
     std::string signalSPath = QL_SS2S(sd.path<<"["<<s<<"]");                   // for JSON error reporting
 
@@ -921,13 +920,13 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
 
     // get the operand index & qubit to work on
     ret.operandIdx = json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
-    if(ret.operandIdx >= qops.size()) {
+    if(ret.operandIdx >= operands.size()) {
         QL_JSON_FATAL("instruction '" << iname <<
-              "': illegal operand number " << ret.operandIdx <<
-              "' exceeds expected maximum of " << qops.size()-1 <<
-              "(edit JSON, or provide enough parameters)");                 // FIXME: add offending statement
+									  "': illegal operand number " << ret.operandIdx <<
+									  "' exceeds expected maximum of " << operands.size() - 1 <<
+									  "(edit JSON, or provide enough parameters)");                 // FIXME: add offending statement
     }
-    unsigned int qubit = qops[ret.operandIdx];
+    unsigned int qubit = operands[ret.operandIdx];
 
     // get signal value
     const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
