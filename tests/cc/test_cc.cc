@@ -367,6 +367,9 @@ void test_break(const std::string &scheduler, const std::string &scheduler_unifo
 {
     // create and set platform
     ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
+    ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
+    ql::options::set("write_qasm_files", "yes");    	// so we can see bundles
 
     const int num_qubits = 5;
     const int num_cregs = 5;
@@ -379,9 +382,6 @@ void test_break(const std::string &scheduler, const std::string &scheduler_unifo
 
     prog.add_for(k, 100);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
-    ql::options::set("write_qasm_files", "yes");    	// so we can see bundles
     prog.compile();
 }
 

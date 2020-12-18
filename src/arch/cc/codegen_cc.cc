@@ -443,8 +443,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 #if OPT_FEEDBACK
 		// FIXME: terrible hack.
-		// Alternatively, we could ignore startCycle and compute it ourselves. No, startCycle is also used to insert 'wait'
-		// Or better, decompose measure into measure+getResults, where getResults does the wait for UHF latency + DSM distribution
+		/* Alternatives:
+		 * - we could ignore startCycle and compute it ourselves. No, startCycle is also used to insert 'wait'
+		 * - or better, decompose measure_rt into measure+getResults, where getResults does the wait for UHF latency + DSM distribution
+		 * - or infer data distribution from explicit assignment of measurement result to classic variable. Hmmm: cregs vs. bregs in keel->gate()
+		 */
 		if(bundleHasReadout && instrMaxDurationInCycles>0) {	// FIXME: also allow runtime selection by option. NB: bundleHasReadout does not reflect subsequent instruments
 			// shorten output to preserve timeline while injecting time for feedback below
 			int totalWait = 1 + settings.getReadoutWait();	// 1 because of 'seq_in' that is also generated, Yuk
@@ -635,15 +638,16 @@ std::string toQasm(const std::string &iname, const Vec<UInt> &qops, const Vec<UI
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
 // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
 // Does not deal with the control mode and digital interface of the instrument.
-
+// FIXME: cleanup naming, qops and cops were recently renamed in class gate
 void codegen_cc::customGate(
 		const std::string &iname,
 		const Vec<UInt> &qops,
 		const Vec<UInt> &cops,
-		const Vec<UInt> &breg_operands, 		// bit operands e.g. assigned to by measure
+		const Vec<UInt> &breg_operands,
 		cond_type_t condition,
-		const Vec<UInt> &cond_operands,		// 0, 1 or 2 bit operands of condition
-		double angle, size_t startCycle, size_t durationInCycles)
+		const Vec<UInt> &cond_operands,
+		double angle,
+		size_t startCycle, size_t durationInCycles)
 {
 #if 0   // FIXME: test for angle parameter
     if(angle != 0.0) {
