@@ -24,7 +24,7 @@ void datapath_cc::programFinish()
 }
 
 
-int datapath_cc::allocateSmBit(size_t cop, size_t instrIdx)
+int datapath_cc::allocateSmBit(size_t creg_operand, size_t instrIdx)
 {
 	static int smBit = 0;
 
@@ -34,7 +34,7 @@ int datapath_cc::allocateSmBit(size_t cop, size_t instrIdx)
 }
 
 
-int datapath_cc::getSmBit(size_t cop, size_t instrIdx)
+int datapath_cc::getSmBit(size_t creg_operand, size_t instrIdx)
 {
 	return 0;	// FIXME
 }

@@ -71,26 +71,25 @@ private:    // types
     	BundleInfo();
 
     public:	// vars
-#if OPT_FEEDBACK
-        // readout
-        int readoutCop;                 // classic operand for readout. NB: we encode an implicit cop as -1
-        int readoutQubit;
-
-        // conditional gates
-        int condition;
-        // FIXME: add cops
-#endif
     	// output gates
         std::string signalValue;
         unsigned int durationInCycles;
 #if OPT_SUPPORT_STATIC_CODEWORDS
         int staticCodewordOverride;
 #endif
+#if OPT_FEEDBACK
+        // readout
+		Vec<UInt> operands;
+		Vec<UInt> creg_operands;
+		Vec<UInt> breg_operands;
+
+        // conditional gates
+        int condition;
+		Vec<UInt> cond_operands;
+#endif
 #if OPT_PRAGMA
         // pragma 'gates'
 		const Json *pragma;
-		Vec<UInt> pragmaCops;
-		Vec<UInt> pragmaQops;		// FIXME: naming, integrate with readout(Cop,Qubit}
 #endif
     }; // information for an instrument group (of channels), for a single instruction
     // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?

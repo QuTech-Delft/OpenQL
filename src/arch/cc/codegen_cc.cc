@@ -13,7 +13,6 @@
 #include <options.h>
 
 // constants
-#define IMPLICIT_COP  -1          // implicit classic operand
 
 
 namespace ql {
@@ -31,16 +30,13 @@ typedef std::vector<int> tBitVars;
 \************************************************************************/
 
 codegen_cc::BundleInfo::BundleInfo() {
-#if OPT_FEEDBACK
-	readoutCop = IMPLICIT_COP;		// FIXME: keep explicit in IR?
-	readoutQubit = -1;
-	condition = cond_always;
-	// FIXME: add creg_operands
-#endif
 	signalValue = "";
 	durationInCycles = 0;
 #if OPT_SUPPORT_STATIC_CODEWORDS
 	staticCodewordOverride = settings_cc::NO_STATIC_CODEWORD_OVERRIDE;
+#endif
+#if OPT_FEEDBACK
+	condition = cond_always;	// FIXME
 #endif
 #if OPT_PRAGMA
 	pragma = nullptr;
@@ -327,8 +323,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         unsigned int instrMaxDurationInCycles = 0;                          // maximum duration over groups that are used, one instrument
 #if OPT_FEEDBACK
 		typedef struct {
-			int condition;	// FIXME: get from bundleInfo?
-			// FIXME: cop
+			int condition;
+			Vec<UInt> cond_operands;
 			uint32_t groupDigOut;
 		} tCondGateInfo;
 		std::map<int, tCondGateInfo> condGateMap;							// NB: key is instrIdx
@@ -337,8 +333,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 		typedef struct {
 			int smBit;
 			int bit;
-			int cop;	// classic operand as annotation only FIXME: get from bundleInfo?
-			int qubit;	// annotation only
+			const BundleInfo *bi;											// used for annotation only
 		} tReadoutInfo;
 		std::map<int, tReadoutInfo> readoutMap;								// NB: key is instrIdx
 #endif
@@ -368,7 +363,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                 	// nothing to do, just use digOut
                 } else {
 					// remind mapping for setting PL
-					condGateMap.emplace(group, tCondGateInfo{bi->condition, gdo.groupDigOut});
+					condGateMap.emplace(group, tCondGateInfo{bi->condition, bi->cond_operands, gdo.groupDigOut});
                 }
 #endif
 
@@ -386,9 +381,9 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             	bundleHasPragma = true;
             	pragma = bi->pragma;
 
-				int cop = bi->pragmaQops[0];                	// implicit cop for qubit. FIXME: perform checks
-				// get SM bit for cop (allocated during readout)
-				pragmaSmBit = dp.getSmBit(cop, instrIdx);
+				int creg_operand = bi->operands[0];                	// implicit classic for qubit. FIXME: perform checks
+				// get SM bit for classic operand (allocated during readout)
+				pragmaSmBit = dp.getSmBit(creg_operand, instrIdx);
             }
 #endif
 
@@ -399,7 +394,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // same instrument, which might be needed in the future
             // FIXME: also generate VCD
 
-			if(bi->readoutQubit >= 0) { // readout requested
+			if(!bi->operands.empty()) { // readout requested
 				int resultBit = settings.getResultBit(ic, group);
 
 #if 0	// FIXME: redundant
@@ -422,16 +417,17 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				instrHasReadout = true;
 
 				// get classic operand
-				if (bi->readoutCop >= 0) {	// i.e. not IMPLICIT_COP
-					QL_WOUT("ignoring explicit assignment to classic operand " << bi->readoutCop << " for measurement of qubit " << bi->readoutQubit);
+				if (!bi->creg_operands.empty()) {
+					QL_WOUT("ignoring explicit assignment to classic operand " << bi->creg_operands[0] << " for measurement of qubit " << bi->operands[0]);
 				}
-				int cop = bi->readoutQubit;                	// implicit cop for qubit
+				int creg_operand = bi->operands[0];                	// implicit classic operand for qubit
+				// FIXME: do we readout to creg or breg?
 
-				// allocate SM bit for cop
-				int smBit = dp.allocateSmBit(cop, instrIdx);
+				// allocate SM bit for classic operand
+				int smBit = dp.allocateSmBit(creg_operand, instrIdx);
 
 				// remind mapping of bit -> smBit for setting MUX
-				readoutMap.emplace(group, tReadoutInfo{smBit, resultBit, cop, bi->readoutQubit});
+				readoutMap.emplace(group, tReadoutInfo{smBit, resultBit, bi});
 			}
 #endif
         } // for(group)
@@ -496,6 +492,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 						if(1<<bit & cgi.groupDigOut) {
 							// FIXME:
 							cgi.condition;
+							cgi.cond_operands;
 							int smBit0 = 0;
 							int smBit1 = 0;
 							std::string expression;
@@ -575,7 +572,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 					dp.emit(ic.ii.slot,
 							QL_SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
-							QL_SS2S("# cop " << ri.cop << " = readout(q" << ri.qubit << ")"));
+							QL_SS2S("# cop " << ri.bi->creg_operands[0] << " = readout(q" << ri.bi->operands[0] << ")"));
 
 					int mySmAddr = ri.smBit/8;	// byte addressable
 				}
@@ -720,20 +717,17 @@ void codegen_cc::customGate(
         // FIXME: not reached if we don't define signals, so here we need output, whereas bundleFinish doesn't
 		// store operands used for readout, actual work is postponed to bundleFinish()
         if(isReadout) {
-            int cop = !creg_operands.empty() ? creg_operands[0] : IMPLICIT_COP;	// FIXME: make explicit here?
-            bi->readoutCop = cop;   // FIXME: naming, we do use cop, but rename qop to qubit below
-
-            // store qubit
-            if(operands.size() == 1) {
-                bi->readoutQubit = operands[0];
-            } else {
+            if(operands.size() != 1) {
                 QL_FATAL("Readout instruction requires exactly 1 quantum operand, not " << operands.size());   // FIXME: provide context
             }
+			bi->operands = operands;
+            bi->creg_operands = creg_operands;
+            bi->breg_operands = breg_operands;
         }
 
-        // store expression for conditional gates
-        bi->condition = cond_always;	// FIXME: implement correctly when expressions are implemented
-        // FIXME: add creg_operands
+        // store 'expression' for conditional gates
+        bi->condition = condition;
+        bi->cond_operands = cond_operands;
 #endif
 
         QL_DOUT("customGate(): iname='" << iname <<
@@ -755,8 +749,8 @@ void codegen_cc::customGate(
 			vbi[0].pragma = pragma;
 
 			// store creg_operands and qubits
-			vbi[0].pragmaCops = creg_operands;
-			vbi[0].pragmaQops = operands;
+			vbi[0].creg_operands = creg_operands;
+			vbi[0].operands = operands;
 		}
 
 	}

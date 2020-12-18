@@ -27,8 +27,8 @@ public: // functions
 	void programStart();
 	void programFinish();
 
-	int allocateSmBit(size_t cop, size_t instrIdx);
-	int getSmBit(size_t cop, size_t instrIdx);
+	int allocateSmBit(size_t creg_operand, size_t instrIdx);
+	int getSmBit(size_t creg_operand, size_t instrIdx);
 	int getOrAssignMux(size_t instrIdx);
 	int getOrAssignPl(size_t instrIdx);
 	static int getSizeTag(int numReadouts);
