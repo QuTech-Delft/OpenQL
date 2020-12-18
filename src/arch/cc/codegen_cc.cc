@@ -8,7 +8,6 @@
  */
 
 #include "codegen_cc.h"
-//#include "eqasm_backend_cc.h"
 
 #include <version.h>
 #include <options.h>
@@ -277,6 +276,11 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 		// do nothing
 	} else if(nrTriggerBits == 1) {                             // single trigger for all groups (NB: will possibly assigned multiple times)
 		ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][0];
+#if 1	// FIXME: hotfix for QWG, implement properly
+	} else if(nrTriggerBits == 2) {
+        ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][0];
+        ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][1];
+#endif
 #if 1   // FIXME: trigger per group
 	} else if(nrTriggerBits == nrGroups) {                      // trigger per group
 		ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][group];
