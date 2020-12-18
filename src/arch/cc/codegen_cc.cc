@@ -247,6 +247,11 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, int group, int nrGroups
         // do nothing
     } else if(nrTriggerBits == 1) {                             // single trigger for all groups (NB: will possibly assigned multiple times)
         ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][0];
+#if 1	// FIXME: hotfix for QWG, implement properly
+	} else if(nrTriggerBits == 2) {
+        ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][0];
+        ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][1];
+#endif
 #if 1   // FIXME: trigger per group, nrGroups always 32
     } else if(nrTriggerBits == nrGroups) {                      // trigger per group
         ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][group];
