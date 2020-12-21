@@ -153,6 +153,7 @@ private:    // funcs
     // helpers
 	void showCodeSoFar() { QL_EOUT("Code so far:\n" << codeSection.str()); }     // provide context to help finding reason. FIXME: limit # lines
     void emitProgramStart();
+	void emitOutput(const tCondGateMap &condGateMap, int32_t digOut, unsigned int instrMaxDurationInCycles, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
 	void emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
 	void emitMeasurementDistribution(const tReadoutMap &readoutMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
     void padToCycle(size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);

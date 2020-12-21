@@ -459,6 +459,9 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
         // generate code for instrument output
         if(instrHasOutput) {
+#if 1
+			emitOutput(condGateMap, digOut, instrMaxDurationInCycles, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
+#else
             comment(QL_SS2S("  # slot=" << ic.ii.slot
 										<< ", instrument='" << ic.ii.instrumentName << "'"
 										<< ": lastEndCycle=" << lastEndCycle[instrIdx]
@@ -511,16 +514,17 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
             // update lastEndCycle
             lastEndCycle[instrIdx] = startCycle + instrMaxDurationInCycles;
-        } else {    // !isInstrUsed
-            // nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
-        }
+#endif
+		} else {    // !instrHasOutput
+			// nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
+		}
 
 #if OPT_PRAGMA	// FIXME: pragma handling
 		if(pragma) {	// NB: note that this will only work because we set the pragma for all instruments, and thus already encounter this for the first instrument
 			emitPragma(pragma, pragmaSmBit, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
         }
 #endif
-        
+
 #if OPT_FEEDBACK
 		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
 	        emitMeasurementDistribution(readoutMap, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
@@ -806,6 +810,62 @@ void codegen_cc::emitProgramStart()
 #endif
 }
 
+
+void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, unsigned int instrMaxDurationInCycles, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
+{
+	comment(QL_SS2S("  # slot=" << slot
+								<< ", instrument='" << instrumentName << "'"
+								<< ": lastEndCycle=" << lastEndCycle[instrIdx]
+								<< ", startCycle=" << startCycle
+								<< ", instrMaxDurationInCycles=" << instrMaxDurationInCycles
+			));
+
+	padToCycle(instrIdx, startCycle, slot, instrumentName);
+
+	// emit code for slot output
+	if(condGateMap.empty()) {	// all groups unconditional
+		emit(slot,
+			 "seq_out",
+			 QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << instrMaxDurationInCycles),
+			 QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": code word/mask on '" << instrumentName + "'"));
+	} else {	// some group conditional
+		// configure datapath PL
+		int smAddr = 0;		// FIXME:
+		int pl = dp.getOrAssignPl(instrIdx);
+
+		dp.emit(slot, QL_SS2S(".PL " << pl));
+		for(auto &cg : condGateMap) {
+			int group = cg.first;
+			tCondGateInfo cgi = cg.second;
+
+#if 1				// FIXME: implement PL output
+			for(int bit=0; bit<32; bit++) {
+				if(1<<bit & cgi.groupDigOut) {
+					// FIXME:
+					cgi.condition;
+					cgi.cond_operands;
+					int smBit0 = 0;
+					int smBit1 = 0;
+					std::string expression;	// gtPlExpression(cgi.condition, cgi.cond_operands);
+					dp.emit(slot,
+							QL_SS2S("O[" << bit << "] := I[" << smBit0 << "]"),		// FIXME: depend on condition
+							QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", expression=" << expression));
+				}
+			}
+#endif
+		}
+
+		// emit code for conditional gate
+		emit(slot,
+			 "seq_out_sm",
+			 QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
+			 QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": consitional code word/mask on '" << instrumentName << "'"));
+		// FIXME
+	}
+
+	// update lastEndCycle
+	lastEndCycle[instrIdx] = startCycle + instrMaxDurationInCycles;
+}
 
 void codegen_cc::emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
 {
