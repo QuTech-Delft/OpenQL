@@ -5,9 +5,18 @@
 #ifdef WITH_VISUALIZER
 
 #include "visualizer.h"
+#include "visualizer_types.h"
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
+#include "visualizer_cimg.h"
 #include "utils/json.h"
+#include "utils/num.h"
+#include "utils/vec.h"
+#include "utils/map.h"
+#include "utils/pair.h"
+#include "utils/exception.h"
+
+#include <regex>
 
 namespace ql {
 
@@ -17,7 +26,7 @@ using namespace utils;
 // =                     CircuitData                     = //
 // ======================================================= //
 
-CircuitData::CircuitData(Vec<GateProperties> &gates, const Layout &layout, const Int cycleDuration) :
+CircuitData::CircuitData(Vec<GateProperties> &gates, const CircuitLayout &layout, const Int cycleDuration) :
     cycles(generateCycles(gates, cycleDuration)),
     amountOfQubits(calculateAmountOfBits(gates, &GateProperties::operands)),
     amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands)),
@@ -34,14 +43,19 @@ Int CircuitData::calculateAmountOfCycles(const Vec<GateProperties> &gates, const
     // Find the highest cycle in the gate vector.
     Int amountOfCycles = 0;
     for (const GateProperties &gate : gates) {
-        const Int gateCycle = gate.cycle;
-        if (gateCycle < 0 || gateCycle > MAX_ALLOWED_VISUALIZER_CYCLE) {
-            QL_FATAL("Found gate with cycle index: " << gateCycle << ". Only indices between 0 and " 
-               << MAX_ALLOWED_VISUALIZER_CYCLE << " are allowed!"
-               << "\nMake sure gates are scheduled before calling the visualizer pass!");
+        if (gate.cycle == MAX_CYCLE) {
+            QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
+            return MAX_CYCLE;
         }
-        if (gateCycle > amountOfCycles)
-            amountOfCycles = gateCycle;
+
+        // if (gate.cycle < 0 || gate.cycle > VISUALIZER_CYCLE_WARNING_THRESHOLD) {
+        //     FATAL("Found gate with cycle index: " << gate.cycle << ". Only indices between 0 and " 
+        //        << MAX_ALLOWED_VISUALIZER_CYCLE << " are allowed!"
+        //        << "\nMake sure gates are scheduled before calling the visualizer pass!");
+        // }
+
+        if (gate.cycle > amountOfCycles)
+            amountOfCycles = gate.cycle;
     }
 
     // The last gate requires a different approach, because it might have a
@@ -59,9 +73,20 @@ Int CircuitData::calculateAmountOfCycles(const Vec<GateProperties> &gates, const
 Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates, const Int cycleDuration) const {
     QL_DOUT("Generating cycles...");
 
-    // Generate the cycles.
+    // Calculate the amount of cycles. If there are gates with undefined cycle
+    // indices, visualize the circuit sequentially.
     Vec<Cycle> cycles;
-    const Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    if (amountOfCycles == MAX_CYCLE) {
+        // Add a sequential cycle to each gate.
+        amountOfCycles = 0;
+        for (GateProperties &gate : gates) {
+            gate.cycle = amountOfCycles;
+            amountOfCycles += gate.duration / cycleDuration;
+        }
+    }
+
+    // Generate the cycles.
     for (Int i = 0; i < amountOfCycles; i++) {
         // Generate the first chunk of the gate partition for this cycle.
         // All gates in this cycle will be added to this chunk first, later on
@@ -180,7 +205,7 @@ void CircuitData::partitionCyclesWithOverlap()
     }
 }
 
-void CircuitData::cutEmptyCycles(const Layout &layout) {
+void CircuitData::cutEmptyCycles(const CircuitLayout &layout) {
     QL_DOUT("Cutting empty cycles...");
 
     if (layout.pulses.areEnabled()) {
@@ -202,7 +227,7 @@ void CircuitData::cutEmptyCycles(const Layout &layout) {
     }
 }
 
-Vec<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout &layout) const {
+Vec<EndPoints> CircuitData::findCuttableEmptyRanges(const CircuitLayout &layout) const {
     QL_DOUT("Finding cuttable empty cycle ranges...");
 
     // Calculate the empty cycle ranges.
@@ -289,7 +314,7 @@ void CircuitData::printProperties() const {
 // =                      Structure                      = //
 // ======================================================= //
 
-Structure::Structure(const Layout &layout, const CircuitData &circuitData) :
+Structure::Structure(const CircuitLayout &layout, const CircuitData &circuitData) :
     layout(layout),
     cellDimensions({layout.grid.getCellSize(), calculateCellHeight(layout)}),
     cycleLabelsY(layout.grid.getBorderSize()),
@@ -302,7 +327,7 @@ Structure::Structure(const Layout &layout, const CircuitData &circuitData) :
     imageHeight = calculateImageHeight(circuitData);
 }
 
-Int Structure::calculateCellHeight(const Layout &layout) const {
+Int Structure::calculateCellHeight(const CircuitLayout &layout) const {
     QL_DOUT("Calculating cell height...");
 
     if (layout.pulses.areEnabled()) {
@@ -515,8 +540,26 @@ void Structure::printProperties() const {
     }
 }
 
-void visualizeCircuit(Vec<GateProperties> gates, const Layout &layout, const Int cycleDuration, const Str &waveformMappingPath)
+void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration)
 {
+    // Get the gate list from the program.
+    QL_DOUT("Getting gate list...");
+    Vec<GateProperties> gates = parseGates(program);
+    if (gates.size() == 0) {
+        QL_FATAL("Quantum program contains no gates!");
+    }
+
+    // Parse and validate the layout and instruction configuration file.
+    CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program->platform.instruction_settings);
+    validateCircuitLayout(layout);
+
+    // Calculate circuit properties.
+    QL_DOUT("Calculating circuit properties...");
+    const Int cycleDuration = utoi(program->platform.cycle_time);
+    QL_DOUT("Cycle duration is: " + to_string(cycleDuration) + " ns.");
+    // Fix measurement gates without classical operands.
+    fixMeasurementOperands(gates);
+
     // Initialize the circuit properties.
     CircuitData circuitData(gates, layout, cycleDuration);
     circuitData.printProperties();
@@ -528,8 +571,7 @@ void visualizeCircuit(Vec<GateProperties> gates, const Layout &layout, const Int
     
     // Initialize image.
     QL_DOUT("Initializing image...");
-    const Int numberOfChannels = 3;
-    cimg_library::CImg<Byte> image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
+    Image image(structure.getImageWidth(), structure.getImageHeight());
     image.fill(255);
 
     // Draw the cycle labels if the option has been set.
@@ -554,7 +596,7 @@ void visualizeCircuit(Vec<GateProperties> gates, const Layout &layout, const Int
 
     // Draw the circuit as pulses if enabled.
     if (layout.pulses.areEnabled()) {
-        PulseVisualization pulseVisualization = parseWaveformMapping(waveformMappingPath);
+        PulseVisualization pulseVisualization = parseWaveformMapping(configuration.waveformMappingPath);
         const Vec<QubitLines> linesPerQubit = generateQubitLines(gates, pulseVisualization, circuitData);
 
         // Draw the lines of each qubit.
@@ -656,9 +698,355 @@ void visualizeCircuit(Vec<GateProperties> gates, const Layout &layout, const Int
         }
     }
 
+    // Save the image if enabled.
+    if (layout.saveImage) {
+        image.save(generateFilePath("circuit_visualization", "bmp"));
+    }
+
     // Display the image.
     QL_DOUT("Displaying image...");
     image.display("Quantum Circuit");
+}
+
+CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
+                                        const Str &visualizerConfigPath,
+                                        const Json platformInstructions) {
+    QL_DOUT("Parsing visualizer configuration file for circuit visualization...");
+
+    // Load the relevant instruction parameters.
+    static const std::regex comma_space_pattern("\\s*,\\s*");
+    static const std::regex trim_pattern("^(\\s)+|(\\s)+$");
+    static const std::regex multiple_space_pattern("(\\s)+");
+
+    struct VisualParameters {
+        Str visual_type;
+        Vec<Int> codewords;
+    };
+
+    Map<Str, VisualParameters> parameterMapping;
+    for (auto it = platformInstructions.begin(); it != platformInstructions.end(); ++it) {
+        Str gateName = it.key();
+        Json instruction = *it; //.value();
+
+        gateName = utils::to_lower(gateName);
+        gateName = std::regex_replace(gateName, trim_pattern, "");
+        gateName = std::regex_replace(gateName, multiple_space_pattern, " ");
+        gateName = std::regex_replace(gateName, comma_space_pattern, ",");
+
+        // Load the visual type of the instruction if provided.
+        Str visual_type;
+        if (instruction.count("visual_type") == 1) {
+            visual_type = instruction["visual_type"].get<Str>();
+            QL_DOUT("visual_type: '" << visual_type);
+        } else {
+            QL_WOUT("Did not find 'visual_type' attribute for instruction: '" << gateName << "'!");
+        }
+
+        Vec<Int> codewords;
+        // Load the codewords of the instruction if provided.
+        if (instruction.count("cc_light_codeword") == 1) {
+            codewords.push_back(instruction["cc_light_codeword"]);
+            QL_DOUT("codewords: " << codewords[0]);
+        } else {
+            if (instruction.count("cc_light_right_codeword") == 1 && instruction.count("cc_light_left_codeword") == 1) {
+                codewords.push_back(instruction["cc_light_right_codeword"]);
+                codewords.push_back(instruction["cc_light_left_codeword"]);
+                QL_DOUT("codewords: " << codewords[0] << "," << codewords[1]);
+            } else {
+                QL_WOUT("Did not find any codeword attributes for instruction: '" << gateName << "'!");
+            }
+        }
+
+        parameterMapping.set(gateName) = {visual_type, codewords};
+    }
+
+    // Match the visualization parameters from the hardware configuration with the existing gates.
+    for (GateProperties &gate : gates) {
+        bool found = false;
+        for (const Pair<Str, VisualParameters> &mapping : parameterMapping) {
+            if (mapping.first == gate.name) {
+                found = true;
+                gate.visual_type = mapping.second.visual_type;
+                gate.codewords = mapping.second.codewords;
+            }
+        }
+        if (!found) {
+            QL_WOUT("Did not find visual type and codewords for gate: " << gate.name << "!");
+        }
+    }
+
+    // Load the visualizer configuration file.
+    Json visualizerConfig;
+    try {
+        visualizerConfig = load_json(visualizerConfigPath);
+    } catch (Json::exception &e) {
+        QL_FATAL("Failed to load the visualization config file: \n\t" << Str(e.what()));
+    }
+
+    // Load the circuit visualization parameters.
+    Json circuitConfig;
+    if (visualizerConfig.count("circuit") == 1) {
+        circuitConfig = visualizerConfig["circuit"];
+    } else {
+        QL_WOUT("Could not find circuit configuration in visualizer configuration file. Is it named correctly?");
+    }
+
+    // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
+    CircuitLayout layout;
+
+    // Check if the image should be saved to disk.
+    if (visualizerConfig.count("saveImage") == 1) {
+        layout.saveImage = visualizerConfig["saveImage"];
+    }
+
+    // -------------------------------------- //
+    // -               CYCLES               - //
+    // -------------------------------------- //
+    if (circuitConfig.count("cycles") == 1) {
+        Json cycles = circuitConfig["cycles"];
+
+        // LABELS
+        if (cycles.count("labels") == 1) {
+            Json labels = cycles["labels"];
+
+            if (labels.count("show") == 1)          layout.cycles.labels.setEnabled(labels["show"]);
+            if (labels.count("inNanoSeconds") == 1) layout.cycles.labels.setInNanoSeconds(labels["inNanoSeconds"]);
+            if (labels.count("rowHeight") == 1)     layout.cycles.labels.setRowHeight(labels["rowHeight"]);
+            if (labels.count("fontHeight") == 1)    layout.cycles.labels.setFontHeight(labels["fontHeight"]);
+            if (labels.count("fontColor") == 1)     layout.cycles.labels.setFontColor(labels["fontColor"]);
+        }
+
+        // EDGES
+        if (cycles.count("edges") == 1) {
+            Json edges = cycles["edges"];
+
+            if (edges.count("show") == 1)   layout.cycles.edges.setEnabled(edges["show"]);
+            if (edges.count("color") == 1)  layout.cycles.edges.setColor(edges["color"]);
+            if (edges.count("alpha") == 1)  layout.cycles.edges.setAlpha(edges["alpha"]);
+        }
+
+        // CUTTING
+        if (cycles.count("cutting") == 1) {
+            Json cutting = cycles["cutting"];
+
+            if (cutting.count("cut") == 1)                      layout.cycles.cutting.setEnabled(cutting["cut"]);
+            if (cutting.count("emptyCycleThreshold") == 1)      layout.cycles.cutting.setEmptyCycleThreshold(cutting["emptyCycleThreshold"]);
+            if (cutting.count("cutCycleWidth") == 1)            layout.cycles.cutting.setCutCycleWidth(cutting["cutCycleWidth"]);
+            if (cutting.count("cutCycleWidthModifier") == 1)    layout.cycles.cutting.setCutCycleWidthModifier(cutting["cutCycleWidthModifier"]);
+        }
+        
+        if (cycles.count("compress") == 1)                      layout.cycles.setCompressed(cycles["compress"]);
+        if (cycles.count("partitionCyclesWithOverlap") == 1)    layout.cycles.setPartitioned(cycles["partitionCyclesWithOverlap"]);
+    }
+
+    // -------------------------------------- //
+    // -              BIT LINES             - //
+    // -------------------------------------- //
+    if (circuitConfig.count("bitLines") == 1)
+    {
+        Json bitLines = circuitConfig["bitLines"];
+
+        // LABELS
+        if (bitLines.count("labels") == 1) {
+            Json labels = bitLines["labels"];
+
+            if (labels.count("show") == 1)          layout.bitLines.labels.setEnabled(labels["show"]);
+            if (labels.count("columnWidth") == 1)   layout.bitLines.labels.setColumnWidth(labels["columnWidth"]);
+            if (labels.count("fontHeight") == 1)    layout.bitLines.labels.setFontHeight(labels["fontHeight"]);
+            if (labels.count("qbitColor") == 1)     layout.bitLines.labels.setQbitColor(labels["qbitColor"]);
+            if (labels.count("cbitColor") == 1)     layout.bitLines.labels.setCbitColor(labels["cbitColor"]);
+        }
+
+        // QUANTUM
+        if (bitLines.count("quantum") == 1) {
+            Json quantum = bitLines["quantum"];
+
+            if (quantum.count("color") == 1) layout.bitLines.quantum.setColor(quantum["color"]);
+        }
+
+        // CLASSICAL
+        if (bitLines.count("classical") == 1) {
+            Json classical = bitLines["classical"];
+
+            if (classical.count("show") == 1)           layout.bitLines.classical.setEnabled(classical["show"]);
+            if (classical.count("group") == 1)          layout.bitLines.classical.setGrouped(classical["group"]);
+            if (classical.count("groupedLineGap") == 1) layout.bitLines.classical.setGroupedLineGap(classical["groupedLineGap"]);
+            if (classical.count("color") == 1)          layout.bitLines.classical.setColor(classical["color"]);
+        }
+
+        // EDGES
+        if (bitLines.count("edges") == 1) {
+            Json edges = bitLines["edges"];
+
+            if (edges.count("show") == 1)       layout.bitLines.edges.setEnabled(edges["show"]);
+            if (edges.count("thickness") == 1)  layout.bitLines.edges.setThickness(edges["thickness"]);
+            if (edges.count("color") == 1)      layout.bitLines.edges.setColor(edges["color"]);
+            if (edges.count("alpha") == 1)      layout.bitLines.edges.setAlpha(edges["alpha"]);
+        }
+    }
+
+    // -------------------------------------- //
+    // -                GRID                - //
+    // -------------------------------------- //
+    if (circuitConfig.count("grid") == 1) {
+        Json grid = circuitConfig["grid"];
+
+        if (grid.count("cellSize") == 1)    layout.grid.setCellSize(grid["cellSize"]);
+        if (grid.count("borderSize") == 1)  layout.grid.setBorderSize(grid["borderSize"]);
+    }
+
+    // -------------------------------------- //
+    // -       GATE DURATION OUTLINES       - //
+    // -------------------------------------- //
+    if (circuitConfig.count("gateDurationOutlines") == 1) {
+        Json gateDurationOutlines = circuitConfig["gateDurationOutlines"];
+
+        if (gateDurationOutlines.count("show") == 1)         layout.gateDurationOutlines.setEnabled(gateDurationOutlines["show"]);
+        if (gateDurationOutlines.count("gap") == 1)          layout.gateDurationOutlines.setGap(gateDurationOutlines["gap"]);
+        if (gateDurationOutlines.count("fillAlpha") == 1)    layout.gateDurationOutlines.setFillAlpha(gateDurationOutlines["fillAlpha"]);
+        if (gateDurationOutlines.count("outlineAlpha") == 1) layout.gateDurationOutlines.setOutlineAlpha(gateDurationOutlines["outlineAlpha"]);
+        if (gateDurationOutlines.count("outlineColor") == 1) layout.gateDurationOutlines.setOutlineColor(gateDurationOutlines["outlineColor"]);
+    }
+
+    // -------------------------------------- //
+    // -            MEASUREMENTS            - //
+    // -------------------------------------- //
+    if (circuitConfig.count("measurements") == 1) {
+        Json measurements = circuitConfig["measurements"];
+
+        if (measurements.count("drawConnection") == 1)  layout.measurements.enableDrawConnection(measurements["drawConnection"]);
+        if (measurements.count("lineSpacing") == 1)     layout.measurements.setLineSpacing(measurements["lineSpacing"]);
+        if (measurements.count("arrowSize") == 1)       layout.measurements.setArrowSize(measurements["arrowSize"]);
+    }
+
+    // -------------------------------------- //
+    // -               PULSES               - //
+    // -------------------------------------- //
+    if (circuitConfig.count("pulses") == 1) {
+        Json pulses = circuitConfig["pulses"];
+
+        if (pulses.count("displayGatesAsPulses") == 1)      layout.pulses.setEnabled(pulses["displayGatesAsPulses"]);
+        if (pulses.count("pulseRowHeightMicrowave") == 1)   layout.pulses.setPulseRowHeightMicrowave(pulses["pulseRowHeightMicrowave"]);
+        if (pulses.count("pulseRowHeightFlux") == 1)        layout.pulses.setPulseRowHeightFlux(pulses["pulseRowHeightFlux"]);
+        if (pulses.count("pulseRowHeightReadout") == 1)     layout.pulses.setPulseRowHeightReadout(pulses["pulseRowHeightReadout"]);
+        if (pulses.count("pulseColorMicrowave") == 1)       layout.pulses.setPulseColorMicrowave(pulses["pulseColorMicrowave"]);
+        if (pulses.count("pulseColorFlux") == 1)            layout.pulses.setPulseColorFlux(pulses["pulseColorFlux"]);
+        if (pulses.count("pulseColorReadout") == 1)         layout.pulses.setPulseColorReadout(pulses["pulseColorReadout"]);
+    }
+
+    // Load the custom instruction visualization parameters.
+    if (circuitConfig.count("instructions") == 1) {
+        for (const auto &instruction : circuitConfig["instructions"].items()) {
+            try {
+                GateVisual gateVisual;
+                Json content = instruction.value();
+
+                // Load the connection color.
+                Json connectionColor = content["connectionColor"];
+                gateVisual.connectionColor[0] = connectionColor[0];
+                gateVisual.connectionColor[1] = connectionColor[1];
+                gateVisual.connectionColor[2] = connectionColor[2];
+                QL_DOUT("Connection color: [" 
+                    << (int)gateVisual.connectionColor[0] << ","
+                    << (int)gateVisual.connectionColor[1] << ","
+                    << (int)gateVisual.connectionColor[2] << "]");
+
+                // Load the individual nodes.
+                Json nodes = content["nodes"];
+                for (size_t i = 0; i < nodes.size(); i++) {
+                    Json node = nodes[i];
+                    
+                    Color fontColor = {node["fontColor"][0], node["fontColor"][1], node["fontColor"][2]};
+                    Color backgroundColor = {node["backgroundColor"][0], node["backgroundColor"][1], node["backgroundColor"][2]};
+                    Color outlineColor = {node["outlineColor"][0], node["outlineColor"][1], node["outlineColor"][2]};
+                    
+                    NodeType nodeType;
+                    if (node["type"] == "NONE") {
+                        nodeType = NONE;
+                    } else if (node["type"] == "GATE") {
+                        nodeType = GATE;
+                    } else if (node["type"] == "CONTROL") {
+                        nodeType = CONTROL;
+                    } else if (node["type"] == "NOT") {
+                        nodeType = NOT;
+                    } else if (node["type"] == "CROSS") {
+                        nodeType = CROSS;
+                    } else {
+                        QL_WOUT("Unknown gate display node type! Defaulting to type NONE...");
+                        nodeType = NONE;
+                    }
+                    
+                    Node loadedNode = {
+                        nodeType,
+                        node["radius"],
+                        node["displayName"],
+                        node["fontHeight"],
+                        fontColor,
+                        backgroundColor,
+                        outlineColor
+                    };
+                    
+                    gateVisual.nodes.push_back(loadedNode);
+                    
+                    QL_DOUT("[type: " << node["type"] << "] "
+                        << "[radius: " << gateVisual.nodes.at(i).radius << "] "
+                        << "[displayName: " << gateVisual.nodes.at(i).displayName << "] "
+                        << "[fontHeight: " << gateVisual.nodes.at(i).fontHeight << "] "
+                        << "[fontColor: "
+                            << (int)gateVisual.nodes.at(i).fontColor[0] << ","
+                            << (int)gateVisual.nodes.at(i).fontColor[1] << ","
+                            << (int)gateVisual.nodes.at(i).fontColor[2] << "] "
+                        << "[backgroundColor: "
+                            << (int)gateVisual.nodes.at(i).backgroundColor[0] << ","
+                            << (int)gateVisual.nodes.at(i).backgroundColor[1] << ","
+                            << (int)gateVisual.nodes.at(i).backgroundColor[2] << "] "
+                        << "[outlineColor: "
+                            << (int)gateVisual.nodes.at(i).outlineColor[0] << ","
+                            << (int)gateVisual.nodes.at(i).outlineColor[1] << ","
+                            << (int)gateVisual.nodes.at(i).outlineColor[2] << "]");
+                }
+
+                layout.customGateVisuals.insert({instruction.key(), gateVisual});
+            } catch (Json::exception &e) {
+                QL_WOUT("Failed to load visualization parameters for instruction: '" << instruction.key()
+                    << "' \n\t" << Str(e.what()));
+            }
+        }
+    } else {
+        QL_WOUT("Did not find 'instructions' attribute! The visualizer will try to fall back on default gate visualizations.");
+    }
+
+    return layout;
+}
+
+void validateCircuitLayout(CircuitLayout &layout) {
+    QL_DOUT("Validating layout...");
+
+    //TODO: add more validation
+    
+    if (layout.cycles.cutting.getEmptyCycleThreshold() < 1) {
+        QL_WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to "
+            << layout.cycles.cutting.getEmptyCycleThreshold() << ".");
+        layout.cycles.cutting.setEmptyCycleThreshold(1);
+    }
+
+    if (layout.pulses.areEnabled()) {
+        if (layout.bitLines.classical.isEnabled()) {
+            QL_WOUT("Adjusting 'showClassicalLines' to false. Unable to show classical lines when 'displayGatesAsPulses' is true!");
+            layout.bitLines.classical.setEnabled(false);
+        }
+        if (layout.cycles.arePartitioned()) {
+            QL_WOUT("Adjusting 'partitionCyclesWithOverlap' to false. It is unnecessary to partition cycles when 'displayGatesAsPulses' is true!");
+            layout.cycles.setPartitioned(false);
+        }
+        if (layout.cycles.areCompressed()) {
+            QL_WOUT("Adjusting 'compressCycles' to false. Cannot compress cycles when 'displayGatesAsPulses' is true!");
+            layout.cycles.setCompressed(false);
+        }	
+    }
+
+    if (!layout.bitLines.labels.areEnabled())   layout.bitLines.labels.setColumnWidth(0);
+    if (!layout.cycles.labels.areEnabled())     layout.cycles.labels.setRowHeight(0);
 }
 
 PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
@@ -691,7 +1079,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
                 pulseVisualization.sampleRateReadout = waveformMapping["samplerates"]["readout"];
             else
                 QL_FATAL("Missing 'samplerateReadout' attribute in waveform mapping file!");
-        } catch (std::exception &e) {
+        } catch (const Exception &e) {
             QL_FATAL("Exception while parsing sample rates from waveform mapping file:\n\t" << e.what()
                  << "\n\tMake sure the sample rates are Integers!" );
         }
@@ -707,7 +1095,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
             Int codewordIndex = 0;
             try {
                 codewordIndex = parse_int(codewordMapping.key());
-            } catch (std::exception &e) {
+            } catch (const Exception &e) {
                 QL_FATAL("Exception while parsing key to codeword mapping " << codewordMapping.key()
                      << " in waveform mapping file:\n\t" << e.what() << "\n\tKey should be an Integer!");
             }
@@ -719,7 +1107,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
                 Int qubitIndex = 0;
                 try {
                     qubitIndex = parse_int(qubitMap.key());
-                } catch (std::exception &e) {
+                } catch (const Exception &e) {
                     QL_FATAL("Exception while parsing key to qubit mapping " << qubitMap.key() << " in waveform mapping file:\n\t"
                          << e.what() << "\n\tKey should be an Integer!");
                 }
@@ -733,7 +1121,7 @@ PulseVisualization parseWaveformMapping(const Str &waveformMappingPath) {
                     if (gatePulsesMapping.contains("microwave")) microwave = gatePulsesMapping["microwave"].get<Vec<Real>>();
                     if (gatePulsesMapping.contains("flux")) flux = gatePulsesMapping["flux"].get<Vec<Real>>();
                     if (gatePulsesMapping.contains("readout")) readout = gatePulsesMapping["readout"].get<Vec<Real>>();
-                } catch (std::exception &e) {
+                } catch (const Exception &e) {
                     QL_FATAL("Exception while parsing waveforms from waveform mapping file:\n\t" << e.what()
                          << "\n\tMake sure the waveforms are arrays of Integers!" );
                 }
@@ -826,7 +1214,7 @@ Vec<QubitLines> generateQubitLines(const Vec<GateProperties> &gates,
 
                 if (!gatePulses.readout.empty())
                     readoutLine.segments.push_back({PULSE, gateCycles, {gatePulses.readout, pulseVisualization.sampleRateReadout}});
-            } catch (std::exception &e) {
+            } catch (const Exception &e) {
                 QL_WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
                      "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex << "\n\texception: " << e.what());
             }
@@ -941,8 +1329,8 @@ void insertFlatLineSegments(Vec<LineSegment> &existingLineSegments, const Int am
     }
 }
 
-void drawCycleLabels(cimg_library::CImg<Byte> &image,
-                     const Layout &layout,
+void drawCycleLabels(Image &image,
+                     const CircuitLayout &layout,
                      const CircuitData &circuitData,
                      const Structure &structure) {
     QL_DOUT("Drawing cycle labels...");
@@ -973,12 +1361,12 @@ void drawCycleLabels(cimg_library::CImg<Byte> &image,
         const Int xCycle = structure.getCellPosition(i, 0, QUANTUM).x0 + xGap;
         const Int yCycle = structure.getCycleLabelsY() + yGap;
 
-        image.draw_text(xCycle, yCycle, cycleLabel.c_str(), layout.cycles.labels.getFontColor().data(), 0, 1, layout.cycles.labels.getFontHeight());
+        image.drawText(xCycle, yCycle, cycleLabel, layout.cycles.labels.getFontHeight(), layout.cycles.labels.getFontColor());
     }
 }
 
-void drawCycleEdges(cimg_library::CImg<Byte> &image,
-                    const Layout &layout,
+void drawCycleEdges(Image &image,
+                    const CircuitLayout &layout,
                     const CircuitData &circuitData,
                     const Structure &structure) {
     QL_DOUT("Drawing cycle edges...");
@@ -991,12 +1379,12 @@ void drawCycleEdges(cimg_library::CImg<Byte> &image,
         const Int y0 = structure.getCircuitTopY();
         const Int y1 = structure.getCircuitBotY();
 
-        image.draw_line(xCycle, y0, xCycle, y1, layout.cycles.edges.getColor().data(), layout.cycles.edges.getAlpha(), 0xF0F0F0F0);
+        image.drawLine(xCycle, y0, xCycle, y1, layout.cycles.edges.getColor(), layout.cycles.edges.getAlpha(), LinePattern::DASHED);
     }
 }
 
-void drawBitLineLabels(cimg_library::CImg<Byte> &image,
-                       const Layout &layout,
+void drawBitLineLabels(Image &image,
+                       const CircuitLayout &layout,
                        const CircuitData &circuitData,
                        const Structure &structure)
 {
@@ -1011,7 +1399,7 @@ void drawBitLineLabels(cimg_library::CImg<Byte> &image,
         const Int xLabel = structure.getBitLabelsX() + xGap;
         const Int yLabel = structure.getCellPosition(0, bitIndex, QUANTUM).y0 + yGap;
 
-        image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getQbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
+        image.drawText(xLabel, yLabel, label, layout.bitLines.labels.getFontHeight(), layout.bitLines.labels.getQbitColor());
     }
 
     if (layout.bitLines.classical.isEnabled()) {
@@ -1024,7 +1412,7 @@ void drawBitLineLabels(cimg_library::CImg<Byte> &image,
             const Int xLabel = structure.getBitLabelsX() + xGap;
             const Int yLabel = structure.getCellPosition(0, 0, CLASSICAL).y0 + yGap;
 
-            image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
+            image.drawText(xLabel, yLabel, label, layout.bitLines.labels.getFontHeight(), layout.bitLines.labels.getCbitColor());
         } else {
             for (Int bitIndex = 0; bitIndex < circuitData.amountOfClassicalBits; bitIndex++) {
                 const Str label = "c" + to_string(bitIndex);
@@ -1035,14 +1423,14 @@ void drawBitLineLabels(cimg_library::CImg<Byte> &image,
                 const Int xLabel = structure.getBitLabelsX() + xGap;
                 const Int yLabel = structure.getCellPosition(0, bitIndex, CLASSICAL).y0 + yGap;
 
-                image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
+                image.drawText(xLabel, yLabel, label, layout.bitLines.labels.getFontHeight(), layout.bitLines.labels.getCbitColor());
             }
         }
     }
 }
 
-void drawBitLineEdges(cimg_library::CImg<Byte> &image,
-                      const Layout &layout,
+void drawBitLineEdges(Image &image,
+                      const CircuitLayout &layout,
                       const CircuitData &circuitData,
                       const Structure &structure)
 {
@@ -1057,7 +1445,7 @@ void drawBitLineEdges(cimg_library::CImg<Byte> &image,
 
         const Int y = structure.getCellPosition(0, bitIndex, QUANTUM).y0;
         for (Int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.getThickness(); yOffset++) {
-            image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor().data(), layout.bitLines.edges.getAlpha());
+            image.drawLine(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor(), layout.bitLines.edges.getAlpha());
         }
     }
 
@@ -1065,7 +1453,7 @@ void drawBitLineEdges(cimg_library::CImg<Byte> &image,
         if (layout.bitLines.classical.isGrouped()) {
             const Int y = structure.getCellPosition(0, 0, CLASSICAL).y0;
             for (Int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.getThickness(); yOffset++) {
-                image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor().data(), layout.bitLines.edges.getAlpha());
+                image.drawLine(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor(), layout.bitLines.edges.getAlpha());
             }
         } else {
             for (Int bitIndex = 0; bitIndex < circuitData.amountOfClassicalBits; bitIndex++) {
@@ -1073,15 +1461,15 @@ void drawBitLineEdges(cimg_library::CImg<Byte> &image,
 
                 const Int y = structure.getCellPosition(0, bitIndex, CLASSICAL).y0;
                 for (Int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.getThickness(); yOffset++) {
-                    image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor().data(), layout.bitLines.edges.getAlpha());
+                    image.drawLine(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor(), layout.bitLines.edges.getAlpha());
                 }
             }
         }
     }
 }
 
-void drawBitLine(cimg_library::CImg<Byte> &image,
-                 const Layout &layout,
+void drawBitLine(Image &image,
+                 const CircuitLayout &layout,
                  const BitType bitType,
                  const Int row,
                  const CircuitData &circuitData,
@@ -1108,13 +1496,13 @@ void drawBitLine(cimg_library::CImg<Byte> &image,
 
             drawWiggle(image, segment.first.start, segment.first.end, y, width, height, bitLineColor);
         } else {
-            image.draw_line(segment.first.start, y, segment.first.end, y, bitLineColor.data());
+            image.drawLine(segment.first.start, y, segment.first.end, y, bitLineColor);
         }
     }
 }
 
-void drawGroupedClassicalBitLine(cimg_library::CImg<Byte> &image,
-                                 const Layout &layout,
+void drawGroupedClassicalBitLine(Image &image,
+                                 const CircuitLayout &layout,
                                  const CircuitData &circuitData,
                                  const Structure &structure) {
     QL_DOUT("Drawing grouped classical bit lines...");
@@ -1133,10 +1521,10 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<Byte> &image,
             drawWiggle(image, segment.first.start, segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(),
                 width, height, layout.bitLines.classical.getColor());
         } else {
-            image.draw_line(segment.first.start, y - layout.bitLines.classical.getGroupedLineGap(),
-                segment.first.end, y - layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor().data());
-            image.draw_line(segment.first.start, y + layout.bitLines.classical.getGroupedLineGap(),
-                segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor().data());
+            image.drawLine(segment.first.start, y - layout.bitLines.classical.getGroupedLineGap(),
+                segment.first.end, y - layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor());
+            image.drawLine(segment.first.start, y + layout.bitLines.classical.getGroupedLineGap(),
+                segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor());
         }
     }
 
@@ -1144,28 +1532,28 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<Byte> &image,
     // segment.
     Pair<EndPoints, Bool> firstSegment = structure.getBitLineSegments()[0];
     //TODO: store the dashed line parameters in the layout object
-    image.draw_line(firstSegment.first.start + 8, y + layout.bitLines.classical.getGroupedLineGap() + 2,
-        firstSegment.first.start + 12, y - layout.bitLines.classical.getGroupedLineGap() - 3, layout.bitLines.classical.getColor().data());
+    image.drawLine(firstSegment.first.start + 8, y + layout.bitLines.classical.getGroupedLineGap() + 2,
+        firstSegment.first.start + 12, y - layout.bitLines.classical.getGroupedLineGap() - 3, layout.bitLines.classical.getColor());
     const Str label = to_string(circuitData.amountOfClassicalBits);
     //TODO: fix these hardcoded parameters
     const Int xLabel = firstSegment.first.start + 8;
     const Int yLabel = y - layout.bitLines.classical.getGroupedLineGap() - 3 - 13;
-    image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
+    image.drawText(xLabel, yLabel, label, layout.bitLines.labels.getFontHeight(), layout.bitLines.labels.getCbitColor());
 }
 
-void drawWiggle(cimg_library::CImg<Byte> &image,
+void drawWiggle(Image &image,
                 const Int x0,
                 const Int x1,
                 const Int y,
                 const Int width,
                 const Int height,
                 const Color color) {
-    image.draw_line(x0,    y, x0 + width / 3, y - height, color.data());
-    image.draw_line(x0 + width / 3,        y - height,    x0 + width / 3 * 2,    y + height,    color.data());
-    image.draw_line(x0 + width / 3 * 2,    y + height,    x1, y, color.data());
+    image.drawLine(x0,                  y,          x0 + width / 3,     y - height, color);
+    image.drawLine(x0 + width / 3,      y - height, x0 + width / 3 * 2, y + height, color);
+    image.drawLine(x0 + width / 3 * 2,  y + height, x1,                 y,          color);
 }
 
-void drawLine(cimg_library::CImg<Byte> &image,
+void drawLine(Image &image,
               const Structure &structure,
               const Int cycleDuration,
               const Line &line,
@@ -1180,7 +1568,7 @@ void drawLine(cimg_library::CImg<Byte> &image,
 
         switch (segment.type) {
             case FLAT: {
-                image.draw_line(x0, yMiddle, x1, yMiddle, color.data());
+                image.drawLine(x0, yMiddle, x1, yMiddle, color);
             }
             break;
 
@@ -1230,11 +1618,11 @@ void drawLine(cimg_library::CImg<Byte> &image,
                     const Position2 currentSample = samplePositions[i];
                     const Position2 nextSample = samplePositions[i + 1];
 
-                    image.draw_line(currentSample.x, currentSample.y, nextSample.x, nextSample.y, color.data());
+                    image.drawLine(currentSample.x, currentSample.y, nextSample.x, nextSample.y, color);
                 }
                 // Draw line from last sample to next segment.
                 const Position2 lastSample = samplePositions[samplePositions.size() - 1];
-                image.draw_line(lastSample.x, lastSample.y, x1, yMiddle, color.data());
+                image.drawLine(lastSample.x, lastSample.y, x1, yMiddle, color);
             }
             break;
 
@@ -1252,8 +1640,8 @@ void drawLine(cimg_library::CImg<Byte> &image,
     }
 }
 
-void drawCycle(cimg_library::CImg<Byte> &image,
-               const Layout &layout,
+void drawCycle(Image &image,
+               const CircuitLayout &layout,
                const CircuitData &circuitData,
                const Structure &structure,
                const Cycle &cycle)
@@ -1271,8 +1659,8 @@ void drawCycle(cimg_library::CImg<Byte> &image,
     }
 }
 
-void drawGate(cimg_library::CImg<Byte> &image,
-              const Layout &layout,
+void drawGate(Image &image,
+              const CircuitLayout &layout,
               const CircuitData &circuitData,
               const GateProperties &gate,
               const Structure &structure,
@@ -1338,17 +1726,17 @@ void drawGate(cimg_library::CImg<Byte> &image,
             if (layout.measurements.isConnectionEnabled() && layout.bitLines.classical.isEnabled()) {
                 const Int groupedClassicalLineOffset = layout.bitLines.classical.isGrouped() ? layout.bitLines.classical.getGroupedLineGap() : 0;
 
-                image.draw_line(connectionPosition.x0 - layout.measurements.getLineSpacing(),
+                image.drawLine(connectionPosition.x0 - layout.measurements.getLineSpacing(),
                     connectionPosition.y0,
                     connectionPosition.x1 - layout.measurements.getLineSpacing(),
                     connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset,
-                    gateVisual.connectionColor.data());
+                    gateVisual.connectionColor);
 
-                image.draw_line(connectionPosition.x0 + layout.measurements.getLineSpacing(),
+                image.drawLine(connectionPosition.x0 + layout.measurements.getLineSpacing(),
                     connectionPosition.y0,
                     connectionPosition.x1 + layout.measurements.getLineSpacing(),
                     connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset,
-                    gateVisual.connectionColor.data());
+                    gateVisual.connectionColor);
 
                 const Int x0 = connectionPosition.x1 - layout.measurements.getArrowSize() / 2;
                 const Int y0 = connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset;
@@ -1356,10 +1744,10 @@ void drawGate(cimg_library::CImg<Byte> &image,
                 const Int y1 = connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset;
                 const Int x2 = connectionPosition.x1;
                 const Int y2 = connectionPosition.y1 - groupedClassicalLineOffset;
-                image.draw_triangle(x0, y0, x1, y1, x2, y2, gateVisual.connectionColor.data(), 1);
+                image.drawFilledTriangle(x0, y0, x1, y1, x2, y2, gateVisual.connectionColor);
             }
         } else {
-            image.draw_line(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateVisual.connectionColor.data());
+            image.drawLine(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateVisual.connectionColor);
         }
         QL_DOUT("Finished setting up multi-operand gate");
     }
@@ -1383,8 +1771,8 @@ void drawGate(cimg_library::CImg<Byte> &image,
 
                 // Draw the outline in the colors of the node.
                 const Node node = gateVisual.nodes.at(i);
-                image.draw_rectangle(x0, y0, x1, y1, node.backgroundColor.data(), layout.gateDurationOutlines.getFillAlpha());
-                image.draw_rectangle(x0, y0, x1, y1, node.outlineColor.data(), layout.gateDurationOutlines.getOutlineAlpha(), 0xF0F0F0F0);
+                image.drawFilledRectangle(x0, y0, x1, y1, node.backgroundColor, layout.gateDurationOutlines.getFillAlpha());
+                image.drawOutlinedRectangle(x0, y0, x1, y1, node.outlineColor, layout.gateDurationOutlines.getOutlineAlpha(), LinePattern::DASHED);
                 
                 //image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationAlpha);
                 //image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationOutLineAlpha, 0xF0F0F0F0);
@@ -1410,14 +1798,14 @@ void drawGate(cimg_library::CImg<Byte> &image,
             };
 
             switch (node.type) {
-                case NONE:        QL_DOUT("node.type = NONE"); break; // Do nothing.
-                case GATE:        QL_DOUT("node.type = GATE"); drawGateNode(image, layout, structure, node, cell); break;
-                case CONTROL:    QL_DOUT("node.type = CONTROL"); drawControlNode(image, layout, structure, node, cell); break;
-                case NOT:        QL_DOUT("node.type = NOT"); drawNotNode(image, layout, structure, node, cell); break;
-                case CROSS:        QL_DOUT("node.type = CROSS"); drawCrossNode(image, layout, structure, node, cell); break;
+                case NONE:      QL_DOUT("node.type = NONE"); break; // Do nothing.
+                case GATE:      QL_DOUT("node.type = GATE"); drawGateNode(image, layout, structure, node, cell); break;
+                case CONTROL:   QL_DOUT("node.type = CONTROL"); drawControlNode(image, layout, structure, node, cell); break;
+                case NOT:       QL_DOUT("node.type = NOT"); drawNotNode(image, layout, structure, node, cell); break;
+                case CROSS:     QL_DOUT("node.type = CROSS"); drawCrossNode(image, layout, structure, node, cell); break;
                 default:        QL_WOUT("Unknown gate display node type!"); break;
             }
-        } catch (const std::out_of_range &e) {
+        } catch (const Exception &e) {
             QL_WOUT(Str(e.what()));
             return;
         }
@@ -1426,8 +1814,8 @@ void drawGate(cimg_library::CImg<Byte> &image,
     }
 }
 
-void drawGateNode(cimg_library::CImg<Byte> &image,
-                  const Layout &layout,
+void drawGateNode(Image &image,
+                  const CircuitLayout &layout,
                   const Structure &structure,
                   const Node &node,
                   const Cell &cell) {
@@ -1443,17 +1831,17 @@ void drawGateNode(cimg_library::CImg<Byte> &image,
     };
 
     // Draw the gate background.
-    image.draw_rectangle(position.x0, position.y0, position.x1, position.y1, node.backgroundColor.data());
-    image.draw_rectangle(position.x0, position.y0, position.x1, position.y1, node.outlineColor.data(), 1, 0xFFFFFFFF);
+    image.drawFilledRectangle(position.x0, position.y0, position.x1, position.y1, node.backgroundColor, 1);
+    image.drawOutlinedRectangle(position.x0, position.y0, position.x1, position.y1, node.outlineColor, 1, LinePattern::UNBROKEN);
 
     // Draw the gate symbol. The width and height of the symbol are calculated first to correctly position the symbol within the gate.
     Dimensions textDimensions = calculateTextDimensions(node.displayName, node.fontHeight);
-    image.draw_text(position.x0 + (node.radius * 2 - textDimensions.width) / 2, position.y0 + (node.radius * 2 - textDimensions.height) / 2,
-        node.displayName.c_str(), node.fontColor.data(), 0, 1, node.fontHeight);
+    image.drawText(position.x0 + (node.radius * 2 - textDimensions.width) / 2, position.y0 + (node.radius * 2 - textDimensions.height) / 2,
+        node.displayName, node.fontHeight, node.fontColor);
 }
 
-void drawControlNode(cimg_library::CImg<Byte> &image,
-                     const Layout &layout,
+void drawControlNode(Image &image,
+                     const CircuitLayout &layout,
                      const Structure &structure,
                      const Node &node,
                      const Cell &cell) {
@@ -1463,11 +1851,11 @@ void drawControlNode(cimg_library::CImg<Byte> &image,
         cellPosition.y0 + cell.chunkOffset + structure.getCellDimensions().height / 2
     };
 
-    image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data());
+    image.drawFilledCircle(position.x, position.y, node.radius, node.backgroundColor);
 }
 
-void drawNotNode(cimg_library::CImg<Byte> &image,
-                 const Layout &layout,
+void drawNotNode(Image &image,
+                 const CircuitLayout &layout,
                  const Structure &structure,
                  const Node &node,
                  const Cell &cell) {
@@ -1480,7 +1868,7 @@ void drawNotNode(cimg_library::CImg<Byte> &image,
     };
 
     // Draw the outlined circle.
-    image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data(), 1, 0xFFFFFFFF);
+    image.drawOutlinedCircle(position.x, position.y, node.radius, node.backgroundColor, 1, LinePattern::UNBROKEN);
 
     // Draw two lines to represent the plus sign.
     const Int xHor0 = position.x - node.radius;
@@ -1491,12 +1879,12 @@ void drawNotNode(cimg_library::CImg<Byte> &image,
     const Int yVer0 = position.y - node.radius;
     const Int yVer1 = position.y + node.radius;
 
-    image.draw_line(xHor0, yHor, xHor1, yHor, node.backgroundColor.data());
-    image.draw_line(xVer, yVer0, xVer, yVer1, node.backgroundColor.data());
+    image.drawLine(xHor0, yHor, xHor1, yHor, node.backgroundColor);
+    image.drawLine(xVer, yVer0, xVer, yVer1, node.backgroundColor);
 }
 
-void drawCrossNode(cimg_library::CImg<Byte> &image,
-                   const Layout &layout,
+void drawCrossNode(Image &image,
+                   const CircuitLayout &layout,
                    const Structure &structure,
                    const Node &node,
                    const Cell &cell) {
@@ -1512,8 +1900,8 @@ void drawCrossNode(cimg_library::CImg<Byte> &image,
     const Int x1 = position.x + node.radius;
     const Int y1 = position.y + node.radius;
 
-    image.draw_line(x0, y0, x1, y1, node.backgroundColor.data());
-    image.draw_line(x0, y1, x1, y0, node.backgroundColor.data());
+    image.drawLine(x0, y0, x1, y1, node.backgroundColor);
+    image.drawLine(x0, y1, x1, y0, node.backgroundColor);
 }
 
 } // namespace ql

@@ -3,9 +3,12 @@
  */
  
 #include "visualizer.h"
+#include "visualizer_types.h"
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
 #include "visualizer_interaction.h"
+#include "visualizer_cimg.h"
+#include "options.h"
 #include "utils/str.h"
 #include "utils/json.h"
 #include "utils/vec.h"
@@ -41,65 +44,69 @@ using namespace utils;
 // [CIRCUIT] check for negative/invalid values during layout validation
 // [CIRCUIT] GateProperties validation on construction (test with visualizer pass called at different points (during different passes) during compilation)
 // [GENERAL] update code style
-// [GENERAL] merge with develop
 // [GENERAL] split visualizer.cc into multiple files
-
-// -- IN PROGRESS ---
+// [GENERAL] split Layout into multiple, one for each visualization type
+// [INTERACTION] add interaction graph layout object and load it from a file
 // [INTERACTION] add number indicating amount of interactions for edges
 // [CIRCUIT] visualize before scheduler has been ran, no duration should be shown, just circuit in user-defined order
-// [GENERAL] update documentation
+// [GENERAL] add option to save the image and/or open the window
 // [INTERACTION] output dot files for graphing software, default circle graph will also be shown
+// [INTERACTION] calculate angle to target qubit and place amount of interactions label accordingly
+// [MAPPING] add pseudogate containing virtual > real qubit mapping
+// [GENERAL] replace primitives and containers with the ones specified in utils (int, double, bool, vector, map, string, etc.)
+// [GENERAL] fix compilation error due to merge
+// [GENERAL] replace cimg calls with cimg wrapper calls
+// [GENERAL] delete default constructors in position types in visualizer_types.h
+
+// -- IN PROGRESS ---
+// [GENERAL] fix isEdgeAlreadyDrawn() build error on CI
+// [GENERAL] update documentation
 
 // --- FUTURE WORK ---
 // [GENERAL] add generating random circuits for visualization testing
+// [CIRCUIT] add background color option
+// [CIRCUIT] add connection line thickness parameter
+// [CIRCUIT] add bitline thickness parameter (maybe)
 // [CIRCUIT] allow collapsing the three qubit lines into one with an option
 // [CIRCUIT] implement cycle cutting for pulse visualization
 // [CIRCUIT] what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
 //           comprising the entire range?
 // [CIRCUIT] when measurement connections are not shown, allow overlap of measurement gates
-// [CIRCUIT] when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
-// [CIRCUIT] display wait/barrier gate (need wait gate fix first)
+// [CIRCUIT] when gate is skipped due to whatever reason, show a dummy gate outline with a question mark, indicating where the gate is (maybe)
+// [CIRCUIT] display barriers (need barrier fix first)
 // [CIRCUIT] add classical bit number to measurement connection when classical lines are grouped
 // [CIRCUIT] implement measurement symbol (to replace the M on measurement gates)
-// [CIRCUIT] generate default gate visuals from the configuration file
-// [GENERAL] add option to save the image and/or open the window
+// [CIRCUIT] generate default gate visuals from the hardware configuration file if none are supplied in the instruction section of the visualizer config file
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfigurationPaths &configurationPaths) {
+void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfiguration &configuration) {
     QL_WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
-        << "might be missing and the visualizer has disabled itself.");
+         << "might be missing and the visualizer has disabled itself.");
 }
 
 #else
 
-void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfigurationPaths &configurationPaths) {
+void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfiguration &configuration) {
     QL_IOUT("Starting visualization...");
     QL_IOUT("Visualization type: " << visualizationType);
 
-    // Get the gate list from the program.
-    QL_DOUT("Getting gate list...");
-    Vec<GateProperties> gates = parseGates(program);
-    if (gates.empty()) {
-        QL_FATAL("Quantum program contains no gates!");
-    }
+    // for (ql::quantum_kernel kernel : program->kernels) {
+    //     for (ql::gate* const gate : kernel.get_circuit()) {
+    //         if (gate->type() == __remap_gate__) {
+    //             const ql::remap *remap_p = dynamic_cast<ql::remap*>(gate);
+    //             IOUT("remap gate: [" << remap_p->operands[0] << ", " << remap_p->virtual_qubit_index << "]");
+    //         }
+    //     }
+    // }
+
+    // printGates(parseGates(program));
 
     // Choose the proper visualization based on the visualization type.
     if (visualizationType == "CIRCUIT") {
-        // Parse and validate the layout and instruction configuration file.
-        Layout layout = parseConfiguration(configurationPaths.config);
-        validateLayout(layout);
-
-        // Calculate circuit properties.
-        QL_DOUT("Calculating circuit properties...");
-        const Int cycleDuration = utoi(program->platform.cycle_time);
-        QL_DOUT("Cycle duration is: " + to_string(cycleDuration) + " ns.");
-        // Fix measurement gates without classical operands.
-        fixMeasurementOperands(gates);
-
-        visualizeCircuit(gates, layout, cycleDuration, configurationPaths.waveformMapping);
+        visualizeCircuit(program, configuration);
     } else if (visualizationType == "INTERACTION_GRAPH") {
-        visualizeInteractionGraph(gates);
+        visualizeInteractionGraph(program, configuration);
     } else if (visualizationType == "MAPPING_GRAPH") {
         QL_WOUT("Mapping graph visualization not yet implemented.");
     } else {
@@ -109,282 +116,11 @@ void visualize(const quantum_program* program, const Str &visualizationType, con
     QL_IOUT("Visualization complete...");
 }
 
-Layout parseConfiguration(const Str &configPath) {
-    QL_DOUT("Parsing visualizer configuration file.");
-
-    Json config;
-    try {
-        config = load_json(configPath);
-    } catch (Json::exception &e) {
-        QL_FATAL("Failed to load the visualization config file: \n\t" << Str(e.what()));
-    }
-
-    Layout layout;
-
-    // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
-
-    // -------------------------------------- //
-    // -               CYCLES               - //
-    // -------------------------------------- //
-    if (config.count("cycles") == 1) {
-        Json cycles = config["cycles"];
-
-        // LABELS
-        if (cycles.count("labels") == 1) {
-            Json labels = cycles["labels"];
-
-            if (labels.count("show") == 1)          layout.cycles.labels.setEnabled(labels["show"]);
-            if (labels.count("inNanoSeconds") == 1) layout.cycles.labels.setInNanoSeconds(labels["inNanoSeconds"]);
-            if (labels.count("rowHeight") == 1)     layout.cycles.labels.setRowHeight(labels["rowHeight"]);
-            if (labels.count("fontHeight") == 1)    layout.cycles.labels.setFontHeight(labels["fontHeight"]);
-            if (labels.count("fontColor") == 1)     layout.cycles.labels.setFontColor(labels["fontColor"]);
-        }
-
-        // EDGES
-        if (cycles.count("edges") == 1) {
-            Json edges = cycles["edges"];
-
-            if (edges.count("show") == 1)   layout.cycles.edges.setEnabled(edges["show"]);
-            if (edges.count("color") == 1)  layout.cycles.edges.setColor(edges["color"]);
-            if (edges.count("alpha") == 1)  layout.cycles.edges.setAlpha(edges["alpha"]);
-        }
-
-        // CUTTING
-        if (cycles.count("cutting") == 1) {
-            Json cutting = cycles["cutting"];
-
-            if (cutting.count("cut") == 1)                      layout.cycles.cutting.setEnabled(cutting["cut"]);
-            if (cutting.count("emptyCycleThreshold") == 1)      layout.cycles.cutting.setEmptyCycleThreshold(cutting["emptyCycleThreshold"]);
-            if (cutting.count("cutCycleWidth") == 1)            layout.cycles.cutting.setCutCycleWidth(cutting["cutCycleWidth"]);
-            if (cutting.count("cutCycleWidthModifier") == 1)    layout.cycles.cutting.setCutCycleWidthModifier(cutting["cutCycleWidthModifier"]);
-        }
-        
-        if (cycles.count("compress") == 1)                      layout.cycles.setCompressed(cycles["compress"]);
-        if (cycles.count("partitionCyclesWithOverlap") == 1)    layout.cycles.setPartitioned(cycles["partitionCyclesWithOverlap"]);
-    }
-
-    // -------------------------------------- //
-    // -              BIT LINES             - //
-    // -------------------------------------- //
-    if (config.count("bitLines") == 1)
-    {
-        Json bitLines = config["bitLines"];
-
-        // LABELS
-        if (bitLines.count("labels") == 1) {
-            Json labels = bitLines["labels"];
-
-            if (labels.count("show") == 1)          layout.bitLines.labels.setEnabled(labels["show"]);
-            if (labels.count("columnWidth") == 1)   layout.bitLines.labels.setColumnWidth(labels["columnWidth"]);
-            if (labels.count("fontHeight") == 1)    layout.bitLines.labels.setFontHeight(labels["fontHeight"]);
-            if (labels.count("qbitColor") == 1)     layout.bitLines.labels.setQbitColor(labels["qbitColor"]);
-            if (labels.count("cbitColor") == 1)     layout.bitLines.labels.setCbitColor(labels["cbitColor"]);
-        }
-
-        // QUANTUM
-        if (bitLines.count("quantum") == 1) {
-            Json quantum = bitLines["quantum"];
-
-            if (quantum.count("color") == 1) layout.bitLines.quantum.setColor(quantum["color"]);
-        }
-
-        // CLASSICAL
-        if (bitLines.count("classical") == 1) {
-            Json classical = bitLines["classical"];
-
-            if (classical.count("show") == 1)           layout.bitLines.classical.setEnabled(classical["show"]);
-            if (classical.count("group") == 1)          layout.bitLines.classical.setGrouped(classical["group"]);
-            if (classical.count("groupedLineGap") == 1) layout.bitLines.classical.setGroupedLineGap(classical["groupedLineGap"]);
-            if (classical.count("color") == 1)          layout.bitLines.classical.setColor(classical["color"]);
-        }
-
-        // EDGES
-        if (bitLines.count("edges") == 1) {
-            Json edges = bitLines["edges"];
-
-            if (edges.count("show") == 1)       layout.bitLines.edges.setEnabled(edges["show"]);
-            if (edges.count("thickness") == 1)  layout.bitLines.edges.setThickness(edges["thickness"]);
-            if (edges.count("color") == 1)      layout.bitLines.edges.setColor(edges["color"]);
-            if (edges.count("alpha") == 1)      layout.bitLines.edges.setAlpha(edges["alpha"]);
-        }
-    }
-
-    // -------------------------------------- //
-    // -                GRID                - //
-    // -------------------------------------- //
-    if (config.count("grid") == 1) {
-        Json grid = config["grid"];
-
-        if (grid.count("cellSize") == 1)    layout.grid.setCellSize(grid["cellSize"]);
-        if (grid.count("borderSize") == 1)  layout.grid.setBorderSize(grid["borderSize"]);
-    }
-
-    // -------------------------------------- //
-    // -       GATE DURATION OUTLINES       - //
-    // -------------------------------------- //
-    if (config.count("gateDurationOutlines") == 1) {
-        Json gateDurationOutlines = config["gateDurationOutlines"];
-
-        if (gateDurationOutlines.count("show") == 1)         layout.gateDurationOutlines.setEnabled(gateDurationOutlines["show"]);
-        if (gateDurationOutlines.count("gap") == 1)          layout.gateDurationOutlines.setGap(gateDurationOutlines["gap"]);
-        if (gateDurationOutlines.count("fillAlpha") == 1)    layout.gateDurationOutlines.setFillAlpha(gateDurationOutlines["fillAlpha"]);
-        if (gateDurationOutlines.count("outlineAlpha") == 1) layout.gateDurationOutlines.setOutlineAlpha(gateDurationOutlines["outlineAlpha"]);
-        if (gateDurationOutlines.count("outlineColor") == 1) layout.gateDurationOutlines.setOutlineColor(gateDurationOutlines["outlineColor"]);
-    }
-
-    // -------------------------------------- //
-    // -            MEASUREMENTS            - //
-    // -------------------------------------- //
-    if (config.count("measurements") == 1) {
-        Json measurements = config["measurements"];
-
-        if (measurements.count("drawConnection") == 1)  layout.measurements.enableDrawConnection(measurements["drawConnection"]);
-        if (measurements.count("lineSpacing") == 1)     layout.measurements.setLineSpacing(measurements["lineSpacing"]);
-        if (measurements.count("arrowSize") == 1)       layout.measurements.setArrowSize(measurements["arrowSize"]);
-    }
-
-    // -------------------------------------- //
-    // -               PULSES               - //
-    // -------------------------------------- //
-    if (config.count("pulses") == 1) {
-        Json pulses = config["pulses"];
-
-        if (pulses.count("displayGatesAsPulses") == 1)      layout.pulses.setEnabled(pulses["displayGatesAsPulses"]);
-        if (pulses.count("pulseRowHeightMicrowave") == 1)   layout.pulses.setPulseRowHeightMicrowave(pulses["pulseRowHeightMicrowave"]);
-        if (pulses.count("pulseRowHeightFlux") == 1)        layout.pulses.setPulseRowHeightFlux(pulses["pulseRowHeightFlux"]);
-        if (pulses.count("pulseRowHeightReadout") == 1)     layout.pulses.setPulseRowHeightReadout(pulses["pulseRowHeightReadout"]);
-        if (pulses.count("pulseColorMicrowave") == 1)       layout.pulses.setPulseColorMicrowave(pulses["pulseColorMicrowave"]);
-        if (pulses.count("pulseColorFlux") == 1)            layout.pulses.setPulseColorFlux(pulses["pulseColorFlux"]);
-        if (pulses.count("pulseColorReadout") == 1)         layout.pulses.setPulseColorReadout(pulses["pulseColorReadout"]);
-    }
-
-    // Load the custom instruction visualization parameters.
-    if (config.count("instructions") == 1) {
-        for (const auto &instruction : config["instructions"].items()) {
-            try {
-                GateVisual gateVisual;
-                Json content = instruction.value();
-
-                // Load the connection color.
-                Json connectionColor = content["connectionColor"];
-                gateVisual.connectionColor[0] = connectionColor[0];
-                gateVisual.connectionColor[1] = connectionColor[1];
-                gateVisual.connectionColor[2] = connectionColor[2];
-                QL_DOUT("Connection color: [" 
-                    << (Int)gateVisual.connectionColor[0] << ","
-                    << (Int)gateVisual.connectionColor[1] << ","
-                    << (Int)gateVisual.connectionColor[2] << "]");
-
-                // Load the individual nodes.
-                Json nodes = content["nodes"];
-                for (UInt i = 0; i < nodes.size(); i++) {
-                    Json node = nodes[i];
-                    
-                    Color fontColor = {node["fontColor"][0], node["fontColor"][1], node["fontColor"][2]};
-                    Color backgroundColor = {node["backgroundColor"][0], node["backgroundColor"][1], node["backgroundColor"][2]};
-                    Color outlineColor = {node["outlineColor"][0], node["outlineColor"][1], node["outlineColor"][2]};
-                    
-                    NodeType nodeType;
-                    if (node["type"] == "NONE") {
-                        nodeType = NONE;
-                    } else if (node["type"] == "GATE") {
-                        nodeType = GATE;
-                    } else if (node["type"] == "CONTROL") {
-                        nodeType = CONTROL;
-                    } else if (node["type"] == "NOT") {
-                        nodeType = NOT;
-                    } else if (node["type"] == "CROSS") {
-                        nodeType = CROSS;
-                    } else {
-                        QL_WOUT("Unknown gate display node type! Defaulting to type NONE...");
-                        nodeType = NONE;
-                    }
-                    
-                    Node loadedNode = {
-                        nodeType,
-                        node["radius"],
-                        node["displayName"],
-                        node["fontHeight"],
-                        fontColor,
-                        backgroundColor,
-                        outlineColor
-                    };
-                    
-                    gateVisual.nodes.push_back(loadedNode);
-                    
-                    QL_DOUT("[type: " << node["type"] << "] "
-                        << "[radius: " << gateVisual.nodes.at(i).radius << "] "
-                        << "[displayName: " << gateVisual.nodes.at(i).displayName << "] "
-                        << "[fontHeight: " << gateVisual.nodes.at(i).fontHeight << "] "
-                        << "[fontColor: "
-                            << (Int)gateVisual.nodes.at(i).fontColor[0] << ","
-                            << (Int)gateVisual.nodes.at(i).fontColor[1] << ","
-                            << (Int)gateVisual.nodes.at(i).fontColor[2] << "] "
-                        << "[backgroundColor: "
-                            << (Int)gateVisual.nodes.at(i).backgroundColor[0] << ","
-                            << (Int)gateVisual.nodes.at(i).backgroundColor[1] << ","
-                            << (Int)gateVisual.nodes.at(i).backgroundColor[2] << "] "
-                        << "[outlineColor: "
-                            << (Int)gateVisual.nodes.at(i).outlineColor[0] << ","
-                            << (Int)gateVisual.nodes.at(i).outlineColor[1] << ","
-                            << (Int)gateVisual.nodes.at(i).outlineColor[2] << "]");
-                }
-
-                layout.customGateVisuals.insert({instruction.key(), gateVisual});
-            } catch (Json::exception &e) {
-                QL_WOUT("Failed to load visualization parameters for instruction: '" << instruction.key()
-                    << "' \n\t" << Str(e.what()));
-            }
-        }
-    } else {
-        QL_WOUT("Did not find 'instructions' attribute! The visualizer will try to fall back on default gate visualizations.");
-    }
-
-    return layout;
-}
-
-void validateLayout(Layout &layout) {
-    QL_DOUT("Validating layout...");
-
-    //TODO: add more validation
-    
-    if (layout.cycles.cutting.getEmptyCycleThreshold() < 1) {
-        QL_WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to "
-            << layout.cycles.cutting.getEmptyCycleThreshold() << ".");
-        layout.cycles.cutting.setEmptyCycleThreshold(1);
-    }
-
-    if (layout.pulses.areEnabled()) {
-        if (layout.bitLines.classical.isEnabled()) {
-            QL_WOUT("Adjusting 'showClassicalLines' to false. Unable to show classical lines when 'displayGatesAsPulses' is true!");
-            layout.bitLines.classical.setEnabled(false);
-        }
-        if (layout.cycles.arePartitioned()) {
-            QL_WOUT("Adjusting 'partitionCyclesWithOverlap' to false. It is unnecessary to partition cycles when 'displayGatesAsPulses' is true!");
-            layout.cycles.setPartitioned(false);
-        }
-        if (layout.cycles.areCompressed()) {
-            QL_WOUT("Adjusting 'compressCycles' to false. Cannot compress cycles when 'displayGatesAsPulses' is true!");
-            layout.cycles.setCompressed(false);
-        }
-    }
-
-    if (!layout.bitLines.labels.areEnabled())   layout.bitLines.labels.setColumnWidth(0);
-    if (!layout.cycles.labels.areEnabled())     layout.cycles.labels.setRowHeight(0);
-}
-
-Vec<GateProperties> parseGates(const quantum_program *program) {
+Vec<GateProperties> parseGates(const quantum_program* program) {
     Vec<GateProperties> gates;
 
     for (quantum_kernel kernel : program->kernels) {
         for (gate* const gate : kernel.get_circuit()) {
-            Vec<Int> codewords;
-            if (gate->type() == __custom_gate__) {
-                for (const UInt codeword : dynamic_cast<custom_gate*>(gate)->codewords) {
-                    codewords.push_back(utoi(codeword));
-                }
-            }
-
             Vec<Int> operands;
             Vec<Int> creg_operands;
             for (const UInt operand : gate->operands) { operands.push_back(utoi(operand)); }
@@ -396,8 +132,10 @@ Vec<GateProperties> parseGates(const quantum_program *program) {
                 utoi(gate->duration),
                 utoi(gate->cycle),
                 gate->type(),
-                codewords,
-                gate->visual_type
+                {},
+                "UNDEFINED",
+                0
+                // gate->type() == __remap_gate__ ? dynamic_cast<ql::remap*>(gate)->virtual_qubit_index : MAX
             };
             gates.push_back(gateProperties);
         }
@@ -483,19 +221,10 @@ void fixMeasurementOperands(Vec<GateProperties> &gates) {
     }
 }
 
-bool isMeasurement(const GateProperties &gate) {
+Bool isMeasurement(const GateProperties &gate) {
     //TODO: this method of checking for measurements is not robust and relies
     //      entirely on the user naming their instructions in a certain way!
     return (gate.name.find("measure") != Str::npos);
-}
-
-Dimensions calculateTextDimensions(const Str &text, const Int fontHeight) {
-    const char* chars = text.c_str();
-    cimg_library::CImg<unsigned char> imageTextDimensions;
-    const char color = 1;
-    imageTextDimensions.draw_text(0, 0, chars, &color, 0, 1, fontHeight);
-
-    return Dimensions { imageTextDimensions.width(), imageTextDimensions.height() };
 }
 
 void printGates(const Vec<GateProperties> &gates) {
@@ -528,17 +257,25 @@ void printGates(const Vec<GateProperties> &gates) {
         QL_IOUT("\tcodewords: " << codewords << "]");
 
         QL_IOUT("\tvisual_type: " << gate.visual_type);
+
+        // if (gate.type == __remap_gate__) {
+        //     QL_IOUT("\tvirtual_qubit_index: " << gate.virtual_qubit_index);
+        // }
     }
 }
 
+Str generateFilePath(const Str &filename, const Str &extension) {
+    return options::get("output_dir") + "/" + filename + "." + extension;
+}
+
+void assertPositive(const Int parameterValue, const Str &parameterName) {
+    if (parameterValue < 0) QL_FATAL(parameterName << " is negative. Only positive values are allowed!");
+}
+
+void assertPositive(const Real parameterValue, const Str &parameterName) {
+    if (parameterValue < 0) QL_FATAL(parameterName << " is negative. Only positive values are allowed!");
+}
+
 #endif //WITH_VISUALIZER
-
-void assertPositive(const Int argument, const Str &parameter) {
-    if (argument < 0) QL_FATAL(parameter << " is negative. Only positive values are allowed!");
-}
-
-void assertPositive(const double argument, const Str &parameter) {
-    if (argument < 0) QL_FATAL(parameter << " is negative. Only positive values are allowed!");
-}
 
 } // namespace ql

@@ -198,7 +198,6 @@ public:
     virtual instruction_t qasm() const = 0;
     virtual gate_type_t   type() const = 0;
     virtual cmat_t        mat()  const = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
-    utils::Str visual_type = ""; // holds the visualization type of this gate that will be linked to a specific configuration in the visualizer
     utils::Vec<utils::UInt> cond_operands;        // 0, 1 or 2 bit operands of condition
     cond_type_t condition = cond_always;          // defines condition and by that number of bit operands of condition
     utils::Bool is_conditional() const;           // whether gate has condition that is NOT cond_always
@@ -484,7 +483,6 @@ class custom_gate : public gate {
 public:
     cmat_t m; // matrix representation
     utils::Str arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
-    utils::Vec<utils::UInt> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
     explicit custom_gate(const utils::Str &name);
     custom_gate(const custom_gate &g);
     static bool is_qubit_id(const utils::Str &str);
