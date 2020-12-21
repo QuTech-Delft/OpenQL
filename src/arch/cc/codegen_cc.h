@@ -78,7 +78,7 @@ private:    // types
         int staticCodewordOverride;
 #endif
 #if OPT_FEEDBACK
-        // readout
+        // readout (FIXME: or, in case of operands, pragma
 		Vec<UInt> operands;
 		Vec<UInt> creg_operands;
 		Vec<UInt> breg_operands;

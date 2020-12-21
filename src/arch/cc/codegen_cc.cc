@@ -327,7 +327,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			Vec<UInt> cond_operands;
 			uint32_t groupDigOut;
 		} tCondGateInfo;
-		std::map<int, tCondGateInfo> condGateMap;							// NB: key is instrIdx
+		std::map<int, tCondGateInfo> condGateMap;							// NB: key is instrument group
 
 		bool instrHasReadout = false;
 		typedef struct {
@@ -335,7 +335,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			int bit;
 			const BundleInfo *bi;											// used for annotation only
 		} tReadoutInfo;
-		std::map<int, tReadoutInfo> readoutMap;								// NB: key is instrIdx
+		std::map<int, tReadoutInfo> readoutMap;								// NB: key is instrument group
 #endif
 #if OPT_PRAGMA
 		const Json *pragma = nullptr;
@@ -394,7 +394,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // same instrument, which might be needed in the future
             // FIXME: also generate VCD
 
-			if(!bi->operands.empty()) { // readout requested
+			if(!bi->operands.empty() && !pragma) { // readout requested FIXME: or pragma, add explicit readout flag
 				int resultBit = settings.getResultBit(ic, group);
 
 #if 0	// FIXME: redundant
@@ -446,7 +446,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 		/* Alternatives:
 		 * - we could ignore startCycle and compute it ourselves. No, startCycle is also used to insert 'wait'
 		 * - or better, decompose measure_rt into measure+getResults, where getResults does the wait for UHF latency + DSM distribution
-		 * - or infer data distribution from explicit assignment of measurement result to classic variable. Hmmm: cregs vs. bregs in keel->gate()
+		 * - or infer data distribution from explicit assignment of measurement result to classic variable. Hmmm: cregs vs. bregs in kernel->gate()
 		 */
 		if(bundleHasReadout && instrMaxDurationInCycles>0) {	// FIXME: also allow runtime selection by option. NB: bundleHasReadout does not reflect subsequent instruments
 			// shorten output to preserve timeline while injecting time for feedback below
@@ -495,7 +495,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 							cgi.cond_operands;
 							int smBit0 = 0;
 							int smBit1 = 0;
-							std::string expression;
+							std::string expression;	// gtPlExpression(cgi.condition, cgi.cond_operands);
 							dp.emit(ic.ii.slot,
 									QL_SS2S("O[" << bit << "] := I[" << smBit0 << "]"),		// FIXME: depend on condition
 									QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", expression=" << expression));
@@ -572,13 +572,13 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 					dp.emit(ic.ii.slot,
 							QL_SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
-							QL_SS2S("# cop " << ri.bi->creg_operands[0] << " = readout(q" << ri.bi->operands[0] << ")"));
+							QL_SS2S("# cop " /*FIXME << ri.bi->creg_operands[0]*/ << " = readout(q" << ri.bi->operands[0] << ")"));
 
 					int mySmAddr = ri.smBit/8;	// byte addressable
 				}
 
 				// emit code for slot input
-				int sizeTag = dp.getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
+				int sizeTag = datapath_cc::getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
 				emit(ic.ii.slot,
 					"seq_in_sm",
 					QL_SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
@@ -625,7 +625,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 \************************************************************************/
 
 // helper FIXME: make QASM compatible, use library function?
-std::string toQasm(const std::string &iname, const Vec<UInt> &operands, const Vec<UInt> &creg_operands)
+std::string toQasm(const std::string &iname, const Vec<UInt> &operands, const Vec<UInt> &breg_operands)
 {
 	std::stringstream s;
 	s << iname << " ";
@@ -661,7 +661,49 @@ void codegen_cc::customGate(
 
     // generate comment (also performs some checks)
     if(isReadout) {
-        if(creg_operands.empty()) {
+    	/* Analysis:
+		 * - there are measurements that are used for feedback (need DSM), and those that don't
+		 * - DSM takes time, but:
+		 * 		- we do want the duration of a measurement gate to reflect reality (i.e. not the hack below)
+		 * 		- we don't want to spend the time if not needed
+		 * - so, we need to be explicit about DSM time
+		 *
+		 * - kernel->gate allows 3 types of measurement:
+		 * 		- no explicit result. Historically this implies implicit bit result for qubit, e.g. for the CC-light using
+    	 * 		conditional gates.
+		 * 		- creg result (old. FIXME: what are intended semantics?)
+		 * 			note that Creg's are managed through a class, whereas bregs are just numbers
+		 * 		- breg result (new)
+		 * 	- many existing programs don't use the (binary) measurement result, but read raw data offline
+		 * 	- the scheduler has special treatment for a gate called "measure" (TBC)
+    	 */
+#if 1	// new creg/breg semantics for branch condex
+    	if(!creg_operands.empty()) {
+            QL_FATAL("Using Creg as measurement target is deprecated");   // FIXME: provide context, move check
+		}
+
+    	if(breg_operands.empty()) {
+            /*  NB: existing code uses empty creg_operands, i.e. no explicit classical register.
+                On the one hand this historically seems to imply assignment to an
+                implicit 'register' in the
+                On the other hand, measurement results can also be read from the
+                readout device without the control device ever taking notice of the
+                value
+
+            */
+            // FIXME: define meaning: no classical target, or implied target (classical register matching qubit)
+            comment(QL_SS2S(" # READOUT: " << iname << "(q" << operands[0] << ")"));
+        } else if(breg_operands.size() == 1) {
+            comment(QL_SS2S(" # READOUT: " << iname << "(c" << breg_operands[0] << ",q" << operands[0] << ")"));	// FIXME use toQasm()
+        } else {
+            QL_FATAL("Readout instruction requires 0 or 1 bit operands, not " << breg_operands.size());   // FIXME: provide context, move check
+        }
+    } else { // handle all other instruction types than "readout"
+        // generate comment. NB: we don't have a particular limit for the number of operands
+        comment(std::string(" # gate '") + toQasm(iname, operands, breg_operands) + "'");
+    }
+#else
+    	if(creg_operands.empty()) {
             /*  NB: existing code uses empty creg_operands, i.e. no explicit classical register.
                 On the one hand this historically seems to imply assignment to an
                 implicit 'register' in the CC-light that can be used for conditional
@@ -669,6 +711,7 @@ void codegen_cc::customGate(
                 On the other hand, measurement results can also be read from the
                 readout device without the control device ever taking notice of the
                 value
+
             */
             // FIXME: define meaning: no classical target, or implied target (classical register matching qubit)
             comment(QL_SS2S(" # READOUT: " << iname << "(q" << operands[0] << ")"));
@@ -681,6 +724,7 @@ void codegen_cc::customGate(
         // generate comment. NB: we don't have a particular limit for the number of operands
         comment(std::string(" # gate '") + toQasm(iname, operands, creg_operands) + "'");
     }
+#endif
 
     // find instruction (gate definition)
     const Json &instruction = platform->find_instruction(iname);
@@ -888,7 +932,8 @@ void codegen_cc::padToCycle(size_t instrIdx, size_t startCycle, int slot, const 
         QL_FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
               ", startCycle=" << startCycle <<
               ", lastEndCycle=" << lastEndCycle[instrIdx] <<
-              ", instrumentName='" << instrumentName << "'");
+              ", instrumentName='" << instrumentName << "'" <<
+              ", instrIdx=" << instrIdx);
     }
 
     if(prePadding > 0) {     // we need to align
