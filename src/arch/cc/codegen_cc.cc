@@ -517,42 +517,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 #if OPT_PRAGMA	// FIXME: pragma handling
 		if(pragma) {	// NB: note that this will only work because we set the pragma for all instruments, and thus already encounter this for the first instrument
-#if 1
 			emitPragma(pragma, pragmaSmBit, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
-#else
-			if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
-				padToCycle(instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
-			}
-
-			// FIXME: the only pragma possible is "break" for now
-			int pragmaBreakVal = json_get<int>(*pragma, "break", "pragma of unknown instruction");		// FIXME we don't know which instruction we're dealing with, so better move
-			int smAddr = pragmaSmBit/32;	// 'seq_cl_sm' is addressable in 32 bit words
-			unsigned int mask = 1 << (pragmaSmBit%32);
-			std::string label = pragmaForLabel+"_end";		// FIXME: must match label set in forEnd(), assumes we are actually inside a for loop
-
-			// emit code for pragma "break". NB: code is identical for all instruments
-/*
-  			seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 (address depends on mapping of variable c) ...
-            move_sm     R0                  ; ... and move to register
-            and         R0,<mask>,R1        ; mask also depends on mapping of c
-            nop								; register dependency R1
-            jlt         R1,1,@loop
-*/
-			emit(ic.ii.slot, "seq_cl_sm", QL_SS2S("S" << smAddr), QL_SS2S("# 'break if " << pragmaBreakVal << "' on '" << ic.ii.instrumentName << "'"));
-			emit(ic.ii.slot, "move_sm", "R0", "");
-			emit(ic.ii.slot, "and", QL_SS2S("R0," << mask << "," << "R1"), "");	// results in '0' for 'bit==0' and 'mask' for 'bit==1'
-			emit(ic.ii.slot, "nop", "", "");
-			if(pragmaBreakVal==0) {
-				emit(ic.ii.slot, "jlt", QL_SS2S("R1,1,@" << label), "");
-			} else {
-				emit(ic.ii.slot, "jgt", QL_SS2S("R1,0,@" << label), "");
-			}
-#endif
         }
 #endif
-
-
-
+        
 #if OPT_FEEDBACK
 		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
 	        emitMeasurementDistribution(readoutMap, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
