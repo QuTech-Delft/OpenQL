@@ -45,7 +45,7 @@ public: //  functions
 
     // Quantum instructions
     void customGate(
-    		// FIXME consider passing a gate&
+    		// FIXME consider passing a gate&/custom_gate&
             const std::string &iname,
             const Vec<UInt> &operands,					// qubit operands (FKA qops)
             const Vec<UInt> &creg_operands,				// classic operands (FKA cops)

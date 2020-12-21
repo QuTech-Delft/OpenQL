@@ -624,9 +624,15 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 | Quantum instructions
 \************************************************************************/
 
-// helper FIXME: make QASM compatible, use library function?
+// helper FIXME: make QASM compatible, use library function (custom_gate::qasm())?
 std::string toQasm(const std::string &iname, const Vec<UInt> &operands, const Vec<UInt> &breg_operands)
 {
+#if 1	// FIXME: hack
+	custom_gate g(iname);
+	g.operands = operands;
+	g.breg_operands = breg_operands;
+	return g.qasm();
+#else
 	std::stringstream s;
 	s << iname << " ";
 	for(size_t i=0; i < operands.size(); i++) {
@@ -634,6 +640,7 @@ std::string toQasm(const std::string &iname, const Vec<UInt> &operands, const Ve
 		if(i < operands.size() - 1) s << ",";
 	}
 	return s.str();
+#endif
 }
 
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
@@ -692,9 +699,9 @@ void codegen_cc::customGate(
 
             */
             // FIXME: define meaning: no classical target, or implied target (classical register matching qubit)
-            comment(QL_SS2S(" # READOUT: " << iname << "(q" << operands[0] << ")"));
+            comment(std::string(" # READOUT: '") + toQasm(iname, operands, breg_operands) + "'");
         } else if(breg_operands.size() == 1) {
-            comment(QL_SS2S(" # READOUT: " << iname << "(c" << breg_operands[0] << ",q" << operands[0] << ")"));	// FIXME use toQasm()
+            comment(std::string(" # READOUT: '") + toQasm(iname, operands, breg_operands) + "'");
         } else {
             QL_FATAL("Readout instruction requires 0 or 1 bit operands, not " << breg_operands.size());   // FIXME: provide context, move check
         }

@@ -13,6 +13,7 @@ config_fn = os.path.join(curdir, 'test_cfg_cc.json')
 platform_name = 's-17'
 num_qubits = 17
 num_cregs = 32
+num_bregs = 32
 all_qubits = range(0, num_qubits)
 
 
@@ -24,13 +25,14 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
-        ql.set_option('log_level', 'LOG_DEBUG')
+        ql.set_option('scheduler_uniform', 'yes')
+        ql.set_option('log_level', 'LOG_WARNING')
 
     def test_classical(self):
         platform = ql.Platform(platform_name, config_fn)
 
-        p = ql.Program('test_classical', platform, num_qubits, num_cregs)
-        k = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
+        p = ql.Program('test_classical', platform, num_qubits, num_cregs, num_bregs)
+        k = ql.Kernel('aKernel1', platform, num_qubits, num_cregs, num_bregs)
 
         # quantum operations
         k.gate('x', [6])
@@ -69,16 +71,10 @@ class Test_central_controller(unittest.TestCase):
 
     # Quantum Error Correction cycle
     def test_qec(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ALAP')
-        ql.set_option('scheduler_uniform', 'yes')
-        ql.set_option('log_level', 'LOG_WARNING')
-
         platform = ql.Platform(platform_name, config_fn)
 
-        p = ql.Program('test_qec', platform, num_qubits, num_cregs)
-        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs)
+        p = ql.Program('test_qec', platform, num_qubits, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs, num_bregs)
 
         # pipelined QEC: [
         # see: R. Versluis et al., Phys. Rev. A 8, 034021 (2017)
@@ -149,16 +145,10 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     def test_angle(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ALAP')
-        ql.set_option('scheduler_uniform', 'yes')
-        ql.set_option('log_level', 'LOG_WARNING')
-
         platform = ql.Platform(platform_name, config_fn)
 
-        p = ql.Program('test_angle', platform, num_qubits, num_cregs)
-        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs)
+        p = ql.Program('test_angle', platform, num_qubits, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs, num_bregs)
 
         k.gate("rx180", [6], 0, 1.2345)     # NB: Python interface lacks classical parameter
 
@@ -166,16 +156,10 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     def test_qi_example(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ALAP')
-        ql.set_option('scheduler_uniform', 'yes')
-        ql.set_option('log_level', 'LOG_WARNING')
-
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
 
-        p = ql.Program('test_qi_example', platform, 5, num_cregs)
-        k = ql.Kernel('kernel_0', platform, 5, num_cregs)
+        p = ql.Program('test_qi_example', platform, 5, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
 
         k.barrier([])
         for q in [0, 1, 2, 3, 4]:
@@ -194,17 +178,10 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     def test_gate_decomposition_builtin_gates(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ALAP')
-        ql.set_option('scheduler_uniform', 'yes')
-        ql.set_option('log_level', 'LOG_DEBUG')
-        #ql.set_option('log_level', 'LOG_WARNING')
-
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
 
-        p = ql.Program('test_gate_decomposition_builtin_gates', platform, 5, num_cregs)
-        k = ql.Kernel('kernel_0', platform, 5, num_cregs)
+        p = ql.Program('test_gate_decomposition_builtin_gates', platform, 5, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
 
         k.gate("cz", [0, 2])
         k.gate("cz", [2, 3])

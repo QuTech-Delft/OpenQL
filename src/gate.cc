@@ -747,7 +747,7 @@ instruction_t custom_gate::qasm() const {
     }
 
     // deal with custom gates with argument, such as angle
-    if (gate_name == "rx" || gate_name == "ry" || gate_name == "rz") {
+    if (gate_name == "rx" || gate_name == "ry" || gate_name == "rz") {	// FIXME: implicitly defining semantics here
         ss << ", " << angle;
     }
 
