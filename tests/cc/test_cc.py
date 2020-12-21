@@ -37,9 +37,10 @@ class Test_central_controller(unittest.TestCase):
         k.gate('cz', [6, 7])
 
         # create classical registers
-        rd = ql.CReg(1)
-        rs1 = ql.CReg(2)
-        rs2 = ql.CReg(3)
+        if 0:   # FIXME: deprecated by branch condex
+            rd = ql.CReg(1)
+            rs1 = ql.CReg(2)
+            rs2 = ql.CReg(3)
 
         if 0:
             # add/sub/and/or/xor
@@ -59,8 +60,8 @@ class Test_central_controller(unittest.TestCase):
 
         # measure
         k.barrier([])
-        k.gate('measure', [6], rs1)
-        k.gate('measure', [7], rs2)
+        k.gate('measure', [6], 0,0.0, [0])
+        k.gate('measure', [7], 0,0.0, [1])
 
         # add kernel
         p.add_kernel(k)
@@ -101,8 +102,9 @@ class Test_central_controller(unittest.TestCase):
         zW = z-1
 
         # create classical registers
-        rdX = ql.CReg(1)
-        rdZ = ql.CReg(2)
+        if 0:      # FIXME: deprecated by branch condex
+            rdX = ql.CReg(1)
+            rdZ = ql.CReg(2)
 
         # X stabilizers
         k.gate("rym90", [x])
@@ -125,7 +127,8 @@ class Test_central_controller(unittest.TestCase):
         k.gate("ry90", [xS])
         k.barrier([])
 
-        k.gate("measure", [x], rdX)
+#        k.gate("measure", [x], rdX)
+        k.gate('measure', [x], 0,0.0, [0])
         k.barrier([])
 
         # Z stabilizers
@@ -139,7 +142,8 @@ class Test_central_controller(unittest.TestCase):
         k.barrier([])
 
         k.gate("ry90", [z])
-        k.gate("measure", [z], rdZ)
+        # k.gate("measure", [z], rdZ)
+        k.gate('measure', [z], 0,0.0, [1])
 
         p.add_kernel(k)
         p.compile()
