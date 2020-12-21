@@ -517,6 +517,9 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 #if OPT_PRAGMA	// FIXME: pragma handling
 		if(pragma) {	// NB: note that this will only work because we set the pragma for all instruments, and thus already encounter this for the first instrument
+#if 1
+			emitPragma(pragma, pragmaSmBit, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
+#else
 			if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
 				padToCycle(instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
 			}
@@ -544,6 +547,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			} else {
 				emit(ic.ii.slot, "jgt", QL_SS2S("R1,0,@" << label), "");
 			}
+#endif
         }
 #endif
 
@@ -834,6 +838,37 @@ void codegen_cc::emitProgramStart()
 #endif
 }
 
+
+void codegen_cc::emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
+{
+	if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
+		padToCycle(instrIdx, startCycle, slot, instrumentName);
+	}
+
+	// FIXME: the only pragma possible is "break" for now
+	int pragmaBreakVal = json_get<int>(*pragma, "break", "pragma of unknown instruction");		// FIXME we don't know which instruction we're dealing with, so better move
+	int smAddr = pragmaSmBit/32;	// 'seq_cl_sm' is addressable in 32 bit words
+	unsigned int mask = 1 << (pragmaSmBit%32);
+	std::string label = pragmaForLabel+"_end";		// FIXME: must match label set in forEnd(), assumes we are actually inside a for loop
+
+	// emit code for pragma "break". NB: code is identical for all instruments
+/*
+	seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 (address depends on mapping of variable c) ...
+	move_sm     R0                  ; ... and move to register
+	and         R0,<mask>,R1        ; mask also depends on mapping of c
+	nop								; register dependency R1
+	jlt         R1,1,@loop
+*/
+	emit(slot, "seq_cl_sm", QL_SS2S("S" << smAddr), QL_SS2S("# 'break if " << pragmaBreakVal << "' on '" << instrumentName << "'"));
+	emit(slot, "move_sm", "R0", "");
+	emit(slot, "and", QL_SS2S("R0," << mask << "," << "R1"), "");	// results in '0' for 'bit==0' and 'mask' for 'bit==1'
+	emit(slot, "nop", "", "");
+	if(pragmaBreakVal==0) {
+		emit(slot, "jlt", QL_SS2S("R1,1,@" << label), "");
+	} else {
+		emit(slot, "jgt", QL_SS2S("R1,0,@" << label), "");
+	}
+}
 
 // generate code to input measurement results and distribute them via DSM
 void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
