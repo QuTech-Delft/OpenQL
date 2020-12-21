@@ -9,10 +9,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - allow 'wait' and 'barrier' in JSON section 'gate_decomposition'
 - CC backend:
     - improved reporting on JSON semantic errors
-    - implemented option to output scheduled QASM files
     - added check for dimension of "instruments/qubits" against "instruments/ref_control_mode/control_bits"
     - added check for dimension of "instructions/<key>/cc/[signals,ref_signal]/value" against "instruments/ref_control_mode/control_bits"
     - added cross check of "instruments/ref_control_mode" against "instrument_definitions"
+    - added support for "pragma/break" in JSON definition to define 'gate' that breaks out of loop
+    - added support to distribute measurement results via DSM
+    - added support for conditional gates
 
 ### Changed
 - CC backend:

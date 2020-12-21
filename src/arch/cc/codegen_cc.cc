@@ -381,9 +381,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             	bundleHasPragma = true;
             	pragma = bi->pragma;
 
-				int creg_operand = bi->operands[0];                	// implicit classic for qubit. FIXME: perform checks
+				// FIXME: use breg_operands if present? How about qubit (operand) then?
+				int breg_operand = bi->operands[0];                	// implicit classic bit for qubit. FIXME: perform checks
 				// get SM bit for classic operand (allocated during readout)
-				pragmaSmBit = dp.getSmBit(creg_operand, instrIdx);
+				pragmaSmBit = dp.getSmBit(breg_operand, instrIdx);
             }
 #endif
 
@@ -417,14 +418,13 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				instrHasReadout = true;
 
 				// get classic operand
-				if (!bi->creg_operands.empty()) {
-					QL_WOUT("ignoring explicit assignment to classic operand " << bi->creg_operands[0] << " for measurement of qubit " << bi->operands[0]);
+				if (!bi->breg_operands.empty()) {
+					QL_WOUT("ignoring explicit assignment to bit " << bi->breg_operands[0] << " for measurement of qubit " << bi->operands[0]);
 				}
-				int creg_operand = bi->operands[0];                	// implicit classic operand for qubit
-				// FIXME: do we readout to creg or breg?
+				int breg_operand = bi->operands[0];                	// implicit classic bit for qubit
 
 				// allocate SM bit for classic operand
-				int smBit = dp.allocateSmBit(creg_operand, instrIdx);
+				int smBit = dp.allocateSmBit(breg_operand, instrIdx);
 
 				// remind mapping of bit -> smBit for setting MUX
 				readoutMap.emplace(group, tReadoutInfo{smBit, resultBit, bi});
@@ -624,7 +624,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 | Quantum instructions
 \************************************************************************/
 
-// helper FIXME: make QASM compatible, use library function (custom_gate::qasm())?
+// helper
 std::string toQasm(const std::string &iname, const Vec<UInt> &operands, const Vec<UInt> &breg_operands)
 {
 #if 1	// FIXME: hack
@@ -674,64 +674,34 @@ void codegen_cc::customGate(
 		 * 		- we do want the duration of a measurement gate to reflect reality (i.e. not the hack below)
 		 * 		- we don't want to spend the time if not needed
 		 * - so, we need to be explicit about DSM time
+		 * - the scheduler has special treatment for a gate called "measure" (TBC)
 		 *
 		 * - kernel->gate allows 3 types of measurement:
-		 * 		- no explicit result. Historically this implies implicit bit result for qubit, e.g. for the CC-light using
-    	 * 		conditional gates.
+		 * 		- no explicit result. Historically this implies either:
+    	 * 			- no result, measurement results are often read offline from the readout device (mostly the raw values
+    	 * 			instead of the binary result), without the control device ever taking notice of the value
+    	 * 			- implicit bit result for qubit, e.g. for the CC-light using conditional gates
 		 * 		- creg result (old. FIXME: what are intended semantics?)
 		 * 			note that Creg's are managed through a class, whereas bregs are just numbers
 		 * 		- breg result (new)
-		 * 	- many existing programs don't use the (binary) measurement result, but read raw data offline
-		 * 	- the scheduler has special treatment for a gate called "measure" (TBC)
     	 */
-#if 1	// new creg/breg semantics for branch condex
+
+		if(operands.size() != 1) {
+			QL_FATAL("Readout instruction requires exactly 1 quantum operand, not " << operands.size());   // FIXME: provide context
+		}
     	if(!creg_operands.empty()) {
             QL_FATAL("Using Creg as measurement target is deprecated");   // FIXME: provide context, move check
 		}
-
-    	if(breg_operands.empty()) {
-            /*  NB: existing code uses empty creg_operands, i.e. no explicit classical register.
-                On the one hand this historically seems to imply assignment to an
-                implicit 'register' in the
-                On the other hand, measurement results can also be read from the
-                readout device without the control device ever taking notice of the
-                value
-
-            */
-            // FIXME: define meaning: no classical target, or implied target (classical register matching qubit)
-            comment(std::string(" # READOUT: '") + toQasm(iname, operands, breg_operands) + "'");
-        } else if(breg_operands.size() == 1) {
-            comment(std::string(" # READOUT: '") + toQasm(iname, operands, breg_operands) + "'");
-        } else {
+        if(breg_operands.size() > 1) {
             QL_FATAL("Readout instruction requires 0 or 1 bit operands, not " << breg_operands.size());   // FIXME: provide context, move check
-        }
+		}
+
+		comment(std::string(" # READOUT: '") + toQasm(iname, operands, breg_operands) + "'");
     } else { // handle all other instruction types than "readout"
         // generate comment. NB: we don't have a particular limit for the number of operands
         comment(std::string(" # gate '") + toQasm(iname, operands, breg_operands) + "'");
     }
-#else
-    	if(creg_operands.empty()) {
-            /*  NB: existing code uses empty creg_operands, i.e. no explicit classical register.
-                On the one hand this historically seems to imply assignment to an
-                implicit 'register' in the CC-light that can be used for conditional
-                gates.
-                On the other hand, measurement results can also be read from the
-                readout device without the control device ever taking notice of the
-                value
 
-            */
-            // FIXME: define meaning: no classical target, or implied target (classical register matching qubit)
-            comment(QL_SS2S(" # READOUT: " << iname << "(q" << operands[0] << ")"));
-        } else if(creg_operands.size() == 1) {
-            comment(QL_SS2S(" # READOUT: " << iname << "(c" << creg_operands[0] << ",q" << operands[0] << ")"));	// FIXME use toQasm()
-        } else {
-            QL_FATAL("Readout instruction requires 0 or 1 classical operands, not " << creg_operands.size());   // FIXME: provide context, move check
-        }
-    } else { // handle all other instruction types than "readout"
-        // generate comment. NB: we don't have a particular limit for the number of operands
-        comment(std::string(" # gate '") + toQasm(iname, operands, creg_operands) + "'");
-    }
-#endif
 
     // find instruction (gate definition)
     const Json &instruction = platform->find_instruction(iname);
@@ -768,11 +738,8 @@ void codegen_cc::customGate(
         // FIXME: not reached if we don't define signals, so here we need output, whereas bundleFinish doesn't
 		// store operands used for readout, actual work is postponed to bundleFinish()
         if(isReadout) {
-            if(operands.size() != 1) {
-                QL_FATAL("Readout instruction requires exactly 1 quantum operand, not " << operands.size());   // FIXME: provide context
-            }
 			bi->operands = operands;
-            bi->creg_operands = creg_operands;
+//            bi->creg_operands = creg_operands;	// NB: will be empty because of checks performed earlier
             bi->breg_operands = breg_operands;
         }
 
@@ -799,11 +766,11 @@ void codegen_cc::customGate(
 			}
 			vbi[0].pragma = pragma;
 
-			// store creg_operands and qubits
-			vbi[0].creg_operands = creg_operands;
+			// store operands
 			vbi[0].operands = operands;
+//			vbi[0].creg_operands = creg_operands;	// NB: will be empty because of checks performed earlier
+			vbi[0].breg_operands = breg_operands;
 		}
-
 	}
 #endif
 }
