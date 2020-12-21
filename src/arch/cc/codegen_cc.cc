@@ -322,20 +322,9 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         uint32_t digOut = 0;                                                // the digital output value sent over the instrument interface
         unsigned int instrMaxDurationInCycles = 0;                          // maximum duration over groups that are used, one instrument
 #if OPT_FEEDBACK
-		typedef struct {
-			int condition;
-			Vec<UInt> cond_operands;
-			uint32_t groupDigOut;
-		} tCondGateInfo;
-		std::map<int, tCondGateInfo> condGateMap;							// NB: key is instrument group
-
+		tCondGateMap condGateMap;
 		bool instrHasReadout = false;
-		typedef struct {
-			int smBit;
-			int bit;
-			const BundleInfo *bi;											// used for annotation only
-		} tReadoutInfo;
-		std::map<int, tReadoutInfo> readoutMap;								// NB: key is instrument group
+		tReadoutMap readoutMap;
 #endif
 #if OPT_PRAGMA
 		const Json *pragma = nullptr;
@@ -390,7 +379,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 
 #if OPT_FEEDBACK
-            // handle readout (i.e. when necessary, create readoutMap entry, and set flags bundleHasReadout and instrHasReadout)
+            // handle readout (i.e. when necessary, create readoutMap entry, and set flags bundleHasReadout)
             // NB: we allow for instruments that perform the input side of readout only, without signal generation by the
             // same instrument, which might be needed in the future
             // FIXME: also generate VCD
@@ -415,10 +404,9 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				};
 #endif
 				bundleHasReadout = true;
-				instrHasReadout = true;
 
 				// get classic operand
-				if (!bi->breg_operands.empty()) {
+				if (!bi->breg_operands.empty()) {	// FIXME
 					QL_WOUT("ignoring explicit assignment to bit " << bi->breg_operands[0] << " for measurement of qubit " << bi->operands[0]);
 				}
 				int breg_operand = bi->operands[0];                	// implicit classic bit for qubit
@@ -443,7 +431,16 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 #if OPT_FEEDBACK
 		// FIXME: terrible hack.
-		/* Alternatives:
+		/*
+		 * Analysis:
+		 * - there are measurements that are used for feedback (need DSM), and those that don't
+		 * - DSM takes time, but:
+		 * 		- we do want the duration of a measurement gate to reflect reality (i.e. not the hack below)
+		 * 		- we don't want to spend the time if not needed
+		 * - so, we need to be explicit about DSM time
+		 * - the scheduler has special treatment for a gate called "measure" (TBC)
+		 *
+		 * Alternatives:
 		 * - we could ignore startCycle and compute it ourselves. No, startCycle is also used to insert 'wait'
 		 * - or better, decompose measure_rt into measure+getResults, where getResults does the wait for UHF latency + DSM distribution
 		 * - or infer data distribution from explicit assignment of measurement result to classic variable. Hmmm: cregs vs. bregs in kernel->gate()
@@ -553,6 +550,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 
 #if OPT_FEEDBACK
+#if 1
+		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
+	        emitMeasurementDistribution(readoutMap, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
+		}
+#else
 		// generate code for instrument input of readout results
 		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
 			if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
@@ -607,6 +609,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			// update lastEndCycle
 			lastEndCycle[instrIdx] += readoutWait;	// FIXME: this time has not been scheduled, but is interjected here at the backend level
 		}
+#endif
 #endif
 
 		// for last bundle, pad end of bundle to align durations
@@ -668,15 +671,8 @@ void codegen_cc::customGate(
 
     // generate comment (also performs some checks)
     if(isReadout) {
-    	/* Analysis:
-		 * - there are measurements that are used for feedback (need DSM), and those that don't
-		 * - DSM takes time, but:
-		 * 		- we do want the duration of a measurement gate to reflect reality (i.e. not the hack below)
-		 * 		- we don't want to spend the time if not needed
-		 * - so, we need to be explicit about DSM time
-		 * - the scheduler has special treatment for a gate called "measure" (TBC)
-		 *
-		 * - kernel->gate allows 3 types of measurement:
+    	/*
+		 * kernel->gate allows 3 types of measurement:
 		 * 		- no explicit result. Historically this implies either:
     	 * 			- no result, measurement results are often read offline from the readout device (mostly the raw values
     	 * 			instead of the binary result), without the control device ever taking notice of the value
@@ -893,6 +889,63 @@ void codegen_cc::emitProgramStart()
     // initialize state
     emit("",                "seq_state","0",                "# clear Programmable Logic state");
 #endif
+}
+
+
+// generate code to input measurement results and distribute them via DSM
+void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
+{
+	if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
+		padToCycle(instrIdx, startCycle, slot, instrumentName);
+	}
+
+	// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
+	if(!readoutMap.empty()) {	// this instrument performs readout now
+		int smAddr = 0;		// FIXME:
+		int mux = dp.getOrAssignMux(instrIdx);
+
+		// emit datapath code
+		dp.emit(slot, QL_SS2S(".MUX " << mux));
+		for(auto &readout : readoutMap) {
+			int group = readout.first;
+			tReadoutInfo ri = readout.second;
+
+			dp.emit(slot,
+					QL_SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
+					QL_SS2S("# cop " /*FIXME << ri.bi->creg_operands[0]*/ << " = readout(q" << ri.bi->operands[0] << ")"));
+
+			int mySmAddr = ri.smBit/8;	// byte addressable
+		}
+
+		// emit code for slot input
+		int sizeTag = datapath_cc::getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
+		emit(slot,
+			"seq_in_sm",
+			QL_SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
+			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": readout on '" << instrumentName+"'"));
+		lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
+	} else {
+		// FIXME:
+		int smAddr = 0;
+		int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
+
+		// emit code for non-participating instrument
+		emit(slot,
+			"seq_inv_sm",
+			QL_SS2S("S" << smAddr << ","  << smTotalSize),
+			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": invalidate SM on '" << instrumentName+"'"));
+		lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
+	}
+
+	// code generation common to paths above
+	int readoutWait = settings.getReadoutWait();
+	emit(slot,
+		"seq_wait",
+		QL_SS2S(readoutWait),
+		QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+readoutWait << ": wait for instrument latency and DSM data distribution on '" << instrumentName+"'"));
+
+	// update lastEndCycle
+	lastEndCycle[instrIdx] += readoutWait;	// FIXME: this time has not been scheduled, but is interjected here at the backend level
 }
 
 

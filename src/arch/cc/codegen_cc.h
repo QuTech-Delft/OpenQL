@@ -102,6 +102,21 @@ private:    // types
         settings_cc::tSignalInfo si;
     } tCalcSignalValue;	// return type for calcSignalValue()
 
+#if OPT_FEEDBACK
+	typedef struct {
+		int condition;
+		Vec<UInt> cond_operands;
+		uint32_t groupDigOut;
+	} tCondGateInfo;
+	using tCondGateMap = std::map<int, tCondGateInfo>;			// NB: key is instrument group
+
+	typedef struct {
+		int smBit;
+		int bit;
+		const BundleInfo *bi;									// used for annotation only
+	} tReadoutInfo;
+	using tReadoutMap = std::map<int, tReadoutInfo>;			// NB: key is instrument group
+#endif
 
 private:    // vars
     static const int MAX_SLOTS = 12;                            // physical maximum of CC
@@ -136,8 +151,9 @@ private:    // funcs
 	void emit(int sel, const std::string &instr, const std::string &ops, const std::string &comment="");
 
     // helpers
-    void emitProgramStart();
 	void showCodeSoFar() { QL_EOUT("Code so far:\n" << codeSection.str()); }     // provide context to help finding reason. FIXME: limit # lines
+    void emitProgramStart();
+	void emitMeasurementDistribution(const tReadoutMap &readoutMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
     void padToCycle(size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
     tCalcSignalValue calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const Vec<UInt> &operands, const std::string &iname);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
