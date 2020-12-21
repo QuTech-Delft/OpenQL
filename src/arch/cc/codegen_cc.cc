@@ -459,62 +459,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
         // generate code for instrument output
         if(instrHasOutput) {
-#if 1
 			emitOutput(condGateMap, digOut, instrMaxDurationInCycles, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
-#else
-            comment(QL_SS2S("  # slot=" << ic.ii.slot
-										<< ", instrument='" << ic.ii.instrumentName << "'"
-										<< ": lastEndCycle=" << lastEndCycle[instrIdx]
-										<< ", startCycle=" << startCycle
-										<< ", instrMaxDurationInCycles=" << instrMaxDurationInCycles
-                    ));
-
-            padToCycle(instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
-
-            // emit code for slot output
-            if(condGateMap.empty()) {	// all groups unconditional
-				emit(ic.ii.slot,
-					 "seq_out",
-					 QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << instrMaxDurationInCycles),
-					 QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName + "'"));
-			} else {	// some group conditional
-				// configure datapath PL
-				int smAddr = 0;		// FIXME:
-				int pl = dp.getOrAssignPl(instrIdx);
-
-				dp.emit(ic.ii.slot, QL_SS2S(".PL " << pl));
-				for(auto &cg : condGateMap) {
-					int group = cg.first;
-					tCondGateInfo cgi = cg.second;
-
-#if 1				// FIXME: implement PL output
-					for(int bit=0; bit<32; bit++) {
-						if(1<<bit & cgi.groupDigOut) {
-							// FIXME:
-							cgi.condition;
-							cgi.cond_operands;
-							int smBit0 = 0;
-							int smBit1 = 0;
-							std::string expression;	// gtPlExpression(cgi.condition, cgi.cond_operands);
-							dp.emit(ic.ii.slot,
-									QL_SS2S("O[" << bit << "] := I[" << smBit0 << "]"),		// FIXME: depend on condition
-									QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", expression=" << expression));
-						}
-					}
-#endif
-				}
-
-				// emit code for conditional gate
-				emit(ic.ii.slot,
-					 "seq_out_sm",
-					 QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
-					 QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": consitional code word/mask on '" << ic.ii.instrumentName << "'"));
-				// FIXME
-            }
-
-            // update lastEndCycle
-            lastEndCycle[instrIdx] = startCycle + instrMaxDurationInCycles;
-#endif
 		} else {    // !instrHasOutput
 			// nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
 		}
