@@ -550,66 +550,9 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 
 #if OPT_FEEDBACK
-#if 1
 		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
 	        emitMeasurementDistribution(readoutMap, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
 		}
-#else
-		// generate code for instrument input of readout results
-		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
-			if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
-				padToCycle(instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
-			}
-
-			// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
-			if(instrHasReadout) {
-				int smAddr = 0;		// FIXME:
-				int mux = dp.getOrAssignMux(instrIdx);
-
-				// emit datapath code
-				dp.emit(ic.ii.slot, QL_SS2S(".MUX " << mux));
-				for(auto &readout : readoutMap) {
-					int group = readout.first;
-					tReadoutInfo ri = readout.second;
-
-					dp.emit(ic.ii.slot,
-							QL_SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
-							QL_SS2S("# cop " /*FIXME << ri.bi->creg_operands[0]*/ << " = readout(q" << ri.bi->operands[0] << ")"));
-
-					int mySmAddr = ri.smBit/8;	// byte addressable
-				}
-
-				// emit code for slot input
-				int sizeTag = datapath_cc::getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
-				emit(ic.ii.slot,
-					"seq_in_sm",
-					QL_SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
-					QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": readout on '" << ic.ii.instrumentName+"'"));
-				lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
-			} else {
-				// FIXME:
-				int smAddr = 0;
-				int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
-
-				// emit code for non-participating instrument
-				emit(ic.ii.slot,
-					"seq_inv_sm",
-					QL_SS2S("S" << smAddr << ","  << smTotalSize),
-					QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": invalidate SM on '" << ic.ii.instrumentName+"'"));
-				lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
-			}
-
-			// code generation common to paths above
-			int readoutWait = settings.getReadoutWait();
-			emit(ic.ii.slot,
-				"seq_wait",
-				QL_SS2S(readoutWait),
-				QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+readoutWait << ": wait for instrument latency and DSM data distribution on '" << ic.ii.instrumentName+"'"));
-
-			// update lastEndCycle
-			lastEndCycle[instrIdx] += readoutWait;	// FIXME: this time has not been scheduled, but is interjected here at the backend level
-		}
-#endif
 #endif
 
 		// for last bundle, pad end of bundle to align durations
