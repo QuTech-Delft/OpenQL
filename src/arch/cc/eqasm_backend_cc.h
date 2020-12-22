@@ -27,7 +27,7 @@ public:
     void compile(quantum_program *program, const quantum_platform &platform) override;
 
 private:
-    std::string kernelLabel(quantum_kernel &k);
+    static std::string kernelLabel(quantum_kernel &k);
     void codegenClassicalInstruction(gate *classical_ins);
     void codegenKernelPrologue(quantum_kernel &k);
     void codegenKernelEpilogue(quantum_kernel &k);

@@ -373,10 +373,12 @@ void test_break(const std::string &scheduler, const std::string &scheduler_unifo
 
     const int num_qubits = 5;
     const int num_cregs = 5;
-    ql::quantum_program prog(("test_break_" + scheduler + "_uniform_" + scheduler_uniform), s5, num_qubits, num_cregs);
-    ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs);
+    const int num_bregs = 5;
+    ql::quantum_program prog(("test_break_" + scheduler + "_uniform_" + scheduler_uniform), s5, num_qubits, num_cregs, num_bregs);
+    ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs, num_bregs);
 
     k.gate("prepz", 1);	// FIXME: program makes no sense
+//    k.gate("measure_rt", 1);	// FIXME: WIP
     k.gate("measure", 1);
     k.gate("if_1_break", 1);
 

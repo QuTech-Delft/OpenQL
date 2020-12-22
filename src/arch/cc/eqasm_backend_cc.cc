@@ -149,7 +149,6 @@ void eqasm_backend_cc::codegenClassicalInstruction(gate *classical_ins)
 // FIXME: the kernel name has a structure (e.g. "sp1_for1_start" or "sp1_for1_start") which we use here. This should be made explicit
 // FIXME: looks very inefficient
 // extracted from get_epilogue
-// FIXME: does not use class
 std::string eqasm_backend_cc::kernelLabel(quantum_kernel &k)
 {
     std::string kname(k.name);
@@ -264,10 +263,11 @@ void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_plat
     for(ir::bundle_t &bundle : bundles) {
         // generate bundle header
         QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << bundle.start_cycle << ", duration_in_cycles=" << bundle.duration_in_cycles));
-        codegen.bundleStart(QL_SS2S("## Bundle " << bundleIdx++
-                                                 << ": start_cycle=" << bundle.start_cycle
-                                                 << ", duration_in_cycles=" << bundle.duration_in_cycles << ":"
-                                  ));
+        codegen.bundleStart(QL_SS2S(
+        	"## Bundle " << bundleIdx++
+        	<< ": start_cycle=" << bundle.start_cycle
+        	<< ", duration_in_cycles=" << bundle.duration_in_cycles << ":"
+		));
         // NB: the "wait" instruction never makes it into the bundle. It is accounted for in scheduling though,
         // and if a non-zero duration is specified that duration is reflected in 'start_cycle' of the subsequent instruction
 

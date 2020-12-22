@@ -319,7 +319,10 @@
         "cl_20 %0": ["rx90 %0", "rym90 %0", "rx90 %0"],
         "cl_21 %0": ["ry90 %0"],
         "cl_22 %0": ["rxm90 %0", "ry180 %0"],
-        "cl_23 %0": ["rx90 %0", "ry90 %0", "rxm90 %0"]
+        "cl_23 %0": ["rx90 %0", "ry90 %0", "rxm90 %0"],
+
+        // CC feedback
+        "measure_rt %0": ["measure %0", "_distribute_shared_mem %0"]
   	},
 
 
@@ -332,7 +335,6 @@
     // - <key>/matrix                   required, but generally does not contain useful information
     //
     // The cc-light scheduler that we currently use requires the following sub keys:
-    // - <key>/cc_light_instr
     // - <key>/type
     // Sub keys for "instructions", CC additions:
     // - <key>/cc/signal/type
@@ -355,7 +357,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "i",
             "cc": {
 //                "ref_signal": "single-qubit-mw",
                 "signal": [],   // no signal, to prevent conflicts with other gates (NB: will output nothing because VSM stays off)
@@ -366,7 +367,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "x",
             "cc": {
                 "ref_signal": "single-qubit-mw",    // NB: reference, instead of defining "signal" here
                 "static_codeword_override": [1]
@@ -376,7 +376,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "y",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [2]
@@ -386,7 +385,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "x90",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [3]
@@ -396,7 +394,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "y90",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [4]
@@ -406,7 +403,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "xm90",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [5]
@@ -416,7 +412,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "ym90",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [6]
@@ -430,7 +425,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "y45",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [1]
@@ -441,7 +435,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "ym45",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [2]
@@ -452,7 +445,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "x45",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [3]
@@ -463,7 +455,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "xm45",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [4]
@@ -475,7 +466,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "cz",
             "cc": {
                 "ref_signal": "two-qubit-flux",     // NB: reference, instead of defining "signal" here
                 "static_codeword_override": [1,1]     // FIXME
@@ -485,7 +475,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "cz",
             "cc": {
                 "signal": [
                     {   "type": "flux",
@@ -514,7 +503,6 @@
 		"park_cz" : { // park signal with same length as cz gate
 			"duration" : 80,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"cc_light_instr": "park_cz",
 			"type": "measure",		// FIXME
 			"cc": {
 				"signal": [
@@ -547,7 +535,6 @@
 			"duration": 200000,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "readout",
-			"cc_light_instr": "prepz",
             "cc": {
 //                "ref_signal": "single-qubit-mw"
                 "signal": [],    // FIXME: no signal, pycQED::test_multi_qubit_oql_CC.py fails otherwise on scheduling issues
@@ -559,7 +546,6 @@
 			"duration": 2000,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "readout",
-			"cc_light_instr": "measz",
 			"cc": {
 				"signal": [
 					{	"type": "measure",
@@ -571,15 +557,27 @@
 			}
 		},
 
+        // aditions for feedback
 		"if_1_break": {
 			"duration": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "none",
-			"cc_light_instr": "none",
 			"cc": {
 				"signal": [],
 				"pragma": {
                     "break": 1
+				}
+			}
+		},
+
+		"_distribute_shared_mem": {
+			"duration": 160,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+			"type": "none",
+			"cc": {
+				"signal": [],
+				"pragma": {
+                    "dist": 1
 				}
 			}
 		},
@@ -590,7 +588,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "square",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [0]
@@ -600,7 +597,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "spec",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [0]
@@ -610,7 +606,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "rx12",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [0]
@@ -621,7 +616,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_00",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [0]
@@ -631,7 +625,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_01",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [1]
@@ -641,7 +634,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_02",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [2]
@@ -651,7 +643,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_03",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [3]
@@ -661,7 +652,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_04",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [4]
@@ -671,7 +661,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_05",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [5]
@@ -681,7 +670,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_06",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [6]
@@ -691,7 +679,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_07",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [7]
@@ -701,7 +688,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_08",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [8]
@@ -711,7 +697,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_09",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [9]
@@ -721,7 +706,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_10",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [0]
@@ -731,7 +715,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_11",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [1]
@@ -741,7 +724,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_12",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [2]
@@ -751,7 +733,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_13",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [3]
@@ -761,7 +742,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_14",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [4]
@@ -771,7 +751,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_15",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [5]
@@ -781,7 +760,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_16",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [6]
@@ -791,7 +769,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_17",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [7]
@@ -801,7 +778,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_18",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [8]
@@ -811,7 +787,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_19",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [9]
@@ -821,7 +796,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_20",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [0]
@@ -831,7 +805,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_21",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [1]
@@ -841,7 +814,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_22",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [2]
@@ -851,7 +823,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_23",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [3]
@@ -861,7 +832,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_24",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [4]
@@ -871,7 +841,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_25",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [5]
@@ -881,7 +850,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_26",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [6]
@@ -891,7 +859,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_27",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [7]
@@ -901,7 +868,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_28",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [8]
@@ -911,7 +877,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_29",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [9]
@@ -921,7 +886,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_30",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [0]
@@ -931,7 +895,6 @@
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
-            "cc_light_instr": "cw_31",
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [1]
@@ -944,7 +907,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "fl_cw_00",
             "cc": {
                 "ref_signal": "two-qubit-flux",     // FIXME
                 "static_codeword_override": [0]
@@ -954,7 +916,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "fl_cw_01",
             "cc": {
                 "ref_signal": "two-qubit-flux",
                 "static_codeword_override": [1]
@@ -964,7 +925,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "fl_cw_02",
             "cc": {
                 "ref_signal": "two-qubit-flux",
                 "static_codeword_override": [2]
@@ -974,7 +934,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "fl_cw_03",
             "cc": {
                 "ref_signal": "two-qubit-flux",
                 "static_codeword_override": [3]
@@ -984,7 +943,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "fl_cw_04",
             "cc": {
                 "ref_signal": "two-qubit-flux",
                 "static_codeword_override": [4]
@@ -994,7 +952,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "fl_cw_05",
             "cc": {
                 "ref_signal": "two-qubit-flux",
                 "static_codeword_override": [5]
@@ -1004,7 +961,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "fl_cw_06",
             "cc": {
                 "ref_signal": "two-qubit-flux",
                 "static_codeword_override": [6]
@@ -1014,7 +970,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "fl_cw_07",
             "cc": {
                 "ref_signal": "two-qubit-flux",
                 "static_codeword_override": [7]
@@ -1028,7 +983,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_cz_ne",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [1]
@@ -1038,7 +992,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_cz_ne",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [1]
@@ -1048,7 +1001,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_cz_se",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [2]
@@ -1058,7 +1010,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_cz_se",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [2]
@@ -1068,7 +1019,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_cz_sw",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [3]
@@ -1078,7 +1028,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_cz_sw",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [3]
@@ -1088,7 +1037,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_cz_nw",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [4]
@@ -1098,7 +1046,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_cz_nw",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [4]
@@ -1108,7 +1055,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_park",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [5]
@@ -1118,7 +1064,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_park",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [5]
@@ -1128,7 +1073,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_sp_park",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [5]
@@ -1138,7 +1082,6 @@
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
-            "cc_light_instr": "sf_square",
             "cc": {
                 "ref_signal": "single-qubit-flux",
                 "static_codeword_override": [6]

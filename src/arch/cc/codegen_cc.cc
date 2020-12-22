@@ -43,7 +43,6 @@ void codegen_cc::init(const quantum_platform &platform)
         mapPreloaded = true;
     }
 
-
 #if OPT_FEEDBACK   // FIXME: WIP on feedback: allocate SM bits
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
@@ -270,8 +269,6 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 
 	return ret;
 }
-
-
 
 
 // bundleFinish: see 'strategy' above
