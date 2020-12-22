@@ -19,29 +19,8 @@ namespace ql {
 
 
 #if OPT_FEEDBACK
-// FIXME: preliminary support based on '20200929_openql_feedback_design.docx'
-
-typedef std::vector<int> tBitVars;
-
+//typedef std::vector<int> tBitVars;
 #endif
-
-/************************************************************************\
-| Class BundleInfo
-\************************************************************************/
-
-codegen_cc::BundleInfo::BundleInfo() {
-	signalValue = "";
-	durationInCycles = 0;
-#if OPT_SUPPORT_STATIC_CODEWORDS
-	staticCodewordOverride = settings_cc::NO_STATIC_CODEWORD_OVERRIDE;
-#endif
-#if OPT_FEEDBACK
-	condition = cond_always;	// FIXME
-#endif
-#if OPT_PRAGMA
-	pragma = nullptr;
-#endif
-}
 
 
 /************************************************************************\
@@ -481,7 +460,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             padToCycle(instrIdx, startCycle+durationInCycles, ic.ii.slot, ic.ii.instrumentName);		// FIXME: use instrMaxDurationInCycles and/or check consistency
         }
 
-        vcd.bundleFinish(startCycle, digOut, instrMaxDurationInCycles, instrIdx);
+        vcd.bundleFinish(startCycle, digOut, instrMaxDurationInCycles, instrIdx);	// FIXME: conditional gates, etc
     } // for(instrIdx)
 
     comment("");    // blank line to separate bundles
@@ -494,20 +473,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 // helper
 std::string toQasm(const std::string &iname, const Vec<UInt> &operands, const Vec<UInt> &breg_operands)
 {
-#if 1	// FIXME: hack
+	// FIXME: hack
 	custom_gate g(iname);
 	g.operands = operands;
 	g.breg_operands = breg_operands;
 	return g.qasm();
-#else
-	std::stringstream s;
-	s << iname << " ";
-	for(size_t i=0; i < operands.size(); i++) {
-		s << operands[i];
-		if(i < operands.size() - 1) s << ",";
-	}
-	return s.str();
-#endif
 }
 
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above

@@ -45,7 +45,7 @@ public: //  functions
 
     // Quantum instructions
     void customGate(
-    		// FIXME consider passing a gate&/custom_gate&
+    		// FIXME consider passing a gate&, custom_gate& or (new type) GateOperands&
             const std::string &iname,
             const Vec<UInt> &operands,					// qubit operands (FKA qops)
             const Vec<UInt> &creg_operands,				// classic operands (FKA cops)
@@ -69,14 +69,14 @@ public: //  functions
 private:    // types
     class BundleInfo {
     public:
-    	BundleInfo();
+    	BundleInfo() = default;
 
     public:	// vars
     	// output gates
         std::string signalValue;
-        unsigned int durationInCycles;
+        unsigned int durationInCycles = 0;
 #if OPT_SUPPORT_STATIC_CODEWORDS
-        int staticCodewordOverride;
+        int staticCodewordOverride = settings_cc::NO_STATIC_CODEWORD_OVERRIDE;
 #endif
 #if OPT_FEEDBACK
         // readout (FIXME: or, in case of operands, pragma
@@ -85,16 +85,32 @@ private:    // types
 		Vec<UInt> breg_operands;
 
         // conditional gates
-        int condition;
+        cond_type_t condition = cond_always;		// FIXME
 		Vec<UInt> cond_operands;
 #endif
 #if OPT_PRAGMA
         // pragma 'gates'
-		const Json *pragma;
+		const Json *pragma = nullptr;
 #endif
     }; // information for an instrument group (of channels), for a single instruction
     // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?
 
+
+#if OPT_FEEDBACK
+	typedef struct {
+		cond_type_t condition;
+		Vec<UInt> cond_operands;
+		uint32_t groupDigOut;
+	} tCondGateInfo;											// information for conditional gate on single instrument group
+	using tCondGateMap = std::map<int, tCondGateInfo>;			// NB: key is instrument group
+
+	typedef struct {
+		int smBit;
+		int bit;
+		const BundleInfo *bi;									// used for annotation only
+	} tReadoutInfo;												// information for readout on single instrument group
+	using tReadoutMap = std::map<int, tReadoutInfo>;			// NB: key is instrument group
+#endif
 
     typedef struct {
         std::string signalValueString;
@@ -102,21 +118,6 @@ private:    // types
         settings_cc::tSignalInfo si;
     } tCalcSignalValue;	// return type for calcSignalValue()
 
-#if OPT_FEEDBACK
-	typedef struct {
-		int condition;
-		Vec<UInt> cond_operands;
-		uint32_t groupDigOut;
-	} tCondGateInfo;
-	using tCondGateMap = std::map<int, tCondGateInfo>;			// NB: key is instrument group
-
-	typedef struct {
-		int smBit;
-		int bit;
-		const BundleInfo *bi;									// used for annotation only
-	} tReadoutInfo;
-	using tReadoutMap = std::map<int, tReadoutInfo>;			// NB: key is instrument group
-#endif
 
 private:    // vars
     static const int MAX_SLOTS = 12;                            // physical maximum of CC
@@ -144,19 +145,22 @@ private:    // vars
 	// codegen state, bundle scope
     std::vector<std::vector<BundleInfo>> bundleInfo;           	// matrix[instrIdx][group]
 
+
 private:    // funcs
-    // Some helpers to ease nice assembly formatting
+    // helpers to ease nice assembly formatting
     void emit(const std::string &labelOrComment, const std::string &instr="");
     void emit(const std::string &label, const std::string &instr, const std::string &ops, const std::string &comment="");
 	void emit(int sel, const std::string &instr, const std::string &ops, const std::string &comment="");
 
-    // helpers
+    // code generation helpers
 	void showCodeSoFar() { QL_EOUT("Code so far:\n" << codeSection.str()); }     // provide context to help finding reason. FIXME: limit # lines
     void emitProgramStart();
 	void emitOutput(const tCondGateMap &condGateMap, int32_t digOut, unsigned int instrMaxDurationInCycles, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
 	void emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
 	void emitMeasurementDistribution(const tReadoutMap &readoutMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
     void padToCycle(size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
+
+    // generic helpers
     tCalcSignalValue calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const Vec<UInt> &operands, const std::string &iname);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);

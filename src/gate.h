@@ -190,7 +190,7 @@ public:
     utils::Vec<utils::UInt> operands;             // qubit operands
     utils::Vec<utils::UInt> creg_operands;
     utils::Vec<utils::UInt> breg_operands;        // bit operands e.g. assigned to by measure
-    utils::Int int_operand = 0;
+    utils::Int int_operand = 0;					// FIXME: move to class 'classical'
     utils::UInt duration = 0;
     utils::Real angle = 0.0;                      // for arbitrary rotations
     utils::UInt cycle = MAX_CYCLE;                // cycle after scheduling; MAX_CYCLE indicates undefined
