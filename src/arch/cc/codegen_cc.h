@@ -69,8 +69,9 @@ public: //  functions
 
 private:    // types
     class BundleInfo {
-    public:
+    public:	// funcs
     	BundleInfo() = default;
+    	bool isReadOut() { return !operands.empty() && !pragma; };		// FIXME: create explicit flag
 
     public:	// vars
     	// output gates

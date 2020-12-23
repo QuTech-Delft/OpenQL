@@ -313,7 +313,6 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         unsigned int instrMaxDurationInCycles = 0;                          // maximum duration over groups that are used, one instrument
 #if OPT_FEEDBACK
 		tCondGateMap condGateMap;
-		bool instrHasReadout = false;
 		tReadoutMap readoutMap;
 #endif
 #if OPT_PRAGMA
@@ -340,7 +339,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				// datapath is configured to generate proper digital output
                 if(bi->condition==cond_always || ic.ii.forceCondGatesOn) {
                 	// nothing to do, just use digOut
-                } else {
+                } else {	// other conditions, including cond_never
 					// remind mapping for setting PL
 					condGateMap.emplace(group, tCondGateInfo{bi->condition, bi->cond_operands, gdo.groupDigOut});
                 }
@@ -374,8 +373,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // same instrument, which might be needed in the future
             // FIXME: also generate VCD
 
-			if(!bi->operands.empty() && !pragma) { // readout requested FIXME: or pragma, add explicit readout flag
-				int resultBit = settings.getResultBit(ic, group);
+			if(bi->isReadOut()) {
+				int resultBit = settings_cc::getResultBit(ic, group);
 
 #if 0	// FIXME: redundant
 				// get our qubit
@@ -419,7 +418,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			comment(QL_SS2S(" # last bundle of kernel, will pad outputs to match durations"));
 		}
 
-#if OPT_FEEDBACK
+#if 0 && OPT_FEEDBACK
 		// FIXME: terrible hack.
 		/*
 		 * Analysis:
@@ -443,7 +442,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				QL_FATAL(
 					"instrMaxDurationInCycles " << instrMaxDurationInCycles
 					<< " smaller than totalWait " << totalWait
-					<< "(instrIdx=" << instrIdx
+					<< " (instrIdx=" << instrIdx
 					<< ", startCycle=" << startCycle << ")"
 				);
 			}
@@ -466,6 +465,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 #if OPT_FEEDBACK
 		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
+			// FIXME: skips instruments before first readout, because bundleHasReadout can be set on the way
 	        emitMeasurementDistribution(readoutMap, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
 		}
 #endif
@@ -561,7 +561,7 @@ void codegen_cc::customGate(
     // find signal vector definition for instruction
     settings_cc::tSignalDef sd = settings.findSignalDefinition(instruction, iname);
 
-    // iterate over signals defined for instruction (e.g. several operands or types, and thus instruments)
+    // scatter signals defined for instruction (e.g. several operands and/or types) to instruments & groups
     for(size_t s=0; s<sd.signal.size(); s++) {
         tCalcSignalValue csv = calcSignalValue(sd, s, operands, iname);
 
@@ -573,7 +573,7 @@ void codegen_cc::customGate(
             // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
             bi->staticCodewordOverride = ql::settings_cc::findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
 #endif
-        } else if(bi->signalValue == csv.signalValueString) {               // signal unchanged
+        } else if(bi->signalValue == csv.signalValueString) {               // signal unchanged (FIXME: possibly: empty()
             // do nothing
         } else {
         	showCodeSoFar();
@@ -592,7 +592,7 @@ void codegen_cc::customGate(
         // FIXME: assumes that group configuration for readout input matches that of output
         // FIXME: not reached if we don't define signals, so here we need output, whereas bundleFinish doesn't
 		// store operands used for readout, actual work is postponed to bundleFinish()
-        if(isReadout) {
+        if(isReadout && settings.getReadoutMode(iname)=="dist") {	// FIXME: hack for new "dist" mode
 			bi->operands = operands;
 //            bi->creg_operands = creg_operands;	// NB: will be empty because of checks performed earlier
             bi->breg_operands = breg_operands;
@@ -852,6 +852,10 @@ void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size
 		padToCycle(instrIdx, startCycle, slot, instrumentName);
 	}
 
+
+	// FIXME: first wait for readout latency. Use gate 'wait_uhfqa'
+
+
 	// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
 	if(!readoutMap.empty()) {	// this instrument performs readout now
 		int smAddr = 0;		// FIXME:
@@ -881,7 +885,7 @@ void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size
 			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": readout on '" << instrumentName+"'")
 		);
 		lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
-	} else {
+	} else {	// this instrument does not perform readout now
 		// FIXME:
 		int smAddr = 0;
 		int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
@@ -896,8 +900,9 @@ void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size
 		lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
 	}
 
+#if 0	// FIXME: use gate '_wait_dist'
 	// code generation common to paths above
-	int readoutWait = settings.getReadoutWait();
+	int readoutWait = settings.getReadoutWait();	// FIXME: just wait for DSM, not latency
 	emit(slot,
 		"seq_wait",
 		QL_SS2S(readoutWait),
@@ -906,6 +911,7 @@ void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size
 
 	// update lastEndCycle
 	lastEndCycle[instrIdx] += readoutWait;	// FIXME: this time has not been scheduled, but is interjected here at the backend level
+#endif
 }
 
 
@@ -958,7 +964,7 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
         	<< "(edit JSON, or provide enough parameters)"
 		); // FIXME: add offending statement
     }
-    unsigned int qubit = operands[ret.operandIdx];
+    UInt qubit = operands[ret.operandIdx];
 
     // get signal value
     const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
@@ -975,28 +981,32 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     // find signalInfo, i.e. perform the mapping
     ret.si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
 
-    // verify signal dimensions
-    size_t channelsPergroup = ret.si.ic.controlModeGroupSize;
-    if(instructionSignalValue.size() != channelsPergroup) {
-        QL_JSON_FATAL(
-        	"signal dimension mismatch on instruction '" << iname
-        	<< "' : control mode '" << ret.si.ic.refControlMode
-        	<< "' requires " <<  channelsPergroup
-        	<< " signals, but signal '" << signalSPath+"/value"
-        	<< "' provides " << instructionSignalValue.size()
-		);
-    }
+	if(instructionSignalValue.size() == 0) {	// FIXME: testing: allow empty signal
+		ret.signalValueString = "";
+	} else {
+		// verify signal dimensions
+		size_t channelsPergroup = ret.si.ic.controlModeGroupSize;
+		if(instructionSignalValue.size() != channelsPergroup) {
+			QL_JSON_FATAL(
+				"signal dimension mismatch on instruction '" << iname
+				<< "' : control mode '" << ret.si.ic.refControlMode
+				<< "' requires " <<  channelsPergroup
+				<< " signals, but signal '" << signalSPath+"/value"
+				<< "' provides " << instructionSignalValue.size()
+			);
+		}
 
-    // expand macros
-    sv = replace_all(sv, "\"", "");   // get rid of quotes
-    sv = replace_all(sv, "{gateName}", iname);
-    sv = replace_all(sv, "{instrumentName}", ret.si.ic.ii.instrumentName);
-    sv = replace_all(sv, "{instrumentGroup}", std::to_string(ret.si.group));
-    // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
-    sv = replace_all(sv, "{qubit}", std::to_string(qubit));
-	ret.signalValueString = sv;
+		// expand macros
+		sv = replace_all(sv, "\"", "");   // get rid of quotes
+		sv = replace_all(sv, "{gateName}", iname);
+		sv = replace_all(sv, "{instrumentName}", ret.si.ic.ii.instrumentName);
+		sv = replace_all(sv, "{instrumentGroup}", std::to_string(ret.si.group));
+		// FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
+		sv = replace_all(sv, "{qubit}", std::to_string(qubit));
+		ret.signalValueString = sv;
 
-    // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
+		// FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
+	}
 
     comment(QL_SS2S(
     	"  # slot=" << ret.si.ic.ii.slot
@@ -1015,8 +1025,8 @@ uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instr
     uint32_t codeword;
     std::string signalValue = bi->signalValue;
 
-    if(QL_JSON_EXISTS(codewordTable, instrumentName) &&                    // instrument exists
-                    codewordTable[instrumentName].size() > group) {     // group exists
+    if(QL_JSON_EXISTS(codewordTable, instrumentName) &&                    	// instrument exists
+                    codewordTable[instrumentName].size() > group) {     	// group exists
         bool cwFound = false;
         // try to find signalValue
         Json &myCodewordArray = codewordTable[instrumentName][group];

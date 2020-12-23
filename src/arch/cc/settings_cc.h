@@ -54,6 +54,7 @@ public: // functions
     ~settings_cc() = default;
 
     void loadBackendSettings(const quantum_platform &platform);
+	std::string getReadoutMode(const std::string &iname);
 	bool isReadout(const std::string &iname);
 	bool isPragma(const std::string &iname);
 	const Json *getPragma(const std::string &iname);
@@ -61,7 +62,7 @@ public: // functions
 	tSignalDef findSignalDefinition(const Json &instruction, const std::string &iname) const;
     tInstrumentInfo getInstrumentInfo(size_t instrIdx) const;
     tInstrumentControl getInstrumentControl(size_t instrIdx) const;
-	int getResultBit(const tInstrumentControl &ic, int group) const;
+	static int getResultBit(const tInstrumentControl &ic, int group) ;
 
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit) const;

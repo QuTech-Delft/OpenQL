@@ -60,6 +60,15 @@ void settings_cc::loadBackendSettings(const quantum_platform &platform)
 #endif
 }
 
+// NB: assumes prior test for isReadout()==true
+std::string settings_cc::getReadoutMode(const std::string &iname)
+{
+	const Json &instruction = platform->find_instruction(iname);
+    std::string instructionPath = "instructions/"+iname;
+    QL_JSON_ASSERT(instruction, "cc", instructionPath);
+    return json_get<std::string>(instruction["cc"], "readout_mode", instructionPath);
+}
+
 // determine whether this is a readout instruction
 bool settings_cc::isReadout(const std::string &iname)
 {
@@ -202,7 +211,7 @@ settings_cc::tInstrumentControl settings_cc::getInstrumentControl(size_t instrId
 }
 
 
-int settings_cc::getResultBit(const tInstrumentControl &ic, int group) const
+int settings_cc::getResultBit(const tInstrumentControl &ic, int group)
 {
 	// FIXME: test similar to settings_cc::getInstrumentControl, move
 	// check existence of key 'result_bits'

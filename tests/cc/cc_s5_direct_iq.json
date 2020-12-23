@@ -322,7 +322,7 @@
         "cl_23 %0": ["rx90 %0", "ry90 %0", "rxm90 %0"],
 
         // CC feedback
-        "measure_rt %0": ["measure %0", "_distribute_shared_mem %0"]
+        "measure_rt %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"]
   	},
 
 
@@ -352,7 +352,6 @@
 
 	"instructions": {
         // based on PyqQED_py3 'mw_lutman.py' and 'generate_CCL_cfg.py':
-        // FIXME: also add conditional single qubit gates?
         "i": {
             "duration": 20,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -535,14 +534,47 @@
 				"signal": [
 					{	"type": "measure",
 						"operand_idx": 0,
-						"value": ["dummy"]			// Future extension: specify output and weight, and generate code word
+						"value": ["dummy"],			// Future extension: specify output, and generate code word. Use "" if no output is present
+						"weight": ["dummy"]			// Future extension: specify weight (implies readout? How about INT_AVG)
 					}
 				],
                 "static_codeword_override": [0]   // FIXME
 			}
 		},
 
-        // aditions for feedback
+        // additions for feedback
+        "_wait_uhfqa": {
+            "duration": 220,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "cc": {
+                "signal": [],
+                "static_codeword_override": [0]
+            }
+        },
+		"_dist_dsm": {
+			"duration": 20,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+			"cc": {
+			    "readout_mode": "dist",
+				"signal": [
+					{	"type": "measure",
+						"operand_idx": 0,
+						//"value": ["dummy"]  // FIXME: performs output
+						"value": []
+					}
+                ],
+                "static_codeword_override": [0]
+			}
+		},
+        "_wait_dsm": {
+            "duration": 80,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "cc": {
+                "signal": [],
+                "static_codeword_override": [0]
+            }
+        },
+
 		"if_1_break": {
 			"duration": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -550,17 +582,6 @@
 				"signal": [],
 				"pragma": {
                     "break": 1
-				}
-			}
-		},
-
-		"_distribute_shared_mem": {
-			"duration": 160,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"cc": {
-				"signal": [],
-				"pragma": {
-                    "dist": 1
 				}
 			}
 		},
