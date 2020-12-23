@@ -917,7 +917,7 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     std::string sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
 
 	// get instruction signal type (e.g. "mw", "flux", etc)
-    // NB: instructionSignalType is different from the type provided by find_instruction_type, although some identical strings are used) FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL
+    // NB: instructionSignalType is different from "instruction/type" provided by find_instruction_type, although some identical strings are used). NB: that key is no longer used by the 'core' of OpenQL
     std::string instructionSignalType = json_get<std::string>(sd.signal[s], "type", signalSPath);
 
 	/************************************************************************\

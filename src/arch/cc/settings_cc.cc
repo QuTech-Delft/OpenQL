@@ -60,10 +60,16 @@ void settings_cc::loadBackendSettings(const quantum_platform &platform)
 #endif
 }
 
-
+// determine whether this is a readout instruction
 bool settings_cc::isReadout(const std::string &iname)
 {
-	/*  determine whether this is a readout instruction
+#if 1	// new semantics
+	const Json &instruction = platform->find_instruction(iname);
+    std::string instructionPath = "instructions/"+iname;
+    QL_JSON_ASSERT(instruction, "cc", instructionPath);
+    return QL_JSON_EXISTS(instruction["cc"], "readout_mode");
+#else
+	/*
 		NB: we only use the instruction_type "readout" and don't care about the rest
 		because the terms "mw" and "flux" don't fully cover gate functionality. It
 		would be nice if custom gates could mimic gate_type_t
@@ -72,6 +78,7 @@ bool settings_cc::isReadout(const std::string &iname)
 	// FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
 	// FIXME: gate semantics should be handled at the OpenQL core
 	return "readout" == platform->find_instruction_type(iname);
+#endif
 }
 
 

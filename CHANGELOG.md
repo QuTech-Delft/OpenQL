@@ -22,6 +22,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - renamed JSON field "ref_signals_type" to "signal_type"
     - changed JSON field "static_codeword_override" to be a vector with one element per qubit parameter. To edit a JSON file using Sublime, use Replace with Regular Expressions: find=`"static_codeword_override": ([0-9])+`, replace=`"static_codeword_override": [\1]`
     - adopted new module synchronization scheme ("seq_bar semantics", requires CC software >= v0.2.0, PycQED after commit 470df5b)
+    - JSON field "instruction/type" no longer used by backend, use "instruction/cc/readout_mode" to flag measurement instructions
 
 ### Removed
 

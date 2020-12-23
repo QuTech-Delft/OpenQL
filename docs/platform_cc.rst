@@ -110,7 +110,7 @@ Subsection ``control_modes`` defines modes to control instruments. These define 
                 [22,21,20,19,18,17,16],           // group 2. NB: starts at bit 16 so twin-QWG can also support it
                 [29,28,27,26,25,24,23]            // group 4
             ],
-            "trigger_bits": [31]
+            "trigger_bits": [15,31]
         },
         "awg8-flux": {                             // ZI_HDAWG8.py::cfg_codeword_protocol() == 'flux'
             // NB: please note that internally one AWG unit handles 2 channels, which requires special handling of the waveforms
@@ -316,18 +316,14 @@ The CC backend extends section ``instructions/<key>`` with a subsection ``cc`` a
     "ry180": {
         "duration": 20,
         "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-        "type": "mw",
-        "cc_light_instr": "y",
         "cc": {
             "ref_signal": "single-qubit-mw",
-            "static_codeword_override": 2
+            "static_codeword_override": [2]
         }
     },
     "cz_park": {
         "duration": 40,
         "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-        "type": "flux",
-        "cc_light_instr": "cz",
         "cc": {
             "signal": [
                 {   "type": "flux",
@@ -343,7 +339,7 @@ The CC backend extends section ``instructions/<key>`` with a subsection ``cc`` a
                     "value": ["park_cz-{qubit}"]
                 }
             ],
-            "static_codeword_override": 1
+            "static_codeword_override": [1,2,3]
         }
     }
 
@@ -351,7 +347,7 @@ Where:
 
 * ``cc/ref_signal`` points to a signal definition in ``hardware_settings/eqasm_backend_cc/signals``, which must exist or an error is raised
 * ``cc/signal`` defines a signal in place, in an identical fashion as ``hardware_settings/eqasm_backend_cc/signals``
-* ``cc/static_codeword_override`` provides a user defined codeword for this instruction. Currently, this key is compulsory, but in the future, codewords will be assigned automatically to make better use of limited codeword space
+* ``cc/static_codeword_override`` provides a user defined array of codeword (one entry per operand) for this instruction. Currently, this key is compulsory, but in the future, codewords will be assigned automatically to make better use of limited codeword space
 
 The following standard OpenQL fields are used:
 
@@ -364,15 +360,15 @@ The following standard OpenQL fields are used:
     .. - "measure"
 * ``duration`` duration in [ns]
 * ``matrix`` the process matrix. Required, but only used if optimization is enabled
-* ``type`` instruction type used by scheduler, one of the builtin names "mw", "flux" or "measure". Has no relation with signal type definition of CC backend, even though we use the same string values there
-* ``cc_light_instr`` required by scheduler.
 .. FIXME: expand on this
 * ``latency`` optional instruction latency in [ns], used by scheduler
 * ``qubits`` optional
 
 The following fields in 'instructions' are not used by the CC backend:
 
-* ``cc_light_instr_type``  FIXME: is used in scheduler.h
+* ``type``
+* ``cc_light_instr``
+* ``cc_light_instr_type``
 * ``cc_light_cond``
 * ``cc_light_opcode``
 * ``cc_light_codeword``
