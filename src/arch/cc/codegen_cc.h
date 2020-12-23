@@ -45,15 +45,16 @@ public: //  functions
 
     // Quantum instructions
     void customGate(
-    		// FIXME consider passing a gate&, custom_gate& or (new type) GateOperands&
-            const std::string &iname,
-            const Vec<UInt> &operands,					// qubit operands (FKA qops)
-            const Vec<UInt> &creg_operands,				// classic operands (FKA cops)
-			const Vec<UInt> &breg_operands, 			// bit operands e.g. assigned to by measure
-            cond_type_t condition,
-			const Vec<UInt> &cond_operands,				// 0, 1 or 2 bit operands of condition
-            double angle,
-            size_t startCycle, size_t durationInCycles);
+		// FIXME consider passing a gate&, custom_gate& or (new type) GateOperands&
+		const std::string &iname,
+		const Vec<UInt> &operands,					// qubit operands (FKA qops)
+		const Vec<UInt> &creg_operands,				// classic operands (FKA cops)
+		const Vec<UInt> &breg_operands, 			// bit operands e.g. assigned to by measure
+		cond_type_t condition,
+		const Vec<UInt> &cond_operands,				// 0, 1 or 2 bit operands of condition
+		double angle,
+		size_t startCycle, size_t durationInCycles
+	);
     void nopGate();
 
     // Classical operations on kernels

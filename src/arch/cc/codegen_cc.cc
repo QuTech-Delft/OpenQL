@@ -155,8 +155,10 @@ void codegen_cc::bundleStart(const std::string &cmnt)
     BundleInfo empty;
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
-        bundleInfo.emplace_back(ic.controlModeGroupCnt,   	// one BundleInfo per group in the control mode selected for instrument
-								empty);  					// empty BundleInfo
+        bundleInfo.emplace_back(
+        	ic.controlModeGroupCnt,   	// one BundleInfo per group in the control mode selected for instrument
+			empty  						// empty BundleInfo
+		);
     }
 
 	// generate source code comments
@@ -189,19 +191,23 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 		controlModeGroup = group;
 	} else {
 		// FIXME: will become logic error once we get nrGroups right
-		QL_JSON_FATAL("instrument '" << ic.ii.instrumentName
-								  << "' uses " << nrGroups
-								  << " groups, but control mode '" << ic.refControlMode
-								  << "' only defines " << ic.controlModeGroupCnt
-								  << " groups in 'control_bits'");
+		QL_JSON_FATAL(
+			"instrument '" << ic.ii.instrumentName
+			<< "' uses " << nrGroups
+			<< " groups, but control mode '" << ic.refControlMode
+			<< "' only defines " << ic.controlModeGroupCnt
+			<< " groups in 'control_bits'"
+		);
 	}
 
 	// get number of control bits for group
 	const Json &groupControlBits = ic.controlMode["control_bits"][controlModeGroup];    // NB: tests above guarantee existence
-	QL_DOUT("instrumentName=" << ic.ii.instrumentName
-						   << ", slot=" << ic.ii.slot
-						   << ", control mode group=" << controlModeGroup
-						   << ", group control bits: " << groupControlBits);
+	QL_DOUT(
+		"instrumentName=" << ic.ii.instrumentName
+		<< ", slot=" << ic.ii.slot
+		<< ", control mode group=" << controlModeGroup
+		<< ", group control bits: " << groupControlBits
+	);
 	size_t nrGroupControlBits = groupControlBits.size();
 
 
@@ -233,15 +239,19 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 			if(codeword & (1<<codeWordBit)) ret.groupDigOut |= 1<<(int)groupControlBits[idx];
 		}
 
-		ret.comment = QL_SS2S("  # slot=" << ic.ii.slot
-									   << ", instrument='" << ic.ii.instrumentName << "'"
-									   << ", group=" << group
-									   << ": codeword=" << codeword
-									   << std::string(codewordOverriden ? " (static override)" : "")
-									   << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << ret.groupDigOut);
+		ret.comment = QL_SS2S(
+			"  # slot=" << ic.ii.slot
+			<< ", instrument='" << ic.ii.instrumentName << "'"
+			<< ", group=" << group
+			<< ": codeword=" << codeword
+			<< std::string(codewordOverriden ? " (static override)" : "")
+			<< ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << ret.groupDigOut
+		);
 	} else {    // nrGroupControlBits < 1
-		QL_JSON_FATAL("key 'control_bits' empty for group " << controlModeGroup
-					<< " on instrument '" << ic.ii.instrumentName << "'");
+		QL_JSON_FATAL(
+			"key 'control_bits' empty for group " << controlModeGroup
+			<< " on instrument '" << ic.ii.instrumentName << "'"
+		);
 	}
 
 	// add trigger to digOut
@@ -260,11 +270,13 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 		ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][group];
 #endif
 	} else {
-		QL_JSON_FATAL("instrument '" << ic.ii.instrumentName
-								  << "' uses " << nrGroups
-								  << " groups, but control mode '" << ic.refControlMode
-								  << "' defines " << nrTriggerBits
-								  << " trigger bits in 'trigger_bits' (must be 1 or #groups)");
+		QL_JSON_FATAL(
+			"instrument '" << ic.ii.instrumentName
+			<< "' uses " << nrGroups
+			<< " groups, but control mode '" << ic.refControlMode
+			<< "' defines " << nrTriggerBits
+			<< " trigger bits in 'trigger_bits' (must be 1 or #groups)"
+		);
 	} // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG requires 2 trigger bits
 
 	return ret;
@@ -285,8 +297,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
     	// get control info from instrument settings
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
         if(ic.ii.slot >= MAX_SLOTS) {
-            QL_JSON_FATAL("illegal slot " << ic.ii.slot <<
-                       " on instrument '" << ic.ii.instrumentName);
+            QL_JSON_FATAL(
+            	"illegal slot " << ic.ii.slot
+            	<< " on instrument '" << ic.ii.instrumentName
+			);
         }
 
 		/************************************************************************\
@@ -426,8 +440,12 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			int totalWait = 1 + settings.getReadoutWait();	// 1 because of 'seq_in' that is also generated, Yuk
 			if(instrMaxDurationInCycles <= totalWait) {
 		        showCodeSoFar();
-				QL_FATAL("instrMaxDurationInCycles " << instrMaxDurationInCycles << " smaller than totalWait " << totalWait <<
-												"(instrIdx=" << instrIdx << ", startCycle=" << startCycle << ")");
+				QL_FATAL(
+					"instrMaxDurationInCycles " << instrMaxDurationInCycles
+					<< " smaller than totalWait " << totalWait
+					<< "(instrIdx=" << instrIdx
+					<< ", startCycle=" << startCycle << ")"
+				);
 			}
 			instrMaxDurationInCycles -= totalWait;	// adjust gate duration (Ugh)
 		}
@@ -481,14 +499,15 @@ std::string toQasm(const std::string &iname, const Vec<UInt> &operands, const Ve
 // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
 // Does not deal with the control mode and digital interface of the instrument.
 void codegen_cc::customGate(
-		const std::string &iname,
-		const Vec<UInt> &operands,
-		const Vec<UInt> &creg_operands,
-		const Vec<UInt> &breg_operands,
-		cond_type_t condition,
-		const Vec<UInt> &cond_operands,
-		double angle,
-		size_t startCycle, size_t durationInCycles)
+	const std::string &iname,
+	const Vec<UInt> &operands,
+	const Vec<UInt> &creg_operands,
+	const Vec<UInt> &breg_operands,
+	cond_type_t condition,
+	const Vec<UInt> &cond_operands,
+	double angle,
+	size_t startCycle, size_t durationInCycles
+)
 {
 #if 0   // FIXME: test for angle parameter
     if(angle != 0.0) {
@@ -513,14 +532,21 @@ void codegen_cc::customGate(
 		 * 		- breg result (new)
     	 */
 
+		// operand checks. FIXME: move
 		if(operands.size() != 1) {
-			QL_FATAL("Readout instruction requires exactly 1 quantum operand, not " << operands.size());   // FIXME: provide context
+			QL_FATAL(
+				"Readout instruction '" << toQasm(iname, operands, breg_operands)
+				<< "' requires exactly 1 quantum operand, not " << operands.size()
+			);
 		}
     	if(!creg_operands.empty()) {
-            QL_FATAL("Using Creg as measurement target is deprecated");   // FIXME: provide context, move check
+            QL_FATAL("Using Creg as measurement target is deprecated, use new bit registers");
 		}
         if(breg_operands.size() > 1) {
-            QL_FATAL("Readout instruction requires 0 or 1 bit operands, not " << breg_operands.size());   // FIXME: provide context, move check
+            QL_FATAL(
+            	"Readout instruction '" << toQasm(iname, operands, breg_operands)
+            	<< "' requires 0 or 1 bit operands, not " << breg_operands.size()
+			);
 		}
 
 		comment(std::string(" # READOUT: '") + toQasm(iname, operands, breg_operands) + "'");
@@ -551,10 +577,12 @@ void codegen_cc::customGate(
             // do nothing
         } else {
         	showCodeSoFar();
-            QL_FATAL("Signal conflict on instrument='" << csv.si.ic.ii.instrumentName <<
-                  "', group=" << csv.si.group <<
-                  ", between '" << bi->signalValue <<
-                  "' and '" << csv.signalValueString << "'");               // FIXME: add offending instruction
+            QL_FATAL(
+            	"Signal conflict on instrument='" << csv.si.ic.ii.instrumentName
+            	<< "', group=" << csv.si.group
+            	<< ", between '" << bi->signalValue
+            	<< "' and '" << csv.signalValueString << "'"
+			);  // FIXME: add offending instruction
         }
 
         // store signal duration
@@ -725,21 +753,24 @@ void codegen_cc::emitProgramStart()
 
 void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, unsigned int instrMaxDurationInCycles, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
 {
-	comment(QL_SS2S("  # slot=" << slot
-								<< ", instrument='" << instrumentName << "'"
-								<< ": lastEndCycle=" << lastEndCycle[instrIdx]
-								<< ", startCycle=" << startCycle
-								<< ", instrMaxDurationInCycles=" << instrMaxDurationInCycles
-			));
+	comment(QL_SS2S(
+		"  # slot=" << slot
+		<< ", instrument='" << instrumentName << "'"
+		<< ": lastEndCycle=" << lastEndCycle[instrIdx]
+		<< ", startCycle=" << startCycle
+		<< ", instrMaxDurationInCycles=" << instrMaxDurationInCycles
+	));
 
 	padToCycle(instrIdx, startCycle, slot, instrumentName);
 
 	// emit code for slot output
 	if(condGateMap.empty()) {	// all groups unconditional
-		emit(slot,
-			 "seq_out",
-			 QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << instrMaxDurationInCycles),
-			 QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": code word/mask on '" << instrumentName + "'"));
+		emit(
+			slot,
+			"seq_out",
+			QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << instrMaxDurationInCycles),
+			QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": code word/mask on '" << instrumentName + "'")
+		);
 	} else {	// some group conditional
 		// configure datapath PL
 		int smAddr = 0;		// FIXME:
@@ -759,19 +790,23 @@ void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, uns
 					int smBit0 = 0;
 					int smBit1 = 0;
 					std::string expression;	// gtPlExpression(cgi.condition, cgi.cond_operands);
-					dp.emit(slot,
-							QL_SS2S("O[" << bit << "] := I[" << smBit0 << "]"),		// FIXME: depend on condition
-							QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", expression=" << expression));
+					dp.emit(
+						slot,
+						QL_SS2S("O[" << bit << "] := I[" << smBit0 << "]"),		// FIXME: depend on condition
+						QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", expression=" << expression)
+					);
 				}
 			}
 #endif
 		}
 
 		// emit code for conditional gate
-		emit(slot,
-			 "seq_out_sm",
-			 QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
-			 QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": consitional code word/mask on '" << instrumentName << "'"));
+		emit(
+			slot,
+			"seq_out_sm",
+			QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
+			QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": consitional code word/mask on '" << instrumentName << "'")
+		);
 		// FIXME
 	}
 
@@ -828,19 +863,23 @@ void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size
 			int group = readout.first;
 			tReadoutInfo ri = readout.second;
 
-			dp.emit(slot,
-					QL_SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
-					QL_SS2S("# cop " /*FIXME << ri.bi->creg_operands[0]*/ << " = readout(q" << ri.bi->operands[0] << ")"));
+			dp.emit(
+				slot,
+				QL_SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
+				QL_SS2S("# cop " /*FIXME << ri.bi->creg_operands[0]*/ << " = readout(q" << ri.bi->operands[0] << ")")
+			);
 
 			int mySmAddr = ri.smBit/8;	// byte addressable
 		}
 
 		// emit code for slot input
 		int sizeTag = datapath_cc::getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
-		emit(slot,
+		emit(
+			slot,
 			"seq_in_sm",
 			QL_SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
-			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": readout on '" << instrumentName+"'"));
+			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": readout on '" << instrumentName+"'")
+		);
 		lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
 	} else {
 		// FIXME:
@@ -848,10 +887,12 @@ void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size
 		int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
 
 		// emit code for non-participating instrument
-		emit(slot,
+		emit(
+			slot,
 			"seq_inv_sm",
 			QL_SS2S("S" << smAddr << ","  << smTotalSize),
-			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": invalidate SM on '" << instrumentName+"'"));
+			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": invalidate SM on '" << instrumentName+"'")
+		);
 		lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
 	}
 
@@ -860,7 +901,8 @@ void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size
 	emit(slot,
 		"seq_wait",
 		QL_SS2S(readoutWait),
-		QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+readoutWait << ": wait for instrument latency and DSM data distribution on '" << instrumentName+"'"));
+		QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+readoutWait << ": wait for instrument latency and DSM data distribution on '" << instrumentName+"'")
+	);
 
 	// update lastEndCycle
 	lastEndCycle[instrIdx] += readoutWait;	// FIXME: this time has not been scheduled, but is interjected here at the backend level
@@ -874,18 +916,22 @@ void codegen_cc::padToCycle(size_t instrIdx, size_t startCycle, int slot, const 
     if(prePadding < 0) {
         QL_EOUT("Inconsistency detected in bundle contents: printing code generated so far");
         showCodeSoFar();
-        QL_FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
-              ", startCycle=" << startCycle <<
-              ", lastEndCycle=" << lastEndCycle[instrIdx] <<
-              ", instrumentName='" << instrumentName << "'" <<
-              ", instrIdx=" << instrIdx);
+        QL_FATAL(
+        	"Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding
+        	<< ", startCycle=" << startCycle
+        	<< ", lastEndCycle=" << lastEndCycle[instrIdx]
+        	<< ", instrumentName='" << instrumentName << "'"
+        	<< ", instrIdx=" << instrIdx
+		);
     }
 
     if(prePadding > 0) {     // we need to align
-        emit(slot,
+        emit(
+        	slot,
             "seq_wait",
             QL_SS2S(prePadding),
-            QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << startCycle << ": padding on '" << instrumentName+"'"));
+            QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << startCycle << ": padding on '" << instrumentName+"'")
+		);
     }
 
     // update lastEndCycle
@@ -905,10 +951,12 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     // get the operand index & qubit to work on
     ret.operandIdx = json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
     if(ret.operandIdx >= operands.size()) {
-        QL_JSON_FATAL("instruction '" << iname <<
-									  "': illegal operand number " << ret.operandIdx <<
-									  "' exceeds expected maximum of " << operands.size() - 1 <<
-									  "(edit JSON, or provide enough parameters)");                 // FIXME: add offending statement
+        QL_JSON_FATAL(
+        	"instruction '" << iname
+        	<< "': illegal operand number " << ret.operandIdx
+        	<< "' exceeds expected maximum of " << operands.size() - 1
+        	<< "(edit JSON, or provide enough parameters)"
+		); // FIXME: add offending statement
     }
     unsigned int qubit = operands[ret.operandIdx];
 
@@ -930,11 +978,13 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     // verify signal dimensions
     size_t channelsPergroup = ret.si.ic.controlModeGroupSize;
     if(instructionSignalValue.size() != channelsPergroup) {
-        QL_JSON_FATAL("signal dimension mismatch on instruction '" << iname <<
-                   "' : control mode '" << ret.si.ic.refControlMode <<
-                   "' requires " <<  channelsPergroup <<
-                   " signals, but signal '" << signalSPath+"/value" <<
-                   "' provides " << instructionSignalValue.size());
+        QL_JSON_FATAL(
+        	"signal dimension mismatch on instruction '" << iname
+        	<< "' : control mode '" << ret.si.ic.refControlMode
+        	<< "' requires " <<  channelsPergroup
+        	<< " signals, but signal '" << signalSPath+"/value"
+        	<< "' provides " << instructionSignalValue.size()
+		);
     }
 
     // expand macros
@@ -948,11 +998,12 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
 
     // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
 
-    comment(QL_SS2S("  # slot=" << ret.si.ic.ii.slot
-            << ", instrument='" << ret.si.ic.ii.instrumentName << "'"
-            << ", group=" << ret.si.group
-            << "': signalValue='" << ret.signalValueString << "'"
-            ));
+    comment(QL_SS2S(
+    	"  # slot=" << ret.si.ic.ii.slot
+		<< ", instrument='" << ret.si.ic.ii.instrumentName << "'"
+		<< ", group=" << ret.si.group
+		<< "': signalValue='" << ret.signalValueString << "'"
+	));
 
     return ret;
 }

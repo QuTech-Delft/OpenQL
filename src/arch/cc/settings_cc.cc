@@ -119,8 +119,11 @@ settings_cc::tSignalDef settings_cc::findSignalDefinition(const Json &instructio
         std::string refSignal = instruction["cc"]["ref_signal"];
         ret.signal = (*jsonSignals)[refSignal];                                 // poor man's JSON pointer
         if(ret.signal.empty()) {
-            QL_JSON_FATAL("instruction '" << iname <<
-            			  "': ref_signal '" << refSignal << "' does not resolve");
+            QL_JSON_FATAL(
+            	"instruction '" << iname
+            	<< "': ref_signal '" << refSignal
+            	<< "' does not resolve"
+			);
         }
         ret.path = "signals/"+refSignal;
     } else {                                                                    // alternative syntax: "signal"
@@ -238,10 +241,12 @@ settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &
             // verify group size: qubits vs. control mode
             size_t qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
             if(qubitGroupCnt != ic.controlModeGroupCnt) {
-                QL_JSON_FATAL("instrument " << ic.ii.instrumentName <<
-                                            ": number of qubit groups " << qubitGroupCnt <<
-                                            " does not match number of control_bits groups " << ic.controlModeGroupCnt <<
-                                            " of selected control mode '" << ic.refControlMode << "'");
+                QL_JSON_FATAL(
+                	"instrument " << ic.ii.instrumentName
+                	<< ": number of qubit groups " << qubitGroupCnt
+                	<< " does not match number of control_bits groups " << ic.controlModeGroupCnt
+                	<< " of selected control mode '" << ic.refControlMode << "'"
+				);
             }
 
             // anyone connected to qubit?
@@ -250,11 +255,12 @@ settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &
                     if(qubits[group][idx] == qubit) {
                         qubitFound = true;                                      // also: stop searching
 
-                        QL_DOUT("qubit " << qubit
-                                         << " signal type '" << instructionSignalType
-                                         << "' driven by instrument '" << ic.ii.instrumentName
-                                         << "' group " << group
-                             );
+                        QL_DOUT(
+                        	"qubit " << qubit
+							<< " signal type '" << instructionSignalType
+							<< "' driven by instrument '" << ic.ii.instrumentName
+							<< "' group " << group
+						);
 
                         ret.ic = ic;
                         ret.instrIdx = instrIdx;
@@ -301,14 +307,18 @@ int settings_cc::findStaticCodewordOverride(const Json &instruction, size_t oper
  #else
         staticCodewordOverride = instruction["cc"]["static_codeword_override"];
  #endif
-        QL_DOUT("Found static_codeword_override=" << staticCodewordOverride <<
-                                                  " for instruction '" << iname <<
-                                                  "', operand index " << operandIdx);
+        QL_DOUT(
+        	"Found static_codeword_override=" << staticCodewordOverride
+        	<< " for instruction '" << iname
+        	<< "', operand index " << operandIdx
+		);
     }
  #if 1 // FIXME: require override
     if(staticCodewordOverride < 0) {
-        QL_JSON_FATAL("No static codeword defined for instruction '" << iname <<
-                                                                     "' (we currently require it because automatic assignment is disabled)");
+        QL_JSON_FATAL(
+        	"No static codeword defined for instruction '" << iname
+        	<< "' (we currently require it because automatic assignment is disabled)"
+		);
     }
  #endif
     return staticCodewordOverride;

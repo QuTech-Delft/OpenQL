@@ -311,7 +311,8 @@ void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_plat
                             	instr->condition,
                             	instr->cond_operands,		// 0, 1 or 2 bit operands of condition
 							   	instr->angle,
-							   	bundle.start_cycle, platform.time_to_cycles(instr->duration));
+							   	bundle.start_cycle, platform.time_to_cycles(instr->duration)
+							);
                             break;
 
                         case __display__:
