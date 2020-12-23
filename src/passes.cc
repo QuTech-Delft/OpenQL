@@ -89,12 +89,14 @@ Bool AbstractPass::getSkip() const {
  * @brief   Initializes the pass by printing useful information
  */
 void AbstractPass::initPass(quantum_program *program) {
+    QL_DOUT("initPass of " << getPassName() << " on program " << program->name);
     if (getPassOptions()->getOption("write_qasm_files") == "yes") {
         //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         Str writeQasmLocal = options::get("write_qasm_files");
         options::set("write_qasm_files", "yes");
 
+        QL_DOUT("initPass of " << getPassName() << " write_qasm_files option was yes for pass");
         report_qasm(program, program->platform, "in", getPassName());
 
         options::set("write_qasm_files", writeQasmLocal);
@@ -106,6 +108,7 @@ void AbstractPass::initPass(quantum_program *program) {
         Str writeReportLocal = options::get("write_report_files");
         options::set("write_report_files", "yes");
 
+        QL_DOUT("initPass of " << getPassName() << " write_report_files option was yes for pass");
         report_statistics(program, program->platform, "in", getPassName(), "# ");
 
         options::set("write_report_files", writeReportLocal);
@@ -116,12 +119,14 @@ void AbstractPass::initPass(quantum_program *program) {
  * @brief   Finilazes the pass by printing useful information and cleaning
  */
 void AbstractPass::finalizePass(quantum_program *program) {
+    QL_DOUT("finalizePass of " << getPassName() << " on program " << program->name);
     if (getPassOptions()->getOption("write_qasm_files") == "yes") {
         //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         Str writeQasmLocal = options::get("write_qasm_files");
         options::set("write_qasm_files", "yes");
 
+        QL_DOUT("finalizePass of " << getPassName() << " write_qasm_files option was yes for pass");
         report_qasm(program, program->platform, "out", getPassName());
 
         options::set("write_qasm_files", writeQasmLocal);
@@ -133,6 +138,7 @@ void AbstractPass::finalizePass(quantum_program *program) {
         Str writeReportLocal = options::get("write_report_files");
         options::set("write_report_files", "yes");
 
+        QL_DOUT("finalizePass of " << getPassName() << " write_report_files option was yes for pass");
         report_statistics(program, program->platform, "out", getPassName(), "# ", getPassStatistics());
 
         options::set("write_report_files", writeReportLocal);
@@ -283,12 +289,12 @@ BackendCompilerPass::BackendCompilerPass(const Str &name) : AbstractPass(name) {
  */
 void BackendCompilerPass::runOnProgram(quantum_program *program) {
     QL_DOUT("run BackendCompilerPass with name = " << getPassName() << " on program " << program->name);
-
+    
     Opt<eqasm_compiler> backend_compiler;
-
+    
     Str eqasm_compiler_name = program->platform.eqasm_compiler_name;
     //getPassOptions()->getOption("eqasm_compiler_name");
-
+    
     if (eqasm_compiler_name == "cc_light_compiler") {
         backend_compiler.emplace<arch::cc_light_eqasm_compiler>();
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
@@ -296,14 +302,14 @@ void BackendCompilerPass::runOnProgram(quantum_program *program) {
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
-
+    
     ///@todo-rn: Decide how to construct backend:
     // 1) we can run backend as one big composite engine, e.g.,
     //assert(backend_compiler);
     backend_compiler->compile(program, program->platform); //called here
     // OR
     // 2) in the user program add one for one individual backed passes.
-
+    
     backend_compiler.reset();
 }
 

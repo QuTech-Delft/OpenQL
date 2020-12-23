@@ -472,7 +472,9 @@ public:
         const utils::Vec<utils::UInt> &cregs = {},
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
-        const utils::Vec<utils::UInt> &bregs = {}
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t gcond = cond_always,
+        const utils::Vec<utils::UInt> &gcondregs = {}
     ) const;
 
     // return number of swaps added to this past

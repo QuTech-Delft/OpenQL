@@ -27,7 +27,7 @@ using namespace utils;
 quantum_kernel::quantum_kernel(const Str &name) :
     name(name), iterations(1), type(kernel_type_t::STATIC)
 {
-    cond_condition = cond_always;
+    condition = cond_always;
 }
 
 quantum_kernel::quantum_kernel(
@@ -47,7 +47,7 @@ quantum_kernel::quantum_kernel(
     instruction_map = platform.instruction_map;
     cycle_time = platform.cycle_time;
     cycles_valid = true;
-    cond_condition = cond_always;
+    condition = cond_always;
     // FIXME: check qubit_count and creg_count against platform
     // FIXME: what is the reason we can specify qubit_count and creg_count here anyway
 }
@@ -109,16 +109,22 @@ void quantum_kernel::h(UInt qubit) {
 
 void quantum_kernel::rx(UInt qubit, Real angle) {
     c.push_back(new ql::rx(qubit,angle));
+    c.back()->condition = condition;
+    c.back()->cond_operands = cond_operands;;
     cycles_valid = false;
 }
 
 void quantum_kernel::ry(UInt qubit, Real angle) {
     c.push_back(new ql::ry(qubit,angle));
+    c.back()->condition = condition;
+    c.back()->cond_operands = cond_operands;;
     cycles_valid = false;
 }
 
 void quantum_kernel::rz(UInt qubit, Real angle) {
     c.push_back(new ql::rz(qubit,angle));
+    c.back()->condition = condition;
+    c.back()->cond_operands = cond_operands;;
     cycles_valid = false;
 }
 
@@ -201,6 +207,8 @@ void quantum_kernel::cphase(UInt qubit1, UInt qubit2) {
 void quantum_kernel::toffoli(UInt qubit1, UInt qubit2, UInt qubit3) {
     // TODO add custom gate check if needed
     c.push_back(new ql::toffoli(qubit1, qubit2, qubit3));
+    c.back()->condition = condition;
+    c.back()->cond_operands = cond_operands;;
     cycles_valid = false;
 }
 
@@ -323,8 +331,8 @@ Bool quantum_kernel::add_default_gate_if_available(
     UInt duration,
     Real angle,
     const Vec<UInt> &bregs,
-    cond_type_t cond,
-    const Vec<UInt> &condregs
+    cond_type_t gcond,
+    const Vec<UInt> &gcondregs
 ) {
     Bool result = false;
 
@@ -345,6 +353,7 @@ Bool quantum_kernel::add_default_gate_if_available(
 
     Bool is_multi_qubit_gate = (gname == "toffoli")
                                || (gname == "wait") || (gname == "barrier");
+    Bool is_non_conditional_gate = (gname == "wait") || (gname == "barrier");
 
     if (is_one_qubit_gate) {
         if (qubits.size() != 1) {
@@ -474,8 +483,14 @@ Bool quantum_kernel::add_default_gate_if_available(
 
     if (result) {
         c.back()->breg_operands = bregs;
-        c.back()->condition = cond;
-        c.back()->cond_operands = condregs;
+        if (gcond != cond_always && is_non_conditional_gate ) {
+            QL_WOUT("Condition " << gcond << " on default gate '" << gname << "' specified while gate cannot be executed conditionally; condition will be ignored");
+            c.back()->condition = cond_always;
+            c.back()->cond_operands = {};
+        } else {
+            c.back()->condition = gcond;
+            c.back()->cond_operands = gcondregs;
+        }
         cycles_valid = false;
     }
 
@@ -493,8 +508,8 @@ Bool quantum_kernel::add_custom_gate_if_available(
     UInt duration,
     Real angle,
     const Vec<UInt> &bregs,
-    cond_type_t cond,
-    const Vec<UInt> &condregs
+    cond_type_t gcond,
+    const Vec<UInt> &gcondregs
 ) {
 #if OPT_DECOMPOSE_WAIT_BARRIER  // hack to skip wait/barrier
     if (gname=="wait" || gname=="barrier") {
@@ -536,8 +551,8 @@ Bool quantum_kernel::add_custom_gate_if_available(
         g->duration = duration;
     }
     g->angle = angle;
-    g->condition = cond;
-    g->cond_operands = condregs;
+    g->condition = gcond;
+    g->cond_operands = gcondregs;
     c.push_back(g);
 
     QL_DOUT("custom gate added for " << gname);
@@ -577,8 +592,8 @@ Bool quantum_kernel::add_spec_decomposed_gate_if_available(
     const Vec<UInt> &all_qubits,
     const Vec<UInt> &cregs,
     const Vec<UInt> &bregs,
-    cond_type_t cond,
-    const Vec<UInt> &condregs
+    cond_type_t gcond,
+    const Vec<UInt> &gcondregs
 ) {
     Bool added = false;
     QL_DOUT("Checking if specialized decomposition is available for " << gate_name);
@@ -636,12 +651,12 @@ Bool quantum_kernel::add_spec_decomposed_gate_if_available(
 
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-            Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
+            Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, gcond, gcondregs);
             if (!custom_added) {
                 if (options::get("use_default_gates") == "yes") {
                     // default gate check
                     QL_DOUT("adding default gate for " << sub_ins_name);
-                    Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
+                    Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, gcond, gcondregs);
                     if (default_available) {
                         QL_DOUT("added default gate '" << sub_ins_name << "' with qubits " << this_gate_qubits); // // NB: changed WOUT to DOUT, since this is common for 'barrier', spamming log
                     } else {
@@ -673,8 +688,8 @@ Bool quantum_kernel::add_param_decomposed_gate_if_available(
     const Vec<UInt> &all_qubits,
     const Vec<UInt> &cregs,
     const Vec<UInt> &bregs,
-    cond_type_t cond,
-    const Vec<UInt> &condregs
+    cond_type_t gcond,
+    const Vec<UInt> &gcondregs
 ) {
     Bool added = false;
     QL_DOUT("Checking if parameterized composite gate is available for " << gate_name);
@@ -734,12 +749,12 @@ Bool quantum_kernel::add_param_decomposed_gate_if_available(
             // FIXME: following code block exists several times in this file
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-            Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
+            Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, gcond, gcondregs);
             if (!custom_added) {
                 if (options::get("use_default_gates") == "yes") {
                     // default gate check
                     QL_DOUT("adding default gate for " << sub_ins_name);
-                    Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, cond, condregs);
+                    Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, gcond, gcondregs);
                     if (default_available) {
                         QL_WOUT("added default gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
                     } else {
@@ -768,9 +783,11 @@ void quantum_kernel::gate(const Str &gname, UInt q0, UInt q1) {
 }
 
 /**
- * custom gate with arbitrary number of operands
- * check qubit/creg indices against platform parameters; fail fatally if an index is out of range
- * find matching gate in kernel's and platform's gate_definition; when no match, fail
+ * general user-level gate creation with any combination of operands
+ *
+ * check argument register indices against platform parameters; fail fatally if an index is out of range
+ * add implicit arguments if absent (used when no register argument means all registers)
+ * find matching gate in kernel's and platform's gate_definition (custom or default); when no match, fail
  * return the gate (or its decomposition) by appending it to kernel.c, the current kernel's circuit
  */
 void quantum_kernel::gate(
@@ -780,10 +797,10 @@ void quantum_kernel::gate(
     UInt duration,
     Real angle,
     const Vec<UInt> &bregs,
-    cond_type_t cond,
-    const Vec<UInt> &condregs
+    cond_type_t gcond,
+    const Vec<UInt> &gcondregs
 ) {
-    QL_DOUT("gate:" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" cond=" << cond <<" condregs=" << condregs);
+    QL_DOUT("gate:" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" gcond=" << gcond <<" gcondregs=" << gcondregs);
 
     for (auto &qno : qubits) {
         if (qno >= qubit_count) {
@@ -800,40 +817,44 @@ void quantum_kernel::gate(
             QL_FATAL("Out of range operand(s) for '" << gname << "' with bregs " << bregs);
         }
     }
-    if (!gate::is_valid_cond(cond, condregs)) {
-        QL_FATAL("Condition " << cond << " of '" << gname << "' incompatible with condregs " << condregs);
+    if (!gate::is_valid_cond(gcond, gcondregs)) {
+        QL_FATAL("Condition " << gcond << " of '" << gname << "' incompatible with gcondregs " << gcondregs);
     }
-    for (auto &cbno : condregs) {
+    for (auto &cbno : gcondregs) {
         if (cbno >= breg_count) {
-            QL_FATAL("Out of range condition operand(s) for '" << gname << "' with condregs " << condregs);
+            QL_FATAL("Out of range condition operand(s) for '" << gname << "' with gcondregs " << gcondregs);
         }
     }
     auto lqubits = qubits;
     auto lcregs = cregs;
     auto lbregs = bregs;
-    gate_add_implicits(gname, lqubits, lcregs, duration, angle, lbregs, cond, condregs);
-    if (!gate_nonfatal(gname, lqubits, lcregs, duration, angle, lbregs, cond, condregs)) {
+    gate_add_implicits(gname, lqubits, lcregs, duration, angle, lbregs, gcond, gcondregs);
+    if (!gate_nonfatal(gname, lqubits, lcregs, duration, angle, lbregs, gcond, gcondregs)) {
         QL_FATAL("Unknown gate '" << gname << "' with qubits " << lqubits);
     }
 }
 
 /**
  * preset condition to make all future created gates conditional gates with this condition
- * preset ends when cleared (back to (cond_always, {});
- * useful in combination with higher-level gate creation interfaces and when decomposing inside the compiler
+ * preset ends when cleared: back to {cond_always, {}};
+ * useful in combination with higher-level gate creation interfaces
+ * that don't support adding a condition for conditional execution
  */
 void quantum_kernel::gate_preset_condition(
-    cond_type_t cond,
-    const utils::Vec<utils::UInt> &condregs
+    cond_type_t gcond,
+    const utils::Vec<utils::UInt> &gcondregs
 ) {
-    if (!gate::is_valid_cond(cond, condregs)) {
-        QL_FATAL("Condition " << cond << " of gate_preset_condition incompatible with condregs " << condregs);
+    if (!gate::is_valid_cond(gcond, gcondregs)) {
+        QL_FATAL("Condition " << gcond << " of gate_preset_condition incompatible with gcondregs " << gcondregs);
     }
-    QL_DOUT("Gate_preset_condition: setting cond_condition=" << cond_condition << " cond_operands=" << cond_operands);
-    cond_condition = cond;
-    cond_operands = condregs;
+    QL_DOUT("Gate_preset_condition: setting condition=" << condition << " cond_operands=" << cond_operands);
+    condition = gcond;
+    cond_operands = gcondregs;
 }
 
+/**
+ * clear preset condition again
+ */
 void quantum_kernel::gate_clear_condition() {
     gate_preset_condition(cond_always, {});
 }
@@ -848,15 +869,15 @@ void quantum_kernel::gate_add_implicits(
     UInt &duration,
     Real &angle,
     Vec<UInt> &bregs,
-    cond_type_t &cond,
-    const Vec<UInt> &condregs
+    cond_type_t &gcond,
+    const Vec<UInt> &gcondregs
 ) {
     if (gname == "measure" || gname == "measx" || gname == "measz") {
-        QL_DOUT("gate_add_implicits:" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" cond=" << cond <<" condregs=" << condregs);
+        QL_DOUT("gate_add_implicits:" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" gcond=" << gcond <<" gcondregs=" << gcondregs);
         if (bregs.size() == 0 && qubits[0] < breg_count) {
             bregs.push_back(qubits[0]);
         }
-        QL_DOUT("gate_add_implicits (after):" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" cond=" << cond <<" condregs=" << condregs);
+        QL_DOUT("gate_add_implicits (after):" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" gcond=" << gcond <<" gcondregs=" << gcondregs);
     }
 }
 
@@ -871,17 +892,21 @@ Bool quantum_kernel::gate_nonfatal(
     UInt duration,
     Real angle,
     const Vec<UInt> &bregs,
-    cond_type_t cond,
-    const Vec<UInt> &condregs
+    cond_type_t gcond,
+    const Vec<UInt> &gcondregs
 ) {
-    Vec<UInt> lcondregs = condregs;
+    Vec<UInt> lcondregs = gcondregs;
 
-    // check and impose preset condition if any
-    if (cond != cond_always && cond_condition != cond_always) {
-        QL_FATAL("Condition " << cond << " of '" << gname << "' specified while a condition was already preset");
-    }
-    if (cond_condition != cond_always) {
-        cond = cond_condition;
+    // check and impose kernel's preset condition if any
+    if (condition != cond_always && ( condition != gcond || cond_operands != gcondregs)) {
+        // a non-trivial condition, different from the current condition argument (gcond/gcondregs),
+        // was preset in the kernel to be imposed on all subsequently created gates
+        // if the condition argument is also non-trivial, there is a clash (but we could also take the intersection)
+        if (gcond != cond_always) {
+            QL_FATAL("Condition " << gcond << " for '" << gname << "' specified while a different non-trivial condition was already preset");
+        }
+        // impose kernel's preset condition
+        gcond = condition;
         lcondregs = cond_operands;
     }
 
@@ -893,21 +918,21 @@ Bool quantum_kernel::gate_nonfatal(
     // if not, check if a default gate is available
     // if not, then error
 
-    QL_DOUT("Gate_nonfatal:" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" cond=" << cond <<" condregs=" << condregs);
+    QL_DOUT("Gate_nonfatal:" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" gcond=" << gcond <<" gcondregs=" << gcondregs);
 
     auto gname_lower = to_lower(gname);
     QL_DOUT("Adding gate : " << gname_lower << " with qubits " << qubits);
 
     // specialized composite gate check
     QL_DOUT("trying to add specialized composite gate for: " << gname_lower);
-    Bool spec_decom_added = add_spec_decomposed_gate_if_available(gname_lower, qubits, cregs, bregs, cond, lcondregs);
+    Bool spec_decom_added = add_spec_decomposed_gate_if_available(gname_lower, qubits, cregs, bregs, gcond, lcondregs);
     if (spec_decom_added) {
         added = true;
         QL_DOUT("specialized decomposed gates added for " << gname_lower);
     } else {
         // parameterized composite gate check
         QL_DOUT("trying to add parameterized composite gate for: " << gname_lower);
-        Bool param_decom_added = add_param_decomposed_gate_if_available(gname_lower, qubits, cregs, bregs, cond, lcondregs);
+        Bool param_decom_added = add_param_decomposed_gate_if_available(gname_lower, qubits, cregs, bregs, gcond, lcondregs);
         if (param_decom_added) {
             added = true;
             QL_DOUT("decomposed gates added for " << gname_lower);
@@ -915,7 +940,7 @@ Bool quantum_kernel::gate_nonfatal(
             // specialized/parameterized custom gate check
             QL_DOUT("adding custom gate for " << gname_lower);
             // when found, custom_added is true, and the gate was added to the circuit
-            Bool custom_added = add_custom_gate_if_available(gname_lower, qubits, cregs, duration, angle, bregs, cond, lcondregs);
+            Bool custom_added = add_custom_gate_if_available(gname_lower, qubits, cregs, duration, angle, bregs, gcond, lcondregs);
             if (custom_added) {
                 added = true;
                 QL_DOUT("custom gate added for " << gname_lower);
@@ -924,7 +949,7 @@ Bool quantum_kernel::gate_nonfatal(
                     // default gate check (which is always parameterized)
                     QL_DOUT("adding default gate for " << gname_lower);
 
-                    Bool default_available = add_default_gate_if_available(gname_lower, qubits, cregs, duration, angle, bregs, cond, lcondregs);
+                    Bool default_available = add_default_gate_if_available(gname_lower, qubits, cregs, duration, angle, bregs, gcond, lcondregs);
                     if (default_available) {
                         added = true;
                         QL_DOUT("default gate added for " << gname_lower);   // FIXME: used to be WOUT, but that gives a warning for every "wait" and spams the log
