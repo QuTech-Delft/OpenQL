@@ -192,7 +192,7 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 	} else if(group < ic.controlModeGroupCnt) {                 // normal mode: group selects control group
 		controlModeGroup = group;
 	} else {
-		// FIXME: will become logic error once we get nrGroups right
+		// NB: this actually an error in program logic
 		QL_JSON_FATAL(
 			"instrument '" << ic.ii.instrumentName
 			<< "' uses " << nrGroups
@@ -279,7 +279,7 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 			<< "' defines " << nrTriggerBits
 			<< " trigger bits in 'trigger_bits' (must be 1 or #groups)"
 		);
-	} // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG requires 2 trigger bits
+	}
 
 	return ret;
 }
@@ -531,7 +531,6 @@ void codegen_cc::customGate(
 
 #if OPT_FEEDBACK
         // FIXME: assumes that group configuration for readout input matches that of output
-        // FIXME: not reached if we don't define signals, so here we need output, whereas bundleFinish doesn't
 		// store operands used for readout, actual work is postponed to bundleFinish()
         if(isReadout) {
 			/*
@@ -545,7 +544,7 @@ void codegen_cc::customGate(
 			 * 		- breg result (new)
 			 */
 
-			// operand checks. FIXME: move
+			// operand checks
 			if(operands.size() != 1) {
 				QL_FATAL(
 					"Readout instruction '" << toQasm(iname, operands, breg_operands)
@@ -562,6 +561,7 @@ void codegen_cc::customGate(
 				);
 			}
 
+			// store operands
 			if(settings.getReadoutMode(iname)=="feedback") {
 				bundleHasFeedback = true;
 				bi->isMeasFeedback = true;
@@ -701,6 +701,7 @@ void codegen_cc::emit(int sel, const std::string &instr, const std::string &ops,
 {
 	emit(QL_SS2S("[" << sel << "]"), instr, ops, comment);
 }
+
 /************************************************************************\
 | helpers
 \************************************************************************/
