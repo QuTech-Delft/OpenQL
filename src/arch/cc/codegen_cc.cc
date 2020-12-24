@@ -567,23 +567,25 @@ void codegen_cc::customGate(
 
         // store signal value, checking for conflicts
         BundleInfo *bi = &bundleInfo[csv.si.instrIdx][csv.si.group];       	// shorthand
-        if(bi->signalValue.empty()) {                                       // signal not yet used
-            bi->signalValue = csv.signalValueString;
+        if(!csv.signalValueString.empty()) {								// empty implies no signal
+			if(bi->signalValue.empty()) {                                   // signal not yet used
+				bi->signalValue = csv.signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
-            // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
-            bi->staticCodewordOverride = ql::settings_cc::findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
+				// FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
+				bi->staticCodewordOverride = ql::settings_cc::findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
 #endif
-        } else if(bi->signalValue == csv.signalValueString) {               // signal unchanged (FIXME: possibly: empty()
-            // do nothing
-        } else {
-        	showCodeSoFar();
-            QL_FATAL(
-            	"Signal conflict on instrument='" << csv.si.ic.ii.instrumentName
-            	<< "', group=" << csv.si.group
-            	<< ", between '" << bi->signalValue
-            	<< "' and '" << csv.signalValueString << "'"
-			);  // FIXME: add offending instruction
-        }
+			} else if(bi->signalValue == csv.signalValueString) {           // signal unchanged
+				// do nothing
+			} else {
+				showCodeSoFar();
+				QL_FATAL(
+					"Signal conflict on instrument='" << csv.si.ic.ii.instrumentName
+					<< "', group=" << csv.si.group
+					<< ", between '" << bi->signalValue
+					<< "' and '" << csv.signalValueString << "'"
+				);  // FIXME: add offending instruction
+			}
+		}
 
         // store signal duration
         bi->durationInCycles = durationInCycles;
@@ -852,10 +854,6 @@ void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size
 		padToCycle(instrIdx, startCycle, slot, instrumentName);
 	}
 
-
-	// FIXME: first wait for readout latency. Use gate 'wait_uhfqa'
-
-
 	// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
 	if(!readoutMap.empty()) {	// this instrument performs readout now
 		int smAddr = 0;		// FIXME:
@@ -899,19 +897,6 @@ void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size
 		);
 		lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
 	}
-
-#if 0	// FIXME: use gate '_wait_dist'
-	// code generation common to paths above
-	int readoutWait = settings.getReadoutWait();	// FIXME: just wait for DSM, not latency
-	emit(slot,
-		"seq_wait",
-		QL_SS2S(readoutWait),
-		QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+readoutWait << ": wait for instrument latency and DSM data distribution on '" << instrumentName+"'")
-	);
-
-	// update lastEndCycle
-	lastEndCycle[instrIdx] += readoutWait;	// FIXME: this time has not been scheduled, but is interjected here at the backend level
-#endif
 }
 
 
@@ -959,9 +944,9 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     if(ret.operandIdx >= operands.size()) {
         QL_JSON_FATAL(
         	"instruction '" << iname
-        	<< "': illegal operand number " << ret.operandIdx
-        	<< "' exceeds expected maximum of " << operands.size() - 1
-        	<< "(edit JSON, or provide enough parameters)"
+        	<< "': JSON file defines operand_idx " << ret.operandIdx
+        	<< ", but only " << operands.size()
+        	<< " operands were provided (correct JSON, or provide enough operands)"
 		); // FIXME: add offending statement
     }
     UInt qubit = operands[ret.operandIdx];
@@ -981,7 +966,7 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
     // find signalInfo, i.e. perform the mapping
     ret.si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
 
-	if(instructionSignalValue.size() == 0) {	// FIXME: testing: allow empty signal
+	if(instructionSignalValue.size() == 0) {	// allow empty signal
 		ret.signalValueString = "";
 	} else {
 		// verify signal dimensions

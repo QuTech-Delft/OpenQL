@@ -547,8 +547,7 @@
             "duration": 220,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
-                "signal": [],
-                "static_codeword_override": [0]
+                "signal": []
             }
         },
 		"_dist_dsm": {
@@ -559,19 +558,16 @@
 				"signal": [
 					{	"type": "measure",
 						"operand_idx": 0,
-						//"value": ["dummy"]  // FIXME: performs output
 						"value": []
 					}
-                ],
-                "static_codeword_override": [0]
+                ]
 			}
 		},
         "_wait_dsm": {
             "duration": 80,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
-                "signal": [],
-                "static_codeword_override": [0]
+                "signal": []
             }
         },
 
