@@ -322,7 +322,7 @@
         "cl_23 %0": ["rx90 %0", "ry90 %0", "rxm90 %0"],
 
         // CC feedback
-        "measure_rt %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"]
+        "measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"]
   	},
 
 
@@ -554,7 +554,7 @@
 			"duration": 20,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"cc": {
-			    "readout_mode": "dist",
+			    "readout_mode": "feedback",
 				"signal": [
 					{	"type": "measure",
 						"operand_idx": 0,

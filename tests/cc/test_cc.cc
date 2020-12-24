@@ -378,8 +378,7 @@ void test_break(const std::string &scheduler, const std::string &scheduler_unifo
     ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs, num_bregs);
 
     k.gate("prepz", 1);	// FIXME: program makes no sense
-    k.gate("measure_rt", 1);	// FIXME: WIP
-//    k.gate("measure", 1);
+    k.gate("measure_fb", 1);
     k.gate("if_1_break", 1);
 
     prog.add_for(k, 100);
@@ -400,10 +399,8 @@ int main(int argc, char ** argv)
     test_wait("ALAP", "no");
 #endif
 
-#if 1
     test_qi_example("ALAP", "no");
     test_break("ALAP", "no");
-#endif
 
     return 0;
 }

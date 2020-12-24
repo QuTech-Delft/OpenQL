@@ -342,12 +342,14 @@ The CC backend extends section ``instructions/<key>`` with a subsection ``cc`` a
             "static_codeword_override": [1,2,3]
         }
     }
+.. FIXME: add feedback example
 
 Where:
 
 * ``cc/ref_signal`` points to a signal definition in ``hardware_settings/eqasm_backend_cc/signals``, which must exist or an error is raised
-* ``cc/signal`` defines a signal in place, in an identical fashion as ``hardware_settings/eqasm_backend_cc/signals``
-* ``cc/static_codeword_override`` provides a user defined array of codeword (one entry per operand) for this instruction. Currently, this key is compulsory, but in the future, codewords will be assigned automatically to make better use of limited codeword space
+* ``cc/signal`` defines a signal in place, in an identical fashion as ``hardware_settings/eqasm_backend_cc/signals``. May be empty (``[]``) to disable signal generation.
+* ``cc/static_codeword_override`` provides a user defined array of codeword (one entry per operand) for this instruction. Currently, this key is compulsory (if signal is non-empty), but in the future, codewords will be assigned automatically to make better use of limited codeword space
+* ``cc/readout_mode`` defines an instruction to perform readout if non-empty. If the value "feedback" is used, code is generated to read and distribute the instrument result.
 
 The following standard OpenQL fields are used:
 

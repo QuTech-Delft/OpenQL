@@ -71,7 +71,6 @@ private:    // types
     class BundleInfo {
     public:	// funcs
     	BundleInfo() = default;
-    	bool isReadOut() { return !operands.empty() && !pragma; };		// FIXME: create explicit flag
 
     public:	// vars
     	// output gates
@@ -81,8 +80,9 @@ private:    // types
         int staticCodewordOverride = settings_cc::NO_STATIC_CODEWORD_OVERRIDE;
 #endif
 #if OPT_FEEDBACK
-        // readout (FIXME: or, in case of operands, pragma
-		Vec<UInt> operands;
+        // readout
+        bool isMeasFeedback = false;
+		Vec<UInt> operands;							// NB: also used by OPT_PRAGMA
 		Vec<UInt> creg_operands;
 		Vec<UInt> breg_operands;
 
@@ -110,8 +110,8 @@ private:    // types
 		int smBit;
 		int bit;
 		const BundleInfo *bi;									// used for annotation only
-	} tReadoutInfo;												// information for readout on single instrument group
-	using tReadoutMap = std::map<int, tReadoutInfo>;			// NB: key is instrument group
+	} tFeedbackInfo;											// information for feedback on single instrument group
+	using tFeedbackMap = std::map<int, tFeedbackInfo>;			// NB: key is instrument group
 #endif
 
     typedef struct {
@@ -159,7 +159,7 @@ private:    // funcs
     void emitProgramStart();
 	void emitOutput(const tCondGateMap &condGateMap, int32_t digOut, unsigned int instrMaxDurationInCycles, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
 	void emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
-	void emitMeasurementDistribution(const tReadoutMap &readoutMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
+	void emitMeasurementDistribution(const tFeedbackMap &readoutMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
     void padToCycle(size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
 
     // generic helpers

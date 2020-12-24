@@ -9,7 +9,7 @@
 #pragma once
 
 // constants
-#define CC_BACKEND_VERSION_STRING       "0.2.6"
+#define CC_BACKEND_VERSION_STRING       "0.3.0"
 
 // options
 #define OPT_CC_SCHEDULE_RC              0   // 1=use resource constraint scheduler

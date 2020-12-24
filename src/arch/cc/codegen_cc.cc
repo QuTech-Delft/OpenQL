@@ -287,7 +287,7 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 // FIXME: split into smaller parts
 void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
 {
-	bool bundleHasReadout = false;
+	bool bundleHasFeedback = false;
 #if OPT_PRAGMA
 	bool bundleHasPragma = false;
 #endif
@@ -312,8 +312,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         uint32_t digOut = 0;                                                // the digital output value sent over the instrument interface
         unsigned int instrMaxDurationInCycles = 0;                          // maximum duration over groups that are used, one instrument
 #if OPT_FEEDBACK
+		tFeedbackMap feedbackMap;
 		tCondGateMap condGateMap;
-		tReadoutMap readoutMap;
 #endif
 #if OPT_PRAGMA
 		const Json *pragma = nullptr;
@@ -351,8 +351,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             } // if(signal defined)
 
 
-			// handle pragma
 #if OPT_PRAGMA
+			// handle pragma
 			if(bi->pragma) {
 				// FIXME: enforce single pragma per bundle (currently by design)
 				// FIXME: enforce no other work
@@ -368,12 +368,12 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 
 #if OPT_FEEDBACK
-            // handle readout (i.e. when necessary, create readoutMap entry, and set flags bundleHasReadout)
+            // handle readout (i.e. when necessary, create feedbackMap entry, and set flags bundleHasFeedback)
             // NB: we allow for instruments that perform the input side of readout only, without signal generation by the
             // same instrument, which might be needed in the future
             // FIXME: also generate VCD
 
-			if(bi->isReadOut()) {
+			if(bi->isMeasFeedback) {
 				int resultBit = settings_cc::getResultBit(ic, group);
 
 #if 0	// FIXME: redundant
@@ -392,10 +392,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 					QL_FATAL("inconsistency FIXME");
 				};
 #endif
-				bundleHasReadout = true;
+				bundleHasFeedback = true;
 
 				// get classic operand
-				if (!bi->breg_operands.empty()) {	// FIXME
+				if (!bi->breg_operands.empty()) {	// FIXME: breg_operands should be honoured
+					// FIXME: Note that our gate decomposition "measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"] is problematic in that sense
 					QL_WOUT("ignoring explicit assignment to bit " << bi->breg_operands[0] << " for measurement of qubit " << bi->operands[0]);
 				}
 				int breg_operand = bi->operands[0];                	// implicit classic bit for qubit
@@ -404,7 +405,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 				int smBit = dp.allocateSmBit(breg_operand, instrIdx);
 
 				// remind mapping of bit -> smBit for setting MUX
-				readoutMap.emplace(group, tReadoutInfo{smBit, resultBit, bi});
+				feedbackMap.emplace(group, tFeedbackInfo{smBit, resultBit, bi});
 			}
 #endif
         } // for(group)
@@ -418,38 +419,6 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			comment(QL_SS2S(" # last bundle of kernel, will pad outputs to match durations"));
 		}
 
-#if 0 && OPT_FEEDBACK
-		// FIXME: terrible hack.
-		/*
-		 * Analysis:
-		 * - there are measurements that are used for feedback (need DSM), and those that don't
-		 * - DSM takes time, but:
-		 * 		- we do want the duration of a measurement gate to reflect reality (i.e. not the hack below)
-		 * 		- we don't want to spend the time if not needed
-		 * - so, we need to be explicit about DSM time
-		 * - the scheduler has special treatment for a gate called "measure" (TBC)
-		 *
-		 * Alternatives:
-		 * - we could ignore startCycle and compute it ourselves. No, startCycle is also used to insert 'wait'
-		 * - or better, decompose measure_rt into measure+getResults, where getResults does the wait for UHF latency + DSM distribution
-		 * - or infer data distribution from explicit assignment of measurement result to classic variable. Hmmm: cregs vs. bregs in kernel->gate()
-		 */
-		if(bundleHasReadout && instrMaxDurationInCycles>0) {	// FIXME: also allow runtime selection by option. NB: bundleHasReadout does not reflect subsequent instruments
-			// shorten output to preserve timeline while injecting time for feedback below
-			int totalWait = 1 + settings.getReadoutWait();	// 1 because of 'seq_in' that is also generated, Yuk
-			if(instrMaxDurationInCycles <= totalWait) {
-		        showCodeSoFar();
-				QL_FATAL(
-					"instrMaxDurationInCycles " << instrMaxDurationInCycles
-					<< " smaller than totalWait " << totalWait
-					<< " (instrIdx=" << instrIdx
-					<< ", startCycle=" << startCycle << ")"
-				);
-			}
-			instrMaxDurationInCycles -= totalWait;	// adjust gate duration (Ugh)
-		}
-#endif
-
         // generate code for instrument output
         if(instrHasOutput) {
 			emitOutput(condGateMap, digOut, instrMaxDurationInCycles, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
@@ -457,16 +426,16 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			// nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
 		}
 
-#if OPT_PRAGMA	// FIXME: pragma handling
+#if OPT_PRAGMA
 		if(pragma) {	// NB: note that this will only work because we set the pragma for all instruments, and thus already encounter this for the first instrument
 			emitPragma(pragma, pragmaSmBit, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
         }
 #endif
 
 #if OPT_FEEDBACK
-		if(bundleHasReadout) {	// FIXME: also allow runtime selection by option
-			// FIXME: skips instruments before first readout, because bundleHasReadout can be set on the way
-	        emitMeasurementDistribution(readoutMap, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
+		if(bundleHasFeedback) {
+			// FIXME: skips instruments before first readout, because bundleHasFeedback can be set on the way
+	        emitMeasurementDistribution(feedbackMap, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
 		}
 #endif
 
@@ -519,36 +488,8 @@ void codegen_cc::customGate(
 
     bool isReadout = settings.isReadout(iname);    	//  determine whether this is a readout instruction
 
-    // generate comment (also performs some checks)
+    // generate comment
     if(isReadout) {
-    	/*
-		 * kernel->gate allows 3 types of measurement:
-		 * 		- no explicit result. Historically this implies either:
-    	 * 			- no result, measurement results are often read offline from the readout device (mostly the raw values
-    	 * 			instead of the binary result), without the control device ever taking notice of the value
-    	 * 			- implicit bit result for qubit, e.g. for the CC-light using conditional gates
-		 * 		- creg result (old. FIXME: what are intended semantics?)
-		 * 			note that Creg's are managed through a class, whereas bregs are just numbers
-		 * 		- breg result (new)
-    	 */
-
-		// operand checks. FIXME: move
-		if(operands.size() != 1) {
-			QL_FATAL(
-				"Readout instruction '" << toQasm(iname, operands, breg_operands)
-				<< "' requires exactly 1 quantum operand, not " << operands.size()
-			);
-		}
-    	if(!creg_operands.empty()) {
-            QL_FATAL("Using Creg as measurement target is deprecated, use new bit registers");
-		}
-        if(breg_operands.size() > 1) {
-            QL_FATAL(
-            	"Readout instruction '" << toQasm(iname, operands, breg_operands)
-            	<< "' requires 0 or 1 bit operands, not " << breg_operands.size()
-			);
-		}
-
 		comment(std::string(" # READOUT: '") + toQasm(iname, operands, breg_operands) + "'");
     } else { // handle all other instruction types than "readout"
         // generate comment. NB: we don't have a particular limit for the number of operands
@@ -594,10 +535,41 @@ void codegen_cc::customGate(
         // FIXME: assumes that group configuration for readout input matches that of output
         // FIXME: not reached if we don't define signals, so here we need output, whereas bundleFinish doesn't
 		// store operands used for readout, actual work is postponed to bundleFinish()
-        if(isReadout && settings.getReadoutMode(iname)=="dist") {	// FIXME: hack for new "dist" mode
-			bi->operands = operands;
-//            bi->creg_operands = creg_operands;	// NB: will be empty because of checks performed earlier
-            bi->breg_operands = breg_operands;
+        if(isReadout) {
+			/*
+			 * kernel->gate allows 3 types of measurement:
+			 * 		- no explicit result. Historically this implies either:
+			 * 			- no result, measurement results are often read offline from the readout device (mostly the raw values
+			 * 			instead of the binary result), without the control device ever taking notice of the value
+			 * 			- implicit bit result for qubit, e.g. for the CC-light using conditional gates
+			 * 		- creg result (old. FIXME: what are intended semantics?)
+			 * 			note that Creg's are managed through a class, whereas bregs are just numbers
+			 * 		- breg result (new)
+			 */
+
+			// operand checks. FIXME: move
+			if(operands.size() != 1) {
+				QL_FATAL(
+					"Readout instruction '" << toQasm(iname, operands, breg_operands)
+					<< "' requires exactly 1 quantum operand, not " << operands.size()
+				);
+			}
+			if(!creg_operands.empty()) {
+				QL_FATAL("Using Creg as measurement target is deprecated, use new bit registers");
+			}
+			if(breg_operands.size() > 1) {
+				QL_FATAL(
+					"Readout instruction '" << toQasm(iname, operands, breg_operands)
+					<< "' requires 0 or 1 bit operands, not " << breg_operands.size()
+				);
+			}
+
+			if(settings.getReadoutMode(iname)=="feedback") {
+				bi->isMeasFeedback = true;
+				bi->operands = operands;
+//            	bi->creg_operands = creg_operands;	// NB: will be empty because of checks performed earlier
+				bi->breg_operands = breg_operands;
+			}
         }
 
         // store 'expression' for conditional gates
@@ -848,7 +820,7 @@ void codegen_cc::emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx
 }
 
 // generate code to input measurement results and distribute them via DSM
-void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
+void codegen_cc::emitMeasurementDistribution(const tFeedbackMap &readoutMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
 {
 	if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
 		padToCycle(instrIdx, startCycle, slot, instrumentName);
@@ -863,7 +835,7 @@ void codegen_cc::emitMeasurementDistribution(const tReadoutMap &readoutMap, size
 		dp.emit(slot, QL_SS2S(".MUX " << mux));
 		for(auto &readout : readoutMap) {
 			int group = readout.first;
-			tReadoutInfo ri = readout.second;
+			tFeedbackInfo ri = readout.second;
 
 			dp.emit(
 				slot,
