@@ -150,6 +150,8 @@ void codegen_cc::kernelFinish(const std::string &kernelName, size_t durationInCy
 // bundleStart: see 'strategy' above
 void codegen_cc::bundleStart(const std::string &cmnt)
 {
+	bundleHasFeedback = false;
+
     // create 'matrix' of BundleInfo with proper vector size per instrument
 	bundleInfo.clear();
     BundleInfo empty;
@@ -287,7 +289,6 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 // FIXME: split into smaller parts
 void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
 {
-	bool bundleHasFeedback = false;
 #if OPT_PRAGMA
 	bool bundleHasPragma = false;
 #endif
@@ -368,7 +369,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 
 #if OPT_FEEDBACK
-            // handle readout (i.e. when necessary, create feedbackMap entry, and set flags bundleHasFeedback)
+            // handle readout (i.e. when necessary, create feedbackMap entry
             // NB: we allow for instruments that perform the input side of readout only, without signal generation by the
             // same instrument, which might be needed in the future
             // FIXME: also generate VCD
@@ -392,8 +393,6 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 					QL_FATAL("inconsistency FIXME");
 				};
 #endif
-				bundleHasFeedback = true;
-
 				// get classic operand
 				if (!bi->breg_operands.empty()) {	// FIXME: breg_operands should be honoured
 					// FIXME: Note that our gate decomposition "measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"] is problematic in that sense
@@ -434,8 +433,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 #if OPT_FEEDBACK
 		if(bundleHasFeedback) {
-			// FIXME: skips instruments before first readout, because bundleHasFeedback can be set on the way
-	        emitMeasurementDistribution(feedbackMap, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
+			emitFeedback(feedbackMap, instrIdx, startCycle, ic.ii.slot, ic.ii.instrumentName);
 		}
 #endif
 
@@ -565,6 +563,7 @@ void codegen_cc::customGate(
 			}
 
 			if(settings.getReadoutMode(iname)=="feedback") {
+				bundleHasFeedback = true;
 				bi->isMeasFeedback = true;
 				bi->operands = operands;
 //            	bi->creg_operands = creg_operands;	// NB: will be empty because of checks performed earlier
@@ -820,42 +819,42 @@ void codegen_cc::emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx
 }
 
 // generate code to input measurement results and distribute them via DSM
-void codegen_cc::emitMeasurementDistribution(const tFeedbackMap &readoutMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
+void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
 {
 	if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
 		padToCycle(instrIdx, startCycle, slot, instrumentName);
 	}
 
 	// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
-	if(!readoutMap.empty()) {	// this instrument performs readout now
+	if(!feedbackMap.empty()) {	// this instrument performs readout for feedback now
 		int smAddr = 0;		// FIXME:
 		int mux = dp.getOrAssignMux(instrIdx);
 
 		// emit datapath code
 		dp.emit(slot, QL_SS2S(".MUX " << mux));
-		for(auto &readout : readoutMap) {
-			int group = readout.first;
-			tFeedbackInfo ri = readout.second;
+		for(auto &feedback : feedbackMap) {
+			int group = feedback.first;
+			tFeedbackInfo fi = feedback.second;
 
 			dp.emit(
 				slot,
-				QL_SS2S("SM[" << ri.smBit << "] := I[" << ri.bit << "]"),
-				QL_SS2S("# cop " /*FIXME << ri.bi->creg_operands[0]*/ << " = readout(q" << ri.bi->operands[0] << ")")
+				QL_SS2S("SM[" << fi.smBit << "] := I[" << fi.bit << "]"),
+				QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->operands[0] << ")")
 			);
 
-			int mySmAddr = ri.smBit/8;	// byte addressable
+			int mySmAddr = fi.smBit / 8;	// byte addressable
 		}
 
 		// emit code for slot input
-		int sizeTag = datapath_cc::getSizeTag(readoutMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
+		int sizeTag = datapath_cc::getSizeTag(feedbackMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
 		emit(
 			slot,
 			"seq_in_sm",
 			QL_SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
-			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": readout on '" << instrumentName+"'")
+			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": feedback on '" << instrumentName+"'")
 		);
-		lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
-	} else {	// this instrument does not perform readout now
+		lastEndCycle[instrIdx]++;
+	} else {	// this instrument does not perform readout for feedback now
 		// FIXME:
 		int smAddr = 0;
 		int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
@@ -867,7 +866,7 @@ void codegen_cc::emitMeasurementDistribution(const tFeedbackMap &readoutMap, siz
 			QL_SS2S("S" << smAddr << ","  << smTotalSize),
 			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": invalidate SM on '" << instrumentName+"'")
 		);
-		lastEndCycle[instrIdx]++;		// FIXME: this time has not been scheduled, but is interjected here at the backend level
+		lastEndCycle[instrIdx]++;
 	}
 }
 
