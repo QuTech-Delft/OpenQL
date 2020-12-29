@@ -2,7 +2,7 @@
 #
 # tests python interface
 #
-# assumes config files: test_mapper_s7.json
+# assumes config files: test_mapper_s7.json and test_condex_no_backend.json
 #
 
 from openql import openql as ql
@@ -26,7 +26,7 @@ class Test_condex(unittest.TestCase):
     def test_condex_basic(self):
         # parameters
         v = 'basic'
-        config = os.path.join(curdir, "test_condex_no_backend.json")
+        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
         num_bregs = num_qubits
 
@@ -86,139 +86,6 @@ class Test_condex(unittest.TestCase):
 
         ql.set_option('use_default_gates', 'no')
 
-#    def test_condex_cnot(self):
-#        # check whether condex works with conditional cnot gate which is to be decomposed by mapper
-#        # parameters
-#        v = 'cnot'
-#        config = os.path.join(curdir, "test_mapper_s7.json")
-#        num_qubits = 7
-#        num_bregs = num_qubits
-#
-#        # create and set platform
-#        prog_name = "test_condex_" + v
-#        kernel_name = "kernel_" + v
-#        starmon = ql.Platform("starmon", config)
-#        prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
-#        k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
-#
-#        ql.set_option('log_level', 'LOG_DEBUG')
-#        ql.set_option('write_qasm_files', 'yes')
-#
-#        ql.set_option('mapper', 'minextend')
-#        ql.set_option('mapassumezeroinitstate', 'yes')
-#        ql.set_option('mapusemoves', 'yes')
-#        ql.set_option('mappathselect', 'all')
-#        ql.set_option('maplookahead', 'noroutingfirst')
-#
-#        k.gate("cnot", [0,1])
-#
-#        k.gate("measure", [2])
-#        k.gate("cnot", [0,2], 0, 0.0, [], 'COND', [2])
-#
-#        k.gate("measure", [2])
-#        k.condgate("cnot", [0,5], 'COND', [2])
-#
-#        k.gate("measure", [2])
-#        k.gate_preset_condition('COND', [2])
-#        k.gate("cnot", [0,6])
-#        k.gate_clear_condition()
-#
-#        prog.add_kernel(k)
-#        prog.compile()
-#
-#        # gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
-#        # qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
-#        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
-#
-#        ql.set_option('write_qasm_files', 'no')
-#        ql.set_option('mapper', 'no')
-
-    def test_condex_toffoli_pass(self):
-        # check whether condex works with conditional toffoli gate which is to be decomposed by toffoli decomposition
-        # parameters
-        v = 'toffoli_pass'
-        config = os.path.join(curdir, "test_condex_no_backend.json")
-        num_qubits = 7
-        num_bregs = num_qubits
-
-        # create and set platform
-        prog_name = "test_condex_" + v
-        kernel_name = "kernel_" + v
-        starmon = ql.Platform("starmon", config)
-        prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
-        k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
-
-        ql.set_option('decompose_toffoli', 'AM')
-        ql.set_option('use_default_gates', 'yes')
-
-        k.gate("toffoli", [0,1,5])
-
-        k.gate("measure", [0])
-        k.gate("toffoli", [0,1,5], 0, 0.0, [], 'COND', [0])
-
-        k.gate("measure", [0])
-        k.condgate("toffoli", [0,1,5], 'COND', [0])
-
-        k.gate("measure", [0])
-        k.gate_preset_condition('COND', [0])
-        k.toffoli(0,1,5)
-        k.gate_clear_condition()
-
-        prog.add_kernel(k)
-        prog.compile()
-
-        gold_fn = curdir + '/golden/' + prog_name +'_scheduled.qasm'
-        qasm_fn = os.path.join(output_dir, prog_name+'_scheduled.qasm')
-        self.assertTrue( file_compare(qasm_fn, gold_fn) )
-
-        ql.set_option('decompose_toffoli', 'no')
-        ql.set_option('use_default_gates', 'no')
-
-#    def test_condex_toffoli_composgate(self):
-#        # check whether condex works with conditional toffoli gate which is to be decomposed by toffoli decomposition
-#        # parameters
-#        v = 'composgate'
-#        config = os.path.join(curdir, "test_mapper_s7.json")
-#        num_qubits = 7
-#        num_bregs = num_qubits
-#
-#        # create and set platform
-#        prog_name = "test_condex_" + v
-#        kernel_name = "kernel_" + v
-#        starmon = ql.Platform("starmon", config)
-#        prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
-#        k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
-#
-#        ql.set_option('log_level', 'LOG_NOTHING')
-#
-#        ql.set_option('mapper', 'minextend')
-#        ql.set_option('mapassumezeroinitstate', 'yes')
-#        ql.set_option('mapusemoves', 'yes')
-#        ql.set_option('mappathselect', 'all')
-#        ql.set_option('maplookahead', 'noroutingfirst')
-#
-#        k.gate("toffoli_decomp", [0,1,5])
-#
-#        k.gate("measure", [0])
-#        k.gate("toffoli_decomp", [0,1,5], 0, 0.0, [], 'COND', [0])
-#
-#        k.gate("measure", [0])
-#        k.condgate("toffoli_decomp", [0,1,5], 'COND', [0])
-#
-#        k.gate("measure", [0])
-#        k.gate_preset_condition('COND', [0])
-#        k.gate("toffoli_decomp", [0,1,5])
-#        k.gate_clear_condition()
-#
-#        prog.add_kernel(k)
-#        prog.compile()
-#
-#        # gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
-#        # qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
-#        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
-#
-#        ql.set_option('mapper', 'no')
-
     def test_condex_measure(self):
         # parameters
         v = 'measure'
@@ -246,6 +113,147 @@ class Test_condex(unittest.TestCase):
         gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
         qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
+    def test_condex_cnot(self):
+        # check whether condex works with conditional cnot gate which is to be decomposed by mapper
+        # parameters
+        v = 'cnot'
+        config = os.path.join(curdir, "test_mapper_s7.json")
+        num_qubits = 7
+        num_bregs = num_qubits
+
+        # create and set platform
+        prog_name = "test_condex_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
+
+        ql.set_option('mapper', 'minextend')
+        ql.set_option('mapassumezeroinitstate', 'no')
+        ql.set_option('mapinitone2one', 'yes')
+        ql.set_option('mapusemoves', 'yes')
+        ql.set_option('maplookahead', 'noroutingfirst')
+        ql.set_option('mappathselect', 'all')
+        ql.set_option('maptiebreak', 'first')
+
+        k.gate("cnot", [0,1])
+
+        k.gate("measure", [2])
+        k.gate("cnot", [0,2], 0, 0.0, [], 'COND', [2])
+
+        k.gate("measure", [2])
+        k.condgate("cnot", [0,5], 'COND', [2])
+
+        k.gate("measure", [2])
+        k.gate_preset_condition('COND', [2])
+        k.gate("cnot", [0,6])
+        k.gate_clear_condition()
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
+        ql.set_option('mapper', 'no')
+
+    def test_condex_toffoli_pass(self):
+        # check whether condex works with conditional toffoli gate which is to be decomposed by toffoli decomposition
+        # parameters
+        v = 'toffoli_pass'
+        # no backend because toffoli expansion requires mapping
+        config = os.path.join(curdir, "test_mapper_s7.json")
+        num_qubits = 7
+        num_bregs = num_qubits
+
+        # create and set platform
+        prog_name = "test_condex_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
+
+        ql.set_option('decompose_toffoli', 'AM')
+        ql.set_option('use_default_gates', 'yes')
+
+        ql.set_option('mapper', 'minextend')
+        ql.set_option('mapassumezeroinitstate', 'no')
+        ql.set_option('mapinitone2one', 'yes')
+        ql.set_option('mapusemoves', 'yes')
+        ql.set_option('maplookahead', 'noroutingfirst')
+        ql.set_option('mappathselect', 'all')
+        ql.set_option('maptiebreak', 'first')
+
+        k.gate("toffoli", [0,1,5])
+
+        k.gate("measure", [0])
+        k.gate("toffoli", [0,1,5], 0, 0.0, [], 'COND', [0])
+
+        k.gate("measure", [0])
+        k.condgate("toffoli", [0,1,5], 'COND', [0])
+
+        k.gate("measure", [0])
+        k.gate_preset_condition('COND', [0])
+        k.toffoli(0,1,5)
+        k.gate_clear_condition()
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
+        ql.set_option('mapper', 'no')
+        ql.set_option('decompose_toffoli', 'no')
+        ql.set_option('use_default_gates', 'no')
+
+    def test_condex_toffoli_composgate(self):
+        # check whether condex works with conditional toffoli gate which is to be decomposed by toffoli decomposition
+        # parameters
+        v = 'toffoli_composgate'
+        config = os.path.join(curdir, "test_mapper_s7.json")
+        num_qubits = 7
+        num_bregs = num_qubits
+
+        # create and set platform
+        prog_name = "test_condex_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
+
+        ql.set_option('mapper', 'minextend')
+        ql.set_option('mapassumezeroinitstate', 'no')
+        ql.set_option('mapinitone2one', 'yes')
+        ql.set_option('mapusemoves', 'yes')
+        ql.set_option('maplookahead', 'noroutingfirst')
+        ql.set_option('mappathselect', 'all')
+        ql.set_option('maptiebreak', 'first')
+
+        k.gate("toffoli_decomp", [0,1,5])
+
+        k.gate("measure", [0])
+        k.gate("toffoli_decomp", [0,1,5], 0, 0.0, [], 'COND', [0])
+
+        k.gate("measure", [0])
+        k.condgate("toffoli_decomp", [0,1,5], 'COND', [0])
+
+        k.gate("measure", [0])
+        k.gate_preset_condition('COND', [0])
+        k.gate("toffoli_decomp", [0,1,5])
+        k.gate_clear_condition()
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
+        ql.set_option('mapper', 'no')
 
 if __name__ == '__main__':
     # ql.set_option('log_level', 'LOG_DEBUG')

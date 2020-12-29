@@ -189,7 +189,7 @@ public:
     utils::Str name;
     utils::Vec<utils::UInt> operands;             // qubit operands
     utils::Vec<utils::UInt> creg_operands;
-    utils::Vec<utils::UInt> breg_operands;        // bit operands e.g. assigned to by measure
+    utils::Vec<utils::UInt> breg_operands;        // bit operands e.g. assigned to by measure; cond_operands are separate
     utils::Int int_operand = 0;
     utils::UInt duration = 0;
     utils::Real angle = 0.0;                      // for arbitrary rotations
