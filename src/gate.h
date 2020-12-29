@@ -484,7 +484,6 @@ class custom_gate : public gate {
 public:
     cmat_t m; // matrix representation
     utils::Str arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
-    utils::Vec<utils::UInt> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
     explicit custom_gate(const utils::Str &name);
     custom_gate(const custom_gate &g);
     static bool is_qubit_id(const utils::Str &str);
