@@ -17,6 +17,7 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_condex(unittest.TestCase):
 
     def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)     # this uses output_dir set above
 
         ql.set_option('log_level', 'LOG_NOTHING')
