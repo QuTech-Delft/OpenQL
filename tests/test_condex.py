@@ -2,7 +2,7 @@
 #
 # tests python interface
 #
-# assumes config files: test_mapper_s7.json and test_condex_no_backend.json
+# assumes config files: test_mapper_s7.json
 #
 
 from openql import openql as ql
@@ -164,7 +164,6 @@ class Test_condex(unittest.TestCase):
         # check whether condex works with conditional toffoli gate which is to be decomposed by toffoli decomposition
         # parameters
         v = 'toffoli_pass'
-        # no backend because toffoli expansion requires mapping
         config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
         num_bregs = num_qubits
