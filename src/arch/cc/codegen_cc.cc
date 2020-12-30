@@ -463,15 +463,6 @@ static std::string qasm(const std::string &iname, const Vec<UInt> &operands, con
 	return g.qasm();
 }
 
-static std::string cond_qasm(cond_type_t condition, Vec<UInt> cond_operands)
-{
-	// FIXME: hack
-	custom_gate g("foo");
-	g.condition = condition;
-	g.cond_operands = cond_operands;
-	return g.cond_qasm();
-}
-
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
 // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
 // Does not deal with the control mode and digital interface of the instrument.
@@ -756,84 +747,11 @@ void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, uns
 			QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": code word/mask on '" << instrumentName + "'")
 		);
 	} else {	// at least one group conditional
-#if 1
 		// configure datapath PL
 		int smAddr = 0;		// FIXME:
 		int pl = dp.getOrAssignPl(instrIdx);	// FIXME: add parameter condGateMap
 
 		dp.emitPl(pl, smAddr, condGateMap, instrIdx, slot);
-#else
-		dp.emit(slot, QL_SS2S(".PL " << pl));
-
-
-		for(auto &cg : condGateMap) {
-			int group = cg.first;
-			tCondGateInfo cgi = cg.second;
-
-			// emit comment for group
-			std::string condition = cond_qasm(cgi.condition, cgi.cond_operands);
-			dp.emit(
-				slot,
-				QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", condition='" << condition << "'")
-			);
-
-			// emit PL logic
-			for(int bit=0; bit<32; bit++) {
-				if(1<<bit & cgi.groupDigOut) {
-					// FIXME:
-					cgi.cond_operands;
-					int smBit0 = 0;	// FIXME: get
-					int smBit1 = 0;
-					std::string inv;
-					std::stringstream rhs;
-
-					switch(cgi.condition) {		// FIXME: cleanup
-						// 0 operands:
-						case cond_always:
-							rhs << "1";
-							break;
-						case cond_never:
-							rhs << "0";
-							break;
-
-					    // 1 operand:
-						case cond_not:
-							inv = "/";
-							// fall through
-						case cond:
-							rhs << "I[" << smBit0 << "]";
-							break;
-
-					    // 2 operands
-						case cond_nand:
-							inv = "/";
-							// fall through
-						case cond_and:
-							rhs << "I[" << smBit0 << "] & I[" << smBit1 << "]";
-							break;
-
-						case cond_nor:
-							inv = "/";
-							// fall through
-						case cond_or:
-							rhs << "I[" << smBit0 << "] | I[" << smBit1 << "]";
-							break;
-
-						case cond_nxor:
-							inv = "/";
-							// fall through
-						case cond_xor:
-							rhs << "I[" << smBit0 << "] ^ I[" << smBit1 << "]";
-							break;
-					}
-					dp.emit(
-						slot,
-						QL_SS2S(inv << "O[" << bit << "] := " << rhs.str())
-					);
-				}
-			}
-		}
-#endif
 
 		// emit code for conditional gate
 		emit(
