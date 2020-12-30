@@ -91,6 +91,26 @@ static std::string cond_qasm(cond_type_t condition, const Vec<UInt> &cond_operan
 	return g.cond_qasm();
 }
 
+
+void datapath_cc::emitMux(int mux, int smAddr, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot)
+{
+		// emit datapath code
+	emit(slot, QL_SS2S(".MUX " << mux));
+	for(auto &feedback : feedbackMap) {
+		int group = feedback.first;
+		tFeedbackInfo fi = feedback.second;
+
+		emit(
+			slot,
+			QL_SS2S("SM[" << fi.smBit << "] := I[" << fi.bit << "]"),
+			QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->operands[0] << ")")
+		);
+
+		int mySmAddr = fi.smBit / 8;	// byte addressable
+	}
+}
+
+
 void datapath_cc::emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, size_t instrIdx, int slot)
 {
 	emit(slot, QL_SS2S(".PL " << pl));

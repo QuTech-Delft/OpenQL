@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "options_cc.h"
+#include "bundle_info.h"
+
 #include "gate.h"
 #include "utils/vec.h"
-//#include "codegen_cc.h"
 
 #include <string>
 #include <cstddef>
@@ -24,6 +24,18 @@ namespace ql {
 namespace { using namespace utils; }
 
 // NB: types shared with codegen_cc
+#if 1 // FIXME
+//class codegen_cc;
+//class BundleInfo;	// opaque to prevent circular includes
+
+typedef struct {
+	int smBit;
+	int bit;
+	const BundleInfo *bi;									// used for annotation only
+} tFeedbackInfo;											// information for feedback on single instrument group
+using tFeedbackMap = std::map<int, tFeedbackInfo>;			// NB: key is instrument group
+#endif
+
 typedef struct {
 	cond_type_t condition;
 	Vec<UInt> cond_operands;
@@ -49,6 +61,7 @@ public: // functions
 	int getOrAssignMux(size_t instrIdx);
 	int getOrAssignPl(size_t instrIdx);
 	static int getSizeTag(int numReadouts);
+	void emitMux(int mux, int smAddr, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot);
 	void emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, size_t instrIdx, int slot);
 
 	std::string getDatapathSection() { return datapathSection.str(); }

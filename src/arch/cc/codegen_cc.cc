@@ -739,6 +739,8 @@ void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, 
 		int mux = dp.getOrAssignMux(instrIdx);	// FIXME: add parameter feedbackMap
 
 #if 1	// FIXME: move to datapath_cc
+		dp.emitMux(mux, smAddr, feedbackMap, instrIdx, slot);
+#else
 		// emit datapath code
 		dp.emit(slot, QL_SS2S(".MUX " << mux));
 		for(auto &feedback : feedbackMap) {
