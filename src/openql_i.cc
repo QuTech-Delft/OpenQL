@@ -212,10 +212,12 @@ void Kernel::rz(size_t q0, double angle) {
 }
 
 void Kernel::measure(size_t q0) {
+    QL_DOUT("Python k.measure([" << q0 << "])");
     kernel->measure(q0);
 }
 
 void Kernel::measure(size_t q0, size_t b0) {
+    QL_DOUT("Python k.measure([" << q0 << "], [" << b0 << "])");
     kernel->measure(q0, b0);
 }
 
@@ -268,6 +270,23 @@ void Kernel::gate(
     const std::string &condstring,
     const std::vector<size_t> &condregs
 ) {
+    QL_DOUT(
+        "Python k.gate("
+        << name
+        << ", "
+        << ql::utils::Vec<size_t>(qubits.begin(), qubits.end())
+        << ", "
+        << duration
+        << ", "
+        << angle
+        << ", "
+        << ql::utils::Vec<size_t>(bregs.begin(), bregs.end())
+        << ", "
+        << condstring
+        << ", "
+        << ql::utils::Vec<size_t>(condregs.begin(), condregs.end())
+        << ")"
+    );
     ql::cond_type_t condvalue;
     if      (condstring == "COND_ALWAYS") condvalue = ql::cond_always;
     else if (condstring == "COND_NEVER") condvalue = ql::cond_never;
@@ -299,7 +318,46 @@ void Kernel::gate(
     const std::vector<size_t> &qubits,
     const CReg &destination
 ) {
+    QL_DOUT(
+        "Python k.gate("
+        << name
+        << ", "
+        << ql::utils::Vec<size_t>(qubits.begin(), qubits.end())
+        << ",  "
+        << (destination.creg)->id
+        << ") # (name,qubits,creg-destination)"
+    );
     kernel->gate(name, {qubits.begin(), qubits.end()}, {(destination.creg)->id} );
+}
+
+void Kernel::gate_preset_condition(
+    const std::string &condstring,
+    const std::vector<size_t> &condregs
+) {
+    QL_DOUT("Python k.gate_preset_condition("<<condstring<<", condregs)");
+    ql::cond_type_t condvalue;
+    if      (condstring == "COND_ALWAYS") condvalue = ql::cond_always;
+    else if (condstring == "COND_NEVER") condvalue = ql::cond_never;
+    else if (condstring == "COND") condvalue = ql::cond;
+    else if (condstring == "COND_NOT") condvalue = ql::cond_not;
+    else if (condstring == "COND_AND") condvalue = ql::cond_and;
+    else if (condstring == "COND_NAND") condvalue = ql::cond_nand;
+    else if (condstring == "COND_OR") condvalue = ql::cond_or;
+    else if (condstring == "COND_NOR") condvalue = ql::cond_nor;
+    else if (condstring == "COND_XOR") condvalue = ql::cond_xor;
+    else if (condstring == "COND_NXOR") condvalue = ql::cond_nxor;
+    else {
+        throw std::runtime_error("Error: Unknown condition " + condstring);
+    }
+    kernel->gate_preset_condition(
+        condvalue,
+        {condregs.begin(), condregs.end()}
+    );
+}
+
+void Kernel::gate_clear_condition() {
+    QL_DOUT("Python k.gate_clear_condition()");
+    kernel->gate_clear_condition();
 }
 
 void Kernel::condgate(
@@ -308,6 +366,17 @@ void Kernel::condgate(
     const std::string &condstring,
     const std::vector<size_t> &condregs
 ) {
+    QL_DOUT(
+        "Python k.condgate("
+        << name
+        << ", "
+        << ql::utils::Vec<size_t>(qubits.begin(), qubits.end())
+        << ", "
+        << condstring
+        << ", "
+        << ql::utils::Vec<size_t>(condregs.begin(), condregs.end())
+        << ")"
+    );
     ql::cond_type_t condvalue;
     if      (condstring == "COND_ALWAYS") condvalue = ql::cond_always;
     else if (condstring == "COND_NEVER") condvalue = ql::cond_never;

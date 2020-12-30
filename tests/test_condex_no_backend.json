@@ -1,5 +1,5 @@
 {
-    "eqasm_compiler" : "cc_light_compiler",
+    "eqasm_compiler" : "none",
 
     "hardware_settings": {
         "qubit_number": 7,
@@ -17,131 +17,14 @@
 
     "qubit_attributes":
     {
-        "relaxation_times":
-        {
-        "0" : [3000, 1500],
-        "1" : [3000, 1500],
-        "2" : [3000, 1500],
-        "3" : [3000, 1500],
-        "4" : [3000, 1500],
-        "5" : [3000, 1500],
-        "6" : [3000, 1500]
-        }
     },
 
     "topology" : 
     {
-        "description": "A qubit grid's topology is defined by the neighbor relation among its qubits. Each qubit has an id (its index, used as gate operand and in the resource descriptions) in the range of 0 to hardware_settings.qubit_number-1. Qubits are connected by directed pairs, called edges. Each edge has an id (its index, also used in the resource descriptions) in some contiguous range starting from 0, a source qubit and a destination qubit. Two grid forms are supported: the xy form and the irregular form. In grids of xy form qubits have in addition an x and a y coordinate: these coordinates in the X (Y) direction are in the range of 0 to x_size-1 (y_size-1).",
-        "form": "xy",
-        "x_size": 5,
-        "y_size": 3,
-        "qubits": 
-        [ 
-            { "id": 0,  "x": 1, "y": 2 },
-            { "id": 1,  "x": 3, "y": 2 },
-            { "id": 2,  "x": 0, "y": 1 },
-            { "id": 3,  "x": 2, "y": 1 },
-            { "id": 4,  "x": 4, "y": 1 },
-            { "id": 5,  "x": 1, "y": 0 },
-            { "id": 6,  "x": 3, "y": 0 }
-        ],
-        "edges": 
-        [
-            { "id": 0,  "src": 2, "dst": 0 },
-            { "id": 1,  "src": 0, "dst": 3 },
-            { "id": 2,  "src": 3, "dst": 1 },
-            { "id": 3,  "src": 1, "dst": 4 },
-            { "id": 4,  "src": 2, "dst": 5 },
-            { "id": 5,  "src": 5, "dst": 3 },
-            { "id": 6,  "src": 3, "dst": 6 },
-            { "id": 7,  "src": 6, "dst": 4 },
-            { "id": 8,  "src": 0, "dst": 2 },
-            { "id": 9,  "src": 3, "dst": 0 },
-            { "id": 10,  "src": 1, "dst": 3 },
-            { "id": 11,  "src": 4, "dst": 1 },
-            { "id": 12,  "src": 5, "dst": 2 },
-            { "id": 13,  "src": 3, "dst": 5 },
-            { "id": 14,  "src": 6, "dst": 3 },
-            { "id": 15,  "src": 4, "dst": 6 }
-        ]
     },
 
     "resources":
     {
-        "qubits":
-        {
-            "description": "Each qubit can be used by only one gate at a time. There are 'count' qubits.",
-            "count": 7
-        },
-        "qwgs" :
-        {
-            "description": "Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.  Each qwg controls a private set of qubits.  A qwg can control multiple qubits at the same time, but only when they perform the same gate and start at the same time. There are 'count' qwgs. For each qwg it is described which set of qubits it controls.",
-            "count": 3,
-            "connection_map":
-            {
-            "0" : [0, 1],
-            "1" : [2, 3, 4],
-            "2" : [5, 6]             
-            }
-        },
-        "meas_units" :
-        {
-            "description": "Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.  Each one controls a private set of qubits.  A measurement unit can control multiple qubits at the same time, but only when they start at the same time. There are 'count' measurement units. For each measurement unit it is described which set of qubits it controls.",
-            "count": 2,
-            "connection_map":
-            {
-            "0" : [0, 2, 3, 5, 6],
-            "1" : [1, 4]
-            }
-        },
-        "edges":
-        {
-            "description": "Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge. A two-qubit flux gate operates by lowering (detuning) the frequency of the operand qubit with the highest frequency to get close to the frequency of the other operand qubit.  But any two qubits which have close frequencies execute a two-qubit flux gate: this may happen between the detuned frequency qubit and each of its other neighbors with a frequency close to this; to prevent this, those neighbors must have their frequency detuned (lowered out of the way, parked) as well. A parked qubit cannot engage in any gate, so also not a two-qubit gate. As a consequence, for each edge executing a two-qubit gate, certain other edges cannot execute a two-qubit gate in parallel. There are 'count' edges. For each edge it is described which set of other edges cannot execute a two-qubit gate in parallel.",
-            "count": 16,
-            "connection_map":
-            {
-            "0": [2, 10],
-            "1": [3, 11],
-            "2": [0, 8],
-            "3": [1, 9],
-            "4": [6, 14],
-            "5": [7, 15],
-            "6": [4, 12],
-            "7": [5, 13],
-            "8": [2, 10],
-            "9": [3, 11],
-            "10": [0, 8],
-            "11": [1, 9],
-            "12": [6, 14],
-            "13": [7, 15],
-            "14": [4, 12],
-            "15": [5, 13]
-            }
-        },
-        "detuned_qubits":
-        {
-            "updated description": "Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge. A two-qubit flux gate operates by lowering (detuning) the frequency of the operand qubit with the highest frequency to get close to the frequency of the other operand qubit.  But any two qubits which have close frequencies execute a two-qubit flux gate: this may happen between the detuned frequency qubit and each of its other neighbors with a frequency close to this; to prevent this, those neighbors must have their frequency detuned (lowered out of the way, parked) as well. A parked qubit cannot engage in any gate, so also not a single-qubit rotation (an instruction of 'mw' type). There are 'count' qubits. For each edge it is described, when executing a two-qubit gate for it, which set of qubits it detunes in addition to one of its operand qubits, and so which set of qubits cannot execute a single-qubit rotation in parallel.",
-            "count": 7,
-            "connection_map":
-            {
-            "0": [3],
-            "1": [2],
-            "2": [4],
-            "3": [3],
-            "4": [],
-            "5": [6],
-            "6": [5],
-            "7": [],
-            "8": [3],
-            "9": [2],
-            "10": [4],
-            "11": [3],
-            "12": [],
-            "13": [6],
-            "14": [5],
-            "15": []
-            }
-        }
     },
 
     "instructions": {

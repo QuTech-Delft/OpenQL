@@ -63,6 +63,13 @@ public:
         and updating cliffcycles[q].
         And when finding a gate that ends a sequence of cliffords ('synchronization point'),
         the minimal sequence corresponding to the accumulated sequence is output before the new gate.
+
+        While scanning the circuit having accumulated the clifford state, for each next gate split out:
+        - those potentially affecting all qubits: push out all state, clearing all accumulated state
+        - those affecting a particular set of qubits: for those qubits, push out state, clearing their state
+        - those affecting a single qubit but not being a clifford: push out state for that qubit, clearing it
+        - those affecting a single qubit and being a conditional gate: push out state for that qubit, clearing it
+        - remaining case is a single qubit clifford: add it to the state
         */
         for (auto gp : input_circuit) {
             QL_DOUT("... gate: " << gp->qasm());

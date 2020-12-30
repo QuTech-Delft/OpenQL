@@ -38,6 +38,8 @@ public: // FIXME: should be private
     utils::Opt<operation>   br_condition;
     utils::UInt             cycle_time;   // FIXME HvS just a copy of platform.cycle_time
     instruction_map_t       instruction_map;
+    utils::Vec<utils::UInt> cond_operands;    // see gate interface: condition mode to make new gates conditional
+    cond_type_t             condition;        // kernel condition mode is set by gate_preset_condition()
 
 public:
     quantum_kernel(const utils::Str &name);
@@ -94,7 +96,7 @@ public:
 private:
     // a default gate is the last resort of user gate resolution and is of a build-in form, as below in the code;
     // the "using_default_gates" option can be used to enable ("yes") or disable ("no") default gates;
-    // the use of default gates is deprecated; use the .json configuration file instead;
+    // the use of default gates is deprecated; use the .json configuration file instead to define custom gates;
     //
     // if a default gate definition is available for the given gate name and qubits, add it to circuit and return true
     utils::Bool add_default_gate_if_available(
@@ -104,8 +106,8 @@ private:
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t cond = cond_always,
-        const utils::Vec<utils::UInt> &condregs = {}
+        cond_type_t gcond = cond_always,
+        const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
     // if a specialized custom gate ("e.g. cz q0,q4") is available, add it to circuit and return true
@@ -119,8 +121,8 @@ private:
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t cond = cond_always,
-        const utils::Vec<utils::UInt> &condregs = {}
+        cond_type_t gcond = cond_always,
+        const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
     // FIXME: move to class composite_gate?
@@ -132,9 +134,9 @@ private:
     ) const;
 
     // if specialized composed gate: "e.g. cz q0,q3" available, with composition of subinstructions, return true
-    //      also check each subinstruction for presence of a custom_gate (or a default gate)
+    //      also check each subinstruction for presence as a custom_gate (or a default gate)
     // otherwise, return false
-    // don't add anything to circuit
+    // rely on add_custom_gate_if_available or add_default_gate_if_available to add each subinstruction to the circuit
     //
     // add specialized decomposed gate, example JSON definition: "cl_14 q1": ["rx90 %0", "rym90 %0", "rxm90 %0"]
     utils::Bool add_spec_decomposed_gate_if_available(
@@ -142,14 +144,14 @@ private:
         const utils::Vec<utils::UInt> &all_qubits,
         const utils::Vec<utils::UInt> &cregs = {},
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t cond = cond_always,
-        const utils::Vec<utils::UInt> &condregs = {}
+        cond_type_t gcond = cond_always,
+        const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
     // if composite gate: "e.g. cz %0 %1" available, return true;
     //      also check each subinstruction for availability as a custom gate (or default gate)
     // if not, return false
-    // don't add anything to circuit
+    // rely on add_custom_gate_if_available or add_default_gate_if_available to add each subinstruction to the circuit
     //
     // add parameterized decomposed gate, example JSON definition: "cl_14 %0": ["rx90 %0", "rym90 %0", "rxm90 %0"]
     utils::Bool add_param_decomposed_gate_if_available(
@@ -157,8 +159,8 @@ private:
         const utils::Vec<utils::UInt> &all_qubits,
         const utils::Vec<utils::UInt> &cregs = {},
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t cond = cond_always,
-        const utils::Vec<utils::UInt> &condregs = {}
+        cond_type_t gcond = cond_always,
+        const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
 public:
@@ -172,8 +174,23 @@ public:
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t cond = cond_always,
-        const utils::Vec<utils::UInt> &condregs = {}
+        cond_type_t gcond = cond_always,
+        const utils::Vec<utils::UInt> &gcondregs = {}
+    );
+    void gate_preset_condition(
+        cond_type_t gcond,
+        const utils::Vec<utils::UInt> &gcondregs
+    );
+    void gate_clear_condition();
+    void gate_add_implicits(
+        const utils::Str &gname,
+        utils::Vec<utils::UInt> &qubits,
+        utils::Vec<utils::UInt> &cregs,
+        utils::UInt &duration,
+        utils::Real &angle,
+        utils::Vec<utils::UInt> &bregs,
+        cond_type_t &gcond,
+        const utils::Vec<utils::UInt> &gcondregs
     );
 
     // terminology:
@@ -209,8 +226,8 @@ public:
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t cond = cond_always,
-        const utils::Vec<utils::UInt> &condregs = {}
+        cond_type_t gcond = cond_always,
+        const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
     // to add unitary to kernel
