@@ -192,6 +192,64 @@ class Test_central_controller(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
+    # based on ../test_cqasm_reader.py::test_conditions
+    def test_conditions(self):
+        cqasm_config_fn = os.path.join(curdir, 'cqasm_config_cc.json')
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+        # platform = ql.Platform('seven_qubits_chip', config_fn)
+        number_qubits = platform.get_qubit_number()
+        name = 'test_cqasm_conditions'
+        program = ql.Program(name, platform, number_qubits)
+        qasm_rdr = ql.cQasmReader(platform, program, cqasm_config_fn)
+        qasm_str = "version 1.1\n"                  \
+                   "var qa, qb: qubit\n"            \
+                   "var ca, cb: bool\n"             \
+                   "measure qa, ca\n"               \
+                   "measure qb, cb\n"               \
+                   "cond(true) x qa\n"              \
+                   "cond(false) y qa\n"             \
+                   "cond(ca) z qa\n"                \
+                   "cond(!true) x qa\n"             \
+                   "cond(!false) y qa\n"            \
+                   "cond(!ca) z qa\n"               \
+                   "cond(!!true) x qa\n"            \
+                   "cond(!!false) y qa\n"           \
+                   "cond(!!ca) z qa\n"              \
+                   "cond(ca && cb) x qa\n"          \
+                   "cond(ca && true) y qa\n"        \
+                   "cond(ca && false) z qa\n"       \
+                   "cond(true && cb) x qa\n"        \
+                   "cond(false && cb) y qa\n"       \
+                   "cond(ca || cb) z qa\n"          \
+                   "cond(ca || true) x qa\n"        \
+                   "cond(ca || false) y qa\n"       \
+                   "cond(true || cb) z qa\n"        \
+                   "cond(false || cb) x qa\n"       \
+                   "cond(ca ^^ cb) y qa\n"          \
+                   "cond(ca ^^ true) z qa\n"        \
+                   "cond(ca ^^ false) x qa\n"       \
+                   "cond(true ^^ cb) y qa\n"        \
+                   "cond(false ^^ cb) z qa\n"       \
+                   "cond(!(ca && cb)) x qa\n"       \
+                   "cond(!(ca && true)) y qa\n"     \
+                   "cond(!(ca && false)) z qa\n"    \
+                   "cond(!(true && cb)) x qa\n"     \
+                   "cond(!(false && cb)) y qa\n"    \
+                   "cond(!(ca || cb)) z qa\n"       \
+                   "cond(!(ca || true)) x qa\n"     \
+                   "cond(!(ca || false)) y qa\n"    \
+                   "cond(!(true || cb)) z qa\n"     \
+                   "cond(!(false || cb)) x qa\n"    \
+                   "cond(!(ca ^^ cb)) y qa\n"       \
+                   "cond(!(ca ^^ true)) z qa\n"     \
+                   "cond(!(ca ^^ false)) x qa\n"    \
+                   "cond(!(true ^^ cb)) y qa\n"     \
+                   "cond(!(false ^^ cb)) z qa\n"
+        qasm_rdr.string2circuit(qasm_str)
+        program.compile()
+        #self.assertTrue(file_compare(os.path.join(output_dir, name + '.qasm'), os.path.join(curdir, 'golden', name + '.qasm')))
+
+
 
 
     # FIXME: add:

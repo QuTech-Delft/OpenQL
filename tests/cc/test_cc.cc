@@ -440,6 +440,30 @@ void test_condex(const std::string &scheduler, const std::string &scheduler_unif
     prog.compile();
 }
 
+void test_cqasm_condex()
+{
+    // create platform
+    ql::quantum_platform platform("s5", "cc_s5_direct_iq.json");
+    size_t num_qubits = platform.get_qubit_number();
+    // create program
+    ql::quantum_program program("qasm_qi_example", platform, num_qubits);
+#if 1	// FIXME: fails to compile (tested on Macos): "error: invalid application of 'sizeof' to an incomplete type 'ql::cqasm::ReaderImpl'"
+    ql::cqasm::Reader cqasm_rdr(platform, program);
+    cqasm_rdr.string2circuit(R"(
+	version 1.0
+    qubits 5
+    prep_z q[0,1,2,3,4]
+    y q[0,2]
+    cz q[0], q[2]
+    y90 q[2]
+    measure_all
+	)");
+#endif
+
+    // compile the resulting program
+    program.compile();
+}
+
 
 int main(int argc, char ** argv)
 {
@@ -456,6 +480,7 @@ int main(int argc, char ** argv)
     test_qi_example("ALAP", "no");
     test_break("ALAP", "no");
     test_condex("ALAP", "no");
+//    test_cqasm_condex();
 
     return 0;
 }
