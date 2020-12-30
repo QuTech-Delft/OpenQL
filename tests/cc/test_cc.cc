@@ -447,7 +447,7 @@ void test_cqasm_condex()
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::quantum_program program("qasm_qi_example", platform, num_qubits);
-#if 1	// FIXME: fails to compile (tested on Macos): "error: invalid application of 'sizeof' to an incomplete type 'ql::cqasm::ReaderImpl'"
+#if 0	// FIXME: fails to compile (tested on Macos): "error: invalid application of 'sizeof' to an incomplete type 'ql::cqasm::ReaderImpl'"
     ql::cqasm::Reader cqasm_rdr(platform, program);
     cqasm_rdr.string2circuit(R"(
 	version 1.0

@@ -201,50 +201,52 @@ class Test_central_controller(unittest.TestCase):
         name = 'test_cqasm_conditions'
         program = ql.Program(name, platform, number_qubits)
         qasm_rdr = ql.cQasmReader(platform, program, cqasm_config_fn)
-        qasm_str = "version 1.1\n"                  \
-                   "var qa, qb: qubit\n"            \
-                   "var ca, cb: bool\n"             \
-                   "measure qa, ca\n"               \
-                   "measure qb, cb\n"               \
-                   "cond(true) x qa\n"              \
-                   "cond(false) y qa\n"             \
-                   "cond(ca) z qa\n"                \
-                   "cond(!true) x qa\n"             \
-                   "cond(!false) y qa\n"            \
-                   "cond(!ca) z qa\n"               \
-                   "cond(!!true) x qa\n"            \
-                   "cond(!!false) y qa\n"           \
-                   "cond(!!ca) z qa\n"              \
-                   "cond(ca && cb) x qa\n"          \
-                   "cond(ca && true) y qa\n"        \
-                   "cond(ca && false) z qa\n"       \
-                   "cond(true && cb) x qa\n"        \
-                   "cond(false && cb) y qa\n"       \
-                   "cond(ca || cb) z qa\n"          \
-                   "cond(ca || true) x qa\n"        \
-                   "cond(ca || false) y qa\n"       \
-                   "cond(true || cb) z qa\n"        \
-                   "cond(false || cb) x qa\n"       \
-                   "cond(ca ^^ cb) y qa\n"          \
-                   "cond(ca ^^ true) z qa\n"        \
-                   "cond(ca ^^ false) x qa\n"       \
-                   "cond(true ^^ cb) y qa\n"        \
-                   "cond(false ^^ cb) z qa\n"       \
-                   "cond(!(ca && cb)) x qa\n"       \
-                   "cond(!(ca && true)) y qa\n"     \
-                   "cond(!(ca && false)) z qa\n"    \
-                   "cond(!(true && cb)) x qa\n"     \
-                   "cond(!(false && cb)) y qa\n"    \
-                   "cond(!(ca || cb)) z qa\n"       \
-                   "cond(!(ca || true)) x qa\n"     \
-                   "cond(!(ca || false)) y qa\n"    \
-                   "cond(!(true || cb)) z qa\n"     \
-                   "cond(!(false || cb)) x qa\n"    \
-                   "cond(!(ca ^^ cb)) y qa\n"       \
-                   "cond(!(ca ^^ true)) z qa\n"     \
-                   "cond(!(ca ^^ false)) x qa\n"    \
-                   "cond(!(true ^^ cb)) y qa\n"     \
-                   "cond(!(false ^^ cb)) z qa\n"
+        qasm_str = """
+            version 1.1
+            var qa, qb: qubit
+            var ca, cb: bool
+            measure qa, ca
+            measure qb, cb
+            cond(true) x qa
+            cond(false) y qa
+            cond(ca) z qa
+            cond(!true) x qa
+            cond(!false) y qa
+            cond(!ca) z qa
+            cond(!!true) x qa
+            cond(!!false) y qa
+            cond(!!ca) z qa
+            cond(ca && cb) x qa
+            cond(ca && true) y qa
+            cond(ca && false) z qa
+            cond(true && cb) x qa
+            cond(false && cb) y qa
+            cond(ca || cb) z qa
+            cond(ca || true) x qa
+            cond(ca || false) y qa
+            cond(true || cb) z qa
+            cond(false || cb) x qa
+            cond(ca ^^ cb) y qa
+            cond(ca ^^ true) z qa
+            cond(ca ^^ false) x qa
+            cond(true ^^ cb) y qa
+            cond(false ^^ cb) z qa
+            cond(!(ca && cb)) x qa
+            cond(!(ca && true)) y qa
+            cond(!(ca && false)) z qa
+            cond(!(true && cb)) x qa
+            cond(!(false && cb)) y qa
+            cond(!(ca || cb)) z qa
+            cond(!(ca || true)) x qa
+            cond(!(ca || false)) y qa
+            cond(!(true || cb)) z qa
+            cond(!(false || cb)) x qa
+            cond(!(ca ^^ cb)) y qa
+            cond(!(ca ^^ true)) z qa
+            cond(!(ca ^^ false)) x qa
+            cond(!(true ^^ cb)) y qa
+            cond(!(false ^^ cb)) z qa
+            """
         qasm_rdr.string2circuit(qasm_str)
         program.compile()
         #self.assertTrue(file_compare(os.path.join(output_dir, name + '.qasm'), os.path.join(curdir, 'golden', name + '.qasm')))
