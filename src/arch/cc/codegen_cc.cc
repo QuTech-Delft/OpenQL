@@ -454,13 +454,22 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 \************************************************************************/
 
 // helper
-std::string toQasm(const std::string &iname, const Vec<UInt> &operands, const Vec<UInt> &breg_operands)
+static std::string qasm(const std::string &iname, const Vec<UInt> &operands, const Vec<UInt> &breg_operands)
 {
 	// FIXME: hack
 	custom_gate g(iname);
 	g.operands = operands;
 	g.breg_operands = breg_operands;
 	return g.qasm();
+}
+
+static std::string cond_qasm(cond_type_t condition, Vec<UInt> cond_operands)
+{
+	// FIXME: hack
+	custom_gate g("foo");
+	g.condition = condition;
+	g.cond_operands = cond_operands;
+	return g.cond_qasm();
 }
 
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
@@ -489,10 +498,10 @@ void codegen_cc::customGate(
 
     // generate comment
     if(isReadout) {
-		comment(std::string(" # READOUT: '") + toQasm(iname, operands, breg_operands) + "'");
+		comment(std::string(" # READOUT: '") + qasm(iname, operands, breg_operands) + "'");
     } else { // handle all other instruction types than "readout"
         // generate comment. NB: we don't have a particular limit for the number of operands
-        comment(std::string(" # gate '") + toQasm(iname, operands, breg_operands) + "'");
+        comment(std::string(" # gate '") + qasm(iname, operands, breg_operands) + "'");
     }
 
 
@@ -548,8 +557,8 @@ void codegen_cc::customGate(
 			// operand checks
 			if(operands.size() != 1) {
 				QL_FATAL(
-					"Readout instruction '" << toQasm(iname, operands, breg_operands)
-					<< "' requires exactly 1 quantum operand, not " << operands.size()
+					"Readout instruction '" << qasm(iname, operands, breg_operands)
+											<< "' requires exactly 1 quantum operand, not " << operands.size()
 				);
 			}
 			if(!creg_operands.empty()) {
@@ -557,8 +566,8 @@ void codegen_cc::customGate(
 			}
 			if(breg_operands.size() > 1) {
 				QL_FATAL(
-					"Readout instruction '" << toQasm(iname, operands, breg_operands)
-					<< "' requires 0 or 1 bit operands, not " << breg_operands.size()
+					"Readout instruction '" << qasm(iname, operands, breg_operands)
+											<< "' requires 0 or 1 bit operands, not " << breg_operands.size()
 				);
 			}
 
@@ -746,17 +755,29 @@ void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, uns
 			QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << instrMaxDurationInCycles),
 			QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": code word/mask on '" << instrumentName + "'")
 		);
-	} else {	// some group conditional
+	} else {	// at least one group conditional
+#if 1
 		// configure datapath PL
 		int smAddr = 0;		// FIXME:
-		int pl = dp.getOrAssignPl(instrIdx);
+		int pl = dp.getOrAssignPl(instrIdx);	// FIXME: add parameter condGateMap
 
+		dp.emitPl(pl, smAddr, condGateMap, instrIdx, slot);
+#else
 		dp.emit(slot, QL_SS2S(".PL " << pl));
+
+
 		for(auto &cg : condGateMap) {
 			int group = cg.first;
 			tCondGateInfo cgi = cg.second;
 
-#if 1				// FIXME: implement PL output
+			// emit comment for group
+			std::string condition = cond_qasm(cgi.condition, cgi.cond_operands);
+			dp.emit(
+				slot,
+				QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", condition='" << condition << "'")
+			);
+
+			// emit PL logic
 			for(int bit=0; bit<32; bit++) {
 				if(1<<bit & cgi.groupDigOut) {
 					// FIXME:
@@ -805,16 +826,14 @@ void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, uns
 							rhs << "I[" << smBit0 << "] ^ I[" << smBit1 << "]";
 							break;
 					}
-					std::string expression;	// gtPlExpression(cgi.condition, cgi.cond_operands);
 					dp.emit(
 						slot,
-						QL_SS2S(inv << "O[" << bit << "] := " << rhs.str()),
-						QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", expression=" << expression)
+						QL_SS2S(inv << "O[" << bit << "] := " << rhs.str())
 					);
 				}
 			}
-#endif
 		}
+#endif
 
 		// emit code for conditional gate
 		emit(
@@ -823,7 +842,6 @@ void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, uns
 			QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
 			QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": conditional code word/mask on '" << instrumentName << "'")
 		);
-		// FIXME
 	}
 
 	// update lastEndCycle
@@ -871,7 +889,7 @@ void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, 
 	// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
 	if(!feedbackMap.empty()) {	// this instrument performs readout for feedback now
 		int smAddr = 0;		// FIXME:
-		int mux = dp.getOrAssignMux(instrIdx);
+		int mux = dp.getOrAssignMux(instrIdx);	// FIXME: add paremeter feedbackMap
 
 		// emit datapath code
 		dp.emit(slot, QL_SS2S(".MUX " << mux));

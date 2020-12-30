@@ -14,11 +14,11 @@
 #include "settings_cc.h"
 #include "vcd_cc.h"
 #include "platform.h"
+#include "utils/vec.h"
+#include "utils/json.h"
 
 #include <string>
 #include <cstddef>  // for size_t etc.
-#include "utils/vec.h"
-#include "utils/json.h"
 
 namespace ql {
 
@@ -99,13 +99,6 @@ private:    // types
 
 
 #if OPT_FEEDBACK
-	typedef struct {
-		cond_type_t condition;
-		Vec<UInt> cond_operands;
-		uint32_t groupDigOut;
-	} tCondGateInfo;											// information for conditional gate on single instrument group
-	using tCondGateMap = std::map<int, tCondGateInfo>;			// NB: key is instrument group
-
 	typedef struct {
 		int smBit;
 		int bit;

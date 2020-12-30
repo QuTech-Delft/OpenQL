@@ -8,6 +8,11 @@
 
 #pragma once
 
+#include "options_cc.h"
+#include "gate.h"
+#include "utils/vec.h"
+//#include "codegen_cc.h"
+
 #include <string>
 #include <cstddef>
 #include <iomanip>
@@ -15,6 +20,18 @@
 #include <utils/logger.h>
 
 namespace ql {
+
+namespace { using namespace utils; }
+
+// NB: types shared with codegen_cc
+typedef struct {
+	cond_type_t condition;
+	Vec<UInt> cond_operands;
+	uint32_t groupDigOut;
+} tCondGateInfo;											// information for conditional gate on single instrument group
+using tCondGateMap = std::map<int, tCondGateInfo>;			// NB: key is instrument group
+
+
 
 class datapath_cc
 {
@@ -27,11 +44,12 @@ public: // functions
 	void programStart();
 	void programFinish();
 
-	int allocateSmBit(size_t creg_operand, size_t instrIdx);
-	int getSmBit(size_t creg_operand, size_t instrIdx);
+	int allocateSmBit(size_t breg_operand, size_t instrIdx);
+	int getSmBit(size_t breg_operand, size_t instrIdx);
 	int getOrAssignMux(size_t instrIdx);
 	int getOrAssignPl(size_t instrIdx);
 	static int getSizeTag(int numReadouts);
+	void emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, size_t instrIdx, int slot);
 
 	std::string getDatapathSection() { return datapathSection.str(); }
 
