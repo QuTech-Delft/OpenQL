@@ -74,7 +74,7 @@ int datapath_cc::getSizeTag(int numReadouts)
 		sizeTag = 0;			// 0=byte
 	} else if(numReadouts <= 16) {
 		sizeTag = 1;
-	} else if(numReadouts <= 32) {	// NB: should currently not occur since we have a maximum of 16 inputs on UHF
+	} else if(numReadouts <= 32) {	// NB: should currently not occur since we have a maximum of 16 inputs on UHFQA
 		sizeTag = 2;
 	} else {
 		QL_FATAL("inconsistency detected: too many readouts");
@@ -94,7 +94,7 @@ static std::string cond_qasm(cond_type_t condition, const Vec<UInt> &cond_operan
 
 void datapath_cc::emitMux(int mux, int smAddr, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot)
 {
-		// emit datapath code
+	// emit datapath code
 	emit(slot, QL_SS2S(".MUX " << mux));
 	for(auto &feedback : feedbackMap) {
 		int group = feedback.first;

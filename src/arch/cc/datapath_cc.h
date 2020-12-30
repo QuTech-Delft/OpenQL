@@ -24,17 +24,12 @@ namespace ql {
 namespace { using namespace utils; }
 
 // NB: types shared with codegen_cc
-#if 1 // FIXME
-//class codegen_cc;
-//class BundleInfo;	// opaque to prevent circular includes
-
 typedef struct {
 	int smBit;
 	int bit;
 	const BundleInfo *bi;									// used for annotation only
 } tFeedbackInfo;											// information for feedback on single instrument group
 using tFeedbackMap = std::map<int, tFeedbackInfo>;			// NB: key is instrument group
-#endif
 
 typedef struct {
 	cond_type_t condition;
@@ -70,7 +65,7 @@ public: // functions
 	    datapathSection << cmnt << std::endl;
 	}
 
-// FIXME private:
+private:	// functions
 	void emit(const std::string &sel, const std::string &statement, const std::string &comment="") {
 		datapathSection << std::setw(16) << sel << std::setw(16) << statement << std::setw(24) << comment << std::endl;
 	}

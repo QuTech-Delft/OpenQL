@@ -738,24 +738,7 @@ void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, 
 		int smAddr = 0;		// FIXME:
 		int mux = dp.getOrAssignMux(instrIdx);	// FIXME: add parameter feedbackMap
 
-#if 1	// FIXME: move to datapath_cc
 		dp.emitMux(mux, smAddr, feedbackMap, instrIdx, slot);
-#else
-		// emit datapath code
-		dp.emit(slot, QL_SS2S(".MUX " << mux));
-		for(auto &feedback : feedbackMap) {
-			int group = feedback.first;
-			tFeedbackInfo fi = feedback.second;
-
-			dp.emit(
-				slot,
-				QL_SS2S("SM[" << fi.smBit << "] := I[" << fi.bit << "]"),
-				QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->operands[0] << ")")
-			);
-
-			int mySmAddr = fi.smBit / 8;	// byte addressable
-		}
-#endif
 
 		// emit code for slot input
 		int sizeTag = datapath_cc::getSizeTag(feedbackMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
