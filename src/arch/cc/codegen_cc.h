@@ -80,7 +80,7 @@ private:    // types
         int staticCodewordOverride = settings_cc::NO_STATIC_CODEWORD_OVERRIDE;
 #endif
 #if OPT_FEEDBACK
-        // readout
+        // readout feedback
         bool isMeasFeedback = false;
 		Vec<UInt> operands;							// NB: also used by OPT_PRAGMA
 		Vec<UInt> creg_operands;
@@ -135,7 +135,7 @@ private:    // vars
     bool mapPreloaded = false;
 
 	// codegen state, program scope
-	Json codewordTable;                                  // codewords versus signals per instrument group
+	Json codewordTable;                                  		// codewords versus signals per instrument group
 	std::stringstream codeSection;                              // the code generated
 
 	// codegen state, kernel scope FIXME: create class

@@ -11,8 +11,14 @@
 #include <string>
 #include <algorithm>
 
+using namespace ql::utils;
+
 #define CFG_FILE_JSON   "test_cfg_cc.json"
 
+#if 1	// FIXME: interfaces not present in C++ API
+ #define CONDGATE(gname, qubits, cond, condregs)	gate(gname, qubits, Vec<UInt>{}, 0, 0.0, Vec<UInt>{}, cond, condregs)
+ #define BARRIER(x) wait(x,0)
+#endif
 
 // based on tests/test_hybrid.py
 void test_classical(const std::string &scheduler, const std::string &scheduler_uniform)
@@ -31,7 +37,7 @@ void test_classical(const std::string &scheduler, const std::string &scheduler_u
     for (int j=6; j<17; j++) {
         k.gate("x", j);
     }
-    k.wait({}, 0);      // help scheduler
+    k.BARRIER({});      // help scheduler
 
     // 1/2/3 qubit flux
 #if 0 // misaligns cz and park_cz (using old scheduler)
@@ -53,12 +59,12 @@ void test_classical(const std::string &scheduler, const std::string &scheduler_u
     k.gate("cz", 10, 15);
     k.gate("park_cz", 16);
 #endif
-	k.wait({}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
 
     k.gate("cz_park", {6, 7, 11});
     k.gate("cz_park", {12, 13, 15});
     k.gate("cz_park1", {10, 15, 16});   // FIXME:
-    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
 
     // gate with angle parameter
     double angle = 1.23456; // just some number
@@ -184,20 +190,20 @@ void test_qec_pipelined(const std::string &scheduler, const std::string &schedul
     k.gate("rym90", xE);
     k.gate("rym90", xW);
     k.gate("rym90", xS);
-	k.wait({}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
 
     k.gate("cz", x, xE);
     k.gate("cz", x, xN);
     k.gate("cz", x, xS);
     k.gate("cz", x, xW);
-	k.wait({}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
 
     k.gate("ry90", x);
     k.gate("ry90", xN);
     k.gate("ry90", xE);
     k.gate("ry90", xW);
     k.gate("ry90", xS);
-	k.wait({}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
 
     // FIXME:
     // - qubits participating in CZ need phase correction, which may be part of gate, or separate
@@ -207,7 +213,7 @@ void test_qec_pipelined(const std::string &scheduler, const std::string &schedul
     //      + possible in parallel without doing 2 qubits gate?
 
     k.gate("measure", x, 0);
-	k.wait({}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
 
     // Z stabilizers
     k.gate("rym90", z);
@@ -341,18 +347,18 @@ void test_qi_example(const std::string &scheduler, const std::string &scheduler_
 	for(size_t i=0; i<5; i++) {
 		k.gate("prepz", i);
 	}
-	k.wait({}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
     k.gate("ry180", {0, 2});     // FIXME: "y" does not work, but gate decomposition should handle?
     k.gate("wait");
     k.gate("cz", {0, 2});
     k.gate("wait");
     k.gate("y90", 2);
 
-	k.wait({}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
 	for(size_t i=0; i<5; i++) {
 		k.gate("measure", i);
 	}
-	k.wait({}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
 
     prog.add(k);
 
@@ -387,6 +393,54 @@ void test_break(const std::string &scheduler, const std::string &scheduler_unifo
 }
 
 
+void test_condex(const std::string &scheduler, const std::string &scheduler_uniform)
+{
+    // create and set platform
+    ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
+    ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
+    ql::options::set("write_qasm_files", "yes");    	// so we can see bundles
+
+    const int num_qubits = 5;
+    const int num_cregs = 5;
+    const int num_bregs = 5;
+    ql::quantum_program prog(("test_condex_" + scheduler + "_uniform_" + scheduler_uniform), s5, num_qubits, num_cregs, num_bregs);
+    ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs, num_bregs);
+
+    k.gate("prepz", 1);	// FIXME: program makes no sense
+    k.gate("measure_fb", 1);
+    k.gate("measure_fb", 2);
+
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_always, Vec<UInt>{});
+	k.BARRIER({});      // help scheduler
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_never, Vec<UInt>{});
+	k.BARRIER({});
+
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond, Vec<UInt>{1});
+	k.BARRIER({});
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_not, Vec<UInt>{1});
+	k.BARRIER({});
+
+	Vec<UInt> vec2{1,2};
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_and, vec2);
+	k.BARRIER({});
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_nand, vec2);
+	k.BARRIER({});
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_or, vec2);
+	k.BARRIER({});
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_nor, vec2);
+	k.BARRIER({});
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_xor, vec2);
+	k.BARRIER({});
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_nxor, vec2);
+	k.BARRIER({});
+
+    prog.add_for(k, 100);
+
+    prog.compile();
+}
+
+
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_INFO");      // LOG_DEBUG, LOG_INFO
@@ -401,6 +455,7 @@ int main(int argc, char ** argv)
 
     test_qi_example("ALAP", "no");
     test_break("ALAP", "no");
+    test_condex("ALAP", "no");
 
     return 0;
 }

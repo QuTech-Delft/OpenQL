@@ -11,6 +11,7 @@
 
 #include <version.h>
 #include <options.h>
+#include <iosfwd>
 
 // constants
 
@@ -759,14 +760,55 @@ void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, uns
 			for(int bit=0; bit<32; bit++) {
 				if(1<<bit & cgi.groupDigOut) {
 					// FIXME:
-					cgi.condition;
 					cgi.cond_operands;
-					int smBit0 = 0;
+					int smBit0 = 0;	// FIXME: get
 					int smBit1 = 0;
+					std::string inv;
+					std::stringstream rhs;
+
+					switch(cgi.condition) {		// FIXME: cleanup
+						// 0 operands:
+						case cond_always:
+							rhs << "1";
+							break;
+						case cond_never:
+							rhs << "0";
+							break;
+
+					    // 1 operand:
+						case cond_not:
+							inv = "/";
+							// fall through
+						case cond:
+							rhs << "I[" << smBit0 << "]";
+							break;
+
+					    // 2 operands
+						case cond_nand:
+							inv = "/";
+							// fall through
+						case cond_and:
+							rhs << "I[" << smBit0 << "] & I[" << smBit1 << "]";
+							break;
+
+						case cond_nor:
+							inv = "/";
+							// fall through
+						case cond_or:
+							rhs << "I[" << smBit0 << "] | I[" << smBit1 << "]";
+							break;
+
+						case cond_nxor:
+							inv = "/";
+							// fall through
+						case cond_xor:
+							rhs << "I[" << smBit0 << "] ^ I[" << smBit1 << "]";
+							break;
+					}
 					std::string expression;	// gtPlExpression(cgi.condition, cgi.cond_operands);
 					dp.emit(
 						slot,
-						QL_SS2S("O[" << bit << "] := I[" << smBit0 << "]"),		// FIXME: depend on condition
+						QL_SS2S(inv << "O[" << bit << "] := " << rhs.str()),
 						QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", expression=" << expression)
 					);
 				}
@@ -779,7 +821,7 @@ void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, uns
 			slot,
 			"seq_out_sm",
 			QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
-			QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": consitional code word/mask on '" << instrumentName << "'")
+			QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": conditional code word/mask on '" << instrumentName << "'")
 		);
 		// FIXME
 	}
