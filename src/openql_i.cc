@@ -287,20 +287,8 @@ void Kernel::gate(
         << ql::utils::Vec<size_t>(condregs.begin(), condregs.end())
         << ")"
     );
-    ql::cond_type_t condvalue;
-    if      (condstring == "COND_ALWAYS") condvalue = ql::cond_always;
-    else if (condstring == "COND_NEVER") condvalue = ql::cond_never;
-    else if (condstring == "COND") condvalue = ql::cond;
-    else if (condstring == "COND_NOT") condvalue = ql::cond_not;
-    else if (condstring == "COND_AND") condvalue = ql::cond_and;
-    else if (condstring == "COND_NAND") condvalue = ql::cond_nand;
-    else if (condstring == "COND_OR") condvalue = ql::cond_or;
-    else if (condstring == "COND_NOR") condvalue = ql::cond_nor;
-    else if (condstring == "COND_XOR") condvalue = ql::cond_xor;
-    else if (condstring == "COND_NXOR") condvalue = ql::cond_nxor;
-    else {
-        throw std::runtime_error("Error: Unknown condition " + condstring);
-    }
+    ql::cond_type_t condvalue = kernel->condstr2condvalue(condstring);
+
     kernel->gate(
         name,
         {qubits.begin(), qubits.end()},
@@ -335,22 +323,8 @@ void Kernel::gate_preset_condition(
     const std::vector<size_t> &condregs
 ) {
     QL_DOUT("Python k.gate_preset_condition("<<condstring<<", condregs)");
-    ql::cond_type_t condvalue;
-    if      (condstring == "COND_ALWAYS") condvalue = ql::cond_always;
-    else if (condstring == "COND_NEVER") condvalue = ql::cond_never;
-    else if (condstring == "COND") condvalue = ql::cond;
-    else if (condstring == "COND_NOT") condvalue = ql::cond_not;
-    else if (condstring == "COND_AND") condvalue = ql::cond_and;
-    else if (condstring == "COND_NAND") condvalue = ql::cond_nand;
-    else if (condstring == "COND_OR") condvalue = ql::cond_or;
-    else if (condstring == "COND_NOR") condvalue = ql::cond_nor;
-    else if (condstring == "COND_XOR") condvalue = ql::cond_xor;
-    else if (condstring == "COND_NXOR") condvalue = ql::cond_nxor;
-    else {
-        throw std::runtime_error("Error: Unknown condition " + condstring);
-    }
     kernel->gate_preset_condition(
-        condvalue,
+        kernel->condstr2condvalue(condstring),
         {condregs.begin(), condregs.end()}
     );
 }
@@ -377,28 +351,10 @@ void Kernel::condgate(
         << ql::utils::Vec<size_t>(condregs.begin(), condregs.end())
         << ")"
     );
-    ql::cond_type_t condvalue;
-    if      (condstring == "COND_ALWAYS") condvalue = ql::cond_always;
-    else if (condstring == "COND_NEVER") condvalue = ql::cond_never;
-    else if (condstring == "COND") condvalue = ql::cond;
-    else if (condstring == "COND_NOT") condvalue = ql::cond_not;
-    else if (condstring == "COND_AND") condvalue = ql::cond_and;
-    else if (condstring == "COND_NAND") condvalue = ql::cond_nand;
-    else if (condstring == "COND_OR") condvalue = ql::cond_or;
-    else if (condstring == "COND_NOR") condvalue = ql::cond_nor;
-    else if (condstring == "COND_XOR") condvalue = ql::cond_xor;
-    else if (condstring == "COND_NXOR") condvalue = ql::cond_nxor;
-    else {
-        throw std::runtime_error("Error: Unknown condition " + condstring);
-    }
-    kernel->gate(
+    kernel->condgate(
         name,
         {qubits.begin(), qubits.end()},
-        {},
-        0,
-        0.0,
-        {},
-        condvalue,
+        kernel->condstr2condvalue(condstring),
         {condregs.begin(), condregs.end()}
     );
 }

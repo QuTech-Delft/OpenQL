@@ -42,22 +42,22 @@ class Test_condex(unittest.TestCase):
 
         # measure q0 implicitly assigns b0, then x conditionally using condgate on b0 on q0
         k.gate("measure", [0])
-        k.condgate("x", [0], 'COND', [0])
+        k.condgate("x", [0], 'COND_UNARY', [0])
 
         # measure q1 implicitly assigns b1, then x conditionally using preset_condition on b1 on q1
         k.gate("measure", [1])
-        k.gate_preset_condition('COND', [1])
+        k.gate_preset_condition('COND_UNARY', [1])
         k.gate("x", [1])
         k.gate_clear_condition()
         k.gate("x", [1])
 
         # measure q2 implicitly assigns b2, then x conditionally using explicit gate on b2 on q2
         k.gate("measure", [2])
-        k.gate("x", [2], 0, 0.0, [], 'COND', [2])
+        k.gate("x", [2], 0, 0.0, [], 'COND_UNARY', [2])
 
         # measure q3 and explicitly assign b1, then x conditionally on b1 on q3
         k.gate("measure", [3], 0, 0.0, [1])
-        k.condgate("x", [3], 'COND', [1])
+        k.condgate("x", [3], 'COND_UNARY', [1])
 
         # measure q4 and then x conditionally on NOT b4 on q4
         k.gate("measure", [4])
@@ -103,10 +103,10 @@ class Test_condex(unittest.TestCase):
 
         # conditional measure
         k.gate("measure", [0], 0, 0.0, [0])
-        k.gate("measure", [1], 0, 0.0, [1], 'COND', [0])
+        k.gate("measure", [1], 0, 0.0, [1], 'COND_UNARY', [0])
         k.gate("measure", [2], 0, 0.0, [2], 'COND_NOT', [0])
-        k.condgate("x", [3], 'COND', [1])
-        k.condgate("y", [5], 'COND', [2])
+        k.condgate("x", [3], 'COND_UNARY', [1])
+        k.condgate("y", [5], 'COND_UNARY', [2])
 
         prog.add_kernel(k)
         prog.compile()
@@ -141,13 +141,13 @@ class Test_condex(unittest.TestCase):
         k.gate("cnot", [0,1])
 
         k.gate("measure", [2])
-        k.gate("cnot", [0,2], 0, 0.0, [], 'COND', [2])
+        k.gate("cnot", [0,2], 0, 0.0, [], 'COND_UNARY', [2])
 
         k.gate("measure", [2])
-        k.condgate("cnot", [0,5], 'COND', [2])
+        k.condgate("cnot", [0,5], 'COND_UNARY', [2])
 
         k.gate("measure", [2])
-        k.gate_preset_condition('COND', [2])
+        k.gate_preset_condition('COND_UNARY', [2])
         k.gate("cnot", [0,6])
         k.gate_clear_condition()
 
@@ -189,13 +189,13 @@ class Test_condex(unittest.TestCase):
         k.gate("toffoli", [0,1,5])
 
         k.gate("measure", [0])
-        k.gate("toffoli", [0,1,5], 0, 0.0, [], 'COND', [0])
+        k.gate("toffoli", [0,1,5], 0, 0.0, [], 'COND_UNARY', [0])
 
         k.gate("measure", [0])
-        k.condgate("toffoli", [0,1,5], 'COND', [0])
+        k.condgate("toffoli", [0,1,5], 'COND_UNARY', [0])
 
         k.gate("measure", [0])
-        k.gate_preset_condition('COND', [0])
+        k.gate_preset_condition('COND_UNARY', [0])
         k.toffoli(0,1,5)
         k.gate_clear_condition()
 
@@ -236,13 +236,13 @@ class Test_condex(unittest.TestCase):
         k.gate("toffoli_decomp", [0,1,5])
 
         k.gate("measure", [0])
-        k.gate("toffoli_decomp", [0,1,5], 0, 0.0, [], 'COND', [0])
+        k.gate("toffoli_decomp", [0,1,5], 0, 0.0, [], 'COND_UNARY', [0])
 
         k.gate("measure", [0])
-        k.condgate("toffoli_decomp", [0,1,5], 'COND', [0])
+        k.condgate("toffoli_decomp", [0,1,5], 'COND_UNARY', [0])
 
         k.gate("measure", [0])
-        k.gate_preset_condition('COND', [0])
+        k.gate_preset_condition('COND_UNARY', [0])
         k.gate("toffoli_decomp", [0,1,5])
         k.gate_clear_condition()
 

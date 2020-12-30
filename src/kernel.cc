@@ -860,6 +860,39 @@ void quantum_kernel::gate_clear_condition() {
 }
 
 /**
+ * short-cut creation of conditional gate with only qubits as operands
+ */
+void quantum_kernel::condgate(
+    const utils::Str &gname,
+    const utils::Vec<utils::UInt> &qubits,
+    cond_type_t gcond,
+    const utils::Vec<utils::UInt> &gcondregs
+) {
+    gate(gname, qubits, {}, 0, 0.0, {}, gcond, gcondregs);
+}
+
+/**
+ * conversion used by Python conditional execution interface
+ */
+ql::cond_type_t quantum_kernel::condstr2condvalue(const std::string &condstring) {
+    ql::cond_type_t condvalue;
+    if      (condstring == "COND_ALWAYS") condvalue = ql::cond_always;
+    else if (condstring == "COND_NEVER") condvalue = ql::cond_never;
+    else if (condstring == "COND_UNARY") condvalue = ql::cond_unary;
+    else if (condstring == "COND_NOT") condvalue = ql::cond_not;
+    else if (condstring == "COND_AND") condvalue = ql::cond_and;
+    else if (condstring == "COND_NAND") condvalue = ql::cond_nand;
+    else if (condstring == "COND_OR") condvalue = ql::cond_or;
+    else if (condstring == "COND_NOR") condvalue = ql::cond_nor;
+    else if (condstring == "COND_XOR") condvalue = ql::cond_xor;
+    else if (condstring == "COND_NXOR") condvalue = ql::cond_nxor;
+    else {
+        throw std::runtime_error("Error: Unknown condition " + condstring);
+    }
+    return condvalue;
+}
+
+/**
  * add implicit parameters to gate to match IR requirements
  */
 void quantum_kernel::gate_add_implicits(

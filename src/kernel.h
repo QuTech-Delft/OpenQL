@@ -182,16 +182,14 @@ public:
         const utils::Vec<utils::UInt> &gcondregs
     );
     void gate_clear_condition();
-    void gate_add_implicits(
+    void condgate(
         const utils::Str &gname,
-        utils::Vec<utils::UInt> &qubits,
-        utils::Vec<utils::UInt> &cregs,
-        utils::UInt &duration,
-        utils::Real &angle,
-        utils::Vec<utils::UInt> &bregs,
-        cond_type_t &gcond,
+        const utils::Vec<utils::UInt> &qubits,
+        cond_type_t gcond,
         const utils::Vec<utils::UInt> &gcondregs
     );
+    // to add unitary to kernel
+    void gate(const unitary &u, const utils::Vec<utils::UInt> &qubits);
 
     // terminology:
     // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):
@@ -215,6 +213,7 @@ public:
     // if not, check if a default gate is available
     //      e.g. whether "cz" is available as default gate
     // if not, then FATAL (for gate()) or return false (for gate_nonfatal())
+
     /**
      * custom gate with arbitrary number of operands
      * as gate above but return whether gate was successfully matched in gate_definition, next to gate in kernel.c
@@ -230,10 +229,23 @@ public:
         const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
-    // to add unitary to kernel
-    void gate(const unitary &u, const utils::Vec<utils::UInt> &qubits);
+    /**
+     * support function for Python conditional execution interfaces to pass condition
+     */
+    ql::cond_type_t condstr2condvalue(const std::string &condstring);
 
 private:
+    void gate_add_implicits(
+        const utils::Str &gname,
+        utils::Vec<utils::UInt> &qubits,
+        utils::Vec<utils::UInt> &cregs,
+        utils::UInt &duration,
+        utils::Real &angle,
+        utils::Vec<utils::UInt> &bregs,
+        cond_type_t &gcond,
+        const utils::Vec<utils::UInt> &gcondregs
+    );
+
     //recursive gate count function
     //n is number of qubits
     //i is the start point for the instructionlist
