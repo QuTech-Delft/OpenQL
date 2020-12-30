@@ -726,6 +726,61 @@ void codegen_cc::emitProgramStart()
 }
 
 
+// generate code to input measurement results and distribute them via DSM
+void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
+{
+	if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
+		padToCycle(instrIdx, startCycle, slot, instrumentName);
+	}
+
+	// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
+	if(!feedbackMap.empty()) {	// this instrument performs readout for feedback now
+		int smAddr = 0;		// FIXME:
+		int mux = dp.getOrAssignMux(instrIdx);	// FIXME: add parameter feedbackMap
+
+#if 1	// FIXME: move to datapath_cc
+		// emit datapath code
+		dp.emit(slot, QL_SS2S(".MUX " << mux));
+		for(auto &feedback : feedbackMap) {
+			int group = feedback.first;
+			tFeedbackInfo fi = feedback.second;
+
+			dp.emit(
+				slot,
+				QL_SS2S("SM[" << fi.smBit << "] := I[" << fi.bit << "]"),
+				QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->operands[0] << ")")
+			);
+
+			int mySmAddr = fi.smBit / 8;	// byte addressable
+		}
+#endif
+
+		// emit code for slot input
+		int sizeTag = datapath_cc::getSizeTag(feedbackMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
+		emit(
+			slot,
+			"seq_in_sm",
+			QL_SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
+			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": feedback on '" << instrumentName+"'")
+		);
+		lastEndCycle[instrIdx]++;
+	} else {	// this instrument does not perform readout for feedback now
+		// FIXME:
+		int smAddr = 0;
+		int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
+
+		// emit code for non-participating instrument
+		emit(
+			slot,
+			"seq_inv_sm",
+			QL_SS2S("S" << smAddr << ","  << smTotalSize),
+			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": invalidate SM on '" << instrumentName+"'")
+		);
+		lastEndCycle[instrIdx]++;
+	}
+}
+
+
 void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, unsigned int instrMaxDurationInCycles, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
 {
 	comment(QL_SS2S(
@@ -794,58 +849,6 @@ void codegen_cc::emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx
 		emit(slot, "jlt", QL_SS2S("R1,1,@" << label), "");
 	} else {
 		emit(slot, "jgt", QL_SS2S("R1,0,@" << label), "");
-	}
-}
-
-// generate code to input measurement results and distribute them via DSM
-void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName)
-{
-	if(startCycle > lastEndCycle[instrIdx]) {	// i.e. if(!instrHasOutput)
-		padToCycle(instrIdx, startCycle, slot, instrumentName);
-	}
-
-	// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
-	if(!feedbackMap.empty()) {	// this instrument performs readout for feedback now
-		int smAddr = 0;		// FIXME:
-		int mux = dp.getOrAssignMux(instrIdx);	// FIXME: add paremeter feedbackMap
-
-		// emit datapath code
-		dp.emit(slot, QL_SS2S(".MUX " << mux));
-		for(auto &feedback : feedbackMap) {
-			int group = feedback.first;
-			tFeedbackInfo fi = feedback.second;
-
-			dp.emit(
-				slot,
-				QL_SS2S("SM[" << fi.smBit << "] := I[" << fi.bit << "]"),
-				QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->operands[0] << ")")
-			);
-
-			int mySmAddr = fi.smBit / 8;	// byte addressable
-		}
-
-		// emit code for slot input
-		int sizeTag = datapath_cc::getSizeTag(feedbackMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
-		emit(
-			slot,
-			"seq_in_sm",
-			QL_SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
-			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": feedback on '" << instrumentName+"'")
-		);
-		lastEndCycle[instrIdx]++;
-	} else {	// this instrument does not perform readout for feedback now
-		// FIXME:
-		int smAddr = 0;
-		int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
-
-		// emit code for non-participating instrument
-		emit(
-			slot,
-			"seq_inv_sm",
-			QL_SS2S("S" << smAddr << ","  << smTotalSize),
-			QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": invalidate SM on '" << instrumentName+"'")
-		);
-		lastEndCycle[instrIdx]++;
 	}
 }
 
