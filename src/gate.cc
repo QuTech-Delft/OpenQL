@@ -23,7 +23,7 @@ instruction_t gate::cond_qasm() const {
             return "";
         case cond_never:
             return instruction_t("cond(0) ");
-        case cond:
+        case cond_unary:
             return instruction_t("cond(b[" + to_string(cond_operands[0]) + "]) ");
         case cond_not:
             return instruction_t("cond(!b[" + to_string(cond_operands[0]) + "]) ");
@@ -48,7 +48,7 @@ Bool gate::is_valid_cond(cond_type_t condition, const Vec<UInt> &cond_operands) 
     case cond_always:
     case cond_never:
         return (cond_operands.size()==0);
-    case cond:
+    case cond_unary:
     case cond_not:
         return (cond_operands.size()==1);
     case cond_and:

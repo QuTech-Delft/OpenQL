@@ -28,7 +28,10 @@ int datapath_cc::allocateSmBit(size_t breg_operand, size_t instrIdx)
 {
 	// Some requirements from hardware:
 	// - different instruments must use SM bits located in different DSM transfers
-	// - the maximum transfer size (currently, using an UHFQA) is 16 bit
+	// - the maximum required DSM transfer size (currently, using an UHFQA) is 16 bit
+	// - all DSM bits used for the conditional gates of a single bundle must reside in
+	//   a 128 bit window, aligned on 128 bit (16 byte)
+	// - DSM size is 1024 bits (128 bytes)
 	// Other notes:
 	// - we don't attempt to be smart about DSM transfer size allocation
 	// - we don't manage?/allow? multiple allocations to the same breg_operand
@@ -50,7 +53,7 @@ int datapath_cc::getSmBit(size_t breg_operand, size_t instrIdx)
 
 int datapath_cc::getOrAssignMux(size_t instrIdx)
 {
-	// We need a different MUX for every new combination of simultaneous readouts
+	// We need a different MUX for every new combination of simultaneous readouts (per instrument)
 
 	return 0;	// FIXME
 }
@@ -58,7 +61,7 @@ int datapath_cc::getOrAssignMux(size_t instrIdx)
 
 int datapath_cc::getOrAssignPl(size_t instrIdx)
 {
-	// We need a different PL for every new combination of simultaneous gate conditions
+	// We need a different PL for every new combination of simultaneous gate conditions (per instrument)
 
 	return 0;	// FIXME
 }
@@ -149,7 +152,7 @@ void datapath_cc::emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, si
 					case cond_not:
 						inv = "/";
 						// fall through
-					case cond:
+					case cond_unary:
 						rhs << "I[" << smBit0 << "]";
 						break;
 

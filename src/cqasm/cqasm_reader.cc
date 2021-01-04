@@ -978,7 +978,7 @@ private:
                             if (invert) {
                                 cond = e_cond_type::cond_not;
                             } else {
-                                cond = e_cond_type::cond;
+                                cond = e_cond_type::cond_unary;
                             }
                             fun = nullptr;
                             break;
@@ -1008,7 +1008,7 @@ private:
                         }
                     } else {
                         cond_bregs.push_back(expect_condition_reg(insn->condition));
-                        cond = e_cond_type::cond;
+                        cond = e_cond_type::cond_unary;
                     }
 
                     // Figure out if this instruction uses

@@ -416,7 +416,7 @@ void test_condex(const std::string &scheduler, const std::string &scheduler_unif
 	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_never, Vec<UInt>{});
 	k.BARRIER({});
 
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond, Vec<UInt>{1});
+	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_unary, Vec<UInt>{1});
 	k.BARRIER({});
 	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_not, Vec<UInt>{1});
 	k.BARRIER({});
