@@ -298,13 +298,14 @@ class FreeCycle {
 private:
 
     const quantum_platform   *platformp;  // platform description
-    utils::UInt              nq;          // size of the map; after initialization, will always be the same
+    utils::UInt              nq;          // map is (nq+nb) long; after initialization, will always be the same
+    utils::UInt              nb;          // bregs are in map (behind qubits) to track dependences around conditions
     utils::UInt              ct;          // multiplication factor from cycles to nano-seconds (unit of duration)
     utils::Vec<utils::UInt>  fcv;         // fcv[real qubit index i]: qubit i is free from this cycle on
     arch::resource_manager_t rm;          // actual resources occupied by scheduled gates
 
 
-    // access free cycle value of qubit i
+    // access free cycle value of qubit q[i] or breg b[i-nq]
     utils::UInt &operator[](utils::UInt i);
     const utils::UInt &operator[](utils::UInt i) const;
 
@@ -315,7 +316,7 @@ public:
     // default constructor was deleted because it cannot construct resource_manager_t without parameters
     FreeCycle();
 
-    void Init(const quantum_platform *p);
+    void Init(const quantum_platform *p, const utils::UInt breg_count);
 
     // depth of the FreeCycle map
     // equals the max of all entries minus the min of all entries
@@ -339,12 +340,12 @@ public:
     utils::Bool IsFirstSwapEarliest(utils::UInt fr0, utils::UInt fr1, utils::UInt sr0, utils::UInt sr1) const;
 
     // when we would schedule gate g, what would be its start cycle? return it
-    // gate operands are real qubit indices
+    // gate operands are real qubit indices and breg indices
     // is purely functional, doesn't affect state
     utils::UInt StartCycleNoRc(gate *g) const;
 
     // when we would schedule gate g, what would be its start cycle? return it
-    // gate operands are real qubit indices
+    // gate operands are real qubit indices and breg indices
     // is purely functional, doesn't affect state
     // FIXME JvS: except it does. can't make it (or the gate) const, because
     //   resource managers are relying on random map[] operators in debug prints
@@ -352,13 +353,13 @@ public:
     utils::UInt StartCycle(gate *g);
 
     // schedule gate g in the FreeCycle map
-    // gate operands are real qubit indices
+    // gate operands are real qubit indices and breg indices
     // the FreeCycle map is updated, not the resource map
     // this is done, because AddNoRc is used to represent just gate dependences, avoiding a build of a dep graph
     void AddNoRc(gate *g, utils::UInt startCycle);
 
     // schedule gate g in the FreeCycle and resource maps
-    // gate operands are real qubit indices
+    // gate operands are real qubit indices and breg indices
     // both the FreeCycle map and the resource map are updated
     // startcycle must be the result of an earlier StartCycle call (with rc!)
     void Add(gate *g, utils::UInt startCycle);
@@ -399,6 +400,7 @@ class Past {
 private:
 
     utils::UInt                 nq;         // width of Past, Virt2Real, UseCount maps in number of real qubits
+    utils::UInt                 nb;         // extends FreeCycle next to qubits with bregs
     utils::UInt                 ct;         // cycle time, multiplier from cycles to nano-seconds
     const quantum_platform      *platformp; // platform describing resources for scheduling
     quantum_kernel              *kernelp;   // current kernel for creating gates
@@ -471,7 +473,10 @@ public:
         const utils::Vec<utils::UInt> &qubits,
         const utils::Vec<utils::UInt> &cregs = {},
         utils::UInt duration = 0,
-        utils::Real angle = 0.0
+        utils::Real angle = 0.0,
+        const utils::Vec<utils::UInt> &bregs = {},
+        cond_type_t gcond = cond_always,
+        const utils::Vec<utils::UInt> &gcondregs = {}
     ) const;
 
     // return number of swaps added to this past
@@ -720,9 +725,9 @@ public:
     void Init(const quantum_platform *p);
 
     // Set/switch input to the provided circuit
-    // nq and nc are parameters because nc may not be provided by platform but by kernel
+    // nq, nc and nb are parameters because nc/nb may not be provided by platform but by kernel
     // the latter should be updated when mapping multiple kernels
-    void SetCircuit(quantum_kernel &kernel, Scheduler &sched, utils::UInt nq, utils::UInt nc);
+    void SetCircuit(quantum_kernel &kernel, Scheduler &sched, utils::UInt nq, utils::UInt nc, utils::UInt nb);
 
     // Get from avlist all gates that are non-quantum into nonqlg
     // Non-quantum gates include: classical, and dummy (SOURCE/SINK)
@@ -820,6 +825,7 @@ private:
 
     utils::UInt             nq;             // number of qubits in the platform, number of real qubits
     utils::UInt             nc;             // number of cregs in the platform, number of classical registers
+    utils::UInt             nb;             // number of bregs in the platform, number of bit registers
     utils::UInt             cycle_time;     // length in ns of a single cycle of the platform
                                             // is divisor of duration in ns to convert it to cycles
     Grid                    grid;           // current grid

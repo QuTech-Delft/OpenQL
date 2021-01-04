@@ -29,13 +29,14 @@ public:
     utils::Bool                 platformInitialized;
     utils::UInt                 qubit_count;
     utils::UInt                 creg_count;
+    utils::UInt                 breg_count;
     utils::Str                  eqasm_compiler_name;
     utils::Bool                 needs_backend_compiler;
     eqasm_compiler              *backend_compiler;
 
 public:
     quantum_program(const utils::Str &n);
-    quantum_program(const utils::Str &n, const quantum_platform &platf, utils::UInt nqubits, utils::UInt ncregs = 0);
+    quantum_program(const utils::Str &n, const quantum_platform &platf, utils::UInt nqubits, utils::UInt ncregs = 0, utils::UInt nbregs = 0);
 
     void add(const quantum_kernel &k);
     void add_program(const quantum_program &p);

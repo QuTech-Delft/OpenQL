@@ -10,25 +10,25 @@ smis s8, {0, 1, 5, 6}
 smis s9, {2, 3, 4} 
 start:
 
-subprogram1_for2_start:
+subprogram1_for4_start:
     ldi r29, 100
     ldi r30, 1
     ldi r31, 0
 
 subprogram1:
 
-aKernel1_do_while1_start:
+aKernel1_do_while3_start:
 
 aKernel1:
     1    x s0
     qwait 2
 
-aKernel1_do_while1:
+aKernel1_do_while3:
     cmp r2, r3
     nop
-    br ge, aKernel1_do_while1_start
+    br ge, aKernel1_do_while3_start
 
-subprogram1_for2_end:
+subprogram1_for4_end:
     add r31, r31, r30
     cmp r31, r29
     nop
