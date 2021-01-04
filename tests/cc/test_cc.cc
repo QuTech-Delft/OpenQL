@@ -20,7 +20,7 @@ using namespace ql::utils;
 #endif
 
 // based on tests/test_hybrid.py
-void test_classical(const std::string &scheduler, const std::string &scheduler_uniform)
+void test_classical()
 {
     const int num_qubits = 17;
     const int num_cregs = 3;
@@ -29,7 +29,7 @@ void test_classical(const std::string &scheduler, const std::string &scheduler_u
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
 
     // create program
-    ql::quantum_program prog(("test_classical_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program prog("test_classical", s17, num_qubits, num_cregs);
     ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     // quantum operations
@@ -143,8 +143,6 @@ $2 = 0
 
     prog.add(k);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
 #if 0   // FIXME
     ql::options::set("backend_cc_map_input_file", "test_output/test_classical_ALAP_uniform_no.map");
 #endif
@@ -152,7 +150,7 @@ $2 = 0
 }
 
 
-void test_qec_pipelined(const std::string &scheduler, const std::string &scheduler_uniform)
+void test_qec_pipelined()
 {
     const int num_qubits = 17;
     const int num_cregs = 3;
@@ -161,7 +159,7 @@ void test_qec_pipelined(const std::string &scheduler, const std::string &schedul
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
 
     // create program
-    ql::quantum_program prog(("test_qec_pipelined_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program prog("test_qec_pipelined", s17, num_qubits, num_cregs);
     ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     // pipelined QEC: [
@@ -227,13 +225,11 @@ void test_qec_pipelined(const std::string &scheduler, const std::string &schedul
 
     prog.add(k);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile();
 }
 
 
-void test_do_while_nested_for(const std::string &scheduler, const std::string &scheduler_uniform)
+void test_do_while_nested_for()
 {
    // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
@@ -241,7 +237,7 @@ void test_do_while_nested_for(const std::string &scheduler, const std::string &s
     // create program
     const int num_qubits = 17;
     const int num_cregs = 3;
-    ql::quantum_program prog(("test_do_while_nested_for_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program prog("test_do_while_nested_for", s17, num_qubits, num_cregs);
 //    ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
@@ -269,22 +265,20 @@ void test_do_while_nested_for(const std::string &scheduler, const std::string &s
     prog.add_program(sp2);
     // NB: will not run properly, because rs1 and rs2 are never changed
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile();
 }
 
 
 
 
-void test_rabi(const std::string &scheduler, const std::string &scheduler_uniform)
+void test_rabi()
 {
     // create and set platform
     ql::quantum_platform s17("s17", "test_cfg_cc_demo.json");
 
     const int num_qubits = 17;
     const int num_cregs = 3;
-    ql::quantum_program prog(("test_rabi_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program prog("test_rabi", s17, num_qubits, num_cregs);
     ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
     ql::quantum_kernel k1("aKernel1", s17, num_qubits, num_cregs);
 
@@ -299,20 +293,18 @@ void test_rabi(const std::string &scheduler, const std::string &scheduler_unifor
     sp1.add_do_while(k1, op1);
     prog.add_program(sp1);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile();
 }
 
 
-void test_wait(const std::string &scheduler, const std::string &scheduler_uniform)
+void test_wait()
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
 
     const int num_qubits = 17;
     const int num_cregs = 3;
-    ql::quantum_program prog(("test_wait_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program prog("test_wait", s17, num_qubits, num_cregs);
     ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
     ql::quantum_kernel k("aKernel", s17, num_qubits, num_cregs);
 
@@ -326,20 +318,18 @@ void test_wait(const std::string &scheduler, const std::string &scheduler_unifor
 
     prog.add(k);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile();
 }
 
 // FIXME: test to find quantum inspire problems 20200325
-void test_qi_example(const std::string &scheduler, const std::string &scheduler_uniform)
+void test_qi_example()
 {
     // create and set platform
     ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
 
     const int num_qubits = 5;
     const int num_cregs = 5;
-    ql::quantum_program prog(("test_qi_example_" + scheduler + "_uniform_" + scheduler_uniform), s5, num_qubits, num_cregs);
+    ql::quantum_program prog("test_qi_example", s5, num_qubits, num_cregs);
     ql::quantum_program sp1(("sp1"), s5, num_qubits, num_cregs);
     ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs);
 
@@ -361,25 +351,21 @@ void test_qi_example(const std::string &scheduler, const std::string &scheduler_
 
     prog.add(k);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     ql::options::set("write_qasm_files", "yes");    // so we can see bundles
     prog.compile();
 }
 
 
-void test_break(const std::string &scheduler, const std::string &scheduler_uniform)
+void test_break()
 {
     // create and set platform
     ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     ql::options::set("write_qasm_files", "yes");    	// so we can see bundles
 
     const int num_qubits = 5;
     const int num_cregs = 5;
     const int num_bregs = 5;
-    ql::quantum_program prog(("test_break_" + scheduler + "_uniform_" + scheduler_uniform), s5, num_qubits, num_cregs, num_bregs);
+    ql::quantum_program prog("test_break", s5, num_qubits, num_cregs, num_bregs);
     ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs, num_bregs);
 
     k.gate("prepz", 1);	// FIXME: program makes no sense
@@ -392,18 +378,16 @@ void test_break(const std::string &scheduler, const std::string &scheduler_unifo
 }
 
 
-void test_condex(const std::string &scheduler, const std::string &scheduler_uniform)
+void test_condex()
 {
     // create and set platform
     ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     ql::options::set("write_qasm_files", "yes");    	// so we can see bundles
 
     const int num_qubits = 5;
     const int num_cregs = 5;
     const int num_bregs = 5;
-    ql::quantum_program prog(("test_condex_" + scheduler + "_uniform_" + scheduler_uniform), s5, num_qubits, num_cregs, num_bregs);
+    ql::quantum_program prog("test_condex", s5, num_qubits, num_cregs, num_bregs);
     ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs, num_bregs);
 
     k.gate("prepz", 1);	// FIXME: program makes no sense
@@ -468,16 +452,16 @@ int main(int argc, char ** argv)
     ql::utils::logger::set_log_level("LOG_INFO");      // LOG_DEBUG, LOG_INFO
 
 #if 0	// FIXME
-    test_classical("ALAP", "no");
-    test_qec_pipelined("ALAP", "no");
-    test_do_while_nested_for("ALAP", "no");
-    test_rabi("ALAP", "no");
-    test_wait("ALAP", "no");
+    test_classical();
+    test_qec_pipelined();
+    test_do_while_nested_for();
+    test_rabi();
+    test_wait();
 #endif
 
-    test_qi_example("ALAP", "no");
-    test_break("ALAP", "no");
-    test_condex("ALAP", "no");
+    test_qi_example();
+    test_break();
+    test_condex();
 //    test_cqasm_condex();
 
     return 0;
