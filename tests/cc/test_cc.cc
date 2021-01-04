@@ -16,7 +16,6 @@ using namespace ql::utils;
 #define CFG_FILE_JSON   "test_cfg_cc.json"
 
 #if 1	// FIXME: interfaces not present in C++ API
- #define CONDGATE(gname, qubits, cond, condregs)	gate(gname, qubits, Vec<UInt>{}, 0, 0.0, Vec<UInt>{}, cond, condregs)
  #define BARRIER(x) wait(x,0)
 #endif
 
@@ -411,28 +410,27 @@ void test_condex(const std::string &scheduler, const std::string &scheduler_unif
     k.gate("measure_fb", 1);
     k.gate("measure_fb", 2);
 
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_always, Vec<UInt>{});
+	k.condgate("x", Vec<UInt>{0}, ql::cond_always, Vec<UInt>{});
 	k.BARRIER({});      // help scheduler
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_never, Vec<UInt>{});
+	k.condgate("x", Vec<UInt>{0}, ql::cond_never, Vec<UInt>{});
 	k.BARRIER({});
 
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_unary, Vec<UInt>{1});
+	k.condgate("x", Vec<UInt>{0}, ql::cond_unary, Vec<UInt>{1});
 	k.BARRIER({});
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_not, Vec<UInt>{1});
+	k.condgate("x", Vec<UInt>{0}, ql::cond_not, Vec<UInt>{1});
 	k.BARRIER({});
 
-	Vec<UInt> vec2{1,2};
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_and, vec2);
+	k.condgate("x", Vec<UInt>{0}, ql::cond_and, Vec<UInt>{1,2});
 	k.BARRIER({});
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_nand, vec2);
+	k.condgate("x", Vec<UInt>{0}, ql::cond_nand, Vec<UInt>{1,2});
 	k.BARRIER({});
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_or, vec2);
+	k.condgate("x", Vec<UInt>{0}, ql::cond_or, Vec<UInt>{1,2});
 	k.BARRIER({});
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_nor, vec2);
+	k.condgate("x", Vec<UInt>{0}, ql::cond_nor, Vec<UInt>{1,2});
 	k.BARRIER({});
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_xor, vec2);
+	k.condgate("x", Vec<UInt>{0}, ql::cond_xor, Vec<UInt>{1,2});
 	k.BARRIER({});
-	k.CONDGATE("x", Vec<UInt>{0}, ql::cond_nxor, vec2);
+	k.condgate("x", Vec<UInt>{0}, ql::cond_nxor, Vec<UInt>{1,2});
 	k.BARRIER({});
 
     prog.add_for(k, 100);

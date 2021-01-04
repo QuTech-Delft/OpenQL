@@ -156,7 +156,7 @@ Where:
 
     - G determines which the ``instrument_definitions/<key>/control_group_sizes`` used
     - B is an ordered list of bits (MSB to LSB) used for the code word
-* ``trigger_bits`` vector of bits used to trigger the instrument. Must either be size 1 (common trigger) or size G (separate trigger per group)
+* ``trigger_bits`` vector of bits used to trigger the instrument. Must either be size 1 (common trigger) or size G (separate trigger per group), or 2 (common trigger duplicated on 2 bits, to support dual-QWG)
 FIXME: examples
 * ``result_bits`` reserved for future use
 * ``data_valid_bits`` reserved for future use
