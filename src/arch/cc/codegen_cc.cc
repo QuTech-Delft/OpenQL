@@ -378,7 +378,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 			if(bi->isMeasFeedback) {
 				int resultBit = settings_cc::getResultBit(ic, group);
 
-#if 0	// FIXME: redundant
+#if 0	// FIXME: partly redundant
 				// get our qubit
 				const Json qubits = json_get<const Json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const Json&> unavailable
 				size_t qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]

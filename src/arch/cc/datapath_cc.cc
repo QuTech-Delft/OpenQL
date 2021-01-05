@@ -23,38 +23,68 @@ void datapath_cc::programFinish()
 	emit(".END", "");
 }
 
+static unsigned int roundUp(unsigned int val, unsigned int mult) { return (val+mult-1)/mult*mult; }
 
-int datapath_cc::allocateSmBit(size_t breg_operand, size_t instrIdx)
+unsigned int datapath_cc::allocateSmBit(size_t breg_operand, size_t instrIdx)
 {
 	// Some requirements from hardware:
 	// - different instruments must use SM bits located in different DSM transfers
-	// - the maximum required DSM transfer size (currently, using an UHFQA) is 16 bit
+	// - the current maximum required DSM transfer size is 16 bit (using a ZI UHFQA). The
+	//   hardware maximum is 32 bit (and may be utilized by e.g. the ZI SHF)
 	// - all DSM bits used for the conditional gates of a single bundle must reside in
 	//   a 128 bit window, aligned on 128 bit (16 byte)
 	// - DSM size is 1024 bits (128 bytes)
 	// Other notes:
 	// - we don't attempt to be smart about DSM transfer size allocation
-	// - we don't manage?/allow? multiple allocations to the same breg_operand
+	// - new allocations to the same breg_operand overwrite the old mapping
+	// - we don't reuse SM bits (thus wasting space)
 
+	unsigned int smBit = 0;
+	if(mapBregToSmBit.empty()) {	// first alloc
+		mapBregToSmBit.emplace(breg_operand, smBit);
+	} else {
+		// perform allocation
+		if(instrIdx != smBitLastInstrIdx) {
+			smBit = roundUp(lastSmBit, MAX_DSM_XFER_SIZE);
+		} else {
+			smBit = lastSmBit++;
+		}
+		if(smBit >= SM_BIT_CNT) {
+			QL_FATAL("Exceeded available Shared memory space of " << SM_BIT_CNT << " bits");
+		}
 
-	static int smBit = 0;
+		auto it = mapBregToSmBit.find(breg_operand);
+		if(it != mapBregToSmBit.end()) {
+			QL_IOUT("Overwriting mapping of breg_operand " << it->second);
+		}
 
-	smBit++;	// FIXME
+		mapBregToSmBit[breg_operand] = smBit;	// created on demand
+	}
+	smBitLastInstrIdx = instrIdx;
+	lastSmBit = smBit;
 
 	return smBit;
 }
 
 
-int datapath_cc::getSmBit(size_t breg_operand, size_t instrIdx)
+unsigned int datapath_cc::getSmBit(size_t breg_operand, size_t instrIdx)
 {
-	return 0;	// FIXME
+	int smBit;
+
+	auto it = mapBregToSmBit.find(breg_operand);
+	if(it != mapBregToSmBit.end()) {
+		smBit = it->second;
+	} else {
+		QL_FATAL("Request for DSM bit of breg_operand " << breg_operand << " that was never assigned by measurement");		// NB: message refers to user perspective (and thus calling semantics)
+	}
+	return smBit;
 }
 
 
-int datapath_cc::getOrAssignMux(size_t instrIdx, const tFeedbackMap &feedbackMap)
+unsigned int datapath_cc::getOrAssignMux(size_t instrIdx, const tFeedbackMap &feedbackMap)
 {
 	// We need a different MUX for every new combination of simultaneous readouts (per instrument)
-	int mux = lastMux[instrIdx]++;	// FIXME: no reuse of identical combinations yet
+	unsigned int mux = lastMux[instrIdx]++;	// FIXME: no reuse of identical combinations yet
 	if(mux == MUX_CNT) {
 		QL_FATAL("Maximum number of available CC datapath MUXes exceeded");
 	}
@@ -63,10 +93,10 @@ int datapath_cc::getOrAssignMux(size_t instrIdx, const tFeedbackMap &feedbackMap
 }
 
 
-int datapath_cc::getOrAssignPl(size_t instrIdx, const tCondGateMap &condGateMap)
+unsigned int datapath_cc::getOrAssignPl(size_t instrIdx, const tCondGateMap &condGateMap)
 {
 	// We need a different PL for every new combination of simultaneous gate conditions (per instrument)
-	int pl = lastPl[instrIdx]++;	// FIXME: no reuse of identical combinations yet
+	unsigned int pl = lastPl[instrIdx]++;	// FIXME: no reuse of identical combinations yet
 	if(pl == PL_CNT) {
 		QL_FATAL("Maximum number of available CC datapath PLs exceeded");
 	}
@@ -75,7 +105,7 @@ int datapath_cc::getOrAssignPl(size_t instrIdx, const tCondGateMap &condGateMap)
 }
 
 
-int datapath_cc::getSizeTag(int numReadouts)
+unsigned int datapath_cc::getSizeTag(unsigned int numReadouts)
 {
 	int sizeTag;
 
@@ -92,6 +122,7 @@ int datapath_cc::getSizeTag(int numReadouts)
 	}
 	return sizeTag;
 }
+
 
 static std::string cond_qasm(cond_type_t condition, const Vec<UInt> &cond_operands)
 {
