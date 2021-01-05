@@ -7,7 +7,8 @@
  */
 
 #include "datapath_cc.h"
-#include <utils/exception.h>	// FIXME: required for FATAL
+#include "utils/exception.h"	// FIXME: required for FATAL
+#include "utils/num.h"
 
 namespace ql {
 
@@ -137,32 +138,47 @@ static std::string cond_qasm(cond_type_t condition, const Vec<UInt> &cond_operan
 
 unsigned int datapath_cc::emitMux(unsigned int mux, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot)
 {
-	unsigned int smAddr = 0;
+	unsigned int minSmBit = UINT_MAX;
+	unsigned int maxSmBit = 0;
 
-	// emit datapath code
+	if(feedbackMap.empty()) {
+		QL_FATAL("feedbackMap must not be empty");
+	}
+
 	emit(slot, QL_SS2S(".MUX " << mux));
+
 	for(auto &feedback : feedbackMap) {
 		int group = feedback.first;
 		tFeedbackInfo fi = feedback.second;
 
-		// FIXME: fi.smBit ranges from 0 - 1023
+		minSmBit = utils::min(minSmBit, fi.smBit);
+		maxSmBit = utils::max(maxSmBit, fi.smBit);
+		unsigned int winBit = fi.smBit % MUX_SM_WIN_SIZE;
 
 		emit(
 			slot,
-			QL_SS2S("SM[" << fi.smBit << "] := I[" << fi.bit << "]"),
+			QL_SS2S("SM[" << winBit << "] := I[" << fi.bit << "]"),
 			QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->operands[0] << ")")
 		);
-
-		int mySmAddr = fi.smBit / 8;	// byte addressable
-		// FIXME: take lowest and highest, check span, and compute smAddr (which alignment? )
 	}
-	return smAddr;
+
+	// perform checks
+	if(maxSmBit/MUX_SM_WIN_SIZE != minSmBit/MUX_SM_WIN_SIZE) {
+		QL_FATAL("Cannot access DSM bits " << minSmBit << " and " << maxSmBit << " in single MUX configuration");
+	}
+	return minSmBit/MUX_SM_WIN_SIZE;
 }
 
 
 unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMap, size_t instrIdx, int slot)
 {
-	unsigned int smAddr = 0;
+	bool minMaxValid = false;	// we may not access SM
+	unsigned int minSmBit = UINT_MAX;
+	unsigned int maxSmBit = 0;
+
+	if(condGateMap.empty()) {
+		QL_FATAL("condGateMap must not be empty");
+	}
 
 	emit(slot, QL_SS2S(".PL " << pl));
 
@@ -177,16 +193,19 @@ unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMa
 			QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", condition='" << condition << "'")
 		);
 
-		// compute RHS of PL expression
 		// shorthand
-		auto smBit0 = [this, cgi, instrIdx]() { return getSmBit(cgi.cond_operands[0], instrIdx); };
-		auto smBit1 = [this, cgi, instrIdx]() { return getSmBit(cgi.cond_operands[1], instrIdx); };
+		auto winBit = [this, cgi, instrIdx, &minMaxValid, &minSmBit, &maxSmBit](int i)
+		{
+			unsigned int smBit = getSmBit(cgi.cond_operands[i], instrIdx);
+			minMaxValid = true;
+			minSmBit = utils::min(minSmBit, smBit);
+			maxSmBit = utils::max(maxSmBit, smBit);
+			return smBit % PL_SM_WIN_SIZE;
+		};
 
-		// FIXME: bits number through 1023
-		// FIXME: check that bits are in same 128 bit window
+		// compute RHS of PL expression
 		std::string inv;
 		std::stringstream rhs;
-
 		switch(cgi.condition) {
 			// 0 operands:
 			case cond_always:
@@ -201,7 +220,7 @@ unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMa
 				inv = "/";
 				// fall through
 			case cond_unary:
-				rhs << "SM[" << smBit0() << "]";
+				rhs << "SM[" << winBit(0) << "]";
 				break;
 
 			// 2 operands
@@ -209,21 +228,21 @@ unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMa
 				inv = "/";
 				// fall through
 			case cond_and:
-				rhs << "SM[" << smBit0() << "] & SM[" << smBit1() << "]";
+				rhs << "SM[" << winBit(0) << "] & SM[" << winBit(1) << "]";
 				break;
 
 			case cond_nor:
 				inv = "/";
 				// fall through
 			case cond_or:
-				rhs << "SM[" << smBit0() << "] | SM[" << smBit1() << "]";
+				rhs << "SM[" << winBit(0) << "] | SM[" << winBit(1) << "]";
 				break;
 
 			case cond_nxor:
 				inv = "/";
 				// fall through
 			case cond_xor:
-				rhs << "SM[" << smBit0() << "] ^ SM[" << smBit1() << "]";
+				rhs << "SM[" << winBit(0) << "] ^ SM[" << winBit(1) << "]";
 				break;
 		}
 
@@ -237,7 +256,14 @@ unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMa
 			}
 		}
 	}
-	return smAddr;
+
+	// perform checks
+	if(minMaxValid) {
+		if(maxSmBit/PL_SM_WIN_SIZE != minSmBit/PL_SM_WIN_SIZE) {
+			QL_FATAL("Cannot access DSM bits " << minSmBit << " and " << maxSmBit << " in single PL configuration");
+		}
+	}
+	return minSmBit/PL_SM_WIN_SIZE;	// NB: irrelevant if !minMaxValid since SM is not accessed in that case
 }
 
 } // namespace ql

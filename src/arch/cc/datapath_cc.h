@@ -25,8 +25,8 @@ namespace { using namespace utils; }
 
 // NB: types shared with codegen_cc
 typedef struct {
-	int smBit;
-	int bit;
+	unsigned int smBit;
+	unsigned int bit;
 	const BundleInfo *bi;									// used for annotation only
 } tFeedbackInfo;											// information for feedback on single instrument group
 using tFeedbackMap = std::map<int, tFeedbackInfo>;			// NB: key is instrument group
@@ -74,9 +74,11 @@ private:	// functions
 	}
 
 private:    // vars
-    static const int MUX_CNT = 512;                            	// maximum of CC
-    static const int PL_CNT = 512;                            	// maximum of CC
-    static const int SM_BIT_CNT = 1024;                         // maximum of CC
+    static const int MUX_CNT = 512;                            	// number of MUX configurations
+    static const int MUX_SM_WIN_SIZE = 16;						// number of MUX bits in single view (currently, using a ZI UHFQA)
+    static const int PL_CNT = 512;                            	// number of PL configurations
+    static const int PL_SM_WIN_SIZE = 128;						// number of SM bits in single view
+    static const int SM_BIT_CNT = 1024;                         // number of SM bits
     static const int MAX_DSM_XFER_SIZE = 16;                    // current max (using a ZI UHFQA)
 
 	std::stringstream datapathSection;                          // the data path configuration generated

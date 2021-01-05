@@ -44,12 +44,11 @@ void codegen_cc::init(const quantum_platform &platform)
         mapPreloaded = true;
     }
 
-#if OPT_FEEDBACK   // FIXME: WIP on feedback: allocate SM bits
+#if OPT_FEEDBACK
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
         if(QL_JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
-            // FIXME: maintain mapping instrument -> SM
             QL_IOUT("instrument '" << ic.ii.instrumentName << "' (index " << instrIdx << ") is used for feedback");
         }
     }
@@ -376,7 +375,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // FIXME: also generate VCD
 
 			if(bi->isMeasFeedback) {
-				int resultBit = settings_cc::getResultBit(ic, group);
+				unsigned int resultBit = settings_cc::getResultBit(ic, group);
 
 #if 0	// FIXME: partly redundant
 				// get our qubit
@@ -399,10 +398,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 					// FIXME: Note that our gate decomposition "measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"] is problematic in that sense
 					QL_WOUT("ignoring explicit assignment to bit " << bi->breg_operands[0] << " for measurement of qubit " << bi->operands[0]);
 				}
-				int breg_operand = bi->operands[0];                	// implicit classic bit for qubit
+				int breg_operand = bi->operands[0];                	// implicit classic bit for qubit FIXME: Uint
 
 				// allocate SM bit for classic operand
-				int smBit = dp.allocateSmBit(breg_operand, instrIdx);
+				unsigned int smBit = dp.allocateSmBit(breg_operand, instrIdx);
 
 				// remind mapping of bit -> smBit for setting MUX
 				feedbackMap.emplace(group, tFeedbackInfo{smBit, resultBit, bi});
@@ -549,16 +548,16 @@ void codegen_cc::customGate(
 			if(operands.size() != 1) {
 				QL_FATAL(
 					"Readout instruction '" << qasm(iname, operands, breg_operands)
-											<< "' requires exactly 1 quantum operand, not " << operands.size()
+					<< "' requires exactly 1 quantum operand, not " << operands.size()
 				);
 			}
 			if(!creg_operands.empty()) {
-				QL_FATAL("Using Creg as measurement target is deprecated, use new bit registers");
+				QL_FATAL("Using Creg as measurement target is deprecated, use new breg_operands");
 			}
 			if(breg_operands.size() > 1) {
 				QL_FATAL(
 					"Readout instruction '" << qasm(iname, operands, breg_operands)
-											<< "' requires 0 or 1 bit operands, not " << breg_operands.size()
+					<< "' requires 0 or 1 bit operands, not " << breg_operands.size()
 				);
 			}
 
