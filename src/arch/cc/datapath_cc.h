@@ -56,8 +56,8 @@ public: // functions
 	unsigned int getOrAssignMux(size_t instrIdx, const tFeedbackMap &feedbackMap);
 	unsigned int getOrAssignPl(size_t instrIdx, const tCondGateMap &condGateMap);
 	static unsigned int getSizeTag(unsigned int numReadouts);
-	void emitMux(int mux, int smAddr, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot);
-	void emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, size_t instrIdx, int slot);
+	unsigned int emitMux(unsigned int mux, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot);
+	unsigned int emitPl(unsigned int pl, const tCondGateMap &condGateMap, size_t instrIdx, int slot);
 
 	std::string getDatapathSection() { return datapathSection.str(); }
 

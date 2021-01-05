@@ -463,6 +463,7 @@ static std::string qasm(const std::string &iname, const Vec<UInt> &operands, con
 	return g.qasm();
 }
 
+
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
 // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
 // Does not deal with the control mode and digital interface of the instrument.
@@ -494,7 +495,6 @@ void codegen_cc::customGate(
         // generate comment. NB: we don't have a particular limit for the number of operands
         comment(std::string(" # gate '") + qasm(iname, operands, breg_operands) + "'");
     }
-
 
     // find instruction (gate definition)
     const Json &instruction = platform->find_instruction(iname);
@@ -735,10 +735,8 @@ void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, 
 
 	// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
 	if(!feedbackMap.empty()) {	// this instrument performs readout for feedback now
-		int smAddr = 0;		// FIXME:
-		int mux = dp.getOrAssignMux(instrIdx, feedbackMap);
-
-		dp.emitMux(mux, smAddr, feedbackMap, instrIdx, slot);
+		unsigned int mux = dp.getOrAssignMux(instrIdx, feedbackMap);
+		unsigned int smAddr = dp.emitMux(mux, feedbackMap, instrIdx, slot);
 
 		// emit code for slot input
 		int sizeTag = datapath_cc::getSizeTag(feedbackMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
@@ -751,8 +749,8 @@ void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, 
 		lastEndCycle[instrIdx]++;
 	} else {	// this instrument does not perform readout for feedback now
 		// FIXME:
-		int smAddr = 0;
-		int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
+		unsigned int smAddr = 0;
+		unsigned int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
 
 		// emit code for non-participating instrument
 		emit(
@@ -788,10 +786,8 @@ void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, uns
 		);
 	} else {	// at least one group conditional
 		// configure datapath PL
-		int smAddr = 0;		// FIXME:
-		int pl = dp.getOrAssignPl(instrIdx, condGateMap);
-
-		dp.emitPl(pl, smAddr, condGateMap, instrIdx, slot);
+		unsigned int pl = dp.getOrAssignPl(instrIdx, condGateMap);
+		unsigned int smAddr = dp.emitPl(pl, condGateMap, instrIdx, slot);
 
 		// emit code for conditional gate
 		emit(
@@ -814,7 +810,7 @@ void codegen_cc::emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx
 
 	// FIXME: the only pragma possible is "break" for now
 	int pragmaBreakVal = json_get<int>(*pragma, "break", "pragma of unknown instruction");		// FIXME we don't know which instruction we're dealing with, so better move
-	int smAddr = pragmaSmBit/32;	// 'seq_cl_sm' is addressable in 32 bit words
+	unsigned int smAddr = pragmaSmBit/32;	// 'seq_cl_sm' is addressable in 32 bit words
 	unsigned int mask = 1 << (pragmaSmBit%32);
 	std::string label = pragmaForLabel+"_end";		// FIXME: must match label set in forEnd(), assumes we are actually inside a for loop
 

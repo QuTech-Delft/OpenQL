@@ -40,14 +40,12 @@ unsigned int datapath_cc::allocateSmBit(size_t breg_operand, size_t instrIdx)
 	// - we don't reuse SM bits (thus wasting space)
 
 	unsigned int smBit = 0;
-	if(mapBregToSmBit.empty()) {	// first alloc
-		mapBregToSmBit.emplace(breg_operand, smBit);
-	} else {
+	if(!mapBregToSmBit.empty()) {	// not first alloc
 		// perform allocation
 		if(instrIdx != smBitLastInstrIdx) {
-			smBit = roundUp(lastSmBit, MAX_DSM_XFER_SIZE);
+			smBit = roundUp(lastSmBit+1, MAX_DSM_XFER_SIZE);
 		} else {
-			smBit = lastSmBit++;
+			smBit = lastSmBit+1;
 		}
 		if(smBit >= SM_BIT_CNT) {
 			QL_FATAL("Exceeded available Shared memory space of " << SM_BIT_CNT << " bits");
@@ -57,9 +55,11 @@ unsigned int datapath_cc::allocateSmBit(size_t breg_operand, size_t instrIdx)
 		if(it != mapBregToSmBit.end()) {
 			QL_IOUT("Overwriting mapping of breg_operand " << it->second);
 		}
-
-		mapBregToSmBit[breg_operand] = smBit;	// created on demand
 	}
+
+	QL_DOUT("Mapping breg_operand " << breg_operand << " to smBit " << smBit);
+	mapBregToSmBit[breg_operand] = smBit;	// created on demand
+
 	smBitLastInstrIdx = instrIdx;
 	lastSmBit = smBit;
 
@@ -74,6 +74,7 @@ unsigned int datapath_cc::getSmBit(size_t breg_operand, size_t instrIdx)
 	auto it = mapBregToSmBit.find(breg_operand);
 	if(it != mapBregToSmBit.end()) {
 		smBit = it->second;
+		QL_DOUT("Found mapping: breg_operand " << breg_operand << " to smBit " << smBit);
 	} else {
 		QL_FATAL("Request for DSM bit of breg_operand " << breg_operand << " that was never assigned by measurement");		// NB: message refers to user perspective (and thus calling semantics)
 	}
@@ -134,8 +135,10 @@ static std::string cond_qasm(cond_type_t condition, const Vec<UInt> &cond_operan
 }
 
 
-void datapath_cc::emitMux(int mux, int smAddr, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot)
+unsigned int datapath_cc::emitMux(unsigned int mux, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot)
 {
+	unsigned int smAddr = 0;
+
 	// emit datapath code
 	emit(slot, QL_SS2S(".MUX " << mux));
 	for(auto &feedback : feedbackMap) {
@@ -150,11 +153,14 @@ void datapath_cc::emitMux(int mux, int smAddr, const tFeedbackMap &feedbackMap, 
 
 		int mySmAddr = fi.smBit / 8;	// byte addressable
 	}
+	return smAddr;
 }
 
 
-void datapath_cc::emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, size_t instrIdx, int slot)
+unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMap, size_t instrIdx, int slot)
 {
+	unsigned int smAddr = 0;
+
 	emit(slot, QL_SS2S(".PL " << pl));
 
 	for(auto &cg : condGateMap) {
@@ -171,14 +177,16 @@ void datapath_cc::emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, si
 		// emit PL logic
 		for(int bit=0; bit<32; bit++) {
 			if(1<<bit & cgi.groupDigOut) {
-				// FIXME:
-				cgi.cond_operands;
-				int smBit0 = 0;	// FIXME: get
-				int smBit1 = 0;
+				// shorthand
+				auto smBit0 = [this, cgi, instrIdx]() { return getSmBit(cgi.cond_operands[0], instrIdx); };
+				auto smBit1 = [this, cgi, instrIdx]() { return getSmBit(cgi.cond_operands[1], instrIdx); };
+
+				// FIXME: bits number through 1023
+				// FIXME: check that bits are in same 128 bit window
 				std::string inv;
 				std::stringstream rhs;
 
-				switch(cgi.condition) {		// FIXME: cleanup
+				switch(cgi.condition) {
 					// 0 operands:
 					case cond_always:
 						rhs << "1";
@@ -192,7 +200,7 @@ void datapath_cc::emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, si
 						inv = "/";
 						// fall through
 					case cond_unary:
-						rhs << "SM[" << smBit0 << "]";
+						rhs << "SM[" << smBit0() << "]";
 						break;
 
 					// 2 operands
@@ -200,21 +208,21 @@ void datapath_cc::emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, si
 						inv = "/";
 						// fall through
 					case cond_and:
-						rhs << "SM[" << smBit0 << "] & SM[" << smBit1 << "]";
+						rhs << "SM[" << smBit0() << "] & SM[" << smBit1() << "]";
 						break;
 
 					case cond_nor:
 						inv = "/";
 						// fall through
 					case cond_or:
-						rhs << "SM[" << smBit0 << "] | SM[" << smBit1 << "]";
+						rhs << "SM[" << smBit0() << "] | SM[" << smBit1() << "]";
 						break;
 
 					case cond_nxor:
 						inv = "/";
 						// fall through
 					case cond_xor:
-						rhs << "SM[" << smBit0 << "] ^ SM[" << smBit1 << "]";
+						rhs << "SM[" << smBit0() << "] ^ SM[" << smBit1() << "]";
 						break;
 				}
 				emit(
@@ -224,6 +232,7 @@ void datapath_cc::emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, si
 			}
 		}
 	}
+	return smAddr;
 }
 
 } // namespace ql
