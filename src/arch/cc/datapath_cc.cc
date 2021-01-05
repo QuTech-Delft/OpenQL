@@ -145,6 +145,8 @@ unsigned int datapath_cc::emitMux(unsigned int mux, const tFeedbackMap &feedback
 		int group = feedback.first;
 		tFeedbackInfo fi = feedback.second;
 
+		// FIXME: fi.smBit ranges from 0 - 1023
+
 		emit(
 			slot,
 			QL_SS2S("SM[" << fi.smBit << "] := I[" << fi.bit << "]"),
@@ -152,6 +154,7 @@ unsigned int datapath_cc::emitMux(unsigned int mux, const tFeedbackMap &feedback
 		);
 
 		int mySmAddr = fi.smBit / 8;	// byte addressable
+		// FIXME: take lowest and highest, check span, and compute smAddr (which alignment? )
 	}
 	return smAddr;
 }
@@ -174,57 +177,59 @@ unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMa
 			QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", condition='" << condition << "'")
 		);
 
+		// compute RHS of PL expression
+		// shorthand
+		auto smBit0 = [this, cgi, instrIdx]() { return getSmBit(cgi.cond_operands[0], instrIdx); };
+		auto smBit1 = [this, cgi, instrIdx]() { return getSmBit(cgi.cond_operands[1], instrIdx); };
+
+		// FIXME: bits number through 1023
+		// FIXME: check that bits are in same 128 bit window
+		std::string inv;
+		std::stringstream rhs;
+
+		switch(cgi.condition) {
+			// 0 operands:
+			case cond_always:
+				rhs << "1";
+				break;
+			case cond_never:
+				rhs << "0";
+				break;
+
+			// 1 operand:
+			case cond_not:
+				inv = "/";
+				// fall through
+			case cond_unary:
+				rhs << "SM[" << smBit0() << "]";
+				break;
+
+			// 2 operands
+			case cond_nand:
+				inv = "/";
+				// fall through
+			case cond_and:
+				rhs << "SM[" << smBit0() << "] & SM[" << smBit1() << "]";
+				break;
+
+			case cond_nor:
+				inv = "/";
+				// fall through
+			case cond_or:
+				rhs << "SM[" << smBit0() << "] | SM[" << smBit1() << "]";
+				break;
+
+			case cond_nxor:
+				inv = "/";
+				// fall through
+			case cond_xor:
+				rhs << "SM[" << smBit0() << "] ^ SM[" << smBit1() << "]";
+				break;
+		}
+
 		// emit PL logic
 		for(int bit=0; bit<32; bit++) {
 			if(1<<bit & cgi.groupDigOut) {
-				// shorthand
-				auto smBit0 = [this, cgi, instrIdx]() { return getSmBit(cgi.cond_operands[0], instrIdx); };
-				auto smBit1 = [this, cgi, instrIdx]() { return getSmBit(cgi.cond_operands[1], instrIdx); };
-
-				// FIXME: bits number through 1023
-				// FIXME: check that bits are in same 128 bit window
-				std::string inv;
-				std::stringstream rhs;
-
-				switch(cgi.condition) {
-					// 0 operands:
-					case cond_always:
-						rhs << "1";
-						break;
-					case cond_never:
-						rhs << "0";
-						break;
-
-					// 1 operand:
-					case cond_not:
-						inv = "/";
-						// fall through
-					case cond_unary:
-						rhs << "SM[" << smBit0() << "]";
-						break;
-
-					// 2 operands
-					case cond_nand:
-						inv = "/";
-						// fall through
-					case cond_and:
-						rhs << "SM[" << smBit0() << "] & SM[" << smBit1() << "]";
-						break;
-
-					case cond_nor:
-						inv = "/";
-						// fall through
-					case cond_or:
-						rhs << "SM[" << smBit0() << "] | SM[" << smBit1() << "]";
-						break;
-
-					case cond_nxor:
-						inv = "/";
-						// fall through
-					case cond_xor:
-						rhs << "SM[" << smBit0() << "] ^ SM[" << smBit1() << "]";
-						break;
-				}
 				emit(
 					slot,
 					QL_SS2S(inv << "O[" << bit << "] := " << rhs.str())
