@@ -736,7 +736,7 @@ void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, 
 	// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
 	if(!feedbackMap.empty()) {	// this instrument performs readout for feedback now
 		int smAddr = 0;		// FIXME:
-		int mux = dp.getOrAssignMux(instrIdx);	// FIXME: add parameter feedbackMap
+		int mux = dp.getOrAssignMux(instrIdx, feedbackMap);
 
 		dp.emitMux(mux, smAddr, feedbackMap, instrIdx, slot);
 
@@ -789,7 +789,7 @@ void codegen_cc::emitOutput(const tCondGateMap &condGateMap, int32_t digOut, uns
 	} else {	// at least one group conditional
 		// configure datapath PL
 		int smAddr = 0;		// FIXME:
-		int pl = dp.getOrAssignPl(instrIdx);	// FIXME: add parameter condGateMap
+		int pl = dp.getOrAssignPl(instrIdx, condGateMap);
 
 		dp.emitPl(pl, smAddr, condGateMap, instrIdx, slot);
 

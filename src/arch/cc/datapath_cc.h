@@ -53,8 +53,8 @@ public: // functions
 
 	int allocateSmBit(size_t breg_operand, size_t instrIdx);
 	int getSmBit(size_t breg_operand, size_t instrIdx);
-	int getOrAssignMux(size_t instrIdx);
-	int getOrAssignPl(size_t instrIdx);
+	int getOrAssignMux(size_t instrIdx, const tFeedbackMap &feedbackMap);
+	int getOrAssignPl(size_t instrIdx, const tCondGateMap &condGateMap);
 	static int getSizeTag(int numReadouts);
 	void emitMux(int mux, int smAddr, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot);
 	void emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, size_t instrIdx, int slot);
@@ -74,7 +74,12 @@ private:	// functions
 	}
 
 private:    // vars
+    static const int MUX_CNT = 512;                            	// physical maximum of CC
+    static const int PL_CNT = 512;                            	// physical maximum of CC
+
 	std::stringstream datapathSection;                          // the data path configuration generated
+	int lastMux[MAX_INSTRS] = {0};
+	int lastPl[MAX_INSTRS] = {0};
 }; // class
 
 } // namespace ql

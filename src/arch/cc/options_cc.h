@@ -19,3 +19,6 @@
 #define OPT_VECTOR_MODE                 0   // 1=generate single code word for all output groups together (requires codewords allocated by backend)
 #define OPT_FEEDBACK                    1   // feedback support. New feature in being developed
 #define OPT_PRAGMA						1	// pragma support,  initially for Repeat Until Success only
+
+
+static const int MAX_INSTRS = 12;           // maximum number of instruments in config file

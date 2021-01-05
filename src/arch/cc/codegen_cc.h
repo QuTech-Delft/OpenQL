@@ -87,7 +87,6 @@ private:    // types
 
 private:    // vars
     static const int MAX_SLOTS = 12;                            // physical maximum of CC
-    static const int MAX_INSTRS = MAX_SLOTS;                    // maximum number of instruments in config file
     static const int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
     const quantum_platform *platform;                           // remind platform

@@ -51,19 +51,27 @@ int datapath_cc::getSmBit(size_t breg_operand, size_t instrIdx)
 }
 
 
-int datapath_cc::getOrAssignMux(size_t instrIdx)
+int datapath_cc::getOrAssignMux(size_t instrIdx, const tFeedbackMap &feedbackMap)
 {
 	// We need a different MUX for every new combination of simultaneous readouts (per instrument)
+	int mux = lastMux[instrIdx]++;	// FIXME: no reuse of identical combinations yet
+	if(mux == MUX_CNT) {
+		QL_FATAL("Maximum number of available CC datapath MUXes exceeded");
+	}
 
-	return 0;	// FIXME
+	return mux;
 }
 
 
-int datapath_cc::getOrAssignPl(size_t instrIdx)
+int datapath_cc::getOrAssignPl(size_t instrIdx, const tCondGateMap &condGateMap)
 {
 	// We need a different PL for every new combination of simultaneous gate conditions (per instrument)
+	int pl = lastPl[instrIdx]++;	// FIXME: no reuse of identical combinations yet
+	if(pl == PL_CNT) {
+		QL_FATAL("Maximum number of available CC datapath PLs exceeded");
+	}
 
-	return 0;	// FIXME
+	return pl;
 }
 
 
