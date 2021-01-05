@@ -192,7 +192,7 @@ void datapath_cc::emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, si
 						inv = "/";
 						// fall through
 					case cond_unary:
-						rhs << "I[" << smBit0 << "]";
+						rhs << "SM[" << smBit0 << "]";
 						break;
 
 					// 2 operands
@@ -200,21 +200,21 @@ void datapath_cc::emitPl(int pl, int smAddr, const tCondGateMap &condGateMap, si
 						inv = "/";
 						// fall through
 					case cond_and:
-						rhs << "I[" << smBit0 << "] & I[" << smBit1 << "]";
+						rhs << "SM[" << smBit0 << "] & SM[" << smBit1 << "]";
 						break;
 
 					case cond_nor:
 						inv = "/";
 						// fall through
 					case cond_or:
-						rhs << "I[" << smBit0 << "] | I[" << smBit1 << "]";
+						rhs << "SM[" << smBit0 << "] | SM[" << smBit1 << "]";
 						break;
 
 					case cond_nxor:
 						inv = "/";
 						// fall through
 					case cond_xor:
-						rhs << "I[" << smBit0 << "] ^ I[" << smBit1 << "]";
+						rhs << "SM[" << smBit0 << "] ^ SM[" << smBit1 << "]";
 						break;
 				}
 				emit(
