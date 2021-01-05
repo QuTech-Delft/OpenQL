@@ -285,6 +285,8 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 }
 
 
+//codegen_cc::collectCodeGenInfo
+
 // bundleFinish: see 'strategy' above
 // FIXME: split into smaller parts
 void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
@@ -409,6 +411,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 #endif
         } // for(group)
 
+
+// FIXME:
+// 	} for(instrIdx)
+// for() {
 
 		/************************************************************************\
 		| turn code generation info collected above into actual code
@@ -735,10 +741,11 @@ void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, 
 	// code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
 	if(!feedbackMap.empty()) {	// this instrument performs readout for feedback now
 		unsigned int mux = dp.getOrAssignMux(instrIdx, feedbackMap);
-		unsigned int smAddr = dp.emitMux(mux, feedbackMap, instrIdx, slot);
+		dp.emitMux(mux, feedbackMap, instrIdx, slot);
 
 		// emit code for slot input
-		int sizeTag = datapath_cc::getSizeTag(feedbackMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
+		unsigned int sizeTag = datapath_cc::getSizeTag(feedbackMap.size());		// compute DSM transfer size tag (for 'seq_in_sm' instruction)
+		unsigned int smAddr = datapath_cc::getMuxSmAddr(feedbackMap);
 		emit(
 			slot,
 			"seq_in_sm",
@@ -747,11 +754,10 @@ void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, 
 		);
 		lastEndCycle[instrIdx]++;
 	} else {	// this instrument does not perform readout for feedback now
-		// FIXME:
-		unsigned int smAddr = 0;
-		unsigned int smTotalSize = 6;	// FIXME: calculate, requires overview over all measurements of bundle, or take a safe max
-
 		// emit code for non-participating instrument
+		// FIXME: computing the variables above requires overview over all measurements of bundle, i.e. iterating over all instruments in BundleFinish before generating code
+		unsigned int smAddr = 0;
+		unsigned int smTotalSize = 6;
 		emit(
 			slot,
 			"seq_inv_sm",

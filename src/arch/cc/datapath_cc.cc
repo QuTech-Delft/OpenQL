@@ -136,11 +136,8 @@ static std::string cond_qasm(cond_type_t condition, const Vec<UInt> &cond_operan
 }
 
 
-unsigned int datapath_cc::emitMux(unsigned int mux, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot)
+void datapath_cc::emitMux(unsigned int mux, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot)
 {
-	unsigned int minSmBit = UINT_MAX;
-	unsigned int maxSmBit = 0;
-
 	if(feedbackMap.empty()) {
 		QL_FATAL("feedbackMap must not be empty");
 	}
@@ -151,8 +148,6 @@ unsigned int datapath_cc::emitMux(unsigned int mux, const tFeedbackMap &feedback
 		int group = feedback.first;
 		tFeedbackInfo fi = feedback.second;
 
-		minSmBit = utils::min(minSmBit, fi.smBit);
-		maxSmBit = utils::max(maxSmBit, fi.smBit);
 		unsigned int winBit = fi.smBit % MUX_SM_WIN_SIZE;
 
 		emit(
@@ -160,6 +155,25 @@ unsigned int datapath_cc::emitMux(unsigned int mux, const tFeedbackMap &feedback
 			QL_SS2S("SM[" << winBit << "] := I[" << fi.bit << "]"),
 			QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->operands[0] << ")")
 		);
+	}
+}
+
+
+unsigned int datapath_cc::getMuxSmAddr(const tFeedbackMap &feedbackMap)
+{
+	unsigned int minSmBit = UINT_MAX;
+	unsigned int maxSmBit = 0;
+
+	if(feedbackMap.empty()) {
+		QL_FATAL("feedbackMap must not be empty");
+	}
+
+	for(auto &feedback : feedbackMap) {
+		int group = feedback.first;
+		tFeedbackInfo fi = feedback.second;
+
+		minSmBit = utils::min(minSmBit, fi.smBit);
+		maxSmBit = utils::max(maxSmBit, fi.smBit);
 	}
 
 	// perform checks
@@ -170,6 +184,7 @@ unsigned int datapath_cc::emitMux(unsigned int mux, const tFeedbackMap &feedback
 }
 
 
+// FIXME: split like emitMux/getMuxSmAddr
 unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMap, size_t instrIdx, int slot)
 {
 	bool minMaxValid = false;	// we may not access SM
