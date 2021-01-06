@@ -117,7 +117,7 @@ private:    // vars
 #endif
 
 	// codegen state, bundle scope
-	bool bundleHasFeedback;
+	bool bundleHasFeedback;		// FIXME: remove, handle in bundleFinish()
     std::vector<std::vector<BundleInfo>> bundleInfo;           	// matrix[instrIdx][group]
 
 
