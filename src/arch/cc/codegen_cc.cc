@@ -150,8 +150,6 @@ void codegen_cc::kernelFinish(const std::string &kernelName, size_t durationInCy
 // bundleStart: see 'strategy' above
 void codegen_cc::bundleStart(const std::string &cmnt)
 {
-//	bundleHasFeedback = false;
-
     // create 'matrix' of BundleInfo with proper vector size per instrument
 	bundleInfo.clear();
     BundleInfo empty;
@@ -414,7 +412,6 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 	tCodeGenMap codeGenMap = collectCodeGenInfo(startCycle, durationInCycles);
 
 	// FIXME: perform stuff requiring overview over all instruments:
-	// - bundleHasFeedback
 	// - DSM used, for seq_inv_sm
 
 	// determine whether bundle has any feedback
@@ -576,7 +573,6 @@ void codegen_cc::customGate(
 
 			// store operands
 			if(settings.getReadoutMode(iname)=="feedback") {
-//				bundleHasFeedback = true;
 				bi->isMeasFeedback = true;
 				bi->operands = operands;
 //            	bi->creg_operands = creg_operands;	// NB: will be empty because of checks performed earlier
