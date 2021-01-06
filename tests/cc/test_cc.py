@@ -193,7 +193,7 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     # based on ../test_cqasm_reader.py::test_conditions
-    def test_conditions(self):
+    def test_cqasm_conditions(self):
         cqasm_config_fn = os.path.join(curdir, 'cqasm_config_cc.json')
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
         number_qubits = platform.get_qubit_number()

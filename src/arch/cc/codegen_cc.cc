@@ -150,7 +150,7 @@ void codegen_cc::kernelFinish(const std::string &kernelName, size_t durationInCy
 // bundleStart: see 'strategy' above
 void codegen_cc::bundleStart(const std::string &cmnt)
 {
-	bundleHasFeedback = false;
+//	bundleHasFeedback = false;
 
     // create 'matrix' of BundleInfo with proper vector size per instrument
 	bundleInfo.clear();
@@ -410,18 +410,22 @@ codegen_cc::tCodeGenMap codegen_cc::collectCodeGenInfo(size_t startCycle, size_t
 // bundleFinish: see 'strategy' above
 void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
 {
+	// collect info for all instruments
 	tCodeGenMap codeGenMap = collectCodeGenInfo(startCycle, durationInCycles);
 
 	// FIXME: perform stuff requiring overview over all instruments:
 	// - bundleHasFeedback
 	// - DSM used, for seq_inv_sm
 
+	// determine whether bundle has any feedback
+	bool bundleHasFeedback = false;
+	for(auto &codeGenInfo : codeGenMap) {
+		if(!codeGenInfo.second.feedbackMap.empty()) bundleHasFeedback = true;
+	}
+
+	// turn code generation info collected above into actual code
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
     	tCodeGenInfo codeGenInfo = codeGenMap[instrIdx];
-
-		/************************************************************************\
-		| turn code generation info collected above into actual code
-		\************************************************************************/
 
 		if(isLastBundle && instrIdx==0) {
 			comment(QL_SS2S(" # last bundle of kernel, will pad outputs to match durations"));
@@ -572,7 +576,7 @@ void codegen_cc::customGate(
 
 			// store operands
 			if(settings.getReadoutMode(iname)=="feedback") {
-				bundleHasFeedback = true;
+//				bundleHasFeedback = true;
 				bi->isMeasFeedback = true;
 				bi->operands = operands;
 //            	bi->creg_operands = creg_operands;	// NB: will be empty because of checks performed earlier
