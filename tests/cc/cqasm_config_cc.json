@@ -36,5 +36,9 @@
     {"name": "measure_all", "params": "",       "ql_qubits": "all", "implicit_sgmq": true},
     {"name": "display",     "params": ""},
     {"name": "wait",        "params": ""},
-    {"name": "wait",        "params": "i"}
+    {"name": "wait",        "params": "i"},
+
+    {"name": "_wait_uhfqa", "params": "Q"},
+    {"name": "_dist_dsm",   "params": "QB"},
+    {"name": "_wait_dsm",   "params": "Q"}
 ]

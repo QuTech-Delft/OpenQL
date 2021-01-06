@@ -60,7 +60,7 @@ unsigned int datapath_cc::allocateSmBit(size_t breg_operand, size_t instrIdx)
 		}
 	}
 
-	QL_DOUT("Mapping breg_operand " << breg_operand << " to smBit " << smBit);
+	QL_IOUT("Mapping breg_operand " << breg_operand << " to smBit " << smBit);
 	mapBregToSmBit[breg_operand] = smBit;	// created on demand
 
 	smBitLastInstrIdx = instrIdx;
@@ -70,7 +70,7 @@ unsigned int datapath_cc::allocateSmBit(size_t breg_operand, size_t instrIdx)
 }
 
 
-unsigned int datapath_cc::getSmBit(size_t breg_operand, size_t instrIdx)
+unsigned int datapath_cc::getSmBit(size_t breg_operand, size_t instrIdx)	// FIXME: operand can be breg_operand or cond_operand, change to bit_operand
 {
 	int smBit;
 

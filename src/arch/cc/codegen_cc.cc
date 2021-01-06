@@ -384,16 +384,27 @@ codegen_cc::tCodeGenMap codegen_cc::collectCodeGenInfo(size_t startCycle, size_t
 					QL_FATAL("group " << group << " of '" << ic.ii.instrumentName << "/qubits' should define 1 qubit, not " << qubitsOfGroup.size());
 				}
 				int qubit = qubitsOfGroup[0];
-				if (bi->readoutQubit != qubit) {          	// this instrument group handles requested qubit. FIXM: inherently true
+				if (bi->readoutQubit != qubit) {          	// this instrument group handles requested qubit. FIXME: inherently true
 					QL_FATAL("inconsistency FIXME");
 				};
 #endif
 				// get classic operand
+#if 0
 				if (!bi->breg_operands.empty()) {	// FIXME: breg_operands should be honoured
 					// FIXME: Note that our gate decomposition "measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"] is problematic in that sense
 					QL_WOUT("ignoring explicit assignment to bit " << bi->breg_operands[0] << " for measurement of qubit " << bi->operands[0]);
 				}
 				int breg_operand = bi->operands[0];                	// implicit classic bit for qubit FIXME: Uint
+#else
+				UInt breg_operand;
+				if (bi->breg_operands.empty()) {
+					breg_operand = bi->operands[0];	                // implicit classic bit for qubit
+					QL_IOUT("Using implicit bit " << breg_operand << " for qubit " << bi->operands[0]);
+				} else {
+					breg_operand = bi->breg_operands[0];
+					QL_IOUT("Using explicit bit " << breg_operand << " for qubit " << bi->operands[0]);
+				}
+#endif
 
 				// allocate SM bit for classic operand
 				unsigned int smBit = dp.allocateSmBit(breg_operand, instrIdx);

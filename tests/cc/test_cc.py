@@ -196,17 +196,27 @@ class Test_central_controller(unittest.TestCase):
     def test_conditions(self):
         cqasm_config_fn = os.path.join(curdir, 'cqasm_config_cc.json')
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
-        # platform = ql.Platform('seven_qubits_chip', config_fn)
         number_qubits = platform.get_qubit_number()
         name = 'test_cqasm_conditions'
         program = ql.Program(name, platform, number_qubits)
         qasm_rdr = ql.cQasmReader(platform, program, cqasm_config_fn)
         qasm_str = """
             version 1.1
+            
             var qa, qb: qubit
             var ca, cb: bool
-            measure qa, ca
-            measure qb, cb
+            
+            { measure qa, ca | measure qb, cb }
+            
+            # hack for feedback
+            .wait_uhfqa # use subcircuit to force new kernel, and thus schduling realm
+            { _wait_uhfqa qa | _wait_uhfqa qb }
+            .dist_dsm
+            { _dist_dsm qa, ca | _dist_dsm qb, cb }
+            .wait_dsm
+            { _wait_dsm qa | _wait_dsm qb }        
+            .test
+                        
             cond(true) x qa
             cond(false) y qa
             cond(ca) z qa
@@ -248,6 +258,7 @@ class Test_central_controller(unittest.TestCase):
             cond(!(false ^^ cb)) z qa
             """
         qasm_rdr.string2circuit(qasm_str)
+        ql.set_option('log_level', 'LOG_INFO')
         program.compile()
         #self.assertTrue(file_compare(os.path.join(output_dir, name + '.qasm'), os.path.join(curdir, 'golden', name + '.qasm')))
 
