@@ -209,7 +209,7 @@ class Test_central_controller(unittest.TestCase):
             { measure qa, ca | measure qb, cb }
             
             # hack for feedback
-            .wait_uhfqa # use subcircuit to force new kernel, and thus schduling realm
+            .wait_uhfqa # use subcircuit to force new kernel, and thus scheduling realm
             { _wait_uhfqa qa | _wait_uhfqa qb }
             .dist_dsm
             { _dist_dsm qa, ca | _dist_dsm qb, cb }

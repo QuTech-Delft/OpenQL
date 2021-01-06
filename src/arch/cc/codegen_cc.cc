@@ -289,10 +289,6 @@ codegen_cc::tCodeGenMap codegen_cc::collectCodeGenInfo(size_t startCycle, size_t
 {
 	tCodeGenMap codeGenMap;
 
-#if OPT_PRAGMA
-//	bool bundleHasPragma = false;
-#endif
-
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
     	// get control info from instrument settings
@@ -352,7 +348,6 @@ codegen_cc::tCodeGenMap codegen_cc::collectCodeGenInfo(size_t startCycle, size_t
 			if(bi->pragma) {
 				// FIXME: enforce single pragma per bundle (currently by design)
 				// FIXME: enforce no other work
-//            	bundleHasPragma = true;
             	codeGenInfo.pragma = bi->pragma;
 
 				// FIXME: use breg_operands if present? How about qubit (operand) then?
@@ -389,13 +384,6 @@ codegen_cc::tCodeGenMap codegen_cc::collectCodeGenInfo(size_t startCycle, size_t
 				};
 #endif
 				// get classic operand
-#if 0
-				if (!bi->breg_operands.empty()) {	// FIXME: breg_operands should be honoured
-					// FIXME: Note that our gate decomposition "measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"] is problematic in that sense
-					QL_WOUT("ignoring explicit assignment to bit " << bi->breg_operands[0] << " for measurement of qubit " << bi->operands[0]);
-				}
-				int breg_operand = bi->operands[0];                	// implicit classic bit for qubit FIXME: Uint
-#else
 				UInt breg_operand;
 				if (bi->breg_operands.empty()) {
 					breg_operand = bi->operands[0];	                // implicit classic bit for qubit
@@ -404,7 +392,6 @@ codegen_cc::tCodeGenMap codegen_cc::collectCodeGenInfo(size_t startCycle, size_t
 					breg_operand = bi->breg_operands[0];
 					QL_IOUT("Using explicit bit " << breg_operand << " for qubit " << bi->operands[0]);
 				}
-#endif
 
 				// allocate SM bit for classic operand
 				unsigned int smBit = dp.allocateSmBit(breg_operand, instrIdx);
@@ -561,7 +548,7 @@ void codegen_cc::customGate(
 			 * 			- no result, measurement results are often read offline from the readout device (mostly the raw values
 			 * 			instead of the binary result), without the control device ever taking notice of the value
 			 * 			- implicit bit result for qubit, e.g. for the CC-light using conditional gates
-			 * 		- creg result (old. FIXME: what are intended semantics?)
+			 * 		- creg result (old, no longer valid)
 			 * 			note that Creg's are managed through a class, whereas bregs are just numbers
 			 * 		- breg result (new)
 			 */

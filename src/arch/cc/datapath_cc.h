@@ -52,7 +52,7 @@ public: // functions
 	void programFinish();
 
 	unsigned int allocateSmBit(size_t breg_operand, size_t instrIdx);
-	unsigned int getSmBit(size_t breg_operand, size_t instrIdx);
+	unsigned int getSmBit(size_t bit_operand, size_t instrIdx);
 	unsigned int getOrAssignMux(size_t instrIdx, const tFeedbackMap &feedbackMap);
 	unsigned int getOrAssignPl(size_t instrIdx, const tCondGateMap &condGateMap);
 	static unsigned int getSizeTag(unsigned int numReadouts);

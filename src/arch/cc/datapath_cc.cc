@@ -69,17 +69,17 @@ unsigned int datapath_cc::allocateSmBit(size_t breg_operand, size_t instrIdx)
 	return smBit;
 }
 
-
-unsigned int datapath_cc::getSmBit(size_t breg_operand, size_t instrIdx)	// FIXME: operand can be breg_operand or cond_operand, change to bit_operand
+// NB: bit_operand can be breg_operand or cond_operand, depending on context of caller
+unsigned int datapath_cc::getSmBit(size_t bit_operand, size_t instrIdx)
 {
 	int smBit;
 
-	auto it = mapBregToSmBit.find(breg_operand);
+	auto it = mapBregToSmBit.find(bit_operand);
 	if(it != mapBregToSmBit.end()) {
 		smBit = it->second;
-		QL_DOUT("Found mapping: breg_operand " << breg_operand << " to smBit " << smBit);
+		QL_DOUT("Found mapping: bit_operand " << bit_operand << " to smBit " << smBit);
 	} else {
-		QL_FATAL("Request for DSM bit of breg_operand " << breg_operand << " that was never assigned by measurement");		// NB: message refers to user perspective (and thus calling semantics)
+		QL_FATAL("Request for DSM bit of bit_operand " << bit_operand << " that was never assigned by measurement");		// NB: message refers to user perspective (and thus calling semantics)
 	}
 	return smBit;
 }
