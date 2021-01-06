@@ -284,13 +284,138 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nr
 	return ret;
 }
 
+#if 1	// FIXME: WIP
+codegen_cc::tCodeGenMap codegen_cc::collectCodeGenInfo(size_t startCycle, size_t durationInCycles)
+{
+	tCodeGenMap codeGenMap;
 
-//codegen_cc::collectCodeGenInfo
+#if OPT_PRAGMA
+//	bool bundleHasPragma = false;
+#endif
+
+    // iterate over instruments
+    for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
+    	// get control info from instrument settings
+        const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
+        if(ic.ii.slot >= MAX_SLOTS) {
+            QL_JSON_FATAL(
+            	"illegal slot " << ic.ii.slot
+            	<< " on instrument '" << ic.ii.instrumentName
+			);
+        }
+
+		/************************************************************************\
+		| collect code generation info from all groups within one instrument
+		\************************************************************************/
+
+        // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
+
+		tCodeGenInfo codeGenInfo = {0};
+
+		// remind information needed for code generation
+		codeGenInfo.instrumentName = ic.ii.instrumentName;
+		codeGenInfo.slot = ic.ii.slot;
+
+		// now collect code generation info from all groups of instrument
+        size_t nrGroups = bundleInfo[instrIdx].size();
+        for(size_t group=0; group<nrGroups; group++) {
+            BundleInfo *bi = &bundleInfo[instrIdx][group];                 	// shorthand
+
+            // handle output
+            if(!bi->signalValue.empty()) {                                  // signal defined, i.e.: we need to output something
+                // compute maximum duration over all groups
+                if(bi->durationInCycles > codeGenInfo.instrMaxDurationInCycles) codeGenInfo.instrMaxDurationInCycles = bi->durationInCycles;
+
+                tCalcGroupDigOut gdo = calcGroupDigOut(instrIdx, group, nrGroups, ic, bi->staticCodewordOverride);
+                codeGenInfo.digOut |= gdo.groupDigOut;
+                comment(gdo.comment);
+#if OPT_FEEDBACK
+				// conditional gates
+				// store condition and groupDigOut in condMap, if all groups are unconditional we use old scheme, otherwise
+				// datapath is configured to generate proper digital output
+                if(bi->condition==cond_always || ic.ii.forceCondGatesOn) {
+                	// nothing to do, just use digOut
+                } else {	// other conditions, including cond_never
+					// remind mapping for setting PL
+					codeGenInfo.condGateMap.emplace(group, tCondGateInfo{bi->condition, bi->cond_operands, gdo.groupDigOut});
+                }
+#endif
+
+                vcd.bundleFinishGroup(startCycle, bi->durationInCycles, gdo.groupDigOut, bi->signalValue, instrIdx, group);
+
+                codeGenInfo.instrHasOutput = true;
+            } // if(signal defined)
+
+
+#if OPT_PRAGMA
+			// handle pragma
+			if(bi->pragma) {
+				// FIXME: enforce single pragma per bundle (currently by design)
+				// FIXME: enforce no other work
+//            	bundleHasPragma = true;
+            	codeGenInfo.pragma = bi->pragma;
+
+				// FIXME: use breg_operands if present? How about qubit (operand) then?
+				int breg_operand = bi->operands[0];                	// implicit classic bit for qubit. FIXME: perform checks
+				// get SM bit for classic operand (allocated during readout)
+				codeGenInfo.pragmaSmBit = dp.getSmBit(breg_operand, instrIdx);
+            }
+#endif
+
+
+#if OPT_FEEDBACK
+            // handle readout (i.e. when necessary, create feedbackMap entry
+            // NB: we allow for instruments that perform the input side of readout only, without signal generation by the
+            // same instrument, which might be needed in the future
+            // FIXME: also generate VCD
+
+			if(bi->isMeasFeedback) {
+				unsigned int resultBit = settings_cc::getResultBit(ic, group);
+
+#if 0	// FIXME: partly redundant
+				// get our qubit
+				const Json qubits = json_get<const Json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const Json&> unavailable
+				size_t qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
+				if (group >= qubitGroupCnt) {	// FIXME: also tested in settings_cc::findSignalInfoForQubit
+					QL_FATAL("group " << group << " not defined in '" << ic.ii.instrumentName << "/qubits'");
+				}
+				const Json qubitsOfGroup = qubits[group];
+				if (qubitsOfGroup.size() != 1) {	// FIXME: not tested elsewhere
+					QL_FATAL("group " << group << " of '" << ic.ii.instrumentName << "/qubits' should define 1 qubit, not " << qubitsOfGroup.size());
+				}
+				int qubit = qubitsOfGroup[0];
+				if (bi->readoutQubit != qubit) {          	// this instrument group handles requested qubit. FIXM: inherently true
+					QL_FATAL("inconsistency FIXME");
+				};
+#endif
+				// get classic operand
+				if (!bi->breg_operands.empty()) {	// FIXME: breg_operands should be honoured
+					// FIXME: Note that our gate decomposition "measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"] is problematic in that sense
+					QL_WOUT("ignoring explicit assignment to bit " << bi->breg_operands[0] << " for measurement of qubit " << bi->operands[0]);
+				}
+				int breg_operand = bi->operands[0];                	// implicit classic bit for qubit FIXME: Uint
+
+				// allocate SM bit for classic operand
+				unsigned int smBit = dp.allocateSmBit(breg_operand, instrIdx);
+
+				// remind mapping of bit -> smBit for setting MUX
+				codeGenInfo.feedbackMap.emplace(group, tFeedbackInfo{smBit, resultBit, bi});
+			}
+#endif
+        } // for(group)
+//  FIXME      codeGenMap.emplace(instrIdx, codeGenInfo);
+        codeGenMap[instrIdx] = codeGenInfo;
+ 	} // for(instrIdx)
+ 	return codeGenMap;
+}
+#endif
+
 
 // bundleFinish: see 'strategy' above
 // FIXME: split into smaller parts
 void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
 {
+#if 0	// =============================================================
 #if OPT_PRAGMA
 	bool bundleHasPragma = false;
 #endif
@@ -411,11 +536,6 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 #endif
         } // for(group)
 
-
-// FIXME:
-// 	} for(instrIdx)
-// for() {
-
 		/************************************************************************\
 		| turn code generation info collected above into actual code
 		\************************************************************************/
@@ -452,6 +572,52 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
     } // for(instrIdx)
 
     comment("");    // blank line to separate bundles
+
+#else	// =============================================================
+	tCodeGenMap codeGenMap = collectCodeGenInfo(startCycle, durationInCycles);
+
+	// FIXME: perform stuff requiring overview over all instruments
+
+    for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
+    	tCodeGenInfo codeGenInfo = codeGenMap[instrIdx];
+
+		/************************************************************************\
+		| turn code generation info collected above into actual code
+		\************************************************************************/
+
+		if(isLastBundle && instrIdx==0) {
+			comment(QL_SS2S(" # last bundle of kernel, will pad outputs to match durations"));
+		}
+
+        // generate code for instrument output
+        if(codeGenInfo.instrHasOutput) {
+			emitOutput(codeGenInfo.condGateMap, codeGenInfo.digOut, codeGenInfo.instrMaxDurationInCycles, instrIdx, startCycle, codeGenInfo.slot, codeGenInfo.instrumentName);
+		} else {    // !instrHasOutput
+			// nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
+		}
+
+#if OPT_PRAGMA
+		if(codeGenInfo.pragma) {	// NB: note that this will only work because we set the pragma for all instruments, and thus already encounter this for the first instrument FIXME: update comment
+			emitPragma(codeGenInfo.pragma, codeGenInfo.pragmaSmBit, instrIdx, startCycle, codeGenInfo.slot, codeGenInfo.instrumentName);
+        }
+#endif
+
+#if OPT_FEEDBACK
+		if(bundleHasFeedback) {
+			emitFeedback(codeGenInfo.feedbackMap, instrIdx, startCycle, codeGenInfo.slot, codeGenInfo.instrumentName);
+		}
+#endif
+
+		// for last bundle, pad end of bundle to align durations
+        if(isLastBundle) {
+            padToCycle(instrIdx, startCycle+durationInCycles, codeGenInfo.slot, codeGenInfo.instrumentName);		// FIXME: use instrMaxDurationInCycles and/or check consistency
+        }
+
+        vcd.bundleFinish(startCycle, codeGenInfo.digOut, codeGenInfo.instrMaxDurationInCycles, instrIdx);	// FIXME: conditional gates, etc
+    } // for(instrIdx)
+
+    comment("");    // blank line to separate bundles
+#endif	// =============================================================
 }
 
 /************************************************************************\

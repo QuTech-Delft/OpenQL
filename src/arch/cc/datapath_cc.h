@@ -23,7 +23,7 @@ namespace ql {
 
 namespace { using namespace utils; }
 
-// NB: types shared with codegen_cc
+// NB: types shared with codegen_cc. FIXME: move
 typedef struct {
 	unsigned int smBit;
 	unsigned int bit;

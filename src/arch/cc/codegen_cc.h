@@ -69,14 +69,23 @@ public: //  functions
     void comment(const std::string &c);
 
 private:    // types
-#if 0 && OPT_FEEDBACK
 	typedef struct {
-		int smBit;
-		int bit;
-		const BundleInfo *bi;									// used for annotation only
-	} tFeedbackInfo;											// information for feedback on single instrument group
-	using tFeedbackMap = std::map<int, tFeedbackInfo>;			// NB: key is instrument group
+		bool instrHasOutput;
+		uint32_t digOut;                                                	// the digital output value sent over the instrument interface
+		unsigned int instrMaxDurationInCycles;                          	// maximum duration over groups that are used, one instrument
+#if OPT_FEEDBACK
+		tFeedbackMap feedbackMap;
+		tCondGateMap condGateMap;
 #endif
+#if OPT_PRAGMA
+		const Json *pragma;
+		int pragmaSmBit;
+#endif
+		// info copied from tInstrumentInfo
+		std::string instrumentName;
+        int slot;
+	} tCodeGenInfo;
+	using tCodeGenMap = std::map<int, tCodeGenInfo>;			// NB: key is instrument group
 
     typedef struct {
         std::string signalValueString;
@@ -127,6 +136,7 @@ private:    // funcs
     void padToCycle(size_t instrIdx, size_t startCycle, int slot, const std::string &instrumentName);
 
     // generic helpers
+	tCodeGenMap collectCodeGenInfo(size_t startCycle, size_t durationInCycles);
     tCalcSignalValue calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const Vec<UInt> &operands, const std::string &iname);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
