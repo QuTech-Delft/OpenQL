@@ -14,19 +14,20 @@
 
 namespace ql {
 
+// math helpers
+static unsigned int roundUp(unsigned int val, unsigned int mult) { return (val+mult-1)/mult*mult; }
+static unsigned int alignSm(unsigned int bitAddr, unsigned int bits) { return bitAddr/bits*(bits/8); }
+
 void datapath_cc::programStart()
 {
 	datapathSection << std::left;    // assumed by emit()
 	emit(".DATAPATH", "");
 }
 
-
 void datapath_cc::programFinish()
 {
 	emit(".END", "");
 }
-
-static unsigned int roundUp(unsigned int val, unsigned int mult) { return (val+mult-1)/mult*mult; }
 
 unsigned int datapath_cc::allocateSmBit(size_t breg_operand, size_t instrIdx)
 {
@@ -179,17 +180,17 @@ unsigned int datapath_cc::getMuxSmAddr(const tFeedbackMap &feedbackMap)
 	}
 
 	// perform checks
-	if(maxSmBit/MUX_SM_WIN_SIZE != minSmBit/MUX_SM_WIN_SIZE) {
+	if(alignSm(minSmBit, MUX_SM_WIN_SIZE) != alignSm(maxSmBit, MUX_SM_WIN_SIZE)) {
 		QL_FATAL("Cannot access DSM bits " << minSmBit << " and " << maxSmBit << " in single MUX configuration");
 	}
-	return minSmBit/MUX_SM_WIN_SIZE;
+	return alignSm(minSmBit, MUX_SM_WIN_SIZE);
 }
 
 
 // FIXME: split like emitMux/getMuxSmAddr
 unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMap, size_t instrIdx, int slot)
 {
-	bool minMaxValid = false;	// we may not access SM
+	bool minMaxValid = false;	// we might not access SM
 	unsigned int minSmBit = UINT_MAX;
 	unsigned int maxSmBit = 0;
 
@@ -276,11 +277,11 @@ unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMa
 
 	// perform checks
 	if(minMaxValid) {
-		if(maxSmBit/PL_SM_WIN_SIZE != minSmBit/PL_SM_WIN_SIZE) {
+		if(alignSm(minSmBit, PL_SM_WIN_SIZE) != alignSm(maxSmBit, PL_SM_WIN_SIZE)) {
 			QL_FATAL("Cannot access DSM bits " << minSmBit << " and " << maxSmBit << " in single PL configuration");
 		}
 	}
-	return minSmBit/PL_SM_WIN_SIZE;	// NB: irrelevant if !minMaxValid since SM is not accessed in that case
+	return alignSm(minSmBit, PL_SM_WIN_SIZE);	// NB: irrelevant if !minMaxValid since SM is not accessed in that case
 }
 
 } // namespace ql

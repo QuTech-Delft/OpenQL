@@ -417,7 +417,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 	// determine whether bundle has any feedback
 	bool bundleHasFeedback = false;
 	for(auto &codeGenInfo : codeGenMap) {
-		if(!codeGenInfo.second.feedbackMap.empty()) bundleHasFeedback = true;
+		if(!codeGenInfo.second.feedbackMap.empty()) {
+			bundleHasFeedback = true;
+			// FIXME: calc min and max SM address used
+			//  unsigned int smAddr = datapath_cc::getMuxSmAddr(feedbackMap);
+		}
 	}
 
 	// turn code generation info collected above into actual code
