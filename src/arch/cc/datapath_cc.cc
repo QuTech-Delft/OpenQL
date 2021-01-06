@@ -10,6 +10,8 @@
 #include "utils/exception.h"	// FIXME: required for FATAL
 #include "utils/num.h"
 
+#include <limits.h>				// for UINT_MAX on some platforms
+
 namespace ql {
 
 void datapath_cc::programStart()
