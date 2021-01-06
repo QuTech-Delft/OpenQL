@@ -147,7 +147,7 @@ settings_cc::tSignalDef settings_cc::findSignalDefinition(const Json &instructio
 // collect some configuration info for an instrument
 settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) const
 {
-    tInstrumentInfo ret;
+    tInstrumentInfo ret = {0};
 
     std::string instrumentPath = QL_SS2S("instruments[" << instrIdx << "]");    // for JSON error reporting
     if(instrIdx >= jsonInstruments->size()) {
@@ -165,7 +165,7 @@ settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) con
 #if OPT_FEEDBACK
     // optional key 'instruments[]/force_cond_gates_on', can be used to always enable AWG if gate execution is controlled by VSM
     if(QL_JSON_EXISTS(*ret.instrument, "force_cond_gates_on")) {
-        ret.forceCondGatesOn = json_get<bool>((*ret.instrument), "force_cond_gates_on", ret.instrumentName+"/force_cond_gates_on"); // key will exist, but type may be wrong
+        ret.forceCondGatesOn = json_get<bool>(*ret.instrument, "force_cond_gates_on", ret.instrumentName+"/force_cond_gates_on"); // key will exist, but type may be wrong
     }
 #endif
 
