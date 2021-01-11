@@ -167,10 +167,19 @@ const utils::Complex nop_c[] = {
     0.0, 1.0
 };
 
-
+/*
+ * additional definitions for describing conditional gates
+ */
+typedef enum e_cond_type {
+    // 0 operands:
+    cond_always, cond_never,
+    // 1 operand:
+    cond_unary, cond_not,
+    // 2 operands
+    cond_and, cond_nand, cond_or, cond_nor, cond_xor, cond_nxor
+} cond_type_t;
 
 const utils::UInt MAX_CYCLE = utils::MAX;
-
 
 /**
  * gate interface
@@ -178,8 +187,11 @@ const utils::UInt MAX_CYCLE = utils::MAX;
 class gate {
 public:
     utils::Str name;
-    utils::Vec<utils::UInt> operands;
+    utils::Vec<utils::UInt> operands;             // qubit operands
     utils::Vec<utils::UInt> creg_operands;
+    utils::Vec<utils::UInt> breg_operands;        // bit operands e.g. assigned to by measure; cond_operands are separate
+    utils::Vec<utils::UInt> cond_operands;        // 0, 1 or 2 bit operands of condition
+    cond_type_t condition = cond_always;          // defines condition and by that number of bit operands of condition
     utils::Int int_operand = 0;
     utils::UInt duration = 0;
     utils::Real angle = 0.0;                      // for arbitrary rotations
@@ -189,7 +201,11 @@ public:
     virtual gate_type_t   type() const = 0;
     virtual cmat_t        mat()  const = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
     utils::Str visual_type = ""; // holds the visualization type of this gate that will be linked to a specific configuration in the visualizer
+    utils::Bool is_conditional() const;           // whether gate has condition that is NOT cond_always
+    instruction_t cond_qasm() const;              // returns the condition expression in qasm layout
+    static utils::Bool is_valid_cond(cond_type_t condition, const utils::Vec<utils::UInt> &cond_operands);
 };
+
 
 
 /****************************************************************************\
@@ -468,7 +484,6 @@ class custom_gate : public gate {
 public:
     cmat_t m; // matrix representation
     utils::Str arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
-    utils::Vec<utils::UInt> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
     explicit custom_gate(const utils::Str &name);
     custom_gate(const custom_gate &g);
     static bool is_qubit_id(const utils::Str &str);

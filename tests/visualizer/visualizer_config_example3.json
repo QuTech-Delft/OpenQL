@@ -1,0 +1,231 @@
+{
+    "saveImage": false,
+    "interactionGraph":
+    {
+        "outputDotFile": true,
+        "borderWidth": 32,
+        "minInteractionCircleRadius": 100,
+        "interactionCircleRadiusModifier": 3.0,
+        "qubitRadius": 17,
+        "labelFontHeight": 13,
+        "circleOutlineColor": [0, 0, 0],
+        "circleFillColor": [255, 255, 255],
+        "labelColor": [0, 0, 0],
+        "edgeColor": [0, 0, 0]
+    },
+    "circuit":
+    {
+        "cycles":
+        {
+            "labels":
+            {
+                "show": true,
+                "inNanoSeconds": false,
+                "rowHeight": 24,
+                "fontHeight": 13,
+                "fontColor": [0, 0, 0]
+            },
+            "edges":
+            {
+                "show": true,
+                "color": [0, 0, 0],
+                "alpha": 0.2
+            },
+            "cutting":
+            {
+                "cut": false,
+                "emptyCycleThreshold": 2,
+                "cutCycleWidth": 16,
+                "cutCycleWidthModifier": 0.5
+            },
+            "compressCycles": false,
+            "partitionCyclesWithOverlap": true
+        },
+        "bitLines":
+        {
+            "labels":
+            {
+                "show": true,
+                "columnWidth": 32,
+                "fontHeight": 13,
+                "qbitColor": [0, 0, 0],
+                "cbitColor": [128, 128, 128]
+            },
+            "quantum":
+            {
+                "color": [0, 0, 0]
+            },
+            "classical":
+            {
+                "show": true,
+                "group": false,
+                "groupedLineGap": 2,
+                "color": [128, 128, 128]
+            },
+            "edges":
+            {
+                "show": true,
+                "thickness": 5,
+                "color": [0, 0, 0],
+                "alpha": 0.4
+            }
+        },
+        "grid":
+        {
+            "cellSize": 32,
+            "borderSize": 32
+        },
+        "gateDurationOutlines":
+        {
+            "show": true,
+            "gap": 2,
+            "fillAlpha": 0.2,
+            "outlineAlpha": 0.3,
+            "outlineColor": [0, 0, 0]
+        },
+        "measurements":
+        {
+            "drawConnection": true,
+            "lineSpacing": 2,
+            "arrowSize": 10
+        },
+        "pulses":
+        {
+            "displayGatesAsPulses": true,
+            "pulseRowHeightMicrowave": 32,
+            "pulseRowHeightFlux": 32,
+            "pulseRowHeightReadout": 32,
+            "pulseColorMicrowave": [0, 0, 255],
+            "pulseColorFlux": [255, 0, 0],
+            "pulseColorReadout": [0, 255, 0]
+        },
+        "instructions":
+        {
+            "prepz": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "+Z",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [70, 210, 230],
+                        "outlineColor": [70, 210, 230]
+                    }
+                ]
+            },
+            "x": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "X",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [112, 222, 90],
+                        "outlineColor": [112, 222, 90]
+                    }
+                ]
+            },
+            "h": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "H",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [70, 210, 230],
+                        "outlineColor": [70, 210, 230]
+                    }
+                ]
+            },
+            "ry90": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "ry90",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [70, 210, 230],
+                        "outlineColor": [70, 210, 230]
+                    }
+                ]
+            },
+            "cz": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "CONTROL",
+                        "radius": 3,
+                        "displayName": "",
+                        "fontHeight": 13,
+                        "fontColor": [0, 0, 0],
+                        "backgroundColor": [170, 50, 50],
+                        "outlineColor": [170, 50, 50]
+                    },
+                    {
+                        "type": "CONTROL",
+                        "radius": 3,
+                        "displayName": "",
+                        "fontHeight": 13,
+                        "fontColor": [0, 0, 0],
+                        "backgroundColor": [170, 50, 50],
+                        "outlineColor": [170, 50, 50]
+                    }
+                ]
+            },
+            "cnot": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "CONTROL",
+                        "radius": 3,
+                        "displayName": "",
+                        "fontHeight": 13,
+                        "fontColor": [0, 0, 0],
+                        "backgroundColor": [170, 50, 50],
+                        "outlineColor": [170, 50, 50]
+                    },
+                    {
+                        "type": "NOT",
+                        "radius": 7,
+                        "displayName": "",
+                        "fontHeight": 13,
+                        "fontColor": [0, 0, 0],
+                        "backgroundColor": [170, 50, 50],
+                        "outlineColor": [170, 50, 50]
+                    }
+                ]
+            },
+            "measz": {
+                "connectionColor": [225, 118, 225],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "M",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [225, 118, 225],
+                        "outlineColor": [225, 118, 225]
+                    },
+                    {
+                        "type": "NONE",
+                        "radius": 13,
+                        "displayName": "",
+                        "fontHeight": 13,
+                        "fontColor": [0, 0, 0],
+                        "backgroundColor": [0, 0, 0],
+                        "outlineColor": [0, 0, 0]
+                    }
+                ]
+            }
+        }
+    }
+}

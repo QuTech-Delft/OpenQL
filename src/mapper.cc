@@ -604,7 +604,7 @@ void Virt2Real::Export(Vec<Int> &krs) const {
     }
 }
 
-// access free cycle value of qubit i
+// access free cycle value of qubit q[i] or breg b[i-nq]
 UInt &FreeCycle::operator[](UInt i) {
     return fcv[i];
 }
@@ -620,16 +620,17 @@ FreeCycle::FreeCycle() {
     QL_DOUT("Constructing FreeCycle");
 }
 
-void FreeCycle::Init(const quantum_platform *p) {
+void FreeCycle::Init(const quantum_platform *p, const UInt breg_count) {
     QL_DOUT("FreeCycle::Init()");
     arch::resource_manager_t lrm(*p, forward_scheduling);   // allocated here and copied below to rm because of platform parameter
     QL_DOUT("... created FreeCycle Init local resource_manager");
     platformp = p;
     nq = platformp->qubit_number;
+    nb = breg_count;
     ct = platformp->cycle_time;
-    QL_DOUT("... FreeCycle: nq=" << nq << ", ct=" << ct << "), initializing to all 0 cycles");
+    QL_DOUT("... FreeCycle: nq=" << nq << ", nb=" << nb << ", ct=" << ct << "), initializing to all 0 cycles");
     fcv.clear();
-    fcv.resize(nq, 1);   // this 1 implies that cycle of first gate will be 1 and not 0; OpenQL convention!?!?
+    fcv.resize(nq+nb, 1);   // this 1 implies that cycle of first gate will be 1 and not 0; OpenQL convention!?!?
     QL_DOUT("... about to copy FreeCycle Init local resource_manager to FreeCycle member rm");
     rm = lrm;
     QL_DOUT("... done copy FreeCycle Init local resource_manager to FreeCycle member rm");
@@ -715,17 +716,20 @@ Bool FreeCycle::IsFirstSwapEarliest(UInt fr0, UInt fr1, UInt sr0, UInt sr1) cons
 }
 
 // when we would schedule gate g, what would be its start cycle? return it
-// gate operands are real qubit indices
+// gate operands are real qubit indices, measure assigned bregs or conditional bregs
 // is purely functional, doesn't affect state
 UInt FreeCycle::StartCycleNoRc(gate *g) const {
-    auto &q = g->operands;
-    UInt operandCount = q.size();
-
-    UInt startCycle;
-    if (operandCount == 1) {
-        startCycle = fcv[q[0]];
-    } else /* if (operandCount == 2) */ {
-        startCycle = max(fcv[q[0]], fcv[q[1]]);
+    UInt startCycle = 1;
+    for (auto qreg : g->operands) {
+        startCycle = max(startCycle, fcv[qreg]);
+    }
+    for (auto breg : g->breg_operands) {
+        startCycle = max(startCycle, fcv[nq+breg]);
+    }
+    if (g->is_conditional()) {
+        for (auto breg : g->cond_operands) {
+            startCycle = max(startCycle, fcv[nq+breg]);
+        }
     }
     QL_ASSERT (startCycle < MAX_CYCLE);
 
@@ -733,7 +737,7 @@ UInt FreeCycle::StartCycleNoRc(gate *g) const {
 }
 
 // when we would schedule gate g, what would be its start cycle? return it
-// gate operands are real qubit indices
+// gate operands are real qubit indices, measure assigned bregs or conditional bregs
 // is purely functional, doesn't affect state
 UInt FreeCycle::StartCycle(gate *g) {
     UInt startCycle = StartCycleNoRc(g);
@@ -762,24 +766,22 @@ UInt FreeCycle::StartCycle(gate *g) {
 }
 
 // schedule gate g in the FreeCycle map
-// gate operands are real qubit indices
-// the FreeCycle map is updated, not the resource map
+// gate operands are real qubit indices, measure assigned bregs or conditional bregs
+// the FreeCycle map is updated, not the resource map for operands updated by the gate
 // this is done, because AddNoRc is used to represent just gate dependences, avoiding a build of a dep graph
 void FreeCycle::AddNoRc(gate *g, UInt startCycle) {
-    auto &q = g->operands;
-    UInt operandCount = q.size();
     UInt duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
-
-    if (operandCount == 1) {
-        fcv[q[0]] = startCycle + duration;
-    } else /* if (operandCount == 2) */ {
-        fcv[q[0]] = startCycle + duration;
-        fcv[q[1]] = fcv[q[0]];
+    UInt freeCycle = startCycle + duration;
+    for (auto qreg : g->operands) {
+        fcv[qreg] = freeCycle;
+    }
+    for (auto breg : g->breg_operands) {
+        fcv[nq+breg] = freeCycle;
     }
 }
 
 // schedule gate g in the FreeCycle and resource maps
-// gate operands are real qubit indices
+// gate operands are real qubit indices, measure assigned bregs or conditional bregs
 // both the FreeCycle map and the resource map are updated
 // startcycle must be the result of an earlier StartCycle call (with rc!)
 void FreeCycle::Add(gate *g, UInt startCycle) {
@@ -805,11 +807,12 @@ void Past::Init(const quantum_platform *p, quantum_kernel *k, Grid *g) {
     gridp = g;
 
     nq = platformp->qubit_number;
+    nb = kernelp->breg_count;
     ct = platformp->cycle_time;
 
     QL_ASSERT(kernelp->c.empty());   // kernelp->c will be used by new_gate to return newly created gates into
     v2r.Init(nq);               // v2r initializtion until v2r is imported from context
-    fc.Init(platformp);         // fc starts off with all qubits free, is updated after schedule of each gate
+    fc.Init(platformp, nb);     // fc starts off with all qubits free, is updated after schedule of each gate
     waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
     lg.clear();                 // no gates scheduled yet in this past; after schedule of gate, it gets here
     outlg.clear();              // no gates output yet by flushing from or bypassing this past
@@ -973,12 +976,16 @@ Bool Past::new_gate(
     const Vec<UInt> &qubits,
     const Vec<UInt> &cregs,
     UInt duration,
-    Real angle
+    Real angle,
+    const Vec<UInt> &bregs,
+    cond_type_t gcond,
+    const Vec<UInt> &gcondregs
 ) const {
     Bool added;
     QL_ASSERT(circ.empty());
     QL_ASSERT(kernelp->c.empty());
-    added = kernelp->gate_nonfatal(gname, qubits, cregs, duration, angle);   // creates gates in kernelp->c
+    // create gate(s) in kernelp->c
+    added = kernelp->gate_nonfatal(gname, qubits, cregs, duration, angle, bregs, gcond, gcondregs);
     circ = kernelp->c;
     kernelp->c.clear();
     for (auto gp : circ) {
@@ -1183,6 +1190,7 @@ void Past::AddSwap(UInt r0, UInt r1) {
     for (auto &gp : circ) {
         Add(gp);
     }
+
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }
 
@@ -1265,9 +1273,29 @@ void Past::MakeReal(gate *gp, circuit &circ) {
         real_gname.append("_real");
     }
 
-    Bool created = new_gate(circ, real_gname, real_qubits, gp->creg_operands, gp->duration, gp->angle);
+    Bool created = new_gate(
+        circ,
+        real_gname,
+        real_qubits,
+        gp->creg_operands,
+        gp->duration,
+        gp->angle,
+        gp->breg_operands,
+        gp->condition,
+        gp->cond_operands
+    );
     if (!created) {
-        created = new_gate(circ, gname, real_qubits, gp->creg_operands, gp->duration, gp->angle);
+        created = new_gate(
+            circ,
+            gname,
+            real_qubits,
+            gp->creg_operands,
+            gp->duration,
+            gp->angle,
+            gp->breg_operands,
+            gp->condition,
+            gp->cond_operands
+        );
         if (!created) {
             QL_FATAL("MakeReal: failed creating gate " << real_gname << " or " << gname);
         }
@@ -1283,9 +1311,29 @@ void Past::MakePrimitive(gate *gp, circuit &circ) const {
     stripname(gname);
     Str prim_gname = gname;
     prim_gname.append("_prim");
-    Bool created = new_gate(circ, prim_gname, gp->operands, gp->creg_operands, gp->duration, gp->angle);
+    Bool created = new_gate(
+        circ,
+        prim_gname,
+        gp->operands,
+        gp->creg_operands,
+        gp->duration,
+        gp->angle,
+        gp->breg_operands,
+        gp->condition,
+        gp->cond_operands
+    );
     if (!created) {
-        created = new_gate(circ, gname, gp->operands, gp->creg_operands, gp->duration, gp->angle);
+        created = new_gate(
+            circ,
+            gname,
+            gp->operands,
+            gp->creg_operands,
+            gp->duration,
+            gp->angle,
+            gp->breg_operands,
+            gp->condition,
+            gp->cond_operands
+        );
         if (!created) {
             QL_FATAL("MakePrimtive: failed creating gate " << prim_gname << " or " << gname);
         }
@@ -1308,7 +1356,7 @@ void Past::FlushAll() {
     }
     lg.clear();         // so effectively, lg's content was moved to outlg
 
-    // fc.Init(platformp); // needed?
+    // fc.Init(platformp, nb); // needed?
     // cycle.clear();      // needed?
     // cycle is initialized to empty map
     // is ok without windowing, but with window, just delete the ones outside the window
@@ -1588,9 +1636,9 @@ void Future::Init(const quantum_platform *p) {
 }
 
 // Set/switch input to the provided circuit
-// nq and nc are parameters because nc may not be provided by platform but by kernel
+// nq, nc and nb are parameters because nc/nb may not be provided by platform but by kernel
 // the latter should be updated when mapping multiple kernels
-void Future::SetCircuit(quantum_kernel &kernel, Scheduler &sched, UInt nq, UInt nc) {
+void Future::SetCircuit(quantum_kernel &kernel, Scheduler &sched, UInt nq, UInt nc, UInt nb) {
     QL_DOUT("Future::SetCircuit ...");
     schedp = &sched;
     Str maplookaheadopt = options::get("maplookahead");
@@ -1598,7 +1646,7 @@ void Future::SetCircuit(quantum_kernel &kernel, Scheduler &sched, UInt nq, UInt 
         input_gatepv = kernel.c;                                // copy to free original circuit to allow outputing to
         input_gatepp = input_gatepv.begin();                    // iterator set to start of input circuit copy
     } else {
-        schedp->init(kernel.c, *platformp, nq, nc);             // fills schedp->graph (dependence graph) from all of circuit
+        schedp->init(kernel.c, *platformp, nq, nc, nb);         // fills schedp->graph (dependence graph) from all of circuit
         // and so also the original circuit can be output to after this
         for (auto &gp : kernel.c) {
             scheduled.set(gp) = false;   // none were scheduled
@@ -2839,7 +2887,7 @@ void Mapper::MapCircuit(quantum_kernel &kernel, Virt2Real &v2r) {
     Scheduler sched;        // new scheduler instance (from src/scheduler.h) used for its dependence graph
 
     future.Init(platformp);
-    future.SetCircuit(kernel, sched, nq, nc); // constructs depgraph, initializes avlist, ready for producing gates
+    future.SetCircuit(kernel, sched, nq, nc, nb); // constructs depgraph, initializes avlist, ready for producing gates
     kernel.c.clear();       // future has copied kernel.c to private data; kernel.c ready for use by new_gate
     kernelp = &kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
@@ -2891,9 +2939,10 @@ void Mapper::MakePrimitives(quantum_kernel &kernel) {
 
 // map kernel's circuit, main mapper entry once per kernel
 void Mapper::Map(quantum_kernel& kernel) {
-    QL_COUT("Mapping kernel " << kernel.name << " [START]");
+    QL_DOUT("Mapping kernel " << kernel.name << " [START]");
     QL_DOUT("... kernel original virtual number of qubits=" << kernel.qubit_count);
     nc = kernel.creg_count;     // in absence of platform creg_count, take it from kernel, i.e. from OpenQL program
+    nb = kernel.breg_count;     // in absence of platform breg_count, take it from kernel, i.e. from OpenQL program
     kernelp = NULL;             // no new_gates until kernel.c has been copied
 
     Virt2Real   v2r;            // current mapping while mapping this kernel
@@ -2943,7 +2992,7 @@ void Mapper::Map(quantum_kernel& kernel) {
     v2r.Export(v2r_out);     // from v2r to caller for reporting
     v2r.Export(rs_out);      // from v2r to caller for reporting
 
-    QL_COUT("Mapping kernel " << kernel.name << " [DONE]");
+    QL_DOUT("Mapping kernel " << kernel.name << " [DONE]");
 }
 
 // initialize mapper for whole program
@@ -2956,6 +3005,7 @@ void Mapper::Init(const quantum_platform *p) {
     platformp = p;
     nq = p->qubit_number;
     // nc = p->creg_number;  // nc should come from platform, but doesn't; is taken from kernel in Map
+    // nb = p->breg_number;  // nb should come from platform, but doesn't; is taken from kernel in Map
     RandomInit();
     // DOUT("... platform/real number of qubits=" << nq << ");
     cycle_time = p->cycle_time;

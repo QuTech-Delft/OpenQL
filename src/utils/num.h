@@ -213,6 +213,13 @@ inline Real tan(Real a) noexcept {
     return std::tan(a);
 }
 
+/**
+ * Arctangent with two arguments.
+ */
+inline Real atan2(Real a, Real b) noexcept {
+    return std::atan2(a, b);
+}
+
 UInt itou(Int x);
 Int utoi(UInt x);
 

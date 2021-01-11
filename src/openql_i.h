@@ -73,6 +73,7 @@ public:
     Platform platform;
     size_t qubit_count;
     size_t creg_count;
+    size_t breg_count;
     ql::quantum_kernel *kernel;
 
     Kernel(const std::string &name);
@@ -80,7 +81,8 @@ public:
         const std::string &name,
         const Platform &platform,
         size_t qubit_count,
-        size_t creg_count = 0
+        size_t creg_count = 0,
+        size_t breg_count = 0
     );
 
     void identity(size_t q0);
@@ -102,6 +104,7 @@ public:
     void ry(size_t q0, double angle);
     void rz(size_t q0, double angle);
     void measure(size_t q0);
+    void measure(size_t q0, size_t b0);
     void prepz(size_t q0);
     void cnot(size_t q0, size_t q1);
     void cphase(size_t q0, size_t q1);
@@ -116,12 +119,26 @@ public:
         const std::string &name,
         const std::vector<size_t> &qubits,
         size_t duration = 0,
-        double angle = 0.0
+        double angle = 0.0,
+        const std::vector<size_t> &bregs = {},
+        const std::string &condstring = "COND_ALWAYS",
+        const std::vector<size_t> &condregs = {}
     );
     void gate(
         const std::string &name,
         const std::vector<size_t> &qubits,
         const CReg &destination
+    );
+    void gate_preset_condition(
+        const std::string &condstring,
+        const std::vector<size_t> &condregs
+    );
+    void gate_clear_condition();
+    void condgate(
+        const std::string &name,
+        const std::vector<size_t> &qubits,
+        const std::string &condstring,
+        const std::vector<size_t> &condregs
     );
     void gate(const Unitary &u, const std::vector<size_t> &qubits);
     void classical(const CReg &destination, const Operation &operation);
@@ -146,6 +163,7 @@ public:
     Platform platform;
     size_t qubit_count;
     size_t creg_count;
+    size_t breg_count;
     ql::quantum_program *program;
 
     Program(const std::string &name);
@@ -153,7 +171,8 @@ public:
         const std::string &name,
         const Platform &platform,
         size_t qubit_count,
-        size_t creg_count = 0
+        size_t creg_count = 0,
+        size_t breg_count = 0
     );
     void set_sweep_points(const std::vector<double> &sweep_points);
     std::vector<double> get_sweep_points() const;
