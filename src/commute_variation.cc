@@ -327,7 +327,7 @@ public:
     
         QL_DOUT("Create a dependence graph and recognize commutation");
         Depgraph sched;
-        sched.init(ckt, platform, platform.qubit_number, kernel.creg_count);
+        sched.init(ckt, platform, platform.qubit_number, kernel.creg_count, kernel.breg_count);
     
         QL_DOUT("Finding sets of commutable gates ...");
         List<List<lemon::ListDigraph::Arc>> varslist;

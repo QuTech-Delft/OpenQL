@@ -394,7 +394,7 @@ void quantum_program::compile_modular() {
         compiler->addPass("CliffordOptimize", "clifford_premapper");
         compiler->addPass("Map", "mapper");
         compiler->addPass("CliffordOptimize", "clifford_postmapper");
-        compiler->addPass("CommuteVariation", "commute_variation");
+        // compiler->addPass("CommuteVariation", "commute_variation");
         compiler->addPass("RCSchedule", "rcscheduler");
         compiler->addPass("LatencyCompensation", "ccl_latency_compensation");
         compiler->addPass("InsertBufferDelays", "ccl_insert_buffer_delays");

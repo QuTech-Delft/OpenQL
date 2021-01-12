@@ -155,8 +155,8 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        gold_fn = curdir + '/golden/test_cnot_noncommute_RAD.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_last.qasm')
+        gold_fn = curdir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_noncommute_DAR(self):
@@ -179,8 +179,8 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        gold_fn = curdir + '/golden/test_cnot_noncommute_DAR.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_last.qasm')
+        gold_fn = curdir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_mixedcommute(self):
@@ -269,8 +269,8 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        gold_fn = curdir + '/golden/test_cnot_variations_last.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_last.qasm')
+        gold_fn = curdir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 if __name__ == '__main__':
