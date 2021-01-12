@@ -65,6 +65,7 @@ private:
         opt_name2opt_val.set("maptiebreak") = "random";
         opt_name2opt_val.set("mapusemoves") = "yes";
         opt_name2opt_val.set("mapreverseswap") = "yes";
+        opt_name2opt_val.set("mapenableremaps") = "yes";
 
         // add options with default values and list of possible values
         app->add_set_ignore_case("--log_level", opt_name2opt_val.at("log_level"),
@@ -104,6 +105,7 @@ private:
         app->add_set_ignore_case("--maptiebreak", opt_name2opt_val.at("maptiebreak"), {"first", "last", "random", "critical"}, "Tie break method", true);
         app->add_set_ignore_case("--mapusemoves", opt_name2opt_val.at("mapusemoves"), {"no", "yes", "0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"}, "Use unused qubit to move thru", true);
         app->add_set_ignore_case("--mapreverseswap", opt_name2opt_val.at("mapreverseswap"), {"no", "yes"}, "Reverse swap operands when better", true);
+        app->add_set_ignore_case("--mapenableremaps", opt_name2opt_val.at("mapenableremaps"), {"no", "yes"}, "Enable remaps", true);
 
         app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val.at("write_qasm_files"), {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
         app->add_set_ignore_case("--write_report_files", opt_name2opt_val.at("write_report_files"), {"yes", "no"}, "write report files on circuit characteristics and pass results", true);
@@ -140,6 +142,7 @@ public:
                   << "mapusemoves: "      << opt_name2opt_val.at("mapusemoves") << std::endl
                   << "mapreverseswap: "   << opt_name2opt_val.at("mapreverseswap") << std::endl
                   << "mapselectswaps: "   << opt_name2opt_val.at("mapselectswaps") << std::endl
+                  << "mapenableremaps: "   << opt_name2opt_val.at("mapenableremaps") << std::endl
                   << "clifford_postmapper: " << opt_name2opt_val.at("clifford_postmapper") << std::endl
                   << "scheduler_post179: " << opt_name2opt_val.at("scheduler_post179") << std::endl
                   << "scheduler_commute: " << opt_name2opt_val.at("scheduler_commute") << std::endl

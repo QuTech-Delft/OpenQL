@@ -859,6 +859,11 @@ void Past::Schedule() {
     // the copy includes the resource manager.
     // DOUT("Schedule ...");
 
+    QL_IOUT("SCHEDULING...");
+    for (const auto &gp : waitinglg) {
+        QL_IOUT(gp->name);
+    }
+
     while (!waitinglg.empty()) {
         UInt      startCycle = MAX_CYCLE;
         gate_p      gp = nullptr;
@@ -890,6 +895,7 @@ void Past::Schedule() {
 
         // add this gate to the maps, scheduling the gate (doing the cycle assignment)
         // DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
+        QL_IOUT("adding gate: " << gp->name << " to circuit");
         fc.Add(gp, startCycle);
         cycle.set(gp) = startCycle; // cycle[gp] is private to this past but gp->cycle is private to gp
         gp->cycle = startCycle; // so gp->cycle gets assigned for each alter' Past and finally definitively for mainPast
@@ -1188,10 +1194,13 @@ void Past::AddSwap(UInt r0, UInt r1) {
     }
 
     // add the remap gates
-    // QL_DOUT("mapping v " << v2r.GetVirt(r1) << " to q " << r0 << " in remap gate");
-    // QL_DOUT("mapping v " << v2r.GetVirt(r0) << " to q " << r1 << " in remap gate");
-    Add(new remap(r0, v2r.GetVirt(r1)));
-    Add(new remap(r1, v2r.GetVirt(r0)));
+    // QL_IOUT("mapping v " << v2r.GetVirt(r1) << " to q " << r0 << " in remap gate");
+    // QL_IOUT("mapping v " << v2r.GetVirt(r0) << " to q " << r1 << " in remap gate");
+    auto enableremaps = options::get("mapenableremaps");
+    if (enableremaps == "yes") {
+        Add(new remap(r0, v2r.GetVirt(r1)));
+        Add(new remap(r1, v2r.GetVirt(r0)));
+    }
 
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }
