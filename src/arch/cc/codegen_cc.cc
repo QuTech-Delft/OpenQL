@@ -841,7 +841,7 @@ void codegen_cc::emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx
 	if(pragmaBreakVal==0) {
 		emit(slot, "jlt", QL_SS2S("R1,1,@" << label), "");
 	} else {
-		emit(slot, "jgt", QL_SS2S("R1,0,@" << label), "");
+		emit(slot, "jge", QL_SS2S("R1,1,@" << label), "");
 	}
 }
 
