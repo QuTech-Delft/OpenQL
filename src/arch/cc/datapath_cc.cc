@@ -145,7 +145,7 @@ void datapath_cc::emitMux(unsigned int mux, const tFeedbackMap &feedbackMap, siz
 		QL_FATAL("feedbackMap must not be empty");
 	}
 
-	emit(slot, QL_SS2S(".MUX " << mux));
+	emit(selString(slot) + QL_SS2S(".MUX " << mux), "");	// NB: no white space before ".MUX"
 
 	for(auto &feedback : feedbackMap) {
 		int group = feedback.first;
@@ -198,7 +198,7 @@ unsigned int datapath_cc::emitPl(unsigned int pl, const tCondGateMap &condGateMa
 		QL_FATAL("condGateMap must not be empty");
 	}
 
-	emit(slot, QL_SS2S(".PL " << pl));
+	emit(selString(slot) + QL_SS2S(".PL " << pl), "");	// NB: no white space before ".PL"
 
 	for(auto &cg : condGateMap) {
 		int group = cg.first;
