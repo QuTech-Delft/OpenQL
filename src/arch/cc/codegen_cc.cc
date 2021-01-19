@@ -828,9 +828,11 @@ void codegen_cc::emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx
 
 	// emit code for pragma "break". NB: code is identical for all instruments
 	// FIXME: verify that instruction duration matches actual time
+	// FIXME: seq_wait depends on context, put wait in main loop
 /*
 	seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 (address depends on mapping of variable c) ...
- 	seq_wait	2					; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch = 7 fast ticks
+ 	seq_wait	4					; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch,
+ 									; + 1 branch for loop we're inside, + seq_state + move = ?? fast ticks
 	move_sm     R0                  ; ... and move to register
  	nop								; register dependency R0
 	and         R0,<mask>,R1        ; mask also depends on mapping of c
@@ -838,7 +840,7 @@ void codegen_cc::emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx
 	jlt         R1,1,@loop
 */
 	emit(slot, "seq_cl_sm", QL_SS2S("S" << smAddr), QL_SS2S("# 'break if " << pragmaBreakVal << "' on '" << instrumentName << "'"));
-	emit(slot, "seq_wait", "2", "");
+	emit(slot, "seq_wait", "4", "");
 	emit(slot, "move_sm", "R0", "");
 	emit(slot, "nop", "", "");
 	emit(slot, "and", QL_SS2S("R0," << mask << "," << "R1"), "");	// results in '0' for 'bit==0' and 'mask' for 'bit==1'
