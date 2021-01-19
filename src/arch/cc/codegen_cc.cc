@@ -830,12 +830,14 @@ void codegen_cc::emitPragma(const Json *pragma, int pragmaSmBit, size_t instrIdx
 /*
 	seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 (address depends on mapping of variable c) ...
 	move_sm     R0                  ; ... and move to register
+ 	nop								; register dependency R0
 	and         R0,<mask>,R1        ; mask also depends on mapping of c
 	nop								; register dependency R1
 	jlt         R1,1,@loop
 */
 	emit(slot, "seq_cl_sm", QL_SS2S("S" << smAddr), QL_SS2S("# 'break if " << pragmaBreakVal << "' on '" << instrumentName << "'"));
 	emit(slot, "move_sm", "R0", "");
+	emit(slot, "nop", "", "");
 	emit(slot, "and", QL_SS2S("R0," << mask << "," << "R1"), "");	// results in '0' for 'bit==0' and 'mask' for 'bit==1'
 	emit(slot, "nop", "", "");
 	if(pragmaBreakVal==0) {
