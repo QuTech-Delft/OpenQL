@@ -721,7 +721,7 @@ void codegen_cc::emitProgramStart(const std::string &progName)
     comment("# synchronous start and latency compensation");
     emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
 
-    emit("mainLoop:",       "",         "",                 "# ");
+    emit("__mainLoop:",     "",         "",                 "# ");	// FIXME: __mainLoop should be a forbidden kernel name
 
 #if OPT_FEEDBACK
     // initialize state
@@ -741,7 +741,7 @@ void codegen_cc::emitProgramFinish()
 	// loop indefinitely
     emit("",      // no CCIO selector
          "jmp",
-         "@mainLoop",
+         "@__mainLoop",
          "# loop indefinitely");
 #endif
 
