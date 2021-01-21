@@ -28,23 +28,24 @@
  *  - W for Write: such a use must sequentialize with any previous and later
  *    uses of the same qubit/creg/breg. This is the default for qubits in a gate
  *    and for assignment/modifications in classical code.
- *  - R for Read: such uses can be arbitrarily reordered (as long as other
+ *  - Z/R for Z-rotate or Read: such uses can be arbitrarily reordered (as long as other
  *    dependencies allow that). This event applies to all operands of CZ, the
- *    first operand of CNOT gates, and to all reads in classical code. It also
- *    applies in general to the control operand of Control Unitaries. It
- *    represents commutativity between the gates which such use: CU(a,b),
- *    CZ(a,c), CZ(d,a) and CNOT(a,e) all commute.
- *  - D: such uses can be arbitrarily reordered but are sequentialized with W
- *    and R events on the same qubit. This event applies to the second operand
- *    of CNOT gates: CNOT(a,d) and CNOT(b,d) commute. With this, we effectively
- *    get the following table of event transitions (from left-bottom to
- *    right-up), in which 'no' indicates no dependency from left event to top
- *    event and '/' indicates a dependency from left to top.
+ *    first operand of CNOT gates, all Z rotations (RZ,Z,Z90(SDAG),ZM90(S)),
+ *    and to all reads in classical code.
+ *    It also applies in general to the control operand of Control Unitaries.
+ *    It represents commutativity between the gates which such use: CU(a,b),
+ *    CZ(a,c), CZ(d,a), CNOT(a,e), RZ(a), S(a), all commute.
+ *  - X/D for X-rotate: such uses can be arbitrarily reordered but are sequentialized with W
+ *    and Z events on the same qubit. This event applies to the second operand
+ *    of CNOT gates, and all X rotations: CNOT(a,d), CNOT(b,d), RX(d), all commute.
+ *  With this, we effectively get the following table of event transitions (from left-bottom to right-up),
+ *  in which 'no' indicates no dependency from left event to top event
+ *  and '/' indicates a dependency from left to top.
  *
- *             W   R   D                  w   R   D
+ *             W   Z/R X/D                W   Z/R X/D
  *        W    /   /   /              W   WAW RAW DAW
- *        R    /   no  /              R   WAR RAR DAR
- *        D    /   /   no             D   WAD RAD DAD
+ *        Z/R  /   no  /              Z/R WAR RAR DAR
+ *        X/D  /   /   no             X/D WAD RAD DAD
  *
  * When the 'no' dependencies are created (RAR and/or DAD), the respective
  * commutatable gates are sequentialized according to the original circuit's
@@ -129,39 +130,107 @@ void Scheduler::add_dep(Int fromID, Int toID, enum DepTypes deptype, UInt combop
     QL_DOUT("... dep " << name[fromNode] << " -> " << name[toNode] << " (opnd=" << s << "[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
 }
 
-// fill the dependency graph ('graph') with nodes from the circuit and adding arcs for their dependencies
+// Signal a new event to the depgraph constructor:
+// the new event is of type currEvent (which is Writer, Reader or D)
+// and concerns the current gate encoded by currID
+// and its given combooperand (see add_dep for this encoding);
+// commutes indicates whether this event is allowed to commute with the other events of its type.
+// This event drives a state machine to do one step (one state transition).
+// It accepts the following event sequence per combooperand: Writer { Writer | Reader+ | D+ }* Writer,
+// in which the first Writer is the SOURCE and the last Writer is the SINK.
+// This state machine has as state { LastEvent[], LastWriter[], LastReaders[] and LastDs[] },
+// which are vectors over all possible combooperands (all qubits, all classical registers and all bit registers).
+void Scheduler::new_event(
+    int currID,
+    UInt combooperand,
+    EventType currEvent,
+    bool commutes
+) {
+    QL_DOUT(".. " << EventTypeNames[currEvent] << " on operand: " << combooperand << " while in " << EventTypeNames[LastEvent[combooperand]]);
+    switch (currEvent) {
+    case Writer:
+        if (LastEvent[combooperand] == Writer) {
+            add_dep(LastWriter[combooperand], currID, WAW, combooperand);
+        }
+        if (LastEvent[combooperand] == Reader) {
+            for (auto &RgateID : LastReaders[combooperand]) {
+                add_dep(RgateID, currID, WAR, combooperand);
+            }
+        }
+        if (LastEvent[combooperand] == D) {
+            for (auto &DgateID : LastDs[combooperand]) {
+                add_dep(DgateID, currID, WAD, combooperand);
+            }
+        }
+        LastWriter[combooperand] = currID;
+        break;
+
+    case Reader:
+        add_dep(LastWriter[combooperand], currID, RAW, combooperand);
+        if (LastEvent[combooperand] != Reader) {
+            LastReaders[combooperand].clear();
+        }
+        if (LastEvent[combooperand] == Reader) {
+            if (!commutes) {
+                for (auto &RgateID : LastReaders[combooperand]) {
+                    add_dep(RgateID, currID, RAR, combooperand);
+                }
+            }
+        }
+        for (auto &DgateID : LastDs[combooperand]) {
+            add_dep(DgateID, currID, RAD, combooperand);
+        }
+        LastReaders[combooperand].push_back(currID);
+        break;
+
+    case D:
+        add_dep(LastWriter[combooperand], currID, DAW, combooperand);
+        if (LastEvent[combooperand] != D) {
+            LastDs[combooperand].clear();
+        }
+        for (auto &RgateID : LastReaders[combooperand]) {
+            add_dep(RgateID, currID, DAR, combooperand);
+        }
+        if (LastEvent[combooperand] == D) {
+            if (!commutes) {
+                for (auto &DgateID : LastDs[combooperand]) {
+                    add_dep(DgateID, currID, DAD, combooperand);
+                }
+            }
+        }
+        LastDs[combooperand].push_back(currID);
+        break;
+    }
+    LastEvent[combooperand] = currEvent;
+}
+
+// construct the dependency graph ('graph') with nodes from the circuit and adding arcs for their dependencies
 void Scheduler::init(
     circuit &ckt,
     const quantum_platform &platform,
-    UInt qcount,
-    UInt ccount,
-    UInt bcount
+    UInt qcount,        // number of qubits
+    UInt ccount,        // number of classical registers
+    UInt bcount         // number of bit registers
 ) {
     QL_DOUT("dependency graph creation ... #qubits = " << platform.qubit_number);
     qubit_count = qcount; ///@todo-rn: DDG creation should not depend on #qubits
     creg_count = ccount; ///@todo-rn: DDG creation should not depend on #cregs
     breg_count = bcount; ///@todo-rn: DDG creation should not depend on #bregs
+    
+    // combo encoding initialization:
     UInt creg_base = qubit_count;
     UInt breg_base = qubit_count + creg_count;
     UInt total_reg_count = qubit_count + creg_count + breg_count;
     QL_DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", breg_count=" << breg_count << ", total=" << total_reg_count);
+
     cycle_time = platform.cycle_time;
     circp = &ckt;
 
     // dependencies are created with a current gate as target
     // and with those previous gates as source that have an operand match with the current gate:
-    // - the previous gates that Read operand r in LastReaders[r]; this is a list because reading commutes
-    // - the previous gates that D qubit operand q in LastDs[q]; this is a list because D'ing  commutes
-    // - the previous gate that Wrote operand r in LastWriter[r]; this can only be one because writing never commutes
+    // this dependence creation is done by a state matchine triggered to step on each operand of each gate encountered.
     // operands can be a qubit, a classical register or a bit register
     // the indices in LastReaders, LastDs and LastWriter are operand indices in the combined index space (see add_dep)
-    typedef Vec<Int> ReadersListType;
-
-    Vec<ReadersListType> LastReaders;
-    LastReaders.resize(total_reg_count);
-
-    Vec<ReadersListType> LastDs;
-    LastDs.resize(total_reg_count);
 
     // start filling the dependency graph by creating the s node, the top of the graph
     {
@@ -173,7 +242,12 @@ void Scheduler::init(
         s = srcNode;
     }
     Int srcID = graph.id(s);
-    Vec<Int> LastWriter(total_reg_count, srcID);     // it implicitly writes to all qubits/cregs/bregs
+
+    // start the state machine as if the SOURCE gate with a write on all possible operands has been seen
+    LastEvent.resize(total_reg_count, Writer);      // SOURCE virtually writes to all qubits/cregs/bregs
+    LastWriter.resize(total_reg_count, srcID);
+    LastReaders.resize(total_reg_count);            // LastReaders and LastDs start off as empty lists
+    LastDs.resize(total_reg_count);
 
     // for each gate pointer ins in the circuit, add a node and add dependencies on previous gates to it
     for (auto ins : ckt) {
@@ -265,256 +339,101 @@ void Scheduler::init(
         // the default signature would be that of a default gate, modifying each qubit operand.
 
         // every gate can have a condition with condition operands (which are bit register indices) that are read
-        for (auto operand : ins->cond_operands) {
-            QL_DOUT(".. Condition operand: " << operand);
-            add_dep(LastWriter[breg_base+operand], currID, RAW, breg_base+operand);
-            LastReaders[breg_base+operand].push_back(currID);
+        for (auto boperand : ins->cond_operands) {
+            QL_DOUT(".. Condition operand: " << boperand);
+            new_event(currID, breg_base+boperand, Reader, true);
         }
 
         // each type of gate has a different 'signature' of events; switch out to each one
         if (iname == "measure") {
             QL_DOUT(". considering " << name[currNode] << " as measure");
-            // Read+Write each qubit operand + Write each classical operand + Write each bit operand
+            // Write each operand + Write each classical operand + Write each bit operand
             for (auto operand : ins->operands) {
-                QL_DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], currID, WAW, operand);
-                for (auto &readerID : LastReaders[operand]) {
-                    add_dep(readerID, currID, WAR, operand);
-                }
-                for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, currID, WAD, operand);
-                }
+                new_event(currID, operand, Writer, false);
             }
             for (auto coperand : ins->creg_operands) {
-                QL_DOUT(".. Classical operand: " << coperand);
-                add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
-                for (auto &readerID : LastReaders[creg_base+coperand]) {
-                    add_dep(readerID, currID, WAR, creg_base+coperand);
-                }
+                new_event(currID, creg_base+coperand, Writer, false);
             }
             for (auto boperand : ins->breg_operands) {
-                QL_DOUT(".. Bit operand: " << boperand);
-                add_dep(LastWriter[breg_base+boperand], currID, WAW, breg_base+boperand);
-                for (auto &readerID : LastReaders[breg_base+boperand]) {
-                    add_dep(readerID, currID, WAR, breg_base+boperand);
-                }
-            }
-
-            // update LastWriter and so clear LastReaders
-            for (auto operand : ins->operands) {
-                QL_DOUT(".. Update LastWriter for qubit operand register: " << operand);
-                LastWriter[operand] = currID;
-                QL_DOUT(".. Clearing LastReaders for qubit operand register: " << operand);
-                LastReaders[operand].clear();
-                LastDs[operand].clear();
-                QL_DOUT(".. Update LastWriter for qubit operand done");
-            }
-            for (auto coperand : ins->creg_operands) {
-                QL_DOUT(".. Update LastWriter for classical operand register: " << coperand);
-                LastWriter[creg_base+coperand] = currID;
-                QL_DOUT(".. Clearing LastReaders for classical operand register: " << coperand);
-                LastReaders[creg_base+coperand].clear();
-                QL_DOUT(".. Update LastWriter for classical operand done");
-            }
-            for (auto boperand : ins->breg_operands) {
-                QL_DOUT(".. Update LastWriter for bit operand register: " << boperand);
-                LastWriter[breg_base+boperand] = currID;
-                QL_DOUT(".. Clearing LastReaders for bit operand register: " << boperand);
-                LastReaders[breg_base+boperand].clear();
-                QL_DOUT(".. Update LastWriter for bit operand done");
+                new_event(currID, breg_base+boperand, Writer, false);
             }
             QL_DOUT(". measure done");
         } else if (iname == "display") {
             QL_DOUT(". considering " << name[currNode] << " as display");
             // no operands, display all qubits and cregs
-            // Read+Write each operand
+            // Write each one
             Vec<UInt> qubits(total_reg_count);
             std::iota(qubits.begin(), qubits.end(), 0);
-            for (auto operand : qubits) {
-                QL_DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], currID, WAW, operand);
-                for (auto &readerID : LastReaders[operand]) {
-                    add_dep(readerID, currID, WAR, operand);
-                }
-                for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, currID, WAD, operand);
-                }
-            }
 
-            // now update LastWriter and so clear LastReaders/LastDs
             for (auto operand : qubits) {
-                LastWriter[operand] = currID;
-                LastReaders[operand].clear();
-                LastDs[operand].clear();
+                new_event(currID, operand, Writer, false);
             }
         } else if (ins->type() == gate_type_t::__classical_gate__) {
             QL_DOUT(". considering " << name[currNode] << " as classical gate");
-            // Read+Write each classical operand
+            // Write each classical operand
             for (auto coperand : ins->creg_operands) {
-                QL_DOUT("... Classical operand: " << coperand);
-                add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
-                for (auto &readerID : LastReaders[creg_base+coperand]) {
-                    add_dep(readerID, currID, WAR, creg_base+coperand);
-                }
-            }
-
-            // now update LastWriter and so clear LastReaders
-            for (auto coperand : ins->creg_operands) {
-                LastWriter[creg_base+coperand] = currID;
-                LastReaders[creg_base+coperand].clear();
+                new_event(currID, creg_base+coperand, Writer, false);
             }
         } else if (iname == "cnot") {
             QL_DOUT(". considering " << name[currNode] << " as cnot");
-            // CNOTs Read the first operands, and Ds the second operand
-            UInt operandNo = 0;
-            for (auto operand : ins->operands) {
-                QL_DOUT(".. Operand: " << operand);
-                if (operandNo == 0) {
-                    add_dep(LastWriter[operand], currID, RAW, operand);
-                    if (options::get("scheduler_commute") == "no") {
-                        for (auto &readerID : LastReaders[operand]) {
-                            add_dep(readerID, currID, RAR, operand);
-                        }
-                    }
-                    for (auto &readerID : LastDs[operand]) {
-                        add_dep(readerID, currID, RAD, operand);
-                    }
-                } else {
-                    add_dep(LastWriter[operand], currID, DAW, operand);
-                    if (options::get("scheduler_commute") == "no") {
-                        for (auto &readerID : LastDs[operand]) {
-                            add_dep(readerID, currID, DAD, operand);
-                        }
-                    }
-                    for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, currID, DAR, operand);
-                    }
-                }
-                operandNo++;
-            } // end of operand for
+            // CNOTs first operand is control and a Z, second operand is target and an X
+            QL_ASSERT(ins->operands.size() == 2);
 
-            // now update LastWriter and so clear LastReaders
-            operandNo=0;
-            for (auto operand : ins->operands) {
-                if (operandNo == 0) {
-                    // update LastReaders for this operand 0
-                    LastReaders[operand].push_back(currID);
-                    LastDs[operand].clear();
-                } else {
-                    LastDs[operand].push_back(currID);
-                    LastReaders[operand].clear();
-                }
-                operandNo++;
-            }
+            new_event(currID, ins->operands[0], Reader, options::get("scheduler_commute") == "yes");
+            new_event(currID, ins->operands[1], D, options::get("scheduler_commute") == "yes");
         } else if (iname == "cz" || iname == "cphase") {
             QL_DOUT(". considering " << name[currNode] << " as cz");
-            // CZs Read all operands
-            UInt operandNo = 0;
-            for (auto operand : ins->operands) {
-                QL_DOUT(".. Operand: " << operand);
-                if (options::get("scheduler_commute") == "no") {
-                    for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, currID, RAR, operand);
-                    }
-                }
-                add_dep(LastWriter[operand], currID, RAW, operand);
-                for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, currID, RAD, operand);
-                }
-                operandNo++;
-            } // end of operand for
-
-            // update LastReaders etc.
-            operandNo = 0;
-            for (auto operand : ins->operands) {
-                LastDs[operand].clear();
-                LastReaders[operand].push_back(currID);
-                operandNo++;
-            }
-#ifdef HAVEGENERALCONTROLUNITARIES
+            // CZs operands are both Zs
+            QL_ASSERT(ins->operands.size() == 2);
+            new_event(currID, ins->operands[0], Reader, options::get("scheduler_commute") == "yes");
+            new_event(currID, ins->operands[1], Reader, options::get("scheduler_commute") == "yes");
         } else if (
-            // or is a Control Unitary in general
-            // Read on all operands, Write on last operand
-            // before implementing it, check whether all commutativity on Reads above hold for this Control Unitary
-        ) {
-            QL_DOUT(". considering " << name[currNode] << " as Control Unitary");
-            // Control Unitaries Read all operands, and Write the last operand
-            UInt operandNo=0;
-            UInt op_count = ins->operands.size();
-            for (auto operand : ins->operands) {
-                DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], currID, RAW, operand);
-                if (options::get("scheduler_commute") == "no") {
-                    for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, currID, RAR, operand);
-                    }
-                }
-                for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, currID, RAD, operand);
-                }
-
-                if (operandNo < op_count-1) {
-                    LastReaders[operand].push_back(currID);
-                    LastDs[operand].clear();
-                } else {
-                    add_dep(LastWriter[operand], currID, WAW, operand);
-                    for (auto &readerID : LastReaders[operand]) {
-                        add_dep(readerID, currID, WAR, operand);
-                    }
-                    for (auto &readerID : LastDs[operand]) {
-                        add_dep(readerID, currID, WAD, operand);
-                    }
-
-                    LastWriter[operand] = currID;
-                    LastReaders[operand].clear();
-                    LastDs[operand].clear();
-                }
-                operandNo++;
-            } // end of operand for
-#endif  // HAVEGENERALCONTROLUNITARIES
+                iname == "rz"
+                || iname == "z"
+                || iname == "pauli_z"
+                || iname == "rz180"
+                || iname == "z90"
+                || iname == "rz90"
+                || iname == "zm90"
+                || iname == "mrz90"
+                || iname == "s"
+                || iname == "sdag"
+                || iname == "t"
+                || iname == "tdag"
+            ) {
+            QL_DOUT(". considering " << name[currNode] << " as Z rotation");
+            // Z rotations on single operand
+            QL_ASSERT(ins->operands.size() == 1);
+            new_event(currID, ins->operands[0], Reader, options::get("scheduler_commute_rotations") == "yes");
+        } else if (
+                iname == "rx"
+                || iname == "x"
+                || iname == "pauli_x"
+                || iname == "rx180"
+                || iname == "x90"
+                || iname == "rx90"
+                || iname == "xm90"
+                || iname == "mrx90"
+                || iname == "x45"
+            ) {
+            QL_DOUT(". considering " << name[currNode] << " as X rotation");
+            // X rotations on single operand
+            QL_ASSERT(ins->operands.size() == 1);
+            new_event(currID, ins->operands[0], D, options::get("scheduler_commute_rotations") == "yes");
         } else {
             QL_DOUT(". considering " << name[currNode] << " as no special gate (catch-all, generic rules)");
-            // Read+Write on each quantum operand
-            // Read+Write on each classical operand
-            // Read+Write on each bit operand
+            // Write on each quantum operand
+            // Write on each classical operand
+            // Write on each bit operand
             for (auto operand : ins->operands) {
-                QL_DOUT(".. Operand: " << operand);
-                add_dep(LastWriter[operand], currID, WAW, operand);
-                for (auto &readerID : LastReaders[operand]) {
-                    add_dep(readerID, currID, WAR, operand);
-                }
-                for (auto &readerID : LastDs[operand]) {
-                    add_dep(readerID, currID, WAD, operand);
-                }
-                // now update LastWriter and so clear LastReaders/LastDs
-                LastWriter[operand] = currID;
-                LastReaders[operand].clear();
-                LastDs[operand].clear();
-            } // end of operand for
-
-            // Read+Write each classical operand
+                new_event(currID, operand, Writer, false);
+            }
             for (auto coperand : ins->creg_operands) {
-                QL_DOUT("... Classical operand: " << coperand);
-                add_dep(LastWriter[creg_base+coperand], currID, WAW, creg_base+coperand);
-                for (auto &readerID : LastReaders[creg_base+coperand]) {
-                    add_dep(readerID, currID, WAR, creg_base+coperand);
-                }
-                // now update LastWriter and so clear LastReaders
-                LastWriter[creg_base+coperand] = currID;
-                LastReaders[creg_base+coperand].clear();
-            } // end of coperand for
-
-            // Read+Write each bit operand
+                new_event(currID, creg_base+coperand, Writer, false);
+            }
             for (auto boperand : ins->breg_operands) {
-                QL_DOUT("... Bit operand: " << boperand);
-                add_dep(LastWriter[breg_base+boperand], currID, WAW, breg_base+boperand);
-                for (auto &readerID : LastReaders[breg_base+boperand]) {
-                    add_dep(readerID, currID, WAR, breg_base+boperand);
-                }
-                // now update LastWriter and so clear LastReaders
-                LastWriter[breg_base+boperand] = currID;
-                LastReaders[breg_base+boperand].clear();
-            } // end of boperand for
+                new_event(currID, breg_base+boperand, Writer, false);
+            }
         } // end of if/else
         QL_DOUT(". instruction done: " << ins->qasm());
     } // end of instruction for
@@ -546,11 +465,11 @@ void Scheduler::init(
         for (auto operand : all_operands) {
             QL_DOUT(".. Sink operand, adding dep: " << operand);
             add_dep(LastWriter[operand], currID, WAW, operand);
-            for (auto &readerID : LastReaders[operand]) {
-                add_dep(readerID, currID, WAR, operand);
+            for (auto &RgateID : LastReaders[operand]) {
+                add_dep(RgateID, currID, WAR, operand);
             }
-            for (auto &readerID : LastDs[operand]) {
-                add_dep(readerID, currID, WAD, operand);
+            for (auto &DgateID : LastDs[operand]) {
+                add_dep(DgateID, currID, WAD, operand);
             }
         }
 
@@ -1122,7 +1041,16 @@ ListDigraph::Node Scheduler::SelectAvailable(
         QL_DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining.dbg(n));
     }
 
-    // select the first immediately schedulable, if any
+    // select the first (most critical) immediately schedulable gate that has duration 0
+    for (auto n : avlist) {
+        Bool isres;
+        if (instruction[n]->duration == 0 && immediately_schedulable(n, dir, curr_cycle, platform, rm, isres)) {
+            QL_DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " duration 0 and immediately schedulable, remaining=" << remaining.dbg(n) << ", selected");
+            success = true;
+            return n;
+        }
+    }
+    // select the first (most critical) immediately schedulable, if any, otherwise
     // since avlist is deep-criticality ordered, highest first, the first is the most deep-critical
     for (auto n : avlist) {
         Bool isres;

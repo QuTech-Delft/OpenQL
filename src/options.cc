@@ -38,6 +38,7 @@ private:
         opt_name2opt_val.set("scheduler") = "ALAP";
         opt_name2opt_val.set("scheduler_uniform") = "no";
         opt_name2opt_val.set("scheduler_commute") = "no";
+        opt_name2opt_val.set("scheduler_commute_rotations") = "no";
         opt_name2opt_val.set("vary_commutations") = "no";
         opt_name2opt_val.set("prescheduler") = "yes";
         opt_name2opt_val.set("scheduler_post179") = "yes";
@@ -77,7 +78,8 @@ private:
         app->add_set_ignore_case("--print_dot_graphs", opt_name2opt_val.at("print_dot_graphs"), {"no", "yes"}, "Print (un-)scheduled graphs in DOT format", true);
         app->add_set_ignore_case("--scheduler", opt_name2opt_val.at("scheduler"), {"ASAP", "ALAP"}, "scheduler type", true);
         app->add_set_ignore_case("--scheduler_uniform", opt_name2opt_val.at("scheduler_uniform"), {"yes", "no"}, "Do uniform scheduling or not", true);
-        app->add_set_ignore_case("--scheduler_commute", opt_name2opt_val.at("scheduler_commute"), {"yes", "no"}, "Commute gates when possible, or not", true);
+        app->add_set_ignore_case("--scheduler_commute", opt_name2opt_val.at("scheduler_commute"), {"yes", "no"}, "Commute two-qubit CZ/CNOT gates, also with one-qubit gates when enabled", true);
+        app->add_set_ignore_case("--scheduler_commute_rotations", opt_name2opt_val.at("scheduler_commute_rotations"), {"yes", "no"}, "Commute one-qubit gates (X and Z separate), also with CNOT/CZ when enabled", true);
         app->add_set_ignore_case("--vary_commutations", opt_name2opt_val.at("vary_commutations"), {"no", "yes"}, "Circuit-wide exploit commutation", true);
         app->add_set_ignore_case("--use_default_gates", opt_name2opt_val.at("use_default_gates"), {"yes", "no"}, "Use default gates or not", true);
         app->add_set_ignore_case("--optimize", opt_name2opt_val.at("optimize"), {"yes", "no"}, "optimize or not", true);
@@ -145,6 +147,7 @@ public:
                   << "clifford_postmapper: " << opt_name2opt_val.at("clifford_postmapper") << std::endl
                   << "scheduler_post179: " << opt_name2opt_val.at("scheduler_post179") << std::endl
                   << "scheduler_commute: " << opt_name2opt_val.at("scheduler_commute") << std::endl
+                  << "scheduler_commute_rotations: " << opt_name2opt_val.at("scheduler_commute_rotations") << std::endl
                   << "vary_commutations: " << opt_name2opt_val.at("vary_commutations") << std::endl
                   << "cz_mode: " << opt_name2opt_val.at("cz_mode") << std::endl
                   << "write_qasm_files: " << opt_name2opt_val.at("write_qasm_files") << std::endl

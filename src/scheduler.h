@@ -32,6 +32,11 @@ namespace ql {
 enum DepTypes {RAW, WAW, WAR, RAR, RAD, DAR, DAD, WAD, DAW};
 const utils::Str DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR", "RAD", "DAR", "DAD", "WAD", "DAW"};
 
+enum EventType {Writer, Reader, D};
+const utils::Str EventTypeNames[] = {"Writer", "Reader", "D"};
+
+typedef utils::Vec<utils::Int> ReadersListType;
+
 class Scheduler {
 public:
     // dependence graph is constructed (see Init) once from the sequence of gates in a kernel's circuit
@@ -60,14 +65,30 @@ public:
 
     // scheduler support
     utils::Map<lemon::ListDigraph::Node, utils::UInt>  remaining;  // remaining[node] == cycles until end; critical path representation
+private:
+    // state of the state machine that is used to construct the dependence graph
+    // all vectors are indexed by a combooperand, an encoding of all possible qubits, classical registers and bit registers,
+    // that is in qubit_creg_breg combined index space with size qcount+ccount+bcount
+    utils::Vec<enum EventType> LastEvent;
+    utils::Vec<utils::Int> LastWriter;
+    utils::Vec<ReadersListType> LastReaders;
+    utils::Vec<ReadersListType> LastDs;
 
 public:
     Scheduler();
 
-    // ins->name may contain parameters, so must be stripped first before checking it for gate's name
+    // name may contain parameters, so must be stripped first before checking it for gate's name
     static void stripname(utils::Str &name);
 
-    // factored out code from Init to add a dependence between two nodes
+    // signal the state machine of dependence graph construction to do a step as specified by the parameters
+    void new_event(
+        int currID,
+        utils::UInt combooperand,
+        enum EventType currEvent,
+        bool commutes
+    );
+
+    // add a dependence between two nodes
     // operand is in qubit_creg_breg combined index space with size qcount+ccount+bcount
     void add_dep(utils::Int fromID, utils::Int toID, enum DepTypes deptype, utils::UInt comboperand);
 
