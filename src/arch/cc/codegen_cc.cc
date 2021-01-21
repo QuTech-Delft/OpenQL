@@ -35,6 +35,9 @@ void codegen_cc::init(const quantum_platform &platform)
     this->platform = &platform;
     settings.loadBackendSettings(platform);
 
+    runOnce = "yes" == options::get("backend_cc_run_once");
+    verboseCode = "yes" == options::get("backend_cc_verbose");
+
     // optionally preload codewordTable
     std::string map_input_file = options::get("backend_cc_map_input_file");
     if(!map_input_file.empty()) {
@@ -732,18 +735,18 @@ void codegen_cc::emitProgramStart(const std::string &progName)
 
 void codegen_cc::emitProgramFinish()
 {
-#if OPT_RUN_ONCE   // program runs once only
-    emit("", "stop");
-#else   // CC-light emulation: loop indefinitely
-	// prevent real time pipeline emptying during jmp below (especially in conjunction with pragma/break
-	emit("", "seq_wait", "1", "");
+	if(runOnce) {   // program runs once only
+    	emit("", "stop");
+	} else {   // CC-light emulation: loop indefinitely
+		// prevent real time pipeline emptying during jmp below (especially in conjunction with pragma/break
+		emit("", "seq_wait", "1", "");
 
-	// loop indefinitely
-    emit("",      // no CCIO selector
-         "jmp",
-         "@__mainLoop",
-         "# loop indefinitely");
-#endif
+		// loop indefinitely
+		emit("",      // no CCIO selector
+			 "jmp",
+			 "@__mainLoop",
+			 "# loop indefinitely");
+	}
 
     emit(".END");   // end .CODE section
 }

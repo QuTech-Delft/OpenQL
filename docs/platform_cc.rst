@@ -350,6 +350,7 @@ Where:
 * ``cc/signal`` defines a signal in place, in an identical fashion as ``hardware_settings/eqasm_backend_cc/signals``. May be empty (``[]``) to disable signal generation.
 * ``cc/static_codeword_override`` provides a user defined array of codeword (one entry per operand) for this instruction. Currently, this key is compulsory (if signal is non-empty), but in the future, codewords will be assigned automatically to make better use of limited codeword space
 * ``cc/readout_mode`` defines an instruction to perform readout if non-empty. If the value "feedback" is used, code is generated to read and distribute the instrument result.
+* ``cc/pragma/break`` enables special functionality which makes the gate break out of a for loop if the associated qubit was measured as 1 (``"pragma" { "break": 1 }``) or 0 (``"pragma" { "break": 0 }``
 
 The following standard OpenQL fields are used:
 
@@ -388,7 +389,13 @@ FIXME: TBW
 Compiler options
 ^^^^^^^^^^^^^^^^
 
-FIXME: TBW
+The following OpenQL compiler optins are specifi for the CC backend:
+
+* ``--backend_cc_run_once`` create a .vq1asm program that runs once instead of repeating indefinitely (default "no" to maintain compatibility, alternatively "yes")
+* ``--backend_cc_verbose`` add verbose comments to generated .vq1asm file (default "yes", alternatively "no")
+* ``--backend_cc_map_input_file`` name of CC input map file, default "". Reserved for future extension to generate codewords automatically
+
+FIXME: refer to standard optiosns
 
 
 CC backend output files

@@ -103,8 +103,9 @@ private:    // vars
     datapath_cc dp;												// handling of CC datapath
     vcd_cc vcd;                                                 // handling of VCD file output
 
-    bool verboseCode = true;                                    // option to output extra comments in generated code. FIXME: not yet configurable
-    bool mapPreloaded = false;
+    bool runOnce = false;										// option to run once instead of repeating indefinitely
+    bool verboseCode = true;                                    // option to output extra comments in generated code
+    bool mapPreloaded = false;									// flag whether we have a preloaded map
 
 	// codegen state, program scope
 	Json codewordTable;                                  		// codewords versus signals per instrument group

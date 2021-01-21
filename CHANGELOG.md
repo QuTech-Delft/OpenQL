@@ -15,6 +15,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - added support for "pragma/break" in JSON definition to define 'gate' that breaks out of loop
     - added support to distribute measurement results via DSM
     - added support for conditional gates
+    - added compile option "--backend_cc_run_once"
+    - added compile option "--backend_cc_verbose"
 
 ### Changed
 - CC backend:
@@ -24,6 +26,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - adopted new module synchronization scheme ("seq_bar semantics", requires CC software >= v0.2.0, PycQED after commit 470df5b)
     - JSON field "instruction/type" no longer used by backend, use "instruction/cc/readout_mode" to flag measurement instructions
     - allow specification of 2 triggers in JSON field "control_modes/*/trigger_bits" to support dual-QWG
+    - changed label in generated code from "mainLoop" to "__mainLoop". Do not start kernel names with "__" (this should be specified by the API)
 
 ### Removed
 

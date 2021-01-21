@@ -40,7 +40,10 @@ private:
         opt_name2opt_val.set("scheduler_commute") = "no";
         opt_name2opt_val.set("prescheduler") = "yes";
         opt_name2opt_val.set("scheduler_post179") = "yes";
+
         opt_name2opt_val.set("backend_cc_map_input_file") = "";
+        opt_name2opt_val.set("backend_cc_verbose") = "yes";
+        opt_name2opt_val.set("backend_cc_run_once") = "no";
 
         opt_name2opt_val.set("cz_mode") = "manual";
         opt_name2opt_val.set("print_dot_graphs") = "no";
@@ -87,6 +90,8 @@ private:
         app->add_set_ignore_case("--quantumsim", opt_name2opt_val.at("quantumsim"), {"no", "yes", "qsoverlay"}, "Produce quantumsim output, and of which kind", true);
         app->add_set_ignore_case("--issue_skip_319", opt_name2opt_val.at("issue_skip_319"), {"no", "yes"}, "Issue skip instead of wait in bundles", true);
         app->add_option("--backend_cc_map_input_file", opt_name2opt_val.at("backend_cc_map_input_file"), "Name of CC input map file", true);
+        app->add_set_ignore_case("--backend_cc_verbose", opt_name2opt_val.at("backend_cc_verbose"), {"yes", "no"}, "Add verbose comments to generated .vq1asm file", true);
+        app->add_set_ignore_case("--backend_cc_run_once", opt_name2opt_val.at("backend_cc_run_once"), {"yes", "no"}, "Create a .vq1asm program that runs once instead of repeating indefinitely", true);
         app->add_set_ignore_case("--cz_mode", opt_name2opt_val.at("cz_mode"), {"manual", "auto"}, "CZ mode", true);
 
         app->add_set_ignore_case("--mapper", opt_name2opt_val.at("mapper"), {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"}, "Mapper heuristic", true);
