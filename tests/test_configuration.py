@@ -20,7 +20,7 @@ class Test_Configuration(unittest.TestCase):
     def test_case_insensitivity(self):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program("aProgram", platform, platform.get_qubit_number())
+        p = ql.Program("test_case_insensitivity", platform, platform.get_qubit_number())
         sweep_points = [1,2]
         p.set_sweep_points(sweep_points)
 
@@ -50,7 +50,7 @@ class Test_Configuration(unittest.TestCase):
     def test_missing_instr(self):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program("aProgram", platform, platform.get_qubit_number())
+        p = ql.Program("test_missing_instr", platform, platform.get_qubit_number())
         sweep_points = [1,2]
         p.set_sweep_points(sweep_points)
 
@@ -86,7 +86,7 @@ class Test_Configuration(unittest.TestCase):
     def test_missing_cc_light_instr(self):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program("aProgram", platform, platform.get_qubit_number())
+        p = ql.Program("test_missing_cc_light_instr", platform, platform.get_qubit_number())
         sweep_points = [1,2]
         p.set_sweep_points(sweep_points)
 
