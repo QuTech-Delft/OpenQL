@@ -64,7 +64,7 @@ private:
         opt_name2opt_val.set("mapselectmaxlevel") = "0";
         opt_name2opt_val.set("mapselectmaxwidth") = "min";
         opt_name2opt_val.set("mapselectswaps") = "all";
-        opt_name2opt_val.set("maptiebreak") = "random";
+        opt_name2opt_val.set("maptiebreak") = "first";
         opt_name2opt_val.set("mapusemoves") = "yes";
         opt_name2opt_val.set("mapreverseswap") = "yes";
 

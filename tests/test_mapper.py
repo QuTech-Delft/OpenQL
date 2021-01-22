@@ -36,7 +36,6 @@ class Test_mapper(unittest.TestCase):
         ql.set_option('scheduler_uniform', 'no')
         ql.set_option('scheduler_commute', 'yes')
         ql.set_option('prescheduler', 'yes')
-        ql.set_option('scheduler_post179', 'yes')
         ql.set_option('cz_mode', 'manual')
         ql.set_option('print_dot_graphs', 'no')
         
@@ -90,10 +89,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 
     def test_mapper_oneNN(self):
@@ -117,10 +115,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 
     def test_mapper_allNN(self):
@@ -164,11 +161,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
-
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
     def test_mapper_oneD2(self):
         # one cnot with operands that are at distance 2 in s7
@@ -198,10 +193,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 
     def test_mapper_oneD4(self):
@@ -232,10 +226,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 
     def test_mapper_allD(self):
@@ -268,10 +261,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 
     def test_mapper_allDopt(self):
@@ -344,10 +336,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 
     def test_mapper_allIP(self):
@@ -383,10 +374,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 
 
@@ -436,6 +426,7 @@ class Test_mapper(unittest.TestCase):
         k.gate("ym90", [5]);
         k.gate("measure", [5]);
         k.gate("measure", [6]);
+
         k.gate("prepz", [5]);
         k.gate("prepz", [6]);
         k.gate("x", [5]);
@@ -468,6 +459,7 @@ class Test_mapper(unittest.TestCase):
         k.gate("ym90", [5]);
         k.gate("measure", [5]);
         k.gate("measure", [6]);
+
         k.gate("prepz", [5]);
         k.gate("prepz", [6]);
         k.gate("x", [5]);
@@ -500,6 +492,7 @@ class Test_mapper(unittest.TestCase):
         k.gate("ym90", [5]);
         k.gate("measure", [5]);
         k.gate("measure", [6]);
+
         k.gate("prepz", [5]);
         k.gate("prepz", [6]);
         k.gate("x", [5]);
@@ -536,10 +529,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 
 
@@ -632,6 +624,7 @@ class Test_mapper(unittest.TestCase):
         k.gate("ym90", [7]);
         k.gate("measure", [7]);
         k.gate("measure", [8]);
+
         k.gate("prepz", [7]);
         k.gate("prepz", [8]);
         k.gate("x", [7]);
@@ -674,10 +667,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 
 
