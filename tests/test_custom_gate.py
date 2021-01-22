@@ -8,7 +8,7 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 ql.set_option('output_dir', output_dir)
-ql.set_option('write_qasm_files', 'yes')
+# ql.set_option('write_qasm_files', 'yes')
 
 
 class Test_kernel(unittest.TestCase):

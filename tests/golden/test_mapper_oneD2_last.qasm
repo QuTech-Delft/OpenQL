@@ -3,7 +3,15 @@ version 1.0
 qubits 7
 
 .kernel_oneD2
-    { x q[2] | ym90 q[0] }
-    cz q[2],q[0]
+    { y q[3] | ym90 q[5] }
+    cz q[3],q[5]
     wait 1
-    { y90 q[0] | x q[2] }
+    { y90 q[5] | ym90 q[3] }
+    cz q[5],q[3]
+    wait 1
+    { ym90 q[5] | x q[2] }
+    cz q[2],q[5]
+    y90 q[3]
+    cz q[3],q[5]
+    wait 1
+    { x q[2] | ym90 q[5] }

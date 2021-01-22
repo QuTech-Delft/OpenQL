@@ -70,6 +70,15 @@ class Test_mapper(unittest.TestCase):
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
 
+        k.gate("x", [0])
+        k.gate("x", [1])
+        k.gate("x", [2])
+        k.gate("x", [3])
+        k.gate("x", [4])
+        k.gate("x", [5])
+        k.gate("x", [6])
+        k.gate("x", [7])
+
         k.gate("cz", [1,4])
         k.gate("cz", [1,3])
         k.gate("cz", [3,4])
@@ -79,7 +88,9 @@ class Test_mapper(unittest.TestCase):
         k.gate("cz", [5,6])
         k.gate("cz", [1,5])
 
+        k.gate("x", [0])
         k.gate("x", [1])
+        k.gate("x", [2])
         k.gate("x", [3])
         k.gate("x", [4])
         k.gate("x", [5])
@@ -185,10 +196,10 @@ class Test_mapper(unittest.TestCase):
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
 
         k.gate("x", [2])
-        k.gate("x", [3])
+        k.gate("y", [3])
         k.gate("cnot", [2,3])
         k.gate("x", [2])
-        k.gate("x", [3])
+        k.gate("y", [3])
 
         prog.add_kernel(k)
         prog.compile()
@@ -218,10 +229,10 @@ class Test_mapper(unittest.TestCase):
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
 
         k.gate("x", [2])
-        k.gate("x", [4])
+        k.gate("y", [4])
         k.gate("cnot", [2,4])
         k.gate("x", [2])
-        k.gate("x", [4])
+        k.gate("y", [4])
 
         prog.add_kernel(k)
         prog.compile()

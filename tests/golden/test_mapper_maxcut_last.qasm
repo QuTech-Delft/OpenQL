@@ -3,24 +3,33 @@ version 1.0
 qubits 8
 
 .kernel_maxcut
-    red q[5],q[6]
-    wait 3
+    { x q[5] | x q[6] }
+    { x q[4] | x q[7] | red q[5],q[6] }
+    blue q[4],q[7]
+    wait 2
     blue q[6],q[7]
-    red q[3],q[5]
+    x q[3]
+    swap q[5],q[3]
+    x q[6]
+    swap q[6],q[5]
+    wait 1
+    blue q[6],q[7]
+    wait 2
+    x q[7]
+    swap q[7],q[6]
+    wait 1
+    { move_init q[2] | x q[1] | blue q[7],q[4] }
+    move q[1],q[2]
+    wait 1
+    swap q[4],q[2]
     wait 1
     blue q[4],q[7]
+    swap q[5],q[3]
     wait 1
-    { blue q[3],q[0] | x q[6] }
+    { swap q[6],q[5] | red q[4],q[2] }
+    x q[7]
     swap q[7],q[6]
-    { move_init q[2] | x q[5] }
-    { move q[4],q[2] | swap q[0],q[3] | swap q[5],q[6] }
-    move_init q[1]
-    { move q[2],q[1] | red q[3],q[5] }
     wait 1
-    swap q[0],q[1]
-    wait 1
-    blue q[3],q[0]
+    blue q[4],q[7]
     wait 2
-    blue q[1],q[0]
-    wait 2
-    { x q[0] | x q[1] | x q[3] | x q[5] }
+    { x q[2] | x q[4] | x q[7] }
