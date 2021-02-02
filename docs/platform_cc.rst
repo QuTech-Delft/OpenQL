@@ -389,11 +389,11 @@ FIXME: TBW
 Compiler options
 ^^^^^^^^^^^^^^^^
 
-The following OpenQL compiler optins are specifi for the CC backend:
+The following OpenQL compiler options are specific for the CC backend:
 
-* ``--backend_cc_run_once`` create a .vq1asm program that runs once instead of repeating indefinitely (default "no" to maintain compatibility, alternatively "yes")
-* ``--backend_cc_verbose`` add verbose comments to generated .vq1asm file (default "yes", alternatively "no")
-* ``--backend_cc_map_input_file`` name of CC input map file, default "". Reserved for future extension to generate codewords automatically
+* ``backend_cc_run_once`` create a .vq1asm program that runs once instead of repeating indefinitely (default "no" to maintain compatibility, alternatively "yes")
+* ``backend_cc_verbose`` add verbose comments to generated .vq1asm file (default "yes", alternatively "no")
+* ``backend_cc_map_input_file`` name of CC input map file, default "". Reserved for future extension to generate codewords automatically
 
 FIXME: refer to standard optiosns
 

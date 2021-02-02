@@ -18,12 +18,6 @@
 
 namespace ql {
 
-
-#if OPT_FEEDBACK
-//typedef std::vector<int> tBitVars;
-#endif
-
-
 /************************************************************************\
 | Generic
 \************************************************************************/
@@ -778,7 +772,7 @@ void codegen_cc::emitFeedback(const tFeedbackMap &feedbackMap, size_t instrIdx, 
 		// emit code for non-participating instrument
 		// FIXME: computing the variables above requires overview over all measurements of bundle, i.e. iterating over all instruments in BundleFinish before generating code
 		unsigned int smAddr = 0;
-		unsigned int smTotalSize = 6;
+		unsigned int smTotalSize = 1;	// FIXME: inexact, but me must not invalidate memory that we will not write
 		emit(
 			slot,
 			"seq_inv_sm",
