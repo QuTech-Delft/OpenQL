@@ -101,6 +101,14 @@ Int Option::as_int() const {
 }
 
 /**
+ * Returns the current value for this option as an unsigned integer. This will
+ * return 0 when the option value is not a valid integer.
+ */
+UInt Option::as_uint() const {
+    return parse_uint(current_value, 0);
+}
+
+/**
  * Returns the current value for this option as a real number. This will return
  * 0 when the option value is not a valid integer.
  */

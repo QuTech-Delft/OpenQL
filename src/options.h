@@ -124,6 +124,12 @@ public:
     utils::Int as_int() const;
 
     /**
+     * Returns the current value for this option as an unsigned integer. This will
+     * return 0 when the option value is not a valid integer.
+     */
+    utils::UInt as_uint() const;
+
+    /**
      * Returns the current value for this option as a real number. This will return
      * 0 when the option value is not a valid integer.
      */
