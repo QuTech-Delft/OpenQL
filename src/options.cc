@@ -7,208 +7,678 @@
 #include "utils/exception.h"
 #include "utils/logger.h"
 #include "utils/filesystem.h"
-#include "utils/map.h"
-#include "utils/vec.h"
-#include <CLI/CLI.hpp>
 
 namespace ql {
 namespace options {
 
 using namespace utils;
 
-class Options {
-private:
-    CLI::App *app;
-    Map<Str, Str> opt_name2opt_val;
-
-    void set_defaults() {
-        // default values
-        opt_name2opt_val.set("log_level") = "LOG_NOTHING";
-        opt_name2opt_val.set("output_dir") = "test_output";
-        opt_name2opt_val.set("unique_output") = "no";
-        opt_name2opt_val.set("write_qasm_files") = "no";
-        opt_name2opt_val.set("write_report_files") = "no";
-
-        opt_name2opt_val.set("optimize") = "no";
-        opt_name2opt_val.set("use_default_gates") = "yes";
-        opt_name2opt_val.set("decompose_toffoli") = "no";
-        opt_name2opt_val.set("quantumsim") = "no";
-        opt_name2opt_val.set("issue_skip_319") = "no";
-
-        opt_name2opt_val.set("scheduler") = "ALAP";
-        opt_name2opt_val.set("scheduler_uniform") = "no";
-        opt_name2opt_val.set("scheduler_commute") = "no";
-        opt_name2opt_val.set("prescheduler") = "yes";
-        opt_name2opt_val.set("scheduler_post179") = "yes";
-        opt_name2opt_val.set("backend_cc_map_input_file") = "";
-
-        opt_name2opt_val.set("cz_mode") = "manual";
-        opt_name2opt_val.set("print_dot_graphs") = "no";
-
-        opt_name2opt_val.set("clifford_prescheduler") = "no";
-        opt_name2opt_val.set("clifford_postscheduler") = "no";
-        opt_name2opt_val.set("clifford_premapper") = "no";
-        opt_name2opt_val.set("clifford_postmapper") = "no";
-
-        opt_name2opt_val.set("mapper") = "no";
-        opt_name2opt_val.set("mapassumezeroinitstate") = "no";
-        opt_name2opt_val.set("mapinitone2one") = "yes";
-        opt_name2opt_val.set("mapprepinitsstate") = "no";
-        opt_name2opt_val.set("initialplace") = "no";
-        opt_name2opt_val.set("initialplace2qhorizon") = "0";
-        opt_name2opt_val.set("maplookahead") = "noroutingfirst";
-        opt_name2opt_val.set("mappathselect") = "all";
-        opt_name2opt_val.set("maprecNN2q") = "no";
-        opt_name2opt_val.set("mapselectmaxlevel") = "0";
-        opt_name2opt_val.set("mapselectmaxwidth") = "min";
-        opt_name2opt_val.set("mapselectswaps") = "all";
-        opt_name2opt_val.set("maptiebreak") = "random";
-        opt_name2opt_val.set("mapusemoves") = "yes";
-        opt_name2opt_val.set("mapreverseswap") = "yes";
-
-        // add options with default values and list of possible values
-        app->add_set_ignore_case("--log_level", opt_name2opt_val.at("log_level"),
-                                 {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}, "Log levels", true);
-        app->add_option("--output_dir", opt_name2opt_val.at("output_dir"), "Name of output directory", true);
-        app->add_set_ignore_case("--unique_output", opt_name2opt_val.at("unique_output"), {"no", "yes"}, "Make output files unique", true);
-        app->add_set_ignore_case("--prescheduler", opt_name2opt_val.at("prescheduler"), {"no", "yes"}, "Run qasm (first) scheduler?", true);
-        app->add_set_ignore_case("--scheduler_post179", opt_name2opt_val.at("scheduler_post179"), {"no", "yes"}, "Issue 179 solution included", true);
-        app->add_set_ignore_case("--print_dot_graphs", opt_name2opt_val.at("print_dot_graphs"), {"no", "yes"}, "Print (un-)scheduled graphs in DOT format", true);
-        app->add_set_ignore_case("--scheduler", opt_name2opt_val.at("scheduler"), {"ASAP", "ALAP"}, "scheduler type", true);
-        app->add_set_ignore_case("--scheduler_uniform", opt_name2opt_val.at("scheduler_uniform"), {"yes", "no"}, "Do uniform scheduling or not", true);
-        app->add_set_ignore_case("--scheduler_commute", opt_name2opt_val.at("scheduler_commute"), {"yes", "no"}, "Commute gates when possible, or not", true);
-        app->add_set_ignore_case("--use_default_gates", opt_name2opt_val.at("use_default_gates"), {"yes", "no"}, "Use default gates or not", true);
-        app->add_set_ignore_case("--optimize", opt_name2opt_val.at("optimize"), {"yes", "no"}, "optimize or not", true);
-        app->add_set_ignore_case("--clifford_prescheduler", opt_name2opt_val.at("clifford_prescheduler"), {"yes", "no"}, "clifford optimize before prescheduler yes or not", true);
-        app->add_set_ignore_case("--clifford_postscheduler", opt_name2opt_val.at("clifford_postscheduler"), {"yes", "no"}, "clifford optimize after prescheduler yes or not", true);
-        app->add_set_ignore_case("--clifford_premapper", opt_name2opt_val.at("clifford_premapper"), {"yes", "no"}, "clifford optimize before mapping yes or not", true);
-        app->add_set_ignore_case("--clifford_postmapper", opt_name2opt_val.at("clifford_postmapper"), {"yes", "no"}, "clifford optimize after mapping yes or not", true);
-        app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val.at("decompose_toffoli"), {"no", "NC", "AM"}, "Type of decomposition used for toffoli", true);
-        app->add_set_ignore_case("--quantumsim", opt_name2opt_val.at("quantumsim"), {"no", "yes", "qsoverlay"}, "Produce quantumsim output, and of which kind", true);
-        app->add_set_ignore_case("--issue_skip_319", opt_name2opt_val.at("issue_skip_319"), {"no", "yes"}, "Issue skip instead of wait in bundles", true);
-        app->add_option("--backend_cc_map_input_file", opt_name2opt_val.at("backend_cc_map_input_file"), "Name of CC input map file", true);
-        app->add_set_ignore_case("--cz_mode", opt_name2opt_val.at("cz_mode"), {"manual", "auto"}, "CZ mode", true);
-
-        app->add_set_ignore_case("--mapper", opt_name2opt_val.at("mapper"), {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"}, "Mapper heuristic", true);
-        app->add_set_ignore_case("--mapinitone2one", opt_name2opt_val.at("mapinitone2one"), {"no", "yes"}, "Initialize mapping of virtual qubits one to one to real qubits", true);
-        app->add_set_ignore_case("--mapprepinitsstate", opt_name2opt_val.at("mapprepinitsstate"), {"no", "yes"}, "Prep gate leaves qubit in zero state", true);
-        app->add_set_ignore_case("--mapassumezeroinitstate", opt_name2opt_val.at("mapassumezeroinitstate"), {"no", "yes"}, "Assume that qubits are initialized to zero state", true);
-        app->add_set_ignore_case("--initialplace", opt_name2opt_val.at("initialplace"), {"no","yes","1s","10s","1m","10m","1h","1sx","10sx","1mx","10mx","1hx"}, "Initialplace qubits before mapping", true);
-        app->add_set_ignore_case("--initialplace2qhorizon", opt_name2opt_val.at("initialplace2qhorizon"), {"0","1","2","3","4","5","6","7","8","9", "10","11","12","13","14","15","16","17","18","19","20","30","40","50","60","70","80","90","100"}, "Initialplace considers only this number of initial two-qubit gates", true);
-        app->add_set_ignore_case("--maplookahead", opt_name2opt_val.at("maplookahead"), {"no", "1qfirst", "noroutingfirst", "all"}, "Strategy wrt selecting next gate(s) to map", true);
-        app->add_set_ignore_case("--mappathselect", opt_name2opt_val.at("mappathselect"), {"all", "borders"}, "Which paths: all or borders", true);
-        app->add_set_ignore_case("--mapselectswaps", opt_name2opt_val.at("mapselectswaps"), {"one", "all", "earliest"}, "Select only one swap, or earliest, or all swaps for one alternative", true);
-        app->add_set_ignore_case("--maprecNN2q", opt_name2opt_val.at("maprecNN2q"), {"no","yes"}, "Recursing also on NN 2q gate?", true);
-        app->add_set_ignore_case("--mapselectmaxlevel", opt_name2opt_val.at("mapselectmaxlevel"), {"0","1","2","3","4","5","6","7","8","9","10","inf"}, "Maximum recursion in selecting alternatives on minimum extension", true);
-        app->add_set_ignore_case("--mapselectmaxwidth", opt_name2opt_val.at("mapselectmaxwidth"), {"min","minplusone","minplushalfmin","minplusmin","all"}, "Maximum width number of alternatives to enter recursion with", true);
-        app->add_set_ignore_case("--maptiebreak", opt_name2opt_val.at("maptiebreak"), {"first", "last", "random", "critical"}, "Tie break method", true);
-        app->add_set_ignore_case("--mapusemoves", opt_name2opt_val.at("mapusemoves"), {"no", "yes", "0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"}, "Use unused qubit to move thru", true);
-        app->add_set_ignore_case("--mapreverseswap", opt_name2opt_val.at("mapreverseswap"), {"no", "yes"}, "Reverse swap operands when better", true);
-
-        app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val.at("write_qasm_files"), {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
-        app->add_set_ignore_case("--write_report_files", opt_name2opt_val.at("write_report_files"), {"yes", "no"}, "write report files on circuit characteristics and pass results", true);
+/**
+ * Calls all the callbacks.
+ */
+void Option::value_changed() {
+    for (auto &cb : callbacks) {
+        cb(*this);
     }
+}
 
-public:
-    Options(const Str &app_name = "testApp") {
-        app = new CLI::App(app_name);
-        set_defaults();
+/**
+ * Returns a description of the syntax for allowable values.
+ */
+Str Option::syntax() const {
+    return "any string";
+}
+
+/**
+ * Validates and optionally desugars the given input. Should throw an
+ * Exception if the value is invalid.
+ */
+Str Option::validate(const Str &val) const {
+    return val;
+}
+
+/**
+ * Constructs a new Option.
+ */
+Option::Option(
+    Str &&name,
+    Str &&description,
+    Str &&default_value
+) :
+    name(std::move(name)),
+    description(std::move(description)),
+    default_value(default_value),
+    current_value(std::move(default_value)),
+    configured(false)
+{
+}
+
+/**
+ * Returns the name of this option.
+ */
+const Str &Option::get_name() const {
+    return name;
+}
+
+/**
+ * Returns the description of this option.
+ */
+const Str &Option::get_description() const {
+    return description;
+}
+
+/**
+ * Returns the default value for this option. If the option has no default
+ * value, returns an empty string.
+ */
+const Str &Option::get_default() const {
+    return default_value;
+}
+
+/**
+ * Returns the current value for this option. If the option has no default
+ * value and is not configured, returns an empty string.
+ */
+const Str &Option::as_str() const {
+    return current_value;
+}
+
+/**
+ * Returns the current value for this option as a boolean. This will return true
+ * when the value is anything other than the empty string (unconfigured) or
+ * "no".
+ */
+Bool Option::as_bool() const {
+    return !(current_value.empty() || current_value == "no");
+}
+
+/**
+ * Returns the current value for this option as an integer. This will return
+ * -1 when the option value is not a valid integer.
+ */
+Int Option::as_int() const {
+    return parse_int(current_value, -1);
+}
+
+/**
+ * Returns the current value for this option as a real number. This will return
+ * 0 when the option value is not a valid integer.
+ */
+Real Option::as_real() const {
+    return parse_real(current_value, 0);
+}
+
+/**
+ * If the given value is nonempty, configures this option with it. An exception
+ * is thrown if the value is invalid. If the given value is empty, resets to the
+ * default value.
+ */
+void Option::set(const Str &val) {
+    if (val.empty()) {
+        reset();
+    } else {
+        current_value = validate(val);
+        configured = true;
+        value_changed();
     }
+}
 
-    void print_current_values() {
-        std::cout << "log_level: " << opt_name2opt_val.at("log_level") << std::endl
-                  << "output_dir: " << opt_name2opt_val.at("output_dir") << std::endl
-                  << "unique_output: " << opt_name2opt_val.at("unique_output") << std::endl
-                  << "optimize: " << opt_name2opt_val.at("optimize") << std::endl
-                  << "use_default_gates: " << opt_name2opt_val.at("use_default_gates") << std::endl
-                  << "decompose_toffoli: " << opt_name2opt_val.at("decompose_toffoli") << std::endl
-                  << "quantumsim: " << opt_name2opt_val.at("quantumsim") << std::endl
-                  << "issue_skip_319: " << opt_name2opt_val.at("issue_skip_319") << std::endl
-                  << "clifford_prescheduler: " << opt_name2opt_val.at("clifford_prescheduler") << std::endl
-                  << "prescheduler: " << opt_name2opt_val.at("prescheduler") << std::endl
-                  << "scheduler: " << opt_name2opt_val.at("scheduler") << std::endl
-                  << "scheduler_uniform: " << opt_name2opt_val.at("scheduler_uniform") << std::endl
-                  << "clifford_postscheduler: " << opt_name2opt_val.at("clifford_postscheduler") << std::endl
-                  << "clifford_premapper: " << opt_name2opt_val.at("clifford_premapper") << std::endl
-                  << "mapper: "           << opt_name2opt_val.at("mapper") << std::endl
-                  << "mapinitone2one: "   << opt_name2opt_val.at("mapinitone2one") << std::endl
-                  << "initialplace: "     << opt_name2opt_val.at("initialplace") << std::endl
-                  << "initialplace2qhorizon: "<< opt_name2opt_val.at("initialplace2qhorizon") << std::endl
-                  << "maplookahead: "     << opt_name2opt_val.at("maplookahead") << std::endl
-                  << "mappathselect: "    << opt_name2opt_val.at("mappathselect") << std::endl
-                  << "maptiebreak: "      << opt_name2opt_val.at("maptiebreak") << std::endl
-                  << "mapusemoves: "      << opt_name2opt_val.at("mapusemoves") << std::endl
-                  << "mapreverseswap: "   << opt_name2opt_val.at("mapreverseswap") << std::endl
-                  << "mapselectswaps: "   << opt_name2opt_val.at("mapselectswaps") << std::endl
-                  << "clifford_postmapper: " << opt_name2opt_val.at("clifford_postmapper") << std::endl
-                  << "scheduler_post179: " << opt_name2opt_val.at("scheduler_post179") << std::endl
-                  << "scheduler_commute: " << opt_name2opt_val.at("scheduler_commute") << std::endl
-                  << "cz_mode: " << opt_name2opt_val.at("cz_mode") << std::endl
-                  << "write_qasm_files: " << opt_name2opt_val.at("write_qasm_files") << std::endl
-                  << "write_report_files: " << opt_name2opt_val.at("write_report_files") << std::endl
-                  << "print_dot_graphs: " << opt_name2opt_val.at("print_dot_graphs") << std::endl;
-        // FIXME: incomplete, function seems unused
-    }
+/**
+ * Same as set().
+ */
+Option &Option::operator=(const Str &val) {
+    set(val);
+    return *this;
+}
 
-    void reset_options() {
-        app = new CLI::App("testApp");
-        set_defaults();
-    }
+/**
+ * Resets this option to the default value.
+ */
+void Option::reset() {
+    current_value = default_value;
+    configured = false;
+    value_changed();
+}
 
-    void help() {
-        std::cout << app->help() << std::endl;
-    }
+/**
+ * Returns whether this option was manually configured.
+ */
+bool Option::is_set() const {
+    return configured;
+}
 
-    void set(const Str &opt_name, const Str &opt_value) {
-        try {
-            std::vector<Str> opts = {opt_value, "--"+opt_name};
-            app->parse(opts);
-        } catch (const std::exception &e) {
-            app->reset();
-            QL_EOUT("Un-known option:" << e.what());
-            throw Exception("Error parsing options. " + Str(e.what()) + " !", false);
+/**
+ * Writes a help message for this option to the given stream (or stdout).
+ */
+void Option::help(std::ostream &os) const {
+    os << "Option " << name << ": " << syntax() << ", ";
+    if (configured) {
+        os << "currently " << current_value;
+        if (!default_value.empty()) {
+            os << " (default " << default_value << ")";
         }
-        app->reset();
+    } else if (current_value.empty()) {
+        os << "not configured";
+    } else {
+        os << "using default " << current_value;
     }
+    if (!description.empty()) {
+        os << ": " << description;
+    }
+}
 
-    Str get(const Str &opt_name) {
-        Str opt_value("UNKNOWN");
-        if (opt_name2opt_val.find(opt_name) != opt_name2opt_val.end()) {
-            opt_value = opt_name2opt_val.at(opt_name);
+/**
+ * Registers a callback, to be called when the option changes.
+ */
+Option &Option::with_callback(const std::function<void(Option&)> &callback) {
+    callbacks.push_back(callback);
+    return *this;
+}
+
+/**
+ * Stream write operator for Option.
+ */
+std::ostream &operator<<(std::ostream &os, const Option &option) {
+    option.help(os);
+    return os;
+}
+
+/**
+ * Returns a description of the syntax for allowable values.
+ */
+Str BooleanOption::syntax() const {
+    return "yes or no";
+}
+
+/**
+ * Validates and optionally desugars the given input. Should throw an
+ * Exception if the value is invalid.
+ */
+Str BooleanOption::validate(const Str &val) const {
+    auto lower = to_lower(val);
+    if (lower == "true" || lower == "yes" || lower == "y" || lower == "1") {
+        return "yes";
+    } else if (lower == "false" || lower == "no" || lower == "n" || lower == "0") {
+        return "no";
+    } else {
+        throw UserError("invalid value for yes/no option " + get_name() + ": " + val);
+    }
+}
+
+/**
+ * Constructs a new BooleanOption.
+ */
+BooleanOption::BooleanOption(
+    Str &&name,
+    Str &&description,
+    Bool default_value
+) :
+    Option(
+        std::forward<Str>(name),
+        std::forward<Str>(description),
+        default_value ? "yes" : "no"
+    )
+{
+}
+
+/**
+ * Validates the given option. Just implements validate(), but must be
+ * non-virtual to be usable in the constructor.
+ */
+Str EnumerationOption::validate_(const Str &val) const {
+    auto x = to_lower(val);
+    for (const auto &option : options) {
+        if (to_lower(option) == x) {
+            return option;
+        }
+    }
+    StrStrm s{};
+    s << "invalid value for option " << get_name() << ":";
+    s << " possible values are " << options.to_string("", ", ", "", ", or ", " or ");
+    s << ", but " << val << " was given";
+    throw UserError(s.str());
+}
+
+/**
+ * Returns a description of the syntax for allowable values.
+ */
+Str EnumerationOption::syntax() const {
+    return "one of " + options.to_string("", ", ", "", ", or ", " or ");
+}
+
+/**
+ * Validates and optionally desugars the given input. Should throw an
+ * Exception if the value is invalid.
+ */
+Str EnumerationOption::validate(const Str &val) const {
+    return validate_(val);
+}
+
+/**
+ * Constructs a new EnumerationOption.
+ */
+EnumerationOption::EnumerationOption(
+    Str &&name,
+    Str &&description,
+    Str &&default_value,
+    List<Str> &&options
+) :
+    Option(
+        std::forward<Str>(name),
+        std::forward<Str>(description),
+        std::forward<Str>(default_value)
+    ),
+    options(std::move(options))
+{
+    if (!default_value.empty()) {
+        default_value = validate_(default_value);
+    }
+}
+
+/**
+ * Validates the given option. Just implements validate(), but must be
+ * non-virtual to be usable in the constructor.
+ */
+Str IntegerOption::validate_(const Str &val) const {
+    bool success;
+    auto int_val = parse_int(val, 0, &success);
+    if (success && int_val >= minimum && int_val <= maximum) {
+        return val;
+    }
+    auto x = to_lower(val);
+    for (const auto &option : string_options) {
+        if (to_lower(option) == x) {
+            return option;
+        }
+    }
+    StrStrm s{};
+    s << "invalid value for option " << get_name() << ":";
+    s << " value must be " << syntax();
+    s << ", but " << val << " was given";
+    throw UserError(s.str());
+}
+
+/**
+ * Returns a description of the syntax for allowable values.
+ */
+Str IntegerOption::syntax() const {
+    StrStrm s{};
+    if (minimum == MIN) {
+        if (maximum == MAX) {
+            s << "any integer";
         } else {
-            QL_EOUT("Un-known option:" << opt_name);
+            s << "an integer greater than or equal to " << maximum;
         }
-        return opt_value;
+    } else {
+        if (maximum == MAX) {
+            s << "an integer less than or equal to " << minimum;
+        } else {
+            s << "an integer between " << minimum << " and " << maximum << " inclusive";
+        }
     }
-
-};
-
-QL_GLOBAL Options ql_options("OpenQL Options");
-
-void print() {
-    ql_options.help();
+    if (!string_options.empty()) {
+        if (string_options.size() == 1) {
+            s << " or " << string_options.front();
+        } else {
+            s << " or one of " + string_options.to_string("", ", ", "", ", or ", " or ");
+        }
+    }
+    return s.str();
 }
 
-void print_current_values() {
-    ql_options.print_current_values();
+/**
+ * Validates and optionally desugars the given input. Should throw an
+ * Exception if the value is invalid.
+ */
+Str IntegerOption::validate(const Str &val) const {
+    return validate_(val);
 }
 
-void set(const Str &opt_name, const Str &opt_value) {
-    ql_options.set(opt_name, opt_value);
-
-    if (opt_name == "log_level") {
-        logger::set_log_level(opt_value);
-    } else if (opt_name == "output_dir") {
-        make_dirs(opt_value);
+/**
+ * Constructs a new IntegerOption.
+ */
+IntegerOption::IntegerOption(
+    Str &&name,
+    Str &&description,
+    Str &&default_value,
+    Int minimum,
+    Int maximum,
+    List<Str> &&string_options
+) :
+    Option(
+        std::forward<Str>(name),
+        std::forward<Str>(description),
+        std::forward<Str>(default_value)
+    ),
+    minimum(minimum),
+    maximum(maximum),
+    string_options(std::move(string_options))
+{
+    if (!default_value.empty()) {
+        default_value = validate_(default_value);
     }
 }
 
-Str get(const Str &opt_name) {
-    return ql_options.get(opt_name);
+/**
+ * Validates the given option. Just implements validate(), but must be
+ * non-virtual to be usable in the constructor.
+ */
+Str RealOption::validate_(const Str &val) const {
+    bool success;
+    auto real_val = parse_real(val, 0, &success);
+    if (success && real_val >= minimum && real_val <= maximum) {
+        return val;
+    }
+    auto x = to_lower(val);
+    for (const auto &option : string_options) {
+        if (to_lower(option) == x) {
+            return option;
+        }
+    }
+    StrStrm s{};
+    s << "invalid value for option " << get_name() << ":";
+    s << " value must be " << syntax();
+    s << ", but " << val << " was given";
+    throw UserError(s.str());
 }
 
-void reset_options() {
-    ql_options.reset_options();
+/**
+ * Returns a description of the syntax for allowable values.
+ */
+Str RealOption::syntax() const {
+    StrStrm s{};
+    if (minimum == -INF) {
+        if (maximum == INF) {
+            s << "any real number";
+        } else {
+            s << "an real number greater than or equal to " << maximum;
+        }
+    } else {
+        if (maximum == INF) {
+            s << "an real number less than or equal to " << minimum;
+        } else {
+            s << "an real number between " << minimum << " and " << maximum << " inclusive";
+        }
+    }
+    if (!string_options.empty()) {
+        if (string_options.size() == 1) {
+            s << " or " << string_options.front();
+        } else {
+            s << " or one of " + string_options.to_string("", ", ", "", ", or ", " or ");
+        }
+    }
+    return s.str();
+}
+
+/**
+ * Validates and optionally desugars the given input. Should throw an
+ * Exception if the value is invalid.
+ */
+Str RealOption::validate(const Str &val) const {
+    return validate_(val);
+}
+
+/**
+ * Constructs a new IntegerOption.
+ */
+RealOption::RealOption(
+    Str &&name,
+    Str &&description,
+    Str &&default_value,
+    Real minimum,
+    Real maximum,
+    List<Str> &&string_options
+) :
+    Option(
+        std::forward<Str>(name),
+        std::forward<Str>(description),
+        std::forward<Str>(default_value)
+    ),
+    minimum(minimum),
+    maximum(maximum),
+    string_options(std::move(string_options))
+{
+    if (!default_value.empty()) {
+        default_value = validate_(default_value);
+    }
+}
+
+/**
+ * Adds a string option.
+ */
+Option &Options::add_str(
+    Str &&name,
+    Str &&description,
+    Str &&default_value
+) {
+    return add<Option>(
+        std::forward<Str>(name),
+        std::forward<Str>(description),
+        std::forward<Str>(default_value)
+    );
+}
+
+/**
+ * Adds a boolean (yes/no) option.
+ */
+Option &Options::add_bool(
+    Str &&name,
+    Str &&description,
+    Bool default_value
+) {
+    return add<BooleanOption>(
+        std::forward<Str>(name),
+        std::forward<Str>(description),
+        default_value
+    );
+}
+
+/**
+ * Adds an enumeration option.
+ */
+Option &Options::add_enum(
+    Str &&name,
+    Str &&description,
+    Str &&default_value,
+    List<Str> &&options
+) {
+    return add<EnumerationOption>(
+        std::forward<Str>(name),
+        std::forward<Str>(description),
+        std::forward<Str>(default_value),
+        std::forward<List<Str>>(options)
+    );
+}
+
+/**
+ * Adds an integer option.
+ */
+Option &Options::add_int(
+    Str &&name,
+    Str &&description,
+    Str &&default_value,
+    Int minimum,
+    Int maximum,
+    List<Str> &&string_options
+) {
+    return add<IntegerOption>(
+        std::forward<Str>(name),
+        std::forward<Str>(description),
+        std::forward<Str>(default_value),
+        minimum,
+        maximum,
+        std::forward<List<Str>>(string_options)
+    );
+}
+
+/**
+ * Adds a real number option.
+ */
+Option &Options::add_real(
+    Str &&name,
+    Str &&description,
+    Str &&default_value,
+    Real minimum,
+    Real maximum,
+    List<Str> &&string_options
+) {
+    return add<RealOption>(
+        std::forward<Str>(name),
+        std::forward<Str>(description),
+        std::forward<Str>(default_value),
+        minimum,
+        maximum,
+        std::forward<List<Str>>(string_options)
+    );
+}
+
+/**
+ * Returns mutable access to a configuration option.
+ */
+Option &Options::operator[](const Str &key) {
+    auto it = options.find(key);
+    if (it == options.end()) {
+        throw UserError("unknown option: " + key);
+    }
+    return *it->second;
+}
+
+/**
+ * Returns immutable access to a configuration option.
+ */
+const Option &Options::operator[](const Str &key) const {
+    auto it = options.find(key);
+    if (it == options.end()) {
+        throw UserError("unknown option: " + key);
+    }
+    return *it->second;
+}
+
+/**
+ * Updates our options with the values from the src object. The supported
+ * options should be compatible.
+ */
+void Options::update_from(const Options &src) {
+    for (const auto &it : src.options) {
+        if (it.second->is_set()) {
+            operator[](it.first).set(it.second->as_str());
+        }
+    }
+}
+
+/**
+ * Resets all options to their default values.
+ */
+void Options::reset() {
+    for (auto &it : options) {
+        it.second->reset();
+    }
+}
+
+/**
+ * Writes a help message for this option to the given stream (or stdout).
+ */
+void Options::help(std::ostream &os) const {
+    if (options.empty()) {
+        os << "no options have been added!" << std::endl;
+        return;
+    }
+    for (const auto &it : options) {
+        os << it.second << std::endl;
+    }
+}
+
+/**
+ * Dumps all options (or only options which were explicitly set) to the
+ * given stream (or stdout).
+ */
+void Options::dump(bool only_set, std::ostream &os) const {
+    bool any = false;
+    for (const auto &it : options) {
+        if (it.second->is_set() || !only_set) {
+            os << it.second->get_name() << ": " << it.second->as_str() << std::endl;
+            any = true;
+        }
+    }
+    if (!any) {
+        os << "no options to dump" << std::endl;
+    }
+}
+
+/**
+ * Stream write operator for Options.
+ */
+std::ostream &operator<<(std::ostream &os, const Options &options) {
+    options.help(os);
+    return os;
+}
+
+/**
+ * Makes a new options record for OpenQL.
+ */
+Options make_ql_options() {
+    auto options = Options();
+
+    options.add_enum("log_level", "Log levels", "LOG_NOTHING", {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}).with_callback([](Option &x){logger::set_log_level(x.as_str());});
+    options.add_str ("output_dir", "Name of output directory", "test_output").with_callback([](Option &x){make_dirs(x.as_str());});;
+    options.add_bool("unique_output", "Make output files unique");
+    options.add_bool("prescheduler", "Run qasm (first) scheduler?", true);
+    options.add_bool("scheduler_post179", "Issue 179 solution included", true);
+    options.add_bool("print_dot_graphs", "Print (un-)scheduled graphs in DOT format");
+    options.add_enum("scheduler", "scheduler type", "ALAP", {"ASAP", "ALAP"});
+    options.add_bool("scheduler_uniform", "Do uniform scheduling or not");
+    options.add_bool("scheduler_commute", "Commute gates when possible, or not");
+    options.add_bool("use_default_gates", "Use default gates or not", "yes");
+    options.add_bool("optimize", "optimize or not");
+    options.add_bool("clifford_prescheduler", "clifford optimize before prescheduler yes or not");
+    options.add_bool("clifford_postscheduler", "clifford optimize after prescheduler yes or not");
+    options.add_bool("clifford_premapper", "clifford optimize before mapping yes or not");
+    options.add_bool("clifford_postmapper", "clifford optimize after mapping yes or not");
+    options.add_enum("decompose_toffoli", "Type of decomposition used for toffoli", "no", {"no", "NC", "AM"});
+    options.add_enum("quantumsim", "Produce quantumsim output, and of which kind", "no", {"no", "yes", "qsoverlay"});
+    options.add_bool("issue_skip_319", "Issue skip instead of wait in bundles");
+    options.add_str ("backend_cc_map_input_file", "Name of CC input map file");
+    options.add_enum("cz_mode", "CZ mode", "manual", {"manual", "auto"});
+    options.add_enum("mapper", "Mapper heuristic", "no", {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"});
+    options.add_bool("mapinitone2one", "Initialize mapping of virtual qubits one to one to real qubits", true);
+    options.add_bool("mapprepinitsstate", "Prep gate leaves qubit in zero state");
+    options.add_bool("mapassumezeroinitstate", "Assume that qubits are initialized to zero state");
+    options.add_enum("initialplace", "Initialplace qubits before mapping", "no", {"no", "yes", "1s", "10s", "1m", "10m", "1h", "1sx", "10sx", "1mx", "10mx", "1hx"});
+    options.add_int ("initialplace2qhorizon", "Initialplace considers only this number of initial two-qubit gates", "0", 0, 100);
+    options.add_enum("maplookahead", "Strategy wrt selecting next gate(s) to map", "noroutingfirst", {"no", "1qfirst", "noroutingfirst", "all"});
+    options.add_enum("mappathselect", "Which paths: all or borders", "all", {"all", "borders"});
+    options.add_enum("mapselectswaps", "Select only one swap, or earliest, or all swaps for one alternative", "all", {"one", "all", "earliest"});
+    options.add_bool("maprecNN2q", "Recursing also on NN 2q gate?");
+    options.add_int ("mapselectmaxlevel", "Maximum recursion in selecting alternatives on minimum extension", "0", 0, 10, {"inf"});
+    options.add_enum("mapselectmaxwidth", "Maximum width number of alternatives to enter recursion with", "min", {"min", "minplusone", "minplushalfmin", "minplusmin", "all"});
+    options.add_enum("maptiebreak", "Tie break method", "random", {"first", "last", "random", "critical"});
+    options.add_int ("mapusemoves", "Use unused qubit to move thru", "yes", 0, 20, {"no", "yes"});
+    options.add_bool("mapreverseswap", "Reverse swap operands when better", true);
+    options.add_bool("write_qasm_files", "write (un-)scheduled (with and without resource-constraint) qasm files");
+    options.add_bool("write_report_files", "write report files on circuit characteristics and pass results");
+
+    return options;
+}
+
+/**
+ * Global options object for all of OpenQL.
+ */
+Options global = make_ql_options();
+
+/**
+ * Convenience function for getting an option value as a string from the global
+ * options record.
+ */
+const Str &get(const Str &key) {
+    return global[key].as_str();
+}
+
+/**
+ * Convenience function for setting an option value for the global options
+ * record.
+ */
+void set(const Str &key, const Str &value) {
+    global[key] = value;
 }
 
 } // namespace options

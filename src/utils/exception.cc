@@ -89,5 +89,16 @@ Exception::Exception(
 ) noexcept : std::runtime_error(make_message(msg, system)) {
 }
 
+/**
+ * Creates a new exception object with the given message. If system is set,
+ * the standard library is queried for the string representation of the current
+ * value of errno, and this is appended to the message.
+ */
+UserError::UserError(
+    const Str &msg,
+    bool system
+) noexcept : std::runtime_error(make_message(msg, system)) {
+}
+
 } // namespace utils
 } // namespace ql
