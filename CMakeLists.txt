@@ -302,16 +302,6 @@ find_package(Threads REQUIRED)
 target_link_libraries(ql PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 
 
-# CLI11 -----------------------------------------------------------------------
-
-# Wrap CLI11 in an interface library to link against.
-add_library(cli11 INTERFACE)
-target_include_directories(cli11 INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/CLI11/include/"
-)
-target_link_libraries(ql PUBLIC cli11)
-
-
 # LEMON -----------------------------------------------------------------------
 
 # Configure LEMON. LEMON by itself exposes the "lemon" target to link against,

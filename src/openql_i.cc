@@ -25,7 +25,7 @@ void initialize() {
         QL_IOUT("initializing OpenQL library");
     }
     initialized = true;
-    ql::options::reset_options();
+    ql::options::global.reset();
 }
 
 std::string get_version() {
@@ -37,15 +37,15 @@ void set_option(const std::string &option_name, const std::string &option_value)
         QL_WOUT("option set before initialize()! In the future, please call initialize() before anything else!");
         initialize();
     }
-    ql::options::set(option_name, option_value);
+    ql::options::global[option_name] = option_value;
 }
 
 std::string get_option(const std::string &option_name) {
-    return ql::options::get(option_name);
+    return ql::options::global[option_name].as_str();
 }
 
 void print_options() {
-    ql::options::print();
+    ql::options::global.help();
 }
 
 Platform::Platform() {}
