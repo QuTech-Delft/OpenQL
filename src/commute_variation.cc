@@ -21,11 +21,11 @@ using namespace utils;
 /*
     The generation of all variations is done as follows:
     - At each node in the dependence graph, check its incoming dependences
-      whether this node is such a first non-Read or first non-D use;
+      whether this node is such a first non-Zrotate or first non-Xrotate use;
       those incoming dependences are ordered by their dependence type and their cause (the qubit causing the dependence),
-      - when WAR/DAR then we have commutation on a Read operand (1st operand of CNOT, both operands of CZ),
+      - when DAZ/XAZ then we have commutation on a Zrotate operand (1st operand of CNOT, both operands of CZ),
         the cause represents the operand qubit
-      - when WAD/RAD then we have commutation on a D operand (2nd operand of CNOT),
+      - when DAX/ZAX then we have commutation on an Xrotate operand (2nd operand of CNOT),
         the cause represents the operand qubit
       and the possibly several sets of commutable gates are filtered out from these incoming dependences.
       Each commutable set is represented by a list of arcs in the depgraph, i.e. arcs representing dependences
@@ -39,12 +39,12 @@ using namespace utils;
       All variations can be enumerated by varying lexicographically
       through those combinations of permutations (a kind of goedelisation).
       One permutation of one commutable set stands for a particular order of the gates in the set;
-      in the depgraph this order can be enforced by adding to the depgraph RAR (for sets of Control-Unitaries)
-      or DAD (for sets of CNOT 2nd operand commutable gates) dependences between the gates in the set, from first to last.
+      in the depgraph this order can be enforced by adding to the depgraph ZAZ (for sets of Control-Unitaries)
+      or XAX (for sets of CNOT 2nd operand commutable gates) dependences between the gates in the set, from first to last.
     - Then for each variation:
       - the dependences are added
       - tested whether the dependence graph is still acyclic; when the dependence graph became cyclic
-        after having added the RAR/DAD dependences, some commutable sets were interfering, i.e. there were
+        after having added the ZAZ/XAX dependences, some commutable sets were interfering, i.e. there were
         additional dependences (on the other operands) between members of those commutable sets that enforce an order
         between particular pairs of members of those sets;
         when the dependence graph became cyclic, this variation is not feasible and can be skipped
@@ -71,7 +71,7 @@ private:
     }
 
 public:
-    // after scheduling, delete the added arcs (RAR/DAD) from the depgraph to restore it to the original state
+    // after scheduling, delete the added arcs (ZAZ/XAX) from the depgraph to restore it to the original state
     void clean_variation( List<lemon::ListDigraph::Arc>& newarcslist) {
         for (auto a : newarcslist) {
             QL_DOUT("...... erasing arc with id " << graph.id(a) << " from " << instruction[graph.source(a)]->qasm() << " to " << instruction[graph.target(a)]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
@@ -106,7 +106,7 @@ public:
     }
 
     // make this variation effective by generating a sequentialization for the nodes in each subvarslist
-    // the sequentialization is done by adding RAR/DAD dependences to the dependence graph;
+    // the sequentialization is done by adding ZAZ/XAX dependences to the dependence graph;
     // those are kept for removal again from the depgraph after scheduling
     // the original varslist is copied locally to a recipe_varslist that is gradually reduced to empty while generating
     void gen_variation(
@@ -135,7 +135,7 @@ public:
                     auto newarc = graph.addArc(prevn, n);
                     weight[newarc] = weight[a];
                     cause[newarc] = cause[a];
-                    depType[newarc] = (depType[a] == WAR ? RAR : DAD);
+                    depType[newarc] = (depType[a] == DAZ ? ZAZ : XAX);
                     QL_DOUT("...... added new arc with id " << graph.id(newarc) << " from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm() << " as " << DepTypesNames[depType[newarc]] << " by q" << cause[newarc]);
                     newarcslist.push_back(newarc);
                 }
@@ -203,42 +203,48 @@ public:
     }
 
     // for each node scan all incoming dependences
-    // - when WAR/DAR then we have commutation on a Read operand (1st operand of CNOT, both operands of CZ);
-    //   those incoming dependences are collected in Rarclist and further split by their cause in add_variations
-    // - when WAD/RAD then we have commutation on a D operand (2nd operand of CNOT);
-    //   those incoming dependences are collected in Darclist and further split by their cause in add_variations
+    // - when DAZ/XAZ then we have commutation on a Zrotate operand (1st operand of CNOT, both operands of CZ);
+    //   those incoming dependences are collected in Zarclist and further split by their cause in add_variations
+    // - when DAX/ZAX then we have commutation on an Xrotate operand (2nd operand of CNOT);
+    //   those incoming dependences are collected in Xarclist and further split by their cause in add_variations
     void find_variations(
         List<List<lemon::ListDigraph::Arc>>& varslist,
         VarCode& total
     ) {
         for (lemon::ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
             QL_DOUT("Incoming unfiltered dependences of node " << ": " << instruction[n]->qasm() << " :");
-            List<lemon::ListDigraph::Arc> Rarclist;
-            List<lemon::ListDigraph::Arc> Darclist;
+            List<lemon::ListDigraph::Arc> Zarclist;
+            List<lemon::ListDigraph::Arc> Xarclist;
             for( lemon::ListDigraph::InArcIt arc(graph,n); arc != lemon::INVALID; ++arc ) {
                 if (
-                    depType[arc] == WAW
+                    depType[arc] == RAR
                     ||  depType[arc] == RAW
-                    ||  depType[arc] == DAW
+                    ||  depType[arc] == WAR
+                    ||  depType[arc] == WAW
+                    ||  depType[arc] == DAD
+                    ||  depType[arc] == ZAD
+                    ||  depType[arc] == XAD
                 ) {
                     continue;
                 }
                 QL_DOUT("... Encountering relevant " << DepTypesNames[depType[arc]] << " by q" << cause[arc] << " from " << instruction[graph.source(arc)]->qasm());
                 if (
-                    depType[arc] == WAR
-                    ||  depType[arc] == DAR
+                    depType[arc] == DAZ
+                    ||  depType[arc] == XAZ
                 ) {
-                    Rarclist.push_back(arc);
+                    Zarclist.push_back(arc);
                 }
                 else if (
-                    depType[arc] == WAD
-                    ||  depType[arc] == RAD
+                    depType[arc] == DAX
+                    ||  depType[arc] == ZAX
                 ) {
-                    Darclist.push_back(arc);
+                    Xarclist.push_back(arc);
+                } else {
+                    QL_FATAL("Unknown dependence type " << DepTypesNames[depType[arc]] << " by q" << cause[arc] << " from " << instruction[graph.source(arc)]->qasm());
                 }
             }
-            add_variations(Rarclist, varslist, total);
-            add_variations(Darclist, varslist, total);
+            add_variations(Zarclist, varslist, total);
+            add_variations(Xarclist, varslist, total);
         }
     }
 
@@ -342,7 +348,7 @@ public:
         Map<UInt, List<VarCode>> vars_per_depth;
     
         for (VarCode varno = 0; varno < total; varno++) {
-            // generate additional (RAR or DAD) dependences to sequentialize this variation
+            // generate additional (ZAZ or XAX) dependences to sequentialize this variation
             sched.gen_variation(varslist, newarcslist, varno);
             if (!dag(sched.graph)) {
                 // there are cycles among the dependences so this variation is infeasible

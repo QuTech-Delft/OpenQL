@@ -18,39 +18,50 @@
  * their parameters, and for each gate depending on the gate type and parameter
  * value and previous gates operating on the same parameters, it creates a
  * dependency of the current gate on that previous gate. Such a dependency has a
- * type (RAW, WAW, etc.), cause (the qubit or classical register used as
+ * type (RAW, WAW, etc.), cause (the qubit, classical register or bit register used as
  * parameter), and a weight (the cycles the previous gate takes to complete its
  * execution, after which the current gate can start execution).
  *
- * In dependency graph creation, each qubit/classical register (creg,breg) use
+ * In dependency graph creation, each qubit/classical register/bit register (creg,breg) use
  * in each gate is seen as an "event". The following events are distinguished:
  *
- *  - W for Write: such a use must sequentialize with any previous and later
- *    uses of the same qubit/creg/breg. This is the default for qubits in a gate
- *    and for assignment/modifications in classical code.
- *  - Z/R for Z-rotate or Read: such uses can be arbitrarily reordered (as long as other
- *    dependencies allow that). This event applies to all operands of CZ, the
- *    first operand of CNOT gates, all Z rotations (RZ,Z,Z90(SDAG),ZM90(S)),
- *    and to all reads in classical code.
+ *  - W for Write:
+ *    such a use must sequentialize with all previous and later
+ *    uses of the same creg/breg. This is the default in classical code.
+ *    Since all Writes sequentialize, one has only to create dependences with the previous and next one.
+ *  - R for Read:
+ *    such uses can be arbitrarily reordered (as long as other dependences allow that),
+ *    but sequentialize with the previous and following Write on the same register.
+ *    It applies to all reads in classical code (that don't have side effects).
+ *    uses of the same creg/breg. This is the default in classical code.
+ *  - D for Default:
+ *    such a use must sequentialize with all previous and later
+ *    uses of the same qubit. This is the default for qubit operands of gates.
+ *    Since all Defaults sequentialize, one has only to create dependences with the previous and next one.
+ *  - X for Xrotate:
+ *    such uses can be arbitrarily reordered (as long as other
+ *    dependencies allow that) but are sequentialized with Write and Zrotate events on the same qubit.
+ *    This event applies to the second operand of CNOT gates,
+ *    and all X rotations: CNOT(a,d), CNOT(b,d), RX(d), all commute.
+ *  - Z for Z-rotate:
+ *    such uses can be arbitrarily reordered (as long as other
+ *    dependencies allow that) but are sequentialized with Write and Xrotate events on the same qubit.
+ *    This event applies to all operands of CZ, the first operand of CNOT gates,
+ *    and all Z rotations (RZ,Z,Z90(SDAG),ZM90(S)).
  *    It also applies in general to the control operand of Control Unitaries.
- *    It represents commutativity between the gates which such use: CU(a,b),
+ *    It represents commutativity between the gates with such use: CU(a,b),
  *    CZ(a,c), CZ(d,a), CNOT(a,e), RZ(a), S(a), all commute.
- *  - X/D for X-rotate: such uses can be arbitrarily reordered but are sequentialized with W
- *    and Z events on the same qubit. This event applies to the second operand
- *    of CNOT gates, and all X rotations: CNOT(a,d), CNOT(b,d), RX(d), all commute.
- *  With this, we effectively get the following table of event transitions (from left-bottom to right-up),
- *  in which 'no' indicates no dependency from left event to top event
- *  and '/' indicates a dependency from left to top.
+ *  With this, we effectively get the following tables of event transitions (from left-bottom to right-up):
+ *  for creg and breg operands:
+ *           W   R
+ *        W  WAW RAW
+ *        R  WAR RAR
  *
- *             W   Z/R X/D                W   Z/R X/D
- *        W    /   /   /              W   WAW RAW DAW
- *        Z/R  /   no  /              Z/R WAR RAR DAR
- *        X/D  /   /   no             X/D WAD RAD DAD
- *
- * When the 'no' dependencies are created (RAR and/or DAD), the respective
- * commutatable gates are sequentialized according to the original circuit's
- * order. With all 'no's replaced by '/', all event types become equivalent
- * (i.e. as if they were Write).
+ *  for qubit operands:
+ *          D   X   Z
+ *        D DAD XAD ZAD
+ *        X DAX XAX ZAX
+ *        Z DAZ XAZ ZAZ
  *
  * Schedulers come essentially in the following forms:
  *  - ASAP: a plain forward scheduler using dependencies only, aiming at
@@ -102,7 +113,6 @@ void Scheduler::stripname(Str &name) {
 }
 
 // Add a dependency between two nodes: from node fromID to node toID
-// deptype is one of {RAW, WAW, WAR, RAR, RAD, DAR, DAD, WAD, DAW};
 // combo is the operand encoded in a qubit+creg+breg combined index space:
 // - 0 <= combo < qubit_count:                        combo is a qubit index
 // - 0 <= combo-qubit_count < creg_count:             combo-qubit_count is a classical register index
@@ -131,15 +141,18 @@ void Scheduler::add_dep(Int fromID, Int toID, enum DepTypes deptype, UInt combop
 }
 
 // Signal a new event to the depgraph constructor:
-// the new event is of type currEvent (which is Writer, Reader or D)
+// the new event is of type currEvent
 // and concerns the current gate encoded by currID
 // and its given combooperand (see add_dep for this encoding);
 // commutes indicates whether this event is allowed to commute with the other events of its type.
 // This event drives a state machine to do one step (one state transition).
-// It accepts the following event sequence per combooperand: Writer { Writer | Reader+ | D+ }* Writer,
-// in which the first Writer is the SOURCE and the last Writer is the SINK.
-// This state machine has as state { LastEvent[], LastWriter[], LastReaders[] and LastDs[] },
+// It accepts the following event sequence per qubit operand: Default { Default | Xrotate+ | Zrotate+ }* Default
+// and the following event sequence per creg/breg operand: Write { Write | Read+ }* Write,
+// in which the first Writer/Default is the SOURCE and the last Writer/Default is the SINK.
+// This state machine has as state { LastEvent[], LastWriter[], LastReaders[] and LastXrotates[] },
 // which are vectors over all possible combooperands (all qubits, all classical registers and all bit registers).
+// LastWriter is used for Write and Default events, and
+// LastReaders is used for Read and Zrotate events since they exclude on operand type.
 void Scheduler::new_event(
     int currID,
     UInt combooperand,
@@ -148,57 +161,84 @@ void Scheduler::new_event(
 ) {
     QL_DOUT(".. " << EventTypeNames[currEvent] << " on operand: " << combooperand << " while in " << EventTypeNames[LastEvent[combooperand]]);
     switch (currEvent) {
-    case Writer:
-        if (LastEvent[combooperand] == Writer) {
+    case Write:
+        if (LastEvent[combooperand] == Write) {
             add_dep(LastWriter[combooperand], currID, WAW, combooperand);
         }
-        if (LastEvent[combooperand] == Reader) {
+        if (LastEvent[combooperand] == Read) {
             for (auto &RgateID : LastReaders[combooperand]) {
                 add_dep(RgateID, currID, WAR, combooperand);
-            }
-        }
-        if (LastEvent[combooperand] == D) {
-            for (auto &DgateID : LastDs[combooperand]) {
-                add_dep(DgateID, currID, WAD, combooperand);
             }
         }
         LastWriter[combooperand] = currID;
         break;
 
-    case Reader:
+    case Read:
         add_dep(LastWriter[combooperand], currID, RAW, combooperand);
-        if (LastEvent[combooperand] != Reader) {
+        if (LastEvent[combooperand] != Read) {
             LastReaders[combooperand].clear();
         }
-        if (LastEvent[combooperand] == Reader) {
+//      if (LastEvent[combooperand] == Read) {
+//          if (!commutes) {
+//              for (auto &RgateID : LastReaders[combooperand]) {
+//                  add_dep(RgateID, currID, RAR, combooperand);
+//              }
+//          }
+//      }
+        LastReaders[combooperand].push_back(currID);
+        break;
+
+    case Default:
+        if (LastEvent[combooperand] == Default) {
+            add_dep(LastWriter[combooperand], currID, DAD, combooperand);
+        }
+        if (LastEvent[combooperand] == Zrotate) {
+            for (auto &ZgateID : LastReaders[combooperand]) {
+                add_dep(ZgateID, currID, DAZ, combooperand);
+            }
+        }
+        if (LastEvent[combooperand] == Xrotate) {
+            for (auto &XgateID : LastXrotates[combooperand]) {
+                add_dep(XgateID, currID, DAX, combooperand);
+            }
+        }
+        LastWriter[combooperand] = currID;
+        break;
+
+    case Zrotate:
+        add_dep(LastWriter[combooperand], currID, ZAD, combooperand);
+        if (LastEvent[combooperand] != Zrotate) {
+            LastReaders[combooperand].clear();
+        }
+        if (LastEvent[combooperand] == Zrotate) {
             if (!commutes) {
-                for (auto &RgateID : LastReaders[combooperand]) {
-                    add_dep(RgateID, currID, RAR, combooperand);
+                for (auto &ZgateID : LastReaders[combooperand]) {
+                    add_dep(ZgateID, currID, ZAZ, combooperand);
                 }
             }
         }
-        for (auto &DgateID : LastDs[combooperand]) {
-            add_dep(DgateID, currID, RAD, combooperand);
+        for (auto &XgateID : LastXrotates[combooperand]) {
+            add_dep(XgateID, currID, ZAX, combooperand);
         }
         LastReaders[combooperand].push_back(currID);
         break;
 
-    case D:
-        add_dep(LastWriter[combooperand], currID, DAW, combooperand);
-        if (LastEvent[combooperand] != D) {
-            LastDs[combooperand].clear();
+    case Xrotate:
+        add_dep(LastWriter[combooperand], currID, XAD, combooperand);
+        if (LastEvent[combooperand] != Xrotate) {
+            LastXrotates[combooperand].clear();
         }
-        for (auto &RgateID : LastReaders[combooperand]) {
-            add_dep(RgateID, currID, DAR, combooperand);
+        for (auto &ZgateID : LastReaders[combooperand]) {
+            add_dep(ZgateID, currID, XAZ, combooperand);
         }
-        if (LastEvent[combooperand] == D) {
+        if (LastEvent[combooperand] == Xrotate) {
             if (!commutes) {
-                for (auto &DgateID : LastDs[combooperand]) {
-                    add_dep(DgateID, currID, DAD, combooperand);
+                for (auto &XgateID : LastXrotates[combooperand]) {
+                    add_dep(XgateID, currID, XAX, combooperand);
                 }
             }
         }
-        LastDs[combooperand].push_back(currID);
+        LastXrotates[combooperand].push_back(currID);
         break;
     }
     LastEvent[combooperand] = currEvent;
@@ -230,7 +270,7 @@ void Scheduler::init(
     // and with those previous gates as source that have an operand match with the current gate:
     // this dependence creation is done by a state matchine triggered to step on each operand of each gate encountered.
     // operands can be a qubit, a classical register or a bit register
-    // the indices in LastReaders, LastDs and LastWriter are operand indices in the combined index space (see add_dep)
+    // the indices in LastReaders, LastXrotates and LastWriter are operand indices in the combined index space (see add_dep)
 
     // start filling the dependency graph by creating the s node, the top of the graph
     {
@@ -244,10 +284,25 @@ void Scheduler::init(
     Int srcID = graph.id(s);
 
     // start the state machine as if the SOURCE gate with a write on all possible operands has been seen
-    LastEvent.resize(total_reg_count, Writer);      // SOURCE virtually writes to all qubits/cregs/bregs
     LastWriter.resize(total_reg_count, srcID);
-    LastReaders.resize(total_reg_count);            // LastReaders and LastDs start off as empty lists
-    LastDs.resize(total_reg_count);
+    LastReaders.resize(total_reg_count);            // LastReaders and LastXrotates start off as empty lists
+    LastXrotates.resize(total_reg_count);
+    LastEvent.resize(total_reg_count);
+    {
+        // SOURCE virtually writes to all qubits/cregs/bregs
+        Vec<UInt> all_operands(total_reg_count);
+        std::iota(all_operands.begin(), all_operands.end(), 0);
+        for (auto operand : all_operands) {
+            QL_DOUT(".. Source operand, event init dep: " << operand);
+            if (operand >= breg_base) {
+                LastEvent[operand] = Write;
+            } else if (operand >= creg_base) {
+                LastEvent[operand] = Write;
+            } else {
+                LastEvent[operand] = Default;
+            }
+        }
+    }
 
     // for each gate pointer ins in the circuit, add a node and add dependencies on previous gates to it
     for (auto ins : ckt) {
@@ -281,54 +336,34 @@ void Scheduler::init(
         // Every qubit use influences the qubit, updates it, so would be considered a Read+Write at the same time.
         // In dependency graph construction, this leads to WAW-dependency chains of all uses of the same qubit,
         // and hence in a scheduler using this graph to a sequentialization of those uses in the original program order.
-        //
         // For a scheduler, only the presence of a dependency counts, not its type (RAW/WAW/etc.).
-        // A dependency graph also has other uses apart from the scheduler: e.g. to find chains of live qubits,
-        // from their creation (Prep etc.) to their destruction (Measure, etc.) in allocation of virtual to real qubits.
-        // For those uses it makes sense to make a difference with a gate doing a Read+Write, just a Write or just a Read:
-        // a Prep creates a new 'value' (Write); wait, display, x, swap, cnot, all pass this value on (so Read+Write),
-        // while a Measure 'destroys' the 'value' (Read+Write of the qubit, Write of the creg),
-        // the destruction aspect of a Measure being implied by it being followed by a Prep (Write only) on the same qubit.
-        // Furthermore Writes can model barriers on a qubit (see Wait, Display, etc.), because Writes sequentialize.
-        // The dependency graph creation below models a graph suitable for all functions, including chains of live qubits.
-
-        // Control-operands of Controlled Unitaries commute, independent of the Unitary,
-        // i.e. these gates need not be kept in order.
-        // But, of course, those qubit uses should be ordered after (/before) the last (/next) non-control use of the qubit.
-        // In this way, those control-operand qubit uses would be like pure Reads in dependency graph construction.
-        // A problem might be that the gates with the same control-operands might be scheduled in parallel then.
-        // In a non-resource scheduler that will happen but it doesn't do harm because it is not a real machine.
+        //
+        // But as in classical computation Reads commute, in quantum computation e.g. Z rotations commute.
+        // However, multiple classes of such uses can be readily distinguished, e.g. X rotations and Z rotations.
+        // So all X rotations commute and all Zs commute, but an X followed by a Z or vice-versa must be sequentialized.
+        // And since a Write for a qubit is not really correct, we call the default behaviour Default.
+        // So in classical computing with 2 event types, there can be 4 kinds of dependences: RAR, RAW, WAR, and WAW;
+        // of these an RAR dependence is only created when we explicitly want to sequentialize, i.e. ignore commutability.
+        // Similarly with 3 event types in quantum, there can be 9 kinds of dependences:
+        // DAD, DAX, DAZ, XAD, XAX, XAZ, ZAD, ZAX, and ZAZ. Again, XAX and ZAZ dependences
+        // are only created when we explicitly want to sequentialize, i.e. ignore commutability.
+        // Since dependency graphs also has other uses apart from the scheduler, and we might
+        // reconstruct the sets of commuting events later, we annotate the dependence type (and operand) in the edge.
+        //
+        // In classical computing, Reads not only commute but can be done in parallel.
+        // But two Xrotations on the same qubit (and also two Z rotations on the same qubit) cannot be done in parallel.
+        // So the independence in the dependence graph should not be interpreted as a license for parallel execution.
+        //
+        // In a non-resource scheduler such independent gates are put in parallel
+        // but it doesn't do harm because it is not a real machine.
         // In a resource-constrained scheduler the resource constraint that prohibits more than one use
         // of the same qubit being active at the same time, will prevent this parallelism.
-        // So ignoring Read After Read (RAR) dependencies enables the scheduler to take advantage
-        // of the commutation property of Controlled Unitaries without disadvantages.
-        //
-        // In more detail:
-        // 1. CU1(a,b) and CU2(a,c) commute (for any U1, U2, so also can be equal and/or be CNOT and/or be CZ)
-        // 2. CNOT(a,b) and CNOT(c,b) commute (property of CNOT only).
-        // 3. CZ(a,b) and CZ(b,a) are identical (property of CZ only).
-        // 4. CNOT(a,b) commutes with CZ(a,c) (from 1.) and thus with CZ(c,a) (from 3.)
-        // 5. CNOT(a,b) does not commute with CZ(c,b) (and thus not with CZ(b,c), from 3.)
-        // To support this, next to R and W a D (for controlleD operand :-) is introduced for the target operand of CNOT.
-        // The events (instead of just Read and Write) become then:
-        // - Both operands of CZ are just Read.
-        // - The control operand of CNOT is Read, the target operand is D.
-        // - Of any other Control Unitary, the control operand is Read and the target operand is Write (not D!)
-        // - Of any other gate the operands are Read+Write or just Write (as usual to represent flow).
-        // With this, we effectively get the following table of event transitions (from left-bottom to right-up),
-        // in which 'no' indicates no dependency from left event to top event and '/' indicates a dependency from left to top.
-        //
-        //             W   R   D                  w   R   D
-        //        W    /   /   /              W   WAW RAW DAW
-        //        R    /   no  /              R   WAR RAR DAR
-        //        D    /   /   no             D   WAD RAD DAD
-        //
-        // In addition to LastReaders, we introduce LastDs.
-        // Either one is cleared when dependencies are generated from them, and extended otherwise.
-        // From the table it can be seen that the D 'behaves' as a Write to Read, and as a Read to Write,
-        // that there is no order among Ds nor among Rs, but D after R and R after D sequentialize.
-        // With this, the dependency graph is claimed to represent the commutations as above.
-        //
+        // So ignoring Xrotate After Xrotate (XAX) dependencies enables the scheduler to take advantage
+        // of the commutation property of Xrotations (among which the target operands of CNOTs.
+        // Likewise, ignoring Zrotate After Zrotate (ZAZ) dependencies enables the scheduler to take advantage
+        // of the commutation property of Zrotations (among which the control operands of all controlled unitaries,
+        // and the CZ target operands).
+        
         // The schedulers are list schedulers, i.e. they maintain a list of gates in their algorithm,
         // of gates available for being scheduled because they are not blocked by dependencies on non-scheduled gates.
         // Therefore, the schedulers are able to select the best one from a set of commutable gates.
@@ -341,52 +376,52 @@ void Scheduler::init(
         // every gate can have a condition with condition operands (which are bit register indices) that are read
         for (auto boperand : ins->cond_operands) {
             QL_DOUT(".. Condition operand: " << boperand);
-            new_event(currID, breg_base+boperand, Reader, true);
+            new_event(currID, breg_base+boperand, Read, true);
         }
 
         // each type of gate has a different 'signature' of events; switch out to each one
         if (iname == "measure") {
             QL_DOUT(". considering " << name[currNode] << " as measure");
-            // Write each operand + Write each classical operand + Write each bit operand
+            // Default each qubit operand + Write each classical operand + Write each bit operand
             for (auto operand : ins->operands) {
-                new_event(currID, operand, Writer, false);
+                new_event(currID, operand, Default, false);
             }
             for (auto coperand : ins->creg_operands) {
-                new_event(currID, creg_base+coperand, Writer, false);
+                new_event(currID, creg_base+coperand, Write, false);
             }
             for (auto boperand : ins->breg_operands) {
-                new_event(currID, breg_base+boperand, Writer, false);
+                new_event(currID, breg_base+boperand, Write, false);
             }
             QL_DOUT(". measure done");
         } else if (iname == "display") {
             QL_DOUT(". considering " << name[currNode] << " as display");
             // no operands, display all qubits and cregs
-            // Write each one
+            // Default each one
             Vec<UInt> qubits(total_reg_count);
             std::iota(qubits.begin(), qubits.end(), 0);
 
             for (auto operand : qubits) {
-                new_event(currID, operand, Writer, false);
+                new_event(currID, operand, Default, false);
             }
         } else if (ins->type() == gate_type_t::__classical_gate__) {
             QL_DOUT(". considering " << name[currNode] << " as classical gate");
             // Write each classical operand
             for (auto coperand : ins->creg_operands) {
-                new_event(currID, creg_base+coperand, Writer, false);
+                new_event(currID, creg_base+coperand, Write, false);
             }
         } else if (iname == "cnot") {
             QL_DOUT(". considering " << name[currNode] << " as cnot");
-            // CNOTs first operand is control and a Z, second operand is target and an X
+            // CNOTs first operand is control and a Zrotate, second operand is target and an Xrotate
             QL_ASSERT(ins->operands.size() == 2);
 
-            new_event(currID, ins->operands[0], Reader, options::get("scheduler_commute") == "yes");
-            new_event(currID, ins->operands[1], D, options::get("scheduler_commute") == "yes");
+            new_event(currID, ins->operands[0], Zrotate, options::get("scheduler_commute") == "yes");
+            new_event(currID, ins->operands[1], Xrotate, options::get("scheduler_commute") == "yes");
         } else if (iname == "cz" || iname == "cphase") {
             QL_DOUT(". considering " << name[currNode] << " as cz");
-            // CZs operands are both Zs
+            // CZs operands are both Zrotates
             QL_ASSERT(ins->operands.size() == 2);
-            new_event(currID, ins->operands[0], Reader, options::get("scheduler_commute") == "yes");
-            new_event(currID, ins->operands[1], Reader, options::get("scheduler_commute") == "yes");
+            new_event(currID, ins->operands[0], Zrotate, options::get("scheduler_commute") == "yes");
+            new_event(currID, ins->operands[1], Zrotate, options::get("scheduler_commute") == "yes");
         } else if (
                 iname == "rz"
                 || iname == "z"
@@ -404,7 +439,7 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as Z rotation");
             // Z rotations on single operand
             QL_ASSERT(ins->operands.size() == 1);
-            new_event(currID, ins->operands[0], Reader, options::get("scheduler_commute_rotations") == "yes");
+            new_event(currID, ins->operands[0], Zrotate, options::get("scheduler_commute_rotations") == "yes");
         } else if (
                 iname == "rx"
                 || iname == "x"
@@ -419,20 +454,20 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as X rotation");
             // X rotations on single operand
             QL_ASSERT(ins->operands.size() == 1);
-            new_event(currID, ins->operands[0], D, options::get("scheduler_commute_rotations") == "yes");
+            new_event(currID, ins->operands[0], Xrotate, options::get("scheduler_commute_rotations") == "yes");
         } else {
             QL_DOUT(". considering " << name[currNode] << " as no special gate (catch-all, generic rules)");
-            // Write on each quantum operand
+            // Default on each qubit operand
             // Write on each classical operand
             // Write on each bit operand
             for (auto operand : ins->operands) {
-                new_event(currID, operand, Writer, false);
+                new_event(currID, operand, Default, false);
             }
             for (auto coperand : ins->creg_operands) {
-                new_event(currID, creg_base+coperand, Writer, false);
+                new_event(currID, creg_base+coperand, Write, false);
             }
             for (auto boperand : ins->breg_operands) {
-                new_event(currID, breg_base+boperand, Writer, false);
+                new_event(currID, breg_base+boperand, Write, false);
             }
         } // end of if/else
         QL_DOUT(". instruction done: " << ins->qasm());
@@ -450,7 +485,7 @@ void Scheduler::init(
         t = currNode;
 
         // add deps to the dummy target node to close the dependency chains
-        // it behaves as a W to every qubit, creg and breg
+        // it behaves as a Default to every qubit, Write to every creg and breg
         //
         // to guarantee that exactly at start of execution of dummy SINK,
         // all still executing nodes complete, give arc weight of those nodes;
@@ -464,12 +499,12 @@ void Scheduler::init(
         std::iota(all_operands.begin(), all_operands.end(), 0);
         for (auto operand : all_operands) {
             QL_DOUT(".. Sink operand, adding dep: " << operand);
-            add_dep(LastWriter[operand], currID, WAW, operand);
-            for (auto &RgateID : LastReaders[operand]) {
-                add_dep(RgateID, currID, WAR, operand);
-            }
-            for (auto &DgateID : LastDs[operand]) {
-                add_dep(DgateID, currID, WAD, operand);
+            if (operand >= breg_base) {
+                new_event(currID, operand, Write, false);
+            } else if (operand >= creg_base) {
+                new_event(currID, operand, Write, false);
+            } else {
+                new_event(currID, operand, Default, false);
             }
         }
 
@@ -478,7 +513,7 @@ void Scheduler::init(
             QL_DOUT(".. Sink operand, clearing: " << operand);
             LastWriter[operand] = currID;
             LastReaders[operand].clear();
-            LastDs[operand].clear();
+            LastXrotates[operand].clear();
         }
     }
 

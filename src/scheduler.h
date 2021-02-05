@@ -28,12 +28,12 @@
 
 namespace ql {
 
-// see above/below for the meaning of R, W, and D events and their relation to dependences
-enum DepTypes {RAW, WAW, WAR, RAR, RAD, DAR, DAD, WAD, DAW};
-const utils::Str DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR", "RAD", "DAR", "DAD", "WAD", "DAW"};
+// see above/below for the meaning of R, W, D, X and Z events and their relation to dependences
+enum DepTypes {RAR, RAW, WAR, WAW, DAD, DAX, DAZ, XAD, XAX, XAZ, ZAD, ZAX, ZAZ};
+const utils::Str DepTypesNames[] = {"RAR", "RAW", "WAR", "WAW", "DAD", "DAX", "DAZ", "XAD", "XAX", "XAZ", "ZAD", "ZAX", "ZAZ"};
 
-enum EventType {Writer, Reader, D};
-const utils::Str EventTypeNames[] = {"Writer", "Reader", "D"};
+enum EventType {Read, Write, Default, Xrotate, Zrotate};
+const utils::Str EventTypeNames[] = {"Read", "Write", "Default", "Xrotate", "Zrotate"};
 
 typedef utils::Vec<utils::Int> ReadersListType;
 
@@ -70,9 +70,9 @@ private:
     // all vectors are indexed by a combooperand, an encoding of all possible qubits, classical registers and bit registers,
     // that is in qubit_creg_breg combined index space with size qcount+ccount+bcount
     utils::Vec<enum EventType> LastEvent;
-    utils::Vec<utils::Int> LastWriter;
-    utils::Vec<ReadersListType> LastReaders;
-    utils::Vec<ReadersListType> LastDs;
+    utils::Vec<utils::Int> LastWriter;          // shared by W and D, since W is only on non-qubits and D on qubits
+    utils::Vec<ReadersListType> LastReaders;    // shared by R and Z, since R is only on non-qubits and Z on qubits
+    utils::Vec<ReadersListType> LastXrotates;   // for X only
 
 public:
     Scheduler();
