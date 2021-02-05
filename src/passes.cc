@@ -33,7 +33,13 @@ using namespace utils;
 AbstractPass::AbstractPass(const Str &name) {
     QL_DOUT("In AbstractPass::AbstractPass set name " << name << std::endl);
     setPassName(name);
-    createPassOptions();
+    passOptions.add_bool("skip", "skip running the pass");
+    passOptions.add_bool("write_report_files", "report compiler statistics");
+    passOptions.add_bool("write_qasm_files", "write (un-)scheduled (with and without resource-constraint) qasm files");
+    passOptions.add_bool("read_qasm_files", "read (un-)scheduled (with and without resource-constraint) qasm files");
+    passOptions.add_str ("hwconfig", "path to the platform configuration file", "none");
+    passOptions.add_int ("nqubits", "number of qubits used by the program", "100", 1);
+    passOptions.add_enum("eqasm_compiler_name", "Set the compiler backend", "cc_light_compiler", {"cc_light_compiler", "eqasm_backend_cc"});
 }
 
 /**
@@ -60,21 +66,14 @@ void AbstractPass::setPassName(const Str &name) {
 void AbstractPass::setPassOption(const Str &optionName, const Str &optionValue) {
     QL_DOUT("In AbstractPass::setPassOption");
 
-    passOptions->setOption(optionName, optionValue);
+    passOptions[optionName] = optionValue;
 }
 
-/**
- * @brief   Initializes the pass options object
- */
-void AbstractPass::createPassOptions() {
-    passOptions = new PassOptions(getPassName());
-}
-
-PassOptions *AbstractPass::getPassOptions() {
+options::Options &AbstractPass::getPassOptions() {
     return passOptions;
 }
 
-const PassOptions *AbstractPass::getPassOptions() const {
+const options::Options &AbstractPass::getPassOptions() const {
     return passOptions;
 }
 
@@ -83,7 +82,7 @@ const PassOptions *AbstractPass::getPassOptions() const {
  * @return  Bool representing wheather the pass should be skipped
  */
 Bool AbstractPass::getSkip() const {
-    return getPassOptions()->getOption("skip") == "yes";
+    return getPassOptions()["skip"].as_bool();
 }
 
 /**
@@ -91,7 +90,7 @@ Bool AbstractPass::getSkip() const {
  */
 void AbstractPass::initPass(quantum_program *program) {
     QL_DOUT("initPass of " << getPassName() << " on program " << program->name);
-    if (getPassOptions()->getOption("write_qasm_files") == "yes") {
+    if (getPassOptions()["write_qasm_files"].as_bool()) {
         //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         Str writeQasmLocal = options::get("write_qasm_files");
@@ -103,7 +102,7 @@ void AbstractPass::initPass(quantum_program *program) {
         options::set("write_qasm_files", writeQasmLocal);
     }
 
-    if (getPassOptions()->getOption("write_report_files") == "yes") {
+    if (getPassOptions()["write_report_files"].as_bool()) {
         //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         Str writeReportLocal = options::get("write_report_files");
@@ -121,7 +120,7 @@ void AbstractPass::initPass(quantum_program *program) {
  */
 void AbstractPass::finalizePass(quantum_program *program) {
     QL_DOUT("finalizePass of " << getPassName() << " on program " << program->name);
-    if (getPassOptions()->getOption("write_qasm_files") == "yes") {
+    if (getPassOptions()["write_qasm_files"].as_bool()) {
         //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         Str writeQasmLocal = options::get("write_qasm_files");
@@ -133,7 +132,7 @@ void AbstractPass::finalizePass(quantum_program *program) {
         options::set("write_qasm_files", writeQasmLocal);
     }
 
-    if (getPassOptions()->getOption("write_report_files") == "yes") {
+    if (getPassOptions()["write_report_files"].as_bool()) {
         //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         Str writeReportLocal = options::get("write_report_files");
@@ -336,6 +335,9 @@ void ReportStatisticsPass::runOnProgram(quantum_program *program) {
  * @param  Name of the visualizer pass
  */
 VisualizerPass::VisualizerPass(const Str &name) : AbstractPass(name) {
+    getPassOptions().add_str("visualizer_type", "the type of visualization performed", "CIRCUIT");
+    getPassOptions().add_str("visualizer_config_path", "path to the visualizer configuration file", "visualizer_config.json");
+    getPassOptions().add_str("visualizer_waveform_mapping_path", "path to the visualizer waveform mapping file", "waveform_mapping.json");
 }
 
 /**
@@ -345,9 +347,9 @@ VisualizerPass::VisualizerPass(const Str &name) : AbstractPass(name) {
 void VisualizerPass::runOnProgram(quantum_program *program) {
     QL_DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
     
-    ql::visualize(program, getPassOptions()->getOption("visualizer_type"), {
-        getPassOptions()->getOption("visualizer_config_path"),
-        getPassOptions()->getOption("visualizer_waveform_mapping_path")
+    ql::visualize(program, getPassOptions()["visualizer_type"].as_str(), {
+        getPassOptions()["visualizer_config_path"].as_str(),
+        getPassOptions()["visualizer_waveform_mapping_path"].as_str()
     });
 }
 
@@ -521,95 +523,6 @@ QisaCodeGenerationPass::QisaCodeGenerationPass(const Str &name) : AbstractPass(n
  */
 void QisaCodeGenerationPass::runOnProgram(quantum_program *program) {
     arch::cc_light_eqasm_compiler().qisa_code_generation(program, program->platform, getPassName());
-}
-
-/**
- * @brief  Construct an object to hold the pass options
- * @param  app_name String with the name of the pass options object
- */
-PassOptions::PassOptions(Str app_name) {
-    app = new CLI::App(app_name);
-
-    ///@todo-rn: update this list with meaningful pass options
-    // default values
-    opt_name2opt_val.set("skip") = "no";
-    opt_name2opt_val.set("write_report_files") = "no";
-    opt_name2opt_val.set("write_qasm_files") = "no";
-    opt_name2opt_val.set("read_qasm_files") = "no";
-    opt_name2opt_val.set("hwconfig") = "none";
-    opt_name2opt_val.set("nqubits") = "100";
-    opt_name2opt_val.set("eqasm_compiler_name") = "cc_light_compiler";
-    opt_name2opt_val.set("visualizer_type") = "CIRCUIT";
-    opt_name2opt_val.set("visualizer_config_path") = "visualizer_config.json";
-    opt_name2opt_val.set("visualizer_waveform_mapping_path") = "waveform_mapping.json";
-
-    // add options with default values and list of possible values
-    app->add_set_ignore_case("--skip", opt_name2opt_val.at("skip"), {"yes", "no"}, "skip running the pass", true);
-    app->add_set_ignore_case("--write_report_files", opt_name2opt_val.at("write_report_files"), {"yes", "no"}, "report compiler statistics", true);
-    app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val.at("write_qasm_files"), {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
-    app->add_set_ignore_case("--read_qasm_files", opt_name2opt_val.at("read_qasm_files"), {"yes", "no"}, "read (un-)scheduled (with and without resource-constraint) qasm files", true);
-    app->add_option("--hwconfig", opt_name2opt_val.at("hwconfig"), "path to the platform configuration file", true);
-    app->add_option("--nqubits", opt_name2opt_val.at("nqubits"), "number of qubits used by the program", true);
-    app->add_set_ignore_case("--eqasm_compiler_name", opt_name2opt_val.at("eqasm_compiler_name"), {"cc_light_compiler", "eqasm_backend_cc"}, "Set the compiler backend", true);
-    app->add_option("--visualizer_type", opt_name2opt_val.at("visualizer_type"), "the type of visualization performed", true);
-    app->add_option("--visualizer_config_path", opt_name2opt_val.at("visualizer_config_path"), "path to the visualizer configuration file", true);
-    app->add_option("--visualizer_waveform_mapping_path", opt_name2opt_val.at("visualizer_waveform_mapping_path"), "path to the visualizer waveform mapping file", true);
-}
-
-/**
- * @brief  Show the values set for the pass options.
- */
-void PassOptions::print_current_values() const {
-    ///@todo-rn: update this list with meaningful pass options
-    std::cout << "write_qasm_files: " << opt_name2opt_val.at("write_qasm_files") << std::endl
-              << "write_report_files: " << opt_name2opt_val.at("write_report_files") << std::endl
-              << "skip: " << opt_name2opt_val.at("skip") << std::endl
-              << "read_qasm_files: " << opt_name2opt_val.at("read_qasm_files") << std::endl
-              << "hwconfig: " << opt_name2opt_val.at("hwconfig") << std::endl
-              << "nqubits: " << opt_name2opt_val.at("nqubits") << std::endl
-              << "eqasm_compiler_name: " << opt_name2opt_val.at("eqasm_compiler_name") << std::endl;
-}
-
-/**
- * @brief  Displays the help menu to list the available options.
- */
-void PassOptions::help() const {
-    std::cout << app->help() << std::endl;
-}
-
-/**
- * @brief   Sets a pass option
- * @param   opt_name String option name
- * @param   opt_value String value of the option
- */
-void PassOptions::setOption(const Str &opt_name, const Str &opt_value) {
-    QL_DOUT("In PassOptions: setting option " << opt_name << " to value " << opt_value << std::endl);
-    try {
-       std::vector<Str> opts = {opt_value, "--"+opt_name};
-       app->parse(opts);
-    } catch (const std::exception &e) {
-       app->reset();
-       QL_EOUT("Un-known option: " << e.what());
-       throw Exception("Error parsing options. " + Str(e.what()) + " ! \n Allowed values are: \n" + app->help(opt_name), false);
-    }
-    app->reset();
-}
-
-/**
- * @brief  Queries an option
- * @param opt_name Name of the options
- * @return Value of the option
- */
-Str PassOptions::getOption(const Str &opt_name) const {
-    Str opt_value("UNKNOWN");
-    if (opt_name2opt_val.find(opt_name) != opt_name2opt_val.end()) {
-        opt_value = opt_name2opt_val.at(opt_name);
-    } else {
-        QL_EOUT("Un-known option: " << opt_name << "\n Allowed values are: \n");
-        std::cout << app->help(opt_name);
-        exit(1);
-    }
-    return opt_value;
 }
 
 } // namespace ql

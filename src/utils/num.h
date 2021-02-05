@@ -53,6 +53,11 @@ using Complex = std::complex<double>;
 const Int MAX = std::numeric_limits<Int>::max();
 
 /**
+ * Maximum value for an Int.
+ */
+const Int MIN = std::numeric_limits<Int>::min();
+
+/**
  * Constant for pi.
  */
 const Real PI = 3.14159265358979323846;
@@ -63,7 +68,12 @@ const Real PI = 3.14159265358979323846;
 const Real EU = 2.7182818284590452354;
 
 /**
- * Imaginary constant.
+ * Infinity.
+ */
+const Real INF = std::numeric_limits<Real>::infinity();
+
+/**
+ * Imaginary unit.
  */
 const Complex IM = Complex(0.0, 1.0);
 
@@ -220,7 +230,14 @@ inline Real atan2(Real a, Real b) noexcept {
     return std::atan2(a, b);
 }
 
+/**
+ * Converts an Int to a UInt with a range check.
+ */
 UInt itou(Int x);
+
+/**
+ * Converts a UInt to an Int with a range check.
+ */
 Int utoi(UInt x);
 
 } // namespace utils

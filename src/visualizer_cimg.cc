@@ -2,8 +2,6 @@
  * Wrapper for the CImg library.
  */
 
-#pragma once
-
 #ifdef WITH_VISUALIZER
 
 #include "visualizer_cimg.h"

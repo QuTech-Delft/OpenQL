@@ -4,14 +4,12 @@
 
 #pragma once
 
-#include <CLI/CLI.hpp>
 #include "utils/str.h"
 #include "utils/map.h"
+#include "options.h"
 #include "program.h"
 
 namespace ql {
-
-class PassOptions;
 
 /**
  * Compiler Pass Interface
@@ -24,9 +22,8 @@ public:
     utils::Str getPassName() const;
     void setPassName(const utils::Str &name);
     void setPassOption(const utils::Str &optionName, const utils::Str &optionValue);
-    PassOptions *getPassOptions();
-    const PassOptions *getPassOptions() const;
-    void createPassOptions();
+    options::Options &getPassOptions();
+    const options::Options &getPassOptions() const;
     utils::Bool getSkip() const;
     void initPass(quantum_program *program);
     void finalizePass(quantum_program *program);
@@ -37,7 +34,7 @@ public:
 private:
     utils::Str passName;
     utils::Str statistics;
-    PassOptions *passOptions;
+    options::Options passOptions;
 };
 
 /**
@@ -285,22 +282,6 @@ public:
      */
     explicit QisaCodeGenerationPass(const utils::Str &name);
     void runOnProgram(quantum_program *program) override;
-};
-
-/**
- * Pass Options Class
- */
-class PassOptions {
-public:
-      explicit PassOptions(utils::Str app_name="passOpts");
-      void print_current_values() const;
-      void help() const;
-      void setOption(const utils::Str &opt_name, const utils::Str &opt_value);
-      utils::Str getOption(const utils::Str &opt_name) const;
-
-private:
-      CLI::App *app;
-      utils::Map<utils::Str, utils::Str> opt_name2opt_val;
 };
 
 } // namespace ql

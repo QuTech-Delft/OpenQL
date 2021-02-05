@@ -63,11 +63,50 @@ Str to_string(T arg) {
     return ss.str();
 }
 
+/**
+ * Parses the given string as an unsigned integer. Throws an exception if the
+ * conversion fails.
+ */
 UInt parse_uint(const Str &str);
+
+/**
+ * Parses the given string as a signed integer. Throws an exception if the
+ * conversion fails.
+ */
 Int parse_int(const Str &str);
+
+/**
+ * Parses the given string as a real number. Throws an exception if the
+ * conversion fails.
+ */
 Real parse_real(const Str &str);
 
+/**
+ * Parses the given string as an unsigned integer. Returns the given default
+ * value if the conversion fails.
+ */
+UInt parse_uint(const Str &str, UInt dflt, bool *success=nullptr);
+
+/**
+ * Parses the given string as a signed integer. Returns the given default value
+ * if the conversion fails.
+ */
+Int parse_int(const Str &str, Int dflt, bool *success=nullptr);
+
+/**
+ * Parses the given string as a real number. Returns the given default value if
+ * the conversion fails.
+ */
+Real parse_real(const Str &str, Real dflt, bool *success=nullptr);
+
+/**
+ * Converts the given string to lowercase.
+ */
 Str to_lower(Str str);
+
+/**
+ * Replaces all occurrences of from in str with to.
+ */
 Str replace_all(Str str, const Str &from, const Str &to);
 
 } // namespace utils

@@ -217,18 +217,28 @@ public:
     std::string to_string(
         const std::string &prefix = "[",
         const std::string &separator = ", ",
-        const std::string &suffix = "]"
+        const std::string &suffix = "]",
+        const std::string &last_separator = "",
+        const std::string &only_separator = ""
     ) const {
         std::ostringstream ss{};
         ss << prefix;
         bool first = true;
-        for (const auto &val : *this) {
+        for (auto it = this->cbegin(); it != this->cend(); ++it) {
             if (first) {
                 first = false;
             } else {
-                ss << separator;
+                if (it == std::prev(this->cend())) {
+                    if (it == std::next(this->cbegin())) {
+                        ss << (only_separator.empty() ? separator : only_separator);
+                    } else {
+                        ss << (last_separator.empty() ? separator : last_separator);
+                    }
+                } else {
+                    ss << separator;
+                }
             }
-            ss << val;
+            ss << *it;
         }
         ss << suffix;
         return ss.str();
@@ -607,18 +617,28 @@ public:
     std::string to_string(
         const std::string &prefix = "[",
         const std::string &separator = ", ",
-        const std::string &suffix = "]"
+        const std::string &suffix = "]",
+        const std::string &last_separator = "",
+        const std::string &only_separator = ""
     ) const {
         std::ostringstream ss{};
         ss << prefix;
         bool first = true;
-        for (const auto &val : *this) {
+        for (auto it = this->cbegin(); it != this->cend(); ++it) {
             if (first) {
                 first = false;
             } else {
-                ss << separator;
+                if (it == std::prev(this->cend())) {
+                    if (it == std::next(this->cbegin())) {
+                        ss << (only_separator.empty() ? separator : only_separator);
+                    } else {
+                        ss << (last_separator.empty() ? separator : last_separator);
+                    }
+                } else {
+                    ss << separator;
+                }
             }
-            ss << val;
+            ss << *it;
         }
         ss << suffix;
         return ss.str();
