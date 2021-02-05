@@ -635,7 +635,8 @@ Options make_ql_options() {
     options.add_bool("print_dot_graphs", "Print (un-)scheduled graphs in DOT format");
     options.add_enum("scheduler", "scheduler type", "ALAP", {"ASAP", "ALAP"});
     options.add_bool("scheduler_uniform", "Do uniform scheduling or not");
-    options.add_bool("scheduler_commute", "Commute gates when possible, or not");
+    options.add_bool("scheduler_commute", "Commute two-qubit gates when possible, or not");
+    options.add_bool("scheduler_commute_rotations", "Commute rotation gates and with two-qubit gates when possible, or not");
     options.add_bool("use_default_gates", "Use default gates or not", "yes");
     options.add_bool("optimize", "optimize or not");
     options.add_bool("clifford_prescheduler", "clifford optimize before prescheduler yes or not");
