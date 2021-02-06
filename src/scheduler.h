@@ -28,14 +28,17 @@
 
 namespace ql {
 
-// see above/below for the meaning of R, W, D, X and Z events and their relation to dependences
-enum DepTypes {RAR, RAW, WAR, WAW, DAD, DAX, DAZ, XAD, XAX, XAZ, ZAD, ZAX, ZAZ};
-const utils::Str DepTypesNames[] = {"RAR", "RAW", "WAR", "WAW", "DAD", "DAX", "DAZ", "XAD", "XAX", "XAZ", "ZAD", "ZAX", "ZAZ"};
+// see src/scheduler.cc for the meaning of R, W, D, X and Z events and their relation to dependences
+enum DepType {RAR, RAW, WAR, WAW, DAD, DAX, DAZ, XAD, XAX, XAZ, ZAD, ZAX, ZAZ};
+const utils::Str DepTypeName[] = {"RAR", "RAW", "WAR", "WAW", "DAD", "DAX", "DAZ", "XAD", "XAX", "XAZ", "ZAD", "ZAX", "ZAZ"};
 
-enum EventType {Read, Write, Default, Xrotate, Zrotate};
-const utils::Str EventTypeNames[] = {"Read", "Write", "Default", "Xrotate", "Zrotate"};
+enum EventType {Default, Xrotate, Zrotate, Cread, Cwrite, Bread, Bwrite};
+const utils::Str EventTypeName[] = {"Default", "Xrotate", "Zrotate", "Cread", "Cwrite", "Bread", "Bwrite"};
 
 typedef utils::Vec<utils::Int> ReadersListType;
+
+enum OperandType {Qubit, Creg, Breg};
+const utils::Str OperandTypeName[] = {"q", "c", "b"};
 
 class Scheduler {
 public:
@@ -50,7 +53,8 @@ public:
     // attributes
     lemon::ListDigraph::NodeMap<utils::Str> name;     // name[n] == qasm string
     lemon::ListDigraph::ArcMap<utils::Int> weight;    // number of cycles of dependence
-    lemon::ListDigraph::ArcMap<utils::Int> cause;     // qubit/creg/breg index of dependence
+    lemon::ListDigraph::ArcMap<utils::Int> opType;    // qubit, creg or breg
+    lemon::ListDigraph::ArcMap<utils::Int> cause;     // operand index
     lemon::ListDigraph::ArcMap<utils::Int> depType;   // RAW, WAW, ...
 
     // s and t nodes are the top and bottom of the dependence graph
@@ -67,12 +71,21 @@ public:
     utils::Map<lemon::ListDigraph::Node, utils::UInt>  remaining;  // remaining[node] == cycles until end; critical path representation
 private:
     // state of the state machine that is used to construct the dependence graph
-    // all vectors are indexed by a combooperand, an encoding of all possible qubits, classical registers and bit registers,
-    // that is in qubit_creg_breg combined index space with size qcount+ccount+bcount
-    utils::Vec<enum EventType> LastEvent;
-    utils::Vec<utils::Int> LastWriter;          // shared by W and D, since W is only on non-qubits and D on qubits
-    utils::Vec<ReadersListType> LastReaders;    // shared by R and Z, since R is only on non-qubits and Z on qubits
-    utils::Vec<ReadersListType> LastXrotates;   // for X only
+    // for each OperandType there is a separate type of state machine
+    // for each particular operand there is a separate state machine
+    // all vectors are indexed by the operand
+    utils::Vec<enum EventType> LastQEvent;      // Qubit: Default, Xrotate, Zrotate
+    utils::Vec<utils::Int> LastDefault;         // state machine: Default { Default | Xrotate+ | Zrotate+ }* Default
+    utils::Vec<ReadersListType> LastXrotates;
+    utils::Vec<ReadersListType> LastZrotates;
+
+    utils::Vec<enum EventType> LastCEvent;      // Creg: Write, Read
+    utils::Vec<utils::Int> LastCWriter;         // state machine: Write { Write | Read+ }* Write,
+    utils::Vec<ReadersListType> LastCReaders;
+
+    utils::Vec<enum EventType> LastBEvent;      // Breg: Write, Read
+    utils::Vec<utils::Int> LastBWriter;         // state machine: Write { Write | Read+ }* Write,
+    utils::Vec<ReadersListType> LastBReaders;
 
 public:
     Scheduler();
@@ -83,6 +96,7 @@ public:
     // signal the state machine of dependence graph construction to do a step as specified by the parameters
     void new_event(
         int currID,
+        enum OperandType operandType,
         utils::UInt combooperand,
         enum EventType currEvent,
         bool commutes
@@ -90,7 +104,13 @@ public:
 
     // add a dependence between two nodes
     // operand is in qubit_creg_breg combined index space with size qcount+ccount+bcount
-    void add_dep(utils::Int fromID, utils::Int toID, enum DepTypes deptype, utils::UInt comboperand);
+    void add_dep(
+        utils::Int fromID,
+        utils::Int toID,
+        enum DepType deptype,
+        enum OperandType operandType,
+        utils::UInt comboperand
+    );
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(

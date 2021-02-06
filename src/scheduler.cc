@@ -25,11 +25,11 @@
  * In dependency graph creation, each qubit/classical register/bit register (creg,breg) use
  * in each gate is seen as an "event". The following events are distinguished:
  *
- *  - W for Write:
+ *  - W for Cwrite/Bwrite:
  *    such a use must sequentialize with all previous and later
  *    uses of the same creg/breg. This is the default in classical code.
  *    Since all Writes sequentialize, one has only to create dependences with the previous and next one.
- *  - R for Read:
+ *  - R for Cread/Bread:
  *    such uses can be arbitrarily reordered (as long as other dependences allow that),
  *    but sequentialize with the previous and following Write on the same register.
  *    It applies to all reads in classical code (that don't have side effects).
@@ -99,6 +99,7 @@ Scheduler::Scheduler() :
     instruction(graph),
     name(graph),
     weight(graph),
+    opType(graph),
     cause(graph),
     depType(graph)
 {
@@ -113,135 +114,165 @@ void Scheduler::stripname(Str &name) {
 }
 
 // Add a dependency between two nodes: from node fromID to node toID
-// combo is the operand encoded in a qubit+creg+breg combined index space:
-// - 0 <= combo < qubit_count:                        combo is a qubit index
-// - 0 <= combo-qubit_count < creg_count:             combo-qubit_count is a classical register index
-// - 0 <= combo-qubit_count-creg_count < breg_count:  combo-qubit_count-creg_count is a bit register index
-void Scheduler::add_dep(Int fromID, Int toID, enum DepTypes deptype, UInt comboperand) {
-    QL_DOUT(".. adddep ... from fromID " << fromID << " to toID " << toID << "   opnd=" << comboperand << ", dep=" << DepTypesNames[deptype]);
+// the dependence is annotated with the deptype, operandtype and operand for possible transformations and for tracing
+void Scheduler::add_dep(
+    Int fromID,
+    Int toID,
+    enum DepType deptype,
+    enum OperandType operandType,
+    UInt operand
+) {
+    QL_DOUT(".. adddep ... from fromID " << fromID << " to toID " << toID << "   opnd=" << OperandTypeName[operandType] << "[" << operand << "], dep=" << DepTypeName[deptype]);
     auto fromNode = graph.nodeFromId(fromID);
     auto toNode = graph.nodeFromId(toID);
     auto arc = graph.addArc(fromNode, toNode);
     weight[arc] = Int(ceil(static_cast<Real>(instruction[fromNode]->duration) / cycle_time));
-    cause[arc] = comboperand;
-    UInt operand;
+    opType[arc] = operandType;
+    cause[arc] = operand;
     depType[arc] = deptype;
-    Str s;
-    if (comboperand < qubit_count) {
-        s = "q";
-        operand = comboperand;
-    } else if (comboperand - qubit_count < creg_count) {
-        operand = comboperand - qubit_count;
-        s = "c";
-    } else {
-        operand = comboperand - (qubit_count + creg_count);
-        s = "b";
-    }
-    QL_DOUT("... dep " << name[fromNode] << " -> " << name[toNode] << " (opnd=" << s << "[" << operand << "], dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
+    QL_DOUT("... dep " << name[fromNode] << " -> " << name[toNode] << " opnd=" << OperandTypeName[opType[arc]] << "[" << cause[arc] << "], dep=" << DepTypeName[depType[arc]] << ", wght=" << weight[arc] << ")");
 }
 
 // Signal a new event to the depgraph constructor:
 // the new event is of type currEvent
 // and concerns the current gate encoded by currID
-// and its given combooperand (see add_dep for this encoding);
+// and its given ooperand;
 // commutes indicates whether this event is allowed to commute with the other events of its type.
 // This event drives a state machine to do one step (one state transition).
-// It accepts the following event sequence per qubit operand: Default { Default | Xrotate+ | Zrotate+ }* Default
-// and the following event sequence per creg/breg operand: Write { Write | Read+ }* Write,
-// in which the first Writer/Default is the SOURCE and the last Writer/Default is the SINK.
-// This state machine has as state { LastEvent[], LastWriter[], LastReaders[] and LastXrotates[] },
-// which are vectors over all possible combooperands (all qubits, all classical registers and all bit registers).
-// LastWriter is used for Write and Default events, and
-// LastReaders is used for Read and Zrotate events since they exclude on operand type.
+// It accepts the following event sequence per Qubit operand: Default { Default | Xrotate+ | Zrotate+ }* Default
+// and the following event sequence per Creg/Breg operand: Write { Write | Read+ }* Write,
+// in which the first Write/Default is the SOURCE and the last Write/Default is the SINK.
+// The state machines have as state vectors for the lastevent, and various last states; these are vectors indexed by the operand.
 void Scheduler::new_event(
     int currID,
-    UInt combooperand,
+    enum OperandType operandType,
+    UInt operand,
     EventType currEvent,
     bool commutes
 ) {
-    QL_DOUT(".. " << EventTypeNames[currEvent] << " on operand: " << combooperand << " while in " << EventTypeNames[LastEvent[combooperand]]);
     switch (currEvent) {
-    case Write:
-        if (LastEvent[combooperand] == Write) {
-            add_dep(LastWriter[combooperand], currID, WAW, combooperand);
-        }
-        if (LastEvent[combooperand] == Read) {
-            for (auto &RgateID : LastReaders[combooperand]) {
-                add_dep(RgateID, currID, WAR, combooperand);
-            }
-        }
-        LastWriter[combooperand] = currID;
-        break;
-
-    case Read:
-        add_dep(LastWriter[combooperand], currID, RAW, combooperand);
-        if (LastEvent[combooperand] != Read) {
-            LastReaders[combooperand].clear();
-        }
-//      if (LastEvent[combooperand] == Read) {
-//          if (!commutes) {
-//              for (auto &RgateID : LastReaders[combooperand]) {
-//                  add_dep(RgateID, currID, RAR, combooperand);
-//              }
-//          }
-//      }
-        LastReaders[combooperand].push_back(currID);
-        break;
-
     case Default:
-        if (LastEvent[combooperand] == Default) {
-            add_dep(LastWriter[combooperand], currID, DAD, combooperand);
+        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastQEvent[operand]]);
+        if (LastQEvent[operand] == Default) {
+            add_dep(LastDefault[operand], currID, DAD, Qubit, operand);
         }
-        if (LastEvent[combooperand] == Zrotate) {
-            for (auto &ZgateID : LastReaders[combooperand]) {
-                add_dep(ZgateID, currID, DAZ, combooperand);
+        if (LastQEvent[operand] == Zrotate) {
+            for (auto &ZgateID : LastZrotates[operand]) {
+                add_dep(ZgateID, currID, DAZ, Qubit, operand);
             }
         }
-        if (LastEvent[combooperand] == Xrotate) {
-            for (auto &XgateID : LastXrotates[combooperand]) {
-                add_dep(XgateID, currID, DAX, combooperand);
+        if (LastQEvent[operand] == Xrotate) {
+            for (auto &XgateID : LastXrotates[operand]) {
+                add_dep(XgateID, currID, DAX, Qubit, operand);
             }
         }
-        LastWriter[combooperand] = currID;
+        LastDefault[operand] = currID;
+        LastQEvent[operand] = currEvent;
         break;
 
     case Zrotate:
-        add_dep(LastWriter[combooperand], currID, ZAD, combooperand);
-        if (LastEvent[combooperand] != Zrotate) {
-            LastReaders[combooperand].clear();
+        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastQEvent[operand]]);
+        add_dep(LastDefault[operand], currID, ZAD, Qubit, operand);
+        if (LastQEvent[operand] != Zrotate) {
+            LastZrotates[operand].clear();
         }
-        if (LastEvent[combooperand] == Zrotate) {
+        if (LastQEvent[operand] == Zrotate) {
             if (!commutes) {
-                for (auto &ZgateID : LastReaders[combooperand]) {
-                    add_dep(ZgateID, currID, ZAZ, combooperand);
+                for (auto &ZgateID : LastZrotates[operand]) {
+                    add_dep(ZgateID, currID, ZAZ, Qubit, operand);
                 }
             }
         }
-        for (auto &XgateID : LastXrotates[combooperand]) {
-            add_dep(XgateID, currID, ZAX, combooperand);
+        for (auto &XgateID : LastXrotates[operand]) {
+            add_dep(XgateID, currID, ZAX, Qubit, operand);
         }
-        LastReaders[combooperand].push_back(currID);
+        LastZrotates[operand].push_back(currID);
+        LastQEvent[operand] = currEvent;
         break;
 
     case Xrotate:
-        add_dep(LastWriter[combooperand], currID, XAD, combooperand);
-        if (LastEvent[combooperand] != Xrotate) {
-            LastXrotates[combooperand].clear();
+        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastQEvent[operand]]);
+        add_dep(LastDefault[operand], currID, XAD, Qubit, operand);
+        if (LastQEvent[operand] != Xrotate) {
+            LastXrotates[operand].clear();
         }
-        for (auto &ZgateID : LastReaders[combooperand]) {
-            add_dep(ZgateID, currID, XAZ, combooperand);
+        for (auto &ZgateID : LastZrotates[operand]) {
+            add_dep(ZgateID, currID, XAZ, Qubit, operand);
         }
-        if (LastEvent[combooperand] == Xrotate) {
+        if (LastQEvent[operand] == Xrotate) {
             if (!commutes) {
-                for (auto &XgateID : LastXrotates[combooperand]) {
-                    add_dep(XgateID, currID, XAX, combooperand);
+                for (auto &XgateID : LastXrotates[operand]) {
+                    add_dep(XgateID, currID, XAX, Qubit, operand);
                 }
             }
         }
-        LastXrotates[combooperand].push_back(currID);
+        LastXrotates[operand].push_back(currID);
+        LastQEvent[operand] = currEvent;
         break;
+
+    case Cwrite:
+        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastCEvent[operand]]);
+        if (LastCEvent[operand] == Cwrite) {
+            add_dep(LastCWriter[operand], currID, WAW, Breg, operand);
+        }
+        if (LastCEvent[operand] == Cread) {
+            for (auto &RgateID : LastCReaders[operand]) {
+                add_dep(RgateID, currID, WAR, Breg, operand);
+            }
+        }
+        LastCWriter[operand] = currID;
+        LastCEvent[operand] = currEvent;
+        break;
+
+    case Cread:
+        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastCEvent[operand]]);
+        add_dep(LastCWriter[operand], currID, RAW, Breg, operand);
+        if (LastCEvent[operand] != Cread) {
+            LastCReaders[operand].clear();
+        }
+//      if (LastCEvent[operand] == Cread) {
+//          if (!commutes) {
+//              for (auto &RgateID : LastCReaders[operand]) {
+//                  add_dep(RgateID, currID, RAR, Breg, operand);
+//              }
+//          }
+//      }
+        LastCReaders[operand].push_back(currID);
+        LastCEvent[operand] = currEvent;
+        break;
+
+    case Bwrite:
+        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastBEvent[operand]]);
+        if (LastBEvent[operand] == Bwrite) {
+            add_dep(LastBWriter[operand], currID, WAW, Breg, operand);
+        }
+        if (LastBEvent[operand] == Bread) {
+            for (auto &RgateID : LastBReaders[operand]) {
+                add_dep(RgateID, currID, WAR, Breg, operand);
+            }
+        }
+        LastBWriter[operand] = currID;
+        LastBEvent[operand] = currEvent;
+        break;
+
+    case Bread:
+        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastBEvent[operand]]);
+        add_dep(LastBWriter[operand], currID, RAW, Breg, operand);
+        if (LastBEvent[operand] != Bread) {
+            LastBReaders[operand].clear();
+        }
+//      if (LastBEvent[operand] == Bread) {
+//          if (!commutes) {
+//              for (auto &RgateID : LastBReaders[operand]) {
+//                  add_dep(RgateID, currID, RAR, Breg, operand);
+//              }
+//          }
+//      }
+        LastBReaders[operand].push_back(currID);
+        LastBEvent[operand] = currEvent;
+        break;
+
     }
-    LastEvent[combooperand] = currEvent;
 }
 
 // construct the dependency graph ('graph') with nodes from the circuit and adding arcs for their dependencies
@@ -256,10 +287,6 @@ void Scheduler::init(
     qubit_count = qcount; ///@todo-rn: DDG creation should not depend on #qubits
     creg_count = ccount; ///@todo-rn: DDG creation should not depend on #cregs
     breg_count = bcount; ///@todo-rn: DDG creation should not depend on #bregs
-    
-    // combo encoding initialization:
-    UInt creg_base = qubit_count;
-    UInt breg_base = qubit_count + creg_count;
     UInt total_reg_count = qubit_count + creg_count + breg_count;
     QL_DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", breg_count=" << breg_count << ", total=" << total_reg_count);
 
@@ -270,7 +297,7 @@ void Scheduler::init(
     // and with those previous gates as source that have an operand match with the current gate:
     // this dependence creation is done by a state matchine triggered to step on each operand of each gate encountered.
     // operands can be a qubit, a classical register or a bit register
-    // the indices in LastReaders, LastXrotates and LastWriter are operand indices in the combined index space (see add_dep)
+    // the indices in the state vectors are operand indices within the operandType space
 
     // start filling the dependency graph by creating the s node, the top of the graph
     {
@@ -283,26 +310,19 @@ void Scheduler::init(
     }
     Int srcID = graph.id(s);
 
-    // start the state machine as if the SOURCE gate with a write on all possible operands has been seen
-    LastWriter.resize(total_reg_count, srcID);
-    LastReaders.resize(total_reg_count);            // LastReaders and LastXrotates start off as empty lists
-    LastXrotates.resize(total_reg_count);
-    LastEvent.resize(total_reg_count);
-    {
-        // SOURCE virtually writes to all qubits/cregs/bregs
-        Vec<UInt> all_operands(total_reg_count);
-        std::iota(all_operands.begin(), all_operands.end(), 0);
-        for (auto operand : all_operands) {
-            QL_DOUT(".. Source operand, event init dep: " << operand);
-            if (operand >= breg_base) {
-                LastEvent[operand] = Write;
-            } else if (operand >= creg_base) {
-                LastEvent[operand] = Write;
-            } else {
-                LastEvent[operand] = Default;
-            }
-        }
-    }
+    // start the state machines, one for each possible operand
+    LastQEvent.resize(qubit_count, Default);    // start as if SOURCE gate did Default on all qubit operands
+    LastDefault.resize(qubit_count, srcID);
+    LastXrotates.resize(qubit_count);           // start off as empty list, no Xrotate/Zrotate seen yet
+    LastZrotates.resize(qubit_count);
+
+    LastCEvent.resize(creg_count, Cwrite);      // start as if SOURCE gate did Cwrite on all creg operands
+    LastCWriter.resize(creg_count, srcID);
+    LastCReaders.resize(creg_count);            // start off as empty list, no Creader seen yet
+
+    LastBEvent.resize(breg_count, Bwrite);      // start as if SOURCE gate did Bwrite on all breg operands
+    LastBWriter.resize(breg_count, srcID);
+    LastBReaders.resize(breg_count);            // start off as empty list, no Breader seen yet
 
     // for each gate pointer ins in the circuit, add a node and add dependencies on previous gates to it
     for (auto ins : ckt) {
@@ -376,52 +396,63 @@ void Scheduler::init(
         // every gate can have a condition with condition operands (which are bit register indices) that are read
         for (auto boperand : ins->cond_operands) {
             QL_DOUT(".. Condition operand: " << boperand);
-            new_event(currID, breg_base+boperand, Read, true);
+            new_event(currID, Breg, boperand, Bread, true);
         }
 
         // each type of gate has a different 'signature' of events; switch out to each one
         if (iname == "measure") {
             QL_DOUT(". considering " << name[currNode] << " as measure");
-            // Default each qubit operand + Write each classical operand + Write each bit operand
+            // Default each qubit operand + Cwrite each classical operand + Bwrite each bit operand
             for (auto operand : ins->operands) {
-                new_event(currID, operand, Default, false);
+                new_event(currID, Qubit, operand, Default, false);
             }
             for (auto coperand : ins->creg_operands) {
-                new_event(currID, creg_base+coperand, Write, false);
+                new_event(currID, Creg, coperand, Cwrite, false);
             }
             for (auto boperand : ins->breg_operands) {
-                new_event(currID, breg_base+boperand, Write, false);
+                new_event(currID, Breg, boperand, Bwrite, false);
             }
             QL_DOUT(". measure done");
         } else if (iname == "display") {
             QL_DOUT(". considering " << name[currNode] << " as display");
-            // no operands, display all qubits and cregs
-            // Default each one
-            Vec<UInt> qubits(total_reg_count);
+            // no operands, display all qubits, cregs and bregs
+            // FIXME: operands should have been added when creating this gate; then this special case would not be needed
+            // Default on each qubit operand
+            // Cwrite on each classical operand
+            // Bwrite on each bit operand
+            Vec<UInt> qubits(qubit_count);
             std::iota(qubits.begin(), qubits.end(), 0);
-
             for (auto operand : qubits) {
-                new_event(currID, operand, Default, false);
+                new_event(currID, Qubit, operand, Default, false);
+            }
+            Vec<UInt> cregs(creg_count);
+            std::iota(cregs.begin(), cregs.end(), 0);
+            for (auto coperand : cregs) {
+                new_event(currID, Creg, coperand, Cwrite, false);
+            }
+            Vec<UInt> bregs(breg_count);
+            std::iota(bregs.begin(), bregs.end(), 0);
+            for (auto boperand : bregs) {
+                new_event(currID, Breg, boperand, Bwrite, false);
             }
         } else if (ins->type() == gate_type_t::__classical_gate__) {
             QL_DOUT(". considering " << name[currNode] << " as classical gate");
-            // Write each classical operand
+            // Cwrite each classical operand
             for (auto coperand : ins->creg_operands) {
-                new_event(currID, creg_base+coperand, Write, false);
+                new_event(currID, Creg, coperand, Cwrite, false);
             }
         } else if (iname == "cnot") {
             QL_DOUT(". considering " << name[currNode] << " as cnot");
             // CNOTs first operand is control and a Zrotate, second operand is target and an Xrotate
             QL_ASSERT(ins->operands.size() == 2);
-
-            new_event(currID, ins->operands[0], Zrotate, options::get("scheduler_commute") == "yes");
-            new_event(currID, ins->operands[1], Xrotate, options::get("scheduler_commute") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Zrotate, options::get("scheduler_commute") == "yes");
+            new_event(currID, Qubit, ins->operands[1], Xrotate, options::get("scheduler_commute") == "yes");
         } else if (iname == "cz" || iname == "cphase") {
             QL_DOUT(". considering " << name[currNode] << " as cz");
             // CZs operands are both Zrotates
             QL_ASSERT(ins->operands.size() == 2);
-            new_event(currID, ins->operands[0], Zrotate, options::get("scheduler_commute") == "yes");
-            new_event(currID, ins->operands[1], Zrotate, options::get("scheduler_commute") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Zrotate, options::get("scheduler_commute") == "yes");
+            new_event(currID, Qubit, ins->operands[1], Zrotate, options::get("scheduler_commute") == "yes");
         } else if (
                 iname == "rz"
                 || iname == "z"
@@ -439,7 +470,7 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as Z rotation");
             // Z rotations on single operand
             QL_ASSERT(ins->operands.size() == 1);
-            new_event(currID, ins->operands[0], Zrotate, options::get("scheduler_commute_rotations") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Zrotate, options::get("scheduler_commute_rotations") == "yes");
         } else if (
                 iname == "rx"
                 || iname == "x"
@@ -454,20 +485,20 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as X rotation");
             // X rotations on single operand
             QL_ASSERT(ins->operands.size() == 1);
-            new_event(currID, ins->operands[0], Xrotate, options::get("scheduler_commute_rotations") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Xrotate, options::get("scheduler_commute_rotations") == "yes");
         } else {
             QL_DOUT(". considering " << name[currNode] << " as no special gate (catch-all, generic rules)");
             // Default on each qubit operand
-            // Write on each classical operand
-            // Write on each bit operand
+            // Cwrite on each classical operand
+            // Bwrite on each bit operand
             for (auto operand : ins->operands) {
-                new_event(currID, operand, Default, false);
+                new_event(currID, Qubit, operand, Default, false);
             }
             for (auto coperand : ins->creg_operands) {
-                new_event(currID, creg_base+coperand, Write, false);
+                new_event(currID, Creg, coperand, Cwrite, false);
             }
             for (auto boperand : ins->breg_operands) {
-                new_event(currID, breg_base+boperand, Write, false);
+                new_event(currID, Breg, boperand, Bwrite, false);
             }
         } // end of if/else
         QL_DOUT(". instruction done: " << ins->qasm());
@@ -485,7 +516,7 @@ void Scheduler::init(
         t = currNode;
 
         // add deps to the dummy target node to close the dependency chains
-        // it behaves as a Default to every qubit, Write to every creg and breg
+        // it behaves as a Default to every qubit, Cwrite/Bwrite to every creg and breg
         //
         // to guarantee that exactly at start of execution of dummy SINK,
         // all still executing nodes complete, give arc weight of those nodes;
@@ -495,25 +526,20 @@ void Scheduler::init(
         // guaranteed that on a jump and on start of target circuit, the source circuit completed).
         //
         // note that there always is a LastWriter: the dummy source node wrote to every qubit and class. reg
-        Vec<UInt> all_operands(total_reg_count);
-        std::iota(all_operands.begin(), all_operands.end(), 0);
-        for (auto operand : all_operands) {
-            QL_DOUT(".. Sink operand, adding dep: " << operand);
-            if (operand >= breg_base) {
-                new_event(currID, operand, Write, false);
-            } else if (operand >= creg_base) {
-                new_event(currID, operand, Write, false);
-            } else {
-                new_event(currID, operand, Default, false);
-            }
+        Vec<UInt> qubits(qubit_count);
+        std::iota(qubits.begin(), qubits.end(), 0);
+        for (auto operand : qubits) {
+            new_event(currID, Qubit, operand, Default, false);
         }
-
-        // useless because there is nothing after t but destruction
-        for (auto operand : all_operands) {
-            QL_DOUT(".. Sink operand, clearing: " << operand);
-            LastWriter[operand] = currID;
-            LastReaders[operand].clear();
-            LastXrotates[operand].clear();
+        Vec<UInt> cregs(creg_count);
+        std::iota(cregs.begin(), cregs.end(), 0);
+        for (auto coperand : cregs) {
+            new_event(currID, Creg, coperand, Cwrite, false);
+        }
+        Vec<UInt> bregs(breg_count);
+        std::iota(bregs.begin(), bregs.end(), 0);
+        for (auto boperand : bregs) {
+            new_event(currID, Breg, boperand, Bwrite, false);
         }
     }
 
@@ -539,12 +565,12 @@ void Scheduler::DPRINTDepgraph(const Str &s) const {
             std::cout << "Node " << graph.id(n) << " \"" << name[n] << "\" :" << std::endl;
             std::cout << "    out:";
             for (ListDigraph::OutArcIt arc(graph,n); arc != lemon::INVALID; ++arc) {
-                std::cout << " Arc(" << graph.id(arc) << "," << DepTypesNames[ depType[arc] ] << "," << cause[arc] << ")->node(" << graph.id(graph.target(arc)) << ")";
+                std::cout << " Arc(" << graph.id(arc) << "," << DepTypeName[ depType[arc] ] << "," << OperandTypeName[opType[arc]] << "[" << cause[arc] << "])->node(" << graph.id(graph.target(arc)) << ")";
             }
             std::cout << std::endl;
             std::cout << "    in:";
             for (ListDigraph::InArcIt arc(graph,n); arc != lemon::INVALID; ++arc) {
-                std::cout << " Arc(" << graph.id(arc) << "," << DepTypesNames[ depType[arc] ] << "," << cause[arc] << ")<-node(" << graph.id(graph.source(arc)) << ")";
+                std::cout << " Arc(" << graph.id(arc) << "," << DepTypeName[ depType[arc] ] << "," << OperandTypeName[opType[arc]] << "[" << cause[arc] << "])<-node(" << graph.id(graph.source(arc)) << ")";
             }
             std::cout << std::endl;
         }
@@ -556,6 +582,7 @@ void Scheduler::print() const {
     QL_COUT("Printing dependency Graph ");
     digraphWriter(graph).
         nodeMap("name", name).
+        arcMap("optype", opType).
         arcMap("cause", cause).
         arcMap("weight", weight).
         // arcMap("depType", depType).
@@ -1507,9 +1534,9 @@ void Scheduler::get_dot(
                << "->"
                << "\"" << dstID << "\""
                << "[ label=\""
-               << "q" << cause[arc]
+               << OperandTypeName[opType[arc]] << "[" << cause[arc] << "]"
                << " , " << weight[arc]
-               << " , " << DepTypesNames[ depType[arc] ]
+               << " , " << DepTypeName[ depType[arc] ]
                <<"\""
                << " " << EdgeStyle << " "
                << "]"

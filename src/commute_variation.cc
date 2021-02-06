@@ -74,7 +74,7 @@ public:
     // after scheduling, delete the added arcs (ZAZ/XAX) from the depgraph to restore it to the original state
     void clean_variation( List<lemon::ListDigraph::Arc>& newarcslist) {
         for (auto a : newarcslist) {
-            QL_DOUT("...... erasing arc with id " << graph.id(a) << " from " << instruction[graph.source(a)]->qasm() << " to " << instruction[graph.target(a)]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+            QL_DOUT("...... erasing arc with id " << graph.id(a) << " from " << instruction[graph.source(a)]->qasm() << " to " << instruction[graph.target(a)]->qasm() << " as " << DepTypeName[depType[a]] << " by q" << cause[a]);
             graph.erase(a);
         }
         newarcslist.clear();
@@ -129,14 +129,14 @@ public:
                 std::advance(li, thisone);
                 lemon::ListDigraph::Arc a = *li;   // i.e. select the thisone's element in this subvarslist
                 lemon::ListDigraph::Node n  = graph.source(a);
-                QL_DOUT("...... set " << varslist_index << " take " << thisone << ": " << instruction[n]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+                QL_DOUT("...... set " << varslist_index << " take " << thisone << ": " << instruction[n]->qasm() << " as " << DepTypeName[depType[a]] << " by q" << cause[a]);
                 if (prevvalid) {
                     QL_DOUT("...... adding new arc from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm());
                     auto newarc = graph.addArc(prevn, n);
                     weight[newarc] = weight[a];
                     cause[newarc] = cause[a];
                     depType[newarc] = (depType[a] == DAZ ? ZAZ : XAX);
-                    QL_DOUT("...... added new arc with id " << graph.id(newarc) << " from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm() << " as " << DepTypesNames[depType[newarc]] << " by q" << cause[newarc]);
+                    QL_DOUT("...... added new arc with id " << graph.id(newarc) << " from " << instruction[prevn]->qasm() << " to " << instruction[n]->qasm() << " as " << DepTypeName[depType[newarc]] << " by q" << cause[newarc]);
                     newarcslist.push_back(newarc);
                 }
                 prevvalid = true;
@@ -169,7 +169,7 @@ public:
                 List<lemon::ListDigraph::Arc> subvarslist;
                 for (auto a : TMParclist) {
                     lemon::ListDigraph::Node srcNode  = graph.source(a);
-                    QL_DOUT("... " << instruction[srcNode]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+                    QL_DOUT("... " << instruction[srcNode]->qasm() << " as " << DepTypeName[depType[a]] << " by q" << cause[a]);
                     perm_index++;
                     perm_count = mult(perm_count, perm_index);
                     subvarslist.push_back(a);
@@ -191,7 +191,7 @@ public:
             VarCode perm_count = 1;
             for (auto a : subvarslist) {
                 lemon::ListDigraph::Node srcNode  = graph.source(a);
-                QL_DOUT("... " << instruction[srcNode]->qasm() << " as " << DepTypesNames[depType[a]] << " by q" << cause[a]);
+                QL_DOUT("... " << instruction[srcNode]->qasm() << " as " << DepTypeName[depType[a]] << " by q" << cause[a]);
                 perm_index++;
                 perm_count *= perm_index;
             }
@@ -227,7 +227,7 @@ public:
                 ) {
                     continue;
                 }
-                QL_DOUT("... Encountering relevant " << DepTypesNames[depType[arc]] << " by q" << cause[arc] << " from " << instruction[graph.source(arc)]->qasm());
+                QL_DOUT("... Encountering relevant " << DepTypeName[depType[arc]] << " by q" << cause[arc] << " from " << instruction[graph.source(arc)]->qasm());
                 if (
                     depType[arc] == DAZ
                     ||  depType[arc] == XAZ
@@ -240,7 +240,7 @@ public:
                 ) {
                     Xarclist.push_back(arc);
                 } else {
-                    QL_FATAL("Unknown dependence type " << DepTypesNames[depType[arc]] << " by q" << cause[arc] << " from " << instruction[graph.source(arc)]->qasm());
+                    QL_FATAL("Unknown dependence type " << DepTypeName[depType[arc]] << " by q" << cause[arc] << " from " << instruction[graph.source(arc)]->qasm());
                 }
             }
             add_variations(Zarclist, varslist, total);
