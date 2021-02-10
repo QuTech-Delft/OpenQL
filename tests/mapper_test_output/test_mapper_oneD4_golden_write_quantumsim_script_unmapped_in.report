@@ -1,0 +1,14 @@
+# kernel: kernel_oneD4_golden
+# ----- circuit_latency: 6
+# ----- quantum gates: 5
+# ----- non single qubit gates: 1
+# ----- classical operations: 0
+# ----- qubits used: 2
+# ----- qubit cycles use:[0, 0, 6, 0, 6, 0, 0]
+
+# Total circuit_latency: 6
+# Total no. of quantum gates: 5
+# Total no. of non single qubit gates: 1
+# Total no. of classical operations: 0
+# Qubits used: 2
+# No. kernels: 1

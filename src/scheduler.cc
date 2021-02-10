@@ -1038,7 +1038,16 @@ ListDigraph::Node Scheduler::SelectAvailable(
         QL_DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining.dbg(n));
     }
 
-    // select the first immediately schedulable, if any
+    // select the first (most critical) immediately schedulable gate that has duration 0
+    for (auto n : avlist) {
+        Bool isres;
+        if (instruction[n]->duration == 0 && immediately_schedulable(n, dir, curr_cycle, platform, rm, isres)) {
+            QL_DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " duration 0 and immediately schedulable, remaining=" << remaining.dbg(n) << ", selected");
+            success = true;
+            return n;
+        }
+    }
+    // select the first (most critical) immediately schedulable, if any, otherwise
     // since avlist is deep-criticality ordered, highest first, the first is the most deep-critical
     for (auto n : avlist) {
         Bool isres;

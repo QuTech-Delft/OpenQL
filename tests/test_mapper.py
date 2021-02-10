@@ -53,6 +53,7 @@ class Test_mapper(unittest.TestCase):
         ql.set_option('maprecNN2q', 'no')
         ql.set_option('mapselectmaxlevel', '0')
         ql.set_option('mapselectmaxwidth', 'min')
+        ql.set_option('mapenableremaps', 'yes')
         
         ql.set_option('write_qasm_files', 'no')
         ql.set_option('write_report_files', 'no')
