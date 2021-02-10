@@ -93,23 +93,30 @@ public:
     // name may contain parameters, so must be stripped first before checking it for gate's name
     static void stripname(utils::Str &name);
 
-    // signal the state machine of dependence graph construction to do a step as specified by the parameters
+    // signal the state machine of dependence graph construction to do a step as specified by the parameters;
+    // currID is the new node in the graph for the new gate/instruction;
+    // the event concerns a particular operand of this gate, with the specified type and index,
+    // and the particular event that is signalled to the state machine is encoded in currEvent;
+    // commutes indicates whether any commutation with previous events should be represented in the graph,
+    // when not, additional sequentializing dependences will be added;
+    // the state machines knows of all relevant previous events and in this context
+    // can add dependences for this new current gate on those previous ones
     void new_event(
         int currID,
         enum OperandType operandType,
-        utils::UInt combooperand,
+        utils::UInt operand,
         enum EventType currEvent,
         bool commutes
     );
 
     // add a dependence between two nodes
-    // operand is in qubit_creg_breg combined index space with size qcount+ccount+bcount
+    // operand is in index space corresponding to operand type
     void add_dep(
         utils::Int fromID,
         utils::Int toID,
         enum DepType deptype,
         enum OperandType operandType,
-        utils::UInt comboperand
+        utils::UInt operand
     );
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences

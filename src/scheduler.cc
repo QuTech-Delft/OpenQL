@@ -138,6 +138,7 @@ void Scheduler::add_dep(
 // and concerns the current gate encoded by currID
 // and its given ooperand;
 // commutes indicates whether this event is allowed to commute with the other events of its type.
+//
 // This event drives a state machine to do one step (one state transition).
 // It accepts the following event sequence per Qubit operand: Default { Default | Xrotate+ | Zrotate+ }* Default
 // and the following event sequence per Creg/Breg operand: Write { Write | Read+ }* Write,
