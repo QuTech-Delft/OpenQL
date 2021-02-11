@@ -30,7 +30,7 @@ class Test_sweep_points(unittest.TestCase):
         k.measure(0)
 
         # create a program
-        p = ql.Program("aProgram", platf, nqubits)
+        p = ql.Program("test_sweep_points", platf, nqubits)
         p.set_sweep_points(sweep_points)
 
         # add kernel to program
@@ -40,7 +40,7 @@ class Test_sweep_points(unittest.TestCase):
         p.compile()
 
         # all the outputs are generated in 'output' dir
-        with open(os.path.join(output_dir, 'aProgram_config.json')) as fp:
+        with open(os.path.join(output_dir, 'test_sweep_points_config.json')) as fp:
             config = json.load(fp)
 
         self.assertTrue('measurement_points' in config.keys())
@@ -60,7 +60,7 @@ class Test_sweep_points(unittest.TestCase):
         k.measure(0)
 
         # create a program
-        p = ql.Program("aProgram", platf, nqubits)
+        p = ql.Program("test_no_sweep_points", platf, nqubits)
 
         # add kernel to program
         p.add_kernel(k)

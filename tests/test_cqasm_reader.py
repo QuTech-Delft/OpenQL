@@ -14,7 +14,7 @@ class TestcQasmReader(unittest.TestCase):
     def setUp(self):
         ql.initialize()
         ql.set_option('output_dir', output_dir)
-        ql.set_option("write_qasm_files", "yes")
+        # ql.set_option("write_qasm_files", "yes")
 
     def test_invalid_qasm(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')

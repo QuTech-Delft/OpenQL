@@ -2980,7 +2980,6 @@ void Mapper::Map(quantum_kernel& kernel) {
     v2r.Export(v2r_ip);  // from v2r to caller for reporting
     v2r.Export(rs_ip);   // from v2r to caller for reporting
 
-    mapassumezeroinitstateopt = options::get("mapassumezeroinitstate");
     QL_DOUT("Mapper::Map before MapCircuit: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
 
     MapCircuit(kernel, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map

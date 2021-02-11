@@ -194,6 +194,19 @@ public:
 };
 
 /**
+ * Commute Variation Pass
+ */
+class CommuteVariationPass : public AbstractPass {
+public:
+    /**
+     * @brief  Commute variation pass constructor
+     * @param  Name of the commute variation pass
+     */
+    explicit CommuteVariationPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
+};
+
+/**
  * Resource Constraint Scheduler Pass
  */
 class RCSchedulePass : public AbstractPass {

@@ -20,8 +20,8 @@ class Test_skip(unittest.TestCase):
         ql.set_option('output_dir', output_dir)     # this uses output_dir set above
 
         ql.set_option('log_level', 'LOG_NOTHING')
-        ql.set_option('write_qasm_files', 'yes')
-        ql.set_option('write_report_files', 'no')
+        # ql.set_option('write_qasm_files', 'yes')
+        # ql.set_option('write_report_files', 'no')
         ql.set_option('unique_output', 'no')
 
         ql.set_option('optimize', 'no')
@@ -67,8 +67,8 @@ class Test_skip(unittest.TestCase):
 
         self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
-        ql.set_option('write_qasm_files', 'no')
-        ql.set_option('write_report_files', 'no')
+        # ql.set_option('write_qasm_files', 'no')
+        # ql.set_option('write_report_files', 'no')
         ql.set_option('unique_output', 'no')
         ql.set_option('mapper', 'no')
 

@@ -4,18 +4,13 @@ qubits 7
 
 .aKernel
     cnot q[3],q[0]
+    wait 3
     cnot q[3],q[6]
-    t q[6]
-    y q[6]
-    cnot q[3],q[1]
-    t q[1]
-    y q[1]
-    t q[1]
-    y q[1]
-    cnot q[3],q[5]
-    t q[5]
-    y q[5]
-    t q[5]
-    y q[5]
-    t q[5]
-    y q[5]
+    wait 3
+    { x45 q[6] | cnot q[3],q[1] }
+    x q[6]
+    wait 2
+    x45 q[1]
+    x q[1]
+    x45 q[1]
+    x q[1]

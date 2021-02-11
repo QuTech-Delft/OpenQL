@@ -18,7 +18,7 @@ class Test_barrier(unittest.TestCase):
         ql.set_option('scheduler_post179', 'yes')
         ql.set_option("scheduler_commute", 'no')
         ql.set_option('use_default_gates', 'yes')
-        ql.set_option('write_qasm_files', 'yes')
+        # ql.set_option('write_qasm_files', 'yes')
         
 
     # barrier on specified qubits

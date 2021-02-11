@@ -15,6 +15,7 @@
 #include "cqasm/cqasm_reader.h"
 #include "latency_compensation.h"
 #include "buffer_insertion.h"
+#include "commute_variation.h"
 #include "scheduler.h"
 #include "visualizer.h"
 
@@ -417,6 +418,21 @@ CliffordOptimizePass::CliffordOptimizePass(const Str &name) : AbstractPass(name)
  */
 void CliffordOptimizePass::runOnProgram(quantum_program *program) {
     clifford_optimize(program, program->platform, getPassName());
+}
+
+/**
+ * @brief  Commute variation pass constructor
+ * @param  Name of the commute_variation pass
+ */
+CommuteVariationPass::CommuteVariationPass(const Str &name) : AbstractPass(name) {
+}
+
+/**
+ * @brief  Exploit commuting of gates circuit-wide to minimize circuit latency beyond locally in the scheduler
+ * @param  Program object to be latency compensated
+ */
+void CommuteVariationPass::runOnProgram(quantum_program *program) {
+    commute_variation(program, program->platform, getPassName());
 }
 
 /**

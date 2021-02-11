@@ -30,7 +30,7 @@ class Test_kernel(unittest.TestCase):
         sweep_points = [2]
 
         # create a program
-        p = ql.Program("aProgram", platf, nqubits)
+        p = ql.Program("minimal", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         # add kernel to program
