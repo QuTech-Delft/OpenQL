@@ -284,13 +284,6 @@ void Scheduler::init(
                 QL_DOUT(".. Update LastWriter done");
             }
             QL_DOUT(". measure done");
-        } else if (iname == "remap") {
-            QL_DOUT(". considering " << name[consNode] << " as remap");
-            QL_ASSERT(ins->operands.size() == 1);
-            auto operand = ins->operands[0];
-            QL_DOUT(".. Operand: " << operand);
-            add_dep(LastWriter[operand], consID, WAW, operand);
-            LastWriter[operand] = consID;
         } else if (iname == "display") {
             QL_DOUT(". considering " << name[consNode] << " as display");
             // no operands, display all qubits and cregs

@@ -56,9 +56,6 @@ k.gate("cnot", [2,3])
 k.gate("x", [2])
 k.gate("x", [3])
 
-p.add_kernel(k)
-c.compile(p)
-
 # k.gate('x', [0])
 # for i in range(nqubits):
 #     k.gate('prepz', [i])
@@ -78,3 +75,6 @@ c.compile(p)
 # k.gate('measure', [0])
 # k.gate('measure', [1])
 # k.gate('measure', [2])
+
+p.add_kernel(k)
+c.compile(p)

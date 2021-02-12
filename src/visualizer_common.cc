@@ -134,7 +134,7 @@ Vec<GateProperties> parseGates(const quantum_program* program) {
                 gate->type(),
                 {},
                 "UNDEFINED",
-                gate->type() == __remap_gate__ ? dynamic_cast<ql::remap*>(gate)->virtual_qubit_index : MAX
+                gate->type() == MAX
             };
             gates.push_back(gateProperties);
         }

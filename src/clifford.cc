@@ -35,7 +35,6 @@ public:
 
         cliffstate.resize(nq, 0);       // 0 is identity; for all qubits accumulated state is set to identity
         cliffcycles.resize(nq, 0);      // for all qubits, no accumulated cycles
-        lastremap.resize(nq, nullptr);  // no qubits have stored remap gates yet
         total_saved = 0;                // reset saved, just for reporting
 
         /*
@@ -95,11 +94,6 @@ public:
                     Int csq = cliffstate[q];
                     QL_DOUT("... from " << cs2string(csq) << " to " << cs2string(clifftrans[csq][cs]));
                     cliffstate[q] = clifftrans[csq][cs];
-                } else if (gp->type() == __remap_gate__) {
-                    QL_DOUT("... found remap gate - storing for later placeback");
-                    // this should never happen! only one remap gate should be stored per clifford sequence
-                    QL_ASSERT(lastremap[q] == nullptr); 
-                    lastremap[q] = gp;
                 } else {
                     // unary quantum non-clifford gates like wait/meas/prepz/...
                     // interpret cliffstate and create corresponding gate sequence, for this operand qubit
@@ -122,7 +116,6 @@ private:
     UInt ct;
     Vec<Int> cliffstate; // current accumulated clifford state per qubit
     Vec<UInt> cliffcycles; // current accumulated clifford cycles per qubit
-    Vec<gate*> lastremap; // stores the last remap gate found for a qubit when processing clifford sequences
     UInt total_saved; // total number of cycles saved per kernel
 
     // create gate sequences for all accumulated cliffords, output them and reset state
@@ -149,12 +142,6 @@ private:
         }
         cliffstate[q] = 0;
         cliffcycles[q] = 0;
-
-        // if a remap gate was stored in this qubit, place it at the end of the sequence
-        if (lastremap[q] != nullptr) {
-            k.c.push_back(lastremap[q]);
-            lastremap[q] = nullptr;
-        }
     }
 
     // clifford state transition [from state][accumulating sequence represented as state] => new state

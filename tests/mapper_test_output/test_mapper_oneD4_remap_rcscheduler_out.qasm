@@ -18,10 +18,10 @@ qubits 7
     { y90 q[3] | ym90 q[1] }
     cz q[3],q[1]
     wait 1
-    { y90 q[1] | ym90 q[3] }
-    cz q[1],q[3]
-    y90 q[0]
+    { ym90 q[3] | y90 q[0] }
     cz q[0],q[3]
+    y90 q[1]
+    cz q[1],q[3]
     wait 1
     y90 q[3]
     { x q[0] | x q[3] }
