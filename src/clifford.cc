@@ -34,6 +34,7 @@ public:
         kernel.c.clear();
 
         cliffstate.resize(nq, 0);       // 0 is identity; for all qubits accumulated state is set to identity
+        cliffvirtual.resize(nq, 0);     // set all virtual qubits to zero
         cliffcycles.resize(nq, 0);      // for all qubits, no accumulated cycles
         total_saved = 0;                // reset saved, just for reporting
 
@@ -94,6 +95,12 @@ public:
                     Int csq = cliffstate[q];
                     QL_DOUT("... from " << cs2string(csq) << " to " << cs2string(clifftrans[csq][cs]));
                     cliffstate[q] = clifftrans[csq][cs];
+                    // store the virtual operands
+                    if (gp->virtual_operands.size() == 1) {
+                        cliffvirtual[q] = gp->virtual_operands[0];
+                    } else {
+                        QL_DOUT("... gate " << gp << " has no virtual operands");
+                    }
                 } else {
                     // unary quantum non-clifford gates like wait/meas/prepz/...
                     // interpret cliffstate and create corresponding gate sequence, for this operand qubit
@@ -115,6 +122,7 @@ private:
     UInt nq;
     UInt ct;
     Vec<Int> cliffstate; // current accumulated clifford state per qubit
+    Vec<UInt> cliffvirtual; // current virtual qubit per qubit
     Vec<UInt> cliffcycles; // current accumulated clifford cycles per qubit
     UInt total_saved; // total number of cycles saved per kernel
 
@@ -132,7 +140,13 @@ private:
         Int csq = cliffstate[q];
         if (csq != 0) {
             QL_DOUT("... sync q[" << q << "]: generating clifford " << cs2string(csq));
+            UInt old_kernel_size = k.c.size();
             k.clifford(csq, q);          // generates clifford(csq) in kernel.c
+            UInt new_kernel_size = k.c.size();
+            // store the original virtual qubits into the newly generated clifford sequence
+            for (UInt i = old_kernel_size; i < new_kernel_size; i++) {
+                k.c[i]->virtual_operands = { cliffvirtual[q] };
+            }
             UInt  acc_cycles = cliffcycles[q];
             UInt  ins_cycles = cs2cycles(csq);
             QL_DOUT("... qubit q[" << q << "]: accumulated: " << acc_cycles << ", inserted: " << ins_cycles);

@@ -123,14 +123,6 @@ Vec<GateProperties> parseGates(const quantum_program* program) {
 
     for (quantum_kernel kernel : program->kernels) {
         for (gate* const gate : kernel.get_circuit()) {
-
-            Str original_operands = "[";
-            for (UInt i = 0; i < gate->virtual_operands.size(); i++) {
-                original_operands += to_string(gate->virtual_operands[i]);
-                if (i != gate->virtual_operands.size() - 1) original_operands += ", ";
-            }
-            QL_IOUT("parsed gate: " << gate->name << " with virtual operands: " << original_operands << "]");
-
             Vec<Int> operands;
             Vec<Int> creg_operands;
             Vec<Int> virtual_operands;

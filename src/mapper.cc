@@ -3004,25 +3004,7 @@ void Mapper::Map(quantum_kernel& kernel) {
     MapCircuit(kernel, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
     v2r.DPRINT("After heuristics");
 
-    // QL_IOUT("Virtual operands before making gates primitive:");
-    // for (auto gp : kernel.c) {
-    //     Str original_operands = "[";
-    //     for (UInt i = 0; i < gp->virtual_operands.size(); i++) {
-    //         original_operands += to_string(gp->virtual_operands[i]);
-    //         if (i != gp->virtual_operands.size() - 1) original_operands += ", ";
-    //     }
-    //     QL_IOUT("\tgate: " << gp->name << " --> virtual operands: " << original_operands << "]");
-    // }
     MakePrimitives(kernel);         // decompose to primitives as specified in the config file
-    // QL_IOUT("Virtual operands after making gates primitive:");
-    // for (auto gp : kernel.c) {
-    //     Str original_operands = "[";
-    //     for (UInt i = 0; i < gp->virtual_operands.size(); i++) {
-    //         original_operands += to_string(gp->virtual_operands[i]);
-    //         if (i != gp->virtual_operands.size() - 1) original_operands += ", ";
-    //     }
-    //     QL_IOUT("\tgate: " << gp->name << " --> virtual operands: " << original_operands << "]");
-    // }
 
     kernel.qubit_count = nq;        // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
     v2r.Export(v2r_out);     // from v2r to caller for reporting
