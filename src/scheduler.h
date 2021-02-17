@@ -28,9 +28,17 @@
 
 namespace ql {
 
-// see above/below for the meaning of R, W, and D events and their relation to dependences
-enum DepTypes {RAW, WAW, WAR, RAR, RAD, DAR, DAD, WAD, DAW};
-const utils::Str DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR", "RAD", "DAR", "DAD", "WAD", "DAW"};
+// see src/scheduler.cc for the meaning of R, W, D, X and Z events and their relation to dependences
+enum DepType {RAR, RAW, WAR, WAW, DAD, DAX, DAZ, XAD, XAX, XAZ, ZAD, ZAX, ZAZ};
+const utils::Str DepTypeName[] = {"RAR", "RAW", "WAR", "WAW", "DAD", "DAX", "DAZ", "XAD", "XAX", "XAZ", "ZAD", "ZAX", "ZAZ"};
+
+enum EventType {Default, Xrotate, Zrotate, Cread, Cwrite, Bread, Bwrite};
+const utils::Str EventTypeName[] = {"Default", "Xrotate", "Zrotate", "Cread", "Cwrite", "Bread", "Bwrite"};
+
+typedef utils::Vec<utils::Int> ReadersListType;
+
+enum OperandType {Qubit, Creg, Breg};
+const utils::Str OperandTypeName[] = {"q", "c", "b"};
 
 class Scheduler {
 public:
@@ -45,7 +53,8 @@ public:
     // attributes
     lemon::ListDigraph::NodeMap<utils::Str> name;     // name[n] == qasm string
     lemon::ListDigraph::ArcMap<utils::Int> weight;    // number of cycles of dependence
-    lemon::ListDigraph::ArcMap<utils::Int> cause;     // qubit/creg index of dependence
+    lemon::ListDigraph::ArcMap<utils::Int> opType;    // qubit, creg or breg
+    lemon::ListDigraph::ArcMap<utils::Int> cause;     // operand index
     lemon::ListDigraph::ArcMap<utils::Int> depType;   // RAW, WAW, ...
 
     // s and t nodes are the top and bottom of the dependence graph
@@ -55,29 +64,71 @@ public:
     utils::UInt cycle_time;     // to convert durations to cycles as weight of dependence
     utils::UInt qubit_count;    // number of qubits, to check/represent qubit as cause of dependence
     utils::UInt creg_count;     // number of cregs, to check/represent creg as cause of dependence
+    utils::UInt breg_count;     // number of bregs, to check/represent breg as cause of dependence
     circuit *circp;             // current and result circuit, passed from Init to each scheduler
 
     // scheduler support
     utils::Map<lemon::ListDigraph::Node, utils::UInt>  remaining;  // remaining[node] == cycles until end; critical path representation
+private:
+    // state of the state machine that is used to construct the dependence graph
+    // for each OperandType there is a separate type of state machine
+    // for each particular operand there is a separate state machine
+    // all vectors are indexed by the operand
+    utils::Vec<enum EventType> LastQEvent;      // Qubit: Default, Xrotate, Zrotate
+    utils::Vec<utils::Int> LastDefault;         // state machine: Default { Default | Xrotate+ | Zrotate+ }* Default
+    utils::Vec<ReadersListType> LastXrotates;
+    utils::Vec<ReadersListType> LastZrotates;
+
+    utils::Vec<enum EventType> LastCEvent;      // Creg: Write, Read
+    utils::Vec<utils::Int> LastCWriter;         // state machine: Write { Write | Read+ }* Write,
+    utils::Vec<ReadersListType> LastCReaders;
+
+    utils::Vec<enum EventType> LastBEvent;      // Breg: Write, Read
+    utils::Vec<utils::Int> LastBWriter;         // state machine: Write { Write | Read+ }* Write,
+    utils::Vec<ReadersListType> LastBReaders;
 
 public:
     Scheduler();
 
-    // ins->name may contain parameters, so must be stripped first before checking it for gate's name
+    // name may contain parameters, so must be stripped first before checking it for gate's name
     static void stripname(utils::Str &name);
 
-    // factored out code from Init to add a dependence between two nodes
-    // operand is in qubit_creg combined index space
-    void add_dep(utils::Int srcID, utils::Int tgtID, enum DepTypes deptype, utils::Int operand);
+    // signal the state machine of dependence graph construction to do a step as specified by the parameters;
+    // currID is the new node in the graph for the new gate/instruction;
+    // the event concerns a particular operand of this gate, with the specified type and index,
+    // and the particular event that is signalled to the state machine is encoded in currEvent;
+    // commutes indicates whether any commutation with previous events should be represented in the graph,
+    // when not, additional sequentializing dependences will be added;
+    // the state machines knows of all relevant previous events and in this context
+    // can add dependences for this new current gate on those previous ones
+    void new_event(
+        int currID,
+        enum OperandType operandType,
+        utils::UInt operand,
+        enum EventType currEvent,
+        bool commutes
+    );
+
+    // add a dependence between two nodes
+    // operand is in index space corresponding to operand type
+    void add_dep(
+        utils::Int fromID,
+        utils::Int toID,
+        enum DepType deptype,
+        enum OperandType operandType,
+        utils::UInt operand
+    );
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(
         circuit &ckt,
         const quantum_platform &platform,
         utils::UInt qcount,
-        utils::UInt ccount
+        utils::UInt ccount,
+        utils::UInt bcount
     );
 
+    void DPRINTDepgraph(const utils::Str &s) const;
     void print() const;
     void write_dependence_matrix() const;
 
@@ -117,7 +168,6 @@ private:
 public:
 // use MAX_CYCLE for absolute upperbound on cycle value
 // use ALAP_SINK_CYCLE for initial cycle given to SINK in ALAP;
-// the latter allows for some growing room when doing latency compensation/buffer-delay insertion
 #define ALAP_SINK_CYCLE    (MAX_CYCLE/2)
 
     // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
@@ -314,7 +364,16 @@ public:
     void get_dot(utils::Str &dot);
 };
 
-// schedule support for program.h::schedule()
+/*
+ * main entry point of the non resource-constrained scheduler
+ */
+void schedule(
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const utils::Str &passname
+);
+
+// kernel-level entry to the non resource-constrained scheduler
 void schedule_kernel(
     quantum_kernel &kernel,
     const quantum_platform &platform,
@@ -323,29 +382,22 @@ void schedule_kernel(
 );
 
 /*
- * main entry to the non resource-constrained scheduler
- */
-void schedule(
-    quantum_program *programp,
-    const quantum_platform &platform,
-    const utils::Str &passname
-);
-
-void rcschedule_kernel(
-    quantum_kernel &kernel,
-    const quantum_platform &platform,
-    utils::Str &dot,
-    utils::UInt nqubits,
-    utils::UInt ncreg = 0
-);
-
-/*
- * main entry point of the rcscheduler
+ * main entry point of the resource-constrained scheduler
  */
 void rcschedule(
     quantum_program *programp,
     const quantum_platform &platform,
     const utils::Str &passname
+);
+
+// kernel-level entry to the resource-constrained scheduler
+void rcschedule_kernel(
+    quantum_kernel &kernel,
+    const quantum_platform &platform,
+    utils::Str &dot,
+    utils::UInt nqubits,
+    utils::UInt ncreg = 0,
+    utils::UInt nbreg = 0
 );
 
 } // namespace ql

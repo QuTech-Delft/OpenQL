@@ -183,6 +183,9 @@ void hardware_configuration::load(
                     // using existing sub ins, e.g. "x q0" or "x %0"
                     QL_DOUT("using existing sub instr : " << sub_ins);
                     gs.push_back(instruction_map.at(sub_ins));
+                } else if (sub_ins.find("cond(") !=
+                           Str::npos) {              // conditional gate?
+                    QL_FATAL("conditional gate not supported in gate_decomposition: '" << sub_ins << "'");
                 } else if (sub_ins.find("%") !=
                            Str::npos) {              // parameterized composite gate? FIXME: no syntax check
                     // adding new sub ins if not already available, e.g. "x %0"

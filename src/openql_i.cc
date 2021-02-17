@@ -25,7 +25,7 @@ void initialize() {
         QL_IOUT("initializing OpenQL library");
     }
     initialized = true;
-    ql::options::reset_options();
+    ql::options::global.reset();
 }
 
 std::string get_version() {
@@ -37,15 +37,15 @@ void set_option(const std::string &option_name, const std::string &option_value)
         QL_WOUT("option set before initialize()! In the future, please call initialize() before anything else!");
         initialize();
     }
-    ql::options::set(option_name, option_value);
+    ql::options::global[option_name] = option_value;
 }
 
 std::string get_option(const std::string &option_name) {
-    return ql::options::get(option_name);
+    return ql::options::global[option_name].as_str();
 }
 
 void print_options() {
-    ql::options::print();
+    ql::options::global.help();
 }
 
 Platform::Platform() {}
@@ -126,15 +126,17 @@ Kernel::Kernel(
     const std::string &name,
     const Platform &platform,
     size_t qubit_count,
-    size_t creg_count
+    size_t creg_count,
+    size_t breg_count
 ) :
     name(name),
     platform(platform),
     qubit_count(qubit_count),
-    creg_count(creg_count)
+    creg_count(creg_count),
+    breg_count(breg_count)
 {
-    QL_WOUT("Kernel(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
-    kernel = new ql::quantum_kernel(name, *(platform.platform), qubit_count, creg_count);
+    QL_WOUT("Kernel(name,Platform,#qbit,#creg,#breg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
+    kernel = new ql::quantum_kernel(name, *(platform.platform), qubit_count, creg_count, breg_count);
 }
 
 void Kernel::identity(size_t q0) {
@@ -210,7 +212,13 @@ void Kernel::rz(size_t q0, double angle) {
 }
 
 void Kernel::measure(size_t q0) {
+    QL_DOUT("Python k.measure([" << q0 << "])");
     kernel->measure(q0);
+}
+
+void Kernel::measure(size_t q0, size_t b0) {
+    QL_DOUT("Python k.measure([" << q0 << "], [" << b0 << "])");
+    kernel->measure(q0, b0);
 }
 
 void Kernel::prepz(size_t q0) {
@@ -257,9 +265,40 @@ void Kernel::gate(
     const std::string &name,
     const std::vector<size_t> &qubits,
     size_t duration,
-    double angle
+    double angle,
+    const std::vector<size_t> &bregs,
+    const std::string &condstring,
+    const std::vector<size_t> &condregs
 ) {
-    kernel->gate(name, {qubits.begin(), qubits.end()}, {}, duration, angle);
+    QL_DOUT(
+        "Python k.gate("
+        << name
+        << ", "
+        << ql::utils::Vec<size_t>(qubits.begin(), qubits.end())
+        << ", "
+        << duration
+        << ", "
+        << angle
+        << ", "
+        << ql::utils::Vec<size_t>(bregs.begin(), bregs.end())
+        << ", "
+        << condstring
+        << ", "
+        << ql::utils::Vec<size_t>(condregs.begin(), condregs.end())
+        << ")"
+    );
+    ql::cond_type_t condvalue = kernel->condstr2condvalue(condstring);
+
+    kernel->gate(
+        name,
+        {qubits.begin(), qubits.end()},
+        {},
+        duration,
+        angle,
+        {bregs.begin(), bregs.end()},
+        condvalue,
+        {condregs.begin(), condregs.end()}
+    );
 }
 
 void Kernel::gate(
@@ -267,7 +306,57 @@ void Kernel::gate(
     const std::vector<size_t> &qubits,
     const CReg &destination
 ) {
+    QL_DOUT(
+        "Python k.gate("
+        << name
+        << ", "
+        << ql::utils::Vec<size_t>(qubits.begin(), qubits.end())
+        << ",  "
+        << (destination.creg)->id
+        << ") # (name,qubits,creg-destination)"
+    );
     kernel->gate(name, {qubits.begin(), qubits.end()}, {(destination.creg)->id} );
+}
+
+void Kernel::gate_preset_condition(
+    const std::string &condstring,
+    const std::vector<size_t> &condregs
+) {
+    QL_DOUT("Python k.gate_preset_condition("<<condstring<<", condregs)");
+    kernel->gate_preset_condition(
+        kernel->condstr2condvalue(condstring),
+        {condregs.begin(), condregs.end()}
+    );
+}
+
+void Kernel::gate_clear_condition() {
+    QL_DOUT("Python k.gate_clear_condition()");
+    kernel->gate_clear_condition();
+}
+
+void Kernel::condgate(
+    const std::string &name,
+    const std::vector<size_t> &qubits,
+    const std::string &condstring,
+    const std::vector<size_t> &condregs
+) {
+    QL_DOUT(
+        "Python k.condgate("
+        << name
+        << ", "
+        << ql::utils::Vec<size_t>(qubits.begin(), qubits.end())
+        << ", "
+        << condstring
+        << ", "
+        << ql::utils::Vec<size_t>(condregs.begin(), condregs.end())
+        << ")"
+    );
+    kernel->condgate(
+        name,
+        {qubits.begin(), qubits.end()},
+        kernel->condstr2condvalue(condstring),
+        {condregs.begin(), condregs.end()}
+    );
 }
 
 void Kernel::gate(const Unitary &u, const std::vector<size_t> &qubits) {
@@ -307,15 +396,17 @@ Program::Program(
     const std::string &name,
     const Platform &platform,
     size_t qubit_count,
-    size_t creg_count
+    size_t creg_count,
+    size_t breg_count
 ) :
     name(name),
     platform(platform),
     qubit_count(qubit_count),
-    creg_count(creg_count)
+    creg_count(creg_count),
+    breg_count(breg_count)
 {
-    QL_WOUT("Program(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
-    program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count);
+    QL_WOUT("Program(name,Platform,#qbit,#creg,#breg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
+    program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count, breg_count);
 }
 
 void Program::set_sweep_points(const std::vector<double> &sweep_points) {

@@ -100,9 +100,8 @@ void visualize(const quantum_program* program, const Str &visualizationType, con
     //     }
     // }
 
-    printGates(parseGates(program));
-    
-    if (true) return;
+    // printGates(parseGates(program));
+    // if (true) return;
 
     // Choose the proper visualization based on the visualization type.
     if (visualizationType == "CIRCUIT") {

@@ -21,7 +21,7 @@ class Test_multi_core(unittest.TestCase):
         ql.set_option('maptiebreak', 'first')       # this makes behavior deterministic to cmp with golden
                                                     # and deviates from default
 
-        ql.set_option('log_level', 'LOG_DEBUG')
+        ql.set_option('log_level', 'LOG_NOTHING')
         ql.set_option('optimize', 'no')
         ql.set_option('use_default_gates', 'no')
         ql.set_option('decompose_toffoli', 'no')
@@ -48,8 +48,8 @@ class Test_multi_core(unittest.TestCase):
         ql.set_option('mapselectmaxlevel', '0')
         ql.set_option('mapselectmaxwidth', 'min')
         
-        ql.set_option('write_qasm_files', 'yes')
-        ql.set_option('write_report_files', 'no')
+        # ql.set_option('write_qasm_files', 'yes')
+        # ql.set_option('write_report_files', 'no')
 
     def test_mc_all(self):
         v = 'allNN'

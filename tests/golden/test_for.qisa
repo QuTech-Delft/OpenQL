@@ -10,7 +10,7 @@ smis s8, {0, 1, 5, 6}
 smis s9, {2, 3, 4} 
 start:
 
-aKernel1_for3_start:
+aKernel1_for5_start:
     ldi r29, 10
     ldi r30, 1
     ldi r31, 0
@@ -19,7 +19,7 @@ aKernel1:
     1    x s0
     qwait 2
 
-aKernel1_for3_end:
+aKernel1_for5_end:
     add r31, r31, r30
     cmp r31, r29
     nop

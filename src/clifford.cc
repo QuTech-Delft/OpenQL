@@ -64,20 +64,26 @@ public:
         and updating cliffcycles[q].
         And when finding a gate that ends a sequence of cliffords ('synchronization point'),
         the minimal sequence corresponding to the accumulated sequence is output before the new gate.
+
+        While scanning the circuit having accumulated the clifford state, for each next gate split out:
+        - those potentially affecting all qubits: push out all state, clearing all accumulated state
+        - those affecting a particular set of qubits: for those qubits, push out state, clearing their state
+        - those affecting a single qubit but not being a clifford: push out state for that qubit, clearing it
+        - those affecting a single qubit and being a conditional gate: push out state for that qubit, clearing it
+        - remaining case is a single qubit clifford: add it to the state
         */
         for (auto gp : input_circuit) {
             QL_DOUT("... gate: " << gp->qasm());
 
-            if (gp->type() == gate_type_t::__classical_gate__ || gp->operands.empty()) {
-                // classical gates
-                // and quantum gates like wait/display without operands
-                // interpret cliffstate and create corresponding gate sequence, for all qubits
+            if (
+                gp->type() == ql::gate_type_t::__classical_gate__   // classical gates (really being pessimistic here about these)
+                || gp->operands.empty()                             // gates without operands which may affect ALL qubits
+            ) {
+                // sync all qubits: create gate sequences corresponding to what was accumulated in cliffstate, for all qubits
                 sync_all(kernel);
                 kernel.c.push_back(gp);
-            } else if (gp->operands.size() != 1) {                    // gates like CNOT/CZ/TOFFOLI
-                // non-unary quantum gates like wait/cnot/cz/toffoli
-                // interpret cliffstate and emit corresponding gate sequence, for each operand qubit
-                // and then emit new gate
+            } else if (gp->operands.size() != 1) {                 // gates like CNOT/CZ/TOFFOLI
+                // sync particular qubits: create gate sequences corresponding to what was accumulated in cliffstate, for those particular operand qubits
                 for (auto q : gp->operands) {
                     sync(kernel, q);
                 }
@@ -87,7 +93,15 @@ public:
                 UInt q = gp->operands[0];
                 Str gname = gp->name;
                 Int cs = string2cs(gname);
-                if (cs != -1) {
+                if (
+                    cs == -1                                        // non-clifford unary gates (wait, meas, prepz, ...)
+                    || gp->is_conditional()                         // conditional unary (clifford) gates
+                ) {
+                    // sync particular single qubit: create gate sequence corresponding to what was accumulated in cliffstate, for this particular operand qubit
+                    QL_DOUT("... unary gate not a clifford gate or conditional: " << gp->qasm());
+                    sync(kernel, q);
+                    kernel.c.push_back(gp);
+                } else {
                     // unary quantum clifford gates like x/y/z/h/xm90/y90/s/...
                     // don't emit gate but accumulate gate in cliffstate
                     // also record accumulated cycles to compute savings
@@ -101,19 +115,12 @@ public:
                     } else {
                         QL_DOUT("... gate " << gp << " has no virtual operands");
                     }
-                } else {
-                    // unary quantum non-clifford gates like wait/meas/prepz/...
-                    // interpret cliffstate and create corresponding gate sequence, for this operand qubit
-                    // before new gate is emitted
-                    QL_DOUT("... unary gate not a clifford gate: " << gp->qasm());
-                    sync(kernel, q);
-                    kernel.c.push_back(gp);
                 }
             }
             QL_DOUT("... gate: " << gp->qasm() << " DONE");
         }
         sync_all(kernel);
-	    kernel.cycles_valid = false;
+        kernel.cycles_valid = false;
 
         QL_DOUT("Clifford " << passname << " on kernel " << kernel.name << " saved " << total_saved << " cycles [DONE]");
     }
@@ -198,11 +205,14 @@ private:
         else if (gname == "ry180")       return 6;
         else if (gname == "pauli_z")     return 9;
         else if (gname == "z")           return 9;
+        else if (gname == "rz180")       return 9;
         else if (gname == "hadamard")    return 12;
         else if (gname == "h")           return 12;
         else if (gname == "xm90")        return 13;
         else if (gname == "mrx90")       return 13;
         else if (gname == "s")           return 14;
+        else if (gname == "zm90")        return 14;
+        else if (gname == "mrz90")       return 14;
         else if (gname == "ym90")        return 15;
         else if (gname == "mry90")       return 15;
         else if (gname == "x90")         return 16;
@@ -210,6 +220,8 @@ private:
         else if (gname == "y90")         return 21;
         else if (gname == "ry90")        return 21;
         else if (gname == "sdag")        return 23;
+        else if (gname == "z90")         return 23;
+        else if (gname == "rz90")        return 23;
         else return -1;
     }
 
@@ -276,7 +288,7 @@ private:
         }
     }
 
-};	// class Clifford
+}; // class Clifford
 
 /**
  * Clifford sequence optimizer.

@@ -29,13 +29,13 @@ void PassManager::compile(quantum_program *program) const {
         ///@note-rn: currently(0.8.1.dev), all passes require platform as API parameter, and some passes depend on the nqubits internally. Therefore, these are passed through by setting the program with these fields here. However, this should change in the future since compiling for a simulator might not require a platform, and the number of qubits could be optional.
 
         if (!program->qubit_count) {
-            program->qubit_count = parse_uint(pass->getPassOptions()->getOption("nqubits"));
+            program->qubit_count = pass->getPassOptions()["nqubits"].as_uint();
         }
         assert(program->qubit_count);
 
         //If the old interface is used, platform is already set, so it is not needed to look for platform option and configure the platform from there
         if (!program->platformInitialized) {
-            Str hwconfig = pass->getPassOptions()->getOption("hwconfig");
+            Str hwconfig = pass->getPassOptions()["hwconfig"].as_str();
             program->platform = *(new quantum_platform("testPlatform",hwconfig));
         }
 
@@ -106,6 +106,8 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
         pass = new CliffordOptimizePass(aliasName);
     } else if (passName == "Map") {
         pass = new MapPass(aliasName);
+    } else if (passName == "CommuteVariation") {
+        pass = new CommuteVariationPass(aliasName);
     } else if (passName == "RCSchedule") {
         pass = new RCSchedulePass(aliasName);
     } else if (passName == "LatencyCompensation") {
