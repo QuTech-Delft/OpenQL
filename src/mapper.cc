@@ -787,9 +787,7 @@ void FreeCycle::Add(gate *g, UInt startCycle) {
 
     auto mapopt = options::get("mapper");
     if (mapopt == "baserc" || mapopt == "minextendrc") {
-        if (g->type() != __remap_gate__) {
-            rm.reserve(startCycle, g, *platformp);
-        }
+        rm.reserve(startCycle, g, *platformp);
     }
 }
 
@@ -894,7 +892,7 @@ void Past::Schedule() {
 
         // add this gate to the maps, scheduling the gate (doing the cycle assignment)
         // DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
-        QL_IOUT("adding gate: " << gp->name << " to circuit");
+        QL_DOUT("adding gate: " << gp->name << " to circuit");
         fc.Add(gp, startCycle);
         cycle.set(gp) = startCycle; // cycle[gp] is private to this past but gp->cycle is private to gp
         gp->cycle = startCycle; // so gp->cycle gets assigned for each alter' Past and finally definitively for mainPast
@@ -983,6 +981,9 @@ Bool Past::new_gate(
     UInt duration,
     Real angle
 ) const {
+    QL_DOUT("Calling new_gate for gate " << gname);
+
+    // const Vec<UInt> virtual_operands = qubits; // store the virtual operands
     Bool added;
     QL_ASSERT(circ.empty());
     QL_ASSERT(kernelp->c.empty());
@@ -990,6 +991,17 @@ Bool Past::new_gate(
     circ = kernelp->c;
     kernelp->c.clear();
     for (auto gp : circ) {
+        // // add the virtual operands to the new gate
+        // gp->virtual_operands = virtual_operands;
+
+        // Str original_operands = "[";
+        // for (UInt i = 0; i < gp->virtual_operands.size(); i++) {
+        //     original_operands += to_string(gp->virtual_operands[i]);
+        //     if (i != gp->virtual_operands.size() - 1) original_operands += ", ";
+        // }
+        // // QL_IOUT("\toriginal_operands: " << original_operands << "]");
+        // QL_IOUT("Calling new_gate for gate \"" << gname << "\" with virtual operands: " << original_operands << "]");
+
         QL_DOUT("new_gate added: " << gp->qasm());
     }
     return added;
@@ -1255,6 +1267,7 @@ void Past::MakeReal(gate *gp, circuit &circ) {
     stripname(gname);
 
     Vec<UInt> real_qubits = gp->operands;// starts off as copy of virtual qubits!
+    Vec<UInt> virtual_qubits = gp->operands; // store the virtual qubits for filling in later
     for (auto &qi : real_qubits) {
         qi = MapQubit(qi);          // and now they are real
         auto mapprepinitsstateopt = options::get("mapprepinitsstate");
@@ -1282,12 +1295,23 @@ void Past::MakeReal(gate *gp, circuit &circ) {
         }
     }
     QL_DOUT("... MakeReal: new gate created for: " << real_gname << " or " << gname);
+
+    for (gate *gp : circ) {
+        gp->virtual_operands = virtual_qubits;
+        // Str original_operands = "[";
+        // for (UInt i = 0; i < gp->virtual_operands.size(); i++) {
+        //     original_operands += to_string(gp->virtual_operands[i]);
+        //     if (i != gp->virtual_operands.size() - 1) original_operands += ", ";
+        // }
+        // QL_IOUT("\tMakeReal --> gate: " << gp->name << " original_operands: " << original_operands << "]");
+    }
 }
 
 // as mapper after-burner
 // make primitives of all gates that also have an entry with _prim appended to its name
 // and decomposing it according to the .json file gate decomposition
 void Past::MakePrimitive(gate *gp, circuit &circ) const {
+    Vec<UInt> virtual_qubits = gp->operands; // store the virtual qubits for filling in later
     Str gname = gp->name;
     stripname(gname);
     Str prim_gname = gname;
@@ -1300,6 +1324,16 @@ void Past::MakePrimitive(gate *gp, circuit &circ) const {
         }
     }
     QL_DOUT("... MakePrimtive: new gate created for: " << prim_gname << " or " << gname);
+
+    for (gate *gp : circ) {
+        gp->virtual_operands = virtual_qubits;
+        // Str original_operands = "[";
+        // for (UInt i = 0; i < gp->virtual_operands.size(); i++) {
+        //     original_operands += to_string(gp->virtual_operands[i]);
+        //     if (i != gp->virtual_operands.size() - 1) original_operands += ", ";
+        // }
+        // QL_IOUT("\tMakePrimitive --> gate: " << gp->name << " original_operands: " << original_operands << "]");
+    }
 }
 
 UInt Past::MaxFreeCycle() const {
@@ -2508,7 +2542,19 @@ void Mapper::MapRoutedGate(gate *gp, Past &past) {
     // when that new gate is a composite gate, it is immediately decomposed (by gate creation)
     // the resulting gate/expansion (anyhow a sequence of gates) is collected in circ
     circuit circ;   // result of MakeReal
+    // QL_IOUT("Calling MakeReal on gate: " << gp->name);
     past.MakeReal(gp, circ);
+    // QL_IOUT("\tFinished MakeReal on gate: " << gp->name);
+
+    // for (auto gp : circ) {
+    //     Str original_operands = "[";
+    //     for (UInt i = 0; i < gp->virtual_operands.size(); i++) {
+    //         original_operands += to_string(gp->virtual_operands[i]);
+    //         if (i != gp->virtual_operands.size() - 1) original_operands += ", ";
+    //     }
+    //     QL_IOUT("\tafter MakeReal --> gate: " << gp->name << " with virtual operands: " << original_operands << "]");
+    // }
+
     for (auto newgp : circ)
     {
         QL_DOUT(" ... new mapped real gate, about to be added to past: " << newgp->qasm() );
@@ -2883,7 +2929,19 @@ void Mapper::MakePrimitives(quantum_kernel &kernel) {
 
     for (auto & gp : input_gatepv) {
         circuit tmpCirc;
+        // QL_IOUT("Calling MakePrimitive on gate: " << gp->name);
         mainPast.MakePrimitive(gp, tmpCirc);    // decompose gp into tmpCirc; on failure, copy gp into tmpCirc
+        // QL_IOUT("\tFinished MakePrimitive on gate: " << gp->name);
+
+        // for (auto gp : tmpCirc) {
+        //     Str original_operands = "[";
+        //     for (UInt i = 0; i < gp->virtual_operands.size(); i++) {
+        //         original_operands += to_string(gp->virtual_operands[i]);
+        //         if (i != gp->virtual_operands.size() - 1) original_operands += ", ";
+        //     }
+        //     QL_IOUT("\tafter MakePrimitive --> gate: " << gp->name << " with virtual operands: " << original_operands << "]");
+        // }
+
         for (auto newgp : tmpCirc) {
             mainPast.AddAndSchedule(newgp);     // decomposition is scheduled in gate by gate
         }
@@ -2946,7 +3004,25 @@ void Mapper::Map(quantum_kernel& kernel) {
     MapCircuit(kernel, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
     v2r.DPRINT("After heuristics");
 
+    // QL_IOUT("Virtual operands before making gates primitive:");
+    // for (auto gp : kernel.c) {
+    //     Str original_operands = "[";
+    //     for (UInt i = 0; i < gp->virtual_operands.size(); i++) {
+    //         original_operands += to_string(gp->virtual_operands[i]);
+    //         if (i != gp->virtual_operands.size() - 1) original_operands += ", ";
+    //     }
+    //     QL_IOUT("\tgate: " << gp->name << " --> virtual operands: " << original_operands << "]");
+    // }
     MakePrimitives(kernel);         // decompose to primitives as specified in the config file
+    // QL_IOUT("Virtual operands after making gates primitive:");
+    // for (auto gp : kernel.c) {
+    //     Str original_operands = "[";
+    //     for (UInt i = 0; i < gp->virtual_operands.size(); i++) {
+    //         original_operands += to_string(gp->virtual_operands[i]);
+    //         if (i != gp->virtual_operands.size() - 1) original_operands += ", ";
+    //     }
+    //     QL_IOUT("\tgate: " << gp->name << " --> virtual operands: " << original_operands << "]");
+    // }
 
     kernel.qubit_count = nq;        // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
     v2r.Export(v2r_out);     // from v2r to caller for reporting

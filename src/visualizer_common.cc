@@ -101,6 +101,8 @@ void visualize(const quantum_program* program, const Str &visualizationType, con
     // }
 
     printGates(parseGates(program));
+    
+    if (true) return;
 
     // Choose the proper visualization based on the visualization type.
     if (visualizationType == "CIRCUIT") {
@@ -121,20 +123,30 @@ Vec<GateProperties> parseGates(const quantum_program* program) {
 
     for (quantum_kernel kernel : program->kernels) {
         for (gate* const gate : kernel.get_circuit()) {
+
+            Str original_operands = "[";
+            for (UInt i = 0; i < gate->virtual_operands.size(); i++) {
+                original_operands += to_string(gate->virtual_operands[i]);
+                if (i != gate->virtual_operands.size() - 1) original_operands += ", ";
+            }
+            QL_IOUT("parsed gate: " << gate->name << " with virtual operands: " << original_operands << "]");
+
             Vec<Int> operands;
             Vec<Int> creg_operands;
+            Vec<Int> virtual_operands;
             for (const UInt operand : gate->operands) { operands.push_back(utoi(operand)); }
+            for (const UInt operand : gate->virtual_operands) { virtual_operands.push_back(utoi(operand)); }
             for (const UInt operand : gate->creg_operands) { creg_operands.push_back(utoi(operand)); }
             GateProperties gateProperties {
                 gate->name,
                 operands,
+                virtual_operands,
                 creg_operands,
                 utoi(gate->duration),
                 utoi(gate->cycle),
                 gate->type(),
                 {},
-                "UNDEFINED",
-                gate->type() == MAX
+                "UNDEFINED"
             };
             gates.push_back(gateProperties);
         }
@@ -237,6 +249,13 @@ void printGates(const Vec<GateProperties> &gates) {
         }
         QL_IOUT("\toperands: " << operands << "]");
 
+        Str virtual_operands = "[";
+        for (UInt i = 0; i < gate.virtual_operands.size(); i++) {
+            virtual_operands += to_string(gate.virtual_operands[i]);
+            if (i != gate.virtual_operands.size() - 1) virtual_operands += ", ";
+        }
+        QL_IOUT("\tvirtual_operands: " << virtual_operands << "]");
+
         Str creg_operands = "[";
         for (UInt i = 0; i < gate.creg_operands.size(); i++) {
             creg_operands += to_string(gate.creg_operands[i]);
@@ -256,10 +275,6 @@ void printGates(const Vec<GateProperties> &gates) {
         QL_IOUT("\tcodewords: " << codewords << "]");
 
         QL_IOUT("\tvisual_type: " << gate.visual_type);
-
-        if (gate.type == __remap_gate__) {
-            QL_IOUT("\tvirtual_qubit_index: " << gate.virtual_qubit_index);
-        }
     }
 }
 

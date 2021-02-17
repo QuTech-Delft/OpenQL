@@ -97,13 +97,13 @@ struct GateOperand {
 struct GateProperties {
     utils::Str name;
     utils::Vec<utils::Int> operands;
+    utils::Vec<utils::Int> virtual_operands;
     utils::Vec<utils::Int> creg_operands;
     utils::Int duration;
     utils::Int cycle;
     gate_type_t type;
     utils::Vec<utils::Int> codewords; // std::vector<size_t> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
     utils::Str visual_type;
-    utils::Int virtual_qubit_index; // only used for remap gates
 
     GateProperties() = delete;
 };
