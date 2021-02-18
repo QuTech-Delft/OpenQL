@@ -1312,7 +1312,7 @@ void Past::MakeReal(gate *gp, circuit &circ) {
 // make primitives of all gates that also have an entry with _prim appended to its name
 // and decomposing it according to the .json file gate decomposition
 void Past::MakePrimitive(gate *gp, circuit &circ) const {
-    Vec<UInt> virtual_qubits = gp->operands; // store the virtual qubits for filling in later
+    Vec<UInt> virtual_qubits = gp->virtual_operands; // store the virtual qubits for filling in later
     Str gname = gp->name;
     stripname(gname);
     Str prim_gname = gname;
@@ -2558,7 +2558,6 @@ void Mapper::MapRoutedGate(gate *gp, Past &past) {
     // the resulting gate/expansion (anyhow a sequence of gates) is collected in circ
     circuit circ;   // result of MakeReal
     past.MakeReal(gp, circ);
-
     for (auto newgp : circ)
     {
         QL_DOUT(" ... new mapped real gate, about to be added to past: " << newgp->qasm() );

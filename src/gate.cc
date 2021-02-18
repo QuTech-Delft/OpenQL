@@ -746,15 +746,6 @@ instruction_t custom_gate::qasm() const {
         }
     }
 
-    if (virtual_operands.size() == 1) {
-        ss << ", v[" << virtual_operands[0] << "]";
-    } else if (!virtual_operands.empty()) {
-        ss << ", v[" << virtual_operands[0] << "]";
-        for (UInt i = 1; i < virtual_operands.size(); i++) {
-            ss << ",v[" << virtual_operands[i] << "]";
-        }
-    }
-
     // deal with custom gates with argument, such as angle
     if (gate_name == "rx" || gate_name == "ry" || gate_name == "rz") {
         ss << ", " << angle;
