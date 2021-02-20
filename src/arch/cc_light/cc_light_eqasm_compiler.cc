@@ -913,13 +913,17 @@ void cc_light_eqasm_compiler::compile(quantum_program *programp, const quantum_p
     insert_buffer_delays(programp, platform, "ccl_insert_buffer_delays");
 
     // decompose meta-instructions after scheduling
-    ccl_decompose_post_schedule(programp, platform, "ccl_decompose_post_schedule");
+    if (options::get("generate_code") == "yes") {
+        ccl_decompose_post_schedule(programp, platform, "ccl_decompose_post_schedule");
+    }
 
     // just before code generation, emit quantumsim script to best match target architecture
     write_quantumsim_script(programp, platform, "write_quantumsim_script_mapped");
 
     // and now for real
-    qisa_code_generation(programp, platform, "qisa_code_generation");
+    if (options::get("generate_code") == "yes") {
+        qisa_code_generation(programp, platform, "qisa_code_generation");
+    }
 
     // timing to be moved to pass manager
     // computing timetaken, stop interval timer

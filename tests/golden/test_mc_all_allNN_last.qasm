@@ -8,7 +8,7 @@ qubits 16
     cnot q[8],q[9]
     wait 3
     x q[1]
-    tswap q[1],q[8]
+    tswap q[8],q[1]
     wait 8
     x q[4]
     cnot q[4],q[5]
@@ -32,4 +32,4 @@ qubits 16
     wait 4
     cnot q[3],q[1]
     wait 3
-    { x q[5] | x q[13] | x q[9] }
+    { x q[13] | x q[9] | x q[5] }

@@ -30,8 +30,8 @@ class Test_multi_core(unittest.TestCase):
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('scheduler_uniform', 'no')
         ql.set_option('scheduler_commute', 'yes')
+        ql.set_option('scheduler_commute_rotations', 'yes')
         ql.set_option('prescheduler', 'yes')
-        ql.set_option('scheduler_post179', 'yes')
         ql.set_option('cz_mode', 'manual')
         ql.set_option('print_dot_graphs', 'no')
         
@@ -51,7 +51,7 @@ class Test_multi_core(unittest.TestCase):
         ql.set_option('mapselectmaxwidth', 'min')
         
         # ql.set_option('write_qasm_files', 'yes')
-        # ql.set_option('write_report_files', 'no')
+        # ql.set_option('write_report_files', 'yes')
 
     def test_mc_all(self):
         v = 'allNN'
