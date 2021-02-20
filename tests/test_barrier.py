@@ -10,6 +10,7 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_barrier(unittest.TestCase):
 
     def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('optimize', 'no')
@@ -17,12 +18,11 @@ class Test_barrier(unittest.TestCase):
         ql.set_option('scheduler_post179', 'yes')
         ql.set_option("scheduler_commute", 'no')
         ql.set_option('use_default_gates', 'yes')
-        ql.set_option('write_qasm_files', 'yes')
+        # ql.set_option('write_qasm_files', 'yes')
         
 
     # barrier on specified qubits
     def test_barrier(self):
-        self.setUp()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -52,7 +52,6 @@ class Test_barrier(unittest.TestCase):
 
     # barrier on specified qubits with 'wait' and duration = 0
     def test_wait_barrier(self):
-        self.setUp()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -80,7 +79,6 @@ class Test_barrier(unittest.TestCase):
 
     # barrier on all qubits with barrier
     def test_barrier_all_1(self):
-        self.setUp()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -126,7 +124,6 @@ class Test_barrier(unittest.TestCase):
 
     # barrier on all qubits with generalized gate API using 'barrier'
     def test_barrier_all_2(self):
-        self.setUp()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -171,7 +168,6 @@ class Test_barrier(unittest.TestCase):
 
     # barrier on all qubits with generalized gate API using wait with duration 0
     def test_barrier_all_3(self):
-        self.setUp()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]

@@ -13,15 +13,15 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_qubits(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
-        ql.set_option('write_qasm_files', 'yes')
+        # ql.set_option('write_qasm_files', 'yes')
 
     def test_1_qubit(self):
-        self.setUpClass()
         nqubits = 1
         sweep_points = [2]
 
@@ -45,7 +45,6 @@ class Test_qubits(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_2_qubit(self):
-        self.setUpClass()
         nqubits = 3
         sweep_points = [2]
         k = ql.Kernel("aKernel", platf, nqubits)
@@ -69,7 +68,6 @@ class Test_qubits(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_3_qubit(self):
-        self.setUpClass()
         nqubits = 3
         sweep_points = [2]
 

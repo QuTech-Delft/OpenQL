@@ -1,11 +1,11 @@
-{ 
+{
    "eqasm_compiler" : "qumis_compiler",
 
    "hardware_settings":
    {
    "qubit_number": 2,
-   "cycle_time" : 5, 
-   "iterations" : 1, 
+   "cycle_time" : 5,
+   "iterations" : 1,
    "mw_mw_buffer": 0,
    "mw_flux_buffer": 0,
    "mw_readout_buffer": 0,
@@ -22,9 +22,9 @@
 
       "rx90 q0" :
       {
-         "duration": 145, 
+         "duration": 145,
          "latency": 0,
-         "qubits": ["q0"], 
+         "qubits": ["q0"],
          "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": true,
          "type" : "mw",
@@ -34,9 +34,9 @@
 
       "mrx90 q0" :
       {
-         "duration": 145, 
+         "duration": 145,
          "latency": 0,
-         "qubits": ["q0"], 
+         "qubits": ["q0"],
          "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": true,
          "type" : "mw",
@@ -46,10 +46,10 @@
 
       "rx180 q0" :
       {
-         "duration": 290, 
+         "duration": 290,
          "latency": 0,
-         "qubits": ["q0"], 
-         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]], 
+         "qubits": ["q0"],
+         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": true,
          "type" : "mw",
          "qumis_instr": "pulse_trigger",
@@ -58,59 +58,59 @@
 
       "ry90 q0" :
       {
-         "duration": 145, 
+         "duration": 145,
          "latency": 0,
-         "qubits": ["q0"], 
+         "qubits": ["q0"],
          "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "pulse_trigger", 
+         "qumis_instr": "pulse_trigger",
          "qumis_instr_kw": { "trigger_channel": 4, "codeword": 3 }
       },
 
       "mry90 q0" :
       {
-         "duration": 145, 
+         "duration": 145,
          "latency": 0,
-         "qubits": ["q0"], 
+         "qubits": ["q0"],
          "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "pulse_trigger", 
+         "qumis_instr": "pulse_trigger",
          "qumis_instr_kw": { "trigger_channel": 4, "codeword": 4 }
       },
 
       "ry180 q0" :
       {
-         "duration": 290, 
+         "duration": 290,
          "latency": 0,
-         "qubits": ["q0"], 
+         "qubits": ["q0"],
          "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "pulse_trigger", 
+         "qumis_instr": "pulse_trigger",
          "qumis_instr_kw": { "trigger_channel": 4, "codeword": 5 }
       },
 
       "i q0" :
       {
-         "duration": 125, 
+         "duration": 125,
          "latency": 0,
-         "qubits": ["q0"], 
+         "qubits": ["q0"],
          "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "pulse_trigger", 
+         "qumis_instr": "pulse_trigger",
          "qumis_instr_kw": { "trigger_channel": 4, "codeword": 6 }
       },
 
 
       "rx90 q1" :
       {
-         "duration": 145, 
+         "duration": 145,
          "latency": 0,
-         "qubits": ["q1"], 
-         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]], 
+         "qubits": ["q1"],
+         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": true,
          "type" : "mw",
          "qumis_instr": "pulse_trigger",
@@ -120,10 +120,10 @@
 
       "mrx90 q1" :
       {
-         "duration": 145, 
+         "duration": 145,
          "latency": 0,
-         "qubits": ["q1"], 
-         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]], 
+         "qubits": ["q1"],
+         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": true,
          "type" : "mw",
          "qumis_instr": "pulse_trigger",
@@ -133,10 +133,10 @@
 
       "rx180 q1" :
       {
-         "duration": 290, 
+         "duration": 290,
          "latency": 0,
          "qubits": ["q1"],
-         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]], 
+         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": true,
          "type" : "mw",
          "qumis_instr": "pulse_trigger",
@@ -145,50 +145,50 @@
 
       "ry90 q1" :
       {
-         "duration": 145, 
+         "duration": 145,
          "latency": 0,
-         "qubits": ["q1"], 
+         "qubits": ["q1"],
          "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "pulse_trigger", 
+         "qumis_instr": "pulse_trigger",
          "qumis_instr_kw": { "trigger_channel": 5, "codeword": 3 }
       },
 
 
       "mry90 q1" :
       {
-         "duration": 145, 
-         "latency": 0,
-         "qubits": ["q1"], 
-         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
-         "disable_optimization": false,
-         "type" : "mw",
-         "qumis_instr": "pulse_trigger", 
-         "qumis_instr_kw": { "trigger_channel": 5, "codeword": 4 }
-      },
-
-      "ry180 q1" :
-      {
-         "duration": 290, 
+         "duration": 145,
          "latency": 0,
          "qubits": ["q1"],
          "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "pulse_trigger", 
+         "qumis_instr": "pulse_trigger",
+         "qumis_instr_kw": { "trigger_channel": 5, "codeword": 4 }
+      },
+
+      "ry180 q1" :
+      {
+         "duration": 290,
+         "latency": 0,
+         "qubits": ["q1"],
+         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
+         "disable_optimization": false,
+         "type" : "mw",
+         "qumis_instr": "pulse_trigger",
          "qumis_instr_kw": { "trigger_channel": 5, "codeword": 5 }
       },
 
       "i q1" :
       {
-         "duration": 125, 
+         "duration": 125,
          "latency": 0,
-         "qubits": ["q1"], 
+         "qubits": ["q1"],
          "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "pulse_trigger", 
+         "qumis_instr": "pulse_trigger",
          "qumis_instr_kw": { "trigger_channel": 5, "codeword": 6 }
       },
 
@@ -202,7 +202,7 @@
          "matrix" : [ [1.0,0.0], [0.0,0.0], [0.0,0.0], [1.0,0.0]],
          "disable_optimization": true,
          "type" : "mw",
-         "qumis_instr": "pulse_trigger", 
+         "qumis_instr": "pulse_trigger",
          "qumis_instr_kw": { "trigger_channel": 3, "codeword": 7 }
       },
 
@@ -214,7 +214,7 @@
          "matrix" : [ [1.0,0.0], [0.0,0.0], [0.0,0.0], [1.0,0.0]],
          "disable_optimization": true,
          "type" : "mw",
-         "qumis_instr": "trigger_sequence", 
+         "qumis_instr": "trigger_sequence",
          "qumis_instr_kw": { "trigger_channel": 3, "trigger_width": 2 }
       },
 
@@ -223,12 +223,12 @@
       "measure q0" :
       {
          "duration": 400,
-         "latency": 0, 
-         "qubits": ["q0","q1"], 
+         "latency": 0,
+         "qubits": ["q0","q1"],
          "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
          "disable_optimization": false,
          "type" : "readout",
-         "qumis_instr": "trigger_sequence", 
+         "qumis_instr": "trigger_sequence",
          "qumis_instr_kw": { "trigger_channel": 3, "trigger_width": 10 }
       }
 

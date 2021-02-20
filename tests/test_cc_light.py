@@ -9,7 +9,9 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_basic(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
+
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
 
@@ -19,14 +21,8 @@ class Test_basic(unittest.TestCase):
 
         ql.set_option('log_level', 'LOG_WARNING')
 
-    @classmethod
-    def tearDownClass(self):
-        ql.set_option("scheduler_post179", "no");
-
-
     # single qubit mask generation test
     def test_smis(self):
-        self.setUpClass()
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -63,7 +59,6 @@ class Test_basic(unittest.TestCase):
 
     # single qubit mask generation test with custom gates
     def test_smis_with_custom_gates(self):
-        self.setUpClass()
 
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -98,7 +93,6 @@ class Test_basic(unittest.TestCase):
     # single qubit mask generation multi-kernel test (custom with non-custom
     # gates)
     def test_smis_multi_kernel(self):
-        self.setUpClass()
 
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -147,7 +141,6 @@ class Test_basic(unittest.TestCase):
 
 
     def test_smis_all_bundled(self):
-        self.setUpClass()
 
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -179,7 +172,6 @@ class Test_basic(unittest.TestCase):
 
     # two qubit mask generation test
     def test_smit(self):
-        self.setUpClass()
 
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -220,7 +212,7 @@ class Test_basic(unittest.TestCase):
 
 
     def test_smit_all_bundled(self):
-        self.setUpClass()
+
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -254,6 +246,10 @@ class Test_basic(unittest.TestCase):
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 class Test_advance(unittest.TestCase):
+
+    @classmethod
+    def setUp(self):
+        ql.initialize()
 
     def test_qubit_busy(self):
         ql.set_option('output_dir', output_dir)

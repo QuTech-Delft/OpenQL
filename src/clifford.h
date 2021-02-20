@@ -1,23 +1,22 @@
-/**
- * @file   clifford.h
- * @date   05/2019
- * @author Hans van Someren
- * @brief  clifford sequence optimizer
+/** \file
+ * Clifford sequence optimizer.
  */
-#ifndef CLIFFORD_H
-#define CLIFFORD_H
 
+#pragma once
+
+#include "utils/str.h"
 #include "program.h"
 #include "platform.h"
 
+namespace ql {
 
-namespace ql
-{
-
-/*
- * clifford sequence optimizer
+/**
+ * Clifford sequence optimizer.
  */
-    void clifford_optimize(quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-}
+void clifford_optimize(
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const utils::Str &passname
+);
 
-#endif // CLIFFORD_H
+} // namespace ql

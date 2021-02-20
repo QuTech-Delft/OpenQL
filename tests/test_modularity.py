@@ -8,18 +8,18 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_modularity(unittest.TestCase):
 
   @classmethod
-  def setUpClass(self):
+  def setUp(self):
+      ql.initialize()
       ql.set_option('output_dir', output_dir)
       ql.set_option('optimize', 'no')
       ql.set_option('scheduler', 'ASAP')
-      ql.set_option('log_level', 'LOG_DEBUG')
+      ql.set_option('log_level', 'LOG_NOTHING')
       ql.set_option('unique_output', 'no')
       ql.set_option('write_qasm_files', 'no')
       ql.set_option('write_report_files', 'no')
       ql.set_option('mapper', 'minextendrc')
 
   def test_modularity(self):
-      self.setUpClass()
       config_fn = os.path.join(curdir, 'hwcfg_cc_light_modular.json')
 
       c = ql.Compiler("testCompiler")

@@ -415,6 +415,15 @@
             "cc_light_instr": "cnot",
             "cc_light_opcode": 128
         },
+        "toffoli" : {
+            "duration": 80,
+            "matrix" : [ [0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": true,
+            "type": "multi",
+            "cc_light_instr_type": "multi_qubit_gate",
+            "cc_light_instr": "toffoli",
+            "cc_light_opcode": 128
+        },
         "swap": {
             "duration": 200,
             "latency": 0,
@@ -438,7 +447,7 @@
     },
 
     "gate_decomposition": {
-        "toffoli %0,%1,%2" : ["y90 %0", "xm45 %0", "y %0", "y90 %1", "xm45 %1", "ym90 %1", "x %2", "ym90 %2", "cz %2,%0", "y %0", "x45 %0", "y %0", "ym90 %2","cz %1,%2","y %2","cz %1,%0","y %0", "x45 %2", "y %2", "xm45 %0", "y %0","cz %1,%2","y90 %2","cz %2,%0","y %0", "x45 %0", "y %0", "y90 %2", "xm45 %2", "ym90 %2", "cz %1,%0","y90 %0", "x %2", "ym90 %2"],
+        "toffoli_decomp %0,%1,%2" : ["y90 %0", "xm45 %0", "y %0", "y90 %1", "xm45 %1", "ym90 %1", "x %2", "ym90 %2", "cz %2,%0", "y %0", "x45 %0", "y %0", "ym90 %2","cz %1,%2","y %2","cz %1,%0","y %0", "x45 %2", "y %2", "xm45 %0", "y %0","cz %1,%2","y90 %2","cz %2,%0","y %0", "x45 %0", "y %0", "y90 %2", "xm45 %2", "ym90 %2", "cz %1,%0","y90 %0", "x %2", "ym90 %2"],
 
         "rx180 %0" : ["x %0"],
         "ry180 %0" : ["y %0"],

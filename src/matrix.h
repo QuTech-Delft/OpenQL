@@ -1,80 +1,55 @@
-/**
- * @file   matrix.h
- * @date   11/2016
- * @author Nader Khammassi
- * @brief  unitary matrix implementation (taken from qx simulator)
+/** \file
+ * Unitary matrix implementation, originally taken from qx simulator.
  */
 
-#ifndef MATRIX_H
-#define MATRIX_H
+#pragma once
 
-#include <iomanip>
 #include <iostream>
-#include <complex>
+#include <iomanip>
+#include "utils/num.h"
 
-namespace ql
-{
-/**
- * \brief matrix
- */
-template <typename __T, size_t __N>
-class matrix
-{
+namespace ql {
 
+template <typename T, utils::UInt N>
+class matrix {
 public:
 
-    __T m[__N * __N] /* TODO: properly handle it __attribute__((aligned(16))) */ ;
+    T m[N * N];
 
-    /**
-     * default ctor
-     */
-    matrix()
-    {
-        for (size_t i=0; i<(__N*__N); ++i)
+    matrix() {
+        for (utils::UInt i = 0; i < N * N; ++i) {
             m[i] = 0;
+        }
     }
 
-    /**
-     * ctor
-     */
-    matrix(const __T * pm)
-    {
-        for (size_t i=0; i<(__N*__N); ++i)
+    matrix(const T *pm) {
+        for (utils::UInt i = 0; i < N * N; ++i) {
             m[i] = pm[i];
+        }
     }
 
-    __T& operator()(uint32_t r, uint32_t c)
-    {
-        return m[r*__N+c];
+    T &operator()(utils::UInt r, utils::UInt c) {
+        return m[r*N + c];
     }
 
-    uint32_t size() const
-    {
-        return __N;
+    utils::UInt size() const {
+        return N;
     }
 
-    /**
-     * debug
-     */
-    void dump() const
-    {
+    void dump() const {
         std::cout << "[i] ---[matrix]-----------------------------------------------------" << std::endl;
         std::cout << std::fixed;
-        for (int32_t r=0; r<__N; ++r)
-        {
-            for (int32_t c=0; c<__N; ++c)
-                std::cout << std::showpos << std::setw(5) << m[r*__N+c] << "\t";
+        for (utils::UInt r = 0; r < N; ++r) {
+            for (utils::UInt c = 0; c < N; ++c) {
+                std::cout << std::showpos << std::setw(5) << m[r * N + c] << "\t";
+            }
             std::cout << std::endl;
         }
         std::cout << "[i] ----------------------------------------------------------------" << std::endl;
     }
 
-
 };
 
-typedef std::complex<double> complex_t;
-typedef matrix<complex_t,2>  cmat_t;
+typedef matrix<utils::Complex, 2> cmat_t;
 
-}
-
-#endif // MATRIX_H
+} // namespace ql

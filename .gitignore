@@ -6,6 +6,7 @@ dist
 openql.egg-info
 lab
 env
+.eggs/
 
 # Temp files
 *.dot
@@ -25,7 +26,12 @@ swig/qutechopenql.egg-info
 # Test files
 test_output
 .ipynb_checkpoints
+tests/visualizer/visualizer_example_output/
 
 docs/_build
 docs/_static
 docs/_templates
+docs/_templates
+
+/.idea
+/cmake-build-*

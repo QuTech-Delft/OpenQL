@@ -42,20 +42,15 @@ def set_output_dir(path):
 */
 
 
-%exception
-{
-    try
-    {
+%exception {
+    try {
         $action
         if (PyErr_Occurred()) SWIG_fail;
-    }
-    catch(ql::exception & e )
-    {
-        SWIG_exception(SWIG_TypeError, e.what());
+    } catch (ql::utils::Exception &e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
     }
     SWIG_CATCH_STDEXCEPT
-    catch(...)
-    {
+    catch (...) {
         SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
     }
 }
@@ -292,6 +287,8 @@ arg3 : int
     qubit count
 arg4 : int
     classical register count
+arg4 : int
+    bit register count
 """
 
 
@@ -550,9 +547,15 @@ arg1 : str
 arg2 : []
     list of qubits
 arg3 : int
-    duration in ns (at the moment it is only supported for wait instruction, in the future it will be extended to override duration of any gate)
-arg3 : double
-    angle of rotation, used internally only for rotations (rx, ry and rz)
+    duration in ns (default: 0)
+arg4 : double
+    angle of rotation, used internally only for rotations (rx, ry and rz) (default: 0.0)
+arg5 : []
+    list of bit registers (default: [])
+arg6 : str
+    condition (default: 'COND_ALWAYS')
+arg7 : []
+    list of condition registers (default: [])
 """
 
 %feature("docstring") Kernel::gate
@@ -567,6 +570,23 @@ arg2 : []
 arg3 : CReg
     classical destination register for measure operation.
 """
+
+
+%feature("docstring") Kernel::condgate
+""" adds conditional gates to kernel.
+
+Parameters
+----------
+arg1 : str
+    name of gate
+arg2 : []
+    list of qubits
+arg6 : str
+    condition (default: 'COND_ALWAYS')
+arg7 : []
+    list of condition registers (default: [])
+"""
+
 
 
 %feature("docstring") Kernel::gate
@@ -659,6 +679,8 @@ arg3 : int
     number of qubits the program will use
 arg4 : int
     number of classical registers the program will use (default: 0)
+arg4 : int
+    number of bit registers the program will use (default: 0)
 """
 
 

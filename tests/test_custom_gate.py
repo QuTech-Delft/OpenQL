@@ -8,10 +8,14 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 ql.set_option('output_dir', output_dir)
-ql.set_option('write_qasm_files', 'yes')
+# ql.set_option('write_qasm_files', 'yes')
 
 
 class Test_kernel(unittest.TestCase):
+
+    @classmethod
+    def setUp(self):
+        ql.initialize()
 
     def custom_gate_test(self):
         nqubits = 1
@@ -36,7 +40,7 @@ class Test_kernel(unittest.TestCase):
         sweep_points = [1, 1.25, 1.75, 2.25, 2.75 ]
 
         # create a program
-        p = ql.Program("aProgram", platf, nqubits)
+        p = ql.Program("custom_gate_test", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         # add kernel to program
@@ -47,8 +51,8 @@ class Test_kernel(unittest.TestCase):
 
         # load qasm
         qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'custom_gate_test.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'custom_gate_test_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)

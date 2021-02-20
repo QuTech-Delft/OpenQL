@@ -11,7 +11,8 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_kernel(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
@@ -104,7 +105,7 @@ class Test_kernel(unittest.TestCase):
         k2.clifford(2, 0)
         k2.measure(2)
 
-        p = ql.Program("aProgram", platf, nqubits)
+        p = ql.Program("test_multi_kernel", platf, nqubits)
         p.set_sweep_points(sweep_points)
         p.add_kernel(k1)
         p.add_kernel(k2)
@@ -114,7 +115,7 @@ class Test_kernel(unittest.TestCase):
     def test_duplicate_kernel_name(self):
         nqubits = 3
 
-        p = ql.Program("aProgram", platf, nqubits)
+        p = ql.Program("test_duplicate_kernel_name", platf, nqubits)
         k1 = ql.Kernel("aKernel1", platf, nqubits)
         k2 = ql.Kernel("aKernel2", platf, nqubits)
         k3 = ql.Kernel("aKernel1", platf, nqubits)

@@ -1,17 +1,19 @@
-/**
- * @file   write_sweep_points.h
- * @date   11/2016
- * @author Nader Khammassi
+/** \file
+ * Implementation of pass that writes sweep points.
  */
-#ifndef WRITE_SWEEP_POINTS_H
-#define WRITE_SWEEP_POINTS_H
 
+#pragma once
+
+#include "utils/str.h"
 #include "program.h"
 #include "platform.h"
 
-namespace ql
-{
-    void write_sweep_points(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-}
+namespace ql {
 
-#endif // WRITE_SWEEP_POINTS_H
+void write_sweep_points(
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const utils::Str &passname
+);
+
+} // namespace ql

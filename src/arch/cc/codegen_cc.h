@@ -7,149 +7,104 @@
  *          functions is correct
  */
 
-#ifndef ARCH_CC_CODEGEN_CC_H
-#define ARCH_CC_CODEGEN_CC_H
+#pragma once
 
-// options
-#define OPT_SUPPORT_STATIC_CODEWORDS    1
-#define OPT_VCD_OUTPUT                  1   // output Value Change Dump file for GTKWave viewer
-#define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation)
-#define OPT_CALCULATE_LATENCIES         0   // fixed compensation based on instrument latencies
-#define OPT_OLD_SEQBAR_SEMANTICS        1   // support old semantics of seqbar instruction
-
-#include "json.h"
+#include "options_cc.h"
+#include "settings_cc.h"
+#include "vcd_cc.h"
 #include "platform.h"
-#if OPT_VCD_OUTPUT
- #include "vcd.h"
-#endif
 
 #include <string>
 #include <cstddef>  // for size_t etc.
-#ifdef _MSC_VER     // MS Visual C++ does not know about ssize_t
-// FIXME JvS: this #ifdef should not be necessary. libqasm shouldn't be
-// #define'ing ssize_t, but should just use its own type! (so should this,
-// though, for the same reason. Though this typedef is by far the nicer way
-// to do it, it might still conflict with another header working around the
-// same problem)
-#ifndef ssize_t
-  #include <type_traits>
-  typedef std::make_signed<size_t>::type ssize_t;
-#endif
-#endif
+#include "utils/vec.h"
 
+namespace ql {
 
 class codegen_cc
 {
 private: // types
     typedef struct {
-        int instrIdx;           // the index into JSON "eqasm_backend_cc/instruments" that provides the signal
-        int group;              // the group within the instrument that provides the signal
-    } tSignalInfo;
-
-    typedef struct {
         std::string signalValue;
-        size_t durationInNs;
-        ssize_t readoutCop;     // NB: we use ssize_t iso size_t so we can encode 'unused' (-1)
+        unsigned int durationInCycles;
+#if OPT_FEEDBACK
+        int readoutCop;                 // classic operand for readout. NB: we encode 'unused' as -1
+#endif
 #if OPT_SUPPORT_STATIC_CODEWORDS
         int staticCodewordOverride;
 #endif
-    } tGroupInfo;
-
-    typedef struct {
-        json node;              // a copy of the node found
-        std::string path;       // path of the node, for reporting purposes
-    } tJsonNodeInfo;
+    } tBundleInfo;                      // information for an instrument group (of channels), for a single instruction
+// FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR?
 
 public:
     codegen_cc() = default;
     ~codegen_cc() = default;
 
     // Generic
-    void init(const ql::quantum_platform &platform);
-    std::string getCode();
-    std::string getMap();
+    void init(const quantum_platform &platform);
+    std::string getProgram();                           // return the CC source code that was created
+    std::string getMap();                               // return a map of codeword assignments, useful for configuring AWGs
 
-    void program_start(const std::string &progName);
-    void program_finish(const std::string &progName);
-    void kernel_start();
-    void kernel_finish(const std::string &kernelName, size_t durationInCycles);
-    void bundle_start(const std::string &cmnt);
-    void bundle_finish(size_t startCycle, size_t durationInCycles, bool isLastBundle);
-    void comment(const std::string &c);
+    // Compile support
+    void programStart(const std::string &progName);
+    void programFinish(const std::string &progName);
+    void kernelStart();
+    void kernelFinish(const std::string &kernelName, size_t durationInCycles);
+    void bundleStart(const std::string &cmnt);
+    void bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle);
 
     // Quantum instructions
-    void custom_gate(
+    void customGate(
             const std::string &iname,
-            const std::vector<size_t> &qops,
-            const std::vector<size_t> &cops,
-            double angle, size_t startCycle, size_t durationInNs);
-    void nop_gate();
+            const utils::Vec<utils::UInt> &qops,
+            const utils::Vec<utils::UInt> &cops,
+            double angle, size_t startCycle, size_t durationInCycles);
+    void nopGate();
+
+    void comment(const std::string &c);
 
     // Classical operations on kernels
-    void if_start(size_t op0, const std::string &opName, size_t op1);
-    void else_start(size_t op0, const std::string &opName, size_t op1);
-    void for_start(const std::string &label, int iterations);
-    void for_end(const std::string &label);
-    void do_while_start(const std::string &label);
-    void do_while_end(const std::string &label, size_t op0, const std::string &opName, size_t op1);
-
-    // Classical arithmetic instructions
-    void add();
-    // FIXME: etc
+    void ifStart(size_t op0, const std::string &opName, size_t op1);
+    void elseStart(size_t op0, const std::string &opName, size_t op1);
+    void forStart(const std::string &label, int iterations);
+    void forEnd(const std::string &label);
+    void doWhileStart(const std::string &label);
+    void doWhileEnd(const std::string &label, size_t op0, const std::string &opName, size_t op1);
 
 private:    // vars
-    static const int MAX_SLOTS = 12;
-    static const int MAX_GROUPS = 32;                           // enough for VSM
+    static const int MAX_SLOTS = 12;                            // physical maximum of CC
+    static const int MAX_INSTRS = MAX_SLOTS;                    // maximum number of instruments in config file
+    static const int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
-    bool verboseCode = true;                                    // output extra comments in generated code. FIXME: not yet configurable
+    const quantum_platform *platform;                       // remind platform
+    settings_cc settings;                                       // handling of JSON settings
+    vcd_cc vcd;                                                 // handling of VCD file output
+
+    bool verboseCode = true;                                    // option to output extra comments in generated code. FIXME: not yet configurable
     bool mapPreloaded = false;
 
-    std::stringstream cccode;                                   // the code generated for the CC
+    std::stringstream codeSection;                              // the code generated
+#if OPT_FEEDBACK
+    std::stringstream datapathSection;                          // the data path configuration generated
+#endif
 
     // codegen state
-    std::vector<std::vector<tGroupInfo>> groupInfo;             // matrix[instrIdx][group]
-    json codewordTable;                                         // codewords versus signals per instrument group
-    json inputLutTable;                                         // input LUT usage per instrument group
-    size_t lastEndCycle[MAX_SLOTS];
-
-    // some JSON nodes we need access to
-    const json *jsonInstrumentDefinitions;
-    const json *jsonControlModes;
-    const json *jsonInstruments;
-    const json *jsonSignals;
-
-    const ql::quantum_platform *platform;
-
-#if OPT_VCD_OUTPUT
-    size_t kernelStartTime;
-    Vcd vcd;
-    int vcdVarKernel;
-    std::vector<int> vcdVarQubit;
-    std::vector<std::vector<int>> vcdVarSignal;
-    std::vector<int> vcdVarCodeword;
+    unsigned int lastEndCycle[MAX_INSTRS];                      // vector[instrIdx], maintain where we got per slot, kernel scope
+    std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group], bundle scope
+    utils::Json codewordTable;                                  // codewords versus signals per instrument group
+#if OPT_FEEDBACK
+    Json inputLutTable;                                         // input LUT usage per instrument group
 #endif
+
 
 private:    // funcs
     // Some helpers to ease nice assembly formatting
     void emit(const char *labelOrComment, const char *instr="");
-
-    // @param   label       must include trailing ":"
-    // @param   comment     must include leading "#"
     void emit(const char *label, const char *instr, const std::string &qops, const char *comment="");
 
     // helpers
-    void latencyCompensation();
+    void emitProgramStart();
     void padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
-
-    // Functions processing JSON
-    void load_backend_settings();
-    const json &findInstrumentDefinition(const std::string &name);
-
-    // find instrument/group providing instructionSignalType for qubit
-    tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit);
-
-    tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname) const;
 }; // class
 
-#endif  // ndef ARCH_CC_CODEGEN_CC_H
+} // namespace ql

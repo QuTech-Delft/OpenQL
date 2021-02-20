@@ -8,13 +8,13 @@ test_mc(std::string v, std::string param1, std::string param2, std::string param
     std::string prog_name = "test_" + v;
     // std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v;
-    float sweep_points[] = { 1 };
+    double sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("mc4x4full", "test_multi_core_4x4_full.json");
     //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     int i, j;
 

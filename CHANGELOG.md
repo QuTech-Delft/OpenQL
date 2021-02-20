@@ -6,14 +6,20 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [ next ] - [ TBD ]
 ### Added
 - interface (C++ and Python) to compile cQASM 1.0
+- allow 'wait' and 'barrier' in JSON section 'gate_decomposition'
+- CC backend:
+    - improved reporting on JSON semantic errors
+    - implemented option to output scheduled QASM files
+    - added check for dimension of "instruments/qubits" against "instruments/ref_control_mode/control_bits"
+    - added check for dimension of "instructions/<key>/cc/[signals,ref_signal]/value" against "instruments/ref_control_mode/control_bits"
+    - added cross check of "instruments/ref_control_mode" against "instrument_definitions"
 
 ### Changed
 - CC backend:
     - renamed JSON field "signal_ref" to "ref_signal"
     - renamed JSON field "ref_signals_type" to "signal_type"
-    - added option for new seq_bar semantics (cc firmware from 20191219 onwards)
-    - improved reporting on JSON semantic errors
-    - implemented option to output scheduled QASM files
+    - changed JSON field "static_codeword_override" to be a vector with one element per qubit parameter. To edit a JSON file using Sublime, use Replace with Regular Expressions: find=`"static_codeword_override": ([0-9])+`, replace=`"static_codeword_override": [\1]`
+    - adopted new module synchronization scheme ("seq_bar semantics", requires CC software >= v0.2.0, PycQED after commit 470df5b)
 
 ### Removed
 

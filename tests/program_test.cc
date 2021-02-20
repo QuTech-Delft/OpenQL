@@ -13,7 +13,7 @@
 int main(int argc, char ** argv)
 {
    size_t nqubits = 5;
-   float sweep_points[] = {1};
+   double sweep_points[] = {1};
 
    // create platform
    ql::quantum_platform qplatform("target_platform", "hardware_config_cc_light.json");
@@ -23,7 +23,7 @@ int main(int argc, char ** argv)
 
    // create program
    ql::quantum_program prog("prog", qplatform, nqubits);
-   prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+   prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
    // create a kernel
    ql::quantum_kernel kernel("my_kernel", qplatform, nqubits);

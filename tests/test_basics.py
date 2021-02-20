@@ -9,12 +9,14 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_basic(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
+
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('use_default_gates', 'no')
-        ql.set_option('write_qasm_files', 'yes')
+        # ql.set_option('write_qasm_files', 'yes')
 
         # TODO cleanup
         ql.set_option('scheduler', 'ALAP')

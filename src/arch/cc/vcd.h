@@ -6,12 +6,13 @@
  * @remark based on https://github.com/SanDisk-Open-Source/pyvcd/tree/master/vcd
  */
 
-#ifndef _VCD_H
-#define _VCD_H
+#pragma once
 
 #include <string>
 #include <sstream>
 #include <map>
+
+namespace ql {
 
 class Vcd {
 public:
@@ -42,4 +43,4 @@ private:
     std::stringstream vcd;
 };
 
-#endif // ndef _VCD_H
+} // namespace ql

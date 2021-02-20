@@ -1,51 +1,36 @@
-/**
- * @file   platform.h
- * @date   11/2016
- * @author Nader Khammassi
- * @brief  platform header for target-specific compilation
+/** \file
+ * Platform header for target-specific compilation.
  */
-#ifndef QL_PLATFORM_H
-#define QL_PLATFORM_H
 
-#include <string>
-#include <tuple>
+#pragma once
 
-#include <compile_options.h>
-#include <json.h>
-#include <instruction_map.h>
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/json.h"
+#include "hardware_configuration.h"
 
-namespace ql
-{
-class quantum_platform
-{
+namespace ql {
 
+class quantum_platform {
 public:
-    std::string             name;                     // platform name
-    std::string             eqasm_compiler_name;      // eqasm backend
-    size_t                  qubit_number;             // number of qubits
-    size_t                  cycle_time;               // in [ns]
-    std::string             configuration_file_name;  // configuration file name
-    ql::instruction_map_t   instruction_map;          // supported operations
-    json                    instruction_settings;     // instruction settings (to use by the eqasm backend)
-    json                    hardware_settings;        // additional hardware settings (to use by the eqasm backend)
+    utils::Str              name;                     // platform name
+    utils::Str              eqasm_compiler_name;      // eqasm backend
+    utils::UInt             qubit_number;             // number of qubits
+    utils::UInt             cycle_time;               // in [ns]
+    utils::Str              configuration_file_name;  // configuration file name
+    instruction_map_t       instruction_map;          // supported operations
+    utils::Json             instruction_settings;     // instruction settings (to use by the eqasm backend)
+    utils::Json             hardware_settings;        // additional hardware settings (to use by the eqasm backend)
 
-    json                    resources;
-    json                    topology;
-    json                    aliases;                  // workaround the generic instruction composition
+    utils::Json             resources;
+    utils::Json             topology;
+    utils::Json             aliases;                  // workaround the generic instruction composition
 
-//#if OPT_TARGET_PLATFORM   // FIXME: constructed object is not usable
-    quantum_platform() : name("default")
-    {
-    }
-//#endif
-
-    quantum_platform(std::string name, std::string configuration_file_name);
+    // FIXME: constructed object is not usable
+    quantum_platform();
+    quantum_platform(const utils::Str &name, const utils::Str &configuration_file_name);
     void print_info() const;
-    size_t get_qubit_number() const  // FIXME: qubit_number is public anyway
-    {
-        return qubit_number;
-    }
-
+    utils::UInt get_qubit_number() const;  // FIXME: qubit_number is public anyway
 
     /**
      * @brief   Find architecture instruction name for a custom gate
@@ -59,14 +44,12 @@ public:
      */
 
     // find settings for custom gate, preventing JSON exceptions
-    const json& find_instruction(std::string iname) const;
+    const utils::Json &find_instruction(const utils::Str &iname) const;
 
     // find instruction type for custom gate
-    std::string find_instruction_type(std::string iname) const;
+    utils::Str find_instruction_type(const utils::Str &iname) const;
 
-    size_t time_to_cycles(float time_ns) const;
+    utils::UInt time_to_cycles(utils::Real time_ns) const;
 };
 
-}
-
-#endif // QL_PLATFORM_H
+} // namespace ql

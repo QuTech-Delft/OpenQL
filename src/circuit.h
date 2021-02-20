@@ -1,88 +1,30 @@
-/**
- * @file   circuit.h
- * @date   11/2016
- * @author Nader Khammassi
- * @brief  circuit (i.e. gate container) implementation
+/** \file
+ * Circuit (i.e. gate container) implementation.
  */
 
-#ifndef CIRCUIT_H
-#define CIRCUIT_H
+#pragma once
 
-#include <vector>
-#include <iostream>
-
+#include "utils/num.h"
+#include "utils/str.h"
+#include "utils/vec.h"
 #include "gate.h"
 
-namespace ql
-{
+namespace ql {
 
-    typedef std::vector<gate*> circuit;
+typedef utils::Vec<gate*> circuit;
 
+void print(const circuit &c);
 
-    inline void print(circuit& c)
-    {
-        std::cout << "-------------------" << std::endl;
-        for (size_t i=0; i<c.size(); i++)
-        	std::cout << "   " << c[i]->qasm() << std::endl;
-        std::cout << "\n-------------------" << std::endl;
-    }
+/**
+ * generate qasm for a given circuit
+ */
+utils::Str qasm(const circuit &c);
 
-    /**
-     * generate qasm for a given circuit
-     */
-    inline std::string qasm(circuit& c)
-    {
-        std::stringstream ss;
-        for (size_t i=0; i<c.size(); ++i)
-        {
-            ss << c[i]->qasm() << "\n";
-        }
-        return ss.str();
-    }
+utils::Vec<circuit*> split_circuit(circuit &x);
 
-    inline std::vector<circuit*> split_circuit(circuit &x)
-    {
-        IOUT("circuit decomposition in basic blocks ... ");
-        std::vector<circuit*> cs;
-        cs.push_back(new circuit());
-        for (size_t i=0; i<x.size(); i++)
-        {
-            if ((x[i]->type() == __prepz_gate__) || (x[i]->type() == __measure_gate__))
-            {
-                cs.push_back(new circuit());
-                cs.back()->push_back(x[i]);
-                cs.push_back(new circuit());
-            }
-            else
-            {
-                cs.back()->push_back(x[i]);
-            }
-        }
-        IOUT("circuit decomposition done (" << cs.size() << ").");
-        /*
-           for (int i=0; i<cs.size(); ++i)
-           {
-           println(" |-- circuit " << i);
-           print(*(cs[i]));
-           }
-         */
-        return cs;
-    }
+/**
+ * detect measurements and qubit preparations
+ */
+utils::Bool contains_measurements(const circuit &x);
 
-    /**
-     * detect measurements and qubit preparations
-     */
-    inline bool contains_measurements(circuit &x)
-    {
-        for (size_t i=0; i<x.size(); i++)
-        {
-            if (x[i]->type() == __measure_gate__)
-                return true;
-            if (x[i]->type() == __prepz_gate__)
-                return true;
-        }
-        return false;
-    }
-}
-
-#endif // CIRCUIT_H
+} // namespace ql

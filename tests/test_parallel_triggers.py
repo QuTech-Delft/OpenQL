@@ -9,11 +9,12 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_parallel_trigger(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('log_level', 'LOG_WARNING')
-        ql.set_option('write_qasm_files', 'yes')
+        # ql.set_option('write_qasm_files', 'yes')
 
 
     def parallel_trigger(self):

@@ -1,20 +1,19 @@
-/**
- * @file   optimizer.h
- * @date   11/2016
- * @author Nader Khammassi
- * @brief  optimizer interface and its implementation
- * @todo   implementations should be in separate files for better readability
+/** \file
+ * Rotation optimizer pass implementation.
  */
-#ifndef OPTIMIZER_H
-#define OPTIMIZER_H
 
+#pragma once
+
+#include "utils/str.h"
 #include "program.h"
 #include "platform.h"
 
-namespace ql
-{
-    // rotation_optimize pass
-    void rotation_optimize(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-}
+namespace ql {
 
-#endif // OPTIMIZER_H
+void rotation_optimize(
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const utils::Str &passname
+);
+
+} // namespace ql

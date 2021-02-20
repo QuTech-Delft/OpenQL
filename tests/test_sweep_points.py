@@ -11,14 +11,14 @@ output_dir = os.path.join(curdir, 'test_output')
 class Test_sweep_points(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        ql.initialize()
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
             
     def test_sweep_points(self):
-        self.setUpClass()
         sweep_points = [0.25, 1, 1.5, 2, 2.25]
         nqubits = 1
 
@@ -30,7 +30,7 @@ class Test_sweep_points(unittest.TestCase):
         k.measure(0)
 
         # create a program
-        p = ql.Program("aProgram", platf, nqubits)
+        p = ql.Program("test_sweep_points", platf, nqubits)
         p.set_sweep_points(sweep_points)
 
         # add kernel to program
@@ -40,7 +40,7 @@ class Test_sweep_points(unittest.TestCase):
         p.compile()
 
         # all the outputs are generated in 'output' dir
-        with open(os.path.join(output_dir, 'aProgram_config.json')) as fp:
+        with open(os.path.join(output_dir, 'test_sweep_points_config.json')) as fp:
             config = json.load(fp)
 
         self.assertTrue('measurement_points' in config.keys())
@@ -50,7 +50,6 @@ class Test_sweep_points(unittest.TestCase):
         self.assertEqual(len(matched), len(sweep_points))
 
     def test_no_sweep_points(self):
-        self.setUpClass()
         nqubits = 1
 
         # create a kernel
@@ -61,7 +60,7 @@ class Test_sweep_points(unittest.TestCase):
         k.measure(0)
 
         # create a program
-        p = ql.Program("aProgram", platf, nqubits)
+        p = ql.Program("test_no_sweep_points", platf, nqubits)
 
         # add kernel to program
         p.add_kernel(k)

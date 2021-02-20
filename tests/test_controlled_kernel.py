@@ -2,16 +2,21 @@ import os
 import unittest
 from openql import openql as ql
 import numpy as np
+from utils import file_compare
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ASAP')
-ql.set_option('log_level', 'LOG_WARNING')
 
 class Test_controlled_kernel(unittest.TestCase):
+
+    @classmethod
+    def setUp(self):
+        ql.initialize()
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ASAP')
+        ql.set_option('log_level', 'LOG_WARNING')
 
     def test_controlled_single_qubit_gates(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
@@ -40,6 +45,10 @@ class Test_controlled_kernel(unittest.TestCase):
 
         p.compile()
 
+        gold_fn = curdir + '/golden/' + p.name +'_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
+
     def test_controlled_rotations(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
@@ -63,6 +72,10 @@ class Test_controlled_kernel(unittest.TestCase):
 
         p.compile()
 
+        gold_fn = curdir + '/golden/' + p.name +'_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
+
     def test_controlled_two_qubit_gates(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
@@ -83,6 +96,10 @@ class Test_controlled_kernel(unittest.TestCase):
         p.add_kernel(ck)
 
         p.compile()
+
+        gold_fn = curdir + '/golden/' + p.name +'_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
     def test_multi_controlled(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
@@ -109,6 +126,10 @@ class Test_controlled_kernel(unittest.TestCase):
 
         p.compile()
 
+        gold_fn = curdir + '/golden/' + p.name +'_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
+
     def test_decompose_toffoli(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
@@ -124,6 +145,10 @@ class Test_controlled_kernel(unittest.TestCase):
         p.add_kernel(k)
         ql.set_option('decompose_toffoli', 'NC')
         p.compile()
+
+        gold_fn = curdir + '/golden/' + p.name +'_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 if __name__ == '__main__':
     unittest.main()

@@ -7,14 +7,9 @@ output_dir = os.path.join(curdir, 'test_output')
 
 class Test_options(unittest.TestCase):
 
-    def tearDown(self):
-        ql.set_option('log_level', 'LOG_NOTHING')
-        ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ALAP')
-        ql.set_option('scheduler_uniform', 'no')
-        ql.set_option('use_default_gates', 'yes')
-        ql.set_option('decompose_toffoli', 'no')
-
+    @classmethod
+    def setUp(self):
+        ql.initialize()
 
     def test_set_all_options(self):
         # try to set all legal values of options
@@ -52,13 +47,13 @@ class Test_options(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             ql.set_option('optimize', 'nope')
 
-        self.assertEqual(str(cm.exception), 'Error parsing options. The value nope is not an allowed value for --optimize !')
+        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'invalid value for yes/no option optimize: nope')
 
 
         with self.assertRaises(Exception) as cm:
             ql.set_option('scheduler', 'best')
 
-        self.assertEqual(str(cm.exception), 'Error parsing options. The value best is not an allowed value for --scheduler !')
+        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'invalid value for option scheduler: possible values are ASAP or ALAP, but best was given')
 
 
     def test_get_values(self):

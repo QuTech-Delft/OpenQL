@@ -20,13 +20,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Install dependencies
       if: matrix.os == 'macos-latest'
       run: |
         brew install bison flex
-        echo "::add-path::/usr/local/opt/bison/bin"
-        echo "::add-path::/usr/local/opt/flex/bin"
+        echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+        echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
     - uses: actions/cache@v2
       if: matrix.os == 'windows-latest'
       with:
@@ -51,7 +51,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Configure
       run: |
         mkdir cbuild
@@ -64,8 +64,6 @@ jobs:
   python:
     name: Python
     runs-on: ${{ matrix.os }}
-    env:
-      OPENQL_BUILD_TYPE: 'Debug'
     strategy:
       fail-fast: false
       matrix:
@@ -81,7 +79,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python }}
@@ -94,8 +92,8 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         brew install bison flex swig
-        echo "::add-path::/usr/local/opt/bison/bin"
-        echo "::add-path::/usr/local/opt/flex/bin"
+        echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+        echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
     - uses: actions/cache@v2
       if: matrix.os == 'windows-latest'
       with:
@@ -110,7 +108,13 @@ jobs:
       run: |
         choco install winflexbison3 --version 2.5.18.20190508
         choco install swig --version 4.0.1
-        echo "::set-env name=OPENQL_BUILD_TYPE::Release"
+    - name: Select build type
+      if: matrix.os == 'windows-latest'
+      shell: powershell
+      run: echo "OPENQL_BUILD_TYPE=Release" >> $GITHUB_ENV
+    - name: Select build type
+      if: matrix.os != 'windows-latest'
+      run: echo "OPENQL_BUILD_TYPE=Debug" >> $GITHUB_ENV
     - name: Build
       env:
         NPROCS: 100
@@ -127,13 +131,14 @@ jobs:
         os:
         - ubuntu-latest
         - macos-latest
-        - windows-2016
+        #- windows-latest
+        #- windows-2016
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Set up conda
-      uses: goanpeca/setup-miniconda@v1
+      uses: conda-incubator/setup-miniconda@v2
       with:
         auto-update-conda: true
         miniconda-version: "latest"
@@ -142,7 +147,7 @@ jobs:
         show-channel-urls: true
         use-only-tar-bz2: true
     - name: Install Windows dependencies
-      if: matrix.os == 'windows-2016'
+      if: matrix.os == 'windows-2016' || matrix.os == 'windows-latest'
       run: choco install winflexbison3 --version 2.5.18.20190508
     - name: Install conda dependencies
       run: conda install conda-build conda-verify -y
@@ -156,5 +161,5 @@ jobs:
       # see https://github.com/conda/conda/issues/7758
       # Note that conda build already does a test install in a fresh
       # environment, so this is a bit redundant anyway.
-      if: matrix.os != 'windows-2016'
+      if: matrix.os != 'windows-2016' && matrix.os != 'windows-latest'
       run: conda install openql --use-local
