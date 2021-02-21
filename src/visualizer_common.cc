@@ -92,7 +92,7 @@ void visualize(const quantum_program* program, const Str &visualizationType, con
     QL_IOUT("Starting visualization...");
     QL_IOUT("Visualization type: " << visualizationType);
 
-    printGates(parseGates(program));
+    // printGates(parseGates(program));
     // if (true) return;
 
     // Choose the proper visualization based on the visualization type.
@@ -142,30 +142,50 @@ Int calculateAmountOfBits(const Vec<GateProperties> &gates, const Vec<Int> GateP
     QL_DOUT("Calculating amount of bits...");
 
     //TODO: handle circuits not starting at a c- or qbit with index 0
-    Int minAmount = MAX;
+
     Int maxAmount = 0;
 
-    // Find the minimum and maximum index of the operands.
-    for (const GateProperties &gate : gates)
-    {
+    // Find the maximum index of the operands.
+    for (const GateProperties &gate : gates) {
         Vec<Int>::const_iterator begin = (gate.*operandType).begin();
         const Vec<Int>::const_iterator end = (gate.*operandType).end();
 
         for (; begin != end; ++begin) {
             const Int number = *begin;
-            if (number < minAmount) minAmount = number;
             if (number > maxAmount) maxAmount = number;
         }
     }
 
-    // If both minAmount and maxAmount are at their original values, the list of 
-    // operands for all the gates was empty.This means there are no operands of 
-    // the given type for these gates and we return 0.
-    if (minAmount == MAX && maxAmount == 0) {
+    if (maxAmount == 0) {
         return 0;
     } else {
-        return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
+        return 1 + maxAmount;
     }
+
+    // Int minAmount = MAX;
+    // Int maxAmount = 0;
+
+    // // Find the minimum and maximum index of the operands.
+    // for (const GateProperties &gate : gates)
+    // {
+    //     Vec<Int>::const_iterator begin = (gate.*operandType).begin();
+    //     const Vec<Int>::const_iterator end = (gate.*operandType).end();
+
+    //     for (; begin != end; ++begin) {
+    //         const Int number = *begin;
+    //         if (number < minAmount) minAmount = number;
+    //         if (number > maxAmount) maxAmount = number;
+    //     }
+    // }
+
+    // // If both minAmount and maxAmount are at their original values, the list of 
+    // // operands for all the gates was empty. This means there are no operands of 
+    // // the given type for these gates and we return 0.
+    // if (minAmount == MAX && maxAmount == 0) {
+    //     return 0;
+    // } else {
+    //     return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
+    // }
 }
 
 Int calculateAmountOfGateOperands(const GateProperties &gate) {

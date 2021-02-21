@@ -143,6 +143,20 @@
                     }
                 ]
             },
+            "y90": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "y90",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [70, 210, 230],
+                        "outlineColor": [70, 210, 230]
+                    }
+                ]
+            },
             "ry90": {
                 "connectionColor": [0, 0, 0],
                 "nodes": [
@@ -150,6 +164,20 @@
                         "type": "GATE",
                         "radius": 13,
                         "displayName": "ry90",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [70, 210, 230],
+                        "outlineColor": [70, 210, 230]
+                    }
+                ]
+            },
+            "ym90": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "ym90",
                         "fontHeight": 13,
                         "fontColor": [255, 255, 255],
                         "backgroundColor": [70, 210, 230],

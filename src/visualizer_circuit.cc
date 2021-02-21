@@ -389,12 +389,18 @@ void Structure::generateCellPositions(const CircuitData &circuitData) {
         qbitCellPositions.push_back(qColumnCells);
         // Classical cell positions.
         Vec<Position4> cColumnCells;
-        for (Int row = 0; row < circuitData.amountOfClassicalBits; row++) {
-            const Int y0 = layout.grid.getBorderSize() + layout.cycles.labels.getRowHeight() + 
-                ((layout.bitLines.classical.isGrouped() ? 0 : row) + circuitData.amountOfQubits) *
-                (cellDimensions.height + (layout.bitLines.edges.areEnabled() ? layout.bitLines.edges.getThickness() : 0));
+        if (circuitData.amountOfClassicalBits > 0) {
+            for (Int row = 0; row < circuitData.amountOfClassicalBits; row++) {
+                const Int y0 = layout.grid.getBorderSize() + layout.cycles.labels.getRowHeight() + 
+                    ((layout.bitLines.classical.isGrouped() ? 0 : row) + circuitData.amountOfQubits) *
+                    (cellDimensions.height + (layout.bitLines.edges.areEnabled() ? layout.bitLines.edges.getThickness() : 0));
+                const Int y1 = y0 + cellDimensions.height;
+                cColumnCells.push_back( {x0, y0, x1, y1} );
+            }
+        } else {
+            const Int y0 = 0;
             const Int y1 = y0 + cellDimensions.height;
-            cColumnCells.push_back({x0, y0, x1, y1});
+            cColumnCells.push_back( {x0, y0, x1, y1} );
         }
         cbitCellPositions.push_back(cColumnCells);
 
@@ -563,12 +569,12 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     // Initialize the circuit properties.
     CircuitData circuitData(gates, layout, cycleDuration);
     circuitData.printProperties();
-    
+
     // Initialize the structure of the visualization.
     QL_DOUT("Initializing visualization structure...");
     Structure structure(layout, circuitData);
     structure.printProperties();
-    
+
     // Initialize image.
     QL_DOUT("Initializing image...");
     Image image(structure.getImageWidth(), structure.getImageHeight());
@@ -588,7 +594,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     if (layout.bitLines.edges.areEnabled()) {
         drawBitLineEdges(image, layout, circuitData, structure);
     }
-
+    
     // Draw the bit line labels if enabled.
     if (layout.bitLines.labels.areEnabled()) {
         drawBitLineLabels(image, layout, circuitData, structure);
