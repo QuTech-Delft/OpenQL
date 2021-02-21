@@ -718,6 +718,25 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
     static const std::regex trim_pattern("^(\\s)+|(\\s)+$");
     static const std::regex multiple_space_pattern("(\\s)+");
 
+    // Load the visualizer configuration file.
+    Json visualizerConfig;
+    try {
+        visualizerConfig = load_json(visualizerConfigPath);
+    } catch (Json::exception &e) {
+        QL_FATAL("Failed to load the visualization config file: \n\t" << Str(e.what()));
+    }
+
+    // Load the circuit visualization parameters.
+    Json circuitConfig;
+    if (visualizerConfig.count("circuit") == 1) {
+        circuitConfig = visualizerConfig["circuit"];
+    } else {
+        QL_WOUT("Could not find circuit configuration in visualizer configuration file. Is it named correctly?");
+    }
+
+    // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
+    CircuitLayout layout;
+
     struct VisualParameters {
         Str visual_type;
         Vec<Int> codewords;
@@ -753,7 +772,13 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
                 codewords.push_back(instruction["cc_light_left_codeword"]);
                 QL_DOUT("codewords: " << codewords[0] << "," << codewords[1]);
             } else {
-                QL_WOUT("Did not find any codeword attributes for instruction: '" << gateName << "'!");
+                if (circuitConfig.count("pulses") == 1) {
+                    if (circuitConfig["pulses"].count("displayGatesAsPulses") == 1) {
+                        if (circuitConfig["pulses"]["displayGatesAsPulses"]) {
+                            QL_WOUT("Did not find any codeword attributes for instruction: '" << gateName << "'!");
+                        }
+                    }
+                }
             }
         }
 
@@ -774,25 +799,6 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
             QL_WOUT("Did not find visual type and codewords for gate: " << gate.name << "!");
         }
     }
-
-    // Load the visualizer configuration file.
-    Json visualizerConfig;
-    try {
-        visualizerConfig = load_json(visualizerConfigPath);
-    } catch (Json::exception &e) {
-        QL_FATAL("Failed to load the visualization config file: \n\t" << Str(e.what()));
-    }
-
-    // Load the circuit visualization parameters.
-    Json circuitConfig;
-    if (visualizerConfig.count("circuit") == 1) {
-        circuitConfig = visualizerConfig["circuit"];
-    } else {
-        QL_WOUT("Could not find circuit configuration in visualizer configuration file. Is it named correctly?");
-    }
-
-    // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
-    CircuitLayout layout;
 
     // Check if the image should be saved to disk.
     if (visualizerConfig.count("saveImage") == 1) {

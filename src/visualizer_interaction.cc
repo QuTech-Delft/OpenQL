@@ -286,17 +286,6 @@ Bool isEdgeAlreadyDrawn(const Vec<Pair<Int, Int>> &drawnEdges, const Int first, 
     return false;
 }
 
-// bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> &drawnEdges, const int first, const int second) {
-//     // Check if the edge already exists.
-//     for (const std::pair<int, int> &drawnEdge : drawnEdges) {
-//         if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {
-//             return true;
-//         }
-//     }
-
-//     return false;
-// }
-
 void printInteractionList(const Vec<Qubit> &qubits) {
     // Print the qubit interaction list.
     for (const Qubit &qubit : qubits) {

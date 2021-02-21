@@ -7,6 +7,7 @@
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
 #include "visualizer_interaction.h"
+#include "visualizer_mapping.h"
 #include "visualizer_cimg.h"
 #include "options.h"
 #include "utils/str.h"
@@ -91,16 +92,7 @@ void visualize(const quantum_program* program, const Str &visualizationType, con
     QL_IOUT("Starting visualization...");
     QL_IOUT("Visualization type: " << visualizationType);
 
-    // for (ql::quantum_kernel kernel : program->kernels) {
-    //     for (ql::gate* const gate : kernel.get_circuit()) {
-    //         if (gate->type() == __remap_gate__) {
-    //             const ql::remap *remap_p = dynamic_cast<ql::remap*>(gate);
-    //             IOUT("remap gate: [" << remap_p->operands[0] << ", " << remap_p->virtual_qubit_index << "]");
-    //         }
-    //     }
-    // }
-
-    // printGates(parseGates(program));
+    printGates(parseGates(program));
     // if (true) return;
 
     // Choose the proper visualization based on the visualization type.
@@ -109,7 +101,7 @@ void visualize(const quantum_program* program, const Str &visualizationType, con
     } else if (visualizationType == "INTERACTION_GRAPH") {
         visualizeInteractionGraph(program, configuration);
     } else if (visualizationType == "MAPPING_GRAPH") {
-        QL_WOUT("Mapping graph visualization not yet implemented.");
+        visualizeMappingGraph(program, configuration);
     } else {
         QL_FATAL("Unknown visualization type: " << visualizationType << "!");
     }
