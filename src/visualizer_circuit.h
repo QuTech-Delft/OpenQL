@@ -144,7 +144,13 @@ public:
     void printProperties() const;
 };
 
+struct ImageOutput {
+    Image image;
+    CircuitLayout circuitLayout;
+};
+
 void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration);
+ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration);
 
 CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const utils::Json platformInstructions);
 void validateCircuitLayout(CircuitLayout &layout);

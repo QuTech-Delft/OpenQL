@@ -548,6 +548,20 @@ void Structure::printProperties() const {
 
 void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration)
 {
+    // Generate the image.
+    ImageOutput imageOutput = generateImage(program, configuration);
+
+    // Save the image if enabled.
+    if (imageOutput.circuitLayout.saveImage) {
+        imageOutput.image.save(generateFilePath("circuit_visualization", "bmp"));
+    }
+
+    // Display the image.
+    QL_DOUT("Displaying image...");
+    imageOutput.image.display("Quantum Circuit");
+}
+
+ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration) {
     // Get the gate list from the program.
     QL_DOUT("Getting gate list...");
     Vec<GateProperties> gates = parseGates(program);
@@ -704,14 +718,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
         }
     }
 
-    // Save the image if enabled.
-    if (layout.saveImage) {
-        image.save(generateFilePath("circuit_visualization", "bmp"));
-    }
-
-    // Display the image.
-    QL_DOUT("Displaying image...");
-    image.display("Quantum Circuit");
+    return {image, layout};
 }
 
 CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
