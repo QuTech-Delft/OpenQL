@@ -1,5 +1,10 @@
 {
     "saveImage": false,
+    "mappingGraph":
+    {
+        "qubitRadius": 17,
+        "qubitSpacing": 4
+    },
     "interactionGraph":
     {
         "outputDotFile": true,

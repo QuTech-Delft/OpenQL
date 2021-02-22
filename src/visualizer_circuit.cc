@@ -1392,7 +1392,7 @@ void drawCycleEdges(Image &image,
                     const CircuitLayout &layout,
                     const CircuitData &circuitData,
                     const Structure &structure) {
-    QL_IOUT("Drawing cycle edges...");
+    QL_DOUT("Drawing cycle edges...");
 
     for (Int i = 0; i < circuitData.getAmountOfCycles(); i++) {
         if (i == 0) continue;
@@ -1402,7 +1402,7 @@ void drawCycleEdges(Image &image,
         const Int y0 = structure.getCircuitTopY();
         const Int y1 = structure.getCircuitBotY();
 
-        QL_IOUT("drawing edge at x = " << xCycle << ", from y0 = " << y0 << " and y1 = " << y1);
+        QL_DOUT("drawing edge at x = " << xCycle << ", from y0 = " << y0 << " and y1 = " << y1);
 
         image.drawLine(xCycle, y0, xCycle, y1, layout.cycles.edges.getColor(), layout.cycles.edges.getAlpha(), LinePattern::DASHED);
     }
