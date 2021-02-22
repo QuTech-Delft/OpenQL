@@ -114,19 +114,21 @@ private:
     utils::Int imageWidth = 0;
     utils::Int imageHeight = 0;
 
+    const utils::Int minCycleWidth;
+
     utils::Vec<utils::Vec<Position4>> qbitCellPositions;
     utils::Vec<utils::Vec<Position4>> cbitCellPositions;
     utils::Vec<utils::Pair<EndPoints, utils::Bool>> bitLineSegments;
 
     utils::Int calculateCellHeight(const CircuitLayout &layout) const;
     utils::Int calculateImageWidth(const CircuitData &circuitData) const;
-    utils::Int calculateImageHeight(const CircuitData &circuitData) const;
+    utils::Int calculateImageHeight(const CircuitData &circuitData, const utils::Int extendedImageHeight) const;
 
     void generateBitLineSegments(const CircuitData &circuitData);
     void generateCellPositions(const CircuitData &circuitData);
 
 public:
-    Structure(const CircuitLayout &layout, const CircuitData &circuitData);
+    Structure(const CircuitLayout &layout, const CircuitData &circuitData, const utils::Int minCycleWidth, const utils::Int extendedImageHeight);
 
     utils::Int getImageWidth() const;
     utils::Int getImageHeight() const;
@@ -137,6 +139,7 @@ public:
     utils::Int getCircuitTopY() const;
     utils::Int getCircuitBotY() const;
 
+    utils::Int getMinCycleWidth() const;
     Dimensions getCellDimensions() const;
     Position4 getCellPosition(const utils::UInt column, const utils::UInt row, const BitType bitType) const;
     utils::Vec<utils::Pair<EndPoints, utils::Bool>> getBitLineSegments() const;
@@ -150,7 +153,7 @@ struct ImageOutput {
 };
 
 void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration);
-ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration);
+ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration, const utils::Int minCycleWidth, const utils::Int extendedImageHeight);
 
 CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const utils::Json platformInstructions);
 void validateCircuitLayout(CircuitLayout &layout);

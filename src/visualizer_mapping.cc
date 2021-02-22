@@ -16,11 +16,15 @@ using namespace utils;
 void visualizeMappingGraph(const quantum_program* program, const VisualizerConfiguration &configuration) {
     QL_IOUT("Visualizing mapping graph...");
 
-    // 1) get visualized circuit with extra wide cycles from visualizer_circuit.cc
-    // 2) fill in cycle spaces beneath the circuit with the mapping graph
+    // Get visualized circuit with extra wide cycles from visualizer_circuit.cc.
+    //TODO: give parameters that increase the size of the image so that there is space for the mapping graph
+    const Int minCycleWidth = 0;
+    const Int extendedImageHeight = 0;
+    Image image = generateImage(program, configuration, minCycleWidth, extendedImageHeight).image;
 
-    Image image = generateImage(program, configuration).image;
+    // Fill in cycle spaces beneath the circuit with the mapping graph.
 
+    // Display the filled in image.
     image.display("Mapping Graph");
 }
 

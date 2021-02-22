@@ -314,17 +314,18 @@ void CircuitData::printProperties() const {
 // =                      Structure                      = //
 // ======================================================= //
 
-Structure::Structure(const CircuitLayout &layout, const CircuitData &circuitData) :
+Structure::Structure(const CircuitLayout &layout, const CircuitData &circuitData, const Int minCycleWidth, const Int extendedImageHeight) :
     layout(layout),
     cellDimensions({layout.grid.getCellSize(), calculateCellHeight(layout)}),
     cycleLabelsY(layout.grid.getBorderSize()),
-    bitLabelsX(layout.grid.getBorderSize())
+    bitLabelsX(layout.grid.getBorderSize()),
+    minCycleWidth(minCycleWidth)
 {
     generateCellPositions(circuitData);
     generateBitLineSegments(circuitData);
 
     imageWidth = calculateImageWidth(circuitData);
-    imageHeight = calculateImageHeight(circuitData);
+    imageHeight = calculateImageHeight(circuitData, extendedImageHeight);
 }
 
 Int Structure::calculateCellHeight(const CircuitLayout &layout) const {
@@ -350,7 +351,7 @@ Int Structure::calculateImageWidth(const CircuitData &circuitData) const {
     return layout.bitLines.labels.getColumnWidth() + imageWidthFromCells + layout.grid.getBorderSize() * 2;
 }
 
-Int Structure::calculateImageHeight(const CircuitData &circuitData) const {
+Int Structure::calculateImageHeight(const CircuitData &circuitData, const Int extendedImageHeight) const {
     QL_DOUT("Calculating image height...");
     
     const Int rowsFromQuantum = circuitData.amountOfQubits;
@@ -363,7 +364,7 @@ Int Structure::calculateImageHeight(const CircuitData &circuitData) const {
         (rowsFromQuantum + rowsFromClassical) *
         (cellDimensions.height + (layout.bitLines.edges.areEnabled() ? layout.bitLines.edges.getThickness() : 0));
 
-    return layout.cycles.labels.getRowHeight() + heightFromOperands + layout.grid.getBorderSize() * 2;
+    return layout.cycles.labels.getRowHeight() + heightFromOperands + layout.grid.getBorderSize() * 2 + extendedImageHeight;
 }
 
 void Structure::generateCellPositions(const CircuitData &circuitData) {
@@ -373,7 +374,8 @@ void Structure::generateCellPositions(const CircuitData &circuitData) {
     Int widthFromCycles = 0;
     for (Int column = 0; column < circuitData.getAmountOfCycles(); column++) {
         const Int amountOfChunks = utoi(circuitData.getCycle(column).gates.size());
-        const Int cycleWidth = (circuitData.isCycleCut(column) ? layout.cycles.cutting.getCutCycleWidth() : (cellDimensions.width * amountOfChunks));
+        const Int cycleWidth = utils::max(minCycleWidth,
+            (circuitData.isCycleCut(column) ? layout.cycles.cutting.getCutCycleWidth() : (cellDimensions.width * amountOfChunks)));
 
         const Int x0 = layout.grid.getBorderSize() + layout.bitLines.labels.getColumnWidth() + widthFromCycles;
         const Int x1 = x0 + cycleWidth;
@@ -398,8 +400,10 @@ void Structure::generateCellPositions(const CircuitData &circuitData) {
                 cColumnCells.push_back( {x0, y0, x1, y1} );
             }
         } else {
-            const Int y0 = 0;
-            const Int y1 = y0 + cellDimensions.height;
+            const Int y0 = layout.grid.getBorderSize() + layout.cycles.labels.getRowHeight() + 
+                circuitData.amountOfQubits *
+                (cellDimensions.height + (layout.bitLines.edges.areEnabled() ? layout.bitLines.edges.getThickness() : 0));
+            const Int y1 = y0;
             cColumnCells.push_back( {x0, y0, x1, y1} );
         }
         cbitCellPositions.push_back(cColumnCells);
@@ -473,7 +477,7 @@ Int Structure::getCircuitTopY() const {
 }
 
 Int Structure::getCircuitBotY() const {
-    const Vec<Position4> firstColumnPositions = layout.pulses.areEnabled() ? qbitCellPositions[0] : cbitCellPositions[0];
+    const Vec<Position4> firstColumnPositions = (layout.pulses.areEnabled() || !layout.bitLines.classical.isEnabled()) ? qbitCellPositions[0] : cbitCellPositions[0];
     Position4 botPosition = firstColumnPositions[firstColumnPositions.size() - 1];
     return botPosition.y1;
 }
@@ -549,7 +553,7 @@ void Structure::printProperties() const {
 void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration)
 {
     // Generate the image.
-    ImageOutput imageOutput = generateImage(program, configuration);
+    ImageOutput imageOutput = generateImage(program, configuration, 0, 0);
 
     // Save the image if enabled.
     if (imageOutput.circuitLayout.saveImage) {
@@ -561,7 +565,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     imageOutput.image.display("Quantum Circuit");
 }
 
-ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration) {
+ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration, const Int minCycleWidth, const utils::Int extendedImageHeight) {
     // Get the gate list from the program.
     QL_DOUT("Getting gate list...");
     Vec<GateProperties> gates = parseGates(program);
@@ -586,7 +590,7 @@ ImageOutput generateImage(const ql::quantum_program* program, const VisualizerCo
 
     // Initialize the structure of the visualization.
     QL_DOUT("Initializing visualization structure...");
-    Structure structure(layout, circuitData);
+    Structure structure(layout, circuitData, minCycleWidth, extendedImageHeight);
     structure.printProperties();
 
     // Initialize image.
@@ -1388,7 +1392,7 @@ void drawCycleEdges(Image &image,
                     const CircuitLayout &layout,
                     const CircuitData &circuitData,
                     const Structure &structure) {
-    QL_DOUT("Drawing cycle edges...");
+    QL_IOUT("Drawing cycle edges...");
 
     for (Int i = 0; i < circuitData.getAmountOfCycles(); i++) {
         if (i == 0) continue;
@@ -1397,6 +1401,8 @@ void drawCycleEdges(Image &image,
         const Int xCycle = structure.getCellPosition(i, 0, QUANTUM).x0;
         const Int y0 = structure.getCircuitTopY();
         const Int y1 = structure.getCircuitBotY();
+
+        QL_IOUT("drawing edge at x = " << xCycle << ", from y0 = " << y0 << " and y1 = " << y1);
 
         image.drawLine(xCycle, y0, xCycle, y1, layout.cycles.edges.getColor(), layout.cycles.edges.getAlpha(), LinePattern::DASHED);
     }
