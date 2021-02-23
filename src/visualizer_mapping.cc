@@ -37,12 +37,52 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     const Int yStart = imageOutput.structure.getImageHeight() - extendedImageHeight;
     const Int yEnd = imageOutput.structure.getImageHeight();
 
-    Vec<Vec<Int>> virtualQubits(imageOutput.circuitData.getAmountOfCycles());
-    for (Vec<Int> &qubitsInCycle : virtualQubits) {
-        for (Int i = 0; i < amountOfQubits; i++) {
-            qubitsInCycle.push_back(0);
+    // Calculate the virtual qubits mapping for each cycle.
+    const Int amountOfCycles = imageOutput.circuitData.getAmountOfCycles();
+    Vec<Vec<Int>> virtualQubits(amountOfCycles);
+    if (amountOfCycles <= 0) {
+        QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");
+    }
+
+    // Initialize the first cycle with a virtual index = real index mapping.
+    for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+        virtualQubits[0].push_back(qubitIndex);
+    }
+    // Each other cycle either gets a new virtual operand from a gate in that cycle, or carries over the previous
+    // cycle's virtual operand for that qubit.
+    for (Int cycleIndex = 1; cycleIndex < amountOfCycles; cycleIndex++) {
+        // Copy virtual qubit operand from the previous cycle of the same qubit.
+        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+            virtualQubits[cycleIndex].push_back(virtualQubits[cycleIndex - 1][qubitIndex]);
+        }
+        // Update the virtual qubit operands from the gates in this cycle.
+        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+            // Check for changes in virtual operand for this qubit in the gates for this cycle.
+            for (const GateProperties &gate : gates) {
+                // Check if the gate's cycle matches the current cycle.
+                if (gate.cycle == cycleIndex) {
+                    const Vec<Int> virtualOperands = gate.virtual_operands;
+                    const Vec<Int> operands = gate.operands;
+                    if (virtualOperands.size() != operands.size()) {
+                        continue;
+                        // QL_FATAL("Size of virtual operands vector does match size of real operands vector!");
+                    }
+                    // Copy the virtual operands into the corresponding real qubits.
+                    for (Int operandIndex = 0; operandIndex < operands.size(); operandIndex++) {
+                        QL_IOUT("operand: " << operands[operandIndex] << " --> virtual operand: " << virtualOperands[operandIndex]);
+                        virtualQubits[cycleIndex][operands[operandIndex]] = virtualOperands[operandIndex];
+                    }
+                }
+            }
         }
     }
+
+    // Vec<Vec<Int>> virtualQubits(imageOutput.circuitData.getAmountOfCycles());
+    // for (Vec<Int> &qubitsInCycle : virtualQubits) {
+    //     for (Int i = 0; i < amountOfQubits; i++) {
+    //         qubitsInCycle.push_back(-1);
+    //     }
+    // }
 
     // for (const Vec<Int> &qubitsInCycle : virtualQubits) {
     //     for (Int qubitIndex = 0; qubitIndex < qubitsInCycle.size(); qubitIndex++) {
@@ -50,7 +90,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     //     }
     // }
 
-    printGates(gates);
+    // printGates(gates);
 
     // QL_IOUT("Storing virtual operands...");
 
@@ -65,7 +105,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     //         QL_IOUT("\ti: " << i);
     //         QL_IOUT("\toperands[i]: " << operands[i]);
     //         QL_IOUT("\tvirtualOperands[i]: " << virtualOperands[i]);
-    //         // virtualQubits[cycleIndex][operands[i]] = virtualOperands[i];
+    //         virtualQubits[cycleIndex][operands[i]] = virtualOperands[i];
     //     }
     // }
 
@@ -105,11 +145,25 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
 
         // Draw each of the qubit mappings in this cycle.
         for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+            // Draw qubit circle.
             const Int column = qubitIndex % amountOfLines;
             const Int row = qubitIndex / amountOfLines;
             const Int centerX = xStart + column * qubitDiameter + (column + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
             const Int centerY = yStart + row * qubitDiameter + (row + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
             imageOutput.image.drawOutlinedCircle(centerX, centerY, layout.getQubitRadius(), black, 1.0f, LinePattern::UNBROKEN);
+
+            // Draw virtual operand label on qubit.
+            const Int virtualOperand = virtualQubits[cycleIndex][qubitIndex];
+            const Str text = utils::to_string(virtualOperand);
+
+            //TODO: load from config
+            const Int fontHeight = 13;
+            const Color textColor = black;
+
+            const Dimensions dimensions = calculateTextDimensions(text, fontHeight);
+            const Int textX = centerX - dimensions.width / 2;
+            const Int textY = centerY - dimensions.height / 2;
+            imageOutput.image.drawText(textX, textY, text, fontHeight, textColor);
         }
     }
 
