@@ -112,17 +112,20 @@ struct GateProperties {
 
 class MappingGraphLayout {
 private:
-    utils::Int qubitRadius = 17;
-    utls::Int qubitSpacing = 4;
+    utils::Int qubitRadius = 15;
+    utils::Int qubitSpacing = 7;
+    utils::Int borderSize = 32;
 
 public:
     utils::Bool saveImage = false;
 
     utils::Int getQubitRadius() const { return qubitRadius; }
     utils::Int getQubitSpacing() const { return qubitSpacing; }
+    utils::Int getBorderSize() const { return borderSize; }
 
     void setQubitRadius(const utils::Int argument) { assertPositive(argument, "qubitRadius"); qubitRadius = argument; }
-    void setQubitSpacing(const utils::Int argument) { assertPositive(argument, "qubitRadius"); qubitSpacing = argument; }
+    void setQubitSpacing(const utils::Int argument) { assertPositive(argument, "qubitSpacing"); qubitSpacing = argument; }
+    void setBorderSize(const utils::Int argument) { assertPositive(argument, "borderSize"); borderSize = argument; }
 };
 
 class InteractionGraphLayout {

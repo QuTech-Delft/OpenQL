@@ -1303,8 +1303,15 @@ void Past::MakeReal(gate *gp, circuit &circ) {
     }
     QL_DOUT("... MakeReal: new gate created for: " << real_gname << " or " << gname);
 
+    QL_IOUT("MakeReal on gate: " << gp->name);
     for (gate *gp : circ) {
         gp->virtual_operands = virtual_qubits;
+        Str operands = "[ ";
+        for (const Int operand : gp->virtual_operands) {
+            operands += std::to_string(operand) + " ";
+        }
+        operands += "]";
+        QL_IOUT("\tgate: " << gp->name << " --> virtual operands: " << operands);
     }
 }
 
@@ -1312,7 +1319,7 @@ void Past::MakeReal(gate *gp, circuit &circ) {
 // make primitives of all gates that also have an entry with _prim appended to its name
 // and decomposing it according to the .json file gate decomposition
 void Past::MakePrimitive(gate *gp, circuit &circ) const {
-    Vec<UInt> virtual_qubits = gp->virtual_operands; // store the virtual qubits for filling in later
+    Vec<UInt> virtual_qubits = gp->operands; // store the virtual qubits for filling in later
     Str gname = gp->name;
     stripname(gname);
     Str prim_gname = gname;
@@ -1346,8 +1353,15 @@ void Past::MakePrimitive(gate *gp, circuit &circ) const {
     }
     QL_DOUT("... MakePrimtive: new gate created for: " << prim_gname << " or " << gname);
 
+    QL_IOUT("MakePrimitive on gate: " << gp->name);
     for (gate *gp : circ) {
         gp->virtual_operands = virtual_qubits;
+        Str operands = "[ ";
+        for (const Int operand : gp->virtual_operands) {
+            operands += std::to_string(operand) + " ";
+        }
+        operands += "]";
+        QL_IOUT("\tgate: " << gp->name << " --> virtual operands: " << operands);
     }
 }
 

@@ -374,7 +374,7 @@ void Structure::generateCellPositions(const CircuitData &circuitData) {
     Int widthFromCycles = 0;
     for (Int column = 0; column < circuitData.getAmountOfCycles(); column++) {
         const Int amountOfChunks = utoi(circuitData.getCycle(column).gates.size());
-        const Int cycleWidth = utils::max(minCycleWidth,
+        const Int cycleWidth = max(minCycleWidth,
             (circuitData.isCycleCut(column) ? layout.cycles.cutting.getCutCycleWidth() : (cellDimensions.width * amountOfChunks)));
 
         const Int x0 = layout.grid.getBorderSize() + layout.bitLines.labels.getColumnWidth() + widthFromCycles;
@@ -722,7 +722,7 @@ ImageOutput generateImage(const ql::quantum_program* program, const VisualizerCo
         }
     }
 
-    return {image, layout};
+    return {image, layout, circuitData, structure};
 }
 
 CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,

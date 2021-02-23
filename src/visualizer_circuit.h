@@ -149,7 +149,9 @@ public:
 
 struct ImageOutput {
     Image image;
-    CircuitLayout circuitLayout;
+    const CircuitLayout circuitLayout;
+    const CircuitData circuitData;
+    const Structure structure;
 };
 
 void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration);
