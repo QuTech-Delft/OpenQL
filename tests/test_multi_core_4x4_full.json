@@ -31,7 +31,8 @@
     {
         "number_of_cores":  4,
         "connectivity": "full",
-        "form": "irregular"
+        "form": "irregular",
+        "comm_qubits_per_core": 1
     },
 
     "resources":
