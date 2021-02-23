@@ -75,6 +75,7 @@ Where:
 
 * ``channels`` defines the number of logical channels of the instrument. For most instruments there is one logical channel per physical channel, but the 'zi-uhfqa' provides 9 logical channels on one physical channel pair.
 * ``control_group_sizes`` states possible arrangements of channels operating as a vector
+
 .. FIXME: add example
 ..    // * ``latency`` latency from trigger to output in [ns]. FIXME: deprecated
 .. FIXME: describe concept of 'group'
@@ -157,7 +158,6 @@ Where:
     - G determines which the ``instrument_definitions/<key>/control_group_sizes`` used
     - B is an ordered list of bits (MSB to LSB) used for the code word
 * ``trigger_bits`` vector of bits used to trigger the instrument. Must either be size 1 (common trigger) or size G (separate trigger per group), or 2 (common trigger duplicated on 2 bits, to support dual-QWG)
-FIXME: examples
 * ``result_bits`` reserved for future use
 * ``data_valid_bits`` reserved for future use
 
@@ -204,15 +204,17 @@ Where:
 
     * ``type`` defines a signal type. This is used to select an instrument that provides that signal type through key ``instruments/*/signal_type``. The types are entirely user defined, there is no builtin notion of their meaning.
     * ``operand_idx`` states the operand index of the instruction/gate this signal refers to. Signals must be defined for all operand_idx the gate refers to, so a 3-qubit gate needs to define 0 through 2. Several signals with the same operand_idx can be defined to select several signal types, as shown in "single-qubit-mw" which has both "mw" (provided by an AWG) and "switch" (provided by a VSM)
-    .. FIXME: rewrite
     * ``value`` defines a vector of signal names. Supports the following macro expansions:
-    .. FIXME: describe the (future) use of field 'value'
 
         * {gateName}
         * {instrumentName}
         * {instrumentGroup}
         * {qubit}
-        .. FIXME: expand
+
+.. FIXME:
+    rewrite field 'operand_idx
+    describe the (future) use of field 'value'
+    expand
 
 
 Instruments
@@ -298,12 +300,13 @@ Where:
 * ``ref_instrument_definition`` selects record under ``instrument_definitions``, which must exist or an error is raised
 * ``ref_control_mode`` selects record under ``control_modes``, which must exist or an error is raised
 * ``signal_type`` defines which signal type this instrument instance provides.
-.. FIXME: describe matching process against 'signals/*/type'
 * ``qubits`` G groups of 1 or more qubits. G must match one of the available group sizes of ``instrument_definitions/<ref_instrument_definition>/control_group_sizes``. If more than 1 qubits are stated per group - e.g. for an AWG used in conjunction with a VSM - they may not produce conflicting signals at any time slot, or an error is raised
 * ``force_cond_gates_on`` optional, reserved for future use
 * ``controller/slot`` the slot number of the CC this instrument is connected to
 * ``controller/name`` reserved for future use
 * ``controller/io_module`` reserved for future use
+
+.. FIXME: describe matching process of 'signal_type' against 'signals/*/type'
 
 Additions to section 'instructions'
 ***********************************
@@ -342,7 +345,43 @@ The CC backend extends section ``instructions/<key>`` with a subsection ``cc`` a
             "static_codeword_override": [1,2,3]
         }
     }
-.. FIXME: add feedback example
+    "_wait_uhfqa": {
+        "duration": 220,
+        "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+        "cc": {
+            "signal": []
+        }
+    },
+    "_dist_dsm": {
+        "duration": 20,
+        "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+        "cc": {
+            "readout_mode": "feedback",
+            "signal": [
+                {	"type": "measure",
+                    "operand_idx": 0,
+                    "value": []
+                }
+            ]
+        }
+    },
+    "_wait_dsm": {
+        "duration": 80,
+        "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+        "cc": {
+            "signal": []
+        }
+    },
+    "if_1_break": {
+        "duration": 60,
+        "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+        "cc": {
+            "signal": [],
+            "pragma": {
+                "break": 1
+            }
+        }
+    }
 
 Where:
 
@@ -358,14 +397,14 @@ The following standard OpenQL fields are used:
 
     - "<name>"
     - "<name><qubits>"
-    .. FIXME: special treatment of names by scheduler/backend
-    .. - "readout" : backend
-    .. - "measure"
 * ``duration`` duration in [ns]
 * ``matrix`` the process matrix. Required, but only used if optimization is enabled
-.. FIXME: expand on this
 * ``latency`` optional instruction latency in [ns], used by scheduler
 * ``qubits`` optional
+
+.. FIXME: special treatment of names by scheduler/backend
+    - "readout" : backend
+    - "measure"
 
 The following fields in 'instructions' are not used by the CC backend:
 
@@ -379,11 +418,84 @@ The following fields in 'instructions' are not used by the CC backend:
 * ``cc_light_right_codeword``
 * ``disable_optimization`` not implemented in OpenQL
 
+Program flow feedback
+************************************************
 
-Converting quantum gates to instrument codewords
-*******************************************************
+To support Repeat Until Success type experiments, two special fields were added to the gate definition for the CC, as
+shown in the previous section:
 
-FIXME: TBW
+-   the `"readout_mode": "feedback"` clause in the `"_dist_dsm"` gate causes the backend to generate code to retrieve the
+    measurement result from the DIO interface and distribute it across the CC;
+-   the `"pragma": { "break": 1 }` clause  in the `"if_1_break"` gate causes the backend to generate code to break out
+    of a OpenQL loop if the associated qubit is read as 1 (or similarly if 0).
+
+For convenience, the gate decomposition section can be extended with
+`"measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"]`
+
+This creates a `measure_fb` instruction consisting of four parts:
+-   triggering a measurement (on the UHFQA)
+-   waiting for the internal processing time of the UHFQA
+-   retrieve the measurement result, and distribute it across the CC
+-   wait fot the data distribution to finish
+
+The following example code contains a real RUS experiment using PycQED:
+
+.. code-block:: Python
+
+    from pycqed.measurement.openql_experiments import openql_helpers as oqh
+    for i, angle in enumerate(angles):
+        oqh.ql.set_option('output_dir', 'd:\\githubrepos\\pycqed_py3\\pycqed\\measurement\\openql_experiments\\output')
+        p = oqh.create_program('feedback_{}'.format(angle), config_fn)
+        k = oqh.create_kernel("initialize_block_{}".format(angle), p)
+
+        # Initialize
+        k.prepz(qidx)
+
+        # Block do once (prepare |1>)
+        k.gate("rx180", [qidx])
+        p.add_kernel(k)
+
+        # Begin conditional block
+        q = oqh.create_kernel("conditional_block_{}".format(angle), p)
+        # Repeat until success 0
+        q.gate("measure_fb", [qidx])
+        q.gate("if_0_break", [qidx])
+
+        # Correction for result 1
+        q.gate("rx180", [qidx])
+        p.add_for(q, 1000000)
+
+        # Block finalize
+        r = oqh.create_kernel("finalize_block_{}".format(angle), p)
+        cw_idx = angle // 20 + 9
+        r.gate('cw_{:02}'.format(cw_idx), [qidx])
+
+        # Final measurement
+        r.gate("measure_fb", [qidx])
+        p.add_kernel(r)
+
+        oqh.compile(p, extra_openql_options=[('backend_cc_run_once', 'yes')])
+
+Caveats:
+
+-   it is not possible to mix `measure_fb` and `measure` in a single program. This is a consequence of the way measurements
+    are read from the input DIO interface of the CC: every measurement (both from `measure_fb` and `measure`) is pushed
+    onto an input FIFO. This FIFO is only popped by a `measure_fb` instruction. If the two types are mixed, misalignment
+    occurs between what is written and read. No check is currently performed by the backend.
+-   `break` statements may only occur inside a `for` loop. No check is currently performed by the backend.
+-   `break` statements implicitly refer to the last `measure_fb` earlier in code as a result of implicit allocation of
+    variables.
+
+These limitations will vanish when integration with cQASM 2.0 is completed.
+
+
+.. FIXME:
+    add conditional gates
+
+
+.. FIXME: TBW
+    Converting quantum gates to instrument codewords
+    *******************************************************
 
 
 Compiler options
@@ -395,13 +507,11 @@ The following OpenQL compiler options are specific for the CC backend:
 * ``backend_cc_verbose`` add verbose comments to generated .vq1asm file (default "yes", alternatively "no")
 * ``backend_cc_map_input_file`` name of CC input map file, default "". Reserved for future extension to generate codewords automatically
 
-FIXME: refer to standard optiosns
+FIXME: refer to standard options
 
 
 CC backend output files
 ^^^^^^^^^^^^^^^^^^^^^^^
-
-FIXME: TBW:
 
 .vq1asm: 'Vectored Q1 assembly' file for the Central Controller
 
