@@ -270,11 +270,11 @@ void Grid::InitForm() {
 void Grid::InitCores() {
     if (platformp->topology.count("number_of_cores") <= 0) {
         ncores = 1;
-        QL_DOUT("Number of cores (topology.number_of_cores) not defined");
+        QL_DOUT("Number of cores (topology[\"number_of_cores\"]) not defined");
     } else {
         ncores = platformp->topology["number_of_cores"];
         if (ncores <= 0) {
-            QL_FATAL("Number of cores (topology.number_of_cores) is not a positive value: " << ncores);
+            QL_FATAL("Number of cores (topology[\"number_of_cores\"]) is not a positive value: " << ncores);
         }
     }
     QL_DOUT("Numer of cores= " << ncores);
@@ -283,14 +283,14 @@ void Grid::InitCores() {
     // when not specified in multi-core: == nq/ncores (i.e. all qubits of a core)
     if (platformp->topology.count("comm_qubits_per_core") <= 0) {
         ncommqpc = nq/ncores;   // i.e. all are comm qubits
-        QL_DOUT("Number of comm_qubits per core (topology.comm_qubits_per_core) not defined; assuming all are comm qubits.");
+        QL_DOUT("Number of comm_qubits per core (topology[\"comm_qubits_per_core\"]) not defined; assuming all are comm qubits.");
     } else {
         ncommqpc = platformp->topology["comm_qubits_per_core"];
         if (ncommqpc <= 0) {
-            QL_FATAL("Number of communication qubits per core (topology.comm_qubits_per_core) is not a positive value: " << ncommqpc);
+            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is not a positive value: " << ncommqpc);
         }
         if (ncommqpc > nq/ncores) {
-            QL_FATAL("Number of communication qubits per core (topology.comm_qubits_per_core) is larger than number of qubits per core: " << ncommqpc);
+            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is larger than number of qubits per core: " << ncommqpc);
         }
     }
     QL_DOUT("Numer of communication qubits per core= " << ncommqpc);

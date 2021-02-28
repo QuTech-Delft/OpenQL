@@ -41,6 +41,11 @@
         {
             "description": "Each qubit can be used by only one gate at a time. There are 'count' qubits.",
             "count": 16
+        },
+        "channels":
+        {
+            "description": "Each inter-core gate uses one channel in each core. There are 'count' such channels per core.",
+            "count": 1
         }
     },
 
