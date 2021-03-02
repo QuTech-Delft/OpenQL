@@ -324,7 +324,9 @@ void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_plat
                             break;
 
                         default:
-                            QL_FATAL("Unsupported gate type: " << itype);
+                            QL_FATAL(
+                            	"Unsupported builtin gate, type: " << itype
+                            	<< ", instruction: '" << instr->qasm() << "'");
                     }   // switch(itype)
                 } // for(section...)
             }
