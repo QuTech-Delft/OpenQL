@@ -62,8 +62,8 @@ public: // functions
 
 	std::string getDatapathSection() { return datapathSection.str(); }
 
-	void comment(const std::string &cmnt) {
-	    datapathSection << cmnt << std::endl;
+	void comment(const std::string &cmnt, bool verboseCode) {
+	    if(verboseCode) datapathSection << cmnt << std::endl;
 	}
 
 private:	// functions

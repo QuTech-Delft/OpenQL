@@ -144,7 +144,7 @@ void codegen_cc::bundleStart(const std::string &cmnt)
 
 	// generate source code comments
     comment(cmnt);
-    dp.comment(cmnt);		// FIXME: comment is not fully appropriate, but at least allows matching with .CODE section
+    dp.comment(cmnt, verboseCode);		// FIXME: comment is not fully appropriate, but at least allows matching with .CODE section
 }
 
 
