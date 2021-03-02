@@ -32,7 +32,7 @@
         "number_of_cores":  4,
         "connectivity": "full",
         "form": "irregular",
-        "comm_qubits_per_core": 1
+        "comm_qubits_per_core": 4
     },
 
     "resources":
@@ -45,7 +45,7 @@
         "channels":
         {
             "description": "Each inter-core gate uses one channel in each core. There are 'count' such channels per core.",
-            "count": 1
+            "count": 4
         }
     },
 
@@ -345,9 +345,9 @@
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": true,
-            "type": "flux",
+            "type": "none",
             "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "swap",
+            "cc_light_instr": "tswap",
             "cc_light_opcode": 128
         },
         "tmove": {
@@ -355,9 +355,9 @@
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": true,
-            "type": "flux",
+            "type": "none",
             "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "move",
+            "cc_light_instr": "tmove",
             "cc_light_opcode": 128
         }
     },

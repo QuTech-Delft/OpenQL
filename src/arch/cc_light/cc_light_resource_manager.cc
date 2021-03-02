@@ -678,7 +678,7 @@ ccl_channel_resource_t::ccl_channel_resource_t(
     QL_DOUT("Numer of cores = " << ncores);
 
     // nchannels = resources.channels.count: number of channels in each core
-    if (platform.topology[name].count("count") <= 0) {
+    if (platform.resources[name].count("count") <= 0) {
 	    nchannels = platform.qubit_number/ncores;   // i.e. as many as there are qubits in a core
         QL_DOUT("Number of channels per core (resources[\"channels\"][\"count\"]) not defined; assuming: " << nchannels);
     } else {
