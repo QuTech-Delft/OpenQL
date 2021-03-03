@@ -134,6 +134,20 @@
                     }
                 ]
             },
+            "y": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "y",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [70, 210, 230],
+                        "outlineColor": [70, 210, 230]
+                    }
+                ]
+            },
             "h": {
                 "connectionColor": [0, 0, 0],
                 "nodes": [

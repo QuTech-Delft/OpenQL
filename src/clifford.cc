@@ -113,7 +113,7 @@ public:
                     if (gp->virtual_operands.size() == 1) {
                         cliffvirtual[q] = gp->virtual_operands[0];
                     } else {
-                        QL_DOUT("... gate " << gp << " has no virtual operands");
+                        QL_IOUT("... clifford gate " << gp->name << " has no virtual operands");
                     }
                 }
             }
@@ -151,9 +151,9 @@ private:
             k.clifford(csq, q);          // generates clifford(csq) in kernel.c
             UInt new_kernel_size = k.c.size();
             // store the original virtual qubits into the newly generated clifford sequence
-            for (UInt i = old_kernel_size; i < new_kernel_size; i++) {
-                k.c[i]->virtual_operands = { cliffvirtual[q] };
-            }
+            // for (UInt i = old_kernel_size; i < new_kernel_size; i++) {
+            //     k.c[i]->virtual_operands = { cliffvirtual[q] };
+            // }
             UInt  acc_cycles = cliffcycles[q];
             UInt  ins_cycles = cs2cycles(csq);
             QL_DOUT("... qubit q[" << q << "]: accumulated: " << acc_cycles << ", inserted: " << ins_cycles);

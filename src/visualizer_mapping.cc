@@ -44,6 +44,8 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");
     }
 
+    printGates(gates);
+
     // Initialize the first cycle with a virtual index = real index mapping.
     for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
         virtualQubits[0].push_back(qubitIndex);
@@ -69,7 +71,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
                     }
                     // Copy the virtual operands into the corresponding real qubits.
                     for (Int operandIndex = 0; operandIndex < operands.size(); operandIndex++) {
-                        QL_IOUT("operand: " << operands[operandIndex] << " --> virtual operand: " << virtualOperands[operandIndex]);
+                        // QL_IOUT("operand: " << operands[operandIndex] << " --> virtual operand: " << virtualOperands[operandIndex]);
                         virtualQubits[cycleIndex][operands[operandIndex]] = virtualOperands[operandIndex];
                     }
                 }
