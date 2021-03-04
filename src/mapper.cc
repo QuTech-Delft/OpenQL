@@ -1255,10 +1255,6 @@ void Past::MakeReal(gate *gp, circuit &circ) {
 
     Vec<UInt> real_qubits = gp->operands;// starts off as copy of virtual qubits!
     Vec<UInt> virtual_qubits = gp->operands; // store the virtual qubits for filling in later
-    // Map<UInt, UInt> r2v;
-    // for (Int i = 0; i < real_qubits.size(); i++) {
-    //     r2v.set(real_qubits[i]) = virtual_qubits[i];
-    // }
     for (auto &qi : real_qubits) {
         qi = MapQubit(qi);          // and now they are real
         auto mapprepinitsstateopt = options::get("mapprepinitsstate");
@@ -1307,35 +1303,27 @@ void Past::MakeReal(gate *gp, circuit &circ) {
     }
     QL_DOUT("... MakeReal: new gate created for: " << real_gname << " or " << gname);
 
-    QL_IOUT("MakeReal on gate: " << gp->name);
-    Str rOperands = "[ "; for (const Int operand : gp->operands) {rOperands += std::to_string(operand) + " ";} rOperands += "]";
-    Str vOperands = "[ "; for (const Int operand : gp->virtual_operands) {vOperands += std::to_string(operand) + " ";} vOperands += "]";
-    QL_IOUT("contents of real and virtual operands: " << rOperands << " and " << vOperands);
+    QL_DOUT("finding correct virtual operands for gates in decomposed circuit");
     for (gate *gate : circ) {
-        QL_IOUT("\tgate in resulting circuit: " << gate->name);
+        QL_DOUT("\tgate in resulting circuit: " << gate->name);
         Vec<UInt> virtualOperands;
         for (const Int realOperand : gate->operands) {
-            QL_IOUT("\t\tfinding index of real operand: " << realOperand);
+            QL_DOUT("\t\tfinding index of real operand: " << realOperand);
             Int realIndex = -1;
             for (Int index = 0; index < real_qubits.size(); index++) {
                 if (real_qubits[index] == realOperand) {
                     realIndex = index;
                     UInt virtualOperand = virtual_qubits[realIndex];
-                    QL_IOUT("\t\tfound index: " << realIndex << " corresponding to virtual operand: " << virtualOperand);
+                    QL_DOUT("\t\tfound index: " << realIndex << " corresponding to virtual operand: " << virtualOperand);
                     virtualOperands.push_back(virtualOperand); // TODO: change push_back to virtualOperands[realIndex] ?
                     break;
                 }
             }
             if (realIndex == -1) {
-                QL_IOUT("\t\tUh oh! Could not find real qubit index in original real qubits! Things might or might not go wrong!");
+                QL_DOUT("\t\tUh oh! Could not find real qubit index in original real qubits! Things might or might not go wrong!");
             }
         }
         gate->virtual_operands = virtualOperands;
-
-        // gate->virtual_operands = virtual_qubits;
-        Str rrOperands = "[ "; for (const Int operand : gate->operands) {rrOperands += std::to_string(operand) + " ";} rrOperands += "]";
-        Str vvOperands = "[ "; for (const Int operand : gate->virtual_operands) {vvOperands += std::to_string(operand) + " ";} vvOperands += "]";
-        QL_IOUT("\t\tadding gate " << gate->name << " with real and virtual operands: " << rrOperands << " and " << vvOperands);
     }
 }
 
@@ -1377,39 +1365,31 @@ void Past::MakePrimitive(gate *gp, circuit &circ) const {
     }
     QL_DOUT("... MakePrimtive: new gate created for: " << prim_gname << " or " << gname);
 
-    QL_IOUT("MakePrimitive on gate: " << gp->name);
-    Str rOperands = "[ "; for (const Int operand : gp->operands) {rOperands += std::to_string(operand) + " ";} rOperands += "]";
-    Str vOperands = "[ "; for (const Int operand : gp->virtual_operands) {vOperands += std::to_string(operand) + " ";} vOperands += "]";
-    QL_IOUT("contents of real and virtual operands: " << rOperands << " and " << vOperands);
+    QL_DOUT("finding correct virtual operands for gates in decomposed circuit");
     if (gp->virtual_operands.size() == 0) {
-        QL_IOUT("gate has no virtual operands and must have been added by swap/move... not adding virtual operands");
+        QL_DOUT("gate has no virtual operands and must have been added by swap/move... not adding virtual operands");
         return;
     }
     for (gate *gate : circ) {
-        QL_IOUT("\tgate in resulting circuit: " << gate->name);
+        QL_DOUT("\tgate in resulting circuit: " << gate->name);
         Vec<UInt> virtualOperands;
         for (const Int realOperand : gate->operands) {
-            QL_IOUT("\t\tfinding index of real operand: " << realOperand);
+            QL_DOUT("\t\tfinding index of real operand: " << realOperand);
             Int realIndex = -1;
             for (Int index = 0; index < gp->operands.size(); index++) {
                 if (gp->operands[index] == realOperand) {
                     realIndex = index;
                     UInt virtualOperand = virtual_qubits[realIndex];
-                    QL_IOUT("\t\tfound index: " << realIndex << " corresponding to virtual operand: " << virtualOperand);
+                    QL_DOUT("\t\tfound index: " << realIndex << " corresponding to virtual operand: " << virtualOperand);
                     virtualOperands.push_back(virtualOperand); // TODO: change push_back to virtualOperands[realIndex] ?
                     break;
                 }
             }
             if (realIndex == -1) {
-                QL_IOUT("\t\tUh oh! Could not find real qubit index in original real qubits! Things might or might not go wrong!");
+                QL_DOUT("\t\tUh oh! Could not find real qubit index in original real qubits! Things might or might not go wrong!");
             }
         }
         gate->virtual_operands = virtualOperands;
-
-        // gate->virtual_operands = virtual_qubits;
-        Str rrOperands = "[ "; for (const Int operand : gate->operands) {rrOperands += std::to_string(operand) + " ";} rrOperands += "]";
-        Str vvOperands = "[ "; for (const Int operand : gate->virtual_operands) {vvOperands += std::to_string(operand) + " ";} vvOperands += "]";
-        QL_IOUT("\t\tadding gate " << gate->name << " with real and virtual operands: " << rrOperands << " and " << vvOperands);
     }
 }
 
@@ -2997,12 +2977,6 @@ void Mapper::MakePrimitives(quantum_kernel &kernel) {
         mainPast.MakePrimitive(gp, tmpCirc);    // decompose gp into tmpCirc; on failure, copy gp into tmpCirc
         for (auto newgp : tmpCirc) {
             mainPast.AddAndSchedule(newgp);     // decomposition is scheduled in gate by gate
-            Str virtualOperands = "[ ";
-            for (const Int operand : newgp->virtual_operands) {
-                virtualOperands += std::to_string(operand) + " ";
-            }
-            virtualOperands += "]";
-            QL_IOUT("\tscheduled gate: " << newgp->name << " in cycle: " << newgp->cycle << " with virtual operands: " << virtualOperands);
         }
     }
     mainPast.FlushAll();
@@ -3068,14 +3042,6 @@ void Mapper::Map(quantum_kernel& kernel) {
     kernel.qubit_count = nq;        // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
     v2r.Export(v2r_out);     // from v2r to caller for reporting
     v2r.Export(rs_out);      // from v2r to caller for reporting
-
-    QL_IOUT(" --- GATE SEQUENCE SUMMARY AFTER MAPPING [START] --- ");
-    for (const gate *gate : kernel.c) {
-        Str rOperands = "[ "; for (const Int operand : gate->operands) {rOperands += std::to_string(operand) + " ";} rOperands += "]";
-        Str vOperands = "[ "; for (const Int operand : gate->virtual_operands) {vOperands += std::to_string(operand) + " ";} vOperands += "]";
-        QL_IOUT("gate: " << gate->name << "\treal and virtual operands: " << rOperands << " and " << vOperands << "\tcycle: " << gate->cycle);
-    }
-    QL_IOUT(" --- GATE SEQUENCE SUMMARY AFTER MAPPING [END] --- ");
 
     QL_DOUT("Mapping kernel " << kernel.name << " [DONE]");
 }
