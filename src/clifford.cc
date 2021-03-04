@@ -24,6 +24,14 @@ public:
     ) {
         QL_DOUT("clifford_optimize_kernel()");
 
+        QL_IOUT(" --- GATE SEQUENCE SUMMARY BEFORE CLIFFORD OPTIMIZATION [START] --- ");
+        for (const gate *gate : kernel.c) {
+            Str rOperands = "[ "; for (const Int operand : gate->operands) {rOperands += std::to_string(operand) + " ";} rOperands += "]";
+            Str vOperands = "[ "; for (const Int operand : gate->virtual_operands) {vOperands += std::to_string(operand) + " ";} vOperands += "]";
+            QL_IOUT("gate: " << gate->name << "\treal and virtual operands: " << rOperands << " and " << vOperands << "\tcycle: " << gate->cycle);
+        }
+        QL_IOUT(" --- GATE SEQUENCE SUMMARY BEFORE CLIFFORD OPTIMIZATION [END] --- ");
+
         nq = kernel.qubit_count;
         ct = kernel.cycle_time;
         QL_DOUT("Clifford " << passname << " on kernel " << kernel.name << " ...");
@@ -37,6 +45,11 @@ public:
         cliffvirtual.resize(nq, 0);     // set all virtual qubits to zero
         cliffcycles.resize(nq, 0);      // for all qubits, no accumulated cycles
         total_saved = 0;                // reset saved, just for reporting
+
+        // init cliff virtual state to real index = virtual index
+        for (Int qubitIndex = 0; qubitIndex < cliffvirtual.size(); qubitIndex++) {
+            cliffvirtual[qubitIndex] = qubitIndex;
+        }
 
         /*
         The main idea of this optimization is that there are 24 clifford gates and these form a group,
@@ -111,16 +124,31 @@ public:
                     cliffstate[q] = clifftrans[csq][cs];
                     // store the virtual operands
                     if (gp->virtual_operands.size() == 1) {
+                        QL_IOUT("storing " << gp->virtual_operands[0] << " in qubit index " << q);
                         cliffvirtual[q] = gp->virtual_operands[0];
                     } else {
-                        QL_IOUT("... clifford gate " << gp->name << " has no virtual operands");
+                        QL_DOUT("... clifford gate " << gp->name << " has no virtual operands");
                     }
                 }
             }
             QL_DOUT("... gate: " << gp->qasm() << " DONE");
         }
+
+        QL_IOUT("cliffvirtual state:");
+        for (Int qubitIndex = 0; qubitIndex < cliffvirtual.size(); qubitIndex++) {
+            QL_IOUT("\tq" << qubitIndex << ": [" << cliffvirtual[qubitIndex] << "]");
+        }
+
         sync_all(kernel);
         kernel.cycles_valid = false;
+
+        QL_IOUT(" --- GATE SEQUENCE SUMMARY AFTER CLIFFORD OPTIMIZATION [START] --- ");
+        for (const gate *gate : kernel.c) {
+            Str rOperands = "[ "; for (const Int operand : gate->operands) {rOperands += std::to_string(operand) + " ";} rOperands += "]";
+            Str vOperands = "[ "; for (const Int operand : gate->virtual_operands) {vOperands += std::to_string(operand) + " ";} vOperands += "]";
+            QL_IOUT("gate: " << gate->name << "\treal and virtual operands: " << rOperands << " and " << vOperands << "\tcycle: " << gate->cycle);
+        }
+        QL_IOUT(" --- GATE SEQUENCE SUMMARY AFTER CLIFFORD OPTIMIZATION [END] --- ");
 
         QL_DOUT("Clifford " << passname << " on kernel " << kernel.name << " saved " << total_saved << " cycles [DONE]");
     }
@@ -147,13 +175,16 @@ private:
         Int csq = cliffstate[q];
         if (csq != 0) {
             QL_DOUT("... sync q[" << q << "]: generating clifford " << cs2string(csq));
+            QL_IOUT("... sync q[" << q << "]: generating clifford " << cs2string(csq));
             UInt old_kernel_size = k.c.size();
             k.clifford(csq, q);          // generates clifford(csq) in kernel.c
             UInt new_kernel_size = k.c.size();
             // store the original virtual qubits into the newly generated clifford sequence
-            // for (UInt i = old_kernel_size; i < new_kernel_size; i++) {
-            //     k.c[i]->virtual_operands = { cliffvirtual[q] };
-            // }
+            for (UInt i = old_kernel_size; i < new_kernel_size; i++) {
+                Str vOperands = "[ "; for (const Int operand : k.c[i]->operands) {vOperands += std::to_string(operand) + " ";} vOperands += "]";
+                k.c[i]->virtual_operands = { cliffvirtual[q] };
+                QL_IOUT("\tgate: " << k.c[i]->name << " virtual operands: " << vOperands);
+            }
             UInt  acc_cycles = cliffcycles[q];
             UInt  ins_cycles = cs2cycles(csq);
             QL_DOUT("... qubit q[" << q << "]: accumulated: " << acc_cycles << ", inserted: " << ins_cycles);
