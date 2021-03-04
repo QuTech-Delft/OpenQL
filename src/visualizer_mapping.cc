@@ -44,7 +44,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");
     }
 
-    printGates(gates);
+    // printGates(gates);
 
     // Initialize the first cycle with a virtual index = real index mapping.
     for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
@@ -64,15 +64,17 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
                 // Check if the gate's cycle matches the current cycle.
                 if (gate.cycle == cycleIndex) {
                     const Vec<Int> virtualOperands = gate.virtual_operands;
-                    const Vec<Int> operands = gate.operands;
-                    if (virtualOperands.size() != operands.size()) {
+                    const Vec<Int> realOperands = gate.operands;
+                    if (virtualOperands.size() != realOperands.size()) {
                         continue;
                         // QL_FATAL("Size of virtual operands vector does match size of real operands vector!");
                     }
-                    // Copy the virtual operands into the corresponding real qubits.
-                    for (Int operandIndex = 0; operandIndex < operands.size(); operandIndex++) {
-                        // QL_IOUT("operand: " << operands[operandIndex] << " --> virtual operand: " << virtualOperands[operandIndex]);
-                        virtualQubits[cycleIndex][operands[operandIndex]] = virtualOperands[operandIndex];
+                    // Swap the virtual and real qubits.
+                    for (Int operandIndex = 0; operandIndex < realOperands.size(); operandIndex++) {
+                        const Int virtualQubit = virtualOperands[operandIndex];
+                        const Int realQubit = realOperands[operandIndex];
+                        virtualQubits[cycleIndex][realQubit] = virtualQubit;
+                        virtualQubits[cycleIndex][virtualQubit] = realQubit;
                     }
                 }
             }
