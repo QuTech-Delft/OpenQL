@@ -2,6 +2,7 @@
     "saveImage": false,
     "mappingGraph":
     {
+        "useTopology": true,
         "qubitRadius": 15,
         "qubitSpacing": 7
     },

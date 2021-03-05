@@ -25,12 +25,37 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     const MappingGraphLayout layout = parseMappingGraphLayout(configuration.visualizerConfigPath);
     const Vec<GateProperties> gates = parseGates(program);
 
+    // Parse the topology if it exists in the platform configuration file.
+    Topology topology;
+    const Bool parsedTopology = layout.getUseTopology() ? parseTopology(program->platform.topology, topology) : false;
+    if (parsedTopology) {
+        QL_IOUT("Succesfully parsed topology.");
+        QL_IOUT("xSize: " << topology.xSize);
+        QL_IOUT("ySize: " << topology.ySize);
+        QL_IOUT("qubits:");
+        for (Int qubitIndex = 0; qubitIndex < topology.vertices.size(); qubitIndex++) {
+            QL_IOUT("\tid: " << qubitIndex << " position: [" << topology.vertices[qubitIndex].x << ", " << topology.vertices[qubitIndex].y << "]");
+        }
+        QL_IOUT("edges:");
+        for (const Edge edge : topology.edges) {
+            QL_IOUT("\tsrc: " << edge.src << ", dst: " << edge.dst);
+        }
+    } else {
+        QL_IOUT("Topology not parsed. Falling back on basic visualization.");
+    }
+
     // Get visualized circuit with extra wide cycles from visualizer_circuit.cc.
     const Int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
     const Int amountOfLines = ceil(sqrt(amountOfQubits));
     const Int qubitDiameter = layout.getQubitRadius() * 2;
-    const Int minCycleWidth = amountOfLines * qubitDiameter + (amountOfLines + 1) * layout.getQubitSpacing();
-    const Int extendedImageHeight = minCycleWidth + layout.getBorderSize();
+    const Int minCycleWidth = parsedTopology ?
+        topology.xSize * qubitDiameter + (topology.xSize + 1) * layout.getQubitSpacing()
+        :
+        amountOfLines * qubitDiameter + (amountOfLines + 1) * layout.getQubitSpacing();
+    const Int extendedImageHeight = parsedTopology ?
+        topology.ySize * qubitDiameter + (topology.ySize + 1) * layout.getQubitSpacing() + layout.getBorderSize()
+        :
+        minCycleWidth + layout.getBorderSize();
     ImageOutput imageOutput = generateImage(program, configuration, minCycleWidth, extendedImageHeight);
 
     // Fill in cycle spaces beneath the circuit with the mapping graph.
@@ -76,55 +101,53 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         }
     }
 
-    // Load the topology if it exists in the platform configuration file.
-    Topology topology;
-    const Bool parsedTopology = parseTopology(program->platform.topology, topology);
-    if (parsedTopology) {
-        QL_IOUT("Succesfully parsed topology.");
-        QL_IOUT("xSize: " << topology.xSize);
-        QL_IOUT("ySize: " << topology.ySize);
-        QL_IOUT("qubits:");
-        for (Int qubitIndex = 0; qubitIndex < topology.vertices.size(); qubitIndex++) {
-            QL_IOUT("\tid: " << qubitIndex << " position: [" << topology.vertices[qubitIndex].x << ", " << topology.vertices[qubitIndex].y << "]");
+    // Draw the mapping for each cycle.
+    for (Int cycleIndex = 0; cycleIndex < imageOutput.circuitData.getAmountOfCycles(); cycleIndex++) {
+        const Position4 position = imageOutput.structure.getCellPosition(cycleIndex, 0, QUANTUM);
+        const Int xStart = position.x0;
+        const Int xEnd = position.x1;
+
+        // Calculate the qubit positions.
+        Vec<Position2> qubitPositions(amountOfQubits, { 0, 0 });
+        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+            const Int column = parsedTopology ? topology.vertices[qubitIndex].x : qubitIndex % amountOfLines;
+            const Int row = parsedTopology ? topology.vertices[qubitIndex].y : qubitIndex / amountOfLines;
+            const Int centerX = xStart + column * qubitDiameter + (column + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
+            const Int centerY = yStart + row * qubitDiameter + (row + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
+            qubitPositions[qubitIndex].x = centerX;
+            qubitPositions[qubitIndex].y = centerY;
         }
-        QL_IOUT("edges:");
+
+        // Draw the edges.
         for (const Edge edge : topology.edges) {
-            QL_IOUT("\tsrc: " << edge.src << ", dst: " << edge.dst);
-        }
-    } else {
-        QL_IOUT("Problem while parsing topology.");
-    }
-
-    // If no topology was parsed, fall back on the basic visualization.
-    if (!parsedTopology) {
-        // Draw the mapping for each cycle.
-        for (Int cycleIndex = 0; cycleIndex < imageOutput.circuitData.getAmountOfCycles(); cycleIndex++) {
-            const Position4 position = imageOutput.structure.getCellPosition(cycleIndex, 0, QUANTUM);
-            const Int xStart = position.x0;
-            const Int xEnd = position.x1;
-
-            // Draw each of the qubit mappings in this cycle.
-            for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
-                // Draw qubit circle.
-                const Int column = qubitIndex % amountOfLines;
-                const Int row = qubitIndex / amountOfLines;
-                const Int centerX = xStart + column * qubitDiameter + (column + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
-                const Int centerY = yStart + row * qubitDiameter + (row + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
-                imageOutput.image.drawOutlinedCircle(centerX, centerY, layout.getQubitRadius(), black, 1.0f, LinePattern::UNBROKEN);
-
-                // Draw virtual operand label on qubit.
-                const Int virtualOperand = virtualQubits[cycleIndex][qubitIndex];
-                const Str text = utils::to_string(virtualOperand);
-
-                //TODO: load from config
-                const Int fontHeight = 13;
-                const Color textColor = black;
-
-                const Dimensions dimensions = calculateTextDimensions(text, fontHeight);
-                const Int textX = centerX - dimensions.width / 2;
-                const Int textY = centerY - dimensions.height / 2;
-                imageOutput.image.drawText(textX, textY, text, fontHeight, textColor);
+            if (edge.src >= amountOfQubits || edge.dst >= amountOfQubits) {
+                continue;
             }
+            const Position2 src = qubitPositions[edge.src];
+            const Position2 dst = qubitPositions[edge.dst];
+            imageOutput.image.drawLine(src.x, src.y, dst.x, dst.y, black, 1.0f, LinePattern::UNBROKEN);
+        }
+
+        // Draw each of the qubit mappings in this cycle.
+        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+            const Position2 position = qubitPositions[qubitIndex];
+
+            // Draw qubit circle.
+            imageOutput.image.drawFilledCircle(position.x, position.y, layout.getQubitRadius(), white, 1.0f);
+            imageOutput.image.drawOutlinedCircle(position.x, position.y, layout.getQubitRadius(), black, 1.0f, LinePattern::UNBROKEN);
+
+            // Draw virtual operand label on qubit.
+            const Int virtualOperand = virtualQubits[cycleIndex][qubitIndex];
+            const Str text = utils::to_string(virtualOperand);
+
+            //TODO: load from config
+            const Int fontHeight = 13;
+            const Color textColor = black;
+
+            const Dimensions dimensions = calculateTextDimensions(text, fontHeight);
+            const Int textX = position.x - dimensions.width / 2;
+            const Int textY = position.y - dimensions.height / 2;
+            imageOutput.image.drawText(textX, textY, text, fontHeight, textColor);
         }
     }
 
@@ -215,6 +238,7 @@ MappingGraphLayout parseMappingGraphLayout(const Str &configPath) {
     }
 
     // Load the parameters.
+    if (config.count("useTopology") == 1)    layout.setUseTopology(config["useTopology"]);
     if (config.count("qubitRadius") == 1)    layout.setQubitRadius(config["qubitRadius"]);
     if (config.count("qubitSpacing") == 1)   layout.setQubitSpacing(config["qubitSpacing"]);
     if (gridConfig.count("borderSize") == 1) layout.setBorderSize(gridConfig["borderSize"]);
