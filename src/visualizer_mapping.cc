@@ -76,38 +76,107 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         }
     }
 
-    // Draw the mapping for each cycle.
-    for (Int cycleIndex = 0; cycleIndex < imageOutput.circuitData.getAmountOfCycles(); cycleIndex++) {
-        const Position4 position = imageOutput.structure.getCellPosition(cycleIndex, 0, QUANTUM);
-        const Int xStart = position.x0;
-        const Int xEnd = position.x1;
+    // Load the topology if it exists in the platform configuration file.
+    Topology topology;
+    const Bool parsedTopology = parseTopology(program->platform.topology, topology);
+    if (parsedTopology) {
+        QL_IOUT("Succesfully parsed topology.");
+        QL_IOUT("xSize: " << topology.xSize);
+        QL_IOUT("ySize: " << topology.ySize);
+        QL_IOUT("qubits:");
+        for (Int qubitIndex = 0; qubitIndex < topology.vertices.size(); qubitIndex++) {
+            QL_IOUT("\tid: " << qubitIndex << " position: [" << topology.vertices[qubitIndex].x << ", " << topology.vertices[qubitIndex].y << "]");
+        }
+        QL_IOUT("edges:");
+        for (const Edge edge : topology.edges) {
+            QL_IOUT("\tsrc: " << edge.src << ", dst: " << edge.dst);
+        }
+    } else {
+        QL_IOUT("Problem while parsing topology.");
+    }
 
-        // Draw each of the qubit mappings in this cycle.
-        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
-            // Draw qubit circle.
-            const Int column = qubitIndex % amountOfLines;
-            const Int row = qubitIndex / amountOfLines;
-            const Int centerX = xStart + column * qubitDiameter + (column + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
-            const Int centerY = yStart + row * qubitDiameter + (row + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
-            imageOutput.image.drawOutlinedCircle(centerX, centerY, layout.getQubitRadius(), black, 1.0f, LinePattern::UNBROKEN);
+    // If no topology was parsed, fall back on the basic visualization.
+    if (!parsedTopology) {
+        // Draw the mapping for each cycle.
+        for (Int cycleIndex = 0; cycleIndex < imageOutput.circuitData.getAmountOfCycles(); cycleIndex++) {
+            const Position4 position = imageOutput.structure.getCellPosition(cycleIndex, 0, QUANTUM);
+            const Int xStart = position.x0;
+            const Int xEnd = position.x1;
 
-            // Draw virtual operand label on qubit.
-            const Int virtualOperand = virtualQubits[cycleIndex][qubitIndex];
-            const Str text = utils::to_string(virtualOperand);
+            // Draw each of the qubit mappings in this cycle.
+            for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+                // Draw qubit circle.
+                const Int column = qubitIndex % amountOfLines;
+                const Int row = qubitIndex / amountOfLines;
+                const Int centerX = xStart + column * qubitDiameter + (column + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
+                const Int centerY = yStart + row * qubitDiameter + (row + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
+                imageOutput.image.drawOutlinedCircle(centerX, centerY, layout.getQubitRadius(), black, 1.0f, LinePattern::UNBROKEN);
 
-            //TODO: load from config
-            const Int fontHeight = 13;
-            const Color textColor = black;
+                // Draw virtual operand label on qubit.
+                const Int virtualOperand = virtualQubits[cycleIndex][qubitIndex];
+                const Str text = utils::to_string(virtualOperand);
 
-            const Dimensions dimensions = calculateTextDimensions(text, fontHeight);
-            const Int textX = centerX - dimensions.width / 2;
-            const Int textY = centerY - dimensions.height / 2;
-            imageOutput.image.drawText(textX, textY, text, fontHeight, textColor);
+                //TODO: load from config
+                const Int fontHeight = 13;
+                const Color textColor = black;
+
+                const Dimensions dimensions = calculateTextDimensions(text, fontHeight);
+                const Int textX = centerX - dimensions.width / 2;
+                const Int textY = centerY - dimensions.height / 2;
+                imageOutput.image.drawText(textX, textY, text, fontHeight, textColor);
+            }
         }
     }
 
     // Display the filled in image.
     imageOutput.image.display("Mapping Graph");
+}
+
+Bool parseTopology(Json topologyJson, Topology &topology) {
+    const Str fallbackMessage = "Falling back on basic visualization. Missing attribute: ";
+    if (topologyJson.count("x_size") == 1) { topology.xSize = topologyJson["x_size"]; } else { QL_IOUT(fallbackMessage << "x_size"); return false; }
+    if (topologyJson.count("y_size") == 1) { topology.ySize = topologyJson["y_size"]; } else { QL_IOUT(fallbackMessage << "y_size"); return false; }
+
+    if (topologyJson.count("qubits") == 1) {
+        const Json qubits = topologyJson["qubits"];
+        topology.vertices.resize(qubits.size(), { 0, 0 });
+        for (const Json qubit : qubits) {
+            if (qubit.count("id") == 1 && qubit.count("x") == 1 && qubit.count("y") == 1) {
+                const Int id = qubit["id"];
+                const Int x = qubit["x"];
+                const Int y = qubit["y"];
+                topology.vertices[id].x = x;
+                topology.vertices[id].y = y;
+            }
+            else {
+                QL_IOUT(fallbackMessage << "id, or x or y");
+                return false;
+            }
+        }
+    } else {
+        QL_IOUT(fallbackMessage << " qubits");
+        return false;
+    }
+
+    if (topologyJson.count("edges") == 1) {
+        const Json edges = topologyJson["edges"];
+        topology.edges.resize(edges.size(), { 0, 0 });
+        for (const Json edge : edges) {
+            if (edge.count("id") == 1 && edge.count("src") == 1 && edge.count("dst") == 1) {
+                const Int id = edge["id"];
+                topology.edges[id].src = edge["src"];
+                topology.edges[id].dst = edge["dst"];
+            } else {
+                QL_IOUT(fallbackMessage << " id, or src or dst");
+                return false;
+            }
+        }
+    } else {
+        QL_IOUT(fallbackMessage << " edges");
+        return false;
+    }
+
+    return true;
 }
 
 MappingGraphLayout parseMappingGraphLayout(const Str &configPath) {
