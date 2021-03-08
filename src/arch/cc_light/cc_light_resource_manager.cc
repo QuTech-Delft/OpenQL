@@ -675,7 +675,7 @@ ccl_channel_resource_t::ccl_channel_resource_t(
             QL_FATAL("Number of cores (topology[\"number_of_cores\"]) is not a positive value: " << ncores);
         }
     }
-    QL_DOUT("Numer of cores = " << ncores);
+    QL_DOUT("Number of cores = " << ncores);
 
     // nchannels = resources.channels.count: number of channels in each core
     if (platform.resources[name].count("count") <= 0) {
@@ -691,7 +691,7 @@ ccl_channel_resource_t::ccl_channel_resource_t(
 	        QL_FATAL("Number of channels per core (resources[\"channels\"][\"count\"]) is larger than number of qubits per core: " << nchannels);
 	    }
     }
-    QL_DOUT("Numer of channels per core= " << nchannels);
+    QL_DOUT("Number of channels per core= " << nchannels);
 
     state.resize(ncores);
     for (UInt i=0; i<ncores; i++) state[i].resize(nchannels, (forward_scheduling == dir ? 0 : MAX_CYCLE));
@@ -714,52 +714,57 @@ Bool ccl_channel_resource_t::available(
     Str operation_name = ccl_get_operation_name(ins, platform);
     UInt      operation_duration = ccl_get_operation_duration(ins, platform);
 
-    QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
-
     Bool is_ic = (operation_name == "tswap" || operation_name == "tmove");
     if (is_ic) {
+        QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
         if (direction == forward_scheduling) {
             for (auto q : ins->operands) {
-                UInt core = q/ncores;
+                UInt core = q/(platform.qubit_number/ncores);
                 Bool is_avail = false;
                 // fwd: channel c is busy till cycle=state[core][c],
                 // when reserving state[core][c] = start_cycle + duration
                 // i.e. all cycles < state[core][c] it is busy, i.e. available when start_cycle >= state[core][c]
+                QL_DOUT(" available " << name << "? ... q=" << q << " core=" << core);
                 for (UInt c=0; c<nchannels; c++) {
+                    QL_DOUT(" available " << name << "? ... c=" << c);
                     if (
                         op_start_cycle >= state[core][c]
                     ) {
-                        QL_DOUT(" available " << name << "? for qubit: " << q << " in core: " << core << " channel: " << c << " available");
+                        QL_DOUT(" available " << name << "! for qubit: " << q << " in core: " << core << " channel: " << c << " available");
                         is_avail = true;
+                        break;
                     }
                 }
                 if (!is_avail) {
-                     QL_DOUT("    " << name << " resource busy ...");
+                     QL_DOUT(" busy " << name << "! for qubit: " << q << " in core: " << core << " all channels busy");
                      return false;
                 }
             }
         } else {
             for (auto q : ins->operands) {
-                UInt core = q/ncores;
+                UInt core = q/(platform.qubit_number/ncores);
                 Bool is_avail = false;
                 // bwd: channel c is busy from cycle=state[core][c],
                 // when reserving state[core][c] = start_cycle
-                // i.e. all cycles >= state[core][c] it is busy, i.e. available when start_cycle <= state[core][c]
+                // i.e. all cycles >= state[core][c] it is busy, i.e. available when start_cycle + duration <= state[core][c]
+                QL_DOUT(" available " << name << "? ... q=" << q << " core=" << core);
                 for (UInt c=0; c<nchannels; c++) {
+                    QL_DOUT(" available " << name << "? ... c=" << c);
                     if (
                         op_start_cycle + operation_duration <= state[core][c]
                     ) {
-                        QL_DOUT(" available " << name << "? for qubit: " << q << " in core: " << core << " channel: " << c << " available");
+                        QL_DOUT(" available " << name << "! for qubit: " << q << " in core: " << core << " channel: " << c << " available");
                         is_avail = true;
+                        break;
                     }
                 }
                 if (!is_avail) {
-                    QL_DOUT(" busy " << name << "? for qubit: " << q << " in core: " << core << " all channels busy");
+                    QL_DOUT(" busy " << name << "! for qubit: " << q << " in core: " << core << " all channels busy");
                     return false;
                 }
             }
         }
-        QL_DOUT("    " << name << " resource available ...");
+        QL_DOUT(" available " << name << " resource available for: " << ins->qasm());
     }
     return true;
 }
@@ -775,13 +780,12 @@ void ccl_channel_resource_t::reserve(
     Str operation_name = ccl_get_operation_name(ins, platform);
     UInt      operation_duration = ccl_get_operation_duration(ins, platform);
 
-    QL_DOUT(" reserve " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
-
     Bool is_ic = (operation_name == "tswap" || operation_name == "tmove");
     if (is_ic) {
+        QL_DOUT(" reserve " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
         if (direction == forward_scheduling) {
             for (auto q : ins->operands) {
-                UInt core = q/ncores;
+                UInt core = q/(platform.qubit_number/ncores);
                 Bool is_avail = false;
                 // fwd: channel c is busy till cycle=state[core][c],
                 // when reserving state[core][c] = start_cycle + duration
@@ -802,7 +806,7 @@ void ccl_channel_resource_t::reserve(
             // bwd: channel c is busy from cycle=state[core][c],
             // i.e. all cycles >= state[core][c] it is busy, i.e. available when start_cycle <= state[core][c]
             for (auto q : ins->operands) {
-                UInt core = q/ncores;
+                UInt core = q/(platform.qubit_number/ncores);
                 Bool is_avail = false;
                 // bwd: channel c is busy from cycle=state[core][c],
                 // when reserving state[core][c] = start_cycle
