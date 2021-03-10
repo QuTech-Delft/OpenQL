@@ -1127,8 +1127,9 @@ void Past::AddSwap(UInt r0, UInt r1) {
         return;
     }
 
-    // UInt v0 = v2r.GetRs(r0);
-    // UInt v1 = v2r.GetRs(r1);
+    // store the virtual qubits corresponding to each real qubit
+    UInt v0 = v2r.GetVirt(r0);
+    UInt v1 = v2r.GetVirt(r1);
 
     circuit circ;   // current kernel copy, clear circuit
     Str mapusemovesopt = options::get("mapusemoves");
@@ -1190,15 +1191,19 @@ void Past::AddSwap(UInt r0, UInt r1) {
         }
     }
     nswapsadded++;                       // for reporting at the end
-    // gate *last_2q_gate;
+
+    gate *last_2q_gate;
+    // add each gate in the resulting circuit
     for (auto &gp : circ) {
         Add(gp);
-        // if (gp->operands.size() == 2) {
-        //     last_2q_gate = gp;
-        // }
+        // find the last two-qubit gate in the circuit
+        if (gp->operands.size() == 2) {
+            last_2q_gate = gp;
+        }
     }
-    // last_2q_gate->virtual_operands.push_back(v1);
-    // last_2q_gate->virtual_operands.push_back(v0);
+    // add the stored virtual operands to the last two qubit gate in the circuit
+    last_2q_gate->virtual_operands.push_back(v1);
+    last_2q_gate->virtual_operands.push_back(v0);
 
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }

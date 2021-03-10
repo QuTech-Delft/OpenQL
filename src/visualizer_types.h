@@ -112,6 +112,7 @@ struct GateProperties {
 
 class MappingGraphLayout {
 private:
+    utils::Bool initDefaultVirtuals = false;
     utils::Bool showVirtualColors = true;
     utils::Bool showRealIndices = true;
     utils::Bool useTopology = true;
@@ -129,6 +130,7 @@ private:
 public:
     utils::Bool saveImage = false;
 
+    utils::Bool getInitDefaultVirtuals() const { return initDefaultVirtuals; }
     utils::Bool getShowVirtualColors() const { return showVirtualColors; }
     utils::Bool getShowRealIndices() const { return showRealIndices; }
     utils::Bool getUseTopology() const { return useTopology; }
@@ -143,6 +145,7 @@ public:
     Color getQubitFillColor() const { return qubitFillColor; }
     Color getQubitOutlineColor() const { return qubitOutlineColor; }
 
+    void setInitDefaultVirtuals(const utils::Bool argument) { initDefaultVirtuals = argument; }
     void setShowVirtualColors(const utils::Bool argument) { showVirtualColors = argument; }
     void setShowRealIndices(const utils::Bool argument) { showRealIndices = argument; }
     void setUseTopology(const utils::Bool argument) { useTopology = argument; }

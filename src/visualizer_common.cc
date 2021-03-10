@@ -62,7 +62,6 @@ using namespace utils;
 
 // -- IN PROGRESS ---
 // [GENERAL] update documentation
-// add virtual qubit indices to last 2-qubit gate of swap in AddSwap
 // add option to let non-initialized real qubits remain empty until a gate puts a virtual qubit in there in mapping graph visualization
 // fix size of image when image is too big for screen
 

@@ -44,7 +44,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         QL_IOUT("Topology not parsed. Falling back on basic visualization.");
     }
 
-    printGates(gates);
+    // printGates(gates);
 
     // Get visualized circuit with extra wide cycles from visualizer_circuit.cc.
     const Int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
@@ -71,7 +71,8 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
 
     // Initialize the first cycle with a virtual index = real index mapping.
     for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
-        virtualQubits[0].push_back(qubitIndex);
+        const Int virtualIndex = layout.getInitDefaultVirtuals() ? qubitIndex : -1;
+        virtualQubits[0].push_back(virtualIndex);
     }
     // Each other cycle either gets a new virtual operand from a gate in that cycle, or carries over the previous
     // cycle's virtual operand for that qubit.
@@ -101,6 +102,18 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         }
     }
 
+    // Load the fill colors for virtual qubits.
+    Vec<Color> virtualColors(amountOfQubits);
+    const Int division = 255 / amountOfQubits;
+    for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+        const Int currentColor = division * qubitIndex;
+        const Int R = qubitIndex % 3 != 0 ? currentColor : 0;
+        const Int G = qubitIndex % 3 != 1 ? currentColor : 0;
+        const Int B = qubitIndex % 3 != 2 ? currentColor : 0;
+        const Color virtualColor = {{ R, G, B }};
+        virtualColors[qubitIndex] = virtualColor;
+    }
+
     // Draw the mapping for each cycle.
     for (Int cycleIndex = 0; cycleIndex < imageOutput.circuitData.getAmountOfCycles(); cycleIndex++) {
         const Position4 position = imageOutput.structure.getCellPosition(cycleIndex, 0, QUANTUM);
@@ -128,26 +141,14 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
             imageOutput.image.drawLine(src.x, src.y, dst.x, dst.y, black, 1.0f, LinePattern::UNBROKEN);
         }
 
-        // Load the fill colors for virtual qubits.
-        Vec<Color> virtualColors(amountOfQubits);
-        const Int division = 255 / amountOfQubits;
-        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
-            const Int currentColor = division * qubitIndex;
-            const Int R = qubitIndex % 3 != 0 ? currentColor : 0;
-            const Int G = qubitIndex % 3 != 1 ? currentColor : 0;
-            const Int B = qubitIndex % 3 != 2 ? currentColor : 0;
-            const Color virtualColor = {{ R, G, B }};
-            virtualColors[qubitIndex] = virtualColor;
-        }
-
         // Draw each of the qubit mappings in this cycle.
         for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
             const Position2 position = qubitPositions[qubitIndex];
+            const Int virtualOperand = virtualQubits[cycleIndex][qubitIndex];
 
             // Draw qubit circle.
-            const Int virtualQubitIndex = virtualQubits[cycleIndex][qubitIndex];
-            const Color virtualColor = virtualColors[virtualQubitIndex];
-            const Color fillColor = layout.getShowVirtualColors() ? virtualColor : layout.getQubitFillColor();
+            const Color virtualColor = virtualOperand != -1 ? virtualColors[virtualOperand] : layout.getQubitFillColor();
+            const Color fillColor = layout.getShowVirtualColors() && virtualOperand != -1 ? virtualColor : layout.getQubitFillColor();
             imageOutput.image.drawFilledCircle(position.x, position.y, layout.getQubitRadius(), fillColor, 1.0f);
             imageOutput.image.drawOutlinedCircle(position.x, position.y, layout.getQubitRadius(), layout.getQubitOutlineColor(), 1.0f, LinePattern::UNBROKEN);
 
@@ -162,14 +163,20 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
             }
 
             // Draw virtual operand label on qubit.
-            const Int virtualOperand = virtualQubits[cycleIndex][qubitIndex];
-            const Str text = utils::to_string(virtualOperand);
+            if (virtualOperand != -1) {
+                const Str text = utils::to_string(virtualOperand);
 
-            const Dimensions dimensions = calculateTextDimensions(text, layout.getFontHeightVirtual());
-            const Int textX = position.x - dimensions.width / 2;
-            const Int textY = position.y - dimensions.height / 2;
-            imageOutput.image.drawText(textX, textY, text, layout.getFontHeightVirtual(), layout.getTextColorVirtual());
+                const Dimensions dimensions = calculateTextDimensions(text, layout.getFontHeightVirtual());
+                const Int textX = position.x - dimensions.width / 2;
+                const Int textY = position.y - dimensions.height / 2;
+                imageOutput.image.drawText(textX, textY, text, layout.getFontHeightVirtual(), layout.getTextColorVirtual());
+            }
         }
+    }
+
+    // Save the image if enabled.
+    if (imageOutput.circuitLayout.saveImage) {
+        imageOutput.image.save(generateFilePath("circuit_visualization", "bmp"));
     }
 
     // Display the filled in image.
@@ -259,6 +266,7 @@ MappingGraphLayout parseMappingGraphLayout(const Str &configPath) {
     }
 
     // Load the parameters.
+    if (config.count("initDefaultVirtuals") == 1)   layout.setInitDefaultVirtuals(config["initDefaultVirtuals"]);
     if (config.count("showVirtualColors") == 1)   layout.setShowVirtualColors(config["showVirtualColors"]);
     if (config.count("showRealIndices") == 1)   layout.setShowRealIndices(config["showRealIndices"]);
     if (config.count("useTopology") == 1)       layout.setUseTopology(config["useTopology"]);

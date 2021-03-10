@@ -1,7 +1,8 @@
 {
-    "saveImage": false,
+    "saveImage": true,
     "mappingGraph":
     {
+        "initDefaultVirtuals": false,
         "showVirtualColors": true,
         "showRealIndices": true,
         "useTopology": true,
