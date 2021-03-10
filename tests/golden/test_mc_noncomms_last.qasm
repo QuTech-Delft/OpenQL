@@ -3,11 +3,15 @@ version 1.0
 qubits 16
 
 .kernel_noncomms
+    x q[7]
+    premove q[7]
+    wait 4
+    teleportmove q[7],q[1]
+    wait 24
     x q[3]
     move q[3],q[0]
-    wait 8
-    tmove q[0],q[4]
-    wait 29
-    cnot q[4],q[7]
+    wait 3
+    postmove q[1]
     wait 4
-    x q[7]
+    cnot q[0],q[1]
+    wait 4

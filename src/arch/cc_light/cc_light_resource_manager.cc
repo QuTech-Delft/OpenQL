@@ -15,7 +15,7 @@ UInt ccl_get_operation_duration(gate *ins, const quantum_platform &platform) {
     return ceil( static_cast<Real>(ins->duration) / platform.cycle_time);
 }
 
-// operation type is "mw" (for microwave), "flux", or "readout"
+// operation type is "mw" (for microwave), "flux", "readout", or "extern" (used for inter-core)
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
 Str ccl_get_operation_type(gate *ins, const quantum_platform &platform) {
     Str operation_type("cc_light_type");
@@ -711,10 +711,10 @@ Bool ccl_channel_resource_t::available(
     gate *ins,
     const quantum_platform &platform
 ) {
-    Str operation_name = ccl_get_operation_name(ins, platform);
+    Str operation_type = ccl_get_operation_type(ins, platform);
     UInt      operation_duration = ccl_get_operation_duration(ins, platform);
 
-    Bool is_ic = (operation_name == "tswap" || operation_name == "tmove");
+    Bool is_ic = (operation_type == "extern");
     if (is_ic) {
         QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
         if (direction == forward_scheduling) {
@@ -777,10 +777,10 @@ void ccl_channel_resource_t::reserve(
     // for each operand:
     //     find a free channel c and then do
     //     state[core][c] = (forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle );
-    Str operation_name = ccl_get_operation_name(ins, platform);
+    Str operation_type = ccl_get_operation_type(ins, platform);
     UInt      operation_duration = ccl_get_operation_duration(ins, platform);
 
-    Bool is_ic = (operation_name == "tswap" || operation_name == "tmove");
+    Bool is_ic = (operation_type == "extern");
     if (is_ic) {
         QL_DOUT(" reserve " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
         if (direction == forward_scheduling) {

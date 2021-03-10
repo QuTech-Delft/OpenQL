@@ -6,65 +6,36 @@ qubits 16
     x q[0]
     cnot q[0],q[1]
     wait 4
-    move q[0],q[2]
-    wait 2
-    x q[4]
-    cnot q[4],q[5]
-    wait 4
-    tmove q[4],q[0]
-    wait 28
-    x q[12]
-    { cnot q[12],q[13] | cnot q[2],q[0] }
-    wait 4
-    tswap q[0],q[12]
-    wait 48
+    x q[1]
+    swap q[0],q[1]
+    wait 11
     x q[8]
-    { cnot q[8],q[9] | cnot q[2],q[0] }
-    wait 4
-    tswap q[0],q[8]
-    wait 45
-    move q[12],q[14]
+    { cnot q[8],q[9] | preswap q[0] }
     wait 3
-    cnot q[2],q[0]
-    wait 4
-    tmove q[0],q[12]
-    wait 29
-    cnot q[14],q[12]
-    wait 4
-    tswap q[12],q[8]
-    wait 49
-    cnot q[14],q[12]
-    wait 4
-    swap q[14],q[12]
-    wait 12
-    tmove q[12],q[0]
-    wait 29
-    tmove q[8],q[12]
-    wait 29
-    { cnot q[0],q[2] | cnot q[12],q[14] }
-    wait 4
-    tswap q[12],q[0]
-    wait 49
-    cnot q[0],q[2]
-    wait 4
-    move q[0],q[3]
+    x q[4]
+    { cnot q[4],q[5] | teleportswap q[0],q[8] }
     wait 3
-    cnot q[14],q[12]
+    x q[12]
+    { cnot q[12],q[13] | premove q[4] }
     wait 4
-    tmove q[12],q[0]
-    wait 29
-    cnot q[3],q[0]
+    { premove q[12] | teleportmove q[4],q[2] }
     wait 4
-    swap q[0],q[2]
-    wait 12
-    tmove q[0],q[12]
-    wait 29
-    cnot q[14],q[12]
+    teleportmove q[12],q[3]
+    wait 24
+    postmove q[2]
     wait 4
-    swap q[14],q[12]
-    wait 12
-    tmove q[12],q[0]
-    wait 29
-    cnot q[0],q[3]
+    { postmove q[3] | cnot q[1],q[2] }
+    wait 4
+    { cnot q[2],q[3] | cnot q[1],q[0] }
+    wait 4
+    { cnot q[1],q[3] | cnot q[2],q[0] }
+    wait 4
+    { cnot q[2],q[1] | cnot q[0],q[3] }
+    wait 4
+    { cnot q[0],q[2] | cnot q[3],q[1] }
+    wait 4
+    { cnot q[0],q[1] | cnot q[3],q[2] }
+    wait 4
+    { postswap q[8] | cnot q[3],q[0] }
     wait 3
-    { x q[13] | x q[9] | x q[5] | x q[1] }
+    { x q[13] | x q[9] | x q[5] }
