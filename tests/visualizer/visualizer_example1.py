@@ -57,6 +57,12 @@ k.gate("cnot", [2,3])
 k.gate("x", [2])
 k.gate("y", [3])
 
+# k.gate("x", [2])
+# k.gate("y", [4])
+# k.gate("cnot", [2,4])
+# k.gate("x", [2])
+# k.gate("y", [4])
+
 # k.gate('x', [0])
 # for i in range(nqubits):
 #     k.gate('prepz', [i])

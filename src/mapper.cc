@@ -1127,6 +1127,9 @@ void Past::AddSwap(UInt r0, UInt r1) {
         return;
     }
 
+    // UInt v0 = v2r.GetRs(r0);
+    // UInt v1 = v2r.GetRs(r1);
+
     circuit circ;   // current kernel copy, clear circuit
     Str mapusemovesopt = options::get("mapusemoves");
     if (mapusemovesopt != "no" && (v2r.GetRs(r0) != rs_hasstate || v2r.GetRs(r1) != rs_hasstate)) {
@@ -1187,9 +1190,15 @@ void Past::AddSwap(UInt r0, UInt r1) {
         }
     }
     nswapsadded++;                       // for reporting at the end
+    // gate *last_2q_gate;
     for (auto &gp : circ) {
         Add(gp);
+        // if (gp->operands.size() == 2) {
+        //     last_2q_gate = gp;
+        // }
     }
+    // last_2q_gate->virtual_operands.push_back(v1);
+    // last_2q_gate->virtual_operands.push_back(v0);
 
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }

@@ -2,9 +2,18 @@
     "saveImage": false,
     "mappingGraph":
     {
+        "showVirtualColors": true,
+        "showRealIndices": true,
         "useTopology": true,
         "qubitRadius": 15,
-        "qubitSpacing": 7
+        "qubitSpacing": 7,
+        "fontHeightReal": 13,
+        "fontHeightVirtual": 13,
+        "textColorReal": [0, 0, 255],
+        "textColorVirtual": [255, 0, 0],
+        "realIndexSpacing": 1,
+        "qubitFillColor": [255, 255, 255],
+        "qubitOutlineColor": [0, 0, 0]
     },
     "interactionGraph":
     {

@@ -29,33 +29,33 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     Topology topology;
     const Bool parsedTopology = layout.getUseTopology() ? parseTopology(program->platform.topology, topology) : false;
     if (parsedTopology) {
-        QL_IOUT("Succesfully parsed topology.");
-        QL_IOUT("xSize: " << topology.xSize);
-        QL_IOUT("ySize: " << topology.ySize);
-        QL_IOUT("qubits:");
+        QL_DOUT("Succesfully parsed topology.");
+        QL_DOUT("xSize: " << topology.xSize);
+        QL_DOUT("ySize: " << topology.ySize);
+        QL_DOUT("qubits:");
         for (Int qubitIndex = 0; qubitIndex < topology.vertices.size(); qubitIndex++) {
-            QL_IOUT("\tid: " << qubitIndex << " position: [" << topology.vertices[qubitIndex].x << ", " << topology.vertices[qubitIndex].y << "]");
+            QL_DOUT("\tid: " << qubitIndex << " position: [" << topology.vertices[qubitIndex].x << ", " << topology.vertices[qubitIndex].y << "]");
         }
-        QL_IOUT("edges:");
+        QL_DOUT("edges:");
         for (const Edge edge : topology.edges) {
-            QL_IOUT("\tsrc: " << edge.src << ", dst: " << edge.dst);
+            QL_DOUT("\tsrc: " << edge.src << ", dst: " << edge.dst);
         }
     } else {
         QL_IOUT("Topology not parsed. Falling back on basic visualization.");
     }
 
+    printGates(gates);
+
     // Get visualized circuit with extra wide cycles from visualizer_circuit.cc.
     const Int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
-    const Int amountOfLines = ceil(sqrt(amountOfQubits));
+    const Int amountOfColumns = parsedTopology ? topology.xSize : ceil(sqrt(amountOfQubits));
+    const Int amountOfRows = parsedTopology ? topology.ySize : ceil(sqrt(amountOfQubits));
     const Int qubitDiameter = layout.getQubitRadius() * 2;
-    const Int minCycleWidth = parsedTopology ?
-        topology.xSize * qubitDiameter + (topology.xSize + 1) * layout.getQubitSpacing()
-        :
-        amountOfLines * qubitDiameter + (amountOfLines + 1) * layout.getQubitSpacing();
-    const Int extendedImageHeight = parsedTopology ?
-        topology.ySize * qubitDiameter + (topology.ySize + 1) * layout.getQubitSpacing() + layout.getBorderSize()
-        :
-        minCycleWidth + layout.getBorderSize();
+    const Int columnWidth = qubitDiameter;
+    const Int rowHeight = qubitDiameter + (layout.getShowRealIndices() ? layout.getFontHeightReal() + layout.getRealIndexSpacing() * 2 : 0);
+    const Int minCycleWidth = amountOfColumns * columnWidth + (amountOfColumns + 1) * layout.getQubitSpacing();
+    const Int extendedImageHeight = amountOfRows * rowHeight + (amountOfRows + 1) * layout.getQubitSpacing() + layout.getBorderSize();
+
     ImageOutput imageOutput = generateImage(program, configuration, minCycleWidth, extendedImageHeight);
 
     // Fill in cycle spaces beneath the circuit with the mapping graph.
@@ -110,10 +110,10 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         // Calculate the qubit positions.
         Vec<Position2> qubitPositions(amountOfQubits, { 0, 0 });
         for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
-            const Int column = parsedTopology ? topology.vertices[qubitIndex].x : qubitIndex % amountOfLines;
-            const Int row = parsedTopology ? topology.vertices[qubitIndex].y : qubitIndex / amountOfLines;
-            const Int centerX = xStart + column * qubitDiameter + (column + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
-            const Int centerY = yStart + row * qubitDiameter + (row + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
+            const Int column = parsedTopology ? topology.vertices[qubitIndex].x : qubitIndex % amountOfColumns;
+            const Int row = parsedTopology ? topology.vertices[qubitIndex].y : qubitIndex / amountOfRows;
+            const Int centerX = xStart + column * columnWidth + (column + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
+            const Int centerY = yStart + row * rowHeight + (row + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
             qubitPositions[qubitIndex].x = centerX;
             qubitPositions[qubitIndex].y = centerY;
         }
@@ -128,26 +128,47 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
             imageOutput.image.drawLine(src.x, src.y, dst.x, dst.y, black, 1.0f, LinePattern::UNBROKEN);
         }
 
+        // Load the fill colors for virtual qubits.
+        Vec<Color> virtualColors(amountOfQubits);
+        const Int division = 255 / amountOfQubits;
+        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+            const Int currentColor = division * qubitIndex;
+            const Int R = qubitIndex % 3 != 0 ? currentColor : 0;
+            const Int G = qubitIndex % 3 != 1 ? currentColor : 0;
+            const Int B = qubitIndex % 3 != 2 ? currentColor : 0;
+            const Color virtualColor = {{ R, G, B }};
+            virtualColors[qubitIndex] = virtualColor;
+        }
+
         // Draw each of the qubit mappings in this cycle.
         for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
             const Position2 position = qubitPositions[qubitIndex];
 
             // Draw qubit circle.
-            imageOutput.image.drawFilledCircle(position.x, position.y, layout.getQubitRadius(), white, 1.0f);
-            imageOutput.image.drawOutlinedCircle(position.x, position.y, layout.getQubitRadius(), black, 1.0f, LinePattern::UNBROKEN);
+            const Int virtualQubitIndex = virtualQubits[cycleIndex][qubitIndex];
+            const Color virtualColor = virtualColors[virtualQubitIndex];
+            const Color fillColor = layout.getShowVirtualColors() ? virtualColor : layout.getQubitFillColor();
+            imageOutput.image.drawFilledCircle(position.x, position.y, layout.getQubitRadius(), fillColor, 1.0f);
+            imageOutput.image.drawOutlinedCircle(position.x, position.y, layout.getQubitRadius(), layout.getQubitOutlineColor(), 1.0f, LinePattern::UNBROKEN);
+
+            // Draw real qubit index if enabled.
+            if (layout.getShowRealIndices()) {
+                const Str realIndexLabel = utils::to_string(qubitIndex);
+                const Dimensions realIndexLabelDimensions = calculateTextDimensions(realIndexLabel, layout.getFontHeightReal());
+
+                const Int realIndexLabelX = position.x - realIndexLabelDimensions.width / 2;
+                const Int realIndexLabelY = position.y - layout.getQubitRadius() - realIndexLabelDimensions.height - layout.getRealIndexSpacing();
+                imageOutput.image.drawText(realIndexLabelX, realIndexLabelY, realIndexLabel, layout.getFontHeightReal(), layout.getTextColorReal());
+            }
 
             // Draw virtual operand label on qubit.
             const Int virtualOperand = virtualQubits[cycleIndex][qubitIndex];
             const Str text = utils::to_string(virtualOperand);
 
-            //TODO: load from config
-            const Int fontHeight = 13;
-            const Color textColor = black;
-
-            const Dimensions dimensions = calculateTextDimensions(text, fontHeight);
+            const Dimensions dimensions = calculateTextDimensions(text, layout.getFontHeightVirtual());
             const Int textX = position.x - dimensions.width / 2;
             const Int textY = position.y - dimensions.height / 2;
-            imageOutput.image.drawText(textX, textY, text, fontHeight, textColor);
+            imageOutput.image.drawText(textX, textY, text, layout.getFontHeightVirtual(), layout.getTextColorVirtual());
         }
     }
 
@@ -238,10 +259,23 @@ MappingGraphLayout parseMappingGraphLayout(const Str &configPath) {
     }
 
     // Load the parameters.
-    if (config.count("useTopology") == 1)    layout.setUseTopology(config["useTopology"]);
-    if (config.count("qubitRadius") == 1)    layout.setQubitRadius(config["qubitRadius"]);
-    if (config.count("qubitSpacing") == 1)   layout.setQubitSpacing(config["qubitSpacing"]);
-    if (gridConfig.count("borderSize") == 1) layout.setBorderSize(gridConfig["borderSize"]);
+    if (config.count("showVirtualColors") == 1)   layout.setShowVirtualColors(config["showVirtualColors"]);
+    if (config.count("showRealIndices") == 1)   layout.setShowRealIndices(config["showRealIndices"]);
+    if (config.count("useTopology") == 1)       layout.setUseTopology(config["useTopology"]);
+
+    if (config.count("qubitRadius") == 1)       layout.setQubitRadius(config["qubitRadius"]);
+    if (config.count("qubitSpacing") == 1)      layout.setQubitSpacing(config["qubitSpacing"]);
+    if (config.count("fontHeightReal") == 1)      layout.setFontHeightReal(config["fontHeightReal"]);
+    if (config.count("fontHeightVirtual") == 1)      layout.setFontHeightVirtual(config["fontHeightVirtual"]);
+
+    if (config.count("textColorReal") == 1)      layout.setTextColorReal(config["textColorReal"]);
+    if (config.count("textColorVirtual") == 1)      layout.setTextColorVirtual(config["textColorVirtual"]);
+    if (config.count("qubitFillColor") == 1)      layout.setQubitFillColor(config["qubitFillColor"]);
+    if (config.count("qubitOutlineColor") == 1)      layout.setQubitOutlineColor(config["qubitOutlineColor"]);
+
+    if (config.count("realIndexSpacing") == 1)      layout.setRealIndexSpacing(config["realIndexSpacing"]);
+
+    if (gridConfig.count("borderSize") == 1)    layout.setBorderSize(gridConfig["borderSize"]);
 
     return layout;
 }
