@@ -63,7 +63,6 @@ using namespace utils;
 // -- IN PROGRESS ---
 // [GENERAL] update documentation
 // fix size of image when image is too big for screen
-// skip cycles where mapping does not change
 
 // --- FUTURE WORK ---
 // [GENERAL] add generating random circuits for visualization testing

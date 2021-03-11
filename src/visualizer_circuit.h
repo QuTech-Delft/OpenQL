@@ -114,7 +114,7 @@ private:
     utils::Int imageWidth = 0;
     utils::Int imageHeight = 0;
 
-    const utils::Int minCycleWidth;
+    const utils::Vec<utils::Int> minCycleWidths;
 
     utils::Vec<utils::Vec<Position4>> qbitCellPositions;
     utils::Vec<utils::Vec<Position4>> cbitCellPositions;
@@ -128,7 +128,7 @@ private:
     void generateCellPositions(const CircuitData &circuitData);
 
 public:
-    Structure(const CircuitLayout &layout, const CircuitData &circuitData, const utils::Int minCycleWidth, const utils::Int extendedImageHeight);
+    Structure(const CircuitLayout &layout, const CircuitData &circuitData, const utils::Vec<utils::Int> minCycleWidths, const utils::Int extendedImageHeight);
 
     utils::Int getImageWidth() const;
     utils::Int getImageHeight() const;
@@ -155,7 +155,7 @@ struct ImageOutput {
 };
 
 void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration);
-ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration, const utils::Int minCycleWidth, const utils::Int extendedImageHeight);
+ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration, const utils::Vec<utils::Int> minCycleWidths, const utils::Int extendedImageHeight);
 
 CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const utils::Json platformInstructions);
 void validateCircuitLayout(CircuitLayout &layout);

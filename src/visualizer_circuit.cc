@@ -308,12 +308,12 @@ void CircuitData::printProperties() const {
 // =                      Structure                      = //
 // ======================================================= //
 
-Structure::Structure(const CircuitLayout &layout, const CircuitData &circuitData, const Int minCycleWidth, const Int extendedImageHeight) :
+Structure::Structure(const CircuitLayout &layout, const CircuitData &circuitData, const Vec<Int> minCycleWidths, const Int extendedImageHeight) :
     layout(layout),
     cellDimensions({layout.grid.getCellSize(), calculateCellHeight(layout)}),
     cycleLabelsY(layout.grid.getBorderSize()),
     bitLabelsX(layout.grid.getBorderSize()),
-    minCycleWidth(minCycleWidth)
+    minCycleWidths(minCycleWidths)
 {
     generateCellPositions(circuitData);
     generateBitLineSegments(circuitData);
@@ -368,7 +368,7 @@ void Structure::generateCellPositions(const CircuitData &circuitData) {
     Int widthFromCycles = 0;
     for (Int column = 0; column < circuitData.getAmountOfCycles(); column++) {
         const Int amountOfChunks = utoi(circuitData.getCycle(column).gates.size());
-        const Int cycleWidth = max(minCycleWidth,
+        const Int cycleWidth = max(minCycleWidths[column],
             (circuitData.isCycleCut(column) ? layout.cycles.cutting.getCutCycleWidth() : (cellDimensions.width * amountOfChunks)));
 
         const Int x0 = layout.grid.getBorderSize() + layout.bitLines.labels.getColumnWidth() + widthFromCycles;
@@ -546,8 +546,13 @@ void Structure::printProperties() const {
 
 void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration)
 {
+    const Vec<GateProperties> gates = parseGates(program);
+    const Int cycleDuration = utoi(program->platform.cycle_time);
+    const Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    const Vec<Int> minCycleWidths(amountOfCycles, 0);
+
     // Generate the image.
-    ImageOutput imageOutput = generateImage(program, configuration, 0, 0);
+    ImageOutput imageOutput = generateImage(program, configuration, minCycleWidths, 0);
 
     // Save the image if enabled.
     if (imageOutput.circuitLayout.saveImage) {
@@ -559,7 +564,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     imageOutput.image.display("Quantum Circuit");
 }
 
-ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration, const Int minCycleWidth, const utils::Int extendedImageHeight) {
+ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration, const Vec<Int> minCycleWidths, const utils::Int extendedImageHeight) {
     // Get the gate list from the program.
     QL_DOUT("Getting gate list...");
     Vec<GateProperties> gates = parseGates(program);
@@ -584,7 +589,7 @@ ImageOutput generateImage(const ql::quantum_program* program, const VisualizerCo
 
     // Initialize the structure of the visualization.
     QL_DOUT("Initializing visualization structure...");
-    Structure structure(layout, circuitData, minCycleWidth, extendedImageHeight);
+    Structure structure(layout, circuitData, minCycleWidths, extendedImageHeight);
     structure.printProperties();
 
     // Initialize image.

@@ -55,8 +55,6 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     const Int qubitDiameter = layout.getQubitRadius() * 2;
     const Int columnWidth = qubitDiameter;
     const Int rowHeight = qubitDiameter + (layout.getShowRealIndices() ? layout.getFontHeightReal() + layout.getRealIndexSpacing() * 2 : 0);
-    const Int minCycleWidth = amountOfColumns * columnWidth + (amountOfColumns + 1) * layout.getQubitSpacing();
-    const Int extendedImageHeight = amountOfRows * rowHeight + (amountOfRows + 1) * layout.getQubitSpacing() + layout.getBorderSize();
 
     // Calculate the virtual qubits mapping for each cycle.
     const Int cycleDuration = utoi(program->platform.cycle_time);
@@ -69,7 +67,16 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     // This vector stores whether the mapping has changed for each cycle compared to the previous cycle.
     Vec<Bool> mappingChangedPerCycle(amountOfCycles, false);
 
+    // Compute the mappings for each cycle.
     computeMappingPerCycle(layout, virtualQubits, mappingChangedPerCycle, gates, amountOfCycles, amountOfQubits);
+    
+    // Compute the minimum cycle widths for each cycle.
+    Vec<Int> minCycleWidths(amountOfCycles, 0);
+    for (Int cycleIndex = 0; cycleIndex < amountOfCycles; cycleIndex++) {
+        if (mappingChangedPerCycle[cycleIndex]) {
+            minCycleWidths[cycleIndex] = amountOfColumns * columnWidth + (amountOfColumns + 1) * layout.getQubitSpacing();
+        }
+    }
 
     // Load the fill colors for virtual qubits.
     Vec<Color> virtualColors(amountOfQubits);
@@ -84,14 +91,20 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     }
 
     // Generate the image.
-    ImageOutput imageOutput = generateImage(program, configuration, minCycleWidth, extendedImageHeight);
+    const Int extendedImageHeight = amountOfRows * rowHeight + (amountOfRows + 1) * layout.getQubitSpacing() + layout.getBorderSize();
+    ImageOutput imageOutput = generateImage(program, configuration, minCycleWidths, extendedImageHeight);
 
     // Fill in cycle spaces beneath the circuit with the mapping graph.
     const Int yStart = imageOutput.structure.getImageHeight() - extendedImageHeight;
     const Int yEnd = imageOutput.structure.getImageHeight();
 
     // Draw the mapping for each cycle.
-    for (Int cycleIndex = 0; cycleIndex < imageOutput.circuitData.getAmountOfCycles(); cycleIndex++) {
+    for (Int cycleIndex = 0; cycleIndex < amountOfCycles; cycleIndex++) {
+        // Skip cycles for which the mapping has not changed.
+        if (!mappingChangedPerCycle[cycleIndex]) {
+            continue;
+        }
+
         const Position4 position = imageOutput.structure.getCellPosition(cycleIndex, 0, QUANTUM);
         const Int xStart = position.x0;
         const Int xEnd = position.x1;
