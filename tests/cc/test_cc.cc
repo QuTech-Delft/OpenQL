@@ -368,7 +368,7 @@ void test_break()
     ql::quantum_program prog("test_break", s5, num_qubits, num_cregs, num_bregs);
     ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs, num_bregs);
 
-    k.gate("prepz", 1);	// FIXME: program makes no sense
+    k.gate("prepz", 1);
     k.gate("measure_fb", 1);
     k.gate("if_1_break", 1);
 
