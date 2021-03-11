@@ -50,7 +50,7 @@
             },
             "cutting":
             {
-                "cut": false,
+                "cut": true,
                 "emptyCycleThreshold": 2,
                 "cutCycleWidth": 16,
                 "cutCycleWidthModifier": 0.5

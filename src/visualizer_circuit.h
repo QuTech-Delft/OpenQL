@@ -158,7 +158,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
 ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration, const utils::Vec<utils::Int> minCycleWidths, const utils::Int extendedImageHeight);
 
 CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const utils::Json platformInstructions);
-void validateCircuitLayout(CircuitLayout &layout);
+void validateCircuitLayout(CircuitLayout &layout, const utils::Str &visualizationType);
 PulseVisualization parseWaveformMapping(const utils::Str &waveformMappingPath);
 
 utils::Vec<QubitLines> generateQubitLines(const utils::Vec<GateProperties> &gates, const PulseVisualization &pulseVisualization, const CircuitData &circuitData);

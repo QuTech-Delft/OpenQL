@@ -574,7 +574,7 @@ ImageOutput generateImage(const ql::quantum_program* program, const VisualizerCo
 
     // Parse and validate the layout and instruction configuration file.
     CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program->platform.instruction_settings);
-    validateCircuitLayout(layout);
+    validateCircuitLayout(layout, configuration.visualizationType);
 
     // Calculate circuit properties.
     QL_DOUT("Calculating circuit properties...");
@@ -1046,11 +1046,17 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
     return layout;
 }
 
-void validateCircuitLayout(CircuitLayout &layout) {
+void validateCircuitLayout(CircuitLayout &layout, const Str &visualizationType) {
     QL_DOUT("Validating layout...");
 
     //TODO: add more validation
-    
+
+    // Disable pulse visualization and cycle cutting for the mapping graph visualization.
+    if (visualizationType == "MAPPING_GRAPH") {
+        layout.cycles.cutting.setEnabled(false);
+        layout.pulses.setEnabled(false);
+    }
+
     if (layout.cycles.cutting.getEmptyCycleThreshold() < 1) {
         QL_WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to "
             << layout.cycles.cutting.getEmptyCycleThreshold() << ".");

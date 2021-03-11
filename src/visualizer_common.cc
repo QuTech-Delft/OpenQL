@@ -83,29 +83,29 @@ using namespace utils;
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfiguration &configuration) {
+void visualize(const quantum_program* program, const VisualizerConfiguration &configuration) {
     QL_WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
          << "might be missing and the visualizer has disabled itself.");
 }
 
 #else
 
-void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfiguration &configuration) {
+void visualize(const quantum_program* program, const VisualizerConfiguration &configuration) {
     QL_IOUT("Starting visualization...");
-    QL_IOUT("Visualization type: " << visualizationType);
+    QL_IOUT("Visualization type: " << configuration.visualizationType);
 
     // printGates(parseGates(program));
     // if (true) return;
 
     // Choose the proper visualization based on the visualization type.
-    if (visualizationType == "CIRCUIT") {
+    if (configuration.visualizationType == "CIRCUIT") {
         visualizeCircuit(program, configuration);
-    } else if (visualizationType == "INTERACTION_GRAPH") {
+    } else if (configuration.visualizationType == "INTERACTION_GRAPH") {
         visualizeInteractionGraph(program, configuration);
-    } else if (visualizationType == "MAPPING_GRAPH") {
+    } else if (configuration.visualizationType == "MAPPING_GRAPH") {
         visualizeMappingGraph(program, configuration);
     } else {
-        QL_FATAL("Unknown visualization type: " << visualizationType << "!");
+        QL_FATAL("Unknown visualization type: " << configuration.visualizationType << "!");
     }
 
     QL_IOUT("Visualization complete...");
