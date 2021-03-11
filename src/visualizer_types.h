@@ -454,6 +454,7 @@ public:
 
 struct CircuitLayout {
     utils::Bool saveImage = false;
+    Color backgroundColor = {{ 0, 0, 50 }};
 
     Cycles cycles;
     BitLines bitLines;

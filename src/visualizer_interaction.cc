@@ -62,7 +62,7 @@ void visualizeInteractionGraph(const quantum_program* program, const VisualizerC
         const Int imageWidth = 2 * (layout.getBorderWidth() + interactionCircleRadius);
         const Int imageHeight = 2 * (layout.getBorderWidth() + interactionCircleRadius);
         Image image(imageWidth, imageHeight);
-        image.fill(255);
+        image.fill(white);
 
         // Draw the edges between interacting qubits.
         Vec<Pair<Int, Int>> drawnEdges;

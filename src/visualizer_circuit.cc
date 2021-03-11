@@ -595,7 +595,7 @@ ImageOutput generateImage(const ql::quantum_program* program, const VisualizerCo
     // Initialize image.
     QL_DOUT("Initializing image...");
     Image image(structure.getImageWidth(), structure.getImageHeight());
-    image.fill(255);
+    image.fill(layout.backgroundColor);
 
     // Draw the cycle labels if the option has been set.
     if (layout.cycles.labels.areEnabled()) {
@@ -819,6 +819,11 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
     // Check if the image should be saved to disk.
     if (visualizerConfig.count("saveImage") == 1) {
         layout.saveImage = visualizerConfig["saveImage"];
+    }
+
+    // Load background fill color.
+    if (visualizerConfig.count("backgroundColor") == 1) {
+        layout.backgroundColor = visualizerConfig["backgroundColor"];
     }
 
     // -------------------------------------- //

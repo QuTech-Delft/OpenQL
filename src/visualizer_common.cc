@@ -61,15 +61,16 @@ using namespace utils;
 // [GENERAL] fix isEdgeAlreadyDrawn() build error on CI
 
 // -- IN PROGRESS ---
+// [MAPPING] make cycle cutting work with mapping graph visualization (or just turn it off for mapping graph visualization)
 // [GENERAL] update documentation
-// fix size of image when image is too big for screen
+// [GENERAL] fix size of image when image is too big for screen
 
 // --- FUTURE WORK ---
+// [INTERACTION] apply background color option to interaction graph too
 // [GENERAL] add generating random circuits for visualization testing
-// [CIRCUIT] add background color option
 // [CIRCUIT] add connection line thickness parameter
 // [CIRCUIT] add bitline thickness parameter (maybe)
-// [CIRCUIT] allow collapsing the three qubit lines into one with an option
+// [CIRCUIT] allow collapsing the three qubit lines into one with an option for pulse visualization
 // [CIRCUIT] implement cycle cutting for pulse visualization
 // [CIRCUIT] what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
 //           comprising the entire range?

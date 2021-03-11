@@ -1,5 +1,6 @@
 {
     "saveImage": true,
+    "backgroundColor": [179, 235, 255],
     "mappingGraph":
     {
         "initDefaultVirtuals": false,
@@ -49,7 +50,7 @@
             },
             "cutting":
             {
-                "cut": true,
+                "cut": false,
                 "emptyCycleThreshold": 2,
                 "cutCycleWidth": 16,
                 "cutCycleWidthModifier": 0.5
