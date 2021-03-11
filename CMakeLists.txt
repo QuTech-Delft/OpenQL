@@ -233,6 +233,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/qsoverlay.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/resource_manager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/scheduler.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/commute_variation.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_resource_manager.cc"
 )
@@ -301,16 +302,6 @@ endif()
 # Look for thread support library (pthreads)
 find_package(Threads REQUIRED)
 target_link_libraries(ql PUBLIC ${CMAKE_THREAD_LIBS_INIT})
-
-
-# CLI11 -----------------------------------------------------------------------
-
-# Wrap CLI11 in an interface library to link against.
-add_library(cli11 INTERFACE)
-target_include_directories(cli11 INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/CLI11/include/"
-)
-target_link_libraries(ql PUBLIC cli11)
 
 
 # LEMON -----------------------------------------------------------------------

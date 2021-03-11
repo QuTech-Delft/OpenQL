@@ -5,23 +5,23 @@ import os
 curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ALAP')
-ql.set_option('log_level', 'LOG_WARNING')
 
 class Tester(unittest.TestCase):
 
     @classmethod
     def setUp(self):
         ql.initialize()
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('log_level', 'LOG_WARNING')
 
     def test_decomposition(self):
         config_fn = os.path.join(curdir, 'test_cfg_none.json')
         platform  = ql.Platform('platform_none', config_fn)
         sweep_points = [1,2]
         num_qubits = 17
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_decomposition', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)

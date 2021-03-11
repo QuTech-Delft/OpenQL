@@ -17,12 +17,12 @@ class Test_quantumsim(unittest.TestCase):
         ql.set_option('quantumsim', 'yes')
 
 
-    def test(self):
+    def test_quantumsim(self):
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'test_mapper_s7.json')
         platform = ql.Platform('platform_quantumsim', config_fn)
         num_qubits = 3
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_quantumsim', platform, num_qubits)
         sweep_points = [1, 2]
         p.set_sweep_points(sweep_points)
 

@@ -191,11 +191,14 @@ private:
         else if (gname == "ry180")       return 6;
         else if (gname == "pauli_z")     return 9;
         else if (gname == "z")           return 9;
+        else if (gname == "rz180")       return 9;
         else if (gname == "hadamard")    return 12;
         else if (gname == "h")           return 12;
         else if (gname == "xm90")        return 13;
         else if (gname == "mrx90")       return 13;
         else if (gname == "s")           return 14;
+        else if (gname == "zm90")        return 14;
+        else if (gname == "mrz90")       return 14;
         else if (gname == "ym90")        return 15;
         else if (gname == "mry90")       return 15;
         else if (gname == "x90")         return 16;
@@ -203,6 +206,8 @@ private:
         else if (gname == "y90")         return 21;
         else if (gname == "ry90")        return 21;
         else if (gname == "sdag")        return 23;
+        else if (gname == "z90")         return 23;
+        else if (gname == "rz90")        return 23;
         else return -1;
     }
 

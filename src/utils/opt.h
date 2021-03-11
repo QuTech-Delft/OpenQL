@@ -125,6 +125,20 @@ public:
     }
 
     /**
+     * Returns the raw unique_ptr.
+     */
+    const std::unique_ptr<T> &unwrap() const {
+        return v;
+    }
+
+    /**
+     * Returns the raw unique_ptr.
+     */
+    std::unique_ptr<T> &unwrap() {
+        return v;
+    }
+
+    /**
      * Mutating dereference operator.
      */
     T &operator*() {
@@ -162,6 +176,18 @@ public:
             throw Exception("attempt to dereference empty Opt");
         }
         return v.get();
+    }
+
+    /**
+     * Stream overload for Opt.
+     */
+    friend std::ostream &operator<<(std::ostream &os, const Opt &opt) {
+        if (opt.v) {
+            os << *opt.v;
+        } else {
+            os << "<NULL>";
+        }
+        return os;
     }
 
 };
