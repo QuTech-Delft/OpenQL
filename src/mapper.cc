@@ -1194,7 +1194,9 @@ void Past::AddSwap(UInt r0, UInt r1) {
 
     gate *last_2q_gate;
     // add each gate in the resulting circuit
+    // QL_IOUT("adding swap between " << r0 << " and " << r1);
     for (auto &gp : circ) {
+        // QL_IOUT("\tadding decomposed gate " << gp->name << " for swap");
         Add(gp);
         // find the last two-qubit gate in the circuit
         if (gp->operands.size() == 2) {

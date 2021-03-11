@@ -45,6 +45,8 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     }
 
     // printGates(gates);
+    QL_IOUT("Gate input to mapping graph visualizer:");
+    printGatesShort(gates);
 
     // Get visualized circuit with extra wide cycles from visualizer_circuit.cc.
     const Int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
@@ -56,51 +58,18 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     const Int minCycleWidth = amountOfColumns * columnWidth + (amountOfColumns + 1) * layout.getQubitSpacing();
     const Int extendedImageHeight = amountOfRows * rowHeight + (amountOfRows + 1) * layout.getQubitSpacing() + layout.getBorderSize();
 
-    ImageOutput imageOutput = generateImage(program, configuration, minCycleWidth, extendedImageHeight);
-
-    // Fill in cycle spaces beneath the circuit with the mapping graph.
-    const Int yStart = imageOutput.structure.getImageHeight() - extendedImageHeight;
-    const Int yEnd = imageOutput.structure.getImageHeight();
-
     // Calculate the virtual qubits mapping for each cycle.
-    const Int amountOfCycles = imageOutput.circuitData.getAmountOfCycles();
+    const Int cycleDuration = utoi(program->platform.cycle_time);
+    const Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
     Vec<Vec<Int>> virtualQubits(amountOfCycles);
     if (amountOfCycles <= 0) {
         QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");
     }
 
-    // Initialize the first cycle with a virtual index = real index mapping.
-    for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
-        const Int virtualIndex = layout.getInitDefaultVirtuals() ? qubitIndex : -1;
-        virtualQubits[0].push_back(virtualIndex);
-    }
-    // Each other cycle either gets a new virtual operand from a gate in that cycle, or carries over the previous
-    // cycle's virtual operand for that qubit.
-    for (Int cycleIndex = 1; cycleIndex < amountOfCycles; cycleIndex++) {
-        // Copy virtual qubit operand from the previous cycle of the same qubit.
-        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
-            virtualQubits[cycleIndex].push_back(virtualQubits[cycleIndex - 1][qubitIndex]);
-        }
-        // Update the virtual qubit operands from the gates in this cycle.
-        for (const GateProperties &gate : gates) {
-            // Check if the gate's cycle matches the current cycle.
-            if (gate.cycle == cycleIndex) {
-                const Vec<Int> virtualOperands = gate.virtual_operands;
-                const Vec<Int> realOperands = gate.operands;
-                if (virtualOperands.size() != realOperands.size()) {
-                    QL_DOUT("Size of virtual operands vector does not match size of real operands vector, skipping gate.");
-                    continue;
-                }
-                // Swap the virtual and real qubits.
-                for (Int operandIndex = 0; operandIndex < realOperands.size(); operandIndex++) {
-                    const Int virtualQubit = virtualOperands[operandIndex];
-                    const Int realQubit = realOperands[operandIndex];
-                    virtualQubits[cycleIndex][realQubit] = virtualQubit;
-                    virtualQubits[cycleIndex][virtualQubit] = realQubit;
-                }
-            }
-        }
-    }
+    // This vector stores whether the mapping has changed for each cycle compared to the previous cycle.
+    Vec<Bool> mappingChangedPerCycle(amountOfCycles, false);
+
+    computeMappingPerCycle(layout, virtualQubits, mappingChangedPerCycle, gates, amountOfCycles, amountOfQubits);
 
     // Load the fill colors for virtual qubits.
     Vec<Color> virtualColors(amountOfQubits);
@@ -114,6 +83,13 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         virtualColors[qubitIndex] = virtualColor;
     }
 
+    // Generate the image.
+    ImageOutput imageOutput = generateImage(program, configuration, minCycleWidth, extendedImageHeight);
+
+    // Fill in cycle spaces beneath the circuit with the mapping graph.
+    const Int yStart = imageOutput.structure.getImageHeight() - extendedImageHeight;
+    const Int yEnd = imageOutput.structure.getImageHeight();
+
     // Draw the mapping for each cycle.
     for (Int cycleIndex = 0; cycleIndex < imageOutput.circuitData.getAmountOfCycles(); cycleIndex++) {
         const Position4 position = imageOutput.structure.getCellPosition(cycleIndex, 0, QUANTUM);
@@ -124,7 +100,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         Vec<Position2> qubitPositions(amountOfQubits, { 0, 0 });
         for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
             const Int column = parsedTopology ? topology.vertices[qubitIndex].x : qubitIndex % amountOfColumns;
-            const Int row = parsedTopology ? topology.vertices[qubitIndex].y : qubitIndex / amountOfRows;
+            const Int row = parsedTopology ? topology.ySize - 1 - topology.vertices[qubitIndex].y : qubitIndex / amountOfRows; // flip y-axis for topology
             const Int centerX = xStart + column * columnWidth + (column + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
             const Int centerY = yStart + row * rowHeight + (row + 1) * layout.getQubitSpacing() + layout.getQubitRadius();
             qubitPositions[qubitIndex].x = centerX;
@@ -133,6 +109,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
 
         // Draw the edges.
         for (const Edge edge : topology.edges) {
+            // Ignore qubits that are not present in the circuit.
             if (edge.src >= amountOfQubits || edge.dst >= amountOfQubits) {
                 continue;
             }
@@ -181,6 +158,54 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
 
     // Display the filled in image.
     imageOutput.image.display("Mapping Graph");
+}
+
+void computeMappingPerCycle(const MappingGraphLayout layout,
+                            Vec<Vec<Int>> &virtualQubits,
+                            Vec<Bool> &mappingChangedPerCycle,
+                            const Vec<GateProperties> &gates,
+                            const Int amountOfCycles,
+                            const Int amountOfQubits) {
+    // Initialize the first cycle with a virtual index = real index mapping.
+    for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+        const Int virtualIndex = layout.getInitDefaultVirtuals() ? qubitIndex : -1;
+        virtualQubits[0].push_back(virtualIndex);
+        mappingChangedPerCycle[0] = true; // the mapping has changed for the first cycle always!
+    }
+    // Each other cycle either gets a new virtual operand from a gate in that cycle, or carries over the previous
+    // cycle's virtual operand for that qubit.
+    for (Int cycleIndex = 1; cycleIndex < amountOfCycles; cycleIndex++) {
+        // Copy virtual qubit operand from the previous cycle of the same qubit.
+        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+            virtualQubits[cycleIndex].push_back(virtualQubits[cycleIndex - 1][qubitIndex]);
+        }
+        // Update the virtual qubit operands from the gates in this cycle.
+        for (const GateProperties &gate : gates) {
+            // Check if the gate's cycle matches the current cycle.
+            if (gate.cycle == cycleIndex) {
+                const Vec<Int> virtualOperands = gate.virtual_operands;
+                const Vec<Int> realOperands = gate.operands;
+                if (virtualOperands.size() != realOperands.size()) {
+                    QL_DOUT("Size of virtual operands vector does not match size of real operands vector, skipping gate.");
+                    continue;
+                }
+                // Swap the virtual and real qubits.
+                for (Int operandIndex = 0; operandIndex < realOperands.size(); operandIndex++) {
+                    const Int virtualQubit = virtualOperands[operandIndex];
+                    const Int realQubit = realOperands[operandIndex];
+                    virtualQubits[cycleIndex][realQubit] = virtualQubit;
+                    virtualQubits[cycleIndex][virtualQubit] = realQubit;
+                }
+            }
+        }
+        // Check if the mapping has changed compared to the previous cycle.
+        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
+            if (virtualQubits[cycleIndex][qubitIndex] != virtualQubits[cycleIndex - 1][qubitIndex]) {
+                mappingChangedPerCycle[cycleIndex] = true;
+                break;
+            }
+        }
+    }
 }
 
 Bool parseTopology(Json topologyJson, Topology &topology) {

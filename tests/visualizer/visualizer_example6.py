@@ -45,10 +45,10 @@ p = ql.Program("testProgram1", platformCustomGates, nqubits, 0)
 k = ql.Kernel("aKernel1", platformCustomGates, nqubits, 0)
 
 k.gate("x", [2])
-k.gate("y", [3])
-k.gate("cnot", [2,3])
+k.gate("y", [4])
+k.gate("cnot", [2,4])
 k.gate("x", [2])
-k.gate("y", [3])
+k.gate("y", [4])
 
 p.add_kernel(k)
 c.compile(p)

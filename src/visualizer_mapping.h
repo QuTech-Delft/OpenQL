@@ -30,6 +30,13 @@ struct Topology {
 
 void visualizeMappingGraph(const quantum_program* program, const VisualizerConfiguration &configuration);
 
+void computeMappingPerCycle(const MappingGraphLayout layout,
+                            utils::Vec<utils::Vec<utils::Int>> &virtualQubits,
+                            utils::Vec<utils::Bool> &mappingChangedPerCycle,
+                            const utils::Vec<GateProperties> &gates,
+                            const utils::Int amountOfCycles,
+                            const utils::Int amountOfQubits);
+
 utils::Bool parseTopology(const utils::Json hardware_settings, Topology &topology);
 MappingGraphLayout parseMappingGraphLayout(const utils::Str &configPath);
 

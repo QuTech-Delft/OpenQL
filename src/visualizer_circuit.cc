@@ -37,38 +37,32 @@ CircuitData::CircuitData(Vec<GateProperties> &gates, const CircuitLayout &layout
     if (layout.cycles.cutting.isEnabled())  cutEmptyCycles(layout);
 }
 
-Int CircuitData::calculateAmountOfCycles(const Vec<GateProperties> &gates, const Int cycleDuration) const {
-    QL_DOUT("Calculating amount of cycles...");
+// Int CircuitData::calculateAmountOfCycles(const Vec<GateProperties> &gates, const Int cycleDuration) const {
+//     QL_DOUT("Calculating amount of cycles...");
 
-    // Find the highest cycle in the gate vector.
-    Int amountOfCycles = 0;
-    for (const GateProperties &gate : gates) {
-        if (gate.cycle == MAX_CYCLE) {
-            QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
-            return MAX_CYCLE;
-        }
+//     // Find the highest cycle in the gate vector.
+//     Int amountOfCycles = 0;
+//     for (const GateProperties &gate : gates) {
+//         if (gate.cycle == MAX_CYCLE) {
+//             QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
+//             return MAX_CYCLE;
+//         }
 
-        // if (gate.cycle < 0 || gate.cycle > VISUALIZER_CYCLE_WARNING_THRESHOLD) {
-        //     FATAL("Found gate with cycle index: " << gate.cycle << ". Only indices between 0 and " 
-        //        << MAX_ALLOWED_VISUALIZER_CYCLE << " are allowed!"
-        //        << "\nMake sure gates are scheduled before calling the visualizer pass!");
-        // }
+//         if (gate.cycle > amountOfCycles)
+//             amountOfCycles = gate.cycle;
+//     }
 
-        if (gate.cycle > amountOfCycles)
-            amountOfCycles = gate.cycle;
-    }
+//     // The last gate requires a different approach, because it might have a
+//     // duration of multiple cycles. None of those cycles will show up as cycle
+//     // index on any other gate, so we need to calculate them seperately.
+//     const Int lastGateDuration = gates.at(gates.size() - 1).duration;
+//     const Int lastGateDurationInCycles = lastGateDuration / cycleDuration;
+//     if (lastGateDurationInCycles > 1)
+//         amountOfCycles += lastGateDurationInCycles - 1;
 
-    // The last gate requires a different approach, because it might have a
-    // duration of multiple cycles. None of those cycles will show up as cycle
-    // index on any other gate, so we need to calculate them seperately.
-    const Int lastGateDuration = gates.at(gates.size() - 1).duration;
-    const Int lastGateDurationInCycles = lastGateDuration / cycleDuration;
-    if (lastGateDurationInCycles > 1)
-        amountOfCycles += lastGateDurationInCycles - 1;
-
-    // Cycles start at zero, so we add 1 to get the true amount of cycles.
-    return amountOfCycles + 1; 
-}
+//     // Cycles start at zero, so we add 1 to get the true amount of cycles.
+//     return amountOfCycles + 1; 
+// }
 
 Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates, const Int cycleDuration) const {
     QL_DOUT("Generating cycles...");

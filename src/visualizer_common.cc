@@ -62,8 +62,8 @@ using namespace utils;
 
 // -- IN PROGRESS ---
 // [GENERAL] update documentation
-// add option to let non-initialized real qubits remain empty until a gate puts a virtual qubit in there in mapping graph visualization
 // fix size of image when image is too big for screen
+// skip cycles where mapping does not change
 
 // --- FUTURE WORK ---
 // [GENERAL] add generating random circuits for visualization testing
@@ -138,6 +138,33 @@ Vec<GateProperties> parseGates(const quantum_program* program) {
     }
 
     return gates;
+}
+
+Int calculateAmountOfCycles(const Vec<GateProperties> &gates, const Int cycleDuration) {
+    QL_DOUT("Calculating amount of cycles...");
+
+    // Find the highest cycle in the gate vector.
+    Int amountOfCycles = 0;
+    for (const GateProperties &gate : gates) {
+        if (gate.cycle == MAX_CYCLE) {
+            QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
+            return MAX_CYCLE;
+        }
+
+        if (gate.cycle > amountOfCycles)
+            amountOfCycles = gate.cycle;
+    }
+
+    // The last gate requires a different approach, because it might have a
+    // duration of multiple cycles. None of those cycles will show up as cycle
+    // index on any other gate, so we need to calculate them seperately.
+    const Int lastGateDuration = gates.at(gates.size() - 1).duration;
+    const Int lastGateDurationInCycles = lastGateDuration / cycleDuration;
+    if (lastGateDurationInCycles > 1)
+        amountOfCycles += lastGateDurationInCycles - 1;
+
+    // Cycles start at zero, so we add 1 to get the true amount of cycles.
+    return amountOfCycles + 1; 
 }
 
 Int calculateAmountOfBits(const Vec<GateProperties> &gates, const Vec<Int> GateProperties::* operandType) {
@@ -255,6 +282,49 @@ void printGates(const Vec<GateProperties> &gates) {
         QL_IOUT("\tcodewords: " << codewords << "]");
 
         QL_IOUT("\tvisual_type: " << gate.visual_type);
+    }
+}
+
+void printGatesShort(const Vec<GateProperties> &gates) {
+    Int maxGateNameLength = 0;
+    Int maxCycleStringLength = 0;
+    Int maxRealOperandsLength = 0;
+    for (const GateProperties &gate : gates) {
+        if (gate.name.length() > maxGateNameLength) {
+            maxGateNameLength = gate.name.length();
+        }
+        if (to_string(gate.cycle).length() > maxCycleStringLength) {
+            maxCycleStringLength = to_string(gate.cycle).length();
+        }
+        Str rOperands = "[ "; for (const Int operand : gate.operands) {rOperands += std::to_string(operand) + " ";} rOperands += "]";
+        if (rOperands.length() > maxRealOperandsLength) {
+            maxRealOperandsLength = rOperands.length();
+        }
+    }
+    const Int minSpacing = 3;
+    for (const GateProperties &gate : gates) {
+        Str rOperands = "[ "; for (const Int operand : gate.operands) {rOperands += std::to_string(operand) + " ";} rOperands += "]";
+        Str vOperands = "[ "; for (const Int operand : gate.virtual_operands) {vOperands += std::to_string(operand) + " ";} vOperands += "]";
+
+        Str nameSectionExtraSpacing;
+        for (Int i = 0; i < maxGateNameLength - gate.name.length() + minSpacing; i++) {
+            nameSectionExtraSpacing += " ";
+        }
+        const Str nameSection = "gate: " + gate.name + nameSectionExtraSpacing;
+
+        Str cycleSectionExtraSpacing;
+        for (Int i = 0; i < maxCycleStringLength - to_string(gate.cycle).length() + minSpacing; i++) {
+            cycleSectionExtraSpacing += " ";
+        }
+        const Str cycleSection = "cycle: " + to_string(gate.cycle) + cycleSectionExtraSpacing;
+
+        Str realOperandsSectionExtraSpacing;
+        for (Int i = 0; i < maxRealOperandsLength - rOperands.length() + 1; i++) {
+            realOperandsSectionExtraSpacing += " ";
+        }
+        const Str realOperandsSection = "real and virtual operands: " + rOperands + realOperandsSectionExtraSpacing;
+
+        QL_IOUT(nameSection << cycleSection + realOperandsSection + " and " << vOperands);
     }
 }
 
