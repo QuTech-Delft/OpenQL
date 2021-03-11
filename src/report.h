@@ -59,6 +59,12 @@ void write_qasm(
     const utils::Str &pass_name
 );
 
+void write_c(
+    const quantum_program *programp,
+    const quantum_platform &platform,
+    const utils::Str &pass_name
+);
+
 /**
  * reports qasm
  * in a file with a name that contains the program unique name and the place from where the report is done
