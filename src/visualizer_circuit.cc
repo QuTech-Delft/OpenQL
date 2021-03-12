@@ -70,7 +70,7 @@ Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates, const Int cyc
     // Calculate the amount of cycles. If there are gates with undefined cycle
     // indices, visualize the circuit sequentially.
     Vec<Cycle> cycles;
-    int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
     if (amountOfCycles == MAX_CYCLE) {
         // Add a sequential cycle to each gate.
         amountOfCycles = 0;

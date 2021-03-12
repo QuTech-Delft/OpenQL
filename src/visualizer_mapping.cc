@@ -23,7 +23,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
 
     // Parse the layout and gate vector.
     const MappingGraphLayout layout = parseMappingGraphLayout(configuration.visualizerConfigPath);
-    const Vec<GateProperties> gates = parseGates(program);
+    Vec<GateProperties> gates = parseGates(program);
 
     // Parse the topology if it exists in the platform configuration file.
     Topology topology;
@@ -58,7 +58,15 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
 
     // Calculate the virtual qubits mapping for each cycle.
     const Int cycleDuration = utoi(program->platform.cycle_time);
-    const Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    if (amountOfCycles == MAX_CYCLE) {
+        // Add a sequential cycle to each gate.
+        amountOfCycles = 0;
+        for (GateProperties &gate : gates) {
+            gate.cycle = amountOfCycles;
+            amountOfCycles += gate.duration / cycleDuration;
+        }
+    }
     Vec<Vec<Int>> virtualQubits(amountOfCycles);
     if (amountOfCycles <= 0) {
         QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");

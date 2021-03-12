@@ -59,13 +59,16 @@ using namespace utils;
 // [GENERAL] replace cimg calls with cimg wrapper calls
 // [GENERAL] delete default constructors in position types in visualizer_types.h
 // [GENERAL] fix isEdgeAlreadyDrawn() build error on CI
+// [MAPPING] turn pulse visualization and cycle cutting off for the mapping graph
 
 // -- IN PROGRESS ---
-// [MAPPING] make cycle cutting work with mapping graph visualization (or just turn it off for mapping graph visualization)
+// [MAPPING] fix virtual qubit swapping
 // [GENERAL] update documentation
-// [GENERAL] fix size of image when image is too big for screen
 
 // --- FUTURE WORK ---
+// [GENERAL] fix size of image when image is too big for screen (not sure how with CImg)
+// [MAPPING] make cycle cutting work with the mapping graph
+// [MAPPING] make pulse visualization work with the mapping graph
 // [INTERACTION] apply background color option to interaction graph too
 // [GENERAL] add generating random circuits for visualization testing
 // [CIRCUIT] add connection line thickness parameter
