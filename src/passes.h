@@ -284,4 +284,30 @@ public:
     void runOnProgram(quantum_program *program) override;
 };
 
+/**
+ * C Printer Pass
+ */
+class CPrinterPass : public AbstractPass {
+public:
+    /**
+     * @brief  C Printer pass constructor
+     * @param  Name of the CPrinter pass
+     */
+    explicit CPrinterPass(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
+};
+
+/**
+ * External C Compiler Pass
+ */
+class RunExternalCompiler : public AbstractPass {
+public:
+    /**
+     * @brief  External C compiler pass constructor
+     * @param  Name of the pass
+     */
+    explicit RunExternalCompiler(const utils::Str &name);
+    void runOnProgram(quantum_program *program) override;
+};
+
 } // namespace ql
