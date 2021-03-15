@@ -288,12 +288,39 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('log_level', 'LOG_INFO')
         program.compile()
 
+    # based on test_hybrid.py::test_do_while_nested_for()
+    def test_nested_rus(self):
+        qidx = 0
+
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+        p = ql.Program('test_nested_rus', platform, 5, num_cregs, num_bregs)
+
+        # FIXME: don't use underscores in program/kernel names if those are involved in loops
+        outer_program = ql.Program('outerProgram', platform, 5, num_cregs, num_bregs)
+        outer_kernel = ql.Kernel('outerKernel', platform, 5, num_cregs)
+        outer_kernel.gate("measure_fb", [qidx])
+        outer_kernel.gate("if_1_break", [qidx])
+        outer_program.add_kernel(outer_kernel)
+
+        inner_program = ql.Program('innerProgram', platform, 5, num_cregs, num_bregs)
+        inner_kernel = ql.Kernel('innerKernel', platform, 5, num_cregs)
+        inner_kernel.gate("measure_fb", [qidx])
+        inner_kernel. gate("if_0_break", [qidx])
+        inner_kernel.gate("rx180", [qidx])
+        inner_program.add_for(inner_kernel, 1000000)
+
+        outer_program.add_program(inner_program)  # seems to overwrite any prior add_kernel
+
+        foo = ql.CReg(0)
+#        outer_program.add_for(inner_program, 1000000)  # raises: 'Nested for not yet implemented'
+        p.add_do_while(inner_program, ql.Operation(foo, '==', foo))
+
+        p.compile()
 
 
 
     # FIXME: add:
     # - qec_pipelined
-    # - nested loops
     # - long program (RB)
 
 
