@@ -8,92 +8,90 @@
 
 #pragma once
 
+#include "utils/logger.h"
+#include "gate.h"
+
+#include "types_cc.h"
 #include "bundle_info.h"
 
-#include "gate.h"
-#include "utils/vec.h"
-
-#include <string>
-#include <cstddef>
-#include <iomanip>
-#include <sstream>
-#include <utils/logger.h>
-
 namespace ql {
-
-namespace { using namespace utils; }
+namespace arch {
+namespace cc {
 
 // NB: types shared with codegen_cc. FIXME: move
-typedef struct {
-	unsigned int smBit;
-	unsigned int bit;
-	const BundleInfo *bi;									// used for annotation only
-} tFeedbackInfo;											// information for feedback on single instrument group
-using tFeedbackMap = std::map<int, tFeedbackInfo>;			// NB: key is instrument group
+struct FeedbackInfo {                                      // information for feedback on single instrument group
+    UInt smBit;
+    UInt bit;
+    Ptr<const BundleInfo> bi;                               // used for annotation only
+};
 
-typedef struct {
-	cond_type_t condition;
-	Vec<UInt> cond_operands;
-	uint32_t groupDigOut;
-} tCondGateInfo;											// information for conditional gate on single instrument group
-using tCondGateMap = std::map<int, tCondGateInfo>;			// NB: key is instrument group
+using FeedbackMap = Map<Group, FeedbackInfo>;             // NB: key is instrument group
+
+struct CondGateInfo { // information for conditional gate on single instrument group
+    cond_type_t condition;
+    Vec<UInt> cond_operands;
+    Digital groupDigOut;
+};
+
+using CondGateMap = Map<Group, CondGateInfo>;             // NB: key is instrument group
 
 
 
-class datapath_cc
-{
+class Datapath {
 public: // types
 
 public: // functions
-    datapath_cc() = default;
-    ~datapath_cc() = default;
+    Datapath() = default;
+    ~Datapath() = default;
 
-	void programStart();
-	void programFinish();
+    void programStart();
+    void programFinish();
 
-	unsigned int allocateSmBit(size_t breg_operand, size_t instrIdx);
-	unsigned int getSmBit(size_t bit_operand, size_t instrIdx);
-	unsigned int getOrAssignMux(size_t instrIdx, const tFeedbackMap &feedbackMap);
-	unsigned int getOrAssignPl(size_t instrIdx, const tCondGateMap &condGateMap);
-	static unsigned int getSizeTag(unsigned int numReadouts);
-	void emitMux(unsigned int mux, const tFeedbackMap &feedbackMap, size_t instrIdx, int slot);
-	static unsigned int getMuxSmAddr(const tFeedbackMap &feedbackMap);
-	unsigned int emitPl(unsigned int pl, const tCondGateMap &condGateMap, size_t instrIdx, int slot);
+    UInt allocateSmBit(UInt breg_operand, UInt instrIdx);
+    UInt getSmBit(UInt bit_operand, UInt instrIdx);
+    UInt getOrAssignMux(UInt instrIdx, const FeedbackMap &feedbackMap);
+    UInt getOrAssignPl(UInt instrIdx, const CondGateMap &condGateMap);
+    static UInt getSizeTag(UInt numReadouts);
+    void emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, Slot slot);
+    static UInt getMuxSmAddr(const FeedbackMap &feedbackMap);
+    UInt emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Slot slot);
 
-	std::string getDatapathSection() { return datapathSection.str(); }
+    Str getDatapathSection() { return datapathSection.str(); }
 
-	void comment(const std::string &cmnt, bool verboseCode) {
-	    if(verboseCode) datapathSection << cmnt << std::endl;
-	}
+    void comment(const Str &cmnt, Bool verboseCode) {
+        if (verboseCode) datapathSection << cmnt << std::endl;
+    }
 
-private:	// functions
-	std::string selString(int sel) { return QL_SS2S("[" << sel << "]"); }
+private:    // functions
+    Str selString(Slot sel) { return QL_SS2S("[" << sel << "]"); }
 
-	void emit(const std::string &sel, const std::string &statement, const std::string &comment="") {
-		datapathSection << std::setw(16) << sel << std::setw(16) << statement << std::setw(24) << comment << std::endl;
-	}
-	void emit(int sel, const std::string &statement, const std::string &comment="") {
-		emit(selString(sel), statement, comment);
-	}
+    void emit(const Str &sel, const Str &statement, const Str &comment="") {
+        datapathSection << std::setw(16) << sel << std::setw(16) << statement << std::setw(24) << comment << std::endl;
+    }
+    void emit(Slot sel, const Str &statement, const Str &comment="") {
+        emit(selString(sel), statement, comment);
+    }
 
 private:    // vars
-    static const int MUX_CNT = 512;                            	// number of MUX configurations
-    static const int MUX_SM_WIN_SIZE = 16;						// number of MUX bits in single view (currently, using a ZI UHFQA)
-    static const int PL_CNT = 512;                            	// number of PL configurations
-    static const int PL_SM_WIN_SIZE = 128;						// number of SM bits in single view
-    static const int SM_BIT_CNT = 1024;                         // number of SM bits
-    static const int MAX_DSM_XFER_SIZE = 16;                    // current max (using a ZI UHFQA)
+    static const UInt MUX_CNT = 512;                            // number of MUX configurations
+    static const UInt MUX_SM_WIN_SIZE = 16;                     // number of MUX bits in single view (currently, using a ZI UHFQA)
+    static const UInt PL_CNT = 512;                             // number of PL configurations
+    static const UInt PL_SM_WIN_SIZE = 128;                     // number of SM bits in single view
+    static const UInt SM_BIT_CNT = 1024;                        // number of SM bits
+    static const UInt MAX_DSM_XFER_SIZE = 16;                   // current max (using a ZI UHFQA)
 
-	std::stringstream datapathSection;                          // the data path configuration generated
+    StrStrm datapathSection;                                    // the data path configuration generated
 
-	// state for allocateSmBit/getSmBit
-	unsigned int lastSmBit = 0;
-	size_t smBitLastInstrIdx = 0;
-	std::map<size_t, unsigned int> mapBregToSmBit;
+    // state for allocateSmBit/getSmBit
+    UInt lastSmBit = 0;
+    UInt smBitLastInstrIdx = 0;
+    Map<UInt, UInt> mapBregToSmBit;
 
-	// other state
-	unsigned int lastMux[MAX_INSTRS] = {0};
-	unsigned int lastPl[MAX_INSTRS] = {0};
+    // other state
+    Vec<UInt> lastMux = Vec<UInt>(MAX_INSTRS, 0);
+    Vec<UInt> lastPl = Vec<UInt>(MAX_INSTRS, 0);
 }; // class
 
+} // namespace cc
+} // namespace arch
 } // namespace ql
