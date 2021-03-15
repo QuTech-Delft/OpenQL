@@ -17,6 +17,7 @@ namespace ql {
 class PassManager {
 public:
     PassManager(const utils::Str &n);
+    PassManager(const utils::Str &n, const utils::Str &cfg);
 
     void compile(quantum_program *program) const;
     void addPassNamed(const utils::Str &realPassName, const utils::Str &symbolicPassName);
@@ -28,6 +29,7 @@ private:
     void addPass(AbstractPass *pass);
 
     utils::Str name;
+    utils::Str cfg_file_name;
     utils::List<AbstractPass*> passes;
 };
 

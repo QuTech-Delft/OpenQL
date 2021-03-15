@@ -18,6 +18,48 @@ PassManager::PassManager(const Str &name) : name(name) {
 }
 
 /**
+ * @brief   PassManager constructor and initialize from configuration file
+ * @param   name Name of the pass manager
+ * @param   cfg Name of the compiler configuration file
+ */
+PassManager::PassManager(const Str &name, const Str &cfg) : name(name), cfg_file_name(cfg) {
+    Json compilerConfig;
+    try {
+        QL_DOUT("Loading compiler configuration file " << cfg_file_name);
+        compilerConfig = load_json(cfg_file_name);
+    } catch (Json::exception &e) {
+        QL_FATAL("Failed to load the compiler config file: \n\t" << Str(e.what()));
+    }
+    
+    for (auto it = compilerConfig["CompilerPasses"].begin(); it != compilerConfig["CompilerPasses"].end(); ++it) {
+        
+        std::cout << *it << std::endl;
+        
+        Json compilerPass = *it;
+        
+        QL_DOUT("Found pass name " << compilerPass["passName"] << " with options " << compilerPass["options"] << " and alias name: " << compilerPass["passAlias"]);
+        
+        AbstractPass* pass = createPass(compilerPass["passName"], compilerPass["passAlias"]);
+        
+        assert(pass);
+        addPass(pass);
+        
+        Json passOptions = compilerPass["options"];
+        
+        std::cout << passOptions << std::endl;
+        
+        // We need to set the local pass options
+        for(const auto &passOption : passOptions.items())
+        {
+            Json option = passOption.value();
+                
+            QL_DOUT("Found option " << option["optionName"] << " with value " << option["optionValue"]);
+            pass->setPassOption(option["optionName"], option["optionValue"]);
+        }
+    }
+}
+
+/**
  * @brief   Applies the sequence of compiler passes to the given program
  * @param   program   Object reference to the program to be compiled
  */
