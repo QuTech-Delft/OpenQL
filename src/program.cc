@@ -266,11 +266,11 @@ void quantum_program::add_for(const quantum_kernel &k, UInt iterations) {
 
 void quantum_program::add_for(const quantum_program &p, UInt iterations) {
     Bool nested_for = false;
-    for (auto &k : p.kernels) {
-        if (k.type == kernel_type_t::FOR_START) {
-            nested_for = true;
-        }
-    }
+//     for (auto &k : p.kernels) {
+//         if (k.type == kernel_type_t::FOR_START) {
+//             nested_for = true;
+//         }
+//     }
     if (nested_for) {
         QL_EOUT("Nested for not yet implemented !");
         throw Exception("Error: Nested for not yet implemented !", false);
