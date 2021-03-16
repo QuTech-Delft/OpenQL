@@ -526,4 +526,42 @@ void QisaCodeGenerationPass::runOnProgram(quantum_program *program) {
     arch::cc_light_eqasm_compiler().qisa_code_generation(program, program->platform, getPassName());
 }
 
+/**
+ * @brief  C printer pass constructor
+ * @param  Name of the pass
+ */
+CPrinterPass::CPrinterPass(const Str &name) : AbstractPass(name) {
+}
+
+/**
+ * @brief  Generate the C code equivalent to the input program
+ * @param  Program object to be transformed into QISA output
+ */
+void CPrinterPass::runOnProgram(quantum_program *program) {
+    QL_DOUT("[OPENQL] Run CPrinter pass on program " << program->unique_name);
+    
+    write_c(program, program->platform, getPassName());
+}
+
+/**
+ * @brief  External pass constructor
+ * @param  Name of the pass
+ */
+RunExternalCompiler::RunExternalCompiler(const Str &name) : AbstractPass(name) {
+}
+
+/**
+ * @brief  Generate the C code equivalent to the input program
+ * @param  Program object to be transformed into QISA output
+ */
+void RunExternalCompiler::runOnProgram(quantum_program *program) {
+    std::string extcompname, copycmd;
+
+    QL_DOUT("[OPENQL] Run ExternalCompiler pass with " << getPassName() << " compiler on program " << program->unique_name);
+
+    //TODO: parametrize this so that we can run multiple external passes using this code! (use alias_name)
+    system(("cp test_output/"+program->name+".c .").c_str());
+    system(("./"+getPassName()+" -dumpall "+program->name+".c").c_str());
+}
+
 } // namespace ql

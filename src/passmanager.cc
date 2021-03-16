@@ -120,6 +120,10 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
         pass = new QisaCodeGenerationPass(aliasName);
     } else if (passName == "Visualizer") {
         pass = new VisualizerPass(aliasName);
+    } else if (passName == "CPrinter") {
+        pass = new CPrinterPass(aliasName);
+    } else if (passName == "RunExternalCompiler") {
+        pass = new RunExternalCompiler(aliasName);
     } else {
         QL_EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
         exit(1);
