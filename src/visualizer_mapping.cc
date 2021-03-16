@@ -41,7 +41,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
             QL_DOUT("\tsrc: " << edge.src << ", dst: " << edge.dst);
         }
     } else {
-        QL_IOUT("Topology not parsed. Falling back on basic visualization.");
+        QL_WOUT("Could not parse qubit topology. Falling back on basic visualization.");
     }
 
     // printGates(gates);
@@ -59,6 +59,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     // Calculate the virtual qubits mapping for each cycle.
     const Int cycleDuration = utoi(program->platform.cycle_time);
     Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    // Visualize the circuit sequentially if one or more gates were not scheduled yet.
     if (amountOfCycles == MAX_CYCLE) {
         // Add a sequential cycle to each gate.
         amountOfCycles = 0;
@@ -87,6 +88,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     }
 
     // Load the fill colors for virtual qubits.
+    //TODO: implement better way of generating distinct colors for any given amount of qubits.
     Vec<Color> virtualColors(amountOfQubits);
     const Int division = 255 / amountOfQubits;
     for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
