@@ -184,7 +184,12 @@ const utils::UInt MAX_CYCLE = utils::MAX;
 
 struct swap_parameters {
     utils::Bool part_of_swap = false;
-    utils::Pair<utils::Int, utils::Int> virtual_operands;
+    // at the end of the swap r0 stores v0 and r1 stores v1
+    utils::Int r0 = 0;
+    utils::Int r1 = 0;
+    utils::Int v0 = 0;
+    utils::Int v1 = 0;
+    // utils::Pair<utils::Int, utils::Int> virtual_operands;
 };
 
 /**

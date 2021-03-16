@@ -79,7 +79,6 @@ private:
     utils::Vec<Cycle> cycles;
     utils::Vec<EndPoints> cutCycleRangeIndices;
 
-    // utils::Int calculateAmountOfCycles(const utils::Vec<GateProperties> &gates, const utils::Int cycleDuration) const;
     utils::Vec<Cycle> generateCycles(utils::Vec<GateProperties> &gates, const utils::Int cycleDuration) const;
     utils::Vec<EndPoints> findCuttableEmptyRanges(const CircuitLayout &layout) const;
 

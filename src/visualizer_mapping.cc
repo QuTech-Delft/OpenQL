@@ -213,24 +213,16 @@ void computeMappingPerCycle(const MappingGraphLayout layout,
         if (gate.cycle >= startSearchFromCycle) {
             // If a swap is found, search the rest of the circuit for more parts of the swap.
             if (gate.swap_params.part_of_swap) {
-                Int r0 = 0;
-                Int r1 = 0;
-                if (gate.operands.size() == 2) {
-                    r0 = gate.operands[0];
-                    r1 = gate.operands[1];
-                }
-                const Int v0 = gate.swap_params.virtual_operands.first;
-                const Int v1 = gate.swap_params.virtual_operands.second;
+                const Int r0 = gate.swap_params.r0;
+                const Int r1 = gate.swap_params.r1;
+                const Int v0 = gate.swap_params.v0;
+                const Int v1 = gate.swap_params.v1;
                 Int nextPartOfSwapCycle = gate.cycle;
                 // Search for the cycle of the next part of the swap.
                 for (const GateProperties &gateInSearch : gates) {
                     if (gateInSearch.swap_params.part_of_swap) {
-                        // if (gateInSearch.operands.size() == 2) {
-                        //     r0 = gateInSearch.operands[0];
-                        //     r1 = gateInSearch.operands[1];
-                        // }
-                        const Int nextV0 = gateInSearch.swap_params.virtual_operands.first;
-                        const Int nextV1 = gateInSearch.swap_params.virtual_operands.second;
+                        const Int nextV0 = gateInSearch.swap_params.v0;
+                        const Int nextV1 = gateInSearch.swap_params.v1;
                         if (gateInSearch.cycle > nextPartOfSwapCycle) {
                             if (v0 == nextV0 && v1 == nextV1) {
                                 nextPartOfSwapCycle = gateInSearch.cycle;

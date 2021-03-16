@@ -1196,7 +1196,8 @@ void Past::AddSwap(UInt r0, UInt r1) {
     for (auto &gp : circ) {
         Add(gp);
         // each gate in circ is part of a swap or move, so add the parameters
-        gp->swap_params = { true, {v1, v0} };
+        //TODO: uint to int conversion
+        gp->swap_params = { true, (Int) r0, (Int) r1, (Int) v1, (Int) v0 };
     }
 
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
@@ -1322,7 +1323,6 @@ void Past::MakeReal(gate *gp, circuit &circ) {
 // make primitives of all gates that also have an entry with _prim appended to its name
 // and decomposing it according to the .json file gate decomposition
 void Past::MakePrimitive(gate *gp, circuit &circ) const {
-    // Vec<UInt> virtual_qubits = gp->virtual_operands; // store the virtual qubits for filling in later
     Str gname = gp->name;
     stripname(gname);
     Str prim_gname = gname;
@@ -3009,6 +3009,11 @@ void Mapper::Map(quantum_kernel& kernel) {
     v2r.DPRINT("After heuristics");
 
     MakePrimitives(kernel);         // decompose to primitives as specified in the config file
+
+    QL_IOUT("GATE OUTPUT AFTER MAPPING");
+    for (const gate *gp : kernel.c) {
+        QL_IOUT("gate: " << gp->name << "\tpart of swap: " << gp->swap_params.part_of_swap);
+    }
 
     kernel.qubit_count = nq;        // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
     v2r.Export(v2r_out);     // from v2r to caller for reporting

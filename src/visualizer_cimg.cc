@@ -23,12 +23,6 @@ void Image::fill(const Color color) {
     drawFilledRectangle(0, 0, cimg.width(), cimg.height(), color, 1.0f);
 }
 
-template< typename T >
-std::string int_to_hex( T i )
-{
-
-}
-
 void Image::drawLine(const Int x0, const Int y0, const Int x1, const Int y1, const Color color, const Real alpha, const LinePattern pattern) {
     cimg.draw_line((int) x0, (int) y0, (int) x1, (int) y1, color.data(), (float) alpha, static_cast<unsigned int>(pattern));
 }
