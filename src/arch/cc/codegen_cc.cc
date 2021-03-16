@@ -296,7 +296,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
         // now collect code generation info from all groups of instrument
         UInt nrGroups = bundleInfo[instrIdx].size();
         for (UInt group = 0; group < nrGroups; group++) {
-            const auto &bi = bundleInfo[instrIdx][group];           // shorthand
+            const BundleInfo &bi = bundleInfo[instrIdx][group];           // shorthand
 
             // handle output
             if (!bi.signalValue.empty()) {                         // signal defined, i.e.: we need to output something
@@ -534,15 +534,15 @@ void Codegen::customGate(
         CalcSignalValue csv = calcSignalValue(sd, s, operands, iname);
 
         // store signal value, checking for conflicts
-        auto &bi = bundleInfo[csv.si.instrIdx][csv.si.group];                // shorthand
+        BundleInfo &bi = bundleInfo[csv.si.instrIdx][csv.si.group];         // shorthand
         if (!csv.signalValueString.empty()) {                               // empty implies no signal
-            if (bi.signalValue.empty()) {                                  // signal not yet used
+            if (bi.signalValue.empty()) {                                   // signal not yet used
                 bi.signalValue = csv.signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
                 // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
                 bi.staticCodewordOverride = Settings::findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
 #endif
-            } else if (bi.signalValue == csv.signalValueString) {          // signal unchanged
+            } else if (bi.signalValue == csv.signalValueString) {           // signal unchanged
                 // do nothing
             } else {
                 showCodeSoFar();
@@ -613,9 +613,9 @@ void Codegen::customGate(
     }   // for(signal)
 
 #if OPT_PRAGMA
-    auto pragma = settings.getPragma(iname);
+    RawPtr<const Json> pragma = settings.getPragma(iname);
     if (pragma) {
-        for (auto &vbi : bundleInfo) {
+        for (std::vector<BundleInfo> &vbi : bundleInfo) {
             // FIXME: for now we just store the JSON of the pragma statement in bundleInfo[*][0]
             if(vbi[0].pragma) {
                 QL_FATAL("Bundle contains more than one gate with 'pragma' key");    // FIXME: provide context

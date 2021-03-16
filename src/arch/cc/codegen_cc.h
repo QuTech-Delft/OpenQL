@@ -91,8 +91,8 @@ private:    // types
 
 
 private:    // vars
-    static const Int MAX_SLOTS = 12;                           // physical maximum of CC
-    static const Int MAX_GROUPS = 32;                         // based on VSM, which currently has the largest number of groups
+    static const Int MAX_SLOTS = 12;                            // physical maximum of CC
+    static const Int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
     const quantum_platform *platform;                           // remind platform
     Settings settings;                                          // handling of JSON settings
