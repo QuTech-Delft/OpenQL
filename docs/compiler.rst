@@ -3,7 +3,45 @@
 Compiler
 =========
 
-To compile a program, the user needs to configure a compiler first. Until version 0.8, this program compilation was done using a monolithic hard-coded sequence of compiler passes inside the program itself when ``program.compile()`` function was called. This is the legacy operation mode, which is currently described in the :ref:`Program` documentation page. However, starting with version 0.8.0.dev1, the program has the ability to configure its own pass sequence using the :ref:`Compiler API <compiler_api>`. To illustrate this interface, consider the following example:
+To compile a program, the user needs to configure a compiler first. Until version 0.8, this program compilation was done using a monolithic hard-coded sequence of compiler passes inside the program itself when ``program.compile()`` function was called. This is the legacy operation mode, which is currently described in the :ref:`Program` documentation page. However, starting with version 0.8.0.dev1, the programer has the ability to configure its own pass sequence using the :ref:`Compiler API <compiler_api>`. 
+
+There are two options on how to configure a compiler. The first and the most straightforward is to define a compiler object giving it as the second parameter the name of a json configuration, similar of how the :ref:`Platform` is defined. The following code line shows an example of a such initialization:
+
+.. code:: python
+
+    ... different other program initializations ...
+
+    c = ql.Compiler("testCompiler", "cc_compiler_cfg.json")
+    
+    ..... # definition of Platform and Program p .....
+    
+    c.compile(p)
+
+In the above code, the ``cc_compiler_cfg.json`` compiler configuration file is used. This can be found in the `.\\test' folder within the OpenQL installation directory and has the following structure:
+
+.. code-block:: html
+    :linenos:
+    
+    {
+      "CompilerPasses": 
+      [
+        {
+            "passName" : "Writer", 
+            "passAlias": "initialqasmwriter"
+            "options": 
+            [
+                {
+                    "optionName" : "eqasm_compiler_name",
+                    "optionValue": "eqasm_backend_cc"
+                },
+                ....
+            ]
+        },
+        ...
+      ]
+    }
+
+Furthermore, an additional option to configure a compiler is to use the ``compiler::add_pass()`` method to manually load compiler passes inside the program itself. To illustrate this interface, consider the following example:
 
 .. code:: python
 
