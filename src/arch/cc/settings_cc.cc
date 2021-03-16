@@ -1,5 +1,5 @@
 /**
- * @file    settings_cc.cc
+ * @file    arch/cc/settings_cc.cc
  * @date    20201001
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handle JSON settings for the CC backend
@@ -154,7 +154,7 @@ Settings::InstrumentInfo Settings::getInstrumentInfo(UInt instrIdx) const {
 
     QL_JSON_ASSERT(*ret.instrument, "controller", ret.instrumentName);          // first check intermediate node
     // FIXME: check controller/"name" being "cc"?
-    ret.slot = json_get<Slot>((*ret.instrument)["controller"], "slot", ret.instrumentName+"/controller");
+    ret.slot = json_get<Int>((*ret.instrument)["controller"], "slot", ret.instrumentName+"/controller");
     // FIXME: also return controller/"io_module"?
 
 #if OPT_FEEDBACK
@@ -205,7 +205,7 @@ Settings::InstrumentControl Settings::getInstrumentControl(UInt instrIdx) const 
 }
 
 
-Int Settings::getResultBit(const InstrumentControl &ic, Group group) {
+Int Settings::getResultBit(const InstrumentControl &ic, Int group) {
     // FIXME: test similar to settings_cc::getInstrumentControl, move
     // check existence of key 'result_bits'
     if (!QL_JSON_EXISTS(ic.controlMode, "result_bits")) {        // this instrument mode produces results (i.e. it is a measurement device)

@@ -1,5 +1,5 @@
 /**
- * @file    codegen_cc.h
+ * @file    arch/cc/codegen_cc.h
  * @date    201810xx
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   code generator backend for the Central Controller
@@ -78,7 +78,7 @@ private:    // types
 #endif
         // info copied from tInstrumentInfo
         Str instrumentName;
-        Slot slot;
+        Int slot;
     };
 
     using CodeGenMap = Map<Int, CodeGenInfo>;                   // NB: key is instrument group
@@ -91,8 +91,8 @@ private:    // types
 
 
 private:    // vars
-    static const Slot MAX_SLOTS = 12;                           // physical maximum of CC
-    static const Group MAX_GROUPS = 32;                         // based on VSM, which currently has the largest number of groups
+    static const Int MAX_SLOTS = 12;                           // physical maximum of CC
+    static const Int MAX_GROUPS = 32;                         // based on VSM, which currently has the largest number of groups
 
     const quantum_platform *platform;                           // remind platform
     Settings settings;                                          // handling of JSON settings
@@ -121,16 +121,16 @@ private:    // funcs
     // helpers to ease nice assembly formatting
     void emit(const Str &labelOrComment, const Str &instr="");
     void emit(const Str &label, const Str &instr, const Str &ops, const Str &comment="");
-    void emit(Slot slot, const Str &instr, const Str &ops, const Str &comment="");
+    void emit(Int slot, const Str &instr, const Str &ops, const Str &comment="");
 
     // code generation helpers
     void showCodeSoFar();
     void emitProgramStart(const Str &progName);
     void emitProgramFinish();
-    void emitFeedback(const FeedbackMap &feedbackMap, UInt instrIdx, UInt startCycle, Slot slot, const Str &instrumentName);
-    void emitOutput(const CondGateMap &condGateMap, Digital digOut, UInt instrMaxDurationInCycles, UInt instrIdx, UInt startCycle, Slot slot, const Str &instrumentName);
-    void emitPragma(const Json &pragma, Int pragmaSmBit, UInt instrIdx, UInt startCycle, Slot slot, const Str &instrumentName);
-    void emitPadToCycle(UInt instrIdx, UInt startCycle, Slot slot, const Str &instrumentName);
+    void emitFeedback(const FeedbackMap &feedbackMap, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
+    void emitOutput(const CondGateMap &condGateMap, Digital digOut, UInt instrMaxDurationInCycles, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
+    void emitPragma(const Json &pragma, Int pragmaSmBit, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
+    void emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
 
     // generic helpers
     CodeGenMap collectCodeGenInfo(UInt startCycle, UInt durationInCycles);

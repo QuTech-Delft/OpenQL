@@ -27,8 +27,6 @@ using Json = utils::Json;
 
 using Digital   = uint32_t;
 using Codeword  = uint32_t;
-using Slot      = uint32_t;
-using Group     = uint32_t;
 
 using StrStrm   = utils::StrStrm;
 

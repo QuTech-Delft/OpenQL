@@ -1,5 +1,5 @@
 /**
- * @file    vcd_cc.h
+ * @file    arch/cc/vcd_cc.h
  * @date    20201001
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handle generation of Value Change Dump file for GTKWave viewer
@@ -25,7 +25,7 @@ public:     // funcs
     void programStart(UInt qubitNumber, Int cycleTime, Int maxGroups, const Settings &settings);
     void programFinish(const Str &progName);
     void kernelFinish(const Str &kernelName, UInt durationInCycles);
-    void bundleFinishGroup(UInt startCycle, UInt durationInCycles, Digital groupDigOut, const Str &signalValue, UInt instrIdx, Group group);
+    void bundleFinishGroup(UInt startCycle, UInt durationInCycles, Digital groupDigOut, const Str &signalValue, UInt instrIdx, Int group);
     void bundleFinish(UInt startCycle, Digital digOut, UInt maxDurationInCycles, UInt instrIdx);
     void customGate(const Str &iname, const Vec<UInt> &qops, UInt startCycle, UInt durationInCycles);
 

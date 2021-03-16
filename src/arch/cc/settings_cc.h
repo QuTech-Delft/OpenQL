@@ -1,5 +1,5 @@
 /**
- * @file    settings_cc.h
+ * @file    arch/cc/settings_cc.h
  * @date    20201001
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handle JSON settings for the CC backend
@@ -26,7 +26,7 @@ public: // types
     struct InstrumentInfo {         // information from key 'instruments'
         RawPtr<const Json> instrument;
         Str instrumentName;         // key 'instruments[]/name'
-        Slot slot;                  // key 'instruments[]/controller/slot'
+        Int slot;                  // key 'instruments[]/controller/slot'
 #if OPT_FEEDBACK
         Bool forceCondGatesOn;      // optional key 'instruments[]/force_cond_gates_on', can be used to always enable AWG if gate execution is controlled by VSM
 #endif
@@ -43,7 +43,7 @@ public: // types
     struct SignalInfo {
         InstrumentControl ic;
         UInt instrIdx;              // the index into JSON "eqasm_backend_cc/instruments" that provides the signal
-        Group group;                // the group of channels within the instrument that provides the signal
+        Int group;                  // the group of channels within the instrument that provides the signal
     };
 
     static const Int NO_STATIC_CODEWORD_OVERRIDE = -1;
@@ -61,7 +61,7 @@ public: // functions
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
     InstrumentInfo getInstrumentInfo(UInt instrIdx) const;
     InstrumentControl getInstrumentControl(UInt instrIdx) const;
-    static Int getResultBit(const InstrumentControl &ic, Group group) ;
+    static Int getResultBit(const InstrumentControl &ic, Int group) ;
 
     // find instrument/group providing instructionSignalType for qubit
     SignalInfo findSignalInfoForQubit(const Str &instructionSignalType, UInt qubit) const;

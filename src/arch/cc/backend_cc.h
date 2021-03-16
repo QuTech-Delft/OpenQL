@@ -1,5 +1,5 @@
 /**
- * @file   eqasm_backend_cc.h
+ * @file   arch/cc/backend_cc.h
  * @date   201809xx
  * @author Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief  eqasm backend for the Central Controller

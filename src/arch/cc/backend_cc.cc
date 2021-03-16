@@ -1,5 +1,5 @@
 /**
- * @file   eqasm_backend_cc.cc
+ * @file   arch/cc/backend_cc.cc
  * @date   201809xx
  * @author Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief  eqasm backend for the Central Controller
@@ -148,7 +148,7 @@ void Backend::codegenClassicalInstruction(gate *classical_ins) {
 // extracted from quantum_kernel::get_epilogue
 // FIXME: k.name has a structure (e.g. "sp1_for1_start" or "sp1_for1_end") which is set in quantum_program::add_*. The
 // initial part can be a program name or kernel name, depending on how the kernel came to life
-// FIXME: fails for kernel names containing underscore, because only the part up to the first underscore is returned
+// FIXME: may produce duplicate labels for kernel names containing underscore, because only the part up to the first underscore is returned
 Str Backend::kernelLabel(quantum_kernel &k) {
     return k.name.substr(0, k.name.find('_'));
 }

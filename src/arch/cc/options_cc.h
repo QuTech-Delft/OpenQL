@@ -1,5 +1,5 @@
 /**
- * @file    options_cc.h
+ * @file    arch/cc/options_cc.h
  * @date    20201007
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   options for Central Controller backend

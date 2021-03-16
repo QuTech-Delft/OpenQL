@@ -1,5 +1,5 @@
 /**
- * @file    codegen_cc.cc
+ * @file    arch/cc/codegen_cc.cc
  * @date    201810xx
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   code generator backend for the Central Controller
@@ -716,7 +716,7 @@ void Codegen::emit(const Str &labelOrSel, const Str &instr, const Str &ops, cons
     codeSection << std::setw(16) << labelOrSel << std::setw(16) << instr << std::setw(24) << ops << comment << std::endl;
 }
 
-void Codegen::emit(Slot slot, const Str &instr, const Str &ops, const Str &comment) {
+void Codegen::emit(Int slot, const Str &instr, const Str &ops, const Str &comment) {
     emit(QL_SS2S("[" << slot << "]"), instr, ops, comment);
 }
 
@@ -778,7 +778,7 @@ void Codegen::emitFeedback(
     const FeedbackMap &feedbackMap,
     UInt instrIdx,
     UInt startCycle,
-    Slot slot,
+    Int slot,
     const Str &instrumentName
 ) {
     if (startCycle > lastEndCycle[instrIdx]) {  // i.e. if(!instrHasOutput)
@@ -822,7 +822,7 @@ void Codegen::emitOutput(
     UInt instrMaxDurationInCycles,
     UInt instrIdx,
     UInt startCycle,
-    Slot slot,
+    Int slot,
     const Str &instrumentName
 ) {
     comment(QL_SS2S(
@@ -866,7 +866,7 @@ void Codegen::emitPragma(
     Int pragmaSmBit,
     UInt instrIdx,
     UInt startCycle,
-    Slot slot,
+    Int slot,
     const Str &instrumentName
 ) {
     if (startCycle > lastEndCycle[instrIdx]) {    // i.e. if(!instrHasOutput)
@@ -904,7 +904,7 @@ void Codegen::emitPragma(
 }
 
 
-void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Slot slot, const Str &instrumentName) {
+void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName) {
     // compute prePadding: time to bridge to align timing
     int prePadding = startCycle - lastEndCycle[instrIdx];
     if (prePadding < 0) {

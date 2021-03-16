@@ -1,5 +1,5 @@
 /**
- * @file    datapath_cc.cc
+ * @file    arch/cc/datapath_cc.cc
  * @date    20201119
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handling of Central Controller datapath (input MUX, Distributed Shared Memory, output PL)
@@ -132,7 +132,7 @@ static Str cond_qasm(cond_type_t condition, const Vec<UInt> &cond_operands) {
 }
 
 
-void Datapath::emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, Slot slot) {
+void Datapath::emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, Int slot) {
     if (feedbackMap.empty()) {
         QL_FATAL("feedbackMap must not be empty");
     }
@@ -177,7 +177,7 @@ UInt Datapath::getMuxSmAddr(const FeedbackMap &feedbackMap) {
 
 
 // FIXME: split like emitMux/getMuxSmAddr
-UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Slot slot) {
+UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Int slot) {
     Bool minMaxValid = false;    // we might not access SM
     UInt minSmBit = MAX;
     UInt maxSmBit = 0;

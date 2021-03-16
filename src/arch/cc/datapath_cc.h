@@ -1,5 +1,5 @@
 /**
- * @file    datapath_cc.h
+ * @file    arch/cc/datapath_cc.h
  * @date    20201119
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handling of Central Controller datapath (input MUX, Distributed Shared Memory, output PL)
@@ -19,13 +19,13 @@ namespace arch {
 namespace cc {
 
 // NB: types shared with codegen_cc. FIXME: move
-struct FeedbackInfo {                                      // information for feedback on single instrument group
+struct FeedbackInfo {                                       // information for feedback on single instrument group
     UInt smBit;
     UInt bit;
     Ptr<const BundleInfo> bi;                               // used for annotation only
 };
 
-using FeedbackMap = Map<Group, FeedbackInfo>;             // NB: key is instrument group
+using FeedbackMap = Map<Int, FeedbackInfo>;                 // NB: key is instrument group
 
 struct CondGateInfo { // information for conditional gate on single instrument group
     cond_type_t condition;
@@ -33,7 +33,7 @@ struct CondGateInfo { // information for conditional gate on single instrument g
     Digital groupDigOut;
 };
 
-using CondGateMap = Map<Group, CondGateInfo>;             // NB: key is instrument group
+using CondGateMap = Map<Int, CondGateInfo>;                 // NB: key is instrument group
 
 
 
@@ -52,9 +52,9 @@ public: // functions
     UInt getOrAssignMux(UInt instrIdx, const FeedbackMap &feedbackMap);
     UInt getOrAssignPl(UInt instrIdx, const CondGateMap &condGateMap);
     static UInt getSizeTag(UInt numReadouts);
-    void emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, Slot slot);
+    void emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, Int slot);
     static UInt getMuxSmAddr(const FeedbackMap &feedbackMap);
-    UInt emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Slot slot);
+    UInt emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Int slot);
 
     Str getDatapathSection() { return datapathSection.str(); }
 
@@ -63,12 +63,12 @@ public: // functions
     }
 
 private:    // functions
-    Str selString(Slot sel) { return QL_SS2S("[" << sel << "]"); }
+    Str selString(Int sel) { return QL_SS2S("[" << sel << "]"); }
 
     void emit(const Str &sel, const Str &statement, const Str &comment="") {
         datapathSection << std::setw(16) << sel << std::setw(16) << statement << std::setw(24) << comment << std::endl;
     }
-    void emit(Slot sel, const Str &statement, const Str &comment="") {
+    void emit(Int sel, const Str &statement, const Str &comment="") {
         emit(selString(sel), statement, comment);
     }
 

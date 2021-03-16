@@ -1,5 +1,5 @@
 /**
- * @file    vcd_cc.cc
+ * @file    arch/cc/vcd_cc.cc
  * @date    20201001
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handle generation of Value Change Dump file for GTKWave viewer
@@ -93,7 +93,7 @@ void Vcd::bundleFinishGroup(
     Digital groupDigOut,
     const Str &signalValue,
     UInt instrIdx,
-    Group group
+    Int group
 ) {
     // generate signal output for group
     UInt startTime = kernelStartTime + startCycle * cycleTime;
