@@ -295,7 +295,8 @@ class Test_central_controller(unittest.TestCase):
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
         p = ql.Program('test_nested_rus', platform, 5, num_cregs, num_bregs)
 
-        # FIXME: don't use underscores in program/kernel names if those are involved in loops
+        # FIXME: don't use underscores in program/kernel names if those are used as parameters to add_for()/add_do_while()
+        # since incorrect labels are generated in that case (both in .qasm and .vq1asm files)
         outer_program = ql.Program('outerProgram', platform, 5, num_cregs, num_bregs)
         outer_kernel = ql.Kernel('outerKernel', platform, 5, num_cregs)
         outer_kernel.gate("measure_fb", [qidx])
@@ -307,14 +308,14 @@ class Test_central_controller(unittest.TestCase):
         inner_kernel.gate("measure_fb", [qidx])
         inner_kernel. gate("if_0_break", [qidx])
         inner_kernel.gate("rx180", [qidx])
-        inner_program.add_for(inner_kernel, 1000000)
+        inner_program.add_for(inner_kernel, 1000000) # NB: loops *kernel* # NB: loops *kernel*
 
-        outer_program.add_program(inner_program)  # seems to overwrite any prior add_kernel
+        outer_program.add_program(inner_program)
 
         foo = ql.CReg(0)
-#        outer_program.add_for(inner_program, 1000000)  # raises: 'Nested for not yet implemented'
-        p.add_do_while(inner_program, ql.Operation(foo, '==', foo))
+        p.add_do_while(outer_program, ql.Operation(foo, '==', foo)) # NB: loops *program*, CC backend interprets all conditions as true
 
+        ql.set_option('log_level', 'LOG_INFO') # override log level
         p.compile()
 
 

@@ -623,7 +623,7 @@ void codegen_cc::forStart(const std::string &label, int iterations)
 {
     comment(QL_SS2S("# FOR_START(" << iterations << ")"));
     // FIXME: reserve register
-    emit("", "move", QL_SS2S(iterations << ",R62"), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
+    emit("", "move", QL_SS2S(iterations << ",R62"), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested for loops (not supported by program.cc either)
     emit((label+":"), "", "", "# ");        // just a label
 #if OPT_PRAGMA
     pragmaForLabel = label;		// remind label for pragma/break FIXME: implement properly later on
@@ -634,7 +634,7 @@ void codegen_cc::forEnd(const std::string &label)
 {
     comment("# FOR_END");
     // FIXME: free register
-    emit("", "loop", QL_SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
+    emit("", "loop", QL_SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested for loops (not supported by program.cc either)
 #if OPT_PRAGMA
     emit((label+"_end:"), "", "", "# ");                          // NB: just a label
 #endif
@@ -650,6 +650,7 @@ void codegen_cc::doWhileEnd(const std::string &label, size_t op0, const std::str
 {
     comment(QL_SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
     emit("", "jmp", QL_SS2S("@" << label), "# FIXME: we don't support conditions, just an endless loop'");        // FIXME: just endless loop
+    QL_WOUT("CC backend ignores condition of do while loop");
 }
 
 void codegen_cc::comment(const std::string &c)

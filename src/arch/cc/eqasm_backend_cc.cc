@@ -145,12 +145,12 @@ void eqasm_backend_cc::codegenClassicalInstruction(gate *classical_ins)
 }
 
 
-// get label from kernel name: FIXME: the label is the program name
-// FIXME: the kernel name has a structure (e.g. "sp1_for1_start" or "sp1_for1_end") which is set in quantum_program::add_*
-// We use this structure here. This should be made explicit
+// get label from kernel name
+// extracted from quantum_kernel::get_epilogue
+// FIXME: k.name has a structure (e.g. "sp1_for1_start" or "sp1_for1_end") which is set in quantum_program::add_*. The
+// initial part can be a program name or kernel name, depending on how the kernel came to life
 // FIXME: fails for kernel names containing underscore, because only the part up to the first underscore is returned
 // FIXME: looks very inefficient
-// extracted from get_epilogue
 std::string eqasm_backend_cc::kernelLabel(quantum_kernel &k)
 {
     std::string kname(k.name);
