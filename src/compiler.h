@@ -23,7 +23,8 @@ public:
     void addPass(const utils::Str &realPassName, const utils::Str &symbolicPassName);
     void addPass(const utils::Str &realPassName);
     void setPassOption(const utils::Str &passName, const utils::Str &optionName, const utils::Str &optionValue);
-
+    void loadPassesFromConfigFile(const utils::Str &passManagerName, const utils::Str &configFile);
+    
 private:
 
     void constructPassManager();//TODO: potentially read the IR->Options!

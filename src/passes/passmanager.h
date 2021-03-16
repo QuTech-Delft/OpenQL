@@ -24,6 +24,7 @@ public:
     static AbstractPass *createPass(const utils::Str &passName, const utils::Str &aliasName);
     AbstractPass *findPass(const utils::Str &passName);
     void setPassOptionAll(const utils::Str &optionName, const utils::Str &optionValue);
+    void loadPassesFromConfigFile(const utils::Str &name, const utils::Str &cfg);
 
 private:
     void addPass(AbstractPass *pass);

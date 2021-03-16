@@ -23,6 +23,18 @@ PassManager::PassManager(const Str &name) : name(name) {
  * @param   cfg Name of the compiler configuration file
  */
 PassManager::PassManager(const Str &name, const Str &cfg) : name(name), cfg_file_name(cfg) {
+    loadPassesFromConfigFile(name, cfg);    
+}
+
+/**
+ * @brief   Configures the passes of the compiler based on an external configuration file
+ * @param   name Name of the new configured pass manager
+ * @param   cfg Name of the compiler configuration file
+ */
+void PassManager::loadPassesFromConfigFile(const Str &newName, const Str &cfg) {
+    name = newName;
+    cfg_file_name = cfg;
+
     Json compilerConfig;
     try {
         QL_DOUT("Loading compiler configuration file " << cfg_file_name);

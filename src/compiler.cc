@@ -80,6 +80,15 @@ void quantum_compiler::setPassOption(
 }
 
 /**
+ * @brief   Configures the passes of the compiler based on an external configuration file
+ * @param   name Name of the new configured compiler
+ * @param   cfg Name of the compiler configuration file
+ */
+void quantum_compiler::loadPassesFromConfigFile(const Str &newName, const Str &cfg) {
+    passManager->loadPassesFromConfigFile(newName,cfg);
+}
+
+/**
  * @brief   Constructs the sequence of compiler passes
  */
 void quantum_compiler::constructPassManager() {
