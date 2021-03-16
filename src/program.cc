@@ -14,7 +14,7 @@
 #include "clifford.h"
 #include "write_sweep_points.h"
 #include "arch/cc_light/cc_light_eqasm_compiler.h"
-#include "arch/cc/eqasm_backend_cc.h"
+#include "arch/cc/backend_cc.h"
 
 static unsigned long phi_node_count = 0;    // FIXME: number across quantum_program instances
 
@@ -59,7 +59,7 @@ quantum_program::quantum_program(
     } else if (eqasm_compiler_name == "cc_light_compiler") {
         backend_compiler = new arch::cc_light_eqasm_compiler();
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-        backend_compiler = new eqasm_backend_cc();
+        backend_compiler = new arch::cc::Backend();
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }

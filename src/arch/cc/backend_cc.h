@@ -8,26 +8,26 @@
 
 #pragma once
 
+#include "types_cc.h"
+
 #include "program.h"
 #include "eqasm_compiler.h"
 #include "ir.h"
 #include "codegen_cc.h"
 
-#include <string>
-#include <vector>
-
 namespace ql {
+namespace arch {
+namespace cc {
 
-class eqasm_backend_cc : public eqasm_compiler
-{
+class Backend : public eqasm_compiler {
 public:
-    eqasm_backend_cc() = default;
-    ~eqasm_backend_cc() override = default;
+    Backend() = default;
+    ~Backend() override = default;
 
     void compile(quantum_program *program, const quantum_platform &platform) override;
 
 private:
-    static std::string kernelLabel(quantum_kernel &k);
+    static Str kernelLabel(quantum_kernel &k);
     void codegenClassicalInstruction(gate *classical_ins);
     void codegenKernelPrologue(quantum_kernel &k);
     void codegenKernelEpilogue(quantum_kernel &k);
@@ -35,8 +35,10 @@ private:
     void loadHwSettings(const quantum_platform &platform);
 
 private: // vars
-    codegen_cc codegen;
-    int bundleIdx;
+    Codegen codegen;
+    Int bundleIdx;
 }; // class
 
+} // namespace cc
+} // namespace arch
 } // namespace ql

@@ -7,13 +7,20 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
 #include "utils/exception.h"
 
 namespace ql {
 namespace utils {
 
+template<typename T, template<typename> class TT>
+struct is_instantiation_of : std::false_type { };
+
+template<typename T, template<typename> class TT>
+struct is_instantiation_of<TT<T>, TT> : std::true_type { };
+
 /**
- * Represents a shared pointers/references to possibly polymorphic objects. So,
+ * Represents shared pointers/references to possibly polymorphic objects. So,
  * like std::shared_ptr (but with added safety) or tree::One/Maybe (but without
  * requiring tree methods on the object type).
  */
@@ -59,7 +66,12 @@ public:
      * of the contained object, and the object is not polymorphic. You'll have
      * to use emplace() otherwise.
      */
-    template<class Arg1, class... Args>
+    template<
+        class Arg1, class... Args,
+        typename = typename std::enable_if<!std::is_same<
+            typename std::remove_reference<Arg1>::type,
+            Ptr<T>
+        >::value>::type>
     Ptr(Arg1 &&arg1, Args&&... args) {
         emplace(std::forward<Arg1>(arg1), std::forward<Args>(args)...);
     }
@@ -232,6 +244,220 @@ public:
      * Stream overload for pointers.
      */
     friend std::ostream &operator<<(std::ostream &os, const Ptr &ptr) {
+        if (ptr.v) {
+            os << *ptr.v;
+        } else {
+            os << "<NULL>";
+        }
+        return os;
+    }
+
+};
+
+/**
+ * Represents raw pointers/references to possibly polymorphic objects. It
+ * emulates Ptr's interface (though it lacks anything that would construct a
+ * copy of the contained value), but internally it's a raw pointer with no
+ * ownership. That means it can do and does a null check whenever it's
+ * dereferenced, and always initializes to nullptr (unlike an actual raw
+ * pointer, which gets an undefined value), but cannot guard against dangling
+ * pointers if someone else deletes it before or after the wrapper is given this
+ * pointer. Therefore, use Ptr unless this really isn't possible.
+ */
+template <class T>
+class RawPtr {
+private:
+
+    /**
+     * The contained value.
+     */
+    T *v = nullptr;
+
+public:
+
+    /**
+     * Drops the contained object, if any.
+     */
+    void reset() {
+        v = nullptr;
+    }
+
+    /**
+     * Constructor for an empty container.
+     */
+    RawPtr() = default;
+
+    /**
+     * Constructor from a raw pointer.
+     */
+    RawPtr(T *v) : v(v) {
+    }
+
+    /**
+     * Copy constructor. Only the pointer is moved, so the two Ptrs will
+     * refer to the same object.
+     */
+    RawPtr(const RawPtr &o) : v(o.v) {
+    }
+
+    /**
+     * Move constructor. Just moves the pointer to the contained object.
+     */
+    RawPtr(RawPtr &&o) : v(o.v) {
+    }
+
+    /**
+     * Assignment from a raw pointer.
+     */
+    RawPtr &operator=(T *rhs) {
+        v = rhs;
+        return *this;
+    }
+
+    /**
+     * Copy assignment. Copies the pointer, so both RawPtrs will point to the
+     * same object.
+     */
+    template<typename S = T, typename = typename std::enable_if<std::is_base_of<T, S>::value>::type>
+    RawPtr &operator=(const RawPtr<S> &rhs) {
+        v = rhs.unwrap();
+        return *this;
+    }
+
+    /**
+     * Copy assignment. Copies the pointer, so both RawPtrs will point to the
+     * same object.
+     */
+    RawPtr &operator=(const RawPtr &rhs) {
+        v = rhs.v;
+        return *this;
+    }
+
+    /**
+     * Move assignment.
+     */
+    RawPtr &operator=(RawPtr &&rhs) noexcept {
+        v = rhs.v;
+        return *this;
+    }
+
+    /**
+     * Returns whether this container is filled.
+     */
+    bool has_value() const noexcept {
+        return v != nullptr;
+    }
+
+    /**
+     * Returns whether this container is filled.
+     */
+    explicit operator bool() const noexcept {
+        return v != nullptr;
+    }
+
+    /**
+     * Returns the raw pointer.
+     */
+    const T *unwrap() const {
+        return v;
+    }
+
+    /**
+     * Returns the raw pointer.
+     */
+    T *unwrap() {
+        return v;
+    }
+
+    /**
+     * Returns whether this RawPtr points to a value of the given type.
+     */
+    template<typename S>
+    bool is() const noexcept {
+        if (v == nullptr) return false;
+        return dynamic_cast<S*>(v) != nullptr;
+    }
+
+    /**
+     * Casts to a RawPtr of the given type. The resulting RawPtr will be empty
+     * if the cast failed.
+     */
+    template<typename S>
+    RawPtr<S> try_as() const noexcept {
+        RawPtr<S> result;
+        result.unwrap() = dynamic_cast<S*>(v);
+        return result;
+    }
+
+    /**
+     * Casts to a RawPtr of the given type. Throws an exception if the cast
+     * failed or this RawPtr is empty.
+     */
+    template<typename S>
+    Ptr<S> as() const noexcept {
+        if (!v) {
+            throw Exception("attempt to cast empty Ptr");
+        }
+        auto result = try_as<S>();
+        if (!result) {
+            throw Exception("attempt to cast Ptr to unsupported type");
+        }
+        return result;
+    }
+
+    /**
+     * Casts to a const Ptr.
+     */
+    Ptr<const T> as_const() const noexcept {
+        auto result = Ptr<const T>();
+        result.unwrap() = const_cast<const T*>(v);
+        return result;
+    }
+
+    /**
+     * Mutating dereference operator.
+     */
+    T &operator*() {
+        if (v == nullptr) {
+            throw Exception("attempt to dereference empty RawPtr");
+        }
+        return *v;
+    }
+
+    /**
+     * Const dereference operator.
+     */
+    const T &operator*() const {
+        if (v == nullptr) {
+            throw Exception("attempt to dereference empty RawPtr");
+        }
+        return *v;
+    }
+
+    /**
+     * Mutating dereference operator.
+     */
+    T *operator->() {
+        if (v == nullptr) {
+            throw Exception("attempt to dereference empty RawPtr");
+        }
+        return v;
+    }
+
+    /**
+     * Const dereference operator.
+     */
+    const T *operator->() const {
+        if (v == nullptr) {
+            throw Exception("attempt to dereference empty RawPtr");
+        }
+        return v;
+    }
+
+    /**
+     * Stream overload for pointers.
+     */
+    friend std::ostream &operator<<(std::ostream &os, const RawPtr &ptr) {
         if (ptr.v) {
             os << *ptr.v;
         } else {
