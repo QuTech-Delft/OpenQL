@@ -1192,20 +1192,12 @@ void Past::AddSwap(UInt r0, UInt r1) {
     }
     nswapsadded++;                       // for reporting at the end
 
-    gate *last_2q_gate;
     // add each gate in the resulting circuit
-    // QL_IOUT("adding swap between " << r0 << " and " << r1);
     for (auto &gp : circ) {
-        // QL_IOUT("\tadding decomposed gate " << gp->name << " for swap");
         Add(gp);
-        // find the last two-qubit gate in the circuit
-        if (gp->operands.size() == 2) {
-            last_2q_gate = gp;
-        }
+        // each gate in circ is part of a swap or move, so add the parameters
+        gp->swap_params = { true, {v1, v0} };
     }
-    // add the stored virtual operands to the last two qubit gate in the circuit
-    last_2q_gate->virtual_operands.push_back(v1);
-    last_2q_gate->virtual_operands.push_back(v0);
 
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }
@@ -1270,7 +1262,6 @@ void Past::MakeReal(gate *gp, circuit &circ) {
     stripname(gname);
 
     Vec<UInt> real_qubits = gp->operands;// starts off as copy of virtual qubits!
-    Vec<UInt> virtual_qubits = gp->operands; // store the virtual qubits for filling in later
     for (auto &qi : real_qubits) {
         qi = MapQubit(qi);          // and now they are real
         auto mapprepinitsstateopt = options::get("mapprepinitsstate");
@@ -1319,27 +1310,11 @@ void Past::MakeReal(gate *gp, circuit &circ) {
     }
     QL_DOUT("... MakeReal: new gate created for: " << real_gname << " or " << gname);
 
-    QL_DOUT("finding correct virtual operands for gates in decomposed circuit");
-    for (gate *gate : circ) {
-        QL_DOUT("\tgate in resulting circuit: " << gate->name);
-        Vec<UInt> virtualOperands;
-        for (const Int realOperand : gate->operands) {
-            QL_DOUT("\t\tfinding index of real operand: " << realOperand);
-            Int realIndex = -1;
-            for (Int index = 0; index < real_qubits.size(); index++) {
-                if (real_qubits[index] == realOperand) {
-                    realIndex = index;
-                    UInt virtualOperand = virtual_qubits[realIndex];
-                    QL_DOUT("\t\tfound index: " << realIndex << " corresponding to virtual operand: " << virtualOperand);
-                    virtualOperands.push_back(virtualOperand); // TODO: change push_back to virtualOperands[realIndex] ?
-                    break;
-                }
-            }
-            if (realIndex == -1) {
-                QL_DOUT("\t\tUh oh! Could not find real qubit index in original real qubits! Things might or might not go wrong!");
-            }
+    if (gp->swap_params.part_of_swap) {
+        QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");
+        for (gate *gate : circ) {
+            gate->swap_params = gp->swap_params;
         }
-        gate->virtual_operands = virtualOperands;
     }
 }
 
@@ -1347,7 +1322,7 @@ void Past::MakeReal(gate *gp, circuit &circ) {
 // make primitives of all gates that also have an entry with _prim appended to its name
 // and decomposing it according to the .json file gate decomposition
 void Past::MakePrimitive(gate *gp, circuit &circ) const {
-    Vec<UInt> virtual_qubits = gp->virtual_operands; // store the virtual qubits for filling in later
+    // Vec<UInt> virtual_qubits = gp->virtual_operands; // store the virtual qubits for filling in later
     Str gname = gp->name;
     stripname(gname);
     Str prim_gname = gname;
@@ -1381,31 +1356,11 @@ void Past::MakePrimitive(gate *gp, circuit &circ) const {
     }
     QL_DOUT("... MakePrimtive: new gate created for: " << prim_gname << " or " << gname);
 
-    QL_DOUT("finding correct virtual operands for gates in decomposed circuit");
-    if (gp->virtual_operands.size() == 0) {
-        QL_DOUT("gate has no virtual operands and must have been added by swap/move... not adding virtual operands");
-        return;
-    }
-    for (gate *gate : circ) {
-        QL_DOUT("\tgate in resulting circuit: " << gate->name);
-        Vec<UInt> virtualOperands;
-        for (const Int realOperand : gate->operands) {
-            QL_DOUT("\t\tfinding index of real operand: " << realOperand);
-            Int realIndex = -1;
-            for (Int index = 0; index < gp->operands.size(); index++) {
-                if (gp->operands[index] == realOperand) {
-                    realIndex = index;
-                    UInt virtualOperand = virtual_qubits[realIndex];
-                    QL_DOUT("\t\tfound index: " << realIndex << " corresponding to virtual operand: " << virtualOperand);
-                    virtualOperands.push_back(virtualOperand); // TODO: change push_back to virtualOperands[realIndex] ?
-                    break;
-                }
-            }
-            if (realIndex == -1) {
-                QL_DOUT("\t\tUh oh! Could not find real qubit index in original real qubits! Things might or might not go wrong!");
-            }
+    if (gp->swap_params.part_of_swap) {
+        QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");
+        for (gate *gate : circ) {
+            gate->swap_params = gp->swap_params;
         }
-        gate->virtual_operands = virtualOperands;
     }
 }
 

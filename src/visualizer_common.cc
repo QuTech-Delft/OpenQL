@@ -121,15 +121,16 @@ Vec<GateProperties> parseGates(const quantum_program* program) {
         for (gate* const gate : kernel.get_circuit()) {
             Vec<Int> operands;
             Vec<Int> creg_operands;
-            Vec<Int> virtual_operands;
+            // Vec<Int> virtual_operands;
             for (const UInt operand : gate->operands) { operands.push_back(utoi(operand)); }
-            for (const UInt operand : gate->virtual_operands) { virtual_operands.push_back(utoi(operand)); }
+            // for (const UInt operand : gate->virtual_operands) { virtual_operands.push_back(utoi(operand)); }
             for (const UInt operand : gate->creg_operands) { creg_operands.push_back(utoi(operand)); }
             GateProperties gateProperties {
                 gate->name,
                 operands,
-                virtual_operands,
+                // virtual_operands,
                 creg_operands,
+                gate->swap_params,
                 utoi(gate->duration),
                 utoi(gate->cycle),
                 gate->type(),
@@ -259,12 +260,12 @@ void printGates(const Vec<GateProperties> &gates) {
         }
         QL_IOUT("\toperands: " << operands << "]");
 
-        Str virtual_operands = "[";
-        for (UInt i = 0; i < gate.virtual_operands.size(); i++) {
-            virtual_operands += to_string(gate.virtual_operands[i]);
-            if (i != gate.virtual_operands.size() - 1) virtual_operands += ", ";
-        }
-        QL_IOUT("\tvirtual_operands: " << virtual_operands << "]");
+        // Str virtual_operands = "[";
+        // for (UInt i = 0; i < gate.virtual_operands.size(); i++) {
+        //     virtual_operands += to_string(gate.virtual_operands[i]);
+        //     if (i != gate.virtual_operands.size() - 1) virtual_operands += ", ";
+        // }
+        // QL_IOUT("\tvirtual_operands: " << virtual_operands << "]");
 
         Str creg_operands = "[";
         for (UInt i = 0; i < gate.creg_operands.size(); i++) {
@@ -290,11 +291,15 @@ void printGates(const Vec<GateProperties> &gates) {
 
 void printGatesShort(const Vec<GateProperties> &gates) {
     Int maxGateNameLength = 0;
+    Int maxSwapStringLength = 0;
     Int maxCycleStringLength = 0;
     Int maxRealOperandsLength = 0;
     for (const GateProperties &gate : gates) {
         if (gate.name.length() > maxGateNameLength) {
             maxGateNameLength = gate.name.length();
+        }
+        if (to_string(gate.swap_params.part_of_swap).length() > maxSwapStringLength) {
+            maxSwapStringLength = to_string(gate.swap_params.part_of_swap).length();
         }
         if (to_string(gate.cycle).length() > maxCycleStringLength) {
             maxCycleStringLength = to_string(gate.cycle).length();
@@ -307,13 +312,20 @@ void printGatesShort(const Vec<GateProperties> &gates) {
     const Int minSpacing = 3;
     for (const GateProperties &gate : gates) {
         Str rOperands = "[ "; for (const Int operand : gate.operands) {rOperands += std::to_string(operand) + " ";} rOperands += "]";
-        Str vOperands = "[ "; for (const Int operand : gate.virtual_operands) {vOperands += std::to_string(operand) + " ";} vOperands += "]";
+        Str vOperands = "[" + to_string(gate.swap_params.virtual_operands.first) + ", " + to_string(gate.swap_params.virtual_operands.second) + "]";
+        // Str vOperands = "[ "; for (const Int operand : gate.virtual_operands) {vOperands += std::to_string(operand) + " ";} vOperands += "]";
 
         Str nameSectionExtraSpacing;
         for (Int i = 0; i < maxGateNameLength - gate.name.length() + minSpacing; i++) {
             nameSectionExtraSpacing += " ";
         }
         const Str nameSection = "gate: " + gate.name + nameSectionExtraSpacing;
+
+        Str swapSectionExtraSpacing;
+        for (Int i = 0; i < maxSwapStringLength - to_string(gate.swap_params.part_of_swap).length() + minSpacing; i++) {
+            swapSectionExtraSpacing += " ";
+        }
+        const Str swapSection = "part of swap: " + to_string(gate.swap_params.part_of_swap) + swapSectionExtraSpacing;
 
         Str cycleSectionExtraSpacing;
         for (Int i = 0; i < maxCycleStringLength - to_string(gate.cycle).length() + minSpacing; i++) {
@@ -327,7 +339,8 @@ void printGatesShort(const Vec<GateProperties> &gates) {
         }
         const Str realOperandsSection = "real and virtual operands: " + rOperands + realOperandsSectionExtraSpacing;
 
-        QL_IOUT(nameSection << cycleSection + realOperandsSection + " and " << vOperands);
+        // QL_IOUT(nameSection << swapSection << cycleSection << realOperandsSection << " and " << vOperands);
+        QL_IOUT(nameSection << swapSection << cycleSection << realOperandsSection << " and " << vOperands);
     }
 }
 

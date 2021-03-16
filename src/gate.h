@@ -7,6 +7,7 @@
 #include "utils/str.h"
 #include "utils/vec.h"
 #include "utils/json.h"
+#include "utils/pair.h"
 #include "utils/misc.h"
 #include "matrix.h"
 
@@ -181,6 +182,11 @@ typedef enum e_cond_type {
 
 const utils::UInt MAX_CYCLE = utils::MAX;
 
+struct swap_parameters {
+    utils::Bool part_of_swap = false;
+    utils::Pair<utils::Int, utils::Int> virtual_operands;
+};
+
 /**
  * gate interface
  */
@@ -188,11 +194,11 @@ class gate {
 public:
     utils::Str name;
     utils::Vec<utils::UInt> operands;             // qubit operands
-    utils::Vec<utils::UInt> virtual_operands;     // hold the virtual qubit operands assigned at the start of the program
     utils::Vec<utils::UInt> creg_operands;
     utils::Vec<utils::UInt> breg_operands;        // bit operands e.g. assigned to by measure; cond_operands are separate
     utils::Vec<utils::UInt> cond_operands;        // 0, 1 or 2 bit operands of condition
     cond_type_t condition = cond_always;          // defines condition and by that number of bit operands of condition
+    swap_parameters swap_params;
     utils::Int int_operand = 0;
     utils::UInt duration = 0;
     utils::Real angle = 0.0;                      // for arbitrary rotations

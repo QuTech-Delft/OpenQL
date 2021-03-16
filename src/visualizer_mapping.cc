@@ -59,6 +59,9 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     // Calculate the virtual qubits mapping for each cycle.
     const Int cycleDuration = utoi(program->platform.cycle_time);
     Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    if (amountOfCycles <= 0) {
+        QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");
+    }
     // Visualize the circuit sequentially if one or more gates were not scheduled yet.
     if (amountOfCycles == MAX_CYCLE) {
         // Add a sequential cycle to each gate.
@@ -68,10 +71,9 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
             amountOfCycles += gate.duration / cycleDuration;
         }
     }
+
+    // This vector stores the qubit mapping per cycle.
     Vec<Vec<Int>> virtualQubits(amountOfCycles);
-    if (amountOfCycles <= 0) {
-        QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");
-    }
 
     // This vector stores whether the mapping has changed for each cycle compared to the previous cycle.
     Vec<Bool> mappingChangedPerCycle(amountOfCycles, false);
@@ -195,38 +197,85 @@ void computeMappingPerCycle(const MappingGraphLayout layout,
         virtualQubits[0].push_back(virtualIndex);
         mappingChangedPerCycle[0] = true; // the mapping has changed for the first cycle always!
     }
-    // Each other cycle either gets a new virtual operand from a gate in that cycle, or carries over the previous
-    // cycle's virtual operand for that qubit.
+
+    struct SwapOperands {
+        Int r0 = -1;
+        Int r1 = -1;
+        Int v0 = -1;
+        Int v1 = -1;
+    };
+
+    // Find the swaps.
+    Vec<SwapOperands> swaps(amountOfCycles, {-1, -1, -1, -1});
+    Int startSearchFromCycle = 0;
+    for (const GateProperties &gate : gates) {
+        // Search the remaining cycles of the circuit for a swap.
+        if (gate.cycle >= startSearchFromCycle) {
+            // If a swap is found, search the rest of the circuit for more parts of the swap.
+            if (gate.swap_params.part_of_swap) {
+                Int r0 = 0;
+                Int r1 = 0;
+                if (gate.operands.size() == 2) {
+                    r0 = gate.operands[0];
+                    r1 = gate.operands[1];
+                }
+                const Int v0 = gate.swap_params.virtual_operands.first;
+                const Int v1 = gate.swap_params.virtual_operands.second;
+                Int nextPartOfSwapCycle = gate.cycle;
+                // Search for the cycle of the next part of the swap.
+                for (const GateProperties &gateInSearch : gates) {
+                    if (gateInSearch.swap_params.part_of_swap) {
+                        // if (gateInSearch.operands.size() == 2) {
+                        //     r0 = gateInSearch.operands[0];
+                        //     r1 = gateInSearch.operands[1];
+                        // }
+                        const Int nextV0 = gateInSearch.swap_params.virtual_operands.first;
+                        const Int nextV1 = gateInSearch.swap_params.virtual_operands.second;
+                        if (gateInSearch.cycle > nextPartOfSwapCycle) {
+                            if (v0 == nextV0 && v1 == nextV1) {
+                                nextPartOfSwapCycle = gateInSearch.cycle;
+                            }
+                        }
+                    }
+                }
+
+                // We now have a swap from gate.cycle to nextPartOfSwapCycle. Add it to the swap vector.
+                swaps[nextPartOfSwapCycle] = {r0, r1, v0, v1};
+                mappingChangedPerCycle[nextPartOfSwapCycle] = true;
+
+                // Continue the search from the next cycle.
+                startSearchFromCycle = nextPartOfSwapCycle + 1;
+            }
+        }
+    }
+
+    // Fill the cycles with qubit mappings.
     for (Int cycleIndex = 1; cycleIndex < amountOfCycles; cycleIndex++) {
         // Copy virtual qubit operand from the previous cycle of the same qubit.
         for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
             virtualQubits[cycleIndex].push_back(virtualQubits[cycleIndex - 1][qubitIndex]);
         }
-        // Update the virtual qubit operands from the gates in this cycle.
         for (const GateProperties &gate : gates) {
-            // Check if the gate's cycle matches the current cycle.
             if (gate.cycle == cycleIndex) {
-                const Vec<Int> virtualOperands = gate.virtual_operands;
-                const Vec<Int> realOperands = gate.operands;
-                if (virtualOperands.size() != realOperands.size()) {
-                    QL_DOUT("Size of virtual operands vector does not match size of real operands vector, skipping gate.");
-                    continue;
-                }
-                // Swap the virtual and real qubits.
-                for (Int operandIndex = 0; operandIndex < realOperands.size(); operandIndex++) {
-                    const Int virtualQubit = virtualOperands[operandIndex];
-                    const Int realQubit = realOperands[operandIndex];
-                    virtualQubits[cycleIndex][realQubit] = virtualQubit;
-                    virtualQubits[cycleIndex][virtualQubit] = realQubit;
+                for (Int qubitIndex = 0; qubitIndex < gate.operands.size(); qubitIndex++) {
+                    const Int mappingIndex = gate.operands[qubitIndex];
+                    const Int mappingIndexFromPreviousCycle = virtualQubits[cycleIndex - 1][mappingIndex];
+                    if (mappingIndexFromPreviousCycle == -1) {
+                        virtualQubits[cycleIndex][mappingIndex] = mappingIndex;
+                        mappingChangedPerCycle[cycleIndex] = true;
+                    }
                 }
             }
         }
-        // Check if the mapping has changed compared to the previous cycle.
-        for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
-            if (virtualQubits[cycleIndex][qubitIndex] != virtualQubits[cycleIndex - 1][qubitIndex]) {
-                mappingChangedPerCycle[cycleIndex] = true;
-                break;
-            }
+        // Check if there was a swap in this cycle.
+        const Int v0 = swaps[cycleIndex].v0;
+        const Int v1 = swaps[cycleIndex].v1;
+        const Bool swapInCycle = v0 != -1 && v1 != -1;
+        if (swapInCycle) {
+            const Int r0 = swaps[cycleIndex].r0;
+            const Int r1 = swaps[cycleIndex].r1;
+            virtualQubits[cycleIndex][r0] = v0;
+            virtualQubits[cycleIndex][r1] = v1;
         }
     }
 }

@@ -97,8 +97,9 @@ struct GateOperand {
 struct GateProperties {
     utils::Str name;
     utils::Vec<utils::Int> operands;
-    utils::Vec<utils::Int> virtual_operands;
+    // utils::Vec<utils::Int> virtual_operands;
     utils::Vec<utils::Int> creg_operands;
+    swap_parameters swap_params;
     utils::Int duration;
     utils::Int cycle;
     gate_type_t type;
