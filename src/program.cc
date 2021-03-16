@@ -317,56 +317,6 @@ void quantum_program::compile() {
         QL_FATAL("compiling a program with no kernels !");
     }
 
-    // from here on front-end passes
-
-    // writer pass of the initial qasm file (program.qasm)
-    write_qasm(this, platform, "initialqasmwriter");
-
-    // rotation_optimize pass
-    rotation_optimize(this, platform, "rotation_optimize");
-
-    // decompose_toffoli pass
-    decompose_toffoli(this, platform, "decompose_toffoli");
-
-    // clifford optimize
-    clifford_optimize(this, platform, "clifford_prescheduler");
-
-    // prescheduler pass
-    schedule(this, platform, "prescheduler");
-
-    // clifford optimize
-    clifford_optimize(this, platform, "clifford_postscheduler");
-
-    // writer pass of the scheduled qasm file (program_scheduled.qasm)
-    write_qasm(this, platform, "scheduledqasmwriter");
-
-    // backend passes
-    QL_DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
-    if (!needs_backend_compiler) {
-        QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
-        return;
-    } if (!backend_compiler) {
-        QL_EOUT("No known eqasm compiler has been specified in the configuration file.");
-        return;
-    } else {
-        QL_DOUT("About to call backend_compiler->compile for " << eqasm_compiler_name);
-        backend_compiler->compile(this, platform);
-        QL_DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
-    }
-
-    // generate sweep_points file
-    write_sweep_points(this, platform, "write_sweep_points");
-
-    QL_IOUT("compilation of program '" << name << "' done.");
-}
-
-void quantum_program::compile_modular() {
-    QL_IOUT("compiling " << name << " ...");
-    QL_WOUT("compiling " << name << " ...");
-    if (kernels.empty()) {
-        QL_FATAL("compiling a program with no kernels !");
-    }
-
     //constuct compiler
     std::unique_ptr<quantum_compiler> compiler(new quantum_compiler("Hard Coded Compiler"));
 

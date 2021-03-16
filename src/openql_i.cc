@@ -460,8 +460,7 @@ void Program::add_for(const Program &p, size_t iterations) {
 }
 
 void Program::compile() {
-    //program->compile();
-    program->compile_modular();
+    program->compile();
 }
 
 std::string Program::microcode() const {
