@@ -36,16 +36,11 @@ void PassManager::loadPassesFromConfigFile(const Str &newName, const Str &cfg) {
     cfg_file_name = cfg;
 
     Json compilerConfig;
-    try {
-        QL_DOUT("Loading compiler configuration file " << cfg_file_name);
-        compilerConfig = load_json(cfg_file_name);
-    } catch (Json::exception &e) {
-        QL_FATAL("Failed to load the compiler config file: \n\t" << Str(e.what()));
-    }
+    
+    QL_DOUT("Loading compiler configuration file " << cfg_file_name);
+    compilerConfig = load_json(cfg_file_name); //note: fail to open error catched in util::json.cc
     
     for (auto it = compilerConfig["CompilerPasses"].begin(); it != compilerConfig["CompilerPasses"].end(); ++it) {
-        
-        std::cout << *it << std::endl;
         
         Json compilerPass = *it;
         
@@ -57,8 +52,6 @@ void PassManager::loadPassesFromConfigFile(const Str &newName, const Str &cfg) {
         addPass(pass);
         
         Json passOptions = compilerPass["options"];
-        
-        std::cout << passOptions << std::endl;
         
         // We need to set the local pass options
         for(const auto &passOption : passOptions.items())

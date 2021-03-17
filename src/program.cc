@@ -326,12 +326,12 @@ void quantum_program::compile() {
         QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
     } else if (eqasm_compiler_name == "none" || eqasm_compiler_name == "qx") {
         QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
-        compiler->loadPassesFromConfigFile("QX_compiler", "qx_compiler_cfg.json");
+        compiler->loadPassesFromConfigFile("QX_compiler", "tests/qx_compiler_cfg.json");
     } else if (eqasm_compiler_name == "cc_light_compiler") {
-        compiler->loadPassesFromConfigFile("CCLight_compiler", "cclight_compiler_cfg.json");
+        compiler->loadPassesFromConfigFile("CCLight_compiler", "tests/cclight_compiler_cfg.json");
         QL_DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-        compiler->loadPassesFromConfigFile("CC_compiler", "cc_compiler_cfg.json");
+        compiler->loadPassesFromConfigFile("CC_compiler", "tests/cc_compiler_cfg.json");
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
