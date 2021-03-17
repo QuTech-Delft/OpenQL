@@ -112,7 +112,6 @@ public:
             }
             QL_DOUT("... gate: " << gp->qasm() << " DONE");
         }
-
         sync_all(kernel);
         kernel.cycles_valid = false;
 

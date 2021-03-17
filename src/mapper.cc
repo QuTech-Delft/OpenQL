@@ -1197,7 +1197,8 @@ void Past::AddSwap(UInt r0, UInt r1) {
         Add(gp);
         // each gate in circ is part of a swap or move, so add the parameters
         //TODO: uint to int conversion
-        gp->swap_params = { true, (Int) r0, (Int) r1, (Int) v1, (Int) v0 };
+        const swap_parameters swap_params = { true, (Int) r0, (Int) r1, (Int) v1, (Int) v0 };
+        gp->swap_params = swap_params;
     }
 
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap

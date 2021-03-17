@@ -60,9 +60,9 @@ using namespace utils;
 // [GENERAL] delete default constructors in position types in visualizer_types.h
 // [GENERAL] fix isEdgeAlreadyDrawn() build error on CI
 // [MAPPING] turn pulse visualization and cycle cutting off for the mapping graph
+// [MAPPING] fix virtual qubit swapping
 
 // -- IN PROGRESS ---
-// [MAPPING] fix virtual qubit swapping
 // [GENERAL] update documentation
 
 // --- FUTURE WORK ---

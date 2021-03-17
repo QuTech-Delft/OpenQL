@@ -206,7 +206,7 @@ void computeMappingPerCycle(const MappingGraphLayout layout,
     };
 
     // Find the swaps.
-    Vec<SwapOperands> swaps(amountOfCycles, {-1, -1, -1, -1});
+    Vec<SwapOperands> swaps(amountOfCycles);
     Int startSearchFromCycle = 0;
     for (const GateProperties &gate : gates) {
         // Search the remaining cycles of the circuit for a swap.
