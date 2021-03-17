@@ -1197,7 +1197,7 @@ void Past::AddSwap(UInt r0, UInt r1) {
         Add(gp);
         // each gate in circ is part of a swap or move, so add the parameters
         //TODO: uint to int conversion
-        const swap_parameters swap_params(true, (Int) r0, (Int) r1, (Int) v1, (Int) v0);
+        const swap_parameters swap_params = {true, (Int) r0, (Int) r1, (Int) v1, (Int) v0};
         gp->swap_params = swap_params;
     }
 

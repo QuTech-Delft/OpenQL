@@ -232,7 +232,7 @@ void computeMappingPerCycle(const MappingGraphLayout layout,
                 }
 
                 // We now have a swap from gate.cycle to nextPartOfSwapCycle. Add it to the swap vector.
-                const SwapOperands swapOperands(r0, r1, v0, v1);
+                const SwapOperands swapOperands = {r0, r1, v0, v1};
                 swaps[nextPartOfSwapCycle] = swapOperands;
                 mappingChangedPerCycle[nextPartOfSwapCycle] = true;
 
