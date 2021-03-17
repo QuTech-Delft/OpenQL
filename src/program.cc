@@ -310,12 +310,25 @@ void quantum_program::set_platform(const quantum_platform &platform) {
     this->platform = platform;
 }
 
+std::string dirnameOf(const std::string& fname)
+{
+     size_t pos = fname.find_last_of("\\/");
+     return (std::string::npos == pos) ? "" : fname.substr(0, pos);
+}
+
 void quantum_program::compile() {
     QL_IOUT("compiling " << name << " ...");
     QL_WOUT("compiling " << name << " ...");
     if (kernels.empty()) {
         QL_FATAL("compiling a program with no kernels !");
     }
+
+    // Retrieve the path to the platform configuration file.
+    // This is needed below to circumvent the hardcoding of the compiler configuration file
+    // when this legacy ::compile method is used.
+    // NOTE: For the use of 'compilerCfgPath' below to work, it is assumed the compiler configuration file
+    //       is located in the same folder as the platform configuration file. 
+    std::string compilerCfgPath = dirnameOf(platform.configuration_file_name);
 
     //constuct compiler
     std::unique_ptr<quantum_compiler> compiler(new quantum_compiler("Hard Coded Compiler"));
@@ -326,12 +339,12 @@ void quantum_program::compile() {
         QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
     } else if (eqasm_compiler_name == "none" || eqasm_compiler_name == "qx") {
         QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
-        compiler->loadPassesFromConfigFile("QX_compiler", "tests/qx_compiler_cfg.json");
+        compiler->loadPassesFromConfigFile("QX_compiler", compilerCfgPath+"/qx_compiler_cfg.json");
     } else if (eqasm_compiler_name == "cc_light_compiler") {
-        compiler->loadPassesFromConfigFile("CCLight_compiler", "tests/cclight_compiler_cfg.json");
+        compiler->loadPassesFromConfigFile("CCLight_compiler", compilerCfgPath+"/cclight_compiler_cfg.json");
         QL_DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-        compiler->loadPassesFromConfigFile("CC_compiler", "tests/cc_compiler_cfg.json");
+        compiler->loadPassesFromConfigFile("CC_compiler", compilerCfgPath+"/cc_compiler_cfg.json");
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
