@@ -3010,11 +3010,6 @@ void Mapper::Map(quantum_kernel& kernel) {
 
     MakePrimitives(kernel);         // decompose to primitives as specified in the config file
 
-    QL_IOUT("GATE OUTPUT AFTER MAPPING");
-    for (const gate *gp : kernel.c) {
-        QL_IOUT("gate: " << gp->name << "\tpart of swap: " << gp->swap_params.part_of_swap);
-    }
-
     kernel.qubit_count = nq;        // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
     v2r.Export(v2r_out);     // from v2r to caller for reporting
     v2r.Export(rs_out);      // from v2r to caller for reporting

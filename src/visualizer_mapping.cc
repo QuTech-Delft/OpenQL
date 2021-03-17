@@ -44,9 +44,9 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         QL_WOUT("Could not parse qubit topology. Falling back on basic visualization.");
     }
 
+    // QL_IOUT("Gate input to mapping graph visualizer:");
     // printGates(gates);
-    QL_IOUT("Gate input to mapping graph visualizer:");
-    printGatesShort(gates);
+    // printGatesShort(gates);
 
     // Get visualized circuit with extra wide cycles from visualizer_circuit.cc.
     const Int amountOfQubits = calculateAmountOfBits(gates, &GateProperties::operands);
