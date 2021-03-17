@@ -199,14 +199,14 @@ void computeMappingPerCycle(const MappingGraphLayout layout,
     }
 
     struct SwapOperands {
-        Int r0 = -1;
-        Int r1 = -1;
-        Int v0 = -1;
-        Int v1 = -1;
+        Int r0;
+        Int r1;
+        Int v0;
+        Int v1;
     };
 
     // Find the swaps.
-    Vec<SwapOperands> swaps(amountOfCycles);
+    Vec<SwapOperands> swaps(amountOfCycles, {-1, -1, -1, -1});
     Int startSearchFromCycle = 0;
     for (const GateProperties &gate : gates) {
         // Search the remaining cycles of the circuit for a swap.
