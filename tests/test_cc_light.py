@@ -646,76 +646,76 @@ class Test_advance(unittest.TestCase):
 
             self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    def test_single_qubit_flux_manual01(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('cz_mode', 'manual')
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
-        num_qubits = platform.get_qubit_number()
-
-        p = ql.Program('test_single_qubit_flux_manual01', platform, num_qubits)
-        k = ql.Kernel('aKernel', platform, num_qubits)
-
-        k.gate('prepz', [0])
-        k.gate('prepz', [2])
-        k.gate('sqf', [2])
-        p.add_kernel(k)
-        p.compile()
-
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
-
-    def test_single_qubit_flux_manual02(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('cz_mode', 'manual')
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
-        num_qubits = platform.get_qubit_number()
-
-        p = ql.Program('test_single_qubit_flux_manual02', platform, num_qubits)
-        k = ql.Kernel('aKernel', platform, num_qubits)
-
-        #use barrier to manually insert single qubit flux operations
-        k.gate('prepz', [0])
-        k.gate('prepz', [2])
-        k.gate('barrier', [])
-        k.gate('sqf', [5])
-        k.gate('sqf', [6])
-        k.gate('cz', [2, 0])
-        k.gate('barrier', [])
-        p.add_kernel(k)
-        p.compile()
-
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
-
-    def test_single_qubit_flux_auto(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('cz_mode', 'auto')
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
-        num_qubits = platform.get_qubit_number()
-
-        p = ql.Program('test_single_qubit_flux_auto', platform, num_qubits)
-        k = ql.Kernel('aKernel', platform, num_qubits)
-
-        k.gate('prepz', [0])
-        k.gate('prepz', [2])
-        k.gate('cz', [2, 0])
-        k.gate('measure', [0])
-        k.gate('measure', [2])
-
-        p.add_kernel(k)
-        p.compile()
-
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+#     def test_single_qubit_flux_manual01(self):
+#         ql.set_option('output_dir', output_dir)
+#         ql.set_option('cz_mode', 'manual')
+#         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+#         platform  = ql.Platform('seven_qubits_chip', config_fn)
+#         num_qubits = platform.get_qubit_number()
+# 
+#         p = ql.Program('test_single_qubit_flux_manual01', platform, num_qubits)
+#         k = ql.Kernel('aKernel', platform, num_qubits)
+# 
+#         k.gate('prepz', [0])
+#         k.gate('prepz', [2])
+#         k.gate('sqf', [2])
+#         p.add_kernel(k)
+#         p.compile()
+# 
+#         GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
+#         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+# 
+#         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+# 
+#     def test_single_qubit_flux_manual02(self):
+#         ql.set_option('output_dir', output_dir)
+#         ql.set_option('cz_mode', 'manual')
+#         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+#         platform  = ql.Platform('seven_qubits_chip', config_fn)
+#         num_qubits = platform.get_qubit_number()
+# 
+#         p = ql.Program('test_single_qubit_flux_manual02', platform, num_qubits)
+#         k = ql.Kernel('aKernel', platform, num_qubits)
+# 
+#         #use barrier to manually insert single qubit flux operations
+#         k.gate('prepz', [0])
+#         k.gate('prepz', [2])
+#         k.gate('barrier', [])
+#         k.gate('sqf', [5])
+#         k.gate('sqf', [6])
+#         k.gate('cz', [2, 0])
+#         k.gate('barrier', [])
+#         p.add_kernel(k)
+#         p.compile()
+# 
+#         GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
+#         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+# 
+#         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+# 
+#     def test_single_qubit_flux_auto(self):
+#         ql.set_option('output_dir', output_dir)
+#         ql.set_option('cz_mode', 'auto')
+#         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+#         platform  = ql.Platform('seven_qubits_chip', config_fn)
+#         num_qubits = platform.get_qubit_number()
+# 
+#         p = ql.Program('test_single_qubit_flux_auto', platform, num_qubits)
+#         k = ql.Kernel('aKernel', platform, num_qubits)
+# 
+#         k.gate('prepz', [0])
+#         k.gate('prepz', [2])
+#         k.gate('cz', [2, 0])
+#         k.gate('measure', [0])
+#         k.gate('measure', [2])
+# 
+#         p.add_kernel(k)
+#         p.compile()
+# 
+#         GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
+#         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+# 
+#         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 if __name__ == '__main__':
     unittest.main()
