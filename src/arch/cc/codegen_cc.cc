@@ -399,7 +399,8 @@ void Codegen::bundleFinish(
     // collect info for all instruments
     CodeGenMap codeGenMap = collectCodeGenInfo(startCycle, durationInCycles);
 
-    // FIXME: perform stuff requiring overview over all instruments:
+    // compute stuff requiring overview over all instruments:
+    // FIXME: add
     // - DSM used, for seq_inv_sm
 
     // determine whether bundle has any feedback
@@ -802,7 +803,7 @@ void Codegen::emitFeedback(
         lastEndCycle[instrIdx]++;
     } else {    // this instrument does not perform readout for feedback now
         // emit code for non-participating instrument
-        // FIXME: computing the variables above requires overview over all measurements of bundle, i.e. iterating over all instruments in BundleFinish before generating code
+        // FIXME: may invalidate DSM that ust arrived dependent on individual SEQBAR counts
         UInt smAddr = 0;
         UInt smTotalSize = 1;    // FIXME: inexact, but me must not invalidate memory that we will not write
         emit(

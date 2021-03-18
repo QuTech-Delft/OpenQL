@@ -1,10 +1,6 @@
 Feedback latencies in QuSurf architecture
 -----------------------------------------
 
-.. based on:
-    QuSurf_MetricsTables_201015-Please-update-for-TEM5.docx
-    CC-SiteVisitVirtual-20200506.pptx
-
 .. list-table:: Latencies
     :widths: 25 15 20 40
     :header-rows: 1
@@ -36,7 +32,7 @@ Feedback latencies in QuSurf architecture
     *   -   tCcCondgate
         -   20
         -
-        -   output a conditional gate
+        -   output a gate conditional on DSM data
     *   -   tCcOutputDio
         -   ~10
         -
@@ -52,7 +48,7 @@ Feedback latencies in QuSurf architecture
     *   -   tCcCondBreak
         -   150
         -
-        -   perform a conditional break
+        -   perform a break conditional on DSM data
     *   -
         -
         -
@@ -62,9 +58,33 @@ Feedback latencies in QuSurf architecture
         -
         -
     *   -   tHdawgTriggerDio
-        -   150
-        -   HDAWG8 v2, filter disabled?
+        -   180
+        -   HDAWG8 v2, filter disabled, no output delay
         -   delay from DIO trigger to first analog output
+    *   -   tHdawgFilter
+        -   30
+        -
+        -   extra delay if the filter is enabled at all (not bypassed)
+    *   -   tHdawgFilterHighPass
+        -   40
+        -
+        -   extra delay if high pass filter is enabled
+    *   -   tHdawgFilterExpComp
+        -   36.67
+        -
+        -   extra delay per enabled exponential compensation filter stage (8 stages available)
+    *   -   tHdawgFilterBounceComp
+        -   13.33
+        -
+        -   extra delay if bounce compensation filter is enabled
+    *   -   tHdawgFilterFir
+        -   56.67
+        -
+        -   extra delay if FIR filter is enabled
+    *   -   tHdawgOutputDelay
+        -   0-TBD
+        -
+        -   output delay configurable by user (/DEV..../SIGOUTS/n/DELAY)
     *   -
         -
         -
@@ -81,7 +101,7 @@ Feedback latencies in QuSurf architecture
         -   261
         -   UHFQA-9, no bypass
         -   state discrimination latency, from TBD to TBD
-    *   -   tUHFQAholdoff
+    *   -   tUhfqaHoldoff
         -
         -
         -
@@ -101,3 +121,12 @@ Feedback latencies in QuSurf architecture
         -
         -
         -
+
+
+Information sources:
+
+-   tHdawgTriggerDio: table 5.5 of https://docs.zhinst.com/pdf/ziHDAWG_UserManual.pdf (revision 21.02.0)
+-   tHdawgFilter*: section 4.6.2 of same document
+-   tCc*: CC-SiteVisitVirtual-20200506.pptx
+-   tUhf*: QuSurf_MetricsTables_201015-Please-update-for-TEM5.docx
+
