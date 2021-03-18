@@ -296,11 +296,18 @@ out_c << "\t} while(rs" << (kernel.br_condition->operands[0])->as_creg().id << "
                         //NOTE-rn: match gate name to an instruction in the config file, otherwise this will fail.
                         UInt p = g->name.find(' ');
                         Str gate_name = g->name.substr(0, p);
+
                         if(gate_name == "measure" && g->creg_operands.size())//NOTE-rn: measure gate returns type custom_gate so gate_type_t::__measure_gate__ cannot be used to check for measure gate
                         {
                             out_c << "\trs" << g->creg_operands[0] << " = ";
                         }
-                        out_c << "\t" << gate_name << "(qc" << g->operands[0] << ");\n";
+                        if(gate_name == "ldi"  && g->creg_operands.size())
+                        {
+                            out_c << "\trs" << g->creg_operands[0] << " = ";
+                            out_c << g->int_operand << ";\n";
+                        }
+                        else
+                            out_c << "\t" << gate_name << "(qc" << g->operands[0] << ");\n";
                     } break;}
             default: break;                           
         }

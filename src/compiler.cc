@@ -12,11 +12,20 @@ namespace ql {
 using namespace utils;
 
 /**
- * @brief   Compiler constructor
+ * @brief   Compiler constructor (empty)
  * @param   name Name of the compiler
  */
-quantum_compiler::quantum_compiler(const Str &n) : name(n) {
+quantum_compiler::quantum_compiler(const Str &n) : name(n), configuration_file_name("empty") {
     QL_DOUT("In quantum_compiler constructor before PassManager initialization ");
+    constructPassManager();
+}
+
+/**
+ * @brief   Compiler constructor (using configuration file)
+ * @param   name Name of the compiler
+ */
+quantum_compiler::quantum_compiler(const Str &n, const Str &cfg) : name(n), configuration_file_name(cfg) {
+    QL_DOUT("In quantum_compiler constructor before PassManager initialization using configuration file " << cfg);
     constructPassManager();
 }
 
@@ -71,13 +80,24 @@ void quantum_compiler::setPassOption(
 }
 
 /**
+ * @brief   Configures the passes of the compiler based on an external configuration file
+ * @param   name Name of the new configured compiler
+ * @param   cfg Name of the compiler configuration file
+ */
+void quantum_compiler::loadPassesFromConfigFile(const Str &newName, const Str &cfg) {
+    passManager->loadPassesFromConfigFile(newName,cfg);
+}
+
+/**
  * @brief   Constructs the sequence of compiler passes
  */
 void quantum_compiler::constructPassManager() {
-    QL_DOUT("Construct the passManager");
-    passManager = new PassManager("empty");
+    QL_DOUT("Construct the passManager " << name << " using configuration file: " << configuration_file_name);
+    if(configuration_file_name == "empty")
+        passManager = new PassManager(name);
+    else
+        passManager = new PassManager(name, configuration_file_name);
 
     assert(passManager);
 }
-
 } // namespace ql

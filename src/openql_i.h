@@ -216,9 +216,11 @@ public:
 class Compiler {
 public:
     std::string name;
+    std::string config_file;
     ql::quantum_compiler *compiler;
 
     Compiler(const std::string &name);
+    Compiler(const std::string &name, const std::string &config_file);
     void compile(Program &program);
     void add_pass_alias(const std::string &realPassName, const std::string &symbolicPassName);
     void add_pass(const std::string &realPassName);
