@@ -7,7 +7,7 @@ Feedback latencies in QuSurf architecture
 
 .. list-table:: Latencies
     :widths: 25 15 20 40
-    :header-rows: 0
+    :header-rows: 1
 
     *   -   Identifier
         -   Latency [ns]
@@ -49,7 +49,7 @@ Feedback latencies in QuSurf architecture
         -
         -
         -
-    *   -   tCCCondBreak
+    *   -   tCcCondBreak
         -   150
         -
         -   perform a conditional break
@@ -61,38 +61,42 @@ Feedback latencies in QuSurf architecture
         -
         -
         -
-    *   -   tHDAWGtrigger
+    *   -   tHdawgTriggerDio
         -   150
         -   HDAWG8 v2, filter disabled?
-        -
+        -   delay from DIO trigger to first analog output
     *   -
         -
         -
         -
-    *   -
+    *   -   tUhfqaTriggerDio
         -
         -
-        -
-    *   -   tUHFQA_5_sd
+        -   delay from DIO trigger to first analog output
+    *   -   tUhfqa5stateDiscr
         -   168
-        -   UHFQA-5
-        -   State discrimination latency, from TBD to TBD
-    *   -   tUHFQA_9_sd
+        -   UHFQA-5, no bypass
+        -   state discrimination latency, from TBD to TBD
+    *   -   tUhfqa9stateDiscr
         -   261
-        -   UHFQA-9
-        -   State discrimination latency, from TBD to TBD
+        -   UHFQA-9, no bypass
+        -   state discrimination latency, from TBD to TBD
+    *   -   tUHFQAholdoff
+        -
+        -
+        -
     *   -
         -
         -
         -
-    *   -   tVSMdelay
+    *   -   tVsmDelay
         -   12
         -   VSM v3
+        -   delay from digital input to signal starts turning on/off
+    *   -   tVsmTransition
         -
-    *   -
         -
-        -
-        -
+        -   transition time of VSM switch from on to off or vice versa
     *   -
         -
         -
