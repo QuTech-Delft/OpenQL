@@ -492,9 +492,7 @@ CCLDecomposePostSchedulePass::CCLDecomposePostSchedulePass(const Str &name) : Ab
  * @param  Program object to be postscheduler decomposed
  */
 void CCLDecomposePostSchedulePass::runOnProgram(quantum_program *program) {
-    if (options::get("generate_code") == "yes") {
-        arch::cc_light_eqasm_compiler().ccl_decompose_post_schedule(program, program->platform, getPassName());
-    }
+    arch::cc_light_eqasm_compiler().ccl_decompose_post_schedule(program, program->platform, getPassName());
 }
 
 /**
