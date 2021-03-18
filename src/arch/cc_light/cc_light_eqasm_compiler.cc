@@ -648,7 +648,8 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
 
     QL_IOUT("Post scheduling decomposition ...");
     if (options::get("cz_mode") == "auto") {
-        QL_IOUT("decompose cz to cz+sqf...");
+        // QL_IOUT("decompose cz to cz+sqf...");
+        QL_IOUT("decompose cz to cz_park...");
 
         typedef Pair<UInt,UInt> qubits_pair_t;
         Map<qubits_pair_t, UInt> qubitpair2edge; // map: pair of qubits to edge (from grid configuration)
@@ -707,24 +708,31 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
                             QL_FATAL("custom instruction not found for : " << id << " !");
                         }
 
+                        auto g = *ins_src_it;
+                        UInt q0 = g->operands[0];
+                        UInt q1 = g->operands[1];
                         Bool is_flux_2_qubit = operation_type == "flux";
                         if (is_flux_2_qubit) {
-                            auto &q0 = (*ins_src_it)->operands[0];
-                            auto &q1 = (*ins_src_it)->operands[1];
-                            QL_DOUT("found 2 qubit flux gate on " << q0 << " and " << q1);
+                            QL_DOUT("found 2 qubit flux gate: " << g->qasm());
                             qubits_pair_t aqpair(q0, q1);
                             auto it = qubitpair2edge.find(aqpair);
                             if (it != qubitpair2edge.end()) {
                                 auto edge_no = it->second;
                                 QL_DOUT("add the following sqf gates for edge: " << edge_no << ":");
                                 for (auto &q : edge_detunes_qubits.get(edge_no)) {
-                                    QL_DOUT("sqf q" << q);
-                                    custom_gate *g = new custom_gate("sqf q"+to_string(q));
+                                    QL_DOUT("adding qubit q" << q);
+                                    // custom_gate *g = new custom_gate("sqf q"+to_string(q));
                                     g->operands.push_back(q);
+                                    UInt p = id.find(" ");
+                                    if (p != Str::npos) {
+                                        id = id.substr(0,p);
+                                    }
+                                    id.append("_park");
+                                    g->name = id;
 
-                                    ir::section_t asec;
-                                    asec.push_back(g);
-                                    bundles_dst_it->parallel_sections.push_back(asec);
+                                    // ir::section_t asec;
+                                    // asec.push_back(g);
+                                    // bundles_dst_it->parallel_sections.push_back(asec);
                                 }
                             }
                         }
