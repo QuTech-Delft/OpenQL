@@ -101,6 +101,26 @@ Feedback latencies in QuSurf architecture
         -   261
         -   UHFQA-9, no bypass
         -   state discrimination latency, from TBD to TBD
+    *   -   tUhfqaReadoutProcessing
+        -   140
+        -   Deskew, Rotation, and Crosstalk units bypassed
+        -   delay between the end of a readout pulse at the Signal Inputs and the QA Result Trigger on any Trigger output
+    *   -   tUhfqaDeskew
+        -   ??
+        -
+        -   delay introduced by enabling Deskew unit
+    *   -   tUhfqaRotation
+        -   ??
+        -
+        -   delay introduced by enabling Rotation unit
+    *   -   tUhfqaCrosstalk
+        -   ??
+        -
+        -   delay introduced by enabling Crosstalk unit
+    *   -   tUhfqaReadoutProcessing
+        -   400
+        -   Deskew, Rotation, and Crosstalk units enabled
+        -   delay between the end of a readout pulse at the Signal Inputs and the QA Result Trigger on any Trigger output
     *   -   tUhfqaHoldoff
         -
         -
@@ -122,11 +142,15 @@ Feedback latencies in QuSurf architecture
         -
         -
 
+FIXME:
+
+- how does tUhfqa*stateDiscr relate to tUhfqaReadoutProcessing?
 
 Information sources:
 
 -   tHdawgTriggerDio: table 5.5 of https://docs.zhinst.com/pdf/ziHDAWG_UserManual.pdf (revision 21.02.0)
 -   tHdawgFilter*: section 4.6.2 of same document
 -   tCc*: CC-SiteVisitVirtual-20200506.pptx
+-   tUhfqaReadoutProcessing: ziUHFQA_UserManual.pdf (revision 21.02.01)
 -   tUhf*: QuSurf_MetricsTables_201015-Please-update-for-TEM5.docx
 
