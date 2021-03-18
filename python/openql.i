@@ -896,6 +896,17 @@ arg1 : str
     name of the compiler
 """
 
+%feature("docstring") Compiler::Compiler
+""" Constructs a compiler object from a (passes) configuration file.
+
+Parameters
+----------
+arg1 : str
+    name of the compiler
+arg2 : str
+    name of the compiler configuration file
+"""
+
 %feature("docstring") Compiler::compile
 """ Compiles the program
 

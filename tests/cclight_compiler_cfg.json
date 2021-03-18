@@ -1,0 +1,85 @@
+{
+    "CompilerPasses": 
+    [
+        {
+            "passName" : "Writer", 
+            "passAlias": "initialqasmwriter"
+        },
+        {
+            "passName" : "RotationOptimizer", 
+            "passAlias": "rotation_optimize"
+        },
+        {
+            "passName" : "DecomposeToffoli", 
+            "passAlias": "decompose_toffoli"
+        },
+        {
+            "passName" : "CliffordOptimize", 
+            "passAlias": "clifford_prescheduler"
+        },
+        {
+            "passName" : "Scheduler", 
+            "passAlias": "prescheduler"
+        },
+        {
+            "passName" : "CliffordOptimize", 
+            "passAlias": "clifford_postscheduler"
+        },
+        {
+            "passName" : "Writer", 
+            "passAlias": "scheduledqasmwriter"
+        },
+        {
+            "passName" : "CCLPrepCodeGeneration", 
+            "passAlias": "ccl_prep_code_generation"
+        },
+        {
+            "passName" : "CCLDecomposePreSchedule", 
+            "passAlias": "ccl_decompose_pre_schedule"
+        },
+        {
+            "passName" : "WriteQuantumSim", 
+            "passAlias": "write_quantumsim_script_unmapped"
+        },
+        {
+            "passName" : "CliffordOptimize", 
+            "passAlias": "clifford_premapper"
+        },
+        {
+            "passName" : "Map", 
+            "passAlias": "mapper"
+        },
+        {
+            "passName" : "CliffordOptimize", 
+            "passAlias": "clifford_postmapper"
+        },
+        {
+            "passName" : "RCSchedule", 
+            "passAlias": "rcscheduler"
+        },
+        {
+            "passName" : "LatencyCompensation", 
+            "passAlias": "ccl_latency_compensation"
+        },
+        {
+            "passName" : "InsertBufferDelays", 
+            "passAlias": "ccl_insert_buffer_delays"
+        },
+        {
+            "passName" : "CCLDecomposePostSchedule", 
+            "passAlias": "ccl_decompose_post_schedule"
+        },
+        {
+            "passName" : "WriteQuantumSim", 
+            "passAlias": "write_quantumsim_script_mapped"
+        },
+        {
+            "passName" : "Writer", 
+            "passAlias": "lastqasmwriter"
+        },
+        {
+            "passName" : "QisaCodeGeneration", 
+            "passAlias": "qisa_code_generation"
+        }
+    ]
+}
