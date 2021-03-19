@@ -5,10 +5,10 @@ Visualizer
 
 The visualizer is a special compiler pass that will visualize the quantum circuit being compiled. Three different types of visualization can be generated:
 
-* ``basic circuit visualization``: displays the circuit as an abstract set of gates acting on qubits
-* ``pulse visualization``: specifically designed for the quantum hardware designed by the DiCarlo lab, this visualization displays the RF pulses that control the quantum hardware
-* ``a mapping graph``: shows the evolution of the mapping between logical and real qubits as the circuit runs each cycle
-* ``the qubit interaction graph``: displays the interactions between qubits in the circuit
+* **basic circuit visualization**: displays the circuit as an abstract set of gates acting on qubits
+* **pulse visualization**: specifically designed for the quantum hardware designed by the DiCarlo lab, this visualization displays the RF pulses that control the quantum hardware
+* **a mapping graph**: shows the evolution of the mapping between logical and real qubits as the circuit runs each cycle
+* **the qubit interaction graph**: displays the interactions between qubits in the circuit
 
 All of these visualization types can be customised to turn features on or off and to change the looks of the visualization. This is done by way of the
 visualizer configuration file, which will be elaborated upon in another section.
@@ -34,11 +34,13 @@ The visualizer can be ran by adding the visualizer pass to the compiler and comp
 
 There are three different pass options for the visualizer, each with a default value if no user-specified value is provided:
 
++----------------------------------+------------------------+
 | option                           | default value          |
-| -------------------------------- | ---------------------- |
++==================================+========================+
 | visualizer_type                  | CIRCUIT                |
 | visualizer_config_path           | visualizer_config.json |
 | visualizer_waveform_mapping_path | waveform_mapping.json  |
++----------------------------------+------------------------+
 
 The first option, ``visualizer_type`` determines the type of visualization to use. ``CIRCUIT`` for the basic circuit visualization, ``MAPPING_GRAPH`` for
 the mapping graph visualization and ``INTERACTION_GRAPH`` for the qubit interaction graph. The visualization parameters are read from the configuration file 
