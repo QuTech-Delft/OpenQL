@@ -209,7 +209,7 @@ public:
     utils::Vec<utils::UInt> breg_operands;        // bit operands e.g. assigned to by measure; cond_operands are separate
     utils::Vec<utils::UInt> cond_operands;        // 0, 1 or 2 bit operands of condition
     cond_type_t condition = cond_always;          // defines condition and by that number of bit operands of condition
-    swap_parameters swap_params;
+    swap_parameters swap_params;                  // if the gate is part of a swap/move, this will contain the real and virtual qubits involved
     utils::Int int_operand = 0;
     utils::UInt duration = 0;
     utils::Real angle = 0.0;                      // for arbitrary rotations
