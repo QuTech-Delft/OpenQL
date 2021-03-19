@@ -6,8 +6,7 @@ Visualizer
 The visualizer is a special compiler pass that will visualize the quantum circuit being compiled. Three different types of visualization can be generated:
 
 * ``basic circuit visualization``: displays the circuit as an abstract set of gates acting on qubits
-* ``pulse visualization``: specifically designed for the quantum hardware designed by the DiCarlo lab, this visualization displays the RF pulses that
-control the quantum hardware
+* ``pulse visualization``: specifically designed for the quantum hardware designed by the DiCarlo lab, this visualization displays the RF pulses that control the quantum hardware
 * ``a mapping graph``: shows the evolution of the mapping between logical and real qubits as the circuit runs each cycle
 * ``the qubit interaction graph``: displays the interactions between qubits in the circuit
 
