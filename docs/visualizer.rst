@@ -11,27 +11,39 @@ control the quantum hardware
 * ``a mapping graph``: shows the evolution of the mapping between logical and real qubits as the circuit runs each cycle
 * ``the qubit interaction graph``: displays the interactions between qubits in the circuit
 
-display a visualization of the program being compiled by the compiler.
-The specific look of that visualization can be controlled by the general visualization parameters, which include options for different
-kinds of labels for example, and the gate specific visualization parameters, like the color of the gate, or what kind of shape to show.
+All of these visualization types can be customised to turn features on or off and to change the looks of the visualization. This is done by way of the
+visualizer configuration file, which will be elaborated upon in another section.
 
-Visualizer usage
-----------------
+General visualizer usage
+------------------------
 The visualizer can be ran by adding the visualizer pass to the compiler and compiling the quantum program you want to run. Python example:
 
 .. code:: python
 
     c = ql.Compiler("example_compiler")
+
     c.add_pass("Visualizer");
-    c.set_pass_option("Visualizer", "visualizer_config_path", "full_path_to_file"));
+    c.set_pass_option("Visualizer", "visualizer_type", "<insert type of visualization here>")
+    c.set_pass_option("Visualizer", "visualizer_config_path", "<insert full path to file here>"));
+
+    # only necessary when using the pulse visualization
+    c.set_pass_option("Visualizer", "visualizer_waveform_mapping_path", "<insert full path to file here>"));
 
     # add program and gates
 
     c.compile(program)
 
-The visualization parameters are read from a configuration file. The path to this file should be added through a pass option
-for the visualizer as seen above. If a parameter is missing from that file, the default hardcoded value contained in `src\visualizer.h` will be used instead.
+There are three different pass options for the visualizer, each with a default value if no user-specified value is provided:
 
+| option                           | default value          |
+| -------------------------------- | ---------------------- |
+| visualizer_type                  | CIRCUIT                |
+| visualizer_config_path           | visualizer_config.json |
+| visualizer_waveform_mapping_path | waveform_mapping.json  |
+
+The first option, ``visualizer_type`` determines the type of visualization to use. ``CIRCUIT`` for the basic circuit visualization, ``MAPPING_GRAPH`` for
+the mapping graph visualization and ``INTERACTION_GRAPH`` for the qubit interaction graph. The visualization parameters are read from the configuration file 
+specified by the ``visualizer_config_path`` pass option.
 
 General visualization parameters
 --------------------------------

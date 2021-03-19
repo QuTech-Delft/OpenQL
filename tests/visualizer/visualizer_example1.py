@@ -35,9 +35,9 @@ c.add_pass("Visualizer")
 c.set_pass_option("ALL", "skip", "no")
 c.set_pass_option("ALL", "write_qasm_files", "no")
 c.set_pass_option("ALL", "write_report_files", "no")
-c.set_pass_option("Visualizer", "visualizer_type", "MAPPING_GRAPH")
-c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config_example1.json"))
-c.set_pass_option("Visualizer", "visualizer_waveform_mapping_path", os.path.join(curdir, "waveform_mapping.json"))
+# c.set_pass_option("Visualizer", "visualizer_type", "MAPPING_GRAPH")
+# c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config_example1.json"))
+# c.set_pass_option("Visualizer", "visualizer_waveform_mapping_path", os.path.join(curdir, "waveform_mapping.json"))
 
 platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'test_s7.json'))
 nqubits = 7
