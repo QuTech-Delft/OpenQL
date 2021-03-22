@@ -14,10 +14,11 @@
 
 namespace ql {
 namespace arch {
+namespace cc {
 
 
 // ============ interfaces to access platform dependent attributes of a gate
-
+#if 0   // FIXME: 'private'
 // in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
 // it is needed to define the extend of the resource occupation in case of multi-cycle operations
 utils::UInt cc_get_operation_duration(gate *ins, const quantum_platform &platform);
@@ -28,27 +29,29 @@ utils::Str cc_get_operation_type(gate *ins, const quantum_platform &platform);
 
 // operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
 utils::Str cc_get_operation_name(gate *ins, const quantum_platform &platform);
-
+#endif
 
 // ============ classes of resources that _may_ appear in a configuration file
 // these are a superset of those allocated by the cc_resource_manager_t constructor below
 
 // Each qubit can be used by only one gate at a time.
-class cc_qubit_resource_t : public resource_t {
+class cc_resource_qubit : public resource_t {
 public:
     // fwd: qubit q is busy till cycle=state[q], i.e. all cycles < state[q] it is busy, i.e. start_cycle must be >= state[q]
     // bwd: qubit q is busy from cycle=state[q], i.e. all cycles >= state[q] it is busy, i.e. start_cycle+duration must be <= state[q]
     utils::Vec<utils::UInt> state;
 
-    cc_qubit_resource_t(const quantum_platform &platform, scheduling_direction_t dir);
+    cc_resource_qubit(const quantum_platform &platform, scheduling_direction_t dir);
 
-    cc_qubit_resource_t *clone() const & override;
-    cc_qubit_resource_t *clone() && override;
+    cc_resource_qubit *clone() const & override;
+    cc_resource_qubit *clone() && override;
 
     utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
     void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
 
+
+#if 0   // FIXME: unused
 // Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.
 // Each qwg controls a private set of qubits.
 // A qwg can control multiple qubits at the same time, but only when they perform the same gate and start at the same time.
@@ -73,25 +76,30 @@ public:
     utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
     void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
+#endif
+
 
 // Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.
 // Each one controls a private set of qubits.
 // A measurement unit can control multiple qubits at the same time, but only when they start at the same time.
-class cc_meas_resource_t : public resource_t {
+class cc_resource_meas : public resource_t {
 public:
     utils::Vec<utils::UInt> fromcycle;  // last measurement start cycle
     utils::Vec<utils::UInt> tocycle;    // is busy till cycle
     utils::Map<utils::UInt,utils::UInt> qubit2meas;
 
-    cc_meas_resource_t(const quantum_platform & platform, scheduling_direction_t dir);
+    cc_resource_meas(const quantum_platform & platform, scheduling_direction_t dir);
 
-    cc_meas_resource_t *clone() const & override;
-    cc_meas_resource_t *clone() && override;
+    cc_resource_meas *clone() const & override;
+    cc_resource_meas *clone() && override;
 
     utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
     void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
 
+
+
+#if 0   // FIXME: unused
 // Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge.
 // A two-qubit flux gate operates by lowering (detuning) the frequency of the operand qubit
 // with the highest frequency to get close to the frequency of the other operand qubit.
@@ -160,6 +168,9 @@ public:
     utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
     void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
+#endif
+
+
 
 // ============ platform specific resource_manager matching config file resources sections with resource classes above
 // each config file resources section must have a resource class above
@@ -178,5 +189,6 @@ public:
     cc_resource_manager_t *clone() && override;
 };
 
+} // namespace cc
 } // namespace arch
 } // namespace ql

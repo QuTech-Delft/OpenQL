@@ -6,24 +6,20 @@
 
 namespace ql {
 namespace arch {
+namespace cc {
 
 using namespace utils;
 
 // in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
 // it is needed to define the extend of the resource occupation in case of multi-cycle operations
 UInt cc_get_operation_duration(gate *ins, const quantum_platform &platform) {
-    return ceil( static_cast<Real>(ins->duration) / platform.cycle_time);
+    return platform.time_to_cycles(ins->duration);
 }
 
 // operation type is "mw" (for microwave), "flux", or "readout"
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
 Str cc_get_operation_type(gate *ins, const quantum_platform &platform) {
-    Str operation_type("cc_type");
-    QL_JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-    if (!platform.instruction_settings[ins->name]["type"].is_null()) {
-        operation_type = platform.instruction_settings[ins->name]["type"].get<Str>();
-    }
-    return operation_type;
+    return platform.find_instruction_type(ins->name);
 }
 
 // operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
@@ -36,7 +32,7 @@ Str cc_get_operation_name(gate *ins, const quantum_platform &platform) {
     return operation_name;
 }
 
-cc_qubit_resource_t::cc_qubit_resource_t(
+cc_resource_qubit::cc_resource_qubit(
     const quantum_platform &platform,
     scheduling_direction_t dir
 ) :
@@ -50,23 +46,23 @@ cc_qubit_resource_t::cc_qubit_resource_t(
     }
 }
 
-cc_qubit_resource_t *cc_qubit_resource_t::clone() const & {
-    QL_DOUT("Cloning/copying cc_qubit_resource_t");
-    return new cc_qubit_resource_t(*this);
+cc_resource_qubit *cc_resource_qubit::clone() const & {
+    QL_DOUT("Cloning/copying cc_resource_qubit");
+    return new cc_resource_qubit(*this);
 }
 
-cc_qubit_resource_t *cc_qubit_resource_t::clone() && {
-    QL_DOUT("Cloning/moving cc_qubit_resource_t");
-    return new cc_qubit_resource_t(std::move(*this));
+cc_resource_qubit *cc_resource_qubit::clone() && {
+    QL_DOUT("Cloning/moving cc_resource_qubit");
+    return new cc_resource_qubit(std::move(*this));
 }
 
-Bool cc_qubit_resource_t::available(
+Bool cc_resource_qubit::available(
     UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     UInt operation_duration = cc_get_operation_duration(ins, platform);
-    Str operation_type = cc_get_operation_type(ins, platform);
+    //Str operation_type = cc_get_operation_type(ins, platform);
 
     for (auto q : ins->operands) {
         if (forward_scheduling == direction) {
@@ -87,12 +83,12 @@ Bool cc_qubit_resource_t::available(
     return true;
 }
 
-void cc_qubit_resource_t::reserve(
+void cc_resource_qubit::reserve(
     UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
-    Str operation_type = cc_get_operation_type(ins, platform);
+    //Str operation_type = cc_get_operation_type(ins, platform);
     UInt operation_duration = cc_get_operation_duration(ins, platform);
 
     for (auto q : ins->operands) {
@@ -101,6 +97,8 @@ void cc_qubit_resource_t::reserve(
     }
 }
 
+
+#if 0   // FIXME: unused
 cc_qwg_resource_t::cc_qwg_resource_t(
     const quantum_platform &platform,
     scheduling_direction_t dir
@@ -208,12 +206,14 @@ void cc_qwg_resource_t::reserve(
         }
     }
 }
+#endif
 
-cc_meas_resource_t::cc_meas_resource_t(
+
+cc_resource_meas::cc_resource_meas(
     const quantum_platform &platform,
     scheduling_direction_t dir
 ) :
-    resource_t("meas_units", dir)
+    resource_t("meas_units", dir)   // FIXME
 {
     // DOUT("... creating " << name << " resource");
     count = platform.resources[name]["count"];
@@ -235,23 +235,23 @@ cc_meas_resource_t::cc_meas_resource_t(
     }
 }
 
-cc_meas_resource_t *cc_meas_resource_t::clone() const & {
-    QL_DOUT("Cloning/copying cc_meas_resource_t");
-    return new cc_meas_resource_t(*this);
+cc_resource_meas *cc_resource_meas::clone() const & {
+    QL_DOUT("Cloning/copying cc_resource_meas");
+    return new cc_resource_meas(*this);
 }
 
-cc_meas_resource_t *cc_meas_resource_t::clone() && {
-    QL_DOUT("Cloning/moving cc_meas_resource_t");
-    return new cc_meas_resource_t(std::move(*this));
+cc_resource_meas *cc_resource_meas::clone() && {
+    QL_DOUT("Cloning/moving cc_resource_meas");
+    return new cc_resource_meas(std::move(*this));
 }
 
-Bool cc_meas_resource_t::available(
+Bool cc_resource_meas::available(
     UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = cc_get_operation_type(ins, platform);
-    UInt      operation_duration = cc_get_operation_duration(ins, platform);
+    UInt operation_duration = cc_get_operation_duration(ins, platform);
 
     Bool is_measure = (operation_type == "readout");
     if (is_measure) {
@@ -282,13 +282,13 @@ Bool cc_meas_resource_t::available(
     return true;
 }
 
-void cc_meas_resource_t::reserve(
+void cc_resource_meas::reserve(
     UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = cc_get_operation_type(ins, platform);
-    UInt      operation_duration = cc_get_operation_duration(ins, platform);
+    UInt operation_duration = cc_get_operation_duration(ins, platform);
 
     Bool is_measure = (operation_type == "readout");
     if (is_measure) {
@@ -300,6 +300,8 @@ void cc_meas_resource_t::reserve(
     }
 }
 
+
+#if 0   // FIXME: unused
 cc_edge_resource_t::cc_edge_resource_t(
     const quantum_platform &platform,
     scheduling_direction_t dir
@@ -656,6 +658,9 @@ void cc_detuned_qubits_resource_t::reserve(
         }
     }
 }
+#endif
+
+
 
 // Allocate those resources that were specified in the config file.
 // Those that are not specified, are not allocatd, so are not used in scheduling/mapping.
@@ -669,30 +674,31 @@ cc_resource_manager_t::cc_resource_manager_t(
     QL_DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
     QL_DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
     for (auto it = platform.resources.cbegin(); it != platform.resources.cend(); ++it) {
-        // COUT(it.key() << " : " << it.value() << "\n");
-        Str n = it.key();
+        Str key = it.key();
 
-        // DOUT("... about to create " << n << " resource");
-        if (n == "qubits") {
-            resource_t * ares = new cc_qubit_resource_t(platform, dir);
+        if (key == "qubits") {
+            resource_t * ares = new cc_resource_qubit(platform, dir);
             resource_ptrs.push_back( ares );
-        } else if (n == "qwgs") {
+#if 0
+        } else if (key == "qwgs") {
             resource_t * ares = new cc_qwg_resource_t(platform, dir);
             resource_ptrs.push_back( ares );
-        } else if (n == "meas_units") {
-            resource_t * ares = new cc_meas_resource_t(platform, dir);
+#endif
+        } else if (key == "meas_units") {
+            resource_t * ares = new cc_resource_meas(platform, dir);
             resource_ptrs.push_back( ares );
-        } else if (n == "edges") {
+#if 0
+        } else if (key == "edges") {
             resource_t * ares = new cc_edge_resource_t(platform, dir);
             resource_ptrs.push_back( ares );
-        } else if (n == "detuned_qubits") {
+        } else if (key == "detuned_qubits") {
             resource_t * ares = new cc_detuned_qubits_resource_t(platform, dir);
             resource_ptrs.push_back( ares );
+#endif
         } else {
-            QL_FATAL("Error : Un-modelled resource, i.e. resource not supported by implementation: '" << n << "'");
+            QL_FATAL("Error : Un-modelled resource, i.e. resource not supported by implementation: '" << key << "'");
         }
     }
-    // DOUT("Done constructing inited platform_resource_manager_t");
 }
 
 cc_resource_manager_t *cc_resource_manager_t::clone() const & {
@@ -705,5 +711,6 @@ cc_resource_manager_t *cc_resource_manager_t::clone() && {
     return new cc_resource_manager_t(std::move(*this));
 }
 
+} // namespace cc
 } // namespace arch
 } // namespace ql

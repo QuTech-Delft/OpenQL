@@ -1084,52 +1084,13 @@
         "qubits": {
             "count": 5     // FIXME: duplicates 'hardware_settings/qubit_number'
         },
-        "qwgs" : {
-            "count": 5,
-            "connection_map": { // FIXME: must match "instruments"
-                "0": [0],
-                "1": [1],
-                "2": [2],
-                "3": [3],
-                "4": [4]
-            }
-        },
         "meas_units" : {
             "count": 2,
             "connection_map": { // FIXME: must match "instruments"
                 "0": [0, 2, 3, 4],
                 "1": [1]
             }
-        },
-        "edges": {
-            "count": 4,        // FIXME: must be present and at least match size of 'topology/edges', see edge_resource_t
-            // connection_map:
-            // "0": [2, 10] means that edge 0 'connects' to edges 2 and 10, where edges
-            // refer to the "id" in 'topology/edges'
-            // The term 'connect' in this context means that an operation on edge 0
-            // blocks operations on edges 2 and 10
-            // see: https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L371
-            "connection_map": {
-                "0": [0, 2],
-                "1": [1, 2],
-                "2": [3, 2],
-                "3": [4, 2]
-                // "4": [],
-                // "5": [],
-                // "6": [],
-                // "7": [],
-                // "8": [],
-                // "9": [],
-                // "10": [],
-                // "11": [],
-                // "12": [],
-                // "13": [],
-                // "14": [],
-                // "15": [],
-            }
         }
-
-        //"detuned_qubits"  optional?
     }
 }
 
