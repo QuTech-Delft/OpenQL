@@ -1,8 +1,10 @@
 /** \file
- * Resource management for CC platform.
+ *resource management for CC platform.
  */
 
 #include "cc_resource_manager.h"
+
+#include "utils/json.h"
 
 namespace ql {
 namespace arch {
@@ -10,17 +12,13 @@ namespace cc {
 
 using namespace utils;
 
-// in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
-// it is needed to define the extend of the resource occupation in case of multi-cycle operations
-UInt cc_get_operation_duration(gate *ins, const quantum_platform &platform) {
-    return platform.time_to_cycles(ins->duration);
-}
-
+#if 0
 // operation type is "mw" (for microwave), "flux", or "readout"
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
 Str cc_get_operation_type(gate *ins, const quantum_platform &platform) {
     return platform.find_instruction_type(ins->name);
 }
+#endif
 
 // operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
 Str cc_get_operation_name(gate *ins, const quantum_platform &platform) {
@@ -32,14 +30,17 @@ Str cc_get_operation_name(gate *ins, const quantum_platform &platform) {
     return operation_name;
 }
 
+/************************************************************************\
+| cc_resource_qubit
+\************************************************************************/
+
 cc_resource_qubit::cc_resource_qubit(
     const quantum_platform &platform,
     scheduling_direction_t dir
 ) :
     resource_t("qubits", dir)
 {
-    // DOUT("... creating " << name << " resource");
-    count = platform.resources[name]["count"];
+    count = json_get<UInt>(platform.hardware_settings, "qubit_number", "hardware_settings/qubit_number");
     state.resize(count);
     for (UInt q = 0; q < count; q++) {
         state[q] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
@@ -61,8 +62,7 @@ Bool cc_resource_qubit::available(
     gate *ins,
     const quantum_platform &platform
 ) {
-    UInt operation_duration = cc_get_operation_duration(ins, platform);
-    //Str operation_type = cc_get_operation_type(ins, platform);
+    UInt operation_duration = platform.time_to_cycles(ins->duration);
 
     for (auto q : ins->operands) {
         if (forward_scheduling == direction) {
@@ -88,8 +88,7 @@ void cc_resource_qubit::reserve(
     gate *ins,
     const quantum_platform &platform
 ) {
-    //Str operation_type = cc_get_operation_type(ins, platform);
-    UInt operation_duration = cc_get_operation_duration(ins, platform);
+    UInt operation_duration = platform.time_to_cycles(ins->duration);
 
     for (auto q : ins->operands) {
         state[q] = (forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle );
@@ -99,6 +98,10 @@ void cc_resource_qubit::reserve(
 
 
 #if 0   // FIXME: unused
+/************************************************************************\
+|
+\************************************************************************/
+
 cc_qwg_resource_t::cc_qwg_resource_t(
     const quantum_platform &platform,
     scheduling_direction_t dir
@@ -142,7 +145,7 @@ Bool cc_qwg_resource_t::available(
     gate *ins,
     const quantum_platform &platform
 ) {
-    Str operation_type = cc_get_operation_type(ins, platform);
+    Str operation_type = platform.find_instruction_type(ins->name);
     Str operation_name = cc_get_operation_name(ins, platform);
     UInt      operation_duration = cc_get_operation_duration(ins, platform);
 
@@ -178,7 +181,7 @@ void cc_qwg_resource_t::reserve(
     gate *ins,
     const quantum_platform &platform
 ) {
-    Str operation_type = cc_get_operation_type(ins, platform);
+    Str operation_type = platform.find_instruction_type(ins->name);
     Str operation_name = cc_get_operation_name(ins, platform);
     UInt      operation_duration = cc_get_operation_duration(ins, platform);
 
@@ -209,13 +212,16 @@ void cc_qwg_resource_t::reserve(
 #endif
 
 
+/************************************************************************\
+| cc_resource_meas
+\************************************************************************/
+
 cc_resource_meas::cc_resource_meas(
     const quantum_platform &platform,
     scheduling_direction_t dir
 ) :
     resource_t("meas_units", dir)   // FIXME
 {
-    // DOUT("... creating " << name << " resource");
     count = platform.resources[name]["count"];
     fromcycle.resize(count);
     tocycle.resize(count);
@@ -226,7 +232,6 @@ cc_resource_meas::cc_resource_meas(
     }
     auto &constraints = platform.resources[name]["connection_map"];
     for (auto it = constraints.begin(); it != constraints.end(); ++it) {
-        // COUT(it.key() << " : " << it.value());
         UInt measUnitNo = stoi( it.key() );
         auto & connected_qubits = it.value();
         for (auto &q : connected_qubits) {
@@ -250,8 +255,8 @@ Bool cc_resource_meas::available(
     gate *ins,
     const quantum_platform &platform
 ) {
-    Str operation_type = cc_get_operation_type(ins, platform);
-    UInt operation_duration = cc_get_operation_duration(ins, platform);
+    Str operation_type = platform.find_instruction_type(ins->name);
+    UInt operation_duration = platform.time_to_cycles(ins->duration);
 
     Bool is_measure = (operation_type == "readout");
     if (is_measure) {
@@ -287,8 +292,8 @@ void cc_resource_meas::reserve(
     gate *ins,
     const quantum_platform &platform
 ) {
-    Str operation_type = cc_get_operation_type(ins, platform);
-    UInt operation_duration = cc_get_operation_duration(ins, platform);
+    Str operation_type = platform.find_instruction_type(ins->name);
+    UInt operation_duration = platform.time_to_cycles(ins->duration);
 
     Bool is_measure = (operation_type == "readout");
     if (is_measure) {
@@ -302,6 +307,10 @@ void cc_resource_meas::reserve(
 
 
 #if 0   // FIXME: unused
+/************************************************************************\
+|
+\************************************************************************/
+
 cc_edge_resource_t::cc_edge_resource_t(
     const quantum_platform &platform,
     scheduling_direction_t dir
@@ -357,8 +366,8 @@ Bool cc_edge_resource_t::available(
     gate *ins,
     const quantum_platform &platform
 ) {
-    Str operation_type = cc_get_operation_type(ins, platform);
-    UInt operation_duration = cc_get_operation_duration(ins, platform);
+    Str operation_type = platform.find_instruction_type(ins->name);
+    UInt operation_duration = platform.time_to_cycles(ins->duration);
 
     auto gname = ins->name;
     Bool is_flux = (operation_type == "flux");
@@ -408,8 +417,8 @@ void cc_edge_resource_t::reserve(
     gate *ins,
     const quantum_platform &platform
 ) {
-    Str operation_type = cc_get_operation_type(ins, platform);
-    UInt operation_duration = cc_get_operation_duration(ins, platform);
+    Str operation_type = platform.find_instruction_type(ins->name);
+    UInt operation_duration = platform.time_to_cycles(ins->duration);
 
     auto gname = ins->name;
     Bool is_flux = (operation_type == "flux");
@@ -439,6 +448,10 @@ void cc_edge_resource_t::reserve(
         }
     }
 }
+
+/************************************************************************\
+|
+\************************************************************************/
 
 cc_detuned_qubits_resource_t::cc_detuned_qubits_resource_t(
     const quantum_platform &platform,
@@ -504,7 +517,7 @@ Bool cc_detuned_qubits_resource_t::available(
     gate *ins,
     const quantum_platform &platform
 ) {
-    Str operation_type = cc_get_operation_type(ins, platform);
+    Str operation_type = platform.find_instruction_type(ins->name);
     UInt      operation_duration = cc_get_operation_duration(ins, platform);
 
     auto gname = ins->name;
@@ -587,7 +600,7 @@ void cc_detuned_qubits_resource_t::reserve(
     gate *ins,
     const quantum_platform &platform
 ) {
-    Str operation_type = cc_get_operation_type(ins, platform);
+    Str operation_type = platform.find_instruction_type(ins->name);
     UInt      operation_duration = cc_get_operation_duration(ins, platform);
 
     auto gname = ins->name;
@@ -662,6 +675,10 @@ void cc_detuned_qubits_resource_t::reserve(
 
 
 
+/************************************************************************\
+| cc_resource_manager_t
+\************************************************************************/
+
 // Allocate those resources that were specified in the config file.
 // Those that are not specified, are not allocatd, so are not used in scheduling/mapping.
 // The resource names tested below correspond to the names of the resources sections in the config file.
@@ -677,26 +694,26 @@ cc_resource_manager_t::cc_resource_manager_t(
         Str key = it.key();
 
         if (key == "qubits") {
-            resource_t * ares = new cc_resource_qubit(platform, dir);
-            resource_ptrs.push_back( ares );
+            resource_t *res = new cc_resource_qubit(platform, dir);
+            resource_ptrs.push_back(res);
 #if 0
         } else if (key == "qwgs") {
-            resource_t * ares = new cc_qwg_resource_t(platform, dir);
-            resource_ptrs.push_back( ares );
+            resource_t *res = new cc_qwg_resource_t(platform, dir);
+            resource_ptrs.push_back(res);
 #endif
         } else if (key == "meas_units") {
-            resource_t * ares = new cc_resource_meas(platform, dir);
-            resource_ptrs.push_back( ares );
+            resource_t *res = new cc_resource_meas(platform, dir);
+            resource_ptrs.push_back(res);
 #if 0
         } else if (key == "edges") {
-            resource_t * ares = new cc_edge_resource_t(platform, dir);
-            resource_ptrs.push_back( ares );
+            resource_t *res = new cc_edge_resource_t(platform, dir);
+            resource_ptrs.push_back(res);
         } else if (key == "detuned_qubits") {
-            resource_t * ares = new cc_detuned_qubits_resource_t(platform, dir);
-            resource_ptrs.push_back( ares );
+            resource_t *res = new cc_detuned_qubits_resource_t(platform, dir);
+            resource_ptrs.push_back(res);
 #endif
         } else {
-            QL_FATAL("Error : Un-modelled resource, i.e. resource not supported by implementation: '" << key << "'");
+            QL_JSON_FATAL("resource key '" << key << "' not supported");
         }
     }
 }

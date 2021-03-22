@@ -21,7 +21,7 @@ namespace arch {
 class resource_t {
 protected:
     utils::Str name;
-    utils::UInt count;
+    utils::UInt count;  // FIXME: why a class variable?
     scheduling_direction_t direction;
 
 public:

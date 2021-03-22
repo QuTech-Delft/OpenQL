@@ -21,7 +21,6 @@ public:
     instruction_map_t       instruction_map;          // supported operations
     utils::Json             instruction_settings;     // instruction settings (to use by the eqasm backend)
     utils::Json             hardware_settings;        // additional hardware settings (to use by the eqasm backend)
-
     utils::Json             resources;
     utils::Json             topology;
     utils::Json             aliases;                  // workaround the generic instruction composition

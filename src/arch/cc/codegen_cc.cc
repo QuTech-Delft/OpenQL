@@ -7,11 +7,12 @@
  *          functions is correct
  */
 
-#include <iosfwd>
 #include "codegen_cc.h"
 
 #include "version.h"
 #include "options.h"
+
+#include <iosfwd>
 
 namespace ql {
 namespace arch {

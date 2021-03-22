@@ -15,6 +15,7 @@
 #include "datapath_cc.h"
 #include "settings_cc.h"
 #include "vcd_cc.h"
+
 #include "platform.h"
 
 namespace ql {

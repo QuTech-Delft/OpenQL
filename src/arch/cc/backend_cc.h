@@ -9,11 +9,11 @@
 #pragma once
 
 #include "types_cc.h"
+#include "codegen_cc.h"
 
 #include "program.h"
 #include "eqasm_compiler.h"
 #include "ir.h"
-#include "codegen_cc.h"
 
 namespace ql {
 namespace arch {
