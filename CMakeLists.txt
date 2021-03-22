@@ -210,6 +210,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/filesystem.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/json.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/backend_cc.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/cc_resource_manager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/codegen_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/datapath_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/settings_cc.cc"

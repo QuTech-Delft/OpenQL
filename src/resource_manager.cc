@@ -5,7 +5,7 @@
 #include "resource_manager.h"
 
 #include "arch/cc_light/cc_light_resource_manager.h"
-// #include "arch/cc/cc_resource_manager.h"
+#include "arch/cc/cc_resource_manager.h"
 
 namespace ql {
 namespace arch {
