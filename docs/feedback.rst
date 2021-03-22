@@ -2,7 +2,7 @@ Feedback latencies in QuSurf architecture
 -----------------------------------------
 
 .. list-table:: Latencies
-    :widths: 25 15 20 40
+    :widths: 20 15 25 40
     :header-rows: 1
 
     *   -   Identifier
@@ -16,7 +16,7 @@ Feedback latencies in QuSurf architecture
     *   -   tCcSyncDio
         -   ~10 (0-20)
         -
-        -   synchronize incoming signal on DIO interface to 50 MHz grid.
+        -   synchronize incoming signal on DIO interface to 50 MHz grid. Depends on arrival time and DIO timing calibration
     *   -   tCcDistDsm
         -   20
         -
@@ -92,7 +92,7 @@ Feedback latencies in QuSurf architecture
     *   -   tUhfqaTriggerDio
         -
         -
-        -   delay from DIO trigger to first analog output
+        -   delay from DIO trigger to first analog output. Depends on number of codeword possibilities in sequencing program
     *   -   tUhfqa5stateDiscr
         -   168
         -   UHFQA-5, no bypass
@@ -129,6 +129,18 @@ Feedback latencies in QuSurf architecture
         -
         -
         -
+    *   -   tQwgTriggerDio
+        -   80
+        -   using LVDS input
+        -   delay from DIO trigger to first analog output. Includes sideband modulation and mixer correction
+    *   -
+        -
+        -
+        -
+    *   -
+        -
+        -
+        -
     *   -   tVsmDelay
         -   12
         -   VSM v3
@@ -153,4 +165,5 @@ Information sources:
 -   tCc*: CC-SiteVisitVirtual-20200506.pptx
 -   tUhfqaReadoutProcessing: ziUHFQA_UserManual.pdf (revision 21.02.01)
 -   tUhf*: QuSurf_MetricsTables_201015-Please-update-for-TEM5.docx
+-   tQwg*: 20171511_pitch_qwg_final.pptx
 
