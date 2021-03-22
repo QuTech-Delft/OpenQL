@@ -19,11 +19,12 @@ typedef enum {
 namespace arch {
 
 class resource_t {
-public:
+protected:
     utils::Str name;
     utils::UInt count;
     scheduling_direction_t direction;
 
+public:
     resource_t(const utils::Str &n, scheduling_direction_t dir);
     virtual ~resource_t() = default;
 
@@ -37,10 +38,10 @@ public:
 };
 
 class platform_resource_manager_t {
-public:
-
+protected:
     utils::Vec<resource_t*> resource_ptrs;
 
+public:
     // constructor needed by mapper::FreeCycle to bridge time from its construction to its Init
     // see the note on the use of constructors and Init functions at the start of mapper.h
     platform_resource_manager_t() = default;
@@ -71,10 +72,10 @@ public:
 };
 
 class resource_manager_t {
-public:
-
+private:
     platform_resource_manager_t *platform_resource_manager_ptr;     // pointer to specific platform_resource_manager
 
+public:
     resource_manager_t();
 
     // (platform,dir) parameterized resource_manager_t
