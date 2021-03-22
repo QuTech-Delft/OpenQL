@@ -616,7 +616,7 @@ void Codegen::customGate(
 #if OPT_PRAGMA
     RawPtr<const Json> pragma = settings.getPragma(iname);
     if (pragma) {
-        for (std::vector<BundleInfo> &vbi : bundleInfo) {
+        for (Vec<BundleInfo> &vbi : bundleInfo) {
             // FIXME: for now we just store the JSON of the pragma statement in bundleInfo[*][0]
             if(vbi[0].pragma) {
                 QL_FATAL("Bundle contains more than one gate with 'pragma' key");    // FIXME: provide context
