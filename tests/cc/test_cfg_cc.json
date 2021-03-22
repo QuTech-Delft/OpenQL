@@ -618,7 +618,7 @@
 		},
 
 		"measure": {
-			"duration": 400,
+			"duration": 600,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "readout",
 			"cc_light_instr": "measz",

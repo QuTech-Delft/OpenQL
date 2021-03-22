@@ -5,23 +5,22 @@
                 - ../test_uniform.cc, modified and extended for the cc (Central Controller)
                 - ../test_hybrid.py
 */
+
+#include "openql.h"
+
 #include <string>
-#include <vector>
-#include <iostream>
-#include <fstream>
 #include <algorithm>
-#include <sstream>
-#include <cassert>
 
-#include <time.h>
-
-#include <openql.h>
+using namespace ql::utils;
 
 #define CFG_FILE_JSON   "test_cfg_cc.json"
 
+#if 1	// FIXME: interfaces not present in C++ API
+ #define BARRIER(x) wait(x,0)
+#endif
 
 // based on tests/test_hybrid.py
-void test_classical(std::string scheduler, std::string scheduler_uniform)
+void test_classical()
 {
     const int num_qubits = 17;
     const int num_cregs = 3;
@@ -30,14 +29,14 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
 
     // create program
-    ql::quantum_program prog(("test_classical_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program prog("test_classical", s17, num_qubits, num_cregs);
     ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     // quantum operations
     for (int j=6; j<17; j++) {
         k.gate("x", j);
     }
-    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
+    k.BARRIER({});      // help scheduler
 
     // 1/2/3 qubit flux
 #if 0 // misaligns cz and park_cz (using old scheduler)
@@ -59,12 +58,12 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     k.gate("cz", 10, 15);
     k.gate("park_cz", 16);
 #endif
-    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
 
     k.gate("cz_park", {6, 7, 11});
     k.gate("cz_park", {12, 13, 15});
     k.gate("cz_park1", {10, 15, 16});   // FIXME:
-    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
+	k.BARRIER({});      // help scheduler
 
     // gate with angle parameter
     double angle = 1.23456; // just some number
@@ -139,13 +138,11 @@ $2 = 0
     // measure
     k.gate("measure", [0], rs1)
 #endif
-    k.gate("measure", {7}, {0});
-    k.gate("measure", {8}, {1});
+    k.gate("measure", 7, 0);
+    k.gate("measure", 8, 1);
 
     prog.add(k);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
 #if 0   // FIXME
     ql::options::set("backend_cc_map_input_file", "test_output/test_classical_ALAP_uniform_no.map");
 #endif
@@ -153,7 +150,7 @@ $2 = 0
 }
 
 
-void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
+void test_qec_pipelined()
 {
     const int num_qubits = 17;
     const int num_cregs = 3;
@@ -162,7 +159,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
 
     // create program
-    ql::quantum_program prog(("test_qec_pipelined_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program prog("test_qec_pipelined", s17, num_qubits, num_cregs);
     ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     // pipelined QEC: [
@@ -190,24 +187,20 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     k.gate("rym90", xE);
     k.gate("rym90", xW);
     k.gate("rym90", xS);
-//    k.wait({x, xN, xE, xW, xS}, 0);
-    // FIXME: above line does not work with new scheduler.h
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
+	k.BARRIER({});      // help scheduler
 
     k.gate("cz", x, xE);
     k.gate("cz", x, xN);
     k.gate("cz", x, xS);
     k.gate("cz", x, xW);
-//    k.wait({x, xN, xE, xW, xS}, 0);
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
+	k.BARRIER({});      // help scheduler
 
     k.gate("ry90", x);
     k.gate("ry90", xN);
     k.gate("ry90", xE);
     k.gate("ry90", xW);
     k.gate("ry90", xS);
-//    k.wait({x, xN, xE, xW, xS}, 0);
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
+	k.BARRIER({});      // help scheduler
 
     // FIXME:
     // - qubits participating in CZ need phase correction, which may be part of gate, or separate
@@ -216,9 +209,8 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     //      + duration?
     //      + possible in parallel without doing 2 qubits gate?
 
-    k.gate("measure", {x}, {0});
-//    k.wait({x}, 0);
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
+    k.gate("measure", x, 0);
+	k.BARRIER({});      // help scheduler
 
     // Z stabilizers
     k.gate("rym90", z);
@@ -229,17 +221,15 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     k.gate("cz", z, zW);
 
     k.gate("ry90", z);
-    k.gate("measure", {z}, {1});
+    k.gate("measure", z, 1);
 
     prog.add(k);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile();
 }
 
 
-void test_do_while_nested_for(std::string scheduler, std::string scheduler_uniform)
+void test_do_while_nested_for()
 {
    // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
@@ -247,7 +237,7 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
     // create program
     const int num_qubits = 17;
     const int num_cregs = 3;
-    ql::quantum_program prog(("test_do_while_nested_for_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program prog("test_do_while_nested_for", s17, num_qubits, num_cregs);
 //    ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
@@ -275,22 +265,20 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
     prog.add_program(sp2);
     // NB: will not run properly, because rs1 and rs2 are never changed
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile();
 }
 
 
 
 
-void test_rabi( std::string scheduler, std::string scheduler_uniform)
+void test_rabi()
 {
     // create and set platform
     ql::quantum_platform s17("s17", "test_cfg_cc_demo.json");
 
     const int num_qubits = 17;
     const int num_cregs = 3;
-    ql::quantum_program prog(("test_rabi_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program prog("test_rabi", s17, num_qubits, num_cregs);
     ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
     ql::quantum_kernel k1("aKernel1", s17, num_qubits, num_cregs);
 
@@ -299,26 +287,24 @@ void test_rabi( std::string scheduler, std::string scheduler_uniform)
     size_t qubit = 10;     // connects to uhfqa-0 and awg8-mw-0
 
     k1.gate("x", qubit);
-    k1.gate("measure", {(ql::utils::UInt)qubit}, {1});
+    k1.gate("measure", qubit, 1);
 
     ql::operation op1 = ql::operation(rs1, std::string(">="), rs2); // FIXME: bogus condition, endless loop
     sp1.add_do_while(k1, op1);
     prog.add_program(sp1);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile();
 }
 
 
-void test_wait( std::string scheduler, std::string scheduler_uniform)
+void test_wait()
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
 
     const int num_qubits = 17;
     const int num_cregs = 3;
-    ql::quantum_program prog(("test_wait_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program prog("test_wait", s17, num_qubits, num_cregs);
     ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
     ql::quantum_kernel k("aKernel", s17, num_qubits, num_cregs);
 
@@ -332,55 +318,151 @@ void test_wait( std::string scheduler, std::string scheduler_uniform)
 
     prog.add(k);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile();
 }
 
 // FIXME: test to find quantum inspire problems 20200325
-void test_qi_example( std::string scheduler, std::string scheduler_uniform)
+void test_qi_example()
 {
     // create and set platform
     ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
 
     const int num_qubits = 5;
     const int num_cregs = 5;
-    ql::quantum_program prog(("test_qi_example_" + scheduler + "_uniform_" + scheduler_uniform), s5, num_qubits, num_cregs);
+    ql::quantum_program prog("test_qi_example", s5, num_qubits, num_cregs);
     ql::quantum_program sp1(("sp1"), s5, num_qubits, num_cregs);
     ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs);
 
-    k.gate("prepz", {0, 1, 2, 3, 4});
+	for(size_t i=0; i<5; i++) {
+		k.gate("prepz", i);
+	}
+	k.BARRIER({});      // help scheduler
     k.gate("ry180", {0, 2});     // FIXME: "y" does not work, but gate decomposition should handle?
     k.gate("wait");
     k.gate("cz", {0, 2});
     k.gate("wait");
     k.gate("y90", 2);
-    k.gate("measure", {0, 1, 2, 3, 4});
+
+	k.BARRIER({});      // help scheduler
+	for(size_t i=0; i<5; i++) {
+		k.gate("measure", i);
+	}
+	k.BARRIER({});      // help scheduler
 
     prog.add(k);
 
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
     ql::options::set("write_qasm_files", "yes");    // so we can see bundles
     prog.compile();
 }
 
 
+void test_break()
+{
+    // create and set platform
+    ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
+    ql::options::set("write_qasm_files", "yes");    	// so we can see bundles
+
+    const int num_qubits = 5;
+    const int num_cregs = 5;
+    const int num_bregs = 5;
+    ql::quantum_program prog("test_break", s5, num_qubits, num_cregs, num_bregs);
+    ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs, num_bregs);
+
+    k.gate("prepz", 1);
+    k.gate("measure_fb", 1);
+    k.gate("if_1_break", 1);
+
+    prog.add_for(k, 100);
+
+    prog.compile();
+}
+
+
+void test_condex()
+{
+    // create and set platform
+    ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
+    ql::options::set("write_qasm_files", "yes");    	// so we can see bundles
+
+    const int num_qubits = 5;
+    const int num_cregs = 5;
+    const int num_bregs = 5;
+    ql::quantum_program prog("test_condex", s5, num_qubits, num_cregs, num_bregs);
+    ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs, num_bregs);
+
+    k.gate("prepz", 1);	// FIXME: program makes no sense
+    k.gate("measure_fb", 1);
+    k.gate("measure_fb", 2);
+
+	k.condgate("x", Vec<UInt>{0}, ql::cond_always, Vec<UInt>{});
+	k.BARRIER({});      // help scheduler
+	k.condgate("x", Vec<UInt>{0}, ql::cond_never, Vec<UInt>{});
+	k.BARRIER({});
+
+	k.condgate("x", Vec<UInt>{0}, ql::cond_unary, Vec<UInt>{1});
+	k.BARRIER({});
+	k.condgate("x", Vec<UInt>{0}, ql::cond_not, Vec<UInt>{1});
+	k.BARRIER({});
+
+	k.condgate("x", Vec<UInt>{0}, ql::cond_and, Vec<UInt>{1,2});
+	k.BARRIER({});
+	k.condgate("x", Vec<UInt>{0}, ql::cond_nand, Vec<UInt>{1,2});
+	k.BARRIER({});
+	k.condgate("x", Vec<UInt>{0}, ql::cond_or, Vec<UInt>{1,2});
+	k.BARRIER({});
+	k.condgate("x", Vec<UInt>{0}, ql::cond_nor, Vec<UInt>{1,2});
+	k.BARRIER({});
+	k.condgate("x", Vec<UInt>{0}, ql::cond_xor, Vec<UInt>{1,2});
+	k.BARRIER({});
+	k.condgate("x", Vec<UInt>{0}, ql::cond_nxor, Vec<UInt>{1,2});
+	k.BARRIER({});
+
+    prog.add_for(k, 100);
+
+    prog.compile();
+}
+
+void test_cqasm_condex()
+{
+    // create platform
+    ql::quantum_platform platform("s5", "cc_s5_direct_iq.json");
+    size_t num_qubits = platform.get_qubit_number();
+    // create program
+    ql::quantum_program program("qasm_qi_example", platform, num_qubits);
+#if 0	// FIXME: fails to compile (tested on Macos): "error: invalid application of 'sizeof' to an incomplete type 'ql::cqasm::ReaderImpl'"
+    ql::cqasm::Reader cqasm_rdr(platform, program);
+    cqasm_rdr.string2circuit(R"(
+	version 1.0
+    qubits 5
+    prep_z q[0,1,2,3,4]
+    y q[0,2]
+    cz q[0], q[2]
+    y90 q[2]
+    measure_all
+	)");
+#endif
+
+    // compile the resulting program
+    program.compile();
+}
+
+
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_DEBUG");      // LOG_DEBUG, LOG_INFO
+    ql::utils::logger::set_log_level("LOG_INFO");      // LOG_DEBUG, LOG_INFO
 
-#if 0
-    test_classical("ALAP", "no");
-    test_qec_pipelined("ALAP", "no");
-    test_do_while_nested_for("ALAP", "no");
-    test_rabi("ALAP", "no");
-    test_wait("ALAP", "no");
+#if 0	// FIXME
+    test_classical();
+    test_qec_pipelined();
+    test_do_while_nested_for();
+    test_rabi();
+    test_wait();
 #endif
 
-#if 1
-    test_qi_example("ALAP", "no");
-#endif
+    test_qi_example();
+    test_break();
+    test_condex();
+//    test_cqasm_condex();
 
     return 0;
 }

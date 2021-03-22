@@ -361,12 +361,17 @@
                 "static_codeword_override": [0]
             }
         },
+        // FIXME: new: signal can be 0, 1 or 2-D matrix, first dimension=operand_idx, second=multiple types, e.g. "mw" and "switch"
+        // how about runtime parameters
         "rx180": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "cc": {
-                "ref_signal": "single-qubit-mw",    // NB: reference, instead of defining "signal" here
-                "static_codeword_override": [1]
+            "signal": {
+                "type": "mw",
+                "func": "ge",
+                "parameters": {
+                    "theta": 180,
+                    "phi": 0
+                }
             }
         },
         "ry180": {
@@ -570,17 +575,6 @@
                 "signal": []
             }
         },
-
-		"if_0_break": {
-			"duration": 60,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"cc": {
-				"signal": [],
-				"pragma": {
-                    "break": 0
-				}
-			}
-		},
 
 		"if_1_break": {
 			"duration": 60,

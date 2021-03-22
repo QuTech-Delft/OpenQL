@@ -192,7 +192,7 @@ public:
     utils::Vec<utils::UInt> breg_operands;        // bit operands e.g. assigned to by measure; cond_operands are separate
     utils::Vec<utils::UInt> cond_operands;        // 0, 1 or 2 bit operands of condition
     cond_type_t condition = cond_always;          // defines condition and by that number of bit operands of condition
-    utils::Int int_operand = 0;
+    utils::Int int_operand = 0;						// FIXME: move to class 'classical'
     utils::UInt duration = 0;
     utils::Real angle = 0.0;                      // for arbitrary rotations
     utils::UInt cycle = MAX_CYCLE;                // cycle after scheduling; MAX_CYCLE indicates undefined
