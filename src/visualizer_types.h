@@ -98,17 +98,68 @@ struct GateProperties {
     utils::Str name;
     utils::Vec<utils::Int> operands;
     utils::Vec<utils::Int> creg_operands;
+    swap_parameters swap_params;
     utils::Int duration;
     utils::Int cycle;
     gate_type_t type;
     utils::Vec<utils::Int> codewords; // std::vector<size_t> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
     utils::Str visual_type;
-    utils::Int virtual_qubit_index; // only used for remap gates
 
     GateProperties() = delete;
 };
 
 // ------------- Layout declaration -------------- //
+
+class MappingGraphLayout {
+private:
+    utils::Bool initDefaultVirtuals = false;
+    utils::Bool showVirtualColors = true;
+    utils::Bool showRealIndices = true;
+    utils::Bool useTopology = true;
+    utils::Int qubitRadius = 15;
+    utils::Int qubitSpacing = 7;
+    utils::Int borderSize = 32;
+    utils::Int fontHeightReal = 13;
+    utils::Int fontHeightVirtual = 13;
+    Color textColorReal = black;
+    Color textColorVirtual = black;
+    utils::Int realIndexSpacing = 3;
+    Color qubitFillColor = white;
+    Color qubitOutlineColor = black;
+
+public:
+    utils::Bool saveImage = false;
+
+    utils::Bool getInitDefaultVirtuals() const { return initDefaultVirtuals; }
+    utils::Bool getShowVirtualColors() const { return showVirtualColors; }
+    utils::Bool getShowRealIndices() const { return showRealIndices; }
+    utils::Bool getUseTopology() const { return useTopology; }
+    utils::Int getQubitRadius() const { return qubitRadius; }
+    utils::Int getQubitSpacing() const { return qubitSpacing; }
+    utils::Int getBorderSize() const { return borderSize; }
+    utils::Int getFontHeightReal() const { return fontHeightReal; }
+    utils::Int getFontHeightVirtual() const { return fontHeightVirtual; }
+    Color getTextColorReal() const { return textColorReal; }
+    Color getTextColorVirtual() const { return textColorVirtual; }
+    utils::Int getRealIndexSpacing() const { return realIndexSpacing; }
+    Color getQubitFillColor() const { return qubitFillColor; }
+    Color getQubitOutlineColor() const { return qubitOutlineColor; }
+
+    void setInitDefaultVirtuals(const utils::Bool argument) { initDefaultVirtuals = argument; }
+    void setShowVirtualColors(const utils::Bool argument) { showVirtualColors = argument; }
+    void setShowRealIndices(const utils::Bool argument) { showRealIndices = argument; }
+    void setUseTopology(const utils::Bool argument) { useTopology = argument; }
+    void setQubitRadius(const utils::Int argument) { assertPositive(argument, "qubitRadius"); qubitRadius = argument; }
+    void setQubitSpacing(const utils::Int argument) { assertPositive(argument, "qubitSpacing"); qubitSpacing = argument; }
+    void setBorderSize(const utils::Int argument) { assertPositive(argument, "borderSize"); borderSize = argument; }
+    void setFontHeightReal(const utils::Int argument) { assertPositive(argument, "fontHeightReal"); fontHeightReal = argument; }
+    void setFontHeightVirtual(const utils::Int argument) { assertPositive(argument, "fontHeightVirtual"); fontHeightVirtual = argument; }
+    void setTextColorReal(const Color argument) { textColorReal = argument; }
+    void setTextColorVirtual(const Color argument) { textColorVirtual = argument; }
+    void setRealIndexSpacing(const utils::Int argument) { assertPositive(argument, "realIndexSpacing"); realIndexSpacing = argument; }
+    void setQubitFillColor(const Color argument) { qubitFillColor = argument; }
+    void setQubitOutlineColor(const Color argument) { qubitOutlineColor = argument; }
+};
 
 class InteractionGraphLayout {
 private:
@@ -403,6 +454,7 @@ public:
 
 struct CircuitLayout {
     utils::Bool saveImage = false;
+    Color backgroundColor = {{ 0, 0, 50 }};
 
     Cycles cycles;
     BitLines bitLines;

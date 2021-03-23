@@ -18,8 +18,9 @@ Image::Image(const Int imageWidth, const Int imageHeight) : cimg((int) imageWidt
     // empty
 }
 
-void Image::fill(const Int rgb) {
-    cimg.fill((int) rgb);
+void Image::fill(const Color color) {
+    cimg.fill(255);
+    drawFilledRectangle(0, 0, cimg.width(), cimg.height(), color, 1.0f);
 }
 
 void Image::drawLine(const Int x0, const Int y0, const Int x1, const Int y1, const Color color, const Real alpha, const LinePattern pattern) {

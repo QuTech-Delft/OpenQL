@@ -153,7 +153,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "prepx",
-            "cc_light_opcode": 1
+            "cc_light_opcode": 1,
+            "visual_type": "prepx"
         },
         "prepz": {
             "duration": 620,
@@ -163,7 +164,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "prepz",
-            "cc_light_opcode": 2
+            "cc_light_opcode": 2,
+            "visual_type": "prepz"
         },
         "measx_keep": {
             "duration": 340,
@@ -173,7 +175,8 @@
             "type": "readout",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "measx",
-            "cc_light_opcode": 4
+            "cc_light_opcode": 4,
+            "visual_type": "measure"
         },
         "measz_keep": {
             "duration": 300,
@@ -183,7 +186,8 @@
             "type": "readout",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "measz",
-            "cc_light_opcode": 4
+            "cc_light_opcode": 4,
+            "visual_type": "measure"
         },
         "measure": {
             "duration": 300,
@@ -193,7 +197,8 @@
             "type": "readout",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "measz",
-            "cc_light_opcode": 4
+            "cc_light_opcode": 4,
+            "visual_type": "measure"
         },
         "i": {
             "duration": 20,
@@ -203,7 +208,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "i",
-            "cc_light_opcode": 5
+            "cc_light_opcode": 5,
+            "visual_type": "i"
         },
         "x": {
             "duration": 20,
@@ -213,7 +219,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "x",
-            "cc_light_opcode": 6
+            "cc_light_opcode": 6,
+            "visual_type": "x"
         },
         "y": {
             "duration": 20,
@@ -223,7 +230,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "y",
-            "cc_light_opcode": 7
+            "cc_light_opcode": 7,
+            "visual_type": "y"
         },
         "z": {
             "duration": 40,
@@ -233,7 +241,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "z",
-            "cc_light_opcode": 8
+            "cc_light_opcode": 8,
+            "visual_type": "z"
         },
         "rx": {
             "duration": 60,
@@ -243,7 +252,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "rx",
-            "cc_light_opcode": 6
+            "cc_light_opcode": 6,
+            "visual_type": "rx"
         },
         "ry": {
             "duration": 60,
@@ -253,7 +263,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "ry",
-            "cc_light_opcode": 7
+            "cc_light_opcode": 7,
+            "visual_type": "ry"
         },
         "rz": {
             "duration": 60,
@@ -263,7 +274,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "rz",
-            "cc_light_opcode": 8
+            "cc_light_opcode": 8,
+            "visual_type": "rz"
         },
         "h": {
             "duration": 40,
@@ -273,7 +285,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "h",
-            "cc_light_opcode": 9
+            "cc_light_opcode": 9,
+            "visual_type": "h"
         },
         "s": {
             "duration": 60,
@@ -283,7 +296,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "s",
-            "cc_light_opcode": 10
+            "cc_light_opcode": 10,
+            "visual_type": "s"
         },
         "sdag": {
             "duration": 60,
@@ -293,7 +307,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "sdag",
-            "cc_light_opcode": 11
+            "cc_light_opcode": 11,
+            "visual_type": "sdag"
         },
         "x90": {
             "duration": 20,
@@ -303,7 +318,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "x90",
-            "cc_light_opcode": 12
+            "cc_light_opcode": 12,
+            "visual_type": "x90"
         },
         "xm90": {
             "duration": 20,
@@ -313,7 +329,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "xm90",
-            "cc_light_opcode": 13
+            "cc_light_opcode": 13,
+            "visual_type": "xm90"
         },
         "y90": {
             "duration": 20,
@@ -323,7 +340,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "y90",
-            "cc_light_opcode": 14
+            "cc_light_opcode": 14,
+            "visual_type": "y90"
         },
         "ym90": {
             "duration": 20,
@@ -333,7 +351,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "ym90",
-            "cc_light_opcode": 15
+            "cc_light_opcode": 15,
+            "visual_type": "ym90"
         },
         "t": {
             "duration": 60,
@@ -343,7 +362,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "t",
-            "cc_light_opcode": 16
+            "cc_light_opcode": 16,
+            "visual_type": "t"
         },
         "tdag": {
             "duration": 60,
@@ -353,7 +373,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "tdag",
-            "cc_light_opcode": 17
+            "cc_light_opcode": 17,
+            "visual_type": "tdag"
         },
         "x45": {
             "duration": 20,
@@ -363,7 +384,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "x45",
-            "cc_light_opcode": 18
+            "cc_light_opcode": 18,
+            "visual_type": "x45"
         },
         "xm45": {
             "duration": 20,
@@ -373,7 +395,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "xm45",
-            "cc_light_opcode": 19
+            "cc_light_opcode": 19,
+            "visual_type": "xm45"
         },
         "y45": {
             "duration": 20,
@@ -383,7 +406,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "y45",
-            "cc_light_opcode": 18
+            "cc_light_opcode": 18,
+            "visual_type": "y45"
         },
         "ym45": {
             "duration": 20,
@@ -393,7 +417,8 @@
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "ym45",
-            "cc_light_opcode": 19
+            "cc_light_opcode": 19,
+            "visual_type": "ym45"
         },
         "cz": {
             "duration": 40,
@@ -403,7 +428,8 @@
             "type": "flux",
             "cc_light_instr_type": "two_qubit_gate",
             "cc_light_instr": "cz",
-            "cc_light_opcode": 129
+            "cc_light_opcode": 129,
+            "visual_type": "cz"
         },
         "cnot": {
             "duration": 80,
@@ -413,7 +439,8 @@
             "type": "flux",
             "cc_light_instr_type": "two_qubit_gate",
             "cc_light_instr": "cnot",
-            "cc_light_opcode": 128
+            "cc_light_opcode": 128,
+            "visual_type": "cnot"
         },
         "swap": {
             "duration": 200,
@@ -423,7 +450,8 @@
             "type": "flux",
             "cc_light_instr_type": "two_qubit_gate",
             "cc_light_instr": "swap",
-            "cc_light_opcode": 128
+            "cc_light_opcode": 128,
+            "visual_type": "swap"
         },
         "move": {
             "duration": 140,
@@ -433,7 +461,8 @@
             "type": "flux",
             "cc_light_instr_type": "two_qubit_gate",
             "cc_light_instr": "move",
-            "cc_light_opcode": 128
+            "cc_light_opcode": 128,
+            "visual_type": "move"
         }
     },
 

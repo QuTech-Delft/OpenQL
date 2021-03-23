@@ -202,6 +202,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_common.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_circuit.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_interaction.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_mapping.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/exception.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/logger.cc"

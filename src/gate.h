@@ -181,6 +181,23 @@ typedef enum e_cond_type {
 
 const utils::UInt MAX_CYCLE = utils::MAX;
 
+struct swap_parameters {
+    utils::Bool part_of_swap = false;
+    // at the end of the swap r0 stores v0 and r1 stores v1
+    utils::Int r0 = -1;
+    utils::Int r1 = -1;
+    utils::Int v0 = -1;
+    utils::Int v1 = -1;
+
+    // default constructor
+    swap_parameters() {}
+
+    // initializer list
+    swap_parameters(utils::Bool _part_of_swap, utils::Int _r0, utils::Int _r1, utils::Int _v0, utils::Int _v1)
+        : part_of_swap(_part_of_swap), r0(_r0), r1(_r1), v0(_v0), v1(_v1)
+    {}
+};
+
 /**
  * gate interface
  */
@@ -192,7 +209,8 @@ public:
     utils::Vec<utils::UInt> breg_operands;        // bit operands e.g. assigned to by measure; cond_operands are separate
     utils::Vec<utils::UInt> cond_operands;        // 0, 1 or 2 bit operands of condition
     cond_type_t condition = cond_always;          // defines condition and by that number of bit operands of condition
-    utils::Int int_operand = 0;						// FIXME: move to class 'classical'
+    swap_parameters swap_params;                  // if the gate is part of a swap/move, this will contain the real and virtual qubits involved
+    utils::Int int_operand = 0;                   // FIXME: move to class 'classical'
     utils::UInt duration = 0;
     utils::Real angle = 0.0;                      // for arbitrary rotations
     utils::UInt cycle = MAX_CYCLE;                // cycle after scheduling; MAX_CYCLE indicates undefined

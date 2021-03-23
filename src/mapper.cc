@@ -1127,6 +1127,10 @@ void Past::AddSwap(UInt r0, UInt r1) {
         return;
     }
 
+    // store the virtual qubits corresponding to each real qubit
+    UInt v0 = v2r.GetVirt(r0);
+    UInt v1 = v2r.GetVirt(r1);
+
     circuit circ;   // current kernel copy, clear circuit
     Str mapusemovesopt = options::get("mapusemoves");
     if (mapusemovesopt != "no" && (v2r.GetRs(r0) != rs_hasstate || v2r.GetRs(r1) != rs_hasstate)) {
@@ -1187,8 +1191,14 @@ void Past::AddSwap(UInt r0, UInt r1) {
         }
     }
     nswapsadded++;                       // for reporting at the end
+
+    // add each gate in the resulting circuit
     for (auto &gp : circ) {
         Add(gp);
+        // each gate in circ is part of a swap or move, so add the parameters
+        //TODO: uint to int conversion
+        const swap_parameters swap_params {true, (Int) r0, (Int) r1, (Int) v1, (Int) v0};
+        gp->swap_params = swap_params;
     }
 
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
@@ -1301,6 +1311,13 @@ void Past::MakeReal(gate *gp, circuit &circ) {
         }
     }
     QL_DOUT("... MakeReal: new gate created for: " << real_gname << " or " << gname);
+
+    if (gp->swap_params.part_of_swap) {
+        QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");
+        for (gate *gate : circ) {
+            gate->swap_params = gp->swap_params;
+        }
+    }
 }
 
 // as mapper after-burner
@@ -1339,6 +1356,13 @@ void Past::MakePrimitive(gate *gp, circuit &circ) const {
         }
     }
     QL_DOUT("... MakePrimtive: new gate created for: " << prim_gname << " or " << gname);
+
+    if (gp->swap_params.part_of_swap) {
+        QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");
+        for (gate *gate : circ) {
+            gate->swap_params = gp->swap_params;
+        }
+    }
 }
 
 UInt Past::MaxFreeCycle() const {
