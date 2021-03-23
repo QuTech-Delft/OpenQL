@@ -280,10 +280,10 @@ void printGates(const Vec<GateProperties> &gates) {
 }
 
 void printGatesShort(const Vec<GateProperties> &gates) {
-    Int maxGateNameLength = 0;
-    Int maxSwapStringLength = 0;
-    Int maxCycleStringLength = 0;
-    Int maxRealOperandsLength = 0;
+    UInt maxGateNameLength = 0;
+    UInt maxSwapStringLength = 0;
+    UInt maxCycleStringLength = 0;
+    UInt maxRealOperandsLength = 0;
     for (const GateProperties &gate : gates) {
         if (gate.name.length() > maxGateNameLength) {
             maxGateNameLength = gate.name.length();
@@ -305,25 +305,25 @@ void printGatesShort(const Vec<GateProperties> &gates) {
         Str vOperands = "[" + to_string(gate.swap_params.v0) + ", " + to_string(gate.swap_params.v1) + "]";
 
         Str nameSectionExtraSpacing;
-        for (Int i = 0; i < maxGateNameLength - gate.name.length() + minSpacing; i++) {
+        for (UInt i = 0; i < maxGateNameLength - gate.name.length() + minSpacing; i++) {
             nameSectionExtraSpacing += " ";
         }
         const Str nameSection = "gate: " + gate.name + nameSectionExtraSpacing;
 
         Str swapSectionExtraSpacing;
-        for (Int i = 0; i < maxSwapStringLength - to_string(gate.swap_params.part_of_swap).length() + minSpacing; i++) {
+        for (UInt i = 0; i < maxSwapStringLength - to_string(gate.swap_params.part_of_swap).length() + minSpacing; i++) {
             swapSectionExtraSpacing += " ";
         }
         const Str swapSection = "part of swap: " + to_string(gate.swap_params.part_of_swap) + swapSectionExtraSpacing;
 
         Str cycleSectionExtraSpacing;
-        for (Int i = 0; i < maxCycleStringLength - to_string(gate.cycle).length() + minSpacing; i++) {
+        for (UInt i = 0; i < maxCycleStringLength - to_string(gate.cycle).length() + minSpacing; i++) {
             cycleSectionExtraSpacing += " ";
         }
         const Str cycleSection = "cycle: " + to_string(gate.cycle) + cycleSectionExtraSpacing;
 
         Str realOperandsSectionExtraSpacing;
-        for (Int i = 0; i < maxRealOperandsLength - rOperands.length() + 1; i++) {
+        for (UInt i = 0; i < maxRealOperandsLength - rOperands.length() + 1; i++) {
             realOperandsSectionExtraSpacing += " ";
         }
         const Str realOperandsSection = "real and virtual operands: " + rOperands + realOperandsSectionExtraSpacing;
