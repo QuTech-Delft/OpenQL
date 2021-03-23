@@ -251,65 +251,85 @@ static void report_write_c(
     StrStrm out_c;
     out_c << "#pragma ckt 100001\n\
 typedef struct {\n\
-	char dummy;	/* not accessed */\n\
-} _qbit;		/* must never be used */\n\
+    char dummy; /* not accessed */\n\
+} _qbit;        /* must never be used */\n\
 typedef _qbit * qbit;\n\
-#define	ckt_q_qbit 100001\n\
+#define ckt_q_qbit 100001\n\
 \n\
 #pragma map generate_hw\n\
 void " << programp->name << "(){\n";
 
-    out_c << "\tqbit ";
+    out_c << "    qbit ";
     
-    for(int i=0; i<platform.get_qubit_number()-1; i++)
+    for (UInt i = 0; i < platform.get_qubit_number() - 1; i++) {
         out_c << "qc" << i << ",";
+    }
     out_c << "qc" << platform.get_qubit_number()-1 << ";\n\n";
 
-    if(programp->creg_count)
-    {
-        out_c << "\tint ";
-        for(int i=0; i<programp->creg_count-1; i++)
+    if (programp->creg_count) {
+        out_c << "    int ";
+        for (UInt i = 0; i < programp->creg_count - 1; i++) {
             out_c << "rs" << i << ",";
+        }
         out_c << "rs" << programp->creg_count-1 << ";\n\n";
     }
     
-    for(auto kernel : programp->get_kernels())
-    {
+    for (auto kernel : programp->get_kernels()) {
          QL_DOUT("          Kernel name: " << kernel.get_name() << " with type = " << (int)kernel.type);
         
-        switch(kernel.type) {
+        switch (kernel.type) {
             case kernel_type_t::IF_START: 
-out_c << "\tif(rs" << (kernel.br_condition->operands[0])->as_creg().id << " " << toOperationString(kernel.br_condition->operation_name) << " rs" << (kernel.br_condition->operands[1])->as_creg().id << ") {\n"; break;
+                out_c << "    if(rs" << (kernel.br_condition->operands[0])->as_creg().id << " ";
+                out_c << toOperationString(kernel.br_condition->operation_name);
+                out_c << " rs" << (kernel.br_condition->operands[1])->as_creg().id << ") {\n";
+                break;
 
-            case kernel_type_t::FOR_START:   out_c << "\tfor(int i=0; i < " << kernel.iterations << "; i++){\n"; break;
-            case kernel_type_t::DO_WHILE_START: out_c << "\tdo {\n"; break;
-            case kernel_type_t::ELSE_START: out_c << "\telse {\n"; break;
+            case kernel_type_t::FOR_START:
+                out_c << "    for(int i=0; i < " << kernel.iterations << "; i++){\n";
+                break;
+
+            case kernel_type_t::DO_WHILE_START:
+                out_c << "    do {\n";
+                break;
+
+            case kernel_type_t::ELSE_START:
+                out_c << "    else {\n";
+                break;
+
             case kernel_type_t::IF_END:
             case kernel_type_t::ELSE_END:
-            case kernel_type_t::FOR_END:      out_c << "\t}\n"; break;
-            case kernel_type_t::DO_WHILE_END: 
-out_c << "\t} while(rs" << (kernel.br_condition->operands[0])->as_creg().id << " " << toOperationString(kernel.br_condition->operation_name) << " rs" << (kernel.br_condition->operands[1])->as_creg().id << ");\n"; break;
-            case kernel_type_t::STATIC: {        
-                    circuit circ = kernel.get_circuit();
-                    for(auto g : circ)
-                    {
-                        //NOTE-rn: match gate name to an instruction in the config file, otherwise this will fail.
-                        UInt p = g->name.find(' ');
-                        Str gate_name = g->name.substr(0, p);
+            case kernel_type_t::FOR_END:
+                out_c << "    }\n";
+                break;
 
-                        if(gate_name == "measure" && g->creg_operands.size())//NOTE-rn: measure gate returns type custom_gate so gate_type_t::__measure_gate__ cannot be used to check for measure gate
-                        {
-                            out_c << "\trs" << g->creg_operands[0] << " = ";
-                        }
-                        if(gate_name == "ldi"  && g->creg_operands.size())
-                        {
-                            out_c << "\trs" << g->creg_operands[0] << " = ";
-                            out_c << g->int_operand << ";\n";
-                        }
-                        else
-                            out_c << "\t" << gate_name << "(qc" << g->operands[0] << ");\n";
-                    } break;}
-            default: break;                           
+            case kernel_type_t::DO_WHILE_END: 
+                out_c << "    } while(rs" << (kernel.br_condition->operands[0])->as_creg().id << " ";
+                out_c << toOperationString(kernel.br_condition->operation_name);
+                out_c << " rs" << (kernel.br_condition->operands[1])->as_creg().id << ");\n";
+                break;
+
+            case kernel_type_t::STATIC: {        
+                circuit circ = kernel.get_circuit();
+                for (auto g : circ) {
+                    //NOTE-rn: match gate name to an instruction in the config file, otherwise this will fail.
+                    UInt p = g->name.find(' ');
+                    Str gate_name = g->name.substr(0, p);
+
+                    //NOTE-rn: measure gate returns type custom_gate so gate_type_t::__measure_gate__ cannot be used to check for measure gate
+                    if (gate_name == "measure" && g->creg_operands.size()) {
+                        out_c << "    rs" << g->creg_operands[0] << " = ";
+                    }
+                    if (gate_name == "ldi"  && g->creg_operands.size()) {
+                        out_c << "    rs" << g->creg_operands[0] << " = ";
+                        out_c << g->int_operand << ";\n";
+                    } else {
+                        out_c << "    " << gate_name << "(qc" << g->operands[0] << ");\n";
+                    }
+                } break;
+            }
+
+            default:
+                break;
         }
     }
 
@@ -438,7 +458,7 @@ void write_qasm(
     const quantum_platform &platform,
     const Str &pass_name
 ) {
-    Str       extension;
+    Str extension;
     // next is ugly; must be done by built-in pass class option with different value for each concrete pass
     if (pass_name == "initialqasmwriter" || pass_name == "outputIR") extension = ".qasm";
     else if (pass_name == "scheduledqasmwriter" || pass_name == "outputIRscheduled") extension = "_scheduled.qasm";
@@ -454,10 +474,13 @@ void write_c(
     const quantum_platform &platform,
     const Str &pass_name
 ) {
-    Str       extension;
+    Str extension;
     // next is ugly; must be done by built-in pass class option with different value for each concrete pass
-    if (pass_name == "CPrinter") extension = ".c";
-    else QL_FATAL("write_c: pass_name " << pass_name << " unknown; ");
+    if (pass_name == "CPrinter") {
+        extension = ".c";
+    } else {
+        QL_FATAL("write_c: pass_name " << pass_name << " unknown; ");
+    }
 
     write_c_extension(programp, platform, extension);
 }
@@ -537,8 +560,7 @@ void report_totals_statistics(
     const Vec<quantum_kernel> &kernels,
     const quantum_platform &platform,
     const Str &comment_prefix
-)
-{
+) {
     if (options::get("write_report_files") != "yes") {
         return;
     }
