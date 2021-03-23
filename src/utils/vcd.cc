@@ -14,70 +14,49 @@
 #include <iostream>
 
 namespace ql {
+namespace utils {
 
-void Vcd::start()
-{
+void Vcd::start() {
     vcd << "$date today $end" << std::endl;
     vcd << "$timescale 1 ns $end" << std::endl;
 }
 
 
-void Vcd::scope(tScopeType type, const std::string &name)
-{
+void Vcd::scope(Scope type, const Str &name) {
     // FIXME: handle type
     vcd << "$scope " << "module" << " " << name << " $end" << std::endl;
 }
 
 
-int Vcd::registerVar(const std::string &name, tVarType type, tScopeType scope)
-{
+int Vcd::registerVar(const Str &name, VarType type, Scope scope) {
     // FIXME: incomplete
-    const int width = 20;
+    const Int width = 20;
 
     vcd << "$var string " << width << " " << lastId << " " << name << " $end" << std::endl;
 
     return lastId++;
 }
 
-void Vcd::upscope()
-{
+
+void Vcd::upscope() {
     vcd << "$upscope $end" << std::endl;
 }
 
 
-void Vcd::finish()
-{
-    vcd << "$enddefinitions $end" << std::endl;
-
-    for(auto &t: timestampMap) {
-        vcd << "#" << t.first << std::endl;      // timestamp
-        for(auto &v: t.second) {
-            vcd << "s" << v.second.strVal << " " << v.first << std::endl;
-        }
-    }
-}
-
-
-std::string Vcd::getVcd()
-{
-    return vcd.str();
-}
-
-
-void Vcd::change(int var, int timestamp, const std::string &value)
+void Vcd::change(Int var, Int timestamp, const Str &value)
 {
     auto tsIt = timestampMap.find(timestamp);
-    if(tsIt != timestampMap.end()) {    // timestamp found
-        tVarChangeMap &vcm = tsIt->second;
+    if (tsIt != timestampMap.end()) {    // timestamp found
+        VarChangeMap &vcm = tsIt->second;
 
         auto vcmIt = vcm.find(var);
-        if(vcmIt != vcm.end()) {        // var found
+        if (vcmIt != vcm.end()) {        // var found
 #if OPT_DEBUG_VCD
             std::cout << "ts=" << tsIt->first
                 << ", var " << vcmIt->first
                 << " overwritten with '" << value << "'" << std::endl;
 #endif
-            tValue &val = vcmIt->second;
+            Value &val = vcmIt->second;
             val.strVal = value;         // overwrite previous value. FIXME: only if it was empty?
         } else {                        // var not found
 #if OPT_DEBUG_VCD
@@ -85,7 +64,7 @@ void Vcd::change(int var, int timestamp, const std::string &value)
                 << ", var " << var
                 << " not found, wrote value '" << value << "'" << std::endl;
 #endif
-            tValue val;
+            Value val;
             val.strVal = value;
             vcm.insert({var, val});
         }
@@ -95,17 +74,37 @@ void Vcd::change(int var, int timestamp, const std::string &value)
             << " not found, wrote var " << var
             << " with value '" << value << "'" << std::endl;
 #endif
-        tValue val;
+        Value val;
         val.strVal = value;
 
-        tVarChangeMap varChange{{var, val}};
+        VarChangeMap varChange{{var, val}};
         timestampMap.insert({timestamp, varChange});
     }
 }
 
-void Vcd::change(int var, int timestamp, int value)
-{
+
+void Vcd::change(Int var, Int timestamp, Int value) {
+    throw Exception("not yet implemented");
     // FIXME
 }
 
+
+void Vcd::finish() {
+    vcd << "$enddefinitions $end" << std::endl;
+
+    for (auto &t: timestampMap) {
+        vcd << "#" << t.first << std::endl;      // timestamp
+        for (auto &v: t.second) {
+            vcd << "s" << v.second.strVal << " " << v.first << std::endl;
+        }
+    }
+}
+
+
+std::string Vcd::getVcd() {
+    return vcd.str();
+}
+
+
+} // namespace utils
 } // namespace ql

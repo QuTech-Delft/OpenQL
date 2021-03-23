@@ -1,5 +1,5 @@
 /**
- * @file    vcd_cc.h
+ * @file    arch/cc/vcd_cc.h
  * @date    20201001
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handle generation of Value Change Dump file for GTKWave viewer
@@ -8,33 +8,36 @@
 
 #pragma once
 
-#include "vcd.h"
+#include "utils/vcd.h"
+
+#include "types_cc.h"
 #include "settings_cc.h"
-#include "utils/vec.h"
 
 namespace ql {
+namespace arch {
+namespace cc {
 
-class vcd_cc
-{
+class Vcd : private utils::Vcd {
 public:     // funcs
-    vcd_cc() = default;
-    ~vcd_cc() = default;
+    Vcd() = default;
+    ~Vcd() = default;
 
-    void programStart(int qubitNumber, int cycleTime, int maxGroups, const settings_cc &settings);
-    void programFinish(const std::string &progName);
-    void kernelFinish(const std::string &kernelName, size_t durationInCycles);
-    void bundleFinishGroup(size_t startCycle, unsigned int durationInCycles, uint32_t groupDigOut, const std::string &signalValue, int instrIdx, int group);
-    void bundleFinish(size_t startCycle, uint32_t digOut, size_t maxDurationInCycles, int instrIdx);
-    void customGate(const std::string &iname, const utils::Vec<utils::UInt> &qops, size_t startCycle, size_t durationInCycles);
+    void programStart(UInt qubitNumber, Int cycleTime, Int maxGroups, const Settings &settings);
+    void programFinish(const Str &progName);
+    void kernelFinish(const Str &kernelName, UInt durationInCycles);
+    void bundleFinishGroup(UInt startCycle, UInt durationInCycles, Digital groupDigOut, const Str &signalValue, UInt instrIdx, Int group);
+    void bundleFinish(UInt startCycle, Digital digOut, UInt maxDurationInCycles, UInt instrIdx);
+    void customGate(const Str &iname, const Vec<UInt> &qops, UInt startCycle, UInt durationInCycles);
 
 private:    // vars
-    Vcd vcd;
-    int cycleTime;
-    unsigned int kernelStartTime;
-    int vcdVarKernel;
-    std::vector<int> vcdVarQubit;
-    std::vector<std::vector<int>> vcdVarSignal;
-    std::vector<int> vcdVarCodeword;
+    UInt cycleTime = 1;
+    UInt kernelStartTime = 0;
+    Int vcdVarKernel = 0;
+    Vec<Int> vcdVarQubit;
+    Vec<Vec<Int>> vcdVarSignal;
+    Vec<Int> vcdVarCodeword;
 };
 
+} // namespace cc
+} // namespace arch
 } // namespace ql

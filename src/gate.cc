@@ -716,7 +716,7 @@ void custom_gate::load(nlohmann::json &instr) {
             name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
     }
 
-    if (instr.count("cc_light_instr") > 0) {
+    if (instr.count("cc_light_instr") > 0) {	// FIXME: platform dependency
         arch_operation_name = instr["cc_light_instr"].get<Str>();
         QL_DOUT("cc_light_instr: " << instr["cc_light_instr"]);
     }
@@ -747,7 +747,7 @@ instruction_t custom_gate::qasm() const {
     }
 
     // deal with custom gates with argument, such as angle
-    if (gate_name == "rx" || gate_name == "ry" || gate_name == "rz") {
+    if (gate_name == "rx" || gate_name == "ry" || gate_name == "rz") {	// FIXME: implicitly defining semantics here
         ss << ", " << angle;
     }
 

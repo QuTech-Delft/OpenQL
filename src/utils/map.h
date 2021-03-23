@@ -50,6 +50,12 @@ public:
     using Stl = std::map<Key, T, Compare, Allocator>;
 
     /**
+     * Default constructor. Constructs an empty container with a
+     * default-constructed allocator.
+     */
+    UncheckedMap() : Stl() {}
+
+    /**
      * Constructor arguments are forwarded to the STL container constructor, so
      * all constructors of the STL container can be used.
      */
