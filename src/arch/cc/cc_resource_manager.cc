@@ -157,7 +157,7 @@ cc_resource_meas *cc_resource_meas::clone() && {
     return new cc_resource_meas(std::move(*this));
 }
 
-// FIXME: we should disallow gates during measurement?
+// FIXME: should we disallow gates during measurement?
 Bool cc_resource_meas::available(
     UInt op_start_cycle,
     gate *ins,
@@ -603,24 +603,22 @@ cc_resource_manager::cc_resource_manager(
     QL_DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
     QL_DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
 
-    // unconditionally add qubit resource (does not use JSON section "resources")
+    // unconditionally add resources that do not use JSON section "resources"
     resource_ptrs.push_back(new cc_resource_qubit(platform, dir));
+    resource_ptrs.push_back(new cc_resource_meas(platform, dir));
 
     for (auto it = platform.resources.cbegin(); it != platform.resources.cend(); ++it) {
         Str key = it.key();
 
-        if (key == "meas_units") {
-            resource_t *res = new cc_resource_meas(platform, dir);
-            resource_ptrs.push_back(res);
 #if 0
-        } else if (key == "edges") {
+        if (key == "edges") {
             resource_t *res = new cc_edge_resource_t(platform, dir);
             resource_ptrs.push_back(res);
         } else if (key == "detuned_qubits") {
             resource_t *res = new cc_detuned_qubits_resource_t(platform, dir);
             resource_ptrs.push_back(res);
 #endif
-        } else if (key == "qubits" || key == "qwgs" || key == "edges" || key == "detuned_qubits") {  // keys used by CC-light
+        if (key == "qubits" || key == "meas_units" || key == "qwgs" || key == "edges" || key == "detuned_qubits") {  // keys used by CC-light
             QL_WOUT("resource key '" << key << "' not used by CC");
         } else {
             QL_JSON_FATAL("illegal resource key '" << key << "'");
