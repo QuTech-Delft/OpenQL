@@ -318,6 +318,21 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('log_level', 'LOG_INFO') # override log level
         p.compile()
 
+    def test_rc_sched(self):
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+
+        p = ql.Program('test_rc_sched', platform, 5, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
+
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.gate('x', [0])
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.gate('x', [1])
+
+        p.add_kernel(k)
+        p.compile()
 
 
     # FIXME: add:

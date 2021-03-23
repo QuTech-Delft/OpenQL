@@ -72,8 +72,13 @@ Str Settings::getReadoutMode(const Str &iname) {
 
 // determine whether this is a readout instruction
 Bool Settings::isReadout(const Str &iname) {
+    return isReadout(*platform, iname);
+}
+
+// determine whether this is a readout instruction
+Bool Settings::isReadout(const quantum_platform &_platform, const Str &iname) {
 #if 1    // new semantics
-    const Json &instruction = platform->find_instruction(iname);
+    const Json &instruction = _platform.find_instruction(iname);
     Str instructionPath = "instructions/" + iname;
     QL_JSON_ASSERT(instruction, "cc", instructionPath);
     return QL_JSON_EXISTS(instruction["cc"], "readout_mode");
@@ -86,7 +91,7 @@ Bool Settings::isReadout(const Str &iname) {
     // FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL, so we need a better criterion
     // FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
     // FIXME: gate semantics should be handled at the OpenQL core
-    return platform->find_instruction_type(iname) == "readout";
+    return _platform.find_instruction_type(iname) == "readout";
 #endif
 }
 
@@ -105,12 +110,6 @@ RawPtr<const Json> Settings::getPragma(const Str &iname) {
     } else {
         return nullptr;
     }
-}
-
-
-// return wait for instrument latency + SM data distribution
-UInt Settings::getReadoutWait() {
-    return 20+3;    // FIXME: make configurable
 }
 
 

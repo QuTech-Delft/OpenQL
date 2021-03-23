@@ -19,14 +19,14 @@ namespace cc {
 class Settings {
 public: // types
     struct SignalDef {
-        Json signal;        // a copy of the signal node found
-        Str path;           // path of the node, for reporting purposes
+        Json signal;                // a copy of the signal node found
+        Str path;                   // path of the node, for reporting purposes
     };
 
     struct InstrumentInfo {         // information from key 'instruments'
         RawPtr<const Json> instrument;
         Str instrumentName;         // key 'instruments[]/name'
-        Int slot;                  // key 'instruments[]/controller/slot'
+        Int slot;                   // key 'instruments[]/controller/slot'
 #if OPT_FEEDBACK
         Bool forceCondGatesOn;      // optional key 'instruments[]/force_cond_gates_on', can be used to always enable AWG if gate execution is controlled by VSM
 #endif
@@ -55,9 +55,9 @@ public: // functions
     void loadBackendSettings(const quantum_platform &platform);
     Str getReadoutMode(const Str &iname);
     Bool isReadout(const Str &iname);
+    static Bool isReadout(const quantum_platform &platform, const Str &iname);
     Bool isPragma(const Str &iname);
     RawPtr<const Json> getPragma(const Str &iname);
-    UInt getReadoutWait();
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
     InstrumentInfo getInstrumentInfo(UInt instrIdx) const;
     InstrumentControl getInstrumentControl(UInt instrIdx) const;

@@ -1,5 +1,6 @@
 /** \file
- * Resource management for CC platform.
+ *  Resource management for CC platform.
+ *  Based on arch/cc_light/cc_light_resource_manager.h commit a95bc15c90ad17c2837adc2b3c36e031595e68d1
  */
 
 #pragma once
@@ -20,14 +21,14 @@ namespace arch {
 namespace cc {
 
 // ============ classes of resources that _may_ appear in a configuration file
-// these are a superset of those allocated by the cc_resource_manager_t constructor below
+// these are a superset of those allocated by the cc_resource_manager constructor below
 
 // Each qubit can be used by only one gate at a time.
 class cc_resource_qubit : public resource_t {
 public:
-    // fwd: qubit q is busy till cycle=state[q], i.e. all cycles < state[q] it is busy, i.e. start_cycle must be >= state[q]
-    // bwd: qubit q is busy from cycle=state[q], i.e. all cycles >= state[q] it is busy, i.e. start_cycle+duration must be <= state[q]
-    Vec<UInt> state;
+    // fwd: qubit q is busy till cycle=cycle[q], i.e. all cycles < cycle[q] it is busy, i.e. start_cycle must be >= cycle[q]
+    // bwd: qubit q is busy from cycle=cycle[q], i.e. all cycles >= cycle[q] it is busy, i.e. start_cycle+duration must be <= cycle[q]
+    Vec<UInt> cycle;
 
     cc_resource_qubit(const quantum_platform &platform, scheduling_direction_t dir);
 
@@ -37,34 +38,6 @@ public:
     Bool available(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
     void reserve(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
-
-
-#if 0   // FIXME: unused
-// Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.
-// Each qwg controls a private set of qubits.
-// A qwg can control multiple qubits at the same time, but only when they perform the same gate and start at the same time.
-class cc_qwg_resource_t : public resource_t {
-public:
-    Vec<UInt> fromcycle;          // qwg is busy from cycle==fromcycle[qwg], inclusive
-    Vec<UInt> tocycle;            // qwg is busy to cycle==tocycle[qwg], not inclusive
-
-    // there was a bug here: when qwg is busy from cycle i with operation x
-    // then a new x is ok when starting at i or later
-    // but a new y must wait until the last x has finished;
-    // the bug was that a new x was always ok (so also when starting earlier than cycle i)
-
-    Vec<Str> operations;    // with operation_name==operations[qwg]
-    Map<UInt,UInt> qubit2qwg;      // on qwg==qubit2qwg[q]
-
-    cc_qwg_resource_t(const quantum_platform & platform, scheduling_direction_t dir);
-
-    cc_qwg_resource_t *clone() const & override;
-    cc_qwg_resource_t *clone() && override;
-
-    Bool available(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-};
-#endif
 
 
 // Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.
@@ -164,17 +137,17 @@ public:
 // each config file resources section must have a resource class above
 // not all resource classes above need to be actually used and specified in a config file; only those specified, are used
 
-class cc_resource_manager_t : public platform_resource_manager_t {
+class cc_resource_manager : public platform_resource_manager_t {
 public:
-    cc_resource_manager_t() = default;
+    cc_resource_manager() = default;
 
     // Allocate those resources that were specified in the config file.
     // Those that are not specified, are not allocated, so are not used in scheduling/mapping.
     // The resource names tested below correspond to the names of the resources sections in the config file.
-    cc_resource_manager_t(const quantum_platform &platform, scheduling_direction_t dir);
+    cc_resource_manager(const quantum_platform &platform, scheduling_direction_t dir);
 
-    cc_resource_manager_t *clone() const & override;
-    cc_resource_manager_t *clone() && override;
+    cc_resource_manager *clone() const & override;
+    cc_resource_manager *clone() && override;
 };
 
 } // namespace cc
