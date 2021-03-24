@@ -12,6 +12,7 @@
 
 #include "version.h"
 #include "options.h"
+#include "ir.h"
 
 namespace ql {
 namespace arch {
@@ -95,7 +96,7 @@ void Codegen::programFinish(const Str &progName) {
 \************************************************************************/
 
 void Codegen::kernelStart() {
-    zero(lastEndCycle);       // FIXME: actually, bundle.startCycle starts counting at 1
+    for (UInt i=0; i<ELEM_CNT(lastEndCycle); i++) lastEndCycle[i] = ir::bundle_start_cycle;
 }
 
 void Codegen::kernelFinish(const Str &kernelName, UInt durationInCycles) {

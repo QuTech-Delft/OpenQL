@@ -39,7 +39,7 @@ circuit circuiter(const bundles_t &bundles) {
  */
 Str qasm(const bundles_t &bundles) {
     StrStrm ssqasm;
-    UInt curr_cycle=1;        // FIXME HvS prefer to start at 0; also see depgraph creation
+    UInt curr_cycle = ir::bundle_start_cycle;        // FIXME HvS prefer to start at 0; also see depgraph creation
     Str skipgate = "wait";
     if (options::get("issue_skip_319") == "yes") {
         skipgate = "skip";
