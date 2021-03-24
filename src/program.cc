@@ -318,7 +318,6 @@ std::string dirnameOf(const std::string& fname)
 
 void quantum_program::compile() {
     QL_IOUT("compiling " << name << " ...");
-    QL_WOUT("compiling " << name << " ...");
     if (kernels.empty()) {
         QL_FATAL("compiling a program with no kernels !");
     }

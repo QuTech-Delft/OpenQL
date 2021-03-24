@@ -292,12 +292,12 @@ void Backend::codegenBundles(ir::bundles_t &bundles, const quantum_platform &pla
                             codegen.customGate(
                                 iname,
                                 instr->operands,            // qubit operands (FKA qops)
-                                instr->creg_operands,        // classic operands (FKA cops)
-                                instr->breg_operands,         // bit operands e.g. assigned to by measure
+                                instr->creg_operands,       // classic operands (FKA cops)
+                                instr->breg_operands,       // bit operands e.g. assigned to by measure
                                 instr->condition,
-                                instr->cond_operands,        // 0, 1 or 2 bit operands of condition
-                                   instr->angle,
-                                   bundle.start_cycle, platform.time_to_cycles(instr->duration)
+                                instr->cond_operands,       // 0, 1 or 2 bit operands of condition
+                                instr->angle,
+                                bundle.start_cycle, platform.time_to_cycles(instr->duration)
                             );
                             break;
 

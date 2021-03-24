@@ -334,6 +334,24 @@ class Test_central_controller(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
+    def test_rc_sched_asap(self):
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+
+        p = ql.Program('test_rc_sched_asap', platform, 5, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
+
+        k.gate('x', [2])
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.gate('x', [0])
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.gate('x', [1])
+
+        p.add_kernel(k)
+        ql.set_option('scheduler', 'ASAP')
+        p.compile()
+
     def test_rc_sched_barrier(self):
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
 

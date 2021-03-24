@@ -14,16 +14,6 @@ namespace cc {
 
 using namespace utils;
 
-// operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
-Str cc_get_operation_name(gate *ins, const quantum_platform &platform) {
-    Str operation_name(ins->name);
-    QL_JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-    if (!platform.instruction_settings[ins->name]["cc_instr"].is_null()) {
-        operation_name = platform.instruction_settings[ins->name]["cc_instr"].get<Str>();
-    }
-    return operation_name;
-}
-
 /************************************************************************\
 | cc_resource_qubit
 \************************************************************************/
@@ -56,7 +46,6 @@ Bool cc_resource_qubit::available(
     gate *ins,
     const quantum_platform &platform
 ) {
-
     for (auto q : ins->operands) {
         if (forward_scheduling == direction) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy till cycle : " << cycle[q]);
