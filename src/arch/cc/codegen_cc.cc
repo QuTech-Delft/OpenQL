@@ -95,7 +95,7 @@ void Codegen::programFinish(const Str &progName) {
 \************************************************************************/
 
 void Codegen::kernelStart() {
-    zero(lastEndCycle);       // FIXME: actually, bundle.startCycle starts counting at 1
+    zero(lastEndCycle);
 }
 
 void Codegen::kernelFinish(const Str &kernelName, UInt durationInCycles) {
