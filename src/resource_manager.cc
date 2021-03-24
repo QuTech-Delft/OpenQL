@@ -122,8 +122,8 @@ resource_manager_t::resource_manager_t(
 
     if (eqasm_compiler_name == "cc_light_compiler") {
         platform_resource_manager_ptr = new cc_light_resource_manager_t(platform, dir);
-  } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-      platform_resource_manager_ptr = new cc::cc_resource_manager(platform, dir);
+    } else if (eqasm_compiler_name == "eqasm_backend_cc") {
+        platform_resource_manager_ptr = new cc::cc_resource_manager(platform, dir);
     } else {
         QL_FATAL("the '" << eqasm_compiler_name
                          << "' eqasm compiler backend is not supported !");

@@ -37,7 +37,7 @@ cc_resource_qubit::cc_resource_qubit(
     UInt n = json_get<UInt>(platform.hardware_settings, "qubit_number", "hardware_settings/qubit_number");
     cycle.resize(n);
     for (UInt q = 0; q < n; q++) {
-        cycle[q] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
+        cycle[q] = forward_scheduling == dir ? 0 : MAX_CYCLE;
     }
 }
 
@@ -56,7 +56,6 @@ Bool cc_resource_qubit::available(
     gate *ins,
     const quantum_platform &platform
 ) {
-    UInt operation_duration = platform.time_to_cycles(ins->duration);
 
     for (auto q : ins->operands) {
         if (forward_scheduling == direction) {
@@ -67,6 +66,7 @@ Bool cc_resource_qubit::available(
             }
         } else {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy from cycle : " << cycle[q]);
+            UInt operation_duration = platform.time_to_cycles(ins->duration);
             if (op_start_cycle + operation_duration > cycle[q]) {
                 QL_DOUT("    " << name << " resource busy ...");
                 return false;
@@ -83,9 +83,10 @@ void cc_resource_qubit::reserve(
     const quantum_platform &platform
 ) {
     UInt operation_duration = platform.time_to_cycles(ins->duration);
+    UInt val = forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle;
 
     for (auto q : ins->operands) {
-        cycle[q] = (forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle );
+        cycle[q] = val;
         QL_DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " qubit: " << q << " reserved till/from cycle: " << cycle[q]);
     }
 }
@@ -115,7 +116,7 @@ cc_resource_meas::cc_resource_meas(
                 const Json qubitsOfGroup = qubits[group];
                 if (qubitsOfGroup.size() == 1) {
                     Int qubit = qubitsOfGroup[0].get<Int>();
-                    QL_WOUT("instrument " << meas_unit << "/" << instrument["name"] << ": adding " << qubit);
+                    QL_IOUT("instrument " << meas_unit << "/" << instrument["name"] << ": adding qubit " << qubit);
                     qubit2meas.set(qubit) = meas_unit;
                 }
             }

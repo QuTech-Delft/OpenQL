@@ -76,7 +76,7 @@ void Backend::compile(quantum_program *program, const quantum_platform &platform
 #if OPT_CC_SCHEDULE_RC
     // schedule with platform resource constraints
     rcschedule(program, platform, "rcscheduler");
-    write_qasm(program, platform, "scheduledqasmwriter");  // FIXME: the file "*_scheduled.qasm" created by pass Witer/scheduledqasmwriter uses a different scheduler
+    write_qasm(program, platform, "scheduledqasmwriter");  // FIXME: the file "*_scheduled.qasm" created by pass Writer/scheduledqasmwriter uses a different scheduler
 #else
     // schedule without resource constraints
     schedule(program, platform, "scheduler");
