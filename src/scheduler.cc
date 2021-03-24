@@ -676,7 +676,7 @@ void Scheduler::set_cycle(scheduling_direction_t dir) {
         set_cycle_gate(instruction[s], dir);
 
         // readjust cycle values of gates so that SOURCE is at 0
-        UInt SOURCECycle = instruction[s]->cycle + instruction[s]->duration;
+        UInt  SOURCECycle = instruction[s]->cycle;
         QL_DOUT("... readjusting cycle values by -" << SOURCECycle);
 
         instruction[t]->cycle -= SOURCECycle;
