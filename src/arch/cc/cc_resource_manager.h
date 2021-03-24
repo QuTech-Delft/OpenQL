@@ -30,7 +30,7 @@ public:
     // bwd: qubit q is busy from cycle=cycle[q], i.e. all cycles >= cycle[q] it is busy, i.e. start_cycle+duration must be <= cycle[q]
     Vec<UInt> cycle;
 
-    cc_resource_qubit(const quantum_platform &platform, scheduling_direction_t dir);
+    cc_resource_qubit(const quantum_platform &platform, scheduling_direction_t dir, UInt qubit_number);
 
     cc_resource_qubit *clone() const & override;
     cc_resource_qubit *clone() && override;
@@ -49,7 +49,7 @@ public:
     Vec<UInt> tocycle;    // is busy till cycle
     Map<UInt,UInt> qubit2meas;
 
-    cc_resource_meas(const quantum_platform & platform, scheduling_direction_t dir);
+    cc_resource_meas(const quantum_platform & platform, scheduling_direction_t dir, UInt num_meas_unit, const Map<UInt,UInt> &_qubit2meas);
 
     cc_resource_meas *clone() const & override;
     cc_resource_meas *clone() && override;

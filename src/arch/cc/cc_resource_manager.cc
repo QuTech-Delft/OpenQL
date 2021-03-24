@@ -20,14 +20,15 @@ using namespace utils;
 
 cc_resource_qubit::cc_resource_qubit(
     const quantum_platform &platform,
-    scheduling_direction_t dir
+    scheduling_direction_t dir,
+    UInt qubit_number
 ) :
     resource_t("qubits", dir)
 {
-    UInt n = json_get<UInt>(platform.hardware_settings, "qubit_number", "hardware_settings/qubit_number");
-    cycle.resize(n);
-    for (UInt q = 0; q < n; q++) {
-        cycle[q] = forward_scheduling == dir ? 0 : MAX_CYCLE;
+    cycle.resize(qubit_number);
+    UInt val = forward_scheduling == dir ? 0 : MAX_CYCLE;
+    for (UInt q = 0; q < qubit_number; q++) {
+        cycle[q] = val;
     }
 }
 
@@ -87,54 +88,21 @@ void cc_resource_qubit::reserve(
 
 cc_resource_meas::cc_resource_meas(
     const quantum_platform &platform,
-    scheduling_direction_t dir
+    scheduling_direction_t dir,
+    UInt num_meas_unit,
+    const Map<UInt,UInt> &_qubit2meas
 ) :
     resource_t("meas_units", dir)   // FIXME
 {
-#if 1   // get resources from instrument definitions
-    UInt meas_unit = 0;
-    Settings settings;
-    settings.loadBackendSettings(platform);
-
-    for (UInt i=0; i<settings.getInstrumentsSize(); i++) {
-        const Json &instrument = settings.getInstrumentAtIdx(i);
-        if ("measure" == json_get<Str>(instrument, "signal_type")) {    // FIXME: this adds semantics to "signal_type", which we do nowhere else
-            auto qubits = json_get<const Json &>(instrument, "qubits");
-            UInt qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
-            for (UInt group=0; group<qubitGroupCnt; group++) {
-                const Json qubitsOfGroup = qubits[group];
-                if (qubitsOfGroup.size() == 1) {
-                    Int qubit = qubitsOfGroup[0].get<Int>();
-                    QL_IOUT("instrument " << meas_unit << "/" << instrument["name"] << ": adding qubit " << qubit);
-                    qubit2meas.set(qubit) = meas_unit;
-                }
-            }
-            meas_unit++;
-        }
-    }
-    UInt n = meas_unit;
-#else
-    UInt n = json_get<UInt>(platform.resources["meas_units"], "count", "resources/meas_units/count");
-#endif
-    fromcycle.resize(n);
-    tocycle.resize(n);
+    qubit2meas = _qubit2meas;
+    fromcycle.resize(num_meas_unit);
+    tocycle.resize(num_meas_unit);
 
     UInt val = forward_scheduling == dir ? 0 : MAX_CYCLE;
-    for (UInt i=0; i<n; i++) {
+    for (UInt i=0; i<num_meas_unit; i++) {
         fromcycle[i] = val;
         tocycle[i] = val;
     }
-
-#if 0
-    auto &constraints = platform.resources[name]["connection_map"];
-    for (auto it = constraints.begin(); it != constraints.end(); ++it) {
-        UInt measUnitNo = stoi(it.key());
-        auto & connected_qubits = it.value();
-        for (auto &q : connected_qubits) {
-            qubit2meas.set(q) = measUnitNo;
-        }
-    }
-#endif
 }
 
 cc_resource_meas *cc_resource_meas::clone() const & {
@@ -594,8 +562,33 @@ cc_resource_manager::cc_resource_manager(
     QL_DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
 
     // unconditionally add resources that do not use JSON section "resources"
-    resource_ptrs.push_back(new cc_resource_qubit(platform, dir));
-    resource_ptrs.push_back(new cc_resource_meas(platform, dir));
+    UInt qubit_number = json_get<UInt>(platform.hardware_settings, "qubit_number", "hardware_settings/qubit_number");
+    resource_ptrs.push_back(new cc_resource_qubit(platform, dir, qubit_number));
+
+    // get meas resources from instrument definitions
+    Map<UInt,UInt> qubit2meas;
+    UInt meas_unit = 0;
+    Settings settings;
+    settings.loadBackendSettings(platform);
+
+    for (UInt i=0; i<settings.getInstrumentsSize(); i++) {
+        const Json &instrument = settings.getInstrumentAtIdx(i);
+        if ("measure" == json_get<Str>(instrument, "signal_type")) {    // FIXME: this adds semantics to "signal_type", which we do nowhere else
+            auto qubits = json_get<const Json &>(instrument, "qubits");
+            UInt qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
+            for (UInt group=0; group<qubitGroupCnt; group++) {
+                const Json qubitsOfGroup = qubits[group];
+                if (qubitsOfGroup.size() == 1) {
+                    Int qubit = qubitsOfGroup[0].get<Int>();
+                    QL_IOUT("instrument " << meas_unit << "/" << instrument["name"] << ": adding qubit " << qubit);
+                    qubit2meas.set(qubit) = meas_unit;
+                }
+            }
+            meas_unit++;
+        }
+    }
+    UInt num_meas_unit = meas_unit;
+    resource_ptrs.push_back(new cc_resource_meas(platform, dir, num_meas_unit, qubit2meas));
 
     for (auto it = platform.resources.cbegin(); it != platform.resources.cend(); ++it) {
         Str key = it.key();
