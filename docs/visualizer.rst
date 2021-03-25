@@ -63,7 +63,7 @@ Custom gates
 ------------
 
 When using custom gates the default gate visualizations are not used and the visualization needs to be defined by the user. In the ``instructions``
-section of the visualizater configuration file, each instruction 'type' has its own corresponding description of gate visualization parameters.
+section of the visualizer configuration file, each instruction 'type' has its own corresponding description of gate visualization parameters.
 These instruction types are mapped to actual custom instructions from the hardware configuration file by including an additional attribute to each
 custom instruction, describing its visualization type:
 
@@ -127,7 +127,7 @@ Each node has several attributes describing its visualization:
 * ``backgroundColor``: the background color of the node
 * ``outlineColor``: the color of the edge-line of the node
 
-The colors are defined as RGB arrays: `[R, G, B]`.
+The colors are defined as RGB arrays: ``[R, G, B]``.
 
 The type of the nodes can be one of the following:
 
@@ -137,18 +137,11 @@ The type of the nodes can be one of the following:
 * ``NOT``: a circle outline with cross inside (a CNOT cross)
 * ``CROSS``: a diagonal cross
 
-When a gate has multiple operands, each operand should have a node associated with it. Simply create as many nodes in the `nodes` array as
+When a gate has multiple operands, each operand should have a node associated with it. Simply create as many nodes in the node array as
 there are operands and define a type and visual parameters for it. Don't forget the comma to seperate each node in the array.
+Nodes are coupled to each operand sequentially, i.e. the first node in the node array will be used for the first qubit in the operand vector.
 
+-----------------------
+Qubit Interaction Graph
+-----------------------
 
-Future work
------------
-
-Features and issues on the todo-list are:
-
-* display wait/barrier gates (not possible right now because the program passed to the visualizer does not contain these gates)
-* gate connections overlap when in the same cycle
-* add the classical bit number to the measurement connection when classical bit lines are grouped
-* add a proper measurement symbol
-* add an option to save the image and/or only generate that image without opening a window
-* add option to represent each gate as a pulse instead of an abstract symbol
