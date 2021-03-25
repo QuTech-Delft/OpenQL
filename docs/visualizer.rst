@@ -12,7 +12,7 @@ The visualizer is a special compiler pass that will visualize the quantum circui
 * **the qubit interaction graph**: displays the interactions between qubits in the circuit
 
 All of these visualization types can be customised to turn features on or off and to change the looks of the visualization. This is done by way of the
-visualizer configuration file, see section :ref:`_visualizer_configuration`.
+visualizer configuration file, see section :ref:`visualizer_configuration`.
 
 ------------------------
 General visualizer usage
