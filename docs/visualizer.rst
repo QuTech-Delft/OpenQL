@@ -17,7 +17,8 @@ visualizer configuration file, which will be elaborated upon in another section.
 ------------------------
 General visualizer usage
 ------------------------
-The visualizer can be ran by adding the visualizer pass to the compiler and compiling the quantum program you want to run. Python example:
+The visualizer can be ran by adding the visualizer pass to the compiler, providing the pass with the paths to the configuration files, and compiling the
+quantum program you want to run. Python example:
 
 .. code:: python
 
@@ -48,9 +49,15 @@ There are three different pass options for the visualizer, each with a default v
 
 The first option, ``visualizer_type`` determines the type of visualization to use. ``CIRCUIT`` for the basic circuit visualization, ``MAPPING_GRAPH`` for
 the mapping graph visualization and ``INTERACTION_GRAPH`` for the qubit interaction graph. The visualization parameters are read from the configuration file 
-specified by the ``visualizer_config_path`` pass option. When using the pulse visualization, the waveform mapping configuration file is used to determine
-the mapping between gates and pulses.
+specified by the ``visualizer_config_path`` pass option. When using the pulse visualization, the waveform mapping configuration file, stored in the
+``visualizer_waveform_mapping_path`` pass option is used to determine the mapping between gates and pulses.
 
+---------------------
+Circuit visualization
+---------------------
+
+The circuit visualizater produces an image of the circuit containing the operations on each qubit per cycle. An OpenQL program can use default gates or
+custom gates. Note that default gates will be deprecated at some point in the future.
 
 Custom gates
 ------------
