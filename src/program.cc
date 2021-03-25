@@ -14,7 +14,7 @@
 #include "clifford.h"
 #include "write_sweep_points.h"
 #include "arch/cc_light/cc_light_eqasm_compiler.h"
-#include "arch/cc/eqasm_backend_cc.h"
+#include "arch/cc/backend_cc.h"
 
 static unsigned long phi_node_count = 0;    // FIXME: number across quantum_program instances
 
@@ -59,7 +59,7 @@ quantum_program::quantum_program(
     } else if (eqasm_compiler_name == "cc_light_compiler") {
         backend_compiler = new arch::cc_light_eqasm_compiler();
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-        backend_compiler = new eqasm_backend_cc();
+        backend_compiler = new arch::cc::Backend();
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
@@ -266,11 +266,11 @@ void quantum_program::add_for(const quantum_kernel &k, UInt iterations) {
 
 void quantum_program::add_for(const quantum_program &p, UInt iterations) {
     Bool nested_for = false;
-    for (auto &k : p.kernels) {
-        if (k.type == kernel_type_t::FOR_START) {
-            nested_for = true;
-        }
-    }
+//     for (auto &k : p.kernels) {
+//         if (k.type == kernel_type_t::FOR_START) {
+//             nested_for = true;
+//         }
+//     }
     if (nested_for) {
         QL_EOUT("Nested for not yet implemented !");
         throw Exception("Error: Nested for not yet implemented !", false);
@@ -310,6 +310,12 @@ void quantum_program::set_platform(const quantum_platform &platform) {
     this->platform = platform;
 }
 
+std::string dirnameOf(const std::string& fname)
+{
+     size_t pos = fname.find_last_of("\\/");
+     return (std::string::npos == pos) ? "" : fname.substr(0, pos)+"/";
+}
+
 void quantum_program::compile() {
     QL_IOUT("compiling " << name << " ...");
     QL_WOUT("compiling " << name << " ...");
@@ -317,68 +323,15 @@ void quantum_program::compile() {
         QL_FATAL("compiling a program with no kernels !");
     }
 
-    // from here on front-end passes
-
-    // writer pass of the initial qasm file (program.qasm)
-    write_qasm(this, platform, "initialqasmwriter");
-
-    // rotation_optimize pass
-    rotation_optimize(this, platform, "rotation_optimize");
-
-    // decompose_toffoli pass
-    decompose_toffoli(this, platform, "decompose_toffoli");
-
-    // clifford optimize
-    clifford_optimize(this, platform, "clifford_prescheduler");
-
-    // prescheduler pass
-    schedule(this, platform, "prescheduler");
-
-    // clifford optimize
-    clifford_optimize(this, platform, "clifford_postscheduler");
-
-    // writer pass of the scheduled qasm file (program_scheduled.qasm)
-    write_qasm(this, platform, "scheduledqasmwriter");
-
-    // backend passes
-    QL_DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
-    if (!needs_backend_compiler) {
-        QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
-        return;
-    } if (!backend_compiler) {
-        QL_EOUT("No known eqasm compiler has been specified in the configuration file.");
-        return;
-    } else {
-        QL_DOUT("About to call backend_compiler->compile for " << eqasm_compiler_name);
-        backend_compiler->compile(this, platform);
-        QL_DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
-    }
-
-    // generate sweep_points file
-    write_sweep_points(this, platform, "write_sweep_points");
-
-    QL_IOUT("compilation of program '" << name << "' done.");
-}
-
-void quantum_program::compile_modular() {
-    QL_IOUT("compiling " << name << " ...");
-    QL_WOUT("compiling " << name << " ...");
-    if (kernels.empty()) {
-        QL_FATAL("compiling a program with no kernels !");
-    }
+    // Retrieve the path to the platform configuration file.
+    // This is needed below to circumvent the hardcoding of the compiler configuration file
+    // when this legacy ::compile method is used.
+    // NOTE: For the use of 'compilerCfgPath' below to work, it is assumed the compiler configuration file
+    //       is located in the same folder as the platform configuration file. 
+    std::string compilerCfgPath = dirnameOf(platform.configuration_file_name);
 
     //constuct compiler
     std::unique_ptr<quantum_compiler> compiler(new quantum_compiler("Hard Coded Compiler"));
-
-    //add passes
-    ///@note-rn: WriterPass needs Reader pass to recreate the subciruits! ==> However, then Reader needs to be used to recreate the subcircuits. However, if I do that tests will fail because the harddware configuration file is in synq with qasm reader and tests (error: unrecognized instr prepz)
-    compiler->addPass("Writer", "initialqasmwriter");
-    compiler->addPass("RotationOptimizer", "rotation_optimize");
-    compiler->addPass("DecomposeToffoli", "decompose_toffoli");
-    compiler->addPass("CliffordOptimize", "clifford_prescheduler");
-    compiler->addPass("Scheduler", "prescheduler");
-    compiler->addPass("CliffordOptimize", "clifford_postscheduler");
-    compiler->addPass("Writer", "scheduledqasmwriter");
 
     // backend passes
     QL_DOUT("Calling backend compiler passes for eqasm_compiler_name: " << eqasm_compiler_name);
@@ -386,29 +339,12 @@ void quantum_program::compile_modular() {
         QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
     } else if (eqasm_compiler_name == "none" || eqasm_compiler_name == "qx") {
         QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
+        compiler->loadPassesFromConfigFile("QX_compiler", compilerCfgPath+"qx_compiler_cfg.json");
     } else if (eqasm_compiler_name == "cc_light_compiler") {
-        // from here CCL backend starts
-        compiler->addPass("CCLPrepCodeGeneration", "ccl_prep_code_generation");
-        compiler->addPass("CCLDecomposePreSchedule", "ccl_decompose_pre_schedule");
-        compiler->addPass("WriteQuantumSim", "write_quantumsim_script_unmapped");
-        compiler->addPass("CliffordOptimize", "clifford_premapper");
-        compiler->addPass("Map", "mapper");
-        compiler->addPass("CliffordOptimize", "clifford_postmapper");
-        // compiler->addPass("CommuteVariation", "commute_variation");
-        compiler->addPass("RCSchedule", "rcscheduler");
-        compiler->addPass("LatencyCompensation", "ccl_latency_compensation");
-        compiler->addPass("InsertBufferDelays", "ccl_insert_buffer_delays");
-        compiler->addPass("CCLDecomposePostSchedule", "ccl_decompose_post_schedule");
-        compiler->addPass("WriteQuantumSim", "write_quantumsim_script_mapped");
-        compiler->addPass("Writer", "lastqasmwriter");
-        compiler->addPass("QisaCodeGeneration", "qisa_code_generation");
-        ///@note-rn: Calling the backend like this is equivalend to calling passes individually as above.
-        //compiler->addPass("BackendCompiler");
-        //compiler->setPassOption("BackendCompiler", "eqasm_compiler_name", eqasm_compiler_name);
+        compiler->loadPassesFromConfigFile("CCLight_compiler", compilerCfgPath+"cclight_compiler_cfg.json");
         QL_DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-        compiler->addPass("BackendCompiler");
-        compiler->setPassOption("BackendCompiler", "eqasm_compiler_name", "eqasm_backend_cc");
+        compiler->loadPassesFromConfigFile("CC_compiler", compilerCfgPath+"cc_compiler_cfg.json");
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }

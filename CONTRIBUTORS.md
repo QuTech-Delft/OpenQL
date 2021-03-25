@@ -83,6 +83,7 @@ Note: please fill your contributions in this file
 
 - [Razvan Nane](https://github.com/razvnane)
     -   compiler API and modularity support
+    -   added C printer pass
 
 - [Jeroen van Straten](https://github.com/jvanstraten)
     -   tutorial on DQCsim + OpenQL interoperation

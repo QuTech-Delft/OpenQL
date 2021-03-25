@@ -36,7 +36,7 @@ private:
 public:
     Image(const utils::Int imageWidth, const utils::Int imageHeight);
 
-    void fill(const utils::Int rgb);
+    void fill(const Color color);
 
     void drawLine(const utils::Int x0, const utils::Int y0, const utils::Int x1, const utils::Int y1,
                   const Color color = black, const utils::Real alpha = 1, const LinePattern pattern = LinePattern::UNBROKEN);

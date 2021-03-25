@@ -37,38 +37,32 @@ CircuitData::CircuitData(Vec<GateProperties> &gates, const CircuitLayout &layout
     if (layout.cycles.cutting.isEnabled())  cutEmptyCycles(layout);
 }
 
-Int CircuitData::calculateAmountOfCycles(const Vec<GateProperties> &gates, const Int cycleDuration) const {
-    QL_DOUT("Calculating amount of cycles...");
+// Int CircuitData::calculateAmountOfCycles(const Vec<GateProperties> &gates, const Int cycleDuration) const {
+//     QL_DOUT("Calculating amount of cycles...");
 
-    // Find the highest cycle in the gate vector.
-    Int amountOfCycles = 0;
-    for (const GateProperties &gate : gates) {
-        if (gate.cycle == MAX_CYCLE) {
-            QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
-            return MAX_CYCLE;
-        }
+//     // Find the highest cycle in the gate vector.
+//     Int amountOfCycles = 0;
+//     for (const GateProperties &gate : gates) {
+//         if (gate.cycle == MAX_CYCLE) {
+//             QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
+//             return MAX_CYCLE;
+//         }
 
-        // if (gate.cycle < 0 || gate.cycle > VISUALIZER_CYCLE_WARNING_THRESHOLD) {
-        //     FATAL("Found gate with cycle index: " << gate.cycle << ". Only indices between 0 and " 
-        //        << MAX_ALLOWED_VISUALIZER_CYCLE << " are allowed!"
-        //        << "\nMake sure gates are scheduled before calling the visualizer pass!");
-        // }
+//         if (gate.cycle > amountOfCycles)
+//             amountOfCycles = gate.cycle;
+//     }
 
-        if (gate.cycle > amountOfCycles)
-            amountOfCycles = gate.cycle;
-    }
+//     // The last gate requires a different approach, because it might have a
+//     // duration of multiple cycles. None of those cycles will show up as cycle
+//     // index on any other gate, so we need to calculate them seperately.
+//     const Int lastGateDuration = gates.at(gates.size() - 1).duration;
+//     const Int lastGateDurationInCycles = lastGateDuration / cycleDuration;
+//     if (lastGateDurationInCycles > 1)
+//         amountOfCycles += lastGateDurationInCycles - 1;
 
-    // The last gate requires a different approach, because it might have a
-    // duration of multiple cycles. None of those cycles will show up as cycle
-    // index on any other gate, so we need to calculate them seperately.
-    const Int lastGateDuration = gates.at(gates.size() - 1).duration;
-    const Int lastGateDurationInCycles = lastGateDuration / cycleDuration;
-    if (lastGateDurationInCycles > 1)
-        amountOfCycles += lastGateDurationInCycles - 1;
-
-    // Cycles start at zero, so we add 1 to get the true amount of cycles.
-    return amountOfCycles + 1; 
-}
+//     // Cycles start at zero, so we add 1 to get the true amount of cycles.
+//     return amountOfCycles + 1; 
+// }
 
 Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates, const Int cycleDuration) const {
     QL_DOUT("Generating cycles...");
@@ -76,7 +70,7 @@ Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates, const Int cyc
     // Calculate the amount of cycles. If there are gates with undefined cycle
     // indices, visualize the circuit sequentially.
     Vec<Cycle> cycles;
-    int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
     if (amountOfCycles == MAX_CYCLE) {
         // Add a sequential cycle to each gate.
         amountOfCycles = 0;
@@ -314,17 +308,18 @@ void CircuitData::printProperties() const {
 // =                      Structure                      = //
 // ======================================================= //
 
-Structure::Structure(const CircuitLayout &layout, const CircuitData &circuitData) :
+Structure::Structure(const CircuitLayout &layout, const CircuitData &circuitData, const Vec<Int> minCycleWidths, const Int extendedImageHeight) :
     layout(layout),
     cellDimensions({layout.grid.getCellSize(), calculateCellHeight(layout)}),
     cycleLabelsY(layout.grid.getBorderSize()),
-    bitLabelsX(layout.grid.getBorderSize())
+    bitLabelsX(layout.grid.getBorderSize()),
+    minCycleWidths(minCycleWidths)
 {
     generateCellPositions(circuitData);
     generateBitLineSegments(circuitData);
 
     imageWidth = calculateImageWidth(circuitData);
-    imageHeight = calculateImageHeight(circuitData);
+    imageHeight = calculateImageHeight(circuitData, extendedImageHeight);
 }
 
 Int Structure::calculateCellHeight(const CircuitLayout &layout) const {
@@ -350,7 +345,7 @@ Int Structure::calculateImageWidth(const CircuitData &circuitData) const {
     return layout.bitLines.labels.getColumnWidth() + imageWidthFromCells + layout.grid.getBorderSize() * 2;
 }
 
-Int Structure::calculateImageHeight(const CircuitData &circuitData) const {
+Int Structure::calculateImageHeight(const CircuitData &circuitData, const Int extendedImageHeight) const {
     QL_DOUT("Calculating image height...");
     
     const Int rowsFromQuantum = circuitData.amountOfQubits;
@@ -363,7 +358,7 @@ Int Structure::calculateImageHeight(const CircuitData &circuitData) const {
         (rowsFromQuantum + rowsFromClassical) *
         (cellDimensions.height + (layout.bitLines.edges.areEnabled() ? layout.bitLines.edges.getThickness() : 0));
 
-    return layout.cycles.labels.getRowHeight() + heightFromOperands + layout.grid.getBorderSize() * 2;
+    return layout.cycles.labels.getRowHeight() + heightFromOperands + layout.grid.getBorderSize() * 2 + extendedImageHeight;
 }
 
 void Structure::generateCellPositions(const CircuitData &circuitData) {
@@ -373,7 +368,8 @@ void Structure::generateCellPositions(const CircuitData &circuitData) {
     Int widthFromCycles = 0;
     for (Int column = 0; column < circuitData.getAmountOfCycles(); column++) {
         const Int amountOfChunks = utoi(circuitData.getCycle(column).gates.size());
-        const Int cycleWidth = (circuitData.isCycleCut(column) ? layout.cycles.cutting.getCutCycleWidth() : (cellDimensions.width * amountOfChunks));
+        const Int cycleWidth = max(minCycleWidths[column],
+            (circuitData.isCycleCut(column) ? layout.cycles.cutting.getCutCycleWidth() : (cellDimensions.width * amountOfChunks)));
 
         const Int x0 = layout.grid.getBorderSize() + layout.bitLines.labels.getColumnWidth() + widthFromCycles;
         const Int x1 = x0 + cycleWidth;
@@ -389,12 +385,20 @@ void Structure::generateCellPositions(const CircuitData &circuitData) {
         qbitCellPositions.push_back(qColumnCells);
         // Classical cell positions.
         Vec<Position4> cColumnCells;
-        for (Int row = 0; row < circuitData.amountOfClassicalBits; row++) {
+        if (circuitData.amountOfClassicalBits > 0) {
+            for (Int row = 0; row < circuitData.amountOfClassicalBits; row++) {
+                const Int y0 = layout.grid.getBorderSize() + layout.cycles.labels.getRowHeight() + 
+                    ((layout.bitLines.classical.isGrouped() ? 0 : row) + circuitData.amountOfQubits) *
+                    (cellDimensions.height + (layout.bitLines.edges.areEnabled() ? layout.bitLines.edges.getThickness() : 0));
+                const Int y1 = y0 + cellDimensions.height;
+                cColumnCells.push_back( {x0, y0, x1, y1} );
+            }
+        } else {
             const Int y0 = layout.grid.getBorderSize() + layout.cycles.labels.getRowHeight() + 
-                ((layout.bitLines.classical.isGrouped() ? 0 : row) + circuitData.amountOfQubits) *
+                circuitData.amountOfQubits *
                 (cellDimensions.height + (layout.bitLines.edges.areEnabled() ? layout.bitLines.edges.getThickness() : 0));
-            const Int y1 = y0 + cellDimensions.height;
-            cColumnCells.push_back({x0, y0, x1, y1});
+            const Int y1 = y0;
+            cColumnCells.push_back( {x0, y0, x1, y1} );
         }
         cbitCellPositions.push_back(cColumnCells);
 
@@ -467,7 +471,7 @@ Int Structure::getCircuitTopY() const {
 }
 
 Int Structure::getCircuitBotY() const {
-    const Vec<Position4> firstColumnPositions = layout.pulses.areEnabled() ? qbitCellPositions[0] : cbitCellPositions[0];
+    const Vec<Position4> firstColumnPositions = (layout.pulses.areEnabled() || !layout.bitLines.classical.isEnabled()) ? qbitCellPositions[0] : cbitCellPositions[0];
     Position4 botPosition = firstColumnPositions[firstColumnPositions.size() - 1];
     return botPosition.y1;
 }
@@ -542,6 +546,25 @@ void Structure::printProperties() const {
 
 void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration)
 {
+    const Vec<GateProperties> gates = parseGates(program);
+    const Int cycleDuration = utoi(program->platform.cycle_time);
+    const Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    const Vec<Int> minCycleWidths(amountOfCycles, 0);
+
+    // Generate the image.
+    ImageOutput imageOutput = generateImage(program, configuration, minCycleWidths, 0);
+
+    // Save the image if enabled.
+    if (imageOutput.circuitLayout.saveImage) {
+        imageOutput.image.save(generateFilePath("circuit_visualization", "bmp"));
+    }
+
+    // Display the image.
+    QL_DOUT("Displaying image...");
+    imageOutput.image.display("Quantum Circuit");
+}
+
+ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration, const Vec<Int> minCycleWidths, const utils::Int extendedImageHeight) {
     // Get the gate list from the program.
     QL_DOUT("Getting gate list...");
     Vec<GateProperties> gates = parseGates(program);
@@ -551,7 +574,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
 
     // Parse and validate the layout and instruction configuration file.
     CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program->platform.instruction_settings);
-    validateCircuitLayout(layout);
+    validateCircuitLayout(layout, configuration.visualizationType);
 
     // Calculate circuit properties.
     QL_DOUT("Calculating circuit properties...");
@@ -563,16 +586,16 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     // Initialize the circuit properties.
     CircuitData circuitData(gates, layout, cycleDuration);
     circuitData.printProperties();
-    
+
     // Initialize the structure of the visualization.
     QL_DOUT("Initializing visualization structure...");
-    Structure structure(layout, circuitData);
+    Structure structure(layout, circuitData, minCycleWidths, extendedImageHeight);
     structure.printProperties();
-    
+
     // Initialize image.
     QL_DOUT("Initializing image...");
     Image image(structure.getImageWidth(), structure.getImageHeight());
-    image.fill(255);
+    image.fill(layout.backgroundColor);
 
     // Draw the cycle labels if the option has been set.
     if (layout.cycles.labels.areEnabled()) {
@@ -588,7 +611,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     if (layout.bitLines.edges.areEnabled()) {
         drawBitLineEdges(image, layout, circuitData, structure);
     }
-
+    
     // Draw the bit line labels if enabled.
     if (layout.bitLines.labels.areEnabled()) {
         drawBitLineLabels(image, layout, circuitData, structure);
@@ -698,14 +721,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
         }
     }
 
-    // Save the image if enabled.
-    if (layout.saveImage) {
-        image.save(generateFilePath("circuit_visualization", "bmp"));
-    }
-
-    // Display the image.
-    QL_DOUT("Displaying image...");
-    image.display("Quantum Circuit");
+    return {image, layout, circuitData, structure};
 }
 
 CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
@@ -717,6 +733,25 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
     static const std::regex comma_space_pattern("\\s*,\\s*");
     static const std::regex trim_pattern("^(\\s)+|(\\s)+$");
     static const std::regex multiple_space_pattern("(\\s)+");
+
+    // Load the visualizer configuration file.
+    Json visualizerConfig;
+    try {
+        visualizerConfig = load_json(visualizerConfigPath);
+    } catch (Json::exception &e) {
+        QL_FATAL("Failed to load the visualization config file: \n\t" << Str(e.what()));
+    }
+
+    // Load the circuit visualization parameters.
+    Json circuitConfig;
+    if (visualizerConfig.count("circuit") == 1) {
+        circuitConfig = visualizerConfig["circuit"];
+    } else {
+        QL_WOUT("Could not find circuit configuration in visualizer configuration file. Is it named correctly?");
+    }
+
+    // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
+    CircuitLayout layout;
 
     struct VisualParameters {
         Str visual_type;
@@ -753,7 +788,13 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
                 codewords.push_back(instruction["cc_light_left_codeword"]);
                 QL_DOUT("codewords: " << codewords[0] << "," << codewords[1]);
             } else {
-                QL_WOUT("Did not find any codeword attributes for instruction: '" << gateName << "'!");
+                if (circuitConfig.count("pulses") == 1) {
+                    if (circuitConfig["pulses"].count("displayGatesAsPulses") == 1) {
+                        if (circuitConfig["pulses"]["displayGatesAsPulses"]) {
+                            QL_WOUT("Did not find any codeword attributes for instruction: '" << gateName << "'!");
+                        }
+                    }
+                }
             }
         }
 
@@ -775,28 +816,14 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
         }
     }
 
-    // Load the visualizer configuration file.
-    Json visualizerConfig;
-    try {
-        visualizerConfig = load_json(visualizerConfigPath);
-    } catch (Json::exception &e) {
-        QL_FATAL("Failed to load the visualization config file: \n\t" << Str(e.what()));
-    }
-
-    // Load the circuit visualization parameters.
-    Json circuitConfig;
-    if (visualizerConfig.count("circuit") == 1) {
-        circuitConfig = visualizerConfig["circuit"];
-    } else {
-        QL_WOUT("Could not find circuit configuration in visualizer configuration file. Is it named correctly?");
-    }
-
-    // Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
-    CircuitLayout layout;
-
     // Check if the image should be saved to disk.
     if (visualizerConfig.count("saveImage") == 1) {
         layout.saveImage = visualizerConfig["saveImage"];
+    }
+
+    // Load background fill color.
+    if (visualizerConfig.count("backgroundColor") == 1) {
+        layout.backgroundColor = visualizerConfig["backgroundColor"];
     }
 
     // -------------------------------------- //
@@ -1019,11 +1046,17 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
     return layout;
 }
 
-void validateCircuitLayout(CircuitLayout &layout) {
+void validateCircuitLayout(CircuitLayout &layout, const Str &visualizationType) {
     QL_DOUT("Validating layout...");
 
     //TODO: add more validation
-    
+
+    // Disable pulse visualization and cycle cutting for the mapping graph visualization.
+    if (visualizationType == "MAPPING_GRAPH") {
+        layout.cycles.cutting.setEnabled(false);
+        layout.pulses.setEnabled(false);
+    }
+
     if (layout.cycles.cutting.getEmptyCycleThreshold() < 1) {
         QL_WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to "
             << layout.cycles.cutting.getEmptyCycleThreshold() << ".");
@@ -1378,6 +1411,8 @@ void drawCycleEdges(Image &image,
         const Int xCycle = structure.getCellPosition(i, 0, QUANTUM).x0;
         const Int y0 = structure.getCircuitTopY();
         const Int y1 = structure.getCircuitBotY();
+
+        QL_DOUT("drawing edge at x = " << xCycle << ", from y0 = " << y0 << " and y1 = " << y1);
 
         image.drawLine(xCycle, y0, xCycle, y1, layout.cycles.edges.getColor(), layout.cycles.edges.getAlpha(), LinePattern::DASHED);
     }

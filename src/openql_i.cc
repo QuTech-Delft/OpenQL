@@ -460,8 +460,7 @@ void Program::add_for(const Program &p, size_t iterations) {
 }
 
 void Program::compile() {
-    //program->compile();
-    program->compile_modular();
+    program->compile();
 }
 
 std::string Program::microcode() const {
@@ -526,8 +525,22 @@ cQasmReader::~cQasmReader() {
     // delete cqasm_reader_;
 }
 
-Compiler::Compiler(const std::string &name) : name(name) {
+Compiler::Compiler(
+    const std::string &name
+) :
+    name(name)
+{
     compiler = new ql::quantum_compiler(name);
+}
+
+Compiler::Compiler(
+    const std::string &name,
+    const std::string &config_file
+) :
+    name(name),
+    config_file(config_file)
+{
+    compiler = new ql::quantum_compiler(name, config_file);
 }
 
 void Compiler::compile(Program &program) {

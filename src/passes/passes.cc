@@ -20,7 +20,7 @@
 #include "visualizer.h"
 
 #include "arch/cc_light/cc_light_eqasm_compiler.h"
-#include "arch/cc/eqasm_backend_cc.h"
+#include "arch/cc/backend_cc.h"
 
 namespace ql {
 
@@ -298,7 +298,7 @@ void BackendCompilerPass::runOnProgram(quantum_program *program) {
     if (eqasm_compiler_name == "cc_light_compiler") {
         backend_compiler.emplace<arch::cc_light_eqasm_compiler>();
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-        backend_compiler.emplace<eqasm_backend_cc>();
+        backend_compiler.emplace<arch::cc::Backend>();
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
@@ -347,7 +347,8 @@ VisualizerPass::VisualizerPass(const Str &name) : AbstractPass(name) {
 void VisualizerPass::runOnProgram(quantum_program *program) {
     QL_DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
     
-    ql::visualize(program, getPassOptions()["visualizer_type"].as_str(), {
+    ql::visualize(program, {
+        getPassOptions()["visualizer_type"].as_str(),
         getPassOptions()["visualizer_config_path"].as_str(),
         getPassOptions()["visualizer_waveform_mapping_path"].as_str()
     });
@@ -525,6 +526,44 @@ void QisaCodeGenerationPass::runOnProgram(quantum_program *program) {
     if (options::get("generate_code") == "yes") {
         arch::cc_light_eqasm_compiler().qisa_code_generation(program, program->platform, getPassName());
     }
+}
+
+/**
+ * @brief  C printer pass constructor
+ * @param  Name of the pass
+ */
+CPrinterPass::CPrinterPass(const Str &name) : AbstractPass(name) {
+}
+
+/**
+ * @brief  Generate the C code equivalent to the input program
+ * @param  Program object to be transformed into QISA output
+ */
+void CPrinterPass::runOnProgram(quantum_program *program) {
+    QL_DOUT("[OPENQL] Run CPrinter pass on program " << program->unique_name);
+    
+    write_c(program, program->platform, getPassName());
+}
+
+/**
+ * @brief  External pass constructor
+ * @param  Name of the pass
+ */
+RunExternalCompiler::RunExternalCompiler(const Str &name) : AbstractPass(name) {
+}
+
+/**
+ * @brief  Generate the C code equivalent to the input program
+ * @param  Program object to be transformed into QISA output
+ */
+void RunExternalCompiler::runOnProgram(quantum_program *program) {
+    std::string extcompname, copycmd;
+
+    QL_DOUT("[OPENQL] Run ExternalCompiler pass with " << getPassName() << " compiler on program " << program->unique_name);
+
+    //TODO: parametrize this so that we can run multiple external passes using this code! (use alias_name)
+    system(("cp test_output/"+program->name+".c .").c_str());
+    system(("./"+getPassName()+" -dumpall "+program->name+".c").c_str());
 }
 
 } // namespace ql

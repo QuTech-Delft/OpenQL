@@ -164,6 +164,16 @@ in that zip file instead.
 
     $env:EnvVariableName = "new-value"
 
+Notes for macOS Users
+^^^^^^^^^^^^^^^^^^^^^^^
+Dependencies can be installed using `Homebrew <https://brew.sh>`_:
+
+::
+
+    brew install flex bison
+
+Make sure the above mentioned binaries are added to the system path in front of ``/usr/bin``, otherwise CMake finds the default versions.
+
 Obtaining OpenQL
 ^^^^^^^^^^^^^^^^
 

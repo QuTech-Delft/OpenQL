@@ -1,0 +1,44 @@
+{
+    "CompilerPasses": 
+    [
+        {
+            "passName" : "Writer", 
+            "passAlias": "initialqasmwriter"
+        },
+        {
+            "passName" : "RotationOptimizer", 
+            "passAlias": "rotation_optimize"
+        },
+        {
+            "passName" : "DecomposeToffoli", 
+            "passAlias": "decompose_toffoli"
+        },
+        {
+            "passName" : "CliffordOptimize", 
+            "passAlias": "clifford_prescheduler"
+        },
+        {
+            "passName" : "Scheduler", 
+            "passAlias": "prescheduler"
+        },
+        {
+            "passName" : "CliffordOptimize", 
+            "passAlias": "clifford_postscheduler"
+        },
+        {
+            "passName" : "Writer", 
+            "passAlias": "scheduledqasmwriter"
+        },
+        {
+            "passName" : "BackendCompiler", 
+            "passAlias": "BackendCompiler",
+            "options": 
+            [
+                {
+                    "optionName" : "eqasm_compiler_name",
+                    "optionValue": "eqasm_backend_cc"
+                }
+            ]
+        }    
+    ]
+}

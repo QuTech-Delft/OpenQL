@@ -18,6 +18,53 @@ PassManager::PassManager(const Str &name) : name(name) {
 }
 
 /**
+ * @brief   PassManager constructor and initialize from configuration file
+ * @param   name Name of the pass manager
+ * @param   cfg Name of the compiler configuration file
+ */
+PassManager::PassManager(const Str &name, const Str &cfg) : name(name), cfg_file_name(cfg) {
+    loadPassesFromConfigFile(name, cfg);    
+}
+
+/**
+ * @brief   Configures the passes of the compiler based on an external configuration file
+ * @param   name Name of the new configured pass manager
+ * @param   cfg Name of the compiler configuration file
+ */
+void PassManager::loadPassesFromConfigFile(const Str &newName, const Str &cfg) {
+    name = newName;
+    cfg_file_name = cfg;
+
+    Json compilerConfig;
+    
+    QL_DOUT("Loading compiler configuration file " << cfg_file_name);
+    compilerConfig = load_json(cfg_file_name); //note: fail to open error catched in util::json.cc
+    
+    for (auto it = compilerConfig["CompilerPasses"].begin(); it != compilerConfig["CompilerPasses"].end(); ++it) {
+        
+        Json compilerPass = *it;
+        
+        QL_DOUT("Found pass name " << compilerPass["passName"] << " with options " << compilerPass["options"] << " and alias name: " << compilerPass["passAlias"]);
+        
+        AbstractPass* pass = createPass(compilerPass["passName"], compilerPass["passAlias"]);
+        
+        assert(pass);
+        addPass(pass);
+        
+        Json passOptions = compilerPass["options"];
+        
+        // We need to set the local pass options
+        for(const auto &passOption : passOptions.items())
+        {
+            Json option = passOption.value();
+                
+            QL_DOUT("Found option " << option["optionName"] << " with value " << option["optionValue"]);
+            pass->setPassOption(option["optionName"], option["optionValue"]);
+        }
+    }
+}
+
+/**
  * @brief   Applies the sequence of compiler passes to the given program
  * @param   program   Object reference to the program to be compiled
  */
@@ -120,6 +167,10 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
         pass = new QisaCodeGenerationPass(aliasName);
     } else if (passName == "Visualizer") {
         pass = new VisualizerPass(aliasName);
+    } else if (passName == "CPrinter") {
+        pass = new CPrinterPass(aliasName);
+    } else if (passName == "RunExternalCompiler") {
+        pass = new RunExternalCompiler(aliasName);
     } else {
         QL_EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
         exit(1);

@@ -7,6 +7,7 @@
 #include "visualizer_common.h"
 #include "visualizer_circuit.h"
 #include "visualizer_interaction.h"
+#include "visualizer_mapping.h"
 #include "visualizer_cimg.h"
 #include "options.h"
 #include "utils/str.h"
@@ -57,17 +58,22 @@ using namespace utils;
 // [GENERAL] fix compilation error due to merge
 // [GENERAL] replace cimg calls with cimg wrapper calls
 // [GENERAL] delete default constructors in position types in visualizer_types.h
+// [GENERAL] fix isEdgeAlreadyDrawn() build error on CI
+// [MAPPING] turn pulse visualization and cycle cutting off for the mapping graph
+// [MAPPING] fix virtual qubit swapping
 
 // -- IN PROGRESS ---
-// [GENERAL] fix isEdgeAlreadyDrawn() build error on CI
 // [GENERAL] update documentation
 
 // --- FUTURE WORK ---
+// [GENERAL] fix size of image when image is too big for screen (not sure how with CImg)
+// [MAPPING] make cycle cutting work with the mapping graph
+// [MAPPING] make pulse visualization work with the mapping graph
+// [INTERACTION] apply background color option to interaction graph too
 // [GENERAL] add generating random circuits for visualization testing
-// [CIRCUIT] add background color option
 // [CIRCUIT] add connection line thickness parameter
 // [CIRCUIT] add bitline thickness parameter (maybe)
-// [CIRCUIT] allow collapsing the three qubit lines into one with an option
+// [CIRCUIT] allow collapsing the three qubit lines into one with an option for pulse visualization
 // [CIRCUIT] implement cycle cutting for pulse visualization
 // [CIRCUIT] what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
 //           comprising the entire range?
@@ -80,37 +86,29 @@ using namespace utils;
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfiguration &configuration) {
+void visualize(const quantum_program* program, const VisualizerConfiguration &configuration) {
     QL_WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
          << "might be missing and the visualizer has disabled itself.");
 }
 
 #else
 
-void visualize(const quantum_program* program, const Str &visualizationType, const VisualizerConfiguration &configuration) {
+void visualize(const quantum_program* program, const VisualizerConfiguration &configuration) {
     QL_IOUT("Starting visualization...");
-    QL_IOUT("Visualization type: " << visualizationType);
-
-    // for (ql::quantum_kernel kernel : program->kernels) {
-    //     for (ql::gate* const gate : kernel.get_circuit()) {
-    //         if (gate->type() == __remap_gate__) {
-    //             const ql::remap *remap_p = dynamic_cast<ql::remap*>(gate);
-    //             IOUT("remap gate: [" << remap_p->operands[0] << ", " << remap_p->virtual_qubit_index << "]");
-    //         }
-    //     }
-    // }
+    QL_IOUT("Visualization type: " << configuration.visualizationType);
 
     // printGates(parseGates(program));
+    // if (true) return;
 
     // Choose the proper visualization based on the visualization type.
-    if (visualizationType == "CIRCUIT") {
+    if (configuration.visualizationType == "CIRCUIT") {
         visualizeCircuit(program, configuration);
-    } else if (visualizationType == "INTERACTION_GRAPH") {
+    } else if (configuration.visualizationType == "INTERACTION_GRAPH") {
         visualizeInteractionGraph(program, configuration);
-    } else if (visualizationType == "MAPPING_GRAPH") {
-        QL_WOUT("Mapping graph visualization not yet implemented.");
+    } else if (configuration.visualizationType == "MAPPING_GRAPH") {
+        visualizeMappingGraph(program, configuration);
     } else {
-        QL_FATAL("Unknown visualization type: " << visualizationType << "!");
+        QL_FATAL("Unknown visualization type: " << configuration.visualizationType << "!");
     }
 
     QL_IOUT("Visualization complete...");
@@ -129,13 +127,12 @@ Vec<GateProperties> parseGates(const quantum_program* program) {
                 gate->name,
                 operands,
                 creg_operands,
+                gate->swap_params,
                 utoi(gate->duration),
                 utoi(gate->cycle),
                 gate->type(),
                 {},
-                "UNDEFINED",
-                0
-                // gate->type() == __remap_gate__ ? dynamic_cast<ql::remap*>(gate)->virtual_qubit_index : MAX
+                "UNDEFINED"
             };
             gates.push_back(gateProperties);
         }
@@ -144,33 +141,55 @@ Vec<GateProperties> parseGates(const quantum_program* program) {
     return gates;
 }
 
+Int calculateAmountOfCycles(const Vec<GateProperties> &gates, const Int cycleDuration) {
+    QL_DOUT("Calculating amount of cycles...");
+
+    // Find the highest cycle in the gate vector.
+    Int amountOfCycles = 0;
+    for (const GateProperties &gate : gates) {
+        if (gate.cycle == MAX_CYCLE) {
+            QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
+            return MAX_CYCLE;
+        }
+
+        if (gate.cycle > amountOfCycles)
+            amountOfCycles = gate.cycle;
+    }
+
+    // The last gate requires a different approach, because it might have a
+    // duration of multiple cycles. None of those cycles will show up as cycle
+    // index on any other gate, so we need to calculate them seperately.
+    const Int lastGateDuration = gates.at(gates.size() - 1).duration;
+    const Int lastGateDurationInCycles = lastGateDuration / cycleDuration;
+    if (lastGateDurationInCycles > 1)
+        amountOfCycles += lastGateDurationInCycles - 1;
+
+    // Cycles start at zero, so we add 1 to get the true amount of cycles.
+    return amountOfCycles + 1; 
+}
+
 Int calculateAmountOfBits(const Vec<GateProperties> &gates, const Vec<Int> GateProperties::* operandType) {
     QL_DOUT("Calculating amount of bits...");
 
-    //TODO: handle circuits not starting at a c- or qbit with index 0
-    Int minAmount = MAX;
+    // Find the maximum index of the operands.
     Int maxAmount = 0;
-
-    // Find the minimum and maximum index of the operands.
-    for (const GateProperties &gate : gates)
-    {
+    for (const GateProperties &gate : gates) {
         Vec<Int>::const_iterator begin = (gate.*operandType).begin();
         const Vec<Int>::const_iterator end = (gate.*operandType).end();
 
         for (; begin != end; ++begin) {
             const Int number = *begin;
-            if (number < minAmount) minAmount = number;
             if (number > maxAmount) maxAmount = number;
         }
     }
 
-    // If both minAmount and maxAmount are at their original values, the list of 
-    // operands for all the gates was empty.This means there are no operands of 
-    // the given type for these gates and we return 0.
-    if (minAmount == MAX && maxAmount == 0) {
+    // If maxAmount is at its original value, the list of operands for all the gates
+    // was empty. This means there are no operands of the given type for these gates
+    // and we return 0.
+    if (maxAmount == 0) {
         return 0;
     } else {
-        return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
+        return 1 + maxAmount;
     }
 }
 
@@ -257,10 +276,59 @@ void printGates(const Vec<GateProperties> &gates) {
         QL_IOUT("\tcodewords: " << codewords << "]");
 
         QL_IOUT("\tvisual_type: " << gate.visual_type);
+    }
+}
 
-        // if (gate.type == __remap_gate__) {
-        //     QL_IOUT("\tvirtual_qubit_index: " << gate.virtual_qubit_index);
-        // }
+void printGatesShort(const Vec<GateProperties> &gates) {
+    UInt maxGateNameLength = 0;
+    UInt maxSwapStringLength = 0;
+    UInt maxCycleStringLength = 0;
+    UInt maxRealOperandsLength = 0;
+    for (const GateProperties &gate : gates) {
+        if (gate.name.length() > maxGateNameLength) {
+            maxGateNameLength = gate.name.length();
+        }
+        if (to_string(gate.swap_params.part_of_swap).length() > maxSwapStringLength) {
+            maxSwapStringLength = to_string(gate.swap_params.part_of_swap).length();
+        }
+        if (to_string(gate.cycle).length() > maxCycleStringLength) {
+            maxCycleStringLength = to_string(gate.cycle).length();
+        }
+        Str rOperands = "[ "; for (const Int operand : gate.operands) {rOperands += std::to_string(operand) + " ";} rOperands += "]";
+        if (rOperands.length() > maxRealOperandsLength) {
+            maxRealOperandsLength = rOperands.length();
+        }
+    }
+    const Int minSpacing = 3;
+    for (const GateProperties &gate : gates) {
+        Str rOperands = "[ "; for (const Int operand : gate.operands) {rOperands += std::to_string(operand) + " ";} rOperands += "]";
+        Str vOperands = "[" + to_string(gate.swap_params.v0) + ", " + to_string(gate.swap_params.v1) + "]";
+
+        Str nameSectionExtraSpacing;
+        for (UInt i = 0; i < maxGateNameLength - gate.name.length() + minSpacing; i++) {
+            nameSectionExtraSpacing += " ";
+        }
+        const Str nameSection = "gate: " + gate.name + nameSectionExtraSpacing;
+
+        Str swapSectionExtraSpacing;
+        for (UInt i = 0; i < maxSwapStringLength - to_string(gate.swap_params.part_of_swap).length() + minSpacing; i++) {
+            swapSectionExtraSpacing += " ";
+        }
+        const Str swapSection = "part of swap: " + to_string(gate.swap_params.part_of_swap) + swapSectionExtraSpacing;
+
+        Str cycleSectionExtraSpacing;
+        for (UInt i = 0; i < maxCycleStringLength - to_string(gate.cycle).length() + minSpacing; i++) {
+            cycleSectionExtraSpacing += " ";
+        }
+        const Str cycleSection = "cycle: " + to_string(gate.cycle) + cycleSectionExtraSpacing;
+
+        Str realOperandsSectionExtraSpacing;
+        for (UInt i = 0; i < maxRealOperandsLength - rOperands.length() + 1; i++) {
+            realOperandsSectionExtraSpacing += " ";
+        }
+        const Str realOperandsSection = "real and virtual operands: " + rOperands + realOperandsSectionExtraSpacing;
+
+        QL_IOUT(nameSection << swapSection << cycleSection << realOperandsSection << " and " << vOperands);
     }
 }
 
