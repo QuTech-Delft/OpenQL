@@ -145,3 +145,19 @@ Nodes are coupled to each operand sequentially, i.e. the first node in the node 
 Qubit Interaction Graph
 -----------------------
 
+The qubit interaction graph visualizes the interactions between each of the qubits in the circuit. If a gate acts on two or more qubits, those
+qubits interact with each other and an edge will be drawn in the graph, with a number indicating the amount of times those qubits have interacted
+with each other. Note that the visualization of this is very simple, and the DOT graph the visualizer can produce should be used with the user's
+favorite graphing software to create a better looking graph.
+
+The configuration parameters of the qubit interaction graph are stored in the ``interactionGraph`` section in the visualizer configuration file.
+
+-------------
+Mapping Graph
+-------------
+
+The mapping graph tracks the journey of the virtual qubits through the real topology of the quantum hardware as the cycles of the quantum program
+are executed. The virtual qubits change location whenever a swap/move gate (or their decomposed parts) is finished executing. For convenience, the 
+abstract circuit representation of the quantum program is shown above the qubit mappings for each cycle.
+
+The configuration parameters of the mapping graph are stored in the ``mappingGraph`` section in the visualizer configuration file.
