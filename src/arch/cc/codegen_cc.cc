@@ -96,7 +96,7 @@ void Codegen::programFinish(const Str &progName) {
 \************************************************************************/
 
 void Codegen::kernelStart() {
-    for (UInt i=0; i<ELEM_CNT(lastEndCycle); i++) lastEndCycle[i] = ir::bundle_start_cycle;
+    for (UInt i=0; i<ELEM_CNT(lastEndCycle); i++) lastEndCycle[i] = ir::BUNDLE_START_CYCLE;
 }
 
 void Codegen::kernelFinish(const Str &kernelName, UInt durationInCycles) {

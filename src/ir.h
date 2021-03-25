@@ -13,7 +13,7 @@
 namespace ql {
 namespace ir {
 
-const int bundle_start_cycle = 1;                   // start_cycle of first bundle_t in bundles_t, see discussion in PR #398
+const int BUNDLE_START_CYCLE = 1;                   // start_cycle of first bundle_t in bundles_t, see discussion in PR #398
 
 typedef utils::List<gate *>section_t;
 
