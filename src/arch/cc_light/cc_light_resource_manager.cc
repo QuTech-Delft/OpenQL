@@ -314,6 +314,9 @@ ccl_edge_resource_t::ccl_edge_resource_t(
         state[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
     }
 
+    if (platform.topology.count("edges") <= 0) {
+        QL_FATAL("topology[\"edges\"] not defined in configuration file");
+    }
     for (auto &anedge : platform.topology["edges"]) {
         UInt s = anedge["src"];
         UInt d = anedge["dst"];
@@ -329,6 +332,9 @@ ccl_edge_resource_t::ccl_edge_resource_t(
         }
     }
 
+    if (platform.resources[name].count("connection_map") <= 0) {
+        QL_FATAL("resources[[\"edges\"][\"connection_map\"] not defined in configuration file");
+    }
     auto &constraints = platform.resources[name]["connection_map"];
     for (auto it = constraints.cbegin(); it != constraints.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() << "\n");
@@ -458,6 +464,9 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
     }
 
     // initialize qubitpair2edge map from json description; this is a constant map
+    if (platform.topology.count("edges") <= 0) {
+        QL_FATAL("topology[\"edges\"] not defined in configuration file");
+    }
     for (auto &anedge : platform.topology["edges"]) {
         UInt s = anedge["src"];
         UInt d = anedge["dst"];
@@ -474,6 +483,9 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
     }
 
     // initialize edge_detunes_qubits map from json description; this is a constant map
+    if (platform.resources[name].count("connection_map") <= 0) {
+        QL_FATAL("resources[[\"detuned_qubits\"][\"connection_map\"] not defined in configuration file");
+    }
     auto &constraints = platform.resources[name]["connection_map"];
     for (auto it = constraints.cbegin(); it != constraints.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() << "\n");
