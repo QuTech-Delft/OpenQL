@@ -39,22 +39,25 @@ static void insert_buffer_delays_kernel(
     Map<Pair<Str, Str>, UInt> buffer_cycles_map;
 
     // populate buffer map
-    // 'none' type is a dummy type and 0 buffer cycles will be inserted for
-    // instructions of type 'none'
+    // 'none' type is the default type in case a gate doesn't specify one in the config file
+    // it a dummy type and 0 buffer cycles will be inserted for instructions of type 'none'
+    // for pairs of instructions not represented in the buffer settings in the config file, 0 is inserted as well
     //
     // this has nothing to do with dependence graph generation but with scheduling
     // so should be in resource-constrained scheduler constructor
 
-    Vec<Str> buffer_names = {"none", "mw", "flux", "readout"};
-    for (auto &buf1 : buffer_names) {
-        for (auto &buf2 : buffer_names) {
+    Vec<Str> optype_names = {"none", "mw", "flux", "readout", "extern"};
+    for (auto &buf1 : optype_names) {
+        for (auto &buf2 : optype_names) {
             auto bname = buf1 + "_" + buf2 + "_buffer";
             if (platform.hardware_settings.count(bname) > 0) {
                 buffer_cycles_map.set({buf1, buf2}) = UInt(ceil(
                     static_cast<float>(platform.hardware_settings[bname]) /
                     platform.cycle_time));
+            } else {
+                buffer_cycles_map.set({buf1, buf2}) = 0;
             }
-            // DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
+            QL_DOUT("Initializing " << bname << ": "<< buffer_cycles_map.get({buf1, buf2}));
         }
     }
 
@@ -63,26 +66,28 @@ static void insert_buffer_delays_kernel(
     circuit *circp = &kernel.c;
     ir::bundles_t bundles = ir::bundler(*circp, platform.cycle_time);
 
-    Vec<Str> operations_prev_bundle;
+    Vec<Str> optypes_prev_bundle;
     UInt buffer_cycles_accum = 0;
     for (ir::bundle_t &abundle : bundles) {
-        Vec<Str> operations_curr_bundle;
+        Vec<Str> optypes_curr_bundle;    // map of all gates in this bundle to their types
         for (auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt) {
             for (auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt) {
                 auto &id = (*insIt)->name;
-                Str op_type("none");
+                Str op_type("none");    // default type attribute
                 if (platform.instruction_settings.count(id) > 0) {
+                    // so gate is specified in config file
                     if (platform.instruction_settings[id].count("type") > 0) {
+                        // and it has a type attribute
                         op_type = platform.instruction_settings[id]["type"].get<Str>();
                     }
                 }
-                operations_curr_bundle.push_back(op_type);
+                optypes_curr_bundle.push_back(op_type);
             }
         }
 
-        UInt buffer_cycles = 0;
-        for (auto &op_prev : operations_prev_bundle) {
-            for (auto &op_curr : operations_curr_bundle) {
+        UInt buffer_cycles = 0; // max of buffer_cycles for all combinations of optypes in current and previous bundle
+        for (auto &op_prev : optypes_prev_bundle) {
+            for (auto &op_curr : optypes_curr_bundle) {
                 auto temp_buf_cycles = buffer_cycles_map.get({op_prev, op_curr}, 0);
                 QL_DOUT("... considering buffer_" << op_prev << "_" << op_curr
                                                   << ": " << temp_buf_cycles);
@@ -92,7 +97,7 @@ static void insert_buffer_delays_kernel(
         QL_DOUT("... inserting buffer : " << buffer_cycles);
         buffer_cycles_accum += buffer_cycles;
         abundle.start_cycle = abundle.start_cycle + buffer_cycles_accum;
-        operations_prev_bundle = operations_curr_bundle;
+        optypes_prev_bundle = optypes_curr_bundle;
     }
 
     *circp = ir::circuiter(bundles);

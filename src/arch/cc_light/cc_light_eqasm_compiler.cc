@@ -648,28 +648,38 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
 
     QL_IOUT("Post scheduling decomposition ...");
     if (options::get("cz_mode") == "auto") {
-        QL_IOUT("decompose cz to cz+sqf...");
+        QL_DOUT("Automatically expanding cz to cz_park ...");
 
         typedef Pair<UInt,UInt> qubits_pair_t;
         Map<qubits_pair_t, UInt> qubitpair2edge; // map: pair of qubits to edge (from grid configuration)
         Map<UInt, Vec<UInt>> edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
         // initialize qubitpair2edge map from json description; this is a constant map
+        // QL_DOUT("... reading edge definitions from topology");
+        if (platform.topology.count("edges") <= 0) {
+            QL_FATAL("topology[\"edges\"] not defined in configuration file");
+        }
         for (auto &anedge : platform.topology["edges"]) {
+            // QL_DOUT("... reading edge definitions from topology src");
             UInt s = anedge["src"];
+            // QL_DOUT("... reading edge definitions from topology dst");
             UInt d = anedge["dst"];
+            // QL_DOUT("... reading edge definitions from topology id");
             UInt e = anedge["id"];
 
             qubits_pair_t aqpair(s,d);
+            // QL_DOUT("... reading edge definitions from topology find aqpair(s,d) : " << s << " " << d);
             auto it = qubitpair2edge.find(aqpair);
             if (it != qubitpair2edge.end()) {
                 QL_FATAL("re-defining edge " << s << "->" << d << " !");
             } else {
+                // QL_DOUT("... reading edge definitions from topology setting pair2edge to e: " << e);
                 qubitpair2edge.set(aqpair) = e;
             }
         }
 
         // initialize edge_detunes_qubits map from json description; this is a constant map
+        // QL_DOUT("... initializing internal edge_detunes_qubits map from detuned_qubits resource");
         auto &constraints = platform.resources["detuned_qubits"]["connection_map"];
         for (auto it = constraints.begin(); it != constraints.end(); ++it) {
             UInt edgeNo = stoi(it.key());
@@ -679,6 +689,7 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
             }
         }
 
+        // QL_DOUT("... reading bundles to find candidate two-qubit flux gates");
         for (
             auto bundles_src_it = bundles_src.begin(), bundles_dst_it = bundles_dst.begin();
             bundles_src_it != bundles_src.end() && bundles_dst_it != bundles_dst.end();
@@ -694,10 +705,13 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
                     ins_src_it != sec_src_it->end();
                     ++ins_src_it
                 ) {
-                    Str id = (*ins_src_it)->name;
+                    auto gp = *ins_src_it;
+                    // QL_DOUT("... checking gate: " << gp->qasm());
+                    Str id = gp->name;
                     Str operation_type{};
-                    UInt nOperands = ((*ins_src_it)->operands).size();
+                    UInt nOperands = gp->operands.size();
                     if (nOperands == 2) {
+                        // QL_DOUT("... is two-qubit gate: " << gp->qasm());
                         auto it = platform.instruction_map.find(id);
                         if (it != platform.instruction_map.end()) {
                             if (platform.instruction_settings[id].count("type") > 0) {
@@ -707,24 +721,34 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
                             QL_FATAL("custom instruction not found for : " << id << " !");
                         }
 
+                        // QL_DOUT("... operation_type= " << operation_type);
+                        UInt q0 = gp->operands[0];
+                        UInt q1 = gp->operands[1];
                         Bool is_flux_2_qubit = operation_type == "flux";
                         if (is_flux_2_qubit) {
-                            auto &q0 = (*ins_src_it)->operands[0];
-                            auto &q1 = (*ins_src_it)->operands[1];
-                            QL_DOUT("found 2 qubit flux gate on " << q0 << " and " << q1);
+                            // QL_DOUT("Post scheduling decomposition: found 2 qubit flux gate: " << gp->qasm());
                             qubits_pair_t aqpair(q0, q1);
                             auto it = qubitpair2edge.find(aqpair);
                             if (it != qubitpair2edge.end()) {
                                 auto edge_no = it->second;
-                                QL_DOUT("add the following sqf gates for edge: " << edge_no << ":");
+                                QL_DOUT("checking parked qubits for edge: " << edge_no << ":");
+                                Vec<UInt> parked_operands = {};
                                 for (auto &q : edge_detunes_qubits.get(edge_no)) {
-                                    QL_DOUT("sqf q" << q);
-                                    custom_gate *g = new custom_gate("sqf q"+to_string(q));
-                                    g->operands.push_back(q);
-
-                                    ir::section_t asec;
-                                    asec.push_back(g);
-                                    bundles_dst_it->parallel_sections.push_back(asec);
+                                    // QL_DOUT("found parked qubit q" << q);
+                                    parked_operands.push_back(q);
+                                }
+                                if (parked_operands.size() != 0) {
+                                    // QL_DOUT("adding parked qubits " << parked_operands << " to gate and adding _park behind its name");
+                                    for (auto &q : parked_operands) {
+                                        gp->operands.push_back(q);
+                                    }
+                                    UInt p = id.find(" ");
+                                    if (p != Str::npos) {
+                                        id = id.substr(0,p);
+                                    }
+                                    id.append("_park");
+                                    gp->name = id;
+                                    QL_DOUT("Post scheduling decomposition, added parked qubits: " << gp->qasm());
                                 }
                             }
                         }
@@ -919,7 +943,9 @@ void cc_light_eqasm_compiler::compile(quantum_program *programp, const quantum_p
     write_quantumsim_script(programp, platform, "write_quantumsim_script_mapped");
 
     // and now for real
-    qisa_code_generation(programp, platform, "qisa_code_generation");
+    if (options::get("generate_code") == "yes") {
+        qisa_code_generation(programp, platform, "qisa_code_generation");
+    }
 
     // timing to be moved to pass manager
     // computing timetaken, stop interval timer

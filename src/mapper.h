@@ -44,13 +44,16 @@ namespace mapper {
 // Grid
 //
 // Config file definitions:
-//  nq:                 hardware_settings.qubit_number
-//  ncores:             hardware_settings.number_of_cores
-//  topology.conn;      gc_specified/gc_full: topology.connectivity: how connectivity between qubits is specified
-//  topology.form;      gf_xy/gf_irregular: topology.form: how relation between neighbors is specified
-//  topology.x_size/y_size: x/y space, defines underlying grid (only gf_xy)
-//  topology.qubits:    mapping of qubit to x/y coordinates (defines x[i]/y[i] for each qubit i) (only gf_xy)
-//  topology.edges:     mapping of edge (physical connection between 2 qubits) to its src and dst qubits (defines nbs)
+//  nq:                         hardware_settings.qubit_number
+//  topology.number_of_cores:   number_of_cores
+//  topology.form;              gf_xy/gf_irregular: how relation between neighbors is specified
+//  topology.connectivity:      gc_specified/gc_full: how connectivity between qubits is specified
+//  topology.comm_qubits_per_core: number of qubits per core that can communicate directly with qubits in other cores
+//  topology.x_size/y_size:     x/y space, defines underlying grid (only gf_xy)
+//  topology.qubits:            mapping of qubit to x/y coordinates
+//                              (defines x[i]/y[i] for each qubit i) (only gf_xy)
+//  topology.edges:             mapping of edge (physical connection between 2 qubits)
+//                              to its src and dst qubits (defines nbs)
 //
 // Grid public members (apart from nq):
 //  form:               how relation between neighbors is specified
@@ -64,6 +67,10 @@ namespace mapper {
 // For an irregular grid form, only nq and edges (so nbs) need to be specified; distance is computed from nbs:
 // - there is no underlying rectangular grid, so there are no defined x and y coordinates of qubits;
 //   this means that Normalize as needed by mappathselect==borders cannot work
+// - edges (so nbs) can be specified explicitly (connectivity==gc_specified) or implicitly (it is gc_full):
+//   when connectivity==gc_specified, the edges must be specified in topology.edges in terms of connected qubits;
+//   when connectivity==gc_full, there are edges between all qubits but between cores only between comm_qubits
+//
 // Below, we support regular (xy) grids which need not be fully assigned; this requires edges (so nbs) to be defined,
 //   from which distance is computed; also we have x/y coordinates per qubit specified in the configuration file
 //   An underlying grid with x/y coordinates comes in use for:
@@ -74,12 +81,13 @@ namespace mapper {
 // Not implemented:
 // forms gf_cross and gf_plus: given x_size and y_size, the relations are implicitly defined by the internal
 //      diagonal (gf_cross) or horizontal/vertical (gf_plus) connections between grid points (qubits);
-//      with gf_cross only half the grid is occupied by a qubit; the grid point (0,0) doesn't have a qubit, (1,0) and (0,1) do;
+//      with gf_cross only half the grid is occupied by a qubit;
+//      the grid point (0,0) doesn't have a qubit, (1,0) and (0,1) do;
 //      topology.qubits and topology.edges need not be present in the configuration file;
-//      Distance in both forms would be defined by a formula, not a function
+//      Distance in both forms would be defined by a formula, not a function.
 typedef enum GridConnectivity {
     gc_specified,   // "specified": edges are specified in "edges" section
-    gc_full         // "full": qubits are fully connected by edges
+    gc_full         // "full": qubits are fully connected by edges, between cores only between comm_qubits
 } gridconn_t;
 
 typedef enum GridForms {
@@ -95,6 +103,7 @@ public:
     // Grid configuration, all constant after initialization
     gridform_t form;                      // form of grid
     gridconn_t conn;                      // connectivity of grid
+    utils::UInt ncommqpc;                 // number of comm_qubits per core, ==nq/ncores when all can communicate
     utils::Int nx;                        // length of x dimension (x coordinates count 0..nx-1)
     utils::Int ny;                        // length of y dimension (y coordinates count 0..ny-1)
 
@@ -108,6 +117,9 @@ public:
     // initialize mapper internal grid maps from configuration
     // this remains constant over multiple kernels on the same platform
     void Init(const quantum_platform *p);
+
+    // whether qubit is a communication qubit of a core
+    utils::Bool IsCommQubit(utils::UInt qi) const;
 
     // core index from qubit index
     // when multi-core assumes full and uniform core connectivity
@@ -154,6 +166,9 @@ public:
     void DPRINTGrid() const;
     void PrintGrid() const;
 
+    // init grid form attributes
+    void InitForm();
+
     // init multi-core attributes
     void InitCores();
 
@@ -163,6 +178,7 @@ public:
     // init nbs map
     void InitNbs();
 
+    // sort nbs map; see Normalize and Angle above
     void SortNbs();
 
 };
