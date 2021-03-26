@@ -33,7 +33,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         QL_DOUT("xSize: " << topology.xSize);
         QL_DOUT("ySize: " << topology.ySize);
         QL_DOUT("qubits:");
-        for (Int qubitIndex = 0; qubitIndex < topology.vertices.size(); qubitIndex++) {
+        for (UInt qubitIndex = 0; qubitIndex < topology.vertices.size(); qubitIndex++) {
             QL_DOUT("\tid: " << qubitIndex << " position: [" << topology.vertices[qubitIndex].x << ", " << topology.vertices[qubitIndex].y << "]");
         }
         QL_DOUT("edges:");
@@ -98,7 +98,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
         const Int R = qubitIndex % 3 != 0 ? currentColor : 0;
         const Int G = qubitIndex % 3 != 1 ? currentColor : 0;
         const Int B = qubitIndex % 3 != 2 ? currentColor : 0;
-        const Color virtualColor = {{ R, G, B }};
+        const Color virtualColor = {{ (Byte)R, (Byte)G, (Byte)B }};
         virtualColors[qubitIndex] = virtualColor;
     }
 
@@ -108,7 +108,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
 
     // Fill in cycle spaces beneath the circuit with the mapping graph.
     const Int yStart = imageOutput.structure.getImageHeight() - extendedImageHeight;
-    const Int yEnd = imageOutput.structure.getImageHeight();
+    //const Int yEnd = imageOutput.structure.getImageHeight();
 
     // Draw the mapping for each cycle.
     for (Int cycleIndex = 0; cycleIndex < amountOfCycles; cycleIndex++) {
@@ -119,7 +119,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
 
         const Position4 position = imageOutput.structure.getCellPosition(cycleIndex, 0, QUANTUM);
         const Int xStart = position.x0;
-        const Int xEnd = position.x1;
+        //const Int xEnd = position.x1;
 
         // Calculate the qubit positions.
         Vec<Position2> qubitPositions(amountOfQubits, { 0, 0 });
@@ -250,7 +250,7 @@ void computeMappingPerCycle(const MappingGraphLayout layout,
         }
         for (const GateProperties &gate : gates) {
             if (gate.cycle == cycleIndex) {
-                for (Int qubitIndex = 0; qubitIndex < gate.operands.size(); qubitIndex++) {
+                for (UInt qubitIndex = 0; qubitIndex < gate.operands.size(); qubitIndex++) {
                     const Int mappingIndex = gate.operands[qubitIndex];
                     const Int mappingIndexFromPreviousCycle = virtualQubits[cycleIndex - 1][mappingIndex];
                     if (mappingIndexFromPreviousCycle == -1) {

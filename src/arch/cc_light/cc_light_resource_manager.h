@@ -161,6 +161,32 @@ public:
     void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
 
+// Inter-core communication gates use channels between cores.
+// Each inter-core communication gate uses two channels, one at each side of the communication,
+// to establish a connection between the cores, and especially between the qubits that are operands of the gate.
+// Each of these two channels must remain allocated to the connection, while the communication is ongoing.
+// When the communication gate is ready, the two channels can be released.
+// Of those channels only a limited and configurable number may be available for each core.
+// While during scheduling of a communication gate, no such channels are available, the gate is delayed.
+class ccl_channel_resource_t : public resource_t {
+public:
+    utils::UInt ncores;                             // topology.number_of_cores: total number of cores
+    utils::UInt nchannels;                          // resources.channels.count: number of channels in each core
+    // fwd: channel c is busy till cycle=state[core][c],
+    // i.e. all cycles < state[core][c] it is busy, i.e. start_cycle must be >= state[core][c]
+    // bwd: channel c is busy from cycle=state[core][c],
+    // i.e. all cycles >= state[core][c] it is busy, i.e. start_cycle+duration must be <= state[core][c]
+    utils::Vec<utils::Vec<utils::UInt>> state;
+
+    ccl_channel_resource_t(const quantum_platform & platform, scheduling_direction_t dir);
+
+    ccl_channel_resource_t *clone() const & override;
+    ccl_channel_resource_t *clone() && override;
+
+    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+};
+
 // ============ platform specific resource_manager matching config file resources sections with resource classes above
 // each config file resources section must have a resource class above
 // not all resource classes above need to be actually used and specified in a config file; only those specified, are used
@@ -170,8 +196,8 @@ public:
     cc_light_resource_manager_t() = default;
 
     // Allocate those resources that were specified in the config file.
-    // Those that are not specified, are not allocatd, so are not used in scheduling/mapping.
-    // The resource names tested below correspond to the names of the resources sections in the config file.
+    // Those that are not specified, are not allocated, so are not used in scheduling/mapping.
+    // The resource names tested correspond to the names of the resources sections in the config file.
     cc_light_resource_manager_t(const quantum_platform &platform, scheduling_direction_t dir);
 
     cc_light_resource_manager_t *clone() const & override;

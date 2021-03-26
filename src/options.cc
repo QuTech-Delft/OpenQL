@@ -669,6 +669,7 @@ Options make_ql_options() {
     options.add_bool("mapreverseswap", "Reverse swap operands when better", true);
     options.add_bool("write_qasm_files", "write (un-)scheduled (with and without resource-constraint) qasm files");
     options.add_bool("write_report_files", "write report files on circuit characteristics and pass results");
+    options.add_bool("generate_code", "Generate code for the target; otherwise stop just before doing that", true);
 
     return options;
 }
