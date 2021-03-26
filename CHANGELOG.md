@@ -9,10 +9,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - allow 'wait' and 'barrier' in JSON section 'gate_decomposition'
 - CC backend:
     - improved reporting on JSON semantic errors
-    - implemented option to output scheduled QASM files
     - added check for dimension of "instruments/qubits" against "instruments/ref_control_mode/control_bits"
     - added check for dimension of "instructions/<key>/cc/[signals,ref_signal]/value" against "instruments/ref_control_mode/control_bits"
     - added cross check of "instruments/ref_control_mode" against "instrument_definitions"
+    - added support for "pragma/break" in JSON definition to define 'gate' that breaks out of loop
+    - added support to distribute measurement results via DSM
+    - added support for conditional gates
+    - added compile option "--backend_cc_run_once"
+    - added compile option "--backend_cc_verbose"
 
 ### Changed
 - CC backend:
@@ -20,6 +24,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - renamed JSON field "ref_signals_type" to "signal_type"
     - changed JSON field "static_codeword_override" to be a vector with one element per qubit parameter. To edit a JSON file using Sublime, use Replace with Regular Expressions: find=`"static_codeword_override": ([0-9])+`, replace=`"static_codeword_override": [\1]`
     - adopted new module synchronization scheme ("seq_bar semantics", requires CC software >= v0.2.0, PycQED after commit 470df5b)
+    - JSON field "instruction/type" no longer used by backend, use "instruction/cc/readout_mode" to flag measurement instructions
+    - allow specification of 2 triggers in JSON field "control_modes/*/trigger_bits" to support dual-QWG
+    - changed label in generated code from "mainLoop" to "__mainLoop". Do not start kernel names with "__" (this should be specified by the API)
 
 ### Removed
 

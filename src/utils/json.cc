@@ -70,5 +70,18 @@ Json load_json(const Str &path) {
     return j;
 }
 
+template<>
+const Json &json_get(const Json &j, const Str &key, const Str &nodePath) {
+    // first check existence of key
+    auto it = j.find(key);
+    if (it == j.end()) {
+        QL_JSON_FATAL("Key '" << key
+                              << "' not found on path '" << nodePath
+                              << "', actual node contents '" << j << "'");
+    }
+
+    return *it;
+}
+
 } // namespace utils
 } // namespace ql

@@ -5,12 +5,13 @@
 #pragma once
 
 #include <iostream>
+#include "utils/exception.h"
 #include "utils/compat.h"
 #include "utils/str.h"
 
 // helper macro: stringstream to string
 // based on https://stackoverflow.com/questions/21924156/how-to-initialize-a-stdstringstream
-#define QL_SS2S(values) ::ql::utils::Str(static_cast<::ql::utils::StrStrm&&>(::ql::utils::StrStrm() << values).str())
+#define QL_SS2S(values) ::ql::utils::Str(dynamic_cast<::ql::utils::StrStrm&&>(::ql::utils::StrStrm() << values).str())
 
 #define QL_PRINTLN(x) \
     do {                                                                                                    \

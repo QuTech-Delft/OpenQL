@@ -55,5 +55,8 @@ T json_get(const Json &j, const Str &key, const Str &nodePath = "") {
     }
 }
 
+template<>
+const Json &json_get(const Json &j, const Str &key, const Str &nodePath);
+
 } // namespace utils
 } // namespace ql
