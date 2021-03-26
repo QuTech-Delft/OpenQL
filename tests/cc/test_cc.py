@@ -318,10 +318,10 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('log_level', 'LOG_INFO') # override log level
         p.compile()
 
-    def test_rc_sched(self):
+    def test_rc_sched_measure(self):
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
 
-        p = ql.Program('test_rc_sched', platform, 5, num_cregs, num_bregs)
+        p = ql.Program('test_rc_sched_measure', platform, 5, num_cregs, num_bregs)
         k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
 
         for q in [0, 1, 2, 3, 4]:
@@ -334,10 +334,10 @@ class Test_central_controller(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-    def test_rc_sched_asap(self):
+    def test_rc_sched_measure_asap(self):
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
 
-        p = ql.Program('test_rc_sched_asap', platform, 5, num_cregs, num_bregs)
+        p = ql.Program('test_rc_sched_measure_asap', platform, 5, num_cregs, num_bregs)
         k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
 
         k.gate('x', [2])
@@ -352,10 +352,10 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('scheduler', 'ASAP')
         p.compile()
 
-    def test_rc_sched_barrier(self):
+    def test_rc_sched_measure_barrier(self):
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
 
-        p = ql.Program('test_rc_sched_barrier', platform, 5, num_cregs, num_bregs)
+        p = ql.Program('test_rc_sched_measure_barrier', platform, 5, num_cregs, num_bregs)
         k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
 
         for q in [0, 1, 2, 3, 4]:
@@ -367,6 +367,19 @@ class Test_central_controller(unittest.TestCase):
             k.gate("measure", [q])
         k.barrier([])
         k.gate('x', [1])
+
+        p.add_kernel(k)
+        p.compile()
+
+    def test_rc_sched_cz(self):
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+
+        p = ql.Program('test_rc_sched_cz', platform, 5, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
+
+        k.gate('x', [1])
+        k.gate("cz", [0, 2])  # no associated park
+        # FIXME: we would like to add a CZ[1,x] with x!=2 to see how it schedules, but in our 5 qubit setup qubit 2 is always involved
 
         p.add_kernel(k)
         p.compile()
