@@ -295,16 +295,14 @@ class Test_central_controller(unittest.TestCase):
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
         p = ql.Program('test_nested_rus', platform, 5, num_cregs, num_bregs)
 
-        # FIXME: don't use underscores in program/kernel names if those are used as parameters to add_for()/add_do_while()
-        # since incorrect labels are generated in that case (both in .qasm and .vq1asm files)
-        outer_program = ql.Program('outerProgram', platform, 5, num_cregs, num_bregs)
-        outer_kernel = ql.Kernel('outerKernel', platform, 5, num_cregs)
+        outer_program = ql.Program('outer_program', platform, 5, num_cregs, num_bregs)
+        outer_kernel = ql.Kernel('outer_kernel', platform, 5, num_cregs)
         outer_kernel.gate("measure_fb", [qidx])
-        outer_kernel.gate("if_1_break", [qidx])
+        outer_kernel.gate("if_1_break", [qidx])  # FIXME: uses incorrect label
         outer_program.add_kernel(outer_kernel)
 
-        inner_program = ql.Program('innerProgram', platform, 5, num_cregs, num_bregs)
-        inner_kernel = ql.Kernel('innerKernel', platform, 5, num_cregs)
+        inner_program = ql.Program('inner_program', platform, 5, num_cregs, num_bregs)
+        inner_kernel = ql.Kernel('inner_kernel', platform, 5, num_cregs)
         inner_kernel.gate("measure_fb", [qidx])
         inner_kernel. gate("if_0_break", [qidx])
         inner_kernel.gate("rx180", [qidx])

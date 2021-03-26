@@ -27,6 +27,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - JSON field "instruction/type" no longer used by backend, use "instruction/cc/readout_mode" to flag measurement instructions
     - allow specification of 2 triggers in JSON field "control_modes/*/trigger_bits" to support dual-QWG
     - changed label in generated code from "mainLoop" to "__mainLoop". Do not start kernel names with "__" (this should be specified by the API)
+    - correctly handle kernel names containing "_" in conjunction with looping (formerly duplicate labels could arise)
+    - added "seq_out 0,1" to program start to allow tracing of actual program start
 
 ### Removed
 

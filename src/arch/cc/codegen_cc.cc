@@ -655,7 +655,7 @@ void Codegen::forStart(const Str &label, UInt iterations) {
     comment(QL_SS2S("# FOR_START(" << iterations << ")"));
     // FIXME: reserve register
     emit("", "move", QL_SS2S(iterations << ",R62"), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested for loops (not supported by program.cc either)
-    emit((label+":"), "", "", "# ");        // just a label
+    emit((label+":"), "", "", "# ");
 #if OPT_PRAGMA
     pragmaForLabel = label;        // remind label for pragma/break FIXME: implement properly later on
 #endif
@@ -666,19 +666,25 @@ void Codegen::forEnd(const Str &label) {
     // FIXME: free register
     emit("", "loop", QL_SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested for loops (not supported by program.cc either)
 #if OPT_PRAGMA
-    emit((label+"_end:"), "", "", "# ");                          // NB: just a label
+    emit((label+"_end:"), "", "", "# ");    // label for 'break'
 #endif
 }
 
 void Codegen::doWhileStart(const Str &label) {
     comment("# DO_WHILE_START");
-    emit((label+":"), "", "", "# ");                              // NB: just a label
+    emit((label+":"), "", "", "# ");
+#if OPT_PRAGMA
+    pragmaForLabel = label;        // remind label for pragma/break FIXME: implement properly later on
+#endif
 }
 
 void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1) {
     comment(QL_SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
     emit("", "jmp", QL_SS2S("@" << label), "# FIXME: we don't support conditions, just an endless loop'");        // FIXME: just endless loop
     QL_WOUT("CC backend ignores condition of do while loop");
+#if OPT_PRAGMA
+    emit((label+"_end:"), "", "", "# ");    // label for 'break'
+#endif
 }
 
 void Codegen::comment(const Str &c) {
@@ -746,7 +752,7 @@ void Codegen::emitProgramStart(const Str &progName) {
     // NB: new seq_bar semantics (firmware from 20191219 onwards)
     comment("# synchronous start and latency compensation");
     emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
-
+    emit("",                "seq_out",  "0x00000000,1",     "# allows monitoring actual start time using trace unit");
     emit("__mainLoop:",     "",         "",                 "# ");    // FIXME: __mainLoop should be a forbidden kernel name
 
 #if OPT_FEEDBACK
