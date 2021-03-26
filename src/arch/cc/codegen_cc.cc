@@ -657,7 +657,7 @@ void Codegen::forStart(const Str &label, UInt iterations) {
     emit("", "move", QL_SS2S(iterations << ",R62"), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested for loops (not supported by program.cc either)
     emit((label+":"), "", "", "# ");
 #if OPT_PRAGMA
-    pragmaForLabel = label;        // remind label for pragma/break FIXME: implement properly later on
+    pragmaLoopLabel.push_back(label);        // remind label for pragma/break FIXME: implement properly later on
 #endif
 }
 
@@ -667,6 +667,7 @@ void Codegen::forEnd(const Str &label) {
     emit("", "loop", QL_SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested for loops (not supported by program.cc either)
 #if OPT_PRAGMA
     emit((label+"_end:"), "", "", "# ");    // label for 'break'
+    pragmaLoopLabel.pop_back();
 #endif
 }
 
@@ -674,7 +675,7 @@ void Codegen::doWhileStart(const Str &label) {
     comment("# DO_WHILE_START");
     emit((label+":"), "", "", "# ");
 #if OPT_PRAGMA
-    pragmaForLabel = label;        // remind label for pragma/break FIXME: implement properly later on
+    pragmaLoopLabel.push_back(label);        // remind label for pragma/break FIXME: implement properly later on
 #endif
 }
 
@@ -684,6 +685,7 @@ void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1
     QL_WOUT("CC backend ignores condition of do while loop");
 #if OPT_PRAGMA
     emit((label+"_end:"), "", "", "# ");    // label for 'break'
+    pragmaLoopLabel.pop_back();
 #endif
 }
 
@@ -884,7 +886,7 @@ void Codegen::emitPragma(
     Int pragmaBreakVal = json_get<Int>(pragma, "break", "pragma of unknown instruction");        // FIXME: we don't know which instruction we're dealing with, so better move
     UInt smAddr = pragmaSmBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
     UInt mask = 1ul << (pragmaSmBit % 32);
-    std::string label = pragmaForLabel+"_end";        // FIXME: must match label set in forEnd(), assumes we are actually inside a for loop
+    std::string label = pragmaLoopLabel.back() + "_end";        // FIXME: must match label set in forEnd(), assumes we are actually inside a for loop
 
     // emit code for pragma "break". NB: code is identical for all instruments
     // FIXME: verify that instruction duration matches actual time

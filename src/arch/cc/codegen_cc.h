@@ -110,7 +110,7 @@ private:    // vars
     // codegen state, kernel scope FIXME: create class
     UInt lastEndCycle[MAX_INSTRS];                              // vector[instrIdx], maintain where we got per slot
 #if OPT_PRAGMA
-    Str pragmaForLabel;
+    Vec<Str> pragmaLoopLabel;                                   // stack for loop labels (in conjunction with 'break' instruction)
 #endif
 
     // codegen state, bundle scope
