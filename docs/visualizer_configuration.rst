@@ -125,8 +125,87 @@ Example configuration (self-explanatory attributes have no description):
     "gateDurationOutlines":
     {
         "show": true,
+        // the gap between the edge of the cell and the gate duration outline
         "gap": 2,
+        // the filled background alpha
         "fillAlpha": 0.2,
+        // the outline alpha
         "outlineAlpha": 0.3,
         "outlineColor": [0, 0, 0]
     },
+    "measurements":
+    {
+        // whether to draw a connection from the measurement gate to the classical line it stores the result in
+        "drawConnection": true,
+        // the gap between the double line representing the connection
+        "lineSpacing": 2,
+        "arrowSize": 10
+    ,
+    "pulses":
+    {
+        // set this to true to use the pulse visualization
+        "displayGatesAsPulses": false,
+        // these heights control the line row heights
+        "pulseRowHeightMicrowave": 32,
+        "pulseRowHeightFlux": 32,
+        "pulseRowHeightReadout": 32,
+        // these colors control the line colors
+        "pulseColorMicrowave": [0, 0, 255],
+        "pulseColorFlux": [255, 0, 0],
+        "pulseColorReadout": [0, 255, 0]
+    }
+
+-------------------------------------
+Qubit interaction graph visualization
+-------------------------------------
+
+Example configuration (self-explanatory attributes have no description):
+
+.. code:: javascript
+
+    "interactionGraph":
+    {
+        // whether a DOT file should be generated for use with graphing software
+        "outputDotFile": true,
+        "borderWidth": 32,
+        // the minimum radius of the circle on which the qubits are placed
+        "minInteractionCircleRadius": 100,
+        "interactionCircleRadiusModifier": 3.0,
+        "qubitRadius": 17,
+        "labelFontHeight": 13,
+        "circleOutlineColor": [0, 0, 0],
+        "circleFillColor": [255, 255, 255],
+        "labelColor": [0, 0, 0],
+        "edgeColor": [0, 0, 0]
+    }
+
+---------------------------
+Mapping graph visualization
+---------------------------
+
+Example configuration (self-explanatory attributes have no description):
+
+.. code:: javascript
+
+    "mappingGraph":
+    {
+        // whether qubits should be filled with the corresponding logical qubit index in the first cycle
+        "initDefaultVirtuals": false,
+        // give each distinct virtual qubit a color
+        "showVirtualColors": true,
+        // show the real qubit indices above the qubits
+        "showRealIndices": true,
+        // whether to use the topology from the hardware configuration file
+        "useTopology": true,
+        // parameters for controlling the layout
+        "qubitRadius": 15,
+        "qubitSpacing": 7,
+        "fontHeightReal": 13,
+        "fontHeightVirtual": 13,
+        "textColorReal": [0, 0, 255],
+        "textColorVirtual": [255, 0, 0],
+        // the gap between the qubit and the real index
+        "realIndexSpacing": 1,
+        "qubitFillColor": [255, 255, 255],
+        "qubitOutlineColor": [0, 0, 0]
+    }

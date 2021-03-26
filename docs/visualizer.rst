@@ -180,5 +180,8 @@ The mapping graph tracks the journey of the virtual qubits through the real topo
 are executed. The virtual qubits change location whenever a swap/move gate (or their decomposed parts) is finished executing. For convenience, the 
 abstract circuit representation of the quantum program is shown above the qubit mappings for each cycle.
 
+The topology of the quantum hardware is taken from the topology section in the hardware configuration file, together with the edges between the qubits.
+If no topology is defined, the qubits will simply be spaced sequentially in a grid structure without edges being shown.
+
 The configuration parameters of the mapping graph are stored in the ``mappingGraph`` section in the visualizer configuration file.
 See :ref:`visualizer_configuration` for a description of the available options.
