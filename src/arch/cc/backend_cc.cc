@@ -228,14 +228,12 @@ void Backend::codegenKernelPrologue(quantum_kernel &k) {
         }
 
         case kernel_type_t::FOR_START: {
-            Str label = loopLabel(k);
-            codegen.forStart(label, k.iterations);
+            codegen.forStart(loopLabel(k), k.iterations);
             break;
         }
 
         case kernel_type_t::DO_WHILE_START: {
-            Str label = loopLabel(k);
-            codegen.doWhileStart(label);
+            codegen.doWhileStart(loopLabel(k));
             break;
         }
 
@@ -259,8 +257,7 @@ void Backend::codegenKernelPrologue(quantum_kernel &k) {
 void Backend::codegenKernelEpilogue(quantum_kernel &k) {
     switch (k.type) {
         case kernel_type_t::FOR_END: {
-            Str label = loopLabel(k);
-            codegen.forEnd(label);
+            codegen.forEnd(loopLabel(k));
             break;
         }
 
@@ -268,8 +265,7 @@ void Backend::codegenKernelEpilogue(quantum_kernel &k) {
             auto op0 = k.br_condition->operands[0]->as_creg().id;
             auto op1 = k.br_condition->operands[1]->as_creg().id;
             auto opName = k.br_condition->operation_name;
-            Str label = loopLabel(k);
-            codegen.doWhileEnd(label, op0, opName, op1);
+            codegen.doWhileEnd(loopLabel(k), op0, opName, op1);
             break;
         }
 
