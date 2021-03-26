@@ -151,18 +151,20 @@ void Backend::codegenClassicalInstruction(gate *classical_ins) {
  *
  * quantum_program::add_for() and quantum_program::add_do_while() generate kernels that wrap a program or kernel inside
  * a 'start' and 'end' kernel that only contain the looping information. The names of these added kernels are derived
- * from the base name of the wrapped object. Examples:
+ * from the name of the wrapped object by adding a suffix. Examples:
  * -    "program" results e.g. in "program_for3389_start" or "program_for3389_end"
- * -    "kernel" results e.g. in "kernel_do_while1_start" or "kernel_do_while1_end"
+ * -    "kernel" results e.g. in "kernel_do_while1_start" or "kernel_do_while1" (without "_end")
  *
- * This function tries to obtain the stem name without the added (e.g.) '_for0_start' to use as a label to share between
+ * This function obtains the stem name without the added suffix (e.g. '_for0_start') to use as a label to share between
  * the 'start' and 'end' code.
- * Other than the original in quantum_kernel::get_epilogue, we extract the full stem, not only the part up to the first
- * "_" to prevent duplicate labels if users choose to use names that are identical before the first "_"
+ *
+ * Notes:
+ * -    Other than the original in quantum_kernel::get_epilogue, we extract the full stem, not only the part up to the first
+ *      "_" to prevent duplicate labels if users choose to use names that are identical before the first "_"
+ * -    numbering is performed using "static unsigned long phi_node_count = 0;" and thus persists over compiler invocations
  */
 
 // FIXME: originally extracted from quantum_kernel::get_epilogue, should be in a common place
-// NB: note that numbering is performed using "static unsigned long phi_node_count = 0;" and thus persists over compiler invocations
 
 Str Backend::loopLabel(quantum_kernel &k) {
     Str label;
