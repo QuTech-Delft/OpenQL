@@ -139,7 +139,26 @@ The type of the nodes can be one of the following:
 
 When a gate has multiple operands, each operand should have a node associated with it. Simply create as many nodes in the node array as
 there are operands and define a type and visual parameters for it. Don't forget the comma to seperate each node in the array.
-Nodes are coupled to each operand sequentially, i.e. the first node in the node array will be used for the first qubit in the operand vector.
+Note that nodes are coupled to each operand sequentially, i.e. the first node in the node array will be used for the first qubit in the operand vector.
+
+Pulse Visualization
+-------------------
+
+Along with an abstract representation of the gates used in the quantum circuit, the gates can also be represented by the RF pulses used in the real
+hardware. Note that this feature was specifically made for use by the DiCarlo lab.
+
+Each qubit consists of three lines, the microwave, flux and readout lines, controlling single-qubit gates, two-qubit gates and readouts respectively.
+The waveforms used by the hardware should be stored in the waveform mapping configuration file. Then, in the hardware configuration file the 
+``cc_light_codeword`` and ``qubits`` attributes of each instruction are used as key into the table contained in the waveform mapping file to find the
+corresponding waveform for the specific instruction and qubit (waveforms for the same instruction can be different for different qubits). Note that
+a two-qubit gate has two codeword attributes: ``cc_light_right_codeword`` and ``cc_light_left_codeword``, one for each qubit.
+
+In the waveform mapping configuration file, the waveforms are grouped by codeword first and then by addressed qubit. The waveforms themselves are
+stored as an array of real numbers. The scale of these numbers does not matter, the visualizer will automatically scale the pulses to fit inside the
+graph. The time between samples is determined by the sample rate (the sample rate can be different for each of the three lines).
+
+The configuration parameters of the qubit interaction graph are stored in the ``circuit`` section in the visualizer configuration file under the
+``pulses`` attribute. See :ref:`visualizer_configuration` for a description of the available options.
 
 -----------------------
 Qubit Interaction Graph
@@ -151,6 +170,7 @@ with each other. Note that the visualization of this is very simple, and the DOT
 favorite graphing software to create a better looking graph.
 
 The configuration parameters of the qubit interaction graph are stored in the ``interactionGraph`` section in the visualizer configuration file.
+See :ref:`visualizer_configuration` for a description of the available options.
 
 -------------
 Mapping Graph
@@ -161,3 +181,4 @@ are executed. The virtual qubits change location whenever a swap/move gate (or t
 abstract circuit representation of the quantum program is shown above the qubit mappings for each cycle.
 
 The configuration parameters of the mapping graph are stored in the ``mappingGraph`` section in the visualizer configuration file.
+See :ref:`visualizer_configuration` for a description of the available options.
