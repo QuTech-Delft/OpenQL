@@ -2,11 +2,11 @@
  * Toffoli gate decomposer pass implementation.
  */
 
-#include "utils/vec.h"
+#include "ql/utils/vec.h"
 #include "circuit.h"
 #include "kernel.h"
 #include "decompose_toffoli.h"
-#include "options.h"
+#include "ql/com/options/options.h"
 
 namespace ql {
 
@@ -20,11 +20,11 @@ static void decompose_toffoli_kernel(
     for (auto cit = kernel.c.begin(); cit != kernel.c.end(); ++cit) {
         auto g = *cit;
         QL_DOUT("... decompose_toffoli, considering gate: " << g->qasm());
-        gate_type_t gtype = g->type();
+        GateType gtype = g->type();
 
-        if (gtype == __toffoli_gate__ || g->name == "toffoli") {
+        if (gtype == GateType::TOFFOLI || g->name == "toffoli") {
             quantum_kernel toff_kernel("toff_kernel");
-            auto opt = options::get("decompose_toffoli");
+            auto opt = com::options::get("decompose_toffoli");
 
             QL_DOUT("... decompose_toffoli (option=" << opt << "), decomposing gate '" << g->qasm() << "' in new kernel: " << toff_kernel.name);
             toff_kernel.instruction_map = kernel.instruction_map;
@@ -61,7 +61,7 @@ void decompose_toffoli(
     const quantum_platform &platform,
     const Str &passname
 ) {
-    auto tdopt = options::get("decompose_toffoli");
+    auto tdopt = com::options::get("decompose_toffoli");
     if (tdopt == "AM" || tdopt == "NC") {
         QL_IOUT("Decomposing Toffoli ...");
         for (auto &kernel : programp->kernels) {

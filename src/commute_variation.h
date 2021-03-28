@@ -41,7 +41,7 @@
 
 #pragma once
 
-#include "utils/str.h"
+#include "ql/utils/str.h"
 #include "program.h"
 #include "platform.h"
 

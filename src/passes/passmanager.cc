@@ -2,7 +2,7 @@
  * OpenQL pass manager implementation.
  */
 
-#include "utils/num.h"
+#include "ql/utils/num.h"
 #include "passmanager.h"
 #include "write_sweep_points.h"
 
@@ -130,41 +130,41 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
      */
 
     if (passName == "Reader") {
-        pass = new ReaderPass(aliasName);
+        pass = new CQasmReaderPass(aliasName);
     } else if (passName == "Writer") {
-        pass = new WriterPass(aliasName);
+        pass = new CQasmWriterPass(aliasName);
     } else if (passName == "RotationOptimizer") {
         pass = new RotationOptimizerPass(aliasName);
     } else if (passName == "DecomposeToffoli") {
-        pass = new DecomposeToffoliPass(aliasName);
+        pass = new ToffoliDecomposerPass(aliasName);
     } else if (passName == "Scheduler") {
         pass = new SchedulerPass(aliasName);
     } else if (passName == "BackendCompiler") {
         pass = new BackendCompilerPass(aliasName);
-    } else if (passName == "ReportStatistics") {
-        pass = new ReportStatisticsPass(aliasName);
+    } else if (passName == "StatisticsReporter") {
+        pass = new StatisticsReporterPass(aliasName);
     } else if (passName == "CCLPrepCodeGeneration") {
-        pass = new CCLPrepCodeGeneration(aliasName);
+        pass = new CCLConsistencyCheckerPass(aliasName);
     } else if (passName == "CCLDecomposePreSchedule") {
-        pass = new CCLDecomposePreSchedule(aliasName);
+        pass = new CCLPreScheduleDecomposer(aliasName);
     } else if (passName == "WriteQuantumSim") {
-        pass = new WriteQuantumSimPass(aliasName);
+        pass = new QuantumSimWriterPass(aliasName);
     } else if (passName == "CliffordOptimize") {
-        pass = new CliffordOptimizePass(aliasName);
+        pass = new CliffordOptimizerPass(aliasName);
     } else if (passName == "Map") {
-        pass = new MapPass(aliasName);
+        pass = new MapperPass(aliasName);
     } else if (passName == "CommuteVariation") {
-        pass = new CommuteVariationPass(aliasName);
+        pass = new CommuteVariationOptimizerPass(aliasName);
     } else if (passName == "RCSchedule") {
-        pass = new RCSchedulePass(aliasName);
+        pass = new RCSchedulerPass(aliasName);
     } else if (passName == "LatencyCompensation") {
-        pass = new LatencyCompensationPass(aliasName);
+        pass = new LatencyCompensatorPass(aliasName);
     } else if (passName == "InsertBufferDelays") {
-        pass = new InsertBufferDelaysPass(aliasName);
+        pass = new BufferDelayInserterPass(aliasName);
     } else if (passName == "CCLDecomposePostSchedule") {
-        pass = new CCLDecomposePostSchedulePass(aliasName);
+        pass = new CCLPostScheduleDecomposerPass(aliasName);
     } else if (passName == "QisaCodeGeneration") {
-        pass = new QisaCodeGenerationPass(aliasName);
+        pass = new CCLCodeGeneratorPass(aliasName);
     } else if (passName == "Visualizer") {
         pass = new VisualizerPass(aliasName);
     } else if (passName == "CPrinter") {

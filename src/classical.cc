@@ -4,7 +4,7 @@
 
 #include "classical.h"
 
-#include "utils/exception.h"
+#include "ql/utils/exception.h"
 
 namespace ql {
 
@@ -202,8 +202,8 @@ instruction_t classical::qasm() const {
     }
 }
 
-gate_type_t classical::type() const {
-    return __classical_gate__;
+GateType classical::type() const {
+    return GateType::CLASSICAL;
 }
 
 cmat_t classical::mat() const {

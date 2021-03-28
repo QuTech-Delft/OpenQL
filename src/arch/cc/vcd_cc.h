@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "utils/vcd.h"
+#include "ql/utils/vcd.h"
 
 #include "types_cc.h"
 #include "settings_cc.h"

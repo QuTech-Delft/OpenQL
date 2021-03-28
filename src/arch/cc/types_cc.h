@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "utils/str.h"
-#include "utils/json.h"
-#include "utils/ptr.h"
-#include "utils/vec.h"
-#include "utils/map.h"
+#include "ql/utils/str.h"
+#include "ql/utils/json.h"
+#include "ql/utils/ptr.h"
+#include "ql/utils/vec.h"
+#include "ql/utils/map.h"
 
 namespace ql {
 namespace arch {

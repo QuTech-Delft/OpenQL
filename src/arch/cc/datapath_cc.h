@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "utils/logger.h"
+#include "ql/utils/logger.h"
 #include "gate.h"
 
 #include "types_cc.h"

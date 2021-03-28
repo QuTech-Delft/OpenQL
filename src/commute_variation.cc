@@ -6,12 +6,12 @@
 
 #include "commute_variation.h"
 
-#include "utils/num.h"
-#include "utils/list.h"
-#include "utils/map.h"
-#include "utils/filesystem.h"
+#include "ql/utils/num.h"
+#include "ql/utils/list.h"
+#include "ql/utils/map.h"
+#include "ql/utils/filesystem.h"
 #include "scheduler.h"
-#include "options.h"
+#include "ql/com/options/options.h"
 #include "report.h"
 
 namespace ql {
@@ -250,7 +250,7 @@ public:
 
     // schedule the constructed depgraph for the platform with resource constraints and return the resulting depth
     UInt schedule_rc(const quantum_platform& platform) {
-        Str schedopt = options::get("scheduler");
+        Str schedopt = com::options::get("scheduler");
         Str dot;
         if ("ASAP" == schedopt) {
             arch::resource_manager_t rm(platform, forward_scheduling);
@@ -289,7 +289,7 @@ private:
     ) {
         // next code is copy of what report::write_qasm does for one kernel; should be a circuit method
         StrStrm ss_output_file;
-        ss_output_file << options::get("output_dir") << "/" << kernel.name << "_" << varno << ".qasm";
+        ss_output_file << com::options::get("output_dir") << "/" << kernel.name << "_" << varno << ".qasm";
         QL_DOUT("... writing variation to '" << ss_output_file.str() << "' ...");
         StrStrm ss_qasm;
         ss_qasm << "." << kernel.name << "_" << varno << '\n';
@@ -325,7 +325,7 @@ public:
             QL_DOUT("Empty kernel " << kernel.name);
             return;
         }
-        if (options::get("scheduler_commute") == "no") {
+        if (com::options::get("scheduler_commute") == "no") {
             QL_COUT("Scheduler_commute option is \"no\": don't generate commutation variations");
             QL_DOUT("Scheduler_commute option is \"no\": don't generate commutation variations");
             return;
@@ -389,7 +389,7 @@ public:
         sched.clean_variation(newarcslist);
         QL_DOUT("Find circuit with minimum depth while exploiting commutation [Done]");
     
-        options::set("scheduler_commute", "no");    // next schedulers will respect the commutation order found
+        com::options::set("scheduler_commute", "no");    // next schedulers will respect the commutation order found
     }
 };
 
@@ -400,7 +400,7 @@ static void commute_variation_kernel(
 ) {
     QL_DOUT("Commute variation ...");
     if (!kernel.c.empty()) {
-        if( options::get("vary_commutations") == "yes" ) {
+        if (com::options::get("vary_commutations") == "yes") {
             // find the shortest circuit by varying on gate commutation; replace kernel.c by it
             commute_variation_c   cv;
             cv.generate(programp, kernel, platform);

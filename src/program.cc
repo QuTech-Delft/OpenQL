@@ -4,9 +4,9 @@
 
 #include "program.h"
 
-#include "utils/filesystem.h"
+#include "ql/utils/filesystem.h"
 #include "compiler.h"
-#include "options.h"
+#include "ql/com/options/options.h"
 #include "interactionMatrix.h"
 #include "scheduler.h"
 #include "optimizer.h"
@@ -81,8 +81,8 @@ void quantum_program::add(const quantum_kernel &k) {
         auto gtype = g->type();
         for (auto &op : gate_operands) {
             if (
-                ((gtype == __classical_gate__) && (op >= creg_count)) ||
-                ((gtype != __classical_gate__) && (op >= qubit_count))
+                ((gtype == GateType::CLASSICAL) && (op >= creg_count)) ||
+                ((gtype != GateType::CLASSICAL) && (op >= qubit_count))
             ) {
                  QL_FATAL("Out of range operand(s) for operation: '" << gname <<
                                                                      "' (op=" << op <<
@@ -372,7 +372,7 @@ void quantum_program::write_interaction_matrix() const {
         InteractionMatrix imat(k.get_circuit(), qubit_count);
         Str mstr = imat.getString();
 
-        Str fname = options::get("output_dir") + "/" + k.get_name() + "InteractionMatrix.dat";
+        Str fname = com::options::get("output_dir") + "/" + k.get_name() + "InteractionMatrix.dat";
         QL_IOUT("writing interaction matrix to '" << fname << "' ...");
         OutFile(fname).write(mstr);
     }

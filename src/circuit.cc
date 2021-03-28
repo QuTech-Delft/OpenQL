@@ -34,8 +34,8 @@ Vec<circuit*> split_circuit(circuit &x) {
     Vec<circuit *> cs;
     cs.push_back(new circuit());
     for (auto gate : x) {
-        if ((gate->type() == __prepz_gate__) ||
-            (gate->type() == __measure_gate__)) {
+        if ((gate->type() == GateType::PREP_Z) ||
+            (gate->type() == GateType::MEASURE)) {
             cs.push_back(new circuit());
             cs.back()->push_back(gate);
             cs.push_back(new circuit());
@@ -59,10 +59,10 @@ Vec<circuit*> split_circuit(circuit &x) {
  */
 Bool contains_measurements(const circuit &x) {
     for (auto gate : x) {
-        if (gate->type() == __measure_gate__) {
+        if (gate->type() == GateType::MEASURE) {
             return true;
         }
-        if (gate->type() == __prepz_gate__) {
+        if (gate->type() == GateType::PREP_Z) {
             return true;
         }
     }

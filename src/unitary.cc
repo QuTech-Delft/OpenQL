@@ -4,7 +4,7 @@
 
 #include "unitary.h"
 
-#include "utils/exception.h"
+#include "ql/utils/exception.h"
 
 #ifndef WITHOUT_UNITARY_DECOMPOSITION
 #include <Eigen/MatrixFunctions>

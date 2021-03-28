@@ -4,7 +4,7 @@
 
 #include "eqasm_compiler.h"
 
-#include "utils/filesystem.h"
+#include "ql/utils/filesystem.h"
 
 namespace ql {
 

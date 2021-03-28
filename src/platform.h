@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "utils/num.h"
-#include "utils/str.h"
-#include "utils/json.h"
+#include "ql/utils/num.h"
+#include "ql/utils/str.h"
+#include "ql/utils/json.h"
 #include "hardware_configuration.h"
 
 namespace ql {

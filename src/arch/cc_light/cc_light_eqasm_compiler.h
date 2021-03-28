@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include "utils/num.h"
-#include "utils/str.h"
-#include "utils/pair.h"
-#include "utils/vec.h"
-#include "utils/map.h"
+#include "ql/utils/num.h"
+#include "ql/utils/str.h"
+#include "ql/utils/pair.h"
+#include "ql/utils/vec.h"
+#include "ql/utils/map.h"
 #include "program.h"
 #include "platform.h"
-#include "ir.h"
+#include "ql/ir/ir.h"
 #include "arch/cc_light/cc_light_eqasm.h"
 #include "eqasm_compiler.h"
 
@@ -68,7 +68,7 @@ public:
     // utils::Int imm_value;
     classical_cc(const utils::Str &operation, const utils::Vec<utils::UInt> &opers, utils::Int ivalue = 0);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 

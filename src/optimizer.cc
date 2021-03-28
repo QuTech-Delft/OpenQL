@@ -4,11 +4,11 @@
 
 #include "optimizer.h"
 
-#include "utils/vec.h"
-#include "utils/num.h"
+#include "ql/utils/vec.h"
+#include "ql/utils/num.h"
 #include "circuit.h"
 #include "kernel.h"
-#include "options.h"
+#include "ql/com/options/options.h"
 
 namespace ql {
 
@@ -196,7 +196,7 @@ void rotation_optimize(
     const quantum_platform &platform,
     const Str &passname
 ) {
-    if (options::get("optimize") == "yes") {
+    if (com::options::get("optimize") == "yes") {
         QL_IOUT("optimizing quantum kernels...");
         for (size_t k=0; k<programp->kernels.size(); ++k) {
             rotation_optimize_kernel(programp->kernels[k], platform);

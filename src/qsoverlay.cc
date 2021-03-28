@@ -5,9 +5,9 @@
 #include "qsoverlay.h"
 
 #include <iostream>
-#include "utils/filesystem.h"
-#include "utils/map.h"
-#include "options.h"
+#include "ql/utils/filesystem.h"
+#include "ql/utils/map.h"
+#include "ql/com/options/options.h"
 #include "kernel.h"
 
 namespace ql {
@@ -28,7 +28,7 @@ void write_qsoverlay_program(
     compiled = false;
 
     QL_IOUT("Writing scheduled QSoverlay program");
-    Str qfname(options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
+    Str qfname(com::options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
     QL_DOUT("Writing scheduled QSoverlay program " << qfname);
     QL_IOUT("Writing scheduled QSoverlay program " << qfname);
     OutFile fout(qfname);

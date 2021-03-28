@@ -35,10 +35,10 @@
 
 #include "report.h"
 
-#include "utils/num.h"
-#include "utils/str.h"
-#include "options.h"
-#include "ir.h"
+#include "ql/utils/num.h"
+#include "ql/utils/str.h"
+#include "ql/com/options/options.h"
+#include "ql/ir/ir.h"
 
 namespace ql {
 
@@ -55,10 +55,10 @@ static UInt get_classical_operations_count(
     // DOUT("... reporting get_classical_operations_count");
     for (auto &gp : c) {
         switch (gp->type()) {
-            case __classical_gate__:
+            case GateType::CLASSICAL:
                 classical_operations++;
                 break;
-            case __wait_gate__:
+            case GateType::WAIT:
                 break;
             default:    // quantum gate
                 break;
@@ -76,9 +76,8 @@ static UInt get_non_single_qubit_quantum_gates_count(
     // DOUT("... reporting get_non_single_qubit_quantum_gates_count");
     for (auto &gp : c) {
         switch (gp->type()) {
-            case __classical_gate__:
-                break;
-            case __wait_gate__:
+            case GateType::CLASSICAL:
+            case GateType::WAIT:
                 break;
             default:    // quantum gate
                 if (gp->operands.size() > 1) {
@@ -99,8 +98,8 @@ static void get_qubit_usecount(
     // DOUT("... reporting get_qubit_usecount");
     for (auto &gp : c) {
         switch (gp->type()) {
-            case __classical_gate__:
-            case __wait_gate__:
+            case GateType::CLASSICAL:
+            case GateType::WAIT:
                 break;
             default:    // quantum gate
                 for (auto v : gp->operands) {
@@ -122,9 +121,8 @@ static void get_qubit_usedcyclecount(
     // DOUT("... reporting get_qubit_usedcyclecount");
     for (auto &gp : c) {
         switch (gp->type()) {
-            case __classical_gate__:
-                break;
-            case __wait_gate__:
+            case GateType::CLASSICAL:
+            case GateType::WAIT:
                 break;
             default:    // quantum gate
                 for (auto v : gp->operands) {
@@ -144,9 +142,8 @@ static UInt get_quantum_gates_count(
     // DOUT("... reporting get_quantum_gates_count");
     for (auto &gp : c) {
         switch (gp->type()) {
-            case __classical_gate__:
-                break;
-            case __wait_gate__:
+            case GateType::CLASSICAL:
+            case GateType::WAIT:
                 break;
             default:    // quantum gate
                 quantum_gates++;
@@ -348,7 +345,7 @@ static Str report_compose_write_name(
     const Str &extension
 ) {
     StrStrm fname;
-    fname << options::get("output_dir") << "/"
+    fname << com::options::get("output_dir") << "/"
       << unique_name << extension;
     return fname.str();
 }
@@ -384,7 +381,7 @@ static Str report_compose_report_name(
     const Str &extension
 ) {
     StrStrm fname;
-    fname << options::get("output_dir") << "/"
+    fname << com::options::get("output_dir") << "/"
       << unique_name << "_" << pass_name << "_" << in_or_out << "." << extension;
     return fname.str();
 }
@@ -398,7 +395,7 @@ ReportFile::ReportFile(
     const utils::Str &in_or_out,
     const utils::Str &pass_name
 ) {
-    if (options::get("write_report_files") == "yes") {
+    if (com::options::get("write_report_files") == "yes") {
         auto fname = report_compose_report_name(programp->unique_name, in_or_out, pass_name, "report");
         of.emplace(fname);
     }
@@ -495,7 +492,7 @@ void report_qasm(
     const Str &in_or_out,
     const Str &pass_name
 ) {
-    if (options::get("write_qasm_files") == "yes") {
+    if (com::options::get("write_qasm_files") == "yes") {
         auto fname = report_compose_report_name(programp->unique_name, in_or_out, pass_name, "qasm");
         report_write_qasm(fname, programp, platform);
     }
@@ -509,7 +506,7 @@ void report_string(
     const Str &s
 ) {
     // DOUT("... reporting string");
-    if (options::get("write_report_files") != "yes") {
+    if (com::options::get("write_report_files") != "yes") {
         // DOUT("... reporting string no report [done]");
         return;
     }
@@ -527,7 +524,7 @@ void report_kernel_statistics(
     const quantum_platform &platform,
     const Str &comment_prefix
 ) {
-    if (options::get("write_report_files") != "yes") {
+    if (com::options::get("write_report_files") != "yes") {
         return;
     }
 
@@ -561,7 +558,7 @@ void report_totals_statistics(
     const quantum_platform &platform,
     const Str &comment_prefix
 ) {
-    if (options::get("write_report_files") != "yes") {
+    if (com::options::get("write_report_files") != "yes") {
         return;
     }
 
@@ -610,7 +607,7 @@ void report_statistics(
     const Str &comment_prefix,
     const Str &additionalStatistics
 ) {
-    if (options::get("write_report_files") != "yes") {
+    if (com::options::get("write_report_files") != "yes") {
         return;
     }
 
@@ -641,7 +638,7 @@ void report_statistics(
  * since this may be the first time that the output_dir is used, it warns when that doesn't exist
  */
 static UInt report_bump_unique_file_version(const quantum_program *programp) {
-    Str version_file = QL_SS2S(options::get("output_dir") << "/" << programp->name << ".unique");
+    Str version_file = QL_SS2S(com::options::get("output_dir") << "/" << programp->name << ".unique");
 
     // Retrieve old version number, if one exists.
     UInt vers = 0;
@@ -673,7 +670,7 @@ void report_init(
     const quantum_platform &platform
 ) {
     programp->unique_name = programp->name;
-    if (options::get("unique_output") == "yes") {
+    if (com::options::get("unique_output") == "yes") {
         UInt vers = report_bump_unique_file_version(programp);
         if (vers > 1) {
             programp->unique_name = programp->name + to_string(vers);

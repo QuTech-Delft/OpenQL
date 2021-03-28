@@ -4,9 +4,6 @@
 
 #include "compiler.h"
 
-#include <iostream>
-#include "options.h"
-
 namespace ql {
 
 using namespace utils;

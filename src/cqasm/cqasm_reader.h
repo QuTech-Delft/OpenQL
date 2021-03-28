@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "utils/num.h"
-#include "utils/str.h"
-#include "utils/opt.h"
+#include "ql/utils/num.h"
+#include "ql/utils/str.h"
+#include "ql/utils/opt.h"
 #include "kernel.h"
 #include "platform.h"
 #include "program.h"

@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "utils/str.h"
-#include "utils/map.h"
+#include "ql/utils/str.h"
+#include "ql/utils/map.h"
 #include "gate.h"
 
 namespace ql {

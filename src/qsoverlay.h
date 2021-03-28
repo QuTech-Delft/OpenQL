@@ -2,7 +2,7 @@
  * Implementation for pass that writes circuits using the qsoverlay format.
  */
 
-#include "utils/str.h"
+#include "ql/utils/str.h"
 #include "program.h"
 #include "platform.h"
 

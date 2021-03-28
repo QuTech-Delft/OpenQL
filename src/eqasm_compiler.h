@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "utils/str.h"
-#include "utils/vec.h"
+#include "ql/utils/str.h"
+#include "ql/utils/vec.h"
 #include "program.h"
 #include "platform.h"
 

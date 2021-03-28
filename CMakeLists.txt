@@ -198,24 +198,26 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/clifford.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes/passmanager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes/passes.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_cimg.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_common.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_circuit.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_interaction.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_mapping.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/image.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/common.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/circuit.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/interaction.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/mapping.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/exception.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/logger.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/str.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/num.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/filesystem.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/json.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/exception.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/logger.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/str.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/num.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/filesystem.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/json.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/vcd.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/options.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/options/options.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/backend_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/codegen_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/datapath_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/settings_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/vcd_cc.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/vcd.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/cqasm/cqasm_reader.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/unitary.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/mapper.cc"
@@ -225,11 +227,9 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/gate.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/hardware_configuration.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/interactionMatrix.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ir.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/metrics.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/options.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm_compiler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/qsoverlay.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/resource_manager.cc"
@@ -237,6 +237,8 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/commute_variation.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_resource_manager.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/driv/abstract_pass.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/ir.cc"
 )
 
 # Generate a header file with configuration options that cannot be compiled
@@ -245,8 +247,8 @@ set(QL_CHECKED_VEC ${OPENQL_CHECKED_VEC})
 set(QL_CHECKED_LIST ${OPENQL_CHECKED_LIST})
 set(QL_CHECKED_MAP ${OPENQL_CHECKED_MAP})
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql_config.h.template"
-    "${CMAKE_CURRENT_BINARY_DIR}/include/ql_config.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/config.h.template"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/ql/config.h"
 )
 
 # This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
@@ -261,7 +263,8 @@ target_compile_definitions(ql PUBLIC OPT_DECOMPOSE_WAIT_BARRIER)
 # and they'r all in the source directory. Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/" # FIXME JvS: make private
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
 )
 
@@ -369,19 +372,25 @@ add_subdirectory(deps/libqasm)
 target_link_libraries(ql PUBLIC cqasm)
 
 
-# X11 -------------------------------------------------------------------------
+# X11/CImg ---------------------------------------------------------------------
 
 # Only enable the visualizer if building on Windows or the X11 library is found when building on Linux or Mac.
 if(WIN32)
-    target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+    set(QL_VISUALIZER yes)
 else()
     find_package(X11)
     if(X11_FOUND)
+        set(QL_VISUALIZER yes)
         target_link_libraries(ql PUBLIC X11)
-        target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+    else()
+        set(QL_VISUALIZER no)
     endif()
 endif()
 
+if(QL_VISUALIZER)
+    target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+    target_include_directories(ql PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/deps/cimg/include/")
+endif()
 
 # backward-cpp ----------------------------------------------------------------
 

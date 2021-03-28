@@ -10,13 +10,13 @@
 
 
 #define K_PI 3.141592653589793238462643383279502884197169399375105820974944592307816406L
-#include "utils/json.h"
-#include "utils/str.h"
-#include "utils/vec.h"
-#include "options.h"
+#include "ql/utils/json.h"
+#include "ql/utils/str.h"
+#include "ql/utils/vec.h"
+#include "ql/com/options/options.h"
 #include "gate.h"
 #include "classical.h"
-#include "ir.h"
+#include "ql/ir/ir.h"
 #include "unitary.h"
 #include "platform.h"
 
@@ -615,7 +615,7 @@ Bool quantum_kernel::add_spec_decomposed_gate_if_available(
         // check gate type
         QL_DOUT("specialized composite gate found for " << instr_parameterized);
         composite_gate * gptr = (composite_gate *)(it->second);
-        if (gptr->type() == __composite_gate__) {
+        if (gptr->type() == GateType::COMPOSITE) {
             QL_DOUT("composite gate type");
         } else {
             QL_DOUT("not a composite gate type");
@@ -653,7 +653,7 @@ Bool quantum_kernel::add_spec_decomposed_gate_if_available(
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
             Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, gcond, gcondregs);
             if (!custom_added) {
-                if (options::get("use_default_gates") == "yes") {
+                if (com::options::get("use_default_gates") == "yes") {
                     // default gate check
                     QL_DOUT("adding default gate for " << sub_ins_name);
                     Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, gcond, gcondregs);
@@ -710,7 +710,7 @@ Bool quantum_kernel::add_param_decomposed_gate_if_available(
     if (it != instruction_map.end()) {
         QL_DOUT("parameterized gate found for " << instr_parameterized);
         composite_gate * gptr = (composite_gate *)(it->second);
-        if (gptr->type() == __composite_gate__) {
+        if (gptr->type() == GateType::COMPOSITE) {
             QL_DOUT("composite gate type");
         } else {
             QL_DOUT("Not a composite gate type");
@@ -751,7 +751,7 @@ Bool quantum_kernel::add_param_decomposed_gate_if_available(
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
             Bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, gcond, gcondregs);
             if (!custom_added) {
-                if (options::get("use_default_gates") == "yes") {
+                if (com::options::get("use_default_gates") == "yes") {
                     // default gate check
                     QL_DOUT("adding default gate for " << sub_ins_name);
                     Bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs, 0, 0.0, bregs, gcond, gcondregs);
@@ -978,7 +978,7 @@ Bool quantum_kernel::gate_nonfatal(
                 added = true;
                 QL_DOUT("custom gate added for " << gname_lower);
             } else {
-                if (options::get("use_default_gates") == "yes") {
+                if (com::options::get("use_default_gates") == "yes") {
                     // default gate check (which is always parameterized)
                     QL_DOUT("adding default gate for " << gname_lower);
 
@@ -1483,54 +1483,54 @@ void quantum_kernel::controlled_single(
     const circuit &ckt = k->get_circuit();
     for (auto &g : ckt) {
         Str gname = g->name;
-        gate_type_t gtype = g->type();
+        GateType gtype = g->type();
         Vec<UInt> goperands = g->operands;
         QL_DOUT("Generating controlled gate for " << gname);
         QL_DOUT("Type : " << gtype);
-        if (gtype == __pauli_x_gate__ || gtype == __rx180_gate__) {
+        if (gtype == GateType::PAULI_X || gtype == GateType::RX180) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_x(tq, cq);
-        } else if (gtype == __pauli_y_gate__ || gtype == __ry180_gate__) {
+        } else if (gtype == GateType::PAULI_Y || gtype == GateType::RY180) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_y(tq, cq);
-        } else if (gtype == __pauli_z_gate__) {
+        } else if (gtype == GateType::PAULI_Z) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_z(tq, cq);
-        } else if (gtype == __hadamard_gate__) {
+        } else if (gtype == GateType::HADAMARD) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_h(tq, cq);
-        } else if (gtype == __identity_gate__) {
+        } else if (gtype == GateType::IDENTITY) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_i(tq, cq);
-        } else if (gtype == __t_gate__) {
+        } else if (gtype == GateType::T) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             UInt aq = ancilla_qubit;
             controlled_t(tq, cq, aq);
-        } else if (gtype == __tdag_gate__) {
+        } else if (gtype == GateType::T_DAG) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             UInt aq = ancilla_qubit;
             controlled_tdag(tq, cq, aq);
-        } else if (gtype == __phase_gate__) {
+        } else if (gtype == GateType::PHASE) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_s(tq, cq);
-        } else if (__phasedag_gate__ == gtype) {
+        } else if (gtype == GateType::PHASE_DAG) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_sdag(tq, cq);
-        } else if (__cnot_gate__ == gtype) {
+        } else if (gtype == GateType::CNOT) {
             UInt cq1 = goperands[0];
             UInt cq2 = control_qubit;
             UInt tq = goperands[1];
 
-            auto opt = options::get("decompose_toffoli");
+            auto opt = com::options::get("decompose_toffoli");
             if (opt == "AM") {
                 controlled_cnot_AM(tq, cq1, cq2);
             } else if (opt == "NC") {
@@ -1538,45 +1538,45 @@ void quantum_kernel::controlled_single(
             } else {
                 toffoli(cq1, cq2, tq);
             }
-        } else if (gtype == __swap_gate__) {
+        } else if (gtype == GateType::SWAP) {
             UInt tq1 = goperands[0];
             UInt tq2 = goperands[1];
             UInt cq = control_qubit;
             controlled_swap(tq1, tq2, cq);
-        } else if (gtype == __rx_gate__) {
+        } else if (gtype == GateType::RX) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_rx(tq, cq, g->angle);
-        } else if (gtype == __ry_gate__) {
+        } else if (gtype == GateType::RY) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_ry(tq, cq, g->angle);
-        } else if (gtype == __rz_gate__) {
+        } else if (gtype == GateType::RZ) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_rz(tq, cq, g->angle);
-        } else if (gtype == __rx90_gate__) {
+        } else if (gtype == GateType::RX90) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_rx(tq, cq, K_PI/2);
-        } else if (gtype == __mrx90_gate__) {
+        } else if (gtype == GateType::RXM90) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_rx(tq, cq, -1*K_PI/2);
-        } else if (gtype == __rx180_gate__) {
+        } else if (gtype == GateType::RX180) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_rx(tq, cq, K_PI);
             // controlled_x(tq, cq);
-        } else if (gtype == __ry90_gate__) {
+        } else if (gtype == GateType::RY90) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_ry(tq, cq, K_PI/4);
-        } else if (gtype == __mry90_gate__) {
+        } else if (gtype == GateType::RYM90) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_ry(tq, cq, -1*K_PI/4);
-        } else if (gtype == __ry180_gate__) {
+        } else if (gtype == GateType::RY180) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
             controlled_ry(tq, cq, K_PI);
@@ -1637,52 +1637,52 @@ void quantum_kernel::conjugate(const quantum_kernel *k) {
     for (auto rgit = ckt.rbegin(); rgit != ckt.rend(); ++rgit) {
         auto g = *rgit;
         Str gname = g->name;
-        gate_type_t gtype = g->type();
+        GateType gtype = g->type();
         QL_DOUT("Generating conjugate gate for " << gname);
         QL_DOUT("Type : " << gtype);
-        if (gtype == __pauli_x_gate__ || gtype == __rx180_gate__) {
+        if (gtype == GateType::PAULI_X || gtype == GateType::RX180) {
             gate("x", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __pauli_y_gate__ || gtype == __ry180_gate__) {
+        } else if (gtype == GateType::PAULI_Y || gtype == GateType::RY180) {
             gate("y", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __pauli_z_gate__) {
+        } else if (gtype == GateType::PAULI_Z) {
             gate("z", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __hadamard_gate__) {
+        } else if (gtype == GateType::HADAMARD) {
             gate("hadamard", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __identity_gate__) {
+        } else if (gtype == GateType::IDENTITY) {
             gate("identity", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __t_gate__) {
+        } else if (gtype == GateType::T) {
             gate("tdag", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __tdag_gate__) {
+        } else if (gtype == GateType::T_DAG) {
             gate("t", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __phase_gate__) {
+        } else if (gtype == GateType::PHASE) {
             gate("sdag", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __phasedag_gate__) {
+        } else if (gtype == GateType::PHASE_DAG) {
             gate("s", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __cnot_gate__) {
+        } else if (gtype == GateType::CNOT) {
             gate("cnot", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __swap_gate__) {
+        } else if (gtype == GateType::SWAP) {
             gate("swap", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __rx_gate__) {
+        } else if (gtype == GateType::RX) {
             gate("rx", g->operands, {}, g->duration, -(g->angle) , g->breg_operands);
-        } else if (gtype == __ry_gate__) {
+        } else if (gtype == GateType::RY) {
             gate("ry", g->operands, {}, g->duration, -(g->angle) , g->breg_operands);
-        } else if (gtype == __rz_gate__) {
+        } else if (gtype == GateType::RZ) {
             gate("rz", g->operands, {}, g->duration, -(g->angle) , g->breg_operands);
-        } else if (gtype == __rx90_gate__) {
+        } else if (gtype == GateType::RX90) {
             gate("mrx90", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __mrx90_gate__) {
+        } else if (gtype == GateType::RXM90) {
             gate("rx90", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __rx180_gate__) {
+        } else if (gtype == GateType::RX180) {
             gate("x", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __ry90_gate__) {
+        } else if (gtype == GateType::RY90) {
             gate("mry90", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __mry90_gate__) {
+        } else if (gtype == GateType::RYM90) {
             gate("ry90", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __ry180_gate__) {
+        } else if (gtype == GateType::RY180) {
             gate("y", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __cphase_gate__) {
+        } else if (gtype == GateType::CPHASE) {
             gate("cphase", g->operands, {}, g->duration, g->angle, g->breg_operands);
-        } else if (gtype == __toffoli_gate__) {
+        } else if (gtype == GateType::TOFFOLI) {
             gate("toffoli", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else {
             QL_EOUT("Conjugate version of gate '" << gname << "' not defined !");

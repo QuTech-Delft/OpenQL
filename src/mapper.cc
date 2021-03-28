@@ -4,7 +4,7 @@
 
 #include "mapper.h"
 
-#include "utils/filesystem.h"
+#include "ql/utils/filesystem.h"
 
 #ifdef INITIALPLACE
 #include <thread>
@@ -17,6 +17,7 @@ namespace ql {
 namespace mapper {
 
 using namespace utils;
+using namespace com;
 
 // Grid initializer
 // initialize mapper internal grid maps from configuration
@@ -1747,8 +1748,8 @@ Bool Future::GetNonQuantumGates(List<gate*> &nonqlg) const {
         gate* gp = *input_gatepp;
         if (circuit::const_iterator(input_gatepp) != input_gatepv.end()) {
             if (
-                gp->type() == __classical_gate__
-                || gp->type() == __dummy_gate__
+                gp->type() == GateType::CLASSICAL
+                || gp->type() == GateType::DUMMY
             ) {
                 nonqlg.push_back(gp);
             }
@@ -1757,8 +1758,8 @@ Bool Future::GetNonQuantumGates(List<gate*> &nonqlg) const {
         for (auto n : avlist) {
             gate*  gp = schedp->instruction[n];
             if (
-                gp->type() == __classical_gate__
-                || gp->type() == __dummy_gate__
+                gp->type() == GateType::CLASSICAL
+                || gp->type() == GateType::DUMMY
             ) {
                 nonqlg.push_back(gp);
             }
@@ -2685,7 +2686,7 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<gate*> &lg, Bool 
             for (auto gp : nonqlg) {
                 // here add code to map qubit use of any non-quantum instruction????
                 // dummy gates are nonq gates internal to OpenQL such as SOURCE/SINK; don't output them
-                if (gp->type() != __dummy_gate__) {
+                if (gp->type() != GateType::DUMMY) {
                     // past only can contain quantum gates, so non-quantum gates must by-pass Past
                     past.ByPass(gp);    // this flushes past.lg first to outlg
                 }
@@ -2706,7 +2707,7 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<gate*> &lg, Bool 
         // and GetNonQuantumGates/GetGates indicate these (in qlg) must be done now
         Bool foundone = false;  // whether a quantum gate was found that never requires routing
         for (auto gp : qlg) {
-            if (gp->type() == gate_type_t::__wait_gate__ || gp->operands.size() == 1) {
+            if (gp->type() == GateType::WAIT || gp->operands.size() == 1) {
                 // a quantum gate not requiring routing ever is found
                 MapRoutedGate(gp, past);
                 future.DoneGate(gp);

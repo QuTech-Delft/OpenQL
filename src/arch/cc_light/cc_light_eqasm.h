@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "utils/num.h"
-#include "utils/str.h"
-#include "utils/pair.h"
-#include "utils/vec.h"
+#include "ql/utils/num.h"
+#include "ql/utils/str.h"
+#include "ql/utils/pair.h"
+#include "ql/utils/vec.h"
 #include <sstream>
 #include <bitset>
 #include "classical.h"

@@ -11,7 +11,7 @@
 #include "codegen_cc.h"
 
 #include "version.h"
-#include "options.h"
+#include "ql/com/options/options.h"
 
 namespace ql {
 namespace arch {
@@ -29,11 +29,11 @@ void Codegen::init(const quantum_platform &platform) {
     this->platform = &platform;
     settings.loadBackendSettings(platform);
 
-    runOnce = (options::get("backend_cc_run_once") == "yes");
-    verboseCode = (options::get("backend_cc_verbose") == "yes");
+    runOnce = (com::options::get("backend_cc_run_once") == "yes");
+    verboseCode = (com::options::get("backend_cc_verbose") == "yes");
 
     // optionally preload codewordTable
-    Str map_input_file = options::get("backend_cc_map_input_file");
+    Str map_input_file = com::options::get("backend_cc_map_input_file");
     if (!map_input_file.empty()) {
         QL_DOUT("loading map_input_file='" << map_input_file << "'");
         Json map = load_json(map_input_file);

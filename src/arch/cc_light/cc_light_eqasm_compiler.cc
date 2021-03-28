@@ -10,12 +10,13 @@
 #include "latency_compensation.h"
 #include "buffer_insertion.h"
 #include "qsoverlay.h"
-#include "utils/filesystem.h"
+#include "ql/utils/filesystem.h"
 
 namespace ql {
 namespace arch {
 
 using namespace utils;
+using namespace com;
 
 UInt CurrSRegCount;
 UInt CurrTRegCount;
@@ -253,8 +254,8 @@ instruction_t classical_cc::qasm() const {
 }
 
 
-gate_type_t classical_cc::type() const {
-    return __classical_gate__;
+GateType classical_cc::type() const {
+    return GateType::CLASSICAL;
 }
 
 cmat_t classical_cc::mat() const {
@@ -354,7 +355,7 @@ Str ir2qisa(
                     auto id2 = (*insIt2)->name;
                     auto itype1 = (*insIt1)->type();
                     auto itype2 = (*insIt2)->type();
-                    if (itype1 == __classical_gate__ || itype2 == __classical_gate__) {
+                    if (itype1 == GateType::CLASSICAL || itype2 == GateType::CLASSICAL) {
                         QL_DOUT("Not splicing " << id1 << " and " << id2);
                         continue;
                     }
@@ -441,14 +442,14 @@ Str ir2qisa(
             iname = (*(firstInsIt))->name;
             auto itype = (*(firstInsIt))->type();
 
-            if (itype == __classical_gate__) {
+            if (itype == GateType::CLASSICAL) {
                 classical_bundle = true;
                 ssinst << classical_instruction2qisa( (classical_cc *)(*firstInsIt) );
             } else {
                 QL_DOUT("get cclight instr name for : " << iname);
                 Str cc_light_instr_name = get_cc_light_instruction_name(iname, platform);
                 auto nOperands = ((*firstInsIt)->operands).size();
-                if (itype == __nop_gate__) {
+                if (itype == GateType::NOP) {
                     ssinst << cc_light_instr_name;
                 } else {
                     for (auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt) {
@@ -990,7 +991,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
         Int iqopers_count = iqopers.size();
         QL_DOUT("decomposing instruction " << iname << " operands=" << to_string(iqopers) << " creg_operands=" << to_string(icopers));
         auto itype = ins->type();
-        if (itype == __classical_gate__) {
+        if (itype == GateType::CLASSICAL) {
             QL_DOUT("    classical instruction: " << ins->qasm());
 
             if (
@@ -1046,7 +1047,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
                     QL_DOUT("    readout instruction ");
                     auto qop = iqopers[0];
                     decomp_ckt.push_back(ins);
-                    if (itype == gate_type_t::__custom_gate__) {
+                    if (itype == GateType::CUSTOM) {
                         auto &coperands = ins->creg_operands;
                         if (!coperands.empty()) {
                             auto cop = coperands[0];
@@ -1225,8 +1226,8 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
 
     for (auto &gp : programp->kernels.front().c) {
         switch (gp->type()) {
-            case __classical_gate__:
-            case __wait_gate__:
+            case GateType::CLASSICAL:
+            case GateType::WAIT:
                 break;
             default:    // quantum gate
                 for (auto v: gp->operands) {

@@ -86,8 +86,8 @@
 
 #include "scheduler.h"
 
-#include "utils/vec.h"
-#include "utils/filesystem.h"
+#include "ql/utils/vec.h"
+#include "ql/utils/filesystem.h"
 
 namespace ql {
 
@@ -436,7 +436,7 @@ void Scheduler::init(
             for (auto boperand : bregs) {
                 new_event(currID, Breg, boperand, Bwrite, false);
             }
-        } else if (ins->type() == gate_type_t::__classical_gate__) {
+        } else if (ins->type() == GateType::CLASSICAL) {
             QL_DOUT(". considering " << name[currNode] << " as classical gate");
             // Cwrite each classical operand
             for (auto coperand : ins->creg_operands) {
@@ -446,14 +446,14 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as cnot");
             // CNOTs first operand is control and a Zrotate, second operand is target and an Xrotate
             QL_ASSERT(ins->operands.size() == 2);
-            new_event(currID, Qubit, ins->operands[0], Zrotate, options::get("scheduler_commute") == "yes");
-            new_event(currID, Qubit, ins->operands[1], Xrotate, options::get("scheduler_commute") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Zrotate, com::options::get("scheduler_commute") == "yes");
+            new_event(currID, Qubit, ins->operands[1], Xrotate, com::options::get("scheduler_commute") == "yes");
         } else if (iname == "cz" || iname == "cphase") {
             QL_DOUT(". considering " << name[currNode] << " as cz");
             // CZs operands are both Zrotates
             QL_ASSERT(ins->operands.size() == 2);
-            new_event(currID, Qubit, ins->operands[0], Zrotate, options::get("scheduler_commute") == "yes");
-            new_event(currID, Qubit, ins->operands[1], Zrotate, options::get("scheduler_commute") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Zrotate, com::options::get("scheduler_commute") == "yes");
+            new_event(currID, Qubit, ins->operands[1], Zrotate, com::options::get("scheduler_commute") == "yes");
         } else if (
                 iname == "rz"
                 || iname == "z"
@@ -471,7 +471,7 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as Z rotation");
             // Z rotations on single operand
             QL_ASSERT(ins->operands.size() == 1);
-            new_event(currID, Qubit, ins->operands[0], Zrotate, options::get("scheduler_commute_rotations") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Zrotate, com::options::get("scheduler_commute_rotations") == "yes");
         } else if (
                 iname == "rx"
                 || iname == "x"
@@ -486,7 +486,7 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as X rotation");
             // X rotations on single operand
             QL_ASSERT(ins->operands.size() == 1);
-            new_event(currID, Qubit, ins->operands[0], Xrotate, options::get("scheduler_commute_rotations") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Xrotate, com::options::get("scheduler_commute_rotations") == "yes");
         } else {
             QL_DOUT(". considering " << name[currNode] << " as no special gate (catch-all, generic rules)");
             // Default on each qubit operand
@@ -594,7 +594,7 @@ void Scheduler::print() const {
 
 void Scheduler::write_dependence_matrix() const {
     QL_COUT("Printing dependency Matrix ...");
-    Str datfname( options::get("output_dir") + "/dependenceMatrix.dat");
+    Str datfname(com::options::get("output_dir") + "/dependenceMatrix.dat");
     OutFile fout(datfname);
 
     UInt totalInstructions = countNodes(graph);
@@ -717,7 +717,7 @@ void Scheduler::schedule_asap(Str &sched_dot) {
     set_cycle(forward_scheduling);
     sort_by_cycle(circp);
 
-    if (options::get("print_dot_graphs") == "yes") {
+    if (com::options::get("print_dot_graphs") == "yes") {
         StrStrm ssdot;
         get_dot(false, true, ssdot);
         sched_dot = ssdot.str();
@@ -732,7 +732,7 @@ void Scheduler::schedule_alap(Str &sched_dot) {
     set_cycle(backward_scheduling);
     sort_by_cycle(circp);
 
-    if (options::get("print_dot_graphs") == "yes") {
+    if (com::options::get("print_dot_graphs") == "yes") {
         StrStrm ssdot;
         get_dot(false, true, ssdot);
         sched_dot = ssdot.str();
@@ -1070,9 +1070,9 @@ Bool Scheduler::immediately_schedulable(
         // are resources available?
         if (
             n == s || n == t
-            || gp->type() == gate_type_t::__dummy_gate__
-            || gp->type() == gate_type_t::__classical_gate__
-            || gp->type() == gate_type_t::__wait_gate__
+            || gp->type() == GateType::DUMMY
+            || gp->type() == GateType::CLASSICAL
+            || gp->type() == GateType::WAIT
             ) {
             return true;
         }
@@ -1182,9 +1182,9 @@ void Scheduler::schedule(
         if (
             selected_node != s
             && selected_node != t
-            && gp->type() != gate_type_t::__dummy_gate__
-            && gp->type() != gate_type_t::__classical_gate__
-            && gp->type() != gate_type_t::__wait_gate__
+            && gp->type() != GateType::DUMMY
+            && gp->type() != GateType::CLASSICAL
+            && gp->type() != GateType::WAIT
             ) {
             rm.reserve(curr_cycle, gp, platform);
         }
@@ -1208,7 +1208,7 @@ void Scheduler::schedule(
     }
     // FIXME HvS cycles_valid now
 
-    if (options::get("print_dot_graphs") == "yes") {
+    if (com::options::get("print_dot_graphs") == "yes") {
         StrStrm ssdot;
         get_dot(false, true, ssdot);
         sched_dot = ssdot.str();
@@ -1564,15 +1564,15 @@ void schedule_kernel(
     Str &dot,
     Str &sched_dot
 ) {
-    Str scheduler = options::get("scheduler");
-    Str scheduler_uniform = options::get("scheduler_uniform");
+    Str scheduler = com::options::get("scheduler");
+    Str scheduler_uniform = com::options::get("scheduler_uniform");
 
     QL_IOUT(scheduler << " scheduling the quantum kernel '" << kernel.name << "'...");
 
     Scheduler sched;
     sched.init(kernel.c, platform, kernel.qubit_count, kernel.creg_count, kernel.breg_count);
 
-    if (options::get("print_dot_graphs") == "yes") {
+    if (com::options::get("print_dot_graphs") == "yes") {
         sched.get_dot(dot);
     }
 
@@ -1597,7 +1597,7 @@ void schedule(
     const quantum_platform &platform,
     const Str &passname
 ) {
-    if (options::get("prescheduler") == "yes") {
+    if (com::options::get("prescheduler") == "yes") {
         report_statistics(programp, platform, "in", passname, "# ");
         report_qasm(programp, platform, "in", passname);
 
@@ -1607,14 +1607,14 @@ void schedule(
             Str kernel_sched_dot;
             schedule_kernel(k, platform, dot, kernel_sched_dot);
 
-            if (options::get("print_dot_graphs") == "yes") {
+            if (com::options::get("print_dot_graphs") == "yes") {
                 Str fname;
-                fname = options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
+                fname = com::options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
                 QL_IOUT("writing scheduled dot to '" << fname << "' ...");
                 OutFile(fname).write(dot);
 
-                Str scheduler_opt = options::get("scheduler");
-                fname = options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
+                Str scheduler_opt = com::options::get("scheduler");
+                fname = com::options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
                 QL_IOUT("writing scheduled dot to '" << fname << "' ...");
                 OutFile(fname).write(kernel_sched_dot);
             }
@@ -1635,7 +1635,7 @@ void rcschedule_kernel(
 ) {
     QL_IOUT("Resource constraint scheduling ...");
 
-    Str schedopt = options::get("scheduler");
+    Str schedopt = com::options::get("scheduler");
     if (schedopt == "ASAP") {
         Scheduler sched;
         sched.init(kernel.c, platform, nqubits, ncreg, nbreg);
@@ -1676,9 +1676,9 @@ void rcschedule(
             rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg, num_breg);
             kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
 
-            if (options::get("print_dot_graphs") == "yes") {
+            if (com::options::get("print_dot_graphs") == "yes") {
                 StrStrm fname;
-                fname << options::get("output_dir") << "/" << kernel.name << "_" << passname << ".dot";
+                fname << com::options::get("output_dir") << "/" << kernel.name << "_" << passname << ".dot";
                 QL_IOUT("writing " << passname << " dependency graph dot file to '" << fname.str() << "' ...");
                 OutFile(fname.str()).write(sched_dot);
             }

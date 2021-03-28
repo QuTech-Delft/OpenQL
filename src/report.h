@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include "utils/opt.h"
-#include "utils/str.h"
-#include "utils/vec.h"
-#include "utils/filesystem.h"
+#include "ql/utils/opt.h"
+#include "ql/utils/str.h"
+#include "ql/utils/vec.h"
+#include "ql/utils/filesystem.h"
 #include "platform.h"
 #include "program.h"
 

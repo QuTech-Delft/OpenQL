@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include <iomanip>
-#include "utils/num.h"
+#include "ql/utils/num.h"
 
 namespace ql {
 

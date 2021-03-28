@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "utils/num.h"
-#include "utils/str.h"
-#include "utils/list.h"
-#include "utils/map.h"
+#include "ql/utils/num.h"
+#include "ql/utils/str.h"
+#include "ql/utils/list.h"
+#include "ql/utils/map.h"
 
 #include <lemon/list_graph.h>
 #include <lemon/lgf_reader.h>
@@ -18,11 +18,11 @@
 #include <lemon/dijkstra.h>
 #include <lemon/connectivity.h>
 
-#include "options.h"
+#include "ql/com/options/options.h"
 #include "gate.h"
 #include "kernel.h"
 #include "circuit.h"
-#include "ir.h"
+#include "ql/ir/ir.h"
 #include "resource_manager.h"
 #include "report.h"
 

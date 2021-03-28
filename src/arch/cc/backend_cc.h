@@ -12,7 +12,7 @@
 
 #include "program.h"
 #include "eqasm_compiler.h"
-#include "ir.h"
+#include "ql/ir/ir.h"
 #include "codegen_cc.h"
 
 namespace ql {

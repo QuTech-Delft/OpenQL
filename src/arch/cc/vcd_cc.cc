@@ -7,8 +7,8 @@
  */
 
 #include "vcd_cc.h"
-#include "options.h"
-#include "utils/filesystem.h"
+#include "ql/com/options/options.h"
+#include "ql/utils/filesystem.h"
 
 namespace ql {
 namespace arch {
@@ -72,7 +72,7 @@ void Vcd::programFinish(const Str &progName) {
     finish();
 
     // write VCD to file
-    Str file_name(options::get("output_dir") + "/" + progName + ".vcd");
+    Str file_name(com::options::get("output_dir") + "/" + progName + ".vcd");
     QL_IOUT("Writing Value Change Dump to " << file_name);
     OutFile(file_name).write(getVcd());
 }

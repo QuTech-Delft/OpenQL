@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "utils/str.h"
-#include "utils/list.h"
+#include "ql/utils/str.h"
+#include "ql/utils/list.h"
 #include "passes.h"
 #include "program.h"
 

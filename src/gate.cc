@@ -5,12 +5,50 @@
 #include "gate.h"
 
 #include <cctype>
-#include "utils/num.h"
-#include "utils/str.h"
+#include "ql/utils/num.h"
+#include "ql/utils/str.h"
 
 namespace ql {
 
 using namespace utils;
+
+std::ostream &operator<<(std::ostream &os, GateType gate_type) {
+    switch (gate_type) {
+        case GateType::IDENTITY: os << "IDENTITY"; break;
+        case GateType::HADAMARD: os << "HADAMARD"; break;
+        case GateType::PAULI_X: os << "PAULI_X"; break;
+        case GateType::PAULI_Y: os << "PAULI_Y"; break;
+        case GateType::PAULI_Z: os << "PAULI_Z"; break;
+        case GateType::PHASE: os << "PHASE"; break;
+        case GateType::PHASE_DAG: os << "PHASE_DAG"; break;
+        case GateType::T: os << "T"; break;
+        case GateType::T_DAG: os << "T_DAG"; break;
+        case GateType::RX90: os << "RX90"; break;
+        case GateType::RXM90: os << "RXM90"; break;
+        case GateType::RX180: os << "RX180"; break;
+        case GateType::RY90: os << "RY90"; break;
+        case GateType::RYM90: os << "RYM90"; break;
+        case GateType::RY180: os << "RY180"; break;
+        case GateType::RX: os << "RX"; break;
+        case GateType::RY: os << "RY"; break;
+        case GateType::RZ: os << "RZ"; break;
+        case GateType::PREP_Z: os << "PREP_Z"; break;
+        case GateType::CNOT: os << "CNOT"; break;
+        case GateType::CPHASE: os << "CPHASE"; break;
+        case GateType::TOFFOLI: os << "TOFFOLI"; break;
+        case GateType::CUSTOM: os << "CUSTOM"; break;
+        case GateType::COMPOSITE: os << "COMPOSITE"; break;
+        case GateType::MEASURE: os << "MEASURE"; break;
+        case GateType::DISPLAY: os << "DISPLAY"; break;
+        case GateType::DISPLAY_BINARY: os << "DISPLAY_BINARY"; break;
+        case GateType::NOP: os << "NOP"; break;
+        case GateType::DUMMY: os << "DUMMY"; break;
+        case GateType::SWAP: os << "SWAP"; break;
+        case GateType::WAIT: os << "WAIT"; break;
+        case GateType::CLASSICAL: os << "CLASSICAL"; break;
+    }
+    return os;
+}
 
 Bool gate::is_conditional() const {
     return condition != cond_always;
@@ -72,8 +110,8 @@ instruction_t identity::qasm() const {
     return instruction_t(cond_qasm() + "i q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t identity::type() const {
-    return __identity_gate__;
+GateType identity::type() const {
+    return GateType::IDENTITY;
 }
 
 cmat_t identity::mat() const {
@@ -90,8 +128,8 @@ instruction_t hadamard::qasm() const {
     return instruction_t(cond_qasm() + "h q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t hadamard::type() const {
-    return __hadamard_gate__;
+GateType hadamard::type() const {
+    return GateType::HADAMARD;
 }
 
 cmat_t hadamard::mat() const {
@@ -108,8 +146,8 @@ instruction_t phase::qasm() const {
     return instruction_t(cond_qasm() + "s q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t phase::type() const {
-    return __phase_gate__;
+GateType phase::type() const {
+    return GateType::PHASE;
 }
 
 cmat_t phase::mat() const {
@@ -129,8 +167,8 @@ instruction_t phasedag::qasm() const {
     return instruction_t(cond_qasm() + "sdag q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t phasedag::type() const {
-    return __phasedag_gate__;
+GateType phasedag::type() const {
+    return GateType::PHASE_DAG;
 }
 
 cmat_t phasedag::mat() const {
@@ -152,8 +190,8 @@ instruction_t rx::qasm() const {
     return instruction_t(cond_qasm() + "rx q[" + to_string(operands[0]) + "], " + to_string(angle));
 }
 
-gate_type_t rx::type() const {
-    return __rx_gate__;
+GateType rx::type() const {
+    return GateType::RX;
 }
 
 cmat_t rx::mat() const {
@@ -175,8 +213,8 @@ instruction_t ry::qasm() const {
     return instruction_t(cond_qasm() + "ry q[" + to_string(operands[0]) + "], " + to_string(angle));
 }
 
-gate_type_t ry::type() const {
-    return __ry_gate__;
+GateType ry::type() const {
+    return GateType::RY;
 }
 
 cmat_t ry::mat() const {
@@ -198,8 +236,8 @@ instruction_t rz::qasm() const {
     return instruction_t(cond_qasm() + "rz q[" + to_string(operands[0]) + "], " + to_string(angle));
 }
 
-gate_type_t rz::type() const {
-    return __rz_gate__;
+GateType rz::type() const {
+    return GateType::RZ;
 }
 
 cmat_t rz::mat() const {
@@ -216,8 +254,8 @@ instruction_t t::qasm() const {
     return instruction_t(cond_qasm() + "t q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t t::type() const {
-    return __t_gate__;
+GateType t::type() const {
+    return GateType::T;
 }
 
 cmat_t t::mat() const {
@@ -234,8 +272,8 @@ instruction_t tdag::qasm() const {
     return instruction_t(cond_qasm() + "tdag q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t tdag::type() const {
-    return __tdag_gate__;
+GateType tdag::type() const {
+    return GateType::T_DAG;
 }
 
 cmat_t tdag::mat() const {
@@ -252,8 +290,8 @@ instruction_t pauli_x::qasm() const {
     return instruction_t(cond_qasm() + "x q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t pauli_x::type() const {
-    return __pauli_x_gate__;
+GateType pauli_x::type() const {
+    return GateType::PAULI_X;
 }
 
 cmat_t pauli_x::mat() const {
@@ -270,8 +308,8 @@ instruction_t pauli_y::qasm() const {
     return instruction_t(cond_qasm() + "y q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t pauli_y::type() const {
-    return __pauli_y_gate__;
+GateType pauli_y::type() const {
+    return GateType::PAULI_Y;
 }
 
 cmat_t pauli_y::mat() const {
@@ -288,8 +326,8 @@ instruction_t pauli_z::qasm() const {
     return instruction_t(cond_qasm() + "z q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t pauli_z::type() const {
-    return __pauli_z_gate__;
+GateType pauli_z::type() const {
+    return GateType::PAULI_Z;
 }
 
 cmat_t pauli_z::mat() const {
@@ -306,8 +344,8 @@ instruction_t rx90::qasm() const {
     return instruction_t(cond_qasm() + "x90 q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t rx90::type() const {
-    return __rx90_gate__;
+GateType rx90::type() const {
+    return GateType::RX90;
 }
 
 cmat_t rx90::mat() const {
@@ -324,8 +362,8 @@ instruction_t mrx90::qasm() const {
     return instruction_t(cond_qasm() + "mx90 q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t mrx90::type() const {
-    return __mrx90_gate__;
+GateType mrx90::type() const {
+    return GateType::RXM90;
 }
 
 cmat_t mrx90::mat() const {
@@ -342,8 +380,8 @@ instruction_t rx180::qasm() const {
     return instruction_t(cond_qasm() + "x180 q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t rx180::type() const {
-    return __rx180_gate__;
+GateType rx180::type() const {
+    return GateType::RX180;
 }
 
 cmat_t rx180::mat() const {
@@ -360,8 +398,8 @@ instruction_t ry90::qasm() const {
     return instruction_t(cond_qasm() + "y90 q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t ry90::type() const {
-    return __ry90_gate__;
+GateType ry90::type() const {
+    return GateType::RY90;
 }
 
 cmat_t ry90::mat() const {
@@ -378,8 +416,8 @@ instruction_t mry90::qasm() const {
     return instruction_t(cond_qasm() + "my90 q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t mry90::type() const {
-    return __mry90_gate__;
+GateType mry90::type() const {
+    return GateType::RYM90;
 }
 
 cmat_t mry90::mat() const {
@@ -396,8 +434,8 @@ instruction_t ry180::qasm() const {
     return instruction_t(cond_qasm() + "y180 q[" + to_string(operands[0]) + "]");
 }
 
-gate_type_t ry180::type() const {
-    return __ry180_gate__;
+GateType ry180::type() const {
+    return GateType::RY180;
 }
 
 cmat_t ry180::mat() const {
@@ -428,8 +466,8 @@ instruction_t measure::qasm() const {
     return instruction_t(ss.str());
 }
 
-gate_type_t measure::type() const {
-    return __measure_gate__;
+GateType measure::type() const {
+    return GateType::MEASURE;
 }
 
 cmat_t measure::mat() const {
@@ -446,8 +484,8 @@ instruction_t prepz::qasm() const {
     return instruction_t(cond_qasm() + "prep_z q[" + to_string(operands[0]) +"]");
 }
 
-gate_type_t prepz::type() const {
-    return __prepz_gate__;
+GateType prepz::type() const {
+    return GateType::PREP_Z;
 }
 
 cmat_t prepz::mat() const {
@@ -466,8 +504,8 @@ instruction_t cnot::qasm() const {
                          + ",q[" + to_string(operands[1]) + "]");
 }
 
-gate_type_t cnot::type() const {
-    return __cnot_gate__;
+GateType cnot::type() const {
+    return GateType::CNOT;
 }
 
 cmat_t cnot::mat() const {
@@ -486,8 +524,8 @@ instruction_t cphase::qasm() const {
                          + ",q[" + to_string(operands[1]) + "]");
 }
 
-gate_type_t cphase::type() const {
-    return __cphase_gate__;
+GateType cphase::type() const {
+    return GateType::CPHASE;
 }
 
 cmat_t cphase::mat() const {
@@ -508,8 +546,8 @@ instruction_t toffoli::qasm() const {
                          + ",q[" + to_string(operands[2]) + "]");
 }
 
-gate_type_t toffoli::type() const {
-    return __toffoli_gate__;
+GateType toffoli::type() const {
+    return GateType::TOFFOLI;
 }
 
 cmat_t toffoli::mat() const {
@@ -525,8 +563,8 @@ instruction_t nop::qasm() const {
     return instruction_t("nop");
 }
 
-gate_type_t nop::type() const {
-    return __nop_gate__;
+GateType nop::type() const {
+    return GateType::NOP;
 }
 
 cmat_t nop::mat() const {
@@ -545,8 +583,8 @@ instruction_t swap::qasm() const {
                          + ",q[" + to_string(operands[1]) + "]");
 }
 
-gate_type_t swap::type() const {
-    return __swap_gate__;
+GateType swap::type() const {
+    return GateType::SWAP;
 }
 
 cmat_t swap::mat() const {
@@ -570,8 +608,8 @@ instruction_t wait::qasm() const {
     return instruction_t("wait " + to_string(duration_in_cycles));
 }
 
-gate_type_t wait::type() const {
-    return __wait_gate__;
+GateType wait::type() const {
+    return GateType::WAIT;
 }
 
 cmat_t wait::mat() const {
@@ -587,8 +625,8 @@ instruction_t SOURCE::qasm() const {
     return instruction_t("SOURCE");
 }
 
-gate_type_t SOURCE::type() const {
-    return __dummy_gate__;
+GateType SOURCE::type() const {
+    return GateType::DUMMY;
 }
 
 cmat_t SOURCE::mat() const {
@@ -604,8 +642,8 @@ instruction_t SINK::qasm() const {
     return instruction_t("SINK");
 }
 
-gate_type_t SINK::type() const {
-    return __dummy_gate__;
+GateType SINK::type() const {
+    return GateType::DUMMY;
 }
 
 cmat_t SINK::mat() const {
@@ -621,8 +659,8 @@ instruction_t display::qasm() const {
     return instruction_t("display");
 }
 
-gate_type_t display::type() const {
-    return __display__;
+GateType display::type() const {
+    return GateType::DISPLAY;
 }
 
 cmat_t display::mat() const {
@@ -772,8 +810,8 @@ instruction_t custom_gate::qasm() const {
     return instruction_t(ss.str());
 }
 
-gate_type_t custom_gate::type() const {
-    return __custom_gate__;
+GateType custom_gate::type() const {
+    return GateType::CUSTOM;
 }
 
 cmat_t custom_gate::mat() const {
@@ -801,8 +839,8 @@ instruction_t composite_gate::qasm() const {
     return instruction_t(instr.str());
 }
 
-gate_type_t composite_gate::type() const {
-    return __composite_gate__;
+GateType composite_gate::type() const {
+    return GateType::COMPOSITE;
 }
 
 cmat_t composite_gate::mat() const {

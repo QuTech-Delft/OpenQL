@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "utils/str.h"
-#include "utils/vec.h"
-#include "utils/json.h"
-#include "utils/misc.h"
+#include "ql/utils/str.h"
+#include "ql/utils/vec.h"
+#include "ql/utils/json.h"
+#include "ql/utils/misc.h"
 #include "matrix.h"
 
 namespace ql {
@@ -15,41 +15,42 @@ namespace ql {
 typedef utils::Str instruction_t;
 
 // gate types
-typedef enum __gate_type_t
-{
-    __identity_gate__,
-    __hadamard_gate__,
-    __pauli_x_gate__,
-    __pauli_y_gate__,
-    __pauli_z_gate__,
-    __phase_gate__,
-    __phasedag_gate__,
-    __t_gate__,
-    __tdag_gate__,
-    __rx90_gate__,
-    __mrx90_gate__,
-    __rx180_gate__,
-    __ry90_gate__,
-    __mry90_gate__,
-    __ry180_gate__,
-    __rx_gate__,
-    __ry_gate__,
-    __rz_gate__,
-    __prepz_gate__,
-    __cnot_gate__,
-    __cphase_gate__,
-    __toffoli_gate__,
-    __custom_gate__,
-    __composite_gate__,
-    __measure_gate__,
-    __display__,
-    __display_binary__,
-    __nop_gate__,
-    __dummy_gate__,
-    __swap_gate__,
-    __wait_gate__,
-    __classical_gate__
-} gate_type_t;
+enum class GateType {
+    IDENTITY,
+    HADAMARD,
+    PAULI_X,
+    PAULI_Y,
+    PAULI_Z,
+    PHASE,
+    PHASE_DAG,
+    T,
+    T_DAG,
+    RX90,
+    RXM90,
+    RX180,
+    RY90,
+    RYM90,
+    RY180,
+    RX,
+    RY,
+    RZ,
+    PREP_Z,
+    CNOT,
+    CPHASE,
+    TOFFOLI,
+    CUSTOM,
+    COMPOSITE,
+    MEASURE,
+    DISPLAY,
+    DISPLAY_BINARY,
+    NOP,
+    DUMMY,
+    SWAP,
+    WAIT,
+    CLASSICAL
+};
+
+std::ostream &operator<<(std::ostream &os, GateType gate_type);
 
 const utils::Complex identity_c[] = {
     1.0, 0.0,
@@ -216,7 +217,7 @@ public:
     utils::UInt cycle = MAX_CYCLE;                // cycle after scheduling; MAX_CYCLE indicates undefined
     virtual ~gate() = default;
     virtual instruction_t qasm() const = 0;
-    virtual gate_type_t   type() const = 0;
+    virtual GateType      type() const = 0;
     virtual cmat_t        mat()  const = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
     utils::Str visual_type = ""; // holds the visualization type of this gate that will be linked to a specific configuration in the visualizer
     utils::Bool is_conditional() const;           // whether gate has condition that is NOT cond_always
@@ -235,7 +236,7 @@ public:
     cmat_t m;
     explicit identity(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -244,7 +245,7 @@ public:
     cmat_t m;
     explicit hadamard(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -253,7 +254,7 @@ public:
     cmat_t m;
     explicit phase(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -262,7 +263,7 @@ public:
     cmat_t m;
     explicit phasedag(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -271,7 +272,7 @@ public:
     cmat_t m;
     rx(utils::UInt q, utils::Real theta);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -280,7 +281,7 @@ public:
     cmat_t m;
     ry(utils::UInt q, utils::Real theta);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -289,7 +290,7 @@ public:
     cmat_t m;
     rz(utils::UInt q, utils::Real theta);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -298,7 +299,7 @@ public:
     cmat_t m;
     explicit t(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -307,7 +308,7 @@ public:
     cmat_t m;
     explicit tdag(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -316,7 +317,7 @@ public:
     cmat_t m;
     explicit pauli_x(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -325,7 +326,7 @@ public:
     cmat_t m;
     explicit pauli_y(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -334,7 +335,7 @@ public:
     cmat_t m;
     explicit pauli_z(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -343,7 +344,7 @@ public:
     cmat_t m;
     explicit rx90(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -352,7 +353,7 @@ public:
     cmat_t m;
     explicit mrx90(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -361,7 +362,7 @@ public:
     cmat_t m;
     explicit rx180(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -370,7 +371,7 @@ public:
     cmat_t m;
     explicit ry90(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -379,7 +380,7 @@ public:
     cmat_t m;
     explicit mry90(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -388,7 +389,7 @@ public:
     cmat_t m;
     explicit ry180(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -398,7 +399,7 @@ public:
     explicit measure(utils::UInt q);
     measure(utils::UInt q, utils::UInt c);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -407,7 +408,7 @@ public:
     cmat_t m;
     explicit prepz(utils::UInt q);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -416,7 +417,7 @@ public:
     cmat_t m;
     cnot(utils::UInt q1, utils::UInt q2);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -425,7 +426,7 @@ public:
     cmat_t m;
     cphase(utils::UInt q1, utils::UInt q2);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -434,7 +435,7 @@ public:
     cmat_t m;
     toffoli(utils::UInt q1, utils::UInt q2, utils::UInt q3);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -443,7 +444,7 @@ public:
     cmat_t m;
     nop();
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -452,7 +453,7 @@ public:
     cmat_t m;
     swap(utils::UInt q1, utils::UInt q2);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -467,7 +468,7 @@ public:
 
     wait(utils::Vec<utils::UInt> qubits, utils::UInt d, utils::UInt dc);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -476,7 +477,7 @@ public:
     cmat_t m;
     SOURCE();
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -485,7 +486,7 @@ public:
     cmat_t m;
     SINK();
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -494,7 +495,7 @@ public:
     cmat_t m;
     display();
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -509,7 +510,7 @@ public:
     void load(nlohmann::json &instr);
     void print_info() const;
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 
@@ -520,7 +521,7 @@ public:
     explicit composite_gate(const utils::Str &name);
     composite_gate(const utils::Str &name, const utils::Vec<gate*> &seq);
     instruction_t qasm() const override;
-    gate_type_t type() const override;
+    GateType type() const override;
     cmat_t mat() const override;
 };
 

@@ -14,13 +14,13 @@
  * functionality and use, it can be rewritten and corrected.
  */
 
-#include "utils/str.h"
-#include "utils/map.h"
-#include "utils/vec.h"
-#include "utils/pair.h"
+#include "ql/utils/str.h"
+#include "ql/utils/map.h"
+#include "ql/utils/vec.h"
+#include "ql/utils/pair.h"
 #include "kernel.h"
 #include "circuit.h"
-#include "ir.h"
+#include "ql/ir/ir.h"
 #include "report.h"
 
 #include "buffer_insertion.h"

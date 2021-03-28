@@ -4,7 +4,7 @@
 
 #include "cqasm_reader.h"
 
-#include "utils/tree.h"
+#include "ql/utils/tree.h"
 #include "platform.h"
 #include "kernel.h"
 #include "program.h"

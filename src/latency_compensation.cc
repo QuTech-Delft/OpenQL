@@ -4,7 +4,7 @@
 
 #include "latency_compensation.h"
 
-#include "utils/num.h"
+#include "ql/utils/num.h"
 #include "gate.h"
 #include "kernel.h"
 #include "circuit.h"

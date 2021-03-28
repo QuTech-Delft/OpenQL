@@ -4,11 +4,11 @@
 
 #include "clifford.h"
 
-#include "utils/num.h"
+#include "ql/utils/num.h"
 #include "circuit.h"
 #include "report.h"
 #include "kernel.h"
-#include "options.h"
+#include "ql/com/options/options.h"
 
 namespace ql {
 
@@ -75,7 +75,7 @@ public:
             QL_DOUT("... gate: " << gp->qasm());
 
             if (
-                gp->type() == ql::gate_type_t::__classical_gate__   // classical gates (really being pessimistic here about these)
+                gp->type() == GateType::CLASSICAL                   // classical gates (really being pessimistic here about these)
                 || gp->operands.empty()                             // gates without operands which may affect ALL qubits
             ) {
                 // sync all qubits: create gate sequences corresponding to what was accumulated in cliffstate, for all qubits
@@ -284,7 +284,7 @@ void clifford_optimize(
     const quantum_platform &platform,
     const Str &passname
 ) {
-    if (options::get(passname) == "no") {
+    if (com::options::get(passname) == "no") {
         QL_DOUT("Clifford optimization on program " << programp->name << " at "
                                                     << passname << " not DONE");
         return;

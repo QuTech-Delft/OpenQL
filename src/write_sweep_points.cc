@@ -4,8 +4,8 @@
 
 #include "write_sweep_points.h"
 
-#include "utils/filesystem.h"
-#include "options.h"
+#include "ql/utils/filesystem.h"
+#include "ql/com/options/options.h"
 
 namespace ql {
 
@@ -29,9 +29,9 @@ void write_sweep_points(
 
         StrStrm ss_config;
         if (programp->default_config) {
-            ss_config << options::get("output_dir") << "/" << programp->unique_name << "_config.json";
+            ss_config << com::options::get("output_dir") << "/" << programp->unique_name << "_config.json";
         } else {
-            ss_config << options::get("output_dir") << "/" << programp->config_file_name;
+            ss_config << com::options::get("output_dir") << "/" << programp->config_file_name;
         }
         Str conf_file_name = ss_config.str();
 
