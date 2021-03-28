@@ -11,7 +11,7 @@
 namespace ql {
 
 void rotation_optimize(
-    quantum_program *programp,
+    ir::Program &program,
     const quantum_platform &platform,
     const utils::Str &passname
 );

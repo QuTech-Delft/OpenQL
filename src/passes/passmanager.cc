@@ -68,22 +68,22 @@ void PassManager::loadPassesFromConfigFile(const Str &newName, const Str &cfg) {
  * @brief   Applies the sequence of compiler passes to the given program
  * @param   program   Object reference to the program to be compiled
  */
-void PassManager::compile(quantum_program *program) const {
+void PassManager::compile(ir::Program &program) const {
 
     QL_DOUT("In PassManager::compile ... ");
     for (auto pass : passes) {
         ///@todo-rn: implement option to check if following options are actually needed for a pass
         ///@note-rn: currently(0.8.1.dev), all passes require platform as API parameter, and some passes depend on the nqubits internally. Therefore, these are passed through by setting the program with these fields here. However, this should change in the future since compiling for a simulator might not require a platform, and the number of qubits could be optional.
 
-        if (!program->qubit_count) {
-            program->qubit_count = pass->getPassOptions()["nqubits"].as_uint();
+        if (!program.qubit_count) {
+            program.qubit_count = pass->getPassOptions()["nqubits"].as_uint();
         }
-        assert(program->qubit_count);
+        assert(program.qubit_count);
 
         //If the old interface is used, platform is already set, so it is not needed to look for platform option and configure the platform from there
-        if (!program->platformInitialized) {
+        if (!program.platformInitialized) {
             Str hwconfig = pass->getPassOptions()["hwconfig"].as_str();
-            program->platform = *(new quantum_platform("testPlatform",hwconfig));
+            program.platform = *(new quantum_platform("testPlatform",hwconfig));
         }
 
         if (!pass->getSkip()) {
@@ -95,7 +95,7 @@ void PassManager::compile(quantum_program *program) const {
     }
 
     // generate sweep_points file ==> TOOD: delete?
-    write_sweep_points(program, program->platform, "write_sweep_points");
+    write_sweep_points(program, program.platform, "write_sweep_points");
 }
 
 /**

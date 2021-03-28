@@ -12,7 +12,7 @@ namespace ql {
 
 // buffer_delay_insertion pass
 void latency_compensation(
-    quantum_program *programp,
+    ir::Program &program,
     const quantum_platform &platform,
     const utils::Str &passname
 );

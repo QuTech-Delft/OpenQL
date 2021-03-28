@@ -19,7 +19,7 @@ public:
     PassManager(const utils::Str &n);
     PassManager(const utils::Str &n, const utils::Str &cfg);
 
-    void compile(quantum_program *program) const;
+    void compile(ir::Program &program) const;
     void addPassNamed(const utils::Str &realPassName, const utils::Str &symbolicPassName);
     static AbstractPass *createPass(const utils::Str &passName, const utils::Str &aliasName);
     AbstractPass *findPass(const utils::Str &passName);

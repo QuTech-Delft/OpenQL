@@ -9,6 +9,7 @@
 #include "ql/utils/str.h"
 
 namespace ql {
+namespace ir {
 
 using namespace utils;
 
@@ -24,10 +25,10 @@ std::ostream &operator<<(std::ostream &os, GateType gate_type) {
         case GateType::T: os << "T"; break;
         case GateType::T_DAG: os << "T_DAG"; break;
         case GateType::RX90: os << "RX90"; break;
-        case GateType::RXM90: os << "RXM90"; break;
+        case GateType::MRX90: os << "RXM90"; break;
         case GateType::RX180: os << "RX180"; break;
         case GateType::RY90: os << "RY90"; break;
-        case GateType::RYM90: os << "RYM90"; break;
+        case GateType::MRY90: os << "RYM90"; break;
         case GateType::RY180: os << "RY180"; break;
         case GateType::RX: os << "RX"; break;
         case GateType::RY: os << "RY"; break;
@@ -46,136 +47,157 @@ std::ostream &operator<<(std::ostream &os, GateType gate_type) {
         case GateType::SWAP: os << "SWAP"; break;
         case GateType::WAIT: os << "WAIT"; break;
         case GateType::CLASSICAL: os << "CLASSICAL"; break;
+        default: os << "UNKNOWN"; break;
     }
     return os;
 }
 
-Bool gate::is_conditional() const {
-    return condition != cond_always;
+std::ostream &operator<<(std::ostream &os, ConditionType condition_type) {
+    switch (condition_type) {
+        case ConditionType::ALWAYS: os << "ALWAYS"; break;
+        case ConditionType::NEVER: os << "NEVER"; break;
+        case ConditionType::UNARY: os << "UNARY"; break;
+        case ConditionType::NOT: os << "NOT"; break;
+        case ConditionType::AND: os << "AND"; break;
+        case ConditionType::NAND: os << "NAND"; break;
+        case ConditionType::OR: os << "OR"; break;
+        case ConditionType::NOR: os << "NOR"; break;
+        case ConditionType::XOR: os << "XOR"; break;
+        case ConditionType::NXOR: os << "NXOR"; break;
+        default: os << "UNKNOWN"; break;
+    }
+    return os;
 }
 
-instruction_t gate::cond_qasm() const {
-    QL_ASSERT(gate::is_valid_cond(condition, cond_operands));
+Bool Gate::is_conditional() const {
+    return condition != ConditionType::ALWAYS;
+}
+
+Instruction Gate::cond_qasm() const {
+    QL_ASSERT(Gate::is_valid_cond(condition, cond_operands));
     switch (condition) {
-        case cond_always:
+        case ConditionType::ALWAYS:
             return "";
-        case cond_never:
-            return instruction_t("cond(0) ");
-        case cond_unary:
-            return instruction_t("cond(b[" + to_string(cond_operands[0]) + "]) ");
-        case cond_not:
-            return instruction_t("cond(!b[" + to_string(cond_operands[0]) + "]) ");
-        case cond_and:
-            return instruction_t("cond(b[" + to_string(cond_operands[0]) + "]&&b[" + to_string(cond_operands[1]) + ") ");
-        case cond_nand:
-            return instruction_t("cond(!(b[" + to_string(cond_operands[0]) + "]&&b[" + to_string(cond_operands[1]) + ")) ");
-        case cond_or:
-            return instruction_t("cond(b[" + to_string(cond_operands[0]) + "]||b[" + to_string(cond_operands[1]) + ") ");
-        case cond_nor:
-            return instruction_t("cond(!(b[" + to_string(cond_operands[0]) + "]||b[" + to_string(cond_operands[1]) + ")) ");
-        case cond_xor:
-            return instruction_t("cond(b[" + to_string(cond_operands[0]) + "]^^b[" + to_string(cond_operands[1]) + ") ");
-        case cond_nxor:
-            return instruction_t("cond(!(b[" + to_string(cond_operands[0]) + "]^^b[" + to_string(cond_operands[1]) + ")) ");
+        case ConditionType::NEVER:
+            return Instruction("cond(0) ");
+        case ConditionType::UNARY:
+            return Instruction("cond(b[" + to_string(cond_operands[0]) + "]) ");
+        case ConditionType::NOT:
+            return Instruction("cond(!b[" + to_string(cond_operands[0]) + "]) ");
+        case ConditionType::AND:
+            return Instruction("cond(b[" + to_string(cond_operands[0]) + "]&&b[" + to_string(cond_operands[1]) + ") ");
+        case ConditionType::NAND:
+            return Instruction("cond(!(b[" + to_string(cond_operands[0]) + "]&&b[" + to_string(cond_operands[1]) + ")) ");
+        case ConditionType::OR:
+            return Instruction("cond(b[" + to_string(cond_operands[0]) + "]||b[" + to_string(cond_operands[1]) + ") ");
+        case ConditionType::NOR:
+            return Instruction("cond(!(b[" + to_string(cond_operands[0]) + "]||b[" + to_string(cond_operands[1]) + ")) ");
+        case ConditionType::XOR:
+            return Instruction("cond(b[" + to_string(cond_operands[0]) + "]^^b[" + to_string(cond_operands[1]) + ") ");
+        case ConditionType::NXOR:
+            return Instruction("cond(!(b[" + to_string(cond_operands[0]) + "]^^b[" + to_string(cond_operands[1]) + ")) ");
     }
     return "";
 }
 
-Bool gate::is_valid_cond(cond_type_t condition, const Vec<UInt> &cond_operands) {
+Bool Gate::is_valid_cond(ConditionType condition, const Vec<UInt> &cond_operands) {
     switch (condition) {
-    case cond_always:
-    case cond_never:
+    case ConditionType::ALWAYS:
+    case ConditionType::NEVER:
         return (cond_operands.size()==0);
-    case cond_unary:
-    case cond_not:
+    case ConditionType::UNARY:
+    case ConditionType::NOT:
         return (cond_operands.size()==1);
-    case cond_and:
-    case cond_nand:
-    case cond_or:
-    case cond_nor:
-    case cond_xor:
-    case cond_nxor:
+    case ConditionType::AND:
+    case ConditionType::NAND:
+    case ConditionType::OR:
+    case ConditionType::NOR:
+    case ConditionType::XOR:
+    case ConditionType::NXOR:
         return (cond_operands.size()==2);
     }
     return false;
 }
 
-identity::identity(UInt q) : m(identity_c) {
+bool Gate::operator==(const Gate &rhs) const {
+    return name == rhs.name;
+}
+
+namespace gates {
+
+Identity::Identity(UInt q) : m(matrices::IDENTITY) {
     name = "i";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t identity::qasm() const {
-    return instruction_t(cond_qasm() + "i q[" + to_string(operands[0]) + "]");
+Instruction Identity::qasm() const {
+    return Instruction(cond_qasm() + "i q[" + to_string(operands[0]) + "]");
 }
 
-GateType identity::type() const {
+GateType Identity::type() const {
     return GateType::IDENTITY;
 }
 
-cmat_t identity::mat() const {
+Complex2by2Matrix Identity::mat() const {
     return m;
 }
 
-hadamard::hadamard(UInt q) : m(hadamard_c) {
+Hadamard::Hadamard(UInt q) : m(matrices::HADAMARD) {
     name = "h";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t hadamard::qasm() const {
-    return instruction_t(cond_qasm() + "h q[" + to_string(operands[0]) + "]");
+Instruction Hadamard::qasm() const {
+    return Instruction(cond_qasm() + "h q[" + to_string(operands[0]) + "]");
 }
 
-GateType hadamard::type() const {
+GateType Hadamard::type() const {
     return GateType::HADAMARD;
 }
 
-cmat_t hadamard::mat() const {
+Complex2by2Matrix Hadamard::mat() const {
     return m;
 }
 
-phase::phase(UInt q) : m(phase_c) {
+Phase::Phase(UInt q) : m(matrices::PHASE) {
     name = "s";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t phase::qasm() const {
-    return instruction_t(cond_qasm() + "s q[" + to_string(operands[0]) + "]");
+Instruction Phase::qasm() const {
+    return Instruction(cond_qasm() + "s q[" + to_string(operands[0]) + "]");
 }
 
-GateType phase::type() const {
+GateType Phase::type() const {
     return GateType::PHASE;
 }
 
-cmat_t phase::mat() const {
+Complex2by2Matrix Phase::mat() const {
     return m;
 }
 
-/**
- * phase dag
- */
-phasedag::phasedag(UInt q) : m(phasedag_c) {
+PhaseDag::PhaseDag(UInt q) : m(matrices::PHASE_DAG) {
     name = "sdag";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t phasedag::qasm() const {
-    return instruction_t(cond_qasm() + "sdag q[" + to_string(operands[0]) + "]");
+Instruction PhaseDag::qasm() const {
+    return Instruction(cond_qasm() + "sdag q[" + to_string(operands[0]) + "]");
 }
 
-GateType phasedag::type() const {
+GateType PhaseDag::type() const {
     return GateType::PHASE_DAG;
 }
 
-cmat_t phasedag::mat() const {
+Complex2by2Matrix PhaseDag::mat() const {
     return m;
 }
 
-rx::rx(UInt q, double theta) {
+RX::RX(UInt q, double theta) {
     name = "rx";
     duration = 40;
     angle = theta;
@@ -186,19 +208,19 @@ rx::rx(UInt q, double theta) {
     m(1,1) = cos(angle/2);
 }
 
-instruction_t rx::qasm() const {
-    return instruction_t(cond_qasm() + "rx q[" + to_string(operands[0]) + "], " + to_string(angle));
+Instruction RX::qasm() const {
+    return Instruction(cond_qasm() + "rx q[" + to_string(operands[0]) + "], " + to_string(angle));
 }
 
-GateType rx::type() const {
+GateType RX::type() const {
     return GateType::RX;
 }
 
-cmat_t rx::mat() const {
+Complex2by2Matrix RX::mat() const {
     return m;
 }
 
-ry::ry(UInt q, double theta) {
+RY::RY(UInt q, double theta) {
     name = "ry";
     duration = 40;
     angle = theta;
@@ -209,19 +231,19 @@ ry::ry(UInt q, double theta) {
     m(1,1) = cos(angle/2);
 }
 
-instruction_t ry::qasm() const {
-    return instruction_t(cond_qasm() + "ry q[" + to_string(operands[0]) + "], " + to_string(angle));
+Instruction RY::qasm() const {
+    return Instruction(cond_qasm() + "ry q[" + to_string(operands[0]) + "], " + to_string(angle));
 }
 
-GateType ry::type() const {
+GateType RY::type() const {
     return GateType::RY;
 }
 
-cmat_t ry::mat() const {
+Complex2by2Matrix RY::mat() const {
     return m;
 }
 
-rz::rz(UInt q, double theta) {
+RZ::RZ(UInt q, double theta) {
     name = "rz";
     duration = 40;
     angle = theta;
@@ -232,230 +254,230 @@ rz::rz(UInt q, double theta) {
     m(1,1) = Complex(cos(angle/2), sin(angle/2));
 }
 
-instruction_t rz::qasm() const {
-    return instruction_t(cond_qasm() + "rz q[" + to_string(operands[0]) + "], " + to_string(angle));
+Instruction RZ::qasm() const {
+    return Instruction(cond_qasm() + "rz q[" + to_string(operands[0]) + "], " + to_string(angle));
 }
 
-GateType rz::type() const {
+GateType RZ::type() const {
     return GateType::RZ;
 }
 
-cmat_t rz::mat() const {
+Complex2by2Matrix RZ::mat() const {
     return m;
 }
 
-t::t(UInt q) : m(t_c) {
+T::T(UInt q) : m(matrices::T) {
     name = "t";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t t::qasm() const {
-    return instruction_t(cond_qasm() + "t q[" + to_string(operands[0]) + "]");
+Instruction T::qasm() const {
+    return Instruction(cond_qasm() + "t q[" + to_string(operands[0]) + "]");
 }
 
-GateType t::type() const {
+GateType T::type() const {
     return GateType::T;
 }
 
-cmat_t t::mat() const {
+Complex2by2Matrix T::mat() const {
     return m;
 }
 
-tdag::tdag(UInt q) : m(tdag_c) {
+TDag::TDag(UInt q) : m(matrices::T_DAG) {
     name = "tdag";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t tdag::qasm() const {
-    return instruction_t(cond_qasm() + "tdag q[" + to_string(operands[0]) + "]");
+Instruction TDag::qasm() const {
+    return Instruction(cond_qasm() + "tdag q[" + to_string(operands[0]) + "]");
 }
 
-GateType tdag::type() const {
+GateType TDag::type() const {
     return GateType::T_DAG;
 }
 
-cmat_t tdag::mat() const {
+Complex2by2Matrix TDag::mat() const {
     return m;
 }
 
-pauli_x::pauli_x(UInt q) : m(pauli_x_c) {
+PauliX::PauliX(UInt q) : m(matrices::PAULI_X) {
     name = "x";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t pauli_x::qasm() const {
-    return instruction_t(cond_qasm() + "x q[" + to_string(operands[0]) + "]");
+Instruction PauliX::qasm() const {
+    return Instruction(cond_qasm() + "x q[" + to_string(operands[0]) + "]");
 }
 
-GateType pauli_x::type() const {
+GateType PauliX::type() const {
     return GateType::PAULI_X;
 }
 
-cmat_t pauli_x::mat() const {
+Complex2by2Matrix PauliX::mat() const {
     return m;
 }
 
-pauli_y::pauli_y(UInt q) : m(pauli_y_c) {
+PauliY::PauliY(UInt q) : m(matrices::PAULI_Y) {
     name = "y";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t pauli_y::qasm() const {
-    return instruction_t(cond_qasm() + "y q[" + to_string(operands[0]) + "]");
+Instruction PauliY::qasm() const {
+    return Instruction(cond_qasm() + "y q[" + to_string(operands[0]) + "]");
 }
 
-GateType pauli_y::type() const {
+GateType PauliY::type() const {
     return GateType::PAULI_Y;
 }
 
-cmat_t pauli_y::mat() const {
+Complex2by2Matrix PauliY::mat() const {
     return m;
 }
 
-pauli_z::pauli_z(UInt q) : m(pauli_z_c) {
+PauliZ::PauliZ(UInt q) : m(matrices::PAULI_Z) {
     name = "z";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t pauli_z::qasm() const {
-    return instruction_t(cond_qasm() + "z q[" + to_string(operands[0]) + "]");
+Instruction PauliZ::qasm() const {
+    return Instruction(cond_qasm() + "z q[" + to_string(operands[0]) + "]");
 }
 
-GateType pauli_z::type() const {
+GateType PauliZ::type() const {
     return GateType::PAULI_Z;
 }
 
-cmat_t pauli_z::mat() const {
+Complex2by2Matrix PauliZ::mat() const {
     return m;
 }
 
-rx90::rx90(UInt q) : m(rx90_c) {
+RX90::RX90(UInt q) : m(matrices::RX90) {
     name = "x90";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t rx90::qasm() const {
-    return instruction_t(cond_qasm() + "x90 q[" + to_string(operands[0]) + "]");
+Instruction RX90::qasm() const {
+    return Instruction(cond_qasm() + "x90 q[" + to_string(operands[0]) + "]");
 }
 
-GateType rx90::type() const {
+GateType RX90::type() const {
     return GateType::RX90;
 }
 
-cmat_t rx90::mat() const {
+Complex2by2Matrix RX90::mat() const {
     return m;
 }
 
-mrx90::mrx90(UInt q) : m(mrx90_c) {
+MRX90::MRX90(UInt q) : m(matrices::MRX90) {
     name = "mx90";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t mrx90::qasm() const {
-    return instruction_t(cond_qasm() + "mx90 q[" + to_string(operands[0]) + "]");
+Instruction MRX90::qasm() const {
+    return Instruction(cond_qasm() + "mx90 q[" + to_string(operands[0]) + "]");
 }
 
-GateType mrx90::type() const {
-    return GateType::RXM90;
+GateType MRX90::type() const {
+    return GateType::MRX90;
 }
 
-cmat_t mrx90::mat() const {
+Complex2by2Matrix MRX90::mat() const {
     return m;
 }
 
-rx180::rx180(UInt q) : m(rx180_c) {
+RX180::RX180(UInt q) : m(matrices::RX180) {
     name = "x180";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t rx180::qasm() const {
-    return instruction_t(cond_qasm() + "x180 q[" + to_string(operands[0]) + "]");
+Instruction RX180::qasm() const {
+    return Instruction(cond_qasm() + "x180 q[" + to_string(operands[0]) + "]");
 }
 
-GateType rx180::type() const {
+GateType RX180::type() const {
     return GateType::RX180;
 }
 
-cmat_t rx180::mat() const {
+Complex2by2Matrix RX180::mat() const {
     return m;
 }
 
-ry90::ry90(UInt q) : m(ry90_c) {
+RY90::RY90(UInt q) : m(matrices::RY90) {
     name = "y90";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t ry90::qasm() const {
-    return instruction_t(cond_qasm() + "y90 q[" + to_string(operands[0]) + "]");
+Instruction RY90::qasm() const {
+    return Instruction(cond_qasm() + "y90 q[" + to_string(operands[0]) + "]");
 }
 
-GateType ry90::type() const {
+GateType RY90::type() const {
     return GateType::RY90;
 }
 
-cmat_t ry90::mat() const {
+Complex2by2Matrix RY90::mat() const {
     return m;
 }
 
-mry90::mry90(UInt q) : m(mry90_c) {
+MRY90::MRY90(UInt q) : m(matrices::MRY90) {
     name = "my90";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t mry90::qasm() const {
-    return instruction_t(cond_qasm() + "my90 q[" + to_string(operands[0]) + "]");
+Instruction MRY90::qasm() const {
+    return Instruction(cond_qasm() + "my90 q[" + to_string(operands[0]) + "]");
 }
 
-GateType mry90::type() const {
-    return GateType::RYM90;
+GateType MRY90::type() const {
+    return GateType::MRY90;
 }
 
-cmat_t mry90::mat() const {
+Complex2by2Matrix MRY90::mat() const {
     return m;
 }
 
-ry180::ry180(UInt q) : m(ry180_c) {
+RY180::RY180(UInt q) : m(matrices::RY180) {
     name = "y180";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t ry180::qasm() const {
-    return instruction_t(cond_qasm() + "y180 q[" + to_string(operands[0]) + "]");
+Instruction RY180::qasm() const {
+    return Instruction(cond_qasm() + "y180 q[" + to_string(operands[0]) + "]");
 }
 
-GateType ry180::type() const {
+GateType RY180::type() const {
     return GateType::RY180;
 }
 
-cmat_t ry180::mat() const {
+Complex2by2Matrix RY180::mat() const {
     return m;
 }
 
-measure::measure(UInt q) : m(identity_c) {
+Measure::Measure(UInt q) : m(matrices::IDENTITY) {
     name = "measure";
     duration = 40;
     operands.push_back(q);
 }
 
-measure::measure(UInt q, UInt c) : m(identity_c) {
+Measure::Measure(UInt q, UInt c) : m(matrices::IDENTITY) {
     name = "measure";
     duration = 40;
     operands.push_back(q);
     creg_operands.push_back(c);
 }
 
-instruction_t measure::qasm() const {
+Instruction Measure::qasm() const {
     StrStrm ss;
     ss << "measure ";
     ss << "q[" << operands[0] << "]";
@@ -463,76 +485,76 @@ instruction_t measure::qasm() const {
         ss << ", r[" << creg_operands[0] << "]";
     }
 
-    return instruction_t(ss.str());
+    return Instruction(ss.str());
 }
 
-GateType measure::type() const {
+GateType Measure::type() const {
     return GateType::MEASURE;
 }
 
-cmat_t measure::mat() const {
+Complex2by2Matrix Measure::mat() const {
     return m;
 }
 
-prepz::prepz(UInt q) : m(identity_c) {
+PrepZ::PrepZ(UInt q) : m(matrices::IDENTITY) {
     name = "prep_z";
     duration = 40;
     operands.push_back(q);
 }
 
-instruction_t prepz::qasm() const {
-    return instruction_t(cond_qasm() + "prep_z q[" + to_string(operands[0]) +"]");
+Instruction PrepZ::qasm() const {
+    return Instruction(cond_qasm() + "prep_z q[" + to_string(operands[0]) + "]");
 }
 
-GateType prepz::type() const {
+GateType PrepZ::type() const {
     return GateType::PREP_Z;
 }
 
-cmat_t prepz::mat() const {
+Complex2by2Matrix PrepZ::mat() const {
     return m;
 }
 
-cnot::cnot(UInt q1, UInt q2) : m(cnot_c) {
+CNot::CNot(UInt q1, UInt q2) : m(matrices::CNOT) {
     name = "cnot";
     duration = 80;
     operands.push_back(q1);
     operands.push_back(q2);
 }
 
-instruction_t cnot::qasm() const {
-    return instruction_t(cond_qasm() + "cnot q[" + to_string(operands[0]) + "]"
-                         + ",q[" + to_string(operands[1]) + "]");
+Instruction CNot::qasm() const {
+    return Instruction(cond_qasm() + "cnot q[" + to_string(operands[0]) + "]"
+                       + ",q[" + to_string(operands[1]) + "]");
 }
 
-GateType cnot::type() const {
+GateType CNot::type() const {
     return GateType::CNOT;
 }
 
-cmat_t cnot::mat() const {
+Complex2by2Matrix CNot::mat() const {
     return m;
 }
 
-cphase::cphase(UInt q1, UInt q2) : m(cphase_c) {
+CPhase::CPhase(UInt q1, UInt q2) : m(matrices::CPHASE) {
     name = "cz";
     duration = 80;
     operands.push_back(q1);
     operands.push_back(q2);
 }
 
-instruction_t cphase::qasm() const {
-    return instruction_t(cond_qasm() + "cz q[" + to_string(operands[0]) + "]"
-                         + ",q[" + to_string(operands[1]) + "]");
+Instruction CPhase::qasm() const {
+    return Instruction(cond_qasm() + "cz q[" + to_string(operands[0]) + "]"
+                       + ",q[" + to_string(operands[1]) + "]");
 }
 
-GateType cphase::type() const {
+GateType CPhase::type() const {
     return GateType::CPHASE;
 }
 
-cmat_t cphase::mat() const {
+Complex2by2Matrix CPhase::mat() const {
     return m;
 }
 
-toffoli::toffoli(UInt q1, UInt q2, UInt q3) : m(toffoli_c) {
+Toffoli::Toffoli(UInt q1, UInt q2, UInt q3) : m(matrices::TOFFOLI) {
     name = "toffoli";
     duration = 160;
     operands.push_back(q1);
@@ -540,54 +562,54 @@ toffoli::toffoli(UInt q1, UInt q2, UInt q3) : m(toffoli_c) {
     operands.push_back(q3);
 }
 
-instruction_t toffoli::qasm() const {
-    return instruction_t(cond_qasm() + "toffoli q[" + to_string(operands[0]) + "]"
-                         + ",q[" + to_string(operands[1]) + "]"
-                         + ",q[" + to_string(operands[2]) + "]");
+Instruction Toffoli::qasm() const {
+    return Instruction(cond_qasm() + "toffoli q[" + to_string(operands[0]) + "]"
+                       + ",q[" + to_string(operands[1]) + "]"
+                       + ",q[" + to_string(operands[2]) + "]");
 }
 
-GateType toffoli::type() const {
+GateType Toffoli::type() const {
     return GateType::TOFFOLI;
 }
 
-cmat_t toffoli::mat() const {
+Complex2by2Matrix Toffoli::mat() const {
     return m;
 }
 
-nop::nop() : m(nop_c) {
+Nop::Nop() : m(matrices::NOP) {
     name = "wait";
     duration = 20;
 }
 
-instruction_t nop::qasm() const {
-    return instruction_t("nop");
+Instruction Nop::qasm() const {
+    return Instruction("nop");
 }
 
-GateType nop::type() const {
+GateType Nop::type() const {
     return GateType::NOP;
 }
 
-cmat_t nop::mat() const {
+Complex2by2Matrix Nop::mat() const {
     return m;
 }
 
-swap::swap(UInt q1, UInt q2) : m(swap_c) {
+Swap::Swap(UInt q1, UInt q2) : m(matrices::SWAP) {
     name = "swap";
     duration = 80;
     operands.push_back(q1);
     operands.push_back(q2);
 }
 
-instruction_t swap::qasm() const {
-    return instruction_t(cond_qasm() + "swap q[" + to_string(operands[0]) + "]"
-                         + ",q[" + to_string(operands[1]) + "]");
+Instruction Swap::qasm() const {
+    return Instruction(cond_qasm() + "swap q[" + to_string(operands[0]) + "]"
+                       + ",q[" + to_string(operands[1]) + "]");
 }
 
-GateType swap::type() const {
+GateType Swap::type() const {
     return GateType::SWAP;
 }
 
-cmat_t swap::mat() const {
+Complex2by2Matrix Swap::mat() const {
     return m;
 }
 
@@ -595,7 +617,7 @@ cmat_t swap::mat() const {
 | Special gates
 \****************************************************************************/
 
-wait::wait(Vec<UInt> qubits, UInt d, UInt dc) : m(nop_c) {
+Wait::Wait(Vec<UInt> qubits, UInt d, UInt dc) : m(matrices::NOP) {
     name = "wait";
     duration = d;
     duration_in_cycles = dc;
@@ -604,75 +626,75 @@ wait::wait(Vec<UInt> qubits, UInt d, UInt dc) : m(nop_c) {
     }
 }
 
-instruction_t wait::qasm() const {
-    return instruction_t("wait " + to_string(duration_in_cycles));
+Instruction Wait::qasm() const {
+    return Instruction("wait " + to_string(duration_in_cycles));
 }
 
-GateType wait::type() const {
+GateType Wait::type() const {
     return GateType::WAIT;
 }
 
-cmat_t wait::mat() const {
+Complex2by2Matrix Wait::mat() const {
     return m;
 }
 
-SOURCE::SOURCE() : m(nop_c) {
+Source::Source() : m(matrices::NOP) {
     name = "SOURCE";
     duration = 1;
 }
 
-instruction_t SOURCE::qasm() const {
-    return instruction_t("SOURCE");
+Instruction Source::qasm() const {
+    return Instruction("SOURCE");
 }
 
-GateType SOURCE::type() const {
+GateType Source::type() const {
     return GateType::DUMMY;
 }
 
-cmat_t SOURCE::mat() const {
+Complex2by2Matrix Source::mat() const {
     return m;
 }
 
-SINK::SINK() : m(nop_c) {
-    name = "SINK";
+Sink::Sink() : m(matrices::NOP) {
+    name = "Sink";
     duration = 1;
 }
 
-instruction_t SINK::qasm() const {
-    return instruction_t("SINK");
+Instruction Sink::qasm() const {
+    return Instruction("SINK");
 }
 
-GateType SINK::type() const {
+GateType Sink::type() const {
     return GateType::DUMMY;
 }
 
-cmat_t SINK::mat() const {
+Complex2by2Matrix Sink::mat() const {
     return m;
 }
 
-display::display() : m(nop_c) {
+Display::Display() : m(matrices::NOP) {
     name = "display";
     duration = 0;
 }
 
-instruction_t display::qasm() const {
-    return instruction_t("display");
+Instruction Display::qasm() const {
+    return Instruction("display");
 }
 
-GateType display::type() const {
+GateType Display::type() const {
     return GateType::DISPLAY;
 }
 
-cmat_t display::mat() const {
+Complex2by2Matrix Display::mat() const {
     return m;
 }
 
-custom_gate::custom_gate(const Str &name) {
+Custom::Custom(const Str &name) {
     this->name = name;  // just remember name, e.g. "x", "x %0" or "x q0", expansion is done by add_custom_gate_if_available().
     // FIXME: no syntax check is performed
 }
 
-custom_gate::custom_gate(const custom_gate &g) {
+Custom::Custom(const Custom &g) {
     // FIXME JvS: This copy constructor does NOT copy everything, and apparently
     // the scheduler relies on it not doing so!
     QL_DOUT("Custom gate copy constructor for " << g.name);
@@ -692,7 +714,7 @@ custom_gate::custom_gate(const custom_gate &g) {
 /**
  * match qubit id
  */
-Bool custom_gate::is_qubit_id(const Str &str) {
+Bool Custom::is_qubit_id(const Str &str) {
     if (str[0] != 'q') {
         return false;
     }
@@ -708,7 +730,7 @@ Bool custom_gate::is_qubit_id(const Str &str) {
 /**
  * return qubit id
  */
-UInt custom_gate::qubit_id(const Str &qubit) {
+UInt Custom::qubit_id(const Str &qubit) {
     Str id = qubit.substr(1);
     return parse_uint(id.c_str());
 }
@@ -716,7 +738,7 @@ UInt custom_gate::qubit_id(const Str &qubit) {
 /**
  * load instruction from json map
  */
-void custom_gate::load(nlohmann::json &instr) {
+void Custom::load(nlohmann::json &instr) {
     QL_DOUT("loading instruction '" << name << "'...");
     Str l_attr = "(none)";
     try {
@@ -760,7 +782,7 @@ void custom_gate::load(nlohmann::json &instr) {
     }
 }
 
-void custom_gate::print_info() const {
+void Custom::print_info() const {
     QL_PRINTLN("[-] custom gate : ");
     QL_PRINTLN("    |- name     : " << name);
     QL_PRINTLN("    |- qubits   : " << to_string(operands));
@@ -768,7 +790,7 @@ void custom_gate::print_info() const {
     QL_PRINTLN("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
 }
 
-instruction_t custom_gate::qasm() const {
+Instruction Custom::qasm() const {
     StrStrm ss;
     UInt p = name.find(' ');
     Str gate_name = name.substr(0, p);
@@ -807,44 +829,46 @@ instruction_t custom_gate::qasm() const {
         }
     }
 
-    return instruction_t(ss.str());
+    return Instruction(ss.str());
 }
 
-GateType custom_gate::type() const {
+GateType Custom::type() const {
     return GateType::CUSTOM;
 }
 
-cmat_t custom_gate::mat() const {
+Complex2by2Matrix Custom::mat() const {
     return m;
 }
 
-composite_gate::composite_gate(const Str &name) : custom_gate(name) {
+Composite::Composite(const Str &name) : Custom(name) {
     duration = 0;
 }
 
-composite_gate::composite_gate(const Str &name, const Vec<gate*> &seq) : custom_gate(name) {
+Composite::Composite(const Str &name, const Gates &seq) : Custom(name) {
     duration = 0;
-    for (gate *g : seq) {
-        gs.push_back(g);
+    for (const auto &g : seq) {
+        gs.add(g);
         duration += g->duration;    // FIXME: not true if gates operate in parallel
         operands.insert(operands.end(), g->operands.begin(), g->operands.end());
     }
 }
 
-instruction_t composite_gate::qasm() const {
+Instruction Composite::qasm() const {
     StrStrm instr;
-    for (gate * g : gs) {
+    for (const auto &g : gs) {
         instr << g->qasm() << std::endl;
     }
-    return instruction_t(instr.str());
+    return Instruction(instr.str());
 }
 
-GateType composite_gate::type() const {
+GateType Composite::type() const {
     return GateType::COMPOSITE;
 }
 
-cmat_t composite_gate::mat() const {
+Complex2by2Matrix Composite::mat() const {
     return m;   // FIXME: never initialized
 }
 
+} // namespace gates
+} // namespace ir
 } // namespace ql

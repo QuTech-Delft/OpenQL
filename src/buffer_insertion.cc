@@ -32,7 +32,7 @@ using namespace utils;
 /*
 */
 static void insert_buffer_delays_kernel(
-    quantum_kernel &kernel,
+    ir::Kernel &kernel,
     const quantum_platform &platform
 ) {
     QL_DOUT("Loading buffer settings ...");
@@ -63,12 +63,11 @@ static void insert_buffer_delays_kernel(
 
     QL_DOUT("Buffer-buffer delay insertion ... ");
 
-    circuit *circp = &kernel.c;
-    ir::bundles_t bundles = ir::bundler(*circp, platform.cycle_time);
+    ir::Bundles bundles = ir::bundler(kernel.c, platform.cycle_time);
 
     Vec<Str> optypes_prev_bundle;
     UInt buffer_cycles_accum = 0;
-    for (ir::bundle_t &abundle : bundles) {
+    for (ir::Bundle &abundle : bundles) {
         Vec<Str> optypes_curr_bundle;    // map of all gates in this bundle to their types
         for (auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt) {
             for (auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt) {
@@ -100,25 +99,25 @@ static void insert_buffer_delays_kernel(
         optypes_prev_bundle = optypes_curr_bundle;
     }
 
-    *circp = ir::circuiter(bundles);
+    kernel.c = ir::circuiter(bundles);
 
     QL_DOUT("Buffer-buffer delay insertion [DONE] ");
 }
 
 void insert_buffer_delays(
-    quantum_program *programp,
+    ir::Program &program,
     const quantum_platform &platform,
     const Str &passname
 ) {
-    report_statistics(programp, platform, "in", passname, "# ");
-    report_qasm(programp, platform, "in", passname);
+    report_statistics(program, platform, "in", passname, "# ");
+    report_qasm(program, platform, "in", passname);
 
-    for (auto &kernel : programp->kernels) {
-        insert_buffer_delays_kernel(kernel, platform);
+    for (auto &kernel : program.kernels) {
+        insert_buffer_delays_kernel(*kernel, platform);
     }
 
-    report_statistics(programp, platform, "out", passname, "# ");
-    report_qasm(programp, platform, "out", passname);
+    report_statistics(program, platform, "out", passname, "# ");
+    report_qasm(program, platform, "out", passname);
 }
 
 } // namespace ql

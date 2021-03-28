@@ -135,7 +135,7 @@ Real Metrics::create_output(const Vec<Real> &fids) {
 
 }
 
-Real Metrics::bounded_fidelity(const circuit &circ, Vec<Real> &fids) {
+Real Metrics::bounded_fidelity(const ir::Circuit &circ, Vec<Real> &fids) {
     //this function considers the primitive gates! each operand undergoing a 2-qubit operation is always considered to have the same latency
     //same end fidelity considered for the two operands of the same 2-qubit gate
     //TODO - URGENT!! Check if gate->cycle starts in zero;
@@ -238,17 +238,17 @@ Real Metrics::bounded_fidelity(const circuit &circ, Vec<Real> &fids) {
     return create_output(fids);
 }
 
-Real quick_fidelity(const List<gate*> &gate_list) {
+Real quick_fidelity(const List<ir::GateRef> &gate_list) {
     Metrics estimator(17);
     Vec<Real> previous_fids;
-    circuit circuit;
-    std::copy(std::begin(gate_list), std::end(gate_list), std::back_inserter(circuit));
+    ir::Circuit circuit;
+    std::copy(std::begin(gate_list), std::end(gate_list), std::back_inserter(circuit.get_vec()));
     Real fidelity = estimator.bounded_fidelity(circuit, previous_fids);
     fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
     return fidelity;
 }
 
-Real quick_fidelity_circuit(const circuit &circuit) {
+Real quick_fidelity_circuit(const ir::Circuit &circuit) {
     Metrics estimator(17);
     Vec<Real> previous_fids;
     Real fidelity = estimator.bounded_fidelity(circuit, previous_fids);
@@ -256,7 +256,7 @@ Real quick_fidelity_circuit(const circuit &circuit) {
     return fidelity;
 }
 
-Real quick_fidelity(const circuit &circuit) {
+Real quick_fidelity(const ir::Circuit &circuit) {
     Metrics estimator(17);
     Vec<Real> previous_fids;
     Real fidelity = estimator.bounded_fidelity(circuit, previous_fids);

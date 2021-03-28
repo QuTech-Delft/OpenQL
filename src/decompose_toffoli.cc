@@ -13,17 +13,18 @@ namespace ql {
 using namespace utils;
 
 static void decompose_toffoli_kernel(
-    quantum_kernel &kernel,
+    ir::Kernel &kernel,
     const quantum_platform &platform
 ) {
     QL_DOUT("decompose_toffoli_kernel()");
-    for (auto cit = kernel.c.begin(); cit != kernel.c.end(); ++cit) {
+    auto &cicuit_vec = kernel.c.get_vec();
+    for (auto cit = cicuit_vec.begin(); cit != cicuit_vec.end(); ++cit) {
         auto g = *cit;
         QL_DOUT("... decompose_toffoli, considering gate: " << g->qasm());
-        GateType gtype = g->type();
+        ir::GateType gtype = g->type();
 
-        if (gtype == GateType::TOFFOLI || g->name == "toffoli") {
-            quantum_kernel toff_kernel("toff_kernel");
+        if (gtype == ir::GateType::TOFFOLI || g->name == "toffoli") {
+            ir::Kernel toff_kernel("toff_kernel");
             auto opt = com::options::get("decompose_toffoli");
 
             QL_DOUT("... decompose_toffoli (option=" << opt << "), decomposing gate '" << g->qasm() << "' in new kernel: " << toff_kernel.name);
@@ -44,10 +45,10 @@ static void decompose_toffoli_kernel(
             }
             QL_DOUT("... decompose_toffoli, done decomposing toffoli gate in new kernel: " << toff_kernel.name);
 
-            circuit &toff_ckt = toff_kernel.get_circuit();
-            cit = kernel.c.erase(cit);
+            ir::Circuit &toff_ckt = toff_kernel.get_circuit();
+            cit = cicuit_vec.erase(cit);
             QL_DOUT("... decompose_toffoli, inserting decomposition of toffoli gate from new kernel: " << toff_kernel.name << " into kernel.c");
-            cit = kernel.c.insert(cit, toff_ckt.begin(), toff_ckt.end());
+            cit = cicuit_vec.insert(cit, toff_ckt.begin(), toff_ckt.end());
             kernel.cycles_valid = false;
             QL_DOUT("... decompose_toffoli, new kernel.c after insertion of decomposition: " << qasm(kernel.c));
         }
@@ -57,15 +58,15 @@ static void decompose_toffoli_kernel(
 }
 
 void decompose_toffoli(
-    quantum_program *programp,
+    ir::Program &program,
     const quantum_platform &platform,
     const Str &passname
 ) {
     auto tdopt = com::options::get("decompose_toffoli");
     if (tdopt == "AM" || tdopt == "NC") {
         QL_IOUT("Decomposing Toffoli ...");
-        for (auto &kernel : programp->kernels) {
-            decompose_toffoli_kernel(kernel, platform);
+        for (auto &kernel : program.kernels) {
+            decompose_toffoli_kernel(*kernel, platform);
         }
     } else if (tdopt == "no") {
         QL_IOUT("Not Decomposing Toffoli ...");

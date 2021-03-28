@@ -30,7 +30,7 @@ quantum_compiler::quantum_compiler(const Str &n, const Str &cfg) : name(n), conf
  * @brief   Compiles the program passed as parameter
  * @param   quantum_program   Object reference to the program to be compiled
  */
-void quantum_compiler::compile(quantum_program *program) {
+void quantum_compiler::compile(ir::Program &program) {
     QL_DOUT("Compiler compiles program ");
     passManager->compile(program);
 }

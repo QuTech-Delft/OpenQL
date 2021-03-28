@@ -157,8 +157,8 @@ struct ImageOutput {
     const Structure structure;
 };
 
-void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration);
-ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration, const utils::Vec<utils::Int> minCycleWidths, const utils::Int extendedImageHeight);
+void visualizeCircuit(const ir::Program &program, const VisualizerConfiguration &configuration);
+ImageOutput generateImage(const ir::Program &program, const VisualizerConfiguration &configuration, const utils::Vec<utils::Int> minCycleWidths, const utils::Int extendedImageHeight);
 
 CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const utils::Json platformInstructions);
 void validateCircuitLayout(CircuitLayout &layout, const utils::Str &visualizationType);

@@ -32,7 +32,7 @@ struct Topology {
     utils::Vec<Edge> edges;
 };
 
-void visualizeMappingGraph(const quantum_program* program, const VisualizerConfiguration &configuration);
+void visualizeMappingGraph(const ir::Program &program, const VisualizerConfiguration &configuration);
 
 void computeMappingPerCycle(const MappingGraphLayout layout,
                             utils::Vec<utils::Vec<utils::Int>> &virtualQubits,

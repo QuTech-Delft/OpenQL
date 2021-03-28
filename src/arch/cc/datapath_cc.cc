@@ -123,9 +123,9 @@ UInt Datapath::getSizeTag(UInt numReadouts) {
 }
 
 
-static Str cond_qasm(cond_type_t condition, const Vec<UInt> &cond_operands) {
+static Str cond_qasm(ir::ConditionType condition, const Vec<UInt> &cond_operands) {
     // FIXME: hack
-    custom_gate g("foo");
+    ir::gates::Custom g("foo");
     g.condition = condition;
     g.cond_operands = cond_operands;
     return g.cond_qasm();
@@ -214,40 +214,40 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
         StrStrm rhs;
         switch (cgi.condition) {
             // 0 operands:
-            case cond_always:
+            case ir::ConditionType::ALWAYS:
                 rhs << "1";
                 break;
-            case cond_never:
+            case ir::ConditionType::NEVER:
                 rhs << "0";
                 break;
 
             // 1 operand:
-            case cond_not:
+            case ir::ConditionType::NOT:
                 inv = "/";
                 // fall through
-            case cond_unary:
+            case ir::ConditionType::UNARY:
                 rhs << "SM[" << winBit(0) << "]";
                 break;
 
             // 2 operands
-            case cond_nand:
+            case ir::ConditionType::NAND:
                 inv = "/";
                 // fall through
-            case cond_and:
+            case ir::ConditionType::AND:
                 rhs << "SM[" << winBit(0) << "] & SM[" << winBit(1) << "]";
                 break;
 
-            case cond_nor:
+            case ir::ConditionType::NOR:
                 inv = "/";
                 // fall through
-            case cond_or:
+            case ir::ConditionType::OR:
                 rhs << "SM[" << winBit(0) << "] | SM[" << winBit(1) << "]";
                 break;
 
-            case cond_nxor:
+            case ir::ConditionType::NXOR:
                 inv = "/";
                 // fall through
-            case cond_xor:
+            case ir::ConditionType::XOR:
                 rhs << "SM[" << winBit(0) << "] ^ SM[" << winBit(1) << "]";
                 break;
         }

@@ -20,14 +20,14 @@ namespace arch {
 
 // in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
 // it is needed to define the extend of the resource occupation in case of multi-cycle operations
-utils::UInt ccl_get_operation_duration(gate *ins, const quantum_platform &platform);
+utils::UInt ccl_get_operation_duration(ir::Gate &ins, const quantum_platform &platform);
 
 // operation type is "mw" (for microwave), "flux", or "readout"
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
-utils::Str ccl_get_operation_type(gate *ins, const quantum_platform &platform);
+utils::Str ccl_get_operation_type(ir::Gate &ins, const quantum_platform &platform);
 
 // operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
-utils::Str ccl_get_operation_name(gate *ins, const quantum_platform &platform);
+utils::Str ccl_get_operation_name(ir::Gate &ins, const quantum_platform &platform);
 
 
 // ============ classes of resources that _may_ appear in a configuration file
@@ -45,8 +45,8 @@ public:
     ccl_qubit_resource_t *clone() const & override;
     ccl_qubit_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
 };
 
 // Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.
@@ -70,8 +70,8 @@ public:
     ccl_qwg_resource_t *clone() const & override;
     ccl_qwg_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
 };
 
 // Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.
@@ -88,8 +88,8 @@ public:
     ccl_meas_resource_t *clone() const & override;
     ccl_meas_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
 };
 
 // Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge.
@@ -116,8 +116,8 @@ public:
     ccl_edge_resource_t *clone() const & override;
     ccl_edge_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, gate * ins, const quantum_platform & platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform & platform) override;
 };
 
 // A two-qubit flux gate lowers the frequency of its source qubit to get near the freq of its target qubit.
@@ -157,8 +157,8 @@ public:
     ccl_detuned_qubits_resource_t *clone() const & override;
     ccl_detuned_qubits_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
 };
 
 // Inter-core communication gates use channels between cores.
@@ -183,8 +183,8 @@ public:
     ccl_channel_resource_t *clone() const & override;
     ccl_channel_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
 };
 
 // ============ platform specific resource_manager matching config file resources sections with resource classes above

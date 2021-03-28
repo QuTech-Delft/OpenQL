@@ -31,7 +31,7 @@ public: // vars
     Vec<UInt> breg_operands;
 
     // conditional gates
-    cond_type_t condition = cond_always;        // FIXME
+    ir::ConditionType condition = ir::ConditionType::ALWAYS;        // FIXME
     Vec<UInt> cond_operands;
 #endif
 #if OPT_PRAGMA

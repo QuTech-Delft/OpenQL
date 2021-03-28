@@ -183,6 +183,8 @@ public:
 
 };
 
+using GridRef = utils::Ptr<Grid>;
+
 // =========================================================================================
 // Virt2Real: map of a virtual qubit index to its real qubit index
 //
@@ -358,7 +360,7 @@ public:
     // when we would schedule gate g, what would be its start cycle? return it
     // gate operands are real qubit indices and breg indices
     // is purely functional, doesn't affect state
-    utils::UInt StartCycleNoRc(gate *g) const;
+    utils::UInt StartCycleNoRc(ir::GateRef &g) const;
 
     // when we would schedule gate g, what would be its start cycle? return it
     // gate operands are real qubit indices and breg indices
@@ -366,19 +368,19 @@ public:
     // FIXME JvS: except it does. can't make it (or the gate) const, because
     //   resource managers are relying on random map[] operators in debug prints
     //   to create new default-initialized keys. Fun!
-    utils::UInt StartCycle(gate *g);
+    utils::UInt StartCycle(ir::GateRef &g);
 
     // schedule gate g in the FreeCycle map
     // gate operands are real qubit indices and breg indices
     // the FreeCycle map is updated, not the resource map
     // this is done, because AddNoRc is used to represent just gate dependences, avoiding a build of a dep graph
-    void AddNoRc(gate *g, utils::UInt startCycle);
+    void AddNoRc(ir::GateRef &g, utils::UInt startCycle);
 
     // schedule gate g in the FreeCycle and resource maps
     // gate operands are real qubit indices and breg indices
     // both the FreeCycle map and the resource map are updated
     // startcycle must be the result of an earlier StartCycle call (with rc!)
-    void Add(gate *g, utils::UInt startCycle);
+    void Add(ir::GateRef &g, utils::UInt startCycle);
 
 };
 
@@ -419,22 +421,21 @@ private:
     utils::UInt                 nb;         // extends FreeCycle next to qubits with bregs
     utils::UInt                 ct;         // cycle time, multiplier from cycles to nano-seconds
     const quantum_platform      *platformp; // platform describing resources for scheduling
-    quantum_kernel              *kernelp;   // current kernel for creating gates
-    Grid                        *gridp;     // pointer to grid to know which hops are inter-core
+    ir::KernelRef               kernelp;   // current kernel for creating gates
+    GridRef                     gridp;     // pointer to grid to know which hops are inter-core
 
     Virt2Real                   v2r;        // state: current Virt2Real map, imported/exported to kernel
     FreeCycle                   fc;         // state: FreeCycle map (including resource_manager) of this Past
-    typedef gate *      gate_p;
-    utils::List<gate_p>         waitinglg;  // . . .  list of q gates in this Past, topological order, waiting to be scheduled in
+    utils::List<ir::GateRef>    waitinglg;  // . . .  list of q gates in this Past, topological order, waiting to be scheduled in
     //        waitinglg only contains gates from Add and final Schedule call
     //        when evaluating alternatives, it is empty when Past is cloned; so no state
 public:
-    utils::List<gate_p>         lg;         // state: list of q gates in this Past, scheduled by their (start) cycle values
+    utils::List<ir::GateRef>    lg;         // state: list of q gates in this Past, scheduled by their (start) cycle values
     //        so this is the result list of this Past, to compare with other Alters
 private:
-    utils::List<gate_p>         outlg;      // . . .  list of gates flushed out of this Past, not yet put in outCirc
+    utils::List<ir::GateRef>    outlg;      // . . .  list of gates flushed out of this Past, not yet put in outCirc
     //        when evaluating alternatives, outlg stays constant; so no state
-    utils::Map<gate_p,utils::UInt> cycle;      // state: gate to cycle map, startCycle value of each past gatecycle[gp]
+    utils::Map<ir::GateRef,utils::UInt> cycle; // state: gate to cycle map, startCycle value of each past gatecycle[gp]
     //        cycle[gp] can be different for each gp for each past
     //        gp->cycle is not used by MapGates
     //        although updated by set_cycle called from MakeAvailable/TakeAvailable
@@ -448,7 +449,7 @@ public:
     Past();
 
     // past initializer
-    void Init(const quantum_platform *p, quantum_kernel *k, Grid *g);
+    void Init(const quantum_platform *p, ir::KernelRef &k, GridRef &g);
 
     // import Past's v2r from v2r_value
     void ImportV2r(const Virt2Real &v2r_value);
@@ -467,11 +468,11 @@ public:
     void Schedule();
 
     // compute costs in cycle extension of optionally scheduling initcirc before the inevitable circ
-    utils::Int InsertionCost(const circuit &initcirc, const circuit &circ) const;
+    utils::Int InsertionCost(ir::Circuit &initcirc, ir::Circuit &circ) const;
 
     // add the mapped gate to the current past
     // means adding it to the current past's waiting list, waiting for it to be scheduled later
-    void Add(gate_p gp);
+    void Add(ir::GateRef &gp);
 
     // create a new gate with given name and qubits
     // return whether this was successful
@@ -484,16 +485,16 @@ public:
     // in class Future, kernel.c is copied into the dependence graph or copied to a local circuit; and
     // in Mapper::MapCircuit, a temporary local output circuit is used, which is written to kernel.c only at the very end
     utils::Bool new_gate(
-        circuit &circ,
+        ir::Circuit &circ,
         const utils::Str &gname,
         const utils::Vec<utils::UInt> &qubits,
         const utils::Vec<utils::UInt> &cregs = {},
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t gcond = cond_always,
+        ir::ConditionType gcond = ir::ConditionType::ALWAYS,
         const utils::Vec<utils::UInt> &gcondregs = {}
-    ) const;
+    );
 
     // return number of swaps added to this past
     utils::UInt NumberOfSwapsAdded() const;
@@ -510,7 +511,7 @@ public:
     // generate a move into circ with parameters r0 and r1 (which GenMove may reverse)
     // whether this was successfully done can be seen from whether circ was extended
     // please note that the reversal of operands may have been done also when GenMove was not successful
-    void GenMove(circuit &circ, utils::UInt &r0, utils::UInt &r1);
+    void GenMove(ir::Circuit &circ, utils::UInt &r0, utils::UInt &r1);
 
     // generate a single swap/move with real operands and add it to the current past's waiting list;
     // note that the swap/move may be implemented by a series of gates (circuit circ below),
@@ -525,7 +526,7 @@ public:
 
     // add the mapped gate (with real qubit indices as operands) to the past
     // by adding it to the waitinglist and scheduling it into the past
-    void AddAndSchedule(gate_p gp);
+    void AddAndSchedule(ir::GateRef &gp);
 
     // find real qubit index implementing virtual qubit index;
     // if not yet mapped, allocate a new real qubit index and map to it
@@ -560,12 +561,12 @@ public:
     //      for each gate try recreating it with _prim appended to its name, otherwise keep it; this decomposes those with corresponding _prim entries
     // 4. final schedule:
     //      the resulting gates are subject to final scheduling (the original resource-constrained scheduler)
-    void MakeReal(gate *gp, circuit &circ);
+    void MakeReal(ir::GateRef &gp, ir::Circuit &circ);
 
     // as mapper after-burner
     // make primitives of all gates that also have an entry with _prim appended to its name
     // and decomposing it according to the .json file gate decomposition
-    void MakePrimitive(gate *gp, circuit &circ) const;
+    void MakePrimitive(ir::GateRef &gp, ir::Circuit &circ);
 
     utils::UInt MaxFreeCycle() const;
 
@@ -577,10 +578,10 @@ public:
     void FlushAll();
 
     // gp as nonq gate immediately goes to outlg
-    void ByPass(gate *gp);
+    void ByPass(ir::GateRef &gp);
 
     // mainPast flushes outlg to parameter oc
-    void Out(circuit &oc);
+    void Out(ir::Circuit &oc);
 
 };
 
@@ -620,18 +621,18 @@ public:
 class Alter {
 public:
     const quantum_platform  *platformp;  // descriptions of resources for scheduling
-    quantum_kernel          *kernelp;    // kernel pointer to allow calling kernel private methods
-    Grid                    *gridp;      // grid pointer to know which hops are inter-core
+    ir::KernelRef           kernelp;     // kernel pointer to allow calling kernel private methods
+    GridRef                 gridp;       // grid pointer to know which hops are inter-core
     utils::UInt             nq;          // width of Past and Virt2Real map is number of real qubits
     utils::UInt             ct;          // cycle time, multiplier from cycles to nano-seconds
 
-    gate                    *targetgp;   // gate that this variation aims to make NN
+    ir::GateRef             targetgp;    // gate that this variation aims to make NN
     utils::Vec<utils::UInt> total;       // full path, including source and target nodes
     utils::Vec<utils::UInt> fromSource;  // partial path after split, starting at source
     utils::Vec<utils::UInt> fromTarget;  // partial path after split, starting at target, backward
 
     Past                    past;        // cloned main past, extended with swaps from this path
-    utils::Real           score;       // e.g. latency extension caused by the path
+    utils::Real             score;       // e.g. latency extension caused by the path
     utils::Bool             didscore;    // initially false, true after assignment to score
 
     // explicit Alter constructor
@@ -640,7 +641,7 @@ public:
 
     // Alter initializer
     // This should only be called after a virgin construction and not after cloning a path.
-    void Init(const quantum_platform *p, quantum_kernel *k, Grid *g);
+    void Init(const quantum_platform *p, ir::KernelRef &k, GridRef &g);
 
     // printing facilities of Paths
     // print path as hd followed by [0->1->2]
@@ -729,13 +730,13 @@ public:
 
 class Future {
 public:
-    const quantum_platform            *platformp;
-    Scheduler                       *schedp;        // a pointer, since dependence graph doesn't change
-    circuit                     input_gatepv;   // input circuit when not using scheduler based avlist
+    const quantum_platform          *platformp;
+    utils::Ptr<Scheduler>           schedp;         // a pointer, since dependence graph doesn't change
+    ir::Circuit                     input_gatepv;   // input circuit when not using scheduler based avlist
 
-    utils::Map<gate*,utils::Bool>        scheduled;      // state: has gate been scheduled, here: done from future?
-    utils::List<lemon::ListDigraph::Node> avlist;         // state: which nodes/gates are available for mapping now?
-    circuit::iterator           input_gatepp;   // state: alternative iterator in input_gatepv
+    utils::Map<ir::GateRef,utils::Bool> scheduled;  // state: has gate been scheduled, here: done from future?
+    utils::List<lemon::ListDigraph::Node> avlist;   // state: which nodes/gates are available for mapping now?
+    ir::Circuit::Iterator           input_gatepp;   // state: alternative iterator in input_gatepv
 
     // just program wide initialization
     void Init(const quantum_platform *p);
@@ -743,24 +744,24 @@ public:
     // Set/switch input to the provided circuit
     // nq, nc and nb are parameters because nc/nb may not be provided by platform but by kernel
     // the latter should be updated when mapping multiple kernels
-    void SetCircuit(quantum_kernel &kernel, Scheduler &sched, utils::UInt nq, utils::UInt nc, utils::UInt nb);
+    void SetCircuit(ir::KernelRef &kernel, utils::Ptr<Scheduler> &sched, utils::UInt nq, utils::UInt nc, utils::UInt nb);
 
     // Get from avlist all gates that are non-quantum into nonqlg
     // Non-quantum gates include: classical, and dummy (SOURCE/SINK)
     // Return whether some non-quantum gate was found
-    utils::Bool GetNonQuantumGates(utils::List<gate*> &nonqlg) const;
+    utils::Bool GetNonQuantumGates(utils::List<ir::GateRef> &nonqlg) const;
 
     // Get all gates from avlist into qlg
     // Return whether some gate was found
-    utils::Bool GetGates(utils::List<gate*> &qlg) const;
+    utils::Bool GetGates(utils::List<ir::GateRef> &qlg) const;
 
     // Indicate that a gate currently in avlist has been mapped, can be taken out of the avlist
     // and its successors can be made available
-    void DoneGate(gate *gp);
+    void DoneGate(ir::GateRef &gp);
 
     // Return gp in lag that is most critical (provided lookahead is enabled)
     // This is used in tiebreak, when every other option has failed to make a distinction.
-    gate *MostCriticalIn(utils::List<gate*> &lag) const;
+    ir::GateRef MostCriticalIn(utils::List<ir::GateRef> &lag);
 
 };
 
@@ -836,7 +837,7 @@ private:
                                             // Initialized by Mapper::Init
                                             // OpenQL wide configuration, all constant after initialization
     const quantum_platform  *platformp;     // current platform: topology and gate definitions
-    quantum_kernel          *kernelp;       // (copy of) current kernel (class) with free private circuit and methods
+    ir::KernelRef           kernelp;       // (copy of) current kernel (class) with free private circuit and methods
                                             // primarily to create gates in Past; Past is part of Mapper and of each Alter
 
     utils::UInt             nq;             // number of qubits in the platform, number of real qubits
@@ -844,7 +845,7 @@ private:
     utils::UInt             nb;             // number of bregs in the platform, number of bit registers
     utils::UInt             cycle_time;     // length in ns of a single cycle of the platform
                                             // is divisor of duration in ns to convert it to cycles
-    Grid                    grid;           // current grid
+    GridRef                 grid;           // current grid
 
                                             // Initialized by Mapper.Map
     std::mt19937            gen;            // Standard mersenne_twister_engine, not yet seeded
@@ -880,7 +881,7 @@ private:
     // Find shortest paths between src and tgt in the grid, bounded by a particular strategy (which);
     // budget is the maximum number of hops allowed in the path from src and is at least distance to tgt;
     // it can be higher when not all hops qualify for doing a two-qubit gate or to find more than just the shortest paths.
-    void GenShortestPaths(gate *gp, utils::UInt src, utils::UInt tgt, utils::UInt budget, utils::List<Alter> &resla, whichpaths_t which);
+    void GenShortestPaths(ir::GateRef &gp, utils::UInt src, utils::UInt tgt, utils::UInt budget, utils::List<Alter> &resla, whichpaths_t which);
 
     // Generate shortest paths in the grid for making gate gp NN, from qubit src to qubit tgt, with an alternative for each one
     // - compute budget; usually it is distance but it can be higher such as for multi-core
@@ -892,16 +893,16 @@ private:
     //      one before and one after (reversed) the envisioned two-qubit gate;
     //      all result alternatives are such that a two-qubit gate can be placed at the split
     // End result is a list of alternatives (in resla) suitable for being evaluated for any routing metric.
-    void GenShortestPaths(gate *gp, utils::UInt src, utils::UInt tgt, utils::List<Alter> &resla);
+    void GenShortestPaths(ir::GateRef &gp, utils::UInt src, utils::UInt tgt, utils::List<Alter> &resla);
 
     // Generate all possible variations of making gp NN, starting from given past (with its mappings),
     // and return the found variations by appending them to the given list of Alters, la
-    void GenAltersGate(gate *gp, utils::List<Alter> &la, Past &past);
+    void GenAltersGate(ir::GateRef &gp, utils::List<Alter> &la, Past &past);
 
     // Generate all possible variations of making gates in lg NN, starting from given past (with its mappings),
     // and return the found variations by appending them to the given list of Alters, la
     // Depending on maplookahead only take first (most critical) gate or take all gates.
-    void GenAlters(utils::List<gate*> lg, utils::List<Alter> &la, Past &past);
+    void GenAlters(utils::List<ir::GateRef> lg, utils::List<Alter> &la, Past &past);
 
     // start the random generator with a seed
     // that is unique to the microsecond
@@ -914,7 +915,7 @@ private:
     Alter ChooseAlter(utils::List<Alter> &la, Future &future);
 
     // Map the gate/operands of a gate that has been routed or doesn't require routing
-    void MapRoutedGate(gate *gp, Past &past);
+    void MapRoutedGate(ir::GateRef &gp, Past &past);
 
     // commit Alter resa
     // generating swaps in past
@@ -940,7 +941,7 @@ private:
     //              == "noroutingfirst":   while (nonq or 1q) map gate; return most critical 2q (nonNN or NN)
     //              == "all":              while (nonq or 1q) map gate; return all 2q (nonNN or NN)
     //
-    utils::Bool MapMappableGates(Future &future, Past &past, utils::List<gate*> &lg, utils::Bool alsoNN2q);
+    utils::Bool MapMappableGates(Future &future, Past &past, utils::List<ir::GateRef> &lg, utils::Bool alsoNN2q);
 
     // select Alter determined by strategy defined by mapper options
     // - if base[rc], select from whole list of Alters, of which all 'remain'
@@ -960,16 +961,16 @@ private:
     void MapGates(Future &future, Past &past, Past &basePast);
 
     // Map the circuit's gates in the provided context (v2r maps), updating circuit and v2r maps
-    void MapCircuit(quantum_kernel& kernel, Virt2Real& v2r);
+    void MapCircuit(ir::KernelRef &kernel, Virt2Real& v2r);
 
 public:
 
     // decompose all gates that have a definition with _prim appended to its name
-    void MakePrimitives(quantum_kernel &kernel);
+    void MakePrimitives(ir::KernelRef &kernel);
 
     // map kernel's circuit, main mapper entry once per kernel
     // JvS: moved to mapper.cc ahead of restructuring everything else for persistent INITIALPLACE switch
-    void Map(quantum_kernel &kernel);
+    void Map(ir::KernelRef &kernel);
 
     // initialize mapper for whole program
     // lots could be split off for the whole program, once that is needed

@@ -44,7 +44,7 @@ public:
         if (v) {
             throw Exception("Ptr has already been initialized", false);
         }
-        v = std::unique_ptr<T>(new S(std::forward<Args>(args)...));
+        v = std::static_pointer_cast<T>(std::make_shared<S>(std::forward<Args>(args)...));
     }
 
     /**

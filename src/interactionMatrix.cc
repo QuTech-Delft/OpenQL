@@ -8,7 +8,7 @@ namespace ql {
 
 using namespace utils;
 
-InteractionMatrix::InteractionMatrix(const circuit &ckt, UInt nqubits) {
+InteractionMatrix::InteractionMatrix(const ir::Circuit &ckt, UInt nqubits) {
     Size = nqubits;
     Matrix.resize(Size, Vec<UInt>(Size, 0));
     for (auto ins : ckt) {

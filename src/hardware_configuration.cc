@@ -24,8 +24,8 @@ static Str sanitize_instruction_name(Str name) {
     return name;
 }
 
-static custom_gate *load_instruction(const Str &name, Json &instr) {
-    custom_gate *g = new custom_gate(name);
+static CustomGateRef load_instruction(const Str &name, Json &instr) {
+    CustomGateRef g = make_node<ir::gates::Custom>(name);
     // skip alias fo now
     if (instr.count("alias") > 0) {
         // todo : look for the target aliased gate
@@ -50,7 +50,7 @@ hardware_configuration::hardware_configuration(
 }
 
 void hardware_configuration::load(
-    ql::instruction_map_t &instruction_map,
+    InstructionMap &instruction_map,
     Json &instruction_settings,
     Json &hardware_settings,
     Json &resources,
@@ -172,7 +172,7 @@ void hardware_configuration::load(
                         << comp_ins << "' is malformed (not an array)");
             }
 
-            Vec<gate *> gs;
+            ir::Gates gs;
             for (UInt i = 0; i < sub_instructions.size(); i++) {
                 // standardize name of sub instruction
                 Str sub_ins = sub_instructions[i];
@@ -182,7 +182,7 @@ void hardware_configuration::load(
                 if (instruction_map.find(sub_ins) != instruction_map.end()) {
                     // using existing sub ins, e.g. "x q0" or "x %0"
                     QL_DOUT("using existing sub instr : " << sub_ins);
-                    gs.push_back(instruction_map.at(sub_ins));
+                    gs.add(instruction_map.at(sub_ins));
                 } else if (sub_ins.find("cond(") !=
                            Str::npos) {              // conditional gate?
                     QL_FATAL("conditional gate not supported in gate_decomposition: '" << sub_ins << "'");
@@ -190,15 +190,15 @@ void hardware_configuration::load(
                            Str::npos) {              // parameterized composite gate? FIXME: no syntax check
                     // adding new sub ins if not already available, e.g. "x %0"
                     QL_DOUT("adding new sub instr : " << sub_ins);
-                    instruction_map.set(sub_ins) = new custom_gate(sub_ins);
-                    gs.push_back(instruction_map.at(sub_ins));
+                    instruction_map.set(sub_ins) = make_node<ir::gates::Custom>(sub_ins);
+                    gs.add(instruction_map.at(sub_ins));
                 } else {
 #if OPT_DECOMPOSE_WAIT_BARRIER   // allow wait/barrier, e.g. "barrier q2,q3,q4"
                     // FIXME: just save whatever we find as a *custom* gate (there is no better alternative)
                     // FIXME: also see additions (hacks) to kernel.h
                     QL_DOUT("adding new sub instr : " << sub_ins);
-                    instruction_map.set(sub_ins) = new custom_gate(sub_ins);
-                    gs.push_back(instruction_map.at(sub_ins));
+                    instruction_map.set(sub_ins) = make_node<ir::gates::Custom>(sub_ins);
+                    gs.add(instruction_map.at(sub_ins));
 #else
                     // for specialized custom instructions, raise error if instruction
                     // is not already available
@@ -206,7 +206,7 @@ void hardware_configuration::load(
 #endif
                 }
             }
-            instruction_map.set(comp_ins) = new composite_gate(comp_ins, gs);
+            instruction_map.set(comp_ins) = make_node<ir::gates::Composite>(comp_ins, gs);
         }
     }
 }

@@ -16,8 +16,9 @@
 #include "platform.h"
 
 namespace ql {
+namespace ir {
 
-enum class kernel_type_t {
+enum class KernelType {
     STATIC,
     FOR_START, FOR_END,
     DO_WHILE_START, DO_WHILE_END,
@@ -25,25 +26,25 @@ enum class kernel_type_t {
     ELSE_START, ELSE_END
 };
 
-class quantum_kernel {
+class Kernel : public utils::Node {
 public: // FIXME: should be private
-    utils::Str              name;
-    utils::UInt             iterations;
-    utils::UInt             qubit_count;
-    utils::UInt             creg_count;
-    utils::UInt             breg_count;
-    kernel_type_t           type;
-    circuit                 c;
-    utils::Bool             cycles_valid; // used in bundler to check if kernel has been scheduled
-    utils::Opt<operation>   br_condition;
-    utils::UInt             cycle_time;   // FIXME HvS just a copy of platform.cycle_time
-    instruction_map_t       instruction_map;
-    utils::Vec<utils::UInt> cond_operands;    // see gate interface: condition mode to make new gates conditional
-    cond_type_t             condition;        // kernel condition mode is set by gate_preset_condition()
+    utils::Str                      name;
+    utils::UInt                     iterations;
+    utils::UInt                     qubit_count;
+    utils::UInt                     creg_count;
+    utils::UInt                     breg_count;
+    KernelType                      type;
+    Circuit                         c;
+    utils::Bool                     cycles_valid; // used in bundler to check if kernel has been scheduled
+    utils::Opt<ClassicalOperation>  br_condition;
+    utils::UInt                     cycle_time;   // FIXME HvS just a copy of platform.cycle_time
+    InstructionMap                  instruction_map;
+    utils::Vec<utils::UInt>         cond_operands;    // see gate interface: condition mode to make new gates conditional
+    ConditionType                   condition;        // kernel condition mode is set by gate_preset_condition()
 
 public:
-    quantum_kernel(const utils::Str &name);
-    quantum_kernel(
+    Kernel(const utils::Str &name);
+    Kernel(
         const utils::Str &name,
         const quantum_platform &platform,
         utils::UInt qcount,
@@ -53,13 +54,13 @@ public:
 
     // FIXME: add constructor which allows setting iterations and type, and use that in program.h::add_for(), etc
 
-    void set_condition(const operation &oper);
-    void set_kernel_type(kernel_type_t typ);
+    void set_condition(const ClassicalOperation &oper);
+    void set_kernel_type(KernelType typ);
 
     utils::Str get_gates_definition() const;
     utils::Str get_name() const;
-    circuit &get_circuit();
-    const circuit &get_circuit() const;
+    Circuit &get_circuit();
+    const Circuit &get_circuit() const;
 
     void identity(utils::UInt qubit);
     void i(utils::UInt qubit);
@@ -106,7 +107,7 @@ private:
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t gcond = cond_always,
+        ConditionType gcond = ConditionType::ALWAYS,
         const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
@@ -121,7 +122,7 @@ private:
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t gcond = cond_always,
+        ConditionType gcond = ConditionType::ALWAYS,
         const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
@@ -129,7 +130,7 @@ private:
     // return the subinstructions of a composite gate
     // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
     void get_decomposed_ins(
-        const composite_gate *gptr,
+        const gates::Composite &gate,
         utils::Vec<utils::Str> &sub_instructons
     ) const;
 
@@ -144,7 +145,7 @@ private:
         const utils::Vec<utils::UInt> &all_qubits,
         const utils::Vec<utils::UInt> &cregs = {},
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t gcond = cond_always,
+        ConditionType gcond = ConditionType::ALWAYS,
         const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
@@ -159,7 +160,7 @@ private:
         const utils::Vec<utils::UInt> &all_qubits,
         const utils::Vec<utils::UInt> &cregs = {},
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t gcond = cond_always,
+        ConditionType gcond = ConditionType::ALWAYS,
         const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
@@ -174,18 +175,18 @@ public:
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t gcond = cond_always,
+        ConditionType gcond = ConditionType::ALWAYS,
         const utils::Vec<utils::UInt> &gcondregs = {}
     );
     void gate_preset_condition(
-        cond_type_t gcond,
+        ConditionType gcond,
         const utils::Vec<utils::UInt> &gcondregs
     );
     void gate_clear_condition();
     void condgate(
         const utils::Str &gname,
         const utils::Vec<utils::UInt> &qubits,
-        cond_type_t gcond,
+        ConditionType gcond,
         const utils::Vec<utils::UInt> &gcondregs
     );
     // to add unitary to kernel
@@ -225,14 +226,14 @@ public:
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
         const utils::Vec<utils::UInt> &bregs = {},
-        cond_type_t gcond = cond_always,
+        ConditionType gcond = ConditionType::ALWAYS,
         const utils::Vec<utils::UInt> &gcondregs = {}
     );
 
     /**
      * support function for Python conditional execution interfaces to pass condition
      */
-    ql::cond_type_t condstr2condvalue(const std::string &condstring);
+    ConditionType condstr2condvalue(const std::string &condstring);
 
 private:
     void gate_add_implicits(
@@ -242,7 +243,7 @@ private:
         utils::UInt &duration,
         utils::Real &angle,
         utils::Vec<utils::UInt> &bregs,
-        cond_type_t &gcond,
+        ConditionType &gcond,
         const utils::Vec<utils::UInt> &gcondregs
     );
 
@@ -282,7 +283,7 @@ public:
     utils::Str get_epilogue() const;
     utils::Str qasm() const;
 
-    void classical(const creg &destination, const operation &oper);
+    void classical(const ClassicalRegister &destination, const ClassicalOperation &oper);
     void classical(const utils::Str &operation);
 
     // Controlled gates
@@ -308,17 +309,21 @@ public:
     \************************************************************************/
 
     void controlled_single(
-        const quantum_kernel *k,
+        const Kernel &k,
         utils::UInt control_qubit,
         utils::UInt ancilla_qubit
     );
     void controlled(
-        const quantum_kernel *k,
+        const Kernel &k,
         const utils::Vec<utils::UInt> &control_qubits,
         const utils::Vec<utils::UInt> &ancilla_qubits
     );
-    void conjugate(const quantum_kernel *k);
+    void conjugate(const Kernel &k);
 
 };
 
+using KernelRef = utils::One<Kernel>;
+using Kernels = utils::Any<Kernel>;
+
+} // namespace ir
 } // namespace ql

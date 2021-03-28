@@ -19,7 +19,7 @@ namespace pass {
 namespace ana {
 namespace visualize {
 
-utils::Vec<GateProperties> parseGates(const quantum_program* program);
+utils::Vec<GateProperties> parseGates(const ir::Program &program);
 
 utils::Int calculateAmountOfCycles(const utils::Vec<GateProperties> &gates, const utils::Int cycleDuration);
 utils::Int calculateAmountOfBits(const utils::Vec<GateProperties> &gates, const utils::Vec<utils::Int> GateProperties::* operandType);

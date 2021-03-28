@@ -92,7 +92,7 @@ void visualize(const quantum_program* program, const VisualizerConfiguration &co
 
 #else
 
-void visualize(const quantum_program* program, const VisualizerConfiguration &configuration) {
+void visualize(const ir::Program &program, const VisualizerConfiguration &configuration) {
     QL_IOUT("Starting visualization...");
     QL_IOUT("Visualization type: " << configuration.visualizationType);
 
@@ -113,11 +113,11 @@ void visualize(const quantum_program* program, const VisualizerConfiguration &co
     QL_IOUT("Visualization complete...");
 }
 
-Vec<GateProperties> parseGates(const quantum_program* program) {
+Vec<GateProperties> parseGates(const ir::Program &program) {
     Vec<GateProperties> gates;
 
-    for (quantum_kernel kernel : program->kernels) {
-        for (gate* const gate : kernel.get_circuit()) {
+    for (const auto &kernel : program.kernels) {
+        for (const auto &gate : kernel->get_circuit()) {
             Vec<Int> operands;
             Vec<Int> creg_operands;
             for (const UInt operand : gate->operands) { operands.push_back(utoi(operand)); }
@@ -146,9 +146,9 @@ Int calculateAmountOfCycles(const Vec<GateProperties> &gates, const Int cycleDur
     // Find the highest cycle in the gate vector.
     Int amountOfCycles = 0;
     for (const GateProperties &gate : gates) {
-        if (gate.cycle == MAX_CYCLE) {
+        if (gate.cycle == ir::MAX_CYCLE) {
             QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
-            return MAX_CYCLE;
+            return ir::MAX_CYCLE;
         }
 
         if (gate.cycle > amountOfCycles)

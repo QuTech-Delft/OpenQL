@@ -266,7 +266,7 @@ public:
         // next code is copy of report::get_circuit_latency(); this function should be a circuit method
         UInt cycle_time = platform.cycle_time;
         UInt depth;;
-        if (circp->empty() || circp->back()->cycle == MAX_CYCLE) {
+        if (circp->empty() || circp->back()->cycle == ir::MAX_CYCLE) {
             depth = 0;
         } else {
             depth = circp->back()->cycle + (circp->back()->duration+cycle_time-1)/cycle_time - circp->front()->cycle;
@@ -283,8 +283,8 @@ private:
     // use the variation number to create the file name
     // note that the scheduler has reordered the circuit's gates according to their assigned cycle value
     void print(
-        const quantum_program *programp,
-        quantum_kernel& kernel,
+        const ir::Program &programp,
+        ir::Kernel &kernel,
         VarCode varno
     ) {
         // next code is copy of what report::write_qasm does for one kernel; should be a circuit method
@@ -293,7 +293,7 @@ private:
         QL_DOUT("... writing variation to '" << ss_output_file.str() << "' ...");
         StrStrm ss_qasm;
         ss_qasm << "." << kernel.name << "_" << varno << '\n';
-        circuit &ckt = kernel.c;
+        ir::Circuit &ckt = kernel.c;
         for (auto gp : ckt) {
             ss_qasm << '\t' << gp->qasm();
             // ss_qasm << "\t# " << gp->cycle
@@ -303,7 +303,7 @@ private:
         // next code is copy of report::get_circuit_latency(); this function should be a circuit method
         UInt cycle_time = kernel.cycle_time;
         UInt depth;;
-        if (ckt.empty() || ckt.back()->cycle == MAX_CYCLE) {
+        if (ckt.empty() || ckt.back()->cycle == ir::MAX_CYCLE) {
             depth = 0;
         } else {
             depth = ckt.back()->cycle + (ckt.back()->duration+cycle_time-1)/cycle_time - ckt.front()->cycle;
@@ -315,12 +315,12 @@ private:
 public:
 
     void generate(
-        const quantum_program *programp,
-        quantum_kernel& kernel,
+        const ir::Program &programp,
+        ir::Kernel &kernel,
         const quantum_platform & platform
     ) {
         QL_DOUT("Generate commutable variations of kernel circuit ...");
-        circuit &ckt = kernel.c;
+        ir::Circuit &ckt = kernel.c;
         if (ckt.empty()) {
             QL_DOUT("Empty kernel " << kernel.name);
             return;
@@ -394,8 +394,8 @@ public:
 };
 
 static void commute_variation_kernel(
-    quantum_program *programp,
-    quantum_kernel &kernel,
+    ir::Program &programp,
+    ir::Kernel &kernel,
     const quantum_platform &platform
 ) {
     QL_DOUT("Commute variation ...");
@@ -411,15 +411,15 @@ static void commute_variation_kernel(
 }
 
 void commute_variation(
-    quantum_program *programp,              // updates the circuits of the program
+    ir::Program &programp,              // updates the circuits of the program
     const quantum_platform &platform,
     const Str &passname
 ) {
     report_statistics(programp, platform, "in", passname, "# ");
     report_qasm(programp, platform, "in", passname);
 
-    for (UInt k = 0; k < programp->kernels.size(); ++k) {
-        commute_variation_kernel(programp, programp->kernels[k], platform);
+    for (UInt k = 0; k < programp.kernels.size(); ++k) {
+        commute_variation_kernel(programp, *programp.kernels[k], platform);
     }
 
     report_statistics(programp, platform, "out", passname, "# ");

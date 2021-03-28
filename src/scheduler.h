@@ -7,17 +7,17 @@
 
 #pragma once
 
-#include "ql/utils/num.h"
-#include "ql/utils/str.h"
-#include "ql/utils/list.h"
-#include "ql/utils/map.h"
-
 #include <lemon/list_graph.h>
 #include <lemon/lgf_reader.h>
 #include <lemon/lgf_writer.h>
 #include <lemon/dijkstra.h>
 #include <lemon/connectivity.h>
 
+#include "ql/utils/num.h"
+#include "ql/utils/str.h"
+#include "ql/utils/list.h"
+#include "ql/utils/map.h"
+#include "ql/utils/ptr.h"
 #include "ql/com/options/options.h"
 #include "gate.h"
 #include "kernel.h"
@@ -47,8 +47,8 @@ public:
     lemon::ListDigraph graph;
 
     // conversion between gate* (pointer to the gate in the circuit) and node (of the dependence graph)
-    lemon::ListDigraph::NodeMap<gate*> instruction;// instruction[n] == gate*
-    utils::Map<gate*, lemon::ListDigraph::Node>  node;// node[gate*] == n
+    lemon::ListDigraph::NodeMap<ir::GateRef> instruction;// instruction[n] == gate*
+    utils::Map<ir::GateRef, lemon::ListDigraph::Node>  node;// node[gate*] == n
 
     // attributes
     lemon::ListDigraph::NodeMap<utils::Str> name;     // name[n] == qasm string
@@ -65,7 +65,7 @@ public:
     utils::UInt qubit_count;    // number of qubits, to check/represent qubit as cause of dependence
     utils::UInt creg_count;     // number of cregs, to check/represent creg as cause of dependence
     utils::UInt breg_count;     // number of bregs, to check/represent breg as cause of dependence
-    circuit *circp;             // current and result circuit, passed from Init to each scheduler
+    utils::RawPtr<ir::Circuit> circp;           // current and result circuit, passed from Init to each scheduler
 
     // scheduler support
     utils::Map<lemon::ListDigraph::Node, utils::UInt>  remaining;  // remaining[node] == cycles until end; critical path representation
@@ -121,7 +121,7 @@ public:
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(
-        circuit &ckt,
+        ir::Circuit &ckt,
         const quantum_platform &platform,
         utils::UInt qcount,
         utils::UInt ccount,
@@ -166,19 +166,19 @@ private:
 
 
 public:
-// use MAX_CYCLE for absolute upperbound on cycle value
-// use ALAP_SINK_CYCLE for initial cycle given to SINK in ALAP;
-#define ALAP_SINK_CYCLE    (MAX_CYCLE/2)
+    // use MAX_CYCLE for absolute upperbound on cycle value
+    // use ALAP_SINK_CYCLE for initial cycle given to SINK in ALAP;
+    static const utils::UInt ALAP_SINK_CYCLE = ir::MAX_CYCLE / 2;
 
     // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
     // without RC, this is all there is to schedule, apart from forming the bundles in ir::bundler()
     // set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
     // please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
-    void set_cycle_gate(gate *gp, scheduling_direction_t dir);
+    void set_cycle_gate(ir::GateRef &gp, scheduling_direction_t dir);
     void set_cycle(scheduling_direction_t dir);
 
     // sort circuit by the gates' cycle attribute in non-decreasing order
-    static void sort_by_cycle(circuit *cp);
+    static void sort_by_cycle(ir::Circuit &cp);
 
     // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
     void schedule_asap(utils::Str &sched_dot);
@@ -211,9 +211,9 @@ public:
     // which is easier in the core of the scheduler.
 
     // Note that set_remaining_gate expects a caller like set_remaining that iterates gp backward over the circuit
-    void set_remaining_gate(gate* gp, scheduling_direction_t dir);
+    void set_remaining_gate(ir::GateRef &gp, scheduling_direction_t dir);
     void set_remaining(scheduling_direction_t dir);
-    gate* find_mostcritical(utils::List<gate*>& lg);
+    ir::GateRef find_mostcritical(utils::List<ir::GateRef> &lg);
 
     // ASAP/ALAP list scheduling support code with RC
     // Uses an "available list" (avlist) as interface between dependence graph and scheduler
@@ -294,7 +294,7 @@ public:
     void TakeAvailable(
         lemon::ListDigraph::Node n,
         utils::List<lemon::ListDigraph::Node> &avlist,
-        utils::Map<gate*,utils::Bool> &scheduled,
+        utils::Map<ir::GateRef, utils::Bool> &scheduled,
         scheduling_direction_t dir
     );
 
@@ -338,7 +338,7 @@ public:
     // - *circp (the original and result circuit) is sorted in the new cycle order
     // the bundles are returned, with private start/duration attributes
     void schedule(
-        circuit *circp,
+        ir::Circuit &circp,
         scheduling_direction_t dir,
         const quantum_platform &platform,
         arch::resource_manager_t &rm,
@@ -368,14 +368,14 @@ public:
  * main entry point of the non resource-constrained scheduler
  */
 void schedule(
-    quantum_program *programp,
+    ir::Program &program,
     const quantum_platform &platform,
     const utils::Str &passname
 );
 
 // kernel-level entry to the non resource-constrained scheduler
 void schedule_kernel(
-    quantum_kernel &kernel,
+    ir::KernelRef &kernel,
     const quantum_platform &platform,
     utils::Str &dot,
     utils::Str &sched_dot
@@ -385,14 +385,14 @@ void schedule_kernel(
  * main entry point of the resource-constrained scheduler
  */
 void rcschedule(
-    quantum_program *programp,
+    ir::Program &program,
     const quantum_platform &platform,
     const utils::Str &passname
 );
 
 // kernel-level entry to the resource-constrained scheduler
 void rcschedule_kernel(
-    quantum_kernel &kernel,
+    ir::KernelRef &kernel,
     const quantum_platform &platform,
     utils::Str &dot,
     utils::UInt nqubits,

@@ -49,7 +49,7 @@ namespace ql {
 
 // commute_variation pass
 void commute_variation(
-    quantum_program *programp,              // updates the circuits of the program
+    ir::Program &programp,              // updates the circuits of the program
     const quantum_platform &platform,
     const utils::Str &passname
 );

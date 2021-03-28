@@ -20,72 +20,61 @@ typedef std::vector<int> cliffords_t;
 /**
  * build rb circuit
  */
-void build_rb(int num_cliffords, ql::quantum_kernel& k, int qubits=1, bool different=false)
-{
-   assert((num_cliffords%2) == 0);
-   int n = num_cliffords/2;
+void build_rb(int num_cliffords, ql::ir::KernelRef &k, int qubits=1, bool different=false) {
+    assert((num_cliffords%2) == 0);
+    int n = num_cliffords/2;
 
-   if (!different)
-   {
-      cliffords_t cl;
-      cliffords_t inv_cl;
+    if (!different) {
+        cliffords_t cl;
+        cliffords_t inv_cl;
 
-      // add the clifford and its reverse
-      for (int i=0; i<n; ++i)
-      {
-	 int r = rand()%24;
-	 cl.push_back(r);
-	 inv_cl.insert(inv_cl.begin(), inv_clifford_lut_gs[r]);
-      }
-      cl.insert(cl.begin(),inv_cl.begin(),inv_cl.end());
+        // add the clifford and its reverse
+        for (int i=0; i<n; ++i) {
+            int r = rand()%24;
+            cl.push_back(r);
+            inv_cl.insert(inv_cl.begin(), inv_clifford_lut_gs[r]);
+        }
+        cl.insert(cl.begin(),inv_cl.begin(),inv_cl.end());
 
-      // build the circuit
-      for (int q=0; q<qubits; q++)
-	 k.prepz(q);
+        // build the circuit
+        for (int q=0; q<qubits; q++) {
+            k->prepz(q);
+        }
 
-      for (int i=0; i<num_cliffords; ++i)
-      {
-	 for (int q=0; q<qubits; q++)
-	 {
-	    k.clifford(cl[i],q);
-	 }
-      }
-      for (int q=0; q<qubits; q++)
-	 k.measure(q);
-   }
-   else
-   {
-      // build the circuit
-      for (int q=0; q<qubits; q++)
-	 k.prepz(q);
-      for (int q=0; q<qubits; q++)
-      {
-	 cliffords_t cl;
-	 cliffords_t inv_cl;
+        for (int i=0; i<num_cliffords; ++i) {
+            for (int q=0; q<qubits; q++) {
+                k->clifford(cl[i],q);
+            }
+        }
+        for (int q=0; q<qubits; q++) {
+            k->measure(q);
+        }
+    } else {
+        // build the circuit
+        for (int q=0; q<qubits; q++) {
+            k->prepz(q);
+        }
+        for (int q=0; q<qubits; q++) {
+            cliffords_t cl;
+            cliffords_t inv_cl;
 
-	 // add the clifford and its reverse
-	 for (int i=0; i<n; ++i)
-	 {
-	    int r = rand()%24;
-	    cl.push_back(r);
-	    inv_cl.insert(inv_cl.begin(), inv_clifford_lut_gs[r]);
-	 }
-	 cl.insert(cl.begin(),inv_cl.begin(),inv_cl.end());
+            // add the clifford and its reverse
+            for (int i=0; i<n; ++i) {
+                int r = rand()%24;
+                cl.push_back(r);
+                inv_cl.insert(inv_cl.begin(), inv_clifford_lut_gs[r]);
+            }
+            cl.insert(cl.begin(),inv_cl.begin(),inv_cl.end());
 
-	 for (int i=0; i<num_cliffords; ++i)
-	 {
-	    k.clifford(cl[i],q);
-	 }
-	 k.measure(q);
-      }
-   }
-
-   return;
+            for (int i=0; i<num_cliffords; ++i) {
+                k->clifford(cl[i],q);
+            }
+            k->measure(q);
+        }
+    }
 }
 
-
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
    srand(clock());
 
    // initialize openql
@@ -119,19 +108,19 @@ int main(int argc, char ** argv)
    // create program
    std::stringstream prog_name;
    prog_name << "rb_" << num_qubits << "_" << (different ? "diff" : "same");
-   ql::quantum_program rb(prog_name.str(), starmon, num_qubits);
-   rb.set_sweep_points(sweep_points, num_circuits);
-   rb.set_config_file("rb_config.json");
+   auto rb = ql::utils::make_node<ql::ir::Program>(prog_name.str(), starmon, num_qubits);
+   rb->set_sweep_points(sweep_points, num_circuits);
+   rb->set_config_file("rb_config.json");
 
    // create subcircuit
    std::stringstream name;
    name << "rb_" << num_qubits;
-   ql::quantum_kernel kernel(name.str(),starmon,num_qubits);
+   auto kernel = ql::utils::make_node<ql::ir::Kernel>(name.str(),starmon,num_qubits);
    build_rb(num_cliffords, kernel, num_qubits, different);
-   rb.add(kernel);
+   rb->add(kernel);
 
    // compile the program
-   rb.compile();
+   rb->compile();
 
    return 0;
 }

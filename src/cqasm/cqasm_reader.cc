@@ -312,22 +312,22 @@ private:
             char c = params.at(idx);
             switch (c) {
                 case 'Q':
-                    ql_qubits.add(make<UIntFromParameter>(idx));
+                    ql_qubits.add(make_node<UIntFromParameter>(idx));
                     break;
                 case 'I':
-                    ql_cregs.add(make<UIntFromParameter>(idx));
+                    ql_cregs.add(make_node<UIntFromParameter>(idx));
                     break;
                 case 'B':
-                    ql_bregs.add(make<UIntFromParameter>(idx));
+                    ql_bregs.add(make_node<UIntFromParameter>(idx));
                     break;
                 case 'i':
                     if (ql_duration.empty()) {
-                        ql_duration = make<UIntFromParameter>(idx);
+                        ql_duration = make_node<UIntFromParameter>(idx);
                     }
                     break;
                 case 'r':
                     if (ql_angle.empty()) {
-                        ql_angle = make<AngleFromParameter>(idx, AngleConversionMethod::RADIANS);
+                        ql_angle = make_node<AngleFromParameter>(idx, AngleConversionMethod::RADIANS);
                     }
                     break;
                 default:
@@ -336,9 +336,9 @@ private:
         }
 
         // Default duration and angle to 0.
-        ql_duration = make<FixedValue<UInt>>(0);
+        ql_duration = make_node<FixedValue<UInt>>(0);
         if (ql_angle.empty()) {
-            ql_angle = make<FixedValue<Real>>(0.0);
+            ql_angle = make_node<FixedValue<Real>>(0.0);
         }
     }
 
@@ -383,13 +383,13 @@ private:
         all_args = false;
         for (const auto &json_ent : json) {
             if (json_ent.is_number()) {
-                args.add(make<FixedValue<UInt>>(json_ent.get<UInt>()));
+                args.add(make_node<FixedValue<UInt>>(json_ent.get<UInt>()));
                 continue;
             }
             if (json_ent.is_string()) {
                 auto param_idx = parse_ref(json_ent.get<Str>(), params, "QBI");
                 if (param_idx != MAX) {
-                    args.add(make<UIntFromParameter>(param_idx));
+                    args.add(make_node<UIntFromParameter>(param_idx));
                     continue;
                 }
             }
@@ -510,12 +510,12 @@ public:
         if (it != json.end()) {
             Bool ok = false;
             if (it->is_number()) {
-                gcr->ql_duration = make<FixedValue<UInt>>(it->get<UInt>());
+                gcr->ql_duration = make_node<FixedValue<UInt>>(it->get<UInt>());
                 ok = true;
             } else if (it->is_string()) {
                 auto param_idx = parse_ref(it->get<Str>(), params, "i");
                 if (param_idx != MAX) {
-                    gcr->ql_duration = make<UIntFromParameter>(param_idx);
+                    gcr->ql_duration = make_node<UIntFromParameter>(param_idx);
                     ok = true;
                 }
             }
@@ -553,12 +553,12 @@ public:
         if (it != json.end()) {
             Bool ok = false;
             if (it->is_number()) {
-                gcr->ql_angle = make<FixedValue<Real>>(convert_angle(it->get<Real>(), angle_method));
+                gcr->ql_angle = make_node<FixedValue<Real>>(convert_angle(it->get<Real>(), angle_method));
                 ok = true;
             } else if (it->is_string()) {
                 auto param_idx = parse_ref(it->get<Str>(), params, "ri");
                 if (param_idx != MAX) {
-                    gcr->ql_angle = make<AngleFromParameter>(param_idx, angle_method);
+                    gcr->ql_angle = make_node<AngleFromParameter>(param_idx, angle_method);
                     ok = true;
                 }
             }
@@ -568,7 +568,7 @@ public:
         } else {
             auto param_idx = params.find_first_of('r');
             if (param_idx != Str::npos) {
-                gcr->ql_angle = make<AngleFromParameter>(param_idx, angle_method);
+                gcr->ql_angle = make_node<AngleFromParameter>(param_idx, angle_method);
             }
         }
 
@@ -731,7 +731,7 @@ private:
     /**
      * OpenQL program to add loaded circuits to.
      */
-    quantum_program &program;
+    ir::Program &program;
 
     /**
      * Represents the supported set of gates. This differs from the platform
@@ -807,7 +807,7 @@ private:
             gateset.push_back(GateConversionRule::from_defaults("swap", "QQ"));
             gateset.push_back(GateConversionRule::from_defaults("cr", "QQr"));
             gateset.push_back(GateConversionRule::from_defaults("crk", "QQi"));
-            gateset.back()->ql_angle = make<AngleFromParameter>(2, AngleConversionMethod::POWER_OF_TWO);
+            gateset.back()->ql_angle = make_node<AngleFromParameter>(2, AngleConversionMethod::POWER_OF_TWO);
             gateset.push_back(GateConversionRule::from_defaults("toffoli", "QQQ"));
             gateset.push_back(GateConversionRule::from_defaults("measure_all", "", "measz"));
             gateset.back()->ql_all_qubits = true;
@@ -832,6 +832,8 @@ private:
         a.register_function("operator&&", "bb", op_land_bb);
         a.register_function("operator^^", "bb", op_lxor_bb);
         a.register_function("operator||", "bb", op_lor_bb);
+        a.register_function("operator==", "bb", op_lxor_bb);
+        a.register_function("operator!=", "bb", op_lxor_bb);
         for (const auto &gate : gateset) {
             a.register_instruction(gate->cq_insn);
             a.register_instruction("skip", "i", false, false);
@@ -915,7 +917,7 @@ private:
             // cQASM. Also, multiple cQASM files can be added to a single
             // program, so even if that would be a requirement, it wouldn't be
             // unique enough. So we add a number to them for uniquification.
-            quantum_kernel kernel(
+            ir::KernelRef kernel = make_node<ir::Kernel>(
                 sc->name + "_" + to_string(subcircuit_count++),
                 platform,
                 num_qubits,
@@ -958,13 +960,13 @@ private:
                     const auto &gcr = insn->instruction->get_annotation<GateConversionRule::Ptr>();
 
                     // Handle gate conditions.
-                    cond_type_t cond = e_cond_type::cond_always;
+                    ir::ConditionType cond = ir::ConditionType::ALWAYS;
                     Vec<UInt> cond_bregs;
                     if (auto ccb = insn->condition->as_const_bool()) {
                         if (ccb->value) {
-                            cond = e_cond_type::cond_always;
+                            cond = ir::ConditionType::ALWAYS;
                         } else {
-                            cond = e_cond_type::cond_never;
+                            cond = ir::ConditionType::NEVER;
                         }
                     } else if (auto fun = insn->condition->as_function()) {
                         Bool invert = false;
@@ -976,9 +978,9 @@ private:
                             }
                             cond_bregs.push_back(expect_condition_reg(fun->operands[0]));
                             if (invert) {
-                                cond = e_cond_type::cond_not;
+                                cond = ir::ConditionType::NOT;
                             } else {
-                                cond = e_cond_type::cond_unary;
+                                cond = ir::ConditionType::UNARY;
                             }
                             fun = nullptr;
                             break;
@@ -986,21 +988,33 @@ private:
                         if (fun) {
                             if (fun->name == "operator&&") {
                                 if (invert) {
-                                    cond = e_cond_type::cond_nand;
+                                    cond = ir::ConditionType::NAND;
                                 } else {
-                                    cond = e_cond_type::cond_and;
+                                    cond = ir::ConditionType::AND;
                                 }
                             } else if (fun->name == "operator||") {
                                 if (invert) {
-                                    cond = e_cond_type::cond_nor;
+                                    cond = ir::ConditionType::NOR;
                                 } else {
-                                    cond = e_cond_type::cond_or;
+                                    cond = ir::ConditionType::OR;
                                 }
                             } else if (fun->name == "operator^^") {
                                 if (invert) {
-                                    cond = e_cond_type::cond_nxor;
+                                    cond = ir::ConditionType::NXOR;
                                 } else {
-                                    cond = e_cond_type::cond_xor;
+                                    cond = ir::ConditionType::XOR;
+                                }
+                            } else if (fun->name == "operator==") {
+                                if (invert) {
+                                    cond = ir::ConditionType::XOR;
+                                } else {
+                                    cond = ir::ConditionType::NXOR;
+                                }
+                            } else if (fun->name == "operator!=") {
+                                if (invert) {
+                                    cond = ir::ConditionType::NXOR;
+                                } else {
+                                    cond = ir::ConditionType::XOR;
                                 }
                             }
                             cond_bregs.push_back(expect_condition_reg(fun->operands[0]));
@@ -1008,7 +1022,7 @@ private:
                         }
                     } else {
                         cond_bregs.push_back(expect_condition_reg(insn->condition));
-                        cond = e_cond_type::cond_unary;
+                        cond = ir::ConditionType::UNARY;
                     }
 
                     // Figure out if this instruction uses
@@ -1093,17 +1107,17 @@ private:
                             }
 
                             // Add the gate to the kernel.
-                            kernel.gate(gcr->ql_name, cur_qubits, cregs, duration, angle, bregs, cond, cond_bregs);
+                            kernel->gate(gcr->ql_name, cur_qubits, cregs, duration, angle, bregs, cond, cond_bregs);
 
                             // If that added more than one gate, invalidate
                             // timing information.
-                            if (kernel.c.size() > num_gates + 1) {
+                            if (kernel->c.size() > num_gates + 1) {
                                 cycles_might_be_valid = false;
                             }
 
                             // Set timing information for the added gates.
-                            while (num_gates < kernel.c.size()) {
-                                kernel.c.at(num_gates++)->cycle = cycle;
+                            while (num_gates < kernel->c.size()) {
+                                kernel->c.at(num_gates++)->cycle = cycle;
                             }
 
                         }
@@ -1120,10 +1134,10 @@ private:
             // they pass sanity checks (the cQASM file may already have been
             // scheduled).
             if (cycles_might_be_valid) {
-                QL_IOUT("cQASM schedule for kernel " << kernel.name << " *might* be valid");
-                kernel.cycles_valid = cycles_might_be_valid;
+                QL_IOUT("cQASM schedule for kernel " << kernel->name << " *might* be valid");
+                kernel->cycles_valid = cycles_might_be_valid;
             } else {
-                QL_IOUT("cQASM schedule for kernel " << kernel.name << " is invalid; kernel needs to be (re)scheduled");
+                QL_IOUT("cQASM schedule for kernel " << kernel->name << " is invalid; kernel needs to be (re)scheduled");
             }
 
             // Append the kernel to program.
@@ -1144,7 +1158,7 @@ public:
      */
     ReaderImpl(
         const quantum_platform &platform,
-        quantum_program &program
+        ir::Program &program
     ) :
         platform(platform),
         program(program),
@@ -1199,7 +1213,7 @@ public:
  */
 Reader::Reader(
     const quantum_platform &platform,
-    quantum_program &program
+    ir::Program &program
 ) : impl(platform, program) {}
 
 /**
@@ -1211,7 +1225,7 @@ Reader::Reader(
  */
 Reader::Reader(
     const quantum_platform &platform,
-    quantum_program &program,
+    ir::Program &program,
     const Json &gateset
 ) : impl(platform, program) {
     impl->load_gateset(gateset);
@@ -1226,7 +1240,7 @@ Reader::Reader(
  */
 Reader::Reader(
     const quantum_platform &platform,
-    quantum_program &program,
+    ir::Program &program,
     const Str &gateset_fname
 ) : impl(platform, program) {
     impl->load_gateset(load_json(gateset_fname));

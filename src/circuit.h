@@ -7,24 +7,27 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
+#include "ql/utils/tree.h"
 #include "gate.h"
 
 namespace ql {
+namespace ir {
 
-typedef utils::Vec<gate*> circuit;
+using Circuit = Gates;
 
-void print(const circuit &c);
+void print(const Circuit &c);
 
 /**
  * generate qasm for a given circuit
  */
-utils::Str qasm(const circuit &c);
+utils::Str qasm(const Circuit &c);
 
-utils::Vec<circuit*> split_circuit(circuit &x);
+utils::Vec<Circuit> split_circuit(Circuit &x);
 
 /**
  * detect measurements and qubit preparations
  */
-utils::Bool contains_measurements(const circuit &x);
+utils::Bool contains_measurements(const Circuit &x);
 
+} // namespace ir
 } // namespace ql

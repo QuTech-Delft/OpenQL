@@ -66,7 +66,7 @@ Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates, const Int cyc
     // indices, visualize the circuit sequentially.
     Vec<Cycle> cycles;
     Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
-    if (amountOfCycles == MAX_CYCLE) {
+    if (amountOfCycles == ir::MAX_CYCLE) {
         // Add a sequential cycle to each gate.
         amountOfCycles = 0;
         for (GateProperties &gate : gates) {
@@ -539,10 +539,10 @@ void Structure::printProperties() const {
     }
 }
 
-void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfiguration &configuration)
+void visualizeCircuit(const ir::Program &program, const VisualizerConfiguration &configuration)
 {
     const Vec<GateProperties> gates = parseGates(program);
-    const Int cycleDuration = utoi(program->platform.cycle_time);
+    const Int cycleDuration = utoi(program.platform.cycle_time);
     const Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
     const Vec<Int> minCycleWidths(amountOfCycles, 0);
 
@@ -559,7 +559,7 @@ void visualizeCircuit(const ql::quantum_program* program, const VisualizerConfig
     imageOutput.image.display("Quantum Circuit");
 }
 
-ImageOutput generateImage(const ql::quantum_program* program, const VisualizerConfiguration &configuration, const Vec<Int> minCycleWidths, const utils::Int extendedImageHeight) {
+ImageOutput generateImage(const ir::Program &program, const VisualizerConfiguration &configuration, const Vec<Int> minCycleWidths, const utils::Int extendedImageHeight) {
     // Get the gate list from the program.
     QL_DOUT("Getting gate list...");
     Vec<GateProperties> gates = parseGates(program);
@@ -568,12 +568,12 @@ ImageOutput generateImage(const ql::quantum_program* program, const VisualizerCo
     }
 
     // Parse and validate the layout and instruction configuration file.
-    CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program->platform.instruction_settings);
+    CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program.platform.instruction_settings);
     validateCircuitLayout(layout, configuration.visualizationType);
 
     // Calculate circuit properties.
     QL_DOUT("Calculating circuit properties...");
-    const Int cycleDuration = utoi(program->platform.cycle_time);
+    const Int cycleDuration = utoi(program.platform.cycle_time);
     QL_DOUT("Cycle duration is: " + to_string(cycleDuration) + " ns.");
     // Fix measurement gates without classical operands.
     fixMeasurementOperands(gates);
@@ -1697,7 +1697,7 @@ void drawGate(Image &image,
               const Int chunkOffset) {
     // Get the gate visualization parameters.
     GateVisual gateVisual;
-    if (gate.type == GateType::CUSTOM) {
+    if (gate.type == ir::GateType::CUSTOM) {
         if (layout.customGateVisuals.count(gate.visual_type) == 1) {
             QL_DOUT("Found visual for custom gate: '" << gate.name << "'");
             gateVisual = layout.customGateVisuals.at(gate.visual_type);

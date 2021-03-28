@@ -11,7 +11,7 @@
 namespace ql {
 
 void write_sweep_points(
-    quantum_program *programp,
+    ir::Program &program,
     const quantum_platform &platform,
     const utils::Str &passname
 );

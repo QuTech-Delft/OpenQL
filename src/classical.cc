@@ -7,113 +7,118 @@
 #include "ql/utils/exception.h"
 
 namespace ql {
+namespace ir {
 
 using namespace utils;
 
-cval &coperand::as_cval() {
+ClassicalValue &ClassicalOperand::as_value() {
     try {
-        return dynamic_cast<cval &>(*this);
+        return dynamic_cast<ClassicalValue &>(*this);
     } catch (std::bad_cast &e) {
         throw Exception("coperand is not a cval");
     }
 }
 
-const cval &coperand::as_cval() const {
+const ClassicalValue &ClassicalOperand::as_value() const {
     try {
-        return dynamic_cast<const cval &>(*this);
+        return dynamic_cast<const ClassicalValue &>(*this);
     } catch (std::bad_cast &e) {
         throw Exception("coperand is not a cval");
     }
 }
 
-creg &coperand::as_creg() {
+ClassicalRegister &ClassicalOperand::as_register() {
     try {
-        return dynamic_cast<creg &>(*this);
+        return dynamic_cast<ClassicalRegister &>(*this);
     } catch (std::bad_cast &e) {
         throw Exception("coperand is not a creg");
     }
 }
 
-const creg &coperand::as_creg() const {
+const ClassicalRegister &ClassicalOperand::as_register() const {
     try {
-        return dynamic_cast<const creg &>(*this);
+        return dynamic_cast<const ClassicalRegister &>(*this);
     } catch (std::bad_cast &e) {
         throw Exception("coperand is not a creg");
     }
 }
 
-cval::cval(Int val) : value(val) {
+ClassicalValue::ClassicalValue(Int val) : value(val) {
 }
 
-cval::cval(const cval &cv) : value(cv.value) {
+ClassicalValue::ClassicalValue(const ClassicalValue &cv) : value(cv.value) {
 }
 
-ql::operand_type_t cval::type() const {
-    return operand_type_t::CVAL;
+ClassicalOperandType ClassicalValue::type() const {
+    return ClassicalOperandType::VALUE;
 }
 
-void cval::print() const {
+void ClassicalValue::print() const {
     QL_COUT("cval with value: " << value);
 }
 
-creg::creg(UInt id) : id(id) {
+ClassicalRegister::ClassicalRegister(UInt id) : id(id) {
     QL_DOUT("creg constructor, used id: " << id);
 }
 
-creg::creg(const creg &c) : id(c.id) {
+ClassicalRegister::ClassicalRegister(const ClassicalRegister &c) : id(c.id) {
     QL_DOUT("creg copy constructor, used id: " << id);
 }
 
-ql::operand_type_t creg::type() const {
-    return operand_type_t::CREG;
+ClassicalOperandType ClassicalRegister::type() const {
+    return ClassicalOperandType::REGISTER;
 }
 
-void creg::print() const {
+void ClassicalRegister::print() const {
     QL_COUT("creg with id: " << id);
 }
 
-operation::operation(const creg &l, const Str &op, const creg &r) {
-    operands.push_back(new ql::creg(l));
-    operands.push_back(new ql::creg(r));
+ClassicalOperation::ClassicalOperation(
+    const ClassicalRegister &l,
+    const Str &op,
+    const ClassicalRegister &r
+) {
+    operands.add(make_node<ClassicalRegister>(l));
+    operands.add(make_node<ClassicalRegister>(r));
     if (op == "+") {
         operation_name = "add";
-        operation_type = ql::operation_type_t::ARITHMATIC;
+        operation_type = ClassicalOperationType::ARITHMATIC;
     } else if (op == "-") {
         operation_name = "sub";
-        operation_type = ql::operation_type_t::ARITHMATIC;
+        operation_type = ClassicalOperationType::ARITHMATIC;
     } else if (op == "&") {
         operation_name = "and";
-        operation_type = ql::operation_type_t::BITWISE;
+        operation_type = ClassicalOperationType::BITWISE;
     } else if (op == "|") {
         operation_name = "or";
-        operation_type = ql::operation_type_t::BITWISE;
+        operation_type = ClassicalOperationType::BITWISE;
     } else if (op == "^") {
         operation_name = "xor";
-        operation_type = ql::operation_type_t::BITWISE;
+        operation_type = ClassicalOperationType::BITWISE;
     } else if (op == "==") {
         operation_name = "eq";
         inv_operation_name = "ne";
-        operation_type = ql::operation_type_t::RELATIONAL;
+        operation_type = ClassicalOperationType::RELATIONAL;
     } else if (op == "!=") {
         operation_name = "ne";
         inv_operation_name = "eq";
-        operation_type = ql::operation_type_t::RELATIONAL;
+        operation_type = ClassicalOperationType::RELATIONAL;
     } else if (op == "<") {
         operation_name = "lt";
         inv_operation_name = "ge";
-        operation_type = ql::operation_type_t::RELATIONAL;
+        operation_type = ClassicalOperationType::RELATIONAL;
     } else if (op == ">") {
         operation_name = "gt";
         inv_operation_name = "le";
-        operation_type = ql::operation_type_t::RELATIONAL;
+        operation_type = ClassicalOperationType::RELATIONAL;
     } else if (op == "<=") {
         operation_name = "le";
         inv_operation_name = "gt";
-        operation_type = ql::operation_type_t::RELATIONAL;
+        operation_type = ClassicalOperationType::RELATIONAL;
     } else if (op == ">=") {
         operation_name = "ge";
         inv_operation_name = "lt";
-        operation_type = ql::operation_type_t::RELATIONAL;
+        operation_type = ClassicalOperationType::RELATIONAL;
     } else {
         QL_EOUT("Unknown binary operation '" << op);
         throw Exception("Unknown binary operation '" + op + "' !", false);
@@ -121,55 +126,57 @@ operation::operation(const creg &l, const Str &op, const creg &r) {
 }
 
 // used for assign
-operation::operation(const creg &l) {
+ClassicalOperation::ClassicalOperation(const ClassicalRegister &l) {
     operation_name = "mov";
-    operation_type = ql::operation_type_t::ARITHMATIC;
-    operands.push_back(new ql::creg(l));
+    operation_type = ClassicalOperationType::ARITHMATIC;
+    operands.add(make_node<ClassicalRegister>(l));
 }
 
 // used for initializing with an imm
-operation::operation(const cval &v) {
+ClassicalOperation::ClassicalOperation(const ClassicalValue &v) {
     operation_name = "ldi";
-    operation_type = ql::operation_type_t::ARITHMATIC;
-    operands.push_back(new ql::cval(v));
+    operation_type = ClassicalOperationType::ARITHMATIC;
+    operands.add(make_node<ClassicalValue>(v));
 }
 
 // used for initializing with an imm
-operation::operation(Int val) {
+ClassicalOperation::ClassicalOperation(Int val) {
     operation_name = "ldi";
-    operation_type = ql::operation_type_t::ARITHMATIC;
-    operands.push_back(new ql::cval(val));
+    operation_type = ClassicalOperationType::ARITHMATIC;
+    operands.add(make_node<ClassicalValue>(val));
 }
 
-operation::operation(const Str &op, const creg &r) {
+ClassicalOperation::ClassicalOperation(const Str &op, const ClassicalRegister &r) {
     if (op == "~") {
         operation_name = "not";
-        operation_type = ql::operation_type_t::BITWISE;
-        operands.push_back(new ql::creg(r));
+        operation_type = ClassicalOperationType::BITWISE;
+        operands.add(make_node<ClassicalRegister>(r));
     } else {
         QL_EOUT("Unknown unary operation '" << op);
         throw Exception("Unknown unary operation '" + op + "' !", false);
     }
 }
 
-classical::classical(const creg &dest, const operation &oper) {
+namespace gates {
+
+Classical::Classical(const ClassicalRegister &dest, const ClassicalOperation &oper) {
     QL_DOUT("Classical gate constructor with destination for "
              << oper.operation_name);
     name = oper.operation_name;
     duration = 20;
     creg_operands.push_back(dest.id);
     if (name == "ldi") {
-        int_operand = oper.operands[0]->as_cval().value;
+        int_operand = oper.operands[0]->as_value().value;
         QL_DOUT("... setting int_operand of " << oper.operation_name << " to "
                                               << int_operand);
     } else {
         for (auto &op : oper.operands) {
-            creg_operands.push_back(op->as_creg().id);
+            creg_operands.push_back(op->as_register().id);
         }
     }
 }
 
-classical::classical(const Str &operation) {
+Classical::Classical(const Str &operation) {
     QL_DOUT("Classical gate constructor for " << operation);
     auto operation_lower = to_lower(operation);
     if ((operation_lower == "nop")) {
@@ -184,7 +191,7 @@ classical::classical(const Str &operation) {
     }
 }
 
-instruction_t classical::qasm() const {
+Instruction Classical::qasm() const {
     Str iopers;
     Int sz = creg_operands.size();
     for (Int i = 0; i < sz; ++i) {
@@ -202,12 +209,14 @@ instruction_t classical::qasm() const {
     }
 }
 
-GateType classical::type() const {
+GateType Classical::type() const {
     return GateType::CLASSICAL;
 }
 
-cmat_t classical::mat() const {
+Complex2by2Matrix Classical::mat() const {
     return m;
 }
 
-};
+} // namespace gates
+} // namespace ir
+} // namespace ql

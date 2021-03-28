@@ -63,8 +63,8 @@ using namespace utils;
 
 // compile for Central Controller
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
-void Backend::compile(quantum_program *program, const quantum_platform &platform) {
-    QL_DOUT("Compiling " << program->kernels.size() << " kernels to generate Central Controller program ... ");
+void Backend::compile(ir::Program &program, const quantum_platform &platform) {
+    QL_DOUT("Compiling " << program.kernels.size() << " kernels to generate Central Controller program ... ");
 
     // init
     loadHwSettings(platform);
@@ -72,7 +72,7 @@ void Backend::compile(quantum_program *program, const quantum_platform &platform
     bundleIdx = 0;
 
     // generate program header
-    codegen.programStart(program->unique_name);
+    codegen.programStart(program.unique_name);
 
 #if OPT_CC_SCHEDULE_RC
     // schedule with platform resource constraints
@@ -83,34 +83,34 @@ void Backend::compile(quantum_program *program, const quantum_platform &platform
 #endif
 
     // generate code for all kernels
-    for (auto &kernel : program->kernels) {
-        QL_IOUT("Compiling kernel: " << kernel.name);
-        codegenKernelPrologue(kernel);
+    for (auto &kernel : program.kernels) {
+        QL_IOUT("Compiling kernel: " << kernel->name);
+        codegenKernelPrologue(*kernel);
 
-        circuit &circuit = kernel.c;
+        ir::Circuit &circuit = kernel->c;
         if (!circuit.empty()) {
-            ir::bundles_t bundles = ir::bundler(circuit, platform.cycle_time);
+            ir::Bundles bundles = ir::bundler(circuit, platform.cycle_time);
             codegen.kernelStart();
             codegenBundles(bundles, platform);
-            codegen.kernelFinish(kernel.name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
+            codegen.kernelFinish(kernel->name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
         } else {
-            QL_DOUT("Empty kernel: " << kernel.name);                      // NB: normal situation for kernels with classical control
+            QL_DOUT("Empty kernel: " << kernel->name);                      // NB: normal situation for kernels with classical control
         }
 
-        codegenKernelEpilogue(kernel);
+        codegenKernelEpilogue(*kernel);
     }
 
-    codegen.programFinish(program->unique_name);
+    codegen.programFinish(program.unique_name);
 
     // write program to file
-    Str file_name(com::options::get("output_dir") + "/" + program->unique_name + ".vq1asm");
+    Str file_name(com::options::get("output_dir") + "/" + program.unique_name + ".vq1asm");
     QL_IOUT("Writing Central Controller program to " << file_name);
     OutFile(file_name).write(codegen.getProgram());
 
     // write instrument map to file (unless we were using input file)
     Str map_input_file = com::options::get("backend_cc_map_input_file");
     if (!map_input_file.empty()) {
-        Str file_name_map(com::options::get("output_dir") + "/" + program->unique_name + ".map");
+        Str file_name_map(com::options::get("output_dir") + "/" + program.unique_name + ".map");
         QL_IOUT("Writing instrument map to " << file_name_map);
         OutFile(file_name_map).write(codegen.getMap());
     }
@@ -121,9 +121,9 @@ void Backend::compile(quantum_program *program, const quantum_platform &platform
 
 // based on cc_light_eqasm_compiler.h::classical_instruction2qisa/decompose_instructions
 // NB: input instructions defined in classical.h::classical
-void Backend::codegenClassicalInstruction(gate *classical_ins) {
-    auto &iname =  classical_ins->name;
-    auto &iopers = classical_ins->creg_operands;
+void Backend::codegenClassicalInstruction(ir::Gate &classical_ins) {
+    auto &iname =  classical_ins.name;
+    auto &iopers = classical_ins.creg_operands;
     UInt iopers_count = iopers.size();
 
     if (
@@ -149,50 +149,50 @@ void Backend::codegenClassicalInstruction(gate *classical_ins) {
 // FIXME: k.name has a structure (e.g. "sp1_for1_start" or "sp1_for1_end") which is set in quantum_program::add_*. The
 // initial part can be a program name or kernel name, depending on how the kernel came to life
 // FIXME: may produce duplicate labels for kernel names containing underscore, because only the part up to the first underscore is returned
-Str Backend::kernelLabel(quantum_kernel &k) {
+Str Backend::kernelLabel(ir::Kernel &k) {
     return k.name.substr(0, k.name.find('_'));
 }
 
 
 // handle kernel conditionality at beginning of kernel
 // based on cc_light_eqasm_compiler.h::get_prologue
-void Backend::codegenKernelPrologue(quantum_kernel &k) {
+void Backend::codegenKernelPrologue(ir::Kernel &k) {
     codegen.comment(QL_SS2S("### Kernel: '" << k.name << "'"));
 
     switch (k.type) {
-        case kernel_type_t::IF_START: {
-            auto op0 = k.br_condition->operands[0]->as_creg().id;
-            auto op1 = k.br_condition->operands[1]->as_creg().id;
+        case ir::KernelType::IF_START: {
+            auto op0 = k.br_condition->operands[0]->as_register().id;
+            auto op1 = k.br_condition->operands[1]->as_register().id;
             auto opName = k.br_condition->operation_name;
             codegen.ifStart(op0, opName, op1);
             break;
         }
 
-        case kernel_type_t::ELSE_START: {
-            auto op0 = k.br_condition->operands[0]->as_creg().id;
-            auto op1 = k.br_condition->operands[1]->as_creg().id;
+        case ir::KernelType::ELSE_START: {
+            auto op0 = k.br_condition->operands[0]->as_register().id;
+            auto op1 = k.br_condition->operands[1]->as_register().id;
             auto opName = k.br_condition->operation_name;
             codegen.elseStart(op0, opName, op1);
             break;
         }
 
-        case kernel_type_t::FOR_START: {
+        case ir::KernelType::FOR_START: {
             Str label = kernelLabel(k);
             codegen.forStart(label, k.iterations);
             break;
         }
 
-        case kernel_type_t::DO_WHILE_START: {
+        case ir::KernelType::DO_WHILE_START: {
             Str label = kernelLabel(k);
             codegen.doWhileStart(label);
             break;
         }
 
-        case kernel_type_t::STATIC:
-        case kernel_type_t::FOR_END:
-        case kernel_type_t::DO_WHILE_END:
-        case kernel_type_t::IF_END:
-        case kernel_type_t::ELSE_END:
+        case ir::KernelType::STATIC:
+        case ir::KernelType::FOR_END:
+        case ir::KernelType::DO_WHILE_END:
+        case ir::KernelType::IF_END:
+        case ir::KernelType::ELSE_END:
             // do nothing
             break;
 
@@ -205,33 +205,33 @@ void Backend::codegenKernelPrologue(quantum_kernel &k) {
 
 // handle kernel conditionality at end of kernel
 // based on cc_light_eqasm_compiler.h::get_epilogue
-void Backend::codegenKernelEpilogue(quantum_kernel &k) {
+void Backend::codegenKernelEpilogue(ir::Kernel &k) {
     switch (k.type) {
-        case kernel_type_t::FOR_END: {
+        case ir::KernelType::FOR_END: {
             Str label = kernelLabel(k);
             codegen.forEnd(label);
             break;
         }
 
-        case kernel_type_t::DO_WHILE_END: {
-            auto op0 = k.br_condition->operands[0]->as_creg().id;
-            auto op1 = k.br_condition->operands[1]->as_creg().id;
+        case ir::KernelType::DO_WHILE_END: {
+            auto op0 = k.br_condition->operands[0]->as_register().id;
+            auto op1 = k.br_condition->operands[1]->as_register().id;
             auto opName = k.br_condition->operation_name;
             Str label = kernelLabel(k);
             codegen.doWhileEnd(label, op0, opName, op1);
             break;
         }
 
-        case kernel_type_t::IF_END:
-        case kernel_type_t::ELSE_END:
+        case ir::KernelType::IF_END:
+        case ir::KernelType::ELSE_END:
             // do nothing
             break;
 
-        case kernel_type_t::STATIC:
-        case kernel_type_t::IF_START:
-        case kernel_type_t::ELSE_START:
-        case kernel_type_t::FOR_START:
-        case kernel_type_t::DO_WHILE_START:
+        case ir::KernelType::STATIC:
+        case ir::KernelType::IF_START:
+        case ir::KernelType::ELSE_START:
+        case ir::KernelType::FOR_START:
+        case ir::KernelType::DO_WHILE_START:
             // do nothing
             break;
 
@@ -243,7 +243,7 @@ void Backend::codegenKernelEpilogue(quantum_kernel &k) {
 
 
 // based on cc_light_eqasm_compiler.h::bundles2qisa()
-void Backend::codegenBundles(ir::bundles_t &bundles, const quantum_platform &platform) {
+void Backend::codegenBundles(ir::Bundles &bundles, const quantum_platform &platform) {
     QL_IOUT("Generating .vq1asm for bundles");
 
     for (const auto &bundle : bundles) {
@@ -260,34 +260,34 @@ void Backend::codegenBundles(ir::bundles_t &bundles, const quantum_platform &pla
         // generate code for this bundle
         for (auto section = bundle.parallel_sections.begin(); section != bundle.parallel_sections.end(); ++section ) {
             // check whether section defines classical gate
-            gate *firstInstr = *section->begin();
+            ir::GateRef firstInstr = *section->begin();
             auto firstInstrType = firstInstr->type();
-            if (firstInstrType == GateType::CLASSICAL) {
+            if (firstInstrType == ir::GateType::CLASSICAL) {
                 QL_DOUT(QL_SS2S("Classical bundle: instr='" << firstInstr->name << "'"));
                 if (section->size() != 1) {
                     QL_FATAL("Inconsistency detected in bundle contents: classical gate with parallel sections");
                 }
-                codegenClassicalInstruction(firstInstr);
+                codegenClassicalInstruction(*firstInstr);
             } else {
                 /* iterate over all instructions in section.
                  * NB: our strategy differs from cc_light_eqasm_compiler, we have no special treatment of first instruction
                  * and don't require all instructions to be identical
                  */
                 for (auto instr : *section) {
-                    GateType itype = instr->type();
+                    ir::GateType itype = instr->type();
                     Str iname = instr->name;
                     QL_DOUT(QL_SS2S("Bundle section: instr='" << iname << "'"));
 
                     switch (itype) {
-                        case GateType::NOP:       // a quantum "nop", see gate.h
+                        case ir::GateType::NOP:       // a quantum "nop", see gate.h
                             codegen.nopGate();
                             break;
 
-                        case GateType::CLASSICAL:
+                        case ir::GateType::CLASSICAL:
                             QL_FATAL("Inconsistency detected in bundle contents: classical gate found after first section (which itself was non-classical)");
                             break;
 
-                        case GateType::CUSTOM:
+                        case ir::GateType::CUSTOM:
                             QL_DOUT(QL_SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration) << " ns");
                             codegen.customGate(
                                 iname,
@@ -301,11 +301,11 @@ void Backend::codegenBundles(ir::bundles_t &bundles, const quantum_platform &pla
                             );
                             break;
 
-                        case GateType::DISPLAY:
+                        case ir::GateType::DISPLAY:
                             QL_FATAL("Gate type __display__ not supported");           // QX specific, according to openql.pdf
                             break;
 
-                        case GateType::MEASURE:
+                        case ir::GateType::MEASURE:
                             QL_FATAL("Gate type __measure_gate__ not supported");      // no use, because there is no way to define CC-specifics
                             break;
 

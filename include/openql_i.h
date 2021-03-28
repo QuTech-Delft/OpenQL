@@ -32,19 +32,17 @@ public:
 
 class CReg {
 public:
-    ql::creg *creg;
+    ql::utils::Ptr<ql::ir::ClassicalRegister> creg;
     CReg(size_t id);
-    ~CReg();
 };
 
 class Operation {
 public:
-    ql::operation *operation;
+    ql::utils::Ptr<ql::ir::ClassicalOperation> operation;
     Operation(const CReg &lop, const std::string &op, const CReg &rop);
     Operation(const std::string &op, const CReg &rop);
     Operation(const CReg &lop);
     Operation(int val);
-    ~Operation();
 };
 
 typedef std::complex<double> Complex;
@@ -73,7 +71,7 @@ public:
     size_t qubit_count;
     size_t creg_count;
     size_t breg_count;
-    ql::quantum_kernel *kernel;
+    ql::ir::KernelRef kernel;
 
     Kernel(const std::string &name);
     Kernel(
@@ -148,7 +146,6 @@ public:
         const std::vector<size_t> &ancilla_qubits
     );
     void conjugate(const Kernel &k);
-    ~Kernel();
 };
 
 
@@ -163,7 +160,7 @@ public:
     size_t qubit_count;
     size_t creg_count;
     size_t breg_count;
-    ql::quantum_program *program;
+    ql::ir::ProgramRef program;
 
     Program(const std::string &name);
     Program(
@@ -175,21 +172,20 @@ public:
     );
     void set_sweep_points(const std::vector<double> &sweep_points);
     std::vector<double> get_sweep_points() const;
-    void add_kernel(const Kernel &k);
-    void add_program(const Program &p);
-    void add_if(const Kernel &k, const Operation &operation);
-    void add_if(const Program &p, const Operation &operation);
-    void add_if_else(const Kernel &k_if, const Kernel &k_else, const Operation &operation);
-    void add_if_else(const Program &p_if, const Program &p_else, const Operation &operation);
-    void add_do_while(const Kernel &k, const Operation &operation);
-    void add_do_while(const Program &p, const Operation &operation);
-    void add_for(const Kernel &k, size_t iterations);
-    void add_for(const Program &p, size_t iterations);
+    void add_kernel(Kernel &k);
+    void add_program(Program &p);
+    void add_if(Kernel &k, const Operation &operation);
+    void add_if(Program &p, const Operation &operation);
+    void add_if_else(Kernel &k_if, Kernel &k_else, const Operation &operation);
+    void add_if_else(Program &p_if, Program &p_else, const Operation &operation);
+    void add_do_while(Kernel &k, const Operation &operation);
+    void add_do_while(Program &p, const Operation &operation);
+    void add_for(Kernel &k, size_t iterations);
+    void add_for(Program &p, size_t iterations);
     void compile();
     std::string microcode() const;
     void print_interaction_matrix() const;
     void write_interaction_matrix() const;
-    ~Program();
 };
 
 /**

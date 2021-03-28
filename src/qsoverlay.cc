@@ -16,7 +16,7 @@ using namespace utils;
 
 //Only support for DiCarlo setup atm
 void write_qsoverlay_program(
-    quantum_program *programp,
+    ir::Program &program,
     UInt num_qubits,
     const quantum_platform &platform,
     const Str &suffix,
@@ -28,7 +28,7 @@ void write_qsoverlay_program(
     compiled = false;
 
     QL_IOUT("Writing scheduled QSoverlay program");
-    Str qfname(com::options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
+    Str qfname(com::options::get("output_dir") + "/" + "quantumsim_" + program.unique_name + "_" + suffix + ".py");
     QL_DOUT("Writing scheduled QSoverlay program " << qfname);
     QL_IOUT("Writing scheduled QSoverlay program " << qfname);
     OutFile fout(qfname);
@@ -99,11 +99,11 @@ void write_qsoverlay_program(
          << "	if setup_name == 'DiCarlo_setup':\n"
          << "		setup = DiCarlo_setup.quick_setup(qubit_list, noise_flag = noise_flag)\n"
          << "	b = Builder(setup)\n"
-         << "	b.new_circuit(circuit_title = '" << programp->kernels.front().name << "')\n";
+         << "	b.new_circuit(circuit_title = '" << program.kernels.front()->name << "')\n";
 
 
     // Circuit creation: Add gates
-    for (auto & gate: programp->kernels.front().c) {
+    for (auto & gate: program.kernels.front()->c) {
         Str qs_name;
         try {
             qs_name = gate_map.at(gate->name);

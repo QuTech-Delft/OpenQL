@@ -15,14 +15,14 @@ using namespace utils;
  * Create a circuit with valid cycle values from the bundled internal
  * representation.
  */
-circuit circuiter(const bundles_t &bundles) {
-    circuit circ;
+ir::Circuit circuiter(const ir::Bundles &bundles) {
+    ir::Circuit circ;
 
-    for (const bundle_t &abundle : bundles) {
+    for (const Bundle &abundle : bundles) {
         for (auto sec_it = abundle.parallel_sections.begin(); sec_it != abundle.parallel_sections.end(); ++sec_it) {
             for (auto gp : *sec_it) {
                 gp->cycle = abundle.start_cycle;
-                circ.push_back(gp);
+                circ.add(gp);
             }
         }
     }
@@ -37,7 +37,7 @@ circuit circuiter(const bundles_t &bundles) {
  * Create a bundled-qasm external representation from the bundled internal
  * representation.
  */
-Str qasm(const bundles_t &bundles) {
+Str qasm(const ir::Bundles &bundles) {
     StrStrm ssqasm;
     UInt curr_cycle=1;        // FIXME HvS prefer to start at 0; also see depgraph creation
     Str skipgate = "wait";
@@ -45,7 +45,7 @@ Str qasm(const bundles_t &bundles) {
         skipgate = "skip";
     }
 
-    for (const bundle_t &abundle : bundles) {
+    for (const Bundle &abundle : bundles) {
         auto st_cycle = abundle.start_cycle;
         auto delta = st_cycle - curr_cycle;
         if (delta > 1) {
@@ -96,11 +96,11 @@ Str qasm(const bundles_t &bundles) {
  *
  * FIXME HvS cycles_valid must be true before each call to this bundler
  */
-bundles_t bundler(const circuit &circ, UInt cycle_time) {
-    bundles_t bundles;          // result bundles
+ir::Bundles bundler(const ir::Circuit &circ, UInt cycle_time) {
+    ir::Bundles bundles;        // result bundles
 
-    bundle_t    currBundle;     // current bundle at currCycle that is being filled
-    UInt      currCycle = 0;  // cycle at which bundle is to be scheduled
+    ir::Bundle  currBundle;     // current bundle at currCycle that is being filled
+    UInt        currCycle = 0;  // cycle at which bundle is to be scheduled
 
     currBundle.start_cycle = currCycle; // starts off as empty bundle starting at currCycle
     currBundle.duration_in_cycles = 0;
@@ -143,7 +143,7 @@ bundles_t bundler(const circuit &circ, UInt cycle_time) {
         }
 
         // add gp to currBundle
-        section_t asec;
+        ir::Section asec;
         asec.push_back(gp);
         currBundle.parallel_sections.push_back(asec);
         // DOUT("... gate: " << gp->qasm() << " in private parallel section");
@@ -179,7 +179,7 @@ bundles_t bundler(const circuit &circ, UInt cycle_time) {
  * Print the bundles with an indication (taken from 'at') from where this
  * function was called.
  */
-void DebugBundles(const Str &at, const bundles_t &bundles) {
+void DebugBundles(const Str &at, const ir::Bundles &bundles) {
     QL_DOUT("DebugBundles at: " << at << " showing " << bundles.size() << " bundles");
     for (const auto& abundle : bundles) {
         QL_DOUT("... bundle with nsections: " << abundle.parallel_sections.size());

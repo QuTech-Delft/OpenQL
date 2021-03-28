@@ -27,7 +27,7 @@ public:
     /*
      * compile must be implemented by all compilation backends.
      */
-    virtual void compile(ql::quantum_program *programp, const ql::quantum_platform &plat) = 0;
+    virtual void compile(ir::Program &programp, const quantum_platform &plat) = 0;
 
     /**
      * write eqasm code to file/stdout

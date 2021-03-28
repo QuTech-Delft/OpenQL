@@ -20,7 +20,7 @@ struct VisualizerConfiguration {
     const utils::Str &waveformMappingPath;
 };
 
-void visualize(const quantum_program* program, const VisualizerConfiguration &configuration);
+void visualize(const ir::Program &program, const VisualizerConfiguration &configuration);
 
 // FIXME JvS: WITH_VISUALIZER must never appear in a public header file
 #ifdef WITH_VISUALIZER

@@ -97,7 +97,7 @@ cc_light_eqasm_instr_type_t cc_light_eqasm_instruction::get_instruction_type() c
 /**
  * return operation type
  */
-operation_type_t cc_light_eqasm_instruction::get_operation_type() const {
+ir::ClassicalOperationType cc_light_eqasm_instruction::get_operation_type() const {
     return operation_type;
 }
 

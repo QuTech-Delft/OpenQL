@@ -28,7 +28,7 @@ struct FeedbackInfo {                                       // information for f
 using FeedbackMap = Map<Int, FeedbackInfo>;                 // NB: key is instrument group
 
 struct CondGateInfo { // information for conditional gate on single instrument group
-    cond_type_t condition;
+    ir::ConditionType condition;
     Vec<UInt> cond_operands;
     Digital groupDigOut;
 };

@@ -7,10 +7,11 @@
 #include <iostream>
 
 namespace ql {
+namespace ir {
 
 using namespace utils;
 
-void print(const circuit &c) {
+void print(const Circuit &c) {
     std::cout << "-------------------" << std::endl;
     for (auto gate : c) {
         std::cout << "   " << gate->qasm() << std::endl;
@@ -21,7 +22,7 @@ void print(const circuit &c) {
 /**
  * generate qasm for a given circuit
  */
-Str qasm(const circuit& c) {
+Str qasm(const Circuit &c) {
     StrStrm ss;
     for (auto gate : c) {
         ss << gate->qasm() << "\n";
@@ -29,18 +30,18 @@ Str qasm(const circuit& c) {
     return ss.str();
 }
 
-Vec<circuit*> split_circuit(circuit &x) {
+Vec<Circuit> split_circuit(Circuit &x) {
     QL_IOUT("circuit decomposition in basic blocks ... ");
-    Vec<circuit *> cs;
-    cs.push_back(new circuit());
+    Vec<Circuit> cs;
+    cs.emplace_back();
     for (auto gate : x) {
         if ((gate->type() == GateType::PREP_Z) ||
             (gate->type() == GateType::MEASURE)) {
-            cs.push_back(new circuit());
-            cs.back()->push_back(gate);
-            cs.push_back(new circuit());
+            cs.emplace_back();
+            cs.back().add(gate);
+            cs.emplace_back();
         } else {
-            cs.back()->push_back(gate);
+            cs.back().add(gate);
         }
     }
     QL_IOUT("circuit decomposition done (" << cs.size() << ").");
@@ -57,7 +58,7 @@ Vec<circuit*> split_circuit(circuit &x) {
 /**
  * detect measurements and qubit preparations
  */
-Bool contains_measurements(const circuit &x) {
+Bool contains_measurements(const Circuit &x) {
     for (auto gate : x) {
         if (gate->type() == GateType::MEASURE) {
             return true;
@@ -69,4 +70,5 @@ Bool contains_measurements(const circuit &x) {
     return false;
 }
 
+} // namespace ir
 } // namespace ql

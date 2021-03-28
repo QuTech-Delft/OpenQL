@@ -69,31 +69,23 @@ size_t Platform::get_qubit_number() const {
 }
 
 CReg::CReg(size_t id) {
-    creg = new ql::creg(id);
-}
-
-CReg::~CReg() {
-    delete(creg);
+    creg.emplace(id);
 }
 
 Operation::Operation(const CReg &lop, const std::string &op, const CReg &rop) {
-    operation = new ql::operation(*(lop.creg), op, *(rop.creg));
+    operation.emplace(*(lop.creg), op, *(rop.creg));
 }
 
 Operation::Operation(const std::string &op, const CReg &rop) {
-    operation = new ql::operation(op, *(rop.creg));
+    operation.emplace(op, *(rop.creg));
 }
 
 Operation::Operation(const CReg &lop) {
-    operation = new ql::operation(*(lop.creg));
+    operation.emplace(*(lop.creg));
 }
 
 Operation::Operation(int val) {
-    operation = new ql::operation(val);
-}
-
-Operation::~Operation() {
-    delete(operation);
+    operation.emplace(val);
 }
 
 Unitary::Unitary(
@@ -119,7 +111,7 @@ bool Unitary::is_decompose_support_enabled() {
 
 Kernel::Kernel(const std::string &name) : name(name) {
     QL_DOUT(" API::Kernel named: " << name);
-    kernel = new ql::quantum_kernel(name);
+    kernel = ql::utils::make_node<ql::ir::Kernel>(name);
 }
 
 Kernel::Kernel(
@@ -136,7 +128,7 @@ Kernel::Kernel(
     breg_count(breg_count)
 {
     QL_WOUT("Kernel(name,Platform,#qbit,#creg,#breg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
-    kernel = new ql::quantum_kernel(name, *(platform.platform), qubit_count, creg_count, breg_count);
+    kernel = ql::utils::make_node<ql::ir::Kernel>(name, *(platform.platform), qubit_count, creg_count, breg_count);
 }
 
 void Kernel::identity(size_t q0) {
@@ -287,7 +279,7 @@ void Kernel::gate(
         << ql::utils::Vec<size_t>(condregs.begin(), condregs.end())
         << ")"
     );
-    ql::cond_type_t condvalue = kernel->condstr2condvalue(condstring);
+    auto condvalue = kernel->condstr2condvalue(condstring);
 
     kernel->gate(
         name,
@@ -376,20 +368,16 @@ void Kernel::controlled(
     const std::vector<size_t> &control_qubits,
     const std::vector<size_t> &ancilla_qubits
 ) {
-    kernel->controlled(k.kernel, {control_qubits.begin(), control_qubits.end()}, {ancilla_qubits.begin(), ancilla_qubits.end()});
+    kernel->controlled(*k.kernel, {control_qubits.begin(), control_qubits.end()}, {ancilla_qubits.begin(), ancilla_qubits.end()});
 }
 
 void Kernel::conjugate(const Kernel &k) {
-    kernel->conjugate(k.kernel);
-}
-
-Kernel::~Kernel() {
-    delete(kernel);
+    kernel->conjugate(*k.kernel);
 }
 
 Program::Program(const std::string &name) : name(name) {
     QL_DOUT("SWIG Program(name) constructor for name: " << name);
-    program = new ql::quantum_program(name);
+    program = ql::utils::make_node<ql::ir::Program>(name);
 }
 
 Program::Program(
@@ -406,7 +394,7 @@ Program::Program(
     breg_count(breg_count)
 {
     QL_WOUT("Program(name,Platform,#qbit,#creg,#breg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
-    program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count, breg_count);
+    program = ql::utils::make_node<ql::ir::Program>(name, *(platform.platform), qubit_count, creg_count, breg_count);
 }
 
 void Program::set_sweep_points(const std::vector<double> &sweep_points) {
@@ -419,44 +407,44 @@ std::vector<double> Program::get_sweep_points() const {
     return std::vector<double>(program->sweep_points.begin(), program->sweep_points.end());
 }
 
-void Program::add_kernel(const Kernel &k) {
-    program->add(*(k.kernel));
+void Program::add_kernel(Kernel &k) {
+    program->add(k.kernel);
 }
 
-void Program::add_program(const Program &p) {
-    program->add_program(*(p.program));
+void Program::add_program(Program &p) {
+    program->add_program(p.program);
 }
 
-void Program::add_if(const Kernel &k, const Operation &operation) {
-    program->add_if(*(k.kernel), *(operation.operation));
+void Program::add_if(Kernel &k, const Operation &operation) {
+    program->add_if(k.kernel, *operation.operation);
 }
 
-void Program::add_if(const Program &p, const Operation &operation) {
-    program->add_if( *(p.program), *(operation.operation));
+void Program::add_if(Program &p, const Operation &operation) {
+    program->add_if(p.program, *operation.operation);
 }
 
-void Program::add_if_else(const Kernel &k_if, const Kernel &k_else, const Operation &operation) {
-    program->add_if_else(*(k_if.kernel), *(k_else.kernel), *(operation.operation));
+void Program::add_if_else(Kernel &k_if, Kernel &k_else, const Operation &operation) {
+    program->add_if_else(k_if.kernel, k_else.kernel, *(operation.operation));
 }
 
-void Program::add_if_else(const Program &p_if, const Program &p_else, const Operation &operation) {
-    program->add_if_else(*(p_if.program), *(p_else.program), *(operation.operation));
+void Program::add_if_else(Program &p_if, Program &p_else, const Operation &operation) {
+    program->add_if_else(p_if.program, p_else.program, *(operation.operation));
 }
 
-void Program::add_do_while(const Kernel &k, const Operation &operation) {
-    program->add_do_while(*(k.kernel), *(operation.operation));
+void Program::add_do_while(Kernel &k, const Operation &operation) {
+    program->add_do_while(k.kernel, *operation.operation);
 }
 
-void Program::add_do_while(const Program &p, const Operation &operation) {
-    program->add_do_while(*(p.program), *(operation.operation));
+void Program::add_do_while(Program &p, const Operation &operation) {
+    program->add_do_while(p.program, *operation.operation);
 }
 
-void Program::add_for(const Kernel &k, size_t iterations) {
-    program->add_for( *(k.kernel), iterations);
+void Program::add_for(Kernel &k, size_t iterations) {
+    program->add_for(k.kernel, iterations);
 }
 
-void Program::add_for(const Program &p, size_t iterations) {
-    program->add_for( *(p.program), iterations);
+void Program::add_for(Program &p, size_t iterations) {
+    program->add_for(p.program, iterations);
 }
 
 void Program::compile() {
@@ -477,15 +465,6 @@ void Program::print_interaction_matrix() const {
 
 void Program::write_interaction_matrix() const {
     program->write_interaction_matrix();
-}
-
-Program::~Program() {
-    // std::cout << "program::~program()" << std::endl;
-    // leave deletion to SWIG, otherwise the python unit test framework fails
-    // FIXME JvS: above is impressively broken, this just means it's never
-    //  deleted. It's not like SWIG has some magical garbage collector or
-    //  something.
-    //delete(program);
 }
 
 cQasmReader::cQasmReader(
@@ -545,7 +524,7 @@ Compiler::Compiler(
 
 void Compiler::compile(Program &program) {
     QL_DOUT(" Compiler " << name << " compiles program  " << program.name);
-    compiler->compile(program.program);
+    compiler->compile(*program.program);
 }
 
 void Compiler::add_pass_alias(const std::string &realPassName, const std::string &symbolicPassName) {

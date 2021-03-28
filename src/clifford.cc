@@ -18,7 +18,7 @@ class Clifford {
 public:
 
     void clifford_optimize_kernel(
-        quantum_kernel &kernel,
+        ir::Kernel &kernel,
         const quantum_platform &platform,
         const Str &passname
     ) {
@@ -30,8 +30,8 @@ public:
 
         // copy circuit kernel.c to take input from;
         // output will fill kernel.c again
-        circuit input_circuit = kernel.c;
-        kernel.c.clear();
+        ir::Circuit input_circuit = kernel.c;
+        kernel.c.reset();
 
         cliffstate.resize(nq, 0);       // 0 is identity; for all qubits accumulated state is set to identity
         cliffcycles.resize(nq, 0);      // for all qubits, no accumulated cycles
@@ -75,18 +75,18 @@ public:
             QL_DOUT("... gate: " << gp->qasm());
 
             if (
-                gp->type() == GateType::CLASSICAL                   // classical gates (really being pessimistic here about these)
+                gp->type() == ir::GateType::CLASSICAL               // classical gates (really being pessimistic here about these)
                 || gp->operands.empty()                             // gates without operands which may affect ALL qubits
             ) {
                 // sync all qubits: create gate sequences corresponding to what was accumulated in cliffstate, for all qubits
                 sync_all(kernel);
-                kernel.c.push_back(gp);
+                kernel.c.add(gp);
             } else if (gp->operands.size() != 1) {                 // gates like CNOT/CZ/TOFFOLI
                 // sync particular qubits: create gate sequences corresponding to what was accumulated in cliffstate, for those particular operand qubits
                 for (auto q : gp->operands) {
                     sync(kernel, q);
                 }
-                kernel.c.push_back(gp);
+                kernel.c.add(gp);
             } else {
                 // unary quantum gates like x/y/z/h/xm90/y90/s/wait/meas/prepz
                 UInt q = gp->operands[0];
@@ -99,7 +99,7 @@ public:
                     // sync particular single qubit: create gate sequence corresponding to what was accumulated in cliffstate, for this particular operand qubit
                     QL_DOUT("... unary gate not a clifford gate or conditional: " << gp->qasm());
                     sync(kernel, q);
-                    kernel.c.push_back(gp);
+                    kernel.c.add(gp);
                 } else {
                     // unary quantum clifford gates like x/y/z/h/xm90/y90/s/...
                     // don't emit gate but accumulate gate in cliffstate
@@ -126,7 +126,7 @@ private:
     UInt total_saved; // total number of cycles saved per kernel
 
     // create gate sequences for all accumulated cliffords, output them and reset state
-    void sync_all(quantum_kernel &k) {
+    void sync_all(ir::Kernel &k) {
         QL_DOUT("... sync_all");
         for (UInt q = 0; q < nq; q++) {
             sync(k, q);
@@ -135,7 +135,7 @@ private:
     }
 
     // create gate sequence for accumulated cliffords of qubit q, output it and reset state
-    void sync(quantum_kernel &k, UInt q) {
+    void sync(ir::Kernel &k, UInt q) {
         Int csq = cliffstate[q];
         if (csq != 0) {
             QL_DOUT("... sync q[" << q << "]: generating clifford " << cs2string(csq));
@@ -280,28 +280,28 @@ private:
  * Clifford sequence optimizer.
  */
 void clifford_optimize(
-    quantum_program *programp,
+    ir::Program &program,
     const quantum_platform &platform,
     const Str &passname
 ) {
     if (com::options::get(passname) == "no") {
-        QL_DOUT("Clifford optimization on program " << programp->name << " at "
+        QL_DOUT("Clifford optimization on program " << program.name << " at "
                                                     << passname << " not DONE");
         return;
     }
-    QL_DOUT("Clifford optimization on program " << programp->name << " at "
+    QL_DOUT("Clifford optimization on program " << program.name << " at "
                                                 << passname << " ...");
 
-    report_statistics(programp, platform, "in", passname, "# ");
-    report_qasm(programp, platform, "in", passname);
+    report_statistics(program, platform, "in", passname, "# ");
+    report_qasm(program, platform, "in", passname);
 
     Clifford cliff;
-    for (auto &kernel : programp->kernels) {
-        cliff.clifford_optimize_kernel(kernel, platform, passname);
+    for (auto &kernel : program.kernels) {
+        cliff.clifford_optimize_kernel(*kernel, platform, passname);
     }
 
-    report_statistics(programp, platform, "out", passname, "# ");
-    report_qasm(programp, platform, "out", passname);
+    report_statistics(program, platform, "out", passname, "# ");
+    report_qasm(program, platform, "out", passname);
 }
 
 }

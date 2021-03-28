@@ -18,7 +18,7 @@ public:
     utils::UInt             qubit_number;             // number of qubits
     utils::UInt             cycle_time;               // in [ns]
     utils::Str              configuration_file_name;  // configuration file name
-    instruction_map_t       instruction_map;          // supported operations
+    InstructionMap          instruction_map;          // supported operations
     utils::Json             instruction_settings;     // instruction settings (to use by the eqasm backend)
     utils::Json             hardware_settings;        // additional hardware settings (to use by the eqasm backend)
 

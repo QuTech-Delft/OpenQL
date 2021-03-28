@@ -31,7 +31,7 @@ struct Qubit {
     utils::Vec<InteractionsWithQubit> interactions;
 };
 
-void visualizeInteractionGraph(const quantum_program* program, const VisualizerConfiguration &configuration);
+void visualizeInteractionGraph(const ir::Program &program, const VisualizerConfiguration &configuration);
 
 void generateAndSaveDOTFile(const utils::Vec<Qubit> &qubits);
 

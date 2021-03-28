@@ -135,7 +135,7 @@ public:
     utils::UInt                 opcode = 0;
     utils::UInt                 condition = 0;
 
-    operation_type_t            operation_type;
+    ir::ClassicalOperationType  operation_type;
     cc_light_eqasm_instr_type_t instr_type;
 
     utils::Str                  qasm_label;
@@ -179,7 +179,7 @@ public:
     /**
      * return operation type
      */
-    virtual operation_type_t get_operation_type() const;
+    virtual ir::ClassicalOperationType get_operation_type() const;
 
 };
 

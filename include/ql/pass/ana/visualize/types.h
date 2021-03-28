@@ -121,10 +121,10 @@ struct GateProperties {
     utils::Str name;
     utils::Vec<utils::Int> operands;
     utils::Vec<utils::Int> creg_operands;
-    swap_parameters swap_params;
+    ir::SwapParamaters swap_params;
     utils::Int duration;
     utils::Int cycle;
-    GateType type;
+    ir::GateType type;
     utils::Vec<utils::Int> codewords; // std::vector<size_t> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
     utils::Str visual_type;
 
@@ -488,93 +488,93 @@ struct CircuitLayout {
 
     utils::Map<utils::Str, GateVisual> customGateVisuals;
 
-    const utils::Map<GateType, GateVisual> defaultGateVisuals {
+    const utils::Map<ir::GateType, GateVisual> defaultGateVisuals {
         // TODO: use the proper symbol for dagger gates
         // TODO: use the proper symbol for measurement gates
 
-        {GateType::IDENTITY, { black, {
+        {ir::GateType::IDENTITY, { black, {
             { GATE, 13, "I", 13, white, lightblue, lightblue }}}},
 
-        {GateType::HADAMARD, { black, {
+        {ir::GateType::HADAMARD, { black, {
             { GATE, 13, "H", 13, white, lightblue, lightblue }}}},
 
-        {GateType::PAULI_X, { black, {
+        {ir::GateType::PAULI_X, { black, {
             { GATE, 13, "X", 13, white, green, green }}}},
 
-        {GateType::PAULI_Y, { black, {
+        {ir::GateType::PAULI_Y, { black, {
             { GATE, 13, "Y", 13, white, green, green }}}},
 
-        {GateType::PAULI_Z, { black, {
+        {ir::GateType::PAULI_Z, { black, {
             { GATE, 13, "Z", 13, white, green, green }}}},
 
-        {GateType::PHASE, { black, {
+        {ir::GateType::PHASE, { black, {
             { GATE, 13, "S", 13, white, yellow, yellow }}}},
 
-        {GateType::PHASE_DAG, { black, {
+        {ir::GateType::PHASE_DAG, { black, {
             { GATE, 13, "S\u2020", 13, white, yellow, yellow }}}},
 
-        {GateType::T, { black, {
+        {ir::GateType::T, { black, {
             { GATE, 13, "T", 13, white, red, red }}}},
 
-        {GateType::T_DAG, { black, {
+        {ir::GateType::T_DAG, { black, {
             { GATE, 13, "T\u2020", 13, white, red, red }}}},
 
-        {GateType::RX90, { black, {
+        {ir::GateType::RX90, { black, {
             {}}}},
-        {GateType::RXM90, { black, {
+        {ir::GateType::MRX90, {black, {
             {}}}},
-        {GateType::RX180, { black, {
+        {ir::GateType::RX180, { black, {
             {}}}},
-        {GateType::RY90, { black, {
+        {ir::GateType::RY90, { black, {
             {}}}},
-        {GateType::RYM90, { black, {
+        {ir::GateType::MRY90, {black, {
             {}}}},
-        {GateType::RY180, { black, {
+        {ir::GateType::RY180, { black, {
             {}}}},
-        {GateType::RX, { black, {
+        {ir::GateType::RX, { black, {
             {}}}},
-        {GateType::RY, { black, {
+        {ir::GateType::RY, { black, {
             {}}}},
-        {GateType::RZ, { black, {
+        {ir::GateType::RZ, { black, {
             {}}}},
-        {GateType::PREP_Z, { black, {
+        {ir::GateType::PREP_Z, { black, {
             {}}}},
 
-        {GateType::CNOT, { black, {
+        {ir::GateType::CNOT, { black, {
             { CONTROL, 3, "", 0, black, black, black },
             { NOT, 8, "", 0, black, black, black }}}},
 
-        {GateType::CPHASE, { lightblue, {
+        {ir::GateType::CPHASE, { lightblue, {
             { CONTROL, 3, "", 0, black, lightblue, lightblue },
             { CONTROL, 3, "", 0, black, lightblue, lightblue }}}},
 
-        {GateType::TOFFOLI, { black, {
+        {ir::GateType::TOFFOLI, { black, {
             {}}}},
-        {GateType::CUSTOM, { black, {
+        {ir::GateType::CUSTOM, { black, {
             {}}}},
-        {GateType::COMPOSITE, { black, {
+        {ir::GateType::COMPOSITE, { black, {
             {}}}},
 
-        {GateType::MEASURE, { gray, {
+        {ir::GateType::MEASURE, { gray, {
             { GATE, 13, "M", 13, white, purple, purple },
             { NONE, 3, "", 0, black, black, black }}}},
 
-        {GateType::DISPLAY, { black, {
+        {ir::GateType::DISPLAY, { black, {
             {}}}},
-        {GateType::DISPLAY_BINARY, { black, {
+        {ir::GateType::DISPLAY_BINARY, { black, {
             {}}}},
-        {GateType::NOP, { black, {
+        {ir::GateType::NOP, { black, {
             {}}}},
-        {GateType::DUMMY, { black, {
+        {ir::GateType::DUMMY, { black, {
             {}}}},
 
-        {GateType::SWAP, { black, {
+        {ir::GateType::SWAP, { black, {
             { CROSS, 6, "", 0, black, black, black },
             { CROSS, 6, "", 0, black, black, black }}}},
 
-        {GateType::WAIT, { black, {
+        {ir::GateType::WAIT, { black, {
             {}}}},
-        {GateType::CLASSICAL, { black, {
+        {ir::GateType::CLASSICAL, { black, {
             {}}}}
     };
 };

@@ -9,20 +9,21 @@
 #include "ql/utils/num.h"
 
 namespace ql {
+namespace ir {
 
 template <typename T, utils::UInt N>
-class matrix {
+class Matrix {
 public:
 
     T m[N * N];
 
-    matrix() {
+    Matrix() {
         for (utils::UInt i = 0; i < N * N; ++i) {
             m[i] = 0;
         }
     }
 
-    matrix(const T *pm) {
+    Matrix(const T *pm) {
         for (utils::UInt i = 0; i < N * N; ++i) {
             m[i] = pm[i];
         }
@@ -50,6 +51,7 @@ public:
 
 };
 
-typedef matrix<utils::Complex, 2> cmat_t;
+typedef Matrix<utils::Complex, 2> Complex2by2Matrix;
 
+} // namespace ir
 } // namespace ql

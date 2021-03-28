@@ -18,7 +18,7 @@ private:
     utils::UInt Size;
 
 public:
-    InteractionMatrix(const circuit &ckt, utils::UInt nqubits);
+    InteractionMatrix(const ir::Circuit &ckt, utils::UInt nqubits);
     utils::Str getString() const;
 };
 

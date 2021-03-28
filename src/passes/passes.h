@@ -16,7 +16,7 @@ namespace ql {
  */
 class AbstractPass {
 public:
-    virtual void runOnProgram(quantum_program *program) = 0;
+    virtual void runOnProgram(ir::Program &program) = 0;
 
     explicit AbstractPass(const utils::Str &name);
     utils::Str getPassName() const;
@@ -25,8 +25,8 @@ public:
     utils::Options &getPassOptions();
     const utils::Options &getPassOptions() const;
     utils::Bool getSkip() const;
-    void initPass(quantum_program *program);
-    void finalizePass(quantum_program *program);
+    void initPass(ir::Program &program);
+    void finalizePass(ir::Program &program);
     void appendStatistics(const utils::Str &statistic);
     utils::Str getPassStatistics() const;
     void resetStatistics();
@@ -47,7 +47,7 @@ public:
      * @param  Name of the read pass
      */
     explicit CQasmReaderPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -60,7 +60,7 @@ public:
      * @param  Name of the read pass
      */
     explicit CQasmWriterPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -73,7 +73,7 @@ public:
      * @param  Name of the optimized pass
      */
     explicit RotationOptimizerPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -86,7 +86,7 @@ public:
      * @param  Name of the optimized pass
      */
     explicit ToffoliDecomposerPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -99,7 +99,7 @@ public:
      * @param  Name of the scheduler pass
      */
     explicit SchedulerPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -112,7 +112,7 @@ public:
      * @param  Name of the scheduler pass
      */
     explicit BackendCompilerPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -125,7 +125,7 @@ public:
      * @param  Name of the scheduler pass
      */
     explicit StatisticsReporterPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -138,7 +138,7 @@ public:
      * @param  Name of the visualizer pass
      */
     explicit VisualizerPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -151,7 +151,7 @@ public:
      * @param  Name of the preparation pass
      */
     explicit CCLConsistencyCheckerPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -164,7 +164,7 @@ public:
      * @param  Name of the decomposer pass
      */
     explicit CCLPreScheduleDecomposer(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -177,7 +177,7 @@ public:
      * @param  Name of the mapper pass
      */
     explicit MapperPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -190,7 +190,7 @@ public:
      * @param  Name of the optimizer pass (premapper or postmapper)
      */
     explicit CliffordOptimizerPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -203,7 +203,7 @@ public:
      * @param  Name of the commute variation pass
      */
     explicit CommuteVariationOptimizerPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -216,7 +216,7 @@ public:
      * @param  Name of the scheduler pass
      */
     explicit RCSchedulerPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -229,7 +229,7 @@ public:
      * @param  Name of the latency compensation pass
      */
     explicit LatencyCompensatorPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -242,7 +242,7 @@ public:
      * @param  Name of the buffer delay insertion pass
      */
     explicit BufferDelayInserterPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -255,7 +255,7 @@ public:
      * @param  Name of the decomposer pass
      */
     explicit CCLPostScheduleDecomposerPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -268,7 +268,7 @@ public:
      * @param  Name of the writer pass
      */
     explicit QuantumSimWriterPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -281,7 +281,7 @@ public:
      * @param  Name of the QISA generator pass
      */
     explicit CCLCodeGeneratorPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -294,7 +294,7 @@ public:
      * @param  Name of the CPrinter pass
      */
     explicit CPrinterPass(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 /**
@@ -307,7 +307,7 @@ public:
      * @param  Name of the pass
      */
     explicit RunExternalCompiler(const utils::Str &name);
-    void runOnProgram(quantum_program *program) override;
+    void runOnProgram(ir::Program &program) override;
 };
 
 } // namespace ql

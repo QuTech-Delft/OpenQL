@@ -7,82 +7,87 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
+#include "ql/utils/tree.h"
 
 #include "gate.h"
 
 namespace ql {
+namespace ir {
 
-enum class operation_type_t {
+enum class ClassicalOperationType {
     ARITHMATIC, RELATIONAL, BITWISE
 };
 
-enum class operand_type_t {
-    CREG, CVAL
+enum class ClassicalOperandType {
+    REGISTER, VALUE
 };
 
-class cval;
-class creg;
+class ClassicalValue;
+class ClassicalRegister;
 
-class coperand {
+class ClassicalOperand : public utils::Node {
 public:
-    virtual operand_type_t type() const = 0;
+    virtual ClassicalOperandType type() const = 0;
     virtual void print() const = 0;
-    virtual ~coperand() = default;
-    cval &as_cval();
-    const cval &as_cval() const;
-    creg &as_creg();
-    const creg &as_creg() const;
+    ClassicalValue &as_value();
+    const ClassicalValue &as_value() const;
+    ClassicalRegister &as_register();
+    const ClassicalRegister &as_register() const;
 };
 
-class cval : public coperand {
+class ClassicalValue : public ClassicalOperand {
 public:
     utils::Int value;
-    cval(utils::Int val);
-    cval(const cval &cv);
-    operand_type_t type() const override;
+    ClassicalValue(utils::Int val);
+    ClassicalValue(const ClassicalValue &cv);
+    ClassicalOperandType type() const override;
     void print() const override;
 };
 
-class creg : public coperand {
+class ClassicalRegister : public ClassicalOperand {
 public:
     utils::UInt id;
-    creg(utils::UInt id);
-    creg(const creg &c);
-    operand_type_t type() const override;
+    ClassicalRegister(utils::UInt id);
+    ClassicalRegister(const ClassicalRegister &c);
+    ClassicalOperandType type() const override;
     void print() const override;
 };
 
-class operation {
+class ClassicalOperation : public utils::Node {
 public:
     utils::Str operation_name;
     utils::Str inv_operation_name;
-    operation_type_t operation_type;
-    utils::Vec<coperand*> operands;
+    ClassicalOperationType operation_type;
+    utils::Any<ClassicalOperand> operands;
 
-    operation(const creg &l, const utils::Str &op, const creg &r);
+    ClassicalOperation(const ClassicalRegister &l, const utils::Str &op, const ClassicalRegister &r);
 
     // used for assign
-    operation(const creg &l);
+    ClassicalOperation(const ClassicalRegister &l);
 
     // used for initializing with an imm
-    operation(const cval &v);
+    ClassicalOperation(const ClassicalValue &v);
 
     // used for initializing with an imm
-    operation(utils::Int val);
+    ClassicalOperation(utils::Int val);
 
-    operation(const utils::Str &op, const creg &r);
+    ClassicalOperation(const utils::Str &op, const ClassicalRegister &r);
 };
 
-class classical : public gate {
+namespace gates {
+
+class Classical : public Gate {
 public:
     // utils::Int imm_value;
-    cmat_t m;
+    Complex2by2Matrix m;
 
-    classical(const creg &dest, const operation &oper);
-    classical(const utils::Str &operation);
-    instruction_t qasm() const override;
+    Classical(const ClassicalRegister &dest, const ClassicalOperation &oper);
+    Classical(const utils::Str &operation);
+    Instruction qasm() const override;
     GateType type() const override;
-    cmat_t mat() const override;
+    Complex2by2Matrix mat() const override;
 };
 
+} // namespace gates
+} // namespace ir
 } // namespace ql

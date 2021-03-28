@@ -17,7 +17,7 @@ namespace visualize {
 
 using namespace utils;
 
-void visualizeMappingGraph(const quantum_program* program, const VisualizerConfiguration &configuration) {
+void visualizeMappingGraph(const ir::Program &program, const VisualizerConfiguration &configuration) {
     QL_IOUT("Visualizing mapping graph...");
 
     // Parse the layout and gate vector.
@@ -26,7 +26,7 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
 
     // Parse the topology if it exists in the platform configuration file.
     Topology topology;
-    const Bool parsedTopology = layout.getUseTopology() ? parseTopology(program->platform.topology, topology) : false;
+    const Bool parsedTopology = layout.getUseTopology() ? parseTopology(program.platform.topology, topology) : false;
     if (parsedTopology) {
         QL_DOUT("Succesfully parsed topology.");
         QL_DOUT("xSize: " << topology.xSize);
@@ -56,13 +56,13 @@ void visualizeMappingGraph(const quantum_program* program, const VisualizerConfi
     const Int rowHeight = qubitDiameter + (layout.getShowRealIndices() ? layout.getFontHeightReal() + layout.getRealIndexSpacing() * 2 : 0);
 
     // Calculate the virtual qubits mapping for each cycle.
-    const Int cycleDuration = utoi(program->platform.cycle_time);
+    const Int cycleDuration = utoi(program.platform.cycle_time);
     Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
     if (amountOfCycles <= 0) {
         QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");
     }
     // Visualize the circuit sequentially if one or more gates were not scheduled yet.
-    if (amountOfCycles == MAX_CYCLE) {
+    if (amountOfCycles == ir::MAX_CYCLE) {
         // Add a sequential cycle to each gate.
         amountOfCycles = 0;
         for (GateProperties &gate : gates) {

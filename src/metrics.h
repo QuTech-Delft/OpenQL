@@ -64,12 +64,12 @@ public:
 
 	void Init(utils::UInt Nqubits, quantum_platform *platform);
 	utils::Real create_output(const utils::Vec<utils::Real> &fids);
-	utils::Real bounded_fidelity(const circuit &circ, utils::Vec<utils::Real> &fids);
+	utils::Real bounded_fidelity(const ir::Circuit &circ, utils::Vec<utils::Real> &fids);
 
 };
 
-utils::Real quick_fidelity(const utils::List<gate*> &gate_list);
-utils::Real quick_fidelity_circuit(const circuit &circuit);
-utils::Real quick_fidelity(const circuit &circuit);
+utils::Real quick_fidelity(const utils::List<ir::GateRef> &gate_list);
+utils::Real quick_fidelity_circuit(const ir::Circuit &circuit);
+utils::Real quick_fidelity(const ir::Circuit &circuit);
 
 } // namespace ql

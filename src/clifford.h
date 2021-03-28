@@ -14,7 +14,7 @@ namespace ql {
  * Clifford sequence optimizer.
  */
 void clifford_optimize(
-    quantum_program *programp,
+    ir::Program &programp,
     const quantum_platform &platform,
     const utils::Str &passname
 );

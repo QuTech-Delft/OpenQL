@@ -7,6 +7,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
+#include "ql/utils/tree.h"
 #include "platform.h"
 #include "kernel.h"
 
@@ -14,14 +15,19 @@ namespace ql {
 
 class eqasm_compiler;
 
+namespace ir {
+
+class Program;
+using ProgramRef = utils::One<Program>;
+
 /**
  * quantum_program_
  */
-class quantum_program {
+class Program : public utils::Node {
 public:
     utils::Bool                 default_config;
     utils::Str                  config_file_name;
-    utils::Vec<quantum_kernel>  kernels;
+    Kernels                     kernels;
     utils::Str                  name;
     utils::Str                  unique_name;
     utils::Vec<utils::Real>     sweep_points;
@@ -32,22 +38,22 @@ public:
     utils::UInt                 breg_count;
     utils::Str                  eqasm_compiler_name;
     utils::Bool                 needs_backend_compiler;
-    eqasm_compiler              *backend_compiler;
+    utils::Ptr<eqasm_compiler>  backend_compiler;
 
 public:
-    quantum_program(const utils::Str &n);
-    quantum_program(const utils::Str &n, const quantum_platform &platf, utils::UInt nqubits, utils::UInt ncregs = 0, utils::UInt nbregs = 0);
+    Program(const utils::Str &n);
+    Program(const utils::Str &n, const quantum_platform &platf, utils::UInt nqubits, utils::UInt ncregs = 0, utils::UInt nbregs = 0);
 
-    void add(const quantum_kernel &k);
-    void add_program(const quantum_program &p);
-    void add_if(const quantum_kernel &k, const operation &cond);
-    void add_if(const quantum_program &p, const operation &cond);
-    void add_if_else(const quantum_kernel &k_if, const quantum_kernel &k_else, const operation &cond);
-    void add_if_else(const quantum_program &p_if, const quantum_program &p_else, const operation &cond);
-    void add_do_while(const quantum_kernel &k, const operation &cond);
-    void add_do_while(const quantum_program &p, const operation &cond);
-    void add_for(const quantum_kernel &k, utils::UInt iterations);
-    void add_for(const quantum_program &p, utils::UInt iterations);
+    void add(KernelRef &k);
+    void add_program(ProgramRef &p);
+    void add_if(KernelRef &k, const ClassicalOperation &cond);
+    void add_if(ProgramRef &p, const ClassicalOperation &cond);
+    void add_if_else(KernelRef &k_if, KernelRef &k_else, const ClassicalOperation &cond);
+    void add_if_else(ProgramRef &p_if, ProgramRef &p_else, const ClassicalOperation &cond);
+    void add_do_while(KernelRef &k, const ClassicalOperation &cond);
+    void add_do_while(ProgramRef &p, const ClassicalOperation &cond);
+    void add_for(KernelRef &k, utils::UInt iterations);
+    void add_for(ProgramRef &p, utils::UInt iterations);
 
     void set_config_file(const utils::Str &file_name);
     void set_platform(const quantum_platform &platform);
@@ -58,9 +64,10 @@ public:
     void write_interaction_matrix() const;
     void set_sweep_points(const utils::Real *swpts, utils::UInt size);
 
-    utils::Vec<quantum_kernel> &get_kernels();
-    const utils::Vec<quantum_kernel> &get_kernels() const;
+    Kernels &get_kernels();
+    const Kernels &get_kernels() const;
 
 };
 
+} // namespace ir
 } // namespace ql

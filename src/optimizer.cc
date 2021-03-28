@@ -19,7 +19,7 @@ using namespace utils;
  */
 class optimizer {
 public:
-    virtual circuit optimize(circuit &c) = 0;
+    virtual ir::Circuit optimize(ir::Circuit &c) = 0;
 };
 
 /**
@@ -28,8 +28,8 @@ public:
 class rotations_merging : public optimizer {
 public:
 
-    circuit optimize(circuit &ic /*, bool verbose=false */) override {
-        circuit c = ic;
+    ir::Circuit optimize(ir::Circuit &ic /*, bool verbose=false */) override {
+        ir::Circuit c = ic;
         // if (verbose) COUT("optimizing circuit...");
         for (size_t i = c.size(); i > 1; i--) {
             // println("window size : " << i);
@@ -50,8 +50,8 @@ public:
 
 protected:
 
-    static cmat_t fuse(const cmat_t &m1, const cmat_t &m2) {
-        cmat_t res;
+    static ir::Complex2by2Matrix fuse(const ir::Complex2by2Matrix &m1, const ir::Complex2by2Matrix &m2) {
+        ir::Complex2by2Matrix res;
         const Complex *x = m1.m;
         const Complex *y = m2.m;
         Complex *r = res.m;
@@ -71,7 +71,7 @@ protected:
 
 #define __epsilon__ (1e-4)
 
-    static bool is_id(const cmat_t &mat) {
+    static bool is_id(const ir::Complex2by2Matrix &mat) {
         // mat.dump();
         const Complex *m = mat.m;
         if ((abs(abs(m[0].real())-1.0))>__epsilon__) return false;
@@ -85,30 +85,30 @@ protected:
         return true;
     }
 
-    static bool is_identity(const circuit &c) {
+    static bool is_identity(const ir::Circuit &c) {
         if (c.size() == 1) {
             return false;
         }
-        cmat_t m = c[0]->mat();
+        ir::Complex2by2Matrix m = c[0]->mat();
         for (size_t i = 1; i < c.size(); ++i) {
-            cmat_t m2 = c[i]->mat();
+            ir::Complex2by2Matrix m2 = c[i]->mat();
             m = fuse(m,m2);
         }
         return is_id(m);
     }
 
-    static circuit optimize_sliding_window(circuit &c, size_t window_size) {
-        circuit oc;
+    static ir::Circuit optimize_sliding_window(ir::Circuit &c, size_t window_size) {
+        ir::Circuit oc;
         Vec<int> id_pos;
         for (size_t i = 0; i < c.size() - window_size + 1; ++i) {
-            circuit w;
-            w.insert(w.begin(),c.begin()+i,c.begin()+i+window_size);
+            ir::Circuit w;
+            w.get_vec().insert(w.begin(),c.begin()+i,c.begin()+i+window_size);
             if (is_identity(w)) {
                 id_pos.push_back(i);
             }
         }
         if (id_pos.empty()) {
-            return circuit(c);
+            return ir::Circuit(c);
         }
         // println("id pos:");
         // for (size_t i=0; i<id_pos.size(); i++)
@@ -122,7 +122,7 @@ protected:
                 if (i == pos) {
                     i += window_size;
                 } else {
-                    oc.push_back(c[i]);
+                    oc.add(c[i]);
                     i++;
                 }
             }
@@ -144,7 +144,7 @@ protected:
                     pos = id_pos[ip];
                 }
             } else {
-                oc.push_back(c[i]);
+                oc.add(c[i]);
                 i++;
             }
         }
@@ -154,7 +154,7 @@ protected:
 
 };
 
-inline void rotation_optimize_kernel(quantum_kernel &kernel, const quantum_platform &platform) {
+inline void rotation_optimize_kernel(ir::Kernel &kernel, const quantum_platform &platform) {
     QL_DOUT("kernel " << kernel.name << " optimize_kernel(): circuit before optimizing: ");
     print(kernel.c);
     QL_DOUT("... end circuit");
@@ -162,23 +162,23 @@ inline void rotation_optimize_kernel(quantum_kernel &kernel, const quantum_platf
     if (contains_measurements(kernel.c)) {
         QL_DOUT("kernel contains measurements ...");
         // decompose the circuit
-        Vec<circuit*> cs = split_circuit(kernel.c);
-        Vec<circuit> cs_opt;
+        Vec<ir::Circuit> cs = split_circuit(kernel.c);
+        Vec<ir::Circuit> cs_opt;
         for (auto c : cs)
         {
-            if (!contains_measurements(*c)) {
-                circuit opt = rm.optimize(*c);
+            if (!contains_measurements(c)) {
+                ir::Circuit opt = rm.optimize(c);
                 cs_opt.push_back(opt);
             } else {
-                cs_opt.push_back(*c);
+                cs_opt.push_back(c);
             }
         }
         // for (int i=0; i<cs_opt.size(); ++i)
         // print(cs_opt[i]);
-        kernel.c.clear( );
+        kernel.c.reset();
         for (size_t i = 0; i < cs_opt.size(); ++i) {
             for (size_t j = 0; j < cs_opt[i].size(); j++) {
-                kernel.c.push_back(cs_opt[i][j]);
+                kernel.c.add(cs_opt[i][j]);
             }
         }
     } else {
@@ -192,14 +192,14 @@ inline void rotation_optimize_kernel(quantum_kernel &kernel, const quantum_platf
 
 // rotation_optimize pass
 void rotation_optimize(
-    quantum_program *programp,
+    ir::Program &program,
     const quantum_platform &platform,
     const Str &passname
 ) {
     if (com::options::get("optimize") == "yes") {
         QL_IOUT("optimizing quantum kernels...");
-        for (size_t k=0; k<programp->kernels.size(); ++k) {
-            rotation_optimize_kernel(programp->kernels[k], platform);
+        for (size_t k=0; k<program.kernels.size(); ++k) {
+            rotation_optimize_kernel(*program.kernels[k], platform);
         }
     }
 }

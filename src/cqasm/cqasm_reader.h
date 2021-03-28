@@ -25,9 +25,9 @@ class Reader {
 private:
     utils::Opt<ReaderImpl> impl;
 public:
-    Reader(const quantum_platform &platform, quantum_program &program);
-    Reader(const quantum_platform &platform, quantum_program &program, const utils::Json &gateset);
-    Reader(const quantum_platform &platform, quantum_program &program, const utils::Str &gateset_fname);
+    Reader(const quantum_platform &platform, ir::Program &program);
+    Reader(const quantum_platform &platform, ir::Program &program, const utils::Json &gateset);
+    Reader(const quantum_platform &platform, ir::Program &program, const utils::Str &gateset_fname);
     void string2circuit(const utils::Str &cqasm_str);
     void file2circuit(const utils::Str &cqasm_fname);
 };

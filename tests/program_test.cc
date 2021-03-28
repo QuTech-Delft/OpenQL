@@ -22,27 +22,27 @@ int main(int argc, char ** argv)
    qplatform.print_info();
 
    // create program
-   ql::quantum_program prog("prog", qplatform, nqubits);
-   prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+   auto prog = ql::utils::make_node<ql::ir::Program>("prog", qplatform, nqubits);
+   prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
    // create a kernel
-   ql::quantum_kernel kernel("my_kernel", qplatform, nqubits);
+   auto kernel = ql::utils::make_node<ql::ir::Kernel>("my_kernel", qplatform, nqubits);
 
    // add gates to kernel
-   kernel.gate("prepz", {0});
-   kernel.gate("prepz", {1});
-   kernel.gate("x", {0});
-   kernel.gate("y", {2});
-   kernel.gate("cnot", {0,2});
-   kernel.gate("measure", {0});
-   kernel.gate("measure", {1});
-   kernel.gate("measure", {2});
+   kernel->gate("prepz", {0});
+   kernel->gate("prepz", {1});
+   kernel->gate("x", {0});
+   kernel->gate("y", {2});
+   kernel->gate("cnot", {0,2});
+   kernel->gate("measure", {0});
+   kernel->gate("measure", {1});
+   kernel->gate("measure", {2});
 
    // add kernel to prog
-   prog.add(kernel);
+   prog->add(kernel);
 
    // compile the program
-   prog.compile();
+   prog->compile();
 
    return 0;
 }

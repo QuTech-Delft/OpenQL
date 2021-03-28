@@ -6,11 +6,14 @@
 
 #include "ql/utils/str.h"
 #include "ql/utils/map.h"
+#include "ql/utils/ptr.h"
 #include "gate.h"
 
 namespace ql {
 
-typedef utils::Map<utils::Str, custom_gate*> instruction_map_t;
+using CustomGateRef = utils::One<ir::gates::Custom>;
+
+using InstructionMap = utils::Map<utils::Str, CustomGateRef>;
 
 /**
  * loading hardware configuration
@@ -23,7 +26,7 @@ public:
     hardware_configuration(const utils::Str &config_file_name);
 
     void load(
-        instruction_map_t &instruction_map,
+        InstructionMap &instruction_map,
         utils::Json &instruction_settings,
         utils::Json &hardware_settings,
         utils::Json &resources,

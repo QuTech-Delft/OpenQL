@@ -24,18 +24,18 @@ private:
     utils::Opt<utils::OutFile> of;
 public:
     ReportFile(
-        const quantum_program *programp,
+        const ir::Program &program,
         const utils::Str &in_or_out,
         const utils::Str &pass_name
     );
     void write(const utils::Str &content);
     void write_kernel_statistics(
-        const quantum_kernel &k,
+        const ir::Kernel &k,
         const quantum_platform &platform,
         const utils::Str &comment_prefix=""
     );
     void write_totals_statistics(
-        const utils::Vec<quantum_kernel> &kernels,
+        const ir::Kernels &kernels,
         const quantum_platform &platform,
         const utils::Str &comment_prefix=""
     );
@@ -54,13 +54,13 @@ public:
  * in a file with a name that contains the program unique name and an extension defined by the pass_name
  */
 void write_qasm(
-    const quantum_program *programp,
+    const ir::Program &program,
     const quantum_platform &platform,
     const utils::Str &pass_name
 );
 
 void write_c(
-    const quantum_program *programp,
+    const ir::Program &program,
     const quantum_platform &platform,
     const utils::Str &pass_name
 );
@@ -70,7 +70,7 @@ void write_c(
  * in a file with a name that contains the program unique name and the place from where the report is done
  */
 void report_qasm(
-    const quantum_program *programp,
+    const ir::Program &program,
     const quantum_platform &platform,
     const utils::Str &in_or_out,
     const utils::Str &pass_name
@@ -89,7 +89,7 @@ void report_string(
  */
 void report_kernel_statistics(
     std::ostream &os,
-    const quantum_kernel &k,
+    const ir::Kernel &k,
     const quantum_platform &platform,
     const utils::Str &comment_prefix
 );
@@ -99,7 +99,7 @@ void report_kernel_statistics(
  */
 void report_totals_statistics(
     std::ostream &os,
-    const utils::Vec<quantum_kernel> &kernels,
+    const ir::Kernels &kernels,
     const quantum_platform &platform,
     const utils::Str &comment_prefix
 );
@@ -113,7 +113,7 @@ void report_totals_statistics(
  * otherwise, the sequence of calls in here has to be copied and supplemented by some report_string calls
  */
 void report_statistics(
-    const quantum_program *programp,
+    const ir::Program &program,
     const quantum_platform &platform,
     const utils::Str &in_or_out,
     const utils::Str &pass_name,
@@ -132,7 +132,7 @@ void report_statistics(
  * the second and later use the version (2 or larger) as suffix to the program's name
  */
 void report_init(
-    quantum_program *programp,
+    ir::Program &program,
     const quantum_platform &platform
 );
 
