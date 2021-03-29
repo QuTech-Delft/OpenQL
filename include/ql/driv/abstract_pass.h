@@ -15,14 +15,10 @@
 #include "ql/utils/pair.h"
 #include "ql/utils/options.h"
 #include "ql/utils/compat.h"
+#include "ql/ir/ir.h"
 
 namespace ql {
 namespace driv {
-
-// TODO: these should be coming from the ir namespace
-class Platform;
-class Program;
-class Kernel;
 
 // Forward declaration for the pass factory.
 class PassFactory;
@@ -134,8 +130,8 @@ protected:
      * this is not a pass group.
      */
     virtual void on_compile(
-        const utils::Ptr<Platform> &platform,
-        const utils::Ptr<Program> &program
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program
     ) const = 0;
 
 public:
@@ -366,8 +362,8 @@ public:
      * Executes this pass or pass group on the given platform and program.
      */
     void compile(
-        const utils::Ptr<Platform> &platform,
-        const utils::Ptr<Program> &program
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program
     ) const;
 
 };
@@ -404,8 +400,8 @@ protected:
      * pass always behaves as a group. Thus, it just throws an exception.
      */
     void on_compile(
-        const utils::Ptr<Platform> &platform,
-        const utils::Ptr<Program> &program
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program
     ) const final;
 
     /**
@@ -480,40 +476,6 @@ protected:
 };
 
 /**
- * A pass type for passes that may mutate the platform tree to desugar or
- * error-check it.
- */
-class AbstractPlatformPreprocessingPass : public AbstractNormalPass {
-protected:
-    
-    /**
-     * Constructs the preprocessing pass. No error checking here; this is up to
-     * the parent pass group.
-     */
-    AbstractPlatformPreprocessingPass(
-        const utils::Ptr<const PassFactory> &pass_factory,
-        const utils::Str &instance_name,
-        const utils::Str &type_name
-    );
-
-    /**
-     * Implementation for on_compile() that calls run() appropriately.
-     */
-    void on_compile(
-        const utils::Ptr<Platform> &platform,
-        const utils::Ptr<Program> &program
-    ) const final;
-
-    /**
-     * The virtual implementation for this pass.
-     */
-    virtual void run(
-        const utils::Ptr<Platform> &platform
-    ) const = 0;
-
-};
-
-/**
  * A pass type for passes that apply a program-wide transformation.
  */
 class AbstractProgramTransformationPass : public AbstractNormalPass {
@@ -533,16 +495,16 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     void on_compile(
-        const utils::Ptr<Platform> &platform,
-        const utils::Ptr<Program> &program
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program
     ) const final;
 
     /**
      * The virtual implementation for this pass.
      */
     virtual void run(
-        const utils::Ptr<const Platform> &platform,
-        const utils::Ptr<Program> &program
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program
     ) const = 0;
 
 };
@@ -567,16 +529,17 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     void on_compile(
-        const utils::Ptr<Platform> &platform,
-        const utils::Ptr<Program> &program
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program
     ) const final;
 
     /**
      * The virtual implementation for this pass.
      */
     virtual void run(
-        const utils::Ptr<const Platform> &platform,
-        const utils::Ptr<Kernel> &kernel
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program,
+        const ir::KernelRef &kernel
     ) const = 0;
 
 };
@@ -601,16 +564,16 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     void on_compile(
-        const utils::Ptr<Platform> &platform,
-        const utils::Ptr<Program> &program
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program
     ) const final;
 
     /**
      * The virtual implementation for this pass.
      */
     virtual void run(
-        const utils::Ptr<const Platform> &platform,
-        const utils::Ptr<const Program> &program
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program
     ) const = 0;
 
 };
@@ -635,16 +598,17 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     void on_compile(
-        const utils::Ptr<Platform> &platform,
-        const utils::Ptr<Program> &program
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program
     ) const final;
 
     /**
      * The virtual implementation for this pass.
      */
     virtual void run(
-        const utils::Ptr<const Platform> &platform,
-        const utils::Ptr<const Kernel> &kernel
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program,
+        const ir::KernelRef &kernel
     ) const = 0;
 
 };
