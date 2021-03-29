@@ -5,6 +5,7 @@
 #include "unitary.h"
 
 #include "ql/utils/exception.h"
+#include "ql/utils/logger.h"
 
 #ifndef WITHOUT_UNITARY_DECOMPOSITION
 #include <Eigen/MatrixFunctions>
