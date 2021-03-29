@@ -85,7 +85,7 @@ using namespace utils;
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const quantum_program* program, const VisualizerConfiguration &configuration) {
+void visualize(const ir::Program &program, const VisualizerConfiguration &configuration) {
     QL_WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
          << "might be missing and the visualizer has disabled itself.");
 }
