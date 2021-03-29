@@ -4,13 +4,13 @@
 
 #pragma once
 
+#include <sstream>
+#include <bitset>
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/pair.h"
 #include "ql/utils/vec.h"
-#include <sstream>
-#include <bitset>
-#include "classical.h"
+#include "ql/ir/ir.h"
 
 namespace ql {
 namespace arch {

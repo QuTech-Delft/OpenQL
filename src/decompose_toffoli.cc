@@ -2,10 +2,9 @@
  * Toffoli gate decomposer pass implementation.
  */
 
-#include "ql/utils/vec.h"
-#include "circuit.h"
-#include "kernel.h"
 #include "decompose_toffoli.h"
+
+#include "ql/utils/vec.h"
 #include "ql/com/options/options.h"
 
 namespace ql {

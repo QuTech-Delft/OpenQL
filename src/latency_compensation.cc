@@ -5,9 +5,6 @@
 #include "latency_compensation.h"
 
 #include "ql/utils/num.h"
-#include "gate.h"
-#include "kernel.h"
-#include "circuit.h"
 #include "report.h"
 
 namespace ql {

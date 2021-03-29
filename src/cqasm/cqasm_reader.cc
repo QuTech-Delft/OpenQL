@@ -5,9 +5,6 @@
 #include "cqasm_reader.h"
 
 #include "ql/utils/tree.h"
-#include "platform.h"
-#include "kernel.h"
-#include "program.h"
 #include "cqasm.hpp"
 
 namespace ql {

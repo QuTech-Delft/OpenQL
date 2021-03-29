@@ -2,19 +2,16 @@
  * Quantum program abstraction implementation.
  */
 
-#include "program.h"
+#include "ql/ir/program.h"
 
 #include "ql/utils/filesystem.h"
-#include "compiler.h"
 #include "ql/com/options/options.h"
+#include "arch/cc_light/cc_light_eqasm_compiler.h"
+#include "arch/cc/backend_cc.h"
+#include "compiler.h"
 #include "interactionMatrix.h"
 #include "scheduler.h"
 #include "optimizer.h"
-#include "decompose_toffoli.h"
-#include "clifford.h"
-#include "write_sweep_points.h"
-#include "arch/cc_light/cc_light_eqasm_compiler.h"
-#include "arch/cc/backend_cc.h"
 
 static unsigned long phi_node_count = 0;    // FIXME: number across quantum_program instances
 

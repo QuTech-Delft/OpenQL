@@ -8,7 +8,6 @@
 #include "ql/utils/filesystem.h"
 #include "ql/utils/map.h"
 #include "ql/com/options/options.h"
-#include "kernel.h"
 
 namespace ql {
 

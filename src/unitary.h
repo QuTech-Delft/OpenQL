@@ -7,7 +7,6 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
-#include "gate.h"
 
 namespace ql {
 

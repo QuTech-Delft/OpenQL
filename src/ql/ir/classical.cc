@@ -2,7 +2,7 @@
  * Classical operation implementation.
  */
 
-#include "classical.h"
+#include "ql/ir/classical.h"
 
 #include "ql/utils/exception.h"
 

@@ -14,7 +14,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/map.h"
-#include "gate.h"
+#include "ql/ir/ir.h"
 #include "ql/pass/ana/visualize/visualize.h"
 
 namespace ql {

@@ -7,7 +7,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/map.h"
 #include "ql/utils/ptr.h"
-#include "gate.h"
+#include "ql/ir/gate.h"
 
 namespace ql {
 

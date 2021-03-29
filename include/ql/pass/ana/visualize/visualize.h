@@ -7,7 +7,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
-#include "program.h"
+#include "ql/ir/ir.h"
 
 namespace ql {
 namespace pass {

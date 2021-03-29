@@ -7,9 +7,8 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/opt.h"
-#include "kernel.h"
+#include "ql/ir/ir.h"
 #include "platform.h"
-#include "program.h"
 
 namespace ql {
 namespace cqasm {

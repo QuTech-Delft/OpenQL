@@ -11,8 +11,8 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/list.h"
+#include "ql/ir/ir.h"
 #include "platform.h"
-#include "circuit.h"
 
 namespace ql {
 

@@ -10,8 +10,8 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/filesystem.h"
+#include "ql/ir/ir.h"
 #include "platform.h"
-#include "program.h"
 
 namespace ql {
 

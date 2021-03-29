@@ -7,9 +7,9 @@
  *          functions is correct
  */
 
-#include <iosfwd>
 #include "codegen_cc.h"
 
+#include <iosfwd>
 #include "version.h"
 #include "ql/com/options/options.h"
 

@@ -257,7 +257,7 @@ typedef _qbit * qbit;\n\
 void " << program.name << "(){\n";
 
     out_c << "    qbit ";
-    
+
     for (UInt i = 0; i < platform.get_qubit_number() - 1; i++) {
         out_c << "qc" << i << ",";
     }
@@ -270,10 +270,10 @@ void " << program.name << "(){\n";
         }
         out_c << "rs" << program.creg_count-1 << ";\n\n";
     }
-    
+
     for (auto kernel : program.get_kernels()) {
          QL_DOUT("          Kernel name: " << kernel->get_name() << " with type = " << (int)kernel->type);
-        
+
         switch (kernel->type) {
             case ir::KernelType::IF_START:
                 out_c << "    if(rs" << (kernel->br_condition->operands[0])->as_register().id << " ";
@@ -331,7 +331,7 @@ void " << program.name << "(){\n";
     }
 
     out_c << "}\n";
-    
+
     OutFile(fname).write(out_c.str());
     QL_DOUT("... writing c file [done]");
 }

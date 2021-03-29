@@ -9,9 +9,8 @@
 #include "ql/utils/pair.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/map.h"
-#include "program.h"
-#include "platform.h"
 #include "ql/ir/ir.h"
+#include "platform.h"
 #include "arch/cc_light/cc_light_eqasm.h"
 #include "eqasm_compiler.h"
 

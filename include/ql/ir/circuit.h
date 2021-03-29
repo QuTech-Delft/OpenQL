@@ -8,7 +8,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/tree.h"
-#include "gate.h"
+#include "ql/ir/gate.h"
 
 namespace ql {
 namespace ir {

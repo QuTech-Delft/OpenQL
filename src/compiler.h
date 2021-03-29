@@ -5,7 +5,7 @@
 #pragma once
 
 #include "ql/utils/str.h"
-#include "program.h"
+#include "ql/ir/ir.h"
 #include "passes/passmanager.h"
 
 namespace ql {

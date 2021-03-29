@@ -11,7 +11,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/pair.h"
 #include "ql/utils/vec.h"
-#include "program.h"
+#include "ql/ir/ir.h"
 #include "ql/pass/ana/visualize/types.h"
 
 namespace ql {

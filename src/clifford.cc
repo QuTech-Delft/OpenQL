@@ -5,10 +5,8 @@
 #include "clifford.h"
 
 #include "ql/utils/num.h"
-#include "circuit.h"
-#include "report.h"
-#include "kernel.h"
 #include "ql/com/options/options.h"
+#include "report.h"
 
 namespace ql {
 

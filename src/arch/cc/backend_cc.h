@@ -10,9 +10,8 @@
 
 #include "types_cc.h"
 
-#include "program.h"
-#include "eqasm_compiler.h"
 #include "ql/ir/ir.h"
+#include "eqasm_compiler.h"
 #include "codegen_cc.h"
 
 namespace ql {

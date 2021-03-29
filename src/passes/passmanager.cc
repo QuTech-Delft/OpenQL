@@ -2,8 +2,9 @@
  * OpenQL pass manager implementation.
  */
 
-#include "ql/utils/num.h"
 #include "passmanager.h"
+
+#include "ql/utils/num.h"
 #include "write_sweep_points.h"
 
 namespace ql {

@@ -9,7 +9,7 @@
 #include "ql/utils/json.h"
 #include "ql/utils/misc.h"
 #include "ql/utils/tree.h"
-#include "matrix.h"
+#include "ql/ir/matrix.h"
 
 namespace ql {
 namespace ir {

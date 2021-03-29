@@ -2,7 +2,7 @@
  * Circuit (i.e. gate container) implementation.
  */
 
-#include "circuit.h"
+#include "ql/ir/circuit.h"
 
 #include <iostream>
 

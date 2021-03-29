@@ -2,7 +2,7 @@
  * Quantum gate abstraction implementation.
  */
 
-#include "gate.h"
+#include "ql/ir/gate.h"
 
 #include <cctype>
 #include "ql/utils/num.h"

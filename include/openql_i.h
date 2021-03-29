@@ -5,7 +5,6 @@
 #pragma once
 
 #include "openql.h"
-#include "classical.h"
 #include "unitary.h"
 #include "compiler.h"
 

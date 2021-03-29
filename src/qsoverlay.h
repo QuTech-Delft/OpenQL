@@ -3,7 +3,7 @@
  */
 
 #include "ql/utils/str.h"
-#include "program.h"
+#include "ql/ir/ir.h"
 #include "platform.h"
 
 namespace ql {

@@ -8,8 +8,8 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/tree.h"
+#include "ql/ir/kernel.h"
 #include "platform.h"
-#include "kernel.h"
 
 namespace ql {
 

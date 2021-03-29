@@ -13,10 +13,9 @@
 #include "ql/utils/list.h"
 #include "ql/utils/str.h"
 #include "ql/utils/num.h"
+#include "ql/ir/ir.h"
 #include "platform.h"
-#include "kernel.h"
 #include "resource_manager.h"
-#include "gate.h"
 #include "scheduler.h"
 //#include "metrics.h"
 

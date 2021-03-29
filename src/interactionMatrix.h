@@ -7,8 +7,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
-
-#include "circuit.h"
+#include "ql/ir/ir.h"
 
 namespace ql {
 

@@ -6,9 +6,9 @@
  * @note
  */
 
-#include <iomanip>
-
 #include "datapath_cc.h"
+
+#include <iomanip>
 
 namespace ql {
 namespace arch {

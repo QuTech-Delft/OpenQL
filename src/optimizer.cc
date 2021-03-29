@@ -6,8 +6,6 @@
 
 #include "ql/utils/vec.h"
 #include "ql/utils/num.h"
-#include "circuit.h"
-#include "kernel.h"
 #include "ql/com/options/options.h"
 
 namespace ql {

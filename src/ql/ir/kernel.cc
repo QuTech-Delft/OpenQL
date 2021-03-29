@@ -2,21 +2,19 @@
  * Quantum kernel abstraction implementation.
  */
 
-#include "kernel.h"
+#include "ql/ir/kernel.h"
 
 #include <sstream>
 #include <algorithm>
 #include <iterator>
 
-
-#define K_PI 3.141592653589793238462643383279502884197169399375105820974944592307816406L
 #include "ql/utils/json.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/com/options/options.h"
-#include "gate.h"
-#include "classical.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/gate.h"
+#include "ql/ir/classical.h"
+#include "ql/ir/bundle.h"
 #include "unitary.h"
 #include "platform.h"
 
@@ -1567,28 +1565,28 @@ void Kernel::controlled_single(
         } else if (gtype == GateType::RX90) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
-            controlled_rx(tq, cq, K_PI/2);
+            controlled_rx(tq, cq, M_PI/2);
         } else if (gtype == GateType::MRX90) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
-            controlled_rx(tq, cq, -1*K_PI/2);
+            controlled_rx(tq, cq, -1*M_PI/2);
         } else if (gtype == GateType::RX180) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
-            controlled_rx(tq, cq, K_PI);
+            controlled_rx(tq, cq, M_PI);
             // controlled_x(tq, cq);
         } else if (gtype == GateType::RY90) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
-            controlled_ry(tq, cq, K_PI/4);
+            controlled_ry(tq, cq, M_PI/4);
         } else if (gtype == GateType::MRY90) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
-            controlled_ry(tq, cq, -1*K_PI/4);
+            controlled_ry(tq, cq, -1*M_PI/4);
         } else if (gtype == GateType::RY180) {
             UInt tq = goperands[0];
             UInt cq = control_qubit;
-            controlled_ry(tq, cq, K_PI);
+            controlled_ry(tq, cq, M_PI);
             // controlled_y(tq, cq);
         } else {
             QL_EOUT("Controlled version of gate '" << gname << "' not defined !");

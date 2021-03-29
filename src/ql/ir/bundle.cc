@@ -2,7 +2,7 @@
  * Common IR implementation.
  */
 
-#include "ql/ir/ir.h"
+#include "ql/ir/bundle.h"
 
 #include "ql/com/options/options.h"
 

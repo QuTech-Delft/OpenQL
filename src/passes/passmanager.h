@@ -6,8 +6,8 @@
 
 #include "ql/utils/str.h"
 #include "ql/utils/list.h"
+#include "ql/ir/ir.h"
 #include "passes.h"
-#include "program.h"
 
 namespace ql {
 

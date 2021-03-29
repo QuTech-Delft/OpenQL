@@ -9,8 +9,7 @@
 #pragma once
 
 #include "ql/utils/logger.h"
-#include "gate.h"
-
+#include "ql/ir/ir.h"
 #include "types_cc.h"
 #include "bundle_info.h"
 
