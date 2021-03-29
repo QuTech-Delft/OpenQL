@@ -370,10 +370,10 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     def test_rc_sched_cz(self):
-        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq.json'))
 
-        p = ql.Program('test_rc_sched_cz', platform, 5, num_cregs, num_bregs)
-        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
+        p = ql.Program('test_rc_sched_cz', platform, 17, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 17, num_cregs, num_bregs)
 
         k.gate('x', [1])
         k.gate("cz", [0, 2])  # no associated park
