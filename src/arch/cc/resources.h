@@ -24,35 +24,39 @@ typedef Bool (*tUsesResource)(const quantum_platform &platform, const Str &iname
 
 
 // Each qubit can be used by only one gate at a time.
-class cc_resource_qubit : public resource_t {
+class ResourceQubit : public resource_t {
 public:
     // fwd: qubit q is busy till cycle=cycle[q], i.e. all cycles < cycle[q] it is busy, i.e. start_cycle must be >= cycle[q]
     // bwd: qubit q is busy from cycle=cycle[q], i.e. all cycles >= cycle[q] it is busy, i.e. start_cycle+duration must be <= cycle[q]
     Vec<UInt> cycle;
 
-    cc_resource_qubit(const quantum_platform &platform, scheduling_direction_t dir, UInt qubit_number);
+    ResourceQubit(const quantum_platform &platform, scheduling_direction_t dir, UInt qubit_number);
 
-    cc_resource_qubit *clone() const & override;
-    cc_resource_qubit *clone() && override;
+    ResourceQubit *clone() const & override;
+    ResourceQubit *clone() && override;
 
     Bool available(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
     void reserve(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
 
 
-// Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.
-// Each one controls a private set of qubits.
-// A measurement unit can control multiple qubits at the same time, but only when they start at the same time.
-class cc_resource_meas : public resource_t {
+// Some instruments can control multiple qubits at the same time, but only when they start at the same time.
+class ResourceSharedInstrument : public resource_t {
 public:
     Vec<UInt> fromcycle;  // last measurement start cycle
     Vec<UInt> tocycle;    // is busy till cycle
-    Map<UInt,UInt> qubit2meas;
+    Map<UInt,UInt> qubit2instr;
 
-    cc_resource_meas(const quantum_platform & platform, scheduling_direction_t dir, UInt num_meas_unit, const Map<UInt,UInt> &_qubit2meas, tUsesResource usesResourceFunc);
+    ResourceSharedInstrument(
+            const quantum_platform &platform,
+            scheduling_direction_t dir,
+            const Str &name,
+            UInt num_instr,
+            const Map<UInt,UInt> &_qubit2meas,
+            tUsesResource usesResourceFunc);
 
-    cc_resource_meas *clone() const & override;
-    cc_resource_meas *clone() && override;
+    ResourceSharedInstrument *clone() const & override;
+    ResourceSharedInstrument *clone() && override;
 
     Bool available(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
     void reserve(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;

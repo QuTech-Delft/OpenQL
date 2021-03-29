@@ -415,7 +415,7 @@ cc_resource_manager::cc_resource_manager(
 
     // add qubit resource
     UInt qubit_number = json_get<UInt>(platform.hardware_settings, "qubit_number", "hardware_settings/qubit_number");
-    resource_ptrs.push_back(new cc_resource_qubit(platform, dir, qubit_number));
+    resource_ptrs.push_back(new ResourceQubit(platform, dir, qubit_number));
 
     // load CC settings
     Settings settings;
@@ -444,8 +444,8 @@ cc_resource_manager::cc_resource_manager(
         }
     }
     UInt num_meas_unit = meas_unit;
-    resource_ptrs.push_back(new cc_resource_meas(platform, dir, num_meas_unit, qubit2meas, Settings::isReadout));
-    resource_ptrs.push_back(new cc_resource_meas(platform, dir, 1, qubit2flux, Settings::isFlux));
+    resource_ptrs.push_back(new ResourceSharedInstrument(platform, dir, "meas", num_meas_unit, qubit2meas, Settings::isReadout));
+    resource_ptrs.push_back(new ResourceSharedInstrument(platform, dir, "flux", 1, qubit2flux, Settings::isFlux));
 
     // handle platform resources
     for (auto it = platform.resources.cbegin(); it != platform.resources.cend(); ++it) {
