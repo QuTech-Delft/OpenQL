@@ -4,6 +4,7 @@
  */
 
 #include "cc_resource_manager.h"
+#include "resources.h"
 #include "settings_cc.h"
 
 #include "utils/json.h"
@@ -13,170 +14,6 @@ namespace arch {
 namespace cc {
 
 using namespace utils;
-
-/************************************************************************\
-| cc_resource_qubit
-\************************************************************************/
-
-cc_resource_qubit::cc_resource_qubit(
-    const quantum_platform &platform,
-    scheduling_direction_t dir,
-    UInt qubit_number
-) :
-    resource_t("qubits", dir)
-{
-    cycle.resize(qubit_number);
-    UInt val = forward_scheduling == dir ? 0 : MAX_CYCLE;
-    for (UInt q = 0; q < qubit_number; q++) {
-        cycle[q] = val;
-    }
-}
-
-cc_resource_qubit *cc_resource_qubit::clone() const & {
-    QL_DOUT("Cloning/copying cc_resource_qubit");
-    return new cc_resource_qubit(*this);
-}
-
-cc_resource_qubit *cc_resource_qubit::clone() && {
-    QL_DOUT("Cloning/moving cc_resource_qubit");
-    return new cc_resource_qubit(std::move(*this));
-}
-
-Bool cc_resource_qubit::available(
-    UInt op_start_cycle,
-    gate *ins,
-    const quantum_platform &platform
-) {
-    for (auto q : ins->operands) {
-        if (forward_scheduling == direction) {
-            QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy till cycle : " << cycle[q]);
-            if (op_start_cycle < cycle[q]) {
-                QL_DOUT("    " << name << " resource busy ...");
-                return false;
-            }
-        } else {
-            QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy from cycle : " << cycle[q]);
-            UInt operation_duration = platform.time_to_cycles(ins->duration);
-            if (op_start_cycle + operation_duration > cycle[q]) {
-                QL_DOUT("    " << name << " resource busy ...");
-                return false;
-            }
-        }
-    }
-    QL_DOUT("    " << name << " resource available ...");
-    return true;
-}
-
-void cc_resource_qubit::reserve(
-    UInt op_start_cycle,
-    gate *ins,
-    const quantum_platform &platform
-) {
-    UInt operation_duration = platform.time_to_cycles(ins->duration);
-    UInt val = forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle;
-
-    for (auto q : ins->operands) {
-        cycle[q] = val;
-        QL_DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " qubit: " << q << " reserved till/from cycle: " << cycle[q]);
-    }
-}
-
-
-/************************************************************************\
-| cc_resource_meas
-\************************************************************************/
-
-cc_resource_meas::cc_resource_meas(
-    const quantum_platform &platform,
-    scheduling_direction_t dir,
-    UInt num_meas_unit,
-    const Map<UInt,UInt> &_qubit2meas
-) :
-    resource_t("meas_units", dir)   // FIXME
-{
-    qubit2meas = _qubit2meas;
-    fromcycle.resize(num_meas_unit);
-    tocycle.resize(num_meas_unit);
-
-    UInt val = forward_scheduling == dir ? 0 : MAX_CYCLE;
-    for (UInt i=0; i<num_meas_unit; i++) {
-        fromcycle[i] = val;
-        tocycle[i] = val;
-    }
-}
-
-cc_resource_meas *cc_resource_meas::clone() const & {
-    QL_DOUT("Cloning/copying cc_resource_meas");
-    return new cc_resource_meas(*this);
-}
-
-cc_resource_meas *cc_resource_meas::clone() && {
-    QL_DOUT("Cloning/moving cc_resource_meas");
-    return new cc_resource_meas(std::move(*this));
-}
-
-// FIXME: should we disallow gates during measurement?
-Bool cc_resource_meas::available(
-    UInt op_start_cycle,
-    gate *ins,
-    const quantum_platform &platform
-) {
-    if (Settings::isReadout(platform, ins->name)) {
-        for (auto q : ins->operands) {
-            QL_DOUT(
-                " available " << name
-                << "? op_start_cycle: " << op_start_cycle
-                << "  meas: " << qubit2meas.at(q)
-                << " is busy from cycle: " << fromcycle[qubit2meas.at(q)]
-                << " to cycle: " << tocycle[qubit2meas.at(q)]
-            );
-            if (direction == forward_scheduling) {
-                if (op_start_cycle != fromcycle[qubit2meas.at(q)]) {
-                    // If current measurement on same measurement-unit does not start in the
-                    // same cycle, then it should wait for current measurement to finish
-                    if (op_start_cycle < tocycle[qubit2meas.at(q)]) {
-                        QL_DOUT("    " << name << " resource busy ...");
-                        return false;
-                    }
-                }
-            } else {
-                if (op_start_cycle != fromcycle[qubit2meas.at(q)]) {
-                    UInt operation_duration = platform.time_to_cycles(ins->duration);
-                    // If current measurement on same measurement-unit does not start in the
-                    // same cycle, then it should wait until it would finish at start of or earlier than current measurement
-                    if (op_start_cycle + operation_duration > fromcycle[qubit2meas.at(q)]) {
-                        QL_DOUT("    " << name << " resource busy ...");
-                        return false;
-                    }
-                }
-            }
-        }
-        QL_DOUT("    " << name << " resource available ...");
-    }
-    return true;
-}
-
-void cc_resource_meas::reserve(
-    UInt op_start_cycle,
-    gate *ins,
-    const quantum_platform &platform
-) {
-    if (Settings::isReadout(platform, ins->name)) {
-        UInt operation_duration = platform.time_to_cycles(ins->duration);
-        for (auto q : ins->operands) {
-            fromcycle[qubit2meas.at(q)] = op_start_cycle;
-            tocycle[qubit2meas.at(q)] = op_start_cycle + operation_duration;
-            QL_DOUT(
-                "reserved " << name
-                << ". op_start_cycle: " << op_start_cycle
-                << " meas: " << qubit2meas.at(q)
-                << " reserved from cycle: " << fromcycle[qubit2meas.at(q)]
-                << " to cycle: " << tocycle[qubit2meas.at(q)]
-            );
-        }
-    }
-}
-
 
 #if 0   // FIXME: unused
 /************************************************************************\
@@ -549,9 +386,6 @@ void cc_detuned_qubits_resource_t::reserve(
 | cc_resource_manager
 \************************************************************************/
 
-// Allocate those resources that were specified in the config file.
-// Those that are not specified, are not allocated, so are not used in scheduling/mapping.
-// The resource names tested below correspond to the names of the resources sections in the config file.
 cc_resource_manager::cc_resource_manager(
     const quantum_platform &platform,
     scheduling_direction_t dir
@@ -562,15 +396,18 @@ cc_resource_manager::cc_resource_manager(
     QL_DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
 
     // unconditionally add resources that do not use JSON section "resources"
+
+    // add qubit resource
     UInt qubit_number = json_get<UInt>(platform.hardware_settings, "qubit_number", "hardware_settings/qubit_number");
     resource_ptrs.push_back(new cc_resource_qubit(platform, dir, qubit_number));
 
-    // get meas resources from instrument definitions
-    Map<UInt,UInt> qubit2meas;
-    UInt meas_unit = 0;
+    // load CC settings
     Settings settings;
     settings.loadBackendSettings(platform);
 
+    // add meas resources based on instrument definitions
+    Map<UInt,UInt> qubit2meas;
+    UInt meas_unit = 0;
     for (UInt i=0; i<settings.getInstrumentsSize(); i++) {
         const Json &instrument = settings.getInstrumentAtIdx(i);
         if ("measure" == json_get<Str>(instrument, "signal_type")) {    // FIXME: this adds semantics to "signal_type", which we do nowhere else
@@ -588,19 +425,11 @@ cc_resource_manager::cc_resource_manager(
         }
     }
     UInt num_meas_unit = meas_unit;
-    resource_ptrs.push_back(new cc_resource_meas(platform, dir, num_meas_unit, qubit2meas));
+    resource_ptrs.push_back(new cc_resource_meas(platform, dir, num_meas_unit, qubit2meas, Settings::isReadout));
 
+    // handle platform resources
     for (auto it = platform.resources.cbegin(); it != platform.resources.cend(); ++it) {
         Str key = it.key();
-
-#if 0
-        if (key == "edges") {
-            resource_t *res = new cc_edge_resource_t(platform, dir);
-            resource_ptrs.push_back(res);
-        } else if (key == "detuned_qubits") {
-            resource_t *res = new cc_detuned_qubits_resource_t(platform, dir);
-            resource_ptrs.push_back(res);
-#endif
         if (key == "qubits" || key == "meas_units" || key == "qwgs" || key == "edges" || key == "detuned_qubits") {  // keys used by CC-light
             QL_WOUT("resource key '" << key << "' not used by CC");
         } else {

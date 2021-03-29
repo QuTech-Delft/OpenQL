@@ -12,52 +12,12 @@
 #include "utils/str.h"
 #include "utils/pair.h"
 #include "utils/vec.h"
-#include "utils/json.h"
 
 #include <fstream>
 
 namespace ql {
 namespace arch {
 namespace cc {
-
-// ============ classes of resources that _may_ appear in a configuration file
-// these are a superset of those allocated by the cc_resource_manager constructor below
-
-// Each qubit can be used by only one gate at a time.
-class cc_resource_qubit : public resource_t {
-public:
-    // fwd: qubit q is busy till cycle=cycle[q], i.e. all cycles < cycle[q] it is busy, i.e. start_cycle must be >= cycle[q]
-    // bwd: qubit q is busy from cycle=cycle[q], i.e. all cycles >= cycle[q] it is busy, i.e. start_cycle+duration must be <= cycle[q]
-    Vec<UInt> cycle;
-
-    cc_resource_qubit(const quantum_platform &platform, scheduling_direction_t dir, UInt qubit_number);
-
-    cc_resource_qubit *clone() const & override;
-    cc_resource_qubit *clone() && override;
-
-    Bool available(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-};
-
-
-// Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.
-// Each one controls a private set of qubits.
-// A measurement unit can control multiple qubits at the same time, but only when they start at the same time.
-class cc_resource_meas : public resource_t {
-public:
-    Vec<UInt> fromcycle;  // last measurement start cycle
-    Vec<UInt> tocycle;    // is busy till cycle
-    Map<UInt,UInt> qubit2meas;
-
-    cc_resource_meas(const quantum_platform & platform, scheduling_direction_t dir, UInt num_meas_unit, const Map<UInt,UInt> &_qubit2meas);
-
-    cc_resource_meas *clone() const & override;
-    cc_resource_meas *clone() && override;
-
-    Bool available(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
-};
-
 
 
 #if 0   // FIXME: unused
@@ -132,18 +92,10 @@ public:
 #endif
 
 
-
-// ============ platform specific resource_manager matching config file resources sections with resource classes above
-// each config file resources section must have a resource class above
-// not all resource classes above need to be actually used and specified in a config file; only those specified, are used
-
 class cc_resource_manager : public platform_resource_manager_t {
 public:
     cc_resource_manager() = default;
 
-    // Allocate those resources that were specified in the config file.
-    // Those that are not specified, are not allocated, so are not used in scheduling/mapping.
-    // The resource names tested below correspond to the names of the resources sections in the config file.
     cc_resource_manager(const quantum_platform &platform, scheduling_direction_t dir);
 
     cc_resource_manager *clone() const & override;
