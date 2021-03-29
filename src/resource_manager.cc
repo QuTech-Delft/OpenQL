@@ -69,9 +69,9 @@ platform_resource_manager_t &platform_resource_manager_t::operator=(const platfo
 
 utils::Bool platform_resource_manager_t::available(
     utils::UInt op_start_cycle,
-    ir::Gate &ins,
+    const ir::GateRef &ins,
     const quantum_platform &platform
-) {
+) const {
     // DOUT("checking availability of resources for: " << ins->qasm());
     for (auto rptr : resource_ptrs) {
         // DOUT("... checking availability for resource " << rptr->name);
@@ -86,7 +86,7 @@ utils::Bool platform_resource_manager_t::available(
 
 void platform_resource_manager_t::reserve(
     utils::UInt op_start_cycle,
-    ir::Gate &ins,
+    const ir::GateRef &ins,
     const quantum_platform &platform
 ) {
     // DOUT("reserving resources for: " << ins->qasm());
@@ -156,16 +156,16 @@ resource_manager_t &resource_manager_t::operator=(const resource_manager_t &rhs)
 
 utils::Bool resource_manager_t::available(
     utils::UInt op_start_cycle,
-    ir::Gate &ins,
+    const ir::GateRef &ins,
     const quantum_platform &platform
-) {
+) const {
     // DOUT("resource_manager.available()");
     return platform_resource_manager_ptr->available(op_start_cycle, ins, platform);
 }
 
 void resource_manager_t::reserve(
     utils::UInt op_start_cycle,
-    ir::Gate &ins,
+    const ir::GateRef &ins,
     const quantum_platform &platform
 ) {
     // DOUT("resource_manager.reserve()");

@@ -201,9 +201,9 @@ public:
     }
 
     /**
-     * Mutating dereference operator.
+     * Dereference operator.
      */
-    T &operator*() {
+    T &operator*() const {
         if (!v) {
             throw Exception("attempt to dereference empty Ptr");
         }
@@ -211,29 +211,9 @@ public:
     }
 
     /**
-     * Const dereference operator.
+     * Dereference operator.
      */
-    const T &operator*() const {
-        if (!v) {
-            throw Exception("attempt to dereference empty Ptr");
-        }
-        return *v;
-    }
-
-    /**
-     * Mutating dereference operator.
-     */
-    T *operator->() {
-        if (!v) {
-            throw Exception("attempt to dereference empty Ptr");
-        }
-        return v.get();
-    }
-
-    /**
-     * Const dereference operator.
-     */
-    const T *operator->() const {
+    T *operator->() const {
         if (!v) {
             throw Exception("attempt to dereference empty Ptr");
         }
@@ -417,17 +397,7 @@ public:
     /**
      * Mutating dereference operator.
      */
-    T &operator*() {
-        if (v == nullptr) {
-            throw Exception("attempt to dereference empty RawPtr");
-        }
-        return *v;
-    }
-
-    /**
-     * Const dereference operator.
-     */
-    const T &operator*() const {
+    T &operator*() const {
         if (v == nullptr) {
             throw Exception("attempt to dereference empty RawPtr");
         }
@@ -437,17 +407,7 @@ public:
     /**
      * Mutating dereference operator.
      */
-    T *operator->() {
-        if (v == nullptr) {
-            throw Exception("attempt to dereference empty RawPtr");
-        }
-        return v;
-    }
-
-    /**
-     * Const dereference operator.
-     */
-    const T *operator->() const {
+    T *operator->() const {
         if (v == nullptr) {
             throw Exception("attempt to dereference empty RawPtr");
         }

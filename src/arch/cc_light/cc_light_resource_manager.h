@@ -45,8 +45,8 @@ public:
     ccl_qubit_resource_t *clone() const & override;
     ccl_qubit_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) override;
 };
 
 // Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.
@@ -70,8 +70,8 @@ public:
     ccl_qwg_resource_t *clone() const & override;
     ccl_qwg_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) override;
 };
 
 // Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.
@@ -88,8 +88,8 @@ public:
     ccl_meas_resource_t *clone() const & override;
     ccl_meas_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) override;
 };
 
 // Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge.
@@ -116,8 +116,8 @@ public:
     ccl_edge_resource_t *clone() const & override;
     ccl_edge_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform & platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform & platform) override;
 };
 
 // A two-qubit flux gate lowers the frequency of its source qubit to get near the freq of its target qubit.
@@ -157,8 +157,8 @@ public:
     ccl_detuned_qubits_resource_t *clone() const & override;
     ccl_detuned_qubits_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) override;
 };
 
 // Inter-core communication gates use channels between cores.
@@ -183,8 +183,8 @@ public:
     ccl_channel_resource_t *clone() const & override;
     ccl_channel_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
-    void reserve(utils::UInt op_start_cycle, ir::Gate &ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) override;
 };
 
 // ============ platform specific resource_manager matching config file resources sections with resource classes above

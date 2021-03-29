@@ -1020,7 +1020,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
                 QL_DOUT("                                      " << decomp_ckt.back()->qasm());
             } else if (iname == "ldi") {
                 // auto imval = ((classical_cc*)ins)->int_operand;
-                auto imval = (ins.as<ir::gates::Classical>())->int_operand;
+                auto imval = ins->int_operand;
                 QL_DOUT("    classical instruction decomposed: imval=" << imval);
                 decomp_ckt.add_raw(new classical_cc("ldi", {icopers[0]}, imval));
                 QL_DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
@@ -1068,7 +1068,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
             }
         }
     }
-    kernel.c = decomp_ckt;;
+    kernel.c = decomp_ckt;
 
     QL_DOUT("decomposing instructions...[Done]");
 }

@@ -800,7 +800,7 @@ void Scheduler::set_remaining(scheduling_direction_t dir) {
     }
 }
 
-ir::GateRef Scheduler::find_mostcritical(List<ir::GateRef> &lg) {
+ir::GateRef Scheduler::find_mostcritical(const List<ir::GateRef> &lg) {
     UInt maxRemain = 0;
     ir::GateRef mostCriticalGate = {};
     for (auto gp : lg) {
@@ -1076,7 +1076,7 @@ Bool Scheduler::immediately_schedulable(
             ) {
             return true;
         }
-        if (rm.available(curr_cycle, *gp, platform)) {
+        if (rm.available(curr_cycle, gp, platform)) {
             return true;
         }
         isres = true;;
@@ -1186,7 +1186,7 @@ void Scheduler::schedule(
             && gp->type() != ir::GateType::CLASSICAL
             && gp->type() != ir::GateType::WAIT
             ) {
-            rm.reserve(curr_cycle, *gp, platform);
+            rm.reserve(curr_cycle, gp, platform);
         }
         TakeAvailable(selected_node, avlist, scheduled, dir);   // update avlist/scheduled/cycle
         // more nodes that could be scheduled in this cycle, will be found in an other round of the loop

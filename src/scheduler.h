@@ -213,7 +213,7 @@ public:
     // Note that set_remaining_gate expects a caller like set_remaining that iterates gp backward over the circuit
     void set_remaining_gate(ir::GateRef &gp, scheduling_direction_t dir);
     void set_remaining(scheduling_direction_t dir);
-    ir::GateRef find_mostcritical(utils::List<ir::GateRef> &lg);
+    ir::GateRef find_mostcritical(const utils::List<ir::GateRef> &lg);
 
     // ASAP/ALAP list scheduling support code with RC
     // Uses an "available list" (avlist) as interface between dependence graph and scheduler
