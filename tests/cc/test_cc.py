@@ -290,23 +290,24 @@ class Test_central_controller(unittest.TestCase):
 
     # based on test_hybrid.py::test_do_while_nested_for()
     def test_nested_rus(self):
+        num_qubits = 5
         qidx = 0
 
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
-        p = ql.Program('test_nested_rus', platform, 5, num_cregs, num_bregs)
+        p = ql.Program('test_nested_rus', platform, num_qubits, num_cregs, num_bregs)
 
-        outer_program = ql.Program('outer_program', platform, 5, num_cregs, num_bregs)
-        outer_kernel = ql.Kernel('outer_kernel', platform, 5, num_cregs)
+        outer_program = ql.Program('outer_program', platform, num_qubits, num_cregs, num_bregs)
+        outer_kernel = ql.Kernel('outer_kernel', platform, num_qubits, num_cregs)
         outer_kernel.gate("measure_fb", [qidx])
         outer_kernel.gate("if_1_break", [qidx])  # FIXME: uses incorrect label
         outer_program.add_kernel(outer_kernel)
 
-        inner_program = ql.Program('inner_program', platform, 5, num_cregs, num_bregs)
-        inner_kernel = ql.Kernel('inner_kernel', platform, 5, num_cregs)
+        inner_program = ql.Program('inner_program', platform, num_qubits, num_cregs, num_bregs)
+        inner_kernel = ql.Kernel('inner_kernel', platform, num_qubits, num_cregs)
         inner_kernel.gate("measure_fb", [qidx])
         inner_kernel. gate("if_0_break", [qidx])
         inner_kernel.gate("rx180", [qidx])
-        inner_program.add_for(inner_kernel, 1000000) # NB: loops *kernel* # NB: loops *kernel*
+        inner_program.add_for(inner_kernel, 1000000) # NB: loops *kernel*
 
         outer_program.add_program(inner_program)
 
@@ -316,7 +317,109 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('log_level', 'LOG_INFO') # override log level
         p.compile()
 
+    # based on DCL test program
+    def test_nested_rus_angle_0(self):
+        num_qubits = 17
 
+        ancilla1idx = 10
+        ancilla2idx = 8
+        dataidx = 11
+
+        angle = 0
+        echo_delay_inner_rus = 1
+        echo_delay_inner_rus_data = 1
+        echo_delay_outer_rus = 1
+
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq.json'))
+        p = ql.Program('test_nested_rus_angle_0', platform, num_qubits, num_cregs, num_bregs)
+
+        init_kernel = ql.Kernel('initKernel', platform, num_qubits, num_cregs)
+        init_kernel.prepz(ancilla1idx)
+        init_kernel.prepz(ancilla2idx)
+        init_kernel.prepz(dataidx)
+        init_kernel.gate('cw_{:02}'.format(int(angle) // 20 + 9), [dataidx])
+        init_kernel.gate("wait", [], 0)
+        p.add_kernel(init_kernel)
+
+        outer_program = ql.Program('outerProgram', platform, num_qubits, num_cregs, num_bregs)
+        rus_program_1 = ql.Program('rusProgram1', platform, num_qubits, num_cregs, num_bregs)
+        rus_kernel_1 = ql.Kernel('rusKernel1', platform, num_qubits, num_cregs)
+        rus_kernel_1.gate("rx2theta", [ancilla1idx])
+        rus_kernel_1.gate("rYm90", [ancilla2idx])
+        rus_kernel_1.gate("cz", [ancilla1idx, ancilla2idx])
+        rus_kernel_1.gate("rXm2theta", [ancilla1idx])
+        rus_kernel_1.gate("ry90beta", [ancilla2idx])
+        rus_kernel_1.gate("wait", [ancilla1idx,ancilla2idx], 0)
+        rus_kernel_1.gate("rphi180", [dataidx])
+        rus_kernel_1.gate("measure_fb", [ancilla1idx])
+        rus_kernel_1.gate("wait", [ancilla2idx], echo_delay_inner_rus)
+        rus_kernel_1.gate("rphi180", [ancilla2idx])
+        rus_kernel_1.gate("wait", [ancilla2idx], 1860-echo_delay_inner_rus)
+        rus_kernel_1.gate("wait", [dataidx], echo_delay_inner_rus_data)
+        rus_kernel_1.gate("wait", [ancilla1idx,ancilla2idx,dataidx], 0)
+        rus_kernel_1.gate("if_0_break", [ancilla1idx])
+        rus_kernel_1.gate("wait", [ancilla1idx,ancilla2idx,dataidx], 0)
+        rus_kernel_1.gate("rx180", [ancilla1idx])
+        rus_kernel_1.gate("rxm90", [ancilla2idx])
+        rus_kernel_1.gate("rx180", [dataidx])
+        rus_kernel_1.gate("wait", [ancilla1idx,ancilla2idx,dataidx], 0)
+        rus_program_1.add_for(rus_kernel_1, 1000000)
+        outer_program.add_program(rus_program_1)
+
+        interm_program = ql.Program('intermProgram', platform, num_qubits, num_cregs, num_bregs)
+        interm_kernel = ql.Kernel('intermKernel', platform, num_qubits, num_cregs)
+        interm_kernel.gate("rx180", [ancilla2idx])
+        interm_kernel.gate("rx180", [dataidx])
+        interm_kernel.gate("rYm90", [dataidx])
+        interm_kernel.gate("cz", [ancilla2idx, dataidx])
+        interm_kernel.gate("rY90", [dataidx])
+        interm_program.add_kernel(interm_kernel)
+        outer_program.add_program(interm_program)
+
+        rus_program_2 = ql.Program('rusProgram2', platform, num_qubits, num_cregs, num_bregs)
+        rus_kernel_2 = ql.Kernel('rusKernel2', platform, num_qubits, num_cregs)
+        rus_kernel_2.gate("rX2theta", [ancilla1idx])
+        rus_kernel_2.gate("rYm90alpha", [ancilla2idx])
+        rus_kernel_2.gate("cz", [ancilla1idx, ancilla2idx])
+        rus_kernel_2.gate("rX2thetaalpha", [ancilla1idx])
+        rus_kernel_2.gate("rY90betapi", [ancilla2idx])
+        rus_kernel_2.gate("wait", [ancilla1idx,ancilla2idx], 0)
+        rus_kernel_2.gate("rphi180beta", [dataidx])
+        rus_kernel_2.gate("measure_fb", [ancilla1idx])
+        rus_kernel_2.gate("wait", [ancilla2idx], echo_delay_inner_rus)
+        rus_kernel_2.gate("rphi180alpha", [ancilla2idx])
+        rus_kernel_2.gate("wait", [ancilla2idx], 1860-echo_delay_inner_rus)
+        rus_kernel_2.gate("wait", [dataidx], echo_delay_inner_rus_data)
+        rus_kernel_2.gate("wait", [ancilla1idx,ancilla2idx,dataidx], 0)
+        rus_kernel_2.gate("if_0_break", [ancilla1idx])
+        rus_kernel_2.gate("wait", [ancilla1idx,ancilla2idx,dataidx], 0)
+        rus_kernel_2.gate("rx180", [ancilla1idx])
+        rus_kernel_2.gate("rx90alpha", [ancilla2idx])
+        rus_kernel_2.gate("rx180beta", [dataidx])
+        rus_kernel_2.gate("wait", [ancilla1idx,ancilla2idx,dataidx], 0)
+        rus_program_2.add_for(rus_kernel_2, 1000000)
+        outer_program.add_program(rus_program_2)
+
+        end_kernel = ql.Kernel('outerKernel', platform, num_qubits, num_cregs)
+        end_kernel.gate("wait", [ancilla2idx,dataidx], 0)
+        end_kernel.gate("rx180alpha2", [ancilla2idx])
+        end_kernel.gate("measure_fb", [ancilla2idx])
+        end_kernel.gate("wait", [dataidx], echo_delay_outer_rus)
+        end_kernel.gate("rphi180beta2", [dataidx])
+        end_kernel.gate("wait", [dataidx], 1880-echo_delay_outer_rus)
+        end_kernel.gate("wait", [ancilla2idx,dataidx], 0)
+        end_kernel.gate("if_0_break", [ancilla2idx])
+        outer_program.add_kernel(end_kernel)
+
+        foo = ql.CReg(0)
+        p.add_do_while(outer_program, ql.Operation(foo, '==', foo))
+
+        measure_kernel = ql.Kernel('measureKernel', platform, num_qubits, num_cregs)
+        measure_kernel.gate("measure_fb", [dataidx])
+        p.add_kernel(measure_kernel)
+
+        ql.set_option('log_level', 'LOG_INFO') # override log level
+        p.compile()
 
     # FIXME: add:
     # - qec_pipelined
