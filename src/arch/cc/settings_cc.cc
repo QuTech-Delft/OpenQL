@@ -89,10 +89,26 @@ Bool Settings::isReadout(const quantum_platform &_platform, const Str &iname) {
         would be nice if custom gates could mimic gate_type_t
     */
     // FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL, so we need a better criterion
+    // FIXME: this is no longer true with the RC scheduler
     // FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
     // FIXME: gate semantics should be handled at the OpenQL core
     return _platform.find_instruction_type(iname) == "readout";
 #endif
+}
+
+
+Bool Settings::isFlux(const quantum_platform &_platform, const Str &iname) {
+    // FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL, so we need a better criterion
+    // FIXME: this is no longer true with the RC scheduler
+    // FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
+    // FIXME: gate semantics should be handled at the OpenQL core
+
+    const Json &instruction = _platform.find_instruction(iname);
+    if (!QL_JSON_EXISTS(instruction, "type")) {
+        return false;
+    } else {
+        return instruction["type"] == "flux";
+    }
 }
 
 

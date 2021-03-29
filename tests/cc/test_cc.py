@@ -379,9 +379,9 @@ class Test_central_controller(unittest.TestCase):
         k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs, num_bregs)
 
         # NB: requires resource to manage fluxing
-        k.gate('x', [10])
         k.gate("cz", [10, 14])  # no associated park
         k.gate("cz", [9, 11])   # parks 12
+        k.gate('x', [10])
 
         p.add_kernel(k)
         p.compile()

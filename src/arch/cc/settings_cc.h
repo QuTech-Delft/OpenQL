@@ -56,6 +56,7 @@ public: // functions
     Str getReadoutMode(const Str &iname);
     Bool isReadout(const Str &iname);
     static Bool isReadout(const quantum_platform &platform, const Str &iname);
+    static Bool isFlux(const quantum_platform &platform, const Str &iname);
     Bool isPragma(const Str &iname);
     RawPtr<const Json> getPragma(const Str &iname);
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
