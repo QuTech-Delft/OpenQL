@@ -904,7 +904,7 @@ void Past::Schedule() {
 
     while (!waitinglg.empty()) {
         UInt      startCycle = ir::MAX_CYCLE;
-        ir::GateRef gp = {};
+        utils::List<ir::GateRef>::iterator gp_it;
 
         // find the gate with the minimum startCycle
         //
@@ -921,15 +921,17 @@ void Past::Schedule() {
         // This search is really a hack to avoid
         // the construction of a dependence graph and a set of schedulable gates
         FreeCycle   tryfc = fc;
-        for (auto &trygp : waitinglg) {
-            UInt tryStartCycle = tryfc.StartCycle(trygp);
-            tryfc.Add(trygp, tryStartCycle);
+        for (auto trygp_it = waitinglg.begin(); trygp_it != waitinglg.end(); ++trygp_it) {
+            UInt tryStartCycle = tryfc.StartCycle(*trygp_it);
+            tryfc.Add(*trygp_it, tryStartCycle);
 
             if (tryStartCycle < startCycle) {
                 startCycle = tryStartCycle;
-                gp = trygp;
+                gp_it = trygp_it;
             }
         }
+
+        auto gp = *gp_it;
 
         // add this gate to the maps, scheduling the gate (doing the cycle assignment)
         // QL_DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
@@ -961,7 +963,7 @@ void Past::Schedule() {
         }
 
         // having added it to the main list, remove it from the waiting list
-        waitinglg.remove(gp);
+        waitinglg.erase(gp_it);
     }
 
     // DPRINT("Schedule:");
@@ -2579,7 +2581,7 @@ Alter Mapper::ChooseAlter(List<Alter> &la, Future &future) {
         ir::GateRef gp = future.MostCriticalIn(lag);
         QL_ASSERT(!gp.empty());
         for (auto &a : la) {
-            if (a.targetgp == gp) {
+            if (a.targetgp.get_ptr() == gp.get_ptr()) {
                 // QL_DOUT(" ... took first alternative with most critical target gate");
                 return a;
             }

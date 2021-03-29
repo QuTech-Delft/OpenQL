@@ -1069,6 +1069,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
         }
     }
     kernel.c = decomp_ckt;
+    kernel.cycles_valid = false;
 
     QL_DOUT("decomposing instructions...[Done]");
 }

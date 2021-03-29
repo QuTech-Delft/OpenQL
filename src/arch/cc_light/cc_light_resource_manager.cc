@@ -691,17 +691,17 @@ ccl_channel_resource_t::ccl_channel_resource_t(
 
     // nchannels = resources.channels.count: number of channels in each core
     if (platform.resources[name].count("count") <= 0) {
-	    nchannels = platform.qubit_number/ncores;   // i.e. as many as there are qubits in a core
+        nchannels = platform.qubit_number/ncores;   // i.e. as many as there are qubits in a core
         QL_DOUT("Number of channels per core (resources[\"channels\"][\"count\"]) not defined; assuming: " << nchannels);
     } else {
-	    nchannels = platform.resources[name]["count"];
-	    if (nchannels <= 0) {
-	        QL_DOUT("Number of channels per core (resources[\"channels\"][\"count\"]) is not a positive value: " << nchannels);
-	        nchannels = platform.qubit_number/ncores;   // i.e. as many as there are qubits in a core
-	    }
-	    if (nchannels > platform.qubit_number/ncores) {
-	        QL_FATAL("Number of channels per core (resources[\"channels\"][\"count\"]) is larger than number of qubits per core: " << nchannels);
-	    }
+        nchannels = platform.resources[name]["count"];
+        if (nchannels <= 0) {
+            QL_DOUT("Number of channels per core (resources[\"channels\"][\"count\"]) is not a positive value: " << nchannels);
+            nchannels = platform.qubit_number/ncores;   // i.e. as many as there are qubits in a core
+        }
+        if (nchannels > platform.qubit_number/ncores) {
+            QL_FATAL("Number of channels per core (resources[\"channels\"][\"count\"]) is larger than number of qubits per core: " << nchannels);
+        }
     }
     QL_DOUT("Number of channels per core= " << nchannels);
 

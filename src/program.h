@@ -27,7 +27,7 @@ class Program : public utils::Node {
 public:
     utils::Bool                 default_config;
     utils::Str                  config_file_name;
-    Kernels                     kernels;
+    KernelRefs                  kernels;
     utils::Str                  name;
     utils::Str                  unique_name;
     utils::Vec<utils::Real>     sweep_points;
@@ -64,8 +64,8 @@ public:
     void write_interaction_matrix() const;
     void set_sweep_points(const utils::Real *swpts, utils::UInt size);
 
-    Kernels &get_kernels();
-    const Kernels &get_kernels() const;
+    KernelRefs &get_kernels();
+    const KernelRefs &get_kernels() const;
 
 };
 

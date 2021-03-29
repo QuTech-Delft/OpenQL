@@ -323,7 +323,7 @@ public:
 };
 
 using KernelRef = utils::One<Kernel>;
-using Kernels = utils::Any<Kernel>;
+using KernelRefs = utils::Any<Kernel>;
 
 } // namespace ir
 } // namespace ql

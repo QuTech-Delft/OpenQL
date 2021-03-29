@@ -1347,11 +1347,13 @@ void Scheduler::schedule_alap_uniform() {
             QL_DOUT("pred_cycle=" << pred_cycle);
             QL_DOUT("gates_per_cycle[curr_cycle].size()=" << gates_per_cycle.get(curr_cycle).size());
             UInt min_remaining_cycle = ir::MAX_CYCLE;
+            List<ir::GateRef>::const_iterator best_predgp_it;
             ir::GateRef best_predgp = {};
             Bool best_predgp_found = false;
 
             // scan bundle at pred_cycle to find suitable candidate to move forward to curr_cycle
-            for (auto predgp : gates_per_cycle.get(pred_cycle)) {
+            for (auto predgp_it = gates_per_cycle.get(pred_cycle).begin(); predgp_it != gates_per_cycle.get(pred_cycle).end(); ++predgp_it) {
+                auto predgp = *predgp_it;
                 Bool forward_predgp = true;
                 UInt predgp_completion_cycle;
                 ListDigraph::Node pred_node = node.at(predgp);
@@ -1380,6 +1382,7 @@ void Scheduler::schedule_alap_uniform() {
                     min_remaining_cycle = remaining.at(pred_node);
                     best_predgp_found = true;
                     best_predgp = predgp;
+                    best_predgp_it = predgp_it;
                 }
             }
 
@@ -1388,7 +1391,7 @@ void Scheduler::schedule_alap_uniform() {
             if (best_predgp_found) {
                 // move predgp from pred_cycle to curr_cycle;
                 // adjust all bookkeeping that is affected by this
-                gates_per_cycle.at(pred_cycle).remove(best_predgp);
+                gates_per_cycle.at(pred_cycle).erase(best_predgp_it);
                 if (gates_per_cycle.at(pred_cycle).empty()) {
                     // source bundle was non-empty, now it is empty
                     non_empty_bundle_count--;

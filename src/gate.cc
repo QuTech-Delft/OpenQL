@@ -119,10 +119,6 @@ Bool Gate::is_valid_cond(ConditionType condition, const Vec<UInt> &cond_operands
     return false;
 }
 
-bool Gate::operator==(const Gate &rhs) const {
-    return name == rhs.name;
-}
-
 namespace gates {
 
 Identity::Identity(UInt q) : m(matrices::IDENTITY) {

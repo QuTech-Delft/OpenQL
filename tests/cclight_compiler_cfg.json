@@ -22,6 +22,10 @@
             "passAlias": "prescheduler"
         },
         {
+            "passName" : "WriteQuantumSim", 
+            "passAlias": "write_quantumsim_script_unmapped"
+        },
+        {
             "passName" : "CliffordOptimize", 
             "passAlias": "clifford_postscheduler"
         },
@@ -36,10 +40,6 @@
         {
             "passName" : "CCLDecomposePreSchedule", 
             "passAlias": "ccl_decompose_pre_schedule"
-        },
-        {
-            "passName" : "WriteQuantumSim", 
-            "passAlias": "write_quantumsim_script_unmapped"
         },
         {
             "passName" : "CliffordOptimize", 

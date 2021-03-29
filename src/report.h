@@ -35,7 +35,7 @@ public:
         const utils::Str &comment_prefix=""
     );
     void write_totals_statistics(
-        const ir::Kernels &kernels,
+        const ir::KernelRefs &kernels,
         const quantum_platform &platform,
         const utils::Str &comment_prefix=""
     );
@@ -99,7 +99,7 @@ void report_kernel_statistics(
  */
 void report_totals_statistics(
     std::ostream &os,
-    const ir::Kernels &kernels,
+    const ir::KernelRefs &kernels,
     const quantum_platform &platform,
     const utils::Str &comment_prefix
 );

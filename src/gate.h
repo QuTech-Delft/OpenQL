@@ -111,7 +111,6 @@ public:
     utils::Bool is_conditional() const;           // whether gate has condition that is NOT cond_always
     Instruction cond_qasm() const;              // returns the condition expression in qasm layout
     static utils::Bool is_valid_cond(ConditionType condition, const utils::Vec<utils::UInt> &cond_operands);
-    bool operator==(const Gate &rhs) const;
 };
 
 using GateRef = utils::One<Gate>;

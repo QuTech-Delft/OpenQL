@@ -386,11 +386,11 @@ void Program::set_sweep_points(const Real *swpts, UInt size) {
     }
 }
 
-Kernels &Program::get_kernels() {
+KernelRefs &Program::get_kernels() {
     return kernels;
 }
 
-const Kernels &Program::get_kernels() const {
+const KernelRefs &Program::get_kernels() const {
     return kernels;
 }
 

@@ -428,7 +428,7 @@ void ReportFile::write_kernel_statistics(
  * file.
  */
 void ReportFile::write_totals_statistics(
-    const ir::Kernels &kernels,
+    const ir::KernelRefs &kernels,
     const quantum_platform &platform,
     const Str &comment_prefix
 ) {
@@ -554,7 +554,7 @@ void report_kernel_statistics(
  */
 void report_totals_statistics(
     std::ostream &os,
-    const ir::Kernels &kernels,
+    const ir::KernelRefs &kernels,
     const quantum_platform &platform,
     const Str &comment_prefix
 ) {
