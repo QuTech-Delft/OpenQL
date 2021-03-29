@@ -31,18 +31,18 @@ struct Qubit {
     utils::Vec<InteractionsWithQubit> interactions;
 };
 
-void visualizeInteractionGraph(const ir::Program &program, const VisualizerConfiguration &configuration);
+void visualizeInteractionGraph(const ir::ProgramRef &program, const VisualizerConfiguration &configuration);
 
 void generateAndSaveDOTFile(const utils::Vec<Qubit> &qubits);
 
 InteractionGraphLayout parseInteractionGraphLayout(const utils::Str &configPath);
 
-utils::Real calculateQubitCircleRadius(const utils::Int qubitRadius, const utils::Real theta);
-Position2 calculatePositionOnCircle(const utils::Int radius, utils::Real theta, const Position2 &center);
-utils::Vec<Qubit> findQubitInteractions(const utils::Vec<GateProperties> &gates, const utils::Int amountOfQubits);
+utils::Real calculateQubitCircleRadius(utils::Int qubitRadius, const utils::Real theta);
+Position2 calculatePositionOnCircle(utils::Int radius, utils::Real theta, const Position2 &center);
+utils::Vec<Qubit> findQubitInteractions(const utils::Vec<GateProperties> &gates, utils::Int amountOfQubits);
 
 // bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> &drawnEdges, const int first, const int second);
-utils::Bool isEdgeAlreadyDrawn(const utils::Vec<utils::Pair<utils::Int, utils::Int>> &drawnEdges, const utils::Int first, const utils::Int second);
+utils::Bool isEdgeAlreadyDrawn(const utils::Vec<utils::Pair<utils::Int, utils::Int>> &drawnEdges, utils::Int first, utils::Int second);
 
 void printInteractionList(const utils::Vec<Qubit> &qubits);
 

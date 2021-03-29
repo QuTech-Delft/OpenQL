@@ -16,10 +16,10 @@ namespace ql {
 class quantum_compiler {
 public:
 
-    quantum_compiler(const utils::Str &name);
+    explicit quantum_compiler(const utils::Str &name);
     quantum_compiler(const utils::Str &name, const utils::Str &configuration_file_name);
 
-    void compile(ir::Program &program);
+    void compile(const ir::ProgramRef &program);
     void addPass(const utils::Str &realPassName, const utils::Str &symbolicPassName);
     void addPass(const utils::Str &realPassName);
     void setPassOption(const utils::Str &passName, const utils::Str &optionName, const utils::Str &optionValue);

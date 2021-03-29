@@ -23,7 +23,7 @@ class Platform {
 public:
     std::string name;
     std::string config_file;
-    ql::quantum_platform *platform;
+    ql::plat::PlatformRef platform;
     Platform();
     Platform(const std::string &name, const std::string &config_file);
     size_t get_qubit_number() const;
@@ -192,7 +192,7 @@ public:
  */
 class cQasmReader {
 public:
-    ql::cqasm_reader *cqasm_reader_;
+    ql::utils::Ptr<ql::cqasm::Reader> cqasm_reader;
     Platform platform;
     Program program;
 
@@ -211,7 +211,7 @@ class Compiler {
 public:
     std::string name;
     std::string config_file;
-    ql::quantum_compiler *compiler;
+    ql::utils::Ptr<ql::quantum_compiler> compiler;
 
     Compiler(const std::string &name);
     Compiler(const std::string &name, const std::string &config_file);

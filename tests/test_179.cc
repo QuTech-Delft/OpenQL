@@ -20,9 +20,9 @@ void test_cnot_mixedcommute(std::string v, std::string schedopt, std::string sch
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_179.json");
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_179.json");
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<7; j++) { k->gate("x", j); }
@@ -62,9 +62,9 @@ void test_cnot_controlcommute(std::string v, std::string schedopt, std::string s
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_179.json");
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_179.json");
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("cnot", 3,0);
@@ -99,9 +99,9 @@ void test_cnot_targetcommute(std::string v, std::string schedopt, std::string sc
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_179.json");
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_179.json");
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("cnot", 0,3);
@@ -136,9 +136,9 @@ void test_cz_anycommute(std::string v, std::string schedopt, std::string sched_p
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_179.json");
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_179.json");
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("cz", 0,3);

@@ -119,7 +119,7 @@ public:
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(
         ir::Circuit &ckt,
-        const quantum_platform &platform,
+        const plat::PlatformRef &platform,
         utils::UInt qcount,
         utils::UInt ccount,
         utils::UInt bcount
@@ -171,7 +171,7 @@ public:
     // without RC, this is all there is to schedule, apart from forming the bundles in ir::bundler()
     // set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
     // please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
-    void set_cycle_gate(ir::GateRef &gp, scheduling_direction_t dir);
+    void set_cycle_gate(const ir::GateRef &gp, scheduling_direction_t dir);
     void set_cycle(scheduling_direction_t dir);
 
     // sort circuit by the gates' cycle attribute in non-decreasing order
@@ -208,7 +208,7 @@ public:
     // which is easier in the core of the scheduler.
 
     // Note that set_remaining_gate expects a caller like set_remaining that iterates gp backward over the circuit
-    void set_remaining_gate(ir::GateRef &gp, scheduling_direction_t dir);
+    void set_remaining_gate(const ir::GateRef &gp, scheduling_direction_t dir);
     void set_remaining(scheduling_direction_t dir);
     ir::GateRef find_mostcritical(const utils::List<ir::GateRef> &lg);
 
@@ -310,7 +310,7 @@ public:
         lemon::ListDigraph::Node n,
         scheduling_direction_t dir,
         const utils::UInt curr_cycle,
-        const quantum_platform& platform,
+        const plat::PlatformRef &platform,
         arch::resource_manager_t &rm,
         utils::Bool &isres
     );
@@ -321,7 +321,7 @@ public:
         utils::List<lemon::ListDigraph::Node> &avlist,
         scheduling_direction_t dir,
         const utils::UInt curr_cycle,
-        const quantum_platform &platform,
+        const plat::PlatformRef &platform,
         arch::resource_manager_t &rm,
         utils::Bool &success
     );
@@ -337,20 +337,20 @@ public:
     void schedule(
         ir::Circuit &circp,
         scheduling_direction_t dir,
-        const quantum_platform &platform,
+        const plat::PlatformRef &platform,
         arch::resource_manager_t &rm,
         utils::Str &sched_dot
     );
 
     void schedule_asap(
         arch::resource_manager_t &rm,
-        const quantum_platform &platform,
+        const plat::PlatformRef &platform,
         utils::Str &sched_dot
     );
 
     void schedule_alap(
         arch::resource_manager_t &rm,
-        const quantum_platform &platform,
+        const plat::PlatformRef &platform,
         utils::Str &sched_dot
     );
 
@@ -365,15 +365,15 @@ public:
  * main entry point of the non resource-constrained scheduler
  */
 void schedule(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const utils::Str &passname
 );
 
 // kernel-level entry to the non resource-constrained scheduler
 void schedule_kernel(
-    ir::KernelRef &kernel,
-    const quantum_platform &platform,
+    const ir::KernelRef &kernel,
+    const plat::PlatformRef &platform,
     utils::Str &dot,
     utils::Str &sched_dot
 );
@@ -382,15 +382,15 @@ void schedule_kernel(
  * main entry point of the resource-constrained scheduler
  */
 void rcschedule(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const utils::Str &passname
 );
 
 // kernel-level entry to the resource-constrained scheduler
 void rcschedule_kernel(
-    ir::KernelRef &kernel,
-    const quantum_platform &platform,
+    const ir::KernelRef &kernel,
+    const plat::PlatformRef &platform,
     utils::Str &dot,
     utils::UInt nqubits,
     utils::UInt ncreg = 0,

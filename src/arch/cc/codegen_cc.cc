@@ -23,10 +23,10 @@ using namespace utils;
 | Generic
 \************************************************************************/
 
-void Codegen::init(const quantum_platform &platform) {
+void Codegen::init(const plat::PlatformRef &platform) {
     // NB: a new eqasm_backend_cc is instantiated per call to compile, and
     // as a result also a codegen_cc, so we don't need to cleanup
-    this->platform = &platform;
+    this->platform = platform;
     settings.loadBackendSettings(platform);
 
     runOnce = (com::options::get("backend_cc_run_once") == "yes");

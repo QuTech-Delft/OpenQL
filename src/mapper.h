@@ -13,8 +13,8 @@
 #include "ql/utils/list.h"
 #include "ql/utils/str.h"
 #include "ql/utils/num.h"
+#include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
-#include "platform.h"
 #include "resource_manager.h"
 #include "scheduler.h"
 //#include "metrics.h"
@@ -96,7 +96,7 @@ typedef enum GridForms {
 
 class Grid {
 public:
-    const quantum_platform *platformp;    // current platform: topology
+    plat::PlatformRef platformp;          // current platform: topology
     utils::UInt nq;                       // number of qubits in the platform
     utils::UInt ncores;                   // number of cores in the platform
     // Grid configuration, all constant after initialization
@@ -115,7 +115,7 @@ public:
     // Grid initializer
     // initialize mapper internal grid maps from configuration
     // this remains constant over multiple kernels on the same platform
-    void Init(const quantum_platform *p);
+    void Init(const plat::PlatformRef &p);
 
     // whether qubit is a communication qubit of a core
     utils::Bool IsCommQubit(utils::UInt qi) const;
@@ -312,7 +312,7 @@ public:
 class FreeCycle {
 private:
 
-    const quantum_platform   *platformp;  // platform description
+    plat::PlatformRef        platformp;   // platform description
     utils::UInt              nq;          // map is (nq+nb) long; after initialization, will always be the same
     utils::UInt              nb;          // bregs are in map (behind qubits) to track dependences around conditions
     utils::UInt              ct;          // multiplication factor from cycles to nano-seconds (unit of duration)
@@ -331,7 +331,7 @@ public:
     // default constructor was deleted because it cannot construct resource_manager_t without parameters
     FreeCycle();
 
-    void Init(const quantum_platform *p, const utils::UInt breg_count);
+    void Init(const plat::PlatformRef &p, utils::UInt breg_count);
 
     // depth of the FreeCycle map
     // equals the max of all entries minus the min of all entries
@@ -414,7 +414,7 @@ private:
     utils::UInt                 nq;         // width of Past, Virt2Real, UseCount maps in number of real qubits
     utils::UInt                 nb;         // extends FreeCycle next to qubits with bregs
     utils::UInt                 ct;         // cycle time, multiplier from cycles to nano-seconds
-    const quantum_platform      *platformp; // platform describing resources for scheduling
+    plat::PlatformRef           platformp;  // platform describing resources for scheduling
     ir::KernelRef               kernelp;    // current kernel for creating gates
     utils::Ptr<Grid>            gridp;      // pointer to grid to know which hops are inter-core
 
@@ -443,7 +443,7 @@ public:
     Past();
 
     // past initializer
-    void Init(const quantum_platform *p, const ir::KernelRef &k, const utils::Ptr<Grid> &g);
+    void Init(const plat::PlatformRef &p, const ir::KernelRef &k, const utils::Ptr<Grid> &g);
 
     // import Past's v2r from v2r_value
     void ImportV2r(const Virt2Real &v2r_value);
@@ -614,7 +614,7 @@ public:
 // Having done that, the other Alters can be discarded and the selected one committed to the main Past.
 class Alter {
 public:
-    const quantum_platform  *platformp;  // descriptions of resources for scheduling
+    plat::PlatformRef       platformp;   // descriptions of resources for scheduling
     ir::KernelRef           kernelp;     // kernel pointer to allow calling kernel private methods
     utils::Ptr<Grid>        gridp;       // grid pointer to know which hops are inter-core
     utils::UInt             nq;          // width of Past and Virt2Real map is number of real qubits
@@ -635,7 +635,7 @@ public:
 
     // Alter initializer
     // This should only be called after a virgin construction and not after cloning a path.
-    void Init(const quantum_platform *p, const ir::KernelRef &k, const utils::Ptr<Grid> &g);
+    void Init(const plat::PlatformRef &p, const ir::KernelRef &k, const utils::Ptr<Grid> &g);
 
     // printing facilities of Paths
     // print path as hd followed by [0->1->2]
@@ -724,7 +724,7 @@ public:
 
 class Future {
 public:
-    const quantum_platform                  *platformp;
+    plat::PlatformRef                       platformp;
     utils::Ptr<Scheduler>                   schedp;         // a pointer, since dependence graph doesn't change
     ir::Circuit                             input_gatepv;   // input circuit when not using scheduler based avlist
 
@@ -733,7 +733,7 @@ public:
     ir::Circuit::iterator                   input_gatepp;   // state: alternative iterator in input_gatepv
 
     // just program wide initialization
-    void Init(const quantum_platform *p);
+    void Init(const plat::PlatformRef &p);
 
     // Set/switch input to the provided circuit
     // nq, nc and nb are parameters because nc/nb may not be provided by platform but by kernel
@@ -830,7 +830,7 @@ class Mapper {
 private:
                                             // Initialized by Mapper::Init
                                             // OpenQL wide configuration, all constant after initialization
-    const quantum_platform  *platformp;     // current platform: topology and gate definitions
+    plat::PlatformRef       platformp;     // current platform: topology and gate definitions
     ir::KernelRef           kernelp;        // (copy of) current kernel (class) with free private circuit and methods
                                             // primarily to create gates in Past; Past is part of Mapper and of each Alter
 
@@ -970,7 +970,7 @@ public:
     // lots could be split off for the whole program, once that is needed
     //
     // initialization for a particular kernel is separate (in Map entry)
-    void Init(const quantum_platform *p);
+    void Init(const plat::PlatformRef &p);
 
 };
 

@@ -9,7 +9,7 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/tree.h"
 #include "ql/ir/kernel.h"
-#include "platform.h"
+#include "ql/plat/platform.h"
 
 namespace ql {
 
@@ -31,7 +31,7 @@ public:
     utils::Str                  name;
     utils::Str                  unique_name;
     utils::Vec<utils::Real>     sweep_points;
-    quantum_platform            platform;
+    plat::PlatformRef           platform;
     utils::Bool                 platformInitialized;
     utils::UInt                 qubit_count;
     utils::UInt                 creg_count;
@@ -41,22 +41,22 @@ public:
     utils::Ptr<eqasm_compiler>  backend_compiler;
 
 public:
-    Program(const utils::Str &n);
-    Program(const utils::Str &n, const quantum_platform &platf, utils::UInt nqubits, utils::UInt ncregs = 0, utils::UInt nbregs = 0);
+    explicit Program(const utils::Str &n);
+    Program(const utils::Str &n, const plat::PlatformRef &platf, utils::UInt nqubits, utils::UInt ncregs = 0, utils::UInt nbregs = 0);
 
-    void add(KernelRef &k);
-    void add_program(ProgramRef &p);
-    void add_if(KernelRef &k, const ClassicalOperation &cond);
-    void add_if(ProgramRef &p, const ClassicalOperation &cond);
-    void add_if_else(KernelRef &k_if, KernelRef &k_else, const ClassicalOperation &cond);
-    void add_if_else(ProgramRef &p_if, ProgramRef &p_else, const ClassicalOperation &cond);
-    void add_do_while(KernelRef &k, const ClassicalOperation &cond);
-    void add_do_while(ProgramRef &p, const ClassicalOperation &cond);
-    void add_for(KernelRef &k, utils::UInt iterations);
-    void add_for(ProgramRef &p, utils::UInt iterations);
+    void add(const KernelRef &k);
+    void add_program(const ProgramRef &p);
+    void add_if(const KernelRef &k, const ClassicalOperation &cond);
+    void add_if(const ProgramRef &p, const ClassicalOperation &cond);
+    void add_if_else(const KernelRef &k_if, const KernelRef &k_else, const ClassicalOperation &cond);
+    void add_if_else(const ProgramRef &p_if, const ProgramRef &p_else, const ClassicalOperation &cond);
+    void add_do_while(const KernelRef &k, const ClassicalOperation &cond);
+    void add_do_while(const ProgramRef &p, const ClassicalOperation &cond);
+    void add_for(const KernelRef &k, utils::UInt iterations);
+    void add_for(const ProgramRef &p, utils::UInt iterations);
 
     void set_config_file(const utils::Str &file_name);
-    void set_platform(const quantum_platform &platform);
+    void set_platform(const plat::PlatformRef &platform);
 
     void compile();
 

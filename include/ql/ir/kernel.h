@@ -8,12 +8,11 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/opt.h"
+#include "ql/plat/platform.h"
 #include "ql/ir/gate.h"
 #include "ql/ir/circuit.h"
 #include "ql/ir/classical.h"
-#include "hardware_configuration.h"
 #include "unitary.h"
-#include "platform.h"
 
 namespace ql {
 namespace ir {
@@ -38,7 +37,7 @@ public: // FIXME: should be private
     utils::Bool                     cycles_valid; // used in bundler to check if kernel has been scheduled
     utils::Opt<ClassicalOperation>  br_condition;
     utils::UInt                     cycle_time;   // FIXME HvS just a copy of platform.cycle_time
-    InstructionMap                  instruction_map;
+    plat::InstructionMap            instruction_map;
     utils::Vec<utils::UInt>         cond_operands;    // see gate interface: condition mode to make new gates conditional
     ConditionType                   condition;        // kernel condition mode is set by gate_preset_condition()
 
@@ -46,7 +45,7 @@ public:
     Kernel(const utils::Str &name);
     Kernel(
         const utils::Str &name,
-        const quantum_platform &platform,
+        const plat::PlatformRef &platform,
         utils::UInt qcount,
         utils::UInt ccount=0,
         utils::UInt bcount=0

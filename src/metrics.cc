@@ -62,7 +62,7 @@ Metrics::Metrics(
     this->decoherence_time = decoherence_time;
 }
 
-void Metrics::Init(UInt Nqubits, quantum_platform *platform) {
+void Metrics::Init(UInt Nqubits, const plat::PlatformRef &platform) {
     this->Nqubits = Nqubits;
 
     //TODO test if json has qubit relaxation times / gate error rate in this function

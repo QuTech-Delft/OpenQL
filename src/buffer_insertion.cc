@@ -29,8 +29,8 @@ using namespace utils;
 /*
 */
 static void insert_buffer_delays_kernel(
-    ir::Kernel &kernel,
-    const quantum_platform &platform
+    const ir::KernelRef &kernel,
+    const plat::PlatformRef &platform
 ) {
     QL_DOUT("Loading buffer settings ...");
     Map<Pair<Str, Str>, UInt> buffer_cycles_map;
@@ -47,10 +47,10 @@ static void insert_buffer_delays_kernel(
     for (auto &buf1 : optype_names) {
         for (auto &buf2 : optype_names) {
             auto bname = buf1 + "_" + buf2 + "_buffer";
-            if (platform.hardware_settings.count(bname) > 0) {
+            if (platform->hardware_settings.count(bname) > 0) {
                 buffer_cycles_map.set({buf1, buf2}) = UInt(ceil(
-                    static_cast<float>(platform.hardware_settings[bname]) /
-                    platform.cycle_time));
+                    static_cast<float>(platform->hardware_settings[bname]) /
+                    platform->cycle_time));
             } else {
                 buffer_cycles_map.set({buf1, buf2}) = 0;
             }
@@ -60,7 +60,7 @@ static void insert_buffer_delays_kernel(
 
     QL_DOUT("Buffer-buffer delay insertion ... ");
 
-    ir::Bundles bundles = ir::bundler(kernel.c, platform.cycle_time);
+    ir::Bundles bundles = ir::bundler(kernel->c, platform->cycle_time);
 
     Vec<Str> optypes_prev_bundle;
     UInt buffer_cycles_accum = 0;
@@ -70,11 +70,11 @@ static void insert_buffer_delays_kernel(
             for (auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt) {
                 auto &id = (*insIt)->name;
                 Str op_type("none");    // default type attribute
-                if (platform.instruction_settings.count(id) > 0) {
+                if (platform->instruction_settings.count(id) > 0) {
                     // so gate is specified in config file
-                    if (platform.instruction_settings[id].count("type") > 0) {
+                    if (platform->instruction_settings[id].count("type") > 0) {
                         // and it has a type attribute
-                        op_type = platform.instruction_settings[id]["type"].get<Str>();
+                        op_type = platform->instruction_settings[id]["type"].get<Str>();
                     }
                 }
                 optypes_curr_bundle.push_back(op_type);
@@ -96,21 +96,21 @@ static void insert_buffer_delays_kernel(
         optypes_prev_bundle = optypes_curr_bundle;
     }
 
-    kernel.c = ir::circuiter(bundles);
+    kernel->c = ir::circuiter(bundles);
 
     QL_DOUT("Buffer-buffer delay insertion [DONE] ");
 }
 
 void insert_buffer_delays(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
     report_statistics(program, platform, "in", passname, "# ");
     report_qasm(program, platform, "in", passname);
 
-    for (auto &kernel : program.kernels) {
-        insert_buffer_delays_kernel(*kernel, platform);
+    for (auto &kernel : program->kernels) {
+        insert_buffer_delays_kernel(kernel, platform);
     }
 
     report_statistics(program, platform, "out", passname, "# ");

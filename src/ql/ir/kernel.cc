@@ -12,11 +12,11 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/com/options/options.h"
+#include "ql/plat/platform.h"
 #include "ql/ir/gate.h"
 #include "ql/ir/classical.h"
 #include "ql/ir/bundle.h"
 #include "unitary.h"
-#include "platform.h"
 
 namespace ql {
 namespace ir {
@@ -31,7 +31,7 @@ Kernel::Kernel(const Str &name) :
 
 Kernel::Kernel(
     const Str &name,
-    const quantum_platform& platform,
+    const plat::PlatformRef &platform,
     UInt qcount,
     UInt ccount,
     UInt bcount
@@ -43,8 +43,8 @@ Kernel::Kernel(
     breg_count(bcount),
     type(KernelType::STATIC)
 {
-    instruction_map = platform.instruction_map;
-    cycle_time = platform.cycle_time;
+    instruction_map = platform->instruction_map;
+    cycle_time = platform->cycle_time;
     cycles_valid = true;
     condition = ConditionType::ALWAYS;
     // FIXME: check qubit_count and creg_count against platform
@@ -107,21 +107,21 @@ void Kernel::h(UInt qubit) {
 }
 
 void Kernel::rx(UInt qubit, Real angle) {
-    c.add(make_node<gates::RX>(qubit, angle));
+    c.emplace<gates::RX>(qubit, angle);
     c.back()->condition = condition;
     c.back()->cond_operands = cond_operands;;
     cycles_valid = false;
 }
 
 void Kernel::ry(UInt qubit, Real angle) {
-    c.add(make_node<gates::RY>(qubit, angle));
+    c.emplace<gates::RY>(qubit, angle);
     c.back()->condition = condition;
     c.back()->cond_operands = cond_operands;;
     cycles_valid = false;
 }
 
 void Kernel::rz(UInt qubit, Real angle) {
-    c.add(make_node<gates::RZ>(qubit, angle));
+    c.emplace<gates::RZ>(qubit, angle);
     c.back()->condition = condition;
     c.back()->cond_operands = cond_operands;;
     cycles_valid = false;
@@ -205,7 +205,7 @@ void Kernel::cphase(UInt qubit1, UInt qubit2) {
 
 void Kernel::toffoli(UInt qubit1, UInt qubit2, UInt qubit3) {
     // TODO add custom gate check if needed
-    c.add(make_node<gates::Toffoli>(qubit1, qubit2, qubit3));
+    c.emplace<gates::Toffoli>(qubit1, qubit2, qubit3);
     c.back()->condition = condition;
     c.back()->cond_operands = cond_operands;;
     cycles_valid = false;
@@ -220,7 +220,7 @@ void Kernel::wait(const Vec<UInt> &qubits, UInt duration) {
 }
 
 void Kernel::display() {
-    c.add(make_node<gates::Display>());
+    c.emplace<gates::Display>();
     cycles_valid = false;
 }
 
@@ -370,80 +370,80 @@ Bool Kernel::add_default_gate_if_available(
     }
 
     if (gname == "identity" || gname == "i") {
-        c.add(make_node<gates::Identity>(qubits[0]));
+        c.emplace<gates::Identity>(qubits[0]);
         result = true;
     } else if (gname == "hadamard" || gname == "h") {
-        c.add(make_node<gates::Hadamard>(qubits[0]));
+        c.emplace<gates::Hadamard>(qubits[0]);
         result = true;
     } else if (gname == "pauli_x" || gname == "x") {
-        c.add(make_node<gates::PauliX>(qubits[0]));
+        c.emplace<gates::PauliX>(qubits[0]);
         result = true;
     } else if( gname == "pauli_y" || gname == "y") {
-        c.add(make_node<gates::PauliY>(qubits[0]));
+        c.emplace<gates::PauliY>(qubits[0]);
         result = true;
     } else if (gname == "pauli_z" || gname == "z") {
-        c.add(make_node<gates::PauliZ>(qubits[0]));
+        c.emplace<gates::PauliZ>(qubits[0]);
         result = true;
     } else if (gname == "s" || gname == "phase") {
-        c.add(make_node<gates::Phase>(qubits[0]));
+        c.emplace<gates::Phase>(qubits[0]);
         result = true;
     } else if (gname == "sdag" || gname == "phasedag") {
-        c.add(make_node<gates::PhaseDag>(qubits[0]));
+        c.emplace<gates::PhaseDag>(qubits[0]);
         result = true;
     } else if (gname == "t") {
-        c.add(make_node<gates::T>(qubits[0]));
+        c.emplace<gates::T>(qubits[0]);
         result = true;
     } else if (gname == "tdag") {
-        c.add(make_node<gates::TDag>(qubits[0]));
+        c.emplace<gates::TDag>(qubits[0]);
         result = true;
     } else if (gname == "rx") {
-        c.add(make_node<gates::RX>(qubits[0], angle));
+        c.emplace<gates::RX>(qubits[0], angle);
         result = true;
     } else if (gname == "ry") {
-        c.add(make_node<gates::RY>(qubits[0], angle));
+        c.emplace<gates::RY>(qubits[0], angle);
         result = true;
     } else if( gname == "rz") {
-        c.add(make_node<gates::RZ>(qubits[0], angle));
+        c.emplace<gates::RZ>(qubits[0], angle);
         result = true;
     } else if (gname == "rx90") {
-        c.add(make_node<gates::RX90>(qubits[0]));
+        c.emplace<gates::RX90>(qubits[0]);
         result = true;
     } else if (gname == "mrx90") {
-        c.add(make_node<gates::MRX90>(qubits[0]));
+        c.emplace<gates::MRX90>(qubits[0]);
         result = true;
     } else if (gname == "rx180") {
-        c.add(make_node<gates::RX180>(qubits[0]));
+        c.emplace<gates::RX180>(qubits[0]);
         result = true;
     } else if (gname == "ry90") {
-        c.add(make_node<gates::RY90>(qubits[0]));
+        c.emplace<gates::RY90>(qubits[0]);
         result = true;
     } else if (gname == "mry90") {
-        c.add(make_node<gates::MRY90>(qubits[0]));
+        c.emplace<gates::MRY90>(qubits[0]);
         result = true;
     } else if (gname == "ry180") {
-        c.add(make_node<gates::RY180>(qubits[0]));
+        c.emplace<gates::RY180>(qubits[0]);
         result = true;
     } else if (gname == "measure") {
         if (cregs.empty()) {
-            c.add(make_node<gates::Measure>(qubits[0]));
+            c.emplace<gates::Measure>(qubits[0]);
         } else {
-            c.add(make_node<gates::Measure>(qubits[0], cregs[0]));
+            c.emplace<gates::Measure>(qubits[0], cregs[0]);
         }
         result = true;
     } else if (gname == "prepz") {
-        c.add(make_node<gates::PrepZ>(qubits[0]));
+        c.emplace<gates::PrepZ>(qubits[0]);
         result = true;
     } else if (gname == "cnot") {
-        c.add(make_node<gates::CNot>(qubits[0], qubits[1]));
+        c.emplace<gates::CNot>(qubits[0], qubits[1]);
         result = true;
     } else if (gname == "cz" || gname == "cphase") {
-        c.add(make_node<gates::CPhase>(qubits[0], qubits[1]) );
+        c.emplace<gates::CPhase>(qubits[0], qubits[1]);
         result = true;
     } else if (gname == "toffoli") {
-        c.add(make_node<gates::Toffoli>(qubits[0], qubits[1], qubits[2]));
+        c.emplace<gates::Toffoli>(qubits[0], qubits[1], qubits[2]);
         result = true;
     } else if (gname == "swap") {
-        c.add(make_node<gates::Swap>(qubits[0], qubits[1]));
+        c.emplace<gates::Swap>(qubits[0], qubits[1]);
         result = true;
     } else if (gname == "barrier") {
         /*
@@ -455,9 +455,9 @@ Bool Kernel::add_default_gate_if_available(
             for (UInt q = 0; q < qubit_count; q++) {
                 all_qubits.push_back(q);
             }
-            c.add(make_node<gates::Wait>(all_qubits, 0, 0));
+            c.emplace<gates::Wait>(all_qubits, 0, 0);
         } else {
-            c.add(make_node<gates::Wait>(qubits, 0, 0));
+            c.emplace<gates::Wait>(qubits, 0, 0);
         }
         result = true;
     } else if (gname == "wait") {
@@ -471,9 +471,9 @@ Bool Kernel::add_default_gate_if_available(
             for (UInt q = 0; q < qubit_count; q++) {
                 all_qubits.push_back(q);
             }
-            c.add(make_node<gates::Wait>(all_qubits, duration, duration_in_cycles));
+            c.emplace<gates::Wait>(all_qubits, duration, duration_in_cycles);
         } else {
-            c.add(make_node<gates::Wait>(qubits, duration, duration_in_cycles));
+            c.emplace<gates::Wait>(qubits, duration, duration_in_cycles);
         }
         result = true;
     } else {
@@ -536,7 +536,7 @@ Bool Kernel::add_custom_gate_if_available(
         return false;
     }
 
-    GateRef g = make_node<gates::Custom>(*(it->second));
+    auto g = GateRef::make<gates::Custom>(*(it->second));
     for (auto qubit : qubits) {
         g->operands.push_back(qubit);
     }
@@ -1097,9 +1097,9 @@ Int Kernel::recursiveRelationsForUnitaryDecomposition(
     } else { //n=1
         // DOUT("Adding the zyz decomposition gates at index: "<< i);
         // zyz gates happen on the only qubit in the list.
-        c.add(make_node<gates::RZ>(qubits.back(), u.instructionlist[i]));
-        c.add(make_node<gates::RY>(qubits.back(), u.instructionlist[i + 1]));
-        c.add(make_node<gates::RZ>(qubits.back(), u.instructionlist[i + 2]));
+        c.emplace<gates::RZ>(qubits.back(), u.instructionlist[i]);
+        c.emplace<gates::RY>(qubits.back(), u.instructionlist[i + 1]);
+        c.emplace<gates::RZ>(qubits.back(), u.instructionlist[i + 2]);
         // How many gates this took
         return 3;
     }
@@ -1115,16 +1115,16 @@ void Kernel::multicontrolled_rz(
     // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << to_string(qubits, "qubits: "));
     UInt idx;
     //The first one is always controlled from the last to the first qubit.
-    c.add(make_node<gates::RZ>(qubits.back(),-instruction_list[start_index]));
-    c.add(make_node<gates::CNot>(qubits[0], qubits.back()));
+    c.emplace<gates::RZ>(qubits.back(),-instruction_list[start_index]);
+    c.emplace<gates::CNot>(qubits[0], qubits.back());
     for (UInt i = 1; i < end_index - start_index; i++) {
         idx = log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
-        c.add(make_node<gates::RZ>(qubits.back(),-instruction_list[i+start_index]));
-        c.add(make_node<gates::CNot>(qubits[idx], qubits.back()));
+        c.emplace<gates::RZ>(qubits.back(),-instruction_list[i+start_index]);
+        c.emplace<gates::CNot>(qubits[idx], qubits.back());
     }
     // The last one is always controlled from the next qubit to the first qubit
-    c.add(make_node<gates::RZ>(qubits.back(),-instruction_list[end_index]));
-    c.add(make_node<gates::CNot>(qubits.end()[-2], qubits.back()));
+    c.emplace<gates::RZ>(qubits.back(),-instruction_list[end_index]);
+    c.emplace<gates::CNot>(qubits.end()[-2], qubits.back());
     cycles_valid = false;
 }
 
@@ -1139,17 +1139,17 @@ void Kernel::multicontrolled_ry(
     UInt idx;
 
     //The first one is always controlled from the last to the first qubit.
-    c.add(make_node<gates::RY>(qubits.back(),-instruction_list[start_index]));
-    c.add(make_node<gates::CNot>(qubits[0], qubits.back()));
+    c.emplace<gates::RY>(qubits.back(),-instruction_list[start_index]);
+    c.emplace<gates::CNot>(qubits[0], qubits.back());
 
     for (UInt i = 1; i < end_index - start_index; i++) {
         idx = log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
-        c.add(make_node<gates::RY>(qubits.back(),-instruction_list[i+start_index]));
-        c.add(make_node<gates::CNot>(qubits[idx], qubits.back()));
+        c.emplace<gates::RY>(qubits.back(),-instruction_list[i+start_index]);
+        c.emplace<gates::CNot>(qubits[idx], qubits.back());
     }
     // Last one is controlled from the next qubit to the first one.
-    c.add(make_node<gates::RY>(qubits.back(),-instruction_list[end_index]));
-    c.add(make_node<gates::CNot>(qubits.end()[-2], qubits.back()));
+    c.emplace<gates::RY>(qubits.back(),-instruction_list[end_index]);
+    c.emplace<gates::CNot>(qubits.end()[-2], qubits.back());
     cycles_valid = false;
 }
 
@@ -1240,12 +1240,12 @@ void Kernel::classical(const ClassicalRegister &destination, const ClassicalOper
         }
     }
 
-    c.add(make_node<gates::Classical>(destination, oper));
+    c.emplace<gates::Classical>(destination, oper);
     cycles_valid = false;
 }
 
 void Kernel::classical(const Str &operation) {
-    c.add(make_node<gates::Classical>(operation));
+    c.emplace<gates::Classical>(operation);
     cycles_valid = false;
 }
 

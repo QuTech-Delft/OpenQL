@@ -14,12 +14,12 @@ namespace cc {
 
 using namespace utils;
 
-void Settings::loadBackendSettings(const quantum_platform &platform) {
-    this->platform = &platform;
+void Settings::loadBackendSettings(const plat::PlatformRef &platform) {
+    this->platform = platform;
 
     // remind some main JSON areas
-    QL_JSON_ASSERT(platform.hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
-    const Json &jsonBackendSettings = platform.hardware_settings["eqasm_backend_cc"];
+    QL_JSON_ASSERT(platform->hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
+    const Json &jsonBackendSettings = platform->hardware_settings["eqasm_backend_cc"];
 
     QL_JSON_ASSERT(jsonBackendSettings, "instrument_definitions", "eqasm_backend_cc");
     jsonInstrumentDefinitions = &jsonBackendSettings["instrument_definitions"];

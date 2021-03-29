@@ -152,15 +152,15 @@ protected:
 
 };
 
-inline void rotation_optimize_kernel(ir::Kernel &kernel, const quantum_platform &platform) {
-    QL_DOUT("kernel " << kernel.name << " optimize_kernel(): circuit before optimizing: ");
-    print(kernel.c);
+inline void rotation_optimize_kernel(const ir::KernelRef &kernel, const plat::PlatformRef &platform) {
+    QL_DOUT("kernel " << kernel->name << " optimize_kernel(): circuit before optimizing: ");
+    print(kernel->c);
     QL_DOUT("... end circuit");
     rotations_merging rm;
-    if (contains_measurements(kernel.c)) {
+    if (contains_measurements(kernel->c)) {
         QL_DOUT("kernel contains measurements ...");
         // decompose the circuit
-        Vec<ir::Circuit> cs = split_circuit(kernel.c);
+        Vec<ir::Circuit> cs = split_circuit(kernel->c);
         Vec<ir::Circuit> cs_opt;
         for (auto c : cs)
         {
@@ -173,31 +173,31 @@ inline void rotation_optimize_kernel(ir::Kernel &kernel, const quantum_platform 
         }
         // for (int i=0; i<cs_opt.size(); ++i)
         // print(cs_opt[i]);
-        kernel.c.reset();
+        kernel->c.reset();
         for (size_t i = 0; i < cs_opt.size(); ++i) {
             for (size_t j = 0; j < cs_opt[i].size(); j++) {
-                kernel.c.add(cs_opt[i][j]);
+                kernel->c.add(cs_opt[i][j]);
             }
         }
     } else {
-        kernel.c = rm.optimize(kernel.c);
+        kernel->c = rm.optimize(kernel->c);
     }
-    kernel.cycles_valid = false;
-    QL_DOUT("kernel " << kernel.name << " rotation_optimize(): circuit after optimizing: ");
-    print(kernel.c);
+    kernel->cycles_valid = false;
+    QL_DOUT("kernel " << kernel->name << " rotation_optimize(): circuit after optimizing: ");
+    print(kernel->c);
     QL_DOUT("... end circuit");
 }
 
 // rotation_optimize pass
 void rotation_optimize(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
     if (com::options::get("optimize") == "yes") {
         QL_IOUT("optimizing quantum kernels...");
-        for (size_t k=0; k<program.kernels.size(); ++k) {
-            rotation_optimize_kernel(*program.kernels[k], platform);
+        for (size_t k=0; k<program->kernels.size(); ++k) {
+            rotation_optimize_kernel(program->kernels[k], platform);
         }
     }
 }

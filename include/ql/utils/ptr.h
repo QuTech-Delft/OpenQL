@@ -37,13 +37,10 @@ public:
 
     /**
      * Initialization method, used to fill an empty container after
-     * construction. The container is expected to be empty initially.
+     * construction. Will override any previous value.
      */
     template<typename S = T, class... Args>
     void emplace(Args&&... args) {
-        if (v) {
-            throw Exception("Ptr has already been initialized", false);
-        }
         v = std::static_pointer_cast<T>(std::make_shared<S>(std::forward<Args>(args)...));
     }
 

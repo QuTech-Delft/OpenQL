@@ -32,16 +32,16 @@ struct Topology {
     utils::Vec<Edge> edges;
 };
 
-void visualizeMappingGraph(const ir::Program &program, const VisualizerConfiguration &configuration);
+void visualizeMappingGraph(const ir::ProgramRef &program, const VisualizerConfiguration &configuration);
 
-void computeMappingPerCycle(const MappingGraphLayout layout,
+void computeMappingPerCycle(const MappingGraphLayout &layout,
                             utils::Vec<utils::Vec<utils::Int>> &virtualQubits,
                             utils::Vec<utils::Bool> &mappingChangedPerCycle,
                             const utils::Vec<GateProperties> &gates,
-                            const utils::Int amountOfCycles,
-                            const utils::Int amountOfQubits);
+                            utils::Int amountOfCycles,
+                            utils::Int amountOfQubits);
 
-utils::Bool parseTopology(const utils::Json hardware_settings, Topology &topology);
+utils::Bool parseTopology(const utils::Json &hardware_settings, Topology &topology);
 MappingGraphLayout parseMappingGraphLayout(const utils::Str &configPath);
 
 } // namespace visualize

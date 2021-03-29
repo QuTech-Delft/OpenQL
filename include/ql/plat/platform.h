@@ -7,11 +7,13 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/json.h"
-#include "hardware_configuration.h"
+#include "ql/utils/tree.h"
+#include "ql/plat/hardware_configuration.h"
 
 namespace ql {
+namespace plat {
 
-class quantum_platform {
+class Platform : public utils::Node {
 public:
     utils::Str              name;                     // platform name
     utils::Str              eqasm_compiler_name;      // eqasm backend
@@ -27,8 +29,8 @@ public:
     utils::Json             aliases;                  // workaround the generic instruction composition
 
     // FIXME: constructed object is not usable
-    quantum_platform();
-    quantum_platform(const utils::Str &name, const utils::Str &configuration_file_name);
+    Platform();
+    Platform(const utils::Str &name, const utils::Str &configuration_file_name);
     void print_info() const;
     utils::UInt get_qubit_number() const;  // FIXME: qubit_number is public anyway
 
@@ -52,4 +54,7 @@ public:
     utils::UInt time_to_cycles(utils::Real time_ns) const;
 };
 
+using PlatformRef = utils::One<Platform>;
+
+} // namespace plat
 } // namespace ql

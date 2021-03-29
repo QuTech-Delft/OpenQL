@@ -8,10 +8,10 @@ void test_mc(std::string v, std::string param1, std::string param2, std::string 
     std::string kernel_name = "test_" + v;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("mc4x4full", "test_multi_core_4x4_full.json");
+    auto starmon = ql::plat::PlatformRef::make("mc4x4full", "test_multi_core_4x4_full.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     int i, j;

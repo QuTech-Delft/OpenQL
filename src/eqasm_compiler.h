@@ -6,14 +6,16 @@
 
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
+#include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
-#include "platform.h"
 
 namespace ql {
 
 typedef utils::Vec<utils::Str> eqasm_t;
 
-class quantum_platform;
+namespace plat {
+class Platform;
+}
 
 /**
  * eqasm compiler interface
@@ -27,7 +29,7 @@ public:
     /*
      * compile must be implemented by all compilation backends.
      */
-    virtual void compile(ir::Program &programp, const quantum_platform &plat) = 0;
+    virtual void compile(const ir::ProgramRef &programp, const plat::PlatformRef &plat) = 0;
 
     /**
      * write eqasm code to file/stdout

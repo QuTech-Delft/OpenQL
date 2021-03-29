@@ -10,8 +10,8 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/filesystem.h"
+#include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
-#include "platform.h"
 
 namespace ql {
 
@@ -24,19 +24,19 @@ private:
     utils::Opt<utils::OutFile> of;
 public:
     ReportFile(
-        const ir::Program &program,
+        const ir::ProgramRef &program,
         const utils::Str &in_or_out,
         const utils::Str &pass_name
     );
     void write(const utils::Str &content);
     void write_kernel_statistics(
-        const ir::Kernel &k,
-        const quantum_platform &platform,
+        const ir::KernelRef &k,
+        const plat::PlatformRef &platform,
         const utils::Str &comment_prefix=""
     );
     void write_totals_statistics(
         const ir::KernelRefs &kernels,
-        const quantum_platform &platform,
+        const plat::PlatformRef &platform,
         const utils::Str &comment_prefix=""
     );
     void close();
@@ -54,14 +54,14 @@ public:
  * in a file with a name that contains the program unique name and an extension defined by the pass_name
  */
 void write_qasm(
-    const ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const utils::Str &pass_name
 );
 
 void write_c(
-    const ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const utils::Str &pass_name
 );
 
@@ -70,8 +70,8 @@ void write_c(
  * in a file with a name that contains the program unique name and the place from where the report is done
  */
 void report_qasm(
-    const ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const utils::Str &in_or_out,
     const utils::Str &pass_name
 );
@@ -89,8 +89,8 @@ void report_string(
  */
 void report_kernel_statistics(
     std::ostream &os,
-    const ir::Kernel &k,
-    const quantum_platform &platform,
+    const ir::KernelRef &k,
+    const plat::PlatformRef &platform,
     const utils::Str &comment_prefix
 );
 
@@ -100,7 +100,7 @@ void report_kernel_statistics(
 void report_totals_statistics(
     std::ostream &os,
     const ir::KernelRefs &kernels,
-    const quantum_platform &platform,
+    const plat::PlatformRef &platform,
     const utils::Str &comment_prefix
 );
 
@@ -113,8 +113,8 @@ void report_totals_statistics(
  * otherwise, the sequence of calls in here has to be copied and supplemented by some report_string calls
  */
 void report_statistics(
-    const ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const utils::Str &in_or_out,
     const utils::Str &pass_name,
     const utils::Str &comment_prefix,
@@ -133,7 +133,7 @@ void report_statistics(
  */
 void report_init(
     ir::Program &program,
-    const quantum_platform &platform
+    const plat::PlatformRef &platform
 );
 
 } // namespace ql

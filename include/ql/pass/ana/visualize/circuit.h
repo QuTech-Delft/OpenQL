@@ -157,31 +157,31 @@ struct ImageOutput {
     const Structure structure;
 };
 
-void visualizeCircuit(const ir::Program &program, const VisualizerConfiguration &configuration);
-ImageOutput generateImage(const ir::Program &program, const VisualizerConfiguration &configuration, const utils::Vec<utils::Int> minCycleWidths, const utils::Int extendedImageHeight);
+void visualizeCircuit(const ir::ProgramRef &program, const VisualizerConfiguration &configuration);
+ImageOutput generateImage(const ir::ProgramRef &program, const VisualizerConfiguration &configuration, const utils::Vec<utils::Int> &minCycleWidths, utils::Int extendedImageHeight);
 
-CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const utils::Json platformInstructions);
+CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const utils::Json &platformInstructions);
 void validateCircuitLayout(CircuitLayout &layout, const utils::Str &visualizationType);
 PulseVisualization parseWaveformMapping(const utils::Str &waveformMappingPath);
 
 utils::Vec<QubitLines> generateQubitLines(const utils::Vec<GateProperties> &gates, const PulseVisualization &pulseVisualization, const CircuitData &circuitData);
 utils::Real calculateMaxAmplitude(const utils::Vec<LineSegment> &lineSegments);
-void insertFlatLineSegments(utils::Vec<LineSegment> &existingLineSegments, const utils::Int amountOfCycles);
+void insertFlatLineSegments(utils::Vec<LineSegment> &existingLineSegments, utils::Int amountOfCycles);
 
 void drawCycleLabels(Image &image, const CircuitLayout &layout, const CircuitData &circuitData, const Structure &structure);
 void drawCycleEdges(Image &image, const CircuitLayout &layout, const CircuitData &circuitData, const Structure &structure);
 void drawBitLineLabels(Image &image, const CircuitLayout &layout, const CircuitData &circuitData, const Structure &structure);
 void drawBitLineEdges(Image &image, const CircuitLayout &layout, const CircuitData &circuitData, const Structure &structure);
 
-void drawBitLine(Image &image, const CircuitLayout &layout, const BitType bitType, const utils::Int row, const CircuitData &circuitData, const Structure &structure);
+void drawBitLine(Image &image, const CircuitLayout &layout, BitType bitType, utils::Int row, const CircuitData &circuitData, const Structure &structure);
 void drawGroupedClassicalBitLine(Image &image, const CircuitLayout &layout, const CircuitData &circuitData, const Structure &structure);
 
-void drawWiggle(Image &image, const utils::Int x0, const utils::Int x1, const utils::Int y, const utils::Int width, const utils::Int height, const Color color);
+void drawWiggle(Image &image, utils::Int x0, utils::Int x1, utils::Int y, utils::Int width, utils::Int height, Color color);
 
-void drawLine(Image &image, const Structure &structure, const utils::Int cycleDuration, const Line &line, const utils::Int qubitIndex, const utils::Int y, const utils::Int maxLineHeight, const Color color);
+void drawLine(Image &image, const Structure &structure, utils::Int cycleDuration, const Line &line, utils::Int qubitIndex, utils::Int y, utils::Int maxLineHeight, Color color);
 
 void drawCycle(Image &image, const CircuitLayout &layout, const CircuitData &circuitData, const Structure &structure, const Cycle &cycle);
-void drawGate(Image &image, const CircuitLayout &layout, const CircuitData &circuitData, const GateProperties &gate, const Structure &structure, const utils::Int chunkOffset);
+void drawGate(Image &image, const CircuitLayout &layout, const CircuitData &circuitData, const GateProperties &gate, const Structure &structure, utils::Int chunkOffset);
 void drawGateNode(Image &image, const CircuitLayout &layout, const Structure &structure, const Node &node, const Cell &cell);
 void drawControlNode(Image &image, const CircuitLayout &layout, const Structure &structure, const Node &node, const Cell &cell);
 void drawNotNode(Image &image, const CircuitLayout &layout, const Structure &structure, const Node &node, const Cell &cell);

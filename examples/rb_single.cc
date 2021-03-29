@@ -47,30 +47,30 @@ void build_rb(int num_cliffords, ql::ir::KernelRef &k) {
 
 
 int main(int argc, char **argv) {
-   srand(0);
+    srand(0);
 
-   int    num_circuits       = 4;
-   double sweep_points[]   = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
+    int    num_circuits       = 4;
+    double sweep_points[]   = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
 
-   // create platform
-   ql::quantum_platform qx_platform("qx_simulator","hardware_config_qx.json");
+    // create platform
+    auto qx_platform = ql::plat::PlatformRef::make("qx_simulator", "hardware_config_qx.json");
 
-   // print info
-   qx_platform.print_info();
+    // print info
+    qx_platform->print_info();
 
-   auto rb = ql::utils::make_node<ql::ir::Program>("rb", qx_platform, 1);
+    auto rb = ql::ir::ProgramRef::make("rb", qx_platform, 1);
 
-   rb->set_sweep_points(sweep_points, num_circuits);
+    rb->set_sweep_points(sweep_points, num_circuits);
 
-   auto kernel = ql::utils::make_node<ql::ir::Kernel>("rb1024", qx_platform, 1);
+    auto kernel = ql::ir::KernelRef::make("rb1024", qx_platform, 1);
 
-   build_rb(1024, kernel);
+    build_rb(1024, kernel);
 
-   rb->add(kernel);
-   rb->compile();
+    rb->add(kernel);
+    rb->compile();
 
-   // std::cout<< rb.qasm() << std::endl;
-   // std::cout << rb.qasm() << std::endl;
+    // std::cout<< rb.qasm() << std::endl;
+    // std::cout << rb.qasm() << std::endl;
 
-   return 0;
+    return 0;
 }

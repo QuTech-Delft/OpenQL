@@ -20,14 +20,14 @@ namespace arch {
 
 // in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
 // it is needed to define the extend of the resource occupation in case of multi-cycle operations
-utils::UInt ccl_get_operation_duration(ir::Gate &ins, const quantum_platform &platform);
+utils::UInt ccl_get_operation_duration(ir::Gate &ins, const plat::PlatformRef &platform);
 
 // operation type is "mw" (for microwave), "flux", or "readout"
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
-utils::Str ccl_get_operation_type(ir::Gate &ins, const quantum_platform &platform);
+utils::Str ccl_get_operation_type(ir::Gate &ins, const plat::PlatformRef &platform);
 
 // operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
-utils::Str ccl_get_operation_name(ir::Gate &ins, const quantum_platform &platform);
+utils::Str ccl_get_operation_name(ir::Gate &ins, const plat::PlatformRef &platform);
 
 
 // ============ classes of resources that _may_ appear in a configuration file
@@ -40,13 +40,13 @@ public:
     // bwd: qubit q is busy from cycle=state[q], i.e. all cycles >= state[q] it is busy, i.e. start_cycle+duration must be <= state[q]
     utils::Vec<utils::UInt> state;
 
-    ccl_qubit_resource_t(const quantum_platform &platform, scheduling_direction_t dir);
+    ccl_qubit_resource_t(const plat::PlatformRef &platform, scheduling_direction_t dir);
 
     ccl_qubit_resource_t *clone() const & override;
     ccl_qubit_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
-    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
 };
 
 // Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.
@@ -65,13 +65,13 @@ public:
     utils::Vec<utils::Str> operations;    // with operation_name==operations[qwg]
     utils::Map<utils::UInt,utils::UInt> qubit2qwg;      // on qwg==qubit2qwg[q]
 
-    ccl_qwg_resource_t(const quantum_platform & platform, scheduling_direction_t dir);
+    ccl_qwg_resource_t(const plat::PlatformRef &platform, scheduling_direction_t dir);
 
     ccl_qwg_resource_t *clone() const & override;
     ccl_qwg_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
-    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
 };
 
 // Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.
@@ -83,13 +83,13 @@ public:
     utils::Vec<utils::UInt> tocycle;    // is busy till cycle
     utils::Map<utils::UInt,utils::UInt> qubit2meas;
 
-    ccl_meas_resource_t(const quantum_platform & platform, scheduling_direction_t dir);
+    ccl_meas_resource_t(const plat::PlatformRef & platform, scheduling_direction_t dir);
 
     ccl_meas_resource_t *clone() const & override;
     ccl_meas_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
-    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
 };
 
 // Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge.
@@ -111,13 +111,13 @@ public:
     utils::Map<qubits_pair_t, utils::UInt> qubits2edge;      // constant helper table to find edge between a pair of qubits
     utils::Map<utils::UInt, utils::Vec<utils::UInt>> edge2edges;  // constant "edges" table from configuration file
 
-    ccl_edge_resource_t(const quantum_platform &platform, scheduling_direction_t dir);
+    ccl_edge_resource_t(const plat::PlatformRef &platform, scheduling_direction_t dir);
 
     ccl_edge_resource_t *clone() const & override;
     ccl_edge_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
-    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform & platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
 };
 
 // A two-qubit flux gate lowers the frequency of its source qubit to get near the freq of its target qubit.
@@ -152,13 +152,13 @@ public:
     utils::Map<qubits_pair_t, utils::UInt> qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
     utils::Map<utils::UInt, utils::Vec<utils::UInt>> edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
-    ccl_detuned_qubits_resource_t(const quantum_platform &platform, scheduling_direction_t dir);
+    ccl_detuned_qubits_resource_t(const plat::PlatformRef &platform, scheduling_direction_t dir);
 
     ccl_detuned_qubits_resource_t *clone() const & override;
     ccl_detuned_qubits_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
-    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
 };
 
 // Inter-core communication gates use channels between cores.
@@ -178,13 +178,13 @@ public:
     // i.e. all cycles >= state[core][c] it is busy, i.e. start_cycle+duration must be <= state[core][c]
     utils::Vec<utils::Vec<utils::UInt>> state;
 
-    ccl_channel_resource_t(const quantum_platform & platform, scheduling_direction_t dir);
+    ccl_channel_resource_t(const plat::PlatformRef &platform, scheduling_direction_t dir);
 
     ccl_channel_resource_t *clone() const & override;
     ccl_channel_resource_t *clone() && override;
 
-    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const override;
-    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
 };
 
 // ============ platform specific resource_manager matching config file resources sections with resource classes above
@@ -198,7 +198,7 @@ public:
     // Allocate those resources that were specified in the config file.
     // Those that are not specified, are not allocated, so are not used in scheduling/mapping.
     // The resource names tested correspond to the names of the resources sections in the config file.
-    cc_light_resource_manager_t(const quantum_platform &platform, scheduling_direction_t dir);
+    cc_light_resource_manager_t(const plat::PlatformRef &platform, scheduling_direction_t dir);
 
     cc_light_resource_manager_t *clone() const & override;
     cc_light_resource_manager_t *clone() && override;

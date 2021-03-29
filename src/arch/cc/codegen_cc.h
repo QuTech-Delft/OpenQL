@@ -9,13 +9,13 @@
 
 #pragma once
 
+#include "ql/plat/platform.h"
 #include "types_cc.h"
 #include "options_cc.h"
 #include "bundle_info.h"
 #include "datapath_cc.h"
 #include "settings_cc.h"
 #include "vcd_cc.h"
-#include "platform.h"
 
 namespace ql {
 namespace arch {
@@ -27,7 +27,7 @@ public: //  functions
     ~Codegen() = default;
 
     // Generic
-    void init(const quantum_platform &platform);
+    void init(const plat::PlatformRef &platform);
     Str getProgram();                           // return the CC source code that was created
     Str getMap();                               // return a map of codeword assignments, useful for configuring AWGs
 
@@ -94,7 +94,7 @@ private:    // vars
     static const Int MAX_SLOTS = 12;                            // physical maximum of CC
     static const Int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
-    const quantum_platform *platform;                           // remind platform
+    plat::PlatformRef platform;                                 // remind platform
     Settings settings;                                          // handling of JSON settings
     Datapath dp;                                                // handling of CC datapath
     Vcd vcd;                                                    // handling of VCD file output

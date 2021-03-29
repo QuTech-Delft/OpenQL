@@ -11,7 +11,6 @@
 #include "compiler.h"
 #include "interactionMatrix.h"
 #include "scheduler.h"
-#include "optimizer.h"
 
 static unsigned long phi_node_count = 0;    // FIXME: number across quantum_program instances
 
@@ -31,7 +30,7 @@ Program::Program(const Str &n) : name(n) {
 
 Program::Program(
     const Str &n,
-    const quantum_platform &platf,
+    const plat::PlatformRef &platf,
     UInt nqubits,
     UInt ncregs,
     UInt nbregs
@@ -45,7 +44,7 @@ Program::Program(
     default_config = true;
     needs_backend_compiler = true;
     platformInitialized = true;
-    eqasm_compiler_name = platform.eqasm_compiler_name;
+    eqasm_compiler_name = platform->eqasm_compiler_name;
     backend_compiler.reset();
     if (eqasm_compiler_name.empty()) {
         QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
@@ -62,15 +61,15 @@ Program::Program(
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
 
-    if (qubit_count > platform.qubit_number) {
-        QL_FATAL("number of qubits requested in program '" + to_string(qubit_count) + "' is greater than the qubits available in platform '" + to_string(platform.qubit_number) + "'" );
+    if (qubit_count > platform->qubit_number) {
+        QL_FATAL("number of qubits requested in program '" + to_string(qubit_count) + "' is greater than the qubits available in platform '" + to_string(platform->qubit_number) + "'" );
     }
 
     // report/write_qasm initialization
     report_init(*this, platform);
 }
 
-void Program::add(KernelRef &k) {
+void Program::add(const KernelRef &k) {
     // check sanity of supplied qubit/classical operands for each gate
     Circuit &kc = k->get_circuit();
     for (auto &g : kc) {
@@ -101,15 +100,15 @@ void Program::add(KernelRef &k) {
     kernels.add(k);
 }
 
-void Program::add_program(ProgramRef &p) {
+void Program::add_program(const ProgramRef &p) {
     for (auto &k : p->kernels) {
         add(k);
     }
 }
 
-void Program::add_if(KernelRef &k, const ClassicalOperation &cond) {
+void Program::add_if(const KernelRef &k, const ClassicalOperation &cond) {
     // phi node
-    KernelRef kphi1 = make_node<Kernel>(k->name+"_if", platform, qubit_count, creg_count, breg_count);
+    auto kphi1 = KernelRef::make(k->name+"_if", platform, qubit_count, creg_count, breg_count);
     kphi1->set_kernel_type(KernelType::IF_START);
     kphi1->set_condition(cond);
     kernels.add(kphi1);
@@ -117,15 +116,15 @@ void Program::add_if(KernelRef &k, const ClassicalOperation &cond) {
     add(k);
 
     // phi node
-    KernelRef kphi2 = make_node<Kernel>(k->name+"_if_end", platform, qubit_count, creg_count, breg_count);
+    auto kphi2 = KernelRef::make(k->name+"_if_end", platform, qubit_count, creg_count, breg_count);
     kphi2->set_kernel_type(KernelType::IF_END);
     kphi2->set_condition(cond);
     kernels.add(kphi2);
 }
 
-void Program::add_if(ProgramRef &p, const ClassicalOperation &cond) {
+void Program::add_if(const ProgramRef &p, const ClassicalOperation &cond) {
     // phi node
-    KernelRef kphi1 = make_node<Kernel>(p->name+"_if", platform, qubit_count, creg_count, breg_count);
+    auto kphi1 = KernelRef::make(p->name+"_if", platform, qubit_count, creg_count, breg_count);
     kphi1->set_kernel_type(KernelType::IF_START);
     kphi1->set_condition(cond);
     kernels.add(kphi1);
@@ -133,18 +132,18 @@ void Program::add_if(ProgramRef &p, const ClassicalOperation &cond) {
     add_program(p);
 
     // phi node
-    KernelRef kphi2 = make_node<Kernel>(p->name+"_if_end", platform, qubit_count, creg_count, breg_count);
+    auto kphi2 = KernelRef::make(p->name+"_if_end", platform, qubit_count, creg_count, breg_count);
     kphi2->set_kernel_type(KernelType::IF_END);
     kphi2->set_condition(cond);
     kernels.add(kphi2);
 }
 
 void Program::add_if_else(
-    KernelRef &k_if,
-    KernelRef &k_else,
+    const KernelRef &k_if,
+    const KernelRef &k_else,
     const ClassicalOperation &cond
 ) {
-    KernelRef kphi1 = make_node<Kernel>(k_if->name+"_if"+ to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
+    auto kphi1 = KernelRef::make(k_if->name+"_if"+ to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
     kphi1->set_kernel_type(KernelType::IF_START);
     kphi1->set_condition(cond);
     kernels.add(kphi1);
@@ -152,14 +151,14 @@ void Program::add_if_else(
     add(k_if);
 
     // phi node
-    KernelRef kphi2 = make_node<Kernel>(k_if->name+"_if"+ to_string(phi_node_count) +"_end", platform, qubit_count, creg_count, breg_count);
+    auto kphi2 = KernelRef::make(k_if->name+"_if"+ to_string(phi_node_count) +"_end", platform, qubit_count, creg_count, breg_count);
     kphi2->set_kernel_type(KernelType::IF_END);
     kphi2->set_condition(cond);
     kernels.add(kphi2);
 
 
     // phi node
-    KernelRef kphi3 = make_node<Kernel>(k_else->name+"_else" + to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
+    auto kphi3 = KernelRef::make(k_else->name+"_else" + to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
     kphi3->set_kernel_type(KernelType::ELSE_START);
     kphi3->set_condition(cond);
     kernels.add(kphi3);
@@ -167,7 +166,7 @@ void Program::add_if_else(
     add(k_else);
 
     // phi node
-    KernelRef kphi4 = make_node<Kernel>(k_else->name+"_else" + to_string(phi_node_count)+"_end", platform, qubit_count, creg_count, breg_count);
+    auto kphi4 = KernelRef::make(k_else->name+"_else" + to_string(phi_node_count)+"_end", platform, qubit_count, creg_count, breg_count);
     kphi4->set_kernel_type(KernelType::ELSE_END);
     kphi4->set_condition(cond);
     kernels.add(kphi4);
@@ -176,11 +175,11 @@ void Program::add_if_else(
 }
 
 void Program::add_if_else(
-    ProgramRef &p_if,
-    ProgramRef &p_else,
+    const ProgramRef &p_if,
+    const ProgramRef &p_else,
     const ClassicalOperation &cond
 ) {
-    KernelRef kphi1 = make_node<Kernel>(p_if->name+"_if"+ to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
+    auto kphi1 = KernelRef::make(p_if->name+"_if"+ to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
     kphi1->set_kernel_type(KernelType::IF_START);
     kphi1->set_condition(cond);
     kernels.add(kphi1);
@@ -188,14 +187,14 @@ void Program::add_if_else(
     add_program(p_if);
 
     // phi node
-    KernelRef kphi2 = make_node<Kernel>(p_if->name+"_if"+ to_string(phi_node_count) +"_end", platform, qubit_count, creg_count, breg_count);
+    auto kphi2 = KernelRef::make(p_if->name+"_if"+ to_string(phi_node_count) +"_end", platform, qubit_count, creg_count, breg_count);
     kphi2->set_kernel_type(KernelType::IF_END);
     kphi2->set_condition(cond);
     kernels.add(kphi2);
 
 
     // phi node
-    KernelRef kphi3 = make_node<Kernel>(p_else->name+"_else" + to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
+    auto kphi3 = KernelRef::make(p_else->name+"_else" + to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
     kphi3->set_kernel_type(KernelType::ELSE_START);
     kphi3->set_condition(cond);
     kernels.add(kphi3);
@@ -203,7 +202,7 @@ void Program::add_if_else(
     add_program(p_else);
 
     // phi node
-    KernelRef kphi4 = make_node<Kernel>(p_else->name+"_else" + to_string(phi_node_count)+"_end", platform, qubit_count, creg_count, breg_count);
+    auto kphi4 = KernelRef::make(p_else->name+"_else" + to_string(phi_node_count)+"_end", platform, qubit_count, creg_count, breg_count);
     kphi4->set_kernel_type(KernelType::ELSE_END);
     kphi4->set_condition(cond);
     kernels.add(kphi4);
@@ -211,9 +210,9 @@ void Program::add_if_else(
     phi_node_count++;
 }
 
-void Program::add_do_while(KernelRef &k, const ClassicalOperation &cond) {
+void Program::add_do_while(const KernelRef &k, const ClassicalOperation &cond) {
     // phi node
-    KernelRef kphi1 = make_node<Kernel>(k->name+"_do_while"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
+    auto kphi1 = KernelRef::make(k->name+"_do_while"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
     kphi1->set_kernel_type(KernelType::DO_WHILE_START);
     kphi1->set_condition(cond);
     kernels.add(kphi1);
@@ -221,16 +220,16 @@ void Program::add_do_while(KernelRef &k, const ClassicalOperation &cond) {
     add(k);
 
     // phi node
-    KernelRef kphi2 = make_node<Kernel>(k->name+"_do_while" + to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
+    auto kphi2 = KernelRef::make(k->name+"_do_while" + to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
     kphi2->set_kernel_type(KernelType::DO_WHILE_END);
     kphi2->set_condition(cond);
     kernels.add(kphi2);
     phi_node_count++;
 }
 
-void Program::add_do_while(ProgramRef &p, const ClassicalOperation &cond) {
+void Program::add_do_while(const ProgramRef &p, const ClassicalOperation &cond) {
     // phi node
-    KernelRef kphi1 = make_node<Kernel>(p->name+"_do_while"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
+    auto kphi1 = KernelRef::make(p->name+"_do_while"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
     kphi1->set_kernel_type(KernelType::DO_WHILE_START);
     kphi1->set_condition(cond);
     kernels.add(kphi1);
@@ -238,16 +237,16 @@ void Program::add_do_while(ProgramRef &p, const ClassicalOperation &cond) {
     add_program(p);
 
     // phi node
-    KernelRef kphi2 = make_node<Kernel>(p->name+"_do_while" + to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
+    auto kphi2 = KernelRef::make(p->name+"_do_while" + to_string(phi_node_count), platform, qubit_count, creg_count, breg_count);
     kphi2->set_kernel_type(KernelType::DO_WHILE_END);
     kphi2->set_condition(cond);
     kernels.add(kphi2);
     phi_node_count++;
 }
 
-void Program::add_for(KernelRef &k, UInt iterations) {
+void Program::add_for(const KernelRef &k, UInt iterations) {
     // phi node
-    KernelRef kphi1 = make_node<Kernel>(k->name+"_for"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
+    auto kphi1 = KernelRef::make(k->name+"_for"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
     kphi1->set_kernel_type(KernelType::FOR_START);
     kphi1->iterations = iterations;
     kernels.add(kphi1);
@@ -256,13 +255,13 @@ void Program::add_for(KernelRef &k, UInt iterations) {
     kernels.back()->iterations = iterations;
 
     // phi node
-    KernelRef kphi2 = make_node<Kernel>(k->name+"_for" + to_string(phi_node_count) +"_end", platform, qubit_count, creg_count, breg_count);
+    auto kphi2 = KernelRef::make(k->name+"_for" + to_string(phi_node_count) +"_end", platform, qubit_count, creg_count, breg_count);
     kphi2->set_kernel_type(KernelType::FOR_END);
     kernels.add(kphi2);
     phi_node_count++;
 }
 
-void Program::add_for(ProgramRef &p, UInt iterations) {
+void Program::add_for(const ProgramRef &p, UInt iterations) {
     Bool nested_for = false;
 //     for (auto &k : p.kernels) {
 //         if (k.type == kernel_type_t::FOR_START) {
@@ -280,20 +279,20 @@ void Program::add_for(ProgramRef &p, UInt iterations) {
     }
 
     // phi node
-    KernelRef kphi1 = make_node<Kernel>(p->name+"_for"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
+    auto kphi1 = KernelRef::make(p->name+"_for"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
     kphi1->set_kernel_type(KernelType::FOR_START);
     kphi1->iterations = iterations;
     kernels.add(kphi1);
 
     // phi node
-    KernelRef kphi2 = make_node<Kernel>(p->name, platform, qubit_count, creg_count, breg_count);
+    auto kphi2 = KernelRef::make(p->name, platform, qubit_count, creg_count, breg_count);
     kphi2->set_kernel_type(KernelType::STATIC);
     kernels.add(kphi2);
 
     add_program(p);
 
     // phi node
-    KernelRef kphi3 = make_node<Kernel>(p->name+"_for" + to_string(phi_node_count) +"_end", platform, qubit_count, creg_count, breg_count);
+    auto kphi3 = KernelRef::make(p->name+"_for" + to_string(phi_node_count) +"_end", platform, qubit_count, creg_count, breg_count);
     kphi3->set_kernel_type(KernelType::FOR_END);
     kernels.add(kphi3);
     phi_node_count++;
@@ -304,7 +303,7 @@ void Program::set_config_file(const Str &file_name) {
     default_config   = false;
 }
 
-void Program::set_platform(const quantum_platform &platform) {
+void Program::set_platform(const plat::PlatformRef &platform) {
     this->platform = platform;
 }
 
@@ -326,7 +325,7 @@ void Program::compile() {
     // when this legacy ::compile method is used.
     // NOTE: For the use of 'compilerCfgPath' below to work, it is assumed the compiler configuration file
     //       is located in the same folder as the platform configuration file. 
-    std::string compilerCfgPath = dirnameOf(platform.configuration_file_name);
+    std::string compilerCfgPath = dirnameOf(platform->configuration_file_name);
 
     //constuct compiler
     std::unique_ptr<quantum_compiler> compiler(new quantum_compiler("Hard Coded Compiler"));
@@ -348,7 +347,7 @@ void Program::compile() {
     }
 
     //compile with program
-    compiler->compile(*this);
+    compiler->compile(ProgramRef::make(*this));
 
     QL_IOUT("compilation of program '" << name << "' done.");
 
@@ -358,7 +357,7 @@ void Program::compile() {
 void Program::print_interaction_matrix() const {
     QL_IOUT("printing interaction matrix...");
 
-    for (auto k : kernels) {
+    for (const auto &k : kernels) {
         InteractionMatrix imat(k->get_circuit(), qubit_count);
         Str mstr = imat.getString();
         std::cout << mstr << std::endl;
@@ -366,7 +365,7 @@ void Program::print_interaction_matrix() const {
 }
 
 void Program::write_interaction_matrix() const {
-    for (auto k : kernels) {
+    for (const auto &k : kernels) {
         InteractionMatrix imat(k->get_circuit(), qubit_count);
         Str mstr = imat.getString();
 

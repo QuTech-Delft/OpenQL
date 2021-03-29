@@ -8,9 +8,9 @@
 
 #pragma once
 
+#include "ql/plat/platform.h"
 #include "types_cc.h"
 #include "options_cc.h"
-#include "platform.h"
 
 namespace ql {
 namespace arch {
@@ -52,7 +52,7 @@ public: // functions
     Settings() = default;
     ~Settings() = default;
 
-    void loadBackendSettings(const quantum_platform &platform);
+    void loadBackendSettings(const plat::PlatformRef &platform);
     Str getReadoutMode(const Str &iname);
     Bool isReadout(const Str &iname);
     Bool isPragma(const Str &iname);
@@ -73,7 +73,7 @@ public: // functions
     UInt getInstrumentsSize() const { return jsonInstruments->size(); }
 
 private:    // vars
-    RawPtr<const quantum_platform> platform;
+    plat::PlatformRef platform;
     RawPtr<const Json> jsonInstrumentDefinitions;
     RawPtr<const Json> jsonControlModes;
     RawPtr<const Json> jsonInstruments;

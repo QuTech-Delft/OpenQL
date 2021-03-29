@@ -279,19 +279,19 @@ void Scheduler::new_event(
 // construct the dependency graph ('graph') with nodes from the circuit and adding arcs for their dependencies
 void Scheduler::init(
     ir::Circuit &ckt,
-    const quantum_platform &platform,
+    const plat::PlatformRef &platform,
     UInt qcount,        // number of qubits
     UInt ccount,        // number of classical registers
     UInt bcount         // number of bit registers
 ) {
-    QL_DOUT("dependency graph creation ... #qubits = " << platform.qubit_number);
+    QL_DOUT("dependency graph creation ... #qubits = " << platform->qubit_number);
     qubit_count = qcount; ///@todo-rn: DDG creation should not depend on #qubits
     creg_count = ccount; ///@todo-rn: DDG creation should not depend on #cregs
     breg_count = bcount; ///@todo-rn: DDG creation should not depend on #bregs
     UInt total_reg_count = qubit_count + creg_count + breg_count;
     QL_DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", breg_count=" << breg_count << ", total=" << total_reg_count);
 
-    cycle_time = platform.cycle_time;
+    cycle_time = platform->cycle_time;
     circp = &ckt;
 
     // dependencies are created with a current gate as target
@@ -304,7 +304,7 @@ void Scheduler::init(
     {
         // add dummy source node
         auto srcNode = graph.addNode();
-        instruction[srcNode] = make_node<ir::gates::Source>();    // so SOURCE is defined as instruction[s], not unique in itself
+        instruction[srcNode].emplace<ir::gates::Source>();    // so SOURCE is defined as instruction[s], not unique in itself
         node.set(instruction[srcNode]) = srcNode;
         name[srcNode] = instruction[srcNode]->qasm();
         s = srcNode;
@@ -511,7 +511,7 @@ void Scheduler::init(
         // add dummy target node
         ListDigraph::Node currNode = graph.addNode();
         int currID = graph.id(currNode);
-        instruction[currNode] = make_node<ir::gates::Sink>();    // so SINK is defined as instruction[t], not unique in itself
+        instruction[currNode].emplace<ir::gates::Sink>();    // so SINK is defined as instruction[t], not unique in itself
         node.set(instruction[currNode]) = currNode;
         name[currNode] = instruction[currNode]->qasm();
         t = currNode;
@@ -627,7 +627,7 @@ void Scheduler::write_dependence_matrix() const {
 // the latter never happens when the depgraph was constructed directly from the circuit
 // but when in between the depgraph was updated (as done in commute_variation),
 // dependences may have been inserted in the opposite circuit direction and then the recursion kicks in
-void Scheduler::set_cycle_gate(ir::GateRef &gp, scheduling_direction_t dir) {
+void Scheduler::set_cycle_gate(const ir::GateRef &gp, scheduling_direction_t dir) {
     ListDigraph::Node currNode = node.at(gp);
     UInt  currCycle;
     if (forward_scheduling == dir) {
@@ -745,7 +745,7 @@ void Scheduler::schedule_alap(Str &sched_dot) {
 // it is without RC and depends on direction: forward:ASAP so cycles until SINK, backward:ALAP so cycles until SOURCE;
 // remaining[node] is complementary to node's cycle value,
 // so the implementation below is also a systematically modified copy of that of set_cycle_gate and set_cycle
-void Scheduler::set_remaining_gate(ir::GateRef &gp, scheduling_direction_t dir) {
+void Scheduler::set_remaining_gate(const ir::GateRef &gp, scheduling_direction_t dir) {
     ListDigraph::Node currNode = node.at(gp);
     UInt currRemain = 0;
     QL_DOUT("... set_remaining of node " << graph.id(currNode) << ": " << gp->qasm() << " ...");
@@ -1056,7 +1056,7 @@ Bool Scheduler::immediately_schedulable(
     ListDigraph::Node n,
     scheduling_direction_t dir,
     const UInt curr_cycle,
-    const quantum_platform& platform,
+    const plat::PlatformRef &platform,
     arch::resource_manager_t &rm,
     Bool &isres
 ) {
@@ -1093,7 +1093,7 @@ ListDigraph::Node Scheduler::SelectAvailable(
     List<ListDigraph::Node> &avlist,
     scheduling_direction_t dir,
     const UInt curr_cycle,
-    const quantum_platform &platform,
+    const plat::PlatformRef &platform,
     arch::resource_manager_t &rm,
     Bool &success
 ) {
@@ -1141,7 +1141,7 @@ ListDigraph::Node Scheduler::SelectAvailable(
 void Scheduler::schedule(
     ir::Circuit &circp,
     scheduling_direction_t dir,
-    const quantum_platform &platform,
+    const plat::PlatformRef &platform,
     arch::resource_manager_t &rm,
     Str &sched_dot
 ) {
@@ -1221,7 +1221,7 @@ void Scheduler::schedule(
 
 void Scheduler::schedule_asap(
     arch::resource_manager_t &rm,
-    const quantum_platform &platform,
+    const plat::PlatformRef &platform,
     Str &sched_dot
 ) {
     QL_DOUT("Scheduling ASAP");
@@ -1231,7 +1231,7 @@ void Scheduler::schedule_asap(
 
 void Scheduler::schedule_alap(
     arch::resource_manager_t &rm,
-    const quantum_platform &platform,
+    const plat::PlatformRef &platform,
     Str &sched_dot
 ) {
     QL_DOUT("Scheduling ALAP");
@@ -1563,7 +1563,7 @@ void Scheduler::get_dot(Str &dot) {
 // schedule support for program.h::schedule()
 void schedule_kernel(
     ir::KernelRef &kernel,
-    const quantum_platform &platform,
+    const plat::PlatformRef &platform,
     Str &dot,
     Str &sched_dot
 ) {
@@ -1596,8 +1596,8 @@ void schedule_kernel(
  * main entry to the non resource-constrained scheduler
  */
 void schedule(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
     if (com::options::get("prescheduler") == "yes") {
@@ -1605,7 +1605,7 @@ void schedule(
         report_qasm(program, platform, "in", passname);
 
         QL_IOUT("scheduling the quantum program");
-        for (auto &k : program.kernels) {
+        for (auto &k : program->kernels) {
             Str dot;
             Str kernel_sched_dot;
             schedule_kernel(k, platform, dot, kernel_sched_dot);
@@ -1629,8 +1629,8 @@ void schedule(
 }
 
 void rcschedule_kernel(
-    ir::KernelRef &kernel,
-    const quantum_platform &platform,
+    const ir::KernelRef &kernel,
+    const plat::PlatformRef &platform,
     Str &dot,
     UInt nqubits,
     UInt ncreg,
@@ -1662,21 +1662,21 @@ void rcschedule_kernel(
  * main entry point of the rcscheduler
  */
 void rcschedule(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
     report_statistics(program, platform, "in", passname, "# ");
     report_qasm(program, platform, "in", passname);
 
-    for (auto &kernel : program.kernels) {
+    for (auto &kernel : program->kernels) {
         QL_IOUT("Scheduling kernel: " << kernel->name);
         if (!kernel->c.empty()) {
             auto num_creg = kernel->creg_count;
             auto num_breg = kernel->breg_count;
             Str sched_dot;
 
-            rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg, num_breg);
+            rcschedule_kernel(kernel, platform, sched_dot, platform->qubit_number, num_creg, num_breg);
             kernel->cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
 
             if (com::options::get("print_dot_graphs") == "yes") {

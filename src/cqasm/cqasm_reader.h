@@ -6,9 +6,9 @@
 
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
-#include "ql/utils/opt.h"
+#include "ql/utils/ptr.h"
+#include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
-#include "platform.h"
 
 namespace ql {
 namespace cqasm {
@@ -24,16 +24,12 @@ class Reader {
 private:
     utils::Opt<ReaderImpl> impl;
 public:
-    Reader(const quantum_platform &platform, ir::Program &program);
-    Reader(const quantum_platform &platform, ir::Program &program, const utils::Json &gateset);
-    Reader(const quantum_platform &platform, ir::Program &program, const utils::Str &gateset_fname);
+    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program);
+    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program, const utils::Json &gateset);
+    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program, const utils::Str &gateset_fname);
     void string2circuit(const utils::Str &cqasm_str);
     void file2circuit(const utils::Str &cqasm_fname);
 };
 
 } // namespace cqasm
-
-// TODO: backward-compatibility for now, should probably just be removed.
-using cqasm_reader = cqasm::Reader;
-
 } // namespace ql

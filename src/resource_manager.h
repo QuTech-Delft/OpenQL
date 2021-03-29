@@ -7,7 +7,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
-#include "platform.h"
+#include "ql/plat/platform.h"
 
 namespace ql {
 
@@ -27,8 +27,8 @@ public:
     resource_t(const utils::Str &n, scheduling_direction_t dir);
     virtual ~resource_t() = default;
 
-    virtual utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const = 0;
-    virtual void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) = 0;
+    virtual utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const = 0;
+    virtual void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) = 0;
 
     virtual resource_t *clone() const & = 0;
     virtual resource_t *clone() && = 0;
@@ -45,7 +45,7 @@ public:
     // see the note on the use of constructors and Init functions at the start of mapper.h
     platform_resource_manager_t() = default;
     platform_resource_manager_t(
-        const quantum_platform &platform,
+        const plat::PlatformRef &platform,
         scheduling_direction_t dir
     );
 
@@ -62,8 +62,8 @@ public:
     // follow pattern to use tmp copy to allow self-assignment and to be exception safe
     platform_resource_manager_t &operator=(const platform_resource_manager_t &rhs);
 
-    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const;
-    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform);
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform);
 
     // destructor destroying deep resource_t's
     // runs before shallow destruction which is done by synthesized platform_resource_manager_t destructor
@@ -79,7 +79,7 @@ public:
 
     // (platform,dir) parameterized resource_manager_t
     // dynamically allocating platform specific platform_resource_manager_t depending on platform
-    resource_manager_t(const quantum_platform &platform, scheduling_direction_t dir);
+    resource_manager_t(const plat::PlatformRef &platform, scheduling_direction_t dir);
 
     // copy constructor doing a deep copy
     // *org_resource_manager.platform_resource_manager_ptr->clone() does the trick
@@ -90,8 +90,8 @@ public:
     // follow pattern to use tmp copy to allow self-assignment and to be exception safe
     resource_manager_t &operator=(const resource_manager_t &rhs);
 
-    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform) const;
-    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const quantum_platform &platform);
+    utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const;
+    void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform);
 
     // destructor destroying deep platform_resource_managert_t
     // runs before shallow destruction which is done by synthesized resource_manager_t destructor

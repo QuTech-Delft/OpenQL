@@ -15,10 +15,10 @@ void test_dpt(
     ql::options::set("clifford_prescheduler", "yes");
     ql::options::set("clifford_postscheduler", "yes");
 
-    ql::quantum_platform starmon("starmon5", "test_mapper_s5.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon5", "test_mapper_s5.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("prepz", 0);
@@ -98,10 +98,10 @@ void test_lee(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("x", 0);
@@ -155,10 +155,10 @@ void test_recursion(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<n; j++) { k->gate("x", j); }
@@ -189,10 +189,10 @@ void test_dot(
     std::string kernel_name = "test_" + v + "_scheduler_post179=" + param1 + "_scheduler=" + param2;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("x", 0);
@@ -229,10 +229,10 @@ void test_rc(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     // no dependency, only a conflict in qwg resource
@@ -263,10 +263,10 @@ void test_someNN(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<7; j++) { k->gate("x", j); }
@@ -320,10 +320,10 @@ void test_oneD2(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("x", 2);
@@ -363,10 +363,10 @@ void test_oneD4(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("x", 2);
@@ -409,10 +409,10 @@ void test_string(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
 
@@ -457,10 +457,10 @@ void test_allDopt(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<n; j++) { k->gate("x", j); }
@@ -558,10 +558,10 @@ void test_allD(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<n; j++) { k->gate("x", j); }
@@ -592,10 +592,10 @@ void test_allD2(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<n; j++) { k->gate("x", j); }
@@ -683,11 +683,11 @@ void test_daniel2(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1, 2 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s17.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, n);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, n);
 
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
 
@@ -949,10 +949,10 @@ void test_lingling5esm(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s17.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("prepz",5);
@@ -1111,10 +1111,10 @@ void test_lingling7esm(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s17.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("prepz",7);
@@ -1257,10 +1257,10 @@ void test_lingling7sub(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s17.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
 #define SUB1    1
@@ -1417,10 +1417,10 @@ void test_maxcut(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     double sweep_points[] = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_rig.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_rig.json");
     //ql::set_platform(starmon);
-    auto prog = ql::utils::make_node<ql::ir::Program>(prog_name, starmon, n, 0);
-    auto k = ql::utils::make_node<ql::ir::Kernel>(kernel_name, starmon, n, 0);
+    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
+    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
     prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("cz", 1,4);

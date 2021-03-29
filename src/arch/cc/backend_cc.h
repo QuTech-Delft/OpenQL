@@ -23,15 +23,15 @@ public:
     Backend() = default;
     ~Backend() override = default;
 
-    void compile(ir::Program &program, const quantum_platform &platform) override;
+    void compile(const ir::ProgramRef &program, const plat::PlatformRef &platform) override;
 
 private:
-    static Str kernelLabel(ir::Kernel &k);
-    void codegenClassicalInstruction(ir::Gate &classical_ins);
-    void codegenKernelPrologue(ir::Kernel &k);
-    void codegenKernelEpilogue(ir::Kernel &k);
-    void codegenBundles(ir::Bundles &bundles, const quantum_platform &platform);
-    void loadHwSettings(const quantum_platform &platform);
+    static Str kernelLabel(const ir::KernelRef &k);
+    void codegenClassicalInstruction(const ir::GateRef &classical_ins);
+    void codegenKernelPrologue(const ir::KernelRef &k);
+    void codegenKernelEpilogue(const ir::KernelRef &k);
+    void codegenBundles(ir::Bundles &bundles, const plat::PlatformRef &platform);
+    void loadHwSettings(const plat::PlatformRef &platform);
 
 private: // vars
     Codegen codegen;

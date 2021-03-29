@@ -311,12 +311,12 @@ Str classical_instruction2qisa(classical_cc &classical_ins) {
 // FIXME HvS attribute of gate or just in json? Generalization to arch_operation_name is unnecessary
 Str get_cc_light_instruction_name(
     const Str &id,
-    const quantum_platform &platform
+    const plat::PlatformRef &platform
 ) {
     Str cc_light_instr_name;
-    auto it = platform.instruction_map.find(id);
-    if (it != platform.instruction_map.end()) {
-        CustomGateRef g = it->second;
+    auto it = platform->instruction_map.find(id);
+    if (it != platform->instruction_map.end()) {
+        plat::CustomGateRef g = it->second;
         cc_light_instr_name = g->arch_operation_name;
         if (cc_light_instr_name.empty()) {
             QL_FATAL("cc_light_instr not defined for instruction: " << id << " !");
@@ -329,15 +329,15 @@ Str get_cc_light_instruction_name(
 }
 
 Str ir2qisa(
-    ir::Kernel &kernel,
-    const quantum_platform &platform,
+    const ir::KernelRef &kernel,
+    const plat::PlatformRef &platform,
     MaskManager &gMaskManager
 ) {
     QL_IOUT("Generating CC-Light QISA");
 
     ir::Bundles bundles1;
-    QL_ASSERT(kernel.cycles_valid);
-    bundles1 = ir::bundler(kernel.c, platform.cycle_time);
+    QL_ASSERT(kernel->cycles_valid);
+    bundles1 = ir::bundler(kernel->c, platform->cycle_time);
 
     QL_IOUT("Combining parallel sections...");
     // combine parallel instructions of same type from different sections into a single section
@@ -604,15 +604,15 @@ Str cc_light_eqasm_compiler::get_qisa_epilogue(const ir::Kernel &k) {
 }
 
 void cc_light_eqasm_compiler::ccl_decompose_pre_schedule(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
     report_statistics(program, platform, "in", passname, "# ");
     report_qasm(program, platform, "in", passname);
 
-    for (auto &kernel : program.kernels) {
-        ccl_decompose_pre_schedule_kernel(*kernel, platform);
+    for (auto &kernel : program->kernels) {
+        ccl_decompose_pre_schedule_kernel(kernel, platform);
     }
 
     report_statistics(program, platform, "out", passname, "# ");
@@ -620,18 +620,18 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule(
 }
 
 void cc_light_eqasm_compiler::ccl_decompose_post_schedule(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
     report_statistics(program, platform, "in", passname, "# ");
     report_qasm(program, platform, "in", passname);
 
-    for (auto &kernel : program.kernels) {
+    for (auto &kernel : program->kernels) {
         QL_IOUT("Decomposing meta-instructions kernel after post-scheduling: " << kernel->name);
         if (!kernel->c.empty()) {
             QL_ASSERT(kernel->cycles_valid);
-            ir::Bundles bundles = ir::bundler(kernel->c, platform.cycle_time);
+            ir::Bundles bundles = ir::bundler(kernel->c, platform->cycle_time);
             ccl_decompose_post_schedule_bundles(bundles, platform);
             kernel->c = ir::circuiter(bundles);
             QL_ASSERT(kernel->cycles_valid);
@@ -643,7 +643,7 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule(
 
 void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
     ir::Bundles &bundles_dst,
-    const quantum_platform &platform
+    const plat::PlatformRef &platform
 ) {
     auto bundles_src = bundles_dst;
 
@@ -657,10 +657,10 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
 
         // initialize qubitpair2edge map from json description; this is a constant map
         // QL_DOUT("... reading edge definitions from topology");
-        if (platform.topology.count("edges") <= 0) {
+        if (platform->topology.count("edges") <= 0) {
             QL_FATAL("topology[\"edges\"] not defined in configuration file");
         }
-        for (auto &anedge : platform.topology["edges"]) {
+        for (auto &anedge : platform->topology["edges"]) {
             // QL_DOUT("... reading edge definitions from topology src");
             UInt s = anedge["src"];
             // QL_DOUT("... reading edge definitions from topology dst");
@@ -681,7 +681,7 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
 
         // initialize edge_detunes_qubits map from json description; this is a constant map
         // QL_DOUT("... initializing internal edge_detunes_qubits map from detuned_qubits resource");
-        auto &constraints = platform.resources["detuned_qubits"]["connection_map"];
+        auto &constraints = platform->resources["detuned_qubits"]["connection_map"];
         for (auto it = constraints.begin(); it != constraints.end(); ++it) {
             UInt edgeNo = stoi(it.key());
             auto &detuned_qubits = it.value();
@@ -713,10 +713,10 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
                     UInt nOperands = gp->operands.size();
                     if (nOperands == 2) {
                         // QL_DOUT("... is two-qubit gate: " << gp->qasm());
-                        auto it = platform.instruction_map.find(id);
-                        if (it != platform.instruction_map.end()) {
-                            if (platform.instruction_settings[id].count("type") > 0) {
-                                operation_type = platform.instruction_settings[id]["type"].get<Str>();
+                        auto it = platform->instruction_map.find(id);
+                        if (it != platform->instruction_map.end()) {
+                            if (platform->instruction_settings[id].count("type") > 0) {
+                                operation_type = platform->instruction_settings[id]["type"].get<Str>();
                             }
                         } else {
                             QL_FATAL("custom instruction not found for : " << id << " !");
@@ -762,8 +762,8 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
 }
 
 void cc_light_eqasm_compiler::map(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname,
     Str *mapStatistics
 ) {
@@ -777,14 +777,14 @@ void cc_light_eqasm_compiler::map(
     report_qasm(program, platform, "in", passname);
 
     mapper::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
-    mapper.Init(&platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
+    mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
 
     auto rf = ReportFile(program, "out", passname);
 
     UInt total_swaps = 0;        // for reporting, data is mapper specific
     UInt total_moves = 0;        // for reporting, data is mapper specific
     Real total_timetaken = 0.0;  // total over kernels of time taken by mapper
-    for (auto &kernel : program.kernels) {
+    for (auto &kernel : program->kernels) {
         QL_IOUT("Mapping kernel: " << kernel->name);
 
         // compute timetaken, start interval timer here
@@ -795,7 +795,7 @@ void cc_light_eqasm_compiler::map(
         mapper.Map(kernel);
         // kernel.qubit_count starts off as number of virtual qubits, i.e. highest indexed qubit minus 1
         // kernel.qubit_count is updated by Map to highest index of real qubits used minus -1
-        program.qubit_count = platform.qubit_number;
+        program->qubit_count = platform->qubit_number;
         // program.qubit_count is updated to platform.qubit_number
 
         // computing timetaken, stop interval timer
@@ -804,7 +804,7 @@ void cc_light_eqasm_compiler::map(
         timetaken = time_span.count();
 
         StrStrm ss;
-        report_kernel_statistics(ss, *kernel, platform, "# ");
+        report_kernel_statistics(ss, kernel, platform, "# ");
         ss << "# ----- swaps added: " << mapper.nswapsadded << std::endl;
         ss << "# ----- of which moves added: " << mapper.nmovesadded << std::endl;
         ss << "# ----- virt2real map before mapper:" << mapper.v2r_in << std::endl;
@@ -822,7 +822,7 @@ void cc_light_eqasm_compiler::map(
         *mapStatistics += ss.str();
     }
     StrStrm ss;
-    report_totals_statistics(ss, program.kernels, platform, "# ");
+    report_totals_statistics(ss, program->kernels, platform, "# ");
     ss << "# Total no. of swaps: " << total_swaps << std::endl;
     ss << "# Total no. of moves of swaps: " << total_moves << std::endl;
     ss << "# Total time taken: " << total_timetaken << std::endl;
@@ -835,11 +835,11 @@ void cc_light_eqasm_compiler::map(
 }
 
 void cc_light_eqasm_compiler::ccl_prep_code_generation(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
-    const Json &instruction_settings = platform.instruction_settings;
+    const Json &instruction_settings = platform->instruction_settings;
     for (const Json &i : instruction_settings) {
         if (i.count("cc_light_instr") <= 0) {
             QL_FATAL("cc_light_instr not found for " << i);
@@ -850,8 +850,8 @@ void cc_light_eqasm_compiler::ccl_prep_code_generation(
 // unified entry for quantumsim script writing
 // will be moved to dqcsim eventually, which must read cqasm with cycle information; is that sufficient?
 void cc_light_eqasm_compiler::write_quantumsim_script(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
     report_statistics(program, platform, "in", passname, "# ");
@@ -872,9 +872,9 @@ void cc_light_eqasm_compiler::write_quantumsim_script(
 
     // dqcsim must take over
     if (options::get("quantumsim") == "yes") {
-        write_quantumsim_program(program, platform.qubit_number, platform, suffix);
+        write_quantumsim_program(program, platform->qubit_number, platform, suffix);
     } else if (options::get("quantumsim") == "qsoverlay") {
-        write_qsoverlay_program(program, platform.qubit_number, platform, suffix, platform.cycle_time, compiled);
+        write_qsoverlay_program(program, platform->qubit_number, platform, suffix, platform->cycle_time, compiled);
     }
 
     report_statistics(program, platform, "out", passname, "# ");
@@ -887,15 +887,18 @@ void cc_light_eqasm_compiler::write_quantumsim_script(
 void cc_light_eqasm_compiler::compile(
     const Str &prog_name,
     ir::Circuit &ckt,
-    const quantum_platform &platform
+    const plat::PlatformRef &platform
 ) {
     QL_FATAL("cc_light_eqasm_compiler::compile interface with circuit not supported");
 }
 
 // kernel level compilation
-void cc_light_eqasm_compiler::compile(ir::Program &program, const quantum_platform &platform) {
+void cc_light_eqasm_compiler::compile(
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform
+) {
     //std::cout << " ============= DEBUG PRINT FOR DEBUG(1): In cc_light BACKEND COMPILER " << std::endl;
-    QL_DOUT("Compiling " << program.kernels.size() << " kernels to generate CCLight eQASM ... ");
+    QL_DOUT("Compiling " << program->kernels.size() << " kernels to generate CCLight eQASM ... ");
 
     // overall timing should be done by the pass manager
     // can be deleted here when so
@@ -957,10 +960,10 @@ void cc_light_eqasm_compiler::compile(ir::Program &program, const quantum_platfo
     // reporting to be moved to write_statistics pass
     // report totals over all kernels, over all eqasm passes contributing to mapping
     auto rf = ReportFile(program, "out", "cc_light_compiler");
-    for (const auto &k : program.kernels) {
-        rf.write_kernel_statistics(*k, platform, "# ");
+    for (const auto &k : program->kernels) {
+        rf.write_kernel_statistics(k, platform, "# ");
     }
-    rf.write_totals_statistics(program.kernels, platform, "# ");
+    rf.write_totals_statistics(program->kernels, platform, "# ");
     rf << "# Total time taken: " << total_timetaken << "\n";
     report_qasm(program, platform, "out", "cc_light_compiler");
 
@@ -972,17 +975,17 @@ void cc_light_eqasm_compiler::compile(ir::Program &program, const quantum_platfo
  */
 // decompose meta-instructions
 void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
-    ir::Kernel &kernel,
-    const quantum_platform &platform
+    const ir::KernelRef &kernel,
+    const plat::PlatformRef &platform
 ) {
-    QL_IOUT("Decomposing kernel: " << kernel.name);
-    if (kernel.c.empty()) {
+    QL_IOUT("Decomposing kernel: " << kernel->name);
+    if (kernel->c.empty()) {
         return;
     }
     ir::Circuit decomp_ckt; // collect result circuit in here and before return swap with kernel.c
 
     QL_DOUT("decomposing instructions...");
-    for (auto ins : kernel.c) {
+    for (auto ins : kernel->c) {
         auto iname = to_lower(ins->name);
         QL_DOUT("decomposing instruction " << iname << "...");
         auto & icopers = ins->creg_operands;
@@ -1000,7 +1003,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
                 (iname == "not") || (iname == "nop")
             ) {
                 // decomp_ckt.push_back(ins);
-                decomp_ckt.add(make_node<classical_cc>(iname, icopers));
+                decomp_ckt.emplace<classical_cc>(iname, icopers);
                 QL_DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
             } else if (
                 (iname == "eq") || (iname == "ne") || (iname == "lt") ||
@@ -1033,7 +1036,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
                 QL_DOUT("    wait instruction ");
                 decomp_ckt.add(ins);
             } else {
-                const Json &instruction_settings = platform.instruction_settings;
+                const Json &instruction_settings = platform->instruction_settings;
                 Str operation_type;
                 if (instruction_settings.find(iname) != instruction_settings.end()) {
                     operation_type = instruction_settings[iname]["type"].get<Str>();
@@ -1068,8 +1071,8 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
             }
         }
     }
-    kernel.c = decomp_ckt;
-    kernel.cycles_valid = false;
+    kernel->c = decomp_ckt;
+    kernel->cycles_valid = false;
 
     QL_DOUT("decomposing instructions...[Done]");
 }
@@ -1077,19 +1080,19 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
 // qisa_code_generation pass
 // generates qisa from IR
 void cc_light_eqasm_compiler::qisa_code_generation(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
     (void)passname;
     MaskManager mask_manager;
     StrStrm ssqisa, sskernels_qisa;
     sskernels_qisa << "start:" << std::endl;
-    for (auto &kernel : program.kernels) {
+    for (auto &kernel : program->kernels) {
         sskernels_qisa << std::endl << kernel->name << ":" << std::endl;
         sskernels_qisa << get_qisa_prologue(*kernel);
         if (!kernel->c.empty()) {
-            sskernels_qisa << ir2qisa(*kernel, platform, mask_manager);
+            sskernels_qisa << ir2qisa(kernel, platform, mask_manager);
         }
         sskernels_qisa << get_qisa_epilogue(*kernel);
     }
@@ -1101,7 +1104,7 @@ void cc_light_eqasm_compiler::qisa_code_generation(
     // std::cout << ssqisa.str();
 
     // write cc-light qisa file
-    Str unique_name = program.unique_name;
+    Str unique_name = program->unique_name;
     Str qisafname(options::get("output_dir") + "/" + unique_name + ".qisa");
     QL_IOUT("Writing CC-Light QISA to " << qisafname);
     ssqisa << std::endl;
@@ -1112,13 +1115,13 @@ void cc_light_eqasm_compiler::qisa_code_generation(
 // write cc_light scheduled bundles for quantumsim
 // when cc_light independent, it should be extracted and put in src/quantumsim.h
 void cc_light_eqasm_compiler::write_quantumsim_program(
-    ir::Program &program,
+    const ir::ProgramRef &program,
     UInt num_qubits,
-    const quantum_platform &platform,
+    const plat::PlatformRef &platform,
     const Str &suffix
 ) {
     QL_IOUT("Writing scheduled Quantumsim program");
-    Str qfname( options::get("output_dir") + "/" + "quantumsim_" + program.unique_name + "_" + suffix + ".py");
+    Str qfname( options::get("output_dir") + "/" + "quantumsim_" + program->unique_name + "_" + suffix + ".py");
     QL_DOUT("Writing scheduled Quantumsim program to " << qfname);
     QL_IOUT("Writing scheduled Quantumsim program to " << qfname);
     OutFile fout(qfname);
@@ -1195,13 +1198,13 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
 
     fout << "\n" << "# create a circuit\n";
     fout << "def circuit_generated(t1=np.inf, t2=np.inf, dephasing_axis=None, dephasing_angle=None, dephase_var=0, readout_error=0.0) :\n";
-    fout << "    c = Circuit(title=\"" << program.unique_name << "\")\n";
+    fout << "    c = Circuit(title=\"" << program->unique_name << "\")\n";
 
     QL_DOUT("Adding qubits to Quantumsim program");
     fout << "\n    # add qubits\n";
     Json config;
     try {
-        config = load_json(platform.configuration_file_name);
+        config = load_json(platform->configuration_file_name);
     } catch (Json::exception e) {
         throw Exception("[x] error : quantumsim_compiler::load() :  failed to load the hardware config file : malformed json file ! : \n    " +
                         Str(e.what()), false);
@@ -1218,14 +1221,14 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
         QL_EOUT("relaxation_times is not specified in the hardware config file !");
         throw Exception("[x] error: quantumsim_compiler: relaxation_times is not specified in the hardware config file !", false);
     }
-    UInt count = platform.hardware_settings["qubit_number"];
+    UInt count = platform->hardware_settings["qubit_number"];
 
     // want to ignore unused qubits below
-    QL_ASSERT(program.kernels.size() <= 1);
+    QL_ASSERT(program->kernels.size() <= 1);
     Vec<UInt> check_usecount;
     check_usecount.resize(count, 0);
 
-    for (auto &gp : program.kernels.front()->c) {
+    for (auto &gp : program->kernels.front()->c) {
         switch (gp->type()) {
             case ir::GateType::CLASSICAL:
             case ir::GateType::WAIT:
@@ -1265,10 +1268,10 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
         ssqs << std::endl << "    # add gates" << std::endl;
         fout << ssqs.str();
     }
-    for (auto &kernel : program.kernels) {
+    for (auto &kernel : program->kernels) {
         QL_DOUT("... adding gates, a new kernel");
         QL_ASSERT(kernel->cycles_valid);
-        ir::Bundles bundles = ir::bundler(kernel->c, platform.cycle_time);
+        ir::Bundles bundles = ir::bundler(kernel->c, platform->cycle_time);
 
         if (bundles.empty()) {
             QL_IOUT("No bundles for adding gates");
@@ -1292,20 +1295,20 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
                             ssqs << "    c.add_gate("
                                  << "ButterflyGate("
                                  << "\"q" << op <<"\", "
-                                 << "time=" << ((bcycle-1)*platform.cycle_time) << ", "
+                                 << "time=" << ((bcycle-1)*platform->cycle_time) << ", "
                                  << "p_exc=0,"
                                  << "p_dec= 0.005)"
                                  << ")" << std::endl;
                             ssqs << "    c.add_measurement("
                                  << "\"q" << op << "\", "
-                                 << "time=" << ((bcycle - 1)*platform.cycle_time) + (duration/4) << ", "
+                                 << "time=" << ((bcycle - 1)*platform->cycle_time) + (duration/4) << ", "
                                  << "output_bit=\"m" << op << "\", "
                                  << "sampler=sampler"
                                  << ")" << std::endl;
                             ssqs << "    c.add_gate("
                                  << "ButterflyGate("
                                  << "\"q" << op << "\", "
-                                 << "time=" << ((bcycle - 1)*platform.cycle_time) + duration/2 << ", "
+                                 << "time=" << ((bcycle - 1)*platform->cycle_time) + duration/2 << ", "
                                  << "p_exc=0,"
                                  << "p_dec= 0.015)"
                                  << ")" << std::endl;
@@ -1323,7 +1326,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
                                 }
                                 ssqs << "\"q" << operands.back()<<"\"";
                             }
-                            ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << ", dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle))" << std::endl;
+                            ssqs << ", time=" << ((bcycle - 1)*platform->cycle_time) + (duration/2) << ", dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle))" << std::endl;
                         } else if (iname == "cz") {
                             QL_DOUT("... adding gates, another gate");
                             ssqs <<  "    c.add_gate("<< iname << "(" ;
@@ -1334,7 +1337,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
                                 }
                                 ssqs << "\"q" << operands.back()<<"\"";
                             }
-                            ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << ", dephase_var=dephase_var))" << std::endl;
+                            ssqs << ", time=" << ((bcycle - 1)*platform->cycle_time) + (duration/2) << ", dephase_var=dephase_var))" << std::endl;
                         } else {
                             QL_DOUT("... adding gates, another gate");
                             ssqs <<  "    c.add_gate("<< iname << "(" ;
@@ -1345,7 +1348,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
                                 }
                                 ssqs << "\"q" << operands.back()<<"\"";
                             }
-                            ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << "))" << std::endl;
+                            ssqs << ", time=" << ((bcycle - 1)*platform->cycle_time) + (duration/2) << "))" << std::endl;
                         }
                     }
                 }
@@ -1353,12 +1356,12 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
             }
             fout << "    return c";
             fout << "    \n\n";
-            report_kernel_statistics(fout.unwrap(), *kernel, platform, "    # ");
+            report_kernel_statistics(fout.unwrap(), kernel, platform, "    # ");
         }
     }
     report_string(fout.unwrap(), "    \n");
     report_string(fout.unwrap(), "    # Program-wide statistics:\n");
-    report_totals_statistics(fout.unwrap(), program.kernels, platform, "    # ");
+    report_totals_statistics(fout.unwrap(), program->kernels, platform, "    # ");
     fout << "    return c";
 
     fout.close();

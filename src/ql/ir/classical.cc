@@ -78,8 +78,8 @@ ClassicalOperation::ClassicalOperation(
     const Str &op,
     const ClassicalRegister &r
 ) {
-    operands.add(make_node<ClassicalRegister>(l));
-    operands.add(make_node<ClassicalRegister>(r));
+    operands.emplace<ClassicalRegister>(l);
+    operands.emplace<ClassicalRegister>(r);
     if (op == "+") {
         operation_name = "add";
         operation_type = ClassicalOperationType::ARITHMATIC;
@@ -129,28 +129,28 @@ ClassicalOperation::ClassicalOperation(
 ClassicalOperation::ClassicalOperation(const ClassicalRegister &l) {
     operation_name = "mov";
     operation_type = ClassicalOperationType::ARITHMATIC;
-    operands.add(make_node<ClassicalRegister>(l));
+    operands.emplace<ClassicalRegister>(l);
 }
 
 // used for initializing with an imm
 ClassicalOperation::ClassicalOperation(const ClassicalValue &v) {
     operation_name = "ldi";
     operation_type = ClassicalOperationType::ARITHMATIC;
-    operands.add(make_node<ClassicalValue>(v));
+    operands.emplace<ClassicalValue>(v);
 }
 
 // used for initializing with an imm
 ClassicalOperation::ClassicalOperation(Int val) {
     operation_name = "ldi";
     operation_type = ClassicalOperationType::ARITHMATIC;
-    operands.add(make_node<ClassicalValue>(val));
+    operands.emplace<ClassicalValue>(val);
 }
 
 ClassicalOperation::ClassicalOperation(const Str &op, const ClassicalRegister &r) {
     if (op == "~") {
         operation_name = "not";
         operation_type = ClassicalOperationType::BITWISE;
-        operands.add(make_node<ClassicalRegister>(r));
+        operands.emplace<ClassicalRegister>(r);
     } else {
         QL_EOUT("Unknown unary operation '" << op);
         throw Exception("Unknown unary operation '" + op + "' !", false);

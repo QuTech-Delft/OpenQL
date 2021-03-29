@@ -309,22 +309,22 @@ private:
             char c = params.at(idx);
             switch (c) {
                 case 'Q':
-                    ql_qubits.add(make_node<UIntFromParameter>(idx));
+                    ql_qubits.emplace<UIntFromParameter>(idx);
                     break;
                 case 'I':
-                    ql_cregs.add(make_node<UIntFromParameter>(idx));
+                    ql_cregs.emplace<UIntFromParameter>(idx);
                     break;
                 case 'B':
-                    ql_bregs.add(make_node<UIntFromParameter>(idx));
+                    ql_bregs.emplace<UIntFromParameter>(idx);
                     break;
                 case 'i':
                     if (ql_duration.empty()) {
-                        ql_duration = make_node<UIntFromParameter>(idx);
+                        ql_duration.emplace<UIntFromParameter>(idx);
                     }
                     break;
                 case 'r':
                     if (ql_angle.empty()) {
-                        ql_angle = make_node<AngleFromParameter>(idx, AngleConversionMethod::RADIANS);
+                        ql_angle.emplace<AngleFromParameter>(idx, AngleConversionMethod::RADIANS);
                     }
                     break;
                 default:
@@ -333,9 +333,9 @@ private:
         }
 
         // Default duration and angle to 0.
-        ql_duration = make_node<FixedValue<UInt>>(0);
+        ql_duration.emplace<FixedValue<UInt>>(0);
         if (ql_angle.empty()) {
-            ql_angle = make_node<FixedValue<Real>>(0.0);
+            ql_angle.emplace<FixedValue<Real>>(0.0);
         }
     }
 
@@ -380,13 +380,13 @@ private:
         all_args = false;
         for (const auto &json_ent : json) {
             if (json_ent.is_number()) {
-                args.add(make_node<FixedValue<UInt>>(json_ent.get<UInt>()));
+                args.emplace<FixedValue<UInt>>(json_ent.get<UInt>());
                 continue;
             }
             if (json_ent.is_string()) {
                 auto param_idx = parse_ref(json_ent.get<Str>(), params, "QBI");
                 if (param_idx != MAX) {
-                    args.add(make_node<UIntFromParameter>(param_idx));
+                    args.emplace<UIntFromParameter>(param_idx);
                     continue;
                 }
             }
@@ -507,12 +507,12 @@ public:
         if (it != json.end()) {
             Bool ok = false;
             if (it->is_number()) {
-                gcr->ql_duration = make_node<FixedValue<UInt>>(it->get<UInt>());
+                gcr->ql_duration.emplace<FixedValue<UInt>>(it->get<UInt>());
                 ok = true;
             } else if (it->is_string()) {
                 auto param_idx = parse_ref(it->get<Str>(), params, "i");
                 if (param_idx != MAX) {
-                    gcr->ql_duration = make_node<UIntFromParameter>(param_idx);
+                    gcr->ql_duration.emplace<UIntFromParameter>(param_idx);
                     ok = true;
                 }
             }
@@ -550,12 +550,12 @@ public:
         if (it != json.end()) {
             Bool ok = false;
             if (it->is_number()) {
-                gcr->ql_angle = make_node<FixedValue<Real>>(convert_angle(it->get<Real>(), angle_method));
+                gcr->ql_angle.emplace<FixedValue<Real>>(convert_angle(it->get<Real>(), angle_method));
                 ok = true;
             } else if (it->is_string()) {
                 auto param_idx = parse_ref(it->get<Str>(), params, "ri");
                 if (param_idx != MAX) {
-                    gcr->ql_angle = make_node<AngleFromParameter>(param_idx, angle_method);
+                    gcr->ql_angle.emplace<AngleFromParameter>(param_idx, angle_method);
                     ok = true;
                 }
             }
@@ -565,7 +565,7 @@ public:
         } else {
             auto param_idx = params.find_first_of('r');
             if (param_idx != Str::npos) {
-                gcr->ql_angle = make_node<AngleFromParameter>(param_idx, angle_method);
+                gcr->ql_angle.emplace<AngleFromParameter>(param_idx, angle_method);
             }
         }
 
@@ -723,12 +723,12 @@ private:
     /**
      * OpenQL platform reference to compile for.
      */
-    const quantum_platform &platform;
+    const plat::PlatformRef &platform;
 
     /**
      * OpenQL program to add loaded circuits to.
      */
-    ir::Program &program;
+    const ir::ProgramRef &program;
 
     /**
      * Represents the supported set of gates. This differs from the platform
@@ -804,7 +804,7 @@ private:
             gateset.push_back(GateConversionRule::from_defaults("swap", "QQ"));
             gateset.push_back(GateConversionRule::from_defaults("cr", "QQr"));
             gateset.push_back(GateConversionRule::from_defaults("crk", "QQi"));
-            gateset.back()->ql_angle = make_node<AngleFromParameter>(2, AngleConversionMethod::POWER_OF_TWO);
+            gateset.back()->ql_angle.emplace<AngleFromParameter>(2, AngleConversionMethod::POWER_OF_TWO);
             gateset.push_back(GateConversionRule::from_defaults("toffoli", "QQQ"));
             gateset.push_back(GateConversionRule::from_defaults("measure_all", "", "measz"));
             gateset.back()->ql_all_qubits = true;
@@ -878,7 +878,7 @@ private:
         //    ones that have a qubit associated with them.
         UInt num_qubits = itou(ar.root->num_qubits);
         UInt num_cregs = 0;
-        UInt num_bregs = platform.qubit_number;
+        UInt num_bregs = platform->qubit_number;
         for (auto &var : ar.root->variables) {
             if (var->typ->as_qubit()) {
                 var->set_annotation(VarIndex{num_qubits++});
@@ -890,20 +890,20 @@ private:
                 throw Exception("only int, bool, and qubit variables are supported by OpenQL (" + location(*var) + ")");
             }
         }
-        if (num_qubits > platform.qubit_number) {
-            throw Exception("cQASM file needs " + to_string(num_qubits) + " qubits, but platform only supports " + to_string(platform.qubit_number));
+        if (num_qubits > platform->qubit_number) {
+            throw Exception("cQASM file needs " + to_string(num_qubits) + " qubits, but platform only supports " + to_string(platform->qubit_number));
         }
-        if (num_qubits > program.qubit_count) {
-            QL_IOUT("increasing program qubit count from " << program.qubit_count << " to " << num_qubits);
-            program.qubit_count = num_qubits;
+        if (num_qubits > program->qubit_count) {
+            QL_IOUT("increasing program qubit count from " << program->qubit_count << " to " << num_qubits);
+            program->qubit_count = num_qubits;
         }
-        if (num_cregs > program.creg_count) {
-            QL_IOUT("increasing program creg count from " << program.creg_count << " to " << num_cregs);
-            program.creg_count = num_cregs;
+        if (num_cregs > program->creg_count) {
+            QL_IOUT("increasing program creg count from " << program->creg_count << " to " << num_cregs);
+            program->creg_count = num_cregs;
         }
-        if (num_bregs > program.breg_count) {
-            QL_IOUT("increasing program breg count from " << program.breg_count << " to " << num_bregs);
-            program.breg_count = num_bregs;
+        if (num_bregs > program->breg_count) {
+            QL_IOUT("increasing program breg count from " << program->breg_count << " to " << num_bregs);
+            program->breg_count = num_bregs;
         }
 
         // Add the subcircuits one by one.
@@ -914,7 +914,7 @@ private:
             // cQASM. Also, multiple cQASM files can be added to a single
             // program, so even if that would be a requirement, it wouldn't be
             // unique enough. So we add a number to them for uniquification.
-            ir::KernelRef kernel = make_node<ir::Kernel>(
+            auto kernel = ir::KernelRef::make(
                 sc->name + "_" + to_string(subcircuit_count++),
                 platform,
                 num_qubits,
@@ -1139,9 +1139,9 @@ private:
 
             // Append the kernel to program.
             if (sc->iterations > 1) {
-                program.add_for(kernel, sc->iterations);
+                program->add_for(kernel, sc->iterations);
             } else {
-                program.add(kernel);
+                program->add(kernel);
             }
 
         }
@@ -1154,8 +1154,8 @@ public:
      * Constructs a reader.
      */
     ReaderImpl(
-        const quantum_platform &platform,
-        ir::Program &program
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program
     ) :
         platform(platform),
         program(program),
@@ -1209,8 +1209,8 @@ public:
  * configuration file.
  */
 Reader::Reader(
-    const quantum_platform &platform,
-    ir::Program &program
+    const plat::PlatformRef &platform,
+    const ir::ProgramRef &program
 ) : impl(platform, program) {}
 
 /**
@@ -1221,8 +1221,8 @@ Reader::Reader(
  * GateConverter::from_json().
  */
 Reader::Reader(
-    const quantum_platform &platform,
-    ir::Program &program,
+    const plat::PlatformRef &platform,
+    const ir::ProgramRef &program,
     const Json &gateset
 ) : impl(platform, program) {
     impl->load_gateset(gateset);
@@ -1236,8 +1236,8 @@ Reader::Reader(
  * GateConverter::from_json().
  */
 Reader::Reader(
-    const quantum_platform &platform,
-    ir::Program &program,
+    const plat::PlatformRef &platform,
+    const ir::ProgramRef &program,
     const Str &gateset_fname
 ) : impl(platform, program) {
     impl->load_gateset(load_json(gateset_fname));

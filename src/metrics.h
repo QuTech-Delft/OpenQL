@@ -11,8 +11,8 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/list.h"
+#include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
-#include "platform.h"
 
 namespace ql {
 
@@ -62,7 +62,7 @@ public:
         const utils::Str &output_mode = "average"
     );
 
-    void Init(utils::UInt Nqubits, quantum_platform *platform);
+    void Init(utils::UInt Nqubits, const plat::PlatformRef &platform);
     utils::Real create_output(const utils::Vec<utils::Real> &fids);
     utils::Real bounded_fidelity(const ir::Circuit &circ, utils::Vec<utils::Real> &fids);
 

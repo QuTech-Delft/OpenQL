@@ -85,14 +85,14 @@ using namespace utils;
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const ir::Program &program, const VisualizerConfiguration &configuration) {
+void visualize(const ir::ProgramRef &program, const VisualizerConfiguration &configuration) {
     QL_WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
          << "might be missing and the visualizer has disabled itself.");
 }
 
 #else
 
-void visualize(const ir::Program &program, const VisualizerConfiguration &configuration) {
+void visualize(const ir::ProgramRef &program, const VisualizerConfiguration &configuration) {
     QL_IOUT("Starting visualization...");
     QL_IOUT("Visualization type: " << configuration.visualizationType);
 
@@ -113,10 +113,10 @@ void visualize(const ir::Program &program, const VisualizerConfiguration &config
     QL_IOUT("Visualization complete...");
 }
 
-Vec<GateProperties> parseGates(const ir::Program &program) {
+Vec<GateProperties> parseGates(const ir::ProgramRef &program) {
     Vec<GateProperties> gates;
 
-    for (const auto &kernel : program.kernels) {
+    for (const auto &kernel : program->kernels) {
         for (const auto &gate : kernel->get_circuit()) {
             Vec<Int> operands;
             Vec<Int> creg_operands;
@@ -335,11 +335,11 @@ Str generateFilePath(const Str &filename, const Str &extension) {
     return com::options::get("output_dir") + "/" + filename + "." + extension;
 }
 
-void assertPositive(const Int parameterValue, const Str &parameterName) {
+void assertPositive(Int parameterValue, const Str &parameterName) {
     if (parameterValue < 0) QL_FATAL(parameterName << " is negative. Only positive values are allowed!");
 }
 
-void assertPositive(const Real parameterValue, const Str &parameterName) {
+void assertPositive(Real parameterValue, const Str &parameterName) {
     if (parameterValue < 0) QL_FATAL(parameterName << " is negative. Only positive values are allowed!");
 }
 

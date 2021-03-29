@@ -61,7 +61,7 @@ Platform::Platform(
         QL_WOUT("platform constructed before initialize()! In the future, please call initialize() before anything else!");
         initialize();
     }
-    platform = new ql::quantum_platform(name, config_file);
+    platform.emplace(name, config_file);
 }
 
 size_t Platform::get_qubit_number() const {
@@ -111,7 +111,7 @@ bool Unitary::is_decompose_support_enabled() {
 
 Kernel::Kernel(const std::string &name) : name(name) {
     QL_DOUT(" API::Kernel named: " << name);
-    kernel = ql::utils::make_node<ql::ir::Kernel>(name);
+    kernel.emplace(name);
 }
 
 Kernel::Kernel(
@@ -128,7 +128,7 @@ Kernel::Kernel(
     breg_count(breg_count)
 {
     QL_WOUT("Kernel(name,Platform,#qbit,#creg,#breg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
-    kernel = ql::utils::make_node<ql::ir::Kernel>(name, *(platform.platform), qubit_count, creg_count, breg_count);
+    kernel.emplace(name, platform.platform, qubit_count, creg_count, breg_count);
 }
 
 void Kernel::identity(size_t q0) {
@@ -377,7 +377,7 @@ void Kernel::conjugate(const Kernel &k) {
 
 Program::Program(const std::string &name) : name(name) {
     QL_DOUT("SWIG Program(name) constructor for name: " << name);
-    program = ql::utils::make_node<ql::ir::Program>(name);
+    program.emplace(name);
 }
 
 Program::Program(
@@ -394,7 +394,7 @@ Program::Program(
     breg_count(breg_count)
 {
     QL_WOUT("Program(name,Platform,#qbit,#creg,#breg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
-    program = ql::utils::make_node<ql::ir::Program>(name, *(platform.platform), qubit_count, creg_count, breg_count);
+    program.emplace(name, platform.platform, qubit_count, creg_count, breg_count);
 }
 
 void Program::set_sweep_points(const std::vector<double> &sweep_points) {
@@ -474,7 +474,7 @@ cQasmReader::cQasmReader(
     platform(q_platform),
     program(q_program)
 {
-    cqasm_reader_ = new ql::cqasm_reader(*(platform.platform), *(program.program));
+    cqasm_reader.emplace(platform.platform, program.program);
 }
 
 cQasmReader::cQasmReader(
@@ -485,15 +485,15 @@ cQasmReader::cQasmReader(
     platform(q_platform),
     program(q_program)
 {
-    cqasm_reader_ = new ql::cqasm_reader(*(platform.platform), *(program.program), gateset_fname);
+    cqasm_reader.emplace(platform.platform, program.program, gateset_fname);
 }
 
 void cQasmReader::string2circuit(const std::string &cqasm_str) {
-    cqasm_reader_->string2circuit(cqasm_str);
+    cqasm_reader->string2circuit(cqasm_str);
 }
 
 void cQasmReader::file2circuit(const std::string &cqasm_file_path) {
-    cqasm_reader_->file2circuit(cqasm_file_path);
+    cqasm_reader->file2circuit(cqasm_file_path);
 }
 
 cQasmReader::~cQasmReader() {
@@ -509,7 +509,7 @@ Compiler::Compiler(
 ) :
     name(name)
 {
-    compiler = new ql::quantum_compiler(name);
+    compiler.emplace(name);
 }
 
 Compiler::Compiler(
@@ -519,12 +519,12 @@ Compiler::Compiler(
     name(name),
     config_file(config_file)
 {
-    compiler = new ql::quantum_compiler(name, config_file);
+    compiler.emplace(name, config_file);
 }
 
 void Compiler::compile(Program &program) {
     QL_DOUT(" Compiler " << name << " compiles program  " << program.name);
-    compiler->compile(*program.program);
+    compiler->compile(program.program);
 }
 
 void Compiler::add_pass_alias(const std::string &realPassName, const std::string &symbolicPassName) {
@@ -543,5 +543,5 @@ void Compiler::set_pass_option(
     const std::string &optionValue
 ) {
     QL_DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName);
-    compiler->setPassOption(passName,optionName, optionValue);
+    compiler->setPassOption(passName, optionName, optionValue);
 }

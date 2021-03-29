@@ -13,25 +13,25 @@ using namespace utils;
 
 // write_sweep_points pass
 void write_sweep_points(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
     QL_DOUT("write_sweep_points()");
-    if (program.sweep_points.size()) {
+    if (program->sweep_points.size()) {
         StrStrm ss_swpts;
         ss_swpts << "{ \"measurement_points\" : [";
-        for (UInt i = 0; i < program.sweep_points.size() - 1; i++) {
-            ss_swpts << program.sweep_points[i] << ", ";
+        for (UInt i = 0; i < program->sweep_points.size() - 1; i++) {
+            ss_swpts << program->sweep_points[i] << ", ";
         }
-        ss_swpts << program.sweep_points[program.sweep_points.size() - 1] << "] }";
+        ss_swpts << program->sweep_points[program->sweep_points.size() - 1] << "] }";
         Str config = ss_swpts.str();
 
         StrStrm ss_config;
-        if (program.default_config) {
-            ss_config << com::options::get("output_dir") << "/" << program.unique_name << "_config.json";
+        if (program->default_config) {
+            ss_config << com::options::get("output_dir") << "/" << program->unique_name << "_config.json";
         } else {
-            ss_config << com::options::get("output_dir") << "/" << program.config_file_name;
+            ss_config << com::options::get("output_dir") << "/" << program->config_file_name;
         }
         Str conf_file_name = ss_config.str();
 

@@ -249,7 +249,7 @@ public:
     }
 
     // schedule the constructed depgraph for the platform with resource constraints and return the resulting depth
-    UInt schedule_rc(const quantum_platform& platform) {
+    UInt schedule_rc(const plat::PlatformRef &platform) {
         Str schedopt = com::options::get("scheduler");
         Str dot;
         if ("ASAP" == schedopt) {
@@ -264,7 +264,7 @@ public:
         }
 
         // next code is copy of report::get_circuit_latency(); this function should be a circuit method
-        UInt cycle_time = platform.cycle_time;
+        UInt cycle_time = platform->cycle_time;
         UInt depth;;
         if (circp->empty() || circp->back()->cycle == ir::MAX_CYCLE) {
             depth = 0;
@@ -315,14 +315,14 @@ private:
 public:
 
     void generate(
-        const ir::Program &programp,
-        ir::Kernel &kernel,
-        const quantum_platform & platform
+        const ir::ProgramRef &programp,
+        const ir::KernelRef &kernel,
+        const plat::PlatformRef & platform
     ) {
         QL_DOUT("Generate commutable variations of kernel circuit ...");
-        ir::Circuit &ckt = kernel.c;
+        ir::Circuit &ckt = kernel->c;
         if (ckt.empty()) {
-            QL_DOUT("Empty kernel " << kernel.name);
+            QL_DOUT("Empty kernel " << kernel->name);
             return;
         }
         if (com::options::get("scheduler_commute") == "no") {
@@ -333,7 +333,7 @@ public:
     
         QL_DOUT("Create a dependence graph and recognize commutation");
         Depgraph sched;
-        sched.init(ckt, platform, platform.qubit_number, kernel.creg_count, kernel.breg_count);
+        sched.init(ckt, platform, platform->qubit_number, kernel->creg_count, kernel->breg_count);
     
         QL_DOUT("Finding sets of commutable gates ...");
         List<List<lemon::ListDigraph::Arc>> varslist;
@@ -394,16 +394,16 @@ public:
 };
 
 static void commute_variation_kernel(
-    ir::Program &programp,
-    ir::Kernel &kernel,
-    const quantum_platform &platform
+    const ir::ProgramRef &program,
+    const ir::KernelRef &kernel,
+    const plat::PlatformRef &platform
 ) {
     QL_DOUT("Commute variation ...");
-    if (!kernel.c.empty()) {
+    if (!kernel->c.empty()) {
         if (com::options::get("vary_commutations") == "yes") {
             // find the shortest circuit by varying on gate commutation; replace kernel.c by it
             commute_variation_c   cv;
-            cv.generate(programp, kernel, platform);
+            cv.generate(program, kernel, platform);
         }
     }
 
@@ -411,19 +411,19 @@ static void commute_variation_kernel(
 }
 
 void commute_variation(
-    ir::Program &programp,              // updates the circuits of the program
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,              // updates the circuits of the program
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
-    report_statistics(programp, platform, "in", passname, "# ");
-    report_qasm(programp, platform, "in", passname);
+    report_statistics(program, platform, "in", passname, "# ");
+    report_qasm(program, platform, "in", passname);
 
-    for (UInt k = 0; k < programp.kernels.size(); ++k) {
-        commute_variation_kernel(programp, *programp.kernels[k], platform);
+    for (UInt k = 0; k < program->kernels.size(); ++k) {
+        commute_variation_kernel(program, program->kernels[k], platform);
     }
 
-    report_statistics(programp, platform, "out", passname, "# ");
-    report_qasm(programp, platform, "out", passname);
+    report_statistics(program, platform, "out", passname, "# ");
+    report_qasm(program, platform, "out", passname);
 }
 
 } // namespace ql

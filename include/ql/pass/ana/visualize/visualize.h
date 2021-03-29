@@ -20,13 +20,13 @@ struct VisualizerConfiguration {
     const utils::Str &waveformMappingPath;
 };
 
-void visualize(const ir::Program &program, const VisualizerConfiguration &configuration);
+void visualize(const ir::ProgramRef &program, const VisualizerConfiguration &configuration);
 
 // FIXME JvS: WITH_VISUALIZER must never appear in a public header file
 #ifdef WITH_VISUALIZER
 
-void assertPositive(const utils::Int parameterValue, const utils::Str &parameterName);
-void assertPositive(const utils::Real parameterValue, const utils::Str &parameterName);
+void assertPositive(utils::Int parameterValue, const utils::Str &parameterName);
+void assertPositive(utils::Real parameterValue, const utils::Str &parameterName);
 
 #endif //WITH_VISUALIZER
 

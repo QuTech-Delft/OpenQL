@@ -15,22 +15,21 @@ using namespace ql::utils;
 
 #define CFG_FILE_JSON   "test_cfg_cc.json"
 
-#if 1	// FIXME: interfaces not present in C++ API
+#if 1    // FIXME: interfaces not present in C++ API
  #define BARRIER(x) wait(x,0)
 #endif
 
 // based on tests/test_hybrid.py
-void test_classical()
-{
+void test_classical() {
     const int num_qubits = 17;
     const int num_cregs = 3;
 
     // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    auto s17 = ql::plat::PlatformRef::make("s17", CFG_FILE_JSON);
 
     // create program
-    auto prog = ql::utils::make_node<ql::ir::Program>("test_classical", s17, num_qubits, num_cregs);
-    auto k = ql::utils::make_node<ql::ir::Kernel>("kernel7.0", s17, num_qubits, num_cregs);
+    auto prog = ql::ir::ProgramRef::make("test_classical", s17, num_qubits, num_cregs);
+    auto k = ql::ir::KernelRef::make("kernel7.0", s17, num_qubits, num_cregs);
 
     // quantum operations
     for (int j=6; j<17; j++) {
@@ -58,12 +57,12 @@ void test_classical()
     k->gate("cz", 10, 15);
     k->gate("park_cz", 16);
 #endif
-	k->BARRIER({});      // help scheduler
+    k->BARRIER({});      // help scheduler
 
     k->gate("cz_park", {6, 7, 11});
     k->gate("cz_park", {12, 13, 15});
     k->gate("cz_park1", {10, 15, 16});   // FIXME:
-	k->BARRIER({});      // help scheduler
+    k->BARRIER({});      // help scheduler
 
     // gate with angle parameter
     double angle = 1.23456; // just some number
@@ -150,17 +149,16 @@ $2 = 0
 }
 
 
-void test_qec_pipelined()
-{
+void test_qec_pipelined() {
     const int num_qubits = 17;
     const int num_cregs = 3;
 
    // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    auto s17 = ql::plat::PlatformRef::make("s17", CFG_FILE_JSON);
 
     // create program
-    auto prog = ql::utils::make_node<ql::ir::Program>("test_qec_pipelined", s17, num_qubits, num_cregs);
-    auto k = ql::utils::make_node<ql::ir::Kernel>("kernel7.0", s17, num_qubits, num_cregs);
+    auto prog = ql::ir::ProgramRef::make("test_qec_pipelined", s17, num_qubits, num_cregs);
+    auto k = ql::ir::KernelRef::make("kernel7.0", s17, num_qubits, num_cregs);
 
     // pipelined QEC: [
     // see: R. Versluis et al., Phys. Rev. A 8, 034021 (2017)
@@ -187,20 +185,20 @@ void test_qec_pipelined()
     k->gate("rym90", xE);
     k->gate("rym90", xW);
     k->gate("rym90", xS);
-	k->BARRIER({});      // help scheduler
+    k->BARRIER({});      // help scheduler
 
     k->gate("cz", x, xE);
     k->gate("cz", x, xN);
     k->gate("cz", x, xS);
     k->gate("cz", x, xW);
-	k->BARRIER({});      // help scheduler
+    k->BARRIER({});      // help scheduler
 
     k->gate("ry90", x);
     k->gate("ry90", xN);
     k->gate("ry90", xE);
     k->gate("ry90", xW);
     k->gate("ry90", xS);
-	k->BARRIER({});      // help scheduler
+    k->BARRIER({});      // help scheduler
 
     // FIXME:
     // - qubits participating in CZ need phase correction, which may be part of gate, or separate
@@ -210,7 +208,7 @@ void test_qec_pipelined()
     //      + possible in parallel without doing 2 qubits gate?
 
     k->gate("measure", x, 0);
-	k->BARRIER({});      // help scheduler
+    k->BARRIER({});      // help scheduler
 
     // Z stabilizers
     k->gate("rym90", z);
@@ -229,21 +227,20 @@ void test_qec_pipelined()
 }
 
 
-void test_do_while_nested_for()
-{
+void test_do_while_nested_for() {
    // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    auto s17 = ql::plat::PlatformRef::make("s17", CFG_FILE_JSON);
 
     // create program
     const int num_qubits = 17;
     const int num_cregs = 3;
-    auto prog = ql::utils::make_node<ql::ir::Program>("test_do_while_nested_for", s17, num_qubits, num_cregs);
+    auto prog = ql::ir::ProgramRef::make("test_do_while_nested_for", s17, num_qubits, num_cregs);
 //    ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
-    auto sp1 = ql::utils::make_node<ql::ir::Program>(("sp1"), s17, num_qubits, num_cregs);
-    auto sp2 = ql::utils::make_node<ql::ir::Program>(("sp2"), s17, num_qubits, num_cregs);
-    auto k1 = ql::utils::make_node<ql::ir::Kernel>("aKernel1", s17, num_qubits, num_cregs);
-    auto k2 = ql::utils::make_node<ql::ir::Kernel>("aKernel2", s17, num_qubits, num_cregs);
+    auto sp1 = ql::ir::ProgramRef::make(("sp1"), s17, num_qubits, num_cregs);
+    auto sp2 = ql::ir::ProgramRef::make(("sp2"), s17, num_qubits, num_cregs);
+    auto k1 = ql::ir::KernelRef::make("aKernel1", s17, num_qubits, num_cregs);
+    auto k2 = ql::ir::KernelRef::make("aKernel2", s17, num_qubits, num_cregs);
 
     // create classical registers
     ql::ir::ClassicalRegister rd(1);    // destination register
@@ -271,16 +268,15 @@ void test_do_while_nested_for()
 
 
 
-void test_rabi()
-{
+void test_rabi() {
     // create and set platform
-    ql::quantum_platform s17("s17", "test_cfg_cc_demo.json");
+    auto s17 = ql::plat::PlatformRef::make("s17", "test_cfg_cc_demo.json");
 
     const int num_qubits = 17;
     const int num_cregs = 3;
-    auto prog = ql::utils::make_node<ql::ir::Program>("test_rabi", s17, num_qubits, num_cregs);
-    auto sp1 = ql::utils::make_node<ql::ir::Program>("sp1", s17, num_qubits, num_cregs);
-    auto k1 = ql::utils::make_node<ql::ir::Kernel>("aKernel1", s17, num_qubits, num_cregs);
+    auto prog = ql::ir::ProgramRef::make("test_rabi", s17, num_qubits, num_cregs);
+    auto sp1 = ql::ir::ProgramRef::make("sp1", s17, num_qubits, num_cregs);
+    auto k1 = ql::ir::KernelRef::make("aKernel1", s17, num_qubits, num_cregs);
 
     ql::ir::ClassicalRegister rs1(1);
     ql::ir::ClassicalRegister rs2(2);
@@ -297,16 +293,15 @@ void test_rabi()
 }
 
 
-void test_wait()
-{
+void test_wait() {
     // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    auto s17 = ql::plat::PlatformRef::make("s17", CFG_FILE_JSON);
 
     const int num_qubits = 17;
     const int num_cregs = 3;
-    auto prog = ql::utils::make_node<ql::ir::Program>("test_wait", s17, num_qubits, num_cregs);
-    auto sp1 = ql::utils::make_node<ql::ir::Program>("sp1", s17, num_qubits, num_cregs);
-    auto k = ql::utils::make_node<ql::ir::Kernel>("aKernel", s17, num_qubits, num_cregs);
+    auto prog = ql::ir::ProgramRef::make("test_wait", s17, num_qubits, num_cregs);
+    auto sp1 = ql::ir::ProgramRef::make("sp1", s17, num_qubits, num_cregs);
+    auto k = ql::ir::KernelRef::make("aKernel", s17, num_qubits, num_cregs);
 
     size_t qubit = 10;     // connects to uhfqa-0 and awg8-mw-0
 
@@ -322,16 +317,15 @@ void test_wait()
 }
 
 // FIXME: test to find quantum inspire problems 20200325
-void test_qi_example()
-{
+void test_qi_example() {
     // create and set platform
-    ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
+    auto s5 = ql::plat::PlatformRef::make("s5", "cc_s5_direct_iq.json");
 
     const int num_qubits = 5;
     const int num_cregs = 5;
-    auto prog = ql::utils::make_node<ql::ir::Program>("test_qi_example", s5, num_qubits, num_cregs);
-    auto sp1 = ql::utils::make_node<ql::ir::Program>("sp1", s5, num_qubits, num_cregs);
-    auto k = ql::utils::make_node<ql::ir::Kernel>("aKernel", s5, num_qubits, num_cregs);
+    auto prog = ql::ir::ProgramRef::make("test_qi_example", s5, num_qubits, num_cregs);
+    auto sp1 = ql::ir::ProgramRef::make("sp1", s5, num_qubits, num_cregs);
+    auto k = ql::ir::KernelRef::make("aKernel", s5, num_qubits, num_cregs);
 
     for(size_t i=0; i<5; i++) {
         k->gate("prepz", i);
@@ -356,17 +350,16 @@ void test_qi_example()
 }
 
 
-void test_break()
-{
+void test_break() {
     // create and set platform
-    ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
-    ql::options::set("write_qasm_files", "yes");    	// so we can see bundles
+    auto s5 = ql::plat::PlatformRef::make("s5", "cc_s5_direct_iq.json");
+    ql::options::set("write_qasm_files", "yes");        // so we can see bundles
 
     const int num_qubits = 5;
     const int num_cregs = 5;
     const int num_bregs = 5;
-    auto prog = ql::utils::make_node<ql::ir::Program>("test_break", s5, num_qubits, num_cregs, num_bregs);
-    auto k = ql::utils::make_node<ql::ir::Kernel>("aKernel", s5, num_qubits, num_cregs, num_bregs);
+    auto prog = ql::ir::ProgramRef::make("test_break", s5, num_qubits, num_cregs, num_bregs);
+    auto k = ql::ir::KernelRef::make("aKernel", s5, num_qubits, num_cregs, num_bregs);
 
     k->gate("prepz", 1);
     k->gate("measure_fb", 1);
@@ -378,19 +371,18 @@ void test_break()
 }
 
 
-void test_condex()
-{
+void test_condex() {
     // create and set platform
-    ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
-    ql::options::set("write_qasm_files", "yes");    	// so we can see bundles
+    auto s5 = ql::plat::PlatformRef::make("s5", "cc_s5_direct_iq.json");
+    ql::options::set("write_qasm_files", "yes");        // so we can see bundles
 
     const int num_qubits = 5;
     const int num_cregs = 5;
     const int num_bregs = 5;
-    auto prog = ql::utils::make_node<ql::ir::Program>("test_condex", s5, num_qubits, num_cregs, num_bregs);
-    auto k = ql::utils::make_node<ql::ir::Kernel>("aKernel", s5, num_qubits, num_cregs, num_bregs);
+    auto prog = ql::ir::ProgramRef::make("test_condex", s5, num_qubits, num_cregs, num_bregs);
+    auto k = ql::ir::KernelRef::make("aKernel", s5, num_qubits, num_cregs, num_bregs);
 
-    k->gate("prepz", 1);	// FIXME: program makes no sense
+    k->gate("prepz", 1);    // FIXME: program makes no sense
     k->gate("measure_fb", 1);
     k->gate("measure_fb", 2);
 
@@ -422,24 +414,23 @@ void test_condex()
     prog->compile();
 }
 
-void test_cqasm_condex()
-{
+void test_cqasm_condex() {
     // create platform
-    ql::quantum_platform platform("s5", "cc_s5_direct_iq.json");
-    size_t num_qubits = platform.get_qubit_number();
+    auto platform = ql::plat::PlatformRef::make("s5", "cc_s5_direct_iq.json");
+    size_t num_qubits = platform->get_qubit_number();
     // create program
-    auto program = ql::utils::make_node<ql::ir::Program>("qasm_qi_example", platform, num_qubits);
-#if 0	// FIXME: fails to compile (tested on Macos): "error: invalid application of 'sizeof' to an incomplete type 'ql::cqasm::ReaderImpl'"
+    auto program = ql::ir::ProgramRef::make("qasm_qi_example", platform, num_qubits);
+#if 0    // FIXME: fails to compile (tested on Macos): "error: invalid application of 'sizeof' to an incomplete type 'ql::cqasm::ReaderImpl'"
     ql::cqasm::Reader cqasm_rdr(platform, program);
     cqasm_rdr.string2circuit(R"(
-	version 1.0
+    version 1.0
     qubits 5
     prep_z q[0,1,2,3,4]
     y q[0,2]
     cz q[0], q[2]
     y90 q[2]
     measure_all
-	)");
+    )");
 #endif
 
     // compile the resulting program
@@ -447,11 +438,10 @@ void test_cqasm_condex()
 }
 
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
     ql::utils::logger::set_log_level("LOG_INFO");      // LOG_DEBUG, LOG_INFO
 
-#if 0	// FIXME
+#if 0    // FIXME
     test_classical();
     test_qec_pipelined();
     test_do_while_nested_for();

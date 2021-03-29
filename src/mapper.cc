@@ -22,7 +22,7 @@ using namespace com;
 // Grid initializer
 // initialize mapper internal grid maps from configuration
 // this remains constant over multiple kernels on the same platform
-void Grid::Init(const quantum_platform *p) {
+void Grid::Init(const plat::PlatformRef &p) {
     QL_DOUT("Grid::Init");
     platformp = p;
     nq = platformp->qubit_number;
@@ -663,9 +663,9 @@ FreeCycle::FreeCycle() {
     QL_DOUT("Constructing FreeCycle");
 }
 
-void FreeCycle::Init(const quantum_platform *p, const UInt breg_count) {
+void FreeCycle::Init(const plat::PlatformRef &p, const UInt breg_count) {
     QL_DOUT("FreeCycle::Init()");
-    arch::resource_manager_t lrm(*p, forward_scheduling);   // allocated here and copied below to rm because of platform parameter
+    arch::resource_manager_t lrm(p, forward_scheduling);   // allocated here and copied below to rm because of platform parameter
     QL_DOUT("... created FreeCycle Init local resource_manager");
     platformp = p;
     nq = platformp->qubit_number;
@@ -791,7 +791,7 @@ UInt FreeCycle::StartCycle(const ir::GateRef &g) const {
 
         while (startCycle < ir::MAX_CYCLE) {
             // QL_DOUT("Startcycle for " << g->qasm() << ": available? at startCycle=" << startCycle);
-            if (rm.available(startCycle, g, *platformp)) {
+            if (rm.available(startCycle, g, platformp)) {
                 // QL_DOUT(" ... [" << startCycle << "] resources available for " << g->qasm());
                 break;
             } else {
@@ -832,7 +832,7 @@ void FreeCycle::Add(const ir::GateRef &g, UInt startCycle) {
 
     auto mapopt = options::get("mapper");
     if (mapopt == "baserc" || mapopt == "minextendrc") {
-        rm.reserve(startCycle, g, *platformp);
+        rm.reserve(startCycle, g, platformp);
     }
 }
 
@@ -843,7 +843,7 @@ Past::Past() {
 }
 
 // past initializer
-void Past::Init(const quantum_platform *p, const ir::KernelRef &k, const Ptr<Grid> &g) {
+void Past::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const Ptr<Grid> &g) {
     QL_DOUT("Past::Init");
     platformp = p;
     kernelp = k;
@@ -1456,7 +1456,7 @@ Alter::Alter() {
 
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
-void Alter::Init(const quantum_platform *p, const ir::KernelRef &k, const utils::Ptr<Grid> &g) {
+void Alter::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const utils::Ptr<Grid> &g) {
     QL_DOUT("Alter::Init(number of qubits=" << p->qubit_number);
     platformp = p;
     kernelp = k;
@@ -1699,7 +1699,7 @@ void Alter::Split(const Grid &grid, List<Alter> &resla) const {
 }
 
 // just program wide initialization
-void Future::Init(const quantum_platform *p) {
+void Future::Init(const plat::PlatformRef &p) {
     // QL_DOUT("Future::Init ...");
     platformp = p;
     // QL_DOUT("Future::Init [DONE]");
@@ -1716,7 +1716,7 @@ void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
         input_gatepv = kernel->c;                               // copy to free original circuit to allow outputing to
         input_gatepp = input_gatepv.begin();                    // iterator set to start of input circuit copy
     } else {
-        schedp->init(kernel->c, *platformp, nq, nc, nb);        // fills schedp->graph (dependence graph) from all of circuit
+        schedp->init(kernel->c, platformp, nq, nc, nb);        // fills schedp->graph (dependence graph) from all of circuit
         // and so also the original circuit can be output to after this
         for (auto &gp : kernel->c) {
             scheduled.set(gp) = false;   // none were scheduled
@@ -1892,7 +1892,7 @@ typedef enum InitialPlaceResults {
 class InitialPlace {
 private:
                                           // parameters, constant for a kernel
-    const quantum_platform   *platformp;  // platform
+    plat::PlatformRef         platformp;  // platform
     UInt                      nlocs;      // number of locations, real qubits; index variables k and l
     UInt                      nvq;        // same range as nlocs; when not, take set from config and create v2i earlier
     utils::Ptr<Grid>          gridp;      // current grid with Distance function
@@ -1915,14 +1915,14 @@ public:
     }
 
     // kernel-once initialization
-    void Init(const utils::Ptr<Grid> &g, const quantum_platform *p) {
+    void Init(const utils::Ptr<Grid> &g, const plat::PlatformRef &p) {
         // QL_DOUT("InitialPlace Init ...");
         platformp = p;
         nlocs = p->qubit_number;
         nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
         // QL_DOUT("... number of real qubits (locations): " << nlocs);
         gridp = g;
-        QL_DOUT("Init: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp.unwrap());
+        QL_DOUT("Init: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp.unwrap());
     }
 
     // find an initial placement of the virtual qubits for the given circuit
@@ -2196,14 +2196,14 @@ public:
         QL_DOUT("InitialPlace: solving the problem, this may take a while ...");
         QL_DOUT("..2 nvq=" << nvq);
         Mip::SolveExitStatus s;
-        QL_DOUT("Just before solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp.unwrap());
+        QL_DOUT("Just before solve: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp.unwrap());
         QL_DOUT("Just before solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
         QL_DOUT("..2b nvq=" << nvq);
         {
             s = mip.solve();
         }
         QL_DOUT("..3 nvq=" << nvq);
-        QL_DOUT("Just after solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp.unwrap());
+        QL_DOUT("Just after solve: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp.unwrap());
         QL_DOUT("Just after solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
         QL_ASSERT(nvq == nlocs);         // consistency check, mainly to let it crash
 
@@ -3079,7 +3079,7 @@ void Mapper::Map(const ir::KernelRef &kernel) {
 // lots could be split off for the whole program, once that is needed
 //
 // initialization for a particular kernel is separate (in Map entry)
-void Mapper::Init(const quantum_platform *p) {
+void Mapper::Init(const plat::PlatformRef &p) {
     // QL_DOUT("Mapping initialization ...");
     // QL_DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
     platformp = p;

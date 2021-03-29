@@ -2,11 +2,12 @@
  * JSON hardware configuration loader.
  */
 
-#include "hardware_configuration.h"
+#include "ql/plat/hardware_configuration.h"
 
 #include <regex>
 
 namespace ql {
+namespace plat {
 
 using namespace utils;
 
@@ -25,7 +26,7 @@ static Str sanitize_instruction_name(Str name) {
 }
 
 static CustomGateRef load_instruction(const Str &name, Json &instr) {
-    CustomGateRef g = make_node<ir::gates::Custom>(name);
+    auto g = CustomGateRef::make<ir::gates::Custom>(name);
     // skip alias fo now
     if (instr.count("alias") > 0) {
         // todo : look for the target aliased gate
@@ -44,12 +45,12 @@ static CustomGateRef load_instruction(const Str &name, Json &instr) {
     return g;
 }
 
-hardware_configuration::hardware_configuration(
+HardwareConfiguration::HardwareConfiguration(
     const Str &config_file_name
 ) : config_file_name(config_file_name) {
 }
 
-void hardware_configuration::load(
+void HardwareConfiguration::load(
     InstructionMap &instruction_map,
     Json &instruction_settings,
     Json &hardware_settings,
@@ -190,14 +191,14 @@ void hardware_configuration::load(
                            Str::npos) {              // parameterized composite gate? FIXME: no syntax check
                     // adding new sub ins if not already available, e.g. "x %0"
                     QL_DOUT("adding new sub instr : " << sub_ins);
-                    instruction_map.set(sub_ins) = make_node<ir::gates::Custom>(sub_ins);
+                    instruction_map.set(sub_ins).emplace<ir::gates::Custom>(sub_ins);
                     gs.add(instruction_map.at(sub_ins));
                 } else {
 #if OPT_DECOMPOSE_WAIT_BARRIER   // allow wait/barrier, e.g. "barrier q2,q3,q4"
                     // FIXME: just save whatever we find as a *custom* gate (there is no better alternative)
                     // FIXME: also see additions (hacks) to kernel.h
                     QL_DOUT("adding new sub instr : " << sub_ins);
-                    instruction_map.set(sub_ins) = make_node<ir::gates::Custom>(sub_ins);
+                    instruction_map.set(sub_ins).emplace<ir::gates::Custom>(sub_ins);
                     gs.add(instruction_map.at(sub_ins));
 #else
                     // for specialized custom instructions, raise error if instruction
@@ -206,9 +207,10 @@ void hardware_configuration::load(
 #endif
                 }
             }
-            instruction_map.set(comp_ins) = make_node<ir::gates::Composite>(comp_ins, gs);
+            instruction_map.set(comp_ins).emplace<ir::gates::Composite>(comp_ins, gs);
         }
     }
 }
 
+} // namespace plat
 } // namespace ql

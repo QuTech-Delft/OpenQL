@@ -91,7 +91,7 @@ using Link = tree::base::Link<T>;
  * Constructs a One or Maybe object, analogous to std::make_shared.
  */
 template <class T, typename... Args>
-One<T> make_node(Args&&... args) {
+One<T> make(Args&&... args) {
     return One<T>(std::make_shared<T>(std::forward<Args>(args)...));
 }
 

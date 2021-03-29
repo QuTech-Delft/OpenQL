@@ -24,7 +24,7 @@ private:
     /**
      * The contained value, wrapped in a unique_ptr.
      */
-    std::unique_ptr<T> v{};
+    std::shared_ptr<T> v{};
 
 public:
 
@@ -37,7 +37,7 @@ public:
         if (v) {
             throw Exception("Opt has already been initialized", false);
         }
-        v = std::unique_ptr<T>(new S(std::forward<Args>(args)...));
+        v = std::shared_ptr<T>(new S(std::forward<Args>(args)...));
     }
 
     /**

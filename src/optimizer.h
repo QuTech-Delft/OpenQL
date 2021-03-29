@@ -6,13 +6,13 @@
 
 #include "ql/utils/str.h"
 #include "ql/ir/ir.h"
-#include "platform.h"
+#include "ql/plat/platform.h"
 
 namespace ql {
 
 void rotation_optimize(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const utils::Str &passname
 );
 

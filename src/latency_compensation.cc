@@ -22,21 +22,21 @@ static void lc_sort_by_cycle(ir::Circuit &cp) {
 }
 
 void latency_compensation_kernel(
-    ir::Kernel &kernel,
-    const quantum_platform &platform
+    const ir::KernelRef &kernel,
+    const plat::PlatformRef &platform
 ) {
     QL_DOUT("Latency compensation ...");
 
     Bool compensated_one = false;
-    for (auto &gp : kernel.c) {
+    for (auto &gp : kernel->c) {
         auto &id = gp->name;
         // DOUT("Latency compensating instruction: " << id);
         Int latency_cycles = 0;
 
-        if (platform.instruction_settings.count(id) > 0) {
-            if (platform.instruction_settings[id].count("latency") > 0) {
-                Real latency_ns = platform.instruction_settings[id]["latency"];
-                latency_cycles = Int(round_away_from_zero(latency_ns / platform.cycle_time));
+        if (platform->instruction_settings.count(id) > 0) {
+            if (platform->instruction_settings[id].count("latency") > 0) {
+                Real latency_ns = platform->instruction_settings[id]["latency"];
+                latency_cycles = Int(round_away_from_zero(latency_ns / platform->cycle_time));
                 compensated_one = true;
 
                 gp->cycle = gp->cycle + latency_cycles;
@@ -47,10 +47,10 @@ void latency_compensation_kernel(
 
     if (compensated_one) {
         QL_DOUT("... sorting on cycle value after latency compensation");
-        lc_sort_by_cycle(kernel.c);
+        lc_sort_by_cycle(kernel->c);
 
         QL_DOUT("... printing schedule after latency compensation");
-        for (auto &gp : kernel.c) {
+        for (auto &gp : kernel->c) {
             QL_DOUT("...... @(" << gp->cycle << "): " << gp->qasm());
         }
     } else {
@@ -60,15 +60,15 @@ void latency_compensation_kernel(
 }
 
 void latency_compensation(
-    ir::Program &program,
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
     const Str &passname
 ) {
     report_statistics(program, platform, "in", passname, "# ");
     report_qasm(program, platform, "in", passname);
 
-    for (UInt k = 0; k < program.kernels.size(); ++k) {
-        latency_compensation_kernel(*program.kernels[k], platform);
+    for (UInt k = 0; k < program->kernels.size(); ++k) {
+        latency_compensation_kernel(program->kernels[k], platform);
     }
 
     report_statistics(program, platform, "out", passname, "# ");

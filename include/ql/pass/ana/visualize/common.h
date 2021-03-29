@@ -19,14 +19,14 @@ namespace pass {
 namespace ana {
 namespace visualize {
 
-utils::Vec<GateProperties> parseGates(const ir::Program &program);
+utils::Vec<GateProperties> parseGates(const ir::ProgramRef &program);
 
-utils::Int calculateAmountOfCycles(const utils::Vec<GateProperties> &gates, const utils::Int cycleDuration);
+utils::Int calculateAmountOfCycles(const utils::Vec<GateProperties> &gates, utils::Int cycleDuration);
 utils::Int calculateAmountOfBits(const utils::Vec<GateProperties> &gates, const utils::Vec<utils::Int> GateProperties::* operandType);
 
 utils::Int calculateAmountOfGateOperands(const GateProperties &gate);
 utils::Vec<GateOperand> getGateOperands(const GateProperties &gate);
-utils::Pair<GateOperand, GateOperand> calculateEdgeOperands(const utils::Vec<GateOperand> &operands, const utils::Int amountOfQubits);
+utils::Pair<GateOperand, GateOperand> calculateEdgeOperands(const utils::Vec<GateOperand> &operands, utils::Int amountOfQubits);
 
 void fixMeasurementOperands(utils::Vec<GateProperties> &gates);
 utils::Bool isMeasurement(const GateProperties &gate);

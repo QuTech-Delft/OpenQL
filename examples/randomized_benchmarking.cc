@@ -49,10 +49,10 @@ int main(int argc, char **argv) {
     srand(0);
 
     // create platform
-    ql::quantum_platform qx_platform("qx_simulator","hardware_config_qx.json");
+    auto qx_platform = ql::plat::PlatformRef::make("qx_simulator", "hardware_config_qx.json");
 
     // print info
-    qx_platform.print_info();
+    qx_platform->print_info();
 
     int    num_randomizations = 3;
     int    num_circuits       = 13;
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
         // create program
         std::stringstream prog_name;
         prog_name << "rb_" << r;
-        auto rb = ql::utils::make_node<ql::ir::Program>(prog_name.str(), qx_platform, 1);
+        auto rb = ql::ir::ProgramRef::make(prog_name.str(), qx_platform, 1);
         rb->set_sweep_points(sweep_points, num_circuits);
         rb->set_config_file("rb_config.json");
 
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
             // create subcircuit
             std::stringstream name;
             name << "rb" << c_size;
-            auto kernel = ql::utils::make_node<ql::ir::Kernel>(name.str(),qx_platform, 1);
+            auto kernel = ql::ir::KernelRef::make(name.str(),qx_platform, 1);
             build_rb(c_size, kernel);
             rb->add(kernel);
         }

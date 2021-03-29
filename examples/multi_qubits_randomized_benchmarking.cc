@@ -75,52 +75,51 @@ void build_rb(int num_cliffords, ql::ir::KernelRef &k, int qubits=1, bool differ
 }
 
 int main(int argc, char **argv) {
-   srand(clock());
+    srand(clock());
 
-   // initialize openql
-   // ql::init();
-   // ql::init(ql::transmon_platform, "instructions.map");
+    // initialize openql
+    // ql::init();
+    // ql::init(ql::transmon_platform, "instructions.map");
 
-   // create platform
-//   ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
-   ql::quantum_platform starmon("starmon","hardware_config_qx.json");
+    // create platform
+    //ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
+    auto starmon = ql::plat::PlatformRef::make("starmon", "hardware_config_qx.json");
 
-   // print info
-   starmon.print_info();
+    // print info
+    starmon->print_info();
 
-      int   num_qubits = 1;
-   int   num_cliffords = 4096;
-   bool  different  = false;
+    int   num_qubits = 1;
+    int   num_cliffords = 4096;
+    bool  different  = false;
 
-   if (argc == 3)
-   {
-      num_qubits = atoi(argv[1]);
-      different  = (argv[2][0] == 'd');
-   }
+    if (argc == 3) {
+        num_qubits = atoi(argv[1]);
+        different  = (argv[2][0] == 'd');
+    }
 
-   int    num_circuits       = 1;
-   double sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };  // sizes of the clifford circuits per randomization
+    int    num_circuits       = 1;
+    double sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };  // sizes of the clifford circuits per randomization
 
-   std::cout << "[+] num_qubits    : " << num_qubits << std::endl;
-   std::cout << "[+] num_cliffords : " << num_cliffords<< std::endl;
-   std::cout << "[+] different     : " << (different ? "yes" : "no") << std::endl;
+    std::cout << "[+] num_qubits    : " << num_qubits << std::endl;
+    std::cout << "[+] num_cliffords : " << num_cliffords<< std::endl;
+    std::cout << "[+] different     : " << (different ? "yes" : "no") << std::endl;
 
-   // create program
-   std::stringstream prog_name;
-   prog_name << "rb_" << num_qubits << "_" << (different ? "diff" : "same");
-   auto rb = ql::utils::make_node<ql::ir::Program>(prog_name.str(), starmon, num_qubits);
-   rb->set_sweep_points(sweep_points, num_circuits);
-   rb->set_config_file("rb_config.json");
+    // create program
+    std::stringstream prog_name;
+    prog_name << "rb_" << num_qubits << "_" << (different ? "diff" : "same");
+    auto rb = ql::ir::ProgramRef::make(prog_name.str(), starmon, num_qubits);
+    rb->set_sweep_points(sweep_points, num_circuits);
+    rb->set_config_file("rb_config.json");
 
-   // create subcircuit
-   std::stringstream name;
-   name << "rb_" << num_qubits;
-   auto kernel = ql::utils::make_node<ql::ir::Kernel>(name.str(),starmon,num_qubits);
-   build_rb(num_cliffords, kernel, num_qubits, different);
-   rb->add(kernel);
+    // create subcircuit
+    std::stringstream name;
+    name << "rb_" << num_qubits;
+    auto kernel = ql::ir::KernelRef::make(name.str(),starmon,num_qubits);
+    build_rb(num_cliffords, kernel, num_qubits, different);
+    rb->add(kernel);
 
-   // compile the program
-   rb->compile();
+    // compile the program
+    rb->compile();
 
-   return 0;
+    return 0;
 }

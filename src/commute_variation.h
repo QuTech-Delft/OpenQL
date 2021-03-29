@@ -43,14 +43,14 @@
 
 #include "ql/utils/str.h"
 #include "ql/ir/ir.h"
-#include "platform.h"
+#include "ql/plat/platform.h"
 
 namespace ql {
 
 // commute_variation pass
 void commute_variation(
-    ir::Program &programp,              // updates the circuits of the program
-    const quantum_platform &platform,
+    const ir::ProgramRef &program,              // updates the circuits of the program
+    const plat::PlatformRef &platform,
     const utils::Str &passname
 );
 

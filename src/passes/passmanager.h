@@ -19,7 +19,7 @@ public:
     PassManager(const utils::Str &n);
     PassManager(const utils::Str &n, const utils::Str &cfg);
 
-    void compile(ir::Program &program) const;
+    void compile(const ir::ProgramRef &program) const;
     void addPassNamed(const utils::Str &realPassName, const utils::Str &symbolicPassName);
     static AbstractPass *createPass(const utils::Str &passName, const utils::Str &aliasName);
     AbstractPass *findPass(const utils::Str &passName);

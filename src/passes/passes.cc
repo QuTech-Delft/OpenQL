@@ -88,8 +88,8 @@ Bool AbstractPass::getSkip() const {
 /**
  * @brief   Initializes the pass by printing useful information
  */
-void AbstractPass::initPass(ir::Program &program) {
-    QL_DOUT("initPass of " << getPassName() << " on program " << program.name);
+void AbstractPass::initPass(const ir::ProgramRef &program) {
+    QL_DOUT("initPass of " << getPassName() << " on program " << program->name);
     if (getPassOptions()["write_qasm_files"].as_bool()) {
         //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
@@ -97,7 +97,7 @@ void AbstractPass::initPass(ir::Program &program) {
         com::options::set("write_qasm_files", "yes");
 
         QL_DOUT("initPass of " << getPassName() << " write_qasm_files option was yes for pass");
-        report_qasm(program, program.platform, "in", getPassName());
+        report_qasm(program, program->platform, "in", getPassName());
 
         com::options::set("write_qasm_files", writeQasmLocal);
     }
@@ -109,7 +109,7 @@ void AbstractPass::initPass(ir::Program &program) {
         com::options::set("write_report_files", "yes");
 
         QL_DOUT("initPass of " << getPassName() << " write_report_files option was yes for pass");
-        report_statistics(program, program.platform, "in", getPassName(), "# ");
+        report_statistics(program, program->platform, "in", getPassName(), "# ");
 
         com::options::set("write_report_files", writeReportLocal);
     }
@@ -118,8 +118,8 @@ void AbstractPass::initPass(ir::Program &program) {
 /**
  * @brief   Finilazes the pass by printing useful information and cleaning
  */
-void AbstractPass::finalizePass(ir::Program &program) {
-    QL_DOUT("finalizePass of " << getPassName() << " on program " << program.name);
+void AbstractPass::finalizePass(const ir::ProgramRef &program) {
+    QL_DOUT("finalizePass of " << getPassName() << " on program " << program->name);
     if (getPassOptions()["write_qasm_files"].as_bool()) {
         //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
@@ -127,7 +127,7 @@ void AbstractPass::finalizePass(ir::Program &program) {
         com::options::set("write_qasm_files", "yes");
 
         QL_DOUT("finalizePass of " << getPassName() << " write_qasm_files option was yes for pass");
-        report_qasm(program, program.platform, "out", getPassName());
+        report_qasm(program, program->platform, "out", getPassName());
 
         com::options::set("write_qasm_files", writeQasmLocal);
     }
@@ -139,7 +139,7 @@ void AbstractPass::finalizePass(ir::Program &program) {
         com::options::set("write_report_files", "yes");
 
         QL_DOUT("finalizePass of " << getPassName() << " write_report_files option was yes for pass");
-        report_statistics(program, program.platform, "out", getPassName(), "# ", getPassStatistics());
+        report_statistics(program, program->platform, "out", getPassName(), "# ", getPassStatistics());
 
         com::options::set("write_report_files", writeReportLocal);
     }
@@ -173,22 +173,22 @@ CQasmReaderPass::CQasmReaderPass(const Str &name) : AbstractPass(name) {
  * @brief  Apply the pass to the input program
  * @param  Program object to be read
  */
-void CQasmReaderPass::runOnProgram(ir::Program &program) {
-    QL_DOUT("run ReaderPass with name = " << getPassName() << " on program " << program.name);
+void CQasmReaderPass::runOnProgram(const ir::ProgramRef &program) {
+    QL_DOUT("run ReaderPass with name = " << getPassName() << " on program " << program->name);
 
-    cqasm_reader* reader = new cqasm_reader(program.platform, program);
+    auto reader = cqasm::Reader(program->platform, program);
 
     QL_DOUT("!!!!!!!!!!! start reader !!!!!!!!");
 
     // reset kernels if they are not empty, needed for the case when the reader pass
     // is used after a Writer pass within the sequence os passes and not at the start
     // of the compiler when there is no IR
-    program.kernels.reset();
+    program->kernels.reset();
 
     ///@todo-rn: come up with a parametrized naming scheme to do this printing. This should reflect
     // if the pass is outputing non- or scheduled qasm depending if it is used before or after sched
     // currently this works only when Writer pass creating the qasm file is called outputIR
-    reader->file2circuit(com::options::get("output_dir")+"/"+program.name+"_outputIR_out.qasm");
+    reader.file2circuit(com::options::get("output_dir")+"/"+program->name+"_outputIR_out.qasm");
 }
 
 /**
@@ -202,14 +202,14 @@ CQasmWriterPass::CQasmWriterPass(const Str &name) : AbstractPass(name) {
  * @brief  Apply the pass to the input program
  * @param  Program object to be write
  */
-void CQasmWriterPass::runOnProgram(ir::Program &program) {
-    QL_DOUT("run WriterPass with name = " << getPassName() << " on program " << program.name);
+void CQasmWriterPass::runOnProgram(const ir::ProgramRef &program) {
+    QL_DOUT("run WriterPass with name = " << getPassName() << " on program " << program->name);
 
     // report/write_qasm initialization
     //report_init(program, program->platform);
 
     // writer pass of the initial qasm file (program.qasm)
-    write_qasm(program, program.platform, getPassName());
+    write_qasm(program, program->platform, getPassName());
 
 //     if (getPassName() != "initialqasmwriter" && getPassName() != "scheduledqasmwriter")
 //     { ///@note-rn: temoporary hack to make the writer pass for those 2 configurations soft (i.e., do not delete the subcircuits) so that it does not require a reader pass after it!. This is needed until we fix the synchronization between hardware configuration files and openql tests. Until then a Reader pass would be needed after a hard Write pass. However, a Reader pass will make some unit tests to fail due to a mismatch between the instructions in the tests (i.e., prepz) and included/defined in the hardware config files CONFLICTING with the prepz instr not being available in libQASM.
@@ -226,10 +226,10 @@ RotationOptimizerPass::RotationOptimizerPass(const Str &name) : AbstractPass(nam
  * @brief  Apply the pass to the input program
  * @param  Program object to be read
  */
-void RotationOptimizerPass::runOnProgram(ir::Program &program) {
-    QL_DOUT("run RotationOptimizerPass with name = " << getPassName() << " on program " << program.name);
+void RotationOptimizerPass::runOnProgram(const ir::ProgramRef &program) {
+    QL_DOUT("run RotationOptimizerPass with name = " << getPassName() << " on program " << program->name);
 
-    rotation_optimize(program, program.platform, "rotation_optimize");
+    rotation_optimize(program, program->platform, "rotation_optimize");
 }
 
 /**
@@ -243,11 +243,11 @@ ToffoliDecomposerPass::ToffoliDecomposerPass(const Str &name) : AbstractPass(nam
  * @brief  Apply the pass to the input program
  * @param  Program object to be read
  */
-void ToffoliDecomposerPass::runOnProgram(ir::Program &program) {
-    QL_DOUT("run DecomposeToffoliPass with name = " << getPassName() << " on program " << program.name);
+void ToffoliDecomposerPass::runOnProgram(const ir::ProgramRef &program) {
+    QL_DOUT("run DecomposeToffoliPass with name = " << getPassName() << " on program " << program->name);
 
     // decompose_toffoli pass
-    decompose_toffoli(program, program.platform, "decompose_toffoli");
+    decompose_toffoli(program, program->platform, "decompose_toffoli");
 }
 
 /**
@@ -261,11 +261,11 @@ SchedulerPass::SchedulerPass(const Str &name) : AbstractPass(name) {
  * @brief  Apply the pass to the input program
  * @param  Program object to be read
  */
-void SchedulerPass::runOnProgram(ir::Program &program) {
-    QL_DOUT("run SchedulerPass with name = " << getPassName() << " on program " << program.name);
+void SchedulerPass::runOnProgram(const ir::ProgramRef &program) {
+    QL_DOUT("run SchedulerPass with name = " << getPassName() << " on program " << program->name);
 
     // prescheduler pass
-    schedule(program, program.platform, "prescheduler");
+    schedule(program, program->platform, "prescheduler");
 }
 
 /**
@@ -279,12 +279,12 @@ BackendCompilerPass::BackendCompilerPass(const Str &name) : AbstractPass(name) {
  * @brief  Apply the pass to the input program
  * @param  Program object to be read
  */
-void BackendCompilerPass::runOnProgram(ir::Program &program) {
-    QL_DOUT("run BackendCompilerPass with name = " << getPassName() << " on program " << program.name);
+void BackendCompilerPass::runOnProgram(const ir::ProgramRef &program) {
+    QL_DOUT("run BackendCompilerPass with name = " << getPassName() << " on program " << program->name);
     
     Opt<eqasm_compiler> backend_compiler;
     
-    Str eqasm_compiler_name = program.platform.eqasm_compiler_name;
+    Str eqasm_compiler_name = program->platform->eqasm_compiler_name;
     //getPassOptions()->getOption("eqasm_compiler_name");
     
     if (eqasm_compiler_name == "cc_light_compiler") {
@@ -298,7 +298,7 @@ void BackendCompilerPass::runOnProgram(ir::Program &program) {
     ///@todo-rn: Decide how to construct backend:
     // 1) we can run backend as one big composite engine, e.g.,
     //assert(backend_compiler);
-    backend_compiler->compile(program, program.platform); //called here
+    backend_compiler->compile(program, program->platform); //called here
     // OR
     // 2) in the user program add one for one individual backed passes.
     
@@ -316,10 +316,10 @@ StatisticsReporterPass::StatisticsReporterPass(const Str &name) : AbstractPass(n
  * @brief  Report Statistics for the input program
  * @param  Program object to be read
  */
-void StatisticsReporterPass::runOnProgram(ir::Program &program) {
+void StatisticsReporterPass::runOnProgram(const ir::ProgramRef &program) {
     ///@note-rn: below call should be manually inlined here and removed from its current location
     ///@note-rn: pass should be moved to separate file containing only this pass
-    report_statistics(program, program.platform, "todo-inout", getPassName(), "# ");
+    report_statistics(program, program->platform, "todo-inout", getPassName(), "# ");
 }
 
 /**
@@ -336,8 +336,8 @@ VisualizerPass::VisualizerPass(const Str &name) : AbstractPass(name) {
  * @brief  Visualize the quantum program
  * @param  Program object to be read
  */
-void VisualizerPass::runOnProgram(ir::Program &program) {
-    QL_DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program.name);
+void VisualizerPass::runOnProgram(const ir::ProgramRef &program) {
+    QL_DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
     
     ql::pass::ana::visualize::visualize(program, {
         getPassOptions()["visualizer_type"].as_str(),
@@ -357,8 +357,8 @@ CCLConsistencyCheckerPass::CCLConsistencyCheckerPass(const Str &name) : Abstract
  * @brief  Prepare the program for code generation
  * @param  Program object to be prepared
  */
-void CCLConsistencyCheckerPass::runOnProgram(ir::Program &program) {
-    const Json &instruction_settings = program.platform.instruction_settings;
+void CCLConsistencyCheckerPass::runOnProgram(const ir::ProgramRef &program) {
+    const Json &instruction_settings = program->platform->instruction_settings;
     for (const Json &i : instruction_settings) {
        if (i.count("cc_light_instr") <= 0) {
             QL_FATAL("cc_light_instr not found for " << i);
@@ -377,8 +377,8 @@ CCLPreScheduleDecomposer::CCLPreScheduleDecomposer(const Str &name) : AbstractPa
  * @brief  Decompose the input program before scheduling
  * @param  Program object to be decomposed
  */
-void CCLPreScheduleDecomposer::runOnProgram(ir::Program &program) {
-    arch::cc_light_eqasm_compiler().ccl_decompose_pre_schedule(program, program.platform, getPassName());
+void CCLPreScheduleDecomposer::runOnProgram(const ir::ProgramRef &program) {
+    arch::cc_light_eqasm_compiler().ccl_decompose_pre_schedule(program, program->platform, getPassName());
 }
 
 /**
@@ -392,9 +392,9 @@ MapperPass::MapperPass(const Str &name) : AbstractPass(name) {
  * @brief  Maps the input program to the target platform
  * @param  Program object to be mapped
  */
-void MapperPass::runOnProgram(ir::Program &program) {
+void MapperPass::runOnProgram(const ir::ProgramRef &program) {
     Str stats;
-    arch::cc_light_eqasm_compiler::map(program, program.platform, getPassName(), &stats);
+    arch::cc_light_eqasm_compiler::map(program, program->platform, getPassName(), &stats);
     appendStatistics(stats);
 }
 
@@ -409,8 +409,8 @@ CliffordOptimizerPass::CliffordOptimizerPass(const Str &name) : AbstractPass(nam
  * @brief  Clifford optimizer
  * @param  Program object to be clifford optimized
  */
-void CliffordOptimizerPass::runOnProgram(ir::Program &program) {
-    clifford_optimize(program, program.platform, getPassName());
+void CliffordOptimizerPass::runOnProgram(const ir::ProgramRef &program) {
+    clifford_optimize(program, program->platform, getPassName());
 }
 
 /**
@@ -424,8 +424,8 @@ CommuteVariationOptimizerPass::CommuteVariationOptimizerPass(const Str &name) : 
  * @brief  Exploit commuting of gates circuit-wide to minimize circuit latency beyond locally in the scheduler
  * @param  Program object to be latency compensated
  */
-void CommuteVariationOptimizerPass::runOnProgram(ir::Program &program) {
-    commute_variation(program, program.platform, getPassName());
+void CommuteVariationOptimizerPass::runOnProgram(const ir::ProgramRef &program) {
+    commute_variation(program, program->platform, getPassName());
 }
 
 /**
@@ -439,8 +439,8 @@ RCSchedulerPass::RCSchedulerPass(const Str &name) : AbstractPass(name) {
  * @brief  Resource Constraint Scheduling of the input program
  * @param  Program object to be rcscheduled
  */
-void RCSchedulerPass::runOnProgram(ir::Program &program) {
-    rcschedule(program, program.platform, getPassName());
+void RCSchedulerPass::runOnProgram(const ir::ProgramRef &program) {
+    rcschedule(program, program->platform, getPassName());
 }
 
 /**
@@ -454,8 +454,8 @@ LatencyCompensatorPass::LatencyCompensatorPass(const Str &name) : AbstractPass(n
  * @brief  Apply Latency Compensation to the scheduled program
  * @param  Program object to be latency compensated
  */
-void LatencyCompensatorPass::runOnProgram(ir::Program &program) {
-    latency_compensation(program, program.platform, getPassName());
+void LatencyCompensatorPass::runOnProgram(const ir::ProgramRef &program) {
+    latency_compensation(program, program->platform, getPassName());
 }
 
 /**
@@ -469,8 +469,8 @@ BufferDelayInserterPass::BufferDelayInserterPass(const Str &name) : AbstractPass
  * @brief  Insert Buffer Delays to the input program
  * @param  Program object to be extended with buffer delays
  */
-void BufferDelayInserterPass::runOnProgram(ir::Program &program) {
-    insert_buffer_delays(program, program.platform, getPassName());
+void BufferDelayInserterPass::runOnProgram(const ir::ProgramRef &program) {
+    insert_buffer_delays(program, program->platform, getPassName());
 }
 
 /**
@@ -484,8 +484,8 @@ CCLPostScheduleDecomposerPass::CCLPostScheduleDecomposerPass(const Str &name) : 
  * @brief  CC-Light specific Decomposition of the scheduled program
  * @param  Program object to be postscheduler decomposed
  */
-void CCLPostScheduleDecomposerPass::runOnProgram(ir::Program &program) {
-    arch::cc_light_eqasm_compiler().ccl_decompose_post_schedule(program, program.platform, getPassName());
+void CCLPostScheduleDecomposerPass::runOnProgram(const ir::ProgramRef &program) {
+    arch::cc_light_eqasm_compiler().ccl_decompose_post_schedule(program, program->platform, getPassName());
 }
 
 /**
@@ -499,8 +499,8 @@ QuantumSimWriterPass::QuantumSimWriterPass(const Str &name) : AbstractPass(name)
  * @brief  Generate QuantumSim output
  * @param  Program object to be simulated using quantumsim
  */
-void QuantumSimWriterPass::runOnProgram(ir::Program &program) {
-    arch::cc_light_eqasm_compiler().write_quantumsim_script(program, program.platform, getPassName());
+void QuantumSimWriterPass::runOnProgram(const ir::ProgramRef &program) {
+    arch::cc_light_eqasm_compiler().write_quantumsim_script(program, program->platform, getPassName());
 }
 
 /**
@@ -514,9 +514,9 @@ CCLCodeGeneratorPass::CCLCodeGeneratorPass(const Str &name) : AbstractPass(name)
  * @brief  Generate the QISA output from the input program
  * @param  Program object to be transformed into QISA output
  */
-void CCLCodeGeneratorPass::runOnProgram(ir::Program &program) {
+void CCLCodeGeneratorPass::runOnProgram(const ir::ProgramRef &program) {
     if (com::options::get("generate_code") == "yes") {
-        arch::cc_light_eqasm_compiler::qisa_code_generation(program, program.platform, getPassName());
+        arch::cc_light_eqasm_compiler::qisa_code_generation(program, program->platform, getPassName());
     }
 }
 
@@ -531,10 +531,10 @@ CPrinterPass::CPrinterPass(const Str &name) : AbstractPass(name) {
  * @brief  Generate the C code equivalent to the input program
  * @param  Program object to be transformed into QISA output
  */
-void CPrinterPass::runOnProgram(ir::Program &program) {
-    QL_DOUT("[OPENQL] Run CPrinter pass on program " << program.unique_name);
+void CPrinterPass::runOnProgram(const ir::ProgramRef &program) {
+    QL_DOUT("[OPENQL] Run CPrinter pass on program " << program->unique_name);
     
-    write_c(program, program.platform, getPassName());
+    write_c(program, program->platform, getPassName());
 }
 
 /**
@@ -548,14 +548,14 @@ RunExternalCompiler::RunExternalCompiler(const Str &name) : AbstractPass(name) {
  * @brief  Generate the C code equivalent to the input program
  * @param  Program object to be transformed into QISA output
  */
-void RunExternalCompiler::runOnProgram(ir::Program &program) {
+void RunExternalCompiler::runOnProgram(const ir::ProgramRef &program) {
     std::string extcompname, copycmd;
 
-    QL_DOUT("[OPENQL] Run ExternalCompiler pass with " << getPassName() << " compiler on program " << program.unique_name);
+    QL_DOUT("[OPENQL] Run ExternalCompiler pass with " << getPassName() << " compiler on program " << program->unique_name);
 
     //TODO: parametrize this so that we can run multiple external passes using this code! (use alias_name)
-    system(("cp test_output/"+program.name+".c .").c_str());
-    system(("./"+getPassName()+" -dumpall "+program.name+".c").c_str());
+    system(("cp test_output/"+program->name+".c .").c_str());
+    system(("./"+getPassName()+" -dumpall "+program->name+".c").c_str());
 }
 
 } // namespace ql

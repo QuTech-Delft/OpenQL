@@ -17,7 +17,7 @@ namespace visualize {
 
 using namespace utils;
 
-void visualizeMappingGraph(const ir::Program &program, const VisualizerConfiguration &configuration) {
+void visualizeMappingGraph(const ir::ProgramRef &program, const VisualizerConfiguration &configuration) {
     QL_IOUT("Visualizing mapping graph...");
 
     // Parse the layout and gate vector.
@@ -26,7 +26,7 @@ void visualizeMappingGraph(const ir::Program &program, const VisualizerConfigura
 
     // Parse the topology if it exists in the platform configuration file.
     Topology topology;
-    const Bool parsedTopology = layout.getUseTopology() ? parseTopology(program.platform.topology, topology) : false;
+    const Bool parsedTopology = layout.getUseTopology() ? parseTopology(program->platform->topology, topology) : false;
     if (parsedTopology) {
         QL_DOUT("Succesfully parsed topology.");
         QL_DOUT("xSize: " << topology.xSize);
@@ -56,7 +56,7 @@ void visualizeMappingGraph(const ir::Program &program, const VisualizerConfigura
     const Int rowHeight = qubitDiameter + (layout.getShowRealIndices() ? layout.getFontHeightReal() + layout.getRealIndexSpacing() * 2 : 0);
 
     // Calculate the virtual qubits mapping for each cycle.
-    const Int cycleDuration = utoi(program.platform.cycle_time);
+    const Int cycleDuration = utoi(program->platform->cycle_time);
     Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
     if (amountOfCycles <= 0) {
         QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");
@@ -184,12 +184,12 @@ void visualizeMappingGraph(const ir::Program &program, const VisualizerConfigura
     imageOutput.image.display("Mapping Graph");
 }
 
-void computeMappingPerCycle(const MappingGraphLayout layout,
+void computeMappingPerCycle(const MappingGraphLayout &layout,
                             Vec<Vec<Int>> &virtualQubits,
                             Vec<Bool> &mappingChangedPerCycle,
                             const Vec<GateProperties> &gates,
-                            const Int amountOfCycles,
-                            const Int amountOfQubits) {
+                            Int amountOfCycles,
+                            Int amountOfQubits) {
     // Initialize the first cycle with a virtual index = real index mapping.
     for (Int qubitIndex = 0; qubitIndex < amountOfQubits; qubitIndex++) {
         const Int virtualIndex = layout.getInitDefaultVirtuals() ? qubitIndex : -1;
@@ -272,7 +272,7 @@ void computeMappingPerCycle(const MappingGraphLayout layout,
     }
 }
 
-Bool parseTopology(Json topologyJson, Topology &topology) {
+Bool parseTopology(const Json &topologyJson, Topology &topology) {
     const Str fallbackMessage = "Falling back on basic visualization. Missing attribute: ";
     if (topologyJson.count("x_size") == 1) { topology.xSize = topologyJson["x_size"]; } else { QL_IOUT(fallbackMessage << "x_size"); return false; }
     if (topologyJson.count("y_size") == 1) { topology.ySize = topologyJson["y_size"]; } else { QL_IOUT(fallbackMessage << "y_size"); return false; }

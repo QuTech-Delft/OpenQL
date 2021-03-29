@@ -28,7 +28,7 @@ void resource_t::Print(const Str &s) {
 }
 
 platform_resource_manager_t::platform_resource_manager_t(
-    const quantum_platform &platform,
+    const plat::PlatformRef &platform,
     scheduling_direction_t dir
 ) {
     // DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
@@ -70,7 +70,7 @@ platform_resource_manager_t &platform_resource_manager_t::operator=(const platfo
 utils::Bool platform_resource_manager_t::available(
     utils::UInt op_start_cycle,
     const ir::GateRef &ins,
-    const quantum_platform &platform
+    const plat::PlatformRef &platform
 ) const {
     // DOUT("checking availability of resources for: " << ins->qasm());
     for (auto rptr : resource_ptrs) {
@@ -87,7 +87,7 @@ utils::Bool platform_resource_manager_t::available(
 void platform_resource_manager_t::reserve(
     utils::UInt op_start_cycle,
     const ir::GateRef &ins,
-    const quantum_platform &platform
+    const plat::PlatformRef &platform
 ) {
     // DOUT("reserving resources for: " << ins->qasm());
     for (auto rptr : resource_ptrs) {
@@ -114,11 +114,11 @@ resource_manager_t::resource_manager_t() {
 // (platform,dir) parameterized resource_manager_t
 // dynamically allocating platform specific platform_resource_manager_t depending on platform
 resource_manager_t::resource_manager_t(
-    const quantum_platform &platform,
+    const plat::PlatformRef &platform,
     scheduling_direction_t dir
 ) {
     // DOUT("Constructing (platform,dir) parameterized resource_manager_t");
-    Str eqasm_compiler_name = platform.eqasm_compiler_name;
+    Str eqasm_compiler_name = platform->eqasm_compiler_name;
 
     if (eqasm_compiler_name == "cc_light_compiler") {
         platform_resource_manager_ptr = new cc_light_resource_manager_t(platform, dir);
@@ -157,7 +157,7 @@ resource_manager_t &resource_manager_t::operator=(const resource_manager_t &rhs)
 utils::Bool resource_manager_t::available(
     utils::UInt op_start_cycle,
     const ir::GateRef &ins,
-    const quantum_platform &platform
+    const plat::PlatformRef &platform
 ) const {
     // DOUT("resource_manager.available()");
     return platform_resource_manager_ptr->available(op_start_cycle, ins, platform);
@@ -166,7 +166,7 @@ utils::Bool resource_manager_t::available(
 void resource_manager_t::reserve(
     utils::UInt op_start_cycle,
     const ir::GateRef &ins,
-    const quantum_platform &platform
+    const plat::PlatformRef &platform
 ) {
     // DOUT("resource_manager.reserve()");
     platform_resource_manager_ptr->reserve(op_start_cycle, ins, platform);

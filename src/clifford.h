@@ -5,8 +5,8 @@
 #pragma once
 
 #include "ql/utils/str.h"
+#include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
-#include "platform.h"
 
 namespace ql {
 
@@ -14,8 +14,8 @@ namespace ql {
  * Clifford sequence optimizer.
  */
 void clifford_optimize(
-    ir::Program &programp,
-    const quantum_platform &platform,
+    const ir::ProgramRef &programp,
+    const plat::PlatformRef &platform,
     const utils::Str &passname
 );
 

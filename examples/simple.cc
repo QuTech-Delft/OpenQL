@@ -3,13 +3,13 @@
 
 int main(int argc, char **argv) {
     // create platform
-    ql::quantum_platform platf("seven_qubits_chip", "hardware_config_cc_light.json");
+    auto platf = ql::plat::PlatformRef::make("seven_qubits_chip", "hardware_config_cc_light.json");
 
     // create program
-    auto prog = ql::utils::make_node<ql::ir::Program>("aProgram", platf, 2);
+    auto prog = ql::ir::ProgramRef::make("aProgram", platf, 2);
 
     // create kernel
-    auto k = ql::utils::make_node<ql::ir::Kernel>("aKernel", platf, 2);
+    auto k = ql::ir::KernelRef::make("aKernel", platf, 2);
 
     k->gate("prepz", 0);
     k->gate("prepz", 1);
