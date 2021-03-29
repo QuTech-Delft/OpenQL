@@ -11,19 +11,17 @@
 #include "types_cc.h"
 
 #include "ql/ir/ir.h"
-#include "eqasm_compiler.h"
 #include "codegen_cc.h"
 
 namespace ql {
 namespace arch {
 namespace cc {
 
-class Backend : public eqasm_compiler {
+class Backend {
 public:
     Backend() = default;
-    ~Backend() override = default;
 
-    void compile(const ir::ProgramRef &program, const plat::PlatformRef &platform) override;
+    void compile(const ir::ProgramRef &program, const plat::PlatformRef &platform);
 
 private:
     static Str kernelLabel(const ir::KernelRef &k);

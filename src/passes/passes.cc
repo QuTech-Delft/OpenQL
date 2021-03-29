@@ -282,27 +282,17 @@ BackendCompilerPass::BackendCompilerPass(const Str &name) : AbstractPass(name) {
 void BackendCompilerPass::runOnProgram(const ir::ProgramRef &program) {
     QL_DOUT("run BackendCompilerPass with name = " << getPassName() << " on program " << program->name);
     
-    Opt<eqasm_compiler> backend_compiler;
-    
     Str eqasm_compiler_name = program->platform->eqasm_compiler_name;
     //getPassOptions()->getOption("eqasm_compiler_name");
     
     if (eqasm_compiler_name == "cc_light_compiler") {
-        backend_compiler.emplace<arch::cc_light_eqasm_compiler>();
+        arch::cc_light_eqasm_compiler::compile(program, program->platform);
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-        backend_compiler.emplace<arch::cc::Backend>();
+        arch::cc::Backend().compile(program, program->platform);
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
     
-    ///@todo-rn: Decide how to construct backend:
-    // 1) we can run backend as one big composite engine, e.g.,
-    //assert(backend_compiler);
-    backend_compiler->compile(program, program->platform); //called here
-    // OR
-    // 2) in the user program add one for one individual backed passes.
-    
-    backend_compiler.reset();
 }
 
 /**

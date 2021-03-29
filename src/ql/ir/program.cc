@@ -42,24 +42,7 @@ Program::Program(
     breg_count(nbregs)
 {
     default_config = true;
-    needs_backend_compiler = true;
     platformInitialized = true;
-    eqasm_compiler_name = platform->eqasm_compiler_name;
-    backend_compiler.reset();
-    if (eqasm_compiler_name.empty()) {
-        QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
-    } else if (eqasm_compiler_name == "none") {
-        needs_backend_compiler = false;
-    } else if (eqasm_compiler_name == "qx") {
-        // at the moment no qx specific thing is done
-        needs_backend_compiler = false;;
-    } else if (eqasm_compiler_name == "cc_light_compiler") {
-        backend_compiler.emplace<arch::cc_light_eqasm_compiler>();
-    } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-        backend_compiler.emplace<arch::cc::Backend>();
-    } else {
-        QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
-    }
 
     if (qubit_count > platform->qubit_number) {
         QL_FATAL("number of qubits requested in program '" + to_string(qubit_count) + "' is greater than the qubits available in platform '" + to_string(platform->qubit_number) + "'" );
@@ -331,19 +314,19 @@ void Program::compile() {
     std::unique_ptr<quantum_compiler> compiler(new quantum_compiler("Hard Coded Compiler"));
 
     // backend passes
-    QL_DOUT("Calling backend compiler passes for eqasm_compiler_name: " << eqasm_compiler_name);
-    if (eqasm_compiler_name.empty()) {
+    QL_DOUT("Calling backend compiler passes for eqasm_compiler_name: " << platform->eqasm_compiler_name);
+    if (platform->eqasm_compiler_name.empty()) {
         QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
-    } else if (eqasm_compiler_name == "none" || eqasm_compiler_name == "qx") {
+    } else if (platform->eqasm_compiler_name == "none" || platform->eqasm_compiler_name == "qx") {
         QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
         compiler->loadPassesFromConfigFile("QX_compiler", compilerCfgPath+"qx_compiler_cfg.json");
-    } else if (eqasm_compiler_name == "cc_light_compiler") {
+    } else if (platform->eqasm_compiler_name == "cc_light_compiler") {
         compiler->loadPassesFromConfigFile("CCLight_compiler", compilerCfgPath+"cclight_compiler_cfg.json");
-        QL_DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
-    } else if (eqasm_compiler_name == "eqasm_backend_cc") {
+        QL_DOUT("Returned from call backend_compiler->compile for " << platform->eqasm_compiler_name);
+    } else if (platform->eqasm_compiler_name == "eqasm_backend_cc") {
         compiler->loadPassesFromConfigFile("CC_compiler", compilerCfgPath+"cc_compiler_cfg.json");
     } else {
-        QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
+        QL_FATAL("the '" << platform->eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
 
     //compile with program

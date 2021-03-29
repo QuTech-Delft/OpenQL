@@ -228,7 +228,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/cqasm/cqasm_reader.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/unitary.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/mapper.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/eqasm_compiler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/interactionMatrix.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/metrics.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"

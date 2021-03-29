@@ -12,9 +12,6 @@
 #include "ql/plat/platform.h"
 
 namespace ql {
-
-class eqasm_compiler;
-
 namespace ir {
 
 class Program;
@@ -36,9 +33,6 @@ public:
     utils::UInt                 qubit_count;
     utils::UInt                 creg_count;
     utils::UInt                 breg_count;
-    utils::Str                  eqasm_compiler_name;
-    utils::Bool                 needs_backend_compiler;
-    utils::Ptr<eqasm_compiler>  backend_compiler;
 
 public:
     explicit Program(const utils::Str &n);

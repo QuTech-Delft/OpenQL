@@ -517,10 +517,10 @@ Str ir2qisa(
     return ssqisa.str();
 }
 
-Str cc_light_eqasm_compiler::get_qisa_prologue(const ir::Kernel &k) {
+Str cc_light_eqasm_compiler::get_qisa_prologue(const ir::KernelRef &k) {
     StrStrm ss;
 
-    if (k.type == ir::KernelType::IF_START) {
+    if (k->type == ir::KernelType::IF_START) {
 #if 0
         // Branching macros are not yet supported by assembler,
             // so for now the following can not be used
@@ -528,33 +528,33 @@ Str cc_light_eqasm_compiler::get_qisa_prologue(const ir::Kernel &k) {
                <<" r" << (k.br_condition->operands[0])->id <<", r" << (k.br_condition->operands[1])->id
                << ", " << k.name << "_end" << std::endl;
 #else
-        ss  <<"    cmp r" << (k.br_condition->operands[0])->as_register().id
-            <<", r" << (k.br_condition->operands[1])->as_register().id << std::endl;
+        ss  <<"    cmp r" << (k->br_condition->operands[0])->as_register().id
+            <<", r" << (k->br_condition->operands[1])->as_register().id << std::endl;
         ss  <<"    nop" << std::endl;
-        ss  <<"    br " << k.br_condition->inv_operation_name << ", "
-            << k.name << "_end" << std::endl;
+        ss  <<"    br " << k->br_condition->inv_operation_name << ", "
+            << k->name << "_end" << std::endl;
 #endif
 
     }
 
-    if (k.type == ir::KernelType::ELSE_START) {
+    if (k->type == ir::KernelType::ELSE_START) {
 #if 0
         // Branching macros are not yet supported by assembler,
             // so for now the following can not be used
             ss << "    b" << k.br_condition->operation_name <<" r" << (k.br_condition->operands[0])->id
                <<", r" << (k.br_condition->operands[1])->id << ", " << k.name << "_end" << std::endl;
 #else
-        ss  <<"    cmp r" << (k.br_condition->operands[0])->as_register().id
-            <<", r" << (k.br_condition->operands[1])->as_register().id << std::endl;
+        ss  <<"    cmp r" << (k->br_condition->operands[0])->as_register().id
+            <<", r" << (k->br_condition->operands[1])->as_register().id << std::endl;
         ss  <<"    nop" << std::endl;
-        ss  <<"    br " << k.br_condition->operation_name << ", "
-            << k.name << "_end" << std::endl;
+        ss  <<"    br " << k->br_condition->operation_name << ", "
+            << k->name << "_end" << std::endl;
 #endif
     }
 
-    if (k.type == ir::KernelType::FOR_START) {
+    if (k->type == ir::KernelType::FOR_START) {
         // for now r29, r30, r31 are used as temporaries
-        ss << "    ldi r29" <<", " << k.iterations << std::endl;
+        ss << "    ldi r29" <<", " << k->iterations << std::endl;
         ss << "    ldi r30" <<", " << 1 << std::endl;
         ss << "    ldi r31" <<", " << 0 << std::endl;
     }
@@ -562,26 +562,26 @@ Str cc_light_eqasm_compiler::get_qisa_prologue(const ir::Kernel &k) {
     return ss.str();
 }
 
-Str cc_light_eqasm_compiler::get_qisa_epilogue(const ir::Kernel &k) {
+Str cc_light_eqasm_compiler::get_qisa_epilogue(const ir::KernelRef &k) {
     StrStrm ss;
 
-    if (k.type == ir::KernelType::DO_WHILE_END) {
+    if (k->type == ir::KernelType::DO_WHILE_END) {
 #if 0
         // Branching macros are not yet supported by assembler,
             // so for now the following can not be used
             ss << "    b" << k.br_condition->operation_name <<" r" << (k.br_condition->operands[0])->id
                <<", r" << (k.br_condition->operands[1])->id << ", " << k.name << "_start" << std::endl;
 #else
-        ss  <<"    cmp r" << (k.br_condition->operands[0])->as_register().id
-            <<", r" << (k.br_condition->operands[1])->as_register().id << std::endl;
+        ss  <<"    cmp r" << (k->br_condition->operands[0])->as_register().id
+            <<", r" << (k->br_condition->operands[1])->as_register().id << std::endl;
         ss  <<"    nop" << std::endl;
-        ss  <<"    br " << k.br_condition->operation_name << ", "
-            << k.name << "_start" << std::endl;
+        ss  <<"    br " << k->br_condition->operation_name << ", "
+            << k->name << "_start" << std::endl;
 #endif
     }
 
-    if (k.type == ir::KernelType::FOR_END) {
-        Str kname(k.name);
+    if (k->type == ir::KernelType::FOR_END) {
+        Str kname(k->name);
         std::replace( kname.begin(), kname.end(), '_', ' ');
         std::istringstream iss(kname);
         Vec<Str> tokens{ std::istream_iterator<Str>{iss},
@@ -1090,11 +1090,11 @@ void cc_light_eqasm_compiler::qisa_code_generation(
     sskernels_qisa << "start:" << std::endl;
     for (auto &kernel : program->kernels) {
         sskernels_qisa << std::endl << kernel->name << ":" << std::endl;
-        sskernels_qisa << get_qisa_prologue(*kernel);
+        sskernels_qisa << get_qisa_prologue(kernel);
         if (!kernel->c.empty()) {
             sskernels_qisa << ir2qisa(kernel, platform, mask_manager);
         }
-        sskernels_qisa << get_qisa_epilogue(*kernel);
+        sskernels_qisa << get_qisa_epilogue(kernel);
     }
     sskernels_qisa << std::endl
                    << "    br always, start" << std::endl

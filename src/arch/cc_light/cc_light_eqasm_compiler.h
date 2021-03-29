@@ -12,7 +12,6 @@
 #include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
 #include "arch/cc_light/cc_light_eqasm.h"
-#include "eqasm_compiler.h"
 
 namespace ql {
 namespace arch {
@@ -82,20 +81,15 @@ utils::Str ir2qisa(const ir::KernelRef &kernel, const plat::PlatformRef &platfor
 /**
  * cclight eqasm compiler
  */
-class cc_light_eqasm_compiler : public eqasm_compiler {
-public:
-
-    cc_light_eqasm_program_t cc_light_eqasm_instructions;
-    utils::UInt total_exec_time = 0;
-
+class cc_light_eqasm_compiler {
 public:
 
     // FIXME: should be private
-    static utils::Str get_qisa_prologue(const ir::Kernel &k);
-    static utils::Str get_qisa_epilogue(const ir::Kernel &k);
+    static utils::Str get_qisa_prologue(const ir::KernelRef &k);
+    static utils::Str get_qisa_epilogue(const ir::KernelRef &k);
 
-    void ccl_decompose_pre_schedule(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname);
-    void ccl_decompose_post_schedule(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname);
+    static void ccl_decompose_pre_schedule(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname);
+    static void ccl_decompose_post_schedule(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname);
     static void ccl_decompose_post_schedule_bundles(ir::Bundles &bundles_dst, const plat::PlatformRef &platform);
     static void map(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname, utils::Str *mapStatistics);
 
@@ -114,7 +108,7 @@ public:
     // but what if there are two x90s, with different physical attributes (e.g. different amplitudes?)? Does this happen?
 
     static void ccl_prep_code_generation(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname);
-    void write_quantumsim_script(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname);
+    static void write_quantumsim_script(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname);
 
     /**
      * program-level compilation of qasm to cc_light_eqasm
@@ -122,7 +116,7 @@ public:
     static void compile(const utils::Str &prog_name, ir::Circuit &ckt, const plat::PlatformRef &platform);
 
     // kernel level compilation
-    void compile(const ir::ProgramRef &program, const plat::PlatformRef &platform) override;
+    static void compile(const ir::ProgramRef &program, const plat::PlatformRef &platform);
 
     /**
      * decompose
