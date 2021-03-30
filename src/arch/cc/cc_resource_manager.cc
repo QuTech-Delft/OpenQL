@@ -386,7 +386,7 @@ void cc_detuned_qubits_resource_t::reserve(
 | cc_resource_manager
 \************************************************************************/
 
-static Map<UInt,UInt> qubit2instrument(const Json &instrument, UInt meas_unit) {
+static Map<UInt,UInt> qubit2instrument(const Json &instrument, UInt unit) {
     Map<UInt,UInt> ret;
 
     auto qubits = json_get<const Json &>(instrument, "qubits");
@@ -395,8 +395,8 @@ static Map<UInt,UInt> qubit2instrument(const Json &instrument, UInt meas_unit) {
         const Json qubitsOfGroup = qubits[group];
         if (qubitsOfGroup.size() == 1) {    // FIXME: specific for measurements
             Int qubit = qubitsOfGroup[0].get<Int>();
-            QL_IOUT("instrument " << meas_unit << "/" << instrument["name"] << ": adding qubit " << qubit);
-            ret.set(qubit) = meas_unit;
+            QL_IOUT("instrument " << unit << "/" << instrument["name"] << ": adding qubit " << qubit);
+            ret.set(qubit) = unit;
         }
     }
     return ret;
@@ -421,33 +421,40 @@ cc_resource_manager::cc_resource_manager(
     Settings settings;
     settings.loadBackendSettings(platform);
 
-    // add meas resources based on instrument definitions
+    // parse instrument definitions for resource information
     Map<UInt,UInt> qubit2meas;
     UInt meas_unit = 0;
     Map<UInt,UInt> qubit2flux;
     for (UInt i=0; i<settings.getInstrumentsSize(); i++) {
         const Json &instrument = settings.getInstrumentAtIdx(i);
         Str signal_type = json_get<Str>(instrument, "signal_type");
-        if ("measure" == signal_type) {    // FIXME: this adds semantics to "signal_type", which we do nowhere else
+        // FIXME: this adds semantics to "signal_type", whereas the names are otherwise fully up to the user
+        if ("measure" == signal_type) {
             Map<UInt,UInt> map = qubit2instrument(instrument, meas_unit);
             qubit2meas.insert(map.begin(), map.end());
             meas_unit++;
         } else if ("flux" == signal_type) {
             /*  we map all fluxing on a single 'unit': the actual resource we'd like to manage is a *signal* that connects
                 to a flux line of a qubit. On a single instrument (e.g. ZI HDAWG) these signals cannot be triggered
-                during playback of other signals. Note however, that a single "flux" gate may trigger signals on different
-                instruments. During scheduling, we don't know about these signals yet though, and we also don't particularly
-                care about keeping the instruments independent where possible.
+                during playback of other signals.
+                Note however, that a single "flux" gate may trigger signals on different instruments. During scheduling,
+                we don't know about these signals yet though, and we also don't particularly care about keeping the
+                instruments independent where possible.
+                Also note that all of this breaks down if/when we want to support stuff like "flux assisted measurement",
+                where the flux line is manipulated during a measurement, and we can no longer tie types like "flux" and
+                "measurement" to a gate, but must really work with th signals.
             */
             Map<UInt,UInt> map = qubit2instrument(instrument, 0);
             qubit2flux.insert(map.begin(), map.end());
         }
     }
+
+    // add resources based on instrument definitions
     UInt num_meas_unit = meas_unit;
     resource_ptrs.push_back(new ResourceSharedInstrument(platform, dir, "meas", num_meas_unit, qubit2meas, Settings::isReadout));
     resource_ptrs.push_back(new ResourceSharedInstrument(platform, dir, "flux", 1, qubit2flux, Settings::isFlux));
 
-    // handle platform resources
+    // handle platform resource definitions
     for (auto it = platform.resources.cbegin(); it != platform.resources.cend(); ++it) {
         Str key = it.key();
         if (key == "qubits" || key == "meas_units" || key == "qwgs" || key == "edges" || key == "detuned_qubits") {  // keys used by CC-light
