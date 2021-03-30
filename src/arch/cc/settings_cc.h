@@ -16,7 +16,7 @@ namespace ql {
 namespace arch {
 namespace cc {
 
-class Settings {
+class Settings {    // FIXME: inherit from quantum_platform?
 public: // types
     struct SignalDef {
         Json signal;                // a copy of the signal node found
@@ -53,12 +53,14 @@ public: // functions
     ~Settings() = default;
 
     void loadBackendSettings(const quantum_platform &platform);
+    // FIXME add const where relevant:
     Str getReadoutMode(const Str &iname);
     Bool isReadout(const Str &iname);
     static Bool isReadout(const quantum_platform &platform, const Str &iname);
     static Bool isFlux(const quantum_platform &platform, const Str &iname);
     Bool isPragma(const Str &iname);
     RawPtr<const Json> getPragma(const Str &iname);
+    static SignalDef findSignalDefinition(const quantum_platform &_platform, const Json &instruction, const Str &iname);
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
     InstrumentInfo getInstrumentInfo(UInt instrIdx) const;
     InstrumentControl getInstrumentControl(UInt instrIdx) const;

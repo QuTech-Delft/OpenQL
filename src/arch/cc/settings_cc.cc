@@ -76,6 +76,9 @@ Bool Settings::isReadout(const Str &iname) {
 }
 
 // determine whether this is a readout instruction
+// FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL. It is used by the CC-light RC scheduler
+// FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
+// FIXME: gate semantics should be handled at the OpenQL core
 Bool Settings::isReadout(const quantum_platform &_platform, const Str &iname) {
 #if 1    // new semantics
     const Json &instruction = _platform.find_instruction(iname);
@@ -98,17 +101,25 @@ Bool Settings::isReadout(const quantum_platform &_platform, const Str &iname) {
 
 
 Bool Settings::isFlux(const quantum_platform &_platform, const Str &iname) {
-    // FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL, so we need a better criterion
-    // FIXME: this is no longer true with the RC scheduler
-    // FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
-    // FIXME: gate semantics should be handled at the OpenQL core
 
+#if 1   //new semantics
+    const Json &instruction = _platform.find_instruction(iname);
+    SignalDef sd = findSignalDefinition(_platform, instruction, iname);
+    if (!QL_JSON_EXISTS(sd.signal[0], "type")) {   // NB: looks at first signal only
+        QL_IOUT("no type detected for '" << iname << "', signal=" << sd.signal);
+        return false;
+    } else {
+        QL_IOUT("type detected for '" << iname << "': " << sd.signal[0]["type"]);
+        return sd.signal[0]["type"] == "flux";
+    }
+#else
     const Json &instruction = _platform.find_instruction(iname);
     if (!QL_JSON_EXISTS(instruction, "type")) {
         return false;
     } else {
         return instruction["type"] == "flux";
     }
+#endif
 }
 
 
@@ -130,14 +141,21 @@ RawPtr<const Json> Settings::getPragma(const Str &iname) {
 
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
-Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, const Str &iname) const {
+Settings::SignalDef Settings::findSignalDefinition(const quantum_platform &_platform, const Json &instruction, const Str &iname) {
     SignalDef ret;
 
     Str instructionPath = "instructions/" + iname;
     QL_JSON_ASSERT(instruction, "cc", instructionPath);
     if (QL_JSON_EXISTS(instruction["cc"], "ref_signal")) {                      // optional syntax: "ref_signal"
+        // duplicate part of loadBackendSettings, because we want to be a static function (for use by ResourceSharedInstrument through isFlux())
+        QL_JSON_ASSERT(_platform.hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
+        const Json &jsonBackendSettings = _platform.hardware_settings["eqasm_backend_cc"];
+        QL_JSON_ASSERT(jsonBackendSettings, "signals", "eqasm_backend_cc");
+        const Json &jsonSignals = jsonBackendSettings["signals"];
+
+        // now dereference ref_signal
         Str refSignal = instruction["cc"]["ref_signal"].get<Str>();
-        ret.signal = (*jsonSignals)[refSignal];                                 // poor man's JSON pointer
+        ret.signal = jsonSignals[refSignal];                                 // poor man's JSON pointer
         if(ret.signal.empty()) {
             QL_JSON_FATAL(
                 "instruction '" << iname
@@ -152,6 +170,10 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, cons
         ret.path = instructionPath + "/cc/signal";
     }
     return ret;
+}
+
+Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, const Str &iname) const {
+    return findSignalDefinition(*platform, instruction, iname);
 }
 
 

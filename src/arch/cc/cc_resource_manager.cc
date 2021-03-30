@@ -4,8 +4,9 @@
  */
 
 #include "cc_resource_manager.h"
-#include "resources.h"
 #include "settings_cc.h"
+
+#include "resources.h"
 
 #include "utils/json.h"
 
