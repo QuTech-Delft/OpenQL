@@ -26,6 +26,9 @@ struct is_instantiation_of<TT<T>, TT> : std::true_type { };
  */
 template <class T>
 class Ptr {
+public:
+    using Data = T;
+
 private:
 
     /**

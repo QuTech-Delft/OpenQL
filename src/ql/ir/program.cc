@@ -6,8 +6,6 @@
 
 #include "ql/utils/filesystem.h"
 #include "ql/com/options/options.h"
-#include "arch/cc_light/cc_light_eqasm_compiler.h"
-#include "arch/cc/backend_cc.h"
 #include "compiler.h"
 #include "interactionMatrix.h"
 #include "scheduler.h"

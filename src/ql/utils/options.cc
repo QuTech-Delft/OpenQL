@@ -584,13 +584,13 @@ void Options::reset() {
 /**
  * Writes a help message for this option to the given stream (or stdout).
  */
-void Options::help(std::ostream &os) const {
+void Options::help(std::ostream &os, const utils::Str &line_prefix) const {
     if (options.empty()) {
-        os << "no options have been added!" << std::endl;
+        os << line_prefix << "no options exist" << std::endl;
         return;
     }
     for (const auto &it : options) {
-        os << it.second << std::endl;
+        os << line_prefix << it.second << std::endl;
     }
 }
 
@@ -598,16 +598,16 @@ void Options::help(std::ostream &os) const {
  * Dumps all options (or only options which were explicitly set) to the
  * given stream (or stdout).
  */
-void Options::dump(bool only_set, std::ostream &os) const {
+void Options::dump(bool only_set, std::ostream &os, const utils::Str &line_prefix) const {
     bool any = false;
     for (const auto &it : options) {
         if (it.second->is_set() || !only_set) {
-            os << it.second->get_name() << ": " << it.second->as_str() << std::endl;
+            os << line_prefix << it.second->get_name() << ": " << it.second->as_str() << std::endl;
             any = true;
         }
     }
     if (!any) {
-        os << "no options to dump" << std::endl;
+        os << line_prefix << "no options to dump" << std::endl;
     }
 }
 

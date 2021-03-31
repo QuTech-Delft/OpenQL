@@ -462,13 +462,20 @@ public:
     /**
      * Writes a help message for this option to the given stream (or stdout).
      */
-    void help(std::ostream &os = std::cout) const;
+    void help(
+        std::ostream &os = std::cout,
+        const utils::Str &line_prefix = ""
+    ) const;
 
     /**
      * Dumps all options (or only options which were explicitly set) to the
      * given stream (or stdout).
      */
-    void dump(bool only_set = false, std::ostream &os = std::cout) const;
+    void dump(
+        bool only_set = false,
+        std::ostream &os = std::cout,
+        const utils::Str &line_prefix = ""
+    ) const;
 
 };
 

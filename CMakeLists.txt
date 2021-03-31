@@ -204,6 +204,9 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/circuit.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/program.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/condition.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/pass_types.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/pass_manager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/image.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/common.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/circuit.cc"
@@ -238,7 +241,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/commute_variation.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_resource_manager.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/driv/abstract_pass.cc"
 )
 
 # Generate a header file with configuration options that cannot be compiled
