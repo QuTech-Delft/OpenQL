@@ -379,11 +379,28 @@ class Test_central_controller(unittest.TestCase):
         k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs, num_bregs)
 
         # NB: requires resource to manage fluxing
-        k.gate("cz", [10, 14])  # no associated park
-        k.gate("cz", [9, 11])   # parks 12
+        k.gate("_cz", [10, 14])  # no associated park
+        k.gate("_cz", [9, 11])   # parks 12
         k.gate('x', [10])
-
         p.add_kernel(k)
+
+        ql.set_option('log_level', 'LOG_DEBUG') # override log level
+        p.compile()
+
+    def test_rc_sched_prepz(self):
+        num_qubits = 17
+
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq.json'))
+
+        p = ql.Program('test_rc_sched_prepz', platform, num_qubits, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs, num_bregs)
+
+        k.gate('x', [2])
+        k.gate('prepz', [1,2])
+        k.gate('x', [1])
+        p.add_kernel(k)
+
+        ql.set_option('log_level', 'LOG_DEBUG') # override log level
         p.compile()
 
     # based on DCL test program

@@ -58,6 +58,11 @@ UInt quantum_platform::get_qubit_number() const {
 }
 
 // find settings for custom gate, preventing JSON exceptions
+// FIXME:
+// - rename find_custom_instruction
+// - compare to quantum_kernel::add_custom_gate_if_available, which uses instruction_map
+// NB: iname can refer to specialized or generalized gate name
+#if 0
 const Json &quantum_platform::find_instruction(const Str &iname) const {
     // search the JSON defined instructions, to prevent JSON exception if key does not exist
     if (!QL_JSON_EXISTS(instruction_settings, iname)) {
@@ -65,6 +70,17 @@ const Json &quantum_platform::find_instruction(const Str &iname) const {
     }
     return instruction_settings[iname];
 }
+#else   // FIXME: hack to allow specialized gates in gate decomposition to refer to generalized gates, should be handled in gate decomposition
+const Json &quantum_platform::find_instruction(const Str &iname) const {
+    if (QL_JSON_EXISTS(instruction_settings, iname)) {   // full name, potentially specialized
+        return instruction_settings[iname];
+    } else {
+        Str stripped_name = iname.substr(0, iname.find(' '));
+        return instruction_settings[stripped_name];
+    }
+    QL_FATAL("JSON file: instruction not found: '" << iname << "'");
+}
+#endif
 
 
 // find instruction type for custom gate

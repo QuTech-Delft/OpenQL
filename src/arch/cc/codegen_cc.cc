@@ -974,7 +974,8 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
     Str sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
 
     // get instruction signal type (e.g. "mw", "flux", etc)
-    // NB: instructionSignalType is different from "instruction/type" provided by find_instruction_type, although some identical strings are used). NB: that key is no longer used by the 'core' of OpenQL
+    // NB: instructionSignalType is different from "instruction/type" provided by find_instruction_type, although some identical strings are used).
+    // NB: that key is no longer used by the 'core' of OpenQL, only by the RC scheduler using CC-light resources
     Str instructionSignalType = json_get<Str>(sd.signal[s], "type", signalSPath);
 
     /************************************************************************\
@@ -990,7 +991,11 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
         // verify signal dimensions
         UInt channelsPergroup = ret.si.ic.controlModeGroupSize;
         if (instructionSignalValue.size() != channelsPergroup) {
+#if 1   // FIXME: we're changing semantics of signals, and are getting some false alarms now
+            QL_WOUT(
+#else
             QL_JSON_FATAL(
+#endif
                 "signal dimension mismatch on instruction '" << iname
                 << "' : control mode '" << ret.si.ic.refControlMode
                 << "' requires " <<  channelsPergroup

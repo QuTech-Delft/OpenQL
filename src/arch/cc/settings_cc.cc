@@ -99,17 +99,16 @@ Bool Settings::isReadout(const quantum_platform &_platform, const Str &iname) {
 #endif
 }
 
-
 Bool Settings::isFlux(const quantum_platform &_platform, const Str &iname) {
 
 #if 1   //new semantics
     const Json &instruction = _platform.find_instruction(iname);
     SignalDef sd = findSignalDefinition(_platform, instruction, iname);
-    if (!QL_JSON_EXISTS(sd.signal[0], "type")) {   // NB: looks at first signal only
-        QL_IOUT("no type detected for '" << iname << "', signal=" << sd.signal);
+    if (!QL_JSON_EXISTS(sd.signal[0], "type")) {   // FIXME: looks at first signal only
+        QL_DOUT("no type detected for '" << iname << "', signal=" << sd.signal);
         return false;
     } else {
-        QL_IOUT("type detected for '" << iname << "': " << sd.signal[0]["type"]);
+        QL_DOUT("type detected for '" << iname << "': " << sd.signal[0]["type"]);
         return sd.signal[0]["type"] == "flux";
     }
 #else
