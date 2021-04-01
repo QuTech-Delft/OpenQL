@@ -293,9 +293,19 @@ public:
      * specifies the sub-passes for the group.
      */
     static PassManager from_json(
-        utils::Json &json,
+        const utils::Json &json,
         const PassFactory &factory = {}
     );
+
+    /**
+     * Returns a reference to the root pass group.
+     */
+    const PassRef &get_root();
+
+    /**
+     * Returns a reference to the root pass group.
+     */
+    CPassRef get_root() const;
 
     /**
      * Dumps documentation for all available pass types, as well as the option

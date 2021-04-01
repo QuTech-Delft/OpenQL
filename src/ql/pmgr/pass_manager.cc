@@ -240,16 +240,98 @@ PassManager::PassManager(
 }
 
 /**
+ * Load passes into the given pass group from a JSON array of pass descriptions.
+ */
+static void add_passes_from_json(const PassRef &group, const utils::Json &json) {
+    for (const auto &j : json) {
+        // TODO
+        throw utils::Exception("not yet implemented");
+    }
+}
+
+/**
  * Constructs a pass manager based on the given JSON configuration.
  *
  * Refer to the header file for details.
  */
 PassManager PassManager::from_json(
-    utils::Json &json,
+    const utils::Json &json,
     const PassFactory &factory
 ) {
-    throw utils::Exception("not yet implemented");
-    // TODO
+    // TODO JvS: need proper schema validation in some JSON structure wrapper!
+    //  All this repetition is bad.
+
+    // Look for the strategy key. Ignore any other keys in the toplevel
+    // structure.
+    auto it = json.find("strategy");
+    if (it == json.end()) {
+        throw utils::Exception("missing strategy key");
+    }
+    const auto &strategy = *it;
+    if (strategy.type() != utils::Json::value_t::object) {
+        throw utils::Exception("strategy key must be an object");
+    }
+
+    // Read the strategy structure.
+    utils::Str architecture = {};
+    utils::Set<utils::Str> dnu = {};
+    const utils::Json *passes = nullptr;
+    for (it = strategy.begin(); it != strategy.end(); ++it) {
+        if (it.key() == "architecture") {
+            if (it.value().type() == utils::Json::value_t::string) {
+                architecture = it.value().get<utils::Str>();
+            } else {
+                throw utils::Exception("strategy.architecture must be a string if specified");
+            }
+        } else if (it.key() == "dnu") {
+            if (it.value().type() == utils::Json::value_t::string) {
+                dnu.insert(it.value().get<utils::Str>());
+            } else if (it.value().type() == utils::Json::value_t::array) {
+                for (const auto &val : it.value()) {
+                    if (val.type() == utils::Json::value_t::string) {
+                        dnu.insert(it.value().get<utils::Str>());
+                    } else {
+                        throw utils::Exception("strategy.dnu.* must be a string");
+                    }
+                }
+            } else {
+                throw utils::Exception("strategy.dnu must be a string or array of strings if specified");
+            }
+        } else if (it.key() == "passes") {
+            if (it.value().type() == utils::Json::value_t::array) {
+                passes = &it.value();
+            } else {
+                throw utils::Exception("strategy.passes must be an array of pass descriptions");
+            }
+        } else {
+            throw utils::Exception("unknown key in strategy: " + it.key());
+        }
+    }
+    if (!passes) {
+        throw utils::Exception("missing strategy.passes key");
+    }
+
+    // Construct the pass manager.
+    PassManager pm{architecture, dnu};
+
+    // Add passes from the pass descriptions.
+    add_passes_from_json(pm.get_root(), *passes);
+
+    return pm;
+}
+
+/**
+ * Returns a reference to the root pass group.
+ */
+const PassRef &PassManager::get_root() {
+    return root;
+}
+
+/**
+ * Returns a reference to the root pass group.
+ */
+CPassRef PassManager::get_root() const {
+    return root.as_const();
 }
 
 /**
