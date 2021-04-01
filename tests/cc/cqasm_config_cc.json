@@ -42,5 +42,7 @@
     {"name": "barrier",     "params": ""},
     {"name": "_wait_uhfqa", "params": "Q"},
     {"name": "_dist_dsm",   "params": "QB"},
-    {"name": "_wait_dsm",   "params": "Q"}
+    {"name": "_wait_dsm",   "params": "Q"},
+
+    {"name": "not",         "params": "i"}
 ]

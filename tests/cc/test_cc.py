@@ -288,6 +288,26 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('log_level', 'LOG_INFO')
         program.compile()
 
+    def test_cqasm_not(self):
+        cqasm_config_fn = os.path.join(curdir, 'cqasm_config_cc.json')
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+        number_qubits = platform.get_qubit_number()
+        name = 'test_cqasm_not'
+        program = ql.Program(name, platform, number_qubits)
+        qasm_rdr = ql.cQasmReader(platform, program, cqasm_config_fn)
+        qasm_str = """
+            version 1.1
+            
+            var i: int
+            var b: bool
+
+            not i
+            //not b
+            """
+        qasm_rdr.string2circuit(qasm_str)
+        ql.set_option('log_level', 'LOG_INFO')
+        program.compile()
+
     # based on test_hybrid.py::test_do_while_nested_for()
     def test_nested_rus(self):
         num_qubits = 5
