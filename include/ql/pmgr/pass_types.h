@@ -119,13 +119,6 @@ private:
     utils::Str instance_name;
 
     /**
-     * The option set for this pass. The available options should be registered
-     * in the constructor of the derived pass types. It becomes illegal to
-     * change options once construct() is called.
-     */
-    utils::Options options;
-
-    /**
      * The type of node that this pass represents in the pass tree. Configured
      * by construct().
      */
@@ -189,6 +182,13 @@ private:
     void check_condition_access_allowed() const;
 
 protected:
+
+    /**
+     * The option set for this pass. The available options should be registered
+     * in the constructor of the derived pass types. It becomes illegal to
+     * change options once construct() is called.
+     */
+    utils::Options options;
 
     /**
      * Constructs the abstract pass. No error checking here; this is up to the

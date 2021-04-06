@@ -4,17 +4,18 @@
 
 #ifdef WITH_VISUALIZER
 
-#include "ql/pass/ana/visualize/image.h"
+#include "image.h"
 
 #include "CImg.h"
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
-#include "ql/pass/ana/visualize/types.h"
+#include "types.h"
 
 namespace ql {
 namespace pass {
 namespace ana {
 namespace visualize {
+namespace detail {
 
 using namespace utils;
 
@@ -82,6 +83,7 @@ Dimensions calculateTextDimensions(const Str &text, const Int fontHeight) {
     return Dimensions { imageTextDimensions.width(), imageTextDimensions.height() };
 }
 
+} // namespace detail
 } // namespace visualize
 } // namespace ana
 } // namespace pass

@@ -4,6 +4,11 @@
 
 #include "ql/pmgr/pass_manager.h"
 
+// Pass definition headers. This list should be generated at some point.
+#include "ql/pass/ana/visualize/circuit.h"
+#include "ql/pass/ana/visualize/interaction.h"
+#include "ql/pass/ana/visualize/mapping.h"
+
 namespace ql {
 namespace pmgr {
 
@@ -47,6 +52,12 @@ void PassGroup::dump_docs(
  * Constructs a default pass factory for OpenQL.
  */
 PassFactory::PassFactory() {
+
+    // Default pass registration. This list should be generated at some point.
+    register_pass<::ql::pass::ana::visualize::circuit::Pass>("ana.visualize.Circuit");
+    register_pass<::ql::pass::ana::visualize::interaction::Pass>("ana.visualize.Interaction");
+    register_pass<::ql::pass::ana::visualize::mapping::Pass>("ana.visualize.Mapping");
+
 }
 
 /**

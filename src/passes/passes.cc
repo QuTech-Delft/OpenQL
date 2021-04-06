@@ -17,7 +17,9 @@
 #include "buffer_insertion.h"
 #include "commute_variation.h"
 #include "scheduler.h"
-#include "ql/pass/ana/visualize/visualize.h"
+#include "ql/pass/ana/visualize/circuit.h"
+#include "ql/pass/ana/visualize/interaction.h"
+#include "ql/pass/ana/visualize/mapping.h"
 
 #include "arch/cc_light/cc_light_eqasm_compiler.h"
 #include "arch/cc/backend_cc.h"
@@ -317,7 +319,7 @@ void StatisticsReporterPass::runOnProgram(const ir::ProgramRef &program) {
  * @param  Name of the visualizer pass
  */
 VisualizerPass::VisualizerPass(const Str &name) : AbstractPass(name) {
-    getPassOptions().add_str("visualizer_type", "the type of visualization performed", "CIRCUIT");
+    getPassOptions().add_enum("visualizer_type", "the type of visualization performed", "CIRCUIT", {"CIRCUIT", "MAPPING_GRAPH", "INTERACTION_GRAPH"});
     getPassOptions().add_str("visualizer_config_path", "path to the visualizer configuration file", "visualizer_config.json");
     getPassOptions().add_str("visualizer_waveform_mapping_path", "path to the visualizer waveform mapping file", "waveform_mapping.json");
 }
@@ -327,13 +329,7 @@ VisualizerPass::VisualizerPass(const Str &name) : AbstractPass(name) {
  * @param  Program object to be read
  */
 void VisualizerPass::runOnProgram(const ir::ProgramRef &program) {
-    QL_DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
-    
-    ql::pass::ana::visualize::visualize(program, {
-        getPassOptions()["visualizer_type"].as_str(),
-        getPassOptions()["visualizer_config_path"].as_str(),
-        getPassOptions()["visualizer_waveform_mapping_path"].as_str()
-    });
+    QL_EOUT("the visualizer can no longer be run using this interface");
 }
 
 /**

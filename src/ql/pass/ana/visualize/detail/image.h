@@ -4,13 +4,12 @@
 
 #pragma once
 
-// FIXME JvS: WITH_VISUALIZER must never appear in a header file
 #ifdef WITH_VISUALIZER
 
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"
-#include "ql/pass/ana/visualize/types.h"
+#include "types.h"
 
 // Undef garbage left behind by CImg.
 #undef cimg_use_opencv
@@ -29,6 +28,7 @@ namespace ql {
 namespace pass {
 namespace ana {
 namespace visualize {
+namespace detail {
 
 typedef std::array<utils::Byte, 3> Color;
 
@@ -73,6 +73,7 @@ public:
 
 Dimensions calculateTextDimensions(const utils::Str &text, const utils::Int fontHeight);
 
+} // namespace detail
 } // namespace visualize
 } // namespace ana
 } // namespace pass

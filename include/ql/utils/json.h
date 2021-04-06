@@ -11,6 +11,7 @@
 #include "ql/utils/exception.h"
 #include "ql/utils/str.h"
 #include "ql/utils/list.h"
+#include "ql/utils/set.h"
 #include "ql/utils/ptr.h"
 
 // check existence of JSON key within node, see PR #194
@@ -31,80 +32,51 @@ namespace utils {
 #if 0
 
 using RawJson = nlohmann::json;
-class Json;
 
-namespace json_schema {
-
-class Base {
-private:
-
-    /**
-     * Documentation for this possible value.
-     */
-    Str doc;
-
+class JsonConfigurable {
 protected:
 
-    /**
-     * Returns an identification string for this possible value.
-     */
-    virtual Str identify() = 0;
 
-public:
-
-    /**
-     * Validates the given JSON object against this data type.
-     *
-     * If the JSON data type matches but its value doesn't validate, a suitable
-     * exception is thrown. If the JSON data type does not match, false is
-     * returned. Otherwise, true is returned to indicate a match.
-     */
-    virtual Bool validate(const Json &data) = 0;
 
 
 };
 
-using Ref = Ptr<Base>;
 
-class Options {
-private:
+class JsonObjectReader {
 
-    List<Ref> options;
+    /**
+     * Registers an action for the given key, treating they key as required. The
+     * action function will be called by run() exactly once, receiving a value
+     * reader for the value.
+     */
+    JsonObjectReader &&require(
+        const Str &key,
+        const Str &doc,
+        std::function<void(const JsonValueReader &reader)> action
+    ) &&;
+
+    /**
+     * Registers an action for the given key, treating they key as required. The
+     * action function will be called by run() exactly once, receiving a value
+     * reader for the value.
+     */
+    JsonObjectReader &&optional(
+        const Str &key,
+        const Str &doc,
+        std::function<void(const JsonValueReader *reader)> action
+    ) &&;
+
+    JsonObjectReader &&otherwise(std::function<void(const Str &key, const JsonValueReader &reader)> action) &&;
 
 };
 
-class Array : public Base {
-private:
-
-    /**
-     * The set of allowable array sizes.
-     */
-    IntValidator size_validator;
-
-    /**
-     * The set of allowable values for the array elements.
-     */
-    Options element_options;
-
-
-}
-
-class Object {
-public:
-
-    Object &&with(const Str &key, const List<Ref> &options, const Str &doc) &&;
-
-};
-
-} // namespace json_schema
-
-class Json {
+class JsonObj {
 private:
 
     /**
      * Shared pointer to the root node, to prevent it from being deallocated.
      */
-    Ptr<nlohmann::json> root;
+    Ptr<RawJson> root;
 
     /**
      * Reference to the current JSON object. Empty when this is the root,
@@ -112,29 +84,34 @@ private:
      * elements, with object indices surrounded in "" and array indices
      * surrounded in [].
      */
-    nlohmann::json &current;
+    RawJson &current;
 
     /**
      * The path leading up to the current JSON object.
      */
     Str path;
 
+    /**
+     * The set of keys that have been referenced thus far.
+     */
+    Set<Str> used_keys;
+
 public:
 
     /**
      * Reads a JSON configuration file.
      */
-    static Json from_file(const Str &file_name);
+    static JsonObj from_file(const Str &file_name);
 
     /**
      * Parses JSON data from a string.
      */
-    static Json from_string(const Str &data);
+    static JsonObj from_string(const Str &data);
 
     /**
      * Wraps data from nlohmann_json.
      */
-    static Json from_nlohmann(nlohmann::json &&json);
+    static JsonObj from_nlohmann(nlohmann::json &&json);
 
     /**
      * Returns the path leading up to this object from the root. Empty when this
@@ -154,12 +131,12 @@ public:
      */
     RawJson &unwrap();
 
-
+    bool is_unspecified
 
     /**
      * Returns true if the
      */
-    Bool check_object(const List<Str> &keys);
+    void check_object(const List<Str> &keys);
 
 };
 

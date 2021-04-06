@@ -7,7 +7,6 @@
 
 #include <cctype>
 #include <regex>
-#include <compiler.h>
 #include "ql/pmgr/pass_manager.h"
 
 namespace ql {

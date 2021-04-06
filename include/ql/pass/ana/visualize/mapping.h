@@ -1,52 +1,58 @@
 /** \file
- * Declaration of the visualizer mapping graph.
+ * Defines the mapping graph visualization pass.
  */
 
-#pragma once
-
-// FIXME JvS: WITH_VISUALIZER must never appear in a public header file
-#ifdef WITH_VISUALIZER
-
-#include "ql/utils/num.h"
-#include "ql/utils/vec.h"
-#include "ql/utils/json.h"
-#include "ql/pass/ana/visualize/visualize.h"
-#include "ql/pass/ana/visualize/types.h"
+#include "ql/pmgr/pass_types.h"
 
 namespace ql {
 namespace pass {
 namespace ana {
 namespace visualize {
+namespace mapping {
 
-struct Edge {
-    utils::Int src;
-    utils::Int dst;
+/**
+ * Mapping graph visualizer pass.
+ */
+class VisualizeMappingPass : public pmgr::pass_types::ProgramAnalysis {
+protected:
 
-    Edge() = delete;
+    /**
+     * Dumps docs for the mapping graph visualizer.
+     */
+    void dump_docs(
+        std::ostream &os,
+        const utils::Str &line_prefix
+    ) const override;
+
+public:
+
+    /**
+     * Constructs a mapping graph visualizer pass.
+     */
+    VisualizeMappingPass(
+        const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+        const utils::Str &instance_name,
+        const utils::Str &type_name
+    );
+
+    /**
+     * Runs the mapping graph visualizer.
+     */
+    utils::Int run(
+        const plat::PlatformRef &platform,
+        const ir::ProgramRef &program,
+        const utils::Str &full_name
+    ) const override;
+
 };
 
-struct Topology {
-    utils::Int xSize = 0;
-    utils::Int ySize = 0;
-    utils::Vec<Position2> vertices;
-    utils::Vec<Edge> edges;
-};
+/**
+ * Shorthand for referring to the pass using namespace notation.
+ */
+using Pass = VisualizeMappingPass;
 
-void visualizeMappingGraph(const ir::ProgramRef &program, const VisualizerConfiguration &configuration);
-
-void computeMappingPerCycle(const MappingGraphLayout &layout,
-                            utils::Vec<utils::Vec<utils::Int>> &virtualQubits,
-                            utils::Vec<utils::Bool> &mappingChangedPerCycle,
-                            const utils::Vec<GateProperties> &gates,
-                            utils::Int amountOfCycles,
-                            utils::Int amountOfQubits);
-
-utils::Bool parseTopology(const utils::Json &hardware_settings, Topology &topology);
-MappingGraphLayout parseMappingGraphLayout(const utils::Str &configPath);
-
+} // namespace mapping
 } // namespace visualize
 } // namespace ana
 } // namespace pass
 } // namespace ql
-
-#endif //WITH_VISUALIZER

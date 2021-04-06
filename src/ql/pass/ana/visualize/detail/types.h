@@ -1,13 +1,9 @@
-/**
- * @file   visualizer_types.h
- * @date   11/2020
- * @author Tim van der Meer
- * @brief  declaration of the common types used throughout the visualizer
+/** \file
+ * Declaration of the common types used throughout the visualizer.
  */
  
 #pragma once
 
-// FIXME JvS: WITH_VISUALIZER must never appear in a public header file
 #ifdef WITH_VISUALIZER
 
 #include "ql/utils/num.h"
@@ -15,27 +11,21 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/map.h"
 #include "ql/ir/ir.h"
-#include "ql/pass/ana/visualize/visualize.h"
 
 namespace ql {
 namespace pass {
 namespace ana {
 namespace visualize {
+namespace detail {
 
-// enum class VisualizationType {
+void assertPositive(utils::Int parameterValue, const utils::Str &parameterName);
+void assertPositive(utils::Real parameterValue, const utils::Str &parameterName);
 
-//     /**
-//      * Visualize the quantum program as a circuit composed of abstract gates, or
-//      * waveforms acting on qubits and classical registers
-//      */
-//     CIRCUIT,
-
-//     /**
-//      * Visualize the quantum program as a qubit interaction graph, with the
-//      * labels of edges between qubits indicating the number of interactions.
-//      */
-//     INTERACTION_GRAPH
-// };
+struct VisualizerConfiguration {
+    const utils::Str &visualizationType;
+    const utils::Str &visualizerConfigPath;
+    const utils::Str &waveformMappingPath;
+};
 
 typedef std::array<utils::Byte, 3> Color;
 
@@ -579,6 +569,7 @@ struct CircuitLayout {
     };
 };
 
+} // namespace detail
 } // namespace visualize
 } // namespace ana
 } // namespace pass
