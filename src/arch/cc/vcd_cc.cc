@@ -123,6 +123,7 @@ void Vcd::customGate(const Str &iname, const Vec<UInt> &qops, UInt startCycle, U
     for (UInt i = 0; i < qops.size(); i++) {
         Int var = vcdVarQubit[qops[i]];
         Str name = iname;                                       // FIXME: improve name for 2q gates
+        name = name.substr(0, name.find(' '));                  // strip space (which break GTKWave) and beyond (qubit operands possibly resulting from gate decomposition)
         change(var, startTime, name);                           // start of instruction
         change(var, startTime + durationInNs, "");              // end of instruction
     }

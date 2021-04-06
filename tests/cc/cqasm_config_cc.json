@@ -44,5 +44,5 @@
     {"name": "_dist_dsm",   "params": "QB"},
     {"name": "_wait_dsm",   "params": "Q"},
 
-    {"name": "not",         "params": "i"}
+    {"name": "not",         "params": "B"}
 ]

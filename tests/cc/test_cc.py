@@ -298,11 +298,9 @@ class Test_central_controller(unittest.TestCase):
         qasm_str = """
             version 1.1
             
-            var i: int
             var b: bool
 
-            not i
-            //not b
+            not b
             """
         qasm_rdr.string2circuit(qasm_str)
         ql.set_option('log_level', 'LOG_INFO')
@@ -335,92 +333,6 @@ class Test_central_controller(unittest.TestCase):
         p.add_do_while(outer_program, ql.Operation(foo, '==', foo)) # NB: loops *program*, CC backend interprets all conditions as true
 
         ql.set_option('log_level', 'LOG_INFO') # override log level
-        p.compile()
-
-    def test_rc_sched_measure(self):
-        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
-
-        p = ql.Program('test_rc_sched_measure', platform, 5, num_cregs, num_bregs)
-        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
-
-        for q in [0, 1, 2, 3, 4]:
-            k.gate("measure", [q])
-        k.gate('x', [0])
-        for q in [0, 1, 2, 3, 4]:
-            k.gate("measure", [q])
-        k.gate('x', [1])
-
-        p.add_kernel(k)
-        p.compile()
-
-    def test_rc_sched_measure_asap(self):
-        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
-
-        p = ql.Program('test_rc_sched_measure_asap', platform, 5, num_cregs, num_bregs)
-        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
-
-        k.gate('x', [2])
-        for q in [0, 1, 2, 3, 4]:
-            k.gate("measure", [q])
-        k.gate('x', [0])
-        for q in [0, 1, 2, 3, 4]:
-            k.gate("measure", [q])
-        k.gate('x', [1])
-
-        p.add_kernel(k)
-        ql.set_option('scheduler', 'ASAP')
-        p.compile()
-
-    def test_rc_sched_measure_barrier(self):
-        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
-
-        p = ql.Program('test_rc_sched_measure_barrier', platform, 5, num_cregs, num_bregs)
-        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
-
-        for q in [0, 1, 2, 3, 4]:
-            k.gate("measure", [q])
-        k.barrier([])
-        k.gate('x', [0])
-        k.barrier([])
-        for q in [0, 1, 2, 3, 4]:
-            k.gate("measure", [q])
-        k.barrier([])
-        k.gate('x', [1])
-
-        p.add_kernel(k)
-        p.compile()
-
-    def test_rc_sched_cz(self):
-        num_qubits = 17
-
-        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq.json'))
-
-        p = ql.Program('test_rc_sched_cz', platform, num_qubits, num_cregs, num_bregs)
-        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs, num_bregs)
-
-        # NB: requires resource to manage fluxing
-        k.gate("_cz", [10, 14])  # no associated park
-        k.gate("_cz", [9, 11])   # parks 12
-        k.gate('x', [10])
-        p.add_kernel(k)
-
-        ql.set_option('log_level', 'LOG_DEBUG') # override log level
-        p.compile()
-
-    def test_rc_sched_prepz(self):
-        num_qubits = 17
-
-        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq.json'))
-
-        p = ql.Program('test_rc_sched_prepz', platform, num_qubits, num_cregs, num_bregs)
-        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs, num_bregs)
-
-        k.gate('x', [2])
-        k.gate('prepz', [1,2])
-        k.gate('x', [1])
-        p.add_kernel(k)
-
-        ql.set_option('log_level', 'LOG_DEBUG') # override log level
         p.compile()
 
     # based on DCL test program
@@ -526,6 +438,95 @@ class Test_central_controller(unittest.TestCase):
 
         ql.set_option('log_level', 'LOG_INFO') # override log level
         p.compile()
+
+    def test_rc_sched_measure(self):
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+
+        p = ql.Program('test_rc_sched_measure', platform, 5, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
+
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.gate('x', [0])
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.gate('x', [1])
+
+        p.add_kernel(k)
+        p.compile()
+
+    def test_rc_sched_measure_asap(self):
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+
+        p = ql.Program('test_rc_sched_measure_asap', platform, 5, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
+
+        k.gate('x', [2])
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.gate('x', [0])
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.gate('x', [1])
+
+        p.add_kernel(k)
+        ql.set_option('scheduler', 'ASAP')
+        p.compile()
+
+    def test_rc_sched_measure_barrier(self):
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+
+        p = ql.Program('test_rc_sched_measure_barrier', platform, 5, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
+
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.barrier([])
+        k.gate('x', [0])
+        k.barrier([])
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.barrier([])
+        k.gate('x', [1])
+
+        p.add_kernel(k)
+        p.compile()
+
+    def test_rc_sched_cz(self):
+        num_qubits = 17
+
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq.json'))
+
+        p = ql.Program('test_rc_sched_cz', platform, num_qubits, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs, num_bregs)
+
+        # NB: requires resource to manage fluxing
+        k.gate("_cz", [10, 14])  # no associated park
+        k.gate("_cz", [9, 11])   # parks 12
+        k.gate('x', [10])
+        p.add_kernel(k)
+
+        ql.set_option('log_level', 'LOG_DEBUG') # override log level
+        p.compile()
+
+    def test_rc_sched_prepz(self):
+        num_qubits = 17
+
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq.json'))
+
+        p = ql.Program('test_rc_sched_prepz', platform, num_qubits, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs, num_bregs)
+
+        k.gate('x', [2])
+        k.gate('prepz', [1,2])
+        k.gate('x', [1])
+        p.add_kernel(k)
+
+        ql.set_option('log_level', 'LOG_DEBUG') # override log level
+        p.compile()
+
+
+
 
     # FIXME: add:
     # - qec_pipelined

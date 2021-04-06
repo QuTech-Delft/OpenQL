@@ -35,9 +35,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ### Fixed
-- changed register used for FOR loop, so it doesn't clash with delay setting
 - fixed documentation for python setup and running tests
-
+- CC backend:
+    - changed register used for FOR loop, so it doesn't clash with delay setting
+    - VCD file contained spaces in strings when using gate decomposition (e.g. "sf_cz_swq8"), which aborts parsing in GTKWave
 
 ## [ 0.8.0 ] - [ 2019-10-31 ]
 ### Added
