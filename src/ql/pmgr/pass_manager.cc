@@ -243,9 +243,81 @@ PassManager::PassManager(
  * Load passes into the given pass group from a JSON array of pass descriptions.
  */
 static void add_passes_from_json(const PassRef &group, const utils::Json &json) {
-    for (const auto &j : json) {
-        // TODO
-        throw utils::Exception("not yet implemented");
+
+    // Shorthand.
+    using JsonType = utils::Json::value_t;
+
+    for (const auto &pass_description : json) {
+
+        // Parse the JSON structure.
+        utils::Str type;
+        utils::Str name;
+        utils::Map<utils::Str, utils::Str> options;
+        const utils::Json *sub_passes = nullptr;
+        if (pass_description.type() == JsonType::string) {
+            type = pass_description.get<utils::Str>();
+        } else if (pass_description.type() == JsonType::object) {
+            for (auto it = pass_description.begin(); it != pass_description.end(); ++it) {
+                if (it.key() == "type") {
+                    if (it.value().type() == JsonType::string) {
+                        type = it.value().get<utils::Str>();
+                    } else {
+                        throw utils::Exception("pass type must be a string if specified");
+                    }
+                } else if (it.key() == "name") {
+                    if (it.value().type() == JsonType::string) {
+                        name = it.value().get<utils::Str>();
+                    } else {
+                        throw utils::Exception("pass name must be a string if specified");
+                    }
+                } else if (it.key() == "options") {
+                    if (it.value().type() == JsonType::object) {
+                        for (auto opt_it = it->begin(); opt_it != it->end(); ++opt_it) {
+                            if (opt_it.value().type() == JsonType::boolean) {
+                                options.set(opt_it.key()) = opt_it.value().get<utils::Bool>() ? "yes" : "no";
+                            } else if (opt_it.value().type() == JsonType::number_integer) {
+                                options.set(opt_it.key()) = utils::to_string(opt_it.value().get<utils::Int>());
+                            } else if (opt_it.value().type() == JsonType::number_unsigned) {
+                                options.set(opt_it.key()) = utils::to_string(opt_it.value().get<utils::UInt>());
+                            } else if (opt_it.value().type() == JsonType::string) {
+                                options.set(opt_it.key()) = opt_it.value().get<utils::Str>();
+                            } else {
+                                throw utils::Exception("pass option value must be a boolean, integer, or string");
+                            }
+                        }
+                    } else {
+                        throw utils::Exception("pass options must be an object if specified");
+                    }
+                } else if (it.key() == "group") {
+                    if (it.value().type() == JsonType::array) {
+                        sub_passes = &it.value();
+                    } else {
+                        throw utils::Exception("pass group must be an array of pass descriptions");
+                    }
+                } else {
+                    throw utils::Exception("unknown key in pass description: " + it.key());
+                }
+            }
+        } else {
+            throw utils::Exception("pass description must be a string or an object");
+        }
+        if (type.empty() && sub_passes == nullptr) {
+            throw utils::Exception("either pass type or pass group must be specified");
+        }
+
+        // Add the pass.
+        auto pass = group->append_sub_pass(type, name, options);
+
+        // If the pass has sub-passes, construct it and add them by recursively
+        // calling ourselves.
+        if (sub_passes != nullptr) {
+            pass->construct();
+            if (!pass->is_group()) {
+                throw utils::Exception("pass type " + type + " does not support sub-passes");
+            }
+            add_passes_from_json(pass, *sub_passes);
+        }
+
     }
 }
 
@@ -260,6 +332,9 @@ PassManager PassManager::from_json(
 ) {
     // TODO JvS: need proper schema validation in some JSON structure wrapper!
     //  All this repetition is bad.
+
+    // Shorthand.
+    using JsonType = utils::Json::value_t;
 
     // Look for the strategy key. Ignore any other keys in the toplevel
     // structure.
@@ -278,17 +353,17 @@ PassManager PassManager::from_json(
     const utils::Json *passes = nullptr;
     for (it = strategy.begin(); it != strategy.end(); ++it) {
         if (it.key() == "architecture") {
-            if (it.value().type() == utils::Json::value_t::string) {
+            if (it.value().type() == JsonType::string) {
                 architecture = it.value().get<utils::Str>();
             } else {
                 throw utils::Exception("strategy.architecture must be a string if specified");
             }
         } else if (it.key() == "dnu") {
-            if (it.value().type() == utils::Json::value_t::string) {
+            if (it.value().type() == JsonType::string) {
                 dnu.insert(it.value().get<utils::Str>());
-            } else if (it.value().type() == utils::Json::value_t::array) {
+            } else if (it.value().type() == JsonType::array) {
                 for (const auto &val : it.value()) {
-                    if (val.type() == utils::Json::value_t::string) {
+                    if (val.type() == JsonType::string) {
                         dnu.insert(it.value().get<utils::Str>());
                     } else {
                         throw utils::Exception("strategy.dnu.* must be a string");
@@ -298,7 +373,7 @@ PassManager PassManager::from_json(
                 throw utils::Exception("strategy.dnu must be a string or array of strings if specified");
             }
         } else if (it.key() == "passes") {
-            if (it.value().type() == utils::Json::value_t::array) {
+            if (it.value().type() == JsonType::array) {
                 passes = &it.value();
             } else {
                 throw utils::Exception("strategy.passes must be an array of pass descriptions");
