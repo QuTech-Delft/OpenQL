@@ -229,7 +229,6 @@ protected:
      * Overridable implementation for calling the implementation of the pass.
      */
     virtual utils::Int run_internal(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &full_name
     ) const = 0;
@@ -515,7 +514,6 @@ private:
      * care of logging, profiling, etc.
      */
     utils::Int run_main_pass(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &pass_name_prefix
     ) const;
@@ -525,7 +523,6 @@ private:
      * profiling, etc.
      */
     void run_sub_passes(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &pass_name_prefix
     ) const;
@@ -533,10 +530,9 @@ private:
 public:
 
     /**
-     * Executes this pass or pass group on the given platform and program.
+     * Executes this pass or pass group on the given program.
      */
     void compile(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &pass_name_prefix = ""
     );
@@ -577,7 +573,6 @@ protected:
      * exception.
      */
     utils::Int run_internal(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &full_name
     ) const final;
@@ -654,7 +649,6 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &full_name
     ) const final;
@@ -698,7 +692,6 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &full_name
     ) const final;
@@ -712,7 +705,6 @@ protected:
      * The virtual implementation for this pass.
      */
     virtual utils::Int run(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &full_name
     ) const = 0;
@@ -744,7 +736,6 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &full_name
     ) const final;
@@ -758,7 +749,6 @@ protected:
      * The virtual implementation for this pass.
      */
     virtual void run(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const ir::KernelRef &kernel,
         const utils::Str &full_name
@@ -790,7 +780,6 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &full_name
     ) const final;
@@ -805,7 +794,6 @@ protected:
      * program must not be modified.
      */
     virtual utils::Int run(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &full_name
     ) const = 0;
@@ -836,7 +824,6 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &full_name
     ) const final;
@@ -847,11 +834,10 @@ protected:
     utils::Bool run_transforms_platform() const final;
 
     /**
-     * The virtual implementation for this pass. The contents of platform,
-     * program, and kernel must not be modified.
+     * The virtual implementation for this pass. The contents of program and
+     * kernel must not be modified.
      */
     virtual void run(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const ir::KernelRef &kernel,
         const utils::Str &full_name

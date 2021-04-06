@@ -720,13 +720,12 @@ condition::Ref Base::get_condition() {
  * care of logging, profiling, etc.
  */
 utils::Int Base::run_main_pass(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &pass_name_prefix
 ) const {
     auto full_name = pass_name_prefix + instance_name;
     QL_IOUT("starting pass \"" << full_name << "\" of type \"" << type_name << "\"...");
-    auto retval = run_internal(platform, program, full_name);
+    auto retval = run_internal(program, full_name);
     QL_IOUT("completed pass \"" << full_name << "\"; return value is " << retval);
     return retval;
 }
@@ -736,13 +735,12 @@ utils::Int Base::run_main_pass(
  * profiling, etc.
  */
 void Base::run_sub_passes(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &pass_name_prefix
 ) const {
     utils::Str sub_prefix = pass_name_prefix + instance_name + ".";
     for (const auto &pass : sub_pass_order) {
-        pass->compile(platform, program, sub_prefix);
+        pass->compile(program, sub_prefix);
     }
 }
 
@@ -750,15 +748,9 @@ void Base::run_sub_passes(
  * Executes this pass or pass group on the given platform and program.
  */
 void Base::compile(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &pass_name_prefix
 ) {
-
-    // TODO: need to think about which of these two places is actually the
-    //  correct place for the platform. This redundancy is a recipe for
-    //  disaster.
-    QL_ASSERT(program->platform.get_ptr() == platform.get_ptr());
 
     // The passes should already have been constructed by the pass manager.
     QL_ASSERT(is_constructed());
@@ -766,20 +758,20 @@ void Base::compile(
     // Traverse our level of the pass tree based on our node type.
     switch (node_type) {
         case NodeType::NORMAL: {
-            run_main_pass(platform, program, pass_name_prefix);
+            run_main_pass(program, pass_name_prefix);
             break;
         }
 
         case NodeType::GROUP: {
-            run_sub_passes(platform, program, pass_name_prefix);
+            run_sub_passes(program, pass_name_prefix);
             break;
         }
 
         case NodeType::GROUP_IF: {
-            auto retval = run_main_pass(platform, program, pass_name_prefix);
+            auto retval = run_main_pass(program, pass_name_prefix);
             if (condition->evaluate(retval)) {
                 QL_IOUT("pass condition returned true, running sub-passes...");
-                run_sub_passes(platform, program, pass_name_prefix);
+                run_sub_passes(program, pass_name_prefix);
             } else {
                 QL_IOUT("pass condition returned false, skipping " << sub_pass_order.size() << " sub-pass(es)");
             }
@@ -789,14 +781,14 @@ void Base::compile(
         case NodeType::GROUP_WHILE: {
             QL_IOUT("entering loop pass loop...");
             while (true) {
-                auto retval = run_main_pass(platform, program, pass_name_prefix);
+                auto retval = run_main_pass(program, pass_name_prefix);
                 if (!condition->evaluate(retval)) {
                     QL_IOUT("pass condition returned false, exiting loop");
                     break;
                 } else {
                     QL_IOUT("pass condition returned true, continuing loop...");
                 }
-                run_sub_passes(platform, program, pass_name_prefix);
+                run_sub_passes(program, pass_name_prefix);
             }
             break;
         }
@@ -804,8 +796,8 @@ void Base::compile(
         case NodeType::GROUP_REPEAT_UNTIL_NOT: {
             QL_IOUT("entering loop pass loop...");
             while (true) {
-                run_sub_passes(platform, program, pass_name_prefix);
-                auto retval = run_main_pass(platform, program, pass_name_prefix);
+                run_sub_passes(program, pass_name_prefix);
+                auto retval = run_main_pass(program, pass_name_prefix);
                 if (!condition->evaluate(retval)) {
                     QL_IOUT("pass condition returned false, exiting loop");
                     break;
@@ -851,7 +843,6 @@ NodeType Group::on_construct(
  * exception.
  */
 utils::Int Group::run_internal(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &full_name
 ) const {
@@ -905,11 +896,10 @@ PlatformTransformation::PlatformTransformation(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int PlatformTransformation::run_internal(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &full_name
 ) const {
-    return run(platform, full_name);
+    return run(program->platform, full_name);
 }
 
 /**
@@ -934,11 +924,10 @@ ProgramTransformation::ProgramTransformation(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int ProgramTransformation::run_internal(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &full_name
 ) const {
-    return run(platform, program, full_name);
+    return run(program, full_name);
 }
 
 /**
@@ -963,12 +952,11 @@ KernelTransformation::KernelTransformation(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int KernelTransformation::run_internal(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &full_name
 ) const {
     for (const auto &kernel : program->kernels) {
-        run(platform, program, kernel, full_name);
+        run(program, kernel, full_name);
     }
     return 0;
 }
@@ -995,11 +983,10 @@ ProgramAnalysis::ProgramAnalysis(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int ProgramAnalysis::run_internal(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &full_name
 ) const {
-    return run(platform, program, full_name);
+    return run(program, full_name);
 }
 
 /**
@@ -1024,12 +1011,11 @@ KernelAnalysis::KernelAnalysis(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int KernelAnalysis::run_internal(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &full_name
 ) const {
     for (const auto &kernel : program->kernels) {
-        run(platform, program, kernel, full_name);
+        run(program, kernel, full_name);
     }
     return 0;
 }

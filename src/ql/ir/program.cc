@@ -46,8 +46,31 @@ Program::Program(
         QL_FATAL("number of qubits requested in program '" + to_string(qubit_count) + "' is greater than the qubits available in platform '" + to_string(platform->qubit_number) + "'" );
     }
 
-    // report/write_qasm initialization
-    report_init(*this, platform);
+    // Generate unique filename if requested via the unique_output option.
+    unique_name = name;
+    if (com::options::get("unique_output") == "yes") {
+
+        // Filename for the name uniquification number.
+        Str version_file = QL_SS2S(com::options::get("output_dir") << "/" << name << ".unique");
+
+        // Retrieve old version number, if one exists.
+        UInt vers = 0;
+        if (is_file(version_file)) {
+            InFile(version_file) >> vers;
+        }
+
+        // Increment to get new one.
+        vers++;
+
+        // Store version for a later run.
+        OutFile(version_file) << vers;
+
+        if (vers > 1) {
+            unique_name = name + to_string(vers);
+            QL_DOUT("Unique program name is " << unique_name << ", based on version " << vers);
+        }
+    }
+
 }
 
 void Program::add(const KernelRef &k) {

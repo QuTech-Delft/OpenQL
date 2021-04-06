@@ -19,8 +19,27 @@ Options make_ql_options() {
     auto options = Options();
 
     options.add_enum("log_level", "Log levels", "LOG_NOTHING", {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}).with_callback([](Option &x){logger::set_log_level(x.as_str());});
-    options.add_str ("output_dir", "Name of output directory", "test_output").with_callback([](Option &x){make_dirs(x.as_str());});;
-    options.add_bool("unique_output", "Make output files unique");
+    options.add_str(
+        "output_dir",
+        "Name of the directory in which all output products will be written. "
+        "Defaults to \"test_output\" for compatibility reasons. The directory "
+        "will automatically be created when the program is compiled.",
+        "test_output"
+    );
+    options.add_bool(
+        "unique_output",
+        "Uniquify the program name as used for constructing output filenames, "
+        "such that compiling the same program multiple times does not overwrite "
+        "any previously written output files. When this option is set during the "
+        "first construction of a program with a particular name, the program "
+        "name is used as-is, and a <program>.unique file is generated in the "
+        "output directory to track how many times a program with this name has "
+        "been constructed. When a program with the same name is constructed "
+        "again later, again with this option set, a numeric suffix will be "
+        "automatically added to the program name, starting from 2. The "
+        "generated suffix can be reset by simply removing the .unique file."
+    );
+
     options.add_bool("prescheduler", "Run qasm (first) scheduler?", true);
     options.add_bool("scheduler_post179", "Issue 179 solution included", true);
     options.add_bool("print_dot_graphs", "Print (un-)scheduled graphs in DOT format");

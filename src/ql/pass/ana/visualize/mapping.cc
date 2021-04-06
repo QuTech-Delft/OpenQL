@@ -46,7 +46,6 @@ VisualizeMappingPass::VisualizeMappingPass(
  * Runs the mapping graph visualizer.
  */
 utils::Int VisualizeMappingPass::run(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &full_name
 ) const {

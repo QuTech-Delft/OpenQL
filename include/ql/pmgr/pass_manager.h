@@ -455,12 +455,9 @@ public:
 
     /**
      * Ensures that all passes have been constructed, and then runs the passes
-     * on the given platform and program.
+     * on the given program.
      */
-    void compile(
-        const plat::PlatformRef &platform,
-        const ir::ProgramRef &program
-    );
+    void compile(const ir::ProgramRef &program);
 
 };
 

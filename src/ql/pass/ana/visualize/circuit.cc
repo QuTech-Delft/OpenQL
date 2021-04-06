@@ -46,7 +46,6 @@ VisualizeCircuitPass::VisualizeCircuitPass(
  * Runs the circuit visualizer.
  */
 utils::Int VisualizeCircuitPass::run(
-    const plat::PlatformRef &platform,
     const ir::ProgramRef &program,
     const utils::Str &full_name
 ) const {

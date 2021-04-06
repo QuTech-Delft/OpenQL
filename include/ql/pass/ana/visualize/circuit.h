@@ -39,7 +39,6 @@ public:
      * Runs the circuit visualizer.
      */
     utils::Int run(
-        const plat::PlatformRef &platform,
         const ir::ProgramRef &program,
         const utils::Str &full_name
     ) const override;

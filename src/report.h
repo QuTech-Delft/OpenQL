@@ -121,19 +121,4 @@ void report_statistics(
     const utils::Str &additionalStatistics = ""
 );
 
-/**
- * initialization of program.unique_name that is used by file name generation for reporting and printing
- * it is the program's name with a suffix appended that represents the number of the run of the program
- *
- * objective of this all is that of a later run of the same program, the output files don't overwrite the earlier ones
- *
- * do this only if unique_output option is set; if not, just use the program's name and let files overwrite
- * when set, maintain a seed with the run number; the first run is version 1; the first run uses the program's name
- * the second and later use the version (2 or larger) as suffix to the program's name
- */
-void report_init(
-    ir::Program &program,
-    const plat::PlatformRef &platform
-);
-
 } // namespace ql

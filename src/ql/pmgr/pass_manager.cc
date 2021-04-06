@@ -4,6 +4,9 @@
 
 #include "ql/pmgr/pass_manager.h"
 
+#include "ql/utils/filesystem.h"
+#include "ql/com/options/options.h"
+
 // Pass definition headers. This list should be generated at some point.
 #include "ql/pass/ana/visualize/circuit.h"
 #include "ql/pass/ana/visualize/interaction.h"
@@ -604,12 +607,17 @@ void PassManager::construct() {
 /**
  * Executes this pass or pass group on the given platform and program.
  */
-void PassManager::compile(
-    const plat::PlatformRef &platform,
-    const ir::ProgramRef &program
-) {
+void PassManager::compile(const ir::ProgramRef &program) {
+
+    // Ensure that all passes are constructed.
     construct();
-    root->compile(platform, program, "");
+
+    // Ensure that the output directory exists.
+    utils::make_dirs(com::options::get("output_dir"));
+
+    // Compile the program.
+    root->compile(program, "");
+
 }
 
 } // namespace pmgr
