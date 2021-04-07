@@ -2,7 +2,7 @@
  * Unitary matrix (decomposition) implementation.
  */
 
-#include "unitary.h"
+#include "ql/com/unitary.h"
 
 #include "ql/utils/exception.h"
 #include "ql/utils/logger.h"
@@ -18,42 +18,45 @@
 #include <chrono>
 
 namespace ql {
+namespace com {
 
 using namespace utils;
 
-unitary::unitary() :
-    name(""),
-    is_decomposed(false)
-{
-}
-
-unitary::unitary(
+/**
+ * Creates a unitary gate with the given name and row-major unitary matrix.
+ */
+Unitary::Unitary(
     const Str &name,
     const Vec<Complex> &array
 ) :
+    decomposed(false),
     name(name),
-    array(array),
-    is_decomposed(false)
+    array(array)
 {
 }
 
-Real unitary::size() const {
-    // JvS: Note that the original unitary::size() used
-    // Eigen::Matrix::size() if the array is empty. However, if the array
-    // is empty, _matrix is never initialized beyond its default ctor,
-    // which "allocates" a 0x0 matrix, and is thus size 0, exactly what
-    // array.size() would return.
-    // Don't get me started about why this returns a Real.
-    return (Real) array.size();
+/**
+ * Returns the number of elements in the incoming matrix.
+ */
+UInt Unitary::size() const {
+    return array.size();
 }
 
 #ifdef WITHOUT_UNITARY_DECOMPOSITION
 
-void unitary::decompose() {
+/**
+ * Explicitly runs the matrix decomposition algorithm. Used to be required,
+ * nowadays is called implicitly by get_circuit() if not done explicitly.
+ */
+void Unitary::decompose() const {
     throw Exception("unitary decomposition was explicitly disabled in this build!");
 }
 
-Bool unitary::is_decompose_support_enabled() {
+/**
+ * Returns whether unitary decomposition support was enabled in this build
+ * of OpenQL.
+ */
+Bool Unitary::is_decompose_support_enabled() {
     return false;
 }
 
@@ -77,12 +80,12 @@ public:
     Real alpha;
     Real beta;
     Real gamma;
-    Bool is_decomposed;
-    Vec<Real> instructionlist;
+    Bool decomposed;
+    Vec<Real> instruction_list;
 
     typedef Eigen::Matrix<Complex, Eigen::Dynamic, Eigen::Dynamic> complex_matrix;
 
-    UnitaryDecomposer() : name(""), is_decomposed(false) {}
+    UnitaryDecomposer() : name(""), decomposed(false) {}
 
     UnitaryDecomposer(
         const Str &name,
@@ -90,7 +93,7 @@ public:
     ) :
         name(name),
         array(array),
-        is_decomposed(false)
+        decomposed(false)
     {
         QL_DOUT("constructing unitary: " << name
                   << ", containing: " << array.size() << " elements");
@@ -138,7 +141,7 @@ public:
         decomp_function(_matrix, numberofbits); //needed because the matrix is read in columnmajor
 
         QL_DOUT("Done decomposing");
-        is_decomposed = true;
+        decomposed = true;
     }
 
     Str to_string(
@@ -171,10 +174,10 @@ public:
             // if q2 is zero, the whole thing is a demultiplexing problem instead of full CSD
             if (matrix.bottomLeftCorner(n,n).isZero(10e-14) && matrix.topRightCorner(n,n).isZero(10e-14)) {
                 QL_DOUT("Optimization: q2 is zero, only demultiplexing will be performed.");
-                instructionlist.push_back(200.0);
+                instruction_list.push_back(200.0);
                 if (matrix.topLeftCorner(n, n).isApprox(matrix.bottomRightCorner(n,n),10e-4)) {
                     QL_DOUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << n << " They are both: " << matrix.topLeftCorner(n, n));
-                    instructionlist.push_back(300.0);
+                    instruction_list.push_back(300.0);
                     decomp_function(matrix.topLeftCorner(n, n), numberofbits-1);
                 } else {
                     demultiplexing(matrix.topLeftCorner(n, n), matrix.bottomRightCorner(n,n), V, D, W, numberofbits-1);
@@ -194,7 +197,7 @@ public:
             ) {
                 QL_DOUT("Optimization: last qubit is not affected, skip one step in the recursion.");
                 // Code for last qubit not affected
-                instructionlist.push_back(100.0);
+                instruction_list.push_back(100.0);
                 decomp_function(matrix(Eigen::seqN(0, n, 2), Eigen::seqN(0, n, 2)), numberofbits-1);
             } else {
                 complex_matrix ss(n,n);
@@ -380,9 +383,9 @@ public:
         alpha = t1+t2;
         gamma = t1-t2;
         beta = 2*atan2(sw*sqrt(pow((Real) wx,2)+pow((Real) wy,2)),sqrt(pow((Real) A.real(),2)+pow((wz*sw),2)));
-        instructionlist.push_back(-gamma);
-        instructionlist.push_back(-beta);
-        instructionlist.push_back(-alpha);
+        instruction_list.push_back(-gamma);
+        instruction_list.push_back(-beta);
+        instruction_list.push_back(-alpha);
         // zyz_time += (std::chrono::steady_clock::now() - start);
     }
 
@@ -488,7 +491,7 @@ public:
             throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss), false);
         }
 
-        instructionlist.insert(instructionlist.end(), &tr[0], &tr[halfthesizeofthematrix]);
+        instruction_list.insert(instruction_list.end(), &tr[0], &tr[halfthesizeofthematrix]);
         // multiplexing_time += std::chrono::steady_clock::now() - start;
     }
 
@@ -504,7 +507,7 @@ public:
             throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D), false);
         }
 
-        instructionlist.insert(instructionlist.end(), &tr[0], &tr[halfthesizeofthematrix]);
+        instruction_list.insert(instruction_list.end(), &tr[0], &tr[halfthesizeofthematrix]);
         // multiplexing_time += std::chrono::steady_clock::now() - start;
 
     }
@@ -515,21 +518,186 @@ public:
     }
 };
 
-void unitary::decompose() {
+/**
+ * Explicitly runs the matrix decomposition algorithm. Used to be required,
+ * nowadays is called implicitly by get_circuit() if not done explicitly.
+ */
+void Unitary::decompose() const {
+    if (decomposed) {
+        return;
+    }
     UnitaryDecomposer decomposer(name, array);
     decomposer.decompose();
-    SU = decomposer.SU;
-    alpha = decomposer.alpha;
-    beta = decomposer.beta;
-    gamma = decomposer.gamma;
-    is_decomposed = decomposer.is_decomposed;
-    instructionlist = decomposer.instructionlist;
+    //SU = decomposer.SU;
+    //alpha = decomposer.alpha;
+    //beta = decomposer.beta;
+    //gamma = decomposer.gamma;
+    decomposed = decomposer.decomposed;
+    instruction_list = decomposer.instruction_list;
 }
 
-Bool unitary::is_decompose_support_enabled() {
+/**
+ * Returns whether unitary decomposition support was enabled in this build
+ * of OpenQL.
+ */
+Bool Unitary::is_decompose_support_enabled() {
     return true;
 }
 
 #endif
 
+
+//controlled qubit is the first in the list.
+static void multicontrolled_rz(
+    ir::Circuit &c,
+    const Vec<Real> &instruction_list,
+    UInt start_index,
+    UInt end_index,
+    const Vec<UInt> &qubits
+) {
+    // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << to_string(qubits, "qubits: "));
+    UInt idx;
+    //The first one is always controlled from the last to the first qubit.
+    c.emplace<ir::gates::RZ>(qubits.back(),-instruction_list[start_index]);
+    c.emplace<ir::gates::CNot>(qubits[0], qubits.back());
+    for (UInt i = 1; i < end_index - start_index; i++) {
+        idx = log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
+        c.emplace<ir::gates::RZ>(qubits.back(),-instruction_list[i+start_index]);
+        c.emplace<ir::gates::CNot>(qubits[idx], qubits.back());
+    }
+    // The last one is always controlled from the next qubit to the first qubit
+    c.emplace<ir::gates::RZ>(qubits.back(),-instruction_list[end_index]);
+    c.emplace<ir::gates::CNot>(qubits.end()[-2], qubits.back());
+}
+
+//controlled qubit is the first in the list.
+static void multicontrolled_ry(
+    ir::Circuit &c,
+    const Vec<Real> &instruction_list,
+    UInt start_index,
+    UInt end_index,
+    const Vec<UInt> &qubits
+) {
+    // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << to_string(qubits, "qubits: "));
+    UInt idx;
+
+    //The first one is always controlled from the last to the first qubit.
+    c.emplace<ir::gates::RY>(qubits.back(),-instruction_list[start_index]);
+    c.emplace<ir::gates::CNot>(qubits[0], qubits.back());
+
+    for (UInt i = 1; i < end_index - start_index; i++) {
+        idx = log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
+        c.emplace<ir::gates::RY>(qubits.back(),-instruction_list[i+start_index]);
+        c.emplace<ir::gates::CNot>(qubits[idx], qubits.back());
+    }
+    // Last one is controlled from the next qubit to the first one.
+    c.emplace<ir::gates::RY>(qubits.back(),-instruction_list[end_index]);
+    c.emplace<ir::gates::CNot>(qubits.end()[-2], qubits.back());
+}
+
+//recursive gate count function
+//n is number of qubits
+//i is the start point for the instructionlist
+static Int recursiveRelationsForUnitaryDecomposition(
+    ir::Circuit &c,
+    const Vec<Real> &insns,
+    const Vec<UInt> &qubits,
+    UInt n,
+    UInt i
+) {
+    // DOUT("Adding a new unitary starting at index: "<< i << ", to " << n << to_string(qubits, " qubits: "));
+    if (n > 1) {
+        // Need to be checked here because it changes the structure of the decomposition.
+        // This checks whether the first qubit is affected, if not, it applies a unitary to the all qubits except the first one.
+        UInt numberforcontrolledrotation = pow2(n - 1);                     //number of gates per rotation
+
+        // code for last one not affected
+        if (insns[i] == 100.0) {
+            QL_DOUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion. New start_index: " << i + 1);
+            Vec<UInt> subvector(qubits.begin() + 1, qubits.end());
+            return recursiveRelationsForUnitaryDecomposition(c, insns, subvector, n - 1, i + 1) + 1; // for the number 10.0
+        } else if (insns[i] == 200.0) {
+            Vec<UInt> subvector(qubits.begin(), qubits.end() - 1);
+
+            // This is a special case of only demultiplexing
+            if (insns[i+1] == 300.0) {
+
+                // Two numbers that aren't rotation gate angles
+                UInt start_counter = i + 2;
+                QL_DOUT("[kernel.h] Optimization: first qubit not affected, skip one step in the recursion. New start_index: " << start_counter);
+
+                return recursiveRelationsForUnitaryDecomposition(c, insns, subvector, n - 1, start_counter) + 2; //for the numbers 20 and 30
+            } else {
+                UInt start_counter = i + 1;
+                QL_DOUT("[kernel.h] Optimization: only demultiplexing will be performed. New start_index: " << start_counter);
+
+                start_counter += recursiveRelationsForUnitaryDecomposition(c, insns, subvector, n - 1, start_counter);
+                multicontrolled_rz(c, insns, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+                start_counter += numberforcontrolledrotation; //multicontrolled rotation always has the same number of gates
+                start_counter += recursiveRelationsForUnitaryDecomposition(c, insns, subvector, n - 1, start_counter);
+                return start_counter - i;
+            }
+        } else {
+            // The new qubit vector that is passed to the recursive function
+            Vec<UInt> subvector(qubits.begin(), qubits.end() - 1);
+            UInt start_counter = i;
+            start_counter += recursiveRelationsForUnitaryDecomposition(c, insns, subvector, n - 1, start_counter);
+            multicontrolled_rz(c, insns, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+            start_counter += numberforcontrolledrotation;
+            start_counter += recursiveRelationsForUnitaryDecomposition(c, insns, subvector, n - 1, start_counter);
+            multicontrolled_ry(c, insns, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+            start_counter += numberforcontrolledrotation;
+            start_counter += recursiveRelationsForUnitaryDecomposition(c, insns, subvector, n - 1, start_counter);
+            multicontrolled_rz(c, insns, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+            start_counter += numberforcontrolledrotation;
+            start_counter += recursiveRelationsForUnitaryDecomposition(c, insns, subvector, n - 1, start_counter);
+            return start_counter -i; //it is just the total
+        }
+    } else { //n=1
+        // DOUT("Adding the zyz decomposition gates at index: "<< i);
+        // zyz gates happen on the only qubit in the list.
+        c.emplace<ir::gates::RZ>(qubits.back(), insns[i]);
+        c.emplace<ir::gates::RY>(qubits.back(), insns[i + 1]);
+        c.emplace<ir::gates::RZ>(qubits.back(), insns[i + 2]);
+        // How many gates this took
+        return 3;
+    }
+}
+
+/**
+ * Returns the decomposed circuit.
+ */
+ir::Circuit Unitary::get_circuit(const utils::Vec<utils::UInt> &qubits) const {
+
+    // Decompose now if not done yet.
+    if (!decomposed) {
+        decompose();
+    }
+
+    UInt u_size = log2(size()) / 2;
+    if (u_size != qubits.size()) {
+        QL_EOUT("Unitary " << name << " has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
+        throw Exception("Unitary '" + name + "' has been applied to the wrong number of qubits. Cannot be added to kernel! " + to_string(qubits.size()) + " and not " + to_string(u_size), false);
+    }
+    for (uint64_t i = 0; i < qubits.size()-1; i++) {
+        for (uint64_t j = i + 1; j < qubits.size(); j++) {
+            if (qubits[i] == qubits[j]) {
+                QL_EOUT("Qubit numbers used more than once in Unitary: " << name << ". Double qubit is number " << qubits[j]);
+                throw Exception("Qubit numbers used more than once in Unitary: " + name + ". Double qubit is number " + to_string(qubits[j]), false);
+            }
+        }
+    }
+    // applying unitary to gates
+    QL_DOUT("Applying unitary '" << name << "' to qubits: " << qubits);
+    QL_DOUT("The list is this many items long: " << instruction_list.size());
+    //COUT("Instructionlist" << to_string(u.instructionlist));
+    ir::Circuit c;
+    Int end_index = recursiveRelationsForUnitaryDecomposition(c, instruction_list, qubits, u_size, 0);
+    QL_DOUT("Total number of gates added: " << end_index);
+
+    return c;
+}
+
+
+} // namespace com
 } // namespace ql

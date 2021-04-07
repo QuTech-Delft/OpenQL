@@ -7,7 +7,7 @@
 #include <iostream>
 #include "ql/utils/filesystem.h"
 #include "ql/utils/map.h"
-#include "ql/com/options/options.h"
+#include "ql/com/options.h"
 
 namespace ql {
 

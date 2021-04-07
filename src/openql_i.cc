@@ -4,7 +4,7 @@
 
 #include "openql_i.h"
 
-#include "version.h"
+#include "ql/version.h"
 
 static bool initialized = false;
 
@@ -94,11 +94,7 @@ Unitary::Unitary(
 ) :
     name(name)
 {
-    unitary = new ql::unitary(name, {matrix.begin(), matrix.end()});
-}
-
-Unitary::~Unitary() {
-    delete(unitary);
+    unitary.emplace(name, ql::utils::Vec<ql::utils::Complex>(matrix.begin(), matrix.end()));
 }
 
 void Unitary::decompose() {
@@ -106,7 +102,7 @@ void Unitary::decompose() {
 }
 
 bool Unitary::is_decompose_support_enabled() {
-    return ql::unitary::is_decompose_support_enabled();
+    return ql::com::Unitary::is_decompose_support_enabled();
 }
 
 Kernel::Kernel(const std::string &name) : name(name) {

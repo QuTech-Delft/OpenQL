@@ -5,7 +5,6 @@
 #pragma once
 
 #include "openql.h"
-#include "unitary.h"
 #include "compiler.h"
 
 void initialize();
@@ -52,10 +51,9 @@ typedef std::complex<double> Complex;
 class Unitary {
 public:
     std::string name;
-    ql::unitary *unitary;
+    ql::utils::Ptr<ql::com::Unitary> unitary;
 
     Unitary(const std::string &name, const std::vector<std::complex<double>> &matrix);
-    ~Unitary();
     void decompose();
     static bool is_decompose_support_enabled();
 };

@@ -7,8 +7,8 @@
 #include "common.h"
 
 #include <iostream>
-#include "ql/com/options/options.h"
 #include "ql/utils/json.h"
+#include "ql/com/options.h"
 
 namespace ql {
 namespace pass {

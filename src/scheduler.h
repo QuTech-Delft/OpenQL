@@ -18,8 +18,8 @@
 #include "ql/utils/list.h"
 #include "ql/utils/map.h"
 #include "ql/utils/ptr.h"
-#include "ql/com/options/options.h"
 #include "ql/ir/ir.h"
+#include "ql/com/options.h"
 #include "resource_manager.h"
 #include "report.h"
 

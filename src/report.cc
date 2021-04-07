@@ -37,8 +37,8 @@
 
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
-#include "ql/com/options/options.h"
 #include "ql/ir/ir.h"
+#include "ql/com/options.h"
 
 namespace ql {
 

@@ -4,7 +4,7 @@
 
 #include "ql/ir/bundle.h"
 
-#include "ql/com/options/options.h"
+#include "ql/com/options.h"
 
 namespace ql {
 namespace ir {

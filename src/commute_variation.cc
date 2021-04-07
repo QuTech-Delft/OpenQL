@@ -10,7 +10,7 @@
 #include "ql/utils/list.h"
 #include "ql/utils/map.h"
 #include "ql/utils/filesystem.h"
-#include "ql/com/options/options.h"
+#include "ql/com/options.h"
 #include "scheduler.h"
 #include "report.h"
 

@@ -2,9 +2,8 @@
  * Implementation for OpenQL's global options.
  */
 
-#include "ql/com/options/options.h"
+#include "ql/com/options.h"
 #include "ql/utils/logger.h"
-#include "ql/utils/filesystem.h"
 
 namespace ql {
 namespace com {

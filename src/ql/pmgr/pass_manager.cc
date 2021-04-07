@@ -5,7 +5,7 @@
 #include "ql/pmgr/pass_manager.h"
 
 #include "ql/utils/filesystem.h"
-#include "ql/com/options/options.h"
+#include "ql/com/options.h"
 
 // Pass definition headers. This list should be generated at some point.
 #include "ql/pass/ana/visualize/circuit.h"

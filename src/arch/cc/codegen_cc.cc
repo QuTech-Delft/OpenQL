@@ -10,8 +10,8 @@
 #include "codegen_cc.h"
 
 #include <iosfwd>
-#include "version.h"
-#include "ql/com/options/options.h"
+#include "ql/version.h"
+#include "ql/com/options.h"
 
 namespace ql {
 namespace arch {

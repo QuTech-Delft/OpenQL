@@ -7,7 +7,7 @@
  */
 
 #include "vcd_cc.h"
-#include "ql/com/options/options.h"
+#include "ql/com/options.h"
 #include "ql/utils/filesystem.h"
 
 namespace ql {

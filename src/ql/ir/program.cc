@@ -5,10 +5,9 @@
 #include "ql/ir/program.h"
 
 #include "ql/utils/filesystem.h"
-#include "ql/com/options/options.h"
+#include "ql/com/options.h"
 #include "compiler.h"
 #include "interactionMatrix.h"
-#include "scheduler.h"
 
 static unsigned long phi_node_count = 0;    // FIXME: number across quantum_program instances
 
@@ -311,8 +310,7 @@ void Program::set_platform(const plat::PlatformRef &platform) {
     this->platform = platform;
 }
 
-std::string dirnameOf(const std::string& fname)
-{
+static std::string dirnameOf(const std::string& fname) {
      size_t pos = fname.find_last_of("\\/");
      return (std::string::npos == pos) ? "" : fname.substr(0, pos)+"/";
 }

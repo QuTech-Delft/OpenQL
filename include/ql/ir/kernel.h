@@ -12,9 +12,16 @@
 #include "ql/ir/gate.h"
 #include "ql/ir/circuit.h"
 #include "ql/ir/classical.h"
-#include "unitary.h"
 
 namespace ql {
+
+// FIXME: this should not be here. IR headers should not have to include
+//  anything not from ql::ir, ql::plat, or ql::utils; they should be dumb
+//  containers. But decomposition etc. is still part of Kernel.
+namespace com {
+class Unitary;
+} // namespace com
+
 namespace ir {
 
 enum class KernelType {
@@ -189,7 +196,7 @@ public:
         const utils::Vec<utils::UInt> &gcondregs
     );
     // to add unitary to kernel
-    void gate(const unitary &u, const utils::Vec<utils::UInt> &qubits);
+    void gate(const com::Unitary &u, const utils::Vec<utils::UInt> &qubits);
 
     // terminology:
     // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):
@@ -244,32 +251,6 @@ private:
         utils::Vec<utils::UInt> &bregs,
         ConditionType &gcond,
         const utils::Vec<utils::UInt> &gcondregs
-    );
-
-    //recursive gate count function
-    //n is number of qubits
-    //i is the start point for the instructionlist
-    utils::Int recursiveRelationsForUnitaryDecomposition(
-        const unitary &u,
-        const utils::Vec<utils::UInt> &qubits,
-        utils::UInt n,
-        utils::UInt i
-    );
-
-    //controlled qubit is the first in the list.
-    void multicontrolled_rz(
-        const utils::Vec<utils::Real> &instruction_list,
-        utils::UInt start_index,
-        utils::UInt end_index,
-        const utils::Vec<utils::UInt> &qubits
-    );
-
-    //controlled qubit is the first in the list.
-    void multicontrolled_ry(
-        const utils::Vec<utils::Real> &instruction_list,
-        utils::UInt start_index,
-        utils::UInt end_index,
-        const utils::Vec<utils::UInt> &qubits
     );
 
 public:

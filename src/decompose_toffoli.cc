@@ -5,7 +5,7 @@
 #include "decompose_toffoli.h"
 
 #include "ql/utils/vec.h"
-#include "ql/com/options/options.h"
+#include "ql/com/options.h"
 
 namespace ql {
 

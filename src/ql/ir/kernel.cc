@@ -11,12 +11,12 @@
 #include "ql/utils/json.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
-#include "ql/com/options/options.h"
 #include "ql/plat/platform.h"
 #include "ql/ir/gate.h"
 #include "ql/ir/classical.h"
 #include "ql/ir/bundle.h"
-#include "unitary.h"
+#include "ql/com/options.h"
+#include "ql/com/unitary.h"
 
 namespace ql {
 namespace ir {
@@ -1006,151 +1006,12 @@ Bool Kernel::gate_nonfatal(
 
 // to add unitary to kernel
 void Kernel::gate(
-    const unitary &u,
+    const com::Unitary &u,
     const Vec<UInt> &qubits
 ) {
-    UInt u_size = log2(u.size()) / 2;
-    if (u_size != qubits.size()) {
-        QL_EOUT("Unitary " << u.name << " has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
-        throw Exception("Unitary '" + u.name + "' has been applied to the wrong number of qubits. Cannot be added to kernel! " + to_string(qubits.size()) + " and not " + to_string(u_size), false);
-    }
-    for (uint64_t i = 0; i < qubits.size()-1; i++) {
-        for (uint64_t j = i + 1; j < qubits.size(); j++) {
-            if (qubits[i] == qubits[j]) {
-                QL_EOUT("Qubit numbers used more than once in Unitary: " << u.name << ". Double qubit is number " << qubits[j]);
-                throw Exception("Qubit numbers used more than once in Unitary: " + u.name + ". Double qubit is number " + to_string(qubits[j]), false);
-            }
-        }
-    }
-    // applying unitary to gates
-    QL_COUT("Applying unitary '" << u.name << "' to qubits: " << qubits);
-    if (u.is_decomposed) {
-        QL_DOUT("Adding decomposed unitary to kernel ...");
-        QL_IOUT("The list is this many items long: " << u.instructionlist.size());
-        //COUT("Instructionlist" << to_string(u.instructionlist));
-        cycles_valid = false;
-        Int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
-        QL_DOUT("Total number of gates added: " << end_index);
-    } else {
-        QL_EOUT("Unitary " << u.name << " not decomposed. Cannot be added to kernel!");
-        throw Exception("Unitary '" + u.name + "' not decomposed. Cannot be added to kernel!", false);
-    }
-}
-
-//recursive gate count function
-//n is number of qubits
-//i is the start point for the instructionlist
-Int Kernel::recursiveRelationsForUnitaryDecomposition(
-    const unitary &u,
-    const Vec<UInt> &qubits,
-    UInt n,
-    UInt i
-) {
-    // DOUT("Adding a new unitary starting at index: "<< i << ", to " << n << to_string(qubits, " qubits: "));
-    if (n > 1) {
-        // Need to be checked here because it changes the structure of the decomposition.
-        // This checks whether the first qubit is affected, if not, it applies a unitary to the all qubits except the first one.
-        UInt numberforcontrolledrotation = pow2(n - 1);                     //number of gates per rotation
-
-        // code for last one not affected
-        if (u.instructionlist[i] == 100.0) {
-            QL_DOUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion. New start_index: " << i + 1);
-            Vec<UInt> subvector(qubits.begin() + 1, qubits.end());
-            return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, i + 1) + 1; // for the number 10.0
-        } else if (u.instructionlist[i] == 200.0) {
-            Vec<UInt> subvector(qubits.begin(), qubits.end() - 1);
-
-            // This is a special case of only demultiplexing
-            if (u.instructionlist[i+1] == 300.0) {
-
-                // Two numbers that aren't rotation gate angles
-                UInt start_counter = i + 2;
-                QL_DOUT("[kernel.h] Optimization: first qubit not affected, skip one step in the recursion. New start_index: " << start_counter);
-
-                return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter) + 2; //for the numbers 20 and 30
-            } else {
-                UInt start_counter = i + 1;
-                QL_DOUT("[kernel.h] Optimization: only demultiplexing will be performed. New start_index: " << start_counter);
-
-                start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
-                multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
-                start_counter += numberforcontrolledrotation; //multicontrolled rotation always has the same number of gates
-                start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
-                return start_counter - i;
-            }
-        } else {
-            // The new qubit vector that is passed to the recursive function
-            Vec<UInt> subvector(qubits.begin(), qubits.end() - 1);
-            UInt start_counter = i;
-            start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
-            multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
-            start_counter += numberforcontrolledrotation;
-            start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
-            multicontrolled_ry(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
-            start_counter += numberforcontrolledrotation;
-            start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
-            multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
-            start_counter += numberforcontrolledrotation;
-            start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
-            return start_counter -i; //it is just the total
-        }
-    } else { //n=1
-        // DOUT("Adding the zyz decomposition gates at index: "<< i);
-        // zyz gates happen on the only qubit in the list.
-        c.emplace<gates::RZ>(qubits.back(), u.instructionlist[i]);
-        c.emplace<gates::RY>(qubits.back(), u.instructionlist[i + 1]);
-        c.emplace<gates::RZ>(qubits.back(), u.instructionlist[i + 2]);
-        // How many gates this took
-        return 3;
-    }
-}
-
-//controlled qubit is the first in the list.
-void Kernel::multicontrolled_rz(
-    const Vec<Real> &instruction_list,
-    UInt start_index,
-    UInt end_index,
-    const Vec<UInt> &qubits
-) {
-    // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << to_string(qubits, "qubits: "));
-    UInt idx;
-    //The first one is always controlled from the last to the first qubit.
-    c.emplace<gates::RZ>(qubits.back(),-instruction_list[start_index]);
-    c.emplace<gates::CNot>(qubits[0], qubits.back());
-    for (UInt i = 1; i < end_index - start_index; i++) {
-        idx = log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
-        c.emplace<gates::RZ>(qubits.back(),-instruction_list[i+start_index]);
-        c.emplace<gates::CNot>(qubits[idx], qubits.back());
-    }
-    // The last one is always controlled from the next qubit to the first qubit
-    c.emplace<gates::RZ>(qubits.back(),-instruction_list[end_index]);
-    c.emplace<gates::CNot>(qubits.end()[-2], qubits.back());
+    QL_DOUT("Adding decomposed unitary to kernel ...");
     cycles_valid = false;
-}
-
-//controlled qubit is the first in the list.
-void Kernel::multicontrolled_ry(
-    const Vec<Real> &instruction_list,
-    UInt start_index,
-    UInt end_index,
-    const Vec<UInt> &qubits
-) {
-    // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << to_string(qubits, "qubits: "));
-    UInt idx;
-
-    //The first one is always controlled from the last to the first qubit.
-    c.emplace<gates::RY>(qubits.back(),-instruction_list[start_index]);
-    c.emplace<gates::CNot>(qubits[0], qubits.back());
-
-    for (UInt i = 1; i < end_index - start_index; i++) {
-        idx = log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
-        c.emplace<gates::RY>(qubits.back(),-instruction_list[i+start_index]);
-        c.emplace<gates::CNot>(qubits[idx], qubits.back());
-    }
-    // Last one is controlled from the next qubit to the first one.
-    c.emplace<gates::RY>(qubits.back(),-instruction_list[end_index]);
-    c.emplace<gates::CNot>(qubits.end()[-2], qubits.back());
-    cycles_valid = false;
+    c.extend(u.get_circuit(qubits));
 }
 
 /**
