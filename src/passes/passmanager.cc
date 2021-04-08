@@ -81,12 +81,6 @@ void PassManager::compile(const ir::ProgramRef &program) const {
         }
         assert(program->qubit_count);
 
-        //If the old interface is used, platform is already set, so it is not needed to look for platform option and configure the platform from there
-        if (!program->platformInitialized) {
-            Str hwconfig = pass->getPassOptions()["hwconfig"].as_str();
-            program->platform.emplace("testPlatform", hwconfig);
-        }
-
         if (!pass->getSkip()) {
             QL_DOUT(" Calling pass: " << pass->getPassName());
             pass->initPass(program);

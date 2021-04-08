@@ -24,6 +24,13 @@ class Unitary;
 
 namespace ir {
 
+/**
+ * The role of a kernel in control-flow representation.
+ *
+ * FIXME: this representation of control-flow, while complete, is very poorly
+ *  engineered. The recursive structure is flattened and thus difficult to
+ *  deduce, there is redundant data everywhere, etc.
+ */
 enum class KernelType {
     STATIC,
     FOR_START, FOR_END,
@@ -32,21 +39,100 @@ enum class KernelType {
     ELSE_START, ELSE_END
 };
 
+/**
+ * A single kernel of a program, a.k.a. a basic block.
+ */
 class Kernel : public utils::Node {
 public: // FIXME: should be private
-    utils::Str                      name;
-    utils::UInt                     iterations;
-    utils::UInt                     qubit_count;
-    utils::UInt                     creg_count;
-    utils::UInt                     breg_count;
-    KernelType                      type;
-    Circuit                         c;
-    utils::Bool                     cycles_valid; // used in bundler to check if kernel has been scheduled
-    utils::Opt<ClassicalOperation>  br_condition;
-    utils::UInt                     cycle_time;   // FIXME HvS just a copy of platform.cycle_time
-    plat::InstructionMap            instruction_map;
-    utils::Vec<utils::UInt>         cond_operands;    // see gate interface: condition mode to make new gates conditional
-    ConditionType                   condition;        // kernel condition mode is set by gate_preset_condition()
+    /**
+     * Name given to the kernel by the user.
+     */
+    utils::Str name;
+
+    /**
+     * The platform associated with the kernel.
+     *
+     * TODO: this doesn't really belong here, but is currently necessary because
+     *  the gate constructors are part of the kernel. Rather, gates should be
+     *  constructed by the platform and then added to the kernel, in much the
+     *  same way that kernels are created using the platform and then added to
+     *  a program.
+     */
+    plat::PlatformRef platform;
+
+    /**
+     * Number of (virtual) qubits used by this kernel. Must be less than or
+     * equal to the number of qubits in the platform. When the qubits represent
+     * physical qubits (post-mapping), this must equal the number of qubits in
+     * the platform.
+     */
+    utils::UInt qubit_count;
+
+    /**
+     * Number of (virtual) 32-bit general-purpose classical registers used by
+     * this kernel. Must be less than or equal to the number of registers in the
+     * platform.
+     */
+    utils::UInt creg_count;
+
+    /**
+     * Number of (virtual) single-bit condition registers used by this kernel.
+     * Must be less than or equal to the number of registers in the platform.
+     *
+     * FIXME: code is not consistent about what a breg means. I (JvS) thought we
+     *  were using the first num_qubits bregs as registers that always exist and
+     *  implicitly receive measurement results when no breg is manually
+     *  specified, and use num_qubits..num_qubits+breg_count for user-specified
+     *  state variables. But that's not how it works at all; bregs are still
+     *  usually implicit, code all over the place assumes that bregs only range
+     *  up to breg_count (exclusive), and breg_count defaults to zero. I don't
+     *  get it.
+     */
+    utils::UInt breg_count;
+
+    /**
+     * The list of gates that forms the body of the kernel.
+     */
+    Circuit c;
+
+    /**
+     * The classical control-flow behavior of this kernel.
+     */
+    KernelType type;
+
+    /**
+     * The number of iterations that this kernel must be run for. Exact usage
+     * (if any) depends on type.
+     */
+    utils::UInt iteration_count;
+
+    /**
+     * The branch condition for this kernel. Exact usage (if any) depends on
+     * type.
+     */
+    utils::Opt<ClassicalOperation> br_condition;
+
+    /**
+     * Whether the cycle numbers attached to the gates in the circuit are
+     * considered to be valid. Used by the bundler to see if the kernel has been
+     * scheduled.
+     */
+    utils::Bool cycles_valid;
+
+    /**
+     * A conditional gate type used when adding gates to the kernel.
+     *
+     * FIXME: does NOT exactly serve as a condition for the kernel itself unless
+     *  it's only at construction, not changed after that, and all kernels are
+     *  added via the kernel.gate()-like functions (rather than being added to
+     *  the circuit directly, as done by unitary decomposition, for example.
+     */
+    ConditionType condition;
+
+    /**
+     * Operands for the above condition.
+     */
+    utils::Vec<utils::UInt> cond_operands;
 
     /**
      * Pass-specific unstructured statistical information for this kernel. This
@@ -55,16 +141,16 @@ public: // FIXME: should be private
      * (specifically, the statistics reporting pass dumps these strings as
      * additional lines per kernel).
      */
-    utils::List<utils::Str>         statistics;
+    utils::List<utils::Str> statistics;
 
 public:
-    Kernel(const utils::Str &name);
+
     Kernel(
         const utils::Str &name,
         const plat::PlatformRef &platform,
-        utils::UInt qcount,
-        utils::UInt ccount=0,
-        utils::UInt bcount=0
+        utils::UInt qubit_count,
+        utils::UInt creg_count=0,
+        utils::UInt breg_count=0
     );
 
     // FIXME: add constructor which allows setting iterations and type, and use that in program.h::add_for(), etc
@@ -311,7 +397,14 @@ public:
 
 };
 
+/**
+ * A "reference" (actually a smart pointer) to a single kernel node.
+ */
 using KernelRef = utils::One<Kernel>;
+
+/**
+ * A vector of "references" (actually smart pointers) to kernel nodes.
+ */
 using KernelRefs = utils::Any<Kernel>;
 
 } // namespace ir

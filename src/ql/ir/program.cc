@@ -17,37 +17,54 @@ namespace ir {
 using namespace utils;
 
 /**
- * @brief   Quantum program constructor
- * @param   n   Name of the program
+ * Constructs a new program.
  */
-Program::Program(const Str &n) : name(n) {
-    platformInitialized = false;
-    QL_DOUT("Constructor for quantum_program:  " << n);
-}
-
 Program::Program(
-    const Str &n,
-    const plat::PlatformRef &platf,
-    UInt nqubits,
-    UInt ncregs,
-    UInt nbregs
+    const Str &name,
+    const plat::PlatformRef &platform,
+    UInt qubit_count,
+    UInt creg_count,
+    UInt breg_count
 ) :
-    name(n),
-    platform(platf),
-    qubit_count(nqubits),
-    creg_count(ncregs),
-    breg_count(nbregs)
+    name(name),
+    unique_name(name),
+    platform(platform),
+    qubit_count(qubit_count),
+    creg_count(creg_count),
+    breg_count(breg_count)
 {
-    default_config = true;
-    platformInitialized = true;
-
-    if (qubit_count > platform->qubit_number) {
-        QL_FATAL("number of qubits requested in program '" + to_string(qubit_count) + "' is greater than the qubits available in platform '" + to_string(platform->qubit_number) + "'" );
+    if (qubit_count > platform->qubit_count) {
+        throw Exception(
+            "cannot create program (" + name + ") "
+            + "that uses more qubits (" + to_string(qubit_count) + ") "
+            + "than the platform has (" + to_string(platform->qubit_count) + ")"
+        );
+    }
+    if (creg_count > platform->creg_count) {
+        if (platform->compat_implicit_creg_count) {
+            platform->creg_count = creg_count;
+        } else {
+            throw Exception(
+                "cannot create program (" + name + ") "
+                + "that uses more cregs (" + to_string(creg_count) + ") "
+                + "than the platform has (" + to_string(platform->creg_count) + ")"
+            );
+        }
+    }
+    if (breg_count > platform->breg_count) {
+        if (platform->compat_implicit_breg_count) {
+            platform->breg_count = breg_count;
+        } else {
+            throw Exception(
+                "cannot create program (" + name + ") "
+                + "that uses more bregs (" + to_string(breg_count) + ") "
+                + "than the platform has (" + to_string(platform->breg_count) + ")"
+            );
+        }
     }
 
     // Generate unique filename if requested via the unique_output option.
-    unique_name = name;
-    if (com::options::get("unique_output") == "yes") {
+    if (com::options::global["unique_output"].as_bool()) {
 
         // Filename for the name uniquification number.
         Str version_file = QL_SS2S(com::options::get("output_dir") << "/" << name << ".unique");
@@ -72,37 +89,60 @@ Program::Program(
 
 }
 
-void Program::add(const KernelRef &k) {
-    // check sanity of supplied qubit/classical operands for each gate
-    Circuit &kc = k->get_circuit();
-    for (auto &g : kc) {
-        auto &gate_operands = g->operands;
-        auto &gname = g->name;
-        auto gtype = g->type();
-        for (auto &op : gate_operands) {
-            if (
-                ((gtype == GateType::CLASSICAL) && (op >= creg_count)) ||
-                ((gtype != GateType::CLASSICAL) && (op >= qubit_count))
-            ) {
-                 QL_FATAL("Out of range operand(s) for operation: '" << gname <<
-                                                                     "' (op=" << op <<
-                                                                     ", qubit_count=" << qubit_count <<
-                                                                     ", creg_count=" << creg_count <<
-                                                                     ")");
-            }
+/**
+ * Adds the given kernel to the end of the program, after checking that it's
+ * safe to add.
+ */
+void Program::add(const KernelRef &kernel) {
+
+    // Check name uniqueness.
+    // FIXME: use a set or a map!
+    for (const auto &kernel2 : kernels) {
+        if (kernel2->name == kernel->name) {
+            throw Exception("duplicate kernel name: " + kernel->name);
         }
     }
 
-    for (const auto &kernel : kernels) {
-        if (kernel->name == k->name) {
-            QL_FATAL("Cannot add kernel. Duplicate kernel name: " << k->name);
-        }
+    // Check platform.
+    if (kernel->platform.get_ptr() != platform.get_ptr()) {
+        throw Exception(
+            "cannot add kernel (" + kernel->name + ") "
+            "built using a different platform"
+        );
     }
 
-    // if sane, now add kernel to list of kernels
-    kernels.add(k);
+    // Check register counts.
+    if (kernel->qubit_count > qubit_count) {
+        throw Exception(
+            "cannot add kernel (" + kernel->name + ") " +
+            "that uses more qubits (" + to_string(kernel->qubit_count) + ") " +
+            "than the program declares ( "+ to_string(qubit_count) + ")"
+        );
+    }
+    if (kernel->creg_count > creg_count) {
+        throw Exception(
+            "cannot add kernel (" + kernel->name + ") " +
+            "that uses more cregs (" + to_string(kernel->creg_count) + ") " +
+            "than the program declares ( "+ to_string(creg_count) + ")"
+        );
+    }
+    if (kernel->breg_count > breg_count) {
+        throw Exception(
+            "cannot add kernel (" + kernel->name + ") " +
+            "that uses more bregs (" + to_string(kernel->breg_count) + ") " +
+            "than the program declares ( "+ to_string(breg_count) + ")"
+        );
+    }
+
+    // If sane, add kernel to list of kernels.
+    kernels.add(kernel);
+
 }
 
+/**
+ * Adds the kernels in the given (sub)program to the end of this program,
+ * checking for each kernel whether it's safe to add.
+ */
 void Program::add_program(const ProgramRef &p) {
     for (auto &k : p->kernels) {
         add(k);
@@ -251,11 +291,11 @@ void Program::add_for(const KernelRef &k, UInt iterations) {
     // phi node
     auto kphi1 = KernelRef::make(k->name+"_for"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
     kphi1->set_kernel_type(KernelType::FOR_START);
-    kphi1->iterations = iterations;
+    kphi1->iteration_count = iterations;
     kernels.add(kphi1);
 
     add(k);
-    kernels.back()->iterations = iterations;
+    kernels.back()->iteration_count = iterations;
 
     // phi node
     auto kphi2 = KernelRef::make(k->name+"_for" + to_string(phi_node_count) +"_end", platform, qubit_count, creg_count, breg_count);
@@ -284,7 +324,7 @@ void Program::add_for(const ProgramRef &p, UInt iterations) {
     // phi node
     auto kphi1 = KernelRef::make(p->name+"_for"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
     kphi1->set_kernel_type(KernelType::FOR_START);
-    kphi1->iterations = iterations;
+    kphi1->iteration_count = iterations;
     kernels.add(kphi1);
 
     // phi node
@@ -299,15 +339,6 @@ void Program::add_for(const ProgramRef &p, UInt iterations) {
     kphi3->set_kernel_type(KernelType::FOR_END);
     kernels.add(kphi3);
     phi_node_count++;
-}
-
-void Program::set_config_file(const Str &file_name) {
-    config_file_name = file_name;
-    default_config   = false;
-}
-
-void Program::set_platform(const plat::PlatformRef &platform) {
-    this->platform = platform;
 }
 
 static std::string dirnameOf(const std::string& fname) {
@@ -375,6 +406,10 @@ void Program::write_interaction_matrix() const {
         QL_IOUT("writing interaction matrix to '" << fname << "' ...");
         OutFile(fname).write(mstr);
     }
+}
+
+void Program::set_config_file(const utils::Str &config_file) {
+    sweep_points_config_file_name = config_file;
 }
 
 void Program::set_sweep_points(const Real *swpts, UInt size) {

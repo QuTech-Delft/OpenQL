@@ -279,15 +279,12 @@ void Scheduler::new_event(
 // construct the dependency graph ('graph') with nodes from the circuit and adding arcs for their dependencies
 void Scheduler::init(
     ir::Circuit &ckt,
-    const plat::PlatformRef &platform,
-    UInt qcount,        // number of qubits
-    UInt ccount,        // number of classical registers
-    UInt bcount         // number of bit registers
+    const plat::PlatformRef &platform
 ) {
-    QL_DOUT("dependency graph creation ... #qubits = " << platform->qubit_number);
-    qubit_count = qcount; ///@todo-rn: DDG creation should not depend on #qubits
-    creg_count = ccount; ///@todo-rn: DDG creation should not depend on #cregs
-    breg_count = bcount; ///@todo-rn: DDG creation should not depend on #bregs
+    QL_DOUT("dependency graph creation ... #qubits = " << platform->qubit_count);
+    qubit_count = platform->qubit_count;
+    creg_count = platform->creg_count;
+    breg_count = platform->breg_count;
     UInt total_reg_count = qubit_count + creg_count + breg_count;
     QL_DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", breg_count=" << breg_count << ", total=" << total_reg_count);
 
@@ -1573,7 +1570,7 @@ void schedule_kernel(
     QL_IOUT(scheduler << " scheduling the quantum kernel '" << kernel->name << "'...");
 
     Scheduler sched;
-    sched.init(kernel->c, platform, kernel->qubit_count, kernel->creg_count, kernel->breg_count);
+    sched.init(kernel->c, platform);
 
     if (com::options::get("print_dot_graphs") == "yes") {
         sched.get_dot(dot);
@@ -1631,23 +1628,20 @@ void schedule(
 void rcschedule_kernel(
     const ir::KernelRef &kernel,
     const plat::PlatformRef &platform,
-    Str &dot,
-    UInt nqubits,
-    UInt ncreg,
-    UInt nbreg
+    Str &dot
 ) {
     QL_IOUT("Resource constraint scheduling ...");
 
     Str schedopt = com::options::get("scheduler");
     if (schedopt == "ASAP") {
         Scheduler sched;
-        sched.init(kernel->c, platform, nqubits, ncreg, nbreg);
+        sched.init(kernel->c, platform);
 
         arch::resource_manager_t rm(platform, forward_scheduling);
         sched.schedule_asap(rm, platform, dot);
     } else if (schedopt == "ALAP") {
         Scheduler sched;
-        sched.init(kernel->c, platform, nqubits, ncreg, nbreg);
+        sched.init(kernel->c, platform);
 
         arch::resource_manager_t rm(platform, backward_scheduling);
         sched.schedule_alap(rm, platform, dot);
@@ -1672,11 +1666,9 @@ void rcschedule(
     for (auto &kernel : program->kernels) {
         QL_IOUT("Scheduling kernel: " << kernel->name);
         if (!kernel->c.empty()) {
-            auto num_creg = kernel->creg_count;
-            auto num_breg = kernel->breg_count;
             Str sched_dot;
 
-            rcschedule_kernel(kernel, platform, sched_dot, platform->qubit_number, num_creg, num_breg);
+            rcschedule_kernel(kernel, platform, sched_dot);
             kernel->cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
 
             if (com::options::get("print_dot_graphs") == "yes") {

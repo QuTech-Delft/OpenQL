@@ -119,10 +119,7 @@ public:
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(
         ir::Circuit &ckt,
-        const plat::PlatformRef &platform,
-        utils::UInt qcount,
-        utils::UInt ccount,
-        utils::UInt bcount
+        const plat::PlatformRef &platform
     );
 
     void DPRINTDepgraph(const utils::Str &s) const;
@@ -391,10 +388,7 @@ void rcschedule(
 void rcschedule_kernel(
     const ir::KernelRef &kernel,
     const plat::PlatformRef &platform,
-    utils::Str &dot,
-    utils::UInt nqubits,
-    utils::UInt ncreg = 0,
-    utils::UInt nbreg = 0
+    utils::Str &dot
 );
 
 } // namespace ql

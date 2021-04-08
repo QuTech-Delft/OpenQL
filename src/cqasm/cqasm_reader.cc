@@ -878,7 +878,7 @@ private:
         //    ones that have a qubit associated with them.
         UInt num_qubits = itou(ar.root->num_qubits);
         UInt num_cregs = 0;
-        UInt num_bregs = platform->qubit_number;
+        UInt num_bregs = platform->qubit_count;
         for (auto &var : ar.root->variables) {
             if (var->typ->as_qubit()) {
                 var->set_annotation(VarIndex{num_qubits++});
@@ -890,8 +890,8 @@ private:
                 throw Exception("only int, bool, and qubit variables are supported by OpenQL (" + location(*var) + ")");
             }
         }
-        if (num_qubits > platform->qubit_number) {
-            throw Exception("cQASM file needs " + to_string(num_qubits) + " qubits, but platform only supports " + to_string(platform->qubit_number));
+        if (num_qubits > platform->qubit_count) {
+            throw Exception("cQASM file needs " + to_string(num_qubits) + " qubits, but platform only supports " + to_string(platform->qubit_count));
         }
         if (num_qubits > program->qubit_count) {
             QL_IOUT("increasing program qubit count from " << program->qubit_count << " to " << num_qubits);

@@ -25,7 +25,7 @@ using namespace com;
 void Grid::Init(const plat::PlatformRef &p) {
     QL_DOUT("Grid::Init");
     platformp = p;
-    nq = platformp->qubit_number;
+    nq = platformp->qubit_count;
     QL_DOUT("... number of real qbits=" << nq);
 
     InitForm();     // form: embedded in xy grid (gf_xy) or irregular (gf_irregular) (topology.form)
@@ -663,13 +663,13 @@ FreeCycle::FreeCycle() {
     QL_DOUT("Constructing FreeCycle");
 }
 
-void FreeCycle::Init(const plat::PlatformRef &p, const UInt breg_count) {
+void FreeCycle::Init(const plat::PlatformRef &p) {
     QL_DOUT("FreeCycle::Init()");
     arch::resource_manager_t lrm(p, forward_scheduling);   // allocated here and copied below to rm because of platform parameter
     QL_DOUT("... created FreeCycle Init local resource_manager");
     platformp = p;
-    nq = platformp->qubit_number;
-    nb = breg_count;
+    nq = platformp->qubit_count;
+    nb = platformp->breg_count;
     ct = platformp->cycle_time;
     QL_DOUT("... FreeCycle: nq=" << nq << ", nb=" << nb << ", ct=" << ct << "), initializing to all 0 cycles");
     fcv.clear();
@@ -849,13 +849,13 @@ void Past::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const Ptr<Gr
     kernelp = k;
     gridp = g;
 
-    nq = platformp->qubit_number;
-    nb = kernelp->breg_count;
+    nq = platformp->qubit_count;
+    nb = platformp->breg_count;
     ct = platformp->cycle_time;
 
     QL_ASSERT(kernelp->c.empty());   // kernelp->c will be used by new_gate to return newly created gates into
     v2r.Init(nq);               // v2r initializtion until v2r is imported from context
-    fc.Init(platformp, nb);     // fc starts off with all qubits free, is updated after schedule of each gate
+    fc.Init(platformp);         // fc starts off with all qubits free, is updated after schedule of each gate
     waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
     lg.clear();                 // no gates scheduled yet in this past; after schedule of gate, it gets here
     outlg.clear();              // no gates output yet by flushing from or bypassing this past
@@ -1457,12 +1457,12 @@ Alter::Alter() {
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
 void Alter::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const utils::Ptr<Grid> &g) {
-    QL_DOUT("Alter::Init(number of qubits=" << p->qubit_number);
+    QL_DOUT("Alter::Init(number of qubits=" << p->qubit_count);
     platformp = p;
     kernelp = k;
     gridp = g;
 
-    nq = platformp->qubit_number;
+    nq = platformp->qubit_count;
     ct = platformp->cycle_time;
     // total, fromSource and fromTarget start as empty vectors
     past.Init(platformp, kernelp, gridp);      // initializes past to empty
@@ -1716,7 +1716,7 @@ void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
         input_gatepv = kernel->c;                               // copy to free original circuit to allow outputing to
         input_gatepp = input_gatepv.begin();                    // iterator set to start of input circuit copy
     } else {
-        schedp->init(kernel->c, platformp, nq, nc, nb);        // fills schedp->graph (dependence graph) from all of circuit
+        schedp->init(kernel->c, platformp);                     // fills schedp->graph (dependence graph) from all of circuit
         // and so also the original circuit can be output to after this
         for (auto &gp : kernel->c) {
             scheduled.set(gp) = false;   // none were scheduled
@@ -1918,8 +1918,8 @@ public:
     void Init(const utils::Ptr<Grid> &g, const plat::PlatformRef &p) {
         // QL_DOUT("InitialPlace Init ...");
         platformp = p;
-        nlocs = p->qubit_number;
-        nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
+        nlocs = p->qubit_count;
+        nvq = p->qubit_count;  // same range; when not, take set from config and create v2i earlier
         // QL_DOUT("... number of real qubits (locations): " << nlocs);
         gridp = g;
         QL_DOUT("Init: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp.unwrap());
@@ -3022,8 +3022,6 @@ void Mapper::MakePrimitives(const ir::KernelRef &kernel) {
 void Mapper::Map(const ir::KernelRef &kernel) {
     QL_DOUT("Mapping kernel " << kernel->name << " [START]");
     QL_DOUT("... kernel original virtual number of qubits=" << kernel->qubit_count);
-    nc = kernel->creg_count;    // in absence of platform creg_count, take it from kernel, i.e. from OpenQL program
-    nb = kernel->breg_count;    // in absence of platform breg_count, take it from kernel, i.e. from OpenQL program
     kernelp.reset();            // no new_gates until kernel.c has been copied
 
     Virt2Real   v2r;            // current mapping while mapping this kernel
@@ -3069,6 +3067,8 @@ void Mapper::Map(const ir::KernelRef &kernel) {
     MakePrimitives(kernel);         // decompose to primitives as specified in the config file
 
     kernel->qubit_count = nq;       // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
+    kernel->creg_count = nc;        // same for number of cregs and bregs, although we don't really map those
+    kernel->breg_count = nb;
     v2r.Export(v2r_out);     // from v2r to caller for reporting
     v2r.Export(rs_out);      // from v2r to caller for reporting
 
@@ -3083,9 +3083,9 @@ void Mapper::Init(const plat::PlatformRef &p) {
     // QL_DOUT("Mapping initialization ...");
     // QL_DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
     platformp = p;
-    nq = p->qubit_number;
-    // nc = p->creg_number;  // nc should come from platform, but doesn't; is taken from kernel in Map
-    // nb = p->breg_number;  // nb should come from platform, but doesn't; is taken from kernel in Map
+    nq = p->qubit_count;
+    nc = p->creg_count;
+    nb = p->breg_count;
     RandomInit();
     // QL_DOUT("... platform/real number of qubits=" << nq << ");
     cycle_time = p->cycle_time;

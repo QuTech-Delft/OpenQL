@@ -23,13 +23,16 @@ static void decompose_toffoli_kernel(
         ir::GateType gtype = g->type();
 
         if (gtype == ir::GateType::TOFFOLI || g->name == "toffoli") {
-            ir::Kernel toff_kernel("toff_kernel");
+            ir::Kernel toff_kernel(
+                "toff_kernel",
+                platform,
+                kernel->qubit_count,
+                kernel->creg_count,
+                kernel->breg_count
+            );
             auto opt = com::options::get("decompose_toffoli");
 
             QL_DOUT("... decompose_toffoli (option=" << opt << "), decomposing gate '" << g->qasm() << "' in new kernel: " << toff_kernel.name);
-            toff_kernel.instruction_map = kernel->instruction_map;
-            toff_kernel.qubit_count = kernel->qubit_count;
-            toff_kernel.cycle_time = kernel->cycle_time;
             toff_kernel.condition = g->condition;
             toff_kernel.cond_operands = g->cond_operands;
 

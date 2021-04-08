@@ -23,32 +23,52 @@ namespace ir {
 
 using namespace utils;
 
-Kernel::Kernel(const Str &name) :
-    name(name), iterations(1), type(KernelType::STATIC)
-{
-    condition = ConditionType::ALWAYS;
-}
-
 Kernel::Kernel(
     const Str &name,
     const plat::PlatformRef &platform,
-    UInt qcount,
-    UInt ccount,
-    UInt bcount
+    UInt qubit_count,
+    UInt creg_count,
+    UInt breg_count
 ) :
     name(name),
-    iterations(1),
-    qubit_count(qcount),
-    creg_count(ccount),
-    breg_count(bcount),
-    type(KernelType::STATIC)
+    platform(platform),
+    qubit_count(qubit_count),
+    creg_count(creg_count),
+    breg_count(breg_count),
+    type(KernelType::STATIC),
+    iteration_count(1),
+    cycles_valid(true),
+    condition(ConditionType::ALWAYS)
 {
-    instruction_map = platform->instruction_map;
-    cycle_time = platform->cycle_time;
-    cycles_valid = true;
-    condition = ConditionType::ALWAYS;
-    // FIXME: check qubit_count and creg_count against platform
-    // FIXME: what is the reason we can specify qubit_count and creg_count here anyway
+    if (qubit_count > platform->qubit_count) {
+        throw Exception(
+            "cannot create kernel (" + name + ") "
+            + "that uses more qubits (" + to_string(qubit_count) + ") "
+            + "than the platform has (" + to_string(platform->qubit_count) + ")"
+        );
+    }
+    if (creg_count > platform->creg_count) {
+        if (platform->compat_implicit_creg_count) {
+            platform->creg_count = creg_count;
+        } else {
+            throw Exception(
+                "cannot create kernel (" + name + ") "
+                + "that uses more cregs (" + to_string(creg_count) + ") "
+                + "than the platform has (" + to_string(platform->creg_count) + ")"
+            );
+        }
+    }
+    if (breg_count > platform->breg_count) {
+        if (platform->compat_implicit_breg_count) {
+            platform->breg_count = breg_count;
+        } else {
+            throw Exception(
+                "cannot create kernel (" + name + ") "
+                + "that uses more bregs (" + to_string(breg_count) + ") "
+                + "than the platform has (" + to_string(platform->breg_count) + ")"
+            );
+        }
+    }
 }
 
 void Kernel::set_condition(const ClassicalOperation &oper) {
@@ -72,7 +92,7 @@ void Kernel::set_kernel_type(KernelType typ) {
 Str Kernel::get_gates_definition() const {
     StrStrm ss;
 
-    for (auto i = instruction_map.begin(); i != instruction_map.end(); i++) {
+    for (auto i = platform->instruction_map.begin(); i != platform->instruction_map.end(); i++) {
         ss << i->first << std::endl;
     }
     return ss.str();
@@ -465,7 +485,7 @@ Bool Kernel::add_default_gate_if_available(
         wait/barrier is applied on the qubits specified as arguments.
         if no qubits are specified, then wait/barrier is applied on all qubits
         */
-        UInt duration_in_cycles = ceil(static_cast<float>(duration) / cycle_time);
+        UInt duration_in_cycles = ceil(static_cast<float>(duration) / platform->cycle_time);
         if (qubits.empty()) {
             Vec<UInt> all_qubits;
             for (UInt q = 0; q < qubit_count; q++) {
@@ -527,11 +547,11 @@ Bool Kernel::add_custom_gate_if_available(
 
     // first check if a specialized custom gate is available
     // a specialized custom gate is of the form: "cz q0 q3"
-    auto it = instruction_map.find(instr);
-    if (it == instruction_map.end()) {
-        it = instruction_map.find(gname);
+    auto it = platform->instruction_map.find(instr);
+    if (it == platform->instruction_map.end()) {
+        it = platform->instruction_map.find(gname);
     }
-    if (it == instruction_map.end()) {
+    if (it == platform->instruction_map.end()) {
         QL_DOUT("custom gate not added for " << gname);
         return false;
     }
@@ -571,8 +591,8 @@ void Kernel::get_decomposed_ins(
     for (auto &agate : sub_gates) {
         const Str &sub_ins = agate->name;
         QL_DOUT("  sub ins: " << sub_ins);
-        auto it = instruction_map.find(sub_ins);
-        if (it != instruction_map.end()) {
+        auto it = platform->instruction_map.find(sub_ins);
+        if (it != platform->instruction_map.end()) {
             sub_instructions.push_back(sub_ins);
         } else {
             throw Exception("[x] error : kernel::gate() : gate decomposition not available for '" + sub_ins + "'' in the target platform !", false);
@@ -609,8 +629,8 @@ Bool Kernel::add_spec_decomposed_gate_if_available(
     QL_DOUT("specialized instruction name: " << instr_parameterized);
 
     // find the name
-    auto it = instruction_map.find(instr_parameterized);
-    if (it != instruction_map.end()) {
+    auto it = platform->instruction_map.find(instr_parameterized);
+    if (it != platform->instruction_map.end()) {
         // check gate type
         QL_DOUT("specialized composite gate found for " << instr_parameterized);
         if (it->second->type() == GateType::COMPOSITE) {
@@ -709,8 +729,8 @@ Bool Kernel::add_param_decomposed_gate_if_available(
     QL_DOUT("parameterized instruction name: " << instr_parameterized);
 
     // check for composite ins
-    auto it = instruction_map.find(instr_parameterized);
-    if (it != instruction_map.end()) {
+    auto it = platform->instruction_map.find(instr_parameterized);
+    if (it != platform->instruction_map.end()) {
         QL_DOUT("parameterized gate found for " << instr_parameterized);
         if (it->second->type() == GateType::COMPOSITE) {
             QL_DOUT("composite gate type");
@@ -1036,7 +1056,7 @@ Str Kernel::get_prologue() const  {
 
     if (type == KernelType::FOR_START) {
         // TODO for now r29, r30, r31 are used, fix it
-        ss << "    ldi r29" <<", " << iterations << "\n";
+        ss << "    ldi r29" <<", " << iteration_count << "\n";
         ss << "    ldi r30" <<", " << 1 << "\n";
         ss << "    ldi r31" <<", " << 0 << "\n";
     }

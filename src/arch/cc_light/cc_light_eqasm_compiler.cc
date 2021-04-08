@@ -554,7 +554,7 @@ Str cc_light_eqasm_compiler::get_qisa_prologue(const ir::KernelRef &k) {
 
     if (k->type == ir::KernelType::FOR_START) {
         // for now r29, r30, r31 are used as temporaries
-        ss << "    ldi r29" <<", " << k->iterations << std::endl;
+        ss << "    ldi r29" <<", " << k->iteration_count << std::endl;
         ss << "    ldi r30" <<", " << 1 << std::endl;
         ss << "    ldi r31" <<", " << 0 << std::endl;
     }
@@ -795,7 +795,7 @@ void cc_light_eqasm_compiler::map(
         mapper.Map(kernel);
         // kernel.qubit_count starts off as number of virtual qubits, i.e. highest indexed qubit minus 1
         // kernel.qubit_count is updated by Map to highest index of real qubits used minus -1
-        program->qubit_count = platform->qubit_number;
+        program->qubit_count = platform->qubit_count;
         // program.qubit_count is updated to platform.qubit_number
 
         // computing timetaken, stop interval timer
@@ -827,6 +827,12 @@ void cc_light_eqasm_compiler::map(
     ss << "# Total no. of moves of swaps: " << total_moves << std::endl;
     ss << "# Total time taken: " << total_timetaken << std::endl;
     rf << ss.str();
+
+    // kernel qubit/creg/breg counts will have been updated to the platform
+    // counts, so we need to do the same for the program.
+    program->qubit_count = platform->qubit_count;
+    program->creg_count = platform->creg_count;
+    program->breg_count = platform->breg_count;
 
     report_qasm(program, platform, "out", passname);
 
@@ -872,9 +878,9 @@ void cc_light_eqasm_compiler::write_quantumsim_script(
 
     // dqcsim must take over
     if (options::get("quantumsim") == "yes") {
-        write_quantumsim_program(program, platform->qubit_number, platform, suffix);
+        write_quantumsim_program(program, platform->qubit_count, platform, suffix);
     } else if (options::get("quantumsim") == "qsoverlay") {
-        write_qsoverlay_program(program, platform->qubit_number, platform, suffix, platform->cycle_time, compiled);
+        write_qsoverlay_program(program, platform->qubit_count, platform, suffix, platform->cycle_time, compiled);
     }
 
     report_statistics(program, platform, "out", passname, "# ");

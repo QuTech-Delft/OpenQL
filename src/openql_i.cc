@@ -65,7 +65,7 @@ Platform::Platform(
 }
 
 size_t Platform::get_qubit_number() const {
-    return platform->get_qubit_number();
+    return platform->qubit_count;
 }
 
 CReg::CReg(size_t id) {
@@ -106,8 +106,7 @@ bool Unitary::is_decompose_support_enabled() {
 }
 
 Kernel::Kernel(const std::string &name) : name(name) {
-    QL_DOUT(" API::Kernel named: " << name);
-    kernel.emplace(name);
+    throw std::runtime_error("cannot create kernel without a platform anymore");
 }
 
 Kernel::Kernel(
@@ -372,8 +371,7 @@ void Kernel::conjugate(const Kernel &k) {
 }
 
 Program::Program(const std::string &name) : name(name) {
-    QL_DOUT("SWIG Program(name) constructor for name: " << name);
-    program.emplace(name);
+    throw std::runtime_error("cannot create program without a platform anymore");
 }
 
 Program::Program(

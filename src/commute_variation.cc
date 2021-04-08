@@ -283,17 +283,17 @@ private:
     // use the variation number to create the file name
     // note that the scheduler has reordered the circuit's gates according to their assigned cycle value
     void print(
-        const ir::Program &programp,
-        ir::Kernel &kernel,
+        const ir::ProgramRef &program,
+        const ir::KernelRef &kernel,
         VarCode varno
     ) {
         // next code is copy of what report::write_qasm does for one kernel; should be a circuit method
         StrStrm ss_output_file;
-        ss_output_file << com::options::get("output_dir") << "/" << kernel.name << "_" << varno << ".qasm";
+        ss_output_file << com::options::get("output_dir") << "/" << kernel->name << "_" << varno << ".qasm";
         QL_DOUT("... writing variation to '" << ss_output_file.str() << "' ...");
         StrStrm ss_qasm;
-        ss_qasm << "." << kernel.name << "_" << varno << '\n';
-        ir::Circuit &ckt = kernel.c;
+        ss_qasm << "." << kernel->name << "_" << varno << '\n';
+        ir::Circuit &ckt = kernel->c;
         for (auto gp : ckt) {
             ss_qasm << '\t' << gp->qasm();
             // ss_qasm << "\t# " << gp->cycle
@@ -301,7 +301,7 @@ private:
         }
     
         // next code is copy of report::get_circuit_latency(); this function should be a circuit method
-        UInt cycle_time = kernel.cycle_time;
+        UInt cycle_time = program->platform->cycle_time;
         UInt depth;;
         if (ckt.empty() || ckt.back()->cycle == ir::MAX_CYCLE) {
             depth = 0;
@@ -333,7 +333,7 @@ public:
     
         QL_DOUT("Create a dependence graph and recognize commutation");
         Depgraph sched;
-        sched.init(ckt, platform, platform->qubit_number, kernel->creg_count, kernel->breg_count);
+        sched.init(ckt, platform);
     
         QL_DOUT("Finding sets of commutable gates ...");
         List<List<lemon::ListDigraph::Arc>> varslist;

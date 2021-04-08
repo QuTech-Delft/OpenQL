@@ -315,6 +315,7 @@ private:
     plat::PlatformRef        platformp;   // platform description
     utils::UInt              nq;          // map is (nq+nb) long; after initialization, will always be the same
     utils::UInt              nb;          // bregs are in map (behind qubits) to track dependences around conditions
+                                          // FIXME JvS: why qubits and bregs, but not cregs?
     utils::UInt              ct;          // multiplication factor from cycles to nano-seconds (unit of duration)
     utils::Vec<utils::UInt>  fcv;         // fcv[real qubit index i]: qubit i is free from this cycle on
     arch::resource_manager_t rm;          // actual resources occupied by scheduled gates
@@ -331,7 +332,7 @@ public:
     // default constructor was deleted because it cannot construct resource_manager_t without parameters
     FreeCycle();
 
-    void Init(const plat::PlatformRef &p, utils::UInt breg_count);
+    void Init(const plat::PlatformRef &p);
 
     // depth of the FreeCycle map
     // equals the max of all entries minus the min of all entries

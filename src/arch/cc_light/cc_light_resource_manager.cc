@@ -691,15 +691,15 @@ ccl_channel_resource_t::ccl_channel_resource_t(
 
     // nchannels = resources.channels.count: number of channels in each core
     if (platform->resources[name].count("count") <= 0) {
-        nchannels = platform->qubit_number/ncores;   // i.e. as many as there are qubits in a core
+        nchannels = platform->qubit_count/ncores;   // i.e. as many as there are qubits in a core
         QL_DOUT("Number of channels per core (resources[\"channels\"][\"count\"]) not defined; assuming: " << nchannels);
     } else {
         nchannels = platform->resources[name]["count"];
         if (nchannels <= 0) {
             QL_DOUT("Number of channels per core (resources[\"channels\"][\"count\"]) is not a positive value: " << nchannels);
-            nchannels = platform->qubit_number/ncores;   // i.e. as many as there are qubits in a core
+            nchannels = platform->qubit_count/ncores;   // i.e. as many as there are qubits in a core
         }
-        if (nchannels > platform->qubit_number/ncores) {
+        if (nchannels > platform->qubit_count/ncores) {
             QL_FATAL("Number of channels per core (resources[\"channels\"][\"count\"]) is larger than number of qubits per core: " << nchannels);
         }
     }
@@ -731,7 +731,7 @@ Bool ccl_channel_resource_t::available(
         QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
         if (direction == forward_scheduling) {
             for (auto q : ins->operands) {
-                UInt core = q/(platform->qubit_number/ncores);
+                UInt core = q/(platform->qubit_count/ncores);
                 Bool is_avail = false;
                 // fwd: channel c is busy till cycle=state[core][c],
                 // when reserving state[core][c] = start_cycle + duration
@@ -754,7 +754,7 @@ Bool ccl_channel_resource_t::available(
             }
         } else {
             for (auto q : ins->operands) {
-                UInt core = q/(platform->qubit_number/ncores);
+                UInt core = q/(platform->qubit_count/ncores);
                 Bool is_avail = false;
                 // bwd: channel c is busy from cycle=state[core][c],
                 // when reserving state[core][c] = start_cycle
@@ -797,7 +797,7 @@ void ccl_channel_resource_t::reserve(
         QL_DOUT(" reserve " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
         if (direction == forward_scheduling) {
             for (auto q : ins->operands) {
-                UInt core = q/(platform->qubit_number/ncores);
+                UInt core = q/(platform->qubit_count/ncores);
                 Bool is_avail = false;
                 // fwd: channel c is busy till cycle=state[core][c],
                 // when reserving state[core][c] = start_cycle + duration
@@ -818,7 +818,7 @@ void ccl_channel_resource_t::reserve(
             // bwd: channel c is busy from cycle=state[core][c],
             // i.e. all cycles >= state[core][c] it is busy, i.e. available when start_cycle <= state[core][c]
             for (auto q : ins->operands) {
-                UInt core = q/(platform->qubit_number/ncores);
+                UInt core = q/(platform->qubit_count/ncores);
                 Bool is_avail = false;
                 // bwd: channel c is busy from cycle=state[core][c],
                 // when reserving state[core][c] = start_cycle

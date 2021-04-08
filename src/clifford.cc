@@ -23,7 +23,7 @@ public:
         QL_DOUT("clifford_optimize_kernel()");
 
         nq = kernel->qubit_count;
-        ct = kernel->cycle_time;
+        ct = platform->cycle_time;
         QL_DOUT("Clifford " << passname << " on kernel " << kernel->name << " ...");
 
         // copy circuit kernel.c to take input from;

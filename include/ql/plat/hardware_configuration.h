@@ -31,8 +31,7 @@ public:
         utils::Json &instruction_settings,
         utils::Json &hardware_settings,
         utils::Json &resources,
-        utils::Json &topology,
-        utils::Json &aliases
+        utils::Json &topology
     );
 
 };

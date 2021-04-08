@@ -55,8 +55,7 @@ void HardwareConfiguration::load(
     Json &instruction_settings,
     Json &hardware_settings,
     Json &resources,
-    Json &topology,
-    Json &aliases
+    Json &topology
 ) {
     Json config;
     try {

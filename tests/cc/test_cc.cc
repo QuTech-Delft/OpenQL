@@ -417,7 +417,7 @@ void test_condex() {
 void test_cqasm_condex() {
     // create platform
     auto platform = ql::plat::PlatformRef::make("s5", "cc_s5_direct_iq.json");
-    size_t num_qubits = platform->get_qubit_number();
+    size_t num_qubits = platform->qubit_count;
     // create program
     auto program = ql::ir::ProgramRef::make("qasm_qi_example", platform, num_qubits);
 #if 0    // FIXME: fails to compile (tested on Macos): "error: invalid application of 'sizeof' to an incomplete type 'ql::cqasm::ReaderImpl'"

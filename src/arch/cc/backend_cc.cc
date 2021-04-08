@@ -177,7 +177,7 @@ void Backend::codegenKernelPrologue(const ir::KernelRef &k) {
 
         case ir::KernelType::FOR_START: {
             Str label = kernelLabel(k);
-            codegen.forStart(label, k->iterations);
+            codegen.forStart(label, k->iteration_count);
             break;
         }
 

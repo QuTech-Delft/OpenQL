@@ -28,10 +28,10 @@ void write_sweep_points(
         Str config = ss_swpts.str();
 
         StrStrm ss_config;
-        if (program->default_config) {
+        if (program->sweep_points_config_file_name.empty()) {
             ss_config << com::options::get("output_dir") << "/" << program->unique_name << "_config.json";
         } else {
-            ss_config << com::options::get("output_dir") << "/" << program->config_file_name;
+            ss_config << com::options::get("output_dir") << "/" << program->sweep_points_config_file_name;
         }
         Str conf_file_name = ss_config.str();
 

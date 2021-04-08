@@ -78,7 +78,7 @@ void Codegen::programStart(const Str &progName) {
 
     dp.programStart();
 
-    vcd.programStart(platform->qubit_number, platform->cycle_time, MAX_GROUPS, settings);
+    vcd.programStart(platform->qubit_count, platform->cycle_time, MAX_GROUPS, settings);
 }
 
 

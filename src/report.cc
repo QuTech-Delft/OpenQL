@@ -258,10 +258,10 @@ void " << program->name << "(){\n";
 
     out_c << "    qbit ";
 
-    for (UInt i = 0; i < platform->get_qubit_number() - 1; i++) {
+    for (UInt i = 0; i < platform->qubit_count - 1; i++) {
         out_c << "qc" << i << ",";
     }
-    out_c << "qc" << platform->get_qubit_number()-1 << ";\n\n";
+    out_c << "qc" << platform->qubit_count-1 << ";\n\n";
 
     if (program->creg_count) {
         out_c << "    int ";
@@ -282,7 +282,7 @@ void " << program->name << "(){\n";
                 break;
 
             case ir::KernelType::FOR_START:
-                out_c << "    for(int i=0; i < " << kernel->iterations << "; i++){\n";
+                out_c << "    for(int i=0; i < " << kernel->iteration_count << "; i++){\n";
                 break;
 
             case ir::KernelType::DO_WHILE_START:
@@ -530,12 +530,12 @@ void report_kernel_statistics(
 
     // DOUT("... reporting report_kernel_statistics");
     Vec<UInt> usecount;
-    usecount.resize(platform->qubit_number, 0);
+    usecount.resize(platform->qubit_count, 0);
     get_qubit_usecount(k->c, platform, usecount);
     UInt qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } }
 
     Vec<UInt> usedcyclecount;
-    usedcyclecount.resize(platform->qubit_number, 0);
+    usedcyclecount.resize(platform->qubit_count, 0);
     get_qubit_usedcyclecount(k->c, platform, usedcyclecount);
 
     UInt  circuit_latency = get_circuit_latency(k->c, platform);
@@ -565,7 +565,7 @@ void report_totals_statistics(
     // DOUT("... reporting report_totals_statistics");
     // totals reporting, collect info from all kernels
     Vec<UInt> usecount;
-    usecount.resize(platform->qubit_number, 0);
+    usecount.resize(platform->qubit_count, 0);
     UInt total_circuit_latency = 0;
     UInt total_classical_operations = 0;
     UInt total_quantum_gates = 0;
