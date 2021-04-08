@@ -672,7 +672,7 @@ void FreeCycle::Init(const quantum_platform *p, const UInt breg_count) {
     ct = platformp->cycle_time;
     QL_DOUT("... FreeCycle: nq=" << nq << ", nb=" << nb << ", ct=" << ct << "), initializing to all 0 cycles");
     fcv.clear();
-    fcv.resize(nq+nb, 1);   // this 1 implies that cycle of first gate will be 1 and not 0; OpenQL convention!?!?
+    fcv.resize(nq+nb, ir::BUNDLE_START_CYCLE);
     QL_DOUT("... about to copy FreeCycle Init local resource_manager to FreeCycle member rm");
     rm = lrm;
     QL_DOUT("... done copy FreeCycle Init local resource_manager to FreeCycle member rm");
@@ -761,7 +761,7 @@ Bool FreeCycle::IsFirstSwapEarliest(UInt fr0, UInt fr1, UInt sr0, UInt sr1) cons
 // gate operands are real qubit indices, measure assigned bregs or conditional bregs
 // is purely functional, doesn't affect state
 UInt FreeCycle::StartCycleNoRc(gate *g) const {
-    UInt startCycle = 1;
+    UInt startCycle = ir::BUNDLE_START_CYCLE;
     for (auto qreg : g->operands) {
         startCycle = max(startCycle, fcv[qreg]);
     }
