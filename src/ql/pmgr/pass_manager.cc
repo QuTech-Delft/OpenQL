@@ -254,9 +254,37 @@ PassManager::PassManager(
 }
 
 /**
+ * Converts a JSON pass option value to its internal string representation.
+ */
+static utils::Str option_value_from_json(const utils::Json &json) {
+
+    // Shorthand.
+    using JsonType = utils::Json::value_t;
+
+    if (json.type() == JsonType::boolean) {
+        return json.get<utils::Bool>() ? "yes" : "no";
+    } else if (json.type() == JsonType::number_integer) {
+        return utils::to_string(json.get<utils::Int>());
+    } else if (json.type() == JsonType::number_unsigned) {
+        return utils::to_string(json.get<utils::UInt>());
+    } else if (json.type() == JsonType::string) {
+        return json.get<utils::Str>();
+    } else if (json.type() == JsonType::null) {
+        return "!@#NULL";
+    } else {
+        throw utils::Exception("pass option value must be a boolean, integer, string, or null");
+    }
+
+}
+
+/**
  * Load passes into the given pass group from a JSON array of pass descriptions.
  */
-static void add_passes_from_json(const PassRef &group, const utils::Json &json) {
+static void add_passes_from_json(
+    const PassRef &group,
+    const utils::Json &json,
+    const utils::Map<utils::Str, utils::Str> &pass_default_options
+) {
 
     // Shorthand.
     using JsonType = utils::Json::value_t;
@@ -267,6 +295,7 @@ static void add_passes_from_json(const PassRef &group, const utils::Json &json) 
         utils::Str type;
         utils::Str name;
         utils::Map<utils::Str, utils::Str> options;
+        utils::Map<utils::Str, utils::Str> sub_pass_default_options = pass_default_options;
         const utils::Json *sub_passes = nullptr;
         if (pass_description.type() == JsonType::string) {
             type = pass_description.get<utils::Str>();
@@ -287,20 +316,18 @@ static void add_passes_from_json(const PassRef &group, const utils::Json &json) 
                 } else if (it.key() == "options") {
                     if (it.value().type() == JsonType::object) {
                         for (auto opt_it = it->begin(); opt_it != it->end(); ++opt_it) {
-                            if (opt_it.value().type() == JsonType::boolean) {
-                                options.set(opt_it.key()) = opt_it.value().get<utils::Bool>() ? "yes" : "no";
-                            } else if (opt_it.value().type() == JsonType::number_integer) {
-                                options.set(opt_it.key()) = utils::to_string(opt_it.value().get<utils::Int>());
-                            } else if (opt_it.value().type() == JsonType::number_unsigned) {
-                                options.set(opt_it.key()) = utils::to_string(opt_it.value().get<utils::UInt>());
-                            } else if (opt_it.value().type() == JsonType::string) {
-                                options.set(opt_it.key()) = opt_it.value().get<utils::Str>();
-                            } else {
-                                throw utils::Exception("pass option value must be a boolean, integer, or string");
-                            }
+                            options.set(opt_it.key()) = option_value_from_json(opt_it.value());
                         }
                     } else {
                         throw utils::Exception("pass options must be an object if specified");
+                    }
+                } else if (it.key() == "group-options") {
+                    if (it.value().type() == JsonType::object) {
+                        for (auto opt_it = it->begin(); opt_it != it->end(); ++opt_it) {
+                            sub_pass_default_options.set(opt_it.key()) = option_value_from_json(opt_it.value());
+                        }
+                    } else {
+                        throw utils::Exception("group-options must be an object if specified");
                     }
                 } else if (it.key() == "group") {
                     if (it.value().type() == JsonType::array) {
@@ -322,6 +349,25 @@ static void add_passes_from_json(const PassRef &group, const utils::Json &json) 
         // Add the pass.
         auto pass = group->append_sub_pass(type, name, options);
 
+        // Set pass options based on the pass-options and group-options keys
+        // specified by parent passes.
+        auto &opts = pass->get_options();
+        for (const auto &it : pass_default_options) {
+
+            // Silently ignore options that don't exist for this particular
+            // pass.
+            if (opts.has_option(it.first)) {
+
+                // Only apply the option when it wasn't already set during
+                // construction.
+                if (!opts[it.first].is_set()) {
+                    opts[it.first] = it.second;
+                }
+
+            }
+
+        }
+
         // If the pass has sub-passes, construct it and add them by recursively
         // calling ourselves.
         if (sub_passes != nullptr) {
@@ -329,7 +375,7 @@ static void add_passes_from_json(const PassRef &group, const utils::Json &json) 
             if (!pass->is_group()) {
                 throw utils::Exception("pass type " + type + " does not support sub-passes");
             }
-            add_passes_from_json(pass, *sub_passes);
+            add_passes_from_json(pass, *sub_passes, sub_pass_default_options);
         }
 
     }
@@ -344,8 +390,6 @@ PassManager PassManager::from_json(
     const utils::Json &json,
     const PassFactory &factory
 ) {
-    // TODO JvS: need proper schema validation in some JSON structure wrapper!
-    //  All this repetition is bad.
 
     // Shorthand.
     using JsonType = utils::Json::value_t;
@@ -364,6 +408,7 @@ PassManager PassManager::from_json(
     // Read the strategy structure.
     utils::Str architecture = {};
     utils::Set<utils::Str> dnu = {};
+    const utils::Json *pass_options = nullptr;
     const utils::Json *passes = nullptr;
     for (it = strategy.begin(); it != strategy.end(); ++it) {
         if (it.key() == "architecture") {
@@ -386,6 +431,12 @@ PassManager PassManager::from_json(
             } else {
                 throw utils::Exception("strategy.dnu must be a string or array of strings if specified");
             }
+        } else if (it.key() == "pass-options") {
+            if (it.value().type() == JsonType::object) {
+                pass_options = &it.value();
+            } else {
+                throw utils::Exception("strategy.pass-options must be an object");
+            }
         } else if (it.key() == "passes") {
             if (it.value().type() == JsonType::array) {
                 passes = &it.value();
@@ -400,11 +451,20 @@ PassManager PassManager::from_json(
         throw utils::Exception("missing strategy.passes key");
     }
 
+    // Build the default pass options record.
+    utils::Map<utils::Str, utils::Str> pass_default_options;
+    // TODO: take options from the global options for backward compatibility.
+    if (pass_options) {
+        for (it = pass_options->begin(); it != pass_options->end(); ++it) {
+            pass_default_options.set(it.key()) = option_value_from_json(it.value());
+        }
+    }
+
     // Construct the pass manager.
     PassManager pm{architecture, dnu};
 
     // Add passes from the pass descriptions.
-    add_passes_from_json(pm.get_root(), *passes);
+    add_passes_from_json(pm.get_root(), *passes, pass_default_options);
 
     return pm;
 }

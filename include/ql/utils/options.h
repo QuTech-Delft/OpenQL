@@ -449,6 +449,11 @@ public:
     const Option &operator[](const utils::Str &key) const;
 
     /**
+     * Returns whether an option with the given name exists.
+     */
+    utils::Bool has_option(const utils::Str &key) const;
+
+    /**
      * Updates our options with the values from the src object. The supported
      * options should be compatible.
      */

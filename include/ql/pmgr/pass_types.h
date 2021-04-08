@@ -287,17 +287,33 @@ public:
     ) const;
 
     /**
-     * Sets an option. This is allowed only until construct() is called.
+     * Sets an option. Periods may be used as hierarchy separators to set
+     * options for sub-passes. Furthermore, each period-separated element
+     * (except the last one, which is the option name) may be a single
+     * asterisk, to select all sub-passes. The return value is the number of
+     * passes that were affected. If must_exist is set, an exception will be
+     * thrown if none of the passes were affected.
      */
-    void set_option(const utils::Str &option, const utils::Str &value);
+    utils::UInt set_option(
+        const utils::Str &option,
+        const utils::Str &value,
+        utils::Bool must_exist = true
+    );
 
     /**
-     * Returns the current value of an option.
+     * Returns the current value of an option. Periods may be used as hierarchy
+     * separators to get options from sub-passes (if any).
      */
     const utils::Option &get_option(const utils::Str &option) const;
 
     /**
-     * Returns the embedded options object.
+     * Returns mutable access to the embedded options object. This is allowed
+     * only until construct() is called.
+     */
+    utils::Options &get_options();
+
+    /**
+     * Returns read access to the embedded options object.
      */
     const utils::Options &get_options() const;
 

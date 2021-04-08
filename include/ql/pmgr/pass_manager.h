@@ -235,6 +235,7 @@ public:
      *     "strategy": {
      *         "architecture": <optional string, default "">,
      *         "dnu": <optional list of strings, default []>,
+     *         "pass-options": <optional object, default {}>,
      *         "passes": [
      *             <pass description>
      *         ]
@@ -244,26 +245,42 @@ public:
      * ```
      *
      * The optional "architecture" key may be used to make shorthands for
-     * architecture- specific passes, normally prefixed with "arch.<architecture>.".
-     * If it's not specified or an empty string, no shorthand aliases are made.
+     * architecture- specific passes, normally prefixed with
+     * "arch.<architecture>.". If it's not specified or an empty string, no
+     * shorthand aliases are made.
      *
-     * The optional "dnu" key may be used to specify a list of do-not-use pass types
-     * (experimental passes, deprecated passes, or any other pass that's considered
-     * unfit for "production" use) that you explicitly want to use, including the
-     * "dnu" namespace they are defined in. Once specified, you'll be able to use
-     * the pass type without the "dnu" namespace element. For example, if you would
-     * include "dnu.whatever" in the list, the pass type "whatever" may be used to
-     * add the pass.
+     * The optional "dnu" key may be used to specify a list of do-not-use pass
+     * types (experimental passes, deprecated passes, or any other pass that's
+     * considered unfit for "production" use) that you explicitly want to use,
+     * including the "dnu" namespace they are defined in. Once specified, you'll
+     * be able to use the pass type without the "dnu" namespace element. For
+     * example, if you would include "dnu.whatever" in the list, the pass type
+     * "whatever" may be used to add the pass.
+     *
+     * The optional "pass-options" key may be used to specify options common to
+     * all passes. The values may be booleans, integers, strings, or null, but
+     * nothing else. Null is used to reset an option to its hardcoded default
+     * value. An option need not exist for each pass affected by it; if it
+     * doesn't, the default value is silently ignored for that pass. However, if
+     * it *does* exist, it must be a valid value for the option with that name.
+     * These option values propagate through the pass tree recursively, so
+     * setting a default option in the root using this record will affect all
+     * passes.
+     *
+     * Some of OpenQL's global options add implicit entries to the
+     * "pass-options" structure for backward compatibility. However, entries in
+     * "pass-options" take precedence. TODO: list these options here!
      *
      * Pass descriptions can either be strings (in which case the string is
-     * interpreted as a pass type alias and everything else is inferred/default),
-     * or an object with the following structure.
+     * interpreted as a pass type alias and everything else is
+     * inferred/default), or an object with the following structure.
      *
      * ```json
      * {
      *     "type": <optional string, default "">,
      *     "name": <optional string, default "">,
      *     "options": <optional object, default {}>
+     *     "group-options": <optional object, default {}>,
      *     "group": [
      *         <optional list of pass descriptions>
      *     ]
@@ -271,26 +288,35 @@ public:
      * ```
      *
      * The "type" key, if specified, must identify a pass type that OpenQL knows
-     * about. If it's not specified or empty, a group is made instead, and "group"
-     * must be specified for the group to do anything.
+     * about. If it's not specified or empty, a group is made instead, and
+     * "group" must be specified for the group to do anything.
      *
-     * The "name" key, if specified, is a user-defined name for the pass, that must
-     * match `[a-zA-Z0-9_\-]+` and be unique within the surrounding pass list. If
-     * not specified, a name that complies with these requirements is generated
-     * automatically, but the actual generated name should not be relied upon to be
-     * consistent between OpenQL versions. The name may be used to programmatically
-     * refer to passes after construction, and passes may use it for logging or
-     * unique output filenames. However, passes should not use the name for anything
-     * that affects the behavior of the pass.
+     * The "name" key, if specified, is a user-defined name for the pass, that
+     * must match `[a-zA-Z0-9_\-]+` and be unique within the surrounding pass
+     * list. If not specified, a name that complies with these requirements is
+     * generated automatically, but the actual generated name should not be
+     * relied upon to be consistent between OpenQL versions. The name may be
+     * used to programmatically refer to passes after construction, and passes
+     * may use it for logging or unique output filenames. However, passes should
+     * not use the name for anything that affects the behavior of the pass.
      *
-     * The "options" key, if specified, may be an object that maps option names to
-     * option values. The values may be booleans, integers, or strings, but nothing
-     * else. The option names and values must be supported by the particular pass
-     * type.
+     * The "options" key, if specified, may be an object that maps option names
+     * to option values. The values may be booleans, integers, strings, or null,
+     * but nothing else. Null is used to enforce usage of the OpenQL-default
+     * value for the option. The option names and values must be supported by
+     * the particular pass type.
      *
-     * The "group" key must only be used when "type" is set to an empty string or
-     * left unspecified, turning the pass into a basic group. The list then
-     * specifies the sub-passes for the group.
+     * The "group-options" key, if specified, works just like "pass-options" in
+     * the root, but affects only the sub-passes of this pass (so *not* this
+     * pass itself). Any option specified here will override any
+     * previously-specified option. Specifying null resets the option to its
+     * OpenQL-hardcoded default value.
+     *
+     * The "group" key must only be used when "type" is set to an empty string
+     * or left unspecified, turning the pass into a basic group. The list then
+     * specifies the sub-passes for the group. A normal pass may or may not have
+     * configurable sub-passes depending on its type and configuration; if it
+     * doesn't, "group" must not be specified.
      */
     static PassManager from_json(
         const utils::Json &json,

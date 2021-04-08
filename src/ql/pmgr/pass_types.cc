@@ -239,24 +239,130 @@ void Base::dump_strategy(
 }
 
 /**
- * Sets an option. This is allowed only until construct() is called.
+ * Sets an option. Periods may be used as hierarchy separators to set
+ * options for sub-passes. Furthermore, each period-separated element
+ * (except the last one, which is the option name) may be a single
+ * asterisk, to select all sub-passes. The return value is the number of
+ * passes that were affected. If must_exist is set, an exception will be
+ * thrown if none of the passes were affected.
  */
-void Base::set_option(const utils::Str &option, const utils::Str &value) {
+utils::UInt Base::set_option(
+    const utils::Str &option,
+    const utils::Str &value,
+    utils::Bool must_exist
+) {
+    auto period = option.find('.');
+
+    // Handle setting an option on this pass.
+    if (period == utils::Str::npos) {
+        if (must_exist && is_constructed()) {
+            throw utils::Exception(
+                "cannot modify pass option after pass construction"
+            );
+        }
+        if (must_exist && !options.has_option(option)) {
+            throw utils::Exception(
+                "option " + option + " does not exist for pass " + instance_name
+            );
+        }
+        if (!is_constructed() && options.has_option(option)) {
+            options[option] = value;
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    // Handle setting options on sub-passes.
+    if (!is_constructed()) {
+        throw utils::Exception(
+            "cannot set sub-pass options before parent pass ("
+            + instance_name + ") is constructed"
+        );
+    }
+    if (!is_group()) {
+        throw utils::Exception(
+            "cannot set sub-pass options for non-group pass " + instance_name
+        );
+    }
+    utils::Str sub_pass = option.substr(0, period);
+    utils::Str sub_option = option.substr(period + 1);
+
+    // Handle setting an option on all sub-passes.
+    if (sub_pass == "*") {
+        utils::UInt passes_affected = 0;
+        for (auto &pass : sub_pass_order) {
+            passes_affected += pass->set_option(sub_option, value, false);
+        }
+        if (must_exist && !passes_affected) {
+            throw utils::Exception(
+                "option " + sub_option + " could not be set on any sub-pass of "
+                + instance_name
+            );
+        }
+        return passes_affected;
+    }
+
+    // Handle setting an option on a single sub-pass.
+    static const std::regex name_re{"[a-zA-Z0-9_\\-]+"};
+    if (!std::regex_match(sub_pass, name_re)) {
+        throw utils::Exception(
+            "\"" + sub_pass + "\" is not a valid pass name or supported pattern"
+        );
+    }
+    auto sub_pass_it = sub_pass_names.find(sub_pass);
+    if (sub_pass_it != sub_pass_names.end()) {
+        return sub_pass_it->second->set_option(sub_option, value, must_exist);
+    } else {
+        if (must_exist) {
+            throw utils::Exception(
+                "no sub-pass with name \"" + sub_pass + "\" in pass "
+                + instance_name
+            );
+        }
+        return 0;
+    }
+
+}
+
+/**
+ * Returns the current value of an option. Periods may be used as hierarchy
+ * separators to get options from sub-passes (if any).
+ */
+const utils::Option &Base::get_option(const utils::Str &option) const {
+    auto period = option.find('.');
+
+    // Handle getting an option from this pass.
+    if (period == utils::Str::npos) {
+        return options[option];
+    }
+
+    // Handle getting an option from a sub-pass.
+    utils::Str sub_pass = option.substr(0, period);
+    utils::Str sub_option = option.substr(period + 1);
+    auto sub_pass_it = sub_pass_names.find(sub_pass);
+    if (sub_pass_it == sub_pass_names.end()) {
+        throw utils::Exception(
+            "no sub-pass with name \"" + sub_pass + "\" in pass " + instance_name
+        );
+    }
+    return sub_pass_it->second->get_option(sub_option);
+
+}
+
+/**
+ * Returns mutable access to the embedded options object. This is allowed only
+ * until construct() is called.
+ */
+utils::Options &Base::get_options() {
     if (is_constructed()) {
         throw utils::Exception("cannot modify pass option after pass construction");
     }
-    options[option] = value;
+    return options;
 }
 
 /**
- * Returns the current value of an option.
- */
-const utils::Option &Base::get_option(const utils::Str &option) const {
-    return options[option];
-}
-
-/**
- * Returns the embedded options object.
+ * Returns read access to the embedded options object.
  */
 const utils::Options &Base::get_options() const {
     return options;

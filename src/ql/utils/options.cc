@@ -561,6 +561,14 @@ const Option &Options::operator[](const Str &key) const {
 }
 
 /**
+ * Returns whether an option with the given name exists.
+ */
+utils::Bool Options::has_option(const utils::Str &key) const {
+    auto it = options.find(key);
+    return it != options.end();
+}
+
+/**
  * Updates our options with the values from the src object. The supported
  * options should be compatible.
  */
