@@ -34,6 +34,15 @@ public:
     utils::UInt                 creg_count;
     utils::UInt                 breg_count;
 
+    /**
+     * Pass-specific unstructured statistical information for this program. This
+     * is reset by the pass manager before the start of any transformation pass.
+     * Analysis passes may use the information to augment their behavior
+     * (specifically, the statistics reporting pass dumps these strings as
+     * additional lines for the complete program).
+     */
+    utils::List<utils::Str>         statistics;
+
 public:
     explicit Program(const utils::Str &n);
     Program(const utils::Str &n, const plat::PlatformRef &platf, utils::UInt nqubits, utils::UInt ncregs = 0, utils::UInt nbregs = 0);

@@ -48,6 +48,15 @@ public: // FIXME: should be private
     utils::Vec<utils::UInt>         cond_operands;    // see gate interface: condition mode to make new gates conditional
     ConditionType                   condition;        // kernel condition mode is set by gate_preset_condition()
 
+    /**
+     * Pass-specific unstructured statistical information for this kernel. This
+     * is reset by the pass manager before the start of any transformation pass.
+     * Analysis passes may use the information to augment their behavior
+     * (specifically, the statistics reporting pass dumps these strings as
+     * additional lines per kernel).
+     */
+    utils::List<utils::Str>         statistics;
+
 public:
     Kernel(const utils::Str &name);
     Kernel(

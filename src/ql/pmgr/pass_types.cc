@@ -927,6 +927,14 @@ utils::Int ProgramTransformation::run_internal(
     const ir::ProgramRef &program,
     const utils::Str &full_name
 ) const {
+
+    // This is a transformation pass, so clear the current program/kernel
+    // statistics.
+    program->statistics.clear();
+    for (const auto &kernel : program->kernels) {
+        kernel->statistics.clear();
+    }
+
     return run(program, full_name);
 }
 
@@ -955,6 +963,14 @@ utils::Int KernelTransformation::run_internal(
     const ir::ProgramRef &program,
     const utils::Str &full_name
 ) const {
+
+    // This is a transformation pass, so clear the current program/kernel
+    // statistics.
+    program->statistics.clear();
+    for (const auto &kernel : program->kernels) {
+        kernel->statistics.clear();
+    }
+
     for (const auto &kernel : program->kernels) {
         run(program, kernel, full_name);
     }
