@@ -148,6 +148,13 @@ template <
     typename Allocator = std::allocator<std::pair<const Key, T>>
 >
 class UncheckedMap;
+template <
+    typename Key,
+    typename T,
+    T DEFAULT = 0,
+    typename Compare = std::less<Key>
+>
+class SparseMap;
 
 /**
  * Wrapper for standard iterators to detect undefined behavior and throw an

@@ -197,6 +197,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/options.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/options.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/unitary.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/metrics.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/platform.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/hardware_configuration.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/gate.cc"

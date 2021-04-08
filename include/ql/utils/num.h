@@ -86,6 +86,13 @@ inline int sign_of(T val) noexcept {
 }
 
 /**
+ * Divides the given two unsigned integers, rounding up.
+ */
+inline UInt div_ceil(UInt a, UInt b) {
+    return (a + b - 1) / b;
+}
+
+/**
  * Rounds the given double toward positive infinity.
  */
 inline Real ceil(Real x) noexcept {

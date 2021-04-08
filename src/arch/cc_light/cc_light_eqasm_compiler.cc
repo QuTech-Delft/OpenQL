@@ -804,7 +804,7 @@ void cc_light_eqasm_compiler::map(
         timetaken = time_span.count();
 
         StrStrm ss;
-        report_kernel_statistics(ss, kernel, platform, "# ");
+        report_kernel_statistics(ss, kernel, "# ");
         ss << "# ----- swaps added: " << mapper.nswapsadded << std::endl;
         ss << "# ----- of which moves added: " << mapper.nmovesadded << std::endl;
         ss << "# ----- virt2real map before mapper:" << mapper.v2r_in << std::endl;
@@ -822,7 +822,7 @@ void cc_light_eqasm_compiler::map(
         *mapStatistics += ss.str();
     }
     StrStrm ss;
-    report_totals_statistics(ss, program->kernels, platform, "# ");
+    report_totals_statistics(ss, program, "# ");
     ss << "# Total no. of swaps: " << total_swaps << std::endl;
     ss << "# Total no. of moves of swaps: " << total_moves << std::endl;
     ss << "# Total time taken: " << total_timetaken << std::endl;
@@ -967,9 +967,9 @@ void cc_light_eqasm_compiler::compile(
     // report totals over all kernels, over all eqasm passes contributing to mapping
     auto rf = ReportFile(program, "out", "cc_light_compiler");
     for (const auto &k : program->kernels) {
-        rf.write_kernel_statistics(k, platform, "# ");
+        rf.write_kernel_statistics(k, "# ");
     }
-    rf.write_totals_statistics(program->kernels, platform, "# ");
+    rf.write_totals_statistics(program, "# ");
     rf << "# Total time taken: " << total_timetaken << "\n";
     report_qasm(program, platform, "out", "cc_light_compiler");
 
@@ -1362,12 +1362,12 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
             }
             fout << "    return c";
             fout << "    \n\n";
-            report_kernel_statistics(fout.unwrap(), kernel, platform, "    # ");
+            report_kernel_statistics(fout.unwrap(), kernel, "    # ");
         }
     }
     report_string(fout.unwrap(), "    \n");
     report_string(fout.unwrap(), "    # Program-wide statistics:\n");
-    report_totals_statistics(fout.unwrap(), program->kernels, platform, "    # ");
+    report_totals_statistics(fout.unwrap(), program, "    # ");
     fout << "    return c";
 
     fout.close();

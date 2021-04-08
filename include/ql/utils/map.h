@@ -1108,5 +1108,138 @@ using Map = CheckedMap<Key, T, Compare>;
 using Map = UncheckedMap<Key, T, Compare>;
 #endif
 
+/**
+ * Specialization of Map that adds operator[] back into it, with the following
+ * semantics:
+ *
+ *  - if the key exists, act normally;
+ *  - if the key doesn't exist and const access is sufficient, return DEFAULT;
+ *  - if the key doesn't exist and mutable access is required, add a key to the
+ *    map with DEFAULT as initial value.
+ */
+template <typename Key, typename T, T DEFAULT, typename Compare>
+class SparseMap : public Map<Key, T, Compare> {
+public:
+
+    /**
+     * Default constructor. Constructs an empty container with a
+     * default-constructed allocator.
+     */
+    SparseMap() : Map<Key, T, Compare>() {}
+
+    /**
+     * Constructor arguments are forwarded to the STL container constructor, so
+     * all constructors of the STL container can be used.
+     */
+    template <class... Args>
+    explicit SparseMap(Args&&... args) : Map<Key, T, Compare>(std::forward<Args>(args)...) {
+    }
+
+    /**
+     * Implicit conversion for initializer lists.
+     */
+    SparseMap(
+        std::initializer_list<typename Map<Key, T, Compare>::value_type> init
+    ) :
+        Map<Key, T, Compare>(init)
+    {}
+
+    /**
+     * Default copy constructor.
+     */
+    SparseMap(const SparseMap &map) = default;
+
+    /**
+     * Default move constructor.
+     */
+    SparseMap(SparseMap &&map) noexcept = default;
+
+    /**
+     * Default copy assignment.
+     */
+    SparseMap &operator=(const SparseMap &other) = default;
+
+    /**
+     * Default move assignment.
+     */
+    SparseMap &operator=(SparseMap &&other) noexcept = default;
+
+    /**
+     * Immutable element access.
+     */
+    const T &operator[](const Key &key) const {
+        auto it = this->find(key);
+        if (it == Map<Key, T, Compare>::end()) {
+            static const T DEFLT = DEFAULT;
+            return &DEFLT;
+        } else {
+            return it.second;
+        }
+    }
+
+    /**
+     * Mutable element access.
+     */
+    T &operator[](const Key &key) {
+        auto it = this->find(key);
+        if (it == Map<Key, T, Compare>::end()) {
+            return this->set(key) = DEFAULT;
+        } else {
+            return it->second;
+        }
+    }
+
+    /**
+     * Returns the number of keys with non-default values.
+     */
+    UInt sparse_size() const {
+        UInt size = 0;
+        for (const auto &it : *this) {
+            if (it.second != DEFAULT) {
+                size++;
+            }
+        }
+        return size;
+    }
+
+    /**
+     * Returns a string representation of the sparse contents of the map. Stream
+     * << overloads must exist for both the key and value type.
+     */
+    Str to_string(
+        const Str &prefix = "{",
+        const Str &key_value_separator = ": ",
+        const Str &element_separator = ", ",
+        const Str &suffix = "}"
+    ) const {
+        StrStrm ss{};
+        ss << prefix;
+        bool first = true;
+        for (const auto &kv : *this) {
+            if (kv.second == DEFAULT) {
+                continue;
+            }
+            if (first) {
+                first = false;
+            } else {
+                ss << element_separator;
+            }
+            ss << kv.first << key_value_separator << kv.second;
+        }
+        ss << suffix;
+        return ss.str();
+    }
+
+};
+
+/**
+ * Stream << overload for SparseMap<>.
+ */
+template <class Key, class T, T DEFAULT, class Compare>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::SparseMap<Key, T, DEFAULT, Compare> &map) {
+    os << map.to_string();
+    return os;
+}
+
 } // namespace utils
 } // namespace ql

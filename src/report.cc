@@ -27,10 +27,6 @@
  *      with the totals of the statistics of the given kernels
  * - report_string: add the given string to the ofstream
  * - report_close: close the report file's ofstream again
- *
- * initialization
- * - report_init(programp, platform)
- *      initializes unique_name facility to have different file names for different compiler runs
  */
 
 #include "report.h"
@@ -39,140 +35,12 @@
 #include "ql/utils/str.h"
 #include "ql/ir/ir.h"
 #include "ql/com/options.h"
+#include "ql/com/metrics.h"
 
 namespace ql {
 
 using namespace utils;
 
-/*
- * support functions for reporting statistics
- */
-static UInt get_classical_operations_count(
-    const ir::Circuit &c,
-    const plat::PlatformRef &platform
-) {
-    UInt classical_operations = 0;
-    // DOUT("... reporting get_classical_operations_count");
-    for (auto &gp : c) {
-        switch (gp->type()) {
-            case ir::GateType::CLASSICAL:
-                classical_operations++;
-                break;
-            case ir::GateType::WAIT:
-                break;
-            default:    // quantum gate
-                break;
-        }
-    }
-    // DOUT("... reporting get_classical_operations_count [done]");
-    return classical_operations;
-}
-
-static UInt get_non_single_qubit_quantum_gates_count(
-    const ir::Circuit &c,
-    const plat::PlatformRef &platform
-) {
-    UInt quantum_gates = 0;
-    // DOUT("... reporting get_non_single_qubit_quantum_gates_count");
-    for (auto &gp : c) {
-        switch (gp->type()) {
-            case ir::GateType::CLASSICAL:
-            case ir::GateType::WAIT:
-                break;
-            default:    // quantum gate
-                if (gp->operands.size() > 1) {
-                    quantum_gates++;
-                }
-                break;
-        }
-    }
-    // DOUT("... reporting get_non_single_qubit_quantum_gates_count [done]");
-    return quantum_gates;
-}
-
-static void get_qubit_usecount(
-    const ir::Circuit &c,
-    const plat::PlatformRef &platform,
-    Vec<UInt> &usecount
-) {
-    // DOUT("... reporting get_qubit_usecount");
-    for (auto &gp : c) {
-        switch (gp->type()) {
-            case ir::GateType::CLASSICAL:
-            case ir::GateType::WAIT:
-                break;
-            default:    // quantum gate
-                for (auto v : gp->operands) {
-                    usecount[v]++;
-                }
-                break;
-        }
-    }
-    // DOUT("... reporting get_qubit_usecount [done]");
-}
-
-static void get_qubit_usedcyclecount(
-    const ir::Circuit &c,
-    const plat::PlatformRef &platform,
-    Vec<UInt> &usedcyclecount
-) {
-    UInt  cycle_time = platform->cycle_time;
-
-    // DOUT("... reporting get_qubit_usedcyclecount");
-    for (auto &gp : c) {
-        switch (gp->type()) {
-            case ir::GateType::CLASSICAL:
-            case ir::GateType::WAIT:
-                break;
-            default:    // quantum gate
-                for (auto v : gp->operands) {
-                    usedcyclecount[v] += (gp->duration+cycle_time-1)/cycle_time;
-                }
-                break;
-        }
-    }
-    // DOUT("... reporting get_qubit_usedcyclecount [done]");
-}
-
-static UInt get_quantum_gates_count(
-    const ir::Circuit &c,
-    const plat::PlatformRef &platform
-) {
-    UInt quantum_gates = 0;
-    // DOUT("... reporting get_quantum_gates_count");
-    for (auto &gp : c) {
-        switch (gp->type()) {
-            case ir::GateType::CLASSICAL:
-            case ir::GateType::WAIT:
-                break;
-            default:    // quantum gate
-                quantum_gates++;
-                break;
-        }
-    }
-    // DOUT("... reporting get_quantum_gates_count [done]");
-    return quantum_gates;
-}
-
-static UInt get_circuit_latency(
-    const ir::Circuit &c,
-    const plat::PlatformRef &platform
-) {
-    UInt cycle_time = platform->cycle_time;
-    UInt circuit_latency_result;
-    // DOUT("... reporting get_circuit_latency");
-    if (c.size() < 1) {
-        circuit_latency_result = 0;
-        // DOUT("In get_circuit_latency() result is 0 because circuit is empty");
-    } else if (c.back()->cycle == ir::MAX_CYCLE) {
-        circuit_latency_result = 0;
-        // DOUT("In get_circuit_latency() result is 0 because c.back()->cycle == MAX_CYCLE");
-    } else {
-        circuit_latency_result = c.back()->cycle + (c.back()->duration+cycle_time-1)/cycle_time - c.front()->cycle;
-    }
-    // DOUT("Computed get_circuit_latency(): result is " << circuit_latency_result);
-    return circuit_latency_result;
-}
 
 /*
  * writing out the circuits of the given kernels in qasm/bundles depending on whether cycles_valid for all kernels
@@ -414,12 +282,11 @@ void ReportFile::write(const utils::Str &content) {
  * Writes kernel statistics for the given kernel to the report file.
  */
 void ReportFile::write_kernel_statistics(
-    const ir::KernelRef &k,
-    const plat::PlatformRef &platform,
-    const Str &comment_prefix
+    const ir::KernelRef &kernel,
+    const Str &line_prefix
 ) {
     if (of) {
-        report_kernel_statistics(of->unwrap(), k, platform, comment_prefix);
+        report_kernel_statistics(of->unwrap(), kernel, line_prefix);
     }
 }
 
@@ -428,12 +295,11 @@ void ReportFile::write_kernel_statistics(
  * file.
  */
 void ReportFile::write_totals_statistics(
-    const ir::KernelRefs &kernels,
-    const plat::PlatformRef &platform,
-    const Str &comment_prefix
+    const ir::ProgramRef &program,
+    const Str &line_prefix
 ) {
     if (of) {
-        report_totals_statistics(of->unwrap(), kernels, platform, comment_prefix);
+        report_totals_statistics(of->unwrap(), program, line_prefix);
     }
 }
 
@@ -520,32 +386,23 @@ void report_string(
  */
 void report_kernel_statistics(
     std::ostream &os,
-    const ir::KernelRef &k,
-    const plat::PlatformRef &platform,
-    const Str &comment_prefix
+    const ir::KernelRef &kernel,
+    const Str &line_prefix
 ) {
+    using namespace com::metrics;
+
     if (com::options::get("write_report_files") != "yes") {
         return;
     }
 
     // DOUT("... reporting report_kernel_statistics");
-    Vec<UInt> usecount;
-    usecount.resize(platform->qubit_count, 0);
-    get_qubit_usecount(k->c, platform, usecount);
-    UInt qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } }
-
-    Vec<UInt> usedcyclecount;
-    usedcyclecount.resize(platform->qubit_count, 0);
-    get_qubit_usedcyclecount(k->c, platform, usedcyclecount);
-
-    UInt  circuit_latency = get_circuit_latency(k->c, platform);
-    os << comment_prefix << "kernel: " << k->name << "\n";
-    os << comment_prefix << "----- circuit_latency: " << circuit_latency << "\n";
-    os << comment_prefix << "----- quantum gates: " << get_quantum_gates_count(k->c, platform) << "\n";
-    os << comment_prefix << "----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count(k->c, platform) << "\n";
-    os << comment_prefix << "----- classical operations: " << get_classical_operations_count(k->c, platform) << "\n";
-    os << comment_prefix << "----- qubits used: " << qubits_used << "\n";
-    os << comment_prefix << "----- qubit cycles use:" << usedcyclecount << "\n";
+    os << line_prefix << "kernel: " << kernel->name << "\n";
+    os << line_prefix << "----- circuit_latency: " << compute<Latency>(kernel) << "\n";
+    os << line_prefix << "----- quantum gates: " << compute<QuantumGateCount>(kernel) << "\n";
+    os << line_prefix << "----- non single qubit gates: " << compute<MultiQubitGateCount>(kernel) << "\n";
+    os << line_prefix << "----- classical operations: " << compute<ClassicalOperationCount>(kernel) << "\n";
+    os << line_prefix << "----- qubits used: " << compute<QubitUsageCount>(kernel).sparse_size() << "\n";
+    os << line_prefix << "----- qubit cycles use:" << compute<QubitUsedCycleCount>(kernel) << "\n";
     // DOUT("... reporting report_kernel_statistics [done]");
 }
 
@@ -554,40 +411,23 @@ void report_kernel_statistics(
  */
 void report_totals_statistics(
     std::ostream &os,
-    const ir::KernelRefs &kernels,
-    const plat::PlatformRef &platform,
-    const Str &comment_prefix
+    const ir::ProgramRef &program,
+    const Str &line_prefix
 ) {
+    using namespace com::metrics;
+
     if (com::options::get("write_report_files") != "yes") {
         return;
     }
 
     // DOUT("... reporting report_totals_statistics");
-    // totals reporting, collect info from all kernels
-    Vec<UInt> usecount;
-    usecount.resize(platform->qubit_count, 0);
-    UInt total_circuit_latency = 0;
-    UInt total_classical_operations = 0;
-    UInt total_quantum_gates = 0;
-    UInt total_non_single_qubit_gates= 0;
-    for (auto &k : kernels) {
-        get_qubit_usecount(k->c, platform, usecount);
-
-        total_circuit_latency += get_circuit_latency(k->c, platform);
-        total_classical_operations += get_classical_operations_count(k->c, platform);
-        total_quantum_gates += get_quantum_gates_count(k->c, platform);
-        total_non_single_qubit_gates += get_non_single_qubit_quantum_gates_count(k->c, platform);
-    }
-    UInt qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } }
-
-    // report totals
-    os << "\n";
-    os << comment_prefix << "Total circuit_latency: " << total_circuit_latency << "\n";
-    os << comment_prefix << "Total no. of quantum gates: " << total_quantum_gates << "\n";
-    os << comment_prefix << "Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
-    os << comment_prefix << "Total no. of classical operations: " << total_classical_operations << "\n";
-    os << comment_prefix << "Qubits used: " << qubits_used << "\n";
-    os << comment_prefix << "No. kernels: " << kernels.size() << "\n";
+    os << line_prefix << "\n";
+    os << line_prefix << "Total circuit_latency: " << compute<Latency>(program) << "\n";
+    os << line_prefix << "Total no. of quantum gates: " << compute<QuantumGateCount>(program) << "\n";
+    os << line_prefix << "Total no. of non single qubit gates: " << compute<MultiQubitGateCount>(program) << "\n";
+    os << line_prefix << "Total no. of classical operations: " << compute<ClassicalOperationCount>(program) << "\n";
+    os << line_prefix << "Qubits used: " << compute<QubitUsageCount>(program).sparse_size() << "\n";
+    os << line_prefix << "No. kernels: " << compute<QubitUsedCycleCount>(program) << "\n";
     // DOUT("... reporting report_totals_statistics [done]");
 }
 
@@ -615,12 +455,12 @@ void report_statistics(
     auto rf = ReportFile(program, in_or_out, pass_name);
 
     // per kernel reporting
-    for (auto &k : program->kernels) {
-        rf.write_kernel_statistics(k, platform, comment_prefix);
+    for (auto &kernel : program->kernels) {
+        rf.write_kernel_statistics(kernel, comment_prefix);
     }
 
     // and total collecting and reporting
-    rf.write_totals_statistics(program->kernels, platform, comment_prefix);
+    rf.write_totals_statistics(program, comment_prefix);
 
     if (!additionalStatistics.empty()) {
         rf << " \n\n" << additionalStatistics;

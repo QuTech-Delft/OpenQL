@@ -30,14 +30,12 @@ public:
     );
     void write(const utils::Str &content);
     void write_kernel_statistics(
-        const ir::KernelRef &k,
-        const plat::PlatformRef &platform,
-        const utils::Str &comment_prefix=""
+        const ir::KernelRef &kernel,
+        const utils::Str &line_prefix=""
     );
     void write_totals_statistics(
-        const ir::KernelRefs &kernels,
-        const plat::PlatformRef &platform,
-        const utils::Str &comment_prefix=""
+        const ir::ProgramRef &program,
+        const utils::Str &line_prefix=""
     );
     void close();
     template <typename T>
@@ -89,9 +87,8 @@ void report_string(
  */
 void report_kernel_statistics(
     std::ostream &os,
-    const ir::KernelRef &k,
-    const plat::PlatformRef &platform,
-    const utils::Str &comment_prefix
+    const ir::KernelRef &kernel,
+    const utils::Str &line_prefix = ""
 );
 
 /**
@@ -99,9 +96,8 @@ void report_kernel_statistics(
  */
 void report_totals_statistics(
     std::ostream &os,
-    const ir::KernelRefs &kernels,
-    const plat::PlatformRef &platform,
-    const utils::Str &comment_prefix
+    const ir::ProgramRef &program,
+    const utils::Str &line_prefix = ""
 );
 
 /**
