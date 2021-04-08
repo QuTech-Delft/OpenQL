@@ -16,38 +16,6 @@
 namespace ql {
 
 /**
- * Wraps OutFile such that the file is only created and written if the
- * write_report_files option is set.
- */
-class ReportFile {
-private:
-    utils::Opt<utils::OutFile> of;
-public:
-    ReportFile(
-        const ir::ProgramRef &program,
-        const utils::Str &in_or_out,
-        const utils::Str &pass_name
-    );
-    void write(const utils::Str &content);
-    void write_kernel_statistics(
-        const ir::KernelRef &kernel,
-        const utils::Str &line_prefix=""
-    );
-    void write_totals_statistics(
-        const ir::ProgramRef &program,
-        const utils::Str &line_prefix=""
-    );
-    void close();
-    template <typename T>
-    ReportFile &operator<<(T &&rhs) {
-        if (of) {
-            *of << std::forward<T>(rhs);
-        }
-        return *this;
-    }
-};
-
-/**
  * write qasm
  * in a file with a name that contains the program unique name and an extension defined by the pass_name
  */
@@ -75,32 +43,6 @@ void report_qasm(
 );
 
 /**
- * report given string which is assumed to be closed by an endl by the caller
- */
-void report_string(
-    std::ostream &os,
-    const utils::Str &s
-);
-
-/**
- * report statistics of the circuit of the given kernel
- */
-void report_kernel_statistics(
-    std::ostream &os,
-    const ir::KernelRef &kernel,
-    const utils::Str &line_prefix = ""
-);
-
-/**
- * reports only the totals of the statistics of the circuits of the given kernels
- */
-void report_totals_statistics(
-    std::ostream &os,
-    const ir::ProgramRef &program,
-    const utils::Str &line_prefix = ""
-);
-
-/**
  * reports the statistics of the circuits of the given kernels individually and in total
  * by appending them to the report file of the given program and place from where the report is done;
  * this report file is first created/truncated
@@ -113,7 +55,7 @@ void report_statistics(
     const plat::PlatformRef &platform,
     const utils::Str &in_or_out,
     const utils::Str &pass_name,
-    const utils::Str &comment_prefix,
+    const utils::Str &line_prefix,
     const utils::Str &additionalStatistics = ""
 );
 

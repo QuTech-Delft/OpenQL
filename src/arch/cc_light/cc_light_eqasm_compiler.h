@@ -91,7 +91,7 @@ public:
     static void ccl_decompose_pre_schedule(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname);
     static void ccl_decompose_post_schedule(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname);
     static void ccl_decompose_post_schedule_bundles(ir::Bundles &bundles_dst, const plat::PlatformRef &platform);
-    static void map(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname, utils::Str *mapStatistics);
+    static void map(const ir::ProgramRef &program, const plat::PlatformRef &platform, const utils::Str &passname);
 
     // cc_light_instr is needed by some cc_light backend passes and by cc_light resource_management:
     // - each bundle section will only have gates with the same cc_light_instr name; prepares for SIMD/SOMQ

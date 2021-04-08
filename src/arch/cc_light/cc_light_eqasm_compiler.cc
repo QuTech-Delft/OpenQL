@@ -11,6 +11,7 @@
 #include "buffer_insertion.h"
 #include "qsoverlay.h"
 #include "ql/utils/filesystem.h"
+#include "ql/com/statistics.h"
 
 namespace ql {
 namespace arch {
@@ -764,8 +765,7 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
 void cc_light_eqasm_compiler::map(
     const ir::ProgramRef &program,
     const plat::PlatformRef &platform,
-    const Str &passname,
-    Str *mapStatistics
+    const Str &passname
 ) {
     auto mapopt = options::get("mapper");
     if (mapopt == "no") {
@@ -778,8 +778,6 @@ void cc_light_eqasm_compiler::map(
 
     mapper::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
     mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
-
-    auto rf = ReportFile(program, "out", passname);
 
     UInt total_swaps = 0;        // for reporting, data is mapper specific
     UInt total_moves = 0;        // for reporting, data is mapper specific
@@ -803,30 +801,22 @@ void cc_light_eqasm_compiler::map(
         duration<Real> time_span = t2 - t1;
         timetaken = time_span.count();
 
-        StrStrm ss;
-        report_kernel_statistics(ss, kernel, "# ");
-        ss << "# ----- swaps added: " << mapper.nswapsadded << std::endl;
-        ss << "# ----- of which moves added: " << mapper.nmovesadded << std::endl;
-        ss << "# ----- virt2real map before mapper:" << mapper.v2r_in << std::endl;
-        ss << "# ----- virt2real map after initial placement:" << mapper.v2r_ip << std::endl;
-        ss << "# ----- virt2real map after mapper:" << mapper.v2r_out << std::endl;
-        ss << "# ----- realqubit states before mapper:" << mapper.rs_in << std::endl;
-        ss << "# ----- realqubit states after mapper:" << mapper.rs_out << std::endl;
-        ss << "# ----- time taken: " << timetaken << std::endl;
-        rf << ss.str();
+        kernel->statistics.push_back("swaps added: " + to_string(mapper.nswapsadded));
+        kernel->statistics.push_back("of which moves added: " + to_string(mapper.nmovesadded));
+        kernel->statistics.push_back("virt2real map before mapper:" + to_string(mapper.v2r_in));
+        kernel->statistics.push_back("virt2real map after initial placement:" + to_string(mapper.v2r_ip));
+        kernel->statistics.push_back("virt2real map after mapper:" + to_string(mapper.v2r_out));
+        kernel->statistics.push_back("realqubit states before mapper:" + to_string(mapper.rs_in));
+        kernel->statistics.push_back("realqubit states after mapper:" + to_string(mapper.rs_out));
+        kernel->statistics.push_back("time taken: " + to_string(timetaken));
 
         total_swaps += mapper.nswapsadded;
         total_moves += mapper.nmovesadded;
         total_timetaken += timetaken;
-
-        *mapStatistics += ss.str();
     }
-    StrStrm ss;
-    report_totals_statistics(ss, program, "# ");
-    ss << "# Total no. of swaps: " << total_swaps << std::endl;
-    ss << "# Total no. of moves of swaps: " << total_moves << std::endl;
-    ss << "# Total time taken: " << total_timetaken << std::endl;
-    rf << ss.str();
+    program->statistics.push_back("# Total no. of swaps: " + to_string(total_swaps));
+    program->statistics.push_back("# Total no. of moves of swaps: " + to_string(total_moves));
+    program->statistics.push_back("# Total time taken: " + to_string(total_timetaken));
 
     // kernel qubit/creg/breg counts will have been updated to the platform
     // counts, so we need to do the same for the program.
@@ -834,10 +824,9 @@ void cc_light_eqasm_compiler::map(
     program->creg_count = platform->creg_count;
     program->breg_count = platform->breg_count;
 
+    report_statistics(program, platform, "out", passname, "# ");
     report_qasm(program, platform, "out", passname);
 
-    // add total statistics
-    *mapStatistics += ss.str();
 }
 
 void cc_light_eqasm_compiler::ccl_prep_code_generation(
@@ -935,8 +924,7 @@ void cc_light_eqasm_compiler::compile(
     // because mapper shares ddg code with scheduler
     // this implies that those latter interfaces must be made public in scheduler.h before splitting
     // scheduler.h and mapper.h
-    Str emptystring = "";
-    map(program, platform, "mapper", &emptystring);
+    map(program, platform, "mapper");
 
     clifford_optimize(program, platform, "clifford_postmapper");
 
@@ -965,12 +953,8 @@ void cc_light_eqasm_compiler::compile(
 
     // reporting to be moved to write_statistics pass
     // report totals over all kernels, over all eqasm passes contributing to mapping
-    auto rf = ReportFile(program, "out", "cc_light_compiler");
-    for (const auto &k : program->kernels) {
-        rf.write_kernel_statistics(k, "# ");
-    }
-    rf.write_totals_statistics(program, "# ");
-    rf << "# Total time taken: " << total_timetaken << "\n";
+    program->statistics.push_back("# Total time taken: " + to_string(total_timetaken));
+    report_statistics(program, platform, "out", "cc_light_compiler", "# ");
     report_qasm(program, platform, "out", "cc_light_compiler");
 
     QL_DOUT("Compiling CCLight eQASM [Done]");
@@ -1362,12 +1346,12 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
             }
             fout << "    return c";
             fout << "    \n\n";
-            report_kernel_statistics(fout.unwrap(), kernel, "    # ");
+            com::statistics::dump(kernel, fout.unwrap(), "    # ");
         }
     }
-    report_string(fout.unwrap(), "    \n");
-    report_string(fout.unwrap(), "    # Program-wide statistics:\n");
-    report_totals_statistics(fout.unwrap(), program, "    # ");
+    fout << "    \n";
+    fout << "    # Program-wide statistics:\n";
+    com::statistics::dump(program, fout.unwrap(), "    # ");
     fout << "    return c";
 
     fout.close();

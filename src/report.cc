@@ -35,7 +35,7 @@
 #include "ql/utils/str.h"
 #include "ql/ir/ir.h"
 #include "ql/com/options.h"
-#include "ql/com/metrics.h"
+#include "ql/com/statistics.h"
 
 namespace ql {
 
@@ -255,6 +255,38 @@ static Str report_compose_report_name(
 }
 
 /**
+ * Wraps OutFile such that the file is only created and written if the
+ * write_report_files option is set.
+ */
+class ReportFile {
+private:
+    utils::Opt<utils::OutFile> of;
+public:
+    ReportFile(
+        const ir::ProgramRef &program,
+        const utils::Str &in_or_out,
+        const utils::Str &pass_name
+    );
+    void write(const utils::Str &content);
+    void write_kernel_statistics(
+        const ir::KernelRef &kernel,
+        const utils::Str &line_prefix=""
+    );
+    void write_totals_statistics(
+        const ir::ProgramRef &program,
+        const utils::Str &line_prefix=""
+    );
+    void close();
+    template <typename T>
+    ReportFile &operator<<(T &&rhs) {
+        if (of) {
+            *of << std::forward<T>(rhs);
+        }
+        return *this;
+    }
+};
+
+/**
  * Opens an appropriately-named report file for writing if write_report_files
  * if set to yes.
  */
@@ -275,31 +307,6 @@ ReportFile::ReportFile(
 void ReportFile::write(const utils::Str &content) {
     if (of) {
         *of << content;
-    }
-}
-
-/**
- * Writes kernel statistics for the given kernel to the report file.
- */
-void ReportFile::write_kernel_statistics(
-    const ir::KernelRef &kernel,
-    const Str &line_prefix
-) {
-    if (of) {
-        report_kernel_statistics(of->unwrap(), kernel, line_prefix);
-    }
-}
-
-/**
- * Writes combined statistics for the given vector of kernels to the report
- * file.
- */
-void ReportFile::write_totals_statistics(
-    const ir::ProgramRef &program,
-    const Str &line_prefix
-) {
-    if (of) {
-        report_totals_statistics(of->unwrap(), program, line_prefix);
     }
 }
 
@@ -364,71 +371,29 @@ void report_qasm(
     }
 }
 
-/*
- * report given string which is assumed to be closed by an endl by the caller
+/**
+ * Writes kernel statistics for the given kernel to the report file.
  */
-void report_string(
-    std::ostream &os,
-    const Str &s
-) {
-    // DOUT("... reporting string");
-    if (com::options::get("write_report_files") != "yes") {
-        // DOUT("... reporting string no report [done]");
-        return;
-    }
-
-    os << s;
-    // DOUT("... reporting string [done]");
-}
-
-/*
- * report statistics of the circuit of the given kernel
- */
-void report_kernel_statistics(
-    std::ostream &os,
+void ReportFile::write_kernel_statistics(
     const ir::KernelRef &kernel,
     const Str &line_prefix
 ) {
-    using namespace com::metrics;
-
-    if (com::options::get("write_report_files") != "yes") {
-        return;
+    if (of) {
+        com::statistics::dump(kernel, of->unwrap(), line_prefix);
     }
-
-    // DOUT("... reporting report_kernel_statistics");
-    os << line_prefix << "kernel: " << kernel->name << "\n";
-    os << line_prefix << "----- circuit_latency: " << compute<Latency>(kernel) << "\n";
-    os << line_prefix << "----- quantum gates: " << compute<QuantumGateCount>(kernel) << "\n";
-    os << line_prefix << "----- non single qubit gates: " << compute<MultiQubitGateCount>(kernel) << "\n";
-    os << line_prefix << "----- classical operations: " << compute<ClassicalOperationCount>(kernel) << "\n";
-    os << line_prefix << "----- qubits used: " << compute<QubitUsageCount>(kernel).sparse_size() << "\n";
-    os << line_prefix << "----- qubit cycles use:" << compute<QubitUsedCycleCount>(kernel) << "\n";
-    // DOUT("... reporting report_kernel_statistics [done]");
 }
 
-/*
- * reports only the total statistics of the circuits of the given kernels
+/**
+ * Writes combined statistics for the given vector of kernels to the report
+ * file.
  */
-void report_totals_statistics(
-    std::ostream &os,
+void ReportFile::write_totals_statistics(
     const ir::ProgramRef &program,
     const Str &line_prefix
 ) {
-    using namespace com::metrics;
-
-    if (com::options::get("write_report_files") != "yes") {
-        return;
+    if (of) {
+        com::statistics::dump(program, of->unwrap(), line_prefix);
     }
-
-    // DOUT("... reporting report_totals_statistics");
-    os << line_prefix << "\n";
-    os << line_prefix << "Total circuit_latency: " << compute<Latency>(program) << "\n";
-    os << line_prefix << "Total no. of quantum gates: " << compute<QuantumGateCount>(program) << "\n";
-    os << line_prefix << "Total no. of non single qubit gates: " << compute<MultiQubitGateCount>(program) << "\n";
-    os << line_prefix << "Total no. of classical operations: " << compute<ClassicalOperationCount>(program) << "\n";
-    os << line_prefix << "Qubits used: " << compute<QubitUsageCount>(program).sparse_size() << "\n";
-    os << line_prefix << "No. kernels: " << compute<QubitUsedCycleCount>(program) << "\n";
-    // DOUT("... reporting report_totals_statistics [done]");
 }
 
 /*
@@ -444,7 +409,7 @@ void report_statistics(
     const plat::PlatformRef &platform,
     const Str &in_or_out,
     const Str &pass_name,
-    const Str &comment_prefix,
+    const Str &line_prefix,
     const Str &additionalStatistics
 ) {
     if (com::options::get("write_report_files") != "yes") {
@@ -456,11 +421,14 @@ void report_statistics(
 
     // per kernel reporting
     for (auto &kernel : program->kernels) {
-        rf.write_kernel_statistics(kernel, comment_prefix);
+        rf.write_kernel_statistics(kernel, line_prefix);
+        kernel->statistics.clear();
     }
 
     // and total collecting and reporting
-    rf.write_totals_statistics(program, comment_prefix);
+    rf << line_prefix << "\n";
+    rf.write_totals_statistics(program, line_prefix);
+    program->statistics.clear();
 
     if (!additionalStatistics.empty()) {
         rf << " \n\n" << additionalStatistics;

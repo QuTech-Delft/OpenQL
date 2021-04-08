@@ -379,9 +379,7 @@ MapperPass::MapperPass(const Str &name) : AbstractPass(name) {
  * @param  Program object to be mapped
  */
 void MapperPass::runOnProgram(const ir::ProgramRef &program) {
-    Str stats;
-    arch::cc_light_eqasm_compiler::map(program, program->platform, getPassName(), &stats);
-    appendStatistics(stats);
+    arch::cc_light_eqasm_compiler::map(program, program->platform, getPassName());
 }
 
 /**
