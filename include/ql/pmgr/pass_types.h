@@ -24,6 +24,25 @@ class PassManager;
 
 namespace pass_types {
 
+/**
+ * Context information provided to the run function of a pass by the pass
+ * management system.
+ */
+struct Context {
+
+    /**
+     * The fully-qualified pass name, using periods for hierarchy separation.
+     */
+    utils::Str full_pass_name;
+
+    /**
+     * The directory and filename prefix that should be used for all output
+     * products of the pass.
+     */
+    utils::Str output_prefix;
+
+};
+
 // Forward declaration for the base type.
 class Base;
 
@@ -230,7 +249,7 @@ protected:
      */
     virtual utils::Int run_internal(
         const ir::ProgramRef &program,
-        const utils::Str &full_name
+        const Context &context
     ) const = 0;
 
     /**
@@ -590,7 +609,7 @@ protected:
      */
     utils::Int run_internal(
         const ir::ProgramRef &program,
-        const utils::Str &full_name
+        const Context &context
     ) const final;
 
     /**
@@ -666,7 +685,7 @@ protected:
      */
     utils::Int run_internal(
         const ir::ProgramRef &program,
-        const utils::Str &full_name
+        const Context &context
     ) const final;
 
     /**
@@ -679,7 +698,7 @@ protected:
      */
     virtual utils::Int run(
         const plat::PlatformRef &platform,
-        const utils::Str &full_name
+        const Context &context
     ) const = 0;
 
 };
@@ -709,7 +728,7 @@ protected:
      */
     utils::Int run_internal(
         const ir::ProgramRef &program,
-        const utils::Str &full_name
+        const Context &context
     ) const final;
 
     /**
@@ -722,7 +741,7 @@ protected:
      */
     virtual utils::Int run(
         const ir::ProgramRef &program,
-        const utils::Str &full_name
+        const Context &context
     ) const = 0;
 
 };
@@ -753,7 +772,7 @@ protected:
      */
     utils::Int run_internal(
         const ir::ProgramRef &program,
-        const utils::Str &full_name
+        const Context &context
     ) const final;
 
     /**
@@ -767,7 +786,7 @@ protected:
     virtual void run(
         const ir::ProgramRef &program,
         const ir::KernelRef &kernel,
-        const utils::Str &full_name
+        const Context &context
     ) const = 0;
 
 };
@@ -797,7 +816,7 @@ protected:
      */
     utils::Int run_internal(
         const ir::ProgramRef &program,
-        const utils::Str &full_name
+        const Context &context
     ) const final;
 
     /**
@@ -811,7 +830,7 @@ protected:
      */
     virtual utils::Int run(
         const ir::ProgramRef &program,
-        const utils::Str &full_name
+        const Context &context
     ) const = 0;
 
 };
@@ -841,7 +860,7 @@ protected:
      */
     utils::Int run_internal(
         const ir::ProgramRef &program,
-        const utils::Str &full_name
+        const Context &context
     ) const final;
 
     /**
@@ -856,7 +875,7 @@ protected:
     virtual void run(
         const ir::ProgramRef &program,
         const ir::KernelRef &kernel,
-        const utils::Str &full_name
+        const Context &context
     ) const = 0;
 
 };

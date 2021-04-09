@@ -1,5 +1,5 @@
 /** \file
- * Defines the mapping graph visualization pass.
+ * Defines the statistics cleaning pass.
  */
 
 #pragma once
@@ -9,17 +9,17 @@
 namespace ql {
 namespace pass {
 namespace ana {
-namespace visualize {
-namespace mapping {
+namespace statistics {
+namespace clean {
 
 /**
- * Mapping graph visualizer pass.
+ * Statistics cleaning pass.
  */
-class VisualizeMappingPass : public pmgr::pass_types::ProgramAnalysis {
+class CleanStatisticsPass : public pmgr::pass_types::ProgramAnalysis {
 protected:
 
     /**
-     * Dumps docs for the mapping graph visualizer.
+     * Dumps docs for the statistics cleaner.
      */
     void dump_docs(
         std::ostream &os,
@@ -29,16 +29,16 @@ protected:
 public:
 
     /**
-     * Constructs a mapping graph visualizer pass.
+     * Constructs a statistics cleaner.
      */
-    VisualizeMappingPass(
+    CleanStatisticsPass(
         const utils::Ptr<const pmgr::PassFactory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
     );
 
     /**
-     * Runs the mapping graph visualizer.
+     * Runs the statistics cleaner.
      */
     utils::Int run(
         const ir::ProgramRef &program,
@@ -50,10 +50,10 @@ public:
 /**
  * Shorthand for referring to the pass using namespace notation.
  */
-using Pass = VisualizeMappingPass;
+using Pass = CleanStatisticsPass;
 
-} // namespace mapping
-} // namespace visualize
+} // namespace clean
+} // namespace statistics
 } // namespace ana
 } // namespace pass
 } // namespace ql

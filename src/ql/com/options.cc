@@ -17,7 +17,20 @@ using namespace utils;
 Options make_ql_options() {
     auto options = Options();
 
-    options.add_enum("log_level", "Log levels", "LOG_NOTHING", {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}).with_callback([](Option &x){logger::set_log_level(x.as_str());});
+    options.add_enum(
+        "log_level",
+        "Log levels",
+        "LOG_NOTHING",
+        {
+            "LOG_NOTHING",
+            "LOG_CRITICAL",
+            "LOG_ERROR",
+            "LOG_WARNING",
+            "LOG_INFO",
+            "LOG_DEBUG"
+        }
+    ).with_callback([](Option &x){logger::set_log_level(x.as_str());});
+
     options.add_str(
         "output_dir",
         "Name of the directory in which all output products will be written. "
@@ -25,6 +38,7 @@ Options make_ql_options() {
         "will automatically be created when the program is compiled.",
         "test_output"
     );
+
     options.add_bool(
         "unique_output",
         "Uniquify the program name as used for constructing output filenames, "

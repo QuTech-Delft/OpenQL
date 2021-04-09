@@ -86,15 +86,6 @@ public:
     utils::Vec<utils::Real> sweep_points;
 
     /**
-     * Pass-specific unstructured statistical information for this program. This
-     * is reset by the pass manager before the start of any transformation pass.
-     * Analysis passes may use the information to augment their behavior
-     * (specifically, the statistics reporting pass dumps these strings as
-     * additional lines for the complete program).
-     */
-    utils::List<utils::Str> statistics;
-
-    /**
      * Configuration file name for the sweep points pass. Leave empty to use the
      * default generated filename.
      *

@@ -148,6 +148,22 @@ Base::Base(
     instance_name(instance_name)
 {
     // TODO common pass options
+    options.add_str(
+        "output_prefix",
+        "Format string for the prefix used for all output products. "
+        "%n is substituted with the user-specified name of the program. "
+        "%N is substituted with the optionally uniquified name of the program. "
+        "%p is substituted with the local name of the pass within its group. "
+        "%P is substituted with the fully-qualified name of the pass, using "
+        "periods as hierarchy separators (guaranteed unique). "
+        "%U is substituted with the fully-qualified name of the pass, using "
+        "underscores as hierarchy separators. This may not be completely unique,"
+        "%D is substituted with the fully-qualified name of the pass, using "
+        "slashes as hierarchy separators. "
+        "Any directories that don't exist will be created as soon as an output "
+        "file is written.",
+        "%N.%P"
+    );
 }
 
 /**
@@ -410,7 +426,7 @@ void Base::construct() {
             QL_ASSERT(false);
     }
 
-    // Check validity and uniqueness of the names, and built the name to pass
+    // Check validity and uniqueness of the names, and build the name to pass
     // map.
     utils::Map<utils::Str, Ref> constructed_pass_names;
     std::regex name_re{"[a-zA-Z0-9_\\-]+"};
@@ -829,10 +845,61 @@ utils::Int Base::run_main_pass(
     const ir::ProgramRef &program,
     const utils::Str &pass_name_prefix
 ) const {
-    auto full_name = pass_name_prefix + instance_name;
-    QL_IOUT("starting pass \"" << full_name << "\" of type \"" << type_name << "\"...");
-    auto retval = run_internal(program, full_name);
-    QL_IOUT("completed pass \"" << full_name << "\"; return value is " << retval);
+
+    // Construct pass context.
+    Context context;
+    context.full_pass_name = pass_name_prefix + instance_name;
+
+    // Apply substitution rules for the output prefix option.
+    utils::Bool special = false;
+    for (auto c : options["output_prefix"].as_str()) {
+        if (special) {
+            switch (c) {
+                case '%':
+                    context.output_prefix += '%';
+                    break;
+                case 'n':
+                    context.output_prefix += program->name;
+                    break;
+                case 'N':
+                    context.output_prefix += program->unique_name;
+                    break;
+                case 'p':
+                    context.output_prefix += instance_name;
+                    break;
+                case 'P':
+                    context.output_prefix += context.full_pass_name;
+                    break;
+                case 'U':
+                    context.output_prefix += utils::replace_all(context.full_pass_name, ".", "_");
+                    break;
+                case 'D':
+                    context.output_prefix += utils::replace_all(context.full_pass_name, ".", "/");
+                    break;
+                default:
+                    throw utils::Exception(
+                        "undefined substitution sequence in output_prefix option "
+                        "for pass " + context.full_pass_name + ": %" + c
+                    );
+            }
+            special = false;
+        } else if (c == '%') {
+            special = true;
+        } else {
+            context.output_prefix += c;
+        }
+    }
+    if (special) {
+        throw utils::Exception(
+            "unterminated substitution sequence in output_prefix option "
+            "for pass " + context.full_pass_name
+        );
+    }
+
+    // Run the pass.
+    QL_IOUT("starting pass \"" << context.full_pass_name << "\" of type \"" << type_name << "\"...");
+    auto retval = run_internal(program, context);
+    QL_IOUT("completed pass \"" << context.full_pass_name << "\"; return value is " << retval);
     return retval;
 }
 
@@ -950,7 +1017,7 @@ NodeType Group::on_construct(
  */
 utils::Int Group::run_internal(
     const ir::ProgramRef &program,
-    const utils::Str &full_name
+    const Context &context
 ) const {
     QL_ASSERT(false);
 }
@@ -1003,9 +1070,9 @@ PlatformTransformation::PlatformTransformation(
  */
 utils::Int PlatformTransformation::run_internal(
     const ir::ProgramRef &program,
-    const utils::Str &full_name
+    const Context &context
 ) const {
-    return run(program->platform, full_name);
+    return run(program->platform, context);
 }
 
 /**
@@ -1031,17 +1098,9 @@ ProgramTransformation::ProgramTransformation(
  */
 utils::Int ProgramTransformation::run_internal(
     const ir::ProgramRef &program,
-    const utils::Str &full_name
+    const Context &context
 ) const {
-
-    // This is a transformation pass, so clear the current program/kernel
-    // statistics.
-    program->statistics.clear();
-    for (const auto &kernel : program->kernels) {
-        kernel->statistics.clear();
-    }
-
-    return run(program, full_name);
+    return run(program, context);
 }
 
 /**
@@ -1067,18 +1126,10 @@ KernelTransformation::KernelTransformation(
  */
 utils::Int KernelTransformation::run_internal(
     const ir::ProgramRef &program,
-    const utils::Str &full_name
+    const Context &context
 ) const {
-
-    // This is a transformation pass, so clear the current program/kernel
-    // statistics.
-    program->statistics.clear();
     for (const auto &kernel : program->kernels) {
-        kernel->statistics.clear();
-    }
-
-    for (const auto &kernel : program->kernels) {
-        run(program, kernel, full_name);
+        run(program, kernel, context);
     }
     return 0;
 }
@@ -1106,9 +1157,9 @@ ProgramAnalysis::ProgramAnalysis(
  */
 utils::Int ProgramAnalysis::run_internal(
     const ir::ProgramRef &program,
-    const utils::Str &full_name
+    const Context &context
 ) const {
-    return run(program, full_name);
+    return run(program, context);
 }
 
 /**
@@ -1134,10 +1185,10 @@ KernelAnalysis::KernelAnalysis(
  */
 utils::Int KernelAnalysis::run_internal(
     const ir::ProgramRef &program,
-    const utils::Str &full_name
+        const Context &context
 ) const {
     for (const auto &kernel : program->kernels) {
-        run(program, kernel, full_name);
+        run(program, kernel, context);
     }
     return 0;
 }

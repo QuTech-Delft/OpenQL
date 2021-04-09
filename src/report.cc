@@ -35,7 +35,7 @@
 #include "ql/utils/str.h"
 #include "ql/ir/ir.h"
 #include "ql/com/options.h"
-#include "ql/com/statistics.h"
+#include "ql/pass/ana/statistics/common.h"
 
 namespace ql {
 
@@ -379,7 +379,7 @@ void ReportFile::write_kernel_statistics(
     const Str &line_prefix
 ) {
     if (of) {
-        com::statistics::dump(kernel, of->unwrap(), line_prefix);
+        pass::ana::statistics::dump(kernel, of->unwrap(), line_prefix);
     }
 }
 
@@ -392,7 +392,7 @@ void ReportFile::write_totals_statistics(
     const Str &line_prefix
 ) {
     if (of) {
-        com::statistics::dump(program, of->unwrap(), line_prefix);
+        pass::ana::statistics::dump(program, of->unwrap(), line_prefix);
     }
 }
 
@@ -422,13 +422,11 @@ void report_statistics(
     // per kernel reporting
     for (auto &kernel : program->kernels) {
         rf.write_kernel_statistics(kernel, line_prefix);
-        kernel->statistics.clear();
     }
 
     // and total collecting and reporting
     rf << line_prefix << "\n";
     rf.write_totals_statistics(program, line_prefix);
-    program->statistics.clear();
 
     if (!additionalStatistics.empty()) {
         rf << " \n\n" << additionalStatistics;

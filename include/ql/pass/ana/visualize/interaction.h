@@ -2,6 +2,8 @@
  * Defines the interaction graph visualization pass.
  */
 
+#pragma once
+
 #include "ql/pmgr/pass_types.h"
 
 namespace ql {
@@ -40,7 +42,7 @@ public:
      */
     utils::Int run(
         const ir::ProgramRef &program,
-        const utils::Str &full_name
+        const pmgr::pass_types::Context &context
     ) const override;
 
 };

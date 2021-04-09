@@ -47,7 +47,7 @@ VisualizeInteractionPass::VisualizeInteractionPass(
  */
 utils::Int VisualizeInteractionPass::run(
     const ir::ProgramRef &program,
-    const utils::Str &full_name
+    const pmgr::pass_types::Context &context
 ) const {
 #ifdef WITH_VISUALIZER
     detail::visualizeInteractionGraph(

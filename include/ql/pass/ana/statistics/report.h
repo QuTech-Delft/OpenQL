@@ -1,5 +1,5 @@
 /** \file
- * Defines the mapping graph visualization pass.
+ * Defines the statistics reporting pass.
  */
 
 #pragma once
@@ -9,17 +9,17 @@
 namespace ql {
 namespace pass {
 namespace ana {
-namespace visualize {
-namespace mapping {
+namespace statistics {
+namespace report {
 
 /**
- * Mapping graph visualizer pass.
+ * Statistics reporting pass.
  */
-class VisualizeMappingPass : public pmgr::pass_types::ProgramAnalysis {
+class ReportStatisticsPass : public pmgr::pass_types::ProgramAnalysis {
 protected:
 
     /**
-     * Dumps docs for the mapping graph visualizer.
+     * Dumps docs for the statistics reporter.
      */
     void dump_docs(
         std::ostream &os,
@@ -29,16 +29,16 @@ protected:
 public:
 
     /**
-     * Constructs a mapping graph visualizer pass.
+     * Constructs a statistics reporter.
      */
-    VisualizeMappingPass(
+    ReportStatisticsPass(
         const utils::Ptr<const pmgr::PassFactory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
     );
 
     /**
-     * Runs the mapping graph visualizer.
+     * Runs the statistics reporter.
      */
     utils::Int run(
         const ir::ProgramRef &program,
@@ -50,10 +50,10 @@ public:
 /**
  * Shorthand for referring to the pass using namespace notation.
  */
-using Pass = VisualizeMappingPass;
+using Pass = ReportStatisticsPass;
 
-} // namespace mapping
-} // namespace visualize
+} // namespace report
+} // namespace statistics
 } // namespace ana
 } // namespace pass
 } // namespace ql

@@ -11,7 +11,7 @@
 #include "buffer_insertion.h"
 #include "qsoverlay.h"
 #include "ql/utils/filesystem.h"
-#include "ql/com/statistics.h"
+#include "ql/pass/ana/statistics/common.h"
 
 namespace ql {
 namespace arch {
@@ -767,6 +767,8 @@ void cc_light_eqasm_compiler::map(
     const plat::PlatformRef &platform,
     const Str &passname
 ) {
+    using pass::ana::statistics::AdditionalStats;
+
     auto mapopt = options::get("mapper");
     if (mapopt == "no") {
         QL_IOUT("Not mapping kernels");
@@ -801,22 +803,22 @@ void cc_light_eqasm_compiler::map(
         duration<Real> time_span = t2 - t1;
         timetaken = time_span.count();
 
-        kernel->statistics.push_back("swaps added: " + to_string(mapper.nswapsadded));
-        kernel->statistics.push_back("of which moves added: " + to_string(mapper.nmovesadded));
-        kernel->statistics.push_back("virt2real map before mapper:" + to_string(mapper.v2r_in));
-        kernel->statistics.push_back("virt2real map after initial placement:" + to_string(mapper.v2r_ip));
-        kernel->statistics.push_back("virt2real map after mapper:" + to_string(mapper.v2r_out));
-        kernel->statistics.push_back("realqubit states before mapper:" + to_string(mapper.rs_in));
-        kernel->statistics.push_back("realqubit states after mapper:" + to_string(mapper.rs_out));
-        kernel->statistics.push_back("time taken: " + to_string(timetaken));
+        AdditionalStats::push(kernel, "swaps added: " + to_string(mapper.nswapsadded));
+        AdditionalStats::push(kernel, "of which moves added: " + to_string(mapper.nmovesadded));
+        AdditionalStats::push(kernel, "virt2real map before mapper:" + to_string(mapper.v2r_in));
+        AdditionalStats::push(kernel, "virt2real map after initial placement:" + to_string(mapper.v2r_ip));
+        AdditionalStats::push(kernel, "virt2real map after mapper:" + to_string(mapper.v2r_out));
+        AdditionalStats::push(kernel, "realqubit states before mapper:" + to_string(mapper.rs_in));
+        AdditionalStats::push(kernel, "realqubit states after mapper:" + to_string(mapper.rs_out));
+        AdditionalStats::push(kernel, "time taken: " + to_string(timetaken));
 
         total_swaps += mapper.nswapsadded;
         total_moves += mapper.nmovesadded;
         total_timetaken += timetaken;
     }
-    program->statistics.push_back("# Total no. of swaps: " + to_string(total_swaps));
-    program->statistics.push_back("# Total no. of moves of swaps: " + to_string(total_moves));
-    program->statistics.push_back("# Total time taken: " + to_string(total_timetaken));
+    AdditionalStats::push(program, "Total no. of swaps: " + to_string(total_swaps));
+    AdditionalStats::push(program, "Total no. of moves of swaps: " + to_string(total_moves));
+    AdditionalStats::push(program, "Total time taken: " + to_string(total_timetaken));
 
     // kernel qubit/creg/breg counts will have been updated to the platform
     // counts, so we need to do the same for the program.
@@ -953,7 +955,7 @@ void cc_light_eqasm_compiler::compile(
 
     // reporting to be moved to write_statistics pass
     // report totals over all kernels, over all eqasm passes contributing to mapping
-    program->statistics.push_back("# Total time taken: " + to_string(total_timetaken));
+    pass::ana::statistics::AdditionalStats::push(program, "Total time taken: " + to_string(total_timetaken));
     report_statistics(program, platform, "out", "cc_light_compiler", "# ");
     report_qasm(program, platform, "out", "cc_light_compiler");
 
@@ -1346,12 +1348,12 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
             }
             fout << "    return c";
             fout << "    \n\n";
-            com::statistics::dump(kernel, fout.unwrap(), "    # ");
+            pass::ana::statistics::dump(kernel, fout.unwrap(), "    # ");
         }
     }
     fout << "    \n";
     fout << "    # Program-wide statistics:\n";
-    com::statistics::dump(program, fout.unwrap(), "    # ");
+    pass::ana::statistics::dump(program, fout.unwrap(), "    # ");
     fout << "    return c";
 
     fout.close();

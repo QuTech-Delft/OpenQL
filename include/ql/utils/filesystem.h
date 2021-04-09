@@ -32,7 +32,7 @@ private:
     std::ofstream ofs;
     Str path;
 public:
-    OutFile(const Str &path);
+    explicit OutFile(const Str &path);
     void write(const Str &content);
     void close();
     void check();

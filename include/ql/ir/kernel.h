@@ -134,15 +134,6 @@ public: // FIXME: should be private
      */
     utils::Vec<utils::UInt> cond_operands;
 
-    /**
-     * Pass-specific unstructured statistical information for this kernel. This
-     * is reset by the pass manager before the start of any transformation pass.
-     * Analysis passes may use the information to augment their behavior
-     * (specifically, the statistics reporting pass dumps these strings as
-     * additional lines per kernel).
-     */
-    utils::List<utils::Str> statistics;
-
 public:
 
     Kernel(
