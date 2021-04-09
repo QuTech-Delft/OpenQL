@@ -73,13 +73,11 @@ PassFactory::PassFactory() {
  *  - A copy is made of entries that include an `arch.<architecture>`
  *    component pair, with that pair stripped.
  *
- * Furthermore, the debug_dumpers member is modified accordingly. The
- * original factory is not modified.
+ * The original factory is not modified.
  */
 CPassFactoryRef PassFactory::configure(
     const utils::Str &architecture,
-    const utils::Set<utils::Str> &dnu,
-    const utils::List<utils::Pair<utils::Str, utils::Str>> &debug_dumpers
+    const utils::Set<utils::Str> &dnu
 ) const {
 
     // Clone this pass factory into a smart pointer.
@@ -153,9 +151,6 @@ CPassFactoryRef PassFactory::configure(
         }
     }
 
-    // Set debug dumper list.
-    ref->debug_dumpers = debug_dumpers;
-
     return ref.as_const();
 }
 
@@ -177,23 +172,6 @@ PassRef PassFactory::build_pass(
         throw utils::Exception("unknown pass type \"" + type_name + "\"");
     }
     return (*it->second)(pass_factory, instance_name);
-}
-
-/**
- * Prefixes and suffixes the given pass list with the debug dumpers
- * configured for this factory.
- */
-void PassFactory::add_debug_dumpers(
-    const CPassFactoryRef &pass_factory,
-    utils::List<PassRef> &passes
-) {
-    auto front_it = passes.begin();
-    for (const auto &pair : pass_factory->debug_dumpers) {
-        const auto &type_name = pair.first;
-        const auto &instance_name = pair.second;
-        front_it = std::next(passes.insert(front_it, build_pass(pass_factory, type_name, instance_name + "_pre")));
-        passes.push_back(build_pass(pass_factory, type_name, instance_name + "_post"));
-    }
 }
 
 /**
@@ -246,10 +224,9 @@ void PassFactory::dump_pass_types(
 PassManager::PassManager(
     const utils::Str &architecture,
     const utils::Set<utils::Str> &dnu,
-    const utils::List<utils::Pair<utils::Str, utils::Str>> &debug_dumpers,
     const PassFactory &factory
 ) {
-    pass_factory = factory.configure(architecture, dnu, debug_dumpers);
+    pass_factory = factory.configure(architecture, dnu);
     root = PassFactory::build_pass(pass_factory, "", "");
 }
 

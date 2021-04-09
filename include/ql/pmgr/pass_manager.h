@@ -89,12 +89,6 @@ private:
      */
     utils::Map<utils::Str, ConstructorFn> pass_types;
 
-    /**
-     * List of analysis pass type name & instance name suffix pairs that are
-     * inserted before and after passes with debugging enabled.
-     */
-    utils::List<utils::Pair<utils::Str, utils::Str>> debug_dumpers;
-
 public:
 
     /**
@@ -129,13 +123,11 @@ public:
      *  - A copy is made of entries that include an `arch.<architecture>`
      *    component pair, with that pair stripped.
      *
-     * Furthermore, the debug_dumpers member is modified accordingly. The
-     * original factory is not modified.
+     * The original factory is not modified.
      */
     CPassFactoryRef configure(
         const utils::Str &architecture,
-        const utils::Set<utils::Str> &dnu,
-        const utils::List<utils::Pair<utils::Str, utils::Str>> &debug_dumpers
+        const utils::Set<utils::Str> &dnu
     ) const;
 
     /**
@@ -145,15 +137,6 @@ public:
         const CPassFactoryRef &pass_factory,
         const utils::Str &type_name,
         const utils::Str &instance_name
-    );
-
-    /**
-     * Prefixes and suffixes the given pass list with the debug dumpers
-     * configured for this factory.
-     */
-    static void add_debug_dumpers(
-        const CPassFactoryRef &pass_factory,
-        utils::List<PassRef> &passes
     );
 
     /**
@@ -219,9 +202,6 @@ public:
     explicit PassManager(
         const utils::Str &architecture = "",
         const utils::Set<utils::Str> &dnu = {},
-        const utils::List<utils::Pair<utils::Str, utils::Str>> &debug_dumpers = {
-            {"debug_cqasm", "io.WriteCQasm"}
-        },
         const PassFactory &factory = {}
     );
 
