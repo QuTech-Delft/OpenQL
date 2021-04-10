@@ -1197,7 +1197,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
     Json config;
     try {
         config = load_json(platform->configuration_file_name);
-    } catch (Json::exception e) {
+    } catch (const Json::exception &e) {
         throw Exception("[x] error : quantumsim_compiler::load() :  failed to load the hardware config file : malformed json file ! : \n    " +
                         Str(e.what()), false);
     }
