@@ -34,7 +34,7 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
     - name: Build wheel
       env:
-        NPROCS: 100
+        NPROCS: 5
       run: python setup.py bdist_wheel
     - name: Wheel path
       id: wheel
@@ -92,7 +92,7 @@ jobs:
       run: curl -L https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz | tar xz --strip-components=1 -C /usr
     - name: Build wheel
       env:
-        NPROCS: 100
+        NPROCS: 5
       run: |
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
         /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
@@ -145,7 +145,7 @@ jobs:
         choco install swig --version 4.0.1
     - name: Build wheel
       env:
-        NPROCS: 100
+        NPROCS: 5
       run: python setup.py bdist_wheel
     - name: Wheel path
       id: wheel
@@ -199,7 +199,7 @@ jobs:
       run: conda install conda-build conda-verify -y
     - name: Build & test
       env:
-        NPROCS: 100
+        NPROCS: 5
       run: conda build conda-recipe --python=${{ matrix.python-version }}
     - name: Wheel path
       id: wheel

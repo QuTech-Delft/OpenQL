@@ -117,7 +117,7 @@ jobs:
       run: echo "OPENQL_BUILD_TYPE=Debug" >> $GITHUB_ENV
     - name: Build
       env:
-        NPROCS: 100
+        NPROCS: 5
       run: python -m pip install --verbose .
     - name: Test
       run: python -m pytest
@@ -153,7 +153,7 @@ jobs:
       run: conda install conda-build conda-verify -y
     - name: Build & test
       env:
-        NPROCS: 100
+        NPROCS: 5
       run: conda build conda-recipe
     - name: Install
       # This doesn't seem to work on Windows in CI because everything appears
