@@ -102,12 +102,12 @@ public:
     template <class PassType>
     void register_pass(const utils::Str &type_name) {
         ConstructorFn fn;
-        fn.template emplace([type_name](
+        fn.emplace([type_name](
             const CPassFactoryRef &pass_factory,
             const utils::Str &instance_name
         ) {
             PassRef pass;
-            pass.template emplace<PassType>(pass_factory, type_name, instance_name);
+            pass.emplace<PassType>(pass_factory, type_name, instance_name);
             return pass;
         });
         pass_types.set(type_name) = fn;
