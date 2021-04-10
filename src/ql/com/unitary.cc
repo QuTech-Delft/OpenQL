@@ -48,7 +48,7 @@ UInt Unitary::size() const {
  * Explicitly runs the matrix decomposition algorithm. Used to be required,
  * nowadays is called implicitly by get_circuit() if not done explicitly.
  */
-void Unitary::decompose() const {
+void Unitary::decompose() {
     throw Exception("unitary decomposition was explicitly disabled in this build!");
 }
 
@@ -522,7 +522,7 @@ public:
  * Explicitly runs the matrix decomposition algorithm. Used to be required,
  * nowadays is called implicitly by get_circuit() if not done explicitly.
  */
-void Unitary::decompose() const {
+void Unitary::decompose() {
     if (decomposed) {
         return;
     }
@@ -667,7 +667,7 @@ static Int recursiveRelationsForUnitaryDecomposition(
 /**
  * Returns the decomposed circuit.
  */
-ir::Circuit Unitary::get_circuit(const utils::Vec<utils::UInt> &qubits) const {
+ir::Circuit Unitary::get_circuit(const utils::Vec<utils::UInt> &qubits) {
 
     // Decompose now if not done yet.
     if (!decomposed) {
@@ -676,14 +676,19 @@ ir::Circuit Unitary::get_circuit(const utils::Vec<utils::UInt> &qubits) const {
 
     UInt u_size = log2(size()) / 2;
     if (u_size != qubits.size()) {
-        QL_EOUT("Unitary " << name << " has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
-        throw Exception("Unitary '" + name + "' has been applied to the wrong number of qubits. Cannot be added to kernel! " + to_string(qubits.size()) + " and not " + to_string(u_size), false);
+        throw Exception(
+            "Unitary '" + name + "' has been applied to the wrong number of qubits. " +
+            "Cannot be added to kernel! " + to_string(qubits.size()) + " and not " +
+            to_string(u_size)
+        );
     }
     for (uint64_t i = 0; i < qubits.size()-1; i++) {
         for (uint64_t j = i + 1; j < qubits.size(); j++) {
             if (qubits[i] == qubits[j]) {
-                QL_EOUT("Qubit numbers used more than once in Unitary: " << name << ". Double qubit is number " << qubits[j]);
-                throw Exception("Qubit numbers used more than once in Unitary: " + name + ". Double qubit is number " + to_string(qubits[j]), false);
+                throw Exception(
+                    "Qubit numbers used more than once in Unitary: " + name + ". " +
+                    "Double qubit is number " + to_string(qubits[j])
+                );
             }
         }
     }

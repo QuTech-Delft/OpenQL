@@ -1026,7 +1026,7 @@ Bool Kernel::gate_nonfatal(
 
 // to add unitary to kernel
 void Kernel::gate(
-    const com::Unitary &u,
+    com::Unitary &u,
     const Vec<UInt> &qubits
 ) {
     QL_DOUT("Adding decomposed unitary to kernel ...");

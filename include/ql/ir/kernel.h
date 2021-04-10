@@ -282,7 +282,7 @@ public:
         const utils::Vec<utils::UInt> &gcondregs
     );
     // to add unitary to kernel
-    void gate(const com::Unitary &u, const utils::Vec<utils::UInt> &qubits);
+    void gate(com::Unitary &u, const utils::Vec<utils::UInt> &qubits);
 
     // terminology:
     // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):

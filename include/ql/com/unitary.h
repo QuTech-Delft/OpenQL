@@ -26,7 +26,7 @@ private:
     /**
      * Whether this unitary gate has been decomposed yet.
      */
-    mutable utils::Bool decomposed;
+    utils::Bool decomposed;
 
     /**
      * The list of decomposed instructions.
@@ -34,7 +34,7 @@ private:
      * TODO: document and refactor, using Reals to communicate enum information
      *  is not okay...
      */
-    mutable utils::Vec<utils::Real> instruction_list;
+    utils::Vec<utils::Real> instruction_list;
 
 public:
 
@@ -62,7 +62,7 @@ public:
      * Explicitly runs the matrix decomposition algorithm. Used to be required,
      * nowadays is called implicitly by get_circuit() if not done explicitly.
      */
-    void decompose() const;
+    void decompose();
 
     /**
      * Returns whether unitary decomposition support was enabled in this build
@@ -73,7 +73,7 @@ public:
     /**
      * Returns the decomposed circuit.
      */
-    ir::Circuit get_circuit(const utils::Vec<utils::UInt> &qubits) const;
+    ir::Circuit get_circuit(const utils::Vec<utils::UInt> &qubits);
 
 };
 
