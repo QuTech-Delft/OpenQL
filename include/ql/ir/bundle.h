@@ -15,6 +15,8 @@ namespace ir {
 
 using Section = utils::List<ir::GateRef>;
 
+const int BUNDLE_START_CYCLE = 1;                   // start_cycle of first bundle_t in bundles_t, see discussion in PR #398
+
 class Bundle {
 public:
     utils::UInt start_cycle;                         // start cycle for all gates in parallel_sections
