@@ -9,7 +9,7 @@ fi
 set -u
 set -x
 
-for PYDIR in /opt/python/cp3*; do
+for PYDIR in /opt/python/cp36-cp36m /opt/python/cp37-cp37m /opt/python/cp38-cp38 /opt/python/cp39-cp39; do
     "${PYDIR}/bin/pip" install --no-index -f /io/dist qutechopenql
     "${PYDIR}/bin/python" -m pytest
 done
