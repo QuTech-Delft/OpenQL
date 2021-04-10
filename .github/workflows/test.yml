@@ -57,7 +57,7 @@ jobs:
         mkdir cbuild
         cd cbuild && cmake ../examples/cpp-standalone-example
     - name: Build
-      run: make -C cbuild -j
+      run: make -C cbuild -j 5
     - name: Test
       run: cd tests && ../cbuild/example
 
