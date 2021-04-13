@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <iomanip>
+#include <regex>
 #include "ql/utils/exception.h"
 #include "ql/utils/list.h"
 
@@ -143,6 +145,27 @@ std::string replace_all(std::string str, const std::string &from, const std::str
         start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
     }
     return str;
+}
+
+/**
+ * Returns whether str matches the pattern specified by pattern. Pattern syntax
+ * is the usual one with * and ?, where * represents zero or more characters,
+ * and ? represents exactly one character.
+ */
+Bool pattern_match(const Str &pattern, const Str &str) {
+    StrStrm ss;
+    for (char c : pattern) {
+        if (c == '*') {
+            ss << ".*";
+        } else if (c == '?') {
+            ss << ".";
+        } else if (isalnum(c)) {
+            ss << c;
+        } else {
+            ss << "\\x" << std::setfill('0') << std::setw(2) << std::hex << (int)c;
+        }
+    }
+    return std::regex_match(str, std::regex(ss.str()));
 }
 
 /**

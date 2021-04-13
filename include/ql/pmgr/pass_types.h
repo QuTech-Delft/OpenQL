@@ -307,13 +307,32 @@ public:
 
     /**
      * Sets an option. Periods may be used as hierarchy separators to set
-     * options for sub-passes. Furthermore, each period-separated element
-     * (except the last one, which is the option name) may be a single
-     * asterisk, to select all sub-passes. The return value is the number of
-     * passes that were affected. If must_exist is set, an exception will be
-     * thrown if none of the passes were affected.
+     * options for sub-passes; the last element will be the option name, and the
+     * preceding elements represent pass instance names. Furthermore, wildcards
+     * may be used for the pass name elements (asterisks for zero or more
+     * characters and a question mark for a single character) to select multiple
+     * or all immediate sub-passes of that group, and a double asterisk may be
+     * used for the element before the option name to chain to
+     * set_option_recursively() instead. The return value is the number of
+     * passes that were affected; passes are only affected when they are
+     * selected by the option path AND have an option with the specified name.
+     * If must_exist is set an exception will be thrown if none of the passes
+     * were affected, otherwise 0 will be returned.
      */
     utils::UInt set_option(
+        const utils::Str &option,
+        const utils::Str &value,
+        utils::Bool must_exist = true
+    );
+
+    /**
+     * Sets an option for all sub-passes recursively. The return value is the
+     * number of passes that were affected; passes are only affected when they
+     * have an option with the specified name. If must_exist is set an exception
+     * will be thrown if none of the passes were affected, otherwise 0 will be
+     * returned.
+     */
+    utils::UInt set_option_recursively(
         const utils::Str &option,
         const utils::Str &value,
         utils::Bool must_exist = true
@@ -421,7 +440,8 @@ public:
      * immediately after the target pass (named by instance). If target does not
      * exist or this pass is not a group of sub-passes, an exception is thrown.
      * If type_name is empty or unspecified, a generic subgroup is added.
-     * Returns a reference to the constructed pass.
+     * Returns a reference to the constructed pass. Periods may be used in
+     * target to traverse deeper into the pass hierarchy.
      */
     Ref insert_sub_pass_after(
         const utils::Str &target,
@@ -435,7 +455,8 @@ public:
      * immediately before the target pass (named by instance). If target does
      * not exist or this pass is not a group of sub-passes, an exception is
      * thrown. If type_name is empty or unspecified, a generic subgroup is
-     * added. Returns a reference to the constructed pass.
+     * added. Returns a reference to the constructed pass. Periods may be used
+     * in target to traverse deeper into the pass hierarchy.
      */
     Ref insert_sub_pass_before(
         const utils::Str &target,
@@ -451,7 +472,8 @@ public:
      * will be renamed as specified by sub_name. Note that this ultimately does
      * not modify the pass order. If target does not exist or this pass is not a
      * group of sub-passes, an exception is thrown. Returns a reference to the
-     * constructed group.
+     * constructed group. Periods may be used in target to traverse deeper into
+     * the pass hierarchy.
      */
     Ref group_sub_pass(
         const utils::Str &target,
@@ -461,6 +483,8 @@ public:
     /**
      * Like group_sub_pass(), but groups an inclusive range of passes into a
      * group with the given name, leaving the original pass names unchanged.
+     * Periods may be used in from/to to traverse deeper into the pass
+     * hierarchy, but the hierarchy prefix must be the same for from and to.
      */
     Ref group_sub_passes(
         const utils::Str &from,
@@ -476,7 +500,8 @@ public:
      * before they are added to the parent group. Note that this ultimately does
      * not modify the pass order. If target does not exist, does not construct
      * into a group of passes (construct() is called automatically), or this
-     * pass is not a group of sub-passes, an exception is thrown.
+     * pass is not a group of sub-passes, an exception is thrown. Periods may be
+     * used in target to traverse deeper into the pass hierarchy.
      */
     void flatten_subgroup(
         const utils::Str &target,
@@ -486,20 +511,22 @@ public:
     /**
      * If this pass constructed into a group of passes, returns a reference to
      * the pass with the given instance name. If target does not exist or this
-     * pass is not a group of sub-passes, an exception is thrown.
+     * pass is not a group of sub-passes, an exception is thrown. Periods may be
+     * used as hierarchy separators to get nested sub-passes.
      */
     Ref get_sub_pass(const utils::Str &target) const;
 
     /**
      * If this pass constructed into a group of passes, returns whether a
      * sub-pass with the target instance name exists. Otherwise, an exception is
-     * thrown.
+     * thrown. Periods may be used in target to traverse deeper into the pass
+     * hierarchy.
      */
     utils::Bool does_sub_pass_exist(const utils::Str &target) const;
 
     /**
      * If this pass constructed into a group of passes, returns the total number
-     * of sub-passes. Otherwise, an exception is thrown.
+     * of immediate sub-passes. Otherwise, an exception is thrown.
      */
     utils::UInt get_num_sub_passes() const;
 
@@ -512,15 +539,16 @@ public:
 
     /**
      * If this pass constructed into a group of passes, returns an indexable
-     * list of references to all passes with the given type. Otherwise, an
-     * exception is thrown.
+     * list of references to all immediate sub-passes with the given type.
+     * Otherwise, an exception is thrown.
      */
     utils::Vec<Ref> get_sub_passes_by_type(const utils::Str &target) const;
 
     /**
      * If this pass constructed into a group of passes, removes the sub-pass
      * with the target instance name. If target does not exist or this pass is
-     * not a group of sub-passes, an exception is thrown.
+     * not a group of sub-passes, an exception is thrown. Periods may be used in
+     * target to traverse deeper into the pass hierarchy.
      */
     void remove_sub_pass(const utils::Str &target);
 
@@ -545,12 +573,22 @@ public:
 private:
 
     /**
+     * Handles the debug option. Called once before and once after compile().
+     * after_pass is false when run before, and true when run after.
+     */
+    void handle_debugging(
+        const ir::ProgramRef &program,
+        const Context &context,
+        utils::Bool after_pass
+    );
+
+    /**
      * Wrapper around running the main pass implementation for this pass, taking
      * care of logging, profiling, etc.
      */
     utils::Int run_main_pass(
         const ir::ProgramRef &program,
-        const utils::Str &pass_name_prefix
+        const Context &context
     ) const;
 
     /**
@@ -559,7 +597,7 @@ private:
      */
     void run_sub_passes(
         const ir::ProgramRef &program,
-        const utils::Str &pass_name_prefix
+        const Context &context
     ) const;
 
 public:

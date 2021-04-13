@@ -5,13 +5,75 @@
 #include "ql/pass/ana/statistics/report.h"
 
 #include "ql/utils/filesystem.h"
-#include "ql/pass/ana/statistics/common.h"
+#include "ql/com/metrics.h"
 
 namespace ql {
 namespace pass {
 namespace ana {
 namespace statistics {
 namespace report {
+
+/**
+ * Dumps basic statistics for the given kernel to the given output stream.
+ */
+void dump(
+    const ir::KernelRef &kernel,
+    std::ostream &os,
+    const utils::Str &line_prefix
+) {
+    using namespace com::metrics;
+
+    os << line_prefix << "kernel: " << kernel->name << "\n";
+    os << line_prefix << "----- circuit_latency: " << compute<Latency>(kernel) << "\n";
+    os << line_prefix << "----- quantum gates: " << compute<QuantumGateCount>(kernel) << "\n";
+    os << line_prefix << "----- non single qubit gates: " << compute<MultiQubitGateCount>(kernel) << "\n";
+    os << line_prefix << "----- classical operations: " << compute<ClassicalOperationCount>(kernel) << "\n";
+    os << line_prefix << "----- qubits used: " << compute<QubitUsageCount>(kernel).sparse_size() << "\n";
+    os << line_prefix << "----- qubit cycles use:" << compute<QubitUsedCycleCount>(kernel) << "\n";
+    for (const auto &line : AdditionalStats::pop(kernel)) {
+        os << line_prefix << "----- " << line << "\n";
+    }
+    os.flush();
+}
+
+/**
+ * Dumps basic statistics for the given program to the given output stream. This
+ * only dumps the global statistics, not the statistics for each individual
+ * kernel.
+ */
+void dump(
+    const ir::ProgramRef &program,
+    std::ostream &os,
+    const utils::Str &line_prefix
+) {
+    using namespace com::metrics;
+
+    os << line_prefix << "Total circuit_latency: " << compute<Latency>(program) << "\n";
+    os << line_prefix << "Total no. of quantum gates: " << compute<QuantumGateCount>(program) << "\n";
+    os << line_prefix << "Total no. of non single qubit gates: " << compute<MultiQubitGateCount>(program) << "\n";
+    os << line_prefix << "Total no. of classical operations: " << compute<ClassicalOperationCount>(program) << "\n";
+    os << line_prefix << "Qubits used: " << compute<QubitUsageCount>(program).sparse_size() << "\n";
+    os << line_prefix << "No. kernels: " << compute<QubitUsedCycleCount>(program) << "\n";
+    for (const auto &line : AdditionalStats::pop(program)) {
+        os << line_prefix << line << "\n";
+    }
+    os.flush();
+}
+
+/**
+ * Dumps statistics for the given program and its kernels to the given output
+ * stream.
+ */
+void dump_all(
+    const ir::ProgramRef &program,
+    std::ostream &os,
+    const utils::Str &line_prefix
+) {
+    for (const auto &kernel : program->kernels) {
+        dump(kernel, os, line_prefix);
+    }
+    dump(program, os, line_prefix);
+}
 
 /**
  * Dumps docs for the statistics reporter.
@@ -58,13 +120,7 @@ utils::Int ReportStatisticsPass::run(
 ) const {
     auto line_prefix = options["line_prefix"].as_str();
     auto filename = context.output_prefix + options["output_suffix"].as_str();
-
-    utils::OutFile file{filename};
-    for (const auto &kernel : program->kernels) {
-        dump(kernel, file.unwrap(), line_prefix);
-    }
-    dump(program, file.unwrap(), line_prefix);
-
+    dump_all(program, utils::OutFile(filename).unwrap(), line_prefix);
     return 0;
 }
 

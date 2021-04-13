@@ -7,7 +7,10 @@
 
 #include <cctype>
 #include <regex>
+#include "ql/utils/filesystem.h"
 #include "ql/pmgr/pass_manager.h"
+#include "ql/pass/io/cqasm/report.h"
+#include "ql/pass/ana/statistics/report.h"
 
 namespace ql {
 namespace pmgr {
@@ -164,6 +167,22 @@ Base::Base(
         "file is written.",
         "%N.%P"
     );
+    options.add_enum(
+        "debug",
+        "May be used to implicitly surround this pass with cQASM/report file "
+        "output printers, to aid in debugging. Set to \"no\" to disable this "
+        "functionality or to \"yes\" to write a cQASM file before and after "
+        "that includes statistics as comments. The filename is built using "
+        "the output_prefix option, using suffix \"_debug_[in|out].cq\". "
+        "The option values \"stats\", \"cqasm\", and \"both\" are used for "
+        "backward compatibility with the \"write_qasm_files\" and "
+        "\"write_report_files\" global options; for \"stats\" and \"both\" a "
+        "statistics report file is written with suffix \"_[in|out].report\", "
+        "and for \"qasm\" and \"both\" a cQASM file is written (without stats "
+        "in the comments) with suffix \"_[in|out].qasm\".",
+        "no",
+        {"no", "yes", "stats", "qasm", "both"}
+    );
 }
 
 /**
@@ -256,20 +275,73 @@ void Base::dump_strategy(
 
 /**
  * Sets an option. Periods may be used as hierarchy separators to set
- * options for sub-passes. Furthermore, each period-separated element
- * (except the last one, which is the option name) may be a single
- * asterisk, to select all sub-passes. The return value is the number of
- * passes that were affected. If must_exist is set, an exception will be
- * thrown if none of the passes were affected.
+ * options for sub-passes; the last element will be the option name, and the
+ * preceding elements represent pass instance names. Furthermore, wildcards
+ * may be used for the pass name elements (asterisks for zero or more
+ * characters and a question mark for a single character) to select multiple
+ * or all immediate sub-passes of that group, and a double asterisk may be
+ * used for the element before the option name to chain to
+ * set_option_recursively() instead. The return value is the number of
+ * passes that were affected; passes are only affected when they are
+ * selected by the option path AND have an option with the specified name.
+ * If must_exist is set an exception will be thrown if none of the passes
+ * were affected, otherwise 0 will be returned.
  */
 utils::UInt Base::set_option(
     const utils::Str &option,
     const utils::Str &value,
     utils::Bool must_exist
 ) {
-    auto period = option.find('.');
+
+    // Handle double-asterisk recursive logic.
+    if (option.rfind("**.", 0) == 0) {
+        utils::Str option_name = option.substr(3);
+        if (!is_constructed()) {
+
+            // Pass not constructed; set option on this pass.
+            if (must_exist && !options.has_option(option_name)) {
+                throw utils::Exception(
+                    "option " + option_name + " does not exist for pass " + instance_name
+                );
+            }
+            if (!is_constructed() && options.has_option(option_name)) {
+                options[option_name] = value;
+                return 1;
+            } else {
+                return 0;
+            }
+
+        } else if (!is_group()) {
+
+            // Pass constructed but isn't a group, can't do anything.
+            if (must_exist) {
+                throw utils::Exception(
+                    "cannot set option " + option_name + " on pass " + instance_name
+                    + " anymore, because the pass has already been constructed"
+                );
+            }
+            return 0;
+
+        } else {
+
+            // Call recursively for all sub-passes.
+            utils::UInt passes_affected = 0;
+            for (auto &pass : sub_pass_order) {
+                passes_affected += pass->set_option(option, value, false);
+            }
+            if (must_exist && !passes_affected) {
+                throw utils::Exception(
+                    "option " + option_name + " could not be set on any sub-pass of "
+                    + instance_name
+                );
+            }
+            return passes_affected;
+
+        }
+    }
 
     // Handle setting an option on this pass.
+    auto period = option.find('.');
     if (period == utils::Str::npos) {
         if (must_exist && is_constructed()) {
             throw utils::Exception(
@@ -289,7 +361,7 @@ utils::UInt Base::set_option(
         }
     }
 
-    // Handle setting options on sub-passes.
+    // Handle setting options on sub-passes by pattern-matching.
     if (!is_constructed()) {
         throw utils::Exception(
             "cannot set sub-pass options before parent pass ("
@@ -301,45 +373,50 @@ utils::UInt Base::set_option(
             "cannot set sub-pass options for non-group pass " + instance_name
         );
     }
-    utils::Str sub_pass = option.substr(0, period);
+    utils::Str sub_pass_pattern = option.substr(0, period);
     utils::Str sub_option = option.substr(period + 1);
 
     // Handle setting an option on all sub-passes.
-    if (sub_pass == "*") {
-        utils::UInt passes_affected = 0;
-        for (auto &pass : sub_pass_order) {
+    utils::Bool any_sub_passes_matched = false;
+    utils::UInt passes_affected = 0;
+    for (auto &pass : sub_pass_order) {
+        if (utils::pattern_match(sub_pass_pattern, pass->instance_name)) {
+            any_sub_passes_matched = true;
             passes_affected += pass->set_option(sub_option, value, false);
         }
-        if (must_exist && !passes_affected) {
+    }
+    if (must_exist) {
+        if (!any_sub_passes_matched) {
             throw utils::Exception(
-                "option " + sub_option + " could not be set on any sub-pass of "
+                "pattern " + sub_pass_pattern + " did not match any sub-passes of "
+                + instance_name
+            );
+        } else if (!passes_affected) {
+            throw utils::Exception(
+                "option " + sub_option + " could not be set on any matching sub-pass of "
                 + instance_name
             );
         }
-        return passes_affected;
     }
-
-    // Handle setting an option on a single sub-pass.
-    static const std::regex name_re{"[a-zA-Z0-9_\\-]+"};
-    if (!std::regex_match(sub_pass, name_re)) {
-        throw utils::Exception(
-            "\"" + sub_pass + "\" is not a valid pass name or supported pattern"
-        );
-    }
-    auto sub_pass_it = sub_pass_names.find(sub_pass);
-    if (sub_pass_it != sub_pass_names.end()) {
-        return sub_pass_it->second->set_option(sub_option, value, must_exist);
-    } else {
-        if (must_exist) {
-            throw utils::Exception(
-                "no sub-pass with name \"" + sub_pass + "\" in pass "
-                + instance_name
-            );
-        }
-        return 0;
-    }
+    return passes_affected;
 
 }
+
+/**
+ * Sets an option for all sub-passes recursively. The return value is the
+ * number of passes that were affected; passes are only affected when they
+ * have an option with the specified name. If must_exist is set an exception
+ * will be thrown if none of the passes were affected, otherwise 0 will be
+ * returned.
+ */
+utils::UInt Base::set_option_recursively(
+    const utils::Str &option,
+    const utils::Str &value,
+    utils::Bool must_exist
+) {
+    return set_option("**." + option, value, must_exist);
+}
+
 
 /**
  * Returns the current value of an option. Periods may be used as hierarchy
@@ -429,7 +506,6 @@ void Base::construct() {
     // Check validity and uniqueness of the names, and build the name to pass
     // map.
     utils::Map<utils::Str, Ref> constructed_pass_names;
-    std::regex name_re{"[a-zA-Z0-9_\\-]+"};
     for (const auto &pass : constructed_pass_order) {
         check_pass_name(pass->get_name(), constructed_pass_names);
         constructed_pass_names.set(pass->get_name()) = pass;
@@ -588,7 +664,8 @@ Ref Base::prefix_sub_pass(
  * immediately after the target pass (named by instance). If target does not
  * exist or this pass is not a group of sub-passes, an exception is thrown.
  * If type_name is empty or unspecified, a generic subgroup is added.
- * Returns a reference to the constructed pass.
+ * Returns a reference to the constructed pass. Periods may be used in
+ * target to traverse deeper into the pass hierarchy.
  */
 Ref Base::insert_sub_pass_after(
     const utils::Str &target,
@@ -597,6 +674,16 @@ Ref Base::insert_sub_pass_after(
     const utils::Map<utils::Str, utils::Str> &options
 ) {
     check_group_access_allowed();
+
+    // Handle hierarchy separators.
+    auto period = target.find('.');
+    if (period != utils::Str::npos) {
+        auto sub_group = get_sub_pass(target.substr(0, period));
+        return sub_group->insert_sub_pass_after(
+            target.substr(period + 1),
+            type_name, instance_name, options);
+    }
+
     auto it = find_pass(target);
     Ref pass = make_pass(type_name, instance_name, options);
     sub_pass_order.insert(std::next(it), pass);
@@ -609,7 +696,8 @@ Ref Base::insert_sub_pass_after(
  * immediately before the target pass (named by instance). If target does
  * not exist or this pass is not a group of sub-passes, an exception is
  * thrown. If type_name is empty or unspecified, a generic subgroup is
- * added. Returns a reference to the constructed pass.
+ * added. Returns a reference to the constructed pass. Periods may be used
+ * in target to traverse deeper into the pass hierarchy.
  */
 Ref Base::insert_sub_pass_before(
     const utils::Str &target,
@@ -618,6 +706,16 @@ Ref Base::insert_sub_pass_before(
     const utils::Map<utils::Str, utils::Str> &options
 ) {
     check_group_access_allowed();
+
+    // Handle hierarchy separators.
+    auto period = target.find('.');
+    if (period != utils::Str::npos) {
+        auto sub_group = get_sub_pass(target.substr(0, period));
+        return sub_group->insert_sub_pass_before(
+            target.substr(period + 1),
+            type_name, instance_name, options);
+    }
+
     auto it = find_pass(target);
     Ref pass = make_pass(type_name, instance_name, options);
     sub_pass_order.insert(it, pass);
@@ -632,13 +730,21 @@ Ref Base::insert_sub_pass_before(
  * will be renamed as specified by sub_name. Note that this ultimately does
  * not modify the pass order. If target does not exist or this pass is not a
  * group of sub-passes, an exception is thrown. Returns a reference to the
- * constructed group.
+ * constructed group. Periods may be used in target to traverse deeper into
+ * the pass hierarchy.
  */
 Ref Base::group_sub_pass(
     const utils::Str &target,
     const utils::Str &sub_name
 ) {
     check_group_access_allowed();
+
+    // Handle hierarchy separators.
+    auto period = target.find('.');
+    if (period != utils::Str::npos) {
+        auto sub_group = get_sub_pass(target.substr(0, period));
+        return sub_group->group_sub_pass(target.substr(period + 1), sub_name);
+    }
 
     // Find and remove the target pass from the pass list.
     auto it = find_pass(target);
@@ -665,6 +771,8 @@ Ref Base::group_sub_pass(
 /**
  * Like group_sub_pass(), but groups an inclusive range of passes into a
  * group with the given name, leaving the original pass names unchanged.
+ * Periods may be used in from/to to traverse deeper into the pass
+ * hierarchy, but the hierarchy prefix must be the same for from and to.
  */
 Ref Base::group_sub_passes(
     const utils::Str &from,
@@ -672,6 +780,23 @@ Ref Base::group_sub_passes(
     const utils::Str &group_name
 ) {
     check_group_access_allowed();
+
+    // Handle hierarchy separators.
+    auto period_from = from.find('.');
+    auto period_to = to.find('.');
+    if (period_from != utils::Str::npos && period_to != utils::Str::npos) {
+        if (from.substr(0, period_from) != to.substr(0, period_to)) {
+            throw utils::Exception("hierarchy prefix must be the same for both from and to");
+        }
+        auto sub_group = get_sub_pass(from.substr(0, period_from));
+        return sub_group->group_sub_passes(
+            from.substr(period_from + 1),
+            to.substr(period_to + 1),
+            group_name
+        );
+    } else if (period_from != utils::Str::npos || period_to != utils::Str::npos) {
+        throw utils::Exception("hierarchy prefix must be the same for both from and to");
+    }
 
     // Get the pass range as iterators.
     auto begin = find_pass(from);
@@ -710,13 +835,21 @@ Ref Base::group_sub_passes(
  * before they are added to the parent group. Note that this ultimately does
  * not modify the pass order. If target does not exist, does not construct
  * into a group of passes (construct() is called automatically), or this
- * pass is not a group of sub-passes, an exception is thrown.
+ * pass is not a group of sub-passes, an exception is thrown. Periods may be
+ * used in target to traverse deeper into the pass hierarchy.
  */
 void Base::flatten_subgroup(
     const utils::Str &target,
     const utils::Str &name_prefix
 ) {
     check_group_access_allowed();
+
+    // Handle hierarchy separators.
+    auto period = target.find('.');
+    if (period != utils::Str::npos) {
+        auto sub_group = get_sub_pass(target.substr(0, period));
+        sub_group->flatten_subgroup(target.substr(period + 1), name_prefix);
+    }
 
     // Find the target, ensure that it's a simple group, and then remove it.
     auto it = find_pass(target);
@@ -744,26 +877,44 @@ void Base::flatten_subgroup(
 /**
  * If this pass constructed into a group of passes, returns a reference to
  * the pass with the given instance name. If target does not exist or this
- * pass is not a group of sub-passes, an exception is thrown.
+ * pass is not a group of sub-passes, an exception is thrown. Periods may be
+ * used as hierarchy separators to get nested sub-passes.
  */
 Ref Base::get_sub_pass(const utils::Str &target) const {
     check_group_access_allowed();
+
+    // Handle hierarchy separators.
+    auto period = target.find('.');
+    if (period != utils::Str::npos) {
+        auto sub_group = get_sub_pass(target.substr(0, period));
+        return sub_group->get_sub_pass(target.substr(period + 1));
+    }
+
     return sub_pass_names.get(target);
 }
 
 /**
  * If this pass constructed into a group of passes, returns whether a
  * sub-pass with the target instance name exists. Otherwise, an exception is
- * thrown.
+ * thrown. Periods may be used in target to traverse deeper into the pass
+ * hierarchy.
  */
 utils::Bool Base::does_sub_pass_exist(const utils::Str &target) const {
     check_group_access_allowed();
+
+    // Handle hierarchy separators.
+    auto period = target.find('.');
+    if (period != utils::Str::npos) {
+        auto sub_group = get_sub_pass(target.substr(0, period));
+        return sub_group->does_sub_pass_exist(target.substr(period + 1));
+    }
+
     return sub_pass_names.count(target) > 0;
 }
 
 /**
  * If this pass constructed into a group of passes, returns the total number
- * of sub-passes. Otherwise, an exception is thrown.
+ * of immediate sub-passes. Otherwise, an exception is thrown.
  */
 utils::UInt Base::get_num_sub_passes() const {
     check_group_access_allowed();
@@ -782,8 +933,8 @@ const utils::List<Ref> &Base::get_sub_passes() const {
 
 /**
  * If this pass constructed into a group of passes, returns an indexable
- * list of references to all passes with the given type. Otherwise, an
- * exception is thrown.
+ * list of references to all immediate sub-passes with the given type.
+ * Otherwise, an exception is thrown.
  */
 utils::Vec<Ref> Base::get_sub_passes_by_type(const utils::Str &target) const {
     check_group_access_allowed();
@@ -799,10 +950,19 @@ utils::Vec<Ref> Base::get_sub_passes_by_type(const utils::Str &target) const {
 /**
  * If this pass constructed into a group of passes, removes the sub-pass
  * with the target instance name. If target does not exist or this pass is
- * not a group of sub-passes, an exception is thrown.
+ * not a group of sub-passes, an exception is thrown. Periods may be used in
+ * target to traverse deeper into the pass hierarchy.
  */
 void Base::remove_sub_pass(const utils::Str &target) {
     check_group_access_allowed();
+
+    // Handle hierarchy separators.
+    auto period = target.find('.');
+    if (period != utils::Str::npos) {
+        auto sub_group = get_sub_pass(target.substr(0, period));
+        sub_group->remove_sub_pass(target.substr(period + 1));
+    }
+
     auto it = find_pass(target);
     Ref pass = *it;
     sub_pass_order.erase(it);
@@ -838,13 +998,75 @@ condition::Ref Base::get_condition() {
 }
 
 /**
+ * Handles the debug option. Called once before and once after compile().
+ * after_pass is false when run before, and true when run after.
+ */
+void Base::handle_debugging(
+    const ir::ProgramRef &program,
+    const Context &context,
+    utils::Bool after_pass
+) {
+    utils::Str in_or_out = after_pass ? "out" : "in";
+    auto debug_opt = options["debug"].as_str();
+    if (debug_opt == "yes") {
+        pass::io::cqasm::report::dump_with_statistics(
+            program,
+            utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".cq").unwrap()
+        );
+    }
+    if (debug_opt == "stats" || debug_opt == "both") {
+        pass::ana::statistics::report::dump_all(
+            program,
+            utils::OutFile(context.output_prefix + "_" + in_or_out + ".report").unwrap(),
+            "# " // for some reason; compatibility
+        );
+    }
+    if (debug_opt == "qasm" || debug_opt == "both") {
+        pass::io::cqasm::report::dump(
+            program,
+            utils::OutFile(context.output_prefix + "_" + in_or_out + ".qasm").unwrap()
+        );
+    }
+}
+
+/**
  * Wrapper around running the main pass implementation for this pass, taking
  * care of logging, profiling, etc.
  */
 utils::Int Base::run_main_pass(
     const ir::ProgramRef &program,
-    const utils::Str &pass_name_prefix
+    const Context &context
 ) const {
+    QL_IOUT("starting pass \"" << context.full_pass_name << "\" of type \"" << type_name << "\"...");
+    auto retval = run_internal(program, context);
+    QL_IOUT("completed pass \"" << context.full_pass_name << "\"; return value is " << retval);
+    return retval;
+}
+
+/**
+ * Wrapper around running the sub-passes for this pass, taking care of logging,
+ * profiling, etc.
+ */
+void Base::run_sub_passes(
+    const ir::ProgramRef &program,
+        const Context &context
+) const {
+    utils::Str sub_prefix = context.full_pass_name + ".";
+    for (const auto &pass : sub_pass_order) {
+        pass->compile(program, sub_prefix);
+    }
+}
+
+/**
+ * Executes this pass or pass group on the given platform and program.
+ */
+void Base::compile(
+    const ir::ProgramRef &program,
+    const utils::Str &pass_name_prefix
+) {
+
+    // The passes should already have been constructed by the pass manager.
+    QL_ASSERT(is_constructed());
 
     // Construct pass context.
     Context context;
@@ -896,55 +1118,26 @@ utils::Int Base::run_main_pass(
         );
     }
 
-    // Run the pass.
-    QL_IOUT("starting pass \"" << context.full_pass_name << "\" of type \"" << type_name << "\"...");
-    auto retval = run_internal(program, context);
-    QL_IOUT("completed pass \"" << context.full_pass_name << "\"; return value is " << retval);
-    return retval;
-}
-
-/**
- * Wrapper around running the sub-passes for this pass, taking care of logging,
- * profiling, etc.
- */
-void Base::run_sub_passes(
-    const ir::ProgramRef &program,
-    const utils::Str &pass_name_prefix
-) const {
-    utils::Str sub_prefix = pass_name_prefix + instance_name + ".";
-    for (const auto &pass : sub_pass_order) {
-        pass->compile(program, sub_prefix);
-    }
-}
-
-/**
- * Executes this pass or pass group on the given platform and program.
- */
-void Base::compile(
-    const ir::ProgramRef &program,
-    const utils::Str &pass_name_prefix
-) {
-
-    // The passes should already have been constructed by the pass manager.
-    QL_ASSERT(is_constructed());
+    // Handle configured debugging actions before running the pass.
+    handle_debugging(program, context, false);
 
     // Traverse our level of the pass tree based on our node type.
     switch (node_type) {
         case NodeType::NORMAL: {
-            run_main_pass(program, pass_name_prefix);
+            run_main_pass(program, context);
             break;
         }
 
         case NodeType::GROUP: {
-            run_sub_passes(program, pass_name_prefix);
+            run_sub_passes(program, context);
             break;
         }
 
         case NodeType::GROUP_IF: {
-            auto retval = run_main_pass(program, pass_name_prefix);
+            auto retval = run_main_pass(program, context);
             if (condition->evaluate(retval)) {
                 QL_IOUT("pass condition returned true, running sub-passes...");
-                run_sub_passes(program, pass_name_prefix);
+                run_sub_passes(program, context);
             } else {
                 QL_IOUT("pass condition returned false, skipping " << sub_pass_order.size() << " sub-pass(es)");
             }
@@ -954,14 +1147,14 @@ void Base::compile(
         case NodeType::GROUP_WHILE: {
             QL_IOUT("entering loop pass loop...");
             while (true) {
-                auto retval = run_main_pass(program, pass_name_prefix);
+                auto retval = run_main_pass(program, context);
                 if (!condition->evaluate(retval)) {
                     QL_IOUT("pass condition returned false, exiting loop");
                     break;
                 } else {
                     QL_IOUT("pass condition returned true, continuing loop...");
                 }
-                run_sub_passes(program, pass_name_prefix);
+                run_sub_passes(program, context);
             }
             break;
         }
@@ -969,8 +1162,8 @@ void Base::compile(
         case NodeType::GROUP_REPEAT_UNTIL_NOT: {
             QL_IOUT("entering loop pass loop...");
             while (true) {
-                run_sub_passes(program, pass_name_prefix);
-                auto retval = run_main_pass(program, pass_name_prefix);
+                run_sub_passes(program, context);
+                auto retval = run_main_pass(program, context);
                 if (!condition->evaluate(retval)) {
                     QL_IOUT("pass condition returned false, exiting loop");
                     break;
@@ -983,6 +1176,10 @@ void Base::compile(
 
         default: QL_ASSERT(false);
     }
+
+    // Handle configured debugging actions after running the pass.
+    handle_debugging(program, context, false);
+
 }
 
 /**

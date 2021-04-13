@@ -110,6 +110,13 @@ Str to_lower(Str str);
 Str replace_all(Str str, const Str &from, const Str &to);
 
 /**
+ * Returns whether str matches the pattern specified by pattern. Pattern syntax
+ * is the usual one with * and ?, where * represents zero or more characters,
+ * and ? represents exactly one character.
+ */
+Bool pattern_match(const Str &pattern, const Str &str);
+
+/**
  * Takes a raw string and replaces its line prefix accordingly. Any prefixed
  * spacing common to all non-empty lines is removed, as are any empty lines at
  * the start and end. The remaining lines are then prefixed with line_prefix and

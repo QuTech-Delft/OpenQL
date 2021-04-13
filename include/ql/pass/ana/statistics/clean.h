@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ql/pmgr/pass_types.h"
+#include "ql/pass/ana/statistics/annotations.h"
 
 namespace ql {
 namespace pass {

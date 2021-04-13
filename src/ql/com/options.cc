@@ -11,6 +11,12 @@ namespace options {
 
 using namespace utils;
 
+// TODO JvS: ideally, almost all of these options should be deprecated in favor
+//  of pass options. There should not be any reason to use global options other
+//  than compatibility; in general a global variable for options is ugly. The
+//  same effect as a global option can be achieved by recursively setting
+//  options for all passes.
+
 /**
  * Makes a new options record for OpenQL.
  */
@@ -33,9 +39,14 @@ Options make_ql_options() {
 
     options.add_str(
         "output_dir",
-        "Name of the directory in which all output products will be written. "
-        "Defaults to \"test_output\" for compatibility reasons. The directory "
-        "will automatically be created when the program is compiled.",
+        "Compatibility option for setting the directory that the compiler will "
+        "write output files to. This is deprecated in favor of the "
+        "output_prefix pass option. If the pass manager is constructed in "
+        "compatibility mode, the output_prefix pass option will be set to "
+        "\"<output_dir>/%N_%P\" or \"<output_dir>/%n_%P\" depending on "
+        "the unique_output option to mimic its previous behavior. Defaults to "
+        "\"test_output\" for compatibility reasons. The directory will "
+        "automatically be created when the program is compiled.",
         "test_output"
     );
 
@@ -51,6 +62,24 @@ Options make_ql_options() {
         "again later, again with this option set, a numeric suffix will be "
         "automatically added to the program name, starting from 2. The "
         "generated suffix can be reset by simply removing the .unique file."
+    );
+
+    options.add_bool(
+        "write_qasm_files",
+        "Compatibility option that enables writing cQASM files before and after "
+        "each pass. This is deprecated in favor of the debug pass option. If "
+        "the pass manager is constructed in compatibility mode, the default "
+        "value for the debug pass option is set based on this option and "
+        "write_report_files."
+    );
+
+    options.add_bool(
+        "write_report_files",
+        "Compatibility option that enables writing statistics report files "
+        "before and after each pass. This is deprecated in favor of the debug "
+        "pass option. If the pass manager is constructed in compatibility "
+        "mode, the default value for the debug pass option is set based on "
+        "this option and write_qasm_files."
     );
 
     options.add_bool("prescheduler", "Run qasm (first) scheduler?", true);
@@ -90,8 +119,6 @@ Options make_ql_options() {
     options.add_enum("maptiebreak", "Tie break method", "random", {"first", "last", "random", "critical"});
     options.add_int ("mapusemoves", "Use unused qubit to move thru", "yes", 0, 20, {"no", "yes"});
     options.add_bool("mapreverseswap", "Reverse swap operands when better", true);
-    options.add_bool("write_qasm_files", "write (un-)scheduled (with and without resource-constraint) qasm files");
-    options.add_bool("write_report_files", "write report files on circuit characteristics and pass results");
     options.add_bool("generate_code", "Generate code for the target; otherwise stop just before doing that", true);
 
     return options;

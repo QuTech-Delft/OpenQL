@@ -4,8 +4,6 @@
 
 #include "ql/pass/ana/statistics/clean.h"
 
-#include "ql/pass/ana/statistics/common.h"
-
 namespace ql {
 namespace pass {
 namespace ana {

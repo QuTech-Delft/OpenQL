@@ -11,7 +11,7 @@
 #include "buffer_insertion.h"
 #include "qsoverlay.h"
 #include "ql/utils/filesystem.h"
-#include "ql/pass/ana/statistics/common.h"
+#include "ql/pass/ana/statistics/report.h"
 
 namespace ql {
 namespace arch {
@@ -1348,12 +1348,12 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
             }
             fout << "    return c";
             fout << "    \n\n";
-            pass::ana::statistics::dump(kernel, fout.unwrap(), "    # ");
+            pass::ana::statistics::report::dump(kernel, fout.unwrap(), "    # ");
         }
     }
     fout << "    \n";
     fout << "    # Program-wide statistics:\n";
-    pass::ana::statistics::dump(program, fout.unwrap(), "    # ");
+    pass::ana::statistics::report::dump(program, fout.unwrap(), "    # ");
     fout << "    return c";
 
     fout.close();

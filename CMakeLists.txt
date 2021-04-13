@@ -209,7 +209,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/condition.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/pass_types.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/pass_manager.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/statistics/common.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/statistics/annotations.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/statistics/report.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/statistics/clean.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/detail/types.cc"

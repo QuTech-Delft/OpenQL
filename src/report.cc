@@ -35,7 +35,7 @@
 #include "ql/utils/str.h"
 #include "ql/ir/ir.h"
 #include "ql/com/options.h"
-#include "ql/pass/ana/statistics/common.h"
+#include "ql/pass/ana/statistics/report.h"
 
 namespace ql {
 
@@ -379,7 +379,7 @@ void ReportFile::write_kernel_statistics(
     const Str &line_prefix
 ) {
     if (of) {
-        pass::ana::statistics::dump(kernel, of->unwrap(), line_prefix);
+        pass::ana::statistics::report::dump(kernel, of->unwrap(), line_prefix);
     }
 }
 
@@ -392,7 +392,7 @@ void ReportFile::write_totals_statistics(
     const Str &line_prefix
 ) {
     if (of) {
-        pass::ana::statistics::dump(program, of->unwrap(), line_prefix);
+        pass::ana::statistics::report::dump(program, of->unwrap(), line_prefix);
     }
 }
 

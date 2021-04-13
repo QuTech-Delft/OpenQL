@@ -247,9 +247,10 @@ public:
      * setting a default option in the root using this record will affect all
      * passes.
      *
-     * Some of OpenQL's global options add implicit entries to the
-     * "pass-options" structure for backward compatibility. However, entries in
-     * "pass-options" take precedence. TODO: list these options here!
+     * If compatibility_mode is enabled, some of OpenQL's global options add
+     * implicit entries to the "pass-options" structure for backward
+     * compatibility. However, entries in "pass-options" take precedence.
+     * TODO: list these options here!
      *
      * Pass descriptions can either be strings (in which case the string is
      * interpreted as a pass type alias and everything else is
@@ -300,6 +301,7 @@ public:
      */
     static PassManager from_json(
         const utils::Json &json,
+        utils::Bool compatibility_mode = false,
         const PassFactory &factory = {}
     );
 
@@ -331,6 +333,44 @@ public:
     ) const;
 
     /**
+     * Sets a pass option. Periods are used as hierarchy separators; the last
+     * element will be the option name, and the preceding elements represent
+     * pass instance names. Furthermore, wildcards may be used for the pass name
+     * elements (asterisks for zero or more characters and a question mark for a
+     * single character) to select multiple or all immediate sub-passes of that
+     * group, and a double asterisk may be used for the element before the
+     * option name to chain to set_option_recursively() instead. The return
+     * value is the number of passes that were affected; passes are only
+     * affected when they are selected by the option path AND have an option
+     * with the specified name. If must_exist is set an exception will be thrown
+     * if none of the passes were affected, otherwise 0 will be returned.
+     */
+    utils::UInt set_option(
+        const utils::Str &path,
+        const utils::Str &value,
+        utils::Bool must_exist = true
+    );
+
+    /**
+     * Sets an option for all passes recursively. The return value is the number
+     * of passes that were affected; passes are only affected when they have an
+     * option with the specified name. If must_exist is set an exception will be
+     * thrown if none of the passes were affected, otherwise 0 will be returned.
+     */
+    utils::UInt set_option_recursively(
+        const utils::Str &option,
+        const utils::Str &value,
+        utils::Bool must_exist = true
+    );
+
+    /**
+     * Returns the current value of an option. Periods are used as hierarchy
+     * separators; the last element will be the option name, and the preceding
+     * elements represent pass instance names.
+     */
+    const utils::Option &get_option(const utils::Str &path) const;
+
+    /**
      * Appends a pass to the end of the pass list. If type_name is empty
      * or unspecified, a generic subgroup is added. Returns a reference to the
      * constructed pass.
@@ -356,7 +396,8 @@ public:
      * Inserts a pass immediately after the target pass (named by instance). If
      * target does not exist, an exception is thrown. If type_name is empty or
      * unspecified, a generic subgroup is added. Returns a reference to the
-     * constructed pass.
+     * constructed pass. Periods may be used in target to traverse deeper into
+     * the pass hierarchy.
      */
     PassRef insert_pass_after(
         const utils::Str &target,
@@ -369,7 +410,8 @@ public:
      * Inserts a pass immediately before the target pass (named by instance). If
      * target does not exist, an exception is thrown. If type_name is empty or
      * unspecified, a generic subgroup is added. Returns a reference to the
-     * constructed pass.
+     * constructed pass. Periods may be used in target to traverse deeper into
+     * the pass hierarchy.
      */
     PassRef insert_pass_before(
         const utils::Str &target,
@@ -380,10 +422,12 @@ public:
 
     /**
      * Looks for the pass with the target instance name, and embeds it into a
-     * newly generated group. The newly created group will assume the name of
-     * the original pass, while the original pass will be renamed as specified
-     * by sub_name. Note that this ultimately does not modify the pass order.
-     * If the target
+     * newly generated group. The group will assume the name of the original
+     * pass, while the original pass will be renamed as specified by sub_name.
+     * Note that this ultimately does not modify the pass order. If target does
+     * not exist or this pass is not a group of sub-passes, an exception is
+     * thrown. Returns a reference to the constructed group. Periods may be used
+     * in target to traverse deeper into the pass hierarchy.
      */
     PassRef group_pass(
         const utils::Str &target,
@@ -391,8 +435,10 @@ public:
     );
 
     /**
-     * Like group_pass(), but groups an inclusive range of passes into a group
-     * with the given name, leaving the original pass names unchanged.
+     * Like group_pass(), but groups an inclusive range of passes into a
+     * group with the given name, leaving the original pass names unchanged.
+     * Periods may be used in from/to to traverse deeper into the pass
+     * hierarchy, but the hierarchy prefix must be the same for from and to.
      */
     PassRef group_passes(
         const utils::Str &from,
@@ -406,7 +452,8 @@ public:
      * passes found in the collapsed group are prefixed with name_prefix before
      * they are added to the parent group. Note that this ultimately does not
      * modify the pass order. If the target instance name does not exist or is
-     * not an unconditional group, an exception is thrown.
+     * not an unconditional group, an exception is thrown. Periods may be used
+     * in target to traverse deeper into the pass hierarchy.
      */
     void flatten_subgroup(
         const utils::Str &target,
@@ -415,12 +462,14 @@ public:
 
     /**
      * Returns a reference to the pass with the given instance name. If no such
-     * pass exists, an exception is thrown.
+     * pass exists, an exception is thrown. Periods may be used as hierarchy
+     * separators to get nested sub-passes.
      */
     PassRef get_pass(const utils::Str &target) const;
 
     /**
-     * Returns whether a pass with the target instance name exists.
+     * Returns whether a pass with the target instance name exists. Periods may
+     * be used in target to traverse deeper into the pass hierarchy.
      */
     utils::Bool does_pass_exist(const utils::Str &target) const;
 
