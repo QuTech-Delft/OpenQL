@@ -19,7 +19,9 @@ void VisualizeInteractionPass::dump_docs(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
-    os << line_prefix << "TODO" << std::endl;
+    utils::dump_str(os, line_prefix, R"(
+    TODO
+    )");
 }
 
 /**

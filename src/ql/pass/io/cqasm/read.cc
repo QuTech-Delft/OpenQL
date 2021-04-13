@@ -56,42 +56,57 @@ void ReadCQasmPass::dump_docs(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
-    os << line_prefix << "This pass completely discards the incoming program and replaces it" << std::endl;
-    os << line_prefix << "with the program described by the given cQASM file." << std::endl;
-    os << line_prefix << std::endl;
-    os << line_prefix << "Because libqasm needs information about gate prototypes that does" << std::endl;
-    os << line_prefix << "not currently exist in the platform configuration file, an additional" << std::endl;
-    os << line_prefix << "configuration file is needed for this, specified using the" << std::endl;
-    os << line_prefix << "gateset_file option. This must be a JSON file consisting of an array" << std::endl;
-    os << line_prefix << "of objects, where each object has the following form." << std::endl;
-    os << line_prefix << std::endl;
-    os << line_prefix << "{" << std::endl;
-    os << line_prefix << "    \"name\": \"<name>\",               # mandatory" << std::endl;
-    os << line_prefix << "    \"params\": \"<typespec>\",         # mandatory, refer to cqasm::types::from_spec()" << std::endl;
-    os << line_prefix << "    \"allow_conditionl\": <bool>,    # whether conditional gates of this type are accepted, defaults to true" << std::endl;
-    os << line_prefix << "    \"allow_parallel\": <bool>,       # whether parallel gates of this type are accepted, defaults to true" << std::endl;
-    os << line_prefix << "    \"allow_reused_qubits\": <bool>,  # whether reused qubit args for this type are accepted, defaults to false" << std::endl;
-    os << line_prefix << "    \"ql_name\": \"<name>\",            # defaults to \"name\"" << std::endl;
-    os << line_prefix << "    \"ql_qubits\": [                  # list or \"all\", defaults to the \"Q\" args" << std::endl;
-    os << line_prefix << "        0,                          # hardcoded qubit index" << std::endl;
-    os << line_prefix << "        \"%0\"                        # reference to argument 0, which can be a qubitref, bitref, or int" << std::endl;
-    os << line_prefix << "    ]," << std::endl;
-    os << line_prefix << "    \"ql_cregs\": [                   # list or \"all\", defaults to the \"I\" args" << std::endl;
-    os << line_prefix << "        0,                          # hardcoded creg index" << std::endl;
-    os << line_prefix << "        \"%0\"                        # reference to argument 0, which can be an int variable reference, or int for creg index" << std::endl;
-    os << line_prefix << "    ]," << std::endl;
-    os << line_prefix << "    \"ql_bregs\": [                   # list or \"all\", defaults to the \"B\" args" << std::endl;
-    os << line_prefix << "        0,                          # hardcoded breg index" << std::endl;
-    os << line_prefix << "        \"%0\"                        # reference to argument 0, which can be an int variable reference, or int for creg index" << std::endl;
-    os << line_prefix << "    ]," << std::endl;
-    os << line_prefix << "    \"ql_duration\": 0,               # duration; int to hardcode or \"%i\" to take from param i (must be of type int), defaults to 0" << std::endl;
-    os << line_prefix << "    \"ql_angle\": 0.0,                # angle; float to hardcode or \"%i\" to take from param i (must be of type int or real), defaults to first arg of type real or 0.0" << std::endl;
-    os << line_prefix << "    \"ql_angle_type\": \"<type>\",      # interpretation of angle arg; one of \"rad\" (radians), \"deg\" (degrees), or \"pow2\" (2pi/2^k radians), defaults to \"rad\"" << std::endl;
-    os << line_prefix << "    \"implicit_sgmq\": <bool>,        # if multiple qubit args are present, a single-qubit gate of this type should be replicated for these qubits (instead of a single gate with many qubits)" << std::endl;
-    os << line_prefix << "    \"implicit_breg\": <bool>         # the breg operand(s) that implicitly belongs to the qubit operand(s) in the gate should be added to the OpenQL operand list" << std::endl;
-    os << line_prefix << "}" << std::endl;
+    utils::dump_str(os, line_prefix, R"(
+    This pass completely discards the incoming program and replaces it with the
+    program described by the given cQASM file.
 
-    // TODO: describe configuration file format here.
+    Because libqasm needs information about gate prototypes that does not
+    currently exist in the platform configuration file, an additional
+    configuration file is needed for this, specified using the gateset_file
+    option. This must be a JSON file consisting of an array of objects, where
+    each object has the following form.
+
+    {
+        "name": "<name>",               # mandatory
+        "params": "<typespec>",         # mandatory, refer to cqasm::types::from_spec()
+        "allow_conditional": <bool>,    # whether conditional gates of this type are accepted,
+                                        #   defaults to true
+        "allow_parallel": <bool>,       # whether parallel gates of this type are accepted,
+                                        #   defaults to true
+        "allow_reused_qubits": <bool>,  # whether reused qubit args for this type are accepted,
+                                        #   defaults to false
+        "ql_name": "<name>",            # defaults to "name"
+        "ql_qubits": [                  # list or "all", defaults to the "Q" args
+            0,                          # hardcoded qubit index
+            "%0"                        # reference to argument 0, which can be a qubitref, bitref,
+                                        #   or int
+        ],
+        "ql_cregs": [                   # list or "all", defaults to the "I" args
+            0,                          # hardcoded creg index
+            "%0"                        # reference to argument 0, which can be an int variable
+                                        #   reference, or int for creg index
+        ],
+        "ql_bregs": [                   # list or "all", defaults to the "B" args
+            0,                          # hardcoded breg index
+            "%0"                        # reference to argument 0, which can be an int variable
+                                        #   reference, or int for creg index
+        ],
+        "ql_duration": 0,               # duration; int to hardcode or "%i" to take from param i
+                                        #   (must be of type int), defaults to 0
+        "ql_angle": 0.0,                # angle; float to hardcode or "%i" to take from param i
+                                        #   (must be of type int or real), defaults to first arg
+                                        #   of type real or 0.0
+        "ql_angle_type": "<type>",      # interpretation of angle arg; one of "rad" (radians),
+                                        #   "deg" (degrees), or "pow2" (2pi/2^k radians), defaults
+                                        #   to "rad"
+        "implicit_sgmq": <bool>,        # if multiple qubit args are present, a single-qubit gate
+                                        #   of this type should be replicated for these qubits
+                                        #   (instead of a single gate with many qubits)
+        "implicit_breg": <bool>         # the breg operand(s) that implicitly belongs to the qubit
+                                        #   operand(s) in the gate should be added to the OpenQL
+                                        #   operand list
+    }
+    )");
 }
 
 /**

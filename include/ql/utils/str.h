@@ -109,5 +109,13 @@ Str to_lower(Str str);
  */
 Str replace_all(Str str, const Str &from, const Str &to);
 
+/**
+ * Takes a raw string and replaces its line prefix accordingly. Any prefixed
+ * spacing common to all non-empty lines is removed, as are any empty lines at
+ * the start and end. The remaining lines are then prefixed with line_prefix and
+ * terminated with a single newline before being written to os.
+ */
+void dump_str(std::ostream &os, const Str &line_prefix, const Str &raw);
+
 } // namespace utils
 } // namespace ql

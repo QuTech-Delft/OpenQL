@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cctype>
 #include "ql/utils/exception.h"
+#include "ql/utils/list.h"
 
 namespace ql {
 namespace utils {
@@ -142,6 +143,50 @@ std::string replace_all(std::string str, const std::string &from, const std::str
         start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
     }
     return str;
+}
+
+/**
+ * Takes a raw string and replaces its line prefix accordingly. Any prefixed
+ * spacing common to all non-empty lines is removed, as are any empty lines at
+ * the start and end. The remaining lines are then prefixed with line_prefix and
+ * terminated with a single newline before being written to os.
+ */
+void dump_str(std::ostream &os, const Str &line_prefix, const Str &raw) {
+
+    // Split into lines.
+    List<Str> lines;
+    UInt prev = 0;
+    while (true) {
+        UInt next = raw.find('\n', prev);
+        lines.push_back(raw.substr(prev, next - prev));
+        if (next == Str::npos) break;
+        prev = next + 1;
+    }
+
+    // Clear empty lines entirely and find how much common whitespace we have.
+    Int common_whitespace = -1;
+    for (auto &line : lines) {
+        auto whitespace = line.find_first_not_of(' ');
+        if (whitespace == Str::npos) {
+            line.clear();
+        } else if (common_whitespace == -1 || common_whitespace > (Int)whitespace) {
+            common_whitespace = whitespace;
+        }
+    }
+    if (common_whitespace < 0) {
+        common_whitespace = 0;
+    }
+
+    // Remove empty lines from the front and back of the list.
+    while (!lines.empty() && lines.front().empty()) lines.pop_front();
+    while (!lines.empty() && lines.back().empty()) lines.pop_back();
+
+    // Print to the output stream.
+    for (const auto &line : lines) {
+        os << line_prefix << (line.empty() ? "" : line.substr(common_whitespace)) << '\n';
+    }
+    os.flush();
+
 }
 
 } // namespace utils

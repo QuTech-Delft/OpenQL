@@ -19,7 +19,9 @@ void ReportCQasmPass::dump_docs(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
-    os << line_prefix << "This pass writes the current program out as a cQASM file." << std::endl;
+    utils::dump_str(os, line_prefix, R"(
+    This pass writes the current program out as a cQASM file.
+    )");
 }
 
 /**

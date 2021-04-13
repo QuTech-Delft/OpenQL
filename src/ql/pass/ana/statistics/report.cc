@@ -20,10 +20,12 @@ void ReportStatisticsPass::dump_docs(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
-    os << line_prefix << "This pass reports some basic statistics of the program and each kernel" << std::endl;
-    os << line_prefix << "to a report file. Some passes may also attach additional pass-specific" << std::endl;
-    os << line_prefix << "statistics to the program and kernels, in which case these are printed" << std::endl;
-    os << line_prefix << "and subsequently discarded as well." << std::endl;
+    utils::dump_str(os, line_prefix, R"(
+    This pass reports some basic statistics of the program and each kernel to a
+    report file. Some passes may also attach additional pass-specific statistics
+    to the program and kernels, in which case these are printed and subsequently
+    discarded as well.
+    )");
 }
 
 /**

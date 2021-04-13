@@ -19,9 +19,11 @@ void CleanStatisticsPass::dump_docs(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
-    os << line_prefix << "This pass just discards any statistics that previous passes might have" << std::endl;
-    os << line_prefix << "attached to the kernel and program. It is inserted automatically after" << std::endl;
-    os << line_prefix << "every normal pass that does not have statistics reporting enabled." << std::endl;
+    utils::dump_str(os, line_prefix, R"(
+    This pass just discards any statistics that previous passes might have
+    attached to the kernel and program. It is inserted automatically after every
+    normal pass that does not have statistics reporting enabled.
+    )");
 }
 
 /**
