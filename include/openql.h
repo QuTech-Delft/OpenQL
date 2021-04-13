@@ -9,7 +9,7 @@
 #include "ql/com/unitary.h"
 #include "optimizer.h"
 #include "compiler.h"
-#include "cqasm/cqasm_reader.h"
+#include "ql/pass/io/cqasm/read.h"
 
 namespace ql {
 

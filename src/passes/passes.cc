@@ -12,7 +12,6 @@
 #include "optimizer.h"
 #include "clifford.h"
 #include "decompose_toffoli.h"
-#include "cqasm/cqasm_reader.h"
 #include "latency_compensation.h"
 #include "buffer_insertion.h"
 #include "commute_variation.h"
@@ -20,6 +19,7 @@
 #include "ql/pass/ana/visualize/circuit.h"
 #include "ql/pass/ana/visualize/interaction.h"
 #include "ql/pass/ana/visualize/mapping.h"
+#include "ql/pass/io/cqasm/detail/cqasm_reader.h"
 
 #include "arch/cc_light/cc_light_eqasm_compiler.h"
 #include "arch/cc/backend_cc.h"
@@ -178,7 +178,7 @@ CQasmReaderPass::CQasmReaderPass(const Str &name) : AbstractPass(name) {
 void CQasmReaderPass::runOnProgram(const ir::ProgramRef &program) {
     QL_DOUT("run ReaderPass with name = " << getPassName() << " on program " << program->name);
 
-    auto reader = cqasm::Reader(program->platform, program);
+    auto reader = pass::io::cqasm::read::detail::Reader(program->platform, program);
 
     QL_DOUT("!!!!!!!!!!! start reader !!!!!!!!");
 

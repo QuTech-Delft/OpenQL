@@ -1,5 +1,11 @@
 /** \file
  * Implementation for converting cQASM files to OpenQL's IR.
+ *
+ * FIXME: this file and its cc file are a bit messy because I originall didn't
+ *  want to change the C++ interface for the Reader class. This is no longer the
+ *  case; it's in a completely different namespace now anyway. The reader code
+ *  should be broken up into multiple files, with proper source/header class
+ *  definitions.
  */
 
 #pragma once
@@ -11,7 +17,11 @@
 #include "ql/ir/ir.h"
 
 namespace ql {
+namespace pass {
+namespace io {
 namespace cqasm {
+namespace read {
+namespace detail {
 
 // Opaque forward declaration for the actual implementation of the reader, to
 // keep the header file clean.
@@ -31,5 +41,9 @@ public:
     void file2circuit(const utils::Str &cqasm_fname);
 };
 
+} // namespace detail
+} // namespace read
 } // namespace cqasm
+} // namespace io
+} // namespace pass
 } // namespace ql

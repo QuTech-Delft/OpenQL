@@ -11,6 +11,10 @@
 #include "ql/pass/ana/visualize/circuit.h"
 #include "ql/pass/ana/visualize/interaction.h"
 #include "ql/pass/ana/visualize/mapping.h"
+#include "ql/pass/ana/statistics/clean.h"
+#include "ql/pass/ana/statistics/report.h"
+#include "ql/pass/io/cqasm/read.h"
+#include "ql/pass/io/cqasm/report.h"
 
 namespace ql {
 namespace pmgr {
@@ -60,6 +64,10 @@ PassFactory::PassFactory() {
     register_pass<::ql::pass::ana::visualize::circuit::Pass>("ana.visualize.Circuit");
     register_pass<::ql::pass::ana::visualize::interaction::Pass>("ana.visualize.Interaction");
     register_pass<::ql::pass::ana::visualize::mapping::Pass>("ana.visualize.Mapping");
+    register_pass<::ql::pass::ana::statistics::clean::Pass>("ana.statistics.Clean");
+    register_pass<::ql::pass::ana::statistics::report::Pass>("ana.statistics.Report");
+    register_pass<::ql::pass::io::cqasm::read::Pass>("io.cqasm.Read");
+    register_pass<::ql::pass::io::cqasm::report::Pass>("io.cqasm.Report");
 
 }
 

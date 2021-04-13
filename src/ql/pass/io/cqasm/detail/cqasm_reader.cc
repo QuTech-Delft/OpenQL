@@ -8,7 +8,11 @@
 #include "cqasm.hpp"
 
 namespace ql {
+namespace pass {
+namespace io {
 namespace cqasm {
+namespace read {
+namespace detail {
 
 // Shorthands for namespaces.
 namespace lqt { using namespace ::cqasm::tree; }
@@ -1261,5 +1265,9 @@ void Reader::file2circuit(const utils::Str &cqasm_fname) {
     impl->file2circuit(cqasm_fname);
 }
 
+} // namespace detail
+} // namespace read
 } // namespace cqasm
+} // namespace io
+} // namespace pass
 } // namespace ql

@@ -221,6 +221,9 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/circuit.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/interaction.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/mapping.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/detail/cqasm_reader.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/read.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/report.cc"
 
     "${CMAKE_CURRENT_SOURCE_DIR}/src/compiler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/decompose_toffoli.cc"
@@ -237,7 +240,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/datapath_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/settings_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/vcd_cc.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/cqasm/cqasm_reader.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/mapper.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/interactionMatrix.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"

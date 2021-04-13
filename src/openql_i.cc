@@ -490,14 +490,6 @@ void cQasmReader::file2circuit(const std::string &cqasm_file_path) {
     cqasm_reader->file2circuit(cqasm_file_path);
 }
 
-cQasmReader::~cQasmReader() {
-    // leave deletion to SWIG, otherwise the python unit test framework fails
-    // FIXME JvS: above is impressively broken, this just means it's never
-    //  deleted. It's not like SWIG has some magical garbage collector or
-    //  something.
-    // delete cqasm_reader_;
-}
-
 Compiler::Compiler(
     const std::string &name
 ) :

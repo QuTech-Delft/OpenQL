@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "ql/pass/io/cqasm/detail/cqasm_reader.h"
 #include "openql.h"
-#include "compiler.h"
 
 void initialize();
 
@@ -190,7 +190,7 @@ public:
  */
 class cQasmReader {
 public:
-    ql::utils::Ptr<ql::cqasm::Reader> cqasm_reader;
+    ql::utils::Ptr<ql::pass::io::cqasm::read::detail::Reader> cqasm_reader;
     Platform platform;
     Program program;
 
@@ -198,7 +198,6 @@ public:
     cQasmReader(const Platform &q_platform, const Program &q_program, const std::string &gateset_fname);
     void string2circuit(const std::string &cqasm_str);
     void file2circuit(const std::string &cqasm_file_path);
-    ~cQasmReader();
 };
 
 
