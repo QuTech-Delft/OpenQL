@@ -191,6 +191,7 @@ void PassFactory::dump_pass_types(
     std::ostream &os,
     const utils::Str &line_prefix
 ) {
+
     // Gather all aliases for each particular pass type.
     utils::Map<const ConstructorFn::Data*, utils::List<utils::Str>> aliases;
     for (const auto &pair : pass_factory->pass_types) {

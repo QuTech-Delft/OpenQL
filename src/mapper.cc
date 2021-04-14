@@ -791,7 +791,7 @@ UInt FreeCycle::StartCycle(const ir::GateRef &g) const {
 
         while (startCycle < ir::MAX_CYCLE) {
             // QL_DOUT("Startcycle for " << g->qasm() << ": available? at startCycle=" << startCycle);
-            if (rm.available(startCycle, g, platformp)) {
+            if (rm->available(startCycle, g, platformp)) {
                 // QL_DOUT(" ... [" << startCycle << "] resources available for " << g->qasm());
                 break;
             } else {
@@ -832,7 +832,7 @@ void FreeCycle::Add(const ir::GateRef &g, UInt startCycle) {
 
     auto mapopt = options::get("mapper");
     if (mapopt == "baserc" || mapopt == "minextendrc") {
-        rm.reserve(startCycle, g, platformp);
+        rm->reserve(startCycle, g, platformp);
     }
 }
 

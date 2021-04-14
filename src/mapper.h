@@ -318,7 +318,7 @@ private:
                                           // FIXME JvS: why qubits and bregs, but not cregs?
     utils::UInt              ct;          // multiplication factor from cycles to nano-seconds (unit of duration)
     utils::Vec<utils::UInt>  fcv;         // fcv[real qubit index i]: qubit i is free from this cycle on
-    plat::ResourceManager rm;          // actual resources occupied by scheduled gates
+    utils::Opt<plat::ResourceManager> rm; // actual resources occupied by scheduled gates
 
 
     // access free cycle value of qubit q[i] or breg b[i-nq]

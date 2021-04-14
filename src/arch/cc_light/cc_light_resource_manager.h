@@ -174,7 +174,6 @@ public:
 
 class cc_light_resource_manager_t : public plat::PlatformResourceManager {
 public:
-    cc_light_resource_manager_t() = default;
 
     // Allocate those resources that were specified in the config file.
     // Those that are not specified, are not allocated, so are not used in scheduling/mapping.

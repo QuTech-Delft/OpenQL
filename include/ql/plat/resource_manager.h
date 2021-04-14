@@ -9,6 +9,7 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/ptr.h"
 #include "ql/plat/platform.h"
+#include "ql/ir/ir.h"
 #include "ql/com/types.h"
 
 namespace ql {
@@ -27,8 +28,6 @@ public:
     virtual void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) = 0;
 };
 
-
-
 class PlatformResourceManager {
 public:
 
@@ -36,7 +35,6 @@ public:
 
     // constructor needed by mapper::FreeCycle to bridge time from its construction to its Init
     // see the note on the use of constructors and Init functions at the start of mapper.h
-    PlatformResourceManager() = default;
     PlatformResourceManager(
         const plat::PlatformRef &platform,
         com::SchedulingDirection dir
@@ -62,8 +60,6 @@ class ResourceManager {
 public:
 
     utils::ClonablePtr<PlatformResourceManager> platform_resource_manager_ptr;     // pointer to specific platform_resource_manager
-
-    ResourceManager();
 
     // (platform,dir) parameterized resource_manager_t
     // dynamically allocating platform specific platform_resource_manager_t depending on platform

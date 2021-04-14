@@ -77,11 +77,6 @@ void PlatformResourceManager::reserve(
     // DOUT("all resources reserved for: " << ins->qasm());
 }
 
-ResourceManager::ResourceManager() {
-    // DOUT("Constructing virgin resource_manager_t");
-    //platform_resource_manager_ptr = NULL;
-}
-
 // (platform,dir) parameterized resource_manager_t
 // dynamically allocating platform specific platform_resource_manager_t depending on platform
 ResourceManager::ResourceManager(
@@ -105,23 +100,12 @@ ResourceManager::ResourceManager(
 // *org_resource_manager.platform_resource_manager_ptr->clone() does the trick
 //      to create a copy of the actual derived class' object
 ResourceManager::ResourceManager(const ResourceManager &org_resource_manager) {
-    // DOUT("Copy constructing resource_manager_t");
     platform_resource_manager_ptr = org_resource_manager.platform_resource_manager_ptr.clone();
-    // DOUT("... done copy constructing resource_manager_t by cloning the contained platform_resource_manager_t");
 }
 
 // copy-assignment operator
 // follow pattern to use tmp copy to allow self-assignment and to be exception safe
 ResourceManager &ResourceManager::operator=(const ResourceManager &rhs) {
-    /*// DOUT("Copy assigning resource_manager_t");
-    PlatformResourceManager *new_resource_manager_ptr;
-    // DOUT("... about to clone resource_manager rhs' contained platform_resource_manager_t");
-    new_resource_manager_ptr = rhs.platform_resource_manager_ptr->clone();
-    // DOUT("... about to delete the this'(lhs) resource_manager contained platform_resource_manager_t");
-    delete platform_resource_manager_ptr;
-    // DOUT("... and then assign the cloned copy platform_resource_manager_t to the this resource_manager contained one");
-    platform_resource_manager_ptr = new_resource_manager_ptr;
-    // DOUT("... having done this, copy the copied resource_manager_t to the lhs");*/
     platform_resource_manager_ptr = rhs.platform_resource_manager_ptr.clone();
     return *this;
 }
