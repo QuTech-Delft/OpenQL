@@ -253,12 +253,9 @@ public:
         Str schedopt = com::options::get("scheduler");
         Str dot;
         if (schedopt == "ASAP") {
-            plat::ResourceManager rm(platform, com::SchedulingDirection::FORWARD);
-            schedule_asap(rm, platform, dot);
-        }
-        else if (schedopt == "ALAP") {
-            plat::ResourceManager rm(platform, com::SchedulingDirection::BACKWARD);
-            schedule_alap(rm, platform, dot);
+            schedule_asap(plat::resource::Manager::from_defaults(platform), platform, dot);
+        } else if (schedopt == "ALAP") {
+            schedule_alap(plat::resource::Manager::from_defaults(platform), platform, dot);
         } else {
             QL_FATAL("Unknown scheduler");
         }

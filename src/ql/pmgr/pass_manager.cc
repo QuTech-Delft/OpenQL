@@ -381,6 +381,11 @@ PassManager PassManager::from_json(
     // Shorthand.
     using JsonType = utils::Json::value_t;
 
+    // Check toplevel type.
+    if (json.type() != JsonType::object) {
+        throw utils::Exception("pass manager configuration must be an object");
+    }
+
     // Look for the strategy key. Ignore any other keys in the toplevel
     // structure.
     auto it = json.find("strategy");
@@ -388,7 +393,7 @@ PassManager PassManager::from_json(
         throw utils::Exception("missing strategy key");
     }
     const auto &strategy = *it;
-    if (strategy.type() != utils::Json::value_t::object) {
+    if (strategy.type() != JsonType::object) {
         throw utils::Exception("strategy key must be an object");
     }
 

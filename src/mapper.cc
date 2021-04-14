@@ -665,7 +665,8 @@ FreeCycle::FreeCycle() {
 
 void FreeCycle::Init(const plat::PlatformRef &p) {
     QL_DOUT("FreeCycle::Init()");
-    plat::ResourceManager lrm(p, com::SchedulingDirection::FORWARD);   // allocated here and copied below to rm because of platform parameter
+    auto rm = plat::resource::Manager::from_defaults(p);   // allocated here and copied below to rm because of platform parameter
+                                                           // JvS: I have no idea what ^ means
     QL_DOUT("... created FreeCycle Init local resource_manager");
     platformp = p;
     nq = platformp->qubit_count;
@@ -675,7 +676,7 @@ void FreeCycle::Init(const plat::PlatformRef &p) {
     fcv.clear();
     fcv.resize(nq+nb, 1);   // this 1 implies that cycle of first gate will be 1 and not 0; OpenQL convention!?!?
     QL_DOUT("... about to copy FreeCycle Init local resource_manager to FreeCycle member rm");
-    rm = lrm;
+    rs = rm.build(plat::resource::Direction::FORWARD);
     QL_DOUT("... done copy FreeCycle Init local resource_manager to FreeCycle member rm");
 }
 
@@ -791,7 +792,7 @@ UInt FreeCycle::StartCycle(const ir::GateRef &g) const {
 
         while (startCycle < ir::MAX_CYCLE) {
             // QL_DOUT("Startcycle for " << g->qasm() << ": available? at startCycle=" << startCycle);
-            if (rm->available(startCycle, g, platformp)) {
+            if (rs->available(startCycle, g)) {
                 // QL_DOUT(" ... [" << startCycle << "] resources available for " << g->qasm());
                 break;
             } else {
@@ -832,7 +833,7 @@ void FreeCycle::Add(const ir::GateRef &g, UInt startCycle) {
 
     auto mapopt = options::get("mapper");
     if (mapopt == "baserc" || mapopt == "minextendrc") {
-        rm->reserve(startCycle, g, platformp);
+        rs->reserve(startCycle, g);
     }
 }
 
@@ -1725,7 +1726,7 @@ void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
         scheduled.set(schedp->instruction[schedp->t]) = false;
         avlist.clear();
         avlist.push_back(schedp->s);
-        schedp->set_remaining(com::SchedulingDirection::FORWARD);          // to know criticality
+        schedp->set_remaining(plat::resource::Direction::FORWARD);          // to know criticality
 
         if (options::get("print_dot_graphs") == "yes") {
             Str map_dot;
@@ -1803,7 +1804,7 @@ void Future::DoneGate(const ir::GateRef &gp) {
     if (maplookaheadopt == "no") {
         input_gatepp = std::next(input_gatepp);
     } else {
-        schedp->TakeAvailable(schedp->node.at(gp), avlist, scheduled, com::SchedulingDirection::FORWARD);
+        schedp->TakeAvailable(schedp->node.at(gp), avlist, scheduled, plat::resource::Direction::FORWARD);
     }
 }
 

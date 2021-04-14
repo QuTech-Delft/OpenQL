@@ -8,6 +8,7 @@
 #include "ql/utils/ptr.h"
 #include "ql/utils/str.h"
 #include "ql/utils/map.h"
+#include "ql/utils/json.h"
 #include "ql/plat/platform.h"
 #include "ql/plat/resource/base.h"
 
@@ -30,7 +31,7 @@ private:
             Ref(
                 const utils::Str &instance_name,
                 const plat::PlatformRef &platform,
-                Direction direction
+                const utils::Json &configuration
             )
         >
     >;
@@ -57,10 +58,15 @@ public:
         fn.emplace([type_name](
             const utils::Str &instance_name,
             const plat::PlatformRef &platform,
-            Direction direction
+            const utils::Json &configuration
         ) {
             Ref resource;
-            resource.emplace<ResourceType>(type_name, instance_name, platform, direction);
+            resource.emplace<ResourceType>(Context({
+                type_name,
+                instance_name,
+                platform,
+                configuration
+            }));
             return resource;
         });
         resource_types.set(type_name) = fn;
@@ -90,8 +96,8 @@ public:
         const utils::Str &type_name,
         const utils::Str &instance_name,
         const plat::PlatformRef &platform,
-        Direction direction
-    );
+        const utils::Json &configuration
+    ) const;
 
     /**
      * Dumps documentation for all resource types known by this factory.
@@ -99,7 +105,7 @@ public:
     void dump_resource_types(
         std::ostream &os = std::cout,
         const utils::Str &line_prefix = ""
-    );
+    ) const;
 
 };
 

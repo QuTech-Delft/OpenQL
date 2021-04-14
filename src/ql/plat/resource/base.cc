@@ -24,25 +24,29 @@ std::ostream &operator<<(std::ostream &os, Direction dir) {
  * Constructs the abstract resource. No error checking here; this is up to
  * the resource manager.
  */
-Base::Base(
-    const utils::Str &type_name,
-    const utils::Str &instance_name,
-    const plat::PlatformRef &platform,
-    Direction direction
-) :
-    type_name(type_name),
-    instance_name(instance_name),
-    platform(platform),
-    direction(direction),
-    prev_cycle(direction == Direction::FORWARD ? 0 : utils::UMAX)
+Base::Base(const Context &context) :
+    context(context),
+    initialized(false),
+    direction(Direction::UNDEFINED),
+    prev_cycle(0)
 {
+}
+
+/**
+ * Abstract implementation for initialize(). This is where the JSON
+ * structure should be parsed and the resource state should be initialized.
+ * This will only be called once during the lifetime of this resource. The
+ * default implementation is no-op.
+ */
+void Base::on_initialize(Direction direction) {
+    (void)direction;
 }
 
 /**
  * Returns the type name for this resource.
  */
 const utils::Str &Base::get_type() const {
-    return type_name;
+    return context->type_name;
 }
 
 /**
@@ -50,7 +54,50 @@ const utils::Str &Base::get_type() const {
  * resource.
  */
 const utils::Str &Base::get_name() const {
-    return instance_name;
+    return context->instance_name;
+}
+
+/**
+ * Writes the documentation for this resource to the given output stream.
+ * May depend on type_name, but should not depend on anything else. The help
+ * information should end in a newline, and every line printed should start
+ * with line_prefix.
+ */
+void Base::dump_docs(
+    std::ostream &os,
+    const utils::Str &line_prefix
+) const {
+    on_dump_docs(os, line_prefix);
+}
+
+/**
+ * Writes information about the configuration of this resource. This is
+ * called before initialize(). The printed information should end in a
+ * newline, and every line printed should start with line_prefix.
+ */
+void Base::dump_config(
+    std::ostream &os,
+    const utils::Str &line_prefix
+) const {
+    on_dump_config(os, line_prefix);
+}
+
+/**
+ * Initializes the state for this resource for a particular scheduling
+ * direction.
+ */
+void Base::initialize(Direction direction) {
+    if (initialized) {
+        throw utils::Exception("resource initialize() called twice");
+    }
+    this->direction = direction;
+    if (direction == Direction::FORWARD) {
+        prev_cycle = 0;
+    } else {
+        prev_cycle = utils::UMAX;
+    }
+    on_initialize(direction);
+    initialized = true;
 }
 
 /**
@@ -63,8 +110,12 @@ utils::Bool Base::gate(
     const ir::GateRef &gate,
     utils::Bool commit
 ) {
+    if (!initialized) {
+        throw utils::Exception("resource gate() called before initialization");
+    }
 
     // Verify that the scheduling direction (if any) is respected.
+    QL_DOUT("cycle = " << cycle << ", prev = " << prev_cycle);
     switch (direction) {
         case Direction::FORWARD: QL_ASSERT(cycle >= prev_cycle); break;
         case Direction::BACKWARD: QL_ASSERT(cycle <= prev_cycle); break;
@@ -83,30 +134,16 @@ utils::Bool Base::gate(
 }
 
 /**
- * Shorthand for gate() with commit set to false.
+ * Dumps a debug representation of the current resource state.
  */
-utils::Bool Base::available(
-    utils::UInt cycle,
-    const ir::GateRef &gate
-) {
-    return this->gate(cycle, gate, false);
-}
-
-/**
- * Shorthand for gate() with commit set to true and an exception on failure.
- */
-void Base::reserve(
-    utils::UInt cycle,
-    const ir::GateRef &gate
-) {
-    if (!this->gate(cycle, gate, true)) {
-        utils::StrStrm ss;
-        ss << "failed to reserve " << gate->qasm();
-        ss << " for cycle " << cycle;
-        ss << " with resource " << get_name();
-        ss << " of type " << get_type();
-        throw utils::Exception(ss.str());
+void Base::dump_state(
+    std::ostream &os,
+    const utils::Str &line_prefix
+) const {
+    if (!initialized) {
+        throw utils::Exception("resource dump_state() called before initialization");
     }
+    on_dump_state(os, line_prefix);
 }
 
 } // namespace resource

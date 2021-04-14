@@ -42,6 +42,40 @@ enum class Direction {
 std::ostream &operator<<(std::ostream &os, Direction dir);
 
 /**
+ * Context for constructing resource instances.
+ */
+struct Context {
+
+    /**
+     * The full type name for the resource. This is the full name that was used
+     * when the resource was registered with the resource factory. The same
+     * resource class may be registered with multiple type names, in which case
+     * the pass implementation may use this to differentiate.
+     */
+    utils::Str type_name;
+
+    /**
+     * The instance name for the resource, i.e. the name that the user assigned
+     * to it or the name that was assigned to it automatically. Must match
+     * `[a-zA-Z0-9_\-]+`, and must be unique within a resource manager.
+     * Instance names should NOT have a semantic meaning; they are only intended
+     * for logging.
+     */
+    utils::Str instance_name;
+
+    /**
+     * The platform being compiled for.
+     */
+    plat::PlatformRef platform;
+
+    /**
+     * Unparsed JSON configuration data for the resource.
+     */
+    utils::Json configuration;
+
+};
+
+/**
  * Base class for scheduling resources. Scheduling resources are used to
  * represent constraints on when gates can be executed in a schedule, within
  * context of other gates.
@@ -50,33 +84,23 @@ class Base {
 protected:
 
     /**
-     * The full type name for this resource. This is the full name that was used
-     * when the resource was registered with the resource factory. The same
-     * resource class may be registered with multiple type names, in which case
-     * the pass implementation may use this to differentiate.
+     * The context information that the resource was constructed with. This is
+     * wrapped in a Ptr so it doesn't need to be cloned every time the resource
+     * state is cloned.
      */
-    const utils::Str type_name;
-
-    /**
-     * The instance name for this resource, i.e. the name that the user assigned
-     * to it or the name that was assigned to it automatically. Must match
-     * `[a-zA-Z0-9_\-]+`, and must be unique within a resource manager.
-     * Instance names should NOT have a semantic meaning; they are only intended
-     * for logging.
-     */
-    const utils::Str instance_name;
-
-    /**
-     * Reference to the platform for contextual information.
-     */
-    const plat::PlatformRef platform;
-
-    /**
-     * The directing in which gates are scheduled, if any.
-     */
-    const Direction direction;
+    const utils::Ptr<const Context> context;
 
 private:
+
+    /**
+     * Whether our state has been initialized yet.
+     */
+    utils::Bool initialized;
+
+    /**
+     * The scheduling direction.
+     */
+    Direction direction;
 
     /**
      * Used to verify that gates are added in the order specified by direction.
@@ -89,12 +113,15 @@ protected:
      * Constructs the abstract resource. No error checking here; this is up to
      * the resource manager.
      */
-    Base(
-        const utils::Str &type_name,
-        const utils::Str &instance_name,
-        const plat::PlatformRef &platform,
-        Direction direction
-    );
+    explicit Base(const Context &context);
+
+    /**
+     * Abstract implementation for initialize(). This is where the JSON
+     * structure should be parsed and the resource state should be initialized.
+     * This will only be called once during the lifetime of this resource. The
+     * default implementation is no-op.
+     */
+    virtual void on_initialize(Direction direction);
 
     /**
      * Abstract implementation for gate().
@@ -104,6 +131,30 @@ protected:
         const ir::GateRef &gate,
         utils::Bool commit
     ) = 0;
+
+    /**
+     * Abstract implementation for dump_docs().
+     */
+    virtual void on_dump_docs(
+        std::ostream &os,
+        const utils::Str &line_prefix
+    ) const = 0;
+
+    /**
+     * Abstract implementation for dump_config().
+     */
+    virtual void on_dump_config(
+        std::ostream &os,
+        const utils::Str &line_prefix
+    ) const = 0;
+
+    /**
+     * Abstract implementation for dump_state().
+     */
+    virtual void on_dump_state(
+        std::ostream &os,
+        const utils::Str &line_prefix
+    ) const = 0;
 
 public:
 
@@ -129,18 +180,26 @@ public:
      * information should end in a newline, and every line printed should start
      * with line_prefix.
      */
-    virtual void dump_docs(
+    void dump_docs(
         std::ostream &os = std::cout,
         const utils::Str &line_prefix = ""
-    ) const = 0;
+    ) const;
 
     /**
-     * Dumps a debug representation of the current resource state.
+     * Writes information about the configuration of this resource. This is
+     * called before initialize(). The printed information should end in a
+     * newline, and every line printed should start with line_prefix.
      */
-    virtual void dump_state(
+    void dump_config(
         std::ostream &os = std::cout,
         const utils::Str &line_prefix = ""
-    ) const = 0;
+    ) const;
+
+    /**
+     * Initializes the state for this resource for a particular scheduling
+     * direction.
+     */
+    void initialize(Direction direction);
 
     /**
      * Checks and optionally updates the resource manager state for the given
@@ -154,20 +213,12 @@ public:
     );
 
     /**
-     * Shorthand for gate() with commit set to false.
+     * Dumps a debug representation of the current resource state.
      */
-    utils::Bool available(
-        utils::UInt cycle,
-        const ir::GateRef &gate
-    );
-
-    /**
-     * Shorthand for gate() with commit set to true and an exception on failure.
-     */
-    void reserve(
-        utils::UInt cycle,
-        const ir::GateRef &gate
-    );
+    void dump_state(
+        std::ostream &os = std::cout,
+        const utils::Str &line_prefix = ""
+    ) const;
 
 };
 

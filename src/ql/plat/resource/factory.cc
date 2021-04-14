@@ -8,7 +8,8 @@
 #include <ql/utils/pair.h>
 
 // Resource definition headers. This list should be generated at some point.
-// TODO
+#include "ql/plat/resource/compat.h"
+#include "arch/cc_light/cc_light_resource_manager.h"
 
 namespace ql {
 namespace plat {
@@ -20,8 +21,12 @@ namespace resource {
 Factory::Factory() {
 
     // Default resource registration. This list should be generated at some point.
-    // TODO
-    //register_pass<::ql::pass::ana::visualize::circuit::Pass>("ana.visualize.Circuit");
+    register_resource<resource::Compat<arch::ccl_qubit_resource_t>>("arch.cc_light.qubits");
+    register_resource<resource::Compat<arch::ccl_qwg_resource_t>>("arch.cc_light.qwgs");
+    register_resource<resource::Compat<arch::ccl_meas_resource_t>>("arch.cc_light.meas_units");
+    register_resource<resource::Compat<arch::ccl_edge_resource_t>>("arch.cc_light.edges");
+    register_resource<resource::Compat<arch::ccl_detuned_qubits_resource_t>>("arch.cc_light.detuned_qubits");
+    register_resource<resource::Compat<arch::ccl_channel_resource_t>>("arch.cc_light.channels");
 
 }
 
@@ -123,13 +128,13 @@ Ref Factory::build_resource(
     const utils::Str &type_name,
     const utils::Str &instance_name,
     const plat::PlatformRef &platform,
-    Direction direction
-) {
+    const utils::Json &configuration
+) const {
     auto it = resource_types.find(type_name);
     if (it == resource_types.end()) {
         throw utils::Exception("unknown pass type \"" + type_name + "\"");
     }
-    return (*it->second)(instance_name, platform, direction);
+    return (*it->second)(instance_name, platform, configuration);
 }
 
 /**
@@ -138,7 +143,7 @@ Ref Factory::build_resource(
 void Factory::dump_resource_types(
     std::ostream &os,
     const utils::Str &line_prefix
-) {
+) const {
 
     // Gather all aliases for each particular pass type.
     utils::Map<const ConstructorFn::Data*, utils::List<utils::Str>> aliases;
