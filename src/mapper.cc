@@ -67,6 +67,9 @@ Bool Grid::IsInterCoreHop(UInt qs, UInt qt) const {
 // when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
 UInt Grid::Distance(UInt from_realqi, UInt to_realqi) const {
     if (conn == gc_full) {
+        if (from_realqi == to_realqi) {
+            return 0;
+        }
         UInt d = 1;
         if (CoreOf(from_realqi) == CoreOf(to_realqi)) {
             return d;
@@ -224,7 +227,7 @@ void Grid::ComputeDist() {
 
 void Grid::DPRINTGrid() const {
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
-        // PrintGrid();
+        PrintGrid();
         QL_DOUT("Would have printed grid here, but dont");
     }
 }
@@ -2453,12 +2456,18 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
     UInt d = grid->Distance(src, tgt);
     QL_DOUT("GenShortestPaths: distance(src=" << src << ", tgt=" << tgt << ") = " << d);
     QL_ASSERT(d >= 1);
+    auto nbl = grid->nbs.get(src);
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
+        QL_DOUT("GenShortestPaths: ... nbl: ");
+        for (auto dn : nbl) {
+            QL_DOUT("..." << dn << " ");
+        }
+    }
 
     // reduce neighbors nbs to those n continuing a path within budget
-    // src=>tgt is distance d, budget>=d is allowed, attempt src->n=>tgt
+    // src=>tgt is distance d, budget>=d is allowed, attempt src->n=>tgt, n==tgt is allowed
     // src->n is one hop, budget from n is one less so distance(n,tgt) <= budget-1 (i.e. distance < budget)
     // when budget==d, this defaults to distance(n,tgt) <= d-1
-    auto nbl = grid->nbs.get(src);
     nbl.remove_if([this,budget,tgt](const UInt& n) { return grid->Distance(n,tgt) >= budget; });
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         QL_DOUT("GenShortestPaths: ... after reducing to steps within budget, nbl: ");
@@ -2478,7 +2487,6 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
     } else if (which == wp_leftright_shortest) {
         nbl.remove_if( [nbl](const UInt& n) { return n != nbl.front() && n != nbl.back(); } );
     }
-
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         QL_DOUT("GenShortestPaths: ... after normalizing, before iterating, nbl: ");
         for (auto dn : nbl) {
@@ -2498,7 +2506,9 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
                 newwhich = wp_right_shortest;
             }
         }
+        QL_DOUT("... GenShortestPaths, recurse ... ");
         GenShortestPaths(gp, n, tgt, budget-1, genla, newwhich);  // get list of possible paths in budget-1 from n to tgt in genla
+        QL_DOUT("... GenShortestPaths, recurse [DONE]");
         resla.splice(resla.end(), genla);           // moves all of genla to resla; makes genla empty
     }
     // resla contains all paths starting from a neighbor of src, to tgt
