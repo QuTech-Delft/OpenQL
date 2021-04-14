@@ -3,6 +3,7 @@
  */
 
 #include "ql/com/options.h"
+
 #include "ql/utils/logger.h"
 
 namespace ql {

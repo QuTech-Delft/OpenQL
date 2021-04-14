@@ -665,7 +665,7 @@ FreeCycle::FreeCycle() {
 
 void FreeCycle::Init(const plat::PlatformRef &p) {
     QL_DOUT("FreeCycle::Init()");
-    arch::resource_manager_t lrm(p, forward_scheduling);   // allocated here and copied below to rm because of platform parameter
+    plat::ResourceManager lrm(p, com::SchedulingDirection::FORWARD);   // allocated here and copied below to rm because of platform parameter
     QL_DOUT("... created FreeCycle Init local resource_manager");
     platformp = p;
     nq = platformp->qubit_count;
@@ -1725,7 +1725,7 @@ void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
         scheduled.set(schedp->instruction[schedp->t]) = false;
         avlist.clear();
         avlist.push_back(schedp->s);
-        schedp->set_remaining(forward_scheduling);          // to know criticality
+        schedp->set_remaining(com::SchedulingDirection::FORWARD);          // to know criticality
 
         if (options::get("print_dot_graphs") == "yes") {
             Str map_dot;
@@ -1803,7 +1803,7 @@ void Future::DoneGate(const ir::GateRef &gp) {
     if (maplookaheadopt == "no") {
         input_gatepp = std::next(input_gatepp);
     } else {
-        schedp->TakeAvailable(schedp->node.at(gp), avlist, scheduled, forward_scheduling);
+        schedp->TakeAvailable(schedp->node.at(gp), avlist, scheduled, com::SchedulingDirection::FORWARD);
     }
 }
 

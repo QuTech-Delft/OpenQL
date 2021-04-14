@@ -7,96 +7,84 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
+#include "ql/utils/ptr.h"
 #include "ql/plat/platform.h"
+#include "ql/com/types.h"
 
 namespace ql {
+namespace plat {
 
-typedef enum {
-    forward_scheduling = 0,
-    backward_scheduling = 1
-} scheduling_direction_t;
-
-namespace arch {
-
-class resource_t {
+class Resource {
 public:
     utils::Str name;
     utils::UInt count;
-    scheduling_direction_t direction;
+    com::SchedulingDirection direction;
 
-    resource_t(const utils::Str &n, scheduling_direction_t dir);
-    virtual ~resource_t() = default;
+    Resource(const utils::Str &n, com::SchedulingDirection dir);
+    virtual ~Resource() = default;
 
     virtual utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const = 0;
     virtual void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) = 0;
-
-    virtual resource_t *clone() const & = 0;
-    virtual resource_t *clone() && = 0;
-
-    void Print(const utils::Str &s);
 };
 
-class platform_resource_manager_t {
+
+
+class PlatformResourceManager {
 public:
 
-    utils::Vec<resource_t*> resource_ptrs;
+    utils::Vec<utils::ClonablePtr<Resource>> resource_ptrs;
 
     // constructor needed by mapper::FreeCycle to bridge time from its construction to its Init
     // see the note on the use of constructors and Init functions at the start of mapper.h
-    platform_resource_manager_t() = default;
-    platform_resource_manager_t(
+    PlatformResourceManager() = default;
+    PlatformResourceManager(
         const plat::PlatformRef &platform,
-        scheduling_direction_t dir
+        com::SchedulingDirection dir
     );
-
-    virtual platform_resource_manager_t *clone() const & = 0;
-    virtual platform_resource_manager_t *clone() && = 0;
-
-    void Print(const utils::Str &s);
 
     // copy constructor doing a deep copy
     // *org_resource_ptr->clone() does the trick to create a copy of the actual derived class' object
-    platform_resource_manager_t(const platform_resource_manager_t &org);
+    PlatformResourceManager(const PlatformResourceManager &org);
 
     // copy-assignment operator
     // follow pattern to use tmp copy to allow self-assignment and to be exception safe
-    platform_resource_manager_t &operator=(const platform_resource_manager_t &rhs);
+    PlatformResourceManager &operator=(const PlatformResourceManager &rhs);
 
     utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const;
     void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform);
 
     // destructor destroying deep resource_t's
     // runs before shallow destruction which is done by synthesized platform_resource_manager_t destructor
-    virtual ~platform_resource_manager_t();
+    virtual ~PlatformResourceManager() = default;
 };
 
-class resource_manager_t {
+class ResourceManager {
 public:
 
-    platform_resource_manager_t *platform_resource_manager_ptr;     // pointer to specific platform_resource_manager
+    utils::ClonablePtr<PlatformResourceManager> platform_resource_manager_ptr;     // pointer to specific platform_resource_manager
 
-    resource_manager_t();
+    ResourceManager();
 
     // (platform,dir) parameterized resource_manager_t
     // dynamically allocating platform specific platform_resource_manager_t depending on platform
-    resource_manager_t(const plat::PlatformRef &platform, scheduling_direction_t dir);
+    ResourceManager(const plat::PlatformRef &platform, com::SchedulingDirection dir);
 
     // copy constructor doing a deep copy
     // *org_resource_manager.platform_resource_manager_ptr->clone() does the trick
     //      to create a copy of the actual derived class' object
-    resource_manager_t(const resource_manager_t &org_resource_manager);
+    ResourceManager(const ResourceManager &org_resource_manager);
 
     // copy-assignment operator
     // follow pattern to use tmp copy to allow self-assignment and to be exception safe
-    resource_manager_t &operator=(const resource_manager_t &rhs);
+    ResourceManager &operator=(const ResourceManager &rhs);
 
     utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const;
     void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform);
 
     // destructor destroying deep platform_resource_managert_t
     // runs before shallow destruction which is done by synthesized resource_manager_t destructor
-    virtual ~resource_manager_t();
+    virtual ~ResourceManager() = default;
 };
 
-} // namespace arch
+} // namespace plat
 } // namespacq ql

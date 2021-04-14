@@ -18,9 +18,9 @@
 #include "ql/utils/list.h"
 #include "ql/utils/map.h"
 #include "ql/utils/ptr.h"
+#include "ql/plat/resource_manager.h"
 #include "ql/ir/ir.h"
 #include "ql/com/options.h"
-#include "resource_manager.h"
 #include "report.h"
 
 namespace ql {
@@ -168,8 +168,8 @@ public:
     // without RC, this is all there is to schedule, apart from forming the bundles in ir::bundler()
     // set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
     // please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
-    void set_cycle_gate(const ir::GateRef &gp, scheduling_direction_t dir);
-    void set_cycle(scheduling_direction_t dir);
+    void set_cycle_gate(const ir::GateRef &gp, com::SchedulingDirection dir);
+    void set_cycle(com::SchedulingDirection dir);
 
     // sort circuit by the gates' cycle attribute in non-decreasing order
     static void sort_by_cycle(ir::Circuit &cp);
@@ -205,8 +205,8 @@ public:
     // which is easier in the core of the scheduler.
 
     // Note that set_remaining_gate expects a caller like set_remaining that iterates gp backward over the circuit
-    void set_remaining_gate(const ir::GateRef &gp, scheduling_direction_t dir);
-    void set_remaining(scheduling_direction_t dir);
+    void set_remaining_gate(const ir::GateRef &gp, com::SchedulingDirection dir);
+    void set_remaining(com::SchedulingDirection dir);
     ir::GateRef find_mostcritical(const utils::List<ir::GateRef> &lg);
 
     // ASAP/ALAP list scheduling support code with RC
@@ -230,7 +230,7 @@ public:
     // note that the cycle attributes will be shifted down to start at 1 after backward scheduling.
     void init_available(
         utils::List<lemon::ListDigraph::Node> &avlist,
-        scheduling_direction_t dir,
+        com::SchedulingDirection dir,
         utils::UInt &curr_cycle
     );
 
@@ -240,7 +240,7 @@ public:
     // may be present in the dependence graph because the scheduler ignores dependence type and cause
     void get_depending_nodes(
         lemon::ListDigraph::Node n,
-        scheduling_direction_t dir,
+        com::SchedulingDirection dir,
         utils::List<lemon::ListDigraph::Node> &ln
     );
 
@@ -252,7 +252,7 @@ public:
     utils::Bool criticality_lessthan(
         lemon::ListDigraph::Node n1,
         lemon::ListDigraph::Node n2,
-        scheduling_direction_t dir
+        com::SchedulingDirection dir
     );
 
     // Make node n available
@@ -265,7 +265,7 @@ public:
     void MakeAvailable(
         lemon::ListDigraph::Node n,
         utils::List<lemon::ListDigraph::Node> &avlist,
-        scheduling_direction_t dir
+        com::SchedulingDirection dir
     );
 
     // take node n out of avlist because it has been scheduled;
@@ -289,7 +289,7 @@ public:
         lemon::ListDigraph::Node n,
         utils::List<lemon::ListDigraph::Node> &avlist,
         utils::Map<ir::GateRef, utils::Bool> &scheduled,
-        scheduling_direction_t dir
+        com::SchedulingDirection dir
     );
 
     // advance curr_cycle
@@ -297,7 +297,7 @@ public:
     // and try again; this makes nodes/instructions to complete execution for one more cycle,
     // and makes resources finally available in case of resource constrained scheduling
     // so it contributes to proceeding and to finally have an empty avlist
-    static void AdvanceCurrCycle(scheduling_direction_t dir, utils::UInt &curr_cycle);
+    static void AdvanceCurrCycle(com::SchedulingDirection dir, utils::UInt &curr_cycle);
 
     // a gate must wait until all its operand are available, i.e. the gates having computed them have completed,
     // and must wait until all resources required for the gate's execution are available;
@@ -305,10 +305,10 @@ public:
     // when returning false, isres indicates whether resource occupation was the reason or operand completion (for debugging)
     utils::Bool immediately_schedulable(
         lemon::ListDigraph::Node n,
-        scheduling_direction_t dir,
+        com::SchedulingDirection dir,
         const utils::UInt curr_cycle,
         const plat::PlatformRef &platform,
-        arch::resource_manager_t &rm,
+        plat::ResourceManager &rm,
         utils::Bool &isres
     );
 
@@ -316,10 +316,10 @@ public:
     // the avlist is deep-ordered from high to low criticality (see criticality_lessthan above)
     lemon::ListDigraph::Node SelectAvailable(
         utils::List<lemon::ListDigraph::Node> &avlist,
-        scheduling_direction_t dir,
+        com::SchedulingDirection dir,
         const utils::UInt curr_cycle,
         const plat::PlatformRef &platform,
-        arch::resource_manager_t &rm,
+        plat::ResourceManager &rm,
         utils::Bool &success
     );
 
@@ -333,20 +333,20 @@ public:
     // the bundles are returned, with private start/duration attributes
     void schedule(
         ir::Circuit &circp,
-        scheduling_direction_t dir,
+        com::SchedulingDirection dir,
         const plat::PlatformRef &platform,
-        arch::resource_manager_t &rm,
+        plat::ResourceManager &rm,
         utils::Str &sched_dot
     );
 
     void schedule_asap(
-        arch::resource_manager_t &rm,
+        plat::ResourceManager &rm,
         const plat::PlatformRef &platform,
         utils::Str &sched_dot
     );
 
     void schedule_alap(
-        arch::resource_manager_t &rm,
+        plat::ResourceManager &rm,
         const plat::PlatformRef &platform,
         utils::Str &sched_dot
     );

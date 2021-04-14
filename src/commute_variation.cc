@@ -252,12 +252,12 @@ public:
     UInt schedule_rc(const plat::PlatformRef &platform) {
         Str schedopt = com::options::get("scheduler");
         Str dot;
-        if ("ASAP" == schedopt) {
-            arch::resource_manager_t rm(platform, forward_scheduling);
+        if (schedopt == "ASAP") {
+            plat::ResourceManager rm(platform, com::SchedulingDirection::FORWARD);
             schedule_asap(rm, platform, dot);
         }
-        else if ("ALAP" == schedopt) {
-            arch::resource_manager_t rm(platform, backward_scheduling);
+        else if (schedopt == "ALAP") {
+            plat::ResourceManager rm(platform, com::SchedulingDirection::BACKWARD);
             schedule_alap(rm, platform, dot);
         } else {
             QL_FATAL("Unknown scheduler");

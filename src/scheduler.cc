@@ -624,10 +624,10 @@ void Scheduler::write_dependence_matrix() const {
 // the latter never happens when the depgraph was constructed directly from the circuit
 // but when in between the depgraph was updated (as done in commute_variation),
 // dependences may have been inserted in the opposite circuit direction and then the recursion kicks in
-void Scheduler::set_cycle_gate(const ir::GateRef &gp, scheduling_direction_t dir) {
+void Scheduler::set_cycle_gate(const ir::GateRef &gp, com::SchedulingDirection dir) {
     ListDigraph::Node currNode = node.at(gp);
     UInt  currCycle;
-    if (forward_scheduling == dir) {
+    if (dir == com::SchedulingDirection::FORWARD) {
         currCycle = 0;
         for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
             auto nextgp = instruction[graph.source(arc)];
@@ -650,12 +650,12 @@ void Scheduler::set_cycle_gate(const ir::GateRef &gp, scheduling_direction_t dir
     QL_DOUT("... set_cycle of " << gp->qasm() << " cycles " << gp->cycle);
 }
 
-void Scheduler::set_cycle(scheduling_direction_t dir) {
+void Scheduler::set_cycle(com::SchedulingDirection dir) {
     // note when iterating that graph contains SOURCE and SINK whereas the circuit doesn't
     for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
         instruction[n]->cycle = ir::MAX_CYCLE;       // not yet visited successfully by set_cycle_gate
     }
-    if (forward_scheduling == dir) {
+    if (dir == com::SchedulingDirection::FORWARD) {
         set_cycle_gate(instruction[s], dir);
         for (auto gpit = circp->begin(); gpit != circp->end(); gpit++) {
             if ((*gpit)->cycle == ir::MAX_CYCLE) {
@@ -711,7 +711,7 @@ void Scheduler::sort_by_cycle(ir::Circuit &cp) {
 // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
 void Scheduler::schedule_asap(Str &sched_dot) {
     QL_DOUT("Scheduling ASAP ...");
-    set_cycle(forward_scheduling);
+    set_cycle(com::SchedulingDirection::FORWARD);
     sort_by_cycle(*circp);
 
     if (com::options::get("print_dot_graphs") == "yes") {
@@ -726,7 +726,7 @@ void Scheduler::schedule_asap(Str &sched_dot) {
 // ALAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
 void Scheduler::schedule_alap(Str &sched_dot) {
     QL_DOUT("Scheduling ALAP ...");
-    set_cycle(backward_scheduling);
+    set_cycle(com::SchedulingDirection::BACKWARD);
     sort_by_cycle(*circp);
 
     if (com::options::get("print_dot_graphs") == "yes") {
@@ -742,11 +742,11 @@ void Scheduler::schedule_alap(Str &sched_dot) {
 // it is without RC and depends on direction: forward:ASAP so cycles until SINK, backward:ALAP so cycles until SOURCE;
 // remaining[node] is complementary to node's cycle value,
 // so the implementation below is also a systematically modified copy of that of set_cycle_gate and set_cycle
-void Scheduler::set_remaining_gate(const ir::GateRef &gp, scheduling_direction_t dir) {
+void Scheduler::set_remaining_gate(const ir::GateRef &gp, com::SchedulingDirection dir) {
     ListDigraph::Node currNode = node.at(gp);
     UInt currRemain = 0;
     QL_DOUT("... set_remaining of node " << graph.id(currNode) << ": " << gp->qasm() << " ...");
-    if (forward_scheduling == dir) {
+    if (dir == com::SchedulingDirection::FORWARD) {
         for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
             auto nextNode = graph.target(arc);
             QL_DOUT("...... target of arc " << graph.id(arc) << " to node " << graph.id(nextNode));
@@ -769,14 +769,14 @@ void Scheduler::set_remaining_gate(const ir::GateRef &gp, scheduling_direction_t
     QL_DOUT("... set_remaining of node " << graph.id(currNode) << ": " << gp->qasm() << " remaining " << currRemain);
 }
 
-void Scheduler::set_remaining(scheduling_direction_t dir) {
+void Scheduler::set_remaining(com::SchedulingDirection dir) {
     // note when iterating that graph contains SOURCE and SINK whereas the circuit doesn't;
     // regretfully, the order of visiting the nodes while iterating over the graph, is undefined
     // and in set_remaining (and set_cycle) the order matters (i.e. in circuit order or reversed circuit order)
     for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
         remaining.set(n) = ir::MAX_CYCLE;               // not yet visited successfully by set_remaining_gate
     }
-    if (forward_scheduling == dir) {
+    if (dir == com::SchedulingDirection::FORWARD) {
         // remaining until SINK (i.e. the SINK.cycle-ALAP value)
         set_remaining_gate(instruction[t], dir);
         for (auto gpit = circp->rbegin(); gpit != circp->rend(); gpit++) {
@@ -815,11 +815,11 @@ ir::GateRef Scheduler::find_mostcritical(const List<ir::GateRef> &lg) {
 // note that the cycle attributes will be shifted down to start at 1 after backward scheduling.
 void Scheduler::init_available(
     List<ListDigraph::Node> &avlist,
-    scheduling_direction_t dir,
+    com::SchedulingDirection dir,
     UInt &curr_cycle
 ) {
     avlist.clear();
-    if (forward_scheduling == dir) {
+    if (dir == com::SchedulingDirection::FORWARD) {
         curr_cycle = 0;
         instruction[s]->cycle = curr_cycle;
         avlist.push_back(s);
@@ -836,10 +836,10 @@ void Scheduler::init_available(
 // may be present in the dependency graph because the scheduler ignores dependency type and cause
 void Scheduler::get_depending_nodes(
     ListDigraph::Node n,
-    scheduling_direction_t dir,
+    com::SchedulingDirection dir,
     List<ListDigraph::Node> &ln
 ) {
-    if (forward_scheduling == dir) {
+    if (dir == com::SchedulingDirection::FORWARD) {
         for (ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
             auto succNode = graph.target(succArc);
             // DOUT("...... succ of " << instruction[n]->qasm() << " : " << instruction[succNode]->qasm());
@@ -882,7 +882,7 @@ void Scheduler::get_depending_nodes(
 Bool Scheduler::criticality_lessthan(
     ListDigraph::Node n1,
     ListDigraph::Node n2,
-    scheduling_direction_t dir
+    com::SchedulingDirection dir
 ) {
     if (n1 == n2) return false;             // because not <
 
@@ -932,7 +932,7 @@ Bool Scheduler::criticality_lessthan(
 void Scheduler::MakeAvailable(
     ListDigraph::Node n,
     List<ListDigraph::Node> &avlist,
-    scheduling_direction_t dir
+    com::SchedulingDirection dir
 ) {
     Bool already_in_avlist = false;  // check whether n is already in avlist
     // originates from having multiple arcs between pair of nodes
@@ -994,12 +994,12 @@ void Scheduler::TakeAvailable(
     ListDigraph::Node n,
     List<ListDigraph::Node> &avlist,
     Map<ir::GateRef,Bool> &scheduled,
-    scheduling_direction_t dir
+    com::SchedulingDirection dir
 ) {
     scheduled.set(instruction[n]) = true;
     avlist.remove(n);
 
-    if (forward_scheduling == dir) {
+    if (dir == com::SchedulingDirection::FORWARD) {
         for (ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
             auto succNode = graph.target(succArc);
             Bool schedulable = true;
@@ -1037,8 +1037,8 @@ void Scheduler::TakeAvailable(
 // and try again; this makes nodes/instructions to complete execution for one more cycle,
 // and makes resources finally available in case of resource constrained scheduling
 // so it contributes to proceeding and to finally have an empty avlist
-void Scheduler::AdvanceCurrCycle(scheduling_direction_t dir, UInt &curr_cycle) {
-    if (forward_scheduling == dir) {
+void Scheduler::AdvanceCurrCycle(com::SchedulingDirection dir, UInt &curr_cycle) {
+    if (dir == com::SchedulingDirection::FORWARD) {
         curr_cycle++;
     } else {
         curr_cycle--;
@@ -1051,18 +1051,18 @@ void Scheduler::AdvanceCurrCycle(scheduling_direction_t dir, UInt &curr_cycle) {
 // when returning false, isres indicates whether resource occupation was the reason or operand completion (for debugging)
 Bool Scheduler::immediately_schedulable(
     ListDigraph::Node n,
-    scheduling_direction_t dir,
+    com::SchedulingDirection dir,
     const UInt curr_cycle,
     const plat::PlatformRef &platform,
-    arch::resource_manager_t &rm,
+    plat::ResourceManager &rm,
     Bool &isres
 ) {
     ir::GateRef gp = instruction[n];
     isres = true;
     // have dependent gates completed at curr_cycle?
     if (
-        (forward_scheduling == dir && gp->cycle <= curr_cycle)
-        || (backward_scheduling == dir && curr_cycle <= gp->cycle)
+        (dir == com::SchedulingDirection::FORWARD && gp->cycle <= curr_cycle)
+        || (dir == com::SchedulingDirection::BACKWARD && curr_cycle <= gp->cycle)
         ) {
         // are resources available?
         if (
@@ -1088,10 +1088,10 @@ Bool Scheduler::immediately_schedulable(
 // the avlist is deep-ordered from high to low criticality (see criticality_lessthan above)
 ListDigraph::Node Scheduler::SelectAvailable(
     List<ListDigraph::Node> &avlist,
-    scheduling_direction_t dir,
+    com::SchedulingDirection dir,
     const UInt curr_cycle,
     const plat::PlatformRef &platform,
-    arch::resource_manager_t &rm,
+    plat::ResourceManager &rm,
     Bool &success
 ) {
     success = false;                        // whether a node was found and returned
@@ -1137,12 +1137,12 @@ ListDigraph::Node Scheduler::SelectAvailable(
 // the bundles are returned, with private start/duration attributes
 void Scheduler::schedule(
     ir::Circuit &circp,
-    scheduling_direction_t dir,
+    com::SchedulingDirection dir,
     const plat::PlatformRef &platform,
-    arch::resource_manager_t &rm,
+    plat::ResourceManager &rm,
     Str &sched_dot
 ) {
-    QL_DOUT("Scheduling " << (forward_scheduling == dir ? "ASAP" : "ALAP") << " with RC ...");
+    QL_DOUT("Scheduling " << (dir == com::SchedulingDirection::FORWARD ? "ASAP" : "ALAP") << " with RC ...");
 
     // scheduled[gp] :=: whether gate *gp has been scheduled, init all false
     Map<ir::GateRef, Bool> scheduled;
@@ -1192,7 +1192,7 @@ void Scheduler::schedule(
     QL_DOUT("... sorting on cycle value");
     sort_by_cycle(circp);
 
-    if (dir == backward_scheduling) {
+    if (dir == com::SchedulingDirection::BACKWARD) {
         // readjust cycle values of gates so that SOURCE is at 0
         UInt SOURCECycle = instruction[s]->cycle;
         QL_DOUT("... readjusting cycle values by -" << SOURCECycle);
@@ -1213,26 +1213,26 @@ void Scheduler::schedule(
 
     // end scheduling
 
-    QL_DOUT("Scheduling " << (forward_scheduling == dir ? "ASAP" : "ALAP") << " with RC [DONE]");
+    QL_DOUT("Scheduling " << (dir == com::SchedulingDirection::FORWARD ? "ASAP" : "ALAP") << " with RC [DONE]");
 }
 
 void Scheduler::schedule_asap(
-    arch::resource_manager_t &rm,
+    plat::ResourceManager &rm,
     const plat::PlatformRef &platform,
     Str &sched_dot
 ) {
     QL_DOUT("Scheduling ASAP");
-    schedule(*circp, forward_scheduling, platform, rm, sched_dot);
+    schedule(*circp, com::SchedulingDirection::FORWARD, platform, rm, sched_dot);
     QL_DOUT("Scheduling ASAP [DONE]");
 }
 
 void Scheduler::schedule_alap(
-    arch::resource_manager_t &rm,
+    plat::ResourceManager &rm,
     const plat::PlatformRef &platform,
     Str &sched_dot
 ) {
     QL_DOUT("Scheduling ALAP");
-    schedule(*circp, backward_scheduling, platform, rm, sched_dot);
+    schedule(*circp, com::SchedulingDirection::BACKWARD, platform, rm, sched_dot);
     QL_DOUT("Scheduling ALAP [DONE]");
 }
 
@@ -1266,14 +1266,14 @@ void Scheduler::schedule_alap_uniform() {
     // is a dep from each unused qubit/classical register result with as weight the duration of the last operation.
     // SOURCE (node s) is at cycle 0 and the first circuit's gates are at cycle 1.
     // SINK (node t) is at the earliest cycle that all gates/operations have completed.
-    set_cycle(forward_scheduling);
+    set_cycle(com::SchedulingDirection::FORWARD);
     UInt cycle_count = instruction[t]->cycle - 1;
     // so SOURCE at cycle 0, then all circuit's gates at cycles 1 to cycle_count, and finally SINK at cycle cycle_count+1
 
     // compute remaining which is the opposite of the alap cycle value (remaining[node] :=: SINK->cycle - alapcycle[node])
     // remaining[node] indicates number of cycles remaining in schedule from node's execution start to SINK,
     // and indicates the latest cycle that the node can be scheduled so that the circuit's depth is not increased.
-    set_remaining(forward_scheduling);
+    set_remaining(com::SchedulingDirection::FORWARD);
 
     // DOUT("Creating gates_per_cycle");
     // create gates_per_cycle[cycle] = for each cycle the list of gates at cycle cycle
@@ -1549,7 +1549,7 @@ void Scheduler::get_dot(
 }
 
 void Scheduler::get_dot(Str &dot) {
-    set_cycle(forward_scheduling);
+    set_cycle(com::SchedulingDirection::FORWARD);
     sort_by_cycle(*circp);
 
     StrStrm ssdot;
@@ -1637,13 +1637,13 @@ void rcschedule_kernel(
         Scheduler sched;
         sched.init(kernel->c, platform);
 
-        arch::resource_manager_t rm(platform, forward_scheduling);
+        plat::ResourceManager rm(platform, com::SchedulingDirection::FORWARD);
         sched.schedule_asap(rm, platform, dot);
     } else if (schedopt == "ALAP") {
         Scheduler sched;
         sched.init(kernel->c, platform);
 
-        arch::resource_manager_t rm(platform, backward_scheduling);
+        plat::ResourceManager rm(platform, com::SchedulingDirection::BACKWARD);
         sched.schedule_alap(rm, platform, dot);
     } else {
         QL_FATAL("Not supported scheduler option: scheduler=" << schedopt);

@@ -14,8 +14,8 @@
 #include "ql/utils/str.h"
 #include "ql/utils/num.h"
 #include "ql/plat/platform.h"
+#include "ql/plat/resource_manager.h"
 #include "ql/ir/ir.h"
-#include "resource_manager.h"
 #include "scheduler.h"
 //#include "metrics.h"
 
@@ -318,7 +318,7 @@ private:
                                           // FIXME JvS: why qubits and bregs, but not cregs?
     utils::UInt              ct;          // multiplication factor from cycles to nano-seconds (unit of duration)
     utils::Vec<utils::UInt>  fcv;         // fcv[real qubit index i]: qubit i is free from this cycle on
-    arch::resource_manager_t rm;          // actual resources occupied by scheduled gates
+    plat::ResourceManager rm;          // actual resources occupied by scheduled gates
 
 
     // access free cycle value of qubit q[i] or breg b[i-nq]

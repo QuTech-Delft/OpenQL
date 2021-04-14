@@ -38,26 +38,16 @@ Str ccl_get_operation_name(const ir::GateRef &ins, const plat::PlatformRef &plat
 
 ccl_qubit_resource_t::ccl_qubit_resource_t(
     const plat::PlatformRef &platform,
-    scheduling_direction_t dir
+    com::SchedulingDirection dir
 ) :
-    resource_t("qubits", dir)
+    Resource("qubits", dir)
 {
     // QL_DOUT("... creating " << name << " resource");
     count = platform->resources[name]["count"];
     state.resize(count);
     for (UInt q = 0; q < count; q++) {
-        state[q] = (forward_scheduling == dir ? 0 : ir::MAX_CYCLE);
+        state[q] = (dir == com::SchedulingDirection::FORWARD ? 0 : ir::MAX_CYCLE);
     }
-}
-
-ccl_qubit_resource_t *ccl_qubit_resource_t::clone() const & {
-    QL_DOUT("Cloning/copying ccl_qubit_resource_t");
-    return new ccl_qubit_resource_t(*this);
-}
-
-ccl_qubit_resource_t *ccl_qubit_resource_t::clone() && {
-    QL_DOUT("Cloning/moving ccl_qubit_resource_t");
-    return new ccl_qubit_resource_t(std::move(*this));
 }
 
 Bool ccl_qubit_resource_t::available(
@@ -69,7 +59,7 @@ Bool ccl_qubit_resource_t::available(
     Str operation_type = ccl_get_operation_type(ins, platform);
 
     for (auto q : ins->operands) {
-        if (forward_scheduling == direction) {
+        if (direction == com::SchedulingDirection::FORWARD) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy till cycle : " << state[q]);
             if (op_start_cycle < state[q]) {
                 QL_DOUT("    " << name << " resource busy ...");
@@ -96,16 +86,16 @@ void ccl_qubit_resource_t::reserve(
     UInt operation_duration = ccl_get_operation_duration(ins, platform);
 
     for (auto q : ins->operands) {
-        state[q] = (forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle);
+        state[q] = (direction == com::SchedulingDirection::FORWARD ? op_start_cycle + operation_duration : op_start_cycle);
         QL_DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " qubit: " << q << " reserved till/from cycle: " << state[q]);
     }
 }
 
 ccl_qwg_resource_t::ccl_qwg_resource_t(
     const plat::PlatformRef &platform,
-    scheduling_direction_t dir
+    com::SchedulingDirection dir
 ) :
-    resource_t("qwgs", dir)
+    Resource("qwgs", dir)
 {
     // QL_DOUT("... creating " << name << " resource");
     count = platform->resources[name]["count"];
@@ -114,8 +104,8 @@ ccl_qwg_resource_t::ccl_qwg_resource_t(
     operations.resize(count);
 
     for (UInt i = 0; i < count; i++) {
-        fromcycle[i] = (forward_scheduling == dir ? 0 : ir::MAX_CYCLE);
-        tocycle[i] = (forward_scheduling == dir ? 0 : ir::MAX_CYCLE);
+        fromcycle[i] = (dir == com::SchedulingDirection::FORWARD ? 0 : ir::MAX_CYCLE);
+        tocycle[i] = (dir == com::SchedulingDirection::FORWARD ? 0 : ir::MAX_CYCLE);
         operations[i] = "";
     }
     auto & constraints = platform->resources[name]["connection_map"];
@@ -127,16 +117,6 @@ ccl_qwg_resource_t::ccl_qwg_resource_t(
             qubit2qwg.set(q) = qwgNo;
         }
     }
-}
-
-ccl_qwg_resource_t *ccl_qwg_resource_t::clone() const & {
-    QL_DOUT("Cloning/copying ccl_qwg_resource_t");
-    return new ccl_qwg_resource_t(*this);
-}
-
-ccl_qwg_resource_t *ccl_qwg_resource_t::clone() && {
-    QL_DOUT("Cloning/moving ccl_qwg_resource_t");
-    return new ccl_qwg_resource_t(std::move(*this));
 }
 
 Bool ccl_qwg_resource_t::available(
@@ -152,7 +132,7 @@ Bool ccl_qwg_resource_t::available(
     if (is_mw) {
         for (auto q : ins->operands) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qwg: " << qubit2qwg.at(q) << " is busy from cycle: " << fromcycle[qubit2qwg.at(q)] << " to cycle: " << tocycle[qubit2qwg.at(q)] << " for operation: " << operations[qubit2qwg.at(q)]);
-            if (direction == forward_scheduling) {
+            if (direction == com::SchedulingDirection::FORWARD) {
                 if (
                     op_start_cycle < fromcycle[qubit2qwg.at(q)]
                     || (op_start_cycle < tocycle[qubit2qwg.at(q)] && operations[qubit2qwg.at(q)] != operation_name)
@@ -187,7 +167,7 @@ void ccl_qwg_resource_t::reserve(
     Bool is_mw = operation_type == "mw";
     if (is_mw) {
         for (auto q : ins->operands) {
-            if (direction == forward_scheduling) {
+            if (direction == com::SchedulingDirection::FORWARD) {
                 if (operations[qubit2qwg.at(q)] == operation_name) {
                     tocycle[qubit2qwg.at(q)] = max(tocycle[qubit2qwg.at(q)], op_start_cycle + operation_duration);
                 } else {
@@ -211,9 +191,9 @@ void ccl_qwg_resource_t::reserve(
 
 ccl_meas_resource_t::ccl_meas_resource_t(
     const plat::PlatformRef &platform,
-    scheduling_direction_t dir
+    com::SchedulingDirection dir
 ) :
-    resource_t("meas_units", dir)
+    Resource("meas_units", dir)
 {
     // QL_DOUT("... creating " << name << " resource");
     count = platform->resources[name]["count"];
@@ -221,8 +201,8 @@ ccl_meas_resource_t::ccl_meas_resource_t(
     tocycle.resize(count);
 
     for (UInt i=0; i<count; i++) {
-        fromcycle[i] = (forward_scheduling == dir ? 0 : ir::MAX_CYCLE);
-        tocycle[i] = (forward_scheduling == dir ? 0 : ir::MAX_CYCLE);
+        fromcycle[i] = (dir == com::SchedulingDirection::FORWARD ? 0 : ir::MAX_CYCLE);
+        tocycle[i] = (dir == com::SchedulingDirection::FORWARD ? 0 : ir::MAX_CYCLE);
     }
     auto &constraints = platform->resources[name]["connection_map"];
     for (auto it = constraints.begin(); it != constraints.end(); ++it) {
@@ -233,16 +213,6 @@ ccl_meas_resource_t::ccl_meas_resource_t(
             qubit2meas.set(q) = measUnitNo;
         }
     }
-}
-
-ccl_meas_resource_t *ccl_meas_resource_t::clone() const & {
-    QL_DOUT("Cloning/copying ccl_meas_resource_t");
-    return new ccl_meas_resource_t(*this);
-}
-
-ccl_meas_resource_t *ccl_meas_resource_t::clone() && {
-    QL_DOUT("Cloning/moving ccl_meas_resource_t");
-    return new ccl_meas_resource_t(std::move(*this));
 }
 
 Bool ccl_meas_resource_t::available(
@@ -257,7 +227,7 @@ Bool ccl_meas_resource_t::available(
     if (is_measure) {
         for (auto q : ins->operands) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  meas: " << qubit2meas.at(q) << " is busy from cycle: " << fromcycle[qubit2meas.at(q)] << " to cycle: " << tocycle[qubit2meas.at(q)] );
-            if (direction == forward_scheduling) {
+            if (direction == com::SchedulingDirection::FORWARD) {
                 if (op_start_cycle != fromcycle[qubit2meas.at(q)]) {
                     // If current measurement on same measurement-unit does not start in the
                     // same cycle, then it should wait for current measurement to finish
@@ -302,16 +272,16 @@ void ccl_meas_resource_t::reserve(
 
 ccl_edge_resource_t::ccl_edge_resource_t(
     const plat::PlatformRef &platform,
-    scheduling_direction_t dir
+    com::SchedulingDirection dir
 ) :
-    resource_t("edges", dir)
+    Resource("edges", dir)
 {
     // QL_DOUT("... creating " << name << " resource");
     count = platform->resources[name]["count"];
     state.resize(count);
 
     for (UInt i = 0; i < count; i++) {
-        state[i] = (forward_scheduling == dir ? 0 : ir::MAX_CYCLE);
+        state[i] = (dir == com::SchedulingDirection::FORWARD ? 0 : ir::MAX_CYCLE);
     }
 
     if (platform->topology.count("edges") <= 0) {
@@ -346,16 +316,6 @@ ccl_edge_resource_t::ccl_edge_resource_t(
     }
 }
 
-ccl_edge_resource_t *ccl_edge_resource_t::clone() const & {
-    QL_DOUT("Cloning/copying ccl_edge_resource_t");
-    return new ccl_edge_resource_t(*this);
-}
-
-ccl_edge_resource_t *ccl_edge_resource_t::clone() && {
-    QL_DOUT("Cloning/moving ccl_edge_resource_t");
-    return new ccl_edge_resource_t(std::move(*this));
-}
-
 Bool ccl_edge_resource_t::available(
     UInt op_start_cycle,
     const ir::GateRef &ins,
@@ -384,7 +344,7 @@ Bool ccl_edge_resource_t::available(
                 Vec<UInt> edges2check(edge2edges.get(edge_no));
                 edges2check.push_back(edge_no);
                 for (auto &e : edges2check) {
-                    if (direction == forward_scheduling) {
+                    if (direction == com::SchedulingDirection::FORWARD) {
                         if (op_start_cycle < state[e]) {
                             QL_DOUT("    " << name << " resource busy ...");
                             return false;
@@ -426,7 +386,7 @@ void ccl_edge_resource_t::reserve(
             auto q1 = ins->operands[1];
             qubits_pair_t aqpair(q0, q1);
             auto edge_no = qubits2edge.at(aqpair);
-            if (direction == forward_scheduling) {
+            if (direction == com::SchedulingDirection::FORWARD) {
                 state[edge_no] = op_start_cycle + operation_duration;
                 for (auto &e : edge2edges.get(edge_no)) {
                     state[e] = op_start_cycle + operation_duration;
@@ -446,9 +406,9 @@ void ccl_edge_resource_t::reserve(
 
 ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
     const plat::PlatformRef &platform,
-    scheduling_direction_t dir
+    com::SchedulingDirection dir
 ) :
-    resource_t("detuned_qubits", dir)
+    Resource("detuned_qubits", dir)
 {
     // QL_DOUT("... creating " << name << " resource");
     count = platform->resources[name]["count"];
@@ -458,8 +418,8 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
 
     // initialize resource state machine to be free for all qubits
     for (UInt i = 0; i < count; i++) {
-        fromcycle[i] = (forward_scheduling == dir ? 0 : ir::MAX_CYCLE);
-        tocycle[i] = (forward_scheduling == dir ? 0 : ir::MAX_CYCLE);
+        fromcycle[i] = (dir == com::SchedulingDirection::FORWARD ? 0 : ir::MAX_CYCLE);
+        tocycle[i] = (dir == com::SchedulingDirection::FORWARD ? 0 : ir::MAX_CYCLE);
         operations[i] = "";
     }
 
@@ -497,16 +457,6 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
     }
 }
 
-ccl_detuned_qubits_resource_t *ccl_detuned_qubits_resource_t::clone() const & {
-    QL_DOUT("Cloning/copying ccl_detuned_qubits_resource_t");
-    return new ccl_detuned_qubits_resource_t(*this);
-}
-
-ccl_detuned_qubits_resource_t *ccl_detuned_qubits_resource_t::clone() && {
-    QL_DOUT("Cloning/moving ccl_detuned_qubits_resource_t");
-    return new ccl_detuned_qubits_resource_t(std::move(*this));
-}
-
 // When a two-qubit flux gate, check whether the qubits it would detune are not busy with a rotation.
 // When a one-qubit rotation, check whether the qubit is not detuned (busy with a flux gate).
 Bool ccl_detuned_qubits_resource_t::available(
@@ -534,7 +484,7 @@ Bool ccl_detuned_qubits_resource_t::available(
 
                 for (auto &q : edge_detunes_qubits.get(edge_no)) {
                     QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " detuning qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
-                    if (direction == forward_scheduling) {
+                    if (direction == com::SchedulingDirection::FORWARD) {
                         if (
                             op_start_cycle < fromcycle[q]
                             || ( op_start_cycle < tocycle[q] && operations[q] != operation_type)
@@ -565,7 +515,7 @@ Bool ccl_detuned_qubits_resource_t::available(
     if (is_mw) {
         for (auto q : ins->operands) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
-            if (direction == forward_scheduling) {
+            if (direction == com::SchedulingDirection::FORWARD) {
                 if (op_start_cycle < fromcycle[q]) {
                     QL_DOUT("    " << name << " busy for rotation: op_start cycle " << op_start_cycle << " < fromcycle[" << q << "] " << fromcycle[q] );
                     return false;
@@ -613,7 +563,7 @@ void ccl_detuned_qubits_resource_t::reserve(
             auto edge_no = qubitpair2edge.at(aqpair);
 
             for (auto &q : edge_detunes_qubits.get(edge_no)) {
-                if (direction == forward_scheduling) {
+                if (direction == com::SchedulingDirection::FORWARD) {
                     if (operations[q] == operation_type) {
                         tocycle[q] = max(tocycle[q], op_start_cycle + operation_duration);
                         QL_DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
@@ -643,7 +593,7 @@ void ccl_detuned_qubits_resource_t::reserve(
     Bool is_mw = operation_type == "mw";
     if (is_mw) {
         for (auto q : ins->operands) {
-            if (direction == forward_scheduling) {
+            if (direction == com::SchedulingDirection::FORWARD) {
                 if (operations[q] == operation_type) {
                     tocycle[q] = max(tocycle[q], op_start_cycle + operation_duration);
                     QL_DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
@@ -671,9 +621,9 @@ void ccl_detuned_qubits_resource_t::reserve(
 
 ccl_channel_resource_t::ccl_channel_resource_t(
     const plat::PlatformRef &platform,
-    scheduling_direction_t dir
+    com::SchedulingDirection dir
 ) :
-    resource_t("channels", dir)
+    Resource("channels", dir)
 {
     QL_DOUT("... creating " << name << " resource");
 
@@ -706,18 +656,9 @@ ccl_channel_resource_t::ccl_channel_resource_t(
     QL_DOUT("Number of channels per core= " << nchannels);
 
     state.resize(ncores);
-    for (UInt i=0; i<ncores; i++) state[i].resize(nchannels, (forward_scheduling == dir ? 0 : ir::MAX_CYCLE));
+    for (UInt i=0; i<ncores; i++) state[i].resize(nchannels, (dir == com::SchedulingDirection::FORWARD ? 0 : ir::MAX_CYCLE));
 }
 
-ccl_channel_resource_t *ccl_channel_resource_t::clone() const & {
-    QL_DOUT("Cloning/copying ccl_channel_resource_t");
-    return new ccl_channel_resource_t(*this);
-}
-
-ccl_channel_resource_t *ccl_channel_resource_t::clone() && {
-    QL_DOUT("Cloning/moving ccl_channel_resource_t");
-    return new ccl_channel_resource_t(std::move(*this));
-}
 Bool ccl_channel_resource_t::available(
     UInt op_start_cycle,
     const ir::GateRef &ins,
@@ -729,7 +670,7 @@ Bool ccl_channel_resource_t::available(
     Bool is_ic = (operation_type == "extern");
     if (is_ic) {
         QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
-        if (direction == forward_scheduling) {
+        if (direction == com::SchedulingDirection::FORWARD) {
             for (auto q : ins->operands) {
                 UInt core = q/(platform->qubit_count/ncores);
                 Bool is_avail = false;
@@ -795,7 +736,7 @@ void ccl_channel_resource_t::reserve(
     Bool is_ic = (operation_type == "extern");
     if (is_ic) {
         QL_DOUT(" reserve " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
-        if (direction == forward_scheduling) {
+        if (direction == com::SchedulingDirection::FORWARD) {
             for (auto q : ins->operands) {
                 UInt core = q/(platform->qubit_count/ncores);
                 Bool is_avail = false;
@@ -844,9 +785,9 @@ void ccl_channel_resource_t::reserve(
 // The resource names tested below correspond to the names of the resources sections in the config file.
 cc_light_resource_manager_t::cc_light_resource_manager_t(
     const plat::PlatformRef &platform,
-    scheduling_direction_t dir
+    com::SchedulingDirection dir
 ) :
-    platform_resource_manager_t(platform, dir)
+    PlatformResourceManager(platform, dir)
 {
     QL_DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
     QL_DOUT("New one for direction " << dir << " with no of resources : " << platform->resources.size() );
@@ -855,39 +796,25 @@ cc_light_resource_manager_t::cc_light_resource_manager_t(
         const Str &n = it.key();
 
         // QL_DOUT("... about to create " << n << " resource");
+        utils::ClonablePtr<plat::Resource> new_resource;
         if (n == "qubits") {
-            resource_t * ares = new ccl_qubit_resource_t(platform, dir);
-            resource_ptrs.push_back( ares );
+            new_resource.emplace<ccl_qubit_resource_t>(platform, dir);
         } else if (n == "qwgs") {
-            resource_t * ares = new ccl_qwg_resource_t(platform, dir);
-            resource_ptrs.push_back( ares );
+            new_resource.emplace<ccl_qwg_resource_t>(platform, dir);
         } else if (n == "meas_units") {
-            resource_t * ares = new ccl_meas_resource_t(platform, dir);
-            resource_ptrs.push_back( ares );
+            new_resource.emplace<ccl_meas_resource_t>(platform, dir);
         } else if (n == "edges") {
-            resource_t * ares = new ccl_edge_resource_t(platform, dir);
-            resource_ptrs.push_back( ares );
+            new_resource.emplace<ccl_edge_resource_t>(platform, dir);
         } else if (n == "detuned_qubits") {
-            resource_t * ares = new ccl_detuned_qubits_resource_t(platform, dir);
-            resource_ptrs.push_back( ares );
+            new_resource.emplace<ccl_detuned_qubits_resource_t>(platform, dir);
         } else if (n == "channels") {
-            resource_t * ares = new ccl_channel_resource_t(platform, dir);
-            resource_ptrs.push_back( ares );
+            new_resource.emplace<ccl_channel_resource_t>(platform, dir);
         } else {
             QL_FATAL("Error : Un-modelled resource, i.e. resource not supported by implementation: '" << n << "'");
         }
+        resource_ptrs.emplace_back(std::move(new_resource));
     }
     // QL_DOUT("Done constructing inited platform_resource_manager_t");
-}
-
-cc_light_resource_manager_t *cc_light_resource_manager_t::clone() const & {
-    QL_DOUT("Cloning/copying cc_light_resource_manager_t");
-    return new cc_light_resource_manager_t(*this);
-}
-
-cc_light_resource_manager_t *cc_light_resource_manager_t::clone() && {
-    QL_DOUT("Cloning/moving cc_light_resource_manager_t");
-    return new cc_light_resource_manager_t(std::move(*this));
 }
 
 } // namespace arch

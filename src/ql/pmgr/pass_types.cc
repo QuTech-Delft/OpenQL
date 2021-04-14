@@ -194,8 +194,7 @@ const utils::Str &Base::get_type() const {
 }
 
 /**
- * Returns the full, desugared type name that this pass was constructed
- * with.
+ * Returns the instance name of the pass within the surrounding group.
  */
 const utils::Str &Base::get_name() const {
     return instance_name;
