@@ -105,7 +105,7 @@ void dump(
     os << line_prefix << "Total no. of non single qubit gates: " << compute<MultiQubitGateCount>(program) << "\n";
     os << line_prefix << "Total no. of classical operations: " << compute<ClassicalOperationCount>(program) << "\n";
     os << line_prefix << "Qubits used: " << compute<QubitUsageCount>(program).sparse_size() << "\n";
-    os << line_prefix << "No. kernels: " << compute<QubitUsedCycleCount>(program) << "\n";
+    os << line_prefix << "Qubit cycles use: " << compute<QubitUsedCycleCount>(program) << "\n";
     for (const auto &line : AdditionalStats::pop(program)) {
         os << line_prefix << line << "\n";
     }
