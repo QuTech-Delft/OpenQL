@@ -66,6 +66,19 @@ Bool Grid::IsInterCoreHop(UInt qs, UInt qt) const {
 //      gf_plus:    abs( x[to_realqi] - x[from_realqi] ) + abs( y[to_realqi] - y[from_realqi] )
 // when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
 UInt Grid::Distance(UInt from_realqi, UInt to_realqi) const {
+    if (conn == gc_full) {
+        UInt d = 1;
+        if (CoreOf(from_realqi) == CoreOf(to_realqi)) {
+            return d;
+        }
+        if (!IsCommQubit(from_realqi)) {
+            d++;
+        }
+        if (!IsCommQubit(to_realqi)) {
+            d++;
+        }
+        return d;
+    } 
     return dist[from_realqi][to_realqi];
 }
 
@@ -168,7 +181,12 @@ void Grid::Normalize(UInt src, neighbors_t &nbl) const {
 // Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
 // when not connected, distance remains maximum value
 void Grid::ComputeDist() {
+    if (conn == gc_full) {
+        QL_DOUT("Fully connected so do not apply Floyd-Warshall but compute distance functionally");
+        return;
+    }
     // initialize all distances to maximum value, to neighbors to 1, to itself to 0
+    QL_DOUT("Applying Floyd-Warshall to compute shortest distance between all qubits");
     dist.resize(nq); for (UInt i=0; i<nq; i++) dist[i].resize(nq, ir::MAX_CYCLE);
     for (UInt i = 0; i < nq; i++) {
         dist[i][i] = 0;
@@ -201,11 +219,13 @@ void Grid::ComputeDist() {
         }
     }
 #endif
+    QL_DOUT("Done applying Floyd-Warshall to compute shortest distance between all qubits");
 }
 
 void Grid::DPRINTGrid() const {
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
-        PrintGrid();
+        // PrintGrid();
+        QL_DOUT("Would have printed grid here, but dont");
     }
 }
 
@@ -387,11 +407,12 @@ void Grid::InitNbs() {
                     if (IsInterCoreHop(qs,qd) && (!IsCommQubit(qs) || !IsCommQubit(qd)) ) {
                         continue;
                     }
-                    QL_DOUT("connecting qubit[" << qs << "] to qubit[" << qd << "]");
+                    // QL_DOUT("connecting qubit[" << qs << "] to qubit[" << qd << "]");
                     nbs.set(qs).push_back(qd);
                 }
             }
         }
+        QL_DOUT("connectivity has been stored in nbs map");
     }
 }
 
