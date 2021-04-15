@@ -38,10 +38,6 @@
             "passAlias": "rcscheduler"
         },
         {
-            "passName" : "LatencyCompensation", 
-            "passAlias": "ccl_latency_compensation"
-        },
-        {
             "passName" : "CCLDecomposePostSchedule", 
             "passAlias": "ccl_decompose_post_schedule"
         },

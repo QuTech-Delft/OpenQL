@@ -38,10 +38,6 @@
             "passAlias": "rcscheduler"
         },
         {
-            "passName" : "LatencyCompensation", 
-            "passAlias": "ccl_latency_compensation"
-        },
-        {
             "passName" : "InsertBufferDelays", 
             "passAlias": "ccl_insert_buffer_delays"
         },
