@@ -115,11 +115,13 @@ utils::Bool Base::gate(
     }
 
     // Verify that the scheduling direction (if any) is respected.
-    QL_DOUT("cycle = " << cycle << ", prev = " << prev_cycle);
-    switch (direction) {
-        case Direction::FORWARD: QL_ASSERT(cycle >= prev_cycle); break;
-        case Direction::BACKWARD: QL_ASSERT(cycle <= prev_cycle); break;
-        default: void();
+    QL_DOUT("commit = " << commit << ", cycle = " << cycle << ", prev = " << prev_cycle);
+    if (commit) {
+        switch (direction) {
+            case Direction::FORWARD: QL_ASSERT(cycle >= prev_cycle); break;
+            case Direction::BACKWARD: QL_ASSERT(cycle <= prev_cycle); break;
+            default: void();
+        }
     }
 
     // Run the resource implementation.
