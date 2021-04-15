@@ -52,10 +52,10 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
     # single qubit mask generation test with custom gates
     def test_smis_with_custom_gates(self):
@@ -84,10 +84,10 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     # single qubit mask generation multi-kernel test (custom with non-custom
@@ -134,10 +134,10 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_smis_all_bundled(self):
@@ -164,10 +164,10 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        GOLD_fn = curdir + '/golden/test_smis_all_bundled.qisa'
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
+        GOLD_fn = curdir + '/golden/test_smis_all_bundled_last.qasm'
 
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+        self.assertTrue( file_compare(QASM_fn, GOLD_fn) )
 
 
     # two qubit mask generation test
@@ -205,10 +205,10 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_smit_all_bundled(self):
@@ -240,10 +240,10 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 class Test_advance(unittest.TestCase):
 
@@ -272,10 +272,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_qwg_available_01(self):
@@ -299,10 +299,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_qwg_available_02(self):
@@ -326,10 +326,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_qwg_busy(self):
@@ -353,10 +353,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_measure_available01(self):
@@ -381,10 +381,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_measure_available02(self):
@@ -410,10 +410,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_measure_busy(self):
@@ -440,10 +440,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_edge_available(self):
@@ -467,10 +467,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_edge_busy(self):
@@ -494,10 +494,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
     def test_edge_illegal(self):
@@ -551,10 +551,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
     @unittest.skip
     def test_ccl_buffers(self):
@@ -601,10 +601,10 @@ class Test_advance(unittest.TestCase):
             p.add_kernel(k)
             p.compile()
 
-            GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-            QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+            GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+            QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
-            self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+            self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
 #     def test_single_qubit_flux_manual01(self):
@@ -623,10 +623,10 @@ class Test_advance(unittest.TestCase):
 #         p.add_kernel(k)
 #         p.compile()
 # 
-#         GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-#         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+#         GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+#         QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 # 
-#         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+#         self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 # 
 #     def test_single_qubit_flux_manual02(self):
 #         ql.set_option('output_dir', output_dir)
@@ -649,10 +649,10 @@ class Test_advance(unittest.TestCase):
 #         p.add_kernel(k)
 #         p.compile()
 # 
-#         GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-#         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+#         GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+#         QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 # 
-#         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+#         self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 # 
 #     def test_single_qubit_flux_auto(self):
 #         ql.set_option('output_dir', output_dir)
@@ -673,10 +673,10 @@ class Test_advance(unittest.TestCase):
 #         p.add_kernel(k)
 #         p.compile()
 # 
-#         GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-#         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+#         GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+#         QASM_fn = os.path.join(output_dir, p.name+'_last.qasm')
 # 
-#         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+#         self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 if __name__ == '__main__':
     unittest.main()

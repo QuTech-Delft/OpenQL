@@ -56,10 +56,6 @@
         {
             "passName" : "Writer", 
             "passAlias": "lastqasmwriter"
-        },
-        {
-            "passName" : "QisaCodeGeneration", 
-            "passAlias": "qisa_code_generation"
         }
     ]
 }

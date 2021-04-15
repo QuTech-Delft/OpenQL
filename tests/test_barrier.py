@@ -46,9 +46,9 @@ class Test_barrier(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        gold_fn = curdir + '/golden/test_barrier.qisa'
-        self.assertTrue(file_compare(QISA_fn, gold_fn))
+        qasm_fn = os.path.join(output_dir, p.name+'_last.qasm')
+        gold_fn = curdir + '/golden/test_barrier_last.qasm'
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
     # barrier on specified qubits with 'wait' and duration = 0
     def test_wait_barrier(self):
@@ -72,9 +72,9 @@ class Test_barrier(unittest.TestCase):
         ql.print_options()
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        gold_fn = curdir + '/golden/test_wait_barrier.qisa'
-        self.assertTrue(file_compare(QISA_fn, gold_fn))
+        qasm_fn = os.path.join(output_dir, p.name+'_last.qasm')
+        gold_fn = curdir + '/golden/test_wait_barrier_last.qasm'
+        self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 
     # barrier on all qubits with barrier

@@ -82,34 +82,5 @@ class Test_Configuration(unittest.TestCase):
         #    self.assertTrue(errors == 0)
 
 
-
-    def test_missing_cc_light_instr(self):
-        config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program("test_missing_cc_light_instr", platform, platform.get_qubit_number())
-        sweep_points = [1,2]
-        p.set_sweep_points(sweep_points)
-
-        k = ql.Kernel('aKernel', platform, platform.get_qubit_number())
-
-        k.gate('rx180', [0])  # fine
-
-        # cc_light_instr field is empty for this instruction
-        # so it will raise error
-        k.gate('rx180', [6])
-
-        # add the kernel to the program
-        p.add_kernel(k)
-
-        try:
-            # compile the program
-            p.compile()
-        except:
-            # print("exception raised")
-            pass
-        else:
-            print("Exception not raised for missing cc_light_instr !!!")
-            raise
-
 if __name__ == '__main__':
     unittest.main()

@@ -163,8 +163,8 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
         //pass = new BufferDelayInserterPass(aliasName); // take out
     } else if (passName == "CCLDecomposePostSchedule") {
         pass = new CCLPostScheduleDecomposerPass(aliasName); // take out
-    } else if (passName == "QisaCodeGeneration") {
-        pass = new CCLCodeGeneratorPass(aliasName); // take out
+    //} else if (passName == "QisaCodeGeneration") {
+        //pass = new CCLCodeGeneratorPass(aliasName); // take out
     } else if (passName == "Visualizer") {
         pass = new VisualizerPass(aliasName); // keep
     //} else if (passName == "CPrinter") {
