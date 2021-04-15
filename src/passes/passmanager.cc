@@ -153,8 +153,8 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
         pass = new CliffordOptimizerPass(aliasName); // needed
     } else if (passName == "Map") {
         pass = new MapperPass(aliasName); // needed
-    } else if (passName == "CommuteVariation") {
-        pass = new CommuteVariationOptimizerPass(aliasName); // take out
+    //} else if (passName == "CommuteVariation") {
+        //pass = new CommuteVariationOptimizerPass(aliasName); // take out
     } else if (passName == "RCSchedule") {
         pass = new RCSchedulerPass(aliasName); // needed
     } else if (passName == "LatencyCompensation") {
