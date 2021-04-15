@@ -6,10 +6,6 @@
             "passAlias": "initialqasmwriter"
         },
         {
-            "passName" : "RotationOptimizer", 
-            "passAlias": "rotation_optimize"
-        },
-        {
             "passName" : "DecomposeToffoli", 
             "passAlias": "decompose_toffoli"
         },
