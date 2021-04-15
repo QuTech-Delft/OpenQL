@@ -331,7 +331,6 @@ public:
 
 class Custom : public Gate {
 public:
-    utils::Str arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
     explicit Custom(const utils::Str &name);
     Custom(const Custom &g);
     static bool is_qubit_id(const utils::Str &str);

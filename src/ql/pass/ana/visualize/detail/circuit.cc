@@ -774,6 +774,9 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
 
         Vec<Int> codewords;
         // Load the codewords of the instruction if provided.
+        // TODO JvS: cc_light has been phased out, so this code is no longer
+        //  relevant. Nevertheless, being able to view codewords with the
+        //  visualizer probably is.
         if (instruction.count("cc_light_codeword") == 1) {
             codewords.push_back(instruction["cc_light_codeword"]);
             QL_DOUT("codewords: " << codewords[0]);

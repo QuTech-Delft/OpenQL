@@ -133,209 +133,140 @@
    "prepx": {
       "duration": 360,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepx",
-      "cc_light_opcode": 1
+      "cc_light_instr": "prepx"
    },
    "prepz": {
       "duration": 360,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepz",
-      "cc_light_opcode": 2
+      "cc_light_instr": "prepz"
    },
    "measx": {
       "duration": 320,
       "latency": 0,
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measx",
-      "cc_light_opcode": 4
+      "cc_light_instr": "measx"
    },
    "measz": {
       "duration": 320,
       "latency": 0,
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measure": {
       "duration": 320,
       "latency": 0,
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "i": {
       "duration": 20,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "i",
-      "cc_light_opcode": 5
+      "cc_light_instr": "i"
    },
    "x": {
       "duration": 20,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x",
-      "cc_light_opcode": 6
+      "cc_light_instr": "x"
    },
    "y": {
       "duration": 20,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y",
-      "cc_light_opcode": 7
+      "cc_light_instr": "y"
    },
    "z": {
       "duration": 40,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "z",
-      "cc_light_opcode": 8
+      "cc_light_instr": "z"
    },
    "h": {
       "duration": 40,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "h",
-      "cc_light_opcode": 9
+      "cc_light_instr": "h"
    },
    "s": {
       "duration": 60,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "s",
-      "cc_light_opcode": 10
+      "cc_light_instr": "s"
    },
    "sdag": {
       "duration": 60,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "sdag",
-      "cc_light_opcode": 11
+      "cc_light_instr": "sdag"
    },
    "rx90": {
       "duration": 20,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x90",
-      "cc_light_opcode": 12
+      "cc_light_instr": "x90"
    },
    "xm90": {
       "duration": 20,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm90",
-      "cc_light_opcode": 13
+      "cc_light_instr": "xm90"
    },
    "ry90": {
       "duration": 20,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y90",
-      "cc_light_opcode": 14
+      "cc_light_instr": "y90"
    },
    "ym90": {
       "duration": 20,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "ym90",
-      "cc_light_opcode": 15
+      "cc_light_instr": "ym90"
    },
    "t": {
       "duration": 60,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "t",
-      "cc_light_opcode": 16
+      "cc_light_instr": "t"
    },
    "tdag": {
       "duration": 60,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "tdag",
-      "cc_light_opcode": 17
+      "cc_light_instr": "tdag"
    },
    "x45": {
       "duration": 20,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x45",
-      "cc_light_opcode": 18
+      "cc_light_instr": "x45"
    },
    "xm45": {
       "duration": 20,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm45",
-      "cc_light_opcode": 19
+      "cc_light_instr": "xm45"
    },
    "ry180": {
       "duration": 20,
       "latency": 0,
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "ry180",
-      "cc_light_opcode": 35
+      "cc_light_instr": "ry180"
    },
    "cz": {
       "duration": 40,
       "latency": 0,
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cnot": {
       "duration": 80,
       "latency": 0,
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    }
    }
 }

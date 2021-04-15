@@ -15,162 +15,131 @@
 
       "prep_x" : {
          "duration": 40,
-         "qubits": ["q0","q1"],
-         "disable_optimization": true
+         "qubits": ["q0","q1"]
       },
 
       "prep_y" : {
          "duration": 40,
-         "qubits": ["q0","q1"],
-         "disable_optimization": true
+         "qubits": ["q0","q1"]
       },
 
       "prep_z" : {
          "duration": 40,
-         "qubits": ["q0","q1"],
-         "disable_optimization": true
+         "qubits": ["q0","q1"]
       },
 
       "i" : {
-         "duration": 40,
-         "disable_optimization": true
+         "duration": 40
       },
 
       "h" : {
-         "duration": 40,
-         "disable_optimization": true
+         "duration": 40
       },
 
       "x" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "y" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "z" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "x90" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "y90" : {
-         "duration": 20,
-         "disable_optimization": true
+         "duration": 20
       },
 
       "x180" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "y180" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "mx90" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "my90" : {
-         "duration": 20,
-         "disable_optimization": true
+         "duration": 20
       },
 
       "rx" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "ry" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "rz" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "s" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "sdag" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "t" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "tdag" : {
-         "duration": 40,
-         "disable_optimization": false
+         "duration": 40
       },
 
       "cnot" : {
-         "duration": 80,
-         "disable_optimization": true
+         "duration": 80
       },
 
       "toffoli" : {
-         "duration": 80,
-         "disable_optimization": true
+         "duration": 80
       },
 
       "cz" : {
-         "duration": 80,
-         "disable_optimization": true
+         "duration": 80
       },
 
       "swap" : {
-         "duration": 80,
-         "disable_optimization": true
+         "duration": 80
       },
 
       "measure" : {
-         "duration": 300,
-         "disable_optimization": true
+         "duration": 300
       },
 
       "measure_x" : {
-         "duration": 300,
-         "disable_optimization": true
+         "duration": 300
       },
 
       "measure_y" : {
-         "duration": 300,
-         "disable_optimization": true
+         "duration": 300
       },
 
       "measure_z" : {
-         "duration": 300,
-         "disable_optimization": true
+         "duration": 300
       },
 
      "display": {
         "duration": 20,
-        "qubits": [],
-        "disable_optimization": true
+        "qubits": []
         },
 
       "display_binary": {
         "duration": 20,
-        "qubits": [],
-        "disable_optimization": true
+        "qubits": []
       }
    },
 

@@ -105,1959 +105,1226 @@
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepx",
-      "cc_light_codeword": 10,
-      "cc_light_opcode": 1
+      "cc_light_instr": "prepx"
    },
    "prepx q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepx",
-      "cc_light_codeword": 11,
-      "cc_light_opcode": 1
+      "cc_light_instr": "prepx"
    },
    "prepx q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepx",
-      "cc_light_codeword": 12,
-      "cc_light_opcode": 1
+      "cc_light_instr": "prepx"
    },
    "prepx q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepx",
-      "cc_light_codeword": 13,
-      "cc_light_opcode": 1
+      "cc_light_instr": "prepx"
    },
    "prepx q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepx",
-      "cc_light_codeword": 14,
-      "cc_light_opcode": 1
+      "cc_light_instr": "prepx"
    },
    "prepx q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepx",
-      "cc_light_codeword": 15,
-      "cc_light_opcode": 1
+      "cc_light_instr": "prepx"
    },
    "prepx q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepx",
-      "cc_light_codeword": 16,
-      "cc_light_opcode": 1
+      "cc_light_instr": "prepx"
    },
    "prepz q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepz",
-      "cc_light_codeword": 20,
-      "cc_light_opcode": 2
+      "cc_light_instr": "prepz"
    },
    "prepz q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepz",
-      "cc_light_codeword": 21,
-      "cc_light_opcode": 2
+      "cc_light_instr": "prepz"
    },
    "prepz q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepz",
-      "cc_light_codeword": 22,
-      "cc_light_opcode": 2
+      "cc_light_instr": "prepz"
    },
    "prepz q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepz",
-      "cc_light_codeword": 23,
-      "cc_light_opcode": 2
+      "cc_light_instr": "prepz"
    },
    "prepz q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepz",
-      "cc_light_codeword": 24,
-      "cc_light_opcode": 2
+      "cc_light_instr": "prepz"
    },
    "prepz q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepz",
-      "cc_light_codeword": 25,
-      "cc_light_opcode": 2
+      "cc_light_instr": "prepz"
    },
    "prepz q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepz",
-      "cc_light_codeword": 26,
-      "cc_light_opcode": 2
+      "cc_light_instr": "prepz"
    },
    "cprepz q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "cprepz",
-      "cc_light_codeword": 27,
-      "cc_light_opcode": 75,
-      "cc_light_cond" : 1
+      "cc_light_instr": "cprepz"
    },
    "measx q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measx",
-      "cc_light_codeword": 30,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measx"
    },
    "measx q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measx",
-      "cc_light_codeword": 31,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measx"
    },
    "measx q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measx",
-      "cc_light_codeword": 32,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measx"
    },
    "measx q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measx",
-      "cc_light_codeword": 33,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measx"
    },
    "measx q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measx",
-      "cc_light_codeword": 34,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measx"
    },
    "measx q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measx",
-      "cc_light_codeword": 35,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measx"
    },
    "measx q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measx",
-      "cc_light_codeword": 36,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measx"
    },
    "measz q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 40,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measz q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 41,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measz q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 42,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measz q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 43,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measz q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 44,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measz q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 45,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measz q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 46,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measure q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 40,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measure q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 41,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measure q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 42,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measure q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 43,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measure q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 44,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measure q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 45,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "measure q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "readout",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "measz",
-      "cc_light_codeword": 46,
-      "cc_light_opcode": 4
+      "cc_light_instr": "measz"
    },
    "i q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "i",
-      "cc_light_codeword": 50,
-      "cc_light_opcode": 5
+      "cc_light_instr": "i"
    },
    "i q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "i",
-      "cc_light_codeword": 51,
-      "cc_light_opcode": 5
+      "cc_light_instr": "i"
    },
    "i q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "i",
-      "cc_light_codeword": 52,
-      "cc_light_opcode": 5
+      "cc_light_instr": "i"
    },
    "i q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "i",
-      "cc_light_codeword": 53,
-      "cc_light_opcode": 5
+      "cc_light_instr": "i"
    },
    "i q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "i",
-      "cc_light_codeword": 54,
-      "cc_light_opcode": 5
+      "cc_light_instr": "i"
    },
    "i q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "i",
-      "cc_light_codeword": 55,
-      "cc_light_opcode": 5
+      "cc_light_instr": "i"
    },
    "i q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "i",
-      "cc_light_codeword": 56,
-      "cc_light_opcode": 5
+      "cc_light_instr": "i"
    },
    "x q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x",
-      "cc_light_codeword": 60,
-      "cc_light_opcode": 6
+      "cc_light_instr": "x"
    },
    "x q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x",
-      "cc_light_codeword": 61,
-      "cc_light_opcode": 6
+      "cc_light_instr": "x"
    },
    "x q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x",
-      "cc_light_codeword": 62,
-      "cc_light_opcode": 6
+      "cc_light_instr": "x"
    },
    "x q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x",
-      "cc_light_codeword": 63,
-      "cc_light_opcode": 6
+      "cc_light_instr": "x"
    },
    "x q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x",
-      "cc_light_codeword": 64,
-      "cc_light_opcode": 6
+      "cc_light_instr": "x"
    },
    "x q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x",
-      "cc_light_codeword": 65,
-      "cc_light_opcode": 6
+      "cc_light_instr": "x"
    },
    "x q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x",
-      "cc_light_codeword": 66,
-      "cc_light_opcode": 6
+      "cc_light_instr": "x"
    },
    "y q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y",
-      "cc_light_codeword": 70,
-      "cc_light_opcode": 7
+      "cc_light_instr": "y"
    },
    "y q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y",
-      "cc_light_codeword": 71,
-      "cc_light_opcode": 7
+      "cc_light_instr": "y"
    },
    "y q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y",
-      "cc_light_codeword": 72,
-      "cc_light_opcode": 7
+      "cc_light_instr": "y"
    },
    "y q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y",
-      "cc_light_codeword": 73,
-      "cc_light_opcode": 7
+      "cc_light_instr": "y"
    },
    "y q4": {
       "duration": 40,
       "latency": 20,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y",
-      "cc_light_codeword": 74,
-      "cc_light_opcode": 7
+      "cc_light_instr": "y"
    },
    "y q5": {
       "duration": 40,
       "latency": -20,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y",
-      "cc_light_codeword": 75,
-      "cc_light_opcode": 7
+      "cc_light_instr": "y"
    },
    "y q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y",
-      "cc_light_codeword": 76,
-      "cc_light_opcode": 7
+      "cc_light_instr": "y"
    },
    "z q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "z",
-      "cc_light_codeword": 80,
-      "cc_light_opcode": 8
+      "cc_light_instr": "z"
    },
    "z q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "z",
-      "cc_light_codeword": 81,
-      "cc_light_opcode": 8
+      "cc_light_instr": "z"
    },
    "z q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "z",
-      "cc_light_codeword": 82,
-      "cc_light_opcode": 8
+      "cc_light_instr": "z"
    },
    "z q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "z",
-      "cc_light_codeword": 83,
-      "cc_light_opcode": 8
+      "cc_light_instr": "z"
    },
    "z q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "z",
-      "cc_light_codeword": 84,
-      "cc_light_opcode": 8
+      "cc_light_instr": "z"
    },
    "z q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "z",
-      "cc_light_codeword": 85,
-      "cc_light_opcode": 8
+      "cc_light_instr": "z"
    },
    "z q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "z",
-      "cc_light_codeword": 86,
-      "cc_light_opcode": 8
+      "cc_light_instr": "z"
    },
    "h q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "h",
-      "cc_light_codeword": 90,
-      "cc_light_opcode": 9
+      "cc_light_instr": "h"
    },
    "h q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "h",
-      "cc_light_codeword": 91,
-      "cc_light_opcode": 9
+      "cc_light_instr": "h"
    },
    "h q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "h",
-      "cc_light_codeword": 92,
-      "cc_light_opcode": 9
+      "cc_light_instr": "h"
    },
    "h q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "h",
-      "cc_light_codeword": 93,
-      "cc_light_opcode": 9
+      "cc_light_instr": "h"
    },
    "h q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "h",
-      "cc_light_codeword": 94,
-      "cc_light_opcode": 9
+      "cc_light_instr": "h"
    },
    "h q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "h",
-      "cc_light_codeword": 95,
-      "cc_light_opcode": 9
+      "cc_light_instr": "h"
    },
    "h q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "h",
-      "cc_light_codeword": 96,
-      "cc_light_opcode": 9
+      "cc_light_instr": "h"
    },
    "s q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "s",
-      "cc_light_codeword": 100,
-      "cc_light_opcode": 10
+      "cc_light_instr": "s"
    },
    "s q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "s",
-      "cc_light_codeword": 101,
-      "cc_light_opcode": 10
+      "cc_light_instr": "s"
    },
    "s q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "s",
-      "cc_light_codeword": 102,
-      "cc_light_opcode": 10
+      "cc_light_instr": "s"
    },
    "s q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "s",
-      "cc_light_codeword": 103,
-      "cc_light_opcode": 10
+      "cc_light_instr": "s"
    },
    "s q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "s",
-      "cc_light_codeword": 104,
-      "cc_light_opcode": 10
+      "cc_light_instr": "s"
    },
    "s q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "s",
-      "cc_light_codeword": 105,
-      "cc_light_opcode": 10
+      "cc_light_instr": "s"
    },
    "s q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "s",
-      "cc_light_codeword": 106,
-      "cc_light_opcode": 10
+      "cc_light_instr": "s"
    },
    "sdag q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "sdag",
-      "cc_light_codeword": 110,
-      "cc_light_opcode": 11
+      "cc_light_instr": "sdag"
    },
    "sdag q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "sdag",
-      "cc_light_codeword": 111,
-      "cc_light_opcode": 11
+      "cc_light_instr": "sdag"
    },
    "sdag q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "sdag",
-      "cc_light_codeword": 112,
-      "cc_light_opcode": 11
+      "cc_light_instr": "sdag"
    },
    "sdag q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "sdag",
-      "cc_light_codeword": 113,
-      "cc_light_opcode": 11
+      "cc_light_instr": "sdag"
    },
    "sdag q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "sdag",
-      "cc_light_codeword": 114,
-      "cc_light_opcode": 11
+      "cc_light_instr": "sdag"
    },
    "sdag q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "sdag",
-      "cc_light_codeword": 115,
-      "cc_light_opcode": 11
+      "cc_light_instr": "sdag"
    },
    "sdag q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "sdag",
-      "cc_light_codeword": 116,
-      "cc_light_opcode": 11
+      "cc_light_instr": "sdag"
    },
    "rx90 q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x90",
-      "cc_light_codeword": 120,
-      "cc_light_opcode": 12
+      "cc_light_instr": "x90"
    },
    "rx90 q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x90",
-      "cc_light_codeword": 121,
-      "cc_light_opcode": 12
+      "cc_light_instr": "x90"
    },
    "rx90 q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x90",
-      "cc_light_codeword": 122,
-      "cc_light_opcode": 12
+      "cc_light_instr": "x90"
    },
    "rx90 q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x90",
-      "cc_light_codeword": 123,
-      "cc_light_opcode": 12
+      "cc_light_instr": "x90"
    },
    "rx90 q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x90",
-      "cc_light_codeword": 124,
-      "cc_light_opcode": 12
+      "cc_light_instr": "x90"
    },
    "rx90 q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x90",
-      "cc_light_codeword": 125,
-      "cc_light_opcode": 12
+      "cc_light_instr": "x90"
    },
    "rx90 q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x90",
-      "cc_light_codeword": 126,
-      "cc_light_opcode": 12
+      "cc_light_instr": "x90"
    },
    "xm90 q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm90",
-      "cc_light_codeword": 130,
-      "cc_light_opcode": 13
+      "cc_light_instr": "xm90"
    },
    "xm90 q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm90",
-      "cc_light_codeword": 131,
-      "cc_light_opcode": 13
+      "cc_light_instr": "xm90"
    },
    "xm90 q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm90",
-      "cc_light_codeword": 132,
-      "cc_light_opcode": 13
+      "cc_light_instr": "xm90"
    },
    "xm90 q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm90",
-      "cc_light_codeword": 133,
-      "cc_light_opcode": 13
+      "cc_light_instr": "xm90"
    },
    "xm90 q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm90",
-      "cc_light_codeword": 134,
-      "cc_light_opcode": 13
+      "cc_light_instr": "xm90"
    },
    "xm90 q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm90",
-      "cc_light_codeword": 135,
-      "cc_light_opcode": 13
+      "cc_light_instr": "xm90"
    },
    "xm90 q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm90",
-      "cc_light_codeword": 136,
-      "cc_light_opcode": 13
+      "cc_light_instr": "xm90"
    },
    "ry90 q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y90",
-      "cc_light_codeword": 140,
-      "cc_light_opcode": 14
+      "cc_light_instr": "y90"
    },
    "ry90 q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y90",
-      "cc_light_codeword": 141,
-      "cc_light_opcode": 14
+      "cc_light_instr": "y90"
    },
    "ry90 q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y90",
-      "cc_light_codeword": 142,
-      "cc_light_opcode": 14
+      "cc_light_instr": "y90"
    },
    "ry90 q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y90",
-      "cc_light_codeword": 143,
-      "cc_light_opcode": 14
+      "cc_light_instr": "y90"
    },
    "ry90 q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y90",
-      "cc_light_codeword": 144,
-      "cc_light_opcode": 14
+      "cc_light_instr": "y90"
    },
    "ry90 q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y90",
-      "cc_light_codeword": 145,
-      "cc_light_opcode": 14
+      "cc_light_instr": "y90"
    },
    "ry90 q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "y90",
-      "cc_light_codeword": 146,
-      "cc_light_opcode": 14
+      "cc_light_instr": "y90"
    },
    "ym90 q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "ym90",
-      "cc_light_codeword": 150,
-      "cc_light_opcode": 15
+      "cc_light_instr": "ym90"
    },
    "ym90 q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "ym90",
-      "cc_light_codeword": 151,
-      "cc_light_opcode": 15
+      "cc_light_instr": "ym90"
    },
    "ym90 q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "ym90",
-      "cc_light_codeword": 152,
-      "cc_light_opcode": 15
+      "cc_light_instr": "ym90"
    },
    "ym90 q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "ym90",
-      "cc_light_codeword": 153,
-      "cc_light_opcode": 15
+      "cc_light_instr": "ym90"
    },
    "ym90 q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "ym90",
-      "cc_light_codeword": 154,
-      "cc_light_opcode": 15
+      "cc_light_instr": "ym90"
    },
    "ym90 q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "ym90",
-      "cc_light_codeword": 155,
-      "cc_light_opcode": 15
+      "cc_light_instr": "ym90"
    },
    "ym90 q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "ym90",
-      "cc_light_codeword": 156,
-      "cc_light_opcode": 15
+      "cc_light_instr": "ym90"
    },
    "t q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "t",
-      "cc_light_codeword": 160,
-      "cc_light_opcode": 16
+      "cc_light_instr": "t"
    },
    "t q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "t",
-      "cc_light_codeword": 161,
-      "cc_light_opcode": 16
+      "cc_light_instr": "t"
    },
    "t q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "t",
-      "cc_light_codeword": 162,
-      "cc_light_opcode": 16
+      "cc_light_instr": "t"
    },
    "t q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "t",
-      "cc_light_codeword": 163,
-      "cc_light_opcode": 16
+      "cc_light_instr": "t"
    },
    "t q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "t",
-      "cc_light_codeword": 164,
-      "cc_light_opcode": 16
+      "cc_light_instr": "t"
    },
    "t q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "t",
-      "cc_light_codeword": 165,
-      "cc_light_opcode": 16
+      "cc_light_instr": "t"
    },
    "t q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "t",
-      "cc_light_codeword": 166,
-      "cc_light_opcode": 16
+      "cc_light_instr": "t"
    },
    "tdag q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "tdag",
-      "cc_light_codeword": 170,
-      "cc_light_opcode": 17
+      "cc_light_instr": "tdag"
    },
    "tdag q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "tdag",
-      "cc_light_codeword": 171,
-      "cc_light_opcode": 17
+      "cc_light_instr": "tdag"
    },
    "tdag q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "tdag",
-      "cc_light_codeword": 172,
-      "cc_light_opcode": 17
+      "cc_light_instr": "tdag"
    },
    "tdag q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "tdag",
-      "cc_light_codeword": 173,
-      "cc_light_opcode": 17
+      "cc_light_instr": "tdag"
    },
    "tdag q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "tdag",
-      "cc_light_codeword": 174,
-      "cc_light_opcode": 17
+      "cc_light_instr": "tdag"
    },
    "tdag q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "tdag",
-      "cc_light_codeword": 175,
-      "cc_light_opcode": 17
+      "cc_light_instr": "tdag"
    },
    "tdag q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "tdag",
-      "cc_light_codeword": 176,
-      "cc_light_opcode": 17
+      "cc_light_instr": "tdag"
    },
    "x45 q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x45",
-      "cc_light_codeword": 180,
-      "cc_light_opcode": 18
+      "cc_light_instr": "x45"
    },
    "x45 q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x45",
-      "cc_light_codeword": 181,
-      "cc_light_opcode": 18
+      "cc_light_instr": "x45"
    },
    "x45 q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x45",
-      "cc_light_codeword": 182,
-      "cc_light_opcode": 18
+      "cc_light_instr": "x45"
    },
    "x45 q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x45",
-      "cc_light_codeword": 183,
-      "cc_light_opcode": 18
+      "cc_light_instr": "x45"
    },
    "x45 q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x45",
-      "cc_light_codeword": 184,
-      "cc_light_opcode": 18
+      "cc_light_instr": "x45"
    },
    "x45 q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x45",
-      "cc_light_codeword": 185,
-      "cc_light_opcode": 18
+      "cc_light_instr": "x45"
    },
    "x45 q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "x45",
-      "cc_light_codeword": 186,
-      "cc_light_opcode": 18
+      "cc_light_instr": "x45"
    },
    "xm45 q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm45",
-      "cc_light_codeword": 190,
-      "cc_light_opcode": 19
+      "cc_light_instr": "xm45"
    },
    "xm45 q1": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q1"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm45",
-      "cc_light_codeword": 191,
-      "cc_light_opcode": 19
+      "cc_light_instr": "xm45"
    },
    "xm45 q2": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q2"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm45",
-      "cc_light_codeword": 192,
-      "cc_light_opcode": 19
+      "cc_light_instr": "xm45"
    },
    "xm45 q3": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q3"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm45",
-      "cc_light_codeword": 193,
-      "cc_light_opcode": 19
+      "cc_light_instr": "xm45"
    },
    "xm45 q4": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q4"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm45",
-      "cc_light_codeword": 194,
-      "cc_light_opcode": 19
+      "cc_light_instr": "xm45"
    },
    "xm45 q5": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q5"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm45",
-      "cc_light_codeword": 195,
-      "cc_light_opcode": 19
+      "cc_light_instr": "xm45"
    },
    "xm45 q6": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q6"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "xm45",
-      "cc_light_codeword": 196,
-      "cc_light_opcode": 19
+      "cc_light_instr": "xm45"
    },
    "rx180 q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "rx180",
-      "cc_light_codeword": 197,
-      "cc_light_opcode": 34
+      "cc_light_instr": "rx180"
    },
    "ry180 q0": {
       "duration": 40,
       "latency": 0,
       "qubits": ["q0"],
-      "disable_optimization": false,
       "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "ry180",
-      "cc_light_codeword": 198,
-      "cc_light_opcode": 35
+      "cc_light_instr": "ry180"
    },
    "cnot q2,q0": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q2","q0"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 127,
-      "cc_light_left_codeword": 135,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q0,q3": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q0","q3"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 128,
-      "cc_light_left_codeword": 136,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q3,q1": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q3","q1"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 129,
-      "cc_light_left_codeword": 137,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q1,q4": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q1","q4"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 130,
-      "cc_light_left_codeword": 138,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q2,q5": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q2","q5"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 131,
-      "cc_light_left_codeword": 139,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q5,q3": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q5","q3"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 132,
-      "cc_light_left_codeword": 140,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q3,q6": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q3","q6"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 133,
-      "cc_light_left_codeword": 141,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q6,q4": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q6","q4"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 134,
-      "cc_light_left_codeword": 142,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q0,q2": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q0","q2"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 135,
-      "cc_light_left_codeword": 143,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q3,q0": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q3","q0"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 136,
-      "cc_light_left_codeword": 144,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q1,q3": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q1","q3"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 137,
-      "cc_light_left_codeword": 145,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q4,q1": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q4","q1"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 138,
-      "cc_light_left_codeword": 146,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q5,q2": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q5","q2"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 139,
-      "cc_light_left_codeword": 147,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q3,q5": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q3","q5"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 140,
-      "cc_light_left_codeword": 148,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q6,q3": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q6","q3"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 141,
-      "cc_light_left_codeword": 149,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cnot q4,q6": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q4","q6"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cnot",
-      "cc_light_right_codeword": 142,
-      "cc_light_left_codeword": 150,
-      "cc_light_opcode": 128
+      "cc_light_instr": "cnot"
    },
    "cz q2,q0": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q2","q0"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 143,
-      "cc_light_left_codeword": 151,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q0,q3": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q0","q3"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q3,q1": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q3","q1"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q1,q4": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q1","q4"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q2,q5": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q2","q5"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q5,q3": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q5","q3"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q3,q6": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q3","q6"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q6,q4": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q6","q4"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q0,q2": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q0","q2"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q3,q0": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q3","q0"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q1,q3": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q1","q3"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q4,q1": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q4","q1"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q5,q2": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q5","q2"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q3,q5": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q3","q5"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q6,q3": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q6","q3"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    },
    "cz q4,q6": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q4","q6"],
-      "disable_optimization": true,
       "type": "flux",
-      "cc_light_instr_type": "two_qubit_gate",
-      "cc_light_instr": "cz",
-      "cc_light_right_codeword": 144,
-      "cc_light_left_codeword": 152,
-      "cc_light_opcode": 129
+      "cc_light_instr": "cz"
    }
    },
 
