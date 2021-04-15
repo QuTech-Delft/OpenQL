@@ -22,10 +22,6 @@
             "passAlias": "scheduledqasmwriter"
         },
         {
-            "passName" : "CCLDecomposePreSchedule", 
-            "passAlias": "ccl_decompose_pre_schedule"
-        },
-        {
             "passName" : "CliffordOptimize", 
             "passAlias": "clifford_premapper"
         },
