@@ -26,10 +26,6 @@
             "passAlias": "scheduledqasmwriter"
         },
         {
-            "passName" : "CCLPrepCodeGeneration", 
-            "passAlias": "ccl_prep_code_generation"
-        },
-        {
             "passName" : "CCLDecomposePreSchedule", 
             "passAlias": "ccl_decompose_pre_schedule"
         },
