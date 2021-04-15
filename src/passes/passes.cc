@@ -7,21 +7,15 @@
 #include "passes.h"
 
 #include <iostream>
+#include <chrono>
 #include "ql/utils/opt.h"
 #include "report.h"
-#include "optimizer.h"
 #include "clifford.h"
-#include "decompose_toffoli.h"
-#include "latency_compensation.h"
-#include "buffer_insertion.h"
-#include "commute_variation.h"
 #include "scheduler.h"
-#include "ql/pass/ana/visualize/circuit.h"
-#include "ql/pass/ana/visualize/interaction.h"
-#include "ql/pass/ana/visualize/mapping.h"
+#include "mapper.h"
 #include "ql/pass/io/cqasm/detail/cqasm_reader.h"
+#include "ql/pass/ana/statistics/report.h"
 
-#include "arch/cc_light/cc_light_eqasm_compiler.h"
 #include "arch/cc/backend_cc.h"
 
 namespace ql {
@@ -218,41 +212,6 @@ void CQasmWriterPass::runOnProgram(const ir::ProgramRef &program) {
 }
 
 /**
- * @brief  Rotation optimizer pass constructor
- * @param  Name of the optimized pass
- */
-RotationOptimizerPass::RotationOptimizerPass(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Apply the pass to the input program
- * @param  Program object to be read
- */
-void RotationOptimizerPass::runOnProgram(const ir::ProgramRef &program) {
-    QL_DOUT("run RotationOptimizerPass with name = " << getPassName() << " on program " << program->name);
-
-    rotation_optimize(program, program->platform, "rotation_optimize");
-}
-
-/**
- * @brief  Rotation optimizer pass constructor
- * @param  Name of the optimized pass
- */
-ToffoliDecomposerPass::ToffoliDecomposerPass(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Apply the pass to the input program
- * @param  Program object to be read
- */
-void ToffoliDecomposerPass::runOnProgram(const ir::ProgramRef &program) {
-    QL_DOUT("run DecomposeToffoliPass with name = " << getPassName() << " on program " << program->name);
-
-    // decompose_toffoli pass
-    decompose_toffoli(program, program->platform, "decompose_toffoli");
-}
-
-/**
  * @brief  Scheduler pass constructor
  * @param  Name of the scheduler pass
  */
@@ -287,9 +246,7 @@ void BackendCompilerPass::runOnProgram(const ir::ProgramRef &program) {
     Str eqasm_compiler_name = program->platform->eqasm_compiler_name;
     //getPassOptions()->getOption("eqasm_compiler_name");
     
-    if (eqasm_compiler_name == "cc_light_compiler") {
-        arch::cc_light_eqasm_compiler::compile(program, program->platform);
-    } else if (eqasm_compiler_name == "eqasm_backend_cc") {
+    if (eqasm_compiler_name == "eqasm_backend_cc") {
         arch::cc::Backend().compile(program, program->platform);
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
@@ -333,41 +290,6 @@ void VisualizerPass::runOnProgram(const ir::ProgramRef &program) {
 }
 
 /**
- * @brief  CCL Preparation for Code Generation pass constructor
- * @param  Name of the preparation pass
- */
-CCLConsistencyCheckerPass::CCLConsistencyCheckerPass(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Prepare the program for code generation
- * @param  Program object to be prepared
- */
-void CCLConsistencyCheckerPass::runOnProgram(const ir::ProgramRef &program) {
-    const Json &instruction_settings = program->platform->instruction_settings;
-    for (const Json &i : instruction_settings) {
-       if (i.count("cc_light_instr") <= 0) {
-            QL_FATAL("cc_light_instr not found for " << i);
-       }
-    }
-}
-
-/**
- * @brief  CCL Decompose PreSchedule pass constructor
- * @param  Name of the decomposer pass
- */
-CCLPreScheduleDecomposer::CCLPreScheduleDecomposer(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Decompose the input program before scheduling
- * @param  Program object to be decomposed
- */
-void CCLPreScheduleDecomposer::runOnProgram(const ir::ProgramRef &program) {
-    arch::cc_light_eqasm_compiler().ccl_decompose_pre_schedule(program, program->platform, getPassName());
-}
-
-/**
  * @brief  Mapper pass constructor
  * @param  Name of the mapper pass
  */
@@ -379,7 +301,71 @@ MapperPass::MapperPass(const Str &name) : AbstractPass(name) {
  * @param  Program object to be mapped
  */
 void MapperPass::runOnProgram(const ir::ProgramRef &program) {
-    arch::cc_light_eqasm_compiler::map(program, program->platform, getPassName());
+
+    auto platform = program->platform;
+    auto passname = getPassName();
+
+    using pass::ana::statistics::AdditionalStats;
+
+    auto mapopt = com::options::get("mapper");
+    if (mapopt == "no") {
+        QL_IOUT("Not mapping kernels");
+        return;
+    }
+
+    report_statistics(program, platform, "in", passname, "# ");
+    report_qasm(program, platform, "in", passname);
+
+    mapper::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+    mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
+
+    UInt total_swaps = 0;        // for reporting, data is mapper specific
+    UInt total_moves = 0;        // for reporting, data is mapper specific
+    Real total_timetaken = 0.0;  // total over kernels of time taken by mapper
+    for (auto &kernel : program->kernels) {
+        QL_IOUT("Mapping kernel: " << kernel->name);
+
+        // compute timetaken, start interval timer here
+        Real timetaken = 0.0;
+        using namespace std::chrono;
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
+        mapper.Map(kernel);
+        // kernel.qubit_count starts off as number of virtual qubits, i.e. highest indexed qubit minus 1
+        // kernel.qubit_count is updated by Map to highest index of real qubits used minus -1
+        program->qubit_count = platform->qubit_count;
+        // program.qubit_count is updated to platform.qubit_number
+
+        // computing timetaken, stop interval timer
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        duration<Real> time_span = t2 - t1;
+        timetaken = time_span.count();
+
+        AdditionalStats::push(kernel, "swaps added: " + to_string(mapper.nswapsadded));
+        AdditionalStats::push(kernel, "of which moves added: " + to_string(mapper.nmovesadded));
+        AdditionalStats::push(kernel, "virt2real map before mapper:" + to_string(mapper.v2r_in));
+        AdditionalStats::push(kernel, "virt2real map after initial placement:" + to_string(mapper.v2r_ip));
+        AdditionalStats::push(kernel, "virt2real map after mapper:" + to_string(mapper.v2r_out));
+        AdditionalStats::push(kernel, "realqubit states before mapper:" + to_string(mapper.rs_in));
+        AdditionalStats::push(kernel, "realqubit states after mapper:" + to_string(mapper.rs_out));
+        AdditionalStats::push(kernel, "time taken: " + to_string(timetaken));
+
+        total_swaps += mapper.nswapsadded;
+        total_moves += mapper.nmovesadded;
+        total_timetaken += timetaken;
+    }
+    AdditionalStats::push(program, "Total no. of swaps: " + to_string(total_swaps));
+    AdditionalStats::push(program, "Total no. of moves of swaps: " + to_string(total_moves));
+    AdditionalStats::push(program, "Total time taken: " + to_string(total_timetaken));
+
+    // kernel qubit/creg/breg counts will have been updated to the platform
+    // counts, so we need to do the same for the program.
+    program->qubit_count = platform->qubit_count;
+    program->creg_count = platform->creg_count;
+    program->breg_count = platform->breg_count;
+
+    report_statistics(program, platform, "out", passname, "# ");
+    report_qasm(program, platform, "out", passname);
 }
 
 /**
@@ -398,21 +384,6 @@ void CliffordOptimizerPass::runOnProgram(const ir::ProgramRef &program) {
 }
 
 /**
- * @brief  Commute variation pass constructor
- * @param  Name of the commute_variation pass
- */
-CommuteVariationOptimizerPass::CommuteVariationOptimizerPass(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Exploit commuting of gates circuit-wide to minimize circuit latency beyond locally in the scheduler
- * @param  Program object to be latency compensated
- */
-void CommuteVariationOptimizerPass::runOnProgram(const ir::ProgramRef &program) {
-    commute_variation(program, program->platform, getPassName());
-}
-
-/**
  * @brief  Resource Constraint Scheduler pass constructor
  * @param  Name of the scheduler pass
  */
@@ -425,121 +396,6 @@ RCSchedulerPass::RCSchedulerPass(const Str &name) : AbstractPass(name) {
  */
 void RCSchedulerPass::runOnProgram(const ir::ProgramRef &program) {
     rcschedule(program, program->platform, getPassName());
-}
-
-/**
- * @brief  Latency compensation pass constructor
- * @param  Name of the latency compensation pass
- */
-LatencyCompensatorPass::LatencyCompensatorPass(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Apply Latency Compensation to the scheduled program
- * @param  Program object to be latency compensated
- */
-void LatencyCompensatorPass::runOnProgram(const ir::ProgramRef &program) {
-    latency_compensation(program, program->platform, getPassName());
-}
-
-/**
- * @brief  Insert Buffer Delays pass  constructor
- * @param  Name of the buffer delay insertion pass
- */
-BufferDelayInserterPass::BufferDelayInserterPass(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Insert Buffer Delays to the input program
- * @param  Program object to be extended with buffer delays
- */
-void BufferDelayInserterPass::runOnProgram(const ir::ProgramRef &program) {
-    insert_buffer_delays(program, program->platform, getPassName());
-}
-
-/**
- * @brief  Decomposer Post Schedule  Pass
- * @param  Name of the decomposer pass
- */
-CCLPostScheduleDecomposerPass::CCLPostScheduleDecomposerPass(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  CC-Light specific Decomposition of the scheduled program
- * @param  Program object to be postscheduler decomposed
- */
-void CCLPostScheduleDecomposerPass::runOnProgram(const ir::ProgramRef &program) {
-    arch::cc_light_eqasm_compiler().ccl_decompose_post_schedule(program, program->platform, getPassName());
-}
-
-/**
- * @brief  QuantumSim Writer Pass constructor
- * @param  Name of the writer pass
- */
-QuantumSimWriterPass::QuantumSimWriterPass(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Generate QuantumSim output
- * @param  Program object to be simulated using quantumsim
- */
-void QuantumSimWriterPass::runOnProgram(const ir::ProgramRef &program) {
-    arch::cc_light_eqasm_compiler().write_quantumsim_script(program, program->platform, getPassName());
-}
-
-/**
- * @brief  QISA generation pass constructor
- * @param  Name of the QISA generator pass
- */
-CCLCodeGeneratorPass::CCLCodeGeneratorPass(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Generate the QISA output from the input program
- * @param  Program object to be transformed into QISA output
- */
-void CCLCodeGeneratorPass::runOnProgram(const ir::ProgramRef &program) {
-    if (com::options::get("generate_code") == "yes") {
-        arch::cc_light_eqasm_compiler::qisa_code_generation(program, program->platform, getPassName());
-    }
-}
-
-/**
- * @brief  C printer pass constructor
- * @param  Name of the pass
- */
-CPrinterPass::CPrinterPass(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Generate the C code equivalent to the input program
- * @param  Program object to be transformed into QISA output
- */
-void CPrinterPass::runOnProgram(const ir::ProgramRef &program) {
-    QL_DOUT("[OPENQL] Run CPrinter pass on program " << program->unique_name);
-    
-    write_c(program, program->platform, getPassName());
-}
-
-/**
- * @brief  External pass constructor
- * @param  Name of the pass
- */
-RunExternalCompiler::RunExternalCompiler(const Str &name) : AbstractPass(name) {
-}
-
-/**
- * @brief  Generate the C code equivalent to the input program
- * @param  Program object to be transformed into QISA output
- */
-void RunExternalCompiler::runOnProgram(const ir::ProgramRef &program) {
-    std::string extcompname, copycmd;
-
-    QL_DOUT("[OPENQL] Run ExternalCompiler pass with " << getPassName() << " compiler on program " << program->unique_name);
-
-    //TODO: parametrize this so that we can run multiple external passes using this code! (use alias_name)
-    system(("cp test_output/"+program->name+".c .").c_str());
-    system(("./"+getPassName()+" -dumpall "+program->name+".c").c_str());
 }
 
 } // namespace ql

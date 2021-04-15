@@ -7,7 +7,6 @@
 #include "ql/ir/ir.h"
 #include "ql/com/options.h"
 #include "ql/com/unitary.h"
-#include "optimizer.h"
 #include "compiler.h"
 #include "ql/pass/io/cqasm/read.h"
 

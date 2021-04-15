@@ -130,47 +130,23 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
     // after monday meeting make issue listing plan
 
     if (passName == "Reader") {
-        pass = new CQasmReaderPass(aliasName); // needed
+        pass = new CQasmReaderPass(aliasName);
     } else if (passName == "Writer") {
-        pass = new CQasmWriterPass(aliasName); // needed
-    //} else if (passName == "RotationOptimizer") {
-        //pass = new RotationOptimizerPass(aliasName); // take out
-    //} else if (passName == "DecomposeToffoli") {
-        //pass = new ToffoliDecomposerPass(aliasName); // take out
+        pass = new CQasmWriterPass(aliasName);
     } else if (passName == "Scheduler") {
-        pass = new SchedulerPass(aliasName); // needed
+        pass = new SchedulerPass(aliasName);
     } else if (passName == "BackendCompiler") {
-        pass = new BackendCompilerPass(aliasName); // rewritten
+        pass = new BackendCompilerPass(aliasName);
     } else if (passName == "StatisticsReporter") {
-        pass = new StatisticsReporterPass(aliasName); // already done
-    //} else if (passName == "CCLPrepCodeGeneration") {
-        //pass = new CCLConsistencyCheckerPass(aliasName); // take out
-    //} else if (passName == "CCLDecomposePreSchedule") {
-        //pass = new CCLPreScheduleDecomposer(aliasName); // take out
-    //} else if (passName == "WriteQuantumSim") {
-        //pass = new QuantumSimWriterPass(aliasName); // take out
+        pass = new StatisticsReporterPass(aliasName);
     } else if (passName == "CliffordOptimize") {
-        pass = new CliffordOptimizerPass(aliasName); // needed
+        pass = new CliffordOptimizerPass(aliasName);
     } else if (passName == "Map") {
-        pass = new MapperPass(aliasName); // needed
-    //} else if (passName == "CommuteVariation") {
-        //pass = new CommuteVariationOptimizerPass(aliasName); // take out
+        pass = new MapperPass(aliasName);
     } else if (passName == "RCSchedule") {
-        pass = new RCSchedulerPass(aliasName); // needed
-    //} else if (passName == "LatencyCompensation") {
-        //pass = new LatencyCompensatorPass(aliasName); // take out
-    //} else if (passName == "InsertBufferDelays") {
-        //pass = new BufferDelayInserterPass(aliasName); // take out
-    //} else if (passName == "CCLDecomposePostSchedule") {
-        //pass = new CCLPostScheduleDecomposerPass(aliasName); // take out
-    //} else if (passName == "QisaCodeGeneration") {
-        //pass = new CCLCodeGeneratorPass(aliasName); // take out
+        pass = new RCSchedulerPass(aliasName);
     } else if (passName == "Visualizer") {
         pass = new VisualizerPass(aliasName); // keep
-    //} else if (passName == "CPrinter") {
-        //pass = new CPrinterPass(aliasName); // take out
-    //} else if (passName == "RunExternalCompiler") {
-        //pass = new RunExternalCompiler(aliasName); // take out
     } else {
         QL_EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
         exit(1);

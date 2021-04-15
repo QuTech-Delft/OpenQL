@@ -230,11 +230,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/report.cc"
 
     "${CMAKE_CURRENT_SOURCE_DIR}/src/compiler.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/decompose_toffoli.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/buffer_insertion.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/latency_compensation.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/write_sweep_points.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/optimizer.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/clifford.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes/passmanager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes/passes.cc"
@@ -247,11 +243,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/mapper.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/interactionMatrix.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm_compiler.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/qsoverlay.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/scheduler.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/commute_variation.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_resource_manager.cc"
 )
 

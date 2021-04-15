@@ -64,32 +64,6 @@ public:
 };
 
 /**
- * Optimizer Pass
- */
-class RotationOptimizerPass : public AbstractPass {
-public:
-    /**
-     * @brief  Rotation optimizer pass constructor
-     * @param  Name of the optimized pass
-     */
-    explicit RotationOptimizerPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
- * Decompose Toffoli Pass
- */
-class ToffoliDecomposerPass : public AbstractPass {
-public:
-    /**
-     * @brief  Rotation optimizer pass constructor
-     * @param  Name of the optimized pass
-     */
-    explicit ToffoliDecomposerPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
  * Scheduler Pass
  */
 class SchedulerPass : public AbstractPass {
@@ -142,32 +116,6 @@ public:
 };
 
 /**
- * CC-Light Prepare Backend Code Generation Pass
- */
-class CCLConsistencyCheckerPass : public AbstractPass {
-public:
-    /**
-     * @brief  CCL Preparation for Code Generation pass constructor
-     * @param  Name of the preparation pass
-     */
-    explicit CCLConsistencyCheckerPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
- * CC-Light Prescheduler Decompose Pass
- */
-class CCLPreScheduleDecomposer : public AbstractPass {
-public:
-    /**
-     * @brief  CCL Decompose PreSchedule pass constructor
-     * @param  Name of the decomposer pass
-     */
-    explicit CCLPreScheduleDecomposer(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
  * Mapper Pass
  */
 class MapperPass : public AbstractPass {
@@ -194,19 +142,6 @@ public:
 };
 
 /**
- * Commute Variation Pass
- */
-class CommuteVariationOptimizerPass : public AbstractPass {
-public:
-    /**
-     * @brief  Commute variation pass constructor
-     * @param  Name of the commute variation pass
-     */
-    explicit CommuteVariationOptimizerPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
  * Resource Constraint Scheduler Pass
  */
 class RCSchedulerPass : public AbstractPass {
@@ -216,97 +151,6 @@ public:
      * @param  Name of the scheduler pass
      */
     explicit RCSchedulerPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
- * Latency Compensation Pass
- */
-class LatencyCompensatorPass : public AbstractPass {
-public:
-    /**
-     * @brief  Latency compensation pass constructor
-     * @param  Name of the latency compensation pass
-     */
-    explicit LatencyCompensatorPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
- * Insert Buffer Delays Pass
- */
-class BufferDelayInserterPass : public AbstractPass {
-public:
-    /**
-     * @brief  Insert Buffer Delays pass  constructor
-     * @param  Name of the buffer delay insertion pass
-     */
-    explicit BufferDelayInserterPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
- * CC-Light Decompose PostSchedule Pass
- */
-class CCLPostScheduleDecomposerPass : public AbstractPass {
-public:
-    /**
-     * @brief  Decomposer Post Schedule  Pass
-     * @param  Name of the decomposer pass
-     */
-    explicit CCLPostScheduleDecomposerPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
- * Write QuantumSim Program Pass
- */
-class QuantumSimWriterPass : public AbstractPass {
-public:
-    /**
-     * @brief  QuantumSim Writer Pass constructor
-     * @param  Name of the writer pass
-     */
-    explicit QuantumSimWriterPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
- * QISA Generation Pass
- */
-class CCLCodeGeneratorPass : public AbstractPass {
-public:
-    /**
-     * @brief  QISA generation pass constructor
-     * @param  Name of the QISA generator pass
-     */
-    explicit CCLCodeGeneratorPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
- * C Printer Pass
- */
-class CPrinterPass : public AbstractPass {
-public:
-    /**
-     * @brief  C Printer pass constructor
-     * @param  Name of the CPrinter pass
-     */
-    explicit CPrinterPass(const utils::Str &name);
-    void runOnProgram(const ir::ProgramRef &program) override;
-};
-
-/**
- * External C Compiler Pass
- */
-class RunExternalCompiler : public AbstractPass {
-public:
-    /**
-     * @brief  External C compiler pass constructor
-     * @param  Name of the pass
-     */
-    explicit RunExternalCompiler(const utils::Str &name);
     void runOnProgram(const ir::ProgramRef &program) override;
 };
 
