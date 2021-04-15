@@ -42,10 +42,6 @@
             "passAlias": "ccl_insert_buffer_delays"
         },
         {
-            "passName" : "CCLDecomposePostSchedule", 
-            "passAlias": "ccl_decompose_post_schedule"
-        },
-        {
             "passName" : "Writer", 
             "passAlias": "lastqasmwriter"
         }

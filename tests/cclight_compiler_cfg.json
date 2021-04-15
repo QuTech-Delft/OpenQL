@@ -38,10 +38,6 @@
             "passAlias": "rcscheduler"
         },
         {
-            "passName" : "CCLDecomposePostSchedule", 
-            "passAlias": "ccl_decompose_post_schedule"
-        },
-        {
             "passName" : "Writer", 
             "passAlias": "lastqasmwriter"
         }
