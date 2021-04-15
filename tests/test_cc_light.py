@@ -607,45 +607,6 @@ class Test_advance(unittest.TestCase):
             self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-    def test_ccl_latencies(self):
-
-        tests = [
-                # 'y q3' has a latency of 0 ns
-                            (0, [("x", [0]), ("y", [3])]),
-                # 'y q4' has a latency of +20 ns
-                            (1, [("x", [0]),("y", [4])]),
-                # 'y q5' has a latency of -20 ns
-                            (2, [("x", [0]),("y", [5])]),
-                # qubit dependence and 'y q3' has a latency of 0 ns
-                            (3, [("x", [3]),("y", [3])]),
-                # qubit dependence and 'y q4' has a latency of +20 ns
-                            (4, [("x", [4]),("y", [4])]),
-                # qubit dependence and 'y q5' has a latency of -20 ns
-                            (5, [("x", [5]),("y", [5])])
-                ]
-
-        for testNo, testKernel in tests:
-            print('Running test_ccl_latencies No: {}'.format(testNo))
-            ql.set_option('output_dir', output_dir)
-            config_fn = os.path.join(curdir, 'test_cfg_cc_light_buffers_latencies.json')
-            platform  = ql.Platform('seven_qubits_chip', config_fn)
-            sweep_points = [1,2]
-            num_qubits = 7
-            p = ql.Program('test_ccl_latencies'+str(testNo), platform, num_qubits)
-            p.set_sweep_points(sweep_points)
-            k = ql.Kernel('aKernel', platform, num_qubits)
-
-            for gate, qubits in testKernel:
-                k.gate(gate, qubits)
-
-            p.add_kernel(k)
-            p.compile()
-
-            GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-            QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-
-            self.assertTrue(file_compare(QISA_fn, GOLD_fn))
-
 #     def test_single_qubit_flux_manual01(self):
 #         ql.set_option('output_dir', output_dir)
 #         ql.set_option('cz_mode', 'manual')

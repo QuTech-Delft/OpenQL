@@ -62,10 +62,6 @@
             "passAlias": "ccl_latency_compensation"
         },
         {
-            "passName" : "InsertBufferDelays", 
-            "passAlias": "ccl_insert_buffer_delays"
-        },
-        {
             "passName" : "CCLDecomposePostSchedule", 
             "passAlias": "ccl_decompose_post_schedule"
         },

@@ -159,8 +159,8 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
         pass = new RCSchedulerPass(aliasName); // needed
     } else if (passName == "LatencyCompensation") {
         pass = new LatencyCompensatorPass(aliasName); // take out
-    } else if (passName == "InsertBufferDelays") {
-        pass = new BufferDelayInserterPass(aliasName); // take out
+    //} else if (passName == "InsertBufferDelays") {
+        //pass = new BufferDelayInserterPass(aliasName); // take out
     } else if (passName == "CCLDecomposePostSchedule") {
         pass = new CCLPostScheduleDecomposerPass(aliasName); // take out
     } else if (passName == "QisaCodeGeneration") {
