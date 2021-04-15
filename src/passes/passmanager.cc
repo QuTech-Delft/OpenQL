@@ -167,10 +167,10 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
         pass = new CCLCodeGeneratorPass(aliasName); // take out
     } else if (passName == "Visualizer") {
         pass = new VisualizerPass(aliasName); // keep
-    } else if (passName == "CPrinter") {
-        pass = new CPrinterPass(aliasName); // take out
-    } else if (passName == "RunExternalCompiler") {
-        pass = new RunExternalCompiler(aliasName); // take out
+    //} else if (passName == "CPrinter") {
+        //pass = new CPrinterPass(aliasName); // take out
+    //} else if (passName == "RunExternalCompiler") {
+        //pass = new RunExternalCompiler(aliasName); // take out
     } else {
         QL_EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
         exit(1);
