@@ -147,8 +147,8 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
         //pass = new CCLConsistencyCheckerPass(aliasName); // take out
     } else if (passName == "CCLDecomposePreSchedule") {
         pass = new CCLPreScheduleDecomposer(aliasName); // take out
-    } else if (passName == "WriteQuantumSim") {
-        pass = new QuantumSimWriterPass(aliasName); // take out
+    //} else if (passName == "WriteQuantumSim") {
+        //pass = new QuantumSimWriterPass(aliasName); // take out
     } else if (passName == "CliffordOptimize") {
         pass = new CliffordOptimizerPass(aliasName); // needed
     } else if (passName == "Map") {
