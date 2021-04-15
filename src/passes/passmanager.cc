@@ -135,8 +135,8 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
         pass = new CQasmWriterPass(aliasName); // needed
     //} else if (passName == "RotationOptimizer") {
         //pass = new RotationOptimizerPass(aliasName); // take out
-    } else if (passName == "DecomposeToffoli") {
-        pass = new ToffoliDecomposerPass(aliasName); // take out
+    //} else if (passName == "DecomposeToffoli") {
+        //pass = new ToffoliDecomposerPass(aliasName); // take out
     } else if (passName == "Scheduler") {
         pass = new SchedulerPass(aliasName); // needed
     } else if (passName == "BackendCompiler") {

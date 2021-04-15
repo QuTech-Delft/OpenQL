@@ -160,56 +160,6 @@ class Test_condex(unittest.TestCase):
 
         ql.set_option('mapper', 'no')
 
-    def test_condex_toffoli_pass(self):
-        # check whether condex works with conditional toffoli gate which is to be decomposed by toffoli decomposition
-        # parameters
-        v = 'toffoli_pass'
-        config = os.path.join(curdir, "test_mapper_s7.json")
-        num_qubits = 7
-        num_bregs = num_qubits
-
-        # create and set platform
-        prog_name = "test_condex_" + v
-        kernel_name = "kernel_" + v
-        starmon = ql.Platform("starmon", config)
-        prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
-        k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
-
-        ql.set_option('decompose_toffoli', 'AM')
-        ql.set_option('use_default_gates', 'yes')
-
-        ql.set_option('mapper', 'minextend')
-        ql.set_option('mapassumezeroinitstate', 'no')
-        ql.set_option('mapinitone2one', 'yes')
-        ql.set_option('mapusemoves', 'yes')
-        ql.set_option('maplookahead', 'noroutingfirst')
-        ql.set_option('mappathselect', 'all')
-        ql.set_option('maptiebreak', 'first')
-
-        k.gate("toffoli", [0,1,5])
-
-        k.gate("measure", [0])
-        k.gate("toffoli", [0,1,5], 0, 0.0, [], 'COND_UNARY', [0])
-
-        k.gate("measure", [0])
-        k.condgate("toffoli", [0,1,5], 'COND_UNARY', [0])
-
-        k.gate("measure", [0])
-        k.gate_preset_condition('COND_UNARY', [0])
-        k.toffoli(0,1,5)
-        k.gate_clear_condition()
-
-        prog.add_kernel(k)
-        prog.compile()
-
-        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
-        qasm_fn = os.path.join(output_dir, prog_name+'_last.qasm')
-        self.assertTrue( file_compare(qasm_fn, gold_fn) )
-
-        ql.set_option('mapper', 'no')
-        ql.set_option('decompose_toffoli', 'no')
-        ql.set_option('use_default_gates', 'no')
-
     def test_condex_toffoli_composgate(self):
         # check whether condex works with conditional toffoli gate which is to be decomposed by toffoli decomposition
         # parameters

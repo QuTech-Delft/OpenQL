@@ -6,10 +6,6 @@
             "passAlias": "initialqasmwriter"
         },
         {
-            "passName" : "DecomposeToffoli", 
-            "passAlias": "decompose_toffoli"
-        },
-        {
             "passName" : "CliffordOptimize", 
             "passAlias": "clifford_prescheduler"
         },

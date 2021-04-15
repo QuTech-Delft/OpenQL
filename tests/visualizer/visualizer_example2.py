@@ -15,7 +15,6 @@ ql.set_option('write_qasm_files', 'no')
 ql.set_option('write_report_files', 'no')
 
 c = ql.Compiler("testCompiler")
-c.add_pass("DecomposeToffoli")
 c.add_pass("Scheduler")
 c.add_pass("BackendCompiler")
 c.add_pass("Visualizer")
