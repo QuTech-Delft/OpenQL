@@ -124,48 +124,53 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
      * @note PassManager::createPass defines the collection of passes available in OpenQL. Whenever a new pass is added to the compiler, this list should be extended in order for the pass to be found.
      */
 
+    // take out/rewrite tests that depend on the passes that are taken out
+    // kernel type stays until cQASM 2.0 exists and is merged
+    // take out matrices
+    // after monday meeting make issue listing plan
+
     if (passName == "Reader") {
-        pass = new CQasmReaderPass(aliasName);
+        pass = new CQasmReaderPass(aliasName); // needed
     } else if (passName == "Writer") {
-        pass = new CQasmWriterPass(aliasName);
+        pass = new CQasmWriterPass(aliasName); // needed
     } else if (passName == "RotationOptimizer") {
-        pass = new RotationOptimizerPass(aliasName);
+        pass = new RotationOptimizerPass(aliasName); // take out
     } else if (passName == "DecomposeToffoli") {
-        pass = new ToffoliDecomposerPass(aliasName);
+        pass = new ToffoliDecomposerPass(aliasName); // take out
     } else if (passName == "Scheduler") {
-        pass = new SchedulerPass(aliasName);
+        pass = new SchedulerPass(aliasName); // needed
     } else if (passName == "BackendCompiler") {
-        pass = new BackendCompilerPass(aliasName);
+        pass = new BackendCompilerPass(aliasName); // rewritten
     } else if (passName == "StatisticsReporter") {
-        pass = new StatisticsReporterPass(aliasName);
+        pass = new StatisticsReporterPass(aliasName); // already done
     } else if (passName == "CCLPrepCodeGeneration") {
-        pass = new CCLConsistencyCheckerPass(aliasName);
+        pass = new CCLConsistencyCheckerPass(aliasName); // take out
     } else if (passName == "CCLDecomposePreSchedule") {
-        pass = new CCLPreScheduleDecomposer(aliasName);
+        pass = new CCLPreScheduleDecomposer(aliasName); // take out
     } else if (passName == "WriteQuantumSim") {
-        pass = new QuantumSimWriterPass(aliasName);
+        pass = new QuantumSimWriterPass(aliasName); // take out
     } else if (passName == "CliffordOptimize") {
-        pass = new CliffordOptimizerPass(aliasName);
+        pass = new CliffordOptimizerPass(aliasName); // needed
     } else if (passName == "Map") {
-        pass = new MapperPass(aliasName);
+        pass = new MapperPass(aliasName); // needed
     } else if (passName == "CommuteVariation") {
-        pass = new CommuteVariationOptimizerPass(aliasName);
+        pass = new CommuteVariationOptimizerPass(aliasName); // take out
     } else if (passName == "RCSchedule") {
-        pass = new RCSchedulerPass(aliasName);
+        pass = new RCSchedulerPass(aliasName); // needed
     } else if (passName == "LatencyCompensation") {
-        pass = new LatencyCompensatorPass(aliasName);
+        pass = new LatencyCompensatorPass(aliasName); // take out
     } else if (passName == "InsertBufferDelays") {
-        pass = new BufferDelayInserterPass(aliasName);
+        pass = new BufferDelayInserterPass(aliasName); // take out
     } else if (passName == "CCLDecomposePostSchedule") {
-        pass = new CCLPostScheduleDecomposerPass(aliasName);
+        pass = new CCLPostScheduleDecomposerPass(aliasName); // take out
     } else if (passName == "QisaCodeGeneration") {
-        pass = new CCLCodeGeneratorPass(aliasName);
+        pass = new CCLCodeGeneratorPass(aliasName); // take out
     } else if (passName == "Visualizer") {
-        pass = new VisualizerPass(aliasName);
+        pass = new VisualizerPass(aliasName); // keep
     } else if (passName == "CPrinter") {
-        pass = new CPrinterPass(aliasName);
+        pass = new CPrinterPass(aliasName); // take out
     } else if (passName == "RunExternalCompiler") {
-        pass = new RunExternalCompiler(aliasName);
+        pass = new RunExternalCompiler(aliasName); // take out
     } else {
         QL_EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
         exit(1);
