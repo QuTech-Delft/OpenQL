@@ -38,10 +38,6 @@
             "passAlias": "rcscheduler"
         },
         {
-            "passName" : "InsertBufferDelays", 
-            "passAlias": "ccl_insert_buffer_delays"
-        },
-        {
             "passName" : "Writer", 
             "passAlias": "lastqasmwriter"
         }
