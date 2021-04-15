@@ -213,10 +213,6 @@ GateType Classical::type() const {
     return GateType::CLASSICAL;
 }
 
-Complex2by2Matrix Classical::mat() const {
-    return m;
-}
-
 } // namespace gates
 } // namespace ir
 } // namespace ql

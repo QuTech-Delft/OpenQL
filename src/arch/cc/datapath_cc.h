@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <iomanip>
 #include "ql/utils/logger.h"
 #include "ql/ir/ir.h"
 #include "types_cc.h"

@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "ql/ir/matrix.h"
 #include "ql/ir/gate.h"
 #include "ql/ir/classical.h"
 #include "ql/ir/bundle.h"

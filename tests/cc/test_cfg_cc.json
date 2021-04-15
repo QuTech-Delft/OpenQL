@@ -464,7 +464,6 @@
         // FIXME: also add conditional single qubit gates?
         "i": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "i",
             "cc": {
@@ -475,7 +474,6 @@
         },
         "rx180": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "x",
             "cc": {
@@ -485,7 +483,6 @@
         },
         "ry180": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "y",
             "cc": {
@@ -495,7 +492,6 @@
         },
         "rx90": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "x90",
             "cc": {
@@ -505,7 +501,6 @@
         },
         "ry90": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "y90",
             "cc": {
@@ -515,7 +510,6 @@
         },
         "rxm90": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "xm90",
             "cc": {
@@ -525,7 +519,6 @@
         },
         "rym90": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "ym90",
             "cc": {
@@ -539,7 +532,6 @@
         // https://github.com/QE-Lab/OpenQL/issues/180
         "cz": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
             "cc_light_instr": "cz",
             "cc": {
@@ -549,7 +541,6 @@
         },
         "cz_park": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
             "cc_light_instr": "cz",
             "cc": {
@@ -575,7 +566,6 @@
 		// flux pulses, see issue #176:
 		"park_cz" : { // park signal with same length as cz gate
 			"duration" : 40,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"cc_light_instr": "park_cz",
 			"type": "measure",		// FIXME
 			"cc": {
@@ -591,7 +581,6 @@
 
 		"park_measure" : { // park signal with same length as measurement
 			"duration" : 300,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"cc": {
 				"signal": [
 					{	"type": "flux",
@@ -607,7 +596,6 @@
 		// based on PyqQED_py3 'generate_CCL_cfg.py':
 		"prepz": {
 			"duration": 200000,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "readout",
 			"cc_light_instr": "prepz",
             "cc": {
@@ -619,7 +607,6 @@
 
 		"measure": {
 			"duration": 600,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "readout",
 			"cc_light_instr": "measz",
 			"cc": {
@@ -637,7 +624,6 @@
         // FIXME: contents untested
         "square": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "square",
             "cc": {
@@ -647,7 +633,6 @@
         },
         "spec": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "spec",
             "cc": {
@@ -657,7 +642,6 @@
         },
         "rx12": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "rx12",
             "cc": {
@@ -668,7 +652,6 @@
         // cw_00 .. cw_31
         "cw_00": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_00",
             "cc": {
@@ -678,7 +661,6 @@
         },
         "cw_01": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_01",
             "cc": {
@@ -688,7 +670,6 @@
         },
         "cw_02": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_02",
             "cc": {
@@ -698,7 +679,6 @@
         },
         "cw_03": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_03",
             "cc": {
@@ -708,7 +688,6 @@
         },
         "cw_04": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_04",
             "cc": {
@@ -718,7 +697,6 @@
         },
         "cw_05": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_05",
             "cc": {
@@ -728,7 +706,6 @@
         },
         "cw_06": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_06",
             "cc": {
@@ -738,7 +715,6 @@
         },
         "cw_07": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_07",
             "cc": {
@@ -748,7 +724,6 @@
         },
         "cw_08": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_08",
             "cc": {
@@ -758,7 +733,6 @@
         },
         "cw_09": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_09",
             "cc": {
@@ -768,7 +742,6 @@
         },
         "cw_10": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_10",
             "cc": {
@@ -778,7 +751,6 @@
         },
         "cw_11": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_11",
             "cc": {
@@ -788,7 +760,6 @@
         },
         "cw_12": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_12",
             "cc": {
@@ -798,7 +769,6 @@
         },
         "cw_13": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_13",
             "cc": {
@@ -808,7 +778,6 @@
         },
         "cw_14": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_14",
             "cc": {
@@ -818,7 +787,6 @@
         },
         "cw_15": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_15",
             "cc": {
@@ -828,7 +796,6 @@
         },
         "cw_16": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_16",
             "cc": {
@@ -838,7 +805,6 @@
         },
         "cw_17": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_17",
             "cc": {
@@ -848,7 +814,6 @@
         },
         "cw_18": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_18",
             "cc": {
@@ -858,7 +823,6 @@
         },
         "cw_19": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_109",
             "cc": {
@@ -868,7 +832,6 @@
         },
         "cw_20": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_20",
             "cc": {
@@ -878,7 +841,6 @@
         },
         "cw_21": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_21",
             "cc": {
@@ -888,7 +850,6 @@
         },
         "cw_22": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_22",
             "cc": {
@@ -898,7 +859,6 @@
         },
         "cw_23": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_23",
             "cc": {
@@ -908,7 +868,6 @@
         },
         "cw_24": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_24",
             "cc": {
@@ -918,7 +877,6 @@
         },
         "cw_25": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_25",
             "cc": {
@@ -928,7 +886,6 @@
         },
         "cw_26": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_26",
             "cc": {
@@ -938,7 +895,6 @@
         },
         "cw_27": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_27",
             "cc": {
@@ -948,7 +904,6 @@
         },
         "cw_28": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_28",
             "cc": {
@@ -958,7 +913,6 @@
         },
         "cw_29": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_29",
             "cc": {
@@ -968,7 +922,6 @@
         },
         "cw_30": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_30",
             "cc": {
@@ -978,7 +931,6 @@
         },
         "cw_31": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "mw",
             "cc_light_instr": "cw_31",
             "cc": {
@@ -990,7 +942,6 @@
         // fl_cw_00 .. fl_cw_07
         "fl_cw_00": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
             "cc_light_instr": "fl_cw_00",
             "cc": {
@@ -1000,7 +951,6 @@
         },
         "fl_cw_01": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
             "cc_light_instr": "fl_cw_01",
             "cc": {
@@ -1010,7 +960,6 @@
         },
         "fl_cw_02": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
             "cc_light_instr": "fl_cw_02",
             "cc": {
@@ -1020,7 +969,6 @@
         },
         "fl_cw_03": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
             "cc_light_instr": "fl_cw_03",
             "cc": {
@@ -1030,7 +978,6 @@
         },
         "fl_cw_04": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
             "cc_light_instr": "fl_cw_04",
             "cc": {
@@ -1040,7 +987,6 @@
         },
         "fl_cw_05": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
             "cc_light_instr": "fl_cw_05",
             "cc": {
@@ -1050,7 +996,6 @@
         },
         "fl_cw_06": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
             "cc_light_instr": "fl_cw_06",
             "cc": {
@@ -1060,7 +1005,6 @@
         },
         "fl_cw_07": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "type": "flux",
             "cc_light_instr": "fl_cw_07",
             "cc": {

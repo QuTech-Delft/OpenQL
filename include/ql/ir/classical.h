@@ -78,14 +78,10 @@ namespace gates {
 
 class Classical : public Gate {
 public:
-    // utils::Int imm_value;
-    Complex2by2Matrix m;
-
     Classical(const ClassicalRegister &dest, const ClassicalOperation &oper);
     Classical(const utils::Str &operation);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 } // namespace gates

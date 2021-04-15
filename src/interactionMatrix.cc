@@ -4,6 +4,8 @@
 
 #include "interactionMatrix.h"
 
+#include <iomanip>
+
 namespace ql {
 
 using namespace utils;

@@ -7,6 +7,8 @@
  */
 
 #include "vcd_cc.h"
+
+#include <iomanip>
 #include "ql/com/options.h"
 #include "ql/utils/filesystem.h"
 

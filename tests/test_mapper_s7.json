@@ -148,7 +148,6 @@
         "prepx": {
             "duration": 640,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -158,7 +157,6 @@
         "prepz": {
             "duration": 620,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -168,7 +166,6 @@
         "measx_keep": {
             "duration": 340,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "readout",
             "cc_light_instr_type": "single_qubit_gate",
@@ -178,7 +175,6 @@
         "measz_keep": {
             "duration": 300,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "readout",
             "cc_light_instr_type": "single_qubit_gate",
@@ -188,7 +184,6 @@
         "measure": {
             "duration": 300,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "readout",
             "cc_light_instr_type": "single_qubit_gate",
@@ -198,7 +193,6 @@
         "i": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -208,7 +202,6 @@
         "x": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -218,7 +211,6 @@
         "y": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -228,7 +220,6 @@
         "z": {
             "duration": 40,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -238,7 +229,6 @@
         "rx": {
             "duration": 60,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -248,7 +238,6 @@
         "ry": {
             "duration": 60,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -258,7 +247,6 @@
         "rz": {
             "duration": 60,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -268,7 +256,6 @@
         "h": {
             "duration": 40,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -278,7 +265,6 @@
         "s": {
             "duration": 60,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -288,7 +274,6 @@
         "sdag": {
             "duration": 60,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -298,7 +283,6 @@
         "x90": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -308,7 +292,6 @@
         "xm90": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -318,7 +301,6 @@
         "y90": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -328,7 +310,6 @@
         "ym90": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -338,7 +319,6 @@
         "t": {
             "duration": 60,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -348,7 +328,6 @@
         "tdag": {
             "duration": 60,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -358,7 +337,6 @@
         "x45": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -368,7 +346,6 @@
         "xm45": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -378,7 +355,6 @@
         "y45": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -388,7 +364,6 @@
         "ym45": {
             "duration": 20,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
@@ -398,7 +373,6 @@
         "cz": {
             "duration": 40,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": true,
             "type": "flux",
             "cc_light_instr_type": "two_qubit_gate",
@@ -408,7 +382,6 @@
         "cnot": {
             "duration": 80,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": true,
             "type": "flux",
             "cc_light_instr_type": "two_qubit_gate",
@@ -417,7 +390,6 @@
         },
         "toffoli" : {
             "duration": 80,
-            "matrix" : [ [0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": true,
             "type": "multi",
             "cc_light_instr_type": "multi_qubit_gate",
@@ -427,7 +399,6 @@
         "swap": {
             "duration": 200,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": true,
             "type": "flux",
             "cc_light_instr_type": "two_qubit_gate",
@@ -437,7 +408,6 @@
         "move": {
             "duration": 140,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": true,
             "type": "flux",
             "cc_light_instr_type": "two_qubit_gate",
