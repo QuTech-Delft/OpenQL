@@ -16,9 +16,7 @@ namespace schedule {
 // schedule support for program.h::schedule()
 static void schedule_kernel(
     ir::KernelRef &kernel,
-    const plat::PlatformRef &platform,
-    utils::Str &dot,
-    utils::Str &sched_dot
+    const plat::PlatformRef &platform
 ) {
     utils::Str scheduler = com::options::get("scheduler");
     utils::Str scheduler_uniform = com::options::get("scheduler_uniform");
@@ -33,19 +31,38 @@ static void schedule_kernel(
         com::options::get("scheduler_commute_rotations") == "yes"
     );
 
-    if (com::options::get("print_dot_graphs") == "yes") {
+    /*if (com::options::get("print_dot_graphs") == "yes") {
+        // NOTE JvS: basically, this preschedules with ASAP to generate a dot
+        //  file before scheduling... I don't see why you wouldn't be able to do
+        //  this by just prefixing another scheduler pass, so I'm taking this
+        //  one out.
+        utils::Str dot;
         sched.get_dot(dot);
-    }
+        auto fname = com::options::get("output_dir") + "/" + kernel->get_name() + "_dependence_graph.dot";
+        QL_IOUT("writing scheduled dot to '" << fname << "' ...");
+        utils::OutFile(fname).write(dot);
+    }*/
 
     if (scheduler_uniform == "yes") {
         sched.schedule_alap_uniform(); // result in current kernel's circuit (k.c)
     } else if (scheduler == "ASAP") {
-        sched.schedule_asap(&sched_dot); // result in current kernel's circuit (k.c)
+        sched.schedule_asap(); // result in current kernel's circuit (k.c)
     } else if (scheduler == "ALAP") {
-        sched.schedule_alap(&sched_dot); // result in current kernel's circuit (k.c)
+        sched.schedule_alap(); // result in current kernel's circuit (k.c)
     } else {
         QL_FATAL("Not supported scheduler option: scheduler=" << scheduler);
     }
+
+    if (com::options::get("print_dot_graphs") == "yes") {
+        utils::Str scheduler_opt = com::options::get("scheduler");
+        auto fname = com::options::get("output_dir") + "/" + kernel->get_name() + scheduler_opt + "_scheduled.dot";
+        QL_IOUT("writing scheduled dot to '" << fname << "' ...");
+        utils::OutFile outf{fname};
+        sched.get_dot(false, true, outf.unwrap());
+    }
+
+
+
     QL_DOUT(scheduler << " scheduling the quantum kernel '" << kernel->name << "' DONE");
 }
 
@@ -64,21 +81,7 @@ void schedule(
 
         QL_IOUT("scheduling the quantum program");
         for (auto &k : program->kernels) {
-            utils::Str dot;
-            utils::Str kernel_sched_dot;
-            schedule_kernel(k, platform, dot, kernel_sched_dot);
-
-            if (com::options::get("print_dot_graphs") == "yes") {
-                utils::Str fname;
-                fname = com::options::get("output_dir") + "/" + k->get_name() + "_dependence_graph.dot";
-                QL_IOUT("writing scheduled dot to '" << fname << "' ...");
-                utils::OutFile(fname).write(dot);
-
-                utils::Str scheduler_opt = com::options::get("scheduler");
-                fname = com::options::get("output_dir") + "/" + k->get_name() + scheduler_opt + "_scheduled.dot";
-                QL_IOUT("writing scheduled dot to '" << fname << "' ...");
-                utils::OutFile(fname).write(kernel_sched_dot);
-            }
+            schedule_kernel(k, platform);
         }
 
         report_statistics(program, platform, "out", passname, "# ");
@@ -103,9 +106,9 @@ static void rcschedule_kernel(
 
     utils::Str schedopt = com::options::get("scheduler");
     if (schedopt == "ASAP") {
-        sched.schedule_asap(plat::resource::Manager::from_defaults(platform), platform);
+        sched.schedule_asap(plat::resource::Manager::from_defaults(platform));
     } else if (schedopt == "ALAP") {
-        sched.schedule_alap(plat::resource::Manager::from_defaults(platform), platform);
+        sched.schedule_alap(plat::resource::Manager::from_defaults(platform));
     } else {
         QL_FATAL("Not supported scheduler option: scheduler=" << schedopt);
     }
@@ -198,8 +201,9 @@ SchedulePass::SchedulePass(
         false
     );
     options.add_bool(
-        "print_dot_graphs",
-        "Whether to emit graphviz dot graph files for debugging.",
+        "write_dot_graph",
+        "Whether to emit a graphviz dot graph representation of the schedule "
+        "of the kernel. The emitted file will use suffix \"_<kernel>.dot\".",
         false
     );
 }
@@ -212,6 +216,8 @@ utils::Int SchedulePass::run(
     const ir::KernelRef &kernel,
     const pmgr::pass_types::Context &context
 ) const {
+
+    // Construct the scheduling object.
     detail::Scheduler sched;
     sched.init(
         kernel,
@@ -220,11 +226,13 @@ utils::Int SchedulePass::run(
         options["commute_single_qubit"].as_bool()
     );
 
+    // Run the appropriate scheduling algorithm.
     if (options["resource_constraints"].as_bool()) {
+        auto rm = plat::resource::Manager::from_defaults(kernel->platform);
         if (options["heuristic"].as_str() == "asap") {
-
+            sched.schedule_asap(rm);
         } else if (options["heuristic"].as_str() == "alap") {
-
+            sched.schedule_alap(rm);
         } else {
             utils::StrStrm ss;
             ss << context.full_pass_name << " is configured to use the ";
@@ -235,17 +243,25 @@ utils::Int SchedulePass::run(
         }
     } else {
         if (options["heuristic"].as_str() == "asap") {
-
+            sched.schedule_asap();
         } else if (options["heuristic"].as_str() == "alap") {
-
+            sched.schedule_alap();
         } else if (options["heuristic"].as_str() == "uniform") {
-
+            sched.schedule_alap_uniform();
         } else {
             utils::StrStrm ss;
             ss << "unimplemented scheduling heuristic for " << context.full_pass_name;
             throw utils::Exception(ss.str());
         }
     }
+
+    // Write dot file if requested.
+    // TODO: maybe make this a separate pass, actually?
+    if (options["write_dot_graph"].as_bool()) {
+        utils::OutFile outf{context.output_prefix + "_" + kernel->name + ".dot"};
+        sched.get_dot(false, true, outf.unwrap());
+    }
+
     return 0;
 }
 

@@ -196,10 +196,10 @@ public:
     static void sort_by_cycle(ir::Circuit &cp);
 
     // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-    void schedule_asap(utils::Str *sched_dot);
+    void schedule_asap();
 
     // ALAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-    void schedule_alap(utils::Str *sched_dot);
+    void schedule_alap();
 
 // =========== schedulers with RC
     // Most code from here on deals with scheduling with Resource Constraints.
@@ -328,7 +328,6 @@ public:
         lemon::ListDigraph::Node n,
         plat::resource::Direction dir,
         const utils::UInt curr_cycle,
-        const plat::PlatformRef &platform,
         plat::resource::State &rs,
         utils::Bool &isres
     );
@@ -339,7 +338,6 @@ public:
         utils::List<lemon::ListDigraph::Node> &avlist,
         plat::resource::Direction dir,
         const utils::UInt curr_cycle,
-        const plat::PlatformRef &platform,
         plat::resource::State &rs,
         utils::Bool &success
     );
@@ -353,20 +351,16 @@ public:
     // - *circp (the original and result circuit) is sorted in the new cycle order
     // the bundles are returned, with private start/duration attributes
     void schedule(
-        ir::Circuit &circp,
         plat::resource::Direction dir,
-        const plat::PlatformRef &platform,
         const plat::resource::Manager &rm
     );
 
     void schedule_asap(
-        const plat::resource::Manager &rm,
-        const plat::PlatformRef &platform
+        const plat::resource::Manager &rm
     );
 
     void schedule_alap(
-        const plat::resource::Manager &rm,
-        const plat::PlatformRef &platform
+        const plat::resource::Manager &rm
     );
 
     void schedule_alap_uniform();

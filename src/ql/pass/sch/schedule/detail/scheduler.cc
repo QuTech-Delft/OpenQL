@@ -718,34 +718,20 @@ void Scheduler::sort_by_cycle(ir::Circuit &cp) {
 }
 
 // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-void Scheduler::schedule_asap(Str *sched_dot) {
+void Scheduler::schedule_asap() {
     QL_DOUT("Scheduling ASAP ...");
     set_cycle(plat::resource::Direction::FORWARD);
     sort_by_cycle(kernel->c);
     kernel->cycles_valid = true;
-
-    if (sched_dot) {
-        StrStrm ssdot;
-        get_dot(false, true, ssdot);
-        *sched_dot = ssdot.str();
-    }
-
     QL_DOUT("Scheduling ASAP [DONE]");
 }
 
 // ALAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-void Scheduler::schedule_alap(Str *sched_dot) {
+void Scheduler::schedule_alap() {
     QL_DOUT("Scheduling ALAP ...");
     set_cycle(plat::resource::Direction::BACKWARD);
     sort_by_cycle(kernel->c);
     kernel->cycles_valid = true;
-
-    if (sched_dot) {
-        StrStrm ssdot;
-        get_dot(false, true, ssdot);
-        *sched_dot = ssdot.str();
-    }
-
     QL_DOUT("Scheduling ALAP [DONE]");
 }
 
@@ -1064,7 +1050,6 @@ Bool Scheduler::immediately_schedulable(
     ListDigraph::Node n,
     plat::resource::Direction dir,
     const UInt curr_cycle,
-    const plat::PlatformRef &platform,
     plat::resource::State &rs,
     Bool &isres
 ) {
@@ -1101,7 +1086,6 @@ ListDigraph::Node Scheduler::SelectAvailable(
     List<ListDigraph::Node> &avlist,
     plat::resource::Direction dir,
     const UInt curr_cycle,
-    const plat::PlatformRef &platform,
     plat::resource::State &rs,
     Bool &success
 ) {
@@ -1115,7 +1099,7 @@ ListDigraph::Node Scheduler::SelectAvailable(
     // select the first (most critical) immediately schedulable gate that has duration 0
     for (auto n : avlist) {
         Bool isres;
-        if (instruction[n]->duration == 0 && immediately_schedulable(n, dir, curr_cycle, platform, rs, isres)) {
+        if (instruction[n]->duration == 0 && immediately_schedulable(n, dir, curr_cycle, rs, isres)) {
             QL_DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " duration 0 and immediately schedulable, remaining=" << remaining.dbg(n) << ", selected");
             success = true;
             return n;
@@ -1125,7 +1109,7 @@ ListDigraph::Node Scheduler::SelectAvailable(
     // since avlist is deep-criticality ordered, highest first, the first is the most deep-critical
     for (auto n : avlist) {
         Bool isres;
-        if (immediately_schedulable(n, dir, curr_cycle, platform, rs, isres)) {
+        if (immediately_schedulable(n, dir, curr_cycle, rs, isres)) {
             QL_DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " immediately schedulable, remaining=" << remaining.dbg(n) << ", selected");
             success = true;
             return n;
@@ -1147,9 +1131,7 @@ ListDigraph::Node Scheduler::SelectAvailable(
 // - *circp (the original and result circuit) is sorted in the new cycle order
 // the bundles are returned, with private start/duration attributes
 void Scheduler::schedule(
-    ir::Circuit &circp,
     plat::resource::Direction dir,
-    const plat::PlatformRef &platform,
     const plat::resource::Manager &rm
 ) {
     QL_DOUT("Scheduling " << (dir == plat::resource::Direction::FORWARD ? "ASAP" : "ALAP") << " with RC ...");
@@ -1177,7 +1159,7 @@ void Scheduler::schedule(
         Bool success;
         ListDigraph::Node selected_node;
 
-        selected_node = SelectAvailable(avlist, dir, curr_cycle, platform, rs, success);
+        selected_node = SelectAvailable(avlist, dir, curr_cycle, rs, success);
         if (!success) {
             // i.e. none from avlist was found suitable to schedule in this cycle
             AdvanceCurrCycle(dir, curr_cycle);
@@ -1203,7 +1185,7 @@ void Scheduler::schedule(
     }
 
     QL_DOUT("... sorting on cycle value");
-    sort_by_cycle(circp);
+    sort_by_cycle(kernel->c);
 
     if (dir == plat::resource::Direction::BACKWARD) {
         // readjust cycle values of gates so that SOURCE is at 0
@@ -1211,7 +1193,7 @@ void Scheduler::schedule(
         QL_DOUT("... readjusting cycle values by -" << SOURCECycle);
 
         instruction[t]->cycle -= SOURCECycle;
-        for (auto &gp : circp) {
+        for (auto &gp : kernel->c) {
             gp->cycle -= SOURCECycle;
         }
         instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
@@ -1224,20 +1206,18 @@ void Scheduler::schedule(
 }
 
 void Scheduler::schedule_asap(
-    const plat::resource::Manager &rm,
-    const plat::PlatformRef &platform
+    const plat::resource::Manager &rm
 ) {
     QL_DOUT("Scheduling ASAP");
-    schedule(kernel->c, plat::resource::Direction::FORWARD, platform, rm);
+    schedule(plat::resource::Direction::FORWARD, rm);
     QL_DOUT("Scheduling ASAP [DONE]");
 }
 
 void Scheduler::schedule_alap(
-    const plat::resource::Manager &rm,
-    const plat::PlatformRef &platform
+    const plat::resource::Manager &rm
 ) {
     QL_DOUT("Scheduling ALAP");
-    schedule(kernel->c, plat::resource::Direction::BACKWARD, platform, rm);
+    schedule(plat::resource::Direction::BACKWARD, rm);
     QL_DOUT("Scheduling ALAP [DONE]");
 }
 
