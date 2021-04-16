@@ -316,7 +316,7 @@ void MapperPass::runOnProgram(const ir::ProgramRef &program) {
     report_statistics(program, platform, "in", passname, "# ");
     report_qasm(program, platform, "in", passname);
 
-    mapper::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+    pass::map::qubits::route::detail::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
     mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
 
     UInt total_swaps = 0;        // for reporting, data is mapper specific

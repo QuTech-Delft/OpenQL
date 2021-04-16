@@ -14,14 +14,21 @@
 #include "ql/utils/str.h"
 #include "ql/utils/num.h"
 #include "ql/plat/platform.h"
+#include "ql/plat/topology.h"
 #include "ql/plat/resource/manager.h"
 #include "ql/ir/ir.h"
+#include "ql/com/virt2real.h"
 #include "ql/pass/sch/schedule/detail/scheduler.h"
-//#include "metrics.h"
 
 namespace ql {
-namespace mapper {
+namespace pass {
+namespace map {
+namespace qubits {
+namespace route {
+namespace detail {
 
+using namespace plat::topology;
+using namespace com::virt2real;
 using Scheduler = pass::sch::schedule::detail::Scheduler;
 
 // Note on the use of constructors and Init functions for classes of the mapper
@@ -35,262 +42,6 @@ using Scheduler = pass::sch::schedule::detail::Scheduler;
 // The constructors are trivial by this and can be synthesized by default.
 //
 // Construction of skeleton objects requires the used classes to provide such (non-parameterized) constructors.
-
-
-
-// =========================================================================================
-// Grid: definition and access functions to the grid of qubits that supports the real qubits.
-// Maintain several maps to ease navigating in the grid; these are constant after initialization.
-
-// Grid
-//
-// Config file definitions:
-//  nq:                         hardware_settings.qubit_number
-//  topology.number_of_cores:   number_of_cores
-//  topology.form;              gf_xy/gf_irregular: how relation between neighbors is specified
-//  topology.connectivity:      gc_specified/gc_full: how connectivity between qubits is specified
-//  topology.comm_qubits_per_core: number of qubits per core that can communicate directly with qubits in other cores
-//  topology.x_size/y_size:     x/y space, defines underlying grid (only gf_xy)
-//  topology.qubits:            mapping of qubit to x/y coordinates
-//                              (defines x[i]/y[i] for each qubit i) (only gf_xy)
-//  topology.edges:             mapping of edge (physical connection between 2 qubits)
-//                              to its src and dst qubits (defines nbs)
-//
-// Grid public members (apart from nq):
-//  form:               how relation between neighbors is specified
-//  Distance(qi,qj):    distance in physical connection hops from real qubit qi to real qubit qj;
-//                      - computing it relies on nbs (and Floyd-Warshall) (gf_xy and gf_irregular)
-//  nbs[qi]:            list of neighbor real qubits of real qubit qi
-//                      - nbs can be derived from topology.edges (gf_xy and gf_irregular)
-//  Normalize(qi, neighborlist):    rotate neighborlist such that largest angle diff around qi is behind last element
-//                      relies on nbs, and x[i]/y[i] (gf_xy only)
-//
-// For an irregular grid form, only nq and edges (so nbs) need to be specified; distance is computed from nbs:
-// - there is no underlying rectangular grid, so there are no defined x and y coordinates of qubits;
-//   this means that Normalize as needed by mappathselect==borders cannot work
-// - edges (so nbs) can be specified explicitly (connectivity==gc_specified) or implicitly (it is gc_full):
-//   when connectivity==gc_specified, the edges must be specified in topology.edges in terms of connected qubits;
-//   when connectivity==gc_full, there are edges between all qubits but between cores only between comm_qubits
-//
-// Below, we support regular (xy) grids which need not be fully assigned; this requires edges (so nbs) to be defined,
-//   from which distance is computed; also we have x/y coordinates per qubit specified in the configuration file
-//   An underlying grid with x/y coordinates comes in use for:
-//   - crossbars
-//   - cclight qwg assignment (done in another manner now)
-//   - when mappathselectopt==borders
-//
-// Not implemented:
-// forms gf_cross and gf_plus: given x_size and y_size, the relations are implicitly defined by the internal
-//      diagonal (gf_cross) or horizontal/vertical (gf_plus) connections between grid points (qubits);
-//      with gf_cross only half the grid is occupied by a qubit;
-//      the grid point (0,0) doesn't have a qubit, (1,0) and (0,1) do;
-//      topology.qubits and topology.edges need not be present in the configuration file;
-//      Distance in both forms would be defined by a formula, not a function.
-typedef enum GridConnectivity {
-    gc_specified,   // "specified": edges are specified in "edges" section
-    gc_full         // "full": qubits are fully connected by edges, between cores only between comm_qubits
-} gridconn_t;
-
-typedef enum GridForms {
-    gf_xy,          // nodes have explicit neighbor definitions, qubits have explicit x/y coordinates
-    gf_irregular    // nodes have explicit neighbor definitions, qubits don't have x/y coordinates
-} gridform_t;
-
-class Grid {
-public:
-    plat::PlatformRef platformp;          // current platform: topology
-    utils::UInt nq;                       // number of qubits in the platform
-    utils::UInt ncores;                   // number of cores in the platform
-    // Grid configuration, all constant after initialization
-    gridform_t form;                      // form of grid
-    gridconn_t conn;                      // connectivity of grid
-    utils::UInt ncommqpc;                 // number of comm_qubits per core, ==nq/ncores when all can communicate
-    utils::Int nx;                        // length of x dimension (x coordinates count 0..nx-1)
-    utils::Int ny;                        // length of y dimension (y coordinates count 0..ny-1)
-
-    typedef utils::List<utils::UInt> neighbors_t;  // neighbors is a list of qubits
-    utils::Map<utils::UInt,neighbors_t> nbs;       // nbs[i] is list of neighbor qubits of qubit i
-    utils::Map<utils::UInt,utils::Int> x;          // x[i] is x coordinate of qubit i
-    utils::Map<utils::UInt,utils::Int> y;          // y[i] is y coordinate of qubit i
-    utils::Vec<utils::Vec<utils::UInt>> dist;      // dist[i][j] is computed distance between qubits i and j;
-
-    // Grid initializer
-    // initialize mapper internal grid maps from configuration
-    // this remains constant over multiple kernels on the same platform
-    void Init(const plat::PlatformRef &p);
-
-    // whether qubit is a communication qubit of a core
-    utils::Bool IsCommQubit(utils::UInt qi) const;
-
-    // core index from qubit index
-    // when multi-core assumes full and uniform core connectivity
-    utils::UInt CoreOf(utils::UInt qi) const;
-
-    // inter-core hop from qs to qt?
-    utils::Bool IsInterCoreHop(utils::UInt qs, utils::UInt qt) const;
-
-    // distance between two qubits
-    // formulae for convex (hole free) topologies with underlying grid and with bidirectional edges:
-    //      gf_cross:   max( abs( x[to_realqi] - x[from_realqi] ), abs( y[to_realqi] - y[from_realqi] ))
-    //      gf_plus:    abs( x[to_realqi] - x[from_realqi] ) + abs( y[to_realqi] - y[from_realqi] )
-    // when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
-    utils::UInt Distance(utils::UInt from_realqi, utils::UInt to_realqi) const;
-
-    // coredistance between two qubits
-    // when multi-core assumes full and uniform core connectivity
-    utils::UInt CoreDistance(utils::UInt from_realqi, utils::UInt to_realqi) const;
-
-    // minimum number of hops between two qubits is always >= distance(from, to)
-    // and inside one core (or without multi-core) the minimum number of hops == distance
-    //
-    // however, in multi-core with inter-core hops, an inter-core hop cannot execute a 2qgate
-    // so when the minimum number of hops are all inter-core hops (so distance(from,to) == coredistance(from,to))
-    // and no 2qgate has been placed yet, then at least one additional inter-core hop is needed for the 2qgate,
-    // the number of hops required being at least distance+1;
-    //
-    // we assume below that a valid path exists with distance+1 hops;
-    // this fails when not all qubits in a core support connections to all other cores;
-    // see the check in InitNbs
-    utils::UInt MinHops(utils::UInt from_realqi, utils::UInt to_realqi) const;
-
-    // return clockwise angle around (cx,cy) of (x,y) wrt vertical y axis with angle 0 at 12:00, 0<=angle<2*pi
-    utils::Real Angle(utils::Int cx, utils::Int cy, utils::Int x, utils::Int y) const;
-
-    // rotate neighbors list such that largest angle difference between adjacent elements is behind back;
-    // this is needed when a given subset of variations from a node is wanted (mappathselect==borders);
-    // and this can only be computed when there is an underlying x/y grid (so not for form==gf_irregular)
-    void Normalize(utils::UInt src, neighbors_t &nbl) const;
-
-    // Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
-    void ComputeDist();
-
-    void DPRINTGrid() const;
-    void PrintGrid() const;
-
-    // init grid form attributes
-    void InitForm();
-
-    // init multi-core attributes
-    void InitCores();
-
-    // init x, and y maps
-    void InitXY();
-
-    // init nbs map
-    void InitNbs();
-
-    // sort nbs map; see Normalize and Angle above
-    void SortNbs();
-
-};
-
-// =========================================================================================
-// Virt2Real: map of a virtual qubit index to its real qubit index
-//
-// Mapping maps each used virtual qubit to a real qubit index, but which one that is, may change.
-// For a 2-qubit gate its operands should be nearest neighbor; when its virtual operand qubits
-// are not mapping to nearest neighbors, that should be accomplished by moving/swapping
-// the virtual qubits from their current real qubits to real qubits that are nearest neighbors:
-// those moves/swaps are inserted just before that 2-qubit gate.
-// Anyhow, the virtual operand qubits of gates must be mapped to the real ones, holding their state.
-//
-// The number of virtual qubits is less equal than the number of real qubits,
-// so their indices use the same data type (utils::UInt) and the same range type 0<=index<nq.
-//
-// Virt2Real maintains two maps:
-// - a map (v2rMap[]) for each virtual qubit that is in use to its current real qubit index.
-//      Virtual qubits are in use as soon as they have been encountered as operands in the program.
-//      When a virtual qubit is not in use, it maps to UNDEFINED_QUBIT, the undefined real index.
-//      The reverse map (GetVirt()) is implemented by a reverse look-up:
-//      when there is no virtual qubit that maps to a particular real qubit,
-//      the reverse map maps the real qubit index to UNDEFINED_QUBIT, the undefined virtual index.
-//      At any time, the virtual to real and reverse maps are 1-1 for qubits that are in use.
-// - a map for each real qubit whether there is state in it, and, if so, which (rs[]).
-//      When a gate (except for swap/move) has been executed on a real qubit,
-//      its state becomes valuable and must be preserved (rs_hasstate below).
-//      But before that, it can be in a garbage state (rs_nostate below) or in a known state (rs_wasinited below).
-//      The latter is used to replace a swap using a real qubit with such state by a move, which is cheaper.
-// There is no support yet to make a virtual qubit not in use (which could be after a measure),
-// nor to bring a real qubit in the rs_wasinited or rs_nostate state (perhaps after measure or prep).
-//
-// Some special situations are worth mentioning:
-// - while a virtual qubit is being swapped/moved near to an other one,
-//      along the trip real qubits may be used which have no virtual qubit mapping to them;
-//      a move can then be used which assumes the 2nd real operand in the |0> (inited) state, and leaves
-//      the 1st real operand in that state (while the 2nd has assumed the state of the former 1st).
-//      the mapper implementation assumes that all real qubits in the rs_wasinited state are in that state.
-// - on program start, no virtual qubit has a mapping yet to a real qubit;
-//      mapping is initialized while virtual qubits are encountered as operands.
-// - with multiple kernels, kernels assume the (unified) mapping from their predecessors and leave
-//      the result mapping to their successors in the kernels' Control Flow Graph;
-//      i.e. Virt2Real is what is passed between kernels as dynamic state;
-//      statically, the grid, the maximum number of real qubits and the current platform stay unchanged.
-// - while evaluating sets of swaps/moves as variations to continue mapping, Virt2Real is passed along
-//      to represent the mapping state after such swaps/moves where done; when deciding on a particular
-//      variation, the v2r mapping in the mainPast is made to replect the swaps/moves done.
-typedef enum realstate {
-    rs_nostate,     // real qubit has no relevant state needing preservation, i.e. is garbage
-    rs_wasinited,   // real qubit has initialized state suitable for replacing swap by move
-    rs_hasstate     // real qubit has a unique state which must be preserved
-} realstate_t;
-
-const utils::UInt UNDEFINED_QUBIT = utils::MAX;
-
-
-class Virt2Real {
-private:
-
-    utils::UInt             nq;     // size of the map; after initialization, will always be the same
-    utils::Vec<utils::UInt> v2rMap; // v2rMap[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
-    utils::Vec<realstate_t> rs;     // rs[real qubit index] -> {nostate|wasinited|hasstate}
-
-public:
-
-    // map real qubit to the virtual qubit index that is mapped to it (i.e. backward map);
-    // when none, return UNDEFINED_QUBIT;
-    // a second vector next to v2rMap (i.e. an r2vMap) would speed this up;
-    utils::UInt GetVirt(utils::UInt r) const;
-    realstate_t GetRs(utils::UInt q) const;
-    void SetRs(utils::UInt q, realstate_t rsvalue);
-
-    // expand to desired size
-    //
-    // mapping starts off undefined for all virtual qubits
-    // (unless option mapinitone2one is set, then virtual qubit i maps to real qubit i for all qubits)
-    //
-    // real qubits are assumed to have a garbage state
-    // (unless option mapassumezeroinitstate was set,
-    //  then all real qubits are assumed to have a state suitable for replacing swap by move)
-    //
-    // the rs initializations are done only once, for a whole program
-    void Init(utils::UInt n);
-
-    // map virtual qubit index to real qubit index
-    utils::UInt &operator[](utils::UInt v);
-    const utils::UInt &operator[](utils::UInt v) const;
-
-    // allocate a new real qubit for an unmapped virtual qubit v (i.e. v2rMap[v] == UNDEFINED_QUBIT);
-    // note that this may consult the grid or future gates to find a best real
-    // and thus should not be in Virt2Real but higher up
-    utils::UInt AllocQubit(utils::UInt v);
-
-    // r0 and r1 are real qubit indices;
-    // by execution of a swap(r0,r1), their states are exchanged at runtime;
-    // so when v0 was in r0 and v1 was in r1, then v0 is now in r1 and v1 is in r0;
-    // update v2r accordingly
-    void Swap(utils::UInt r0, utils::UInt r1);
-
-    void DPRINTReal(utils::UInt r) const;
-    void PrintReal(utils::UInt r) const;
-    void PrintVirt(utils::UInt v) const;
-    void DPRINTReal(const utils::Str &s, utils::UInt r0, utils::UInt r1) const;
-    void PrintReal(const utils::Str &s, utils::UInt r0, utils::UInt r1) const;
-    void DPRINT(const utils::Str &s) const;
-    void Print(const utils::Str &s) const;
-    void Export(utils::Vec<utils::UInt> &kv2rMap) const;
-    void Export(utils::Vec<utils::Int> &krs) const;
-
-};
 
 // =========================================================================================
 // FreeCycle: map each real qubit to the first cycle that it is free for use
@@ -977,5 +728,9 @@ public:
 
 };
 
-} // namespace mapper
+} // namespace detail
+} // namespace route
+} // namespace qubits
+} // namespace map
+} // namespace pass
 } // namespace ql
