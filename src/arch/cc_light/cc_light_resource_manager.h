@@ -15,21 +15,6 @@
 namespace ql {
 namespace arch {
 
-
-// ============ interfaces to access platform dependent attributes of a gate
-
-// in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
-// it is needed to define the extend of the resource occupation in case of multi-cycle operations
-utils::UInt ccl_get_operation_duration(ir::Gate &ins, const plat::PlatformRef &platform);
-
-// operation type is "mw" (for microwave), "flux", or "readout"
-// it reflects the different resources used to implement the various gates and that resource management must distinguish
-utils::Str ccl_get_operation_type(ir::Gate &ins, const plat::PlatformRef &platform);
-
-// operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
-utils::Str ccl_get_operation_name(ir::Gate &ins, const plat::PlatformRef &platform);
-
-
 // ============ classes of resources that _may_ appear in a configuration file
 // these are a superset of those allocated by the cc_light_resource_manager_t constructor below
 

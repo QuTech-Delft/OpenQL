@@ -12,13 +12,13 @@ using namespace plat::resource;
 
 // in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
 // it is needed to define the extend of the resource occupation in case of multi-cycle operations
-UInt ccl_get_operation_duration(const ir::GateRef &ins, const plat::PlatformRef &platform) {
+static UInt ccl_get_operation_duration(const ir::GateRef &ins, const plat::PlatformRef &platform) {
     return ceil( static_cast<Real>(ins->duration) / platform->cycle_time);
 }
 
 // operation type is "mw" (for microwave), "flux", "readout", or "extern" (used for inter-core)
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
-Str ccl_get_operation_type(const ir::GateRef &ins, const plat::PlatformRef &platform) {
+static Str ccl_get_operation_type(const ir::GateRef &ins, const plat::PlatformRef &platform) {
     Str operation_type("cc_light_type");
     QL_JSON_ASSERT(platform->instruction_settings, ins->name, ins->name);
     if (!platform->instruction_settings[ins->name]["type"].is_null()) {
@@ -28,7 +28,7 @@ Str ccl_get_operation_type(const ir::GateRef &ins, const plat::PlatformRef &plat
 }
 
 // operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
-Str ccl_get_operation_name(const ir::GateRef &ins, const plat::PlatformRef &platform) {
+static Str ccl_get_operation_name(const ir::GateRef &ins, const plat::PlatformRef &platform) {
     Str operation_name(ins->name);
     QL_JSON_ASSERT(platform->instruction_settings, ins->name, ins->name);
     if (!platform->instruction_settings[ins->name]["cc_light_instr"].is_null()) {
