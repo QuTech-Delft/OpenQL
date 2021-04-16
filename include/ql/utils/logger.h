@@ -67,6 +67,9 @@
         }                                                                                                   \
     } while (false)
 
+#define QL_IF_LOG_DEBUG \
+    if (::ql::utils::logger::log_level >= ::ql::utils::logger::LogLevel::LOG_DEBUG)
+
 namespace ql {
 namespace utils {
 namespace logger {

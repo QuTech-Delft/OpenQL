@@ -343,11 +343,11 @@ void MapperPass::runOnProgram(const ir::ProgramRef &program) {
 
         AdditionalStats::push(kernel, "swaps added: " + to_string(mapper.nswapsadded));
         AdditionalStats::push(kernel, "of which moves added: " + to_string(mapper.nmovesadded));
-        AdditionalStats::push(kernel, "virt2real map before mapper:" + to_string(mapper.v2r_in));
-        AdditionalStats::push(kernel, "virt2real map after initial placement:" + to_string(mapper.v2r_ip));
-        AdditionalStats::push(kernel, "virt2real map after mapper:" + to_string(mapper.v2r_out));
-        AdditionalStats::push(kernel, "realqubit states before mapper:" + to_string(mapper.rs_in));
-        AdditionalStats::push(kernel, "realqubit states after mapper:" + to_string(mapper.rs_out));
+        AdditionalStats::push(kernel, "virt2real map before mapper:" + to_string(mapper.v2r_in.get_virt_to_real()));
+        AdditionalStats::push(kernel, "virt2real map after initial placement:" + to_string(mapper.v2r_ip.get_virt_to_real()));
+        AdditionalStats::push(kernel, "virt2real map after mapper:" + to_string(mapper.v2r_out.get_virt_to_real()));
+        AdditionalStats::push(kernel, "realqubit states before mapper:" + to_string(mapper.v2r_in.get_state()));
+        AdditionalStats::push(kernel, "realqubit states after mapper:" + to_string(mapper.v2r_out.get_state()));
         AdditionalStats::push(kernel, "time taken: " + to_string(timetaken));
 
         total_swaps += mapper.nswapsadded;

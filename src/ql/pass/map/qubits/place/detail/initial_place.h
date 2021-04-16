@@ -75,7 +75,7 @@
 #include "ql/plat/platform.h"
 #include "ql/plat/topology.h"
 #include "ql/ir/ir.h"
-#include "ql/com/virt2real.h"
+#include "ql/com/qubit_mapping.h"
 
 namespace ql {
 namespace pass {
@@ -86,7 +86,6 @@ namespace detail {
 
 using namespace utils;
 using namespace plat::topology;
-using namespace com::virt2real;
 
 typedef enum InitialPlaceResults {
     ipr_any,            // any mapping will do because there are no two-qubit gates in the circuit
@@ -118,7 +117,7 @@ public:
     // find an initial placement of the virtual qubits for the given circuit
     // the resulting placement is put in the provided virt2real map
     // result indicates one of the result indicators (ipr_t, see above)
-    void PlaceBody(const ir::Circuit &circ, Virt2Real &v2r, ipr_t &result, Real &iptimetaken);
+    void PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ipr_t &result, Real &iptimetaken);
 
     // the above PlaceBody is a regular function using circ, and updating v2r and result before it returns;
     // it implements Initial Placement as if the call to Place in the mapper called PlaceBody directly;
@@ -130,7 +129,7 @@ public:
     // and this works as well ...
     Bool PlaceWrapper(
         const ir::Circuit &circ,
-        Virt2Real &v2r,
+        com::QubitMapping &v2r,
         ipr_t &result,
         Real &iptimetaken,
         const Str &initialplaceopt
@@ -143,7 +142,7 @@ public:
     // v2r is updated by PlaceBody/PlaceWrapper when it has found a mapping
     void Place(
         const ir::Circuit &circ,
-        Virt2Real &v2r,
+        com::QubitMapping &v2r,
         ipr_t &result,
         Real &iptimetaken,
         const Str &initialplaceopt

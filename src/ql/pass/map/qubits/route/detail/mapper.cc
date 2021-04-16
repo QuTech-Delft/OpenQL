@@ -226,7 +226,11 @@ void Past::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const Ptr<Gr
     ct = platformp->cycle_time;
 
     QL_ASSERT(kernelp->c.empty());   // kernelp->c will be used by new_gate to return newly created gates into
-    v2r.Init(nq);               // v2r initializtion until v2r is imported from context
+    v2r.resize(                 // v2r initializtion until v2r is imported from context
+        nq,
+        com::options::get("mapinitone2one") == "yes",
+        com::options::get("mapassumezeroinitstate") == "yes" ? QubitState::INITIALIZED : QubitState::NONE
+    );
     fc.Init(platformp);         // fc starts off with all qubits free, is updated after schedule of each gate
     waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
     lg.clear();                 // no gates scheduled yet in this past; after schedule of gate, it gets here
@@ -237,12 +241,12 @@ void Past::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const Ptr<Gr
 }
 
 // import Past's v2r from v2r_value
-void Past::ImportV2r(const Virt2Real &v2r_value) {
+void Past::ImportV2r(const QubitMapping &v2r_value) {
     v2r = v2r_value;
 }
 
 // export Past's v2r into v2r_destination
-void Past::ExportV2r(Virt2Real &v2r_destination) const {
+void Past::ExportV2r(QubitMapping &v2r_destination) const {
     v2r_destination = v2r;
 }
 
@@ -258,7 +262,7 @@ void Past::FcPrint() const{
 
 void Past::Print(const Str &s) const {
     std::cout << "... Past " << s << ":";
-    v2r.Print("");
+    v2r.dump_state();
     fc.Print("");
     // QL_DOUT("... list of gates in past");
     for (auto &gp : lg) {
@@ -436,14 +440,15 @@ Bool Past::IsFirstSwapEarliest(UInt fr0, UInt fr1, UInt sr0, UInt sr1) const {
 // whether this was successfully done can be seen from whether circ was extended
 // please note that the reversal of operands may have been done also when GenMove was not successful
 void Past::GenMove(ir::Circuit &circ, UInt &r0, UInt &r1) {
-    if (v2r.GetRs(r0) != rs_hasstate) {
-        QL_ASSERT(v2r.GetRs(r0) == rs_nostate || v2r.GetRs(r0) == rs_wasinited);
+    if (v2r.get_state(r0) != QubitState::LIVE) {
+        QL_ASSERT(v2r.get_state(r0) == QubitState::NONE ||
+                      v2r.get_state(r0) == QubitState::INITIALIZED);
         // interchange r0 and r1, so that r1 (right-hand operand of move) will be the state-less one
         UInt  tmp = r1; r1 = r0; r0 = tmp;
         // QL_DOUT("... reversed operands for move to become move(q" << r0 << ",q" << r1 << ") ...");
     }
-    QL_ASSERT(v2r.GetRs(r0) == rs_hasstate);    // and r0 will be the one with state
-    QL_ASSERT(v2r.GetRs(r1) != rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_wasinited)
+    QL_ASSERT(v2r.get_state(r0) == QubitState::LIVE);    // and r0 will be the one with state
+    QL_ASSERT(v2r.get_state(r1) != QubitState::LIVE);    // and r1 will be the one without state (QubitState::NONE || QubitState::INITIALIZED)
 
     // first (optimistically) create the move circuit and add it to circ
     Bool created;
@@ -474,7 +479,7 @@ void Past::GenMove(ir::Circuit &circ, UInt &r0, UInt &r1) {
         }
     }
 
-    if (v2r.GetRs(r1) == rs_nostate) {
+    if (v2r.get_state(r1) == QubitState::NONE) {
         // r1 is not in inited state, generate in initcirc the circuit to do so
         // QL_DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
         ir::Circuit initcirc;
@@ -511,7 +516,7 @@ void Past::GenMove(ir::Circuit &circ, UInt &r0, UInt &r1) {
                 initcirc.add(gp);
             }
             circ.get_vec().swap(initcirc.get_vec());
-            v2r.SetRs(r1, rs_wasinited);
+            v2r.set_state(r1, QubitState::INITIALIZED);
         } else {
             // undo damage done, will not do move but swap, i.e. nothing created thisfar
             QL_DOUT("... initialization extends circuit, don't do it ...");
@@ -534,30 +539,36 @@ void Past::AddSwap(UInt r0, UInt r1) {
     Bool created = false;
 
     QL_DOUT("... extending with swap(q" << r0 << ",q" << r1 << ") ...");
-    v2r.DPRINTReal("... adding swap/move", r0, r1);
+    QL_DOUT("... adding swap/move: " << v2r.real_to_string(r0) << ", " << v2r.real_to_string(r1));
 
-    QL_ASSERT(v2r.GetRs(r0) == rs_wasinited || v2r.GetRs(r0) == rs_nostate || v2r.GetRs(r0) == rs_hasstate);
-    QL_ASSERT(v2r.GetRs(r1) == rs_wasinited || v2r.GetRs(r1) == rs_nostate || v2r.GetRs(r1) == rs_hasstate);
+    QL_ASSERT(v2r.get_state(r0) == QubitState::INITIALIZED ||
+                  v2r.get_state(r0) == QubitState::NONE ||
+                  v2r.get_state(r0) == QubitState::LIVE);
+    QL_ASSERT(v2r.get_state(r1) == QubitState::INITIALIZED ||
+                  v2r.get_state(r1) == QubitState::NONE ||
+                  v2r.get_state(r1) == QubitState::LIVE);
 
-    if (v2r.GetRs(r0) != rs_hasstate && v2r.GetRs(r1) != rs_hasstate) {
+    if (v2r.get_state(r0) != QubitState::LIVE &&
+        v2r.get_state(r1) != QubitState::LIVE) {
         QL_DOUT("... no state in both operand of intended swap/move; don't add swap/move gates");
-        v2r.Swap(r0,r1);
+        v2r.swap(r0, r1);
         return;
     }
 
     // store the virtual qubits corresponding to each real qubit
-    UInt v0 = v2r.GetVirt(r0);
-    UInt v1 = v2r.GetVirt(r1);
+    UInt v0 = v2r.get_virtual(r0);
+    UInt v1 = v2r.get_virtual(r1);
 
     ir::Circuit circ;   // current kernel copy, clear circuit
     Str mapusemovesopt = options::get("mapusemoves");
-    if (mapusemovesopt != "no" && (v2r.GetRs(r0) != rs_hasstate || v2r.GetRs(r1) != rs_hasstate)) {
+    if (mapusemovesopt != "no" && (v2r.get_state(r0) != QubitState::LIVE ||
+        v2r.get_state(r1) != QubitState::LIVE)) {
         GenMove(circ, r0, r1);
         created = circ.size()!=0;
         if (created) {
             // generated move
             // move is in circ, optionally with initialization in front of it
-            // also rs of its 2nd operand is 'rs_wasinited'
+            // also rs of its 2nd operand is 'QubitState::INITIALIZED'
             // note that after swap/move, r0 will be in this state then
             nmovesadded++;                       // for reporting at the end
             QL_DOUT("... move(q" << r0 << ",q" << r1 << ") ...");
@@ -619,7 +630,7 @@ void Past::AddSwap(UInt r0, UInt r1) {
         gp->swap_params = swap_params;
     }
 
-    v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
+    v2r.swap(r0, r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }
 
 // add the mapped gate (with real qubit indices as operands) to the past
@@ -634,7 +645,7 @@ void Past::AddAndSchedule(const ir::GateRef &gp) {
 UInt Past::MapQubit(UInt v) {
     UInt  r = v2r[v];
     if (r == UNDEFINED_QUBIT) {
-        r = v2r.AllocQubit(v);
+        r = v2r.allocate(v);
     }
     return r;
 }
@@ -686,9 +697,9 @@ void Past::MakeReal(ir::GateRef &gp, ir::Circuit &circ) {
         qi = MapQubit(qi);          // and now they are real
         auto mapprepinitsstateopt = options::get("mapprepinitsstate");
         if (mapprepinitsstateopt == "yes" && (gname == "prepz" || gname == "Prepz")) {
-            v2r.SetRs(qi, rs_wasinited);
+            v2r.set_state(qi, QubitState::INITIALIZED);
         } else {
-            v2r.SetRs(qi, rs_hasstate);
+            v2r.set_state(qi, QubitState::LIVE);
         }
     }
 
@@ -1756,7 +1767,7 @@ void Mapper::MapGates(Future &future, Past &past, Past &basePast) {
 }
 
 // Map the circuit's gates in the provided context (v2r maps), updating circuit and v2r maps
-void Mapper::MapCircuit(const ir::KernelRef &kernel, Virt2Real &v2r) {
+void Mapper::MapCircuit(const ir::KernelRef &kernel, QubitMapping &v2r) {
     Future  future;         // future window, presents input in avlist
     Past    mainPast;       // past window, contains output schedule, storing all gates until taken out
     utils::Ptr<Scheduler> sched;
@@ -1819,18 +1830,22 @@ void Mapper::Map(const ir::KernelRef &kernel) {
     QL_DOUT("... kernel original virtual number of qubits=" << kernel->qubit_count);
     kernelp.reset();            // no new_gates until kernel.c has been copied
 
-    Virt2Real   v2r;            // current mapping while mapping this kernel
-
     auto mapassumezeroinitstateopt = options::get("mapassumezeroinitstate");
     QL_DOUT("Mapper::Map before v2r.Init: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
 
     // unify all incoming v2rs into v2r to compute kernel input mapping;
     // but until inter-kernel mapping is implemented, take program initial mapping for it
-    v2r.Init(nq);               // v2r now contains program initial mapping
-    v2r.DPRINT("After initialization");
+    QubitMapping v2r{            // current mapping while mapping this kernel
+        nq,
+        com::options::get("mapinitone2one") == "yes",
+        com::options::get("mapassumezeroinitstate") == "yes" ? QubitState::INITIALIZED : QubitState::NONE
+    };
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("After initialization");
+        v2r.dump_state();
+    }
 
-    v2r.Export(v2r_in);  // from v2r to caller for reporting
-    v2r.Export(rs_in);   // from v2r to caller for reporting
+    v2r_in = v2r;  // for reporting
 
     Str initialplaceopt = options::get("initialplace");
     if (initialplaceopt != "no") {
@@ -1850,23 +1865,27 @@ void Mapper::Map(const ir::KernelRef &kernel) {
         QL_WOUT("InitialPlace support disabled during OpenQL build [DONE]");
 #endif // ifdef INITIALPLACE
     }
-    v2r.DPRINT("After InitialPlace");
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("After InitialPlace");
+        v2r.dump_state();
+    }
 
-    v2r.Export(v2r_ip);  // from v2r to caller for reporting
-    v2r.Export(rs_ip);   // from v2r to caller for reporting
+    v2r_ip = v2r;  // for reporting
 
     QL_DOUT("Mapper::Map before MapCircuit: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
 
     MapCircuit(kernel, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
-    v2r.DPRINT("After heuristics");
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("After heuristics");
+        v2r.dump_state();
+    }
 
     MakePrimitives(kernel);         // decompose to primitives as specified in the config file
 
     kernel->qubit_count = nq;       // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
     kernel->creg_count = nc;        // same for number of cregs and bregs, although we don't really map those
     kernel->breg_count = nb;
-    v2r.Export(v2r_out);     // from v2r to caller for reporting
-    v2r.Export(rs_out);      // from v2r to caller for reporting
+    v2r_out = v2r;                  // for reporting
 
     QL_DOUT("Mapping kernel " << kernel->name << " [DONE]");
 }

@@ -46,7 +46,7 @@ void InitialPlace::Init(const utils::Ptr<Grid> &g, const plat::PlatformRef &p) {
 // find an initial placement of the virtual qubits for the given circuit
 // the resulting placement is put in the provided virt2real map
 // result indicates one of the result indicators (ipr_t, see above)
-void InitialPlace::PlaceBody(const ir::Circuit &circ, Virt2Real &v2r, ipr_t &result, Real &iptimetaken) {
+void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ipr_t &result, Real &iptimetaken) {
     QL_DOUT("InitialPlace.PlaceBody ...");
 
     // check validity of circuit
@@ -71,7 +71,7 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, Virt2Real &v2r, ipr_t &res
     Vec<UInt>  ipusecount;// ipusecount[v] = count of use of virtual qubit v in current circuit
     ipusecount.resize(nvq,0);       // initially all 0
     Vec<UInt> v2i;        // v2i[virtual qubit index v] -> index of facility i
-    v2i.resize(nvq,UNDEFINED_QUBIT);// virtual qubit v not used by circuit as gate operand
+    v2i.resize(nvq, com::UNDEFINED_QUBIT);// virtual qubit v not used by circuit as gate operand
 
     Int twoqubitcount = 0;
     for (auto &gp : circ) {
@@ -113,8 +113,8 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, Virt2Real &v2r, ipr_t &res
                 refcount[v2i[q[0]]][v2i[q[1]]] += 1;
 
                 if (
-                    v2r[q[0]] == UNDEFINED_QUBIT
-                    || v2r[q[1]] == UNDEFINED_QUBIT
+                    v2r[q[0]] == com::UNDEFINED_QUBIT
+                    || v2r[q[1]] == com::UNDEFINED_QUBIT
                     || gridp->Distance(v2r[q[0]], v2r[q[1]]) > 1
                 ) {
                     currmap = false;
@@ -354,7 +354,7 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, Virt2Real &v2r, ipr_t &res
     QL_DOUT("... interpret result and copy to Virt2Real, nvq=" << nvq);
     for (UInt v = 0; v < nvq; v++) {
         QL_DOUT("... about to set v2r to undefined for v " << v);
-        v2r[v] = UNDEFINED_QUBIT;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
+        v2r[v] = com::UNDEFINED_QUBIT;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
     }
     for (UInt i = 0; i < nfac; i++) {
         UInt v;   // found virtual qubit index v represented by facility i
@@ -380,13 +380,16 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, Virt2Real &v2r, ipr_t &res
 
     auto mapinitone2oneopt = com::options::get("mapinitone2one");
     if (mapinitone2oneopt == "yes") {
-        QL_DOUT("... correct location of unused mapped virtual qubits to be an unused location");
-        v2r.DPRINT("... result Virt2Real map of InitialPlace before mapping unused mapped virtual qubits ");
+        QL_IF_LOG_DEBUG {
+            QL_DOUT("... correct location of unused mapped virtual qubits to be an unused location");
+            QL_DOUT("... result Virt2Real map of InitialPlace before mapping unused mapped virtual qubits");
+            v2r.dump_state();
+        };
         // virtual qubits used by this kernel v have got their location k filled in in v2r[v] == k
         // unused mapped virtual qubits still have location UNDEFINED_QUBIT, fill with the remaining locs
         // this should be replaced by actually swapping them to there, when mapping multiple kernels
         for (UInt v = 0; v < nvq; v++) {
-            if (v2r[v] == UNDEFINED_QUBIT) {
+            if (v2r[v] == com::UNDEFINED_QUBIT) {
                 // v is unused by this kernel; find an unused location k
                 UInt k;   // location k that is checked for having been allocated to some virtual qubit w
                 for (k = 0; k < nlocs; k++) {
@@ -408,7 +411,10 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, Virt2Real &v2r, ipr_t &res
             QL_DOUT("... end loop body over nvq when mapinitone2oneopt");
         }
     }
-    v2r.DPRINT("... final result Virt2Real map of InitialPlace");
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("... final result Virt2Real map of InitialPlace");
+        v2r.dump_state();
+    }
     result = ipr_newmap;
     QL_DOUT("InitialPlace.PlaceBody [SUCCESS, FOUND MAPPING]");
 }
@@ -423,7 +429,7 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, Virt2Real &v2r, ipr_t &res
 // and this works as well ...
 Bool InitialPlace::PlaceWrapper(
     const ir::Circuit &circ,
-    Virt2Real &v2r,
+    com::QubitMapping &v2r,
     ipr_t &result,
     Real &iptimetaken,
     const Str &initialplaceopt
@@ -487,12 +493,12 @@ Bool InitialPlace::PlaceWrapper(
 // v2r is updated by PlaceBody/PlaceWrapper when it has found a mapping
 void InitialPlace::Place(
     const ir::Circuit &circ,
-    Virt2Real &v2r,
+    com::QubitMapping &v2r,
     ipr_t &result,
     Real &iptimetaken,
     const Str &initialplaceopt
 ) {
-    Virt2Real   v2r_orig = v2r;
+    com::QubitMapping   v2r_orig = v2r;
 
     QL_DOUT("InitialPlace.Place ...");
     if (initialplaceopt == "yes") {
