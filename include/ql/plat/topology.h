@@ -257,6 +257,11 @@ public:
     utils::UInt get_min_hops(Qubit source, Qubit target) const;
 
     /**
+     * Returns whether qubits have coordinates associated with them.
+     */
+    utils::Bool has_coordinates() const;
+
+    /**
      * Rotate neighbors list such that largest angle difference between adjacent
      * elements is behind back. This is needed when a given subset of variations
      * from a node is wanted (mappathselect==borders). This can only be computed

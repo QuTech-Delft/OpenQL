@@ -1251,6 +1251,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
 
     // rotate neighbor list nbl such that largest difference between angles of adjacent elements is beyond back()
     // this makes only sense when there is an underlying xy grid; when not, which can only be wp_all_shortest
+    QL_ASSERT(platformp->grid->has_coordinates() || com::options::get("mappathselect") != "borders");
     platformp->grid->sort_neighbors_by_angle(src, nbl);
     // subset to those neighbors that continue in direction(s) we want
     if (which == wp_left_shortest) {

@@ -8,7 +8,6 @@
 #include "ql/plat/topology.h"
 
 #include "ql/utils/logger.h"
-#include "ql/com/options.h"
 
 namespace ql {
 namespace plat {
@@ -336,6 +335,13 @@ utils::UInt Grid::get_min_hops(Qubit source, Qubit target) const {
 }
 
 /**
+ * Returns whether qubits have coordinates associated with them.
+ */
+utils::Bool Grid::has_coordinates() const {
+    return form != GridForm::IRREGULAR;
+}
+
+/**
  * Rotate neighbors list such that largest angle difference between adjacent
  * elements is behind back. This is needed when a given subset of variations
  * from a node is wanted (mappathselect==borders). This can only be computed
@@ -346,9 +352,6 @@ utils::UInt Grid::get_min_hops(Qubit source, Qubit target) const {
  */
 void Grid::sort_neighbors_by_angle(Qubit src, Neighbors &nbl) const {
     if (form != GridForm::XY) {
-        // there are no implicit/explicit x/y coordinates defined per qubit, so no sense of nearness
-        utils::Str mappathselectopt = com::options::get("mappathselect");
-        QL_ASSERT(mappathselectopt != "borders");
         return;
     }
 
