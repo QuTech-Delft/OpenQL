@@ -183,7 +183,7 @@ public:
      */
     friend std::ostream &operator<<(std::ostream &os, const Opt &opt) {
         if (opt.v) {
-            os << *opt.v;
+            os << *(opt.v);
         } else {
             os << "<NULL>";
         }

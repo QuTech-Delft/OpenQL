@@ -215,11 +215,10 @@ Past::Past() {
 }
 
 // past initializer
-void Past::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const Ptr<Grid> &g) {
+void Past::Init(const plat::PlatformRef &p, const ir::KernelRef &k) {
     QL_DOUT("Past::Init");
     platformp = p;
     kernelp = k;
-    gridp = g;
 
     nq = platformp->qubit_count;
     nb = platformp->breg_count;
@@ -453,7 +452,7 @@ void Past::GenMove(ir::Circuit &circ, UInt &r0, UInt &r1) {
     // first (optimistically) create the move circuit and add it to circ
     Bool created;
     auto mapperopt = options::get("mapper");
-    if (gridp->IsInterCoreHop(r0, r1)) {
+    if (platformp->grid->IsInterCoreHop(r0, r1)) {
         if (mapperopt == "maxfidelity") {
             created = new_gate(circ, "tmove_prim", {r0,r1});    // gates implementing tmove returned in circ
         } else {
@@ -591,7 +590,7 @@ void Past::AddSwap(UInt r0, UInt r1) {
             }
         }
         auto mapperopt = options::get("mapper");
-        if (gridp->IsInterCoreHop(r0, r1)) {
+        if (platformp->grid->IsInterCoreHop(r0, r1)) {
             if (mapperopt == "maxfidelity") {
                 created = new_gate(circ, "tswap_prim", {r0,r1});    // gates implementing tswap returned in circ
             } else {
@@ -839,16 +838,15 @@ Alter::Alter() {
 
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
-void Alter::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const utils::Ptr<Grid> &g) {
+void Alter::Init(const plat::PlatformRef &p, const ir::KernelRef &k) {
     QL_DOUT("Alter::Init(number of qubits=" << p->qubit_count);
     platformp = p;
     kernelp = k;
-    gridp = g;
 
     nq = platformp->qubit_count;
     ct = platformp->cycle_time;
     // total, fromSource and fromTarget start as empty vectors
-    past.Init(platformp, kernelp, gridp);      // initializes past to empty
+    past.Init(platformp, kernelp);      // initializes past to empty
     didscore = false;                   // will not print score for now
 }
 
@@ -1033,7 +1031,7 @@ void Alter::Extend(const Past &currPast, const Past &basePast) {
 // distance=5   means length=6  means 4 swaps + 1 CZ gate, e.g.
 // index in total:      0           1           2           length-3        length-2        length-1
 // qubit:               2   ->      5   ->      7   ->      3       ->      1       CZ      4
-void Alter::Split(const Grid &grid, List<Alter> &resla) const {
+void Alter::Split(List<Alter> &resla) const {
     // QL_DOUT("Split ...");
 
     UInt length = total.size();
@@ -1045,7 +1043,7 @@ void Alter::Split(const Grid &grid, List<Alter> &resla) const {
         // leftopi is the index in total that holds the qubit that becomes the left operand of the gate
         // rightopi is the index in total that holds the qubit that becomes the right operand of the gate
         // rightopi == leftopi + 1
-        if (grid.IsInterCoreHop(total[leftopi], total[rightopi])) {
+        if (platformp->grid->IsInterCoreHop(total[leftopi], total[rightopi])) {
             // an inter-core hop cannot execute a two-qubit gate, so is not a valid alternative
             // QL_DOUT("... skip inter-core hop from qubit=" << total[leftopi] << " to qubit=" << total[rightopi]);
             continue;
@@ -1223,7 +1221,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
         // add src to this path (so that it becomes a distance 0 path with one qubit, src)
         // and add the Alter to the result list
         Alter a;
-        a.Init(platformp, kernelp, grid);
+        a.Init(platformp, kernelp);
         a.targetgp = gp;
         a.Add2Front(src);
         resla.push_back(a);
@@ -1234,7 +1232,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
     }
 
     // start looking around at neighbors for serious paths
-    UInt d = grid->Distance(src, tgt);
+    UInt d = platformp->grid->Distance(src, tgt);
     QL_DOUT("GenShortestPaths: distance(src=" << src << ", tgt=" << tgt << ") = " << d);
     QL_ASSERT(d >= 1);
 
@@ -1242,8 +1240,8 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
     // src=>tgt is distance d, budget>=d is allowed, attempt src->n=>tgt
     // src->n is one hop, budget from n is one less so distance(n,tgt) <= budget-1 (i.e. distance < budget)
     // when budget==d, this defaults to distance(n,tgt) <= d-1
-    auto nbl = grid->nbs.get(src);
-    nbl.remove_if([this,budget,tgt](const UInt& n) { return grid->Distance(n,tgt) >= budget; });
+    auto nbl = platformp->grid->get_neighbors(src);
+    nbl.remove_if([this,budget,tgt](const UInt& n) { return platformp->grid->Distance(n,tgt) >= budget; });
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         QL_DOUT("GenShortestPaths: ... after reducing to steps within budget, nbl: ");
         for (auto dn : nbl) {
@@ -1253,7 +1251,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
 
     // rotate neighbor list nbl such that largest difference between angles of adjacent elements is beyond back()
     // this makes only sense when there is an underlying xy grid; when not, which can only be wp_all_shortest
-    grid->Normalize(src, nbl);
+    platformp->grid->Normalize(src, nbl);
     // subset to those neighbors that continue in direction(s) we want
     if (which == wp_left_shortest) {
         nbl.remove_if( [nbl](const UInt& n) { return n != nbl.front(); } );
@@ -1308,7 +1306,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
 void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, List<Alter> &resla) {
     List<Alter> directla;  // list that will hold all not-yet-split Alters directly from src to tgt
 
-    UInt budget = grid->MinHops(src, tgt);
+    UInt budget = platformp->grid->MinHops(src, tgt);
     Str mappathselectopt = options::get("mappathselect");
     if (mappathselectopt == "all") {
         GenShortestPaths(gp, src, tgt, budget, directla, wp_all_shortest);
@@ -1320,7 +1318,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, List<Al
 
     // QL_DOUT("about to split the paths");
     for (auto &a : directla) {
-        a.Split(*grid, resla);
+        a.Split(resla);
     }
     // Alter::DPRINT("... after generating and splitting the paths", resla);
 }
@@ -1332,7 +1330,7 @@ void Mapper::GenAltersGate(const ir::GateRef &gp, List<Alter> &la, Past &past) {
     QL_ASSERT (q.size() == 2);
     UInt  src = past.MapQubit(q[0]);  // interpret virtual operands in past's current map
     UInt  tgt = past.MapQubit(q[1]);
-    QL_DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at MinHops=" << grid->MinHops(src, tgt));
+    QL_DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at MinHops=" << platformp->grid->MinHops(src, tgt));
     past.DFcPrint();
 
     GenShortestPaths(gp, src, tgt, la);// find shortest paths from src to tgt, and split these
@@ -1453,7 +1451,7 @@ void Mapper::CommitAlter(Alter &resa, Future &future, Past &past) {
 
     // when only some swaps were added, the resgp might not yet be NN, so recheck
     auto &q = resgp->operands;
-    if (grid->MinHops(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1) {
+    if (platformp->grid->MinHops(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1) {
         // resgp is NN: so done with this 2q gate
         // QL_DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
         MapRoutedGate(resgp, past);     // the 2q target gate is NN now and thus can be mapped
@@ -1536,7 +1534,7 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<ir::GateRef> &lg,
                 auto &q = gp->operands;
                 UInt  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
                 UInt  tgt = past.MapQubit(q[1]);
-                UInt  d = grid->MinHops(src, tgt);    // and find minimum number of hops between real counterparts
+                UInt  d = platformp->grid->MinHops(src, tgt);    // and find minimum number of hops between real counterparts
                 if (d == 1) {
                     QL_DOUT("MapMappableGates, NN no routing: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ")");
                     MapRoutedGate(gp, past);
@@ -1778,7 +1776,7 @@ void Mapper::MapCircuit(const ir::KernelRef &kernel, QubitMapping &v2r) {
     kernel->c.reset();      // future has copied kernel.c to private data; kernel.c ready for use by new_gate
     kernelp = kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
-    mainPast.Init(platformp, kernelp, grid);  // mainPast and Past clones inside Alters ready for generating output schedules into
+    mainPast.Init(platformp, kernelp);  // mainPast and Past clones inside Alters ready for generating output schedules into
     mainPast.ImportV2r(v2r);    // give it the current mapping/state
     // mainPast.DPRINT("start mapping");
 
@@ -1805,7 +1803,7 @@ void Mapper::MakePrimitives(const ir::KernelRef &kernel) {
     kernel->c.reset();                          // kernel.c ready for use by new_gate
 
     Past mainPast;                              // output window in which gates are scheduled
-    mainPast.Init(platformp, kernelp, grid);
+    mainPast.Init(platformp, kernelp);
 
     for (auto & gp : input_gatepv) {
         ir::Circuit tmpCirc;
@@ -1857,7 +1855,7 @@ void Mapper::Map(const ir::KernelRef &kernel) {
         ipr_t           ipok;           // one of several ip result possibilities
         Real          iptimetaken;      // time solving the initial placement took, in seconds
 
-        ip.Init(grid, platformp);
+        ip.Init(platformp);
         ip.Place(kernel->c, v2r, ipok, iptimetaken, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
         QL_DOUT("InitialPlace: kernel=" << kernel->name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " result=" << ip.ipr2string(ipok) << " iptimetaken=" << iptimetaken << " seconds [DONE]");
 #else // ifdef INITIALPLACE
@@ -1904,9 +1902,6 @@ void Mapper::Init(const plat::PlatformRef &p) {
     RandomInit();
     // QL_DOUT("... platform/real number of qubits=" << nq << ");
     cycle_time = p->cycle_time;
-
-    grid.emplace();
-    grid->Init(platformp);
 
     // QL_DOUT("Mapping initialization [DONE]");
 }

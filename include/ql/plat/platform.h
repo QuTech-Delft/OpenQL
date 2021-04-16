@@ -6,9 +6,11 @@
 
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
+#include "ql/utils/opt.h"
 #include "ql/utils/json.h"
 #include "ql/utils/tree.h"
 #include "ql/plat/hardware_configuration.h"
+#include "ql/plat/topology.h"
 
 namespace ql {
 namespace plat {
@@ -107,12 +109,17 @@ public:
     utils::Json resources;
 
     /**
-     * Resource description, corresponding to the `"resources"` key in the root
-     * JSON object.
+     * Topology/qubit grid description, corresponding to the `"topology"` key
+     * in the root of the JSON object.
      *
      * FIXME: this shouldn't be here as a raw JSON object.
      */
     utils::Json topology;
+
+    /**
+     * Parsed topology/qubit grid information.
+     */
+    utils::Opt<Grid> grid;
 
     /**
      * Constructs a platform from the given configuration filename.

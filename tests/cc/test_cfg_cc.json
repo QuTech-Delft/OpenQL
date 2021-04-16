@@ -106,7 +106,7 @@
 	"eqasm_compiler" : "eqasm_backend_cc",
 
 	"hardware_settings": {
-		"qubit_number": 17,
+		"qubit_number": 25,     // of which 17 are used. FIXME: duplicates 'hardware_settings/qubit_number'
 		"cycle_time" : 20,        // in [ns]
 
 		// FIXME: we put this key inside "hardware_settings" for now, but it should preferably be below "backend" or "eqasm_compiler"

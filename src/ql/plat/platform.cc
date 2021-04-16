@@ -49,6 +49,8 @@ Platform::Platform(
     } else {
         cycle_time = hardware_settings["cycle_time"];
     }
+
+    grid.emplace(qubit_count, topology);
 }
 
 /**

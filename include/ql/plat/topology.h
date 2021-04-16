@@ -60,30 +60,28 @@
 #include "ql/utils/list.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/map.h"
-#include "ql/plat/platform.h"
+#include "ql/utils/json.h"
 
 namespace ql {
 namespace plat {
-namespace topology {
 
-typedef enum GridConnectivity {
+enum GridConnectivity {
     gc_specified,   // "specified": edges are specified in "edges" section
     gc_full         // "full": qubits are fully connected by edges, between cores only between comm_qubits
-} gridconn_t;
+};
 
-typedef enum GridForms {
+enum GridForm {
     gf_xy,          // nodes have explicit neighbor definitions, qubits have explicit x/y coordinates
     gf_irregular    // nodes have explicit neighbor definitions, qubits don't have x/y coordinates
-} gridform_t;
+};
 
 class Grid {
-public:
-    plat::PlatformRef platformp;          // current platform: topology
+private:
     utils::UInt nq;                       // number of qubits in the platform
     utils::UInt ncores;                   // number of cores in the platform
     // Grid configuration, all constant after initialization
-    gridform_t form;                      // form of grid
-    gridconn_t conn;                      // connectivity of grid
+    GridForm form;                        // form of grid
+    GridConnectivity conn;                // connectivity of grid
     utils::UInt ncommqpc;                 // number of comm_qubits per core, ==nq/ncores when all can communicate
     utils::Int nx;                        // length of x dimension (x coordinates count 0..nx-1)
     utils::Int ny;                        // length of y dimension (y coordinates count 0..ny-1)
@@ -94,10 +92,15 @@ public:
     utils::Map<utils::UInt,utils::Int> y;          // y[i] is y coordinate of qubit i
     utils::Vec<utils::Vec<utils::UInt>> dist;      // dist[i][j] is computed distance between qubits i and j;
 
+public:
+
     // Grid initializer
     // initialize mapper internal grid maps from configuration
     // this remains constant over multiple kernels on the same platform
-    void Init(const plat::PlatformRef &p);
+    Grid(utils::UInt num_qubits, const utils::Json &topology);
+
+    // returns the neighbors for the given qubit
+    const utils::List<utils::UInt> &get_neighbors(utils::UInt qubit) const;
 
     // whether qubit is a communication qubit of a core
     utils::Bool IsCommQubit(utils::UInt qi) const;
@@ -141,29 +144,10 @@ public:
     // and this can only be computed when there is an underlying x/y grid (so not for form==gf_irregular)
     void Normalize(utils::UInt src, neighbors_t &nbl) const;
 
-    // Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
-    void ComputeDist();
-
     void DPRINTGrid() const;
     void PrintGrid() const;
 
-    // init grid form attributes
-    void InitForm();
-
-    // init multi-core attributes
-    void InitCores();
-
-    // init x, and y maps
-    void InitXY();
-
-    // init nbs map
-    void InitNbs();
-
-    // sort nbs map; see Normalize and Angle above
-    void SortNbs();
-
 };
 
-} // namespace topology
 } // namespace plat
 } // namespace ql

@@ -73,7 +73,6 @@
 #include "ql/utils/ptr.h"
 #include "ql/utils/vec.h"
 #include "ql/plat/platform.h"
-#include "ql/plat/topology.h"
 #include "ql/ir/ir.h"
 #include "ql/com/qubit_mapping.h"
 
@@ -85,7 +84,6 @@ namespace place {
 namespace detail {
 
 using namespace utils;
-using namespace plat::topology;
 
 typedef enum InitialPlaceResults {
     ipr_any,            // any mapping will do because there are no two-qubit gates in the circuit
@@ -101,7 +99,6 @@ private:
     plat::PlatformRef         platformp;  // platform
     UInt                      nlocs;      // number of locations, real qubits; index variables k and l
     UInt                      nvq;        // same range as nlocs; when not, take set from config and create v2i earlier
-    utils::Ptr<Grid>          gridp;      // current grid with Distance function
 
                                           // remaining attributes are computed per circuit
     UInt                      nfac;       // number of facilities, actually used virtual qubits; index variables i and j
@@ -112,7 +109,7 @@ public:
     Str ipr2string(ipr_t ipr);
 
     // kernel-once initialization
-    void Init(const utils::Ptr<Grid> &g, const plat::PlatformRef &p);
+    void Init(const plat::PlatformRef &p);
 
     // find an initial placement of the virtual qubits for the given circuit
     // the resulting placement is put in the provided virt2real map

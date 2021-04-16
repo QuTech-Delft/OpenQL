@@ -27,7 +27,6 @@ namespace qubits {
 namespace route {
 namespace detail {
 
-using namespace plat::topology;
 using Scheduler = pass::sch::schedule::detail::Scheduler;
 
 // Note on the use of constructors and Init functions for classes of the mapper
@@ -215,7 +214,6 @@ private:
     utils::UInt                 ct;         // cycle time, multiplier from cycles to nano-seconds
     plat::PlatformRef           platformp;  // platform describing resources for scheduling
     ir::KernelRef               kernelp;    // current kernel for creating gates
-    utils::Ptr<Grid>            gridp;      // pointer to grid to know which hops are inter-core
 
     com::QubitMapping           v2r;        // state: current Virt2Real map, imported/exported to kernel
     FreeCycle                   fc;         // state: FreeCycle map (including resource_manager) of this Past
@@ -242,7 +240,7 @@ public:
     Past();
 
     // past initializer
-    void Init(const plat::PlatformRef &p, const ir::KernelRef &k, const utils::Ptr<Grid> &g);
+    void Init(const plat::PlatformRef &p, const ir::KernelRef &k);
 
     // import Past's v2r from v2r_value
     void ImportV2r(const com::QubitMapping &v2r_value);
@@ -415,7 +413,6 @@ class Alter {
 public:
     plat::PlatformRef       platformp;   // descriptions of resources for scheduling
     ir::KernelRef           kernelp;     // kernel pointer to allow calling kernel private methods
-    utils::Ptr<Grid>        gridp;       // grid pointer to know which hops are inter-core
     utils::UInt             nq;          // width of Past and Virt2Real map is number of real qubits
     utils::UInt             ct;          // cycle time, multiplier from cycles to nano-seconds
 
@@ -434,7 +431,7 @@ public:
 
     // Alter initializer
     // This should only be called after a virgin construction and not after cloning a path.
-    void Init(const plat::PlatformRef &p, const ir::KernelRef &k, const utils::Ptr<Grid> &g);
+    void Init(const plat::PlatformRef &p, const ir::KernelRef &k);
 
     // printing facilities of Paths
     // print path as hd followed by [0->1->2]
@@ -484,7 +481,7 @@ public:
     // distance=5   means length=6  means 4 swaps + 1 CZ gate, e.g.
     // index in total:      0           1           2           length-3        length-2        length-1
     // qubit:               2   ->      5   ->      7   ->      3       ->      1       CZ      4
-    void Split(const Grid &grid, utils::List<Alter> &resla) const;
+    void Split(utils::List<Alter> &resla) const;
 
 };
 
@@ -638,7 +635,6 @@ private:
     utils::UInt             nb;             // number of bregs in the platform, number of bit registers
     utils::UInt             cycle_time;     // length in ns of a single cycle of the platform
                                             // is divisor of duration in ns to convert it to cycles
-    utils::Ptr<Grid>        grid;           // current grid
 
                                             // Initialized by Mapper.Map
     std::mt19937            gen;            // Standard mersenne_twister_engine, not yet seeded

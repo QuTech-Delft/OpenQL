@@ -12,26 +12,229 @@
 
 namespace ql {
 namespace plat {
-namespace topology {
 
 using namespace utils;
 
 // Grid initializer
 // initialize mapper internal grid maps from configuration
 // this remains constant over multiple kernels on the same platform
-void Grid::Init(const plat::PlatformRef &p) {
+Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
     QL_DOUT("Grid::Init");
-    platformp = p;
-    nq = platformp->qubit_count;
+    //p = p;
+    nq = num_qubits;
     QL_DOUT("... number of real qbits=" << nq);
 
-    InitForm();     // form: embedded in xy grid (gf_xy) or irregular (gf_irregular) (topology.form)
-    InitCores();    // ncores: default 1 (topology.ncores)
-    InitXY();       // x[qi],y[qi] when form==gf_xy, as read from topology.qubits
-    InitNbs();      // nbs[qi], read from topology.edges when connectivity is specified, otherwise, when full, computed
-    SortNbs();      // when form embedded in grid, sort clock-wise starting from 12:00, to know boundary of search space
-    ComputeDist();  // dist[qi][qj] by Floyd-Warshall, is maximum when not connected
+    // init grid form attributes
+    Str formstr;
+    if (topology.count("form") <= 0) {
+        if (topology.count("qubits")) {
+            formstr = "xy";
+        } else {
+            formstr = "irregular";
+        }
+    } else {
+        formstr = topology["form"].get<Str>();
+    }
+    if (formstr == "xy") { form = gf_xy; }
+    if (formstr == "irregular") { form = gf_irregular; }
+
+    if (form == gf_irregular) {
+        // irregular can do without topology.x_size, topology.y_size, and topology.qubits
+        nx = 0;
+        ny = 0;
+    } else {
+        // gf_xy have an x/y space; coordinates are explicitly specified
+        nx = topology["x_size"];
+        ny = topology["y_size"];
+    }
+    QL_DOUT("... formstr=" << formstr << "; form=" << form << "; nx=" << nx << "; ny=" << ny);
+
+    // init multi-core attributes
+    if (topology.count("number_of_cores") <= 0) {
+        ncores = 1;
+        QL_DOUT("Number of cores (topology[\"number_of_cores\"]) not defined");
+    } else {
+        ncores = topology["number_of_cores"];
+        if (ncores <= 0) {
+            QL_FATAL("Number of cores (topology[\"number_of_cores\"]) is not a positive value: " << ncores);
+        }
+    }
+    QL_DOUT("Numer of cores= " << ncores);
+
+    // when not specified in single-core: == nq (i.e. all qubits)
+    // when not specified in multi-core: == nq/ncores (i.e. all qubits of a core)
+    if (topology.count("comm_qubits_per_core") <= 0) {
+        ncommqpc = nq/ncores;   // i.e. all are comm qubits
+        QL_DOUT("Number of comm_qubits per core (topology[\"comm_qubits_per_core\"]) not defined; assuming all are comm qubits.");
+    } else {
+        ncommqpc = topology["comm_qubits_per_core"];
+        if (ncommqpc <= 0) {
+            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is not a positive value: " << ncommqpc);
+        }
+        if (ncommqpc > nq/ncores) {
+            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is larger than number of qubits per core: " << ncommqpc);
+        }
+    }
+    QL_DOUT("Numer of communication qubits per core= " << ncommqpc);
+
+    // init x, and y maps
+    if (form != gf_irregular) {
+        if (topology.count("qubits") == 0) {
+            QL_FATAL("Regular configuration doesn't specify qubits and their coordinates");
+        } else {
+            if (nq != topology["qubits"].size()) {
+                QL_FATAL("Mismatch between platform qubit number and qubit coordinate list");
+            }
+            for (auto &aqbit : topology["qubits"]) {
+                UInt qi = aqbit["id"];
+                Int qx = aqbit["x"];
+                Int qy = aqbit["y"];
+
+                // sanity checks
+                if (!(0<=qi && qi<nq)) {
+                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with id that is not in the range 0..nq-1 with nq=" << nq);
+                }
+                if (x.count(qi) > 0) {
+                    QL_FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of x coordinate");
+                }
+                if (y.count(qi) > 0) {
+                    QL_FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of y coordinate");
+                }
+                if (!(0<=qx && qx<nx)) {
+                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with x that is not in the range 0..x_size-1 with x_size=" << nx);
+                }
+                if (!(0<=qy && qy<ny)) {
+                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << ny);
+                }
+
+                x.set(qi) = qx;
+                y.set(qi) = qy;
+            }
+        }
+    }
+
+    // nbs[qi], read from topology.edges when connectivity is specified, otherwise, when full, computed
+    if (!topology.count("connectivity")) {
+        if (topology.count("edges")) {
+            QL_DOUT("Configuration doesn't specify topology.connectivity: assuming connectivity is specified by edges section");
+            conn = gc_specified;
+        } else {
+            QL_DOUT("Configuration doesn't specify topology.connectivity, nor does it specify edges; assuming full connectivity");
+            conn = gc_full;
+        }
+    } else {
+        Str connstr;
+        connstr = topology["connectivity"].get<Str>();
+        if (connstr == "specified") {
+            conn = gc_specified;
+        } else if (connstr == "full") {
+            conn = gc_full;
+        } else {
+            QL_FATAL("connectivity " << connstr << " not supported");
+        }
+        QL_DOUT("topology.connectivity=" << connstr );
+    }
+    if (conn == gc_specified) {
+        if (topology.count("edges") == 0) {
+            QL_FATAL(" There aren't edges configured in the platform's topology");
+        }
+        for (auto &anedge : topology["edges"]) {
+            QL_DOUT("connectivity is specified by edges section, reading ...");
+            UInt qs = anedge["src"];
+            UInt qd = anedge["dst"];
+
+            // sanity checks
+            if (!(0<=qs && qs<nq)) {
+                QL_FATAL(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << nq);
+            }
+            if (!(0<=qd && qd<nq)) {
+                QL_FATAL(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << nq);
+            }
+            for (auto &n : nbs.get(qs)) {
+                if (n == qd) {
+                    QL_FATAL(" redefinition of edge with src=" << qs << " and dst=" << qd);
+                }
+            }
+
+            nbs.set(qs).push_back(qd);
+            QL_DOUT("connectivity has been stored in nbs map");
+        }
+    }
+    if (conn == gc_full) {
+        QL_DOUT("connectivity is full");
+        for (UInt qs = 0; qs < nq; qs++) {
+            for (UInt qd = 0; qd < nq; qd++) {
+                if (qs != qd) {
+                    if (IsInterCoreHop(qs,qd) && (!IsCommQubit(qs) || !IsCommQubit(qd)) ) {
+                        continue;
+                    }
+                    QL_DOUT("connecting qubit[" << qs << "] to qubit[" << qd << "]");
+                    nbs.set(qs).push_back(qd);
+                }
+            }
+        }
+    }
+
+    // when form embedded in grid, sort clock-wise starting from 12:00, to know boundary of search space
+    if (form != gf_irregular) {
+        // sort neighbor list by angles
+        for (UInt qi = 0; qi < nq; qi++) {
+            // sort nbs[qi] to have increasing clockwise angles around qi, starting with angle 0 at 12:00
+            auto nbsq = nbs.find(qi);
+            if (nbsq != nbs.end()) {
+                nbsq->second.sort(
+                    [this, qi](const UInt &i, const UInt &j) {
+                        return Angle(x.at(qi), y.at(qi), x.at(i), y.at(i)) <
+                               Angle(x.at(qi), y.at(qi), x.at(j), y.at(j));
+                    }
+                );
+            }
+        }
+    }
+
+    // Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
+    // when not connected, distance remains maximum value
+
+    // initialize all distances to maximum value, to neighbors to 1, to itself to 0
+    dist.resize(nq); for (UInt i=0; i<nq; i++) dist[i].resize(nq, MAX);
+    for (UInt i = 0; i < nq; i++) {
+        dist[i][i] = 0;
+        for (UInt j : nbs.get(i)) {
+            dist[i][j] = 1;
+        }
+    }
+
+    // find shorter distances by gradually including more qubits (k) in path
+    for (UInt k = 0; k < nq; k++) {
+        for (UInt i = 0; i < nq; i++) {
+            for (UInt j = 0; j < nq; j++) {
+                if (dist[i][j] > dist[i][k] + dist[k][j]) {
+                    dist[i][j] = dist[i][k] + dist[k][j];
+                }
+            }
+        }
+    }
+#ifdef debug
+    for (UInt i = 0; i < nq; i++) {
+        for (UInt j = 0; j < nq; j++) {
+            if (form == gf_cross) {
+                QL_ASSERT (dist[i][j] == (max(abs(x[i] - x[j]),
+                                                      abs(y[i] - y[j]))));
+            } else if (form == gf_plus) {
+                QL_ASSERT (dist[i][j] ==
+                              (abs(x[i] - x[j]) + abs(y[i] - y[j])));
+            }
+
+        }
+    }
+#endif
+
     DPRINTGrid();
+}
+
+// returns the neighbors for the given qubit
+const utils::List<utils::UInt> &Grid::get_neighbors(utils::UInt qubit) const {
+    return nbs.get(qubit);
 }
 
 // whether qubit is a communication qubit of a core, i.e. can communicate with another core
@@ -161,43 +364,6 @@ void Grid::Normalize(UInt src, neighbors_t &nbl) const {
     // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
 }
 
-// Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
-// when not connected, distance remains maximum value
-void Grid::ComputeDist() {
-    // initialize all distances to maximum value, to neighbors to 1, to itself to 0
-    dist.resize(nq); for (UInt i=0; i<nq; i++) dist[i].resize(nq, ir::MAX_CYCLE);
-    for (UInt i = 0; i < nq; i++) {
-        dist[i][i] = 0;
-        for (UInt j : nbs.get(i)) {
-            dist[i][j] = 1;
-        }
-    }
-
-    // find shorter distances by gradually including more qubits (k) in path
-    for (UInt k = 0; k < nq; k++) {
-        for (UInt i = 0; i < nq; i++) {
-            for (UInt j = 0; j < nq; j++) {
-                if (dist[i][j] > dist[i][k] + dist[k][j]) {
-                    dist[i][j] = dist[i][k] + dist[k][j];
-                }
-            }
-        }
-    }
-#ifdef debug
-    for (UInt i = 0; i < nq; i++) {
-        for (UInt j = 0; j < nq; j++) {
-            if (form == gf_cross) {
-                QL_ASSERT (dist[i][j] == (max(abs(x[i] - x[j]),
-                                                      abs(y[i] - y[j]))));
-            } else if (form == gf_plus) {
-                QL_ASSERT (dist[i][j] ==
-                              (abs(x[i] - x[j]) + abs(y[i] - y[j])));
-            }
-
-        }
-    }
-#endif
-}
 
 void Grid::DPRINTGrid() const {
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
@@ -241,174 +407,5 @@ void Grid::PrintGrid() const {
     }
 }
 
-// init grid form attributes
-void Grid::InitForm() {
-    Str formstr;
-    if (platformp->topology.count("form") <= 0) {
-        formstr = "xy";
-    } else {
-        formstr = platformp->topology["form"].get<Str>();
-    }
-    if (formstr == "xy") { form = gf_xy; }
-    if (formstr == "irregular") { form = gf_irregular; }
-
-    if (form == gf_irregular) {
-        // irregular can do without topology.x_size, topology.y_size, and topology.qubits
-        nx = 0;
-        ny = 0;
-    } else {
-        // gf_xy have an x/y space; coordinates are explicitly specified
-        nx = platformp->topology["x_size"];
-        ny = platformp->topology["y_size"];
-    }
-    QL_DOUT("... formstr=" << formstr << "; form=" << form << "; nx=" << nx << "; ny=" << ny);
-}
-
-// init multi-core attributes
-void Grid::InitCores() {
-    if (platformp->topology.count("number_of_cores") <= 0) {
-        ncores = 1;
-        QL_DOUT("Number of cores (topology[\"number_of_cores\"]) not defined");
-    } else {
-        ncores = platformp->topology["number_of_cores"];
-        if (ncores <= 0) {
-            QL_FATAL("Number of cores (topology[\"number_of_cores\"]) is not a positive value: " << ncores);
-        }
-    }
-    QL_DOUT("Numer of cores= " << ncores);
-
-    // when not specified in single-core: == nq (i.e. all qubits)
-    // when not specified in multi-core: == nq/ncores (i.e. all qubits of a core)
-    if (platformp->topology.count("comm_qubits_per_core") <= 0) {
-        ncommqpc = nq/ncores;   // i.e. all are comm qubits
-        QL_DOUT("Number of comm_qubits per core (topology[\"comm_qubits_per_core\"]) not defined; assuming all are comm qubits.");
-    } else {
-        ncommqpc = platformp->topology["comm_qubits_per_core"];
-        if (ncommqpc <= 0) {
-            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is not a positive value: " << ncommqpc);
-        }
-        if (ncommqpc > nq/ncores) {
-            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is larger than number of qubits per core: " << ncommqpc);
-        }
-    }
-    QL_DOUT("Numer of communication qubits per core= " << ncommqpc);
-}
-
-// init x, and y maps
-void Grid::InitXY() {
-    if (form != gf_irregular) {
-        if (platformp->topology.count("qubits") == 0) {
-            QL_FATAL("Regular configuration doesn't specify qubits and their coordinates");
-        } else {
-            if (nq != platformp->topology["qubits"].size()) {
-                QL_FATAL("Mismatch between platform qubit number and qubit coordinate list");
-            }
-            for (auto &aqbit : platformp->topology["qubits"]) {
-                UInt qi = aqbit["id"];
-                Int qx = aqbit["x"];
-                Int qy = aqbit["y"];
-
-                // sanity checks
-                if (!(0<=qi && qi<nq)) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with id that is not in the range 0..nq-1 with nq=" << nq);
-                }
-                if (x.count(qi) > 0) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of x coordinate");
-                }
-                if (y.count(qi) > 0) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of y coordinate");
-                }
-                if (!(0<=qx && qx<nx)) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with x that is not in the range 0..x_size-1 with x_size=" << nx);
-                }
-                if (!(0<=qy && qy<ny)) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << ny);
-                }
-
-                x.set(qi) = qx;
-                y.set(qi) = qy;
-            }
-        }
-    }
-}
-
-// init nbs map
-void Grid::InitNbs() {
-    if (platformp->topology.count("connectivity") <= 0) {
-        QL_DOUT("Configuration doesn't specify topology.connectivity: assuming connectivity is specified by edges section");
-        conn = gc_specified;
-    } else {
-        Str connstr;
-        connstr = platformp->topology["connectivity"].get<Str>();
-        if (connstr == "specified") {
-            conn = gc_specified;
-        } else if (connstr == "full") {
-            conn = gc_full;
-        } else {
-            QL_FATAL("connectivity " << connstr << " not supported");
-        }
-        QL_DOUT("topology.connectivity=" << connstr );
-    }
-    if (conn == gc_specified) {
-        if (platformp->topology.count("edges") == 0) {
-            QL_FATAL(" There aren't edges configured in the platform's topology");
-        }
-        for (auto &anedge : platformp->topology["edges"]) {
-            QL_DOUT("connectivity is specified by edges section, reading ...");
-            UInt qs = anedge["src"];
-            UInt qd = anedge["dst"];
-
-            // sanity checks
-            if (!(0<=qs && qs<nq)) {
-                QL_FATAL(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << nq);
-            }
-            if (!(0<=qd && qd<nq)) {
-                QL_FATAL(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << nq);
-            }
-            for (auto &n : nbs.get(qs)) {
-                if (n == qd) {
-                    QL_FATAL(" redefinition of edge with src=" << qs << " and dst=" << qd);
-                }
-            }
-
-            nbs.set(qs).push_back(qd);
-            QL_DOUT("connectivity has been stored in nbs map");
-        }
-    }
-    if (conn == gc_full) {
-        QL_DOUT("connectivity is full");
-        for (UInt qs = 0; qs < nq; qs++) {
-            for (UInt qd = 0; qd < nq; qd++) {
-                if (qs != qd) {
-                    if (IsInterCoreHop(qs,qd) && (!IsCommQubit(qs) || !IsCommQubit(qd)) ) {
-                        continue;
-                    }
-                    QL_DOUT("connecting qubit[" << qs << "] to qubit[" << qd << "]");
-                    nbs.set(qs).push_back(qd);
-                }
-            }
-        }
-    }
-}
-
-void Grid::SortNbs() {
-    if (form != gf_irregular) {
-        // sort neighbor list by angles
-        for (UInt qi = 0; qi < nq; qi++) {
-            // sort nbs[qi] to have increasing clockwise angles around qi, starting with angle 0 at 12:00
-            auto nbsq = nbs.find(qi);
-            if (nbsq != nbs.end()) {
-                nbsq->second.sort(
-                    [this, qi](const UInt &i, const UInt &j) {
-                        return Angle(x.at(qi), y.at(qi), x.at(i), y.at(i)) <
-                               Angle(x.at(qi), y.at(qi), x.at(j), y.at(j));
-                    }
-                );
-            }
-        }
-    }
-}
-
-} // namespace topology
 } // namespace plat
 } // namespace ql

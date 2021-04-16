@@ -33,14 +33,13 @@ Str InitialPlace::ipr2string(ipr_t ipr) {
 }
 
 // kernel-once initialization
-void InitialPlace::Init(const utils::Ptr<Grid> &g, const plat::PlatformRef &p) {
+void InitialPlace::Init(const plat::PlatformRef &p) {
     // QL_DOUT("InitialPlace Init ...");
     platformp = p;
     nlocs = p->qubit_count;
     nvq = p->qubit_count;  // same range; when not, take set from config and create v2i earlier
     // QL_DOUT("... number of real qubits (locations): " << nlocs);
-    gridp = g;
-    QL_DOUT("Init: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp.unwrap());
+    QL_DOUT("Init: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq);
 }
 
 // find an initial placement of the virtual qubits for the given circuit
@@ -115,7 +114,7 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
                 if (
                     v2r[q[0]] == com::UNDEFINED_QUBIT
                     || v2r[q[1]] == com::UNDEFINED_QUBIT
-                    || gridp->Distance(v2r[q[0]], v2r[q[1]]) > 1
+                    || platformp->grid->Distance(v2r[q[0]], v2r[q[1]]) > 1
                 ) {
                     currmap = false;
                 }
@@ -154,7 +153,7 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
         for (UInt k = 0; k < nlocs; k++) {
             for (UInt j = 0; j < nfac; j++) {
                 for (UInt l = 0; l < nlocs; l++) {
-                    costmax[i][k] += refcount[i][j] * (gridp->Distance(k,l) - 1);
+                    costmax[i][k] += refcount[i][j] * (platformp->grid->Distance(k,l) - 1);
                 }
             }
         }
@@ -250,14 +249,14 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
             Bool started = false;
             for (UInt j = 0; j < nfac; j++) {
                 for (UInt l = 0; l < nlocs; l++) {
-                    left += refcount[i][j] * gridp->Distance(k,l) * x[j][l];
-                    if (refcount[i][j] * gridp->Distance(k,l) != 0) {
+                    left += refcount[i][j] * platformp->grid->Distance(k,l) * x[j][l];
+                    if (refcount[i][j] * platformp->grid->Distance(k,l) != 0) {
                         if (started) {
                             lefts += " + ";
                         } else {
                             started = true;
                         }
-                        lefts += to_string(refcount[i][j] * gridp->Distance(k,l));
+                        lefts += to_string(refcount[i][j] * platformp->grid->Distance(k,l));
                         lefts += " * x[";
                         lefts += to_string(j);
                         lefts += "][";
@@ -314,14 +313,14 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
     QL_DOUT("InitialPlace: solving the problem, this may take a while ...");
     QL_DOUT("..2 nvq=" << nvq);
     Mip::SolveExitStatus s;
-    QL_DOUT("Just before solve: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp.unwrap());
+    QL_DOUT("Just before solve: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq);
     QL_DOUT("Just before solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
     QL_DOUT("..2b nvq=" << nvq);
     {
         s = mip.solve();
     }
     QL_DOUT("..3 nvq=" << nvq);
-    QL_DOUT("Just after solve: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp.unwrap());
+    QL_DOUT("Just after solve: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq);
     QL_DOUT("Just after solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
     QL_ASSERT(nvq == nlocs);         // consistency check, mainly to let it crash
 
