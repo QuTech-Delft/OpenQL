@@ -1270,12 +1270,12 @@ UInt Past::MapQubit(UInt v) {
 }
 
 void Past::stripname(Str &name) {
-    QL_DOUT("stripname(name=" << name << ")");
+    QL_DOUT("strip_name(name=" << name << ")");
     UInt p = name.find(" ");
     if (p != Str::npos) {
         name = name.substr(0,p);
     }
-    QL_DOUT("... after stripname name=" << name);
+    QL_DOUT("... after strip_name name=" << name);
 }
 
 // MakeReal gp
@@ -1811,7 +1811,8 @@ void Future::DoneGate(const ir::GateRef &gp) {
     if (maplookaheadopt == "no") {
         input_gatepp = std::next(input_gatepp);
     } else {
-        schedp->TakeAvailable(schedp->node.at(gp), avlist, scheduled, plat::resource::Direction::FORWARD);
+        schedp->take_available(schedp->node.at(gp), avlist, scheduled,
+                               plat::resource::Direction::FORWARD);
     }
 }
 

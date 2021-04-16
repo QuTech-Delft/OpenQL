@@ -99,18 +99,59 @@ using namespace utils;
 using ListDigraph = lemon::ListDigraph;
 using ListDigraphPath = lemon::Path<ListDigraph>;
 
+std::ostream &operator<<(std::ostream &os, DepType dt) {
+    switch (dt) {
+        case DepType::RAR: os << "RAR"; break;
+        case DepType::RAW: os << "RAW"; break;
+        case DepType::WAR: os << "WAR"; break;
+        case DepType::WAW: os << "WAW"; break;
+        case DepType::DAD: os << "DAD"; break;
+        case DepType::DAX: os << "DAX"; break;
+        case DepType::DAZ: os << "DAZ"; break;
+        case DepType::XAD: os << "XAD"; break;
+        case DepType::XAX: os << "XAX"; break;
+        case DepType::XAZ: os << "XAZ"; break;
+        case DepType::ZAD: os << "ZAD"; break;
+        case DepType::ZAX: os << "ZAX"; break;
+        case DepType::ZAZ: os << "ZAZ"; break;
+    }
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, EventType et) {
+    switch (et) {
+        case EventType::DEFAULT: os << "Default"; break;
+        case EventType::XROTATE: os << "Xrotate"; break;
+        case EventType::ZROTATE: os << "Zrotate"; break;
+        case EventType::CREAD:   os << "Cread"; break;
+        case EventType::CWRITE:  os << "Cwrite"; break;
+        case EventType::BREAD:   os << "Bread"; break;
+        case EventType::BWRITE:  os << "Bwrite"; break;
+    }
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, OperandType ot) {
+    switch (ot) {
+        case OperandType::QUBIT: os << "q"; break;
+        case OperandType::CREG:  os << "c"; break;
+        case OperandType::BREG:  os << "b"; break;
+    }
+    return os;
+}
+
 Scheduler::Scheduler() :
     instruction(graph),
     name(graph),
     weight(graph),
-    opType(graph),
+    op_type(graph),
     cause(graph),
-    depType(graph)
+    dep_type(graph)
 {
 }
 
 // ins->name may contain parameters, so must be stripped first before checking it for gate's name
-void Scheduler::stripname(Str &name) {
+void Scheduler::strip_name(Str &name) {
     UInt p = name.find(' ');
     if (p != Str::npos) {
         name = name.substr(0,p);
@@ -120,21 +161,21 @@ void Scheduler::stripname(Str &name) {
 // Add a dependency between two nodes: from node fromID to node toID
 // the dependence is annotated with the deptype, operandtype and operand for possible transformations and for tracing
 void Scheduler::add_dep(
-    Int fromID,
-    Int toID,
-    enum DepType deptype,
-    enum OperandType operandType,
+    Int from_id,
+    Int to_id,
+    enum DepType dt,
+    enum OperandType ot,
     UInt operand
 ) {
-    QL_DOUT(".. adddep ... from fromID " << fromID << " to toID " << toID << "   opnd=" << OperandTypeName[operandType] << "[" << operand << "], dep=" << DepTypeName[deptype]);
-    auto fromNode = graph.nodeFromId(fromID);
-    auto toNode = graph.nodeFromId(toID);
-    auto arc = graph.addArc(fromNode, toNode);
-    weight[arc] = Int(ceil(static_cast<Real>(instruction[fromNode]->duration) / cycle_time));
-    opType[arc] = operandType;
+    QL_DOUT(".. adddep ... from fromID " << from_id << " to toID " << to_id << "   opnd=" << ot << "[" << operand << "], dep=" << dt);
+    auto from_node = graph.nodeFromId(from_id);
+    auto to_node = graph.nodeFromId(to_id);
+    auto arc = graph.addArc(from_node, to_node);
+    weight[arc] = Int(ceil(static_cast<Real>(instruction[from_node]->duration) / cycle_time));
+    op_type[arc] = ot;
     cause[arc] = operand;
-    depType[arc] = deptype;
-    QL_DOUT("... dep " << name[fromNode] << " -> " << name[toNode] << " opnd=" << OperandTypeName[opType[arc]] << "[" << cause[arc] << "], dep=" << DepTypeName[depType[arc]] << ", wght=" << weight[arc] << ")");
+    dep_type[arc] = dt;
+    QL_DOUT("... dep " << name[from_node] << " -> " << name[to_node] << " opnd=" << op_type[arc] << "[" << cause[arc] << "], dep=" << dep_type[arc] << ", wght=" << weight[arc] << ")");
 }
 
 // Signal a new event to the depgraph constructor:
@@ -149,133 +190,133 @@ void Scheduler::add_dep(
 // in which the first Write/Default is the SOURCE and the last Write/Default is the SINK.
 // The state machines have as state vectors for the lastevent, and various last states; these are vectors indexed by the operand.
 void Scheduler::new_event(
-    int currID,
-    enum OperandType operandType,
+    int curr_id,
+    enum OperandType operand_type,
     UInt operand,
-    EventType currEvent,
+    EventType curr_event,
     bool commutes
 ) {
-    switch (currEvent) {
-    case Default:
-        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastQEvent[operand]]);
-        if (LastQEvent[operand] == Default) {
-            add_dep(LastDefault[operand], currID, DAD, Qubit, operand);
-        }
-        if (LastQEvent[operand] == Zrotate) {
-            for (auto &ZgateID : LastZrotates[operand]) {
-                add_dep(ZgateID, currID, DAZ, Qubit, operand);
+    switch (curr_event) {
+        case EventType::DEFAULT:
+            QL_DOUT(".. " << curr_event << " on: " << operand_type << "[" << operand << "]" << " while in " << last_q_event[operand]);
+            if (last_q_event[operand] == EventType::DEFAULT) {
+                add_dep(last_default[operand], curr_id, DepType::DAD, OperandType::QUBIT, operand);
             }
-        }
-        if (LastQEvent[operand] == Xrotate) {
-            for (auto &XgateID : LastXrotates[operand]) {
-                add_dep(XgateID, currID, DAX, Qubit, operand);
-            }
-        }
-        LastDefault[operand] = currID;
-        LastQEvent[operand] = currEvent;
-        break;
-
-    case Zrotate:
-        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastQEvent[operand]]);
-        add_dep(LastDefault[operand], currID, ZAD, Qubit, operand);
-        if (LastQEvent[operand] != Zrotate) {
-            LastZrotates[operand].clear();
-        }
-        if (LastQEvent[operand] == Zrotate) {
-            if (!commutes) {
-                for (auto &ZgateID : LastZrotates[operand]) {
-                    add_dep(ZgateID, currID, ZAZ, Qubit, operand);
+            if (last_q_event[operand] == EventType::ZROTATE) {
+                for (auto &ZgateID : last_z_rotates[operand]) {
+                    add_dep(ZgateID, curr_id, DepType::DAZ, OperandType::QUBIT, operand);
                 }
             }
-        }
-        for (auto &XgateID : LastXrotates[operand]) {
-            add_dep(XgateID, currID, ZAX, Qubit, operand);
-        }
-        LastZrotates[operand].push_back(currID);
-        LastQEvent[operand] = currEvent;
-        break;
-
-    case Xrotate:
-        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastQEvent[operand]]);
-        add_dep(LastDefault[operand], currID, XAD, Qubit, operand);
-        if (LastQEvent[operand] != Xrotate) {
-            LastXrotates[operand].clear();
-        }
-        for (auto &ZgateID : LastZrotates[operand]) {
-            add_dep(ZgateID, currID, XAZ, Qubit, operand);
-        }
-        if (LastQEvent[operand] == Xrotate) {
-            if (!commutes) {
-                for (auto &XgateID : LastXrotates[operand]) {
-                    add_dep(XgateID, currID, XAX, Qubit, operand);
+            if (last_q_event[operand] == EventType::XROTATE) {
+                for (auto &XgateID : last_x_rotates[operand]) {
+                    add_dep(XgateID, curr_id, DepType::DAX, OperandType::QUBIT, operand);
                 }
             }
-        }
-        LastXrotates[operand].push_back(currID);
-        LastQEvent[operand] = currEvent;
-        break;
-
-    case Cwrite:
-        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastCEvent[operand]]);
-        if (LastCEvent[operand] == Cwrite) {
-            add_dep(LastCWriter[operand], currID, WAW, Breg, operand);
-        }
-        if (LastCEvent[operand] == Cread) {
-            for (auto &RgateID : LastCReaders[operand]) {
-                add_dep(RgateID, currID, WAR, Breg, operand);
+            last_default[operand] = curr_id;
+            last_q_event[operand] = curr_event;
+            break;
+    
+        case EventType::ZROTATE:
+            QL_DOUT(".. " << curr_event << " on: " << operand_type << "[" << operand << "]" << " while in " << last_q_event[operand]);
+            add_dep(last_default[operand], curr_id, DepType::ZAD, OperandType::QUBIT, operand);
+            if (last_q_event[operand] != EventType::ZROTATE) {
+                last_z_rotates[operand].clear();
             }
-        }
-        LastCWriter[operand] = currID;
-        LastCEvent[operand] = currEvent;
-        break;
-
-    case Cread:
-        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastCEvent[operand]]);
-        add_dep(LastCWriter[operand], currID, RAW, Breg, operand);
-        if (LastCEvent[operand] != Cread) {
-            LastCReaders[operand].clear();
-        }
-//      if (LastCEvent[operand] == Cread) {
-//          if (!commutes) {
-//              for (auto &RgateID : LastCReaders[operand]) {
-//                  add_dep(RgateID, currID, RAR, Breg, operand);
-//              }
-//          }
-//      }
-        LastCReaders[operand].push_back(currID);
-        LastCEvent[operand] = currEvent;
-        break;
-
-    case Bwrite:
-        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastBEvent[operand]]);
-        if (LastBEvent[operand] == Bwrite) {
-            add_dep(LastBWriter[operand], currID, WAW, Breg, operand);
-        }
-        if (LastBEvent[operand] == Bread) {
-            for (auto &RgateID : LastBReaders[operand]) {
-                add_dep(RgateID, currID, WAR, Breg, operand);
+            if (last_q_event[operand] == EventType::ZROTATE) {
+                if (!commutes) {
+                    for (auto &ZgateID : last_z_rotates[operand]) {
+                        add_dep(ZgateID, curr_id, DepType::ZAZ, OperandType::QUBIT, operand);
+                    }
+                }
             }
-        }
-        LastBWriter[operand] = currID;
-        LastBEvent[operand] = currEvent;
-        break;
-
-    case Bread:
-        QL_DOUT(".. " << EventTypeName[currEvent] << " on: " << OperandTypeName[operandType] << "[" << operand << "]" << " while in " << EventTypeName[LastBEvent[operand]]);
-        add_dep(LastBWriter[operand], currID, RAW, Breg, operand);
-        if (LastBEvent[operand] != Bread) {
-            LastBReaders[operand].clear();
-        }
-//      if (LastBEvent[operand] == Bread) {
-//          if (!commutes) {
-//              for (auto &RgateID : LastBReaders[operand]) {
-//                  add_dep(RgateID, currID, RAR, Breg, operand);
-//              }
-//          }
-//      }
-        LastBReaders[operand].push_back(currID);
-        LastBEvent[operand] = currEvent;
-        break;
+            for (auto &XgateID : last_x_rotates[operand]) {
+                add_dep(XgateID, curr_id, DepType::ZAX, OperandType::QUBIT, operand);
+            }
+            last_z_rotates[operand].push_back(curr_id);
+            last_q_event[operand] = curr_event;
+            break;
+    
+        case EventType::XROTATE:
+            QL_DOUT(".. " << curr_event << " on: " << operand_type << "[" << operand << "]" << " while in " << last_q_event[operand]);
+            add_dep(last_default[operand], curr_id, DepType::XAD, OperandType::QUBIT, operand);
+            if (last_q_event[operand] != EventType::XROTATE) {
+                last_x_rotates[operand].clear();
+            }
+            for (auto &ZgateID : last_z_rotates[operand]) {
+                add_dep(ZgateID, curr_id, DepType::XAZ, OperandType::QUBIT, operand);
+            }
+            if (last_q_event[operand] == EventType::XROTATE) {
+                if (!commutes) {
+                    for (auto &XgateID : last_x_rotates[operand]) {
+                        add_dep(XgateID, curr_id, DepType::XAX, OperandType::QUBIT, operand);
+                    }
+                }
+            }
+            last_x_rotates[operand].push_back(curr_id);
+            last_q_event[operand] = curr_event;
+            break;
+    
+        case EventType::CWRITE:
+            QL_DOUT(".. " << curr_event << " on: " << operand_type << "[" << operand << "]" << " while in " << last_c_event[operand]);
+            if (last_c_event[operand] == EventType::CWRITE) {
+                add_dep(last_c_writer[operand], curr_id, DepType::WAW, OperandType::BREG, operand);
+            }
+            if (last_c_event[operand] == EventType::CREAD) {
+                for (auto &RgateID : last_c_readers[operand]) {
+                    add_dep(RgateID, curr_id, DepType::WAR, OperandType::BREG, operand);
+                }
+            }
+            last_c_writer[operand] = curr_id;
+            last_c_event[operand] = curr_event;
+            break;
+    
+        case EventType::CREAD:
+            QL_DOUT(".. " << curr_event << " on: " << operand_type << "[" << operand << "]" << " while in " << last_c_event[operand]);
+            add_dep(last_c_writer[operand], curr_id, DepType::RAW, OperandType::BREG, operand);
+            if (last_c_event[operand] != EventType::CREAD) {
+                last_c_readers[operand].clear();
+            }
+    //      if (LastCEvent[operand] == EventType::CREAD) {
+    //          if (!commutes) {
+    //              for (auto &RgateID : LastCReaders[operand]) {
+    //                  add_dep(RgateID, currID, DepType::RAR, OperandType::BREG, operand);
+    //              }
+    //          }
+    //      }
+            last_c_readers[operand].push_back(curr_id);
+            last_c_event[operand] = curr_event;
+            break;
+    
+        case EventType::BWRITE:
+            QL_DOUT(".. " << curr_event << " on: " << operand_type << "[" << operand << "]" << " while in " << last_b_event[operand]);
+            if (last_b_event[operand] == EventType::BWRITE) {
+                add_dep(last_b_writer[operand], curr_id, DepType::WAW, OperandType::BREG, operand);
+            }
+            if (last_b_event[operand] == EventType::BREAD) {
+                for (auto &RgateID : last_b_readers[operand]) {
+                    add_dep(RgateID, curr_id, DepType::WAR, OperandType::BREG, operand);
+                }
+            }
+            last_b_writer[operand] = curr_id;
+            last_b_event[operand] = curr_event;
+            break;
+    
+        case EventType::BREAD:
+            QL_DOUT(".. " << curr_event << " on: " << operand_type << "[" << operand << "]" << " while in " << last_b_event[operand]);
+            add_dep(last_b_writer[operand], curr_id, DepType::RAW, OperandType::BREG, operand);
+            if (last_b_event[operand] != EventType::BREAD) {
+                last_b_readers[operand].clear();
+            }
+    //      if (LastBEvent[operand] == EventType::BREAD) {
+    //          if (!commutes) {
+    //              for (auto &RgateID : LastBReaders[operand]) {
+    //                  add_dep(RgateID, currID, DepType::RAR, OperandType::REG, operand);
+    //              }
+    //          }
+    //      }
+            last_b_readers[operand].push_back(curr_id);
+            last_b_event[operand] = curr_event;
+            break;
 
     }
 }
@@ -315,21 +356,21 @@ void Scheduler::init(
         name[srcNode] = instruction[srcNode]->qasm();
         s = srcNode;
     }
-    Int srcID = graph.id(s);
+    Int src_id = graph.id(s);
 
     // start the state machines, one for each possible operand
-    LastQEvent.resize(qubit_count, Default);    // start as if SOURCE gate did Default on all qubit operands
-    LastDefault.resize(qubit_count, srcID);
-    LastXrotates.resize(qubit_count);           // start off as empty list, no Xrotate/Zrotate seen yet
-    LastZrotates.resize(qubit_count);
+    last_q_event.resize(qubit_count, EventType::DEFAULT);   // start as if SOURCE gate did Default on all qubit operands
+    last_default.resize(qubit_count, src_id);
+    last_x_rotates.resize(qubit_count);                     // start off as empty list, no Xrotate/Zrotate seen yet
+    last_z_rotates.resize(qubit_count);
 
-    LastCEvent.resize(creg_count, Cwrite);      // start as if SOURCE gate did Cwrite on all creg operands
-    LastCWriter.resize(creg_count, srcID);
-    LastCReaders.resize(creg_count);            // start off as empty list, no Creader seen yet
+    last_c_event.resize(creg_count, EventType::CWRITE);     // start as if SOURCE gate did Cwrite on all creg operands
+    last_c_writer.resize(creg_count, src_id);
+    last_c_readers.resize(creg_count);                      // start off as empty list, no Creader seen yet
 
-    LastBEvent.resize(breg_count, Bwrite);      // start as if SOURCE gate did Bwrite on all breg operands
-    LastBWriter.resize(breg_count, srcID);
-    LastBReaders.resize(breg_count);            // start off as empty list, no Breader seen yet
+    last_b_event.resize(breg_count, EventType::BWRITE);     // start as if SOURCE gate did Bwrite on all breg operands
+    last_b_writer.resize(breg_count, src_id);
+    last_b_readers.resize(breg_count);                      // start off as empty list, no Breader seen yet
 
     // for each gate pointer ins in the circuit, add a node and add dependencies on previous gates to it
     for (const auto &ins : kernel->c) {
@@ -349,11 +390,11 @@ void Scheduler::init(
         }
 
         auto iname = ins->name; // copy!!!!
-        stripname(iname);
+        strip_name(iname);
 
         // Add node
         ListDigraph::Node currNode = graph.addNode();
-        int currID = graph.id(currNode);
+        int curr_id = graph.id(currNode);
         instruction[currNode] = ins;
         node.set(ins) = currNode;
         name[currNode] = ins->qasm();   // and this includes any condition!
@@ -403,7 +444,7 @@ void Scheduler::init(
         // every gate can have a condition with condition operands (which are bit register indices) that are read
         for (auto boperand : ins->cond_operands) {
             QL_DOUT(".. Condition operand: " << boperand);
-            new_event(currID, Breg, boperand, Bread, true);
+            new_event(curr_id, OperandType::BREG, boperand, EventType::BREAD, true);
         }
 
         // each type of gate has a different 'signature' of events; switch out to each one
@@ -411,13 +452,13 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as measure");
             // Default each qubit operand + Cwrite each classical operand + Bwrite each bit operand
             for (auto operand : ins->operands) {
-                new_event(currID, Qubit, operand, Default, false);
+                new_event(curr_id, OperandType::QUBIT, operand, EventType::DEFAULT, false);
             }
             for (auto coperand : ins->creg_operands) {
-                new_event(currID, Creg, coperand, Cwrite, false);
+                new_event(curr_id, OperandType::CREG, coperand, EventType::CWRITE, false);
             }
             for (auto boperand : ins->breg_operands) {
-                new_event(currID, Breg, boperand, Bwrite, false);
+                new_event(curr_id, OperandType::BREG, boperand, EventType::BWRITE, false);
             }
             QL_DOUT(". measure done");
         } else if (iname == "display") {
@@ -430,36 +471,36 @@ void Scheduler::init(
             Vec<UInt> qubits(qubit_count);
             std::iota(qubits.begin(), qubits.end(), 0);
             for (auto operand : qubits) {
-                new_event(currID, Qubit, operand, Default, false);
+                new_event(curr_id, OperandType::QUBIT, operand, EventType::DEFAULT, false);
             }
             Vec<UInt> cregs(creg_count);
             std::iota(cregs.begin(), cregs.end(), 0);
             for (auto coperand : cregs) {
-                new_event(currID, Creg, coperand, Cwrite, false);
+                new_event(curr_id, OperandType::CREG, coperand, EventType::CWRITE, false);
             }
             Vec<UInt> bregs(breg_count);
             std::iota(bregs.begin(), bregs.end(), 0);
             for (auto boperand : bregs) {
-                new_event(currID, Breg, boperand, Bwrite, false);
+                new_event(curr_id, OperandType::BREG, boperand, EventType::BWRITE, false);
             }
         } else if (ins->type() == ir::GateType::CLASSICAL) {
             QL_DOUT(". considering " << name[currNode] << " as classical gate");
             // Cwrite each classical operand
             for (auto coperand : ins->creg_operands) {
-                new_event(currID, Creg, coperand, Cwrite, false);
+                new_event(curr_id, OperandType::CREG, coperand, EventType::CWRITE, false);
             }
         } else if (iname == "cnot") {
             QL_DOUT(". considering " << name[currNode] << " as cnot");
             // CNOTs first operand is control and a Zrotate, second operand is target and an Xrotate
             QL_ASSERT(ins->operands.size() == 2);
-            new_event(currID, Qubit, ins->operands[0], Zrotate, commute_multi_qubit);
-            new_event(currID, Qubit, ins->operands[1], Xrotate, commute_multi_qubit);
+            new_event(curr_id, OperandType::QUBIT, ins->operands[0], EventType::ZROTATE, commute_multi_qubit);
+            new_event(curr_id, OperandType::QUBIT, ins->operands[1], EventType::XROTATE, commute_multi_qubit);
         } else if (iname == "cz" || iname == "cphase") {
             QL_DOUT(". considering " << name[currNode] << " as cz");
             // CZs operands are both Zrotates
             QL_ASSERT(ins->operands.size() == 2);
-            new_event(currID, Qubit, ins->operands[0], Zrotate, commute_multi_qubit);
-            new_event(currID, Qubit, ins->operands[1], Zrotate, commute_multi_qubit);
+            new_event(curr_id, OperandType::QUBIT, ins->operands[0], EventType::ZROTATE, commute_multi_qubit);
+            new_event(curr_id, OperandType::QUBIT, ins->operands[1], EventType::ZROTATE, commute_multi_qubit);
         } else if (
                 iname == "rz"
                 || iname == "z"
@@ -477,7 +518,7 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as Z rotation");
             // Z rotations on single operand
             QL_ASSERT(ins->operands.size() == 1);
-            new_event(currID, Qubit, ins->operands[0], Zrotate, commute_single_qubit);
+            new_event(curr_id, OperandType::QUBIT, ins->operands[0], EventType::ZROTATE, commute_single_qubit);
         } else if (
                 iname == "rx"
                 || iname == "x"
@@ -492,20 +533,20 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as X rotation");
             // X rotations on single operand
             QL_ASSERT(ins->operands.size() == 1);
-            new_event(currID, Qubit, ins->operands[0], Xrotate, commute_single_qubit);
+            new_event(curr_id, OperandType::QUBIT, ins->operands[0], EventType::XROTATE, commute_single_qubit);
         } else {
             QL_DOUT(". considering " << name[currNode] << " as no special gate (catch-all, generic rules)");
             // Default on each qubit operand
             // Cwrite on each classical operand
             // Bwrite on each bit operand
             for (auto operand : ins->operands) {
-                new_event(currID, Qubit, operand, Default, false);
+                new_event(curr_id, OperandType::QUBIT, operand, EventType::DEFAULT, false);
             }
             for (auto coperand : ins->creg_operands) {
-                new_event(currID, Creg, coperand, Cwrite, false);
+                new_event(curr_id, OperandType::CREG, coperand, EventType::CWRITE, false);
             }
             for (auto boperand : ins->breg_operands) {
-                new_event(currID, Breg, boperand, Bwrite, false);
+                new_event(curr_id, OperandType::BREG, boperand, EventType::BWRITE, false);
             }
         } // end of if/else
         QL_DOUT(". instruction done: " << ins->qasm());
@@ -515,12 +556,12 @@ void Scheduler::init(
     // finish filling the dependency graph by creating the t node, the bottom of the graph
     {
         // add dummy target node
-        ListDigraph::Node currNode = graph.addNode();
-        int currID = graph.id(currNode);
-        instruction[currNode].emplace<ir::gates::Sink>();    // so SINK is defined as instruction[t], not unique in itself
-        node.set(instruction[currNode]) = currNode;
-        name[currNode] = instruction[currNode]->qasm();
-        t = currNode;
+        ListDigraph::Node curr_node = graph.addNode();
+        int curr_id = graph.id(curr_node);
+        instruction[curr_node].emplace<ir::gates::Sink>();    // so SINK is defined as instruction[t], not unique in itself
+        node.set(instruction[curr_node]) = curr_node;
+        name[curr_node] = instruction[curr_node]->qasm();
+        t = curr_node;
 
         // add deps to the dummy target node to close the dependency chains
         // it behaves as a Default to every qubit, Cwrite/Bwrite to every creg and breg
@@ -536,22 +577,22 @@ void Scheduler::init(
         Vec<UInt> qubits(qubit_count);
         std::iota(qubits.begin(), qubits.end(), 0);
         for (auto operand : qubits) {
-            new_event(currID, Qubit, operand, Default, false);
+            new_event(curr_id, OperandType::QUBIT, operand, EventType::DEFAULT, false);
         }
         Vec<UInt> cregs(creg_count);
         std::iota(cregs.begin(), cregs.end(), 0);
         for (auto coperand : cregs) {
-            new_event(currID, Creg, coperand, Cwrite, false);
+            new_event(curr_id, OperandType::CREG, coperand, EventType::CWRITE, false);
         }
         Vec<UInt> bregs(breg_count);
         std::iota(bregs.begin(), bregs.end(), 0);
         for (auto boperand : bregs) {
-            new_event(currID, Breg, boperand, Bwrite, false);
+            new_event(curr_id, OperandType::BREG, boperand, EventType::BWRITE, false);
         }
     }
 
     // when in doubt about dependence graph, enable next line to get a dump of it in debugging output
-    DPRINTDepgraph("init");
+    dprint_depgraph("init");
 
     // useless as well because by construction, there cannot be cycles
     // but when afterwards dependencies are added, cycles may be created,
@@ -565,19 +606,19 @@ void Scheduler::init(
 }
 
 // print depgraph for debugging with string parameter identifying where
-void Scheduler::DPRINTDepgraph(const Str &s) const {
+void Scheduler::dprint_depgraph(const Str &s) const {
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         std::cout << "Depgraph " << s << std::endl;
         for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
             std::cout << "Node " << graph.id(n) << " \"" << name[n] << "\" :" << std::endl;
             std::cout << "    out:";
             for (ListDigraph::OutArcIt arc(graph,n); arc != lemon::INVALID; ++arc) {
-                std::cout << " Arc(" << graph.id(arc) << "," << DepTypeName[ depType[arc] ] << "," << OperandTypeName[opType[arc]] << "[" << cause[arc] << "])->node(" << graph.id(graph.target(arc)) << ")";
+                std::cout << " Arc(" << graph.id(arc) << "," << dep_type[arc] << "," << op_type[arc] << "[" << cause[arc] << "])->node(" << graph.id(graph.target(arc)) << ")";
             }
             std::cout << std::endl;
             std::cout << "    in:";
             for (ListDigraph::InArcIt arc(graph,n); arc != lemon::INVALID; ++arc) {
-                std::cout << " Arc(" << graph.id(arc) << "," << DepTypeName[ depType[arc] ] << "," << OperandTypeName[opType[arc]] << "[" << cause[arc] << "])<-node(" << graph.id(graph.source(arc)) << ")";
+                std::cout << " Arc(" << graph.id(arc) << "," << dep_type[arc] << "," << op_type[arc] << "[" << cause[arc] << "])<-node(" << graph.id(graph.source(arc)) << ")";
             }
             std::cout << std::endl;
         }
@@ -589,7 +630,7 @@ void Scheduler::print() const {
     QL_COUT("Printing dependency Graph ");
     digraphWriter(graph).
         nodeMap("name", name).
-        arcMap("optype", opType).
+        arcMap("optype", op_type).
         arcMap("cause", cause).
         arcMap("weight", weight).
         // arcMap("depType", depType).
@@ -603,8 +644,8 @@ void Scheduler::write_dependence_matrix() const {
     Str datfname(output_prefix + "dependenceMatrix.dat");
     OutFile fout(datfname);
 
-    UInt totalInstructions = countNodes(graph);
-    Vec<Vec<Bool> > Matrix(totalInstructions, Vec<Bool>(totalInstructions));
+    UInt total_instructions = countNodes(graph);
+    Vec<Vec<Bool> > matrix(total_instructions, Vec<Bool>(total_instructions));
 
     // now print the edges
     for (ListDigraph::ArcIt arc(graph); arc != lemon::INVALID; ++arc) {
@@ -612,12 +653,12 @@ void Scheduler::write_dependence_matrix() const {
         auto dstNode = graph.target(arc);
         UInt srcID = graph.id( srcNode );
         UInt dstID = graph.id( dstNode );
-        Matrix[srcID][dstID] = true;
+        matrix[srcID][dstID] = true;
     }
 
-    for (UInt i = 1; i < totalInstructions - 1; i++) {
-        for (UInt j = 1; j < totalInstructions - 1; j++) {
-            fout << Matrix[j][i] << "\t";
+    for (UInt i = 1; i < total_instructions - 1; i++) {
+        for (UInt j = 1; j < total_instructions - 1; j++) {
+            fout << matrix[j][i] << "\t";
         }
         fout << "\n";
     }
@@ -634,28 +675,28 @@ void Scheduler::write_dependence_matrix() const {
 // but when in between the depgraph was updated (as done in commute_variation),
 // dependences may have been inserted in the opposite circuit direction and then the recursion kicks in
 void Scheduler::set_cycle_gate(const ir::GateRef &gp, plat::resource::Direction dir) {
-    ListDigraph::Node currNode = node.at(gp);
-    UInt  currCycle;
+    ListDigraph::Node curr_node = node.at(gp);
+    UInt  curr_cycle;
     if (dir == plat::resource::Direction::FORWARD) {
-        currCycle = 0;
-        for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+        curr_cycle = 0;
+        for (ListDigraph::InArcIt arc(graph, curr_node); arc != lemon::INVALID; ++arc) {
             auto nextgp = instruction[graph.source(arc)];
             if (nextgp->cycle == ir::MAX_CYCLE) {
                 set_cycle_gate(nextgp, dir);
             }
-            currCycle = max<UInt>(currCycle, nextgp->cycle + weight[arc]);
+            curr_cycle = max<UInt>(curr_cycle, nextgp->cycle + weight[arc]);
         }
     } else {
-        currCycle = ALAP_SINK_CYCLE;
-        for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+        curr_cycle = ALAP_SINK_CYCLE;
+        for (ListDigraph::OutArcIt arc(graph, curr_node); arc != lemon::INVALID; ++arc) {
             auto nextgp = instruction[graph.target(arc)];
             if (nextgp->cycle == ir::MAX_CYCLE) {
                 set_cycle_gate(nextgp, dir);
             }
-            currCycle = min<UInt>(currCycle, nextgp->cycle - weight[arc]);
+            curr_cycle = min<UInt>(curr_cycle, nextgp->cycle - weight[arc]);
         }
     }
-    gp->cycle = currCycle;
+    gp->cycle = curr_cycle;
     QL_DOUT("... set_cycle of " << gp->qasm() << " cycles " << gp->cycle);
 }
 
@@ -740,30 +781,30 @@ void Scheduler::schedule_alap() {
 // remaining[node] is complementary to node's cycle value,
 // so the implementation below is also a systematically modified copy of that of set_cycle_gate and set_cycle
 void Scheduler::set_remaining_gate(const ir::GateRef &gp, plat::resource::Direction dir) {
-    ListDigraph::Node currNode = node.at(gp);
-    UInt currRemain = 0;
-    QL_DOUT("... set_remaining of node " << graph.id(currNode) << ": " << gp->qasm() << " ...");
+    ListDigraph::Node curr_node = node.at(gp);
+    UInt curr_remain = 0;
+    QL_DOUT("... set_remaining of node " << graph.id(curr_node) << ": " << gp->qasm() << " ...");
     if (dir == plat::resource::Direction::FORWARD) {
-        for (ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+        for (ListDigraph::OutArcIt arc(graph, curr_node); arc != lemon::INVALID; ++arc) {
             auto nextNode = graph.target(arc);
             QL_DOUT("...... target of arc " << graph.id(arc) << " to node " << graph.id(nextNode));
             if (remaining.at(nextNode) == ir::MAX_CYCLE) {
                 set_remaining_gate(instruction[nextNode], dir);
             }
-            currRemain = max<UInt>(currRemain, remaining.at(nextNode) + weight[arc]);
+            curr_remain = max<UInt>(curr_remain, remaining.at(nextNode) + weight[arc]);
         }
     } else {
-        for (ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
+        for (ListDigraph::InArcIt arc(graph, curr_node); arc != lemon::INVALID; ++arc) {
             auto nextNode = graph.source(arc);
             QL_DOUT("...... source of arc " << graph.id(arc) << " from node " << graph.id(nextNode));
             if (remaining.at(nextNode) == ir::MAX_CYCLE) {
                 set_remaining_gate(instruction[nextNode], dir);
             }
-            currRemain = max<UInt>(currRemain, remaining.at(nextNode) + weight[arc]);
+            curr_remain = max<UInt>(curr_remain, remaining.at(nextNode) + weight[arc]);
         }
     }
-    remaining.set(currNode) = currRemain;
-    QL_DOUT("... set_remaining of node " << graph.id(currNode) << ": " << gp->qasm() << " remaining " << currRemain);
+    remaining.set(curr_node) = curr_remain;
+    QL_DOUT("... set_remaining of node " << graph.id(curr_node) << ": " << gp->qasm() << " remaining " << curr_remain);
 }
 
 void Scheduler::set_remaining(plat::resource::Direction dir) {
@@ -795,17 +836,17 @@ void Scheduler::set_remaining(plat::resource::Direction dir) {
 }
 
 ir::GateRef Scheduler::find_mostcritical(const List<ir::GateRef> &lg) {
-    UInt maxRemain = 0;
-    ir::GateRef mostCriticalGate = {};
+    UInt max_remain = 0;
+    ir::GateRef most_critical_gate = {};
     for (const auto &gp : lg) {
         UInt gr = remaining.at(node.at(gp));
-        if (gr > maxRemain) {
-            mostCriticalGate = gp;
-            maxRemain = gr;
+        if (gr > max_remain) {
+            most_critical_gate = gp;
+            max_remain = gr;
         }
     }
-    QL_DOUT("... most critical gate: " << mostCriticalGate->qasm() << " with remaining=" << maxRemain);
-    return mostCriticalGate;
+    QL_DOUT("... most critical gate: " << most_critical_gate->qasm() << " with remaining=" << max_remain);
+    return most_critical_gate;
 }
 
 // Set the curr_cycle of the scheduling algorithm to start at the appropriate end as well;
@@ -837,34 +878,34 @@ void Scheduler::get_depending_nodes(
     List<ListDigraph::Node> &ln
 ) {
     if (dir == plat::resource::Direction::FORWARD) {
-        for (ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
-            auto succNode = graph.target(succArc);
+        for (ListDigraph::OutArcIt succ_arc(graph, n); succ_arc != lemon::INVALID; ++succ_arc) {
+            auto succ_node = graph.target(succ_arc);
             // DOUT("...... succ of " << instruction[n]->qasm() << " : " << instruction[succNode]->qasm());
             Bool found = false;             // filter out duplicates
             for (auto anySuccNode : ln) {
-                if (succNode == anySuccNode) {
+                if (succ_node == anySuccNode) {
                     // DOUT("...... duplicate: " << instruction[succNode]->qasm());
                     found = true;           // duplicate found
                 }
             }
             if (!found) {                   // found new one
-                ln.push_back(succNode);     // new node to ln
+                ln.push_back(succ_node);     // new node to ln
             }
         }
         // ln contains depending nodes of n without duplicates
     } else {
-        for (ListDigraph::InArcIt predArc(graph,n); predArc != lemon::INVALID; ++predArc) {
-            ListDigraph::Node predNode = graph.source(predArc);
+        for (ListDigraph::InArcIt pred_arc(graph, n); pred_arc != lemon::INVALID; ++pred_arc) {
+            ListDigraph::Node pred_node = graph.source(pred_arc);
             // DOUT("...... pred of " << instruction[n]->qasm() << " : " << instruction[predNode]->qasm());
             Bool found = false;             // filter out duplicates
-            for (auto anyPredNode : ln) {
-                if (predNode == anyPredNode) {
+            for (auto any_pred_node : ln) {
+                if (pred_node == any_pred_node) {
                     // DOUT("...... duplicate: " << instruction[predNode]->qasm());
                     found = true;           // duplicate found
                 }
             }
             if (!found) {                   // found new one
-                ln.push_back(predNode);     // new node to ln
+                ln.push_back(pred_node);     // new node to ln
             }
         }
         // ln contains depending nodes of n without duplicates
@@ -926,9 +967,9 @@ Bool Scheduler::criticality_lessthan(
 // update its cycle attribute to reflect these dependencies;
 // avlist is initialized with s or t as first element by init_available
 // avlist is kept ordered on deep-criticality, non-increasing (i.e. highest deep-criticality first)
-void Scheduler::MakeAvailable(
+void Scheduler::make_available(
     ListDigraph::Node n,
-    List<ListDigraph::Node> &avlist,
+    utils::List<lemon::ListDigraph::Node> &avlist,
     plat::resource::Direction dir
 ) {
     Bool already_in_avlist = false;  // check whether n is already in avlist
@@ -987,43 +1028,43 @@ void Scheduler::MakeAvailable(
 // update (through MakeAvailable) the cycle attribute of the nodes made available
 // because from then on that value is compared to the curr_cycle to check
 // whether a node has completed execution and thus is available for scheduling in curr_cycle
-void Scheduler::TakeAvailable(
+void Scheduler::take_available(
     ListDigraph::Node n,
-    List<ListDigraph::Node> &avlist,
-    Map<ir::GateRef,Bool> &scheduled,
+    utils::List<lemon::ListDigraph::Node> &avlist,
+    utils::Map<ir::GateRef, utils::Bool> &scheduled,
     plat::resource::Direction dir
 ) {
     scheduled.set(instruction[n]) = true;
     avlist.remove(n);
 
     if (dir == plat::resource::Direction::FORWARD) {
-        for (ListDigraph::OutArcIt succArc(graph,n); succArc != lemon::INVALID; ++succArc) {
-            auto succNode = graph.target(succArc);
+        for (ListDigraph::OutArcIt succ_arc(graph, n); succ_arc != lemon::INVALID; ++succ_arc) {
+            auto succ_node = graph.target(succ_arc);
             Bool schedulable = true;
-            for (ListDigraph::InArcIt predArc(graph,succNode); predArc != lemon::INVALID; ++predArc) {
-                ListDigraph::Node predNode = graph.source(predArc);
+            for (ListDigraph::InArcIt pred_arc(graph, succ_node); pred_arc != lemon::INVALID; ++pred_arc) {
+                ListDigraph::Node predNode = graph.source(pred_arc);
                 if (!scheduled.at(instruction[predNode])) {
                     schedulable = false;
                     break;
                 }
             }
             if (schedulable) {
-                MakeAvailable(succNode, avlist, dir);
+                make_available(succ_node, avlist, dir);
             }
         }
     } else {
-        for (ListDigraph::InArcIt predArc(graph,n); predArc != lemon::INVALID; ++predArc) {
-            auto predNode = graph.source(predArc);
+        for (ListDigraph::InArcIt pred_arc(graph, n); pred_arc != lemon::INVALID; ++pred_arc) {
+            auto pred_node = graph.source(pred_arc);
             Bool schedulable = true;
-            for (ListDigraph::OutArcIt succArc(graph,predNode); succArc != lemon::INVALID; ++succArc) {
-                auto succNode = graph.target(succArc);
-                if (!scheduled.at(instruction[succNode])) {
+            for (ListDigraph::OutArcIt succ_arc(graph, pred_node); succ_arc != lemon::INVALID; ++succ_arc) {
+                auto succ_node = graph.target(succ_arc);
+                if (!scheduled.at(instruction[succ_node])) {
                     schedulable = false;
                     break;
                 }
             }
             if (schedulable) {
-                MakeAvailable(predNode, avlist, dir);
+                make_available(pred_node, avlist, dir);
             }
         }
     }
@@ -1034,7 +1075,7 @@ void Scheduler::TakeAvailable(
 // and try again; this makes nodes/instructions to complete execution for one more cycle,
 // and makes resources finally available in case of resource constrained scheduling
 // so it contributes to proceeding and to finally have an empty avlist
-void Scheduler::AdvanceCurrCycle(plat::resource::Direction dir, UInt &curr_cycle) {
+void Scheduler::advance_curr_cycle(plat::resource::Direction dir, UInt &curr_cycle) {
     if (dir == plat::resource::Direction::FORWARD) {
         curr_cycle++;
     } else {
@@ -1082,8 +1123,8 @@ Bool Scheduler::immediately_schedulable(
 
 // select a node from the avlist
 // the avlist is deep-ordered from high to low criticality (see criticality_lessthan above)
-ListDigraph::Node Scheduler::SelectAvailable(
-    List<ListDigraph::Node> &avlist,
+ListDigraph::Node Scheduler::select_available(
+    utils::List<lemon::ListDigraph::Node> &avlist,
     plat::resource::Direction dir,
     const UInt curr_cycle,
     plat::resource::State &rs,
@@ -1159,10 +1200,10 @@ void Scheduler::schedule(
         Bool success;
         ListDigraph::Node selected_node;
 
-        selected_node = SelectAvailable(avlist, dir, curr_cycle, rs, success);
+        selected_node = select_available(avlist, dir, curr_cycle, rs, success);
         if (!success) {
             // i.e. none from avlist was found suitable to schedule in this cycle
-            AdvanceCurrCycle(dir, curr_cycle);
+            advance_curr_cycle(dir, curr_cycle);
             // so try again; eventually instrs complete and machine is empty
             continue;
         }
@@ -1180,7 +1221,7 @@ void Scheduler::schedule(
             ) {
             rs.reserve(curr_cycle, gp);
         }
-        TakeAvailable(selected_node, avlist, scheduled, dir);   // update avlist/scheduled/cycle
+        take_available(selected_node, avlist, scheduled, dir);   // update avlist/scheduled/cycle
         // more nodes that could be scheduled in this cycle, will be found in an other round of the loop
     }
 
@@ -1442,29 +1483,29 @@ void Scheduler::schedule_alap_uniform() {
 
 // printing dot of the dependency graph
 void Scheduler::get_dot(
-    Bool WithCritical,
-    Bool WithCycles,
+    Bool with_critical,
+    Bool with_cycles,
     std::ostream &dotout
 ) {
     QL_DOUT("Get_dot");
     ListDigraphPath p;
-    ListDigraph::ArcMap<Bool> isInCritical{graph};
-    if (WithCritical) {
+    ListDigraph::ArcMap<Bool> is_in_critical{graph};
+    if (with_critical) {
         for (ListDigraph::ArcIt a(graph); a != lemon::INVALID; ++a) {
-            isInCritical[a] = false;
+            is_in_critical[a] = false;
             for (ListDigraphPath::ArcIt ap(p); ap != lemon::INVALID; ++ap) {
                 if (a == ap) {
-                    isInCritical[a] = true;
+                    is_in_critical[a] = true;
                     break;
                 }
             }
         }
     }
 
-    Str NodeStyle(" fontcolor=black, style=filled, fontsize=16");
-    Str EdgeStyle1(" color=black");
-    Str EdgeStyle2(" color=red");
-    Str EdgeStyle = EdgeStyle1;
+    Str node_style(" fontcolor=black, style=filled, fontsize=16");
+    Str edge_style_1(" color=black");
+    Str edge_style_2(" color=red");
+    Str edge_style = edge_style_1;
 
     dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
            << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
@@ -1472,23 +1513,23 @@ void Scheduler::get_dot(
 
     // first print the nodes
     for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
-        dotout  << "\"" << graph.id(n) << "\""
-                << " [label=\" " << name[n] <<" \""
-                << NodeStyle
+        dotout << "\"" << graph.id(n) << "\""
+               << " [label=\" " << name[n] << " \""
+               << node_style
                 << "];" << std::endl;
     }
 
-    if (WithCycles) {
+    if (with_cycles) {
         // Print cycle numbers as timeline, as shown below
-        UInt TotalCycles;
+        UInt total_cycles;
         if (kernel->c.empty()) {
-            TotalCycles = 1;    // +1 is SOURCE's duration in cycles
+            total_cycles = 1;    // +1 is SOURCE's duration in cycles
         } else {
-            TotalCycles = kernel->c.back()->cycle + (kernel->c.back()->duration+cycle_time-1)/cycle_time
-                          - kernel->c.front()->cycle + 1;    // +1 is SOURCE's duration in cycles
+            total_cycles = kernel->c.back()->cycle + (kernel->c.back()->duration + cycle_time - 1) / cycle_time
+                           - kernel->c.front()->cycle + 1;    // +1 is SOURCE's duration in cycles
         }
         dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
-        for (UInt cn = 0; cn <= TotalCycles; ++cn) {
+        for (UInt cn = 0; cn <= total_cycles; ++cn) {
             if (cn > 0) {
                 dotout << " -> ";
             }
@@ -1506,25 +1547,25 @@ void Scheduler::get_dot(
 
     // now print the edges
     for (ListDigraph::ArcIt arc(graph); arc != lemon::INVALID; ++arc) {
-        auto srcNode = graph.source(arc);
-        auto dstNode = graph.target(arc);
-        Int srcID = graph.id( srcNode );
-        Int dstID = graph.id( dstNode );
+        auto src_node = graph.source(arc);
+        auto dst_node = graph.target(arc);
+        Int src_id = graph.id(src_node );
+        Int dst_id = graph.id(dst_node );
 
-        if (WithCritical) {
-            EdgeStyle = (isInCritical[arc] == true) ? EdgeStyle2 : EdgeStyle1;
+        if (with_critical) {
+            edge_style = (is_in_critical[arc] == true) ? edge_style_2 : edge_style_1;
         }
 
         dotout << std::dec
-               << "\"" << srcID << "\""
+               << "\"" << src_id << "\""
                << "->"
-               << "\"" << dstID << "\""
+               << "\"" << dst_id << "\""
                << "[ label=\""
-               << OperandTypeName[opType[arc]] << "[" << cause[arc] << "]"
+               << op_type[arc] << "[" << cause[arc] << "]"
                << " , " << weight[arc]
-               << " , " << DepTypeName[ depType[arc] ]
-               <<"\""
-               << " " << EdgeStyle << " "
+               << " , " << dep_type[arc]
+               << "\""
+               << " " << edge_style << " "
                << "]"
                << std::endl;
     }

@@ -36,16 +36,16 @@ namespace schedule {
 namespace detail {
 
 // see src/scheduler.cc for the meaning of R, W, D, X and Z events and their relation to dependences
-enum DepType {RAR, RAW, WAR, WAW, DAD, DAX, DAZ, XAD, XAX, XAZ, ZAD, ZAX, ZAZ};
-const utils::Str DepTypeName[] = {"RAR", "RAW", "WAR", "WAW", "DAD", "DAX", "DAZ", "XAD", "XAX", "XAZ", "ZAD", "ZAX", "ZAZ"};
+enum class DepType {RAR, RAW, WAR, WAW, DAD, DAX, DAZ, XAD, XAX, XAZ, ZAD, ZAX, ZAZ};
+std::ostream &operator<<(std::ostream &os, DepType dt);
 
-enum EventType {Default, Xrotate, Zrotate, Cread, Cwrite, Bread, Bwrite};
-const utils::Str EventTypeName[] = {"Default", "Xrotate", "Zrotate", "Cread", "Cwrite", "Bread", "Bwrite"};
+enum class EventType {DEFAULT, XROTATE, ZROTATE, CREAD, CWRITE, BREAD, BWRITE};
+std::ostream &operator<<(std::ostream &os, EventType et);
 
 typedef utils::Vec<utils::Int> ReadersListType;
 
-enum OperandType {Qubit, Creg, Breg};
-const utils::Str OperandTypeName[] = {"q", "c", "b"};
+enum class OperandType {QUBIT, CREG, BREG};
+std::ostream &operator<<(std::ostream &os, OperandType ot);
 
 class Scheduler {
 private:
@@ -64,9 +64,9 @@ private:
     // attributes
     lemon::ListDigraph::NodeMap<utils::Str> name;     // name[n] == qasm string
     lemon::ListDigraph::ArcMap<utils::Int> weight;    // number of cycles of dependence
-    lemon::ListDigraph::ArcMap<utils::Int> opType;    // qubit, creg or breg
+    lemon::ListDigraph::ArcMap<OperandType> op_type;  // qubit, creg or breg
     lemon::ListDigraph::ArcMap<utils::Int> cause;     // operand index
-    lemon::ListDigraph::ArcMap<utils::Int> depType;   // RAW, WAW, ...
+    lemon::ListDigraph::ArcMap<DepType> dep_type;     // RAW, WAW, ...
 
     // s and t nodes are the top and bottom of the dependence graph
     lemon::ListDigraph::Node s, t;                     // instruction[s]==SOURCE, instruction[t]==SINK
@@ -90,24 +90,24 @@ private:
     // for each OperandType there is a separate type of state machine
     // for each particular operand there is a separate state machine
     // all vectors are indexed by the operand
-    utils::Vec<enum EventType> LastQEvent;      // Qubit: Default, Xrotate, Zrotate
-    utils::Vec<utils::Int> LastDefault;         // state machine: Default { Default | Xrotate+ | Zrotate+ }* Default
-    utils::Vec<ReadersListType> LastXrotates;
-    utils::Vec<ReadersListType> LastZrotates;
+    utils::Vec<enum EventType> last_q_event;      // Qubit: Default, Xrotate, Zrotate
+    utils::Vec<utils::Int> last_default;          // state machine: Default { Default | Xrotate+ | Zrotate+ }* Default
+    utils::Vec<ReadersListType> last_x_rotates;
+    utils::Vec<ReadersListType> last_z_rotates;
 
-    utils::Vec<enum EventType> LastCEvent;      // Creg: Write, Read
-    utils::Vec<utils::Int> LastCWriter;         // state machine: Write { Write | Read+ }* Write,
-    utils::Vec<ReadersListType> LastCReaders;
+    utils::Vec<enum EventType> last_c_event;      // Creg: Write, Read
+    utils::Vec<utils::Int> last_c_writer;         // state machine: Write { Write | Read+ }* Write,
+    utils::Vec<ReadersListType> last_c_readers;
 
-    utils::Vec<enum EventType> LastBEvent;      // Breg: Write, Read
-    utils::Vec<utils::Int> LastBWriter;         // state machine: Write { Write | Read+ }* Write,
-    utils::Vec<ReadersListType> LastBReaders;
+    utils::Vec<enum EventType> last_b_event;      // Breg: Write, Read
+    utils::Vec<utils::Int> last_b_writer;         // state machine: Write { Write | Read+ }* Write,
+    utils::Vec<ReadersListType> last_b_readers;
 
 public:
     Scheduler();
 
     // name may contain parameters, so must be stripped first before checking it for gate's name
-    static void stripname(utils::Str &name);
+    static void strip_name(utils::Str &name);
 
     // signal the state machine of dependence graph construction to do a step as specified by the parameters;
     // currID is the new node in the graph for the new gate/instruction;
@@ -118,20 +118,20 @@ public:
     // the state machines knows of all relevant previous events and in this context
     // can add dependences for this new current gate on those previous ones
     void new_event(
-        int currID,
-        enum OperandType operandType,
+        int curr_id,
+        enum OperandType operand_type,
         utils::UInt operand,
-        enum EventType currEvent,
+        enum EventType curr_event,
         bool commutes
     );
 
     // add a dependence between two nodes
     // operand is in index space corresponding to operand type
     void add_dep(
-        utils::Int fromID,
-        utils::Int toID,
-        enum DepType deptype,
-        enum OperandType operandType,
+        utils::Int from_id,
+        utils::Int to_id,
+        enum DepType dt,
+        enum OperandType ot,
         utils::UInt operand
     );
 
@@ -143,7 +143,7 @@ public:
         utils::Bool commute_single_qubit
     );
 
-    void DPRINTDepgraph(const utils::Str &s) const;
+    void dprint_depgraph(const utils::Str &s) const;
     void print() const;
     void write_dependence_matrix() const;
 
@@ -283,7 +283,7 @@ public:
     // update its cycle attribute to reflect these dependences;
     // avlist is initialized with s or t as first element by init_available
     // avlist is kept ordered on deep-criticality, non-increasing (i.e. highest deep-criticality first)
-    void MakeAvailable(
+    void make_available(
         lemon::ListDigraph::Node n,
         utils::List<lemon::ListDigraph::Node> &avlist,
         plat::resource::Direction dir
@@ -306,7 +306,7 @@ public:
     // update (through MakeAvailable) the cycle attribute of the nodes made available
     // because from then on that value is compared to the curr_cycle to check
     // whether a node has completed execution and thus is available for scheduling in curr_cycle
-    void TakeAvailable(
+    void take_available(
         lemon::ListDigraph::Node n,
         utils::List<lemon::ListDigraph::Node> &avlist,
         utils::Map<ir::GateRef, utils::Bool> &scheduled,
@@ -318,7 +318,7 @@ public:
     // and try again; this makes nodes/instructions to complete execution for one more cycle,
     // and makes resources finally available in case of resource constrained scheduling
     // so it contributes to proceeding and to finally have an empty avlist
-    static void AdvanceCurrCycle(plat::resource::Direction dir, utils::UInt &curr_cycle);
+    static void advance_curr_cycle(plat::resource::Direction dir, utils::UInt &curr_cycle);
 
     // a gate must wait until all its operand are available, i.e. the gates having computed them have completed,
     // and must wait until all resources required for the gate's execution are available;
@@ -334,7 +334,7 @@ public:
 
     // select a node from the avlist
     // the avlist is deep-ordered from high to low criticality (see criticality_lessthan above)
-    lemon::ListDigraph::Node SelectAvailable(
+    lemon::ListDigraph::Node select_available(
         utils::List<lemon::ListDigraph::Node> &avlist,
         plat::resource::Direction dir,
         const utils::UInt curr_cycle,
@@ -366,7 +366,7 @@ public:
     void schedule_alap_uniform();
 
     // printing dot of the dependence graph
-    void get_dot(utils::Bool WithCritical, utils::Bool WithCycles, std::ostream &dotout);
+    void get_dot(utils::Bool with_critical, utils::Bool with_cycles, std::ostream &dotout);
     void get_dot(utils::Str &dot);
 };
 
