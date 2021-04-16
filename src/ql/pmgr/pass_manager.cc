@@ -15,6 +15,7 @@
 #include "ql/pass/ana/statistics/report.h"
 #include "ql/pass/io/cqasm/read.h"
 #include "ql/pass/io/cqasm/report.h"
+#include "ql/pass/opt/clifford/optimize.h"
 
 namespace ql {
 namespace pmgr {
@@ -68,6 +69,7 @@ PassFactory::PassFactory() {
     register_pass<::ql::pass::ana::statistics::report::Pass>("ana.statistics.Report");
     register_pass<::ql::pass::io::cqasm::read::Pass>("io.cqasm.Read");
     register_pass<::ql::pass::io::cqasm::report::Pass>("io.cqasm.Report");
+    register_pass<::ql::pass::opt::clifford::optimize::Pass>("opt.clifford.Optimize");
 
 }
 

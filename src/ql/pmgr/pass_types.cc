@@ -1318,16 +1318,34 @@ KernelTransformation::KernelTransformation(
 }
 
 /**
+ * Initial accumulator value for the return value. Defaults to zero.
+ */
+utils::Int KernelTransformation::retval_initialize() const {
+    return 0;
+}
+
+/**
+ * Return value reduction operator. Defaults to addition.
+ */
+utils::Int KernelTransformation::retval_accumulate(
+    utils::Int state,
+    utils::Int kernel
+) const {
+    return state + kernel;
+}
+
+/**
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int KernelTransformation::run_internal(
     const ir::ProgramRef &program,
     const Context &context
 ) const {
+    utils::Int accumulator = retval_initialize();
     for (const auto &kernel : program->kernels) {
-        run(program, kernel, context);
+        accumulator = retval_accumulate(accumulator, run(program, kernel, context));
     }
-    return 0;
+    return accumulator;
 }
 
 /**
@@ -1377,16 +1395,34 @@ KernelAnalysis::KernelAnalysis(
 }
 
 /**
+ * Initial accumulator value for the return value. Defaults to zero.
+ */
+utils::Int KernelAnalysis::retval_initialize() const {
+    return 0;
+}
+
+/**
+ * Return value reduction operator. Defaults to addition.
+ */
+utils::Int KernelAnalysis::retval_accumulate(
+    utils::Int state,
+    utils::Int kernel
+) const {
+    return state + kernel;
+}
+
+/**
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int KernelAnalysis::run_internal(
     const ir::ProgramRef &program,
         const Context &context
 ) const {
+    utils::Int accumulator = retval_initialize();
     for (const auto &kernel : program->kernels) {
-        run(program, kernel, context);
+        accumulator = retval_accumulate(accumulator, run(program, kernel, context));
     }
-    return 0;
+    return accumulator;
 }
 
 /**

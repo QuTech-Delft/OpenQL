@@ -10,7 +10,7 @@
 #include <chrono>
 #include "ql/utils/opt.h"
 #include "report.h"
-#include "clifford.h"
+#include "ql/pass/opt/clifford/detail/clifford.h"
 #include "scheduler.h"
 #include "mapper.h"
 #include "ql/pass/io/cqasm/detail/cqasm_reader.h"
@@ -380,7 +380,27 @@ CliffordOptimizerPass::CliffordOptimizerPass(const Str &name) : AbstractPass(nam
  * @param  Program object to be clifford optimized
  */
 void CliffordOptimizerPass::runOnProgram(const ir::ProgramRef &program) {
-    clifford_optimize(program, program->platform, getPassName());
+    auto passname = getPassName();
+    auto platform = program->platform;
+
+    if (com::options::get(passname) == "no") {
+        QL_DOUT("Clifford optimization on program " << program->name << " at "
+                                                    << passname << " not DONE");
+        return;
+    }
+    QL_DOUT("Clifford optimization on program " << program->name << " at "
+                                                << passname << " ...");
+
+    report_statistics(program, platform, "in", passname, "# ");
+    report_qasm(program, platform, "in", passname);
+
+    pass::opt::clifford::optimize::detail::Clifford cliff;
+    for (auto &kernel : program->kernels) {
+        cliff.optimize_kernel(kernel);
+    }
+
+    report_statistics(program, platform, "out", passname, "# ");
+    report_qasm(program, platform, "out", passname);
 }
 
 /**

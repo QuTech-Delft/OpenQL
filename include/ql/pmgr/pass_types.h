@@ -818,9 +818,19 @@ protected:
     utils::Bool run_transforms_platform() const final;
 
     /**
+     * Initial accumulator value for the return value. Defaults to zero.
+     */
+    virtual utils::Int retval_initialize() const;
+
+    /**
+     * Return value reduction operator. Defaults to addition.
+     */
+    virtual utils::Int retval_accumulate(utils::Int state, utils::Int kernel) const;
+
+    /**
      * The virtual implementation for this pass.
      */
-    virtual void run(
+    virtual utils::Int run(
         const ir::ProgramRef &program,
         const ir::KernelRef &kernel,
         const Context &context
@@ -906,10 +916,20 @@ protected:
     utils::Bool run_transforms_platform() const final;
 
     /**
+     * Initial accumulator value for the return value. Defaults to zero.
+     */
+    virtual utils::Int retval_initialize() const;
+
+    /**
+     * Return value reduction operator. Defaults to addition.
+     */
+    virtual utils::Int retval_accumulate(utils::Int state, utils::Int kernel) const;
+
+    /**
      * The virtual implementation for this pass. The contents of program and
      * kernel must not be modified.
      */
-    virtual void run(
+    virtual utils::Int run(
         const ir::ProgramRef &program,
         const ir::KernelRef &kernel,
         const Context &context

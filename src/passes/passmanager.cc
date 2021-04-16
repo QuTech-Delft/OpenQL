@@ -140,6 +140,7 @@ AbstractPass *PassManager::createPass(const Str &passName, const Str &aliasName)
     } else if (passName == "StatisticsReporter") {
         pass = new StatisticsReporterPass(aliasName);
     } else if (passName == "CliffordOptimize") {
+        // NOTE: com::options::get(passname) must be set to run pass; condition default compiler config on this
         pass = new CliffordOptimizerPass(aliasName);
     } else if (passName == "Map") {
         pass = new MapperPass(aliasName);
