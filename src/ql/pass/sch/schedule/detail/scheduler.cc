@@ -282,18 +282,23 @@ void Scheduler::new_event(
 
 // construct the dependency graph ('graph') with nodes from the circuit and adding arcs for their dependencies
 void Scheduler::init(
-    ir::Circuit &ckt,
-    const plat::PlatformRef &platform
+    const ir::KernelRef &kernel,
+    const utils::Str &output_prefix,
+    utils::Bool commute_multi_qubit,
+    utils::Bool commute_single_qubit
 ) {
-    QL_DOUT("dependency graph creation ... #qubits = " << platform->qubit_count);
-    qubit_count = platform->qubit_count;
-    creg_count = platform->creg_count;
-    breg_count = platform->breg_count;
+    QL_DOUT("dependency graph creation ... #qubits = " << kernel->platform->qubit_count);
+    qubit_count = kernel->platform->qubit_count;
+    creg_count = kernel->platform->creg_count;
+    breg_count = kernel->platform->breg_count;
     UInt total_reg_count = qubit_count + creg_count + breg_count;
     QL_DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", breg_count=" << breg_count << ", total=" << total_reg_count);
 
-    cycle_time = platform->cycle_time;
-    circp = &ckt;
+    cycle_time = kernel->platform->cycle_time;
+    this->kernel = kernel;
+    this->output_prefix = output_prefix;
+    this->commute_multi_qubit = commute_multi_qubit;
+    this->commute_single_qubit = commute_single_qubit;
 
     // dependencies are created with a current gate as target
     // and with those previous gates as source that have an operand match with the current gate:
@@ -327,7 +332,7 @@ void Scheduler::init(
     LastBReaders.resize(breg_count);            // start off as empty list, no Breader seen yet
 
     // for each gate pointer ins in the circuit, add a node and add dependencies on previous gates to it
-    for (const auto &ins : ckt) {
+    for (const auto &ins : kernel->c) {
         QL_DOUT("Current instruction's name: `" << ins->name << "'");
         QL_DOUT(".. Qasm(): " << ins->qasm());
         for (auto operand : ins->operands) {
@@ -447,14 +452,14 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as cnot");
             // CNOTs first operand is control and a Zrotate, second operand is target and an Xrotate
             QL_ASSERT(ins->operands.size() == 2);
-            new_event(currID, Qubit, ins->operands[0], Zrotate, com::options::get("scheduler_commute") == "yes");
-            new_event(currID, Qubit, ins->operands[1], Xrotate, com::options::get("scheduler_commute") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Zrotate, commute_multi_qubit);
+            new_event(currID, Qubit, ins->operands[1], Xrotate, commute_multi_qubit);
         } else if (iname == "cz" || iname == "cphase") {
             QL_DOUT(". considering " << name[currNode] << " as cz");
             // CZs operands are both Zrotates
             QL_ASSERT(ins->operands.size() == 2);
-            new_event(currID, Qubit, ins->operands[0], Zrotate, com::options::get("scheduler_commute") == "yes");
-            new_event(currID, Qubit, ins->operands[1], Zrotate, com::options::get("scheduler_commute") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Zrotate, commute_multi_qubit);
+            new_event(currID, Qubit, ins->operands[1], Zrotate, commute_multi_qubit);
         } else if (
                 iname == "rz"
                 || iname == "z"
@@ -472,7 +477,7 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as Z rotation");
             // Z rotations on single operand
             QL_ASSERT(ins->operands.size() == 1);
-            new_event(currID, Qubit, ins->operands[0], Zrotate, com::options::get("scheduler_commute_rotations") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Zrotate, commute_single_qubit);
         } else if (
                 iname == "rx"
                 || iname == "x"
@@ -487,7 +492,7 @@ void Scheduler::init(
             QL_DOUT(". considering " << name[currNode] << " as X rotation");
             // X rotations on single operand
             QL_ASSERT(ins->operands.size() == 1);
-            new_event(currID, Qubit, ins->operands[0], Xrotate, com::options::get("scheduler_commute_rotations") == "yes");
+            new_event(currID, Qubit, ins->operands[0], Xrotate, commute_single_qubit);
         } else {
             QL_DOUT(". considering " << name[currNode] << " as no special gate (catch-all, generic rules)");
             // Default on each qubit operand
@@ -595,7 +600,7 @@ void Scheduler::print() const {
 
 void Scheduler::write_dependence_matrix() const {
     QL_COUT("Printing dependency Matrix ...");
-    Str datfname(com::options::get("output_dir") + "/dependenceMatrix.dat");
+    Str datfname(output_prefix + "dependenceMatrix.dat");
     OutFile fout(datfname);
 
     UInt totalInstructions = countNodes(graph);
@@ -661,7 +666,7 @@ void Scheduler::set_cycle(plat::resource::Direction dir) {
     }
     if (dir == plat::resource::Direction::FORWARD) {
         set_cycle_gate(instruction[s], dir);
-        for (auto gpit = circp->begin(); gpit != circp->end(); gpit++) {
+        for (auto gpit = kernel->c.begin(); gpit != kernel->c.end(); gpit++) {
             if ((*gpit)->cycle == ir::MAX_CYCLE) {
                 set_cycle_gate(*gpit, dir);
             }
@@ -669,7 +674,7 @@ void Scheduler::set_cycle(plat::resource::Direction dir) {
         set_cycle_gate(instruction[t], dir);
     } else {
         set_cycle_gate(instruction[t], dir);
-        for (auto gpit = circp->rbegin(); gpit != circp->rend(); gpit++) {
+        for (auto gpit = kernel->c.rbegin(); gpit != kernel->c.rend(); gpit++) {
             if ((*gpit)->cycle == ir::MAX_CYCLE) {
                 set_cycle_gate(*gpit, dir);
             }
@@ -681,7 +686,7 @@ void Scheduler::set_cycle(plat::resource::Direction dir) {
         QL_DOUT("... readjusting cycle values by -" << SOURCECycle);
 
         instruction[t]->cycle -= SOURCECycle;
-        for (auto &gp : *circp) {
+        for (auto &gp : kernel->c) {
             gp->cycle -= SOURCECycle;
         }
         instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
@@ -713,30 +718,32 @@ void Scheduler::sort_by_cycle(ir::Circuit &cp) {
 }
 
 // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-void Scheduler::schedule_asap(Str &sched_dot) {
+void Scheduler::schedule_asap(Str *sched_dot) {
     QL_DOUT("Scheduling ASAP ...");
     set_cycle(plat::resource::Direction::FORWARD);
-    sort_by_cycle(*circp);
+    sort_by_cycle(kernel->c);
+    kernel->cycles_valid = true;
 
-    if (com::options::get("print_dot_graphs") == "yes") {
+    if (sched_dot) {
         StrStrm ssdot;
         get_dot(false, true, ssdot);
-        sched_dot = ssdot.str();
+        *sched_dot = ssdot.str();
     }
 
     QL_DOUT("Scheduling ASAP [DONE]");
 }
 
 // ALAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-void Scheduler::schedule_alap(Str &sched_dot) {
+void Scheduler::schedule_alap(Str *sched_dot) {
     QL_DOUT("Scheduling ALAP ...");
     set_cycle(plat::resource::Direction::BACKWARD);
-    sort_by_cycle(*circp);
+    sort_by_cycle(kernel->c);
+    kernel->cycles_valid = true;
 
-    if (com::options::get("print_dot_graphs") == "yes") {
+    if (sched_dot) {
         StrStrm ssdot;
         get_dot(false, true, ssdot);
-        sched_dot = ssdot.str();
+        *sched_dot = ssdot.str();
     }
 
     QL_DOUT("Scheduling ALAP [DONE]");
@@ -783,7 +790,7 @@ void Scheduler::set_remaining(plat::resource::Direction dir) {
     if (dir == plat::resource::Direction::FORWARD) {
         // remaining until SINK (i.e. the SINK.cycle-ALAP value)
         set_remaining_gate(instruction[t], dir);
-        for (auto gpit = circp->rbegin(); gpit != circp->rend(); gpit++) {
+        for (auto gpit = kernel->c.rbegin(); gpit != kernel->c.rend(); gpit++) {
             if (remaining.at(node.at(*gpit)) == ir::MAX_CYCLE) {
                 set_remaining_gate(*gpit, dir);
             }
@@ -792,7 +799,7 @@ void Scheduler::set_remaining(plat::resource::Direction dir) {
     } else {
         // remaining until SOURCE (i.e. the ASAP value)
         set_remaining_gate(instruction[s], dir);
-        for (auto gpit = circp->begin(); gpit != circp->end(); gpit++) {
+        for (auto gpit = kernel->c.begin(); gpit != kernel->c.end(); gpit++) {
             if (remaining.at(node.at(*gpit)) == ir::MAX_CYCLE) {
                 set_remaining_gate(*gpit, dir);
             }
@@ -1143,8 +1150,7 @@ void Scheduler::schedule(
     ir::Circuit &circp,
     plat::resource::Direction dir,
     const plat::PlatformRef &platform,
-    const plat::resource::Manager &rm,
-    Str &sched_dot
+    const plat::resource::Manager &rm
 ) {
     QL_DOUT("Scheduling " << (dir == plat::resource::Direction::FORWARD ? "ASAP" : "ALAP") << " with RC ...");
 
@@ -1210,13 +1216,7 @@ void Scheduler::schedule(
         }
         instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
     }
-    // FIXME HvS cycles_valid now
-
-    if (com::options::get("print_dot_graphs") == "yes") {
-        StrStrm ssdot;
-        get_dot(false, true, ssdot);
-        sched_dot = ssdot.str();
-    }
+    kernel->cycles_valid = true;
 
     // end scheduling
 
@@ -1225,21 +1225,19 @@ void Scheduler::schedule(
 
 void Scheduler::schedule_asap(
     const plat::resource::Manager &rm,
-    const plat::PlatformRef &platform,
-    Str &sched_dot
+    const plat::PlatformRef &platform
 ) {
     QL_DOUT("Scheduling ASAP");
-    schedule(*circp, plat::resource::Direction::FORWARD, platform, rm, sched_dot);
+    schedule(kernel->c, plat::resource::Direction::FORWARD, platform, rm);
     QL_DOUT("Scheduling ASAP [DONE]");
 }
 
 void Scheduler::schedule_alap(
     const plat::resource::Manager &rm,
-    const plat::PlatformRef &platform,
-    Str &sched_dot
+    const plat::PlatformRef &platform
 ) {
     QL_DOUT("Scheduling ALAP");
-    schedule(*circp, plat::resource::Direction::BACKWARD, platform, rm, sched_dot);
+    schedule(kernel->c, plat::resource::Direction::BACKWARD, platform, rm);
     QL_DOUT("Scheduling ALAP [DONE]");
 }
 
@@ -1286,7 +1284,7 @@ void Scheduler::schedule_alap_uniform() {
     // create gates_per_cycle[cycle] = for each cycle the list of gates at cycle cycle
     // this is the basic map to be operated upon by the uniforming scheduler below;
     Map<UInt, List<ir::GateRef>> gates_per_cycle;
-    for (const auto &gp : *circp) {
+    for (const auto &gp : kernel->c) {
         gates_per_cycle.set(gp->cycle).push_back(gp);
     }
 
@@ -1432,8 +1430,8 @@ void Scheduler::schedule_alap_uniform() {
     }   // end curr_cycle loop; curr_cycle is bundle which must be enlarged when too small
 
     // new cycle values computed; reflect this in circuit's gate order
-    sort_by_cycle(*circp);
-    // FIXME HvS cycles_valid now
+    sort_by_cycle(kernel->c);
+    kernel->cycles_valid = true;
 
     // recompute and print statistics reporting on uniform scheduling performance
     max_gates_per_cycle = 0;
@@ -1503,11 +1501,11 @@ void Scheduler::get_dot(
     if (WithCycles) {
         // Print cycle numbers as timeline, as shown below
         UInt TotalCycles;
-        if (circp->empty()) {
+        if (kernel->c.empty()) {
             TotalCycles = 1;    // +1 is SOURCE's duration in cycles
         } else {
-            TotalCycles = circp->back()->cycle + (circp->back()->duration+cycle_time-1)/cycle_time
-                          - circp->front()->cycle + 1;    // +1 is SOURCE's duration in cycles
+            TotalCycles = kernel->c.back()->cycle + (kernel->c.back()->duration+cycle_time-1)/cycle_time
+                          - kernel->c.front()->cycle + 1;    // +1 is SOURCE's duration in cycles
         }
         dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
         for (UInt cn = 0; cn <= TotalCycles; ++cn) {
@@ -1520,7 +1518,7 @@ void Scheduler::get_dot(
 
         // Now print ranks, as shown below
         dotout << "{ rank=same; Cycle" << instruction[s]->cycle <<"; " << graph.id(s) << "; }\n";
-        for (const auto &gp : *circp) {
+        for (const auto &gp : kernel->c) {
             dotout << "{ rank=same; Cycle" << gp->cycle <<"; " << graph.id(node.at(gp)) << "; }\n";
         }
         dotout << "{ rank=same; Cycle" << instruction[t]->cycle <<"; " << graph.id(t) << "; }\n";
@@ -1557,7 +1555,7 @@ void Scheduler::get_dot(
 
 void Scheduler::get_dot(Str &dot) {
     set_cycle(plat::resource::Direction::FORWARD);
-    sort_by_cycle(*circp);
+    sort_by_cycle(kernel->c);
 
     StrStrm ssdot;
     get_dot(false, true, ssdot);

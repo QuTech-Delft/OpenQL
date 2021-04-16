@@ -24,6 +24,12 @@
 #include "report.h"
 
 namespace ql {
+
+// Forward declaration for mapper Future class for friend declaration.
+namespace mapper {
+class Future;
+} // namespace mapper
+
 namespace pass {
 namespace sch {
 namespace schedule {
@@ -42,7 +48,11 @@ enum OperandType {Qubit, Creg, Breg};
 const utils::Str OperandTypeName[] = {"q", "c", "b"};
 
 class Scheduler {
-public:
+private:
+    // NOTE JvS: I don't like that this needs to be here, but making all this
+    // stuff public feels way worse.
+    friend class mapper::Future;
+
     // dependence graph is constructed (see Init) once from the sequence of gates in a kernel's circuit
     // it can be reused as often as needed as long as no gates are added/deleted; it doesn't modify those gates
     lemon::ListDigraph graph;
@@ -66,11 +76,16 @@ public:
     utils::UInt qubit_count;    // number of qubits, to check/represent qubit as cause of dependence
     utils::UInt creg_count;     // number of cregs, to check/represent creg as cause of dependence
     utils::UInt breg_count;     // number of bregs, to check/represent breg as cause of dependence
-    utils::RawPtr<ir::Circuit> circp;           // current and result circuit, passed from Init to each scheduler
+    ir::KernelRef kernel;       // current and result circuit, passed from Init to each scheduler
+
+    // pass option information
+    utils::Str output_prefix;           // replaces output directory global option
+    utils::Bool commute_multi_qubit;    // whether to commute CZ and CNOT gates
+    utils::Bool commute_single_qubit;   // whether to commute X and Z rotations
 
     // scheduler support
     utils::Map<lemon::ListDigraph::Node, utils::UInt>  remaining;  // remaining[node] == cycles until end; critical path representation
-private:
+
     // state of the state machine that is used to construct the dependence graph
     // for each OperandType there is a separate type of state machine
     // for each particular operand there is a separate state machine
@@ -122,8 +137,10 @@ public:
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(
-        ir::Circuit &ckt,
-        const plat::PlatformRef &platform
+        const ir::KernelRef &kernel,
+        const utils::Str &output_prefix,
+        utils::Bool commute_multi_qubit,
+        utils::Bool commute_single_qubit
     );
 
     void DPRINTDepgraph(const utils::Str &s) const;
@@ -179,10 +196,10 @@ public:
     static void sort_by_cycle(ir::Circuit &cp);
 
     // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-    void schedule_asap(utils::Str &sched_dot);
+    void schedule_asap(utils::Str *sched_dot);
 
     // ALAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
-    void schedule_alap(utils::Str &sched_dot);
+    void schedule_alap(utils::Str *sched_dot);
 
 // =========== schedulers with RC
     // Most code from here on deals with scheduling with Resource Constraints.
@@ -339,20 +356,17 @@ public:
         ir::Circuit &circp,
         plat::resource::Direction dir,
         const plat::PlatformRef &platform,
-        const plat::resource::Manager &rm,
-        utils::Str &sched_dot
+        const plat::resource::Manager &rm
     );
 
     void schedule_asap(
         const plat::resource::Manager &rm,
-        const plat::PlatformRef &platform,
-        utils::Str &sched_dot
+        const plat::PlatformRef &platform
     );
 
     void schedule_alap(
         const plat::resource::Manager &rm,
-        const plat::PlatformRef &platform,
-        utils::Str &sched_dot
+        const plat::PlatformRef &platform
     );
 
     void schedule_alap_uniform();

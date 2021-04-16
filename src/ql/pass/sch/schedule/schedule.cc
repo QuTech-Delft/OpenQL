@@ -26,7 +26,12 @@ static void schedule_kernel(
     QL_IOUT(scheduler << " scheduling the quantum kernel '" << kernel->name << "'...");
 
     detail::Scheduler sched;
-    sched.init(kernel->c, platform);
+    sched.init(
+        kernel,
+        com::options::get("output_dir") + "/",
+        com::options::get("scheduler_commute") == "yes",
+        com::options::get("scheduler_commute_rotations") == "yes"
+    );
 
     if (com::options::get("print_dot_graphs") == "yes") {
         sched.get_dot(dot);
@@ -35,14 +40,13 @@ static void schedule_kernel(
     if (scheduler_uniform == "yes") {
         sched.schedule_alap_uniform(); // result in current kernel's circuit (k.c)
     } else if (scheduler == "ASAP") {
-        sched.schedule_asap(sched_dot); // result in current kernel's circuit (k.c)
+        sched.schedule_asap(&sched_dot); // result in current kernel's circuit (k.c)
     } else if (scheduler == "ALAP") {
-        sched.schedule_alap(sched_dot); // result in current kernel's circuit (k.c)
+        sched.schedule_alap(&sched_dot); // result in current kernel's circuit (k.c)
     } else {
         QL_FATAL("Not supported scheduler option: scheduler=" << scheduler);
     }
     QL_DOUT(scheduler << " scheduling the quantum kernel '" << kernel->name << "' DONE");
-    kernel->cycles_valid = true;
 }
 
 /**
@@ -85,26 +89,35 @@ void schedule(
 static void rcschedule_kernel(
     const ir::KernelRef &kernel,
     const plat::PlatformRef &platform,
-    utils::Str &dot
+    const utils::Str &passname
 ) {
     QL_IOUT("Resource constraint scheduling ...");
 
+    detail::Scheduler sched;
+    sched.init(
+        kernel,
+        com::options::get("output_dir") + "/",
+        com::options::get("scheduler_commute") == "yes",
+        com::options::get("scheduler_commute_rotations") == "yes"
+    );
+
     utils::Str schedopt = com::options::get("scheduler");
     if (schedopt == "ASAP") {
-        detail::Scheduler sched;
-        sched.init(kernel->c, platform);
-
-        sched.schedule_asap(plat::resource::Manager::from_defaults(platform), platform, dot);
+        sched.schedule_asap(plat::resource::Manager::from_defaults(platform), platform);
     } else if (schedopt == "ALAP") {
-        detail::Scheduler sched;
-        sched.init(kernel->c, platform);
-
-        sched.schedule_alap(plat::resource::Manager::from_defaults(platform), platform, dot);
+        sched.schedule_alap(plat::resource::Manager::from_defaults(platform), platform);
     } else {
         QL_FATAL("Not supported scheduler option: scheduler=" << schedopt);
     }
 
-    kernel->cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
+    if (com::options::get("print_dot_graphs") == "yes") {
+        utils::StrStrm fname;
+        fname << com::options::get("output_dir") << "/" << kernel->name << "_" << passname << ".dot";
+        QL_IOUT("writing " << passname << " dependency graph dot file to '" << fname.str() << "' ...");
+        utils::OutFile outf{fname.str()};
+        sched.get_dot(false, true, outf.unwrap());
+    }
+
     QL_IOUT("Resource constraint scheduling [Done].");
 }
 
@@ -124,16 +137,7 @@ void rcschedule(
     for (auto &kernel : program->kernels) {
         QL_IOUT("Scheduling kernel: " << kernel->name);
         if (!kernel->c.empty()) {
-            utils::Str sched_dot;
-
-            rcschedule_kernel(kernel, platform, sched_dot);
-
-            if (com::options::get("print_dot_graphs") == "yes") {
-                utils::StrStrm fname;
-                fname << com::options::get("output_dir") << "/" << kernel->name << "_" << passname << ".dot";
-                QL_IOUT("writing " << passname << " dependency graph dot file to '" << fname.str() << "' ...");
-                utils::OutFile(fname.str()).write(sched_dot);
-            }
+            rcschedule_kernel(kernel, platform, passname);
         }
     }
 
@@ -208,6 +212,14 @@ utils::Int SchedulePass::run(
     const ir::KernelRef &kernel,
     const pmgr::pass_types::Context &context
 ) const {
+    detail::Scheduler sched;
+    sched.init(
+        kernel,
+        context.output_prefix,
+        options["commute_multi_qubit"].as_bool(),
+        options["commute_single_qubit"].as_bool()
+    );
+
     if (options["resource_constraints"].as_bool()) {
         if (options["heuristic"].as_str() == "asap") {
 

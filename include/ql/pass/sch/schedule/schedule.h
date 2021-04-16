@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "ql/com/options.h"
 #include "ql/pmgr/pass_types.h"
 
 namespace ql {

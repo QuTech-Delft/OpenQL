@@ -1718,7 +1718,13 @@ void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
         input_gatepv = kernel->c;                               // copy to free original circuit to allow outputing to
         input_gatepp = input_gatepv.begin();                    // iterator set to start of input circuit copy
     } else {
-        schedp->init(kernel->c, platformp);                     // fills schedp->graph (dependence graph) from all of circuit
+        schedp->init(
+            kernel,
+            com::options::get("output_dir") + "/",
+            com::options::get("scheduler_commute") == "yes",
+            com::options::get("scheduler_commute_rotations") == "yes"
+        );
+
         // and so also the original circuit can be output to after this
         for (auto &gp : kernel->c) {
             scheduled.set(gp) = false;   // none were scheduled
