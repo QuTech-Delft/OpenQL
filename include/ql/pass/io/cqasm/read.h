@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include "ql/utils/str.h"
+#include "ql/utils/json.h"
+#include "ql/utils/opt.h"
 #include "ql/pmgr/pass_types.h"
 
 namespace ql {
@@ -11,6 +14,26 @@ namespace pass {
 namespace io {
 namespace cqasm {
 namespace read {
+
+// Opaque forward declaration for the actual implementation of the reader, to
+// keep the header file clean.
+namespace detail {
+class ReaderImpl;
+}
+
+/**
+ * Class for converting cQASM files to OpenQL circuits.
+ */
+class Reader {
+private:
+    utils::Opt<detail::ReaderImpl> impl;
+public:
+    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program);
+    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program, const utils::Json &gateset);
+    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program, const utils::Str &gateset_fname);
+    void string2circuit(const utils::Str &cqasm_str);
+    void file2circuit(const utils::Str &cqasm_fname);
+};
 
 /**
  * Reads a cQASM file. Its content are added to program. The number of qubits,

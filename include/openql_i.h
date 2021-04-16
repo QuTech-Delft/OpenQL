@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ql/pass/io/cqasm/detail/cqasm_reader.h"
+#include "ql/pass/io/cqasm/read.h"
 #include "openql.h"
 
 void initialize();
@@ -190,7 +190,7 @@ public:
  */
 class cQasmReader {
 public:
-    ql::utils::Ptr<ql::pass::io::cqasm::read::detail::Reader> cqasm_reader;
+    ql::utils::Ptr<ql::pass::io::cqasm::read::Reader> cqasm_reader;
     Platform platform;
     Program program;
 

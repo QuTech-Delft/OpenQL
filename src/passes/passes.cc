@@ -13,7 +13,7 @@
 #include "ql/pass/opt/clifford/detail/clifford.h"
 #include "scheduler.h"
 #include "mapper.h"
-#include "ql/pass/io/cqasm/detail/cqasm_reader.h"
+#include "ql/pass/io/cqasm/read.h"
 #include "ql/pass/ana/statistics/report.h"
 
 #include "arch/cc/backend_cc.h"
@@ -172,7 +172,7 @@ CQasmReaderPass::CQasmReaderPass(const Str &name) : AbstractPass(name) {
 void CQasmReaderPass::runOnProgram(const ir::ProgramRef &program) {
     QL_DOUT("run ReaderPass with name = " << getPassName() << " on program " << program->name);
 
-    auto reader = pass::io::cqasm::read::detail::Reader(program->platform, program);
+    auto reader = pass::io::cqasm::read::Reader(program->platform, program);
 
     QL_DOUT("!!!!!!!!!!! start reader !!!!!!!!");
 

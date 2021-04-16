@@ -4,6 +4,7 @@
 
 #include "ql/pass/io/cqasm/read.h"
 
+#include "ql/utils/json.h"
 #include "detail/cqasm_reader.h"
 
 namespace ql {
@@ -11,6 +12,65 @@ namespace pass {
 namespace io {
 namespace cqasm {
 namespace read {
+
+/**
+ * Constructs a cQASM reader with the default cQASM gateset and conversion
+ * rules. This is here for backward compatibility; new code should use a JSON
+ * file for the gateset and conversion rules, or take the JSON from the platform
+ * configuration file.
+ */
+Reader::Reader(
+    const plat::PlatformRef &platform,
+    const ir::ProgramRef &program
+) : impl(platform, program) {}
+
+/**
+ * Constructs a cQASM reader with a custom gateset from a JSON structure. The
+ * JSON structure should be an array of objects, where every object represents
+ * a cQASM gate (overload) and the rules for converting it to OpenQL gate(s).
+ * The expected structure of these objects is described in
+ * GateConverter::from_json().
+ */
+Reader::Reader(
+    const plat::PlatformRef &platform,
+    const ir::ProgramRef &program,
+    const utils::Json &gateset
+) : impl(platform, program) {
+    impl->load_gateset(gateset);
+}
+
+/**
+ * Constructs a cQASM reader with a custom gateset from a JSON file. The
+ * structure of the JSON file should be an array of objects, where every object
+ * represents a cQASM gate (overload) and the rules for converting it to OpenQL
+ * gate(s). The expected structure of these objects is described in
+ * GateConverter::from_json().
+ */
+Reader::Reader(
+    const plat::PlatformRef &platform,
+    const ir::ProgramRef &program,
+    const utils::Str &gateset_fname
+) : impl(platform, program) {
+    impl->load_gateset(utils::load_json(gateset_fname));
+}
+
+/**
+ * Parses a cQASM string using the gateset selected when the Reader is
+ * constructed, converts the cQASM kernels to OpenQL kernels, and adds those
+ * kernels to the selected OpenQL program.
+ */
+void Reader::string2circuit(const utils::Str &cqasm_str) {
+    impl->string2circuit(cqasm_str);
+}
+
+/**
+ * Parses a cQASM file using the gateset selected when the Reader is
+ * constructed, converts the cQASM kernels to OpenQL kernels, and adds those
+ * kernels to the selected OpenQL program.
+ */
+void Reader::file2circuit(const utils::Str &cqasm_fname) {
+    impl->file2circuit(cqasm_fname);
+}
 
 /**
  * Reads a cQASM file. Its content are added to program. The number of qubits,
@@ -26,9 +86,9 @@ void from_file(
     const utils::Json &gateset
 ) {
     if (gateset.empty()) {
-        detail::Reader(program->platform, program).file2circuit(cqasm_fname);
+        Reader(program->platform, program).file2circuit(cqasm_fname);
     } else {
-        detail::Reader(program->platform, program, gateset).file2circuit(cqasm_fname);
+        Reader(program->platform, program, gateset).file2circuit(cqasm_fname);
     }
 }
 
@@ -43,9 +103,9 @@ void from_string(
     const utils::Json &gateset
 ) {
     if (gateset.empty()) {
-        detail::Reader(program->platform, program).string2circuit(cqasm_body);
+        Reader(program->platform, program).string2circuit(cqasm_body);
     } else {
-        detail::Reader(program->platform, program, gateset).string2circuit(cqasm_body);
+        Reader(program->platform, program, gateset).string2circuit(cqasm_body);
     }
 }
 
