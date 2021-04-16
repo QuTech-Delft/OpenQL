@@ -1068,8 +1068,11 @@ void Base::compile(
     QL_ASSERT(is_constructed());
 
     // Construct pass context.
-    Context context;
-    context.full_pass_name = pass_name_prefix + instance_name;
+    Context context{
+        pass_name_prefix + instance_name,   // -> .full_pass_name
+        {},                                 // -> .output_prefix
+        options                             // -> .options
+    };
 
     // Apply substitution rules for the output prefix option.
     utils::Bool special = false;

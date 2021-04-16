@@ -362,39 +362,6 @@ public:
     void get_dot(utils::Str &dot);
 };
 
-/*
- * main entry point of the non resource-constrained scheduler
- */
-void schedule(
-    const ir::ProgramRef &program,
-    const plat::PlatformRef &platform,
-    const utils::Str &passname
-);
-
-// kernel-level entry to the non resource-constrained scheduler
-void schedule_kernel(
-    const ir::KernelRef &kernel,
-    const plat::PlatformRef &platform,
-    utils::Str &dot,
-    utils::Str &sched_dot
-);
-
-/*
- * main entry point of the resource-constrained scheduler
- */
-void rcschedule(
-    const ir::ProgramRef &program,
-    const plat::PlatformRef &platform,
-    const utils::Str &passname
-);
-
-// kernel-level entry to the resource-constrained scheduler
-void rcschedule_kernel(
-    const ir::KernelRef &kernel,
-    const plat::PlatformRef &platform,
-    utils::Str &dot
-);
-
 } // namespace detail
 } // namespace schedule
 } // namespace sch

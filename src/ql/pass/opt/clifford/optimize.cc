@@ -23,7 +23,8 @@ void CliffordOptimizePass::dump_docs(
 ) const {
     utils::dump_str(os, line_prefix, R"(
     This pass tries to minimize sequences of single-qubit gates in the Clifford
-    C1 set to their minimal counterpart in terms of cycles.
+    C1 set to their minimal counterpart in terms of cycles. The pass returns the
+    total number of cycles saved by this optimization per qubit.
 
     Note that the relation between the Clifford state transition corresponding
     to a particular gate is currently hardcoded based on gate name, and the

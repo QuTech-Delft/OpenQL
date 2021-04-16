@@ -41,6 +41,11 @@ struct Context {
      */
     utils::Str output_prefix;
 
+    /**
+     * Reference to the pass options.
+     */
+    const utils::Options &options;
+
 };
 
 // Forward declaration for the base type.

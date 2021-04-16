@@ -11,7 +11,7 @@
 #include "ql/utils/opt.h"
 #include "report.h"
 #include "ql/pass/opt/clifford/detail/clifford.h"
-#include "ql/pass/sch/schedule/detail/scheduler.h"
+#include "ql/pass/sch/schedule/schedule.h"
 #include "mapper.h"
 #include "ql/pass/io/cqasm/read.h"
 #include "ql/pass/ana/statistics/report.h"
@@ -226,7 +226,7 @@ void SchedulerPass::runOnProgram(const ir::ProgramRef &program) {
     QL_DOUT("run SchedulerPass with name = " << getPassName() << " on program " << program->name);
 
     // prescheduler pass
-    pass::sch::schedule::detail::schedule(program, program->platform, "prescheduler");
+    pass::sch::schedule::schedule(program, program->platform, "prescheduler");
 }
 
 /**
@@ -415,7 +415,7 @@ RCSchedulerPass::RCSchedulerPass(const Str &name) : AbstractPass(name) {
  * @param  Program object to be rcscheduled
  */
 void RCSchedulerPass::runOnProgram(const ir::ProgramRef &program) {
-    pass::sch::schedule::detail::rcschedule(program, program->platform, getPassName());
+    pass::sch::schedule::rcschedule(program, program->platform, getPassName());
 }
 
 } // namespace ql
