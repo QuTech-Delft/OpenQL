@@ -6,8 +6,8 @@
 
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
+#include "ql/com/interaction_matrix.h"
 #include "compiler.h"
-#include "interactionMatrix.h"
 
 static unsigned long phi_node_count = 0;    // FIXME: number across quantum_program instances
 
@@ -391,16 +391,16 @@ void Program::print_interaction_matrix() const {
     QL_IOUT("printing interaction matrix...");
 
     for (const auto &k : kernels) {
-        InteractionMatrix imat(k->get_circuit(), qubit_count);
-        Str mstr = imat.getString();
+        ql::com::InteractionMatrix imat(k);
+        Str mstr = imat.get_string();
         std::cout << mstr << std::endl;
     }
 }
 
 void Program::write_interaction_matrix() const {
     for (const auto &k : kernels) {
-        InteractionMatrix imat(k->get_circuit(), qubit_count);
-        Str mstr = imat.getString();
+        ql::com::InteractionMatrix imat(k);
+        Str mstr = imat.get_string();
 
         Str fname = com::options::get("output_dir") + "/" + k->get_name() + "InteractionMatrix.dat";
         QL_IOUT("writing interaction matrix to '" << fname << "' ...");
