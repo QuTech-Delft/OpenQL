@@ -233,6 +233,9 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/clifford/optimize.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/detail/scheduler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/schedule.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/place/place.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/route/detail/mapper.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/route/route.cc"
 
     "${CMAKE_CURRENT_SOURCE_DIR}/src/compiler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/write_sweep_points.cc"
@@ -244,7 +247,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/datapath_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/settings_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/vcd_cc.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/mapper.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_resource_manager.cc"
 )

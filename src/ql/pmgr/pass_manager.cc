@@ -16,6 +16,9 @@
 #include "ql/pass/io/cqasm/read.h"
 #include "ql/pass/io/cqasm/report.h"
 #include "ql/pass/opt/clifford/optimize.h"
+#include "ql/pass/sch/schedule/schedule.h"
+#include "ql/pass/map/qubits/place/place.h"
+#include "ql/pass/map/qubits/route/route.h"
 
 namespace ql {
 namespace pmgr {
@@ -70,6 +73,9 @@ PassFactory::PassFactory() {
     register_pass<::ql::pass::io::cqasm::read::Pass>("io.cqasm.Read");
     register_pass<::ql::pass::io::cqasm::report::Pass>("io.cqasm.Report");
     register_pass<::ql::pass::opt::clifford::optimize::Pass>("opt.clifford.Optimize");
+    register_pass<::ql::pass::sch::schedule::Pass>("sch.Schedule");
+    register_pass<::ql::pass::map::qubits::place::Pass>("map.qubits.Place");
+    register_pass<::ql::pass::map::qubits::route::Pass>("map.qubits.Route");
 
 }
 

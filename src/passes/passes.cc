@@ -12,7 +12,7 @@
 #include "report.h"
 #include "ql/pass/opt/clifford/detail/clifford.h"
 #include "ql/pass/sch/schedule/schedule.h"
-#include "mapper.h"
+#include "ql/pass/map/qubits/route/detail/mapper.h"
 #include "ql/pass/io/cqasm/read.h"
 #include "ql/pass/ana/statistics/report.h"
 
