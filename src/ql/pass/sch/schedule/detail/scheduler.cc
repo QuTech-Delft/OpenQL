@@ -90,6 +90,10 @@
 #include "ql/utils/filesystem.h"
 
 namespace ql {
+namespace pass {
+namespace sch {
+namespace schedule {
+namespace detail {
 
 using namespace utils;
 using ListDigraph = lemon::ListDigraph;
@@ -323,7 +327,7 @@ void Scheduler::init(
     LastBReaders.resize(breg_count);            // start off as empty list, no Breader seen yet
 
     // for each gate pointer ins in the circuit, add a node and add dependencies on previous gates to it
-    for (auto ins : ckt) {
+    for (const auto &ins : ckt) {
         QL_DOUT("Current instruction's name: `" << ins->name << "'");
         QL_DOUT(".. Qasm(): " << ins->qasm());
         for (auto operand : ins->operands) {
@@ -800,7 +804,7 @@ void Scheduler::set_remaining(plat::resource::Direction dir) {
 ir::GateRef Scheduler::find_mostcritical(const List<ir::GateRef> &lg) {
     UInt maxRemain = 0;
     ir::GateRef mostCriticalGate = {};
-    for (auto gp : lg) {
+    for (const auto &gp : lg) {
         UInt gr = remaining.at(node.at(gp));
         if (gr > maxRemain) {
             mostCriticalGate = gp;
@@ -1076,7 +1080,7 @@ Bool Scheduler::immediately_schedulable(
         if (rs.available(curr_cycle, gp)) {
             return true;
         }
-        isres = true;;
+        isres = true;
         return false;
     } else {
         isres = false;
@@ -1282,7 +1286,7 @@ void Scheduler::schedule_alap_uniform() {
     // create gates_per_cycle[cycle] = for each cycle the list of gates at cycle cycle
     // this is the basic map to be operated upon by the uniforming scheduler below;
     Map<UInt, List<ir::GateRef>> gates_per_cycle;
-    for (auto gp : *circp) {
+    for (const auto &gp : *circp) {
         gates_per_cycle.set(gp->cycle).push_back(gp);
     }
 
@@ -1331,7 +1335,7 @@ void Scheduler::schedule_alap_uniform() {
         // which is not hard at all but which is not according to the published algorithm.
         // When the complexity becomes a problem, it is proposed to rewrite the algorithm accordingly.
 
-        long pred_cycle = curr_cycle - 1;    // signed because can become negative
+        Int pred_cycle = curr_cycle - 1;    // signed because can become negative
 
         // target size of each bundle is number of gates still to go divided by number of non-empty cycles to go
         // it averages over non-empty bundles instead of all bundles because the latter would be very strict
@@ -1516,7 +1520,7 @@ void Scheduler::get_dot(
 
         // Now print ranks, as shown below
         dotout << "{ rank=same; Cycle" << instruction[s]->cycle <<"; " << graph.id(s) << "; }\n";
-        for (auto gp : *circp) {
+        for (const auto &gp : *circp) {
             dotout << "{ rank=same; Cycle" << gp->cycle <<"; " << graph.id(node.at(gp)) << "; }\n";
         }
         dotout << "{ rank=same; Cycle" << instruction[t]->cycle <<"; " << graph.id(t) << "; }\n";
@@ -1685,4 +1689,8 @@ void rcschedule(
     report_qasm(program, platform, "out", passname);
 }
 
+} // namespace detail
+} // namespace schedule
+} // namespace sch
+} // namespace pass
 } // namespace ql

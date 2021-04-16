@@ -24,6 +24,10 @@
 #include "report.h"
 
 namespace ql {
+namespace pass {
+namespace sch {
+namespace schedule {
+namespace detail {
 
 // see src/scheduler.cc for the meaning of R, W, D, X and Z events and their relation to dependences
 enum DepType {RAR, RAW, WAR, WAW, DAD, DAX, DAZ, XAD, XAX, XAZ, ZAD, ZAX, ZAZ};
@@ -391,4 +395,8 @@ void rcschedule_kernel(
     utils::Str &dot
 );
 
+} // namespace detail
+} // namespace schedule
+} // namespace sch
+} // namespace pass
 } // namespace ql

@@ -16,11 +16,13 @@
 #include "ql/plat/platform.h"
 #include "ql/plat/resource/manager.h"
 #include "ql/ir/ir.h"
-#include "scheduler.h"
+#include "ql/pass/sch/schedule/detail/scheduler.h"
 //#include "metrics.h"
 
 namespace ql {
 namespace mapper {
+
+using Scheduler = pass::sch::schedule::detail::Scheduler;
 
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------

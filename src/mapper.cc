@@ -5,6 +5,7 @@
 #include "mapper.h"
 
 #include "ql/utils/filesystem.h"
+#include "ql/com/options.h"
 
 #ifdef INITIALPLACE
 #include <thread>
