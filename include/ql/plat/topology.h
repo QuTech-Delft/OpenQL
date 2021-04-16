@@ -1,56 +1,6 @@
 /** \file
- * Topology: definition and access functions to the grid of qubits that supports
- * the real qubits.
- *
- * TODO JvS: clean up docs
- * TODO JvS: naming conventions
- *
- * Maintain several maps to ease navigating in the grid; these are constant after initialization.
- *
- * Grid
- *
- * Config file definitions:
- *  nq:                         hardware_settings.qubit_number
- *  topology.number_of_cores:   number_of_cores
- *  topology.form;              gf_xy/gf_irregular: how relation between neighbors is specified
- *  topology.connectivity:      gc_specified/gc_full: how connectivity between qubits is specified
- *  topology.comm_qubits_per_core: number of qubits per core that can communicate directly with qubits in other cores
- *  topology.x_size/y_size:     x/y space, defines underlying grid (only gf_xy)
- *  topology.qubits:            mapping of qubit to x/y coordinates
- *                              (defines x[i]/y[i] for each qubit i) (only gf_xy)
- *  topology.edges:             mapping of edge (physical connection between 2 qubits)
- *                              to its src and dst qubits (defines nbs)
- *
- * Grid public members (apart from nq):
- *  form:               how relation between neighbors is specified
- *  Distance(qi,qj):    distance in physical connection hops from real qubit qi to real qubit qj;
- *                      - computing it relies on nbs (and Floyd-Warshall) (gf_xy and gf_irregular)
- *  nbs[qi]:            list of neighbor real qubits of real qubit qi
- *                      - nbs can be derived from topology.edges (gf_xy and gf_irregular)
- *  sort_neighbors_by_angle(qi, neighborlist):    rotate neighborlist such that largest angle diff around qi is behind last element
- *                      relies on nbs, and x[i]/y[i] (gf_xy only)
- *
- * For an irregular grid form, only nq and edges (so nbs) need to be specified; distance is computed from nbs:
- * - there is no underlying rectangular grid, so there are no defined x and y coordinates of qubits;
- *   this means that sort_neighbors_by_angle as needed by mappathselect==borders cannot work
- * - edges (so nbs) can be specified explicitly (connectivity==gc_specified) or implicitly (it is gc_full):
- *   when connectivity==gc_specified, the edges must be specified in topology.edges in terms of connected qubits;
- *   when connectivity==gc_full, there are edges between all qubits but between cores only between comm_qubits
- *
- * Below, we support regular (xy) grids which need not be fully assigned; this requires edges (so nbs) to be defined,
- *   from which distance is computed; also we have x/y coordinates per qubit specified in the configuration file
- *   An underlying grid with x/y coordinates comes in use for:
- *   - crossbars
- *   - cclight qwg assignment (done in another manner now)
- *   - when mappathselectopt==borders
- *
- * Not implemented:
- * forms gf_cross and gf_plus: given x_size and y_size, the relations are implicitly defined by the internal
- *      diagonal (gf_cross) or horizontal/vertical (gf_plus) connections between grid points (qubits);
- *      with gf_cross only half the grid is occupied by a qubit;
- *      the grid point (0,0) doesn't have a qubit, (1,0) and (0,1) do;
- *      topology.qubits and topology.edges need not be present in the configuration file;
- *      Distance in both forms would be defined by a formula, not a function.
+ * Definition and access functions to the grid of qubits that supports the real
+ * qubits.
  */
 
 #pragma once
@@ -203,7 +153,83 @@ public:
      * Constructs the grid for the given number of qubits from the given JSON
      * object.
      *
-     * TODO: document JSON structure
+     * The topology JSON object must have the following structure.
+     *
+     * ```json
+     * {
+     *     "form": <optional string, either "xy" or "irregular">,
+     *     "x_size": <optional integer for form="xy">,
+     *     "y_size": <optional integer for form="xy">,
+     *     "qubits": <mandatory array of objects for form="xy">,
+     *     "number_of_cores": <optional positive integer, default 1>,
+     *     "comm_qubits_per_core": <optional positive integer, num_qubits / number_of_cores>,
+     *     "connectivity": <optional string, either "specified" or "full">,
+     *     "edges": <mandatory array of objects for connectivity="full">
+     *     ...
+     * }
+     * ```
+     *
+     * The "form" key specifies whether the qubits can be arranged in a 2D grid
+     * of integer coordinates ("xy") or not ("irregular"). If irregular, mapper
+     * heuristics that rely on sorting possible paths by angle are unavailable.
+     * If xy, "x_size" and "y_size" specify the coordinate ranges (from zero to
+     * the limit minus one), and "qubits" specifies the coordinates. "qubits"
+     * must then be an array of objects of the following form:
+     *
+     * ```json
+     * {
+     *     "id": <qubit index, mandatory>,
+     *     "x": <X coordinate, mandatory>,
+     *     "y": <Y coordinate, mandatory>,
+     *     ...
+     * }
+     * ```
+     *
+     * Each qubit must be specified exactly once. Any additional keys in the
+     * object are silently ignored, as other parts of OpenQL may use the
+     * structure as well.
+     *
+     * If the "form" key is missing, its value is derived from whether a
+     * "qubits" list is given. If "x_size" or "y_size" are missing, the values
+     * are inferred from the largest coordinate found in "qubits".
+     *
+     * The "number_of_cores" key is used to specify multi-core architectures.
+     * It must be a positive integer. Each core is assumed to have the same
+     * number of qubits, so the total number of qubits must be divisible by this
+     * number.
+     *
+     * Cores can communicate only via communication qubits. The amount of these
+     * qubits per cores may be set using the "comm_qubits_per_core" key. Its
+     * value must range between 1 and the number of qubits per core, and
+     * defaults to the latter. The first N qubits for each core are considered
+     * to be communication qubits, whereas the remainder are local qubits.
+     *
+     * The "connectivity" key specifies whether there are qubit connectivity
+     * constraints ("specified") or all qubits (within a core) are connected
+     * ("full"). In the former case, the "edges" key must map to an array of
+     * objects of the following form:
+     *
+     * ```json
+     * {
+     *     "src": <source qubit index, mandatory>,
+     *     "dst": <target qubit index, mandatory>,
+     *     ...
+     * }
+     * ```
+     *
+     * Edges are directional; to allow qubits to interact "in both ways," both
+     * directions must be specified. Any additional keys in the object are
+     * silently ignored, as other parts of OpenQL may use the structure as well.
+     *
+     * When "connectivity" is set to "full" in a multi-core environment,
+     * inter-core edges are only generated when both the source and destination
+     * qubit is a communication qubit.
+     *
+     * If the "connectivity" key is missing, its value is derived from whether
+     * an "edges" list is given.
+     *
+     * Any additional keys in the topology root object are silently ignored, as
+     * other parts of OpenQL may use the structure as well.
      */
     Grid(utils::UInt num_qubits, const utils::Json &topology);
 

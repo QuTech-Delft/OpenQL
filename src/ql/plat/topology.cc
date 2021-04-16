@@ -1,8 +1,6 @@
 /** \file
- * Topology: definition and access functions to the grid of qubits that supports
- * the real qubits.
- *
- * See header file for more information.
+ * Definition and access functions to the grid of qubits that supports the real
+ * qubits.
  */
 
 #include "ql/plat/topology.h"
@@ -59,162 +57,258 @@ std::ostream &operator<<(std::ostream &os, GridConnectivity gc) {
  * See header file for JSON format documentation.
  */
 Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
-    QL_DOUT("Grid::Init");
-    //p = p;
+
+    // Shorthand.
+    using JsonType = utils::Json::value_t;
+
+    // Save number of qubits.
     this->num_qubits = num_qubits;
-    QL_DOUT("... number of real qbits=" << num_qubits);
 
-    // init grid form attributes
-    utils::Str formstr;
-    if (topology.count("form") <= 0) {
-        if (topology.count("qubits")) {
-            formstr = "xy";
+    // Handle grid form key.
+    auto it = topology.find("form");
+    if (it == topology.end()) {
+        if (topology.find("qubits") != topology.end()) {
+            form = GridForm::XY;
         } else {
-            formstr = "irregular";
+            form = GridForm::IRREGULAR;
         }
+    } else if (it->type() != JsonType::string) {
+        throw utils::Exception("topology.form key must be a string if specified");
+    } else if (it->get<utils::Str>() == "xy") {
+        form = GridForm::XY;
+    } else if (it->get<utils::Str>() == "irregular") {
+        form = GridForm::IRREGULAR;
     } else {
-        formstr = topology["form"].get<utils::Str>();
+        throw utils::Exception("topology.form key must be either \"xy\" or \"irregular\" if specified");
     }
-    if (formstr == "xy") { form = GridForm::XY; }
-    if (formstr == "irregular") { form = GridForm::IRREGULAR; }
 
-    if (form == GridForm::IRREGULAR) {
-        // irregular can do without topology.x_size, topology.y_size, and topology.qubits
-        xy_size = {0, 0};
-    } else {
-        // gf_xy have an x/y space; coordinates are explicitly specified
-        xy_size.x = topology["x_size"];
-        xy_size.y = topology["y_size"];
-    }
-    QL_DOUT("... formstr=" << formstr << "; form=" << form << "; xy_size=" << xy_size);
-
-    // init multi-core attributes
-    if (topology.count("number_of_cores") <= 0) {
-        num_cores = 1;
-        QL_DOUT("Number of cores (topology[\"number_of_cores\"]) not defined");
-    } else {
-        num_cores = topology["number_of_cores"];
-        if (num_cores <= 0) {
-            QL_FATAL("Number of cores (topology[\"number_of_cores\"]) is not a positive value: " << num_cores);
-        }
-    }
-    QL_DOUT("Numer of cores= " << num_cores);
-
-    // when not specified in single-core: == nq (i.e. all qubits)
-    // when not specified in multi-core: == nq/ncores (i.e. all qubits of a core)
-    if (topology.count("comm_qubits_per_core") <= 0) {
-        num_comm_qubits = num_qubits / num_cores;   // i.e. all are comm qubits
-        QL_DOUT("Number of comm_qubits per core (topology[\"comm_qubits_per_core\"]) not defined; assuming all are comm qubits.");
-    } else {
-        num_comm_qubits = topology["comm_qubits_per_core"];
-        if (num_comm_qubits <= 0) {
-            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is not a positive value: " << num_comm_qubits);
-        }
-        if (num_comm_qubits > num_qubits / num_cores) {
-            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is larger than number of qubits per core: " << num_comm_qubits);
-        }
-    }
-    QL_DOUT("Numer of communication qubits per core= " << num_comm_qubits);
-
-    // init x, and y maps
+    // Handle XY grid keys.
+    xy_size = {0, 0};
     if (form != GridForm::IRREGULAR) {
-        if (topology.count("qubits") == 0) {
-            QL_FATAL("Regular configuration doesn't specify qubits and their coordinates");
+
+        // Handle X size.
+        it = topology.find("x_size");
+        if (it == topology.end()) {
+            xy_size.x = 0;
+        } else if (it->type() != JsonType::number_unsigned) {
+            throw utils::Exception("topology.x_size key must be an unsigned integer if specified");
         } else {
-            if (num_qubits != topology["qubits"].size()) {
-                QL_FATAL("Mismatch between platform qubit number and qubit coordinate list");
-            }
-            for (auto &aqbit : topology["qubits"]) {
-                utils::UInt qi = aqbit["id"];
-                utils::Int qx = aqbit["x"];
-                utils::Int qy = aqbit["y"];
+            xy_size.x = it->get<utils::UInt>();
+        }
 
-                // sanity checks
-                if (!(0<=qi && qi < num_qubits)) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with id that is not in the range 0..nq-1 with nq=" << num_qubits);
-                }
-                if (xy_coord.count(qi) > 0) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of coordinate");
-                }
-                if (qx < 0 || qx >= xy_size.x) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with x that is not in the range 0..x_size-1 with x_size=" << xy_size.x);
-                }
-                if (qy < 0 || qy >= xy_size.y) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << xy_size.y);
+        // Handle Y size.
+        it = topology.find("y_size");
+        if (it == topology.end()) {
+            xy_size.y = 0;
+        } else if (it->type() != JsonType::number_unsigned) {
+            throw utils::Exception("topology.y_size key must be an unsigned integer if specified");
+        } else {
+            xy_size.y = it->get<utils::UInt>();
+        }
+
+        // Handle qubits.
+        it = topology.find("qubits");
+        if (it == topology.end()) {
+            throw utils::Exception("topology.qubits is missing while topology.form explicitly requires XY mode");
+        } else if (it->type() != JsonType::array) {
+            throw utils::Exception("topology.qubits key must be an array of objects if specified");
+        } else {
+            for (const auto &qubit : *it) {
+                if (qubit.type() != JsonType::object) {
+                    throw utils::Exception("topology.qubits entries must be objects");
                 }
 
-                xy_coord.set(qi) = {qx, qy};
+                // Read ID.
+                utils::UInt id;
+                auto it2 = qubit.find("id");
+                if (it2 == qubit.end()) {
+                    throw utils::Exception("topology.qubits.*.id must be specified");
+                } else if (it2->type() != JsonType::number_unsigned) {
+                    throw utils::Exception("topology.qubits.*.id must be an unsigned integer");
+                } else {
+                    id = it2->get<utils::UInt>();
+                }
+                if (id >= num_qubits) {
+                    throw utils::Exception("topology.qubits.*.id is out of range");
+                } else if (xy_coord.count(id) > 0) {
+                    throw utils::Exception("topology.qubits has multiple entries for qubit " + utils::to_string(id));
+                }
+
+                // Read X coordinate.
+                utils::Int x;
+                it2 = qubit.find("x");
+                if (it2 == qubit.end()) {
+                    throw utils::Exception("topology.qubits.*.x must be specified");
+                } else if (it2->type() != JsonType::number_unsigned) {
+                    throw utils::Exception("topology.qubits.*.x must be an unsigned integer");
+                } else {
+                    x = it2->get<utils::Int>();
+                }
+                if (x < 0) {
+                    throw utils::Exception("topology.qubits.*.x cannot be negative");
+                }
+                if (xy_size.x > 0) {
+                    if (x >= xy_size.x) {
+                        throw utils::Exception("topology.qubits.*.x is out of range");
+                    } else {
+                        xy_size.x = utils::max(xy_size.x, x);
+                    }
+                }
+
+                // Read Y coordinate.
+                utils::Int y;
+                it2 = qubit.find("y");
+                if (it2 == qubit.end()) {
+                    throw utils::Exception("topology.qubits.*.y must be specified");
+                } else if (it2->type() != JsonType::number_unsigned) {
+                    throw utils::Exception("topology.qubits.*.y must be an unsigned integer");
+                } else {
+                    y = it2->get<utils::Int>();
+                }
+                if (y < 0) {
+                    throw utils::Exception("topology.qubits.*.y cannot be negative");
+                }
+                if (xy_size.y > 0) {
+                    if (y >= xy_size.y) {
+                        throw utils::Exception("topology.qubits.*.y is out of range");
+                    } else {
+                        xy_size.y = utils::max(xy_size.y, y);
+                    }
+                }
+
+                // Save the position.
+                xy_coord.set(id) = {x, y};
+
             }
         }
     }
 
-    // nbs[qi], read from topology.edges when connectivity is specified, otherwise, when full, computed
-    if (!topology.count("connectivity")) {
-        if (topology.count("edges")) {
-            QL_DOUT("Configuration doesn't specify topology.connectivity: assuming connectivity is specified by edges section");
-            connectivity = GridConnectivity::SPECIFIED;
-        } else {
-            QL_DOUT("Configuration doesn't specify topology.connectivity, nor does it specify edges; assuming full connectivity");
-            connectivity = GridConnectivity::FULL;
-        }
+    // Handle number of cores.
+    it = topology.find("number_of_cores");
+    if (it == topology.end()) {
+        num_cores = 1;
+    } else if (it->type() != JsonType::number_unsigned) {
+        throw utils::Exception("topology.number_of_cores key must be an unsigned integer if specified");
     } else {
-        utils::Str connstr;
-        connstr = topology["connectivity"].get<utils::Str>();
-        if (connstr == "specified") {
+        num_cores = it->get<utils::UInt>();
+    }
+    if (num_cores < 1) {
+        throw utils::Exception("topology.number_of_cores must be a positive integer");
+    } else if (num_qubits % num_cores) {
+        throw utils::Exception("number of qubits is not divisible by topology.number_of_cores");
+    }
+
+    // Handle number of communication qubits per core.
+    it = topology.find("comm_qubits_per_core");
+    if (it == topology.end()) {
+        num_comm_qubits = num_qubits / num_cores;
+    } else if (it->type() != JsonType::number_unsigned) {
+        throw utils::Exception("topology.comm_qubits_per_core key must be an unsigned integer if specified");
+    } else {
+        num_comm_qubits = it->get<utils::UInt>();
+    }
+    if (num_comm_qubits < 1) {
+        throw utils::Exception("topology.comm_qubits_per_core must be a positive integer");
+    } else if (num_comm_qubits > num_qubits / num_cores) {
+        throw utils::Exception("topology.comm_qubits_per_core is larger than total number of qubits per core");
+    }
+
+    // Handle connectivity key.
+    it = topology.find("connectivity");
+    if (it == topology.end()) {
+        if (topology.find("edges") != topology.end()) {
             connectivity = GridConnectivity::SPECIFIED;
-        } else if (connstr == "full") {
-            connectivity = GridConnectivity::FULL;
         } else {
-            QL_FATAL("connectivity " << connstr << " not supported");
+            connectivity = GridConnectivity::FULL;
         }
-        QL_DOUT("topology.connectivity=" << connstr );
+    } else if (it->type() != JsonType::string) {
+        throw utils::Exception("topology.connectivity key must be a string if specified");
+    } else if (it->get<utils::Str>() == "specified") {
+        connectivity = GridConnectivity::SPECIFIED;
+    } else if (it->get<utils::Str>() == "full") {
+        connectivity = GridConnectivity::FULL;
+    } else {
+        throw utils::Exception("topology.connectivity key must be either \"specified\" or \"full\" if specified");
     }
+
+    // Handle edges.
     if (connectivity == GridConnectivity::SPECIFIED) {
-        if (topology.count("edges") == 0) {
-            QL_FATAL("There aren't edges configured in the platform's topology");
-        }
-        for (auto &anedge : topology["edges"]) {
-            QL_DOUT("connectivity is specified by edges section, reading ...");
-            utils::UInt qs = anedge["src"];
-            utils::UInt qd = anedge["dst"];
 
-            // sanity checks
-            if (!(0<=qs && qs < num_qubits)) {
-                QL_FATAL(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << num_qubits);
-            }
-            if (!(0<=qd && qd < num_qubits)) {
-                QL_FATAL(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << num_qubits);
-            }
-            for (auto &n : neighbors.get(qs)) {
-                if (n == qd) {
-                    QL_FATAL(" redefinition of edge with src=" << qs << " and dst=" << qd);
+        // Parse connectivity from JSON.
+        it = topology.find("edges");
+        if (it == topology.end()) {
+            throw utils::Exception("topology.edges is missing while topology.connectivity explicitly requires it");
+        } else if (it->type() != JsonType::array) {
+            throw utils::Exception("topology.edges key must be an array of objects if specified");
+        } else {
+            for (const auto &edge : *it) {
+                if (edge.type() != JsonType::object) {
+                    throw utils::Exception("topology.edges entries must be objects");
                 }
-            }
 
-            neighbors.set(qs).push_back(qd);
-            QL_DOUT("connectivity has been stored in nbs map");
+                // Read source ID.
+                utils::UInt src;
+                auto it2 = edge.find("src");
+                if (it2 == edge.end()) {
+                    throw utils::Exception("topology.edges.*.src must be specified");
+                } else if (it2->type() != JsonType::number_unsigned) {
+                    throw utils::Exception("topology.edges.*.src must be an unsigned integer");
+                } else {
+                    src = it2->get<utils::UInt>();
+                }
+                if (src >= num_qubits) {
+                    throw utils::Exception("topology.edges.*.src is out of range");
+                }
+
+                // Read destination ID.
+                utils::UInt dst;
+                it2 = edge.find("dst");
+                if (it2 == edge.end()) {
+                    throw utils::Exception("topology.edges.*.dst must be specified");
+                } else if (it2->type() != JsonType::number_unsigned) {
+                    throw utils::Exception("topology.edges.*.dst must be an unsigned integer");
+                } else {
+                    dst = it2->get<utils::UInt>();
+                }
+                if (dst >= num_qubits) {
+                    throw utils::Exception("topology.edges.*.dst is out of range");
+                }
+
+                // Check uniqueness and add.
+                for (auto neighbor : neighbors.get(src)) {
+                    if (neighbor == dst) {
+                        throw utils::Exception(
+                            "redefinition of edge with src=" + utils::to_string(src) +
+                            " and dst=" + utils::to_string(dst)
+                        );
+                    }
+                }
+                neighbors.set(src).push_back(dst);
+
+            }
         }
-    }
-    if (connectivity == GridConnectivity::FULL) {
-        QL_DOUT("connectivity is full");
+
+    } else if (connectivity == GridConnectivity::FULL) {
+
+        // Generate full connectivity.
         for (utils::UInt qs = 0; qs < num_qubits; qs++) {
             for (utils::UInt qd = 0; qd < num_qubits; qd++) {
-                if (qs != qd) {
-                    if (is_inter_core_hop(qs, qd) && (!is_comm_qubit(qs) || !is_comm_qubit(qd)) ) {
-                        continue;
-                    }
-                    QL_DOUT("connecting qubit[" << qs << "] to qubit[" << qd << "]");
-                    neighbors.set(qs).push_back(qd);
+                if (qs == qd) {
+                    continue;
                 }
+                if (is_inter_core_hop(qs, qd) && (!is_comm_qubit(qs) || !is_comm_qubit(qd))) {
+                    continue;
+                }
+                neighbors.set(qs).push_back(qd);
             }
         }
+
     }
 
-    // when form embedded in grid, sort clock-wise starting from 12:00, to know boundary of search space
-    if (form != GridForm::IRREGULAR) {
-        // sort neighbor list by angles
+    // When qubits have coordinates, sort neighbor lists clockwise starting from
+    // 12:00, to know boundary of search space.
+    if (has_coordinates()) {
         for (utils::UInt qi = 0; qi < num_qubits; qi++) {
-            // sort nbs[qi] to have increasing clockwise angles around qi, starting with angle 0 at 12:00
             auto nbsq = neighbors.find(qi);
             if (nbsq != neighbors.end()) {
                 nbsq->second.sort(
@@ -227,23 +321,38 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
         }
     }
 
-    // Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
-    // when not connected, distance remains maximum value
-
-    // initialize all distances to maximum value, to neighbors to 1, to itself to 0
+    // Compute distances between all qubits using Floyd-Warshall. When not
+    // connected, distance remains set to utils::MAX.
     distance.resize(num_qubits);
     for (utils::UInt i = 0; i < num_qubits; i++) {
-        distance[i].resize(num_qubits, utils::MAX); // NOTE: /2 to prevent overflow in addition
+
+        // Initialize all distances to maximum value...
+        distance[i].resize(num_qubits, utils::MAX);
+
+        // ... except the self-edge, which is 0 distance...
         distance[i][i] = 0;
+
+        // ... and the neighbors, which get distance 1.
         for (utils::UInt j : neighbors.get(i)) {
             distance[i][j] = 1;
         }
+
     }
 
-    // find shorter distances by gradually including more qubits (k) in path
+    // Find shorter distances by gradually including more qubits (k) in path
     for (utils::UInt k = 0; k < num_qubits; k++) {
         for (utils::UInt i = 0; i < num_qubits; i++) {
             for (utils::UInt j = 0; j < num_qubits; j++) {
+
+                // Prevent overflow in the sum below by explicitly checking for
+                // MAX.
+                if (distance[i][k] == utils::MAX) {
+                    continue;
+                }
+                if (distance[k][j] == utils::MAX) {
+                    continue;
+                }
+
                 if (distance[i][j] > distance[i][k] + distance[k][j]) {
                     distance[i][j] = distance[i][k] + distance[k][j];
                 }
@@ -251,9 +360,12 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
         }
     }
 
+    // Dump the grid structure to stdout if the loglevel is sufficiently
+    // verbose.
     QL_IF_LOG_DEBUG {
         dump();
     }
+
 }
 
 /**
@@ -269,8 +381,12 @@ const Grid::Neighbors &Grid::get_neighbors(Qubit qubit) const {
 utils::Bool Grid::is_comm_qubit(Qubit qubit) const {
     if (num_cores == 1) return true;
     QL_ASSERT(connectivity == GridConnectivity::FULL);
-    utils::UInt qci = qubit % num_cores;   // index of qubit local to core
-    return qci < num_comm_qubits;  // 0..ncommqpc-1 are comm qubits, ncommqpc..nq/ncores-1 are not comm qubits
+
+    // Compute index of qubit local to core.
+    utils::UInt qci = qubit % num_cores;
+
+    // 0..ncommqpc-1 are comm qubits, ncommqpc..nq/ncores-1 are not comm qubits.
+    return qci < num_comm_qubits;
 }
 
 /**
