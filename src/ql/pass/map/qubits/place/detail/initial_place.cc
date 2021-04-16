@@ -114,7 +114,7 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
                 if (
                     v2r[q[0]] == com::UNDEFINED_QUBIT
                     || v2r[q[1]] == com::UNDEFINED_QUBIT
-                    || platformp->grid->Distance(v2r[q[0]], v2r[q[1]]) > 1
+                    || platformp->grid->get_distance(v2r[q[0]], v2r[q[1]]) > 1
                 ) {
                     currmap = false;
                 }
@@ -153,7 +153,7 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
         for (UInt k = 0; k < nlocs; k++) {
             for (UInt j = 0; j < nfac; j++) {
                 for (UInt l = 0; l < nlocs; l++) {
-                    costmax[i][k] += refcount[i][j] * (platformp->grid->Distance(k,l) - 1);
+                    costmax[i][k] += refcount[i][j] * (platformp->grid->get_distance(k, l) - 1);
                 }
             }
         }
@@ -249,14 +249,14 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
             Bool started = false;
             for (UInt j = 0; j < nfac; j++) {
                 for (UInt l = 0; l < nlocs; l++) {
-                    left += refcount[i][j] * platformp->grid->Distance(k,l) * x[j][l];
-                    if (refcount[i][j] * platformp->grid->Distance(k,l) != 0) {
+                    left += refcount[i][j] * platformp->grid->get_distance(k, l) * x[j][l];
+                    if (refcount[i][j] * platformp->grid->get_distance(k, l) != 0) {
                         if (started) {
                             lefts += " + ";
                         } else {
                             started = true;
                         }
-                        lefts += to_string(refcount[i][j] * platformp->grid->Distance(k,l));
+                        lefts += to_string(refcount[i][j] * platformp->grid->get_distance(k, l));
                         lefts += " * x[";
                         lefts += to_string(j);
                         lefts += "][";

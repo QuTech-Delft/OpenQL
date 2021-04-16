@@ -452,7 +452,7 @@ void Past::GenMove(ir::Circuit &circ, UInt &r0, UInt &r1) {
     // first (optimistically) create the move circuit and add it to circ
     Bool created;
     auto mapperopt = options::get("mapper");
-    if (platformp->grid->IsInterCoreHop(r0, r1)) {
+    if (platformp->grid->is_inter_core_hop(r0, r1)) {
         if (mapperopt == "maxfidelity") {
             created = new_gate(circ, "tmove_prim", {r0,r1});    // gates implementing tmove returned in circ
         } else {
@@ -590,7 +590,7 @@ void Past::AddSwap(UInt r0, UInt r1) {
             }
         }
         auto mapperopt = options::get("mapper");
-        if (platformp->grid->IsInterCoreHop(r0, r1)) {
+        if (platformp->grid->is_inter_core_hop(r0, r1)) {
             if (mapperopt == "maxfidelity") {
                 created = new_gate(circ, "tswap_prim", {r0,r1});    // gates implementing tswap returned in circ
             } else {
@@ -1043,7 +1043,7 @@ void Alter::Split(List<Alter> &resla) const {
         // leftopi is the index in total that holds the qubit that becomes the left operand of the gate
         // rightopi is the index in total that holds the qubit that becomes the right operand of the gate
         // rightopi == leftopi + 1
-        if (platformp->grid->IsInterCoreHop(total[leftopi], total[rightopi])) {
+        if (platformp->grid->is_inter_core_hop(total[leftopi], total[rightopi])) {
             // an inter-core hop cannot execute a two-qubit gate, so is not a valid alternative
             // QL_DOUT("... skip inter-core hop from qubit=" << total[leftopi] << " to qubit=" << total[rightopi]);
             continue;
@@ -1232,7 +1232,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
     }
 
     // start looking around at neighbors for serious paths
-    UInt d = platformp->grid->Distance(src, tgt);
+    UInt d = platformp->grid->get_distance(src, tgt);
     QL_DOUT("GenShortestPaths: distance(src=" << src << ", tgt=" << tgt << ") = " << d);
     QL_ASSERT(d >= 1);
 
@@ -1241,7 +1241,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
     // src->n is one hop, budget from n is one less so distance(n,tgt) <= budget-1 (i.e. distance < budget)
     // when budget==d, this defaults to distance(n,tgt) <= d-1
     auto nbl = platformp->grid->get_neighbors(src);
-    nbl.remove_if([this,budget,tgt](const UInt& n) { return platformp->grid->Distance(n,tgt) >= budget; });
+    nbl.remove_if([this,budget,tgt](const UInt& n) { return platformp->grid->get_distance(n, tgt) >= budget; });
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         QL_DOUT("GenShortestPaths: ... after reducing to steps within budget, nbl: ");
         for (auto dn : nbl) {
@@ -1251,7 +1251,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
 
     // rotate neighbor list nbl such that largest difference between angles of adjacent elements is beyond back()
     // this makes only sense when there is an underlying xy grid; when not, which can only be wp_all_shortest
-    platformp->grid->Normalize(src, nbl);
+    platformp->grid->sort_neighbors_by_angle(src, nbl);
     // subset to those neighbors that continue in direction(s) we want
     if (which == wp_left_shortest) {
         nbl.remove_if( [nbl](const UInt& n) { return n != nbl.front(); } );
@@ -1306,7 +1306,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
 void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, List<Alter> &resla) {
     List<Alter> directla;  // list that will hold all not-yet-split Alters directly from src to tgt
 
-    UInt budget = platformp->grid->MinHops(src, tgt);
+    UInt budget = platformp->grid->get_min_hops(src, tgt);
     Str mappathselectopt = options::get("mappathselect");
     if (mappathselectopt == "all") {
         GenShortestPaths(gp, src, tgt, budget, directla, wp_all_shortest);
@@ -1330,7 +1330,7 @@ void Mapper::GenAltersGate(const ir::GateRef &gp, List<Alter> &la, Past &past) {
     QL_ASSERT (q.size() == 2);
     UInt  src = past.MapQubit(q[0]);  // interpret virtual operands in past's current map
     UInt  tgt = past.MapQubit(q[1]);
-    QL_DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at MinHops=" << platformp->grid->MinHops(src, tgt));
+    QL_DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at get_min_hops=" << platformp->grid->get_min_hops(src, tgt));
     past.DFcPrint();
 
     GenShortestPaths(gp, src, tgt, la);// find shortest paths from src to tgt, and split these
@@ -1451,7 +1451,7 @@ void Mapper::CommitAlter(Alter &resa, Future &future, Past &past) {
 
     // when only some swaps were added, the resgp might not yet be NN, so recheck
     auto &q = resgp->operands;
-    if (platformp->grid->MinHops(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1) {
+    if (platformp->grid->get_min_hops(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1) {
         // resgp is NN: so done with this 2q gate
         // QL_DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
         MapRoutedGate(resgp, past);     // the 2q target gate is NN now and thus can be mapped
@@ -1534,7 +1534,7 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<ir::GateRef> &lg,
                 auto &q = gp->operands;
                 UInt  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
                 UInt  tgt = past.MapQubit(q[1]);
-                UInt  d = platformp->grid->MinHops(src, tgt);    // and find minimum number of hops between real counterparts
+                UInt  d = platformp->grid->get_min_hops(src, tgt);    // and find minimum number of hops between real counterparts
                 if (d == 1) {
                     QL_DOUT("MapMappableGates, NN no routing: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ")");
                     MapRoutedGate(gp, past);

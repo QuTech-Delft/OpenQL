@@ -27,12 +27,12 @@
  *                      - computing it relies on nbs (and Floyd-Warshall) (gf_xy and gf_irregular)
  *  nbs[qi]:            list of neighbor real qubits of real qubit qi
  *                      - nbs can be derived from topology.edges (gf_xy and gf_irregular)
- *  Normalize(qi, neighborlist):    rotate neighborlist such that largest angle diff around qi is behind last element
+ *  sort_neighbors_by_angle(qi, neighborlist):    rotate neighborlist such that largest angle diff around qi is behind last element
  *                      relies on nbs, and x[i]/y[i] (gf_xy only)
  *
  * For an irregular grid form, only nq and edges (so nbs) need to be specified; distance is computed from nbs:
  * - there is no underlying rectangular grid, so there are no defined x and y coordinates of qubits;
- *   this means that Normalize as needed by mappathselect==borders cannot work
+ *   this means that sort_neighbors_by_angle as needed by mappathselect==borders cannot work
  * - edges (so nbs) can be specified explicitly (connectivity==gc_specified) or implicitly (it is gc_full):
  *   when connectivity==gc_specified, the edges must be specified in topology.edges in terms of connected qubits;
  *   when connectivity==gc_full, there are edges between all qubits but between cores only between comm_qubits
@@ -65,87 +65,212 @@
 namespace ql {
 namespace plat {
 
-enum GridConnectivity {
-    gc_specified,   // "specified": edges are specified in "edges" section
-    gc_full         // "full": qubits are fully connected by edges, between cores only between comm_qubits
+/**
+ * Qubit grid form/shape.
+ */
+enum class GridForm {
+
+    /**
+     * Qubits have integer X/Y coordinates associated with them.
+     */
+    XY,
+
+    /**
+     * Qubits do not have any kind of coordinates associated with them.
+     */
+    IRREGULAR
+
 };
 
-enum GridForm {
-    gf_xy,          // nodes have explicit neighbor definitions, qubits have explicit x/y coordinates
-    gf_irregular    // nodes have explicit neighbor definitions, qubits don't have x/y coordinates
+/**
+ * String representation for GridForm.
+ */
+std::ostream &operator<<(std::ostream &os, GridForm gf);
+
+/**
+ * A coordinate as used by GridForm::XY.
+ */
+struct XYCoordinate {
+    utils::Int x;
+    utils::Int y;
 };
 
+/**
+ * String representation for XYCoordinate.
+ */
+std::ostream &operator<<(std::ostream &os, XYCoordinate xy);
+
+/**
+ * Qubit connectivity mode.
+ */
+enum class GridConnectivity {
+
+    /**
+     * Qubit connectivity is specified in the platform configuration file via
+     * the "edges" section.
+     */
+    SPECIFIED,
+
+    /**
+     * Qubit connectivity is not specified in the platform configuration file.
+     * Full connectivity is assumed.
+     */
+    FULL
+
+};
+
+/**
+ * String representation for GridConnectivity.
+ */
+std::ostream &operator<<(std::ostream &os, GridConnectivity gc);
+
+/**
+ * Qubit grid abstraction layer.
+ */
 class Grid {
-private:
-    utils::UInt nq;                       // number of qubits in the platform
-    utils::UInt ncores;                   // number of cores in the platform
-    // Grid configuration, all constant after initialization
-    GridForm form;                        // form of grid
-    GridConnectivity conn;                // connectivity of grid
-    utils::UInt ncommqpc;                 // number of comm_qubits per core, ==nq/ncores when all can communicate
-    utils::Int nx;                        // length of x dimension (x coordinates count 0..nx-1)
-    utils::Int ny;                        // length of y dimension (y coordinates count 0..ny-1)
+public:
 
-    typedef utils::List<utils::UInt> neighbors_t;  // neighbors is a list of qubits
-    utils::Map<utils::UInt,neighbors_t> nbs;       // nbs[i] is list of neighbor qubits of qubit i
-    utils::Map<utils::UInt,utils::Int> x;          // x[i] is x coordinate of qubit i
-    utils::Map<utils::UInt,utils::Int> y;          // y[i] is y coordinate of qubit i
-    utils::Vec<utils::Vec<utils::UInt>> dist;      // dist[i][j] is computed distance between qubits i and j;
+    /**
+     * Shorthand for a qubit index.
+     */
+    using Qubit = utils::UInt;
+
+    /**
+     * A list of neighboring qubits.
+     */
+    using Neighbors = utils::List<Qubit>;
+
+private:
+
+    /**
+     * Shorthand for a map from a qubit number to something else.
+     */
+    template <class T>
+    using QubitMap = utils::Map<Qubit, T>;
+
+    /**
+     * The total number of qubits in the platform.
+     */
+    utils::UInt num_qubits;
+
+    /**
+     * The number of quantum cores. If greater than 1, each core is assumed to
+     * have the same number of qubits, being num_qubits/num_cores.
+     */
+    utils::UInt num_cores;
+
+    /**
+     * Number of communication qubits per core. The first num_comm_qubits qubits
+     * associated with each core is considered to be a communication qubit.
+     */
+    utils::UInt num_comm_qubits;
+
+    /**
+     * The grid form/shape.
+     */
+    GridForm form;
+
+    /**
+     * If this is an XY grid, this is the size of the grid; all X coordinates
+     * must be between 0 and xy_size.x-1, and all Y coordinates must be between
+     * 0 and xy_size.y-1.
+     */
+    XYCoordinate xy_size;
+
+    /**
+     * If this is an XY grid, this contains the coordinates for each qubit.
+     */
+    QubitMap<XYCoordinate> xy_coord;
+
+    /**
+     * Connectivity of the grid.
+     */
+    GridConnectivity connectivity;
+
+    /**
+     * The list of neighboring qubits for each qubit.
+     */
+    QubitMap<Neighbors> neighbors;
+
+    /**
+     * The distance (number of edges) between a pair of qubits.
+     */
+    utils::Vec<utils::Vec<utils::UInt>> distance;
 
 public:
 
-    // Grid initializer
-    // initialize mapper internal grid maps from configuration
-    // this remains constant over multiple kernels on the same platform
+    /**
+     * Constructs the grid for the given number of qubits from the given JSON
+     * object.
+     *
+     * TODO: document JSON structure
+     */
     Grid(utils::UInt num_qubits, const utils::Json &topology);
 
-    // returns the neighbors for the given qubit
-    const utils::List<utils::UInt> &get_neighbors(utils::UInt qubit) const;
+    /**
+     * Returns the indices of the neighboring qubits for the given qubit.
+     */
+    const Neighbors &get_neighbors(Qubit qubit) const;
 
-    // whether qubit is a communication qubit of a core
-    utils::Bool IsCommQubit(utils::UInt qi) const;
+    /**
+     * Returns whether the given qubit is a communication qubit of a core.
+     */
+    utils::Bool is_comm_qubit(Qubit qubit) const;
 
-    // core index from qubit index
-    // when multi-core assumes full and uniform core connectivity
-    utils::UInt CoreOf(utils::UInt qi) const;
+    /**
+     * Returns the core index for the given qubit in a multi-core environment.
+     */
+    utils::UInt get_core_index(Qubit qubit) const;
 
-    // inter-core hop from qs to qt?
-    utils::Bool IsInterCoreHop(utils::UInt qs, utils::UInt qt) const;
+    /**
+     * Returns whether communication between the given two qubits involves
+     * inter-core communication.
+     */
+    utils::Bool is_inter_core_hop(Qubit source, Qubit target) const;
 
-    // distance between two qubits
-    // formulae for convex (hole free) topologies with underlying grid and with bidirectional edges:
-    //      gf_cross:   max( abs( x[to_realqi] - x[from_realqi] ), abs( y[to_realqi] - y[from_realqi] ))
-    //      gf_plus:    abs( x[to_realqi] - x[from_realqi] ) + abs( y[to_realqi] - y[from_realqi] )
-    // when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
-    utils::UInt Distance(utils::UInt from_realqi, utils::UInt to_realqi) const;
+    /**
+     * Returns the distance between the two given qubits in number of hops.
+     * Returns 0 iff source == target.
+     */
+    utils::UInt get_distance(Qubit source, Qubit target) const;
 
-    // coredistance between two qubits
-    // when multi-core assumes full and uniform core connectivity
-    utils::UInt CoreDistance(utils::UInt from_realqi, utils::UInt to_realqi) const;
+    /**
+     * Returns the distance between the given two qubits in terms of cores.
+     */
+    utils::UInt get_core_distance(Qubit source, Qubit target) const;
 
-    // minimum number of hops between two qubits is always >= distance(from, to)
-    // and inside one core (or without multi-core) the minimum number of hops == distance
-    //
-    // however, in multi-core with inter-core hops, an inter-core hop cannot execute a 2qgate
-    // so when the minimum number of hops are all inter-core hops (so distance(from,to) == coredistance(from,to))
-    // and no 2qgate has been placed yet, then at least one additional inter-core hop is needed for the 2qgate,
-    // the number of hops required being at least distance+1;
-    //
-    // we assume below that a valid path exists with distance+1 hops;
-    // this fails when not all qubits in a core support connections to all other cores;
-    // see the check in InitNbs
-    utils::UInt MinHops(utils::UInt from_realqi, utils::UInt to_realqi) const;
+    /**
+     * Minimum number of hops between two qubits is always >= distance(from, to)
+     * and inside one core (or without multi-core) the minimum number of
+     * hops == distance.
+     *
+     * However, in multi-core with inter-core hops, an inter-core hop cannot
+     * execute a 2qgate so when the minimum number of hops are all inter-core
+     * hops (so distance(from,to) == coredistance(from,to)) and no 2qgate has
+     * been placed yet, then at least one additional inter-core hop is needed
+     * for the 2qgate, the number of hops required being at least distance+1.
+     *
+     * We assume below that a valid path exists with distance+1 hops; this fails
+     * when not all qubits in a core support connections to all other cores.
+     * See the check in initialization of neighbors.
+     */
+    utils::UInt get_min_hops(Qubit source, Qubit target) const;
 
-    // return clockwise angle around (cx,cy) of (x,y) wrt vertical y axis with angle 0 at 12:00, 0<=angle<2*pi
-    utils::Real Angle(utils::Int cx, utils::Int cy, utils::Int x, utils::Int y) const;
+    /**
+     * Rotate neighbors list such that largest angle difference between adjacent
+     * elements is behind back. This is needed when a given subset of variations
+     * from a node is wanted (mappathselect==borders). This can only be computed
+     * when there is an underlying x/y grid (so not for form==gf_irregular).
+     *
+     * TODO JvS: does this even belong in grid now that it's not part of the
+     *  mapper anymore? It feels like a very specific thing.
+     */
+    void sort_neighbors_by_angle(Qubit src, Neighbors &nbl) const;
 
-    // rotate neighbors list such that largest angle difference between adjacent elements is behind back;
-    // this is needed when a given subset of variations from a node is wanted (mappathselect==borders);
-    // and this can only be computed when there is an underlying x/y grid (so not for form==gf_irregular)
-    void Normalize(utils::UInt src, neighbors_t &nbl) const;
-
-    void DPRINTGrid() const;
-    void PrintGrid() const;
+    /**
+     * Dumps the grid configuration to the given stream.
+     */
+    void dump(std::ostream &os=std::cout, const utils::Str &line_prefix="") const;
 
 };
 

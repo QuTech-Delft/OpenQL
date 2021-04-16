@@ -13,19 +13,60 @@
 namespace ql {
 namespace plat {
 
-using namespace utils;
+/**
+ * Returns the clockwise angle of b around a with respect to the positive Y
+ * axis, with angle 0 at 12:00, and 0 <= angle < 2*pi.
+ */
+static utils::Real get_angle(XYCoordinate a, XYCoordinate b) {
+    utils::Real ang = std::atan2((b.x - a.x), (b.y - a.y));
+    if (ang < 0) ang += 2 * utils::PI;
+    return ang;
+}
 
-// Grid initializer
-// initialize mapper internal grid maps from configuration
-// this remains constant over multiple kernels on the same platform
+/**
+ * String representation for GridForm.
+ */
+std::ostream &operator<<(std::ostream &os, GridForm gf) {
+    switch (gf) {
+        case GridForm::XY:        os << "xy";        break;
+        case GridForm::IRREGULAR: os << "irregular"; break;
+    }
+    return os;
+}
+
+/**
+ * String representation for XYCoordinate.
+ */
+std::ostream &operator<<(std::ostream &os, XYCoordinate xy) {
+    os << "(" << xy.x << ", " << xy.y << ")";
+    return os;
+}
+
+/**
+ * String representation for GridConnectivity.
+ */
+std::ostream &operator<<(std::ostream &os, GridConnectivity gc) {
+    switch (gc) {
+        case GridConnectivity::SPECIFIED: os << "specified"; break;
+        case GridConnectivity::FULL:      os << "full";      break;
+    }
+    return os;
+}
+
+/**
+ * Constructs the grid for the given number of qubits from the given JSON
+ * object.
+ *
+ * See header file for JSON format documentation.
+ */
 Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
     QL_DOUT("Grid::Init");
     //p = p;
-    nq = num_qubits;
-    QL_DOUT("... number of real qbits=" << nq);
+    this->num_qubits = num_qubits;
+    QL_DOUT("... number of real qbits=" << num_qubits);
 
     // init grid form attributes
-    Str formstr;
+    utils::Str formstr;
     if (topology.count("form") <= 0) {
         if (topology.count("qubits")) {
             formstr = "xy";
@@ -33,82 +74,77 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
             formstr = "irregular";
         }
     } else {
-        formstr = topology["form"].get<Str>();
+        formstr = topology["form"].get<utils::Str>();
     }
-    if (formstr == "xy") { form = gf_xy; }
-    if (formstr == "irregular") { form = gf_irregular; }
+    if (formstr == "xy") { form = GridForm::XY; }
+    if (formstr == "irregular") { form = GridForm::IRREGULAR; }
 
-    if (form == gf_irregular) {
+    if (form == GridForm::IRREGULAR) {
         // irregular can do without topology.x_size, topology.y_size, and topology.qubits
-        nx = 0;
-        ny = 0;
+        xy_size = {0, 0};
     } else {
         // gf_xy have an x/y space; coordinates are explicitly specified
-        nx = topology["x_size"];
-        ny = topology["y_size"];
+        xy_size.x = topology["x_size"];
+        xy_size.y = topology["y_size"];
     }
-    QL_DOUT("... formstr=" << formstr << "; form=" << form << "; nx=" << nx << "; ny=" << ny);
+    QL_DOUT("... formstr=" << formstr << "; form=" << form << "; xy_size=" << xy_size);
 
     // init multi-core attributes
     if (topology.count("number_of_cores") <= 0) {
-        ncores = 1;
+        num_cores = 1;
         QL_DOUT("Number of cores (topology[\"number_of_cores\"]) not defined");
     } else {
-        ncores = topology["number_of_cores"];
-        if (ncores <= 0) {
-            QL_FATAL("Number of cores (topology[\"number_of_cores\"]) is not a positive value: " << ncores);
+        num_cores = topology["number_of_cores"];
+        if (num_cores <= 0) {
+            QL_FATAL("Number of cores (topology[\"number_of_cores\"]) is not a positive value: " << num_cores);
         }
     }
-    QL_DOUT("Numer of cores= " << ncores);
+    QL_DOUT("Numer of cores= " << num_cores);
 
     // when not specified in single-core: == nq (i.e. all qubits)
     // when not specified in multi-core: == nq/ncores (i.e. all qubits of a core)
     if (topology.count("comm_qubits_per_core") <= 0) {
-        ncommqpc = nq/ncores;   // i.e. all are comm qubits
+        num_comm_qubits = num_qubits / num_cores;   // i.e. all are comm qubits
         QL_DOUT("Number of comm_qubits per core (topology[\"comm_qubits_per_core\"]) not defined; assuming all are comm qubits.");
     } else {
-        ncommqpc = topology["comm_qubits_per_core"];
-        if (ncommqpc <= 0) {
-            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is not a positive value: " << ncommqpc);
+        num_comm_qubits = topology["comm_qubits_per_core"];
+        if (num_comm_qubits <= 0) {
+            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is not a positive value: " << num_comm_qubits);
         }
-        if (ncommqpc > nq/ncores) {
-            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is larger than number of qubits per core: " << ncommqpc);
+        if (num_comm_qubits > num_qubits / num_cores) {
+            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is larger than number of qubits per core: " << num_comm_qubits);
         }
     }
-    QL_DOUT("Numer of communication qubits per core= " << ncommqpc);
+    QL_DOUT("Numer of communication qubits per core= " << num_comm_qubits);
 
     // init x, and y maps
-    if (form != gf_irregular) {
+    if (form != GridForm::IRREGULAR) {
         if (topology.count("qubits") == 0) {
             QL_FATAL("Regular configuration doesn't specify qubits and their coordinates");
         } else {
-            if (nq != topology["qubits"].size()) {
+            if (num_qubits != topology["qubits"].size()) {
                 QL_FATAL("Mismatch between platform qubit number and qubit coordinate list");
             }
             for (auto &aqbit : topology["qubits"]) {
-                UInt qi = aqbit["id"];
-                Int qx = aqbit["x"];
-                Int qy = aqbit["y"];
+                utils::UInt qi = aqbit["id"];
+                utils::Int qx = aqbit["x"];
+                utils::Int qy = aqbit["y"];
 
                 // sanity checks
-                if (!(0<=qi && qi<nq)) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with id that is not in the range 0..nq-1 with nq=" << nq);
+                if (!(0<=qi && qi < num_qubits)) {
+                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with id that is not in the range 0..nq-1 with nq=" << num_qubits);
                 }
-                if (x.count(qi) > 0) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of x coordinate");
+                if (xy_coord.count(qi) > 0) {
+                    QL_FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of coordinate");
                 }
-                if (y.count(qi) > 0) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of y coordinate");
+                if (qx < 0 || qx >= xy_size.x) {
+                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with x that is not in the range 0..x_size-1 with x_size=" << xy_size.x);
                 }
-                if (!(0<=qx && qx<nx)) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with x that is not in the range 0..x_size-1 with x_size=" << nx);
-                }
-                if (!(0<=qy && qy<ny)) {
-                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << ny);
+                if (qy < 0 || qy >= xy_size.y) {
+                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << xy_size.y);
                 }
 
-                x.set(qi) = qx;
-                y.set(qi) = qy;
+                xy_coord.set(qi) = {qx, qy};
             }
         }
     }
@@ -117,75 +153,75 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
     if (!topology.count("connectivity")) {
         if (topology.count("edges")) {
             QL_DOUT("Configuration doesn't specify topology.connectivity: assuming connectivity is specified by edges section");
-            conn = gc_specified;
+            connectivity = GridConnectivity::SPECIFIED;
         } else {
             QL_DOUT("Configuration doesn't specify topology.connectivity, nor does it specify edges; assuming full connectivity");
-            conn = gc_full;
+            connectivity = GridConnectivity::FULL;
         }
     } else {
-        Str connstr;
-        connstr = topology["connectivity"].get<Str>();
+        utils::Str connstr;
+        connstr = topology["connectivity"].get<utils::Str>();
         if (connstr == "specified") {
-            conn = gc_specified;
+            connectivity = GridConnectivity::SPECIFIED;
         } else if (connstr == "full") {
-            conn = gc_full;
+            connectivity = GridConnectivity::FULL;
         } else {
             QL_FATAL("connectivity " << connstr << " not supported");
         }
         QL_DOUT("topology.connectivity=" << connstr );
     }
-    if (conn == gc_specified) {
+    if (connectivity == GridConnectivity::SPECIFIED) {
         if (topology.count("edges") == 0) {
-            QL_FATAL(" There aren't edges configured in the platform's topology");
+            QL_FATAL("There aren't edges configured in the platform's topology");
         }
         for (auto &anedge : topology["edges"]) {
             QL_DOUT("connectivity is specified by edges section, reading ...");
-            UInt qs = anedge["src"];
-            UInt qd = anedge["dst"];
+            utils::UInt qs = anedge["src"];
+            utils::UInt qd = anedge["dst"];
 
             // sanity checks
-            if (!(0<=qs && qs<nq)) {
-                QL_FATAL(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << nq);
+            if (!(0<=qs && qs < num_qubits)) {
+                QL_FATAL(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << num_qubits);
             }
-            if (!(0<=qd && qd<nq)) {
-                QL_FATAL(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << nq);
+            if (!(0<=qd && qd < num_qubits)) {
+                QL_FATAL(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << num_qubits);
             }
-            for (auto &n : nbs.get(qs)) {
+            for (auto &n : neighbors.get(qs)) {
                 if (n == qd) {
                     QL_FATAL(" redefinition of edge with src=" << qs << " and dst=" << qd);
                 }
             }
 
-            nbs.set(qs).push_back(qd);
+            neighbors.set(qs).push_back(qd);
             QL_DOUT("connectivity has been stored in nbs map");
         }
     }
-    if (conn == gc_full) {
+    if (connectivity == GridConnectivity::FULL) {
         QL_DOUT("connectivity is full");
-        for (UInt qs = 0; qs < nq; qs++) {
-            for (UInt qd = 0; qd < nq; qd++) {
+        for (utils::UInt qs = 0; qs < num_qubits; qs++) {
+            for (utils::UInt qd = 0; qd < num_qubits; qd++) {
                 if (qs != qd) {
-                    if (IsInterCoreHop(qs,qd) && (!IsCommQubit(qs) || !IsCommQubit(qd)) ) {
+                    if (is_inter_core_hop(qs, qd) && (!is_comm_qubit(qs) || !is_comm_qubit(qd)) ) {
                         continue;
                     }
                     QL_DOUT("connecting qubit[" << qs << "] to qubit[" << qd << "]");
-                    nbs.set(qs).push_back(qd);
+                    neighbors.set(qs).push_back(qd);
                 }
             }
         }
     }
 
     // when form embedded in grid, sort clock-wise starting from 12:00, to know boundary of search space
-    if (form != gf_irregular) {
+    if (form != GridForm::IRREGULAR) {
         // sort neighbor list by angles
-        for (UInt qi = 0; qi < nq; qi++) {
+        for (utils::UInt qi = 0; qi < num_qubits; qi++) {
             // sort nbs[qi] to have increasing clockwise angles around qi, starting with angle 0 at 12:00
-            auto nbsq = nbs.find(qi);
-            if (nbsq != nbs.end()) {
+            auto nbsq = neighbors.find(qi);
+            if (nbsq != neighbors.end()) {
                 nbsq->second.sort(
-                    [this, qi](const UInt &i, const UInt &j) {
-                        return Angle(x.at(qi), y.at(qi), x.at(i), y.at(i)) <
-                               Angle(x.at(qi), y.at(qi), x.at(j), y.at(j));
+                    [this, qi](const utils::UInt &i, const utils::UInt &j) {
+                        return get_angle(xy_coord.at(qi), xy_coord.at(i)) <
+                               get_angle(xy_coord.at(qi), xy_coord.at(j));
                     }
                 );
             }
@@ -196,106 +232,101 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
     // when not connected, distance remains maximum value
 
     // initialize all distances to maximum value, to neighbors to 1, to itself to 0
-    dist.resize(nq); for (UInt i=0; i<nq; i++) dist[i].resize(nq, MAX);
-    for (UInt i = 0; i < nq; i++) {
-        dist[i][i] = 0;
-        for (UInt j : nbs.get(i)) {
-            dist[i][j] = 1;
+    distance.resize(num_qubits);
+    for (utils::UInt i = 0; i < num_qubits; i++) {
+        distance[i].resize(num_qubits, utils::MAX); // NOTE: /2 to prevent overflow in addition
+        distance[i][i] = 0;
+        for (utils::UInt j : neighbors.get(i)) {
+            distance[i][j] = 1;
         }
     }
 
     // find shorter distances by gradually including more qubits (k) in path
-    for (UInt k = 0; k < nq; k++) {
-        for (UInt i = 0; i < nq; i++) {
-            for (UInt j = 0; j < nq; j++) {
-                if (dist[i][j] > dist[i][k] + dist[k][j]) {
-                    dist[i][j] = dist[i][k] + dist[k][j];
+    for (utils::UInt k = 0; k < num_qubits; k++) {
+        for (utils::UInt i = 0; i < num_qubits; i++) {
+            for (utils::UInt j = 0; j < num_qubits; j++) {
+                if (distance[i][j] > distance[i][k] + distance[k][j]) {
+                    distance[i][j] = distance[i][k] + distance[k][j];
                 }
             }
         }
     }
-#ifdef debug
-    for (UInt i = 0; i < nq; i++) {
-        for (UInt j = 0; j < nq; j++) {
-            if (form == gf_cross) {
-                QL_ASSERT (dist[i][j] == (max(abs(x[i] - x[j]),
-                                                      abs(y[i] - y[j]))));
-            } else if (form == gf_plus) {
-                QL_ASSERT (dist[i][j] ==
-                              (abs(x[i] - x[j]) + abs(y[i] - y[j])));
-            }
 
-        }
+    QL_IF_LOG_DEBUG {
+        dump();
     }
-#endif
-
-    DPRINTGrid();
 }
 
-// returns the neighbors for the given qubit
-const utils::List<utils::UInt> &Grid::get_neighbors(utils::UInt qubit) const {
-    return nbs.get(qubit);
+/**
+ * Returns the indices of the neighboring qubits for the given qubit.
+ */
+const Grid::Neighbors &Grid::get_neighbors(Qubit qubit) const {
+    return neighbors.get(qubit);
 }
 
-// whether qubit is a communication qubit of a core, i.e. can communicate with another core
-Bool Grid::IsCommQubit(UInt qi) const {
-    if (ncores == 1) return true;
-    QL_ASSERT(conn == gc_full);
-    UInt qci = qi%ncores;   // index of qubit local to core
-    return qci < ncommqpc;  // 0..ncommqpc-1 are comm qubits, ncommqpc..nq/ncores-1 are not comm qubits
+/**
+ * Returns whether the given qubit is a communication qubit of a core.
+ */
+utils::Bool Grid::is_comm_qubit(Qubit qubit) const {
+    if (num_cores == 1) return true;
+    QL_ASSERT(connectivity == GridConnectivity::FULL);
+    utils::UInt qci = qubit % num_cores;   // index of qubit local to core
+    return qci < num_comm_qubits;  // 0..ncommqpc-1 are comm qubits, ncommqpc..nq/ncores-1 are not comm qubits
 }
 
-// core index from qubit index
-// when multi-core assumes full and uniform core connectivity
-UInt Grid::CoreOf(UInt qi) const {
-    if (ncores == 1) return 1;
-    QL_ASSERT(conn == gc_full);
-    UInt nqpc = nq/ncores;
-    return qi/nqpc;
+/**
+ * Returns the core index for the given qubit in a multi-core environment.
+ */
+utils::UInt Grid::get_core_index(Qubit qubit) const {
+    if (num_cores == 1) return 1;
+    QL_ASSERT(connectivity == GridConnectivity::FULL);
+    utils::UInt nqpc = num_qubits / num_cores;
+    return qubit / nqpc;
 }
 
-// inter-core hop from qs to qt?
-Bool Grid::IsInterCoreHop(UInt qs, UInt qt) const {
-    return CoreOf(qs) != CoreOf(qt);
+/**
+ * Returns whether communication between the given two qubits involves
+ * inter-core communication.
+ */
+utils::Bool Grid::is_inter_core_hop(Qubit source, Qubit target) const {
+    return get_core_index(source) != get_core_index(target);
 }
 
-// distance between two qubits
-// formulae for convex (hole free) topologies with underlying grid and with bidirectional edges:
-//      gf_cross:   max( abs( x[to_realqi] - x[from_realqi] ), abs( y[to_realqi] - y[from_realqi] ))
-//      gf_plus:    abs( x[to_realqi] - x[from_realqi] ) + abs( y[to_realqi] - y[from_realqi] )
-// when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
-UInt Grid::Distance(UInt from_realqi, UInt to_realqi) const {
-    return dist[from_realqi][to_realqi];
+/**
+ * Returns the distance between the two given qubits in number of hops.
+ * Returns 0 iff source == target.
+ */
+utils::UInt Grid::get_distance(Qubit source, Qubit target) const {
+    return distance[source][target];
 }
 
-// coredistance between two qubits
-// the number of inter-core hops that are minimally required on any path between the two qubits
-//
-// Here we assume for multi-core full and uniform core connectivity.
-// When not full, have to compute it and store it in a CoreDistance matrix.
-// Two cores are neighbours when they have communication qubits that are only one hop apart.
-UInt Grid::CoreDistance(UInt from_realqi, UInt to_realqi) const {
-    if (CoreOf(from_realqi) == CoreOf(to_realqi)) return 0;
-    QL_ASSERT(conn == gc_full);
+/**
+ * Returns the distance between the given two qubits in terms of cores.
+ */
+utils::UInt Grid::get_core_distance(Qubit source, Qubit target) const {
+    if (get_core_index(source) == get_core_index(target)) return 0;
+    QL_ASSERT(connectivity == GridConnectivity::FULL);
     return 1;
 }
 
-// minimum number of hops between two qubits is always >= distance(from, to)
-// and inside one core (or without multi-core) the minimum number of hops == distance
-//
-// however, in multi-core with inter-core hops, an inter-core hop cannot execute a 2qgate
-// so when the minimum number of hops are all inter-core hops (so distance(from,to) == coredistance(from,to))
-// and no 2qgate has been placed yet, then at least one additional intra-core hop is needed for the 2qgate,
-// the number of hops required being at least distance+1;
-// but when there is only one comm qubit per core and that qubit is one of the operands of the 2qgate,
-// then one additional intra-core hop is not sufficient,
-// one additional one is needed to go/return to a non-comm qubit on the core;
-// note that in the latter case, the comm qubit is twice in the path; this must not be regarded as a failure!
-//
-// we assume below that a valid path exists with distance+2 hops
-UInt Grid::MinHops(UInt from_realqi, UInt to_realqi) const {
-    UInt d = Distance(from_realqi, to_realqi);
-    UInt cd = CoreDistance(from_realqi, to_realqi);
+/**
+ * Minimum number of hops between two qubits is always >= distance(from, to)
+ * and inside one core (or without multi-core) the minimum number of
+ * hops == distance.
+ *
+ * However, in multi-core with inter-core hops, an inter-core hop cannot
+ * execute a 2qgate so when the minimum number of hops are all inter-core
+ * hops (so distance(from,to) == coredistance(from,to)) and no 2qgate has
+ * been placed yet, then at least one additional inter-core hop is needed
+ * for the 2qgate, the number of hops required being at least distance+1.
+ *
+ * We assume below that a valid path exists with distance+1 hops; this fails
+ * when not all qubits in a core support connections to all other cores.
+ * See the check in initialization of neighbors.
+ */
+utils::UInt Grid::get_min_hops(Qubit source, Qubit target) const {
+    utils::UInt d = get_distance(source, target);
+    utils::UInt cd = get_core_distance(source, target);
     QL_ASSERT(cd <= d);
     if (cd == d) {
         return d+2;
@@ -304,21 +335,19 @@ UInt Grid::MinHops(UInt from_realqi, UInt to_realqi) const {
     }
 }
 
-// return clockwise angle around (cx,cy) of (x,y) wrt vertical y axis with angle 0 at 12:00, 0<=angle<2*pi
-Real Grid::Angle(Int cx, Int cy, Int x, Int y) const {
-    const Real pi = 4 * std::atan(1);
-    Real a = std::atan2((x - cx), (y - cy));
-    if (a < 0) a += 2*pi;
-    return a;
-}
-
-// rotate neighbors list such that largest angle difference between adjacent elements is behind back;
-// this is needed when a given subset of variations from a node is wanted (mappathselect==borders);
-// and this can only be computed when there is an underlying x/y grid (so not for form==gf_irregular)
-void Grid::Normalize(UInt src, neighbors_t &nbl) const {
-    if (form != gf_xy) {
+/**
+ * Rotate neighbors list such that largest angle difference between adjacent
+ * elements is behind back. This is needed when a given subset of variations
+ * from a node is wanted (mappathselect==borders). This can only be computed
+ * when there is an underlying x/y grid (so not for form==gf_irregular).
+ *
+ * TODO JvS: does this even belong in grid now that it's not part of the
+ *  mapper anymore? It feels like a very specific thing.
+ */
+void Grid::sort_neighbors_by_angle(Qubit src, Neighbors &nbl) const {
+    if (form != GridForm::XY) {
         // there are no implicit/explicit x/y coordinates defined per qubit, so no sense of nearness
-        Str mappathselectopt = com::options::get("mappathselect");
+        utils::Str mappathselectopt = com::options::get("mappathselect");
         QL_ASSERT(mappathselectopt != "borders");
         return;
     }
@@ -326,24 +355,24 @@ void Grid::Normalize(UInt src, neighbors_t &nbl) const {
     // std::cout << "Normalizing list from src=" << src << ": ";
     // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
 
-    const Real pi = 4 * std::atan(1);
+    const utils::Real pi = 4 * std::atan(1);
     if (nbl.size() == 1) {
         // QL_DOUT("... size was 1; unchanged");
         return;
     }
 
     // find maxinx index in neighbor list before which largest angle difference occurs
-    Int maxdiff = 0;                            // current maximum angle difference in loop search below
+    utils::Int maxdiff = 0;                            // current maximum angle difference in loop search below
     auto maxinx = nbl.begin(); // before which max diff occurs
 
     // for all indices in and its next one inx compute angle difference and find largest of these
     for (auto in = nbl.begin(); in != nbl.end(); in++) {
-        Real a_in = Angle(x.at(src), y.at(src), x.at(*in), y.at(*in));
+        utils::Real a_in = get_angle(xy_coord.at(src), xy_coord.at(*in));
 
         auto inx = std::next(in); if (inx == nbl.end()) inx = nbl.begin();
-        Real a_inx = Angle(x.at(src), y.at(src), x.at(*inx), y.at(*inx));
+        utils::Real a_inx = get_angle(xy_coord.at(src), xy_coord.at(*inx));
 
-        Int diff = a_inx - a_in; if (diff < 0) diff += 2*pi;
+        utils::Int diff = a_inx - a_in; if (diff < 0) diff += 2*pi;
         if (diff > maxdiff) {
             maxdiff = diff;
             maxinx = inx;
@@ -351,7 +380,7 @@ void Grid::Normalize(UInt src, neighbors_t &nbl) const {
     }
 
     // and now rotate neighbor list so that largest angle difference is behind last one
-    neighbors_t newnbl;
+    Neighbors newnbl;
     for (auto in = maxinx; in != nbl.end(); in++) {
         newnbl.push_back(*in);
     }
@@ -364,46 +393,32 @@ void Grid::Normalize(UInt src, neighbors_t &nbl) const {
     // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
 }
 
-
-void Grid::DPRINTGrid() const {
-    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
-        PrintGrid();
+/**
+ * Dumps the grid configuration to the given stream.
+ */
+void Grid::dump(std::ostream &os, const utils::Str &line_prefix) const {
+    os << line_prefix << "grid form = " << form << "\n";
+    for (utils::UInt i = 0; i < num_qubits; i++) {
+        os << line_prefix << "qubit[" << i << "]=" << xy_coord.dbg(i);
+        os << " has neighbors";
+        for (auto &n : neighbors.get(i)) {
+            os << " qubit[" << n << "]=" << xy_coord.dbg(i);
+        }
+        os << "\n";
     }
-}
-
-void Grid::PrintGrid() const {
-    if (form != gf_irregular) {
-        for (UInt i = 0; i < nq; i++) {
-            std::cout << "qubit[" << i << "]=(" << x.at(i) << "," << y.at(i) << ")";
-            std::cout << " has neighbors ";
-            for (auto &n : nbs.get(i)) {
-                std::cout << "qubit[" << n << "]=(" << x.at(n) << "," << y.at(n) << ") ";
-            }
-            std::cout << std::endl;
+    for (utils::UInt i = 0; i < num_qubits; i++) {
+        os << line_prefix << "qubit[" << i << "] distance(" << i << ",j)=";
+        for (utils::UInt j = 0; j < num_qubits; j++) {
+            os << get_distance(i, j) << " ";
         }
-    } else {
-        for (UInt i = 0; i < nq; i++) {
-            std::cout << "qubit[" << i << "]";
-            std::cout << " has neighbors ";
-            for (auto &n : nbs.get(i)) {
-                std::cout << "qubit[" << n << "] ";
-            }
-            std::cout << std::endl;
-        }
+        os << "\n";
     }
-    for (UInt i = 0; i < nq; i++) {
-        std::cout << "qubit[" << i << "] distance(" << i << ",j)=";
-        for (UInt j = 0; j < nq; j++) {
-            std::cout << Distance(i, j) << " ";
+    for (utils::UInt i = 0; i < num_qubits; i++) {
+        os << line_prefix << "qubit[" << i << "] minhops(" << i << ",j)=";
+        for (utils::UInt j = 0; j < num_qubits; j++) {
+            os << get_min_hops(i, j) << " ";
         }
-        std::cout << std::endl;
-    }
-    for (UInt i = 0; i < nq; i++) {
-        std::cout << "qubit[" << i << "] minhops(" << i << ",j)=";
-        for (UInt j = 0; j < nq; j++) {
-            std::cout << MinHops(i, j) << " ";
-        }
-        std::cout << std::endl;
+        os << "\n";
     }
 }
 
