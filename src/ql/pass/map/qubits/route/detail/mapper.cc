@@ -1852,13 +1852,18 @@ void Mapper::Map(const ir::KernelRef &kernel) {
         Str initialplace2qhorizonopt = options::get("initialplace2qhorizon");
         QL_DOUT("InitialPlace: kernel=" << kernel->name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " [START]");
         using namespace place::detail;
-        InitialPlace    ip;             // initial placer facility
-        ipr_t           ipok;           // one of several ip result possibilities
-        Real          iptimetaken;      // time solving the initial placement took, in seconds
 
-        ip.Init(platformp);
-        ip.Place(kernel->c, v2r, ipok, iptimetaken, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
-        QL_DOUT("InitialPlace: kernel=" << kernel->name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " result=" << ip.ipr2string(ipok) << " iptimetaken=" << iptimetaken << " seconds [DONE]");
+        InitialPlaceOptions ipopt;
+        ipopt.map_all = com::options::get("mapinitone2one") == "yes";
+        ipopt.horizon = utils::parse_uint(initialplace2qhorizonopt);
+        ipopt.timeout = 0.0; // NOTE: BROKEN.
+        if (initialplaceopt != "yes") {
+            QL_WOUT("Initial placement with timeout is broken; running without timeout!");
+        }
+
+        InitialPlace ip;
+        auto ipok = ip.run(kernel, ipopt, v2r); // compute mapping (in v2r) using ip model, may fail
+        QL_DOUT("InitialPlace: kernel=" << kernel->name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " result=" << ipok << " iptimetaken=" << ip.get_time_taken() << " seconds [DONE]");
 #else // ifdef INITIALPLACE
         QL_DOUT("InitialPlace support disabled during OpenQL build [DONE]");
         QL_WOUT("InitialPlace support disabled during OpenQL build [DONE]");

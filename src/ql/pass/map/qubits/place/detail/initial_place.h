@@ -1,10 +1,8 @@
 /** \file
  * Initial placement engine.
  *
- * TODO JvS: clean up docs
- *
- * InitialPlace: initial placement solved as an MIP, mixed integer linear program
- * the initial placement is modelled as a Quadratic Assignment Problem
+ * InitialPlace: initial placement solved as an MIP (mixed integer linear
+ * program). The initial placement is modelled as a Quadratic Assignment Problem
  * by Lingling Lao in her mapping paper:
  *
  * variables:
@@ -39,29 +37,12 @@
  * This model is coded in lemon/mip below.
  * The latter is mapped onto glpk.
  *
- * Since solving takes a while, two ways are offered to deal with this; these can be combined:
- * 1. option initialplace2qhorizon: one of: 0,10,20,30,40,50,60,70,80,90,100
- * The initialplace algorithm considers only this number of initial two-qubit gates to determine a mapping.
- * When 0 is specified as option value, there is no limit.
- * 2. option initialplace: an option steerable timeout mechanism around it is implemented, using threads:
- * The solver runs in a subthread which can succeed or be timed out by the main thread waiting for it.
- * When timed out, it can stop the compiler by raising an exception or continue mapping as if it were not called.
- * When INITIALPLACE is not defined, the compiler doesn't contain initial placement support and ignores calls to it;
- * then all this: lemon/mip, glpk, thread support is avoided making OpenQL much easier build and run.
- * Otherwise, depending on the initialplace option value, initial placement is attempted before the heuristic.
- * Options values of initialplace:
- *  no      don't run initial placement ('ip')
- *  yes     run ip until the solver is ready
- *  1hx     run ip max for 1 hour; when timed out, stop the compiler
- *  1h      run ip max for 1 hour; when timed out, just use heuristics
- *  10mx    run ip max for 10 minutes; when timed out, stop the compiler
- *  10m     run ip max for 10 minutes; when timed out, just use heuristics
- *  1mx     run ip max for 1 minute; when timed out, stop the compiler
- *  1m      run ip max for 1 minute; when timed out, just use heuristics
- *  10sx    run ip max for 10 seconds; when timed out, stop the compiler
- *  10s     run ip max for 10 seconds; when timed out, just use heuristics
- *  1sx     run ip max for 1 second; when timed out, stop the compiler
- *  1s      run ip max for 1 second; when timed out, just use heuristics
+ * Since solving takes a while, two ways are offered to deal with this (and
+ * these can be combined):
+ *
+ *  - the initial placement "horizon" may be used to limit the number of
+ *    two-qubit gates considered by the solver to the first N for each kernel;
+ *  - a timeout may be specified.
  */
 
 #pragma once
@@ -83,69 +64,158 @@ namespace qubits {
 namespace place {
 namespace detail {
 
-using namespace utils;
+/**
+ * Options structure for configuring the initial placement algorithm.
+ */
+struct InitialPlaceOptions {
 
-typedef enum InitialPlaceResults {
-    ipr_any,            // any mapping will do because there are no two-qubit gates in the circuit
-    ipr_current,        // current mapping will do because all two-qubit gates are NN
-    ipr_newmap,         // initial placement solution found a mapping
-    ipr_failed,         // initial placement solution failed
-    ipr_timedout        // initial placement solution timed out and thus failed
-} ipr_t;
+    /**
+     * Timeout for the MIP algorithm in seconds, or 0 to disable timeout.
+     */
+    utils::Real timeout = 0.0;
 
+    /**
+     * The placement algorithm will only consider the connectivity required to
+     * perform the first horizon two-qubit gates of a kernel. 0 means that all
+     * gates should be considered.
+     */
+    utils::UInt horizon = 0;
+
+    /**
+     * When set, any virtual qubits not used in the original kernel will also
+     * be mapped to real qubits.
+     */
+    utils::Bool map_all = false;
+
+};
+
+/**
+ * Enumeration of the possible algorithm outcomes.
+ */
+enum class InitialPlaceResult {
+
+    /**
+     * Any mapping will do, because there are no two-qubit gates in the circuit.
+     */
+    ANY,
+
+    /**
+     * The current mapping will do, because all two-qubit gates are
+     * nearest-neighbor.
+     */
+    CURRENT,
+
+    /**
+     * The placement algorithm found a mapping suitable for all two-qubit gates
+     * before the configured placement horizon.
+     */
+    NEW_MAP,
+
+    /**
+     * No solution exists that satisfies the constraints for all two-qubit gates
+     * before the configured placement horizon.
+     */
+    FAILED,
+
+    /**
+     * The algorithm timed out before a solution could be found.
+     */
+    TIMED_OUT
+
+};
+
+/**
+ * String conversion for initial placement results.
+ */
+std::ostream &operator<<(std::ostream &os, InitialPlaceResult ipr);
+
+/**
+ * Initial placement algorithm.
+ */
 class InitialPlace {
 private:
-                                          // parameters, constant for a kernel
-    plat::PlatformRef         platformp;  // platform
-    UInt                      nlocs;      // number of locations, real qubits; index variables k and l
-    UInt                      nvq;        // same range as nlocs; when not, take set from config and create v2i earlier
 
-                                          // remaining attributes are computed per circuit
-    UInt                      nfac;       // number of facilities, actually used virtual qubits; index variables i and j
-                                          // nfac <= nlocs: e.g. nlocs == 7, but only v2 and v5 are used; nfac then is 2
+    /**
+     * The options that we're being called with.
+     */
+    InitialPlaceOptions options;
+
+    /**
+     * Reference to the kernel we're operating on.
+     */
+    ir::KernelRef kernel;
+
+    /**
+     * Shorthand reference for the platform corresponding to the kernel.
+     */
+    plat::PlatformRef platform;
+
+    /**
+     * Number of locations, real qubits; index variables k and l.
+     */
+    utils::UInt nlocs = 0;
+
+    /**
+     * Same range as nlocs; when not, take set from config and create v2i
+     * earlier.
+     */
+    utils::UInt nvq = 0;
+
+    /**
+     * Number of facilities, actually used virtual qubits; index variables i and
+     * j. nfac <= nlocs: e.g. nlocs == 7, but only v2 and v5 are used; nfac then
+     * is 2.
+     */
+    utils::UInt nfac = 0;
+
+    /**
+     * Initial placement result.
+     */
+    InitialPlaceResult result = InitialPlaceResult::FAILED;
+
+    /**
+     * Total time taken by body() in seconds.
+     */
+    utils::Real time_taken = 0.0;
+
+    /**
+     * The actual algorithm body. Finds an initial placement of the virtual
+     * qubits for the configured kernel. The resulting placement is put in the
+     * provided qubit map. time_taken is set to the time taken by the actual
+     * algorithm.
+     */
+    InitialPlaceResult body(com::QubitMapping &v2r);
+
+    /**
+     * Wrapper around body() that runs it in a separate thread with a timeout.
+     *
+     * FIXME JvS: THIS IS *EXTREMELY* BROKEN. The thread doesn't actually stop
+     *  on timeout; it doesn't even *try* to stop. It just keeps running in the
+     *  background, and even continues poking around on the stack of the main
+     *  thread!
+     */
+    utils::Bool wrapper(com::QubitMapping &v2r);
 
 public:
 
-    Str ipr2string(ipr_t ipr);
-
-    // kernel-once initialization
-    void Init(const plat::PlatformRef &p);
-
-    // find an initial placement of the virtual qubits for the given circuit
-    // the resulting placement is put in the provided virt2real map
-    // result indicates one of the result indicators (ipr_t, see above)
-    void PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ipr_t &result, Real &iptimetaken);
-
-    // the above PlaceBody is a regular function using circ, and updating v2r and result before it returns;
-    // it implements Initial Placement as if the call to Place in the mapper called PlaceBody directly;
-    // because it may take a while to return, a new Place and a PlaceWrapper are put in between;
-    // the idea is to run PlaceBody in a detached thread, that, when ready, signals the main thread;
-    // the main thread waits for this signal with a timeout value;
-    // all this is done in a try block where the catch is called on this timeout;
-    // why exceptions are used, is not clear, so it was replaced by PlaceWrapper returning "timedout" or not
-    // and this works as well ...
-    Bool PlaceWrapper(
-        const ir::Circuit &circ,
-        com::QubitMapping &v2r,
-        ipr_t &result,
-        Real &iptimetaken,
-        const Str &initialplaceopt
+    /**
+     * Runs the algorithm to find an initial placement of the virtual qubits for
+     * the given kernel with the given options. v2r is updated by
+     * PlaceBody/PlaceWrapper when it has found a mapping.
+     */
+    InitialPlaceResult run(
+        const ir::KernelRef &k,
+        const InitialPlaceOptions &opt,
+        com::QubitMapping &v2r
     );
 
-    // find an initial placement of the virtual qubits for the given circuit as in Place
-    // put a timelimit on its execution specified by the initialplace option
-    // when it expires, result is set to ipr_timedout;
-    // details of how this is accomplished, can be found above;
-    // v2r is updated by PlaceBody/PlaceWrapper when it has found a mapping
-    void Place(
-        const ir::Circuit &circ,
-        com::QubitMapping &v2r,
-        ipr_t &result,
-        Real &iptimetaken,
-        const Str &initialplaceopt
-    );
+    /**
+     * Returns the amount of time taken by the mixed-integer-programming solver
+     * for the call to run() in seconds.
+     */
+    utils::Real get_time_taken() const;
 
-};  // end class InitialPlace
+};
 
 } // namespace detail
 } // namespace place

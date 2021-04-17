@@ -10,7 +10,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <lemon/lp.h>
-#include "ql/com/options.h"
 
 namespace ql {
 namespace pass {
@@ -20,36 +19,30 @@ namespace place {
 namespace detail {
 
 using namespace lemon;
+using namespace utils;
 
-Str InitialPlace::ipr2string(ipr_t ipr) {
+/**
+ * String conversion for initial placement results.
+ */
+std::ostream &operator<<(std::ostream &os, InitialPlaceResult ipr) {
     switch (ipr) {
-        case ipr_any:       return "any";
-        case ipr_current:   return "current";
-        case ipr_newmap:    return "newmap";
-        case ipr_failed:    return "failed";
-        case ipr_timedout:  return "timedout";
+        case InitialPlaceResult::ANY:       os << "any";        break;
+        case InitialPlaceResult::CURRENT:   os << "current";    break;
+        case InitialPlaceResult::NEW_MAP:   os << "newmap";     break;
+        case InitialPlaceResult::FAILED:    os << "failed";     break;
+        case InitialPlaceResult::TIMED_OUT: os << "timedout";   break;
     }
-    return "unknown";
-}
-
-// kernel-once initialization
-void InitialPlace::Init(const plat::PlatformRef &p) {
-    // QL_DOUT("InitialPlace Init ...");
-    platformp = p;
-    nlocs = p->qubit_count;
-    nvq = p->qubit_count;  // same range; when not, take set from config and create v2i earlier
-    // QL_DOUT("... number of real qubits (locations): " << nlocs);
-    QL_DOUT("Init: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq);
+    return os;
 }
 
 // find an initial placement of the virtual qubits for the given circuit
 // the resulting placement is put in the provided virt2real map
-// result indicates one of the result indicators (ipr_t, see above)
-void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ipr_t &result, Real &iptimetaken) {
-    QL_DOUT("InitialPlace.PlaceBody ...");
+// result indicates one of the result indicators (InitialPlaceResult, see above)
+InitialPlaceResult InitialPlace::body(com::QubitMapping &v2r) {
+    QL_DOUT("InitialPlace.body ...");
 
     // check validity of circuit
-    for (auto &gp : circ) {
+    for (auto &gp : kernel->c) {
         auto &q = gp->operands;
         if (q.size() > 2) {
             QL_FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
@@ -58,8 +51,6 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
 
     // only consider first number of two-qubit gates as specified by option initialplace2qhorizon
     // this influences refcount (so constraints) and nfac (number of facilities, so size of MIP problem)
-    Str initialplace2qhorizonopt = com::options::get("initialplace2qhorizon");
-    Int prefix = parse_int(initialplace2qhorizonopt);
 
     // compute ipusecount[] to know which virtual qubits are actually used
     // use it to compute v2i, mapping (non-contiguous) virtual qubit indices to contiguous facility indices
@@ -72,9 +63,9 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
     Vec<UInt> v2i;        // v2i[virtual qubit index v] -> index of facility i
     v2i.resize(nvq, com::UNDEFINED_QUBIT);// virtual qubit v not used by circuit as gate operand
 
-    Int twoqubitcount = 0;
-    for (auto &gp : circ) {
-        if (prefix == 0 || twoqubitcount < prefix) {
+    UInt twoqubitcount = 0;
+    for (auto &gp : kernel->c) {
+        if (options.horizon == 0 || twoqubitcount < options.horizon) {
             for (auto v : gp->operands) {
                 ipusecount[v] += 1;
             }
@@ -104,17 +95,17 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
     Bool currmap = true;   // true when in current map all two-qubit gates are NN
 
     twoqubitcount = 0;
-    for (auto &gp : circ) {
+    for (auto &gp : kernel->c) {
         auto &q = gp->operands;
         if (q.size() == 2) {
-            if (prefix == 0 || twoqubitcount < prefix) {
+            if (options.horizon == 0 || twoqubitcount < options.horizon) {
                 anymap = false;
                 refcount[v2i[q[0]]][v2i[q[1]]] += 1;
 
                 if (
                     v2r[q[0]] == com::UNDEFINED_QUBIT
                     || v2r[q[1]] == com::UNDEFINED_QUBIT
-                    || platformp->grid->get_distance(v2r[q[0]], v2r[q[1]]) > 1
+                    || platform->grid->get_distance(v2r[q[0]], v2r[q[1]]) > 1
                 ) {
                     currmap = false;
                 }
@@ -122,22 +113,20 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
             twoqubitcount++;
         }
     }
-    if (prefix != 0 && twoqubitcount >= prefix) {
-        QL_DOUT("InitialPlace: only considered " << prefix << " of " << twoqubitcount << " two-qubit gates, so resulting mapping is not exact");
+    if (options.horizon != 0 && twoqubitcount >= options.horizon) {
+        QL_DOUT("InitialPlace: only considered " << options.horizon << " of " << twoqubitcount << " two-qubit gates, so resulting mapping is not exact");
     }
     if (anymap) {
         QL_DOUT("InitialPlace: no two-qubit gates found, so no constraints, and any mapping is ok");
-        QL_DOUT("InitialPlace.PlaceBody [ANY MAPPING IS OK]");
-        result = ipr_any;
-        iptimetaken = 0.0;
-        return;
+        QL_DOUT("InitialPlace.body [ANY MAPPING IS OK]");
+        time_taken = 0.0;
+        return InitialPlaceResult::ANY;
     }
     if (currmap) {
         QL_DOUT("InitialPlace: in current map, all two-qubit gates are nearest neighbor, so current map is ok");
-        QL_DOUT("InitialPlace.PlaceBody [CURRENT MAPPING IS OK]");
-        result = ipr_current;
-        iptimetaken = 0.0;
-        return;
+        QL_DOUT("InitialPlace.body [CURRENT MAPPING IS OK]");
+        time_taken = 0.0;
+        return InitialPlaceResult::CURRENT;
     }
 
     // compute iptimetaken, start interval timer here
@@ -153,7 +142,7 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
         for (UInt k = 0; k < nlocs; k++) {
             for (UInt j = 0; j < nfac; j++) {
                 for (UInt l = 0; l < nlocs; l++) {
-                    costmax[i][k] += refcount[i][j] * (platformp->grid->get_distance(k, l) - 1);
+                    costmax[i][k] += refcount[i][j] * (platform->grid->get_distance(k, l) - 1);
                 }
             }
         }
@@ -249,14 +238,14 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
             Bool started = false;
             for (UInt j = 0; j < nfac; j++) {
                 for (UInt l = 0; l < nlocs; l++) {
-                    left += refcount[i][j] * platformp->grid->get_distance(k, l) * x[j][l];
-                    if (refcount[i][j] * platformp->grid->get_distance(k, l) != 0) {
+                    left += refcount[i][j] * platform->grid->get_distance(k, l) * x[j][l];
+                    if (refcount[i][j] * platform->grid->get_distance(k, l) != 0) {
                         if (started) {
                             lefts += " + ";
                         } else {
                             started = true;
                         }
-                        lefts += to_string(refcount[i][j] * platformp->grid->get_distance(k, l));
+                        lefts += to_string(refcount[i][j] * platform->grid->get_distance(k, l));
                         lefts += " * x[";
                         lefts += to_string(j);
                         lefts += "][";
@@ -313,14 +302,14 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
     QL_DOUT("InitialPlace: solving the problem, this may take a while ...");
     QL_DOUT("..2 nvq=" << nvq);
     Mip::SolveExitStatus s;
-    QL_DOUT("Just before solve: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq);
+    QL_DOUT("Just before solve: platformp=" << platform.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq);
     QL_DOUT("Just before solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
     QL_DOUT("..2b nvq=" << nvq);
     {
         s = mip.solve();
     }
     QL_DOUT("..3 nvq=" << nvq);
-    QL_DOUT("Just after solve: platformp=" << platformp.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq);
+    QL_DOUT("Just after solve: platformp=" << platform.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq);
     QL_DOUT("Just after solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
     QL_ASSERT(nvq == nlocs);         // consistency check, mainly to let it crash
 
@@ -328,7 +317,7 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
     QL_DOUT("..4 nvq=" << nvq);
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     duration<Real> time_span = t2 - t1;
-    iptimetaken = time_span.count();
+    time_taken = time_span.count();
     QL_DOUT("..5 nvq=" << nvq);
 
     // QL_DOUT("... determine result of solving");
@@ -336,9 +325,8 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
     QL_DOUT("..6 nvq=" << nvq);
     if (s != Mip::SOLVED || pt != Mip::OPTIMAL) {
         QL_DOUT("... InitialPlace: no (optimal) solution found; solve returned:" << s << " type returned:" << pt);
-        result = ipr_failed;
-        QL_DOUT("InitialPlace.PlaceBody [FAILED, DID NOT FIND MAPPING]");
-        return;
+        QL_DOUT("InitialPlace.body [FAILED, DID NOT FIND MAPPING]");
+        return InitialPlaceResult::FAILED;
     }
     QL_DOUT("..7 nvq=" << nvq);
 
@@ -377,8 +365,7 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
         QL_DOUT("... end loop body over nfac");
     }
 
-    auto mapinitone2oneopt = com::options::get("mapinitone2one");
-    if (mapinitone2oneopt == "yes") {
+    if (options.map_all) {
         QL_IF_LOG_DEBUG {
             QL_DOUT("... correct location of unused mapped virtual qubits to be an unused location");
             QL_DOUT("... result Virt2Real map of InitialPlace before mapping unused mapped virtual qubits");
@@ -414,30 +401,33 @@ void InitialPlace::PlaceBody(const ir::Circuit &circ, com::QubitMapping &v2r, ip
         QL_DOUT("... final result Virt2Real map of InitialPlace");
         v2r.dump_state();
     }
-    result = ipr_newmap;
-    QL_DOUT("InitialPlace.PlaceBody [SUCCESS, FOUND MAPPING]");
+    QL_DOUT("InitialPlace.body [SUCCESS, FOUND MAPPING]");
+    return InitialPlaceResult::NEW_MAP;
 }
 
-// the above PlaceBody is a regular function using circ, and updating v2r and result before it returns;
-// it implements Initial Placement as if the call to Place in the mapper called PlaceBody directly;
-// because it may take a while to return, a new Place and a PlaceWrapper are put in between;
-// the idea is to run PlaceBody in a detached thread, that, when ready, signals the main thread;
-// the main thread waits for this signal with a timeout value;
-// all this is done in a try block where the catch is called on this timeout;
-// why exceptions are used, is not clear, so it was replaced by PlaceWrapper returning "timedout" or not
-// and this works as well ...
-Bool InitialPlace::PlaceWrapper(
-    const ir::Circuit &circ,
-    com::QubitMapping &v2r,
-    ipr_t &result,
-    Real &iptimetaken,
-    const Str &initialplaceopt
-) {
-    QL_DOUT("InitialPlace.PlaceWrapper called");
+/**
+ * Wrapper around body() that runs it in a separate thread with a timeout.
+ *
+ * FIXME JvS: THIS IS *EXTREMELY* BROKEN. The thread doesn't actually stop
+ *  on timeout; it doesn't even *try* to stop. It just keeps running in the
+ *  background, and even continues poking around on the stack of the main
+ *  thread!
+ */
+Bool InitialPlace::wrapper(com::QubitMapping &v2r) {
+    throw Exception(
+        "Initial placement with timeout is disabled, because its current "
+        "implementation is completely broken. On timeout, the entire process "
+        "OpenQL is running in would go into an undefined state that can do "
+        "anything from continuing with no problem at all to deleting system32, "
+        "because the worker thread will keep running in the background, poking "
+        "around in memory it doesn't own as it does."
+    );
+
+    QL_DOUT("InitialPlace.wrapper called");
     std::mutex  m;
     std::condition_variable cv;
 
-    // prepare timeout
+    /*// prepare timeout
     Bool throwexception = initialplaceopt.at(initialplaceopt.size() - 1) == 'x';
     Str waittime = throwexception
                          ? initialplaceopt.substr(0, initialplaceopt.size() - 1)
@@ -450,38 +440,38 @@ Bool InitialPlace::PlaceWrapper(
         default:
             QL_FATAL("Unknown value of option 'initialplace'='" << initialplaceopt << "'.");
     }
-    iptimetaken = waitseconds;    // pessimistic, in case of timeout, otherwise it is corrected
+    time_taken = waitseconds;    // pessimistic, in case of timeout, otherwise it is corrected*/
 
     // v2r and result are allocated on stack of main thread by some ancestor so be careful with threading
-    std::thread t([&cv, this, &circ, &v2r, &result, &iptimetaken]()
+    std::thread t([&cv, this, &v2r]()
         {
-            QL_DOUT("InitialPlace.PlaceWrapper subthread about to call PlaceBody");
-            PlaceBody(circ, v2r, result, iptimetaken);
-            QL_DOUT("InitialPlace.PlaceBody returned in subthread; about to signal the main thread");
+            QL_DOUT("InitialPlace.wrapper subthread about to call body");
+            result = body(v2r);
+            QL_DOUT("InitialPlace.body returned in subthread; about to signal the main thread");
             cv.notify_one();        // by this, the main thread awakes from cv.wait_for without timeout
-            QL_DOUT("InitialPlace.PlaceWrapper subthread after signaling the main thread, and is about to die");
+            QL_DOUT("InitialPlace.wrapper subthread after signaling the main thread, and is about to die");
         }
     );
-    QL_DOUT("InitialPlace.PlaceWrapper main code created thread; about to call detach on it");
+    QL_DOUT("InitialPlace.wrapper main code created thread; about to call detach on it");
     t.detach();
-    QL_DOUT("InitialPlace.PlaceWrapper main code detached thread");
+    QL_DOUT("InitialPlace.wrapper main code detached thread");
     {
-        std::chrono::seconds maxwaittime(waitseconds);
+        std::chrono::milliseconds maxwaittime(static_cast<utils::UInt>(options.timeout * 1000));
         std::unique_lock<std::mutex> l(m);
-        QL_DOUT("InitialPlace.PlaceWrapper main code starts waiting with timeout of " << waitseconds << " seconds");
+        QL_DOUT("InitialPlace.wrapper main code starts waiting with timeout of " << options.timeout << " seconds");
         if (cv.wait_for(l, maxwaittime) == std::cv_status::timeout) {
-            QL_DOUT("InitialPlace.PlaceWrapper main code awoke from waiting with timeout");
-            if (throwexception) {
+            QL_DOUT("InitialPlace.wrapper main code awoke from waiting with timeout");
+            /*if (throwexception) {
                 QL_DOUT("InitialPlace: timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
                 QL_FATAL("Initial placement timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
             }
-            QL_DOUT("InitialPlace.PlaceWrapper about to return timedout==true");
+            QL_DOUT("InitialPlace.wrapper about to return timedout==true");*/
             return true;
         }
-        QL_DOUT("InitialPlace.PlaceWrapper main code awoke from waiting without timeout, from signal sent by InitialPlace.PlaceWrapper subthread just before its death");
+        QL_DOUT("InitialPlace.PlaceWrapper main code awoke from waiting without timeout, from signal sent by InitialPlace.wrapper subthread just before its death");
     }
 
-    QL_DOUT("InitialPlace.PlaceWrapper about to return timedout==false");
+    QL_DOUT("InitialPlace.wrapper about to return timedout==false");
     return false;
 }
 
@@ -490,36 +480,65 @@ Bool InitialPlace::PlaceWrapper(
 // when it expires, result is set to ipr_timedout;
 // details of how this is accomplished, can be found above;
 // v2r is updated by PlaceBody/PlaceWrapper when it has found a mapping
-void InitialPlace::Place(
-    const ir::Circuit &circ,
-    com::QubitMapping &v2r,
-    ipr_t &result,
-    Real &iptimetaken,
-    const Str &initialplaceopt
+InitialPlaceResult InitialPlace::run(
+    const ir::KernelRef &k,
+    const InitialPlaceOptions &opt,
+    com::QubitMapping &v2r
 ) {
-    com::QubitMapping   v2r_orig = v2r;
+
+    // Initialize ourselves for the given kernel.
+    options = opt;
+    kernel = k;
+    platform = kernel->platform;
+    nlocs = platform->qubit_count;
+    nvq = platform->qubit_count;  // same range; when not, take set from config and create v2i earlier
+    nfac = 0;
+    result = InitialPlaceResult::FAILED;
+    time_taken = 0.0;
+
+    QL_DOUT("Init: platformp=" << platform.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq);
 
     QL_DOUT("InitialPlace.Place ...");
-    if (initialplaceopt == "yes") {
-        // do initial placement without time limit
-        QL_DOUT("InitialPlace.Place calling PlaceBody without time limit");
-        PlaceBody(circ, v2r, result, iptimetaken);
-        // v2r reflects new mapping, if any found, otherwise unchanged
-        QL_DOUT("InitialPlace.Place [done, no time limit], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+    if (options.timeout <= 0.0) {
+
+        // Do initial placement without a time limit.
+        QL_DOUT("InitialPlace.Place calling body without time limit");
+        body(v2r);
+        QL_DOUT("InitialPlace.Place [done, no time limit], result=" << result << " iptimetaken=" << time_taken << " seconds");
+
     } else {
-        Bool timedout;
-        timedout = PlaceWrapper(circ, v2r, result, iptimetaken, initialplaceopt);
 
-        if (timedout) {
-            result = ipr_timedout;
-            QL_DOUT("InitialPlace.Place [done, TIMED OUT, NO MAPPING FOUND], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+        // Save original virtual to real qubit map in case we get a timeout, so
+        // we can restore the original.
+        auto v2r_orig = v2r;
 
-            v2r = v2r_orig; // v2r may have got corrupted when timed out during v2r updating
-        } else {
-            // v2r reflects new mapping, if any found, otherwise unchanged
-            QL_DOUT("InitialPlace.Place [done, not timed out], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+        // Run the wrapper with timeout.
+        auto timed_out = wrapper(v2r);
+
+        // Replace garbage results with real values if there was a timeout.
+        if (timed_out) {
+            v2r = v2r_orig;
+            result = InitialPlaceResult::TIMED_OUT;
         }
+
+        // Print debug output.
+        if (timed_out) {
+            QL_DOUT("InitialPlace.Place [done, TIMED OUT, NO MAPPING FOUND], result=" << result << " iptimetaken=" << time_taken << " seconds");
+        } else {
+            QL_DOUT("InitialPlace.Place [done, not timed out], result=" << result << " iptimetaken=" << time_taken << " seconds");
+        }
+
     }
+
+    return result;
+}
+
+/**
+ * Returns the amount of time taken by the mixed-integer-programming solver
+ * for the call to run() in seconds.
+ */
+utils::Real InitialPlace::get_time_taken() const {
+    return time_taken;
 }
 
 } // namespace detail
