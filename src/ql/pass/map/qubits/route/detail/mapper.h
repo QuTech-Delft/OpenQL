@@ -19,6 +19,7 @@
 #include "ql/ir/ir.h"
 #include "ql/com/qubit_mapping.h"
 #include "ql/pass/sch/schedule/detail/scheduler.h"
+#include "options.h"
 
 namespace ql {
 namespace pass {
@@ -110,6 +111,7 @@ class FreeCycle {
 private:
 
     plat::PlatformRef        platformp;   // platform description
+    OptionsRef               options;     // parsed mapper pass options
     utils::UInt              nq;          // map is (nq+nb) long; after initialization, will always be the same
     utils::UInt              nb;          // bregs are in map (behind qubits) to track dependences around conditions
                                           // FIXME JvS: why qubits and bregs, but not cregs?
@@ -129,7 +131,7 @@ public:
     // default constructor was deleted because it cannot construct resource_manager_t without parameters
     FreeCycle();
 
-    void Init(const plat::PlatformRef &p);
+    void Init(const plat::PlatformRef &p, const OptionsRef &opt);
 
     // depth of the FreeCycle map
     // equals the max of all entries minus the min of all entries
@@ -214,6 +216,7 @@ private:
     utils::UInt                 ct;         // cycle time, multiplier from cycles to nano-seconds
     plat::PlatformRef           platformp;  // platform describing resources for scheduling
     ir::KernelRef               kernelp;    // current kernel for creating gates
+    OptionsRef                  options;    // parsed mapper pass options
 
     com::QubitMapping           v2r;        // state: current Virt2Real map, imported/exported to kernel
     FreeCycle                   fc;         // state: FreeCycle map (including resource_manager) of this Past
@@ -240,7 +243,7 @@ public:
     Past();
 
     // past initializer
-    void Init(const plat::PlatformRef &p, const ir::KernelRef &k);
+    void Init(const plat::PlatformRef &p, const ir::KernelRef &k, const OptionsRef &opt);
 
     // import Past's v2r from v2r_value
     void ImportV2r(const com::QubitMapping &v2r_value);
@@ -413,6 +416,7 @@ class Alter {
 public:
     plat::PlatformRef       platformp;   // descriptions of resources for scheduling
     ir::KernelRef           kernelp;     // kernel pointer to allow calling kernel private methods
+    OptionsRef              options;     // parsed mapper pass options
     utils::UInt             nq;          // width of Past and Virt2Real map is number of real qubits
     utils::UInt             ct;          // cycle time, multiplier from cycles to nano-seconds
 
@@ -431,7 +435,7 @@ public:
 
     // Alter initializer
     // This should only be called after a virgin construction and not after cloning a path.
-    void Init(const plat::PlatformRef &p, const ir::KernelRef &k);
+    void Init(const plat::PlatformRef &p, const ir::KernelRef &k, const OptionsRef &opt);
 
     // printing facilities of Paths
     // print path as hd followed by [0->1->2]
@@ -453,7 +457,7 @@ public:
     // add to a max of maxnumbertoadd swap gates for the current path to the given past
     // this past can be a path-local one or the main past
     // after having added them, schedule the result into that past
-    void AddSwaps(Past &past, const utils::Str &mapselectswapsopt) const;
+    void AddSwaps(Past &past, SwapSelectionMode mapselectswapsopt) const;
 
     // compute cycle extension of the current alternative in prevPast relative to the given base past
     //
@@ -521,6 +525,7 @@ public:
 class Future {
 public:
     plat::PlatformRef                       platformp;
+    OptionsRef                              options;        // parsed mapper pass options
     utils::Ptr<Scheduler>                   schedp;         // a pointer, since dependence graph doesn't change
     ir::Circuit                             input_gatepv;   // input circuit when not using scheduler based avlist
 
@@ -529,7 +534,7 @@ public:
     ir::Circuit::iterator                   input_gatepp;   // state: alternative iterator in input_gatepv
 
     // just program wide initialization
-    void Init(const plat::PlatformRef &p);
+    void Init(const plat::PlatformRef &p, const OptionsRef &opt);
 
     // Set/switch input to the provided circuit
     // nq, nc and nb are parameters because nc/nb may not be provided by platform but by kernel
@@ -626,9 +631,10 @@ class Mapper {
 private:
                                             // Initialized by Mapper::Init
                                             // OpenQL wide configuration, all constant after initialization
-    plat::PlatformRef       platformp;     // current platform: topology and gate definitions
+    plat::PlatformRef       platformp;      // current platform: topology and gate definitions
     ir::KernelRef           kernelp;        // (copy of) current kernel (class) with free private circuit and methods
                                             // primarily to create gates in Past; Past is part of Mapper and of each Alter
+    OptionsRef              options;        // parsed mapper pass options
 
     utils::UInt             nq;             // number of qubits in the platform, number of real qubits
     utils::UInt             nc;             // number of cregs in the platform, number of classical registers
@@ -736,7 +742,7 @@ private:
     //   - option mapselectmaxlevel: max level of recursion to use, where inf indicates no maximum
     // - maptiebreak option indicates which one to take when several (still) remain
     // result is returned in resa
-    void SelectAlter(utils::List<Alter> &la, Alter &resa, Future &future, Past &past, Past &basePast, utils::Int level);
+    void SelectAlter(utils::List<Alter> &la, Alter &resa, Future &future, Past &past, Past &basePast, utils::UInt level);
 
     // Given the states of past and future
     // map all mappable gates and find the non-mappable ones
@@ -761,7 +767,7 @@ public:
     // lots could be split off for the whole program, once that is needed
     //
     // initialization for a particular kernel is separate (in Map entry)
-    void Init(const plat::PlatformRef &p);
+    void Init(const plat::PlatformRef &p, const OptionsRef &opt);
 
 };
 

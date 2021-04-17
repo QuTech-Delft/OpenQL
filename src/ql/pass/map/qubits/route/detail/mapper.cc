@@ -5,7 +5,6 @@
 #include "mapper.h"
 
 #include "ql/utils/filesystem.h"
-#include "ql/com/options.h"
 #include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
 
 namespace ql {
@@ -34,11 +33,12 @@ FreeCycle::FreeCycle() {
     QL_DOUT("Constructing FreeCycle");
 }
 
-void FreeCycle::Init(const plat::PlatformRef &p) {
+void FreeCycle::Init(const plat::PlatformRef &p, const OptionsRef &opt) {
     QL_DOUT("FreeCycle::Init()");
     auto rm = plat::resource::Manager::from_defaults(p);   // allocated here and copied below to rm because of platform parameter
                                                            // JvS: I have no idea what ^ means
     QL_DOUT("... created FreeCycle Init local resource_manager");
+    options = opt;
     platformp = p;
     nq = platformp->qubit_count;
     nb = platformp->breg_count;
@@ -114,8 +114,7 @@ Bool FreeCycle::IsFirstOperandEarlier(UInt r0, UInt r1) const {
 // will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
 // is really a short-cut ignoring config file and perhaps several other details
 Bool FreeCycle::IsFirstSwapEarliest(UInt fr0, UInt fr1, UInt sr0, UInt sr1) const {
-    Str mapreverseswapopt = options::get("mapreverseswap");
-    if (mapreverseswapopt == "yes") {
+    if (options->reverse_swap_if_better) {
         if (fcv[fr0] < fcv[fr1]) {
             UInt  tmp = fr1; fr1 = fr0; fr0 = tmp;
         }
@@ -157,8 +156,7 @@ UInt FreeCycle::StartCycleNoRc(const ir::GateRef &g) const {
 UInt FreeCycle::StartCycle(const ir::GateRef &g) const {
     UInt startCycle = StartCycleNoRc(g);
 
-    auto mapopt = options::get("mapper");
-    if (mapopt == "baserc" || mapopt == "minextendrc") {
+    if (options->heuristic == Heuristic::BASE_RC || options->heuristic == Heuristic::MIN_EXTEND_RC) {
         UInt baseStartCycle = startCycle;
 
         while (startCycle < ir::MAX_CYCLE) {
@@ -202,8 +200,7 @@ void FreeCycle::AddNoRc(const ir::GateRef &g, UInt startCycle) {
 void FreeCycle::Add(const ir::GateRef &g, UInt startCycle) {
     AddNoRc(g, startCycle);
 
-    auto mapopt = options::get("mapper");
-    if (mapopt == "baserc" || mapopt == "minextendrc") {
+    if (options->heuristic == Heuristic::BASE_RC || options->heuristic == Heuristic::MIN_EXTEND_RC) {
         rs->reserve(startCycle, g);
     }
 }
@@ -215,10 +212,11 @@ Past::Past() {
 }
 
 // past initializer
-void Past::Init(const plat::PlatformRef &p, const ir::KernelRef &k) {
+void Past::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const OptionsRef &opt) {
     QL_DOUT("Past::Init");
     platformp = p;
     kernelp = k;
+    options = opt;
 
     nq = platformp->qubit_count;
     nb = platformp->breg_count;
@@ -227,10 +225,10 @@ void Past::Init(const plat::PlatformRef &p, const ir::KernelRef &k) {
     QL_ASSERT(kernelp->c.empty());   // kernelp->c will be used by new_gate to return newly created gates into
     v2r.resize(                 // v2r initializtion until v2r is imported from context
         nq,
-        com::options::get("mapinitone2one") == "yes",
-        com::options::get("mapassumezeroinitstate") == "yes" ? QubitState::INITIALIZED : QubitState::NONE
+        options->initialize_one_to_one,
+        options->assume_initialized ? QubitState::INITIALIZED : QubitState::NONE
     );
-    fc.Init(platformp);         // fc starts off with all qubits free, is updated after schedule of each gate
+    fc.Init(platformp, options);// fc starts off with all qubits free, is updated after schedule of each gate
     waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
     lg.clear();                 // no gates scheduled yet in this past; after schedule of gate, it gets here
     outlg.clear();              // no gates output yet by flushing from or bypassing this past
@@ -451,9 +449,8 @@ void Past::GenMove(ir::Circuit &circ, UInt &r0, UInt &r1) {
 
     // first (optimistically) create the move circuit and add it to circ
     Bool created;
-    auto mapperopt = options::get("mapper");
     if (platformp->grid->is_inter_core_hop(r0, r1)) {
-        if (mapperopt == "maxfidelity") {
+        if (options->heuristic == Heuristic::MAX_FIDELITY) {
             created = new_gate(circ, "tmove_prim", {r0,r1});    // gates implementing tmove returned in circ
         } else {
             created = new_gate(circ, "tmove_real", {r0,r1});    // gates implementing tmove returned in circ
@@ -465,7 +462,7 @@ void Past::GenMove(ir::Circuit &circ, UInt &r0, UInt &r1) {
             }
         }
     } else {
-        if (mapperopt == "maxfidelity") {
+        if (options->heuristic == Heuristic::MAX_FIDELITY) {
             created = new_gate(circ, "move_prim", {r0,r1});    // gates implementing move returned in circ
         } else {
             created = new_gate(circ, "move_real", {r0,r1});    // gates implementing move returned in circ
@@ -499,14 +496,7 @@ void Past::GenMove(ir::Circuit &circ, UInt &r0, UInt &r1) {
         // when difference in extending circuit after scheduling initcirc+circ or just circ
         // is less equal than threshold cycles (0 would mean scheduling initcirc was for free),
         // commit to it, otherwise abort
-        Int threshold;
-        Str mapusemovesopt = options::get("mapusemoves");
-        if (mapusemovesopt == "yes") {
-            threshold = 0;
-        } else {
-            threshold = atoi(mapusemovesopt.c_str());
-        }
-        if (InsertionCost(initcirc, circ) <= threshold) {
+        if (InsertionCost(initcirc, circ) <= static_cast<utils::Int>(options->max_move_penalty)) {
             // so we go for it!
             // circ contains move; it must get the initcirc before it ...
             // do this by appending circ's gates to initcirc, and then swapping circ and initcirc content
@@ -559,8 +549,7 @@ void Past::AddSwap(UInt r0, UInt r1) {
     UInt v1 = v2r.get_virtual(r1);
 
     ir::Circuit circ;   // current kernel copy, clear circuit
-    Str mapusemovesopt = options::get("mapusemoves");
-    if (mapusemovesopt != "no" && (v2r.get_state(r0) != QubitState::LIVE ||
+    if (options->use_move_gates && (v2r.get_state(r0) != QubitState::LIVE ||
         v2r.get_state(r1) != QubitState::LIVE)) {
         GenMove(circ, r0, r1);
         created = circ.size()!=0;
@@ -577,8 +566,7 @@ void Past::AddSwap(UInt r0, UInt r1) {
     }
     if (!created) {
         // no move generated so do swap
-        Str mapreverseswapopt = options::get("mapreverseswap");
-        if (mapreverseswapopt == "yes") {
+        if (options->reverse_swap_if_better) {
             // swap(r0,r1) is about to be generated
             // it is functionally symmetrical,
             // but in the implementation r1 starts 1 cycle earlier than r0 (we should derive this from json file ...)
@@ -589,9 +577,8 @@ void Past::AddSwap(UInt r0, UInt r1) {
                 QL_DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
             }
         }
-        auto mapperopt = options::get("mapper");
         if (platformp->grid->is_inter_core_hop(r0, r1)) {
-            if (mapperopt == "maxfidelity") {
+            if (options->heuristic == Heuristic::MAX_FIDELITY) {
                 created = new_gate(circ, "tswap_prim", {r0,r1});    // gates implementing tswap returned in circ
             } else {
                 created = new_gate(circ, "tswap_real", {r0,r1});    // gates implementing tswap returned in circ
@@ -604,7 +591,7 @@ void Past::AddSwap(UInt r0, UInt r1) {
             }
             QL_DOUT("... tswap(q" << r0 << ",q" << r1 << ") ...");
         } else {
-            if (mapperopt == "maxfidelity") {
+            if (options->heuristic == Heuristic::MAX_FIDELITY) {
                 created = new_gate(circ, "swap_prim", {r0,r1});    // gates implementing swap returned in circ
             } else {
                 created = new_gate(circ, "swap_real", {r0,r1});    // gates implementing swap returned in circ
@@ -694,17 +681,15 @@ void Past::MakeReal(ir::GateRef &gp, ir::Circuit &circ) {
     Vec<UInt> real_qubits = gp->operands;// starts off as copy of virtual qubits!
     for (auto &qi : real_qubits) {
         qi = MapQubit(qi);          // and now they are real
-        auto mapprepinitsstateopt = options::get("mapprepinitsstate");
-        if (mapprepinitsstateopt == "yes" && (gname == "prepz" || gname == "Prepz")) {
+        if (options->assume_prep_only_initializes && (gname == "prepz" || gname == "Prepz")) {
             v2r.set_state(qi, QubitState::INITIALIZED);
         } else {
             v2r.set_state(qi, QubitState::LIVE);
         }
     }
 
-    auto mapperopt = options::get("mapper");
     Str real_gname = gname;
-    if (mapperopt == "maxfidelity") {
+    if (options->heuristic == Heuristic::MAX_FIDELITY) {
         QL_DOUT("MakeReal: with mapper==maxfidelity generate _prim");
         real_gname.append("_prim");
     } else {
@@ -838,16 +823,17 @@ Alter::Alter() {
 
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
-void Alter::Init(const plat::PlatformRef &p, const ir::KernelRef &k) {
+void Alter::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const OptionsRef &opt) {
     QL_DOUT("Alter::Init(number of qubits=" << p->qubit_count);
     platformp = p;
     kernelp = k;
+    options = opt;
 
     nq = platformp->qubit_count;
     ct = platformp->cycle_time;
     // total, fromSource and fromTarget start as empty vectors
-    past.Init(platformp, kernelp);      // initializes past to empty
-    didscore = false;                   // will not print score for now
+    past.Init(platformp, kernelp, options); // initializes past to empty
+    didscore = false;                       // will not print score for now
 }
 
 // printing facilities of Paths
@@ -947,11 +933,14 @@ void Alter::Add2Front(UInt q) {
 // add to a max of maxnumbertoadd swap gates for the current path to the given past
 // this past can be a path-local one or the main past
 // after having added them, schedule the result into that past
-void Alter::AddSwaps(Past &past, const Str &mapselectswapsopt) const {
+void Alter::AddSwaps(Past &past, SwapSelectionMode mapselectswapsopt) const {
     // QL_DOUT("Addswaps " << mapselectswapsopt);
-    if (mapselectswapsopt == "one" || mapselectswapsopt == "all") {
+    if (
+        mapselectswapsopt == SwapSelectionMode::ONE ||
+        mapselectswapsopt == SwapSelectionMode::ALL
+    ) {
         UInt  numberadded = 0;
-        UInt  maxnumbertoadd = ("one"==mapselectswapsopt ? 1 : ir::MAX_CYCLE);
+        UInt  maxnumbertoadd = (mapselectswapsopt == SwapSelectionMode::ONE ? 1 : ir::MAX_CYCLE);
 
         UInt  fromSourceQ;
         UInt  toSourceQ;
@@ -973,7 +962,7 @@ void Alter::AddSwaps(Past &past, const Str &mapselectswapsopt) const {
             numberadded++;
         }
     } else {
-        QL_ASSERT(mapselectswapsopt == "earliest");
+        QL_ASSERT(mapselectswapsopt == SwapSelectionMode::EARLIEST);
         if (fromSource.size() >= 2 && fromTarget.size() >= 2) {
             if (past.IsFirstSwapEarliest(fromSource[0], fromSource[1], fromTarget[0], fromTarget[1])) {
                 past.AddSwap(fromSource[0], fromSource[1]);
@@ -1006,11 +995,10 @@ void Alter::Extend(const Past &currPast, const Past &basePast) {
     // QL_DOUT("... clone past, add swaps, compute overall score and keep it all in current alternative");
     past = currPast;   // explicitly clone currPast to an alternative-local copy of it, Alter.past
     // QL_DOUT("... adding swaps to alternative-local past ...");
-    AddSwaps(past, "all");
+    AddSwaps(past, SwapSelectionMode::ALL);
     // QL_DOUT("... done adding/scheduling swaps to alternative-local past");
 
-    auto mapperopt = options::get("mapper");
-    if (mapperopt == "maxfidelity") {
+    if (options->heuristic == Heuristic::MAX_FIDELITY) {
         QL_FATAL("Mapper option maxfidelity has been disabled");
         // score = quick_fidelity(past.lg);
     } else {
@@ -1080,9 +1068,10 @@ void Alter::Split(List<Alter> &resla) const {
 }
 
 // just program wide initialization
-void Future::Init(const plat::PlatformRef &p) {
+void Future::Init(const plat::PlatformRef &p, const OptionsRef &opt) {
     // QL_DOUT("Future::Init ...");
     platformp = p;
+    options = opt;
     // QL_DOUT("Future::Init [DONE]");
 }
 
@@ -1092,16 +1081,15 @@ void Future::Init(const plat::PlatformRef &p) {
 void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler> &sched, UInt nq, UInt nc, UInt nb) {
     QL_DOUT("Future::SetCircuit ...");
     schedp = sched;
-    Str maplookaheadopt = options::get("maplookahead");
-    if (maplookaheadopt == "no") {
+    if (options->lookahead_mode == LookaheadMode::DISABLED) {
         input_gatepv = kernel->c;                               // copy to free original circuit to allow outputing to
         input_gatepp = input_gatepv.begin();                    // iterator set to start of input circuit copy
     } else {
         schedp->init(
             kernel,
-            com::options::get("output_dir") + "/",
-            com::options::get("scheduler_commute") == "yes",
-            com::options::get("scheduler_commute_rotations") == "yes"
+            options->output_prefix,
+            options->commute_multi_qubit,
+            options->commute_single_qubit
         );
 
         // and so also the original circuit can be output to after this
@@ -1114,13 +1102,13 @@ void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
         avlist.push_back(schedp->s);
         schedp->set_remaining(plat::resource::Direction::FORWARD);          // to know criticality
 
-        if (options::get("print_dot_graphs") == "yes") {
+        if (options->print_dot_graphs) {
             Str map_dot;
             StrStrm fname;
 
             schedp->get_dot(map_dot);
 
-            fname << options::get("output_dir") << "/" << kernel->name << "_" << "mapper" << ".dot";
+            fname << options->output_prefix << kernel->name << "_" << "mapper" << ".dot";
             QL_IOUT("writing " << "mapper" << " dependence graph dot file to '" << fname.str() << "' ...");
             OutFile(fname.str()).write(map_dot);
         }
@@ -1133,8 +1121,7 @@ void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
 // Return whether some non-quantum gate was found
 Bool Future::GetNonQuantumGates(List<ir::GateRef> &nonqlg) const {
     nonqlg.clear();
-    Str maplookaheadopt = options::get("maplookahead");
-    if (maplookaheadopt == "no") {
+    if (options->lookahead_mode == LookaheadMode::DISABLED) {
         ir::GateRef gp = *input_gatepp;
         if (ir::Circuit::const_iterator(input_gatepp) != input_gatepv.end()) {
             if (
@@ -1162,8 +1149,7 @@ Bool Future::GetNonQuantumGates(List<ir::GateRef> &nonqlg) const {
 // Return whether some gate was found
 Bool Future::GetGates(List<ir::GateRef> &qlg) const {
     qlg.clear();
-    Str maplookaheadopt = options::get("maplookahead");
-    if (maplookaheadopt == "no") {
+    if (options->lookahead_mode == LookaheadMode::DISABLED) {
         if (input_gatepp != input_gatepv.end()) {
             ir::GateRef gp = *input_gatepp;
             if (gp->operands.size() > 2) {
@@ -1186,8 +1172,7 @@ Bool Future::GetGates(List<ir::GateRef> &qlg) const {
 // Indicate that a gate currently in avlist has been mapped, can be taken out of the avlist
 // and its successors can be made available
 void Future::DoneGate(const ir::GateRef &gp) {
-    Str maplookaheadopt = options::get("maplookahead");
-    if (maplookaheadopt == "no") {
+    if (options->lookahead_mode == LookaheadMode::DISABLED) {
         input_gatepp = std::next(input_gatepp);
     } else {
         schedp->take_available(schedp->node.at(gp), avlist, scheduled,
@@ -1198,8 +1183,7 @@ void Future::DoneGate(const ir::GateRef &gp) {
 // Return gp in lag that is most critical (provided lookahead is enabled)
 // This is used in tiebreak, when every other option has failed to make a distinction.
 ir::GateRef Future::MostCriticalIn(const List<ir::GateRef> &lag) const {
-    Str maplookaheadopt = options::get("maplookahead");
-    if (maplookaheadopt == "no") {
+    if (options->lookahead_mode == LookaheadMode::DISABLED) {
         return lag.front();
     } else {
         return schedp->find_mostcritical(lag);
@@ -1221,7 +1205,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
         // add src to this path (so that it becomes a distance 0 path with one qubit, src)
         // and add the Alter to the result list
         Alter a;
-        a.Init(platformp, kernelp);
+        a.Init(platformp, kernelp, options);
         a.targetgp = gp;
         a.Add2Front(src);
         resla.push_back(a);
@@ -1251,7 +1235,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
 
     // rotate neighbor list nbl such that largest difference between angles of adjacent elements is beyond back()
     // this makes only sense when there is an underlying xy grid; when not, which can only be wp_all_shortest
-    QL_ASSERT(platformp->grid->has_coordinates() || com::options::get("mappathselect") != "borders");
+    QL_ASSERT(platformp->grid->has_coordinates() || options->path_selection_mode != PathSelectionMode::BORDERS);
     platformp->grid->sort_neighbors_by_angle(src, nbl);
     // subset to those neighbors that continue in direction(s) we want
     if (which == wp_left_shortest) {
@@ -1308,13 +1292,12 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, List<Al
     List<Alter> directla;  // list that will hold all not-yet-split Alters directly from src to tgt
 
     UInt budget = platformp->grid->get_min_hops(src, tgt);
-    Str mappathselectopt = options::get("mappathselect");
-    if (mappathselectopt == "all") {
+    if (options->path_selection_mode == PathSelectionMode::ALL) {
         GenShortestPaths(gp, src, tgt, budget, directla, wp_all_shortest);
-    } else if (mappathselectopt == "borders") {
+    } else if (options->path_selection_mode == PathSelectionMode::BORDERS) {
         GenShortestPaths(gp, src, tgt, budget, directla, wp_leftright_shortest);
     } else {
-        QL_FATAL("Unknown value of mapppathselect option " << mappathselectopt);
+        QL_FATAL("Unknown value of mapppathselect option " << options->path_selection_mode);
     }
 
     // QL_DOUT("about to split the paths");
@@ -1343,8 +1326,7 @@ void Mapper::GenAltersGate(const ir::GateRef &gp, List<Alter> &la, Past &past) {
 // and return the found variations by appending them to the given list of Alters, la
 // Depending on maplookahead only take first (most critical) gate or take all gates.
 void Mapper::GenAlters(const List<ir::GateRef> &lg, List<Alter> &la, Past &past) {
-    Str maplookaheadopt = options::get("maplookahead");
-    if (maplookaheadopt == "all") {
+    if (options->lookahead_mode == LookaheadMode::ALL) {
         // create alternatives for each gate in lg
         QL_DOUT("GenAlters, " << lg.size() << " 2q gates; create an alternative for each");
         for (auto gp : lg) {
@@ -1377,50 +1359,47 @@ Alter Mapper::ChooseAlter(List<Alter> &la, Future &future) {
         return la.front();
     }
 
-    Str maptiebreakopt = options::get("maptiebreak");
-    if (maptiebreakopt == "critical") {
-        List<ir::GateRef> lag;
-        for (auto &a : la) {
-            lag.push_back(a.targetgp);
-        }
-        ir::GateRef gp = future.MostCriticalIn(lag);
-        QL_ASSERT(!gp.empty());
-        for (auto &a : la) {
-            if (a.targetgp.get_ptr() == gp.get_ptr()) {
-                // QL_DOUT(" ... took first alternative with most critical target gate");
-                return a;
+    switch (options->tie_break_method) {
+        case TieBreakMethod::CRITICAL: {
+            List<ir::GateRef> lag;
+            for (auto &a : la) {
+                lag.push_back(a.targetgp);
             }
-        }
-        return la.front();
-    }
-
-    if (maptiebreakopt == "random") {
-        Alter res;
-        std::uniform_int_distribution<> dis(0, (la.size()-1));
-        UInt choice = dis(gen);
-        UInt i = 0;
-        for (auto &a : la) {
-            if (i == choice) {
-                res = a;
-                break;
+            ir::GateRef gp = future.MostCriticalIn(lag);
+            QL_ASSERT(!gp.empty());
+            for (auto &a : la) {
+                if (a.targetgp.get_ptr() == gp.get_ptr()) {
+                    // QL_DOUT(" ... took first alternative with most critical target gate");
+                    return a;
+                }
             }
-            i++;
+            return la.front();
         }
-        // QL_DOUT(" ... took random draw " << choice << " from 0.." << (la.size()-1));
-        return res;
-    }
 
-    if (maptiebreakopt == "last") {
-        // QL_DOUT(" ... took last " << " from 0.." << (la.size()-1));
-        return la.back();
-    }
+        case TieBreakMethod::RANDOM: {
+            Alter res;
+            std::uniform_int_distribution<> dis(0, (la.size()-1));
+            UInt choice = dis(gen);
+            UInt i = 0;
+            for (auto &a : la) {
+                if (i == choice) {
+                    res = a;
+                    break;
+                }
+                i++;
+            }
+            // QL_DOUT(" ... took random draw " << choice << " from 0.." << (la.size()-1));
+            return res;
+        }
 
-    if (maptiebreakopt == "first") {
-        // QL_DOUT(" ... took first " << " from 0.." << (la.size()-1));
-        return la.front();
-    }
+        case TieBreakMethod::LAST:
+            return la.back();
 
-    return la.front();  // to shut up gcc
+        case TieBreakMethod::FIRST:
+        default:
+            return la.front();
+
+    }
 }
 
 // Map the gate/operands of a gate that has been routed or doesn't require routing
@@ -1447,8 +1426,7 @@ void Mapper::CommitAlter(Alter &resa, Future &future, Past &past) {
     ir::GateRef resgp = resa.targetgp;   // and the 2q target gate then in resgp
     resa.DPRINT("... CommitAlter, alternative to commit, will add swaps and then map target 2q gate");
 
-    Str mapselectswapsopt = options::get("mapselectswaps");
-    resa.AddSwaps(past, mapselectswapsopt);
+    resa.AddSwaps(past, options->swap_selection_mode);
 
     // when only some swaps were added, the resgp might not yet be NN, so recheck
     auto &q = resgp->operands;
@@ -1577,7 +1555,7 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<ir::GateRef> &lg,
 //   - option mapselectmaxlevel: max level of recursion to use, where inf indicates no maximum
 // - maptiebreak option indicates which one to take when several (still) remain
 // result is returned in resa
-void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &past, Past &basePast, Int level) {
+void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &past, Past &basePast, UInt level) {
     // la are all alternatives we enter with
     QL_ASSERT(!la.empty());  // so there is always a result Alter
 
@@ -1585,15 +1563,18 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
     List<Alter> bla;       // best alternative subset of gla, suitable to choose result from
 
     QL_DOUT("SelectAlter ENTRY level=" << level << " from " << la.size() << " alternatives");
-    auto mapperopt = options::get("mapper");
-    if (mapperopt == "base" || mapperopt == "baserc") {
+    if (options->heuristic == Heuristic::BASE || options->heuristic == Heuristic::BASE_RC) {
         Alter::DPRINT("... SelectAlter base (equally good/best) alternatives:", la);
         resa = ChooseAlter(la, future);
         resa.DPRINT("... the selected Alter is");
         // QL_DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
         return;
     }
-    QL_ASSERT(mapperopt == "minextend" || mapperopt == "minextendrc" || mapperopt == "maxfidelity");
+    QL_ASSERT(
+        options->heuristic == Heuristic::MIN_EXTEND ||
+        options->heuristic == Heuristic::MIN_EXTEND_RC ||
+        options->heuristic == Heuristic::MAX_FIDELITY
+    );
 
     // Compute a.score of each alternative relative to basePast, and sort la on it, minimum first
     for (auto &a : la) {
@@ -1613,18 +1594,9 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
     gla.remove_if([this,la](const Alter& a) { return a.score != la.front().score; });
     UInt las = la.size();
     UInt glas = gla.size();
-    auto mapselectmaxwidthopt = options::get("mapselectmaxwidth");
-    if ("min" != mapselectmaxwidthopt) {
-        UInt keep = 1;
-        if (mapselectmaxwidthopt == "minplusone") {
-            keep = glas+1;
-        } else if (mapselectmaxwidthopt == "minplushalfmin") {
-            keep = glas+glas/2;
-        } else if (mapselectmaxwidthopt == "minplusmin") {
-            keep = glas*2;
-        } else if (mapselectmaxwidthopt == "all") {
-            keep = las;
-        }
+    Real keep_real = utils::max(1.0, utils::ceil(options->recursion_width_limit * glas));
+    UInt keep = (keep_real < static_cast<utils::Real>(utils::MAX)) ? static_cast<utils::UInt>(keep_real) : utils::MAX;
+    if (keep != glas) {
         if (keep < las) {
             gla = la;
             List<Alter>::iterator  ia;
@@ -1638,13 +1610,8 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
     // QL_DOUT("SelectAlter mapselectmaxwidth=" << mapselectmaxwidthopt << " level=" << level << " reduced la to gla");
     Alter::DPRINT("... SelectAlter good alternatives before recursion:", gla);
 
-    // Prepare for recursion;
-    // option mapselectmaxlevel indicates the maximum level of recursion (0 is no recursion)
-    auto mapselectmaxlevelstring = options::get("mapselectmaxlevel");
-    Int mapselectmaxlevel = (mapselectmaxlevelstring == "inf") ? ir::MAX_CYCLE : parse_int(mapselectmaxlevelstring);
-
     // When maxlevel has been reached, stop the recursion, and choose from the best minextend/maxfidelity alternatives
-    if (level >= mapselectmaxlevel) {
+    if (level >= options->recursion_depth_limit) {
         // Reduce list of good alternatives (gla) to list of minextend/maxfidelity best alternatives (bla)
         // and make a choice from that list to return as result
         bla = gla;
@@ -1685,8 +1652,7 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
 
         Bool    havegates;                  // are there still non-NN 2q gates to map?
         List<ir::GateRef> lg;            // list of non-NN 2q gates taken from avlist, as returned from MapMappableGates
-        Str maplookaheadopt = options::get("maplookahead");
-        Str maprecNN2qopt = options::get("maprecNN2q");
+
         // In recursion, look at option maprecNN2q:
         // - MapMappableGates with alsoNN2q==true is greedy and immediately maps each 1q and NN 2q gate
         // - MapMappableGates with alsoNN2q==false is not greedy, maps all 1q gates but not the (NN) 2q gates
@@ -1696,7 +1662,11 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
         // This creates more clear recursion: one 2q at a time instead of a possible empty set of NN2qs followed by a nonNN2q;
         // also when a NN2q is found, this is perfect; this is not seen when immediately mapping all NN2qs.
         // So goal is to prove that maprecNN2q should be no at this place, in the recursion step, but not at level 0!
-        Bool alsoNN2q = (maprecNN2qopt == "yes") && (maplookaheadopt == "noroutingfirst" || maplookaheadopt == "all");
+        Bool alsoNN2q = options->recurse_nn_two_qubit
+                     && (
+                         options->lookahead_mode == LookaheadMode::NO_ROUTING_FIRST
+                         || options->lookahead_mode == LookaheadMode::ALL
+                     );
         havegates = MapMappableGates(future_copy, past_copy, lg, alsoNN2q); // map all easy gates; remainder returned in lg
 
         if (havegates) {
@@ -1711,8 +1681,7 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
             // by this an alternative started bad may be compensated by deeper alts
         } else {
             QL_DOUT("... ... SelectAlter level=" << level << ", no gates to evaluate next; RECURSION BOTTOM");
-            auto mapperopt = options::get("mapper");
-            if (mapperopt == "maxfidelity") {
+            if (options->heuristic == Heuristic::MAX_FIDELITY) {
                 QL_FATAL("Mapper option maxfidelity has been disabled");
                 // a.score = quick_fidelity(past_copy.lg);
             } else {
@@ -1744,8 +1713,7 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
 // and past is the last past (top of recursion stack) relative to which the mapping is done.
 void Mapper::MapGates(Future &future, Past &past, Past &basePast) {
     List<ir::GateRef> lg;              // list of non-mappable gates taken from avlist, as returned from MapMappableGates
-    Str maplookaheadopt = options::get("maplookahead");
-    Bool alsoNN2q = (maplookaheadopt == "noroutingfirst" || maplookaheadopt == "all");
+    Bool alsoNN2q = (options->lookahead_mode == LookaheadMode::NO_ROUTING_FIRST || options->lookahead_mode == LookaheadMode::ALL);
     while (MapMappableGates(future, past, lg, alsoNN2q)) { // returns false when no gates remain
         // all gates in lg are two-qubit quantum gates that cannot be mapped
         // select which one(s) to (partially) route, according to one of the known strategies
@@ -1773,12 +1741,12 @@ void Mapper::MapCircuit(const ir::KernelRef &kernel, QubitMapping &v2r) {
     utils::Ptr<Scheduler> sched;
     sched.emplace();        // new scheduler instance (from src/scheduler.h) used for its dependence graph
 
-    future.Init(platformp);
+    future.Init(platformp, options);
     future.SetCircuit(kernel, sched, nq, nc, nb); // constructs depgraph, initializes avlist, ready for producing gates
     kernel->c.reset();      // future has copied kernel.c to private data; kernel.c ready for use by new_gate
     kernelp = kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
-    mainPast.Init(platformp, kernelp);  // mainPast and Past clones inside Alters ready for generating output schedules into
+    mainPast.Init(platformp, kernelp, options);  // mainPast and Past clones inside Alters ready for generating output schedules into
     mainPast.ImportV2r(v2r);    // give it the current mapping/state
     // mainPast.DPRINT("start mapping");
 
@@ -1805,7 +1773,7 @@ void Mapper::MakePrimitives(const ir::KernelRef &kernel) {
     kernel->c.reset();                          // kernel.c ready for use by new_gate
 
     Past mainPast;                              // output window in which gates are scheduled
-    mainPast.Init(platformp, kernelp);
+    mainPast.Init(platformp, kernelp, options);
 
     for (auto & gp : input_gatepv) {
         ir::Circuit tmpCirc;
@@ -1830,15 +1798,14 @@ void Mapper::Map(const ir::KernelRef &kernel) {
     QL_DOUT("... kernel original virtual number of qubits=" << kernel->qubit_count);
     kernelp.reset();            // no new_gates until kernel.c has been copied
 
-    auto mapassumezeroinitstateopt = options::get("mapassumezeroinitstate");
-    QL_DOUT("Mapper::Map before v2r.Init: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
+    QL_DOUT("Mapper::Map before v2r.Init: assume_initialized=" << options->assume_initialized);
 
     // unify all incoming v2rs into v2r to compute kernel input mapping;
     // but until inter-kernel mapping is implemented, take program initial mapping for it
     QubitMapping v2r{            // current mapping while mapping this kernel
         nq,
-        com::options::get("mapinitone2one") == "yes",
-        com::options::get("mapassumezeroinitstate") == "yes" ? QubitState::INITIALIZED : QubitState::NONE
+        options->initialize_one_to_one,
+        options->assume_initialized ? QubitState::INITIALIZED : QubitState::NONE
     };
     QL_IF_LOG_DEBUG {
         QL_DOUT("After initialization");
@@ -1847,24 +1814,18 @@ void Mapper::Map(const ir::KernelRef &kernel) {
 
     v2r_in = v2r;  // for reporting
 
-    Str initialplaceopt = options::get("initialplace");
-    if (initialplaceopt != "no") {
+    if (options->enable_mip_placer) {
 #ifdef INITIALPLACE
-        Str initialplace2qhorizonopt = options::get("initialplace2qhorizon");
-        QL_DOUT("InitialPlace: kernel=" << kernel->name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " [START]");
-        using namespace place_mip::detail;
+        QL_DOUT("InitialPlace: kernel=" << kernel->name << " timeout=" << options->mip_timeout << " horizon=" << options->mip_horizon << " [START]");
 
-        Options ipopt;
-        ipopt.map_all = com::options::get("mapinitone2one") == "yes";
-        ipopt.horizon = utils::parse_uint(initialplace2qhorizonopt);
-        ipopt.timeout = 0.0; // NOTE: BROKEN.
-        if (initialplaceopt != "yes") {
-            QL_WOUT("Initial placement with timeout is broken; running without timeout!");
-        }
+        place_mip::detail::Options ipopt;
+        ipopt.map_all = options->initialize_one_to_one;
+        ipopt.horizon = options->mip_horizon;
+        ipopt.timeout = options->mip_timeout;
 
-        Algorithm ip;
+        place_mip::detail::Algorithm ip;
         auto ipok = ip.run(kernel, ipopt, v2r); // compute mapping (in v2r) using ip model, may fail
-        QL_DOUT("InitialPlace: kernel=" << kernel->name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " result=" << ipok << " iptimetaken=" << ip.get_time_taken() << " seconds [DONE]");
+        QL_DOUT("InitialPlace: kernel=" << kernel->name << " timeout=" << options->mip_timeout << " horizon=" << options->mip_horizon << " result=" << ipok << " iptimetaken=" << ip.get_time_taken() << " seconds [DONE]");
 #else // ifdef INITIALPLACE
         QL_DOUT("InitialPlace support disabled during OpenQL build [DONE]");
         QL_WOUT("InitialPlace support disabled during OpenQL build [DONE]");
@@ -1877,7 +1838,7 @@ void Mapper::Map(const ir::KernelRef &kernel) {
 
     v2r_ip = v2r;  // for reporting
 
-    QL_DOUT("Mapper::Map before MapCircuit: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
+    QL_DOUT("Mapper::Map before MapCircuit: assume_initialized=" << options->assume_initialized);
 
     MapCircuit(kernel, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
     QL_IF_LOG_DEBUG {
@@ -1899,10 +1860,11 @@ void Mapper::Map(const ir::KernelRef &kernel) {
 // lots could be split off for the whole program, once that is needed
 //
 // initialization for a particular kernel is separate (in Map entry)
-void Mapper::Init(const plat::PlatformRef &p) {
+void Mapper::Init(const plat::PlatformRef &p, const OptionsRef &opt) {
     // QL_DOUT("Mapping initialization ...");
     // QL_DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
     platformp = p;
+    options = opt;
     nq = p->qubit_count;
     nc = p->creg_count;
     nb = p->breg_count;

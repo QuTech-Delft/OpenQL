@@ -302,6 +302,8 @@ MapperPass::MapperPass(const Str &name) : AbstractPass(name) {
  */
 void MapperPass::runOnProgram(const ir::ProgramRef &program) {
 
+    namespace detail = pass::map::qubits::route::detail;
+
     auto platform = program->platform;
     auto passname = getPassName();
 
@@ -316,8 +318,108 @@ void MapperPass::runOnProgram(const ir::ProgramRef &program) {
     report_statistics(program, platform, "in", passname, "# ");
     report_qasm(program, platform, "in", passname);
 
-    pass::map::qubits::route::detail::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
-    mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
+    // Build the options structure for the mapper.
+    detail::Options parsed_options;
+
+    parsed_options.output_prefix = com::options::get("output_dir") + "/";
+
+    if (mapopt == "base") {
+        parsed_options.heuristic = detail::Heuristic::BASE;
+    } else if (mapopt == "baserc") {
+        parsed_options.heuristic = detail::Heuristic::BASE_RC;
+    } else if (mapopt == "minextend") {
+        parsed_options.heuristic = detail::Heuristic::MIN_EXTEND;
+    } else if (mapopt == "minextendrc") {
+        parsed_options.heuristic = detail::Heuristic::MIN_EXTEND_RC;
+    } else if (mapopt == "maxfidelity") {
+        parsed_options.heuristic = detail::Heuristic::MAX_FIDELITY;
+    } else {
+        QL_ASSERT(false);
+    }
+
+    parsed_options.initialize_one_to_one = com::options::global["mapinitone2one"].as_bool();
+    parsed_options.assume_initialized = com::options::global["mapassumezeroinitstate"].as_bool();
+    parsed_options.assume_prep_only_initializes = com::options::global["mapprepinitsstate"].as_bool();
+
+    auto lookahead_mode = com::options::global["maplookahead"].as_str();
+    if (lookahead_mode == "no") {
+        parsed_options.lookahead_mode = detail::LookaheadMode::DISABLED;
+    } else if (lookahead_mode == "1qfirst") {
+        parsed_options.lookahead_mode = detail::LookaheadMode::ONE_QUBIT_GATE_FIRST;
+    } else if (lookahead_mode == "noroutingfirst") {
+        parsed_options.lookahead_mode = detail::LookaheadMode::NO_ROUTING_FIRST;
+    } else if (lookahead_mode == "all") {
+        parsed_options.lookahead_mode = detail::LookaheadMode::ALL;
+    } else {
+        QL_ASSERT(false);
+    }
+
+    auto path_selection_mode = com::options::global["mappathselect"].as_str();
+    if (path_selection_mode == "all") {
+        parsed_options.path_selection_mode = detail::PathSelectionMode::ALL;
+    } else if (path_selection_mode == "borders") {
+        parsed_options.path_selection_mode = detail::PathSelectionMode::BORDERS;
+    } else {
+        QL_ASSERT(false);
+    }
+
+    auto swap_selection_mode = com::options::global["mapselectswaps"].as_str();
+    if (swap_selection_mode == "one") {
+        parsed_options.swap_selection_mode = detail::SwapSelectionMode::ONE;
+    } else if (path_selection_mode == "all") {
+        parsed_options.swap_selection_mode = detail::SwapSelectionMode::ALL;
+    } else if (path_selection_mode == "earliest") {
+        parsed_options.swap_selection_mode = detail::SwapSelectionMode::EARLIEST;
+    } else {
+        QL_ASSERT(false);
+    }
+
+    parsed_options.recurse_nn_two_qubit = com::options::global["maprecNN2q"].as_bool();
+
+    if (com::options::global["mapselectmaxlevel"].as_str() == "inf") {
+        parsed_options.recursion_depth_limit = utils::MAX;
+    } else {
+        parsed_options.recursion_depth_limit = com::options::global["mapselectmaxlevel"].as_uint();
+    }
+
+    parsed_options.recursion_width_limit = com::options::global["mapselectmaxwidth"].as_real();
+
+    auto tie_break_method = com::options::global["maptiebreak"].as_str();
+    if (tie_break_method == "first") {
+        parsed_options.tie_break_method = detail::TieBreakMethod::FIRST;
+    } else if (tie_break_method == "last") {
+        parsed_options.tie_break_method = detail::TieBreakMethod::LAST;
+    } else if (tie_break_method == "random") {
+        parsed_options.tie_break_method = detail::TieBreakMethod::RANDOM;
+    } else if (tie_break_method == "critical") {
+        parsed_options.tie_break_method = detail::TieBreakMethod::CRITICAL;
+    } else {
+        QL_ASSERT(false);
+    }
+
+    auto use_moves = com::options::global["mapusemoves"].as_str();
+    if (use_moves == "no") {
+        parsed_options.use_move_gates = false;
+    } else if (use_moves == "yes") {
+        parsed_options.use_move_gates = true;
+        parsed_options.max_move_penalty = 0;
+    } else {
+        parsed_options.use_move_gates = true;
+        parsed_options.max_move_penalty = utils::parse_uint(use_moves);
+    }
+
+    parsed_options.reverse_swap_if_better = com::options::global["mapreverseswap"].as_bool();
+    parsed_options.commute_multi_qubit = com::options::global["scheduler_commute"].as_bool();
+    parsed_options.commute_single_qubit = com::options::global["scheduler_commute_rotations"].as_bool();
+    parsed_options.print_dot_graphs = com::options::global["print_dot_graphs"].as_bool();
+    parsed_options.enable_mip_placer = com::options::global["initialplace"].as_bool();
+    parsed_options.mip_horizon = com::options::global["initialplace2qhorizon"].as_uint();
+
+    detail::OptionsRef parsed_options_ref;
+    parsed_options_ref.emplace(parsed_options);
+
+    detail::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+    mapper.Init(platform, parsed_options_ref); // platform specifies number of real qubits, i.e. locations for virtual qubits
 
     UInt total_swaps = 0;        // for reporting, data is mapper specific
     UInt total_moves = 0;        // for reporting, data is mapper specific

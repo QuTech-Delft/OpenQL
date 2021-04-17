@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "ql/utils/ptr.h"
 #include "ql/com/options.h"
 #include "ql/pmgr/pass_types.h"
 
@@ -13,10 +14,22 @@ namespace map {
 namespace qubits {
 namespace route {
 
+namespace detail {
+class Options;
+} // namespace detail
+
+
 /**
  * Qubit router pass.
  */
 class RouteQubitsPass : public pmgr::pass_types::KernelTransformation {
+private:
+
+    /**
+     * Parsed options structure.
+     */
+    utils::Ptr<detail::Options> parsed_options;
+
 protected:
 
     /**
@@ -37,6 +50,15 @@ public:
         const utils::Str &instance_name,
         const utils::Str &type_name
     );
+
+    /**
+     * Builds the options structure for the mapper.
+     */
+    pmgr::pass_types::NodeType on_construct(
+        const utils::Ptr<const pmgr::PassFactory> &factory,
+        utils::List<pmgr::PassRef> &passes,
+        pmgr::condition::Ref &condition
+    ) override;
 
     /**
      * Runs the qubit router.

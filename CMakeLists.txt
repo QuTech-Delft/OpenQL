@@ -237,6 +237,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/schedule.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/place_mip/detail/algorithm.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/place_mip/place_mip.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/route/detail/options.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/route/detail/mapper.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/route/route.cc"
 

@@ -192,6 +192,9 @@ Options make_ql_options() {
     // Default-inserted initial/MIP placement pass behavior                   //
     //========================================================================//
 
+    // NOTE: actually still part of the router (i.e. the complete mapper
+    // implementation right now)
+
     options.add_enum(
         "initialplace",
         "When no compiler configuration file is specified, this controls "
