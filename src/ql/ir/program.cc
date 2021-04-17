@@ -149,6 +149,10 @@ void Program::add_program(const ProgramRef &p) {
     }
 }
 
+/**
+ * Adds a conditional kernel, conditioned by a classical operation via
+ * classical flow control.
+ */
 void Program::add_if(const KernelRef &k, const ClassicalOperation &cond) {
     // phi node
     auto kphi1 = KernelRef::make(k->name+"_if", platform, qubit_count, creg_count, breg_count);
@@ -181,6 +185,10 @@ void Program::add_if(const ProgramRef &p, const ClassicalOperation &cond) {
     kernels.add(kphi2);
 }
 
+/**
+ * Adds two conditional kernels, conditioned by a classical operation and
+ * its complement respectively via classical flow control.
+ */
 void Program::add_if_else(
     const KernelRef &k_if,
     const KernelRef &k_else,
@@ -253,6 +261,9 @@ void Program::add_if_else(
     phi_node_count++;
 }
 
+/**
+ * Adds a do-while loop with the given kernel as the body.
+ */
 void Program::add_do_while(const KernelRef &k, const ClassicalOperation &cond) {
     // phi node
     auto kphi1 = KernelRef::make(k->name+"_do_while"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
@@ -270,6 +281,9 @@ void Program::add_do_while(const KernelRef &k, const ClassicalOperation &cond) {
     phi_node_count++;
 }
 
+/**
+ * Adds a do-while loop with the given program as the body.
+ */
 void Program::add_do_while(const ProgramRef &p, const ClassicalOperation &cond) {
     // phi node
     auto kphi1 = KernelRef::make(p->name+"_do_while"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
@@ -287,6 +301,9 @@ void Program::add_do_while(const ProgramRef &p, const ClassicalOperation &cond) 
     phi_node_count++;
 }
 
+/**
+ * Adds a static for loop with the given kernel as the body.
+ */
 void Program::add_for(const KernelRef &k, UInt iterations) {
     // phi node
     auto kphi1 = KernelRef::make(k->name+"_for"+ to_string(phi_node_count) +"_start", platform, qubit_count, creg_count, breg_count);
@@ -304,17 +321,10 @@ void Program::add_for(const KernelRef &k, UInt iterations) {
     phi_node_count++;
 }
 
+/**
+ * Adds a static for loop with the given program as the body.
+ */
 void Program::add_for(const ProgramRef &p, UInt iterations) {
-    Bool nested_for = false;
-//     for (auto &k : p.kernels) {
-//         if (k.type == kernel_type_t::FOR_START) {
-//             nested_for = true;
-//         }
-//     }
-    if (nested_for) {
-        QL_EOUT("Nested for not yet implemented !");
-        throw Exception("Error: Nested for not yet implemented !", false);
-    }
 
     // optimize away if zero iterations
     if (iterations <= 0) {
@@ -346,6 +356,9 @@ static std::string dirnameOf(const std::string& fname) {
      return (std::string::npos == pos) ? "" : fname.substr(0, pos)+"/";
 }
 
+/**
+ * Entry point for compilation.
+ */
 void Program::compile() {
     QL_IOUT("compiling " << name << " ...");
     QL_WOUT("compiling " << name << " ...");
@@ -387,44 +400,25 @@ void Program::compile() {
     compiler.reset();
 }
 
-void Program::print_interaction_matrix() const {
-    QL_IOUT("printing interaction matrix...");
-
-    for (const auto &k : kernels) {
-        ql::com::InteractionMatrix imat(k);
-        Str mstr = imat.get_string();
-        std::cout << mstr << std::endl;
-    }
-}
-
-void Program::write_interaction_matrix() const {
-    for (const auto &k : kernels) {
-        ql::com::InteractionMatrix imat(k);
-        Str mstr = imat.get_string();
-
-        Str fname = com::options::get("output_dir") + "/" + k->get_name() + "InteractionMatrix.dat";
-        QL_IOUT("writing interaction matrix to '" << fname << "' ...");
-        OutFile(fname).write(mstr);
-    }
-}
-
+/**
+ * Set sweep points output filename.
+ *
+ * TODO: shouldn't be here.
+ */
 void Program::set_config_file(const utils::Str &config_file) {
     sweep_points_config_file_name = config_file;
 }
 
+/**
+ * Set sweep points output data.
+ *
+ * TODO: shouldn't be here, and especially not with this parameter pack.
+ */
 void Program::set_sweep_points(const Real *swpts, UInt size) {
     sweep_points.clear();
     for (UInt i = 0; i < size; ++i) {
         sweep_points.push_back(swpts[i]);
     }
-}
-
-KernelRefs &Program::get_kernels() {
-    return kernels;
-}
-
-const KernelRefs &Program::get_kernels() const {
-    return kernels;
 }
 
 } // namespace ir

@@ -116,25 +116,68 @@ public:
      */
     void add_program(const ProgramRef &p);
 
+    /**
+     * Adds a conditional kernel, conditioned by a classical operation via
+     * classical flow control.
+     */
     void add_if(const KernelRef &k, const ClassicalOperation &cond);
+
+    /**
+     * Adds a conditional program, conditioned by a classical operation via
+     * classical flow control.
+     */
     void add_if(const ProgramRef &p, const ClassicalOperation &cond);
+
+    /**
+     * Adds two conditional kernels, conditioned by a classical operation and
+     * its complement respectively via classical flow control.
+     */
     void add_if_else(const KernelRef &k_if, const KernelRef &k_else, const ClassicalOperation &cond);
+
+    /**
+     * Adds two conditional programs, conditioned by a classical operation and
+     * its complement respectively via classical flow control.
+     */
     void add_if_else(const ProgramRef &p_if, const ProgramRef &p_else, const ClassicalOperation &cond);
+
+    /**
+     * Adds a do-while loop with the given kernel as the body.
+     */
     void add_do_while(const KernelRef &k, const ClassicalOperation &cond);
+
+    /**
+     * Adds a do-while loop with the given program as the body.
+     */
     void add_do_while(const ProgramRef &p, const ClassicalOperation &cond);
+
+    /**
+     * Adds a static for loop with the given kernel as the body.
+     */
     void add_for(const KernelRef &k, utils::UInt iterations);
+
+    /**
+     * Adds a static for loop with the given program as the body.
+     */
     void add_for(const ProgramRef &p, utils::UInt iterations);
 
+    /**
+     * Entry point for compilation.
+     */
     void compile();
 
-    void print_interaction_matrix() const;
-    void write_interaction_matrix() const;
-
+    /**
+     * Set sweep points output filename.
+     *
+     * TODO: shouldn't be here.
+     */
     void set_config_file(const utils::Str &config_file);
-    void set_sweep_points(const utils::Real *swpts, utils::UInt size);
 
-    KernelRefs &get_kernels();
-    const KernelRefs &get_kernels() const;
+    /**
+     * Set sweep points output data.
+     *
+     * TODO: shouldn't be here, and especially not with this parameter pack.
+     */
+    void set_sweep_points(const utils::Real *swpts, utils::UInt size);
 
 };
 

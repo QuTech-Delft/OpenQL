@@ -5,6 +5,8 @@
 #include "ql/com/interaction_matrix.h"
 
 #include <iomanip>
+#include "ql/utils/filesystem.h"
+#include "ql/com/options.h"
 
 namespace ql {
 namespace com {
@@ -67,6 +69,39 @@ Str InteractionMatrix::get_string() const {
 #undef ALIGNMENT
 
     return ss.str();
+}
+
+/**
+ * Constructs interaction matrices for each kernel in the program, and
+ * reports the results to the given output stream.
+ */
+void InteractionMatrix::dump_for_program(
+    const ir::ProgramRef &program,
+    std::ostream &os
+) {
+    for (const auto &k : program->kernels) {
+        InteractionMatrix imat(k);
+        utils::Str mstr = imat.get_string();
+        os << mstr << std::endl;
+    }
+}
+
+/**
+ * Same as dump_for_program(), but writes the result to files in the
+ * current globally-configured output directory, using the names
+ * "<kernel>InteractionMatrix.dat".
+ */
+void InteractionMatrix::write_for_program(
+    const ir::ProgramRef &program
+) {
+    for (const auto &k : program->kernels) {
+        ql::com::InteractionMatrix imat(k);
+        utils::Str mstr = imat.get_string();
+
+        utils::Str fname = com::options::get("output_dir") + "/" + k->get_name() + "InteractionMatrix.dat";
+        QL_IOUT("writing interaction matrix to '" << fname << "' ...");
+        utils::OutFile(fname).write(mstr);
+    }
 }
 
 } // namespace com

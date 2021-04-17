@@ -2,6 +2,7 @@
  * Implementation for Python interface classes.
  */
 
+#include <ql/com/interaction_matrix.h>
 #include "openql_i.h"
 
 #include "ql/version.h"
@@ -454,11 +455,13 @@ std::string Program::microcode() const {
 }
 
 void Program::print_interaction_matrix() const {
-    program->print_interaction_matrix();
+    QL_IOUT("printing interaction matrix...");
+
+    ql::com::InteractionMatrix::dump_for_program(program);
 }
 
 void Program::write_interaction_matrix() const {
-    program->write_interaction_matrix();
+    ql::com::InteractionMatrix::write_for_program(program);
 }
 
 cQasmReader::cQasmReader(

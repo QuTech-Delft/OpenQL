@@ -139,7 +139,7 @@ void " << program->name << "(){\n";
         out_c << "rs" << program->creg_count-1 << ";\n\n";
     }
 
-    for (auto kernel : program->get_kernels()) {
+    for (auto kernel : program->kernels) {
          QL_DOUT("          Kernel name: " << kernel->get_name() << " with type = " << (int)kernel->type);
 
         switch (kernel->type) {

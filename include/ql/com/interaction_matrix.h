@@ -56,6 +56,19 @@ public:
      */
     utils::Str get_string() const;
 
+    /**
+     * Constructs interaction matrices for each kernel in the program, and
+     * reports the results to the given output stream.
+     */
+    static void dump_for_program(const ir::ProgramRef &program, std::ostream &os=std::cout);
+
+    /**
+     * Same as dump_for_program(), but writes the result to files in the
+     * current globally-configured output directory, using the names
+     * "<kernel>InteractionMatrix.dat".
+     */
+    static void write_for_program(const ir::ProgramRef &program);
+
 };
 
 } // namespace com
