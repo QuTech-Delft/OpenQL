@@ -40,7 +40,7 @@ void Past::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const Option
         options->initialize_one_to_one,
         options->assume_initialized ? QubitState::INITIALIZED : QubitState::NONE
     );
-    fc.Init(platformp, options);// fc starts off with all qubits free, is updated after schedule of each gate
+    fc.initialize(platformp, options);// fc starts off with all qubits free, is updated after schedule of each gate
     waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
     lg.clear();                 // no gates scheduled yet in this past; after schedule of gate, it gets here
     outlg.clear();              // no gates output yet by flushing from or bypassing this past
@@ -61,18 +61,18 @@ void Past::ExportV2r(QubitMapping &v2r_destination) const {
 
 void Past::DFcPrint() const {
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
-        fc.Print("");
+        fc.print("");
     }
 }
 
 void Past::FcPrint() const{
-    fc.Print("");
+    fc.print("");
 }
 
 void Past::Print(const Str &s) const {
     std::cout << "... Past " << s << ":";
     v2r.dump_state();
-    fc.Print("");
+    fc.print("");
     // QL_DOUT("... list of gates in past");
     for (auto &gp : lg) {
         QL_DOUT("[" << cycle.at(gp) << "] " << gp->qasm());
@@ -107,8 +107,8 @@ void Past::Schedule() {
         // the construction of a dependence graph and a set of schedulable gates
         FreeCycle   tryfc = fc;
         for (auto trygp_it = waitinglg.begin(); trygp_it != waitinglg.end(); ++trygp_it) {
-            UInt tryStartCycle = tryfc.StartCycle(*trygp_it);
-            tryfc.Add(*trygp_it, tryStartCycle);
+            UInt tryStartCycle = tryfc.get_start_cycle(*trygp_it);
+            tryfc.add(*trygp_it, tryStartCycle);
 
             if (tryStartCycle < startCycle) {
                 startCycle = tryStartCycle;
@@ -120,7 +120,7 @@ void Past::Schedule() {
 
         // add this gate to the maps, scheduling the gate (doing the cycle assignment)
         // QL_DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
-        fc.Add(gp, startCycle);
+        fc.add(gp, startCycle);
         cycle.set(gp) = startCycle; // cycle[gp] is private to this past but gp->cycle is private to gp
         gp->cycle = startCycle; // so gp->cycle gets assigned for each alter' Past and finally definitively for mainPast
         // QL_DOUT("... set " << gp->qasm() << " at cycle " << startCycle);
@@ -160,23 +160,23 @@ Int Past::InsertionCost(const ir::Circuit &initcirc, const ir::Circuit &circ) co
     UInt initmax;
     FreeCycle   tryfcinit = fc;
     for (auto &trygp : initcirc) {
-        UInt tryStartCycle = tryfcinit.StartCycleNoRc(trygp);
-        tryfcinit.AddNoRc(trygp, tryStartCycle);
+        UInt tryStartCycle = tryfcinit.get_start_cycle_no_rc(trygp);
+        tryfcinit.add_no_rc(trygp, tryStartCycle);
     }
     for (auto &trygp : circ) {
-        UInt tryStartCycle = tryfcinit.StartCycleNoRc(trygp);
-        tryfcinit.AddNoRc(trygp, tryStartCycle);
+        UInt tryStartCycle = tryfcinit.get_start_cycle_no_rc(trygp);
+        tryfcinit.add_no_rc(trygp, tryStartCycle);
     }
-    initmax = tryfcinit.Max(); // this reflects the depth afterwards
+    initmax = tryfcinit.get_max(); // this reflects the depth afterwards
 
     // then fake-schedule circ alone in a private freecyclemap
     UInt max;
     FreeCycle tryfc = fc;
     for (auto &trygp : circ) {
-        UInt tryStartCycle = tryfc.StartCycleNoRc(trygp);
-        tryfc.AddNoRc(trygp, tryStartCycle);
+        UInt tryStartCycle = tryfc.get_start_cycle_no_rc(trygp);
+        tryfc.add_no_rc(trygp, tryStartCycle);
     }
-    max = tryfc.Max();         // this reflects the depth afterwards
+    max = tryfc.get_max();         // this reflects the depth afterwards
 
     QL_DOUT("... scheduling init+circ => depth " << initmax << ", scheduling circ => depth " << max << ", init insertion cost " << (initmax - max));
     QL_ASSERT(initmax >= max);
@@ -242,7 +242,7 @@ void Past::new_gate_exception(const Str &s) {
 // will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
 // is really a short-cut ignoring config file and perhaps several other details
 Bool Past::IsFirstSwapEarliest(UInt fr0, UInt fr1, UInt sr0, UInt sr1) const {
-    return fc.IsFirstSwapEarliest(fr0, fr1, sr0, sr1);
+    return fc.is_first_swap_earliest(fr0, fr1, sr0, sr1);
 }
 
 // generate a move into circ with parameters r0 and r1 (which GenMove may reverse)
@@ -384,7 +384,7 @@ void Past::AddSwap(UInt r0, UInt r1) {
             // but in the implementation r1 starts 1 cycle earlier than r0 (we should derive this from json file ...)
             // so swap(r0,r1) with interchanged operands might get scheduled 1 cycle earlier;
             // when fcv[r0] < fcv[r1], r0 is free for use 1 cycle earlier than r1, so a reversal will help
-            if (fc.IsFirstOperandEarlier(r0, r1)) {
+            if (fc.is_first_operand_earlier(r0, r1)) {
                 UInt  tmp = r1; r1 = r0; r0 = tmp;
                 QL_DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
             }
@@ -591,7 +591,7 @@ void Past::MakePrimitive(ir::GateRef &gp, ir::Circuit &circ) const {
 }
 
 UInt Past::MaxFreeCycle() const {
-    return fc.Max();
+    return fc.get_max();
 }
 
 // nonq and q gates follow separate flows through Past:

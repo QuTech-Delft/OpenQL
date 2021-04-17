@@ -46,71 +46,126 @@ namespace detail {
 class FreeCycle {
 private:
 
-    plat::PlatformRef        platformp;   // platform description
-    OptionsRef               options;     // parsed mapper pass options
-    utils::UInt              nq;          // map is (nq+nb) long; after initialization, will always be the same
-    utils::UInt              nb;          // bregs are in map (behind qubits) to track dependences around conditions
-                                          // FIXME JvS: why qubits and bregs, but not cregs?
-    utils::UInt              ct;          // multiplication factor from cycles to nano-seconds (unit of duration)
-    utils::Vec<utils::UInt>  fcv;         // fcv[real qubit index i]: qubit i is free from this cycle on
-    utils::Opt<plat::resource::State> rs; // actual resources occupied by scheduled gates
+    /**
+     * Platform description.
+     */
+    plat::PlatformRef platform;
 
+    /**
+     * Parsed mapper pass options.
+     */
+    OptionsRef options;
 
-    // access free cycle value of qubit q[i] or breg b[i-nq]
-    utils::UInt &operator[](utils::UInt i);
-    const utils::UInt &operator[](utils::UInt i) const;
+    /**
+     * Map is (nq+nb) long; after initialization, will always be the same.
+     */
+    utils::UInt nq;
+
+    /**
+     * Bregs are in map (behind qubits) to track dependences around conditions.
+     *
+     * FIXME JvS: why qubits and bregs, but not cregs?
+     */
+    utils::UInt nb;
+
+    /**
+     * Multiplication factor from cycles to nano-seconds (unit of duration).
+     */
+    utils::UInt ct;
+
+    /**
+     * fcv[real qubit index i]: qubit i is free from this cycle on.
+     */
+    utils::Vec<utils::UInt> fcv;
+
+    /**
+     * Actual resources occupied by scheduled gates, if resource-aware.
+     */
+    utils::Opt<plat::resource::State> rs;
 
 public:
 
-    // explicit FreeCycle constructor
-    // needed for virgin construction
-    // default constructor was deleted because it cannot construct resource_manager_t without parameters
-    FreeCycle();
+    /**
+     * Initializes this FreeCycle object.
+     */
+    void initialize(const plat::PlatformRef &p, const OptionsRef &opt);
 
-    void Init(const plat::PlatformRef &p, const OptionsRef &opt);
+    /**
+     * Returns the depth of the FreeCycle map. Equals the max of all entries
+     * minus the min of all entries not used yet; would be used to compute the
+     * max size of a top window on the past.
+     */
+    utils::UInt get_depth() const;
 
-    // depth of the FreeCycle map
-    // equals the max of all entries minus the min of all entries
-    // not used yet; would be used to compute the max size of a top window on the past
-    utils::UInt Depth() const;
+    /**
+     * Returns the minimum cycle of the FreeCycle map; equals the min of all
+     * entries.
+     */
+    utils::UInt get_min() const;
 
-    // min of the FreeCycle map equals the min of all entries;
-    utils::UInt Min() const;
+    /**
+     * Returns the maximum cycle of the FreeCycle map; equals the max of all
+     * entries.
+     */
+    utils::UInt get_max() const;
 
-    // max of the FreeCycle map equals the max of all entries;
-    utils::UInt Max() const;
+    /**
+     * Prints the state of this object along with the given string.
+     */
+    void print(const utils::Str &s) const;
 
-    void DPRINT(const utils::Str &s) const;
-    void Print(const utils::Str &s) const;
+    /**
+     * Calls print only if the loglevel is debug or more verbose.
+     */
+    void debug_print(const utils::Str &s) const;
 
-    // return whether gate with first operand qubit r0 can be scheduled earlier than with operand qubit r1
-    utils::Bool IsFirstOperandEarlier(utils::UInt r0, utils::UInt r1) const;
+    /**
+     * Return whether gate with first operand qubit r0 can be scheduled earlier
+     * than with operand qubit r1.
+     */
+    utils::Bool is_first_operand_earlier(utils::UInt r0, utils::UInt r1) const;
 
-    // will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
-    // is really a short-cut ignoring config file and perhaps several other details
-    utils::Bool IsFirstSwapEarliest(utils::UInt fr0, utils::UInt fr1, utils::UInt sr0, utils::UInt sr1) const;
+    /**
+     * Returns whether swap(fr0,fr1) start earlier than a swap(sr0,sr1). Is
+     * really a short-cut ignoring config file and perhaps several other
+     * details.
+     */
+    utils::Bool is_first_swap_earliest(
+        utils::UInt fr0,
+        utils::UInt fr1,
+        utils::UInt sr0,
+        utils::UInt sr1
+    ) const;
 
-    // when we would schedule gate g, what would be its start cycle? return it
-    // gate operands are real qubit indices and breg indices
-    // is purely functional, doesn't affect state
-    utils::UInt StartCycleNoRc(const ir::GateRef &g) const;
+    /**
+     * Returns what the start cycle would be when we would schedule the given
+     * gate, ignoring resource constraints. gate operands are real qubit indices
+     * and breg indices. Purely functional, doesn't affect state.
+     */
+    utils::UInt get_start_cycle_no_rc(const ir::GateRef &g) const;
 
-    // when we would schedule gate g, what would be its start cycle? return it
-    // gate operands are real qubit indices and breg indices
-    // is purely functional, doesn't affect state
-    utils::UInt StartCycle(const ir::GateRef &g) const;
+    /**
+     * Returns what the start cycle would be when we would schedule the given
+     * gate. gate operands are real qubit indices and breg indices. Purely
+     * functional, doesn't affect state.
+     */
+    utils::UInt get_start_cycle(const ir::GateRef &g) const;
 
-    // schedule gate g in the FreeCycle map
-    // gate operands are real qubit indices and breg indices
-    // the FreeCycle map is updated, not the resource map
-    // this is done, because AddNoRc is used to represent just gate dependences, avoiding a build of a dep graph
-    void AddNoRc(const ir::GateRef &g, utils::UInt startCycle);
+    /**
+     * Schedules the given gate in the FreeCycle map. The gate operands are real
+     * qubit indices and breg indices. The FreeCycle map is updated, but not the
+     * resource map. This is done because add_no_rc is used to represent just gate
+     * dependencies, avoiding a build of a dep graph.
+     */
+    void add_no_rc(const ir::GateRef &g, utils::UInt startCycle);
 
-    // schedule gate g in the FreeCycle and resource maps
-    // gate operands are real qubit indices and breg indices
-    // both the FreeCycle map and the resource map are updated
-    // startcycle must be the result of an earlier StartCycle call (with rc!)
-    void Add(const ir::GateRef &g, utils::UInt startCycle);
+    /**
+     * Schedules the given gate in the FreeCycle and resource maps. The gate
+     * operands are real qubit indices and breg indices. Both the FreeCycle map
+     * and the resource map are updated. startcycle must be the result of an
+     * earlier StartCycle call (with rc!)
+     */
+    void add(const ir::GateRef &g, utils::UInt start_cycle);
 
 };
 
