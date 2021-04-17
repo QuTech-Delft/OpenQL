@@ -155,6 +155,11 @@ public:
     utils::Str virtual_to_string(utils::UInt virt) const;
 
     /**
+     * Returns a string representation of the virtual to physical qubit mapping.
+     */
+    utils::Str mapping_to_string() const;
+
+    /**
      * Dumps the state of this mapping to the given stream.
      */
     void dump_state(std::ostream &os=std::cout, const utils::Str &line_prefix="") const;

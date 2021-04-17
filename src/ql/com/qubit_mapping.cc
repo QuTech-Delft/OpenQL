@@ -218,6 +218,30 @@ utils::Str QubitMapping::virtual_to_string(utils::UInt virt) const {
 }
 
 /**
+ * Returns a string representation of the virtual to physical qubit mapping.
+ */
+Str QubitMapping::mapping_to_string() const {
+    StrStrm ss;
+    Bool any = false;
+    for (UInt virt = 0; virt < nq; virt++) {
+        auto real = virt_to_real[virt];
+        if (real != UNDEFINED_QUBIT) {
+            if (!any) {
+                any = true;
+            } else {
+                ss << ", ";
+            }
+            ss << virt << " => " << real;
+        }
+    }
+    if (!any) {
+        return "empty";
+    } else {
+        return ss.str();
+    }
+}
+
+/**
  * Dumps the state of this mapping to the given stream.
  */
 void QubitMapping::dump_state(std::ostream &os, const utils::Str &line_prefix) const {

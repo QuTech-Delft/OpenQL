@@ -11,7 +11,7 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace place {
+namespace place_mip {
 
 /**
  * Initial qubit placer pass.

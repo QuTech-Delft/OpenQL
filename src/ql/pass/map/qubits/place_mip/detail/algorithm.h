@@ -61,13 +61,13 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace place {
+namespace place_mip {
 namespace detail {
 
 /**
  * Options structure for configuring the initial placement algorithm.
  */
-struct InitialPlaceOptions {
+struct Options {
 
     /**
      * Timeout for the MIP algorithm in seconds, or 0 to disable timeout.
@@ -92,7 +92,7 @@ struct InitialPlaceOptions {
 /**
  * Enumeration of the possible algorithm outcomes.
  */
-enum class InitialPlaceResult {
+enum class Result {
 
     /**
      * Any mapping will do, because there are no two-qubit gates in the circuit.
@@ -127,18 +127,18 @@ enum class InitialPlaceResult {
 /**
  * String conversion for initial placement results.
  */
-std::ostream &operator<<(std::ostream &os, InitialPlaceResult ipr);
+std::ostream &operator<<(std::ostream &os, Result ipr);
 
 /**
  * Initial placement algorithm.
  */
-class InitialPlace {
+class Algorithm {
 private:
 
     /**
      * The options that we're being called with.
      */
-    InitialPlaceOptions options;
+    Options options;
 
     /**
      * Reference to the kernel we're operating on.
@@ -171,7 +171,7 @@ private:
     /**
      * Initial placement result.
      */
-    InitialPlaceResult result = InitialPlaceResult::FAILED;
+    Result result = Result::FAILED;
 
     /**
      * Total time taken by body() in seconds.
@@ -184,7 +184,7 @@ private:
      * provided qubit map. time_taken is set to the time taken by the actual
      * algorithm.
      */
-    InitialPlaceResult body(com::QubitMapping &v2r);
+    Result body(com::QubitMapping &v2r);
 
     /**
      * Wrapper around body() that runs it in a separate thread with a timeout.
@@ -203,9 +203,9 @@ public:
      * the given kernel with the given options. v2r is updated by
      * PlaceBody/PlaceWrapper when it has found a mapping.
      */
-    InitialPlaceResult run(
+    Result run(
         const ir::KernelRef &k,
-        const InitialPlaceOptions &opt,
+        const Options &opt,
         com::QubitMapping &v2r
     );
 

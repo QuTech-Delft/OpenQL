@@ -6,7 +6,7 @@
 
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
-#include "ql/pass/map/qubits/place/detail/initial_place.h"
+#include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
 
 namespace ql {
 namespace pass {
@@ -1851,9 +1851,9 @@ void Mapper::Map(const ir::KernelRef &kernel) {
 #ifdef INITIALPLACE
         Str initialplace2qhorizonopt = options::get("initialplace2qhorizon");
         QL_DOUT("InitialPlace: kernel=" << kernel->name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " [START]");
-        using namespace place::detail;
+        using namespace place_mip::detail;
 
-        InitialPlaceOptions ipopt;
+        Options ipopt;
         ipopt.map_all = com::options::get("mapinitone2one") == "yes";
         ipopt.horizon = utils::parse_uint(initialplace2qhorizonopt);
         ipopt.timeout = 0.0; // NOTE: BROKEN.
@@ -1861,7 +1861,7 @@ void Mapper::Map(const ir::KernelRef &kernel) {
             QL_WOUT("Initial placement with timeout is broken; running without timeout!");
         }
 
-        InitialPlace ip;
+        Algorithm ip;
         auto ipok = ip.run(kernel, ipopt, v2r); // compute mapping (in v2r) using ip model, may fail
         QL_DOUT("InitialPlace: kernel=" << kernel->name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " result=" << ipok << " iptimetaken=" << ip.get_time_taken() << " seconds [DONE]");
 #else // ifdef INITIALPLACE

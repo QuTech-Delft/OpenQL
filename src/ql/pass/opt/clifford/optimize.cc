@@ -53,7 +53,7 @@ utils::Int CliffordOptimizePass::run(
     auto cycles_saved = detail::Clifford().optimize_kernel(kernel);
     ana::statistics::AdditionalStats::push(
         kernel,
-        utils::to_string(cycles_saved) + "cycles saved by " + context.full_pass_name
+        utils::to_string(cycles_saved) + " cycles saved by " + context.full_pass_name
     );
     return cycles_saved;
 }

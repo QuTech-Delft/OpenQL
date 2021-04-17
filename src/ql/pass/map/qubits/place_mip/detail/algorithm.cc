@@ -2,9 +2,9 @@
  * Initial placement engine.
  */
 
-#ifdef INITIALPLACE
+#include "algorithm.h"
 
-#include "initial_place.h"
+#ifdef INITIALPLACE
 
 #include <thread>
 #include <mutex>
@@ -15,7 +15,7 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace place {
+namespace place_mip {
 namespace detail {
 
 using namespace lemon;
@@ -24,13 +24,13 @@ using namespace utils;
 /**
  * String conversion for initial placement results.
  */
-std::ostream &operator<<(std::ostream &os, InitialPlaceResult ipr) {
+std::ostream &operator<<(std::ostream &os, Result ipr) {
     switch (ipr) {
-        case InitialPlaceResult::ANY:       os << "any";        break;
-        case InitialPlaceResult::CURRENT:   os << "current";    break;
-        case InitialPlaceResult::NEW_MAP:   os << "newmap";     break;
-        case InitialPlaceResult::FAILED:    os << "failed";     break;
-        case InitialPlaceResult::TIMED_OUT: os << "timedout";   break;
+        case Result::ANY:       os << "any";        break;
+        case Result::CURRENT:   os << "current";    break;
+        case Result::NEW_MAP:   os << "newmap";     break;
+        case Result::FAILED:    os << "failed";     break;
+        case Result::TIMED_OUT: os << "timedout";   break;
     }
     return os;
 }
@@ -38,7 +38,7 @@ std::ostream &operator<<(std::ostream &os, InitialPlaceResult ipr) {
 // find an initial placement of the virtual qubits for the given circuit
 // the resulting placement is put in the provided virt2real map
 // result indicates one of the result indicators (InitialPlaceResult, see above)
-InitialPlaceResult InitialPlace::body(com::QubitMapping &v2r) {
+Result Algorithm::body(com::QubitMapping &v2r) {
     QL_DOUT("InitialPlace.body ...");
 
     // check validity of circuit
@@ -120,13 +120,13 @@ InitialPlaceResult InitialPlace::body(com::QubitMapping &v2r) {
         QL_DOUT("InitialPlace: no two-qubit gates found, so no constraints, and any mapping is ok");
         QL_DOUT("InitialPlace.body [ANY MAPPING IS OK]");
         time_taken = 0.0;
-        return InitialPlaceResult::ANY;
+        return Result::ANY;
     }
     if (currmap) {
         QL_DOUT("InitialPlace: in current map, all two-qubit gates are nearest neighbor, so current map is ok");
         QL_DOUT("InitialPlace.body [CURRENT MAPPING IS OK]");
         time_taken = 0.0;
-        return InitialPlaceResult::CURRENT;
+        return Result::CURRENT;
     }
 
     // compute iptimetaken, start interval timer here
@@ -326,7 +326,7 @@ InitialPlaceResult InitialPlace::body(com::QubitMapping &v2r) {
     if (s != Mip::SOLVED || pt != Mip::OPTIMAL) {
         QL_DOUT("... InitialPlace: no (optimal) solution found; solve returned:" << s << " type returned:" << pt);
         QL_DOUT("InitialPlace.body [FAILED, DID NOT FIND MAPPING]");
-        return InitialPlaceResult::FAILED;
+        return Result::FAILED;
     }
     QL_DOUT("..7 nvq=" << nvq);
 
@@ -402,7 +402,7 @@ InitialPlaceResult InitialPlace::body(com::QubitMapping &v2r) {
         v2r.dump_state();
     }
     QL_DOUT("InitialPlace.body [SUCCESS, FOUND MAPPING]");
-    return InitialPlaceResult::NEW_MAP;
+    return Result::NEW_MAP;
 }
 
 /**
@@ -413,7 +413,7 @@ InitialPlaceResult InitialPlace::body(com::QubitMapping &v2r) {
  *  background, and even continues poking around on the stack of the main
  *  thread!
  */
-Bool InitialPlace::wrapper(com::QubitMapping &v2r) {
+Bool Algorithm::wrapper(com::QubitMapping &v2r) {
     throw Exception(
         "Initial placement with timeout is disabled, because its current "
         "implementation is completely broken. On timeout, the entire process "
@@ -428,6 +428,9 @@ Bool InitialPlace::wrapper(com::QubitMapping &v2r) {
     std::condition_variable cv;
 
     /*// prepare timeout
+    JvS: this is the responsibility of the initial placement caller now. If/when
+     timeout logic is reintroduced, it should be moved. Same for the exception
+     throw.
     Bool throwexception = initialplaceopt.at(initialplaceopt.size() - 1) == 'x';
     Str waittime = throwexception
                          ? initialplaceopt.substr(0, initialplaceopt.size() - 1)
@@ -480,9 +483,9 @@ Bool InitialPlace::wrapper(com::QubitMapping &v2r) {
 // when it expires, result is set to ipr_timedout;
 // details of how this is accomplished, can be found above;
 // v2r is updated by PlaceBody/PlaceWrapper when it has found a mapping
-InitialPlaceResult InitialPlace::run(
+Result Algorithm::run(
     const ir::KernelRef &k,
-    const InitialPlaceOptions &opt,
+    const Options &opt,
     com::QubitMapping &v2r
 ) {
 
@@ -493,7 +496,7 @@ InitialPlaceResult InitialPlace::run(
     nlocs = platform->qubit_count;
     nvq = platform->qubit_count;  // same range; when not, take set from config and create v2i earlier
     nfac = 0;
-    result = InitialPlaceResult::FAILED;
+    result = Result::FAILED;
     time_taken = 0.0;
 
     QL_DOUT("Init: platformp=" << platform.get_ptr() << " nlocs=" << nlocs << " nvq=" << nvq);
@@ -518,7 +521,7 @@ InitialPlaceResult InitialPlace::run(
         // Replace garbage results with real values if there was a timeout.
         if (timed_out) {
             v2r = v2r_orig;
-            result = InitialPlaceResult::TIMED_OUT;
+            result = Result::TIMED_OUT;
         }
 
         // Print debug output.
@@ -537,7 +540,7 @@ InitialPlaceResult InitialPlace::run(
  * Returns the amount of time taken by the mixed-integer-programming solver
  * for the call to run() in seconds.
  */
-utils::Real InitialPlace::get_time_taken() const {
+utils::Real Algorithm::get_time_taken() const {
     return time_taken;
 }
 
