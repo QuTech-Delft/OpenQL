@@ -127,6 +127,12 @@ utils::Int PlaceQubitsPass::run(
     // If the algorithm gave us a new mapping, apply it to all gates in the
     // kernel.
     if (result == detail::Result::NEW_MAP) {
+
+        // FIXME JvS: One Does Not Simply change qubit operands. In general
+        //  this just wouldn't work at all. Hence this pass isn't registered
+        //  with the pass manager (it's commented out), and is for now still
+        //  part of map.qubits.Route.
+        QL_ASSERT(false);
         for (const auto &gate : kernel->c) {
             for (auto &qubit : gate->operands) {
                 qubit = mapping[qubit];

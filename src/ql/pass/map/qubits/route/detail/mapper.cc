@@ -973,7 +973,7 @@ void Alter::AddSwaps(Past &past, const Str &mapselectswapsopt) const {
             numberadded++;
         }
     } else {
-        QL_ASSERT("earliest" == mapselectswapsopt);
+        QL_ASSERT(mapselectswapsopt == "earliest");
         if (fromSource.size() >= 2 && fromTarget.size() >= 2) {
             if (past.IsFirstSwapEarliest(fromSource[0], fromSource[1], fromTarget[0], fromTarget[1])) {
                 past.AddSwap(fromSource[0], fromSource[1]);
@@ -1624,7 +1624,8 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
             keep = glas*2;
         } else if (mapselectmaxwidthopt == "all") {
             keep = las;
-        } if (keep < las) {
+        }
+        if (keep < las) {
             gla = la;
             List<Alter>::iterator  ia;
             ia = gla.begin();
