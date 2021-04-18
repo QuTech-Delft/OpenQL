@@ -27,7 +27,7 @@ public:     // funcs
     ~Vcd() = default;
 
     void programStart(UInt qubitNumber, Int cycleTime, Int maxGroups, const Settings &settings);
-    void programFinish(const Str &progName);
+    void programFinish(const Str &filename);
     void kernelFinish(const Str &kernelName, UInt durationInCycles);
     void bundleFinishGroup(UInt startCycle, UInt durationInCycles, Digital groupDigOut, const Str &signalValue, UInt instrIdx, Int group);
     void bundleFinish(UInt startCycle, Digital digOut, UInt maxDurationInCycles, UInt instrIdx);

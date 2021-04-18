@@ -17,7 +17,7 @@ namespace vq1asm {
 /**
  * QuTech Central Controller Q1 processor assembly generator pass.
  */
-class GenerateVQ1AsmPass : public pmgr::pass_types::KernelTransformation {
+class GenerateVQ1AsmPass : public pmgr::pass_types::ProgramTransformation {
 protected:
 
     /**
@@ -44,7 +44,6 @@ public:
      */
     utils::Int run(
         const ir::ProgramRef &program,
-        const ir::KernelRef &kernel,
         const pmgr::pass_types::Context &context
     ) const override;
 

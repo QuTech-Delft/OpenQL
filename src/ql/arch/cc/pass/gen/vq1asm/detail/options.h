@@ -21,6 +21,8 @@
 #define OPT_FEEDBACK                    1   // feedback support. New feature in being developed
 #define OPT_PRAGMA                      1   // pragma support, initially for Repeat Until Success only
 
+// NOTE JvS: I added these to the documentation string for the backend pass, so
+//  you can see these values at runtime.
 
 namespace ql {
 namespace arch {
@@ -30,7 +32,43 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
-static const UInt MAX_INSTRS = 12;   // maximum number of instruments in config file
+/**
+ * Maximum number of instruments in config file.
+ */
+static const UInt MAX_INSTRS = 12;
+
+/**
+ * Parsed configuration option structure for the backend/code generator.
+ */
+struct Options {
+
+    /**
+     * Filename prefix for all output files.
+     */
+    Str output_prefix;
+
+    /**
+     * Input map filename.
+     */
+    Str map_input_file;
+
+    /**
+     * Whether verbose comments should be added to the generated .vq1asm file.
+     */
+    Bool verbose;
+
+    /**
+     * When set, create a .vq1asm program that runs once instead of repeating
+     * indefinitely.
+     */
+    Bool run_once;
+
+};
+
+/**
+ * Reference to a constant options object.
+ */
+using OptionsRef = Ptr<const Options>;
 
 } // namespace detail
 } // namespace vq1asm

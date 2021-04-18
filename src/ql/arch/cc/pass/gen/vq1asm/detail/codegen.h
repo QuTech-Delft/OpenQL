@@ -31,7 +31,7 @@ public: //  functions
     ~Codegen() = default;
 
     // Generic
-    void init(const plat::PlatformRef &platform);
+    void init(const plat::PlatformRef &platform, const OptionsRef &options);
     Str getProgram();                           // return the CC source code that was created
     Str getMap();                               // return a map of codeword assignments, useful for configuring AWGs
 
@@ -98,13 +98,12 @@ private:    // vars
     static const Int MAX_SLOTS = 12;                            // physical maximum of CC
     static const Int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
+    OptionsRef options;
     plat::PlatformRef platform;                                 // remind platform
     Settings settings;                                          // handling of JSON settings
     Datapath dp;                                                // handling of CC datapath
     Vcd vcd;                                                    // handling of VCD file output
 
-    Bool runOnce = false;                                       // option to run once instead of repeating indefinitely
-    Bool verboseCode = true;                                    // option to output extra comments in generated code
     Bool mapPreloaded = false;                                  // flag whether we have a preloaded map
 
     // codegen state, program scope

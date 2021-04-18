@@ -73,14 +73,13 @@ void Vcd::programStart(UInt qubitNumber, Int cycleTime, Int maxGroups, const Set
 }
 
 
-void Vcd::programFinish(const Str &progName) {
+void Vcd::programFinish(const Str &filename) {
     // generate VCD
     finish();
 
     // write VCD to file
-    Str file_name(com::options::get("output_dir") + "/" + progName + ".vcd");
-    QL_IOUT("Writing Value Change Dump to " << file_name);
-    OutFile(file_name).write(getVcd());
+    QL_IOUT("Writing Value Change Dump to " << filename);
+    OutFile(filename).write(getVcd());
 }
 
 

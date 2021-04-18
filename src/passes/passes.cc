@@ -246,7 +246,21 @@ void BackendCompilerPass::runOnProgram(const ir::ProgramRef &program) {
     //getPassOptions()->getOption("eqasm_compiler_name");
     
     if (eqasm_compiler_name == "eqasm_backend_cc") {
-        arch::cc::pass::gen::vq1asm::detail::Backend().compile(program, program->platform);
+
+        // This was hardcoded in the CC backend still, taken out now.
+        ql::pass::sch::schedule::schedule(program, program->platform, "scheduler");
+
+        // Parse options structure from global options.
+        namespace detail = arch::cc::pass::gen::vq1asm::detail;
+        auto options = utils::Ptr<detail::Options>::make();
+        options->output_prefix = com::options::get("output_dir") + "/" + program->unique_name;
+        options->map_input_file = com::options::get("backend_cc_map_input_file");
+        options->run_once = com::options::get("backend_cc_run_once") == "yes";
+        options->verbose = com::options::get("backend_cc_verbose") == "yes";
+
+        // Run backend.
+        detail::Backend().compile(program, options.as_const());
+
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }

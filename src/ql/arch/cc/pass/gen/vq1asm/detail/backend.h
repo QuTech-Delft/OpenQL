@@ -11,6 +11,7 @@
 #include "types.h"
 
 #include "ql/ir/ir.h"
+#include "options.h"
 #include "codegen.h"
 
 namespace ql {
@@ -25,7 +26,7 @@ class Backend {
 public:
     Backend() = default;
 
-    void compile(const ir::ProgramRef &program, const plat::PlatformRef &platform);
+    void compile(const ir::ProgramRef &program, const OptionsRef &options);
 
 private:
     static Str kernelLabel(const ir::KernelRef &k);

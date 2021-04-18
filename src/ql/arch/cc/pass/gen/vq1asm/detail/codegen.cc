@@ -27,17 +27,15 @@ using namespace utils;
 | Generic
 \************************************************************************/
 
-void Codegen::init(const plat::PlatformRef &platform) {
+void Codegen::init(const plat::PlatformRef &platform, const OptionsRef &options) {
     // NB: a new eqasm_backend_cc is instantiated per call to compile, and
     // as a result also a codegen_cc, so we don't need to cleanup
     this->platform = platform;
+    this->options = options;
     settings.loadBackendSettings(platform);
 
-    runOnce = (com::options::get("backend_cc_run_once") == "yes");
-    verboseCode = (com::options::get("backend_cc_verbose") == "yes");
-
     // optionally preload codewordTable
-    Str map_input_file = com::options::get("backend_cc_map_input_file");
+    Str map_input_file = options->map_input_file;
     if (!map_input_file.empty()) {
         QL_DOUT("loading map_input_file='" << map_input_file << "'");
         Json map = load_json(map_input_file);
@@ -91,7 +89,7 @@ void Codegen::programFinish(const Str &progName) {
 
     dp.programFinish();
 
-    vcd.programFinish(progName);
+    vcd.programFinish(options->output_prefix + ".vcd");
 }
 
 /************************************************************************\
@@ -141,7 +139,7 @@ void Codegen::bundleStart(const Str &cmnt) {
 
     // generate source code comments
     comment(cmnt);
-    dp.comment(cmnt, verboseCode);      // FIXME: comment is not fully appropriate, but at least allows matching with .CODE section
+    dp.comment(cmnt, options->verbose);      // FIXME: comment is not fully appropriate, but at least allows matching with .CODE section
 }
 
 
@@ -686,7 +684,7 @@ void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1
 }
 
 void Codegen::comment(const Str &c) {
-    if (verboseCode) emit(c);
+    if (options->verbose) emit(c);
 }
 
 /************************************************************************\
@@ -761,7 +759,7 @@ void Codegen::emitProgramStart(const Str &progName) {
 
 
 void Codegen::emitProgramFinish() {
-    if (runOnce) {   // program runs once only
+    if (options->run_once) {   // program runs once only
         emit("", "stop");
     } else {   // CC-light emulation: loop indefinitely
         // prevent real time pipeline emptying during jmp below (especially in conjunction with pragma/break
