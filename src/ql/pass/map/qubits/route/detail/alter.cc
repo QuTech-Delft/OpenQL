@@ -23,7 +23,7 @@ Alter::Alter() {
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
 void Alter::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const OptionsRef &opt) {
-    QL_DOUT("Alter::Init(number of qubits=" << p->qubit_count);
+    QL_DOUT("Alter::initialize(number of qubits=" << p->qubit_count);
     platformp = p;
     kernelp = k;
     options = opt;
@@ -31,7 +31,7 @@ void Alter::Init(const plat::PlatformRef &p, const ir::KernelRef &k, const Optio
     nq = platformp->qubit_count;
     ct = platformp->cycle_time;
     // total, fromSource and fromTarget start as empty vectors
-    past.Init(platformp, kernelp, options); // initializes past to empty
+    past.initialize(kernelp, options); // initializes past to empty
     didscore = false;                       // will not print score for now
 }
 
@@ -146,7 +146,7 @@ void Alter::AddSwaps(Past &past, SwapSelectionMode mapselectswapsopt) const {
         fromSourceQ = fromSource[0];
         for (UInt i = 1; i < fromSource.size() && numberadded < maxnumbertoadd; i++) {
             toSourceQ = fromSource[i];
-            past.AddSwap(fromSourceQ, toSourceQ);
+            past.add_swap(fromSourceQ, toSourceQ);
             fromSourceQ = toSourceQ;
             numberadded++;
         }
@@ -156,26 +156,27 @@ void Alter::AddSwaps(Past &past, SwapSelectionMode mapselectswapsopt) const {
         fromTargetQ = fromTarget[0];
         for (UInt i = 1; i < fromTarget.size() && numberadded < maxnumbertoadd; i++) {
             toTargetQ = fromTarget[i];
-            past.AddSwap(fromTargetQ, toTargetQ);
+            past.add_swap(fromTargetQ, toTargetQ);
             fromTargetQ = toTargetQ;
             numberadded++;
         }
     } else {
         QL_ASSERT(mapselectswapsopt == SwapSelectionMode::EARLIEST);
         if (fromSource.size() >= 2 && fromTarget.size() >= 2) {
-            if (past.IsFirstSwapEarliest(fromSource[0], fromSource[1], fromTarget[0], fromTarget[1])) {
-                past.AddSwap(fromSource[0], fromSource[1]);
+            if (past.is_first_swap_earliest(fromSource[0], fromSource[1],
+                                            fromTarget[0], fromTarget[1])) {
+                past.add_swap(fromSource[0], fromSource[1]);
             } else {
-                past.AddSwap(fromTarget[0], fromTarget[1]);
+                past.add_swap(fromTarget[0], fromTarget[1]);
             }
         } else if (fromSource.size() >= 2) {
-            past.AddSwap(fromSource[0], fromSource[1]);
+            past.add_swap(fromSource[0], fromSource[1]);
         } else if (fromTarget.size() >= 2) {
-            past.AddSwap(fromTarget[0], fromTarget[1]);
+            past.add_swap(fromTarget[0], fromTarget[1]);
         }
     }
 
-    past.Schedule();
+    past.schedule();
 }
 
 // compute cycle extension of the current alternative in prevPast relative to the given base past
@@ -201,7 +202,7 @@ void Alter::Extend(const Past &currPast, const Past &basePast) {
         QL_FATAL("Mapper option maxfidelity has been disabled");
         // score = quick_fidelity(past.lg);
     } else {
-        score = past.MaxFreeCycle() - basePast.MaxFreeCycle();
+        score = past.get_max_free_cycle() - basePast.get_max_free_cycle();
     }
     didscore = true;
 }

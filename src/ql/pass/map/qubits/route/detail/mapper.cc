@@ -139,10 +139,10 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, List<Al
 void Mapper::GenAltersGate(const ir::GateRef &gp, List<Alter> &la, Past &past) {
     auto&   q = gp->operands;
     QL_ASSERT (q.size() == 2);
-    UInt  src = past.MapQubit(q[0]);  // interpret virtual operands in past's current map
-    UInt  tgt = past.MapQubit(q[1]);
+    UInt  src = past.map_qubit(q[0]);  // interpret virtual operands in past's current map
+    UInt  tgt = past.map_qubit(q[1]);
     QL_DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at get_min_hops=" << platformp->grid->get_min_hops(src, tgt));
-    past.DFcPrint();
+    past.debug_print_fc();
 
     GenShortestPaths(gp, src, tgt, la);// find shortest paths from src to tgt, and split these
     QL_ASSERT(la.size() != 0);
@@ -238,11 +238,11 @@ void Mapper::MapRoutedGate(ir::GateRef &gp, Past &past) {
     // when that new gate is a composite gate, it is immediately decomposed (by gate creation)
     // the resulting gate/expansion (anyhow a sequence of gates) is collected in circ
     ir::Circuit circ;   // result of MakeReal
-    past.MakeReal(gp, circ);
+    past.make_real(gp, circ);
     for (auto newgp : circ)
     {
         QL_DOUT(" ... new mapped real gate, about to be added to past: " << newgp->qasm() );
-        past.AddAndSchedule(newgp);
+        past.add_and_schedule(newgp);
     }
 }
 
@@ -257,7 +257,7 @@ void Mapper::CommitAlter(Alter &resa, Future &future, Past &past) {
 
     // when only some swaps were added, the resgp might not yet be NN, so recheck
     auto &q = resgp->operands;
-    if (platformp->grid->get_min_hops(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1) {
+    if (platformp->grid->get_min_hops(past.map_qubit(q[0]), past.map_qubit(q[1])) == 1) {
         // resgp is NN: so done with this 2q gate
         // QL_DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
         MapRoutedGate(resgp, past);     // the 2q target gate is NN now and thus can be mapped
@@ -301,7 +301,7 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<ir::GateRef> &lg,
                 // dummy gates are nonq gates internal to OpenQL such as SOURCE/SINK; don't output them
                 if (gp->type() != ir::GateType::DUMMY) {
                     // past only can contain quantum gates, so non-quantum gates must by-pass Past
-                    past.ByPass(gp);    // this flushes past.lg first to outlg
+                    past.bypass(gp);    // this flushes past.lg first to outlg
                 }
                 future.DoneGate(gp); // so on avlist= nonNN2q -> NN2q -> 1q -> nonq: the nonq is done first
                 QL_DOUT("MapMappableGates, done with " << gp->qasm());
@@ -338,8 +338,8 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<ir::GateRef> &lg,
             // when more, take most critical one first (because qlg is ordered, most critical first)
             for (auto gp : qlg) {
                 auto &q = gp->operands;
-                UInt  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
-                UInt  tgt = past.MapQubit(q[1]);
+                UInt  src = past.map_qubit(q[0]);      // interpret virtual operands in current map
+                UInt  tgt = past.map_qubit(q[1]);
                 UInt  d = platformp->grid->get_min_hops(src, tgt);    // and find minimum number of hops between real counterparts
                 if (d == 1) {
                     QL_DOUT("MapMappableGates, NN no routing: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ")");
@@ -512,7 +512,8 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
                 QL_FATAL("Mapper option maxfidelity has been disabled");
                 // a.score = quick_fidelity(past_copy.lg);
             } else {
-                a.score = past_copy.MaxFreeCycle() - basePast.MaxFreeCycle();
+                a.score = past_copy.get_max_free_cycle() -
+                          basePast.get_max_free_cycle();
             }
             a.DPRINT("... ... SelectAlter, after committing this alternative, mapped easy gates, no gates to evaluate next; RECURSION BOTTOM");
         }
@@ -573,23 +574,23 @@ void Mapper::MapCircuit(const ir::KernelRef &kernel, QubitMapping &v2r) {
     kernel->c.reset();      // future has copied kernel.c to private data; kernel.c ready for use by new_gate
     kernelp = kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
-    mainPast.Init(platformp, kernelp, options);  // mainPast and Past clones inside Alters ready for generating output schedules into
-    mainPast.ImportV2r(v2r);    // give it the current mapping/state
+    mainPast.initialize(kernelp, options);  // mainPast and Past clones inside Alters ready for generating output schedules into
+    mainPast.import_mapping(v2r);    // give it the current mapping/state
     // mainPast.DPRINT("start mapping");
 
     MapGates(future, mainPast, mainPast);
-    mainPast.FlushAll();                // all output to mainPast.outlg, the output window of mainPast
+    mainPast.flush_all();                // all output to mainPast.outlg, the output window of mainPast
 
     // mainPast.DPRINT("end mapping");
 
     QL_DOUT("... retrieving outCirc from mainPast.outlg; swapping outCirc with kernel.c, kernel.c contains output circuit");
     ir::Circuit outCirc;
-    mainPast.Out(outCirc);                          // copy (final part of) mainPast's output window into this outCirc
+    mainPast.flush_to_circuit(outCirc);                          // copy (final part of) mainPast's output window into this outCirc
     kernel->c.get_vec().swap(outCirc.get_vec());    // and then to kernel.c
     kernel->cycles_valid = true;                    // decomposition was scheduled in; see Past.Add() and Past.Schedule()
-    mainPast.ExportV2r(v2r);
-    nswapsadded = mainPast.NumberOfSwapsAdded();
-    nmovesadded = mainPast.NumberOfMovesAdded();
+    mainPast.export_mapping(v2r);
+    nswapsadded = mainPast.get_num_swaps_added();
+    nmovesadded = mainPast.get_num_moves_added();
 }
 
 // decompose all gates that have a definition with _prim appended to its name
@@ -600,19 +601,19 @@ void Mapper::MakePrimitives(const ir::KernelRef &kernel) {
     kernel->c.reset();                          // kernel.c ready for use by new_gate
 
     Past mainPast;                              // output window in which gates are scheduled
-    mainPast.Init(platformp, kernelp, options);
+    mainPast.initialize(kernelp, options);
 
     for (auto & gp : input_gatepv) {
         ir::Circuit tmpCirc;
-        mainPast.MakePrimitive(gp, tmpCirc);    // decompose gp into tmpCirc; on failure, copy gp into tmpCirc
+        mainPast.make_primitive(gp, tmpCirc);    // decompose gp into tmpCirc; on failure, copy gp into tmpCirc
         for (auto newgp : tmpCirc) {
-            mainPast.AddAndSchedule(newgp);     // decomposition is scheduled in gate by gate
+            mainPast.add_and_schedule(newgp);     // decomposition is scheduled in gate by gate
         }
     }
-    mainPast.FlushAll();
+    mainPast.flush_all();
 
     ir::Circuit outCirc;                        // ultimate output gate stream
-    mainPast.Out(outCirc);
+    mainPast.flush_to_circuit(outCirc);
     kernel->c.get_vec().swap(outCirc.get_vec());
     kernel->cycles_valid = true;                 // decomposition was scheduled in above
 
@@ -625,7 +626,7 @@ void Mapper::Map(const ir::KernelRef &kernel) {
     QL_DOUT("... kernel original virtual number of qubits=" << kernel->qubit_count);
     kernelp.reset();            // no new_gates until kernel.c has been copied
 
-    QL_DOUT("Mapper::Map before v2r.Init: assume_initialized=" << options->assume_initialized);
+    QL_DOUT("Mapper::Map before v2r.initialize: assume_initialized=" << options->assume_initialized);
 
     // unify all incoming v2rs into v2r to compute kernel input mapping;
     // but until inter-kernel mapping is implemented, take program initial mapping for it
