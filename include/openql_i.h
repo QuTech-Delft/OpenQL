@@ -199,25 +199,3 @@ public:
     void string2circuit(const std::string &cqasm_str);
     void file2circuit(const std::string &cqasm_file_path);
 };
-
-
-/**
- * quantum compiler interface
- */
-class Compiler {
-public:
-    std::string name;
-    std::string config_file;
-    ql::utils::Ptr<ql::quantum_compiler> compiler;
-
-    Compiler(const std::string &name);
-    Compiler(const std::string &name, const std::string &config_file);
-    void compile(Program &program);
-    void add_pass_alias(const std::string &realPassName, const std::string &symbolicPassName);
-    void add_pass(const std::string &realPassName);
-    void set_pass_option(
-        const std::string &passName,
-        const std::string &optionName,
-        const std::string &optionValue
-    );
-};

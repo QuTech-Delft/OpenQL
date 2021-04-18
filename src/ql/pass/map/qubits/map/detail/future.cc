@@ -4,6 +4,8 @@
 
 #include "future.h"
 
+#include "ql/utils/filesystem.h"
+
 namespace ql {
 namespace pass {
 namespace map {

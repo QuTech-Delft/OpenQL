@@ -21,7 +21,6 @@
 #include "ql/rmgr/manager.h"
 #include "ql/ir/ir.h"
 #include "ql/com/options.h"
-#include "report.h"
 
 namespace ql {
 namespace pass {

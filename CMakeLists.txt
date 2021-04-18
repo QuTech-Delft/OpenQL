@@ -256,12 +256,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/settings.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/vcd.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/vq1asm.cc"
-
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/compiler.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/write_sweep_points.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/passes/passmanager.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/passes/passes.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
 )
 

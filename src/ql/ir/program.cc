@@ -7,7 +7,6 @@
 
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
-#include "compiler.h"
 
 static unsigned long phi_node_count = 0;    // FIXME: number across quantum_program instances
 
@@ -351,11 +350,6 @@ void Program::add_for(const ProgramRef &p, UInt iterations) {
     phi_node_count++;
 }
 
-static std::string dirnameOf(const std::string& fname) {
-     size_t pos = fname.find_last_of("\\/");
-     return (std::string::npos == pos) ? "" : fname.substr(0, pos)+"/";
-}
-
 /**
  * Entry point for compilation.
  */
@@ -365,49 +359,7 @@ void Program::compile() {
     if (kernels.empty()) {
         QL_FATAL("compiling a program with no kernels !");
     }
-
-    static utils::Bool new_pass_manager = true;
-    if (new_pass_manager) {
-
-        // Use the new pass manager... fingers crossed!
-        pmgr::Manager::from_defaults(platform).compile(ProgramRef::make(*this));
-
-    } else {
-
-        // Retrieve the path to the platform configuration file.
-        // This is needed below to circumvent the hardcoding of the compiler configuration file
-        // when this legacy ::compile method is used.
-        // NOTE: For the use of 'compilerCfgPath' below to work, it is assumed the compiler configuration file
-        //       is located in the same folder as the platform configuration file.
-        std::string compilerCfgPath = dirnameOf(platform->configuration_file_name);
-
-        //constuct compiler
-        std::unique_ptr<quantum_compiler> compiler(new quantum_compiler("Hard Coded Compiler"));
-
-        // backend passes
-        QL_DOUT("Calling backend compiler passes for eqasm_compiler_name: " << platform->eqasm_compiler_name);
-        if (platform->eqasm_compiler_name.empty()) {
-            QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
-        } else if (platform->eqasm_compiler_name == "none" || platform->eqasm_compiler_name == "qx") {
-            QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
-            compiler->loadPassesFromConfigFile("QX_compiler", compilerCfgPath+"qx_compiler_cfg.json");
-        } else if (platform->eqasm_compiler_name == "cc_light_compiler") {
-            compiler->loadPassesFromConfigFile("CCLight_compiler", compilerCfgPath+"cclight_compiler_cfg.json");
-            QL_DOUT("Returned from call backend_compiler->compile for " << platform->eqasm_compiler_name);
-        } else if (platform->eqasm_compiler_name == "eqasm_backend_cc") {
-            compiler->loadPassesFromConfigFile("CC_compiler", compilerCfgPath+"cc_compiler_cfg.json");
-        } else {
-            QL_FATAL("the '" << platform->eqasm_compiler_name << "' eqasm compiler backend is not suported !");
-        }
-
-        //compile with program
-        compiler->compile(ProgramRef::make(*this));
-
-        QL_IOUT("compilation of program '" << name << "' done.");
-
-        compiler.reset();
-
-    }
+    pmgr::Manager::from_defaults(platform).compile(ProgramRef::make(*this));
 }
 
 } // namespace ir
