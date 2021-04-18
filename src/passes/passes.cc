@@ -12,7 +12,7 @@
 #include "report.h"
 #include "ql/pass/opt/clifford/detail/clifford.h"
 #include "ql/pass/sch/schedule/schedule.h"
-#include "ql/pass/map/qubits/route/detail/mapper.h"
+#include "ql/pass/map/qubits/map/detail/mapper.h"
 #include "ql/pass/io/cqasm/read.h"
 #include "ql/pass/ana/statistics/report.h"
 
@@ -302,7 +302,7 @@ MapperPass::MapperPass(const Str &name) : AbstractPass(name) {
  */
 void MapperPass::runOnProgram(const ir::ProgramRef &program) {
 
-    namespace detail = pass::map::qubits::route::detail;
+    namespace detail = pass::map::qubits::map::detail;
 
     auto platform = program->platform;
     auto passname = getPassName();

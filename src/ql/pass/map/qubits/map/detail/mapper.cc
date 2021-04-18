@@ -13,7 +13,7 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace route {
+namespace map {
 namespace detail {
 
 /**
@@ -1064,7 +1064,7 @@ void Mapper::map(const ir::ProgramRef &prog, const OptionsRef &opt) {
 }
 
 } // namespace detail
-} // namespace route
+} // namespace map
 } // namespace qubits
 } // namespace map
 } // namespace pass

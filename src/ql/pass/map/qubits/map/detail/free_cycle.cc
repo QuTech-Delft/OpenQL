@@ -8,7 +8,7 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace route {
+namespace map {
 namespace detail {
 
 /**
@@ -221,7 +221,7 @@ void FreeCycle::add(const ir::GateRef &g, utils::UInt start_cycle) {
 }
 
 } // namespace detail
-} // namespace route
+} // namespace map
 } // namespace qubits
 } // namespace map
 } // namespace pass

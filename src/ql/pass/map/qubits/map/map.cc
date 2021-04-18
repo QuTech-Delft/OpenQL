@@ -2,7 +2,7 @@
  * Defines the qubit router pass.
  */
 
-#include "ql/pass/map/qubits/route/route.h"
+#include "ql/pass/map/qubits/map/map.h"
 
 #include "detail/mapper.h"
 
@@ -10,12 +10,12 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace route {
+namespace map {
 
 /**
- * Dumps docs for the qubit router.
+ * Dumps docs for the qubit mapper.
  */
-void RouteQubitsPass::dump_docs(
+void MapQubitsPass::dump_docs(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
@@ -35,9 +35,9 @@ void RouteQubitsPass::dump_docs(
 }
 
 /**
- * Constructs a qubit router.
+ * Constructs a qubit mapper.
  */
-RouteQubitsPass::RouteQubitsPass(
+MapQubitsPass::MapQubitsPass(
     const utils::Ptr<const pmgr::PassFactory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
@@ -234,7 +234,7 @@ RouteQubitsPass::RouteQubitsPass(
 /**
  * Builds the options structure for the mapper.
  */
-pmgr::pass_types::NodeType RouteQubitsPass::on_construct(
+pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     const utils::Ptr<const pmgr::PassFactory> &factory,
     utils::List<pmgr::PassRef> &passes,
     pmgr::condition::Ref &condition
@@ -344,9 +344,9 @@ pmgr::pass_types::NodeType RouteQubitsPass::on_construct(
 }
 
 /**
- * Runs the qubit router.
+ * Runs the qubit mapper.
  */
-utils::Int RouteQubitsPass::run(
+utils::Int MapQubitsPass::run(
     const ir::ProgramRef &program,
     const ir::KernelRef &kernel,
     const pmgr::pass_types::Context &context
@@ -361,7 +361,7 @@ utils::Int RouteQubitsPass::run(
     return 0;
 }
 
-} // namespace route
+} // namespace map
 } // namespace qubits
 } // namespace map
 } // namespace pass

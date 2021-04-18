@@ -8,7 +8,7 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace route {
+namespace map {
 namespace detail {
 
 /**
@@ -75,7 +75,7 @@ std::ostream &operator<<(std::ostream &os, TieBreakMethod tbm) {
 }
 
 } // namespace detail
-} // namespace route
+} // namespace map
 } // namespace qubits
 } // namespace map
 } // namespace pass

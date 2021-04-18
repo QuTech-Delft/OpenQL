@@ -18,7 +18,7 @@
 #include "ql/pass/opt/clifford/optimize.h"
 #include "ql/pass/sch/schedule/schedule.h"
 //#include "ql/pass/map/qubits/place_mip/place_mip.h" // Broken: need half-decent IR for gates and virtual vs real qubit operands first.
-#include "ql/pass/map/qubits/route/route.h"
+#include "ql/pass/map/qubits/map/map.h"
 
 namespace ql {
 namespace pmgr {
@@ -75,7 +75,7 @@ PassFactory::PassFactory() {
     register_pass<::ql::pass::opt::clifford::optimize::Pass>("opt.clifford.Optimize");
     register_pass<::ql::pass::sch::schedule::Pass>("sch.Schedule");
     //register_pass<::ql::pass::map::qubits::place_mip::Pass>("map.qubits.PlaceMIP"); // Broken: need half-decent IR for gates and virtual vs real qubit operands first.
-    register_pass<::ql::pass::map::qubits::route::Pass>("map.qubits.Route");
+    register_pass<::ql::pass::map::qubits::map::Pass>("map.qubits.Map");
 
 }
 

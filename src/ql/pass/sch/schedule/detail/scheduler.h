@@ -29,7 +29,7 @@ namespace pass {
 // Forward declaration for mapper Future class for friend declaration.
 namespace map {
 namespace qubits {
-namespace route {
+namespace map {
 namespace detail {
 class Future;
 } // namespace detail
@@ -57,7 +57,7 @@ class Scheduler {
 private:
     // NOTE JvS: I don't like that this needs to be here, but making all this
     // stuff public feels way worse.
-    friend class map::qubits::route::detail::Future;
+    friend class map::qubits::map::detail::Future;
 
     // dependence graph is constructed (see Init) once from the sequence of gates in a kernel's circuit
     // it can be reused as often as needed as long as no gates are added/deleted; it doesn't modify those gates

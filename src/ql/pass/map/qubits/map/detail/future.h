@@ -21,7 +21,7 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace route {
+namespace map {
 namespace detail {
 
 // Shorthand.
@@ -140,7 +140,7 @@ public:
 };
 
 } // namespace detail
-} // namespace route
+} // namespace map
 } // namespace qubits
 } // namespace map
 } // namespace pass

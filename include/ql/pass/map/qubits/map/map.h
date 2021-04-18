@@ -12,17 +12,16 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace route {
+namespace map {
 
 namespace detail {
 class Options;
 } // namespace detail
 
-
 /**
- * Qubit router pass.
+ * Qubit mapper pass.
  */
-class RouteQubitsPass : public pmgr::pass_types::KernelTransformation {
+class MapQubitsPass : public pmgr::pass_types::KernelTransformation {
 private:
 
     /**
@@ -33,7 +32,7 @@ private:
 protected:
 
     /**
-     * Dumps docs for the qubit router.
+     * Dumps docs for the qubit mapper.
      */
     void dump_docs(
         std::ostream &os,
@@ -43,9 +42,9 @@ protected:
 public:
 
     /**
-     * Constructs a qubit router.
+     * Constructs a qubit mapper.
      */
-    RouteQubitsPass(
+    MapQubitsPass(
         const utils::Ptr<const pmgr::PassFactory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
@@ -61,7 +60,7 @@ public:
     ) override;
 
     /**
-     * Runs the qubit router.
+     * Runs the qubit mapper.
      */
     utils::Int run(
         const ir::ProgramRef &program,
@@ -74,9 +73,9 @@ public:
 /**
  * Shorthand for referring to the pass using namespace notation.
  */
-using Pass = RouteQubitsPass;
+using Pass = MapQubitsPass;
 
-} // namespace route
+} // namespace map
 } // namespace qubits
 } // namespace map
 } // namespace pass

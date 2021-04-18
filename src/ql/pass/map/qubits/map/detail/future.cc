@@ -8,7 +8,7 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace route {
+namespace map {
 namespace detail {
 
 /**
@@ -145,7 +145,7 @@ ir::GateRef Future::get_most_critical(const utils::List<ir::GateRef> &lag) const
 }
 
 } // namespace detail
-} // namespace route
+} // namespace map
 } // namespace qubits
 } // namespace map
 } // namespace pass

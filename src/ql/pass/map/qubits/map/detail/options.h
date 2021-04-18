@@ -12,7 +12,7 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace route {
+namespace map {
 namespace detail {
 
 /**
@@ -305,7 +305,7 @@ struct Options {
 using OptionsRef = utils::Ptr<const Options>;
 
 } // namespace detail
-} // namespace route
+} // namespace map
 } // namespace qubits
 } // namespace map
 } // namespace pass
