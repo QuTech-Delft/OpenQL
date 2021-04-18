@@ -1759,7 +1759,7 @@ void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
             schedp->get_dot(map_dot);
 
             fname << options::get("output_dir") << "/" << kernel->name << "_" << "mapper" << ".dot";
-            QL_IOUT("writing " << "mapper" << " dependence graph dot file to '" << fname.str() << "' ...");
+            QL_DOUT("writing " << "mapper" << " dependence graph dot file to '" << fname.str() << "' ...");
             OutFile(fname.str()).write(map_dot);
         }
     }

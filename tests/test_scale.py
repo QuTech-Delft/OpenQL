@@ -21,7 +21,7 @@ class Test_multi_core(unittest.TestCase):
         ql.set_option('maptiebreak', 'first')       # this makes behavior deterministic to cmp with golden
                                                     # and deviates from default
 
-        ql.set_option('log_level', 'LOG_NOTHING')
+        ql.set_option('log_level', 'LOG_INFO')
         ql.set_option('optimize', 'no')
         ql.set_option('use_default_gates', 'no')
         ql.set_option('generate_code', 'no')
@@ -56,7 +56,7 @@ class Test_multi_core(unittest.TestCase):
     def test_mc_wide(self):
         v = 'wide'
         config = os.path.join(curdir, "test_multi_core_8x1024_full.json")
-        num_qubits = 1024
+        num_qubits = 2048
 
         # create and set platform
         prog_name = "test_mc_" + v
@@ -65,9 +65,9 @@ class Test_multi_core(unittest.TestCase):
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
 
-        for i in range(1024):
+        for i in range(2048):
             k.gate("xm45", [i])
-        for i in range(1024):
+        for i in range(2048):
             k.gate("measure", [i])
 
         prog.add_kernel(k)
@@ -78,5 +78,5 @@ class Test_multi_core(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 if __name__ == '__main__':
-    # ql.set_option('log_level', 'LOG_DEBUG')
+    # ql.set_option('log_level', 'LOG_INFO')
     unittest.main()
