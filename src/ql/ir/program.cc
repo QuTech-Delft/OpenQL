@@ -7,7 +7,6 @@
 
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
-#include "ql/com/interaction_matrix.h"
 #include "compiler.h"
 
 static unsigned long phi_node_count = 0;    // FIXME: number across quantum_program instances
@@ -408,27 +407,6 @@ void Program::compile() {
 
         compiler.reset();
 
-    }
-}
-
-/**
- * Set sweep points output filename.
- *
- * TODO: shouldn't be here.
- */
-void Program::set_config_file(const utils::Str &config_file) {
-    sweep_points_config_file_name = config_file;
-}
-
-/**
- * Set sweep points output data.
- *
- * TODO: shouldn't be here, and especially not with this parameter pack.
- */
-void Program::set_sweep_points(const Real *swpts, UInt size) {
-    sweep_points.clear();
-    for (UInt i = 0; i < size; ++i) {
-        sweep_points.push_back(swpts[i]);
     }
 }
 

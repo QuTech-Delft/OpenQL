@@ -81,19 +81,6 @@ public:
     KernelRefs kernels;
 
     /**
-     * TODO JvS: still not sure what this is.
-     */
-    utils::Vec<utils::Real> sweep_points;
-
-    /**
-     * Configuration file name for the sweep points pass. Leave empty to use the
-     * default generated filename.
-     *
-     * FIXME: should not be here, should be a pass option if anything.
-     */
-    utils::Str sweep_points_config_file_name;
-
-    /**
      * Constructs a new program.
      */
     Program(
@@ -164,20 +151,6 @@ public:
      * Entry point for compilation.
      */
     void compile();
-
-    /**
-     * Set sweep points output filename.
-     *
-     * TODO: shouldn't be here.
-     */
-    void set_config_file(const utils::Str &config_file);
-
-    /**
-     * Set sweep points output data.
-     *
-     * TODO: shouldn't be here, and especially not with this parameter pack.
-     */
-    void set_sweep_points(const utils::Real *swpts, utils::UInt size);
 
 };
 

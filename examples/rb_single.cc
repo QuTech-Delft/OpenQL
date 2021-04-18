@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 
     auto rb = ql::ir::ProgramRef::make("rb", qx_platform, 1);
 
-    rb->set_sweep_points(sweep_points, num_circuits);
+    //rb->set_sweep_points(sweep_points, num_circuits);
 
     auto kernel = ql::ir::KernelRef::make("rb1024", qx_platform, 1);
 

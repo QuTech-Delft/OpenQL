@@ -23,7 +23,7 @@ void test_cnot_mixedcommute(std::string v, std::string schedopt, std::string sch
     auto starmon = ql::plat::PlatformRef::make("starmon", "test_179.json");
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<7; j++) { k->gate("x", j); }
 
@@ -65,7 +65,7 @@ void test_cnot_controlcommute(std::string v, std::string schedopt, std::string s
     auto starmon = ql::plat::PlatformRef::make("starmon", "test_179.json");
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("cnot", 3,0);
     k->gate("cnot", 3,6);
@@ -102,7 +102,7 @@ void test_cnot_targetcommute(std::string v, std::string schedopt, std::string sc
     auto starmon = ql::plat::PlatformRef::make("starmon", "test_179.json");
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("cnot", 0,3);
     k->gate("cnot", 6,3);
@@ -139,7 +139,7 @@ void test_cz_anycommute(std::string v, std::string schedopt, std::string sched_p
     auto starmon = ql::plat::PlatformRef::make("starmon", "test_179.json");
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("cz", 0,3);
     k->gate("cz", 3,6);

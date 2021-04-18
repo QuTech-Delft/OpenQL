@@ -64,8 +64,8 @@ int main(int argc, char **argv) {
         std::stringstream prog_name;
         prog_name << "rb_" << r;
         auto rb = ql::ir::ProgramRef::make(prog_name.str(), qx_platform, 1);
-        rb->set_sweep_points(sweep_points, num_circuits);
-        rb->set_config_file("rb_config.json");
+        //rb->set_sweep_points(sweep_points, num_circuits);
+        //rb->set_config_file("rb_config.json");
 
         for (int j=0; j<num_circuits-4; j++) {
             int c_size = sweep_points[j];

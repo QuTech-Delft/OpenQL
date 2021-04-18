@@ -108,8 +108,8 @@ int main(int argc, char **argv) {
     std::stringstream prog_name;
     prog_name << "rb_" << num_qubits << "_" << (different ? "diff" : "same");
     auto rb = ql::ir::ProgramRef::make(prog_name.str(), starmon, num_qubits);
-    rb->set_sweep_points(sweep_points, num_circuits);
-    rb->set_config_file("rb_config.json");
+    //rb->set_sweep_points(sweep_points, num_circuits);
+    //rb->set_config_file("rb_config.json");
 
     // create subcircuit
     std::stringstream name;

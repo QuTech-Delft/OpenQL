@@ -19,7 +19,7 @@ void test_dpt(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("prepz", 0);
     k->gate("prepz", 1);
@@ -102,7 +102,7 @@ void test_lee(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("x", 0);
     k->gate("x", 1);
@@ -159,7 +159,7 @@ void test_recursion(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<n; j++) { k->gate("x", j); }
 
@@ -193,7 +193,7 @@ void test_dot(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("x", 0);
     k->gate("x", 3);
@@ -233,7 +233,7 @@ void test_rc(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     // no dependency, only a conflict in qwg resource
     k->gate("x", 0);
@@ -267,7 +267,7 @@ void test_someNN(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<7; j++) { k->gate("x", j); }
 
@@ -324,7 +324,7 @@ void test_oneD2(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("x", 2);
     k->gate("x", 3);
@@ -367,7 +367,7 @@ void test_oneD4(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("x", 2);
     k->gate("x", 4);
@@ -413,7 +413,7 @@ void test_string(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
 
     for (int j=0; j<7; j++) { k->gate("x", j); }
@@ -461,7 +461,7 @@ void test_allDopt(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<n; j++) { k->gate("x", j); }
 
@@ -562,7 +562,7 @@ void test_allD(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<n; j++) { k->gate("x", j); }
 
@@ -596,7 +596,7 @@ void test_allD2(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     for (int j=0; j<n; j++) { k->gate("x", j); }
 
@@ -688,7 +688,7 @@ void test_daniel2(
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, n);
 
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
 
     k->gate("x",0);
@@ -953,7 +953,7 @@ void test_lingling5esm(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("prepz",5);
     k->gate("prepz",6);
@@ -1115,7 +1115,7 @@ void test_lingling7esm(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("prepz",7);
     k->gate("prepz",8);
@@ -1261,7 +1261,7 @@ void test_lingling7sub(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
 #define SUB1    1
 
@@ -1421,7 +1421,7 @@ void test_maxcut(
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     k->gate("cz", 1,4);
     k->gate("cz", 1,3);

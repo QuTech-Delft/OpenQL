@@ -12,7 +12,7 @@ void test_mc(std::string v, std::string param1, std::string param2, std::string 
     //ql::set_platform(starmon);
     auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
     auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
 
     int i, j;
 

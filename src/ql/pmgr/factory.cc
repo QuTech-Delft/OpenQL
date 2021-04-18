@@ -15,6 +15,7 @@
 #include "ql/pass/ana/statistics/report.h"
 #include "ql/pass/io/cqasm/read.h"
 #include "ql/pass/io/cqasm/report.h"
+#include "ql/pass/io/sweep_points/write.h"
 #include "ql/pass/opt/clifford/optimize.h"
 #include "ql/pass/sch/schedule/schedule.h"
 //#include "ql/pass/map/qubits/place_mip/place_mip.h" // Broken: need half-decent IR for gates and virtual vs real qubit operands first.
@@ -37,6 +38,7 @@ Factory::Factory() {
     register_pass<::ql::pass::ana::statistics::report::Pass>("ana.statistics.Report");
     register_pass<::ql::pass::io::cqasm::read::Pass>("io.cqasm.Read");
     register_pass<::ql::pass::io::cqasm::report::Pass>("io.cqasm.Report");
+    register_pass<::ql::pass::io::sweep_points::write::Pass>("io.sweep_points.Write");
     register_pass<::ql::pass::opt::clifford::optimize::Pass>("opt.clifford.Optimize");
     register_pass<::ql::pass::sch::schedule::Pass>("sch.Schedule");
     //register_pass<::ql::pass::map::qubits::place_mip::Pass>("map.qubits.PlaceMIP"); // Broken: need half-decent IR for gates and virtual vs real qubit operands first.

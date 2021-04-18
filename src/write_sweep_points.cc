@@ -18,6 +18,7 @@ void write_sweep_points(
     const Str &passname
 ) {
     QL_DOUT("write_sweep_points()");
+/*
     if (program->sweep_points.size()) {
         StrStrm ss_swpts;
         ss_swpts << "{ \"measurement_points\" : [";
@@ -41,6 +42,7 @@ void write_sweep_points(
         QL_IOUT("sweep points file not generated as sweep point array is empty !");
     }
     QL_DOUT("write_sweep_points() [Done] ");
+    */
 }
 
 } // namespace ql

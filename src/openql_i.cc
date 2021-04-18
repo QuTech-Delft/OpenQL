@@ -6,6 +6,7 @@
 #include "openql_i.h"
 
 #include "ql/version.h"
+#include "ql/pass/io/sweep_points/annotation.h"
 
 static bool initialized = false;
 
@@ -394,12 +395,22 @@ Program::Program(
 
 void Program::set_sweep_points(const std::vector<double> &sweep_points) {
     QL_WOUT("This will soon be deprecated according to issue #76");
-    program->sweep_points = sweep_points;
+    using Annotation = ql::pass::io::sweep_points::Annotation;
+    if (!program->has_annotation<Annotation>()) {
+        program->set_annotation<Annotation>({});
+    }
+    program->get_annotation<Annotation>().data = sweep_points;
 }
 
 std::vector<double> Program::get_sweep_points() const {
     QL_WOUT("This will soon be deprecated according to issue #76");
-    return std::vector<double>(program->sweep_points.begin(), program->sweep_points.end());
+    using Annotation = ql::pass::io::sweep_points::Annotation;
+    auto annot = program->get_annotation_ptr<Annotation>();
+    if (annot == nullptr) {
+        return {};
+    } else {
+        return {annot->data.begin(), annot->data.end()};
+    }
 }
 
 void Program::add_kernel(Kernel &k) {

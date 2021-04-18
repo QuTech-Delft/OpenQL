@@ -236,6 +236,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/detail/cqasm_reader.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/read.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/report.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/sweep_points/write.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/clifford/detail/clifford.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/clifford/optimize.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/detail/scheduler.cc"
