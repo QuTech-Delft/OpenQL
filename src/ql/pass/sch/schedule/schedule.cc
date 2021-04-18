@@ -5,7 +5,7 @@
 #include "ql/pass/sch/schedule/schedule.h"
 
 #include "ql/utils/filesystem.h"
-#include "ql/pmgr/pass_types.h"
+#include "ql/pmgr/pass_types/base.h"
 #include "detail/scheduler.h"
 
 namespace ql {
@@ -31,7 +31,7 @@ void SchedulePass::dump_docs(
  * Constructs a scheduler.
  */
 SchedulePass::SchedulePass(
-    const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+    const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
 ) : pmgr::pass_types::KernelTransformation(pass_factory, instance_name, type_name) {
@@ -99,7 +99,7 @@ utils::Int SchedulePass::run(
 
     // Run the appropriate scheduling algorithm.
     if (options["resource_constraints"].as_bool()) {
-        auto rm = plat::resource::Manager::from_defaults(kernel->platform);
+        auto rm = rmgr::Manager::from_defaults(kernel->platform);
         if (options["heuristic"].as_str() == "asap") {
             sched.schedule_asap(rm);
         } else if (options["heuristic"].as_str() == "alap") {

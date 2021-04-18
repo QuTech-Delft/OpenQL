@@ -3,11 +3,10 @@
  * resources.
  */
 
-#include "ql/plat/resource/state.h"
+#include "ql/rmgr/state.h"
 
 namespace ql {
-namespace plat {
-namespace resource {
+namespace rmgr {
 
 /**
  * Constructor for the initial state, called from Manager::build().
@@ -98,6 +97,5 @@ void State::dump(
     os.flush();
 }
 
-} // namespace resource
-} // namespace plat
+} // namespace rmgr
 } // namespacq ql

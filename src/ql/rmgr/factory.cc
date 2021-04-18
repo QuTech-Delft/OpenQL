@@ -2,18 +2,17 @@
  * Resource factory implementation.
  */
 
-#include "ql/plat/resource/factory.h"
+#include "ql/rmgr/factory.h"
 
 #include <ql/utils/list.h>
 #include <ql/utils/pair.h>
 
 // Resource definition headers. This list should be generated at some point.
-#include "ql/plat/resource/compat.h"
+#include "ql/rmgr/resource_types/compat.h"
 #include "arch/cc_light/cc_light_resource_manager.h"
 
 namespace ql {
-namespace plat {
-namespace resource {
+namespace rmgr {
 
 /**
  * Constructs a default resource factory for OpenQL.
@@ -21,12 +20,12 @@ namespace resource {
 Factory::Factory() {
 
     // Default resource registration. This list should be generated at some point.
-    register_resource<resource::Compat<arch::ccl_qubit_resource_t>>("arch.cc_light.qubits");
-    register_resource<resource::Compat<arch::ccl_qwg_resource_t>>("arch.cc_light.qwgs");
-    register_resource<resource::Compat<arch::ccl_meas_resource_t>>("arch.cc_light.meas_units");
-    register_resource<resource::Compat<arch::ccl_edge_resource_t>>("arch.cc_light.edges");
-    register_resource<resource::Compat<arch::ccl_detuned_qubits_resource_t>>("arch.cc_light.detuned_qubits");
-    register_resource<resource::Compat<arch::ccl_channel_resource_t>>("arch.cc_light.channels");
+    register_resource<resource_types::Compat<arch::ccl_qubit_resource_t>>("arch.cc_light.qubits");
+    register_resource<resource_types::Compat<arch::ccl_qwg_resource_t>>("arch.cc_light.qwgs");
+    register_resource<resource_types::Compat<arch::ccl_meas_resource_t>>("arch.cc_light.meas_units");
+    register_resource<resource_types::Compat<arch::ccl_edge_resource_t>>("arch.cc_light.edges");
+    register_resource<resource_types::Compat<arch::ccl_detuned_qubits_resource_t>>("arch.cc_light.detuned_qubits");
+    register_resource<resource_types::Compat<arch::ccl_channel_resource_t>>("arch.cc_light.channels");
 
 }
 
@@ -124,7 +123,7 @@ Factory Factory::configure(
 /**
  * Builds a resource instance.
  */
-Ref Factory::build_resource(
+ResourceRef Factory::build_resource(
     const utils::Str &type_name,
     const utils::Str &instance_name,
     const plat::PlatformRef &platform,
@@ -154,7 +153,7 @@ void Factory::dump_resource_types(
     }
 
     // Sort pass types by full pass type name.
-    utils::Map<utils::Str, utils::Pair<Ref, utils::List<utils::Str>>> pass_types;
+    utils::Map<utils::Str, utils::Pair<ResourceRef, utils::List<utils::Str>>> pass_types;
     for (const auto &pair : aliases) {
         const auto *constructor_fn_ptr = pair.first;
         const auto &type_aliases = pair.second;
@@ -180,6 +179,5 @@ void Factory::dump_resource_types(
 
 }
 
-} // namespace resource
-} // namespace plat
+} // namespace rmgr
 } // namespace ql

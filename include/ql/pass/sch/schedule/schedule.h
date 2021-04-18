@@ -5,7 +5,7 @@
 #pragma once
 
 #include "ql/com/options.h"
-#include "ql/pmgr/pass_types.h"
+#include "ql/pmgr/pass_types/specializations.h"
 
 namespace ql {
 namespace pass {
@@ -32,7 +32,7 @@ public:
      * Constructs a scheduler.
      */
     SchedulePass(
-        const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+        const utils::Ptr<const pmgr::Factory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
     );

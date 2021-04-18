@@ -2,13 +2,12 @@
  * Defines the resource manager.
  */
 
-#include "ql/plat/resource/manager.h"
+#include "ql/rmgr/manager.h"
 
 #include <regex>
 
 namespace ql {
-namespace plat {
-namespace resource {
+namespace rmgr {
 
 /**
  * Returns whether the given user-specified name is a valid resource name.
@@ -311,6 +310,5 @@ State Manager::build(Direction direction) const {
     return state;
 }
 
-} // namespace resource
-} // namespace plat
+} // namespace rmgr
 } // namespace ql

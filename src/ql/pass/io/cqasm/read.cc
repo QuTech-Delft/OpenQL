@@ -173,7 +173,7 @@ void ReadCQasmPass::dump_docs(
  * Constructs a cQASM reader.
  */
 ReadCQasmPass::ReadCQasmPass(
-    const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+    const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
 ) : pmgr::pass_types::ProgramTransformation(pass_factory, instance_name, type_name) {

@@ -4,7 +4,7 @@
 
 #include "ql/pass/opt/clifford/optimize.h"
 
-#include "ql/pmgr/pass_types.h"
+#include "ql/pmgr/pass_types/base.h"
 #include "ql/pass/ana/statistics/annotations.h"
 #include "detail/clifford.h"
 
@@ -36,7 +36,7 @@ void CliffordOptimizePass::dump_docs(
  * Constructs a Clifford optimizer.
  */
 CliffordOptimizePass::CliffordOptimizePass(
-    const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+    const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
 ) : pmgr::pass_types::KernelTransformation(pass_factory, instance_name, type_name) {

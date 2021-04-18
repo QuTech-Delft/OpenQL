@@ -38,7 +38,7 @@ void MapQubitsPass::dump_docs(
  * Constructs a qubit mapper.
  */
 MapQubitsPass::MapQubitsPass(
-    const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+    const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
 ) : pmgr::pass_types::KernelTransformation(pass_factory, instance_name, type_name) {
@@ -235,7 +235,7 @@ MapQubitsPass::MapQubitsPass(
  * Builds the options structure for the mapper.
  */
 pmgr::pass_types::NodeType MapQubitsPass::on_construct(
-    const utils::Ptr<const pmgr::PassFactory> &factory,
+    const utils::Ptr<const pmgr::Factory> &factory,
     utils::List<pmgr::PassRef> &passes,
     pmgr::condition::Ref &condition
 ) {

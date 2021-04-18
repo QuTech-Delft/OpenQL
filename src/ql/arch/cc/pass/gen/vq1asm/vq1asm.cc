@@ -4,7 +4,7 @@
 
 #include "ql/arch/cc/pass/gen/vq1asm/vq1asm.h"
 
-#include "ql/pmgr/pass_types.h"
+#include "ql/pmgr/pass_types/base.h"
 #include "detail/backend.h"
 
 namespace ql {
@@ -45,7 +45,7 @@ void GenerateVQ1AsmPass::dump_docs(
  * Constructs a code generator.
  */
 GenerateVQ1AsmPass::GenerateVQ1AsmPass(
-    const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+    const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
 ) : pmgr::pass_types::ProgramTransformation(pass_factory, instance_name, type_name) {

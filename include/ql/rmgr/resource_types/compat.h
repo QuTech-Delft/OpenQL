@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "ql/plat/resource/base.h"
+#include "ql/rmgr/resource_types/base.h"
 
 namespace ql {
-namespace plat {
-namespace resource {
+namespace rmgr {
+namespace resource_types {
 
 // FIXME JvS: replace all old-style resources with new ones, then delete this
 //  whole file.
@@ -16,9 +16,9 @@ class OldResource {
 public:
     utils::Str name;
     utils::UInt count;
-    resource::Direction direction;
+    Direction direction;
 
-    OldResource(const utils::Str &n, resource::Direction dir) : name(n), direction(dir) {}
+    OldResource(const utils::Str &n, Direction dir) : name(n), direction(dir) {}
     virtual ~OldResource() = default;
 
     virtual utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const = 0;
@@ -107,6 +107,6 @@ public:
 
 };
 
-} // namespace resource
-} // namespace plat
+} // namespace resource_types
+} // namespace rmgr
 } // namespacq ql

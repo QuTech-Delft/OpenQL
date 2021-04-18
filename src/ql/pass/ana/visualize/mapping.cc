@@ -28,7 +28,7 @@ void VisualizeMappingPass::dump_docs(
  * Constructs a mapping graph visualizer pass.
  */
 VisualizeMappingPass::VisualizeMappingPass(
-    const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+    const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
 ) : ProgramAnalysis(pass_factory, instance_name, type_name) {

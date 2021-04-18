@@ -9,7 +9,7 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/opt.h"
 #include "ql/plat/platform.h"
-#include "ql/plat/resource/manager.h"
+#include "ql/rmgr/manager.h"
 #include "ql/ir/ir.h"
 #include "ql/com/qubit_mapping.h"
 #include "options.h"
@@ -81,7 +81,7 @@ private:
     /**
      * Actual resources occupied by scheduled gates, if resource-aware.
      */
-    utils::Opt<plat::resource::State> rs;
+    utils::Opt<rmgr::State> rs;
 
 public:
 

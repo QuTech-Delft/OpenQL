@@ -10,7 +10,7 @@
 #include "ql/utils/pair.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/json.h"
-#include "ql/plat/resource/compat.h"
+#include "ql/rmgr/resource_types/compat.h"
 
 namespace ql {
 namespace arch {
@@ -19,13 +19,13 @@ namespace arch {
 // these are a superset of those allocated by the cc_light_resource_manager_t constructor below
 
 // Each qubit can be used by only one gate at a time.
-class ccl_qubit_resource_t : public plat::resource::OldResource {
+class ccl_qubit_resource_t : public rmgr::resource_types::OldResource {
 public:
     // fwd: qubit q is busy till cycle=state[q], i.e. all cycles < state[q] it is busy, i.e. start_cycle must be >= state[q]
     // bwd: qubit q is busy from cycle=state[q], i.e. all cycles >= state[q] it is busy, i.e. start_cycle+duration must be <= state[q]
     utils::Vec<utils::UInt> state;
 
-    ccl_qubit_resource_t(const plat::PlatformRef &platform, plat::resource::Direction dir);
+    ccl_qubit_resource_t(const plat::PlatformRef &platform, rmgr::Direction dir);
 
     utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
     void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
@@ -34,7 +34,7 @@ public:
 // Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.
 // Each qwg controls a private set of qubits.
 // A qwg can control multiple qubits at the same time, but only when they perform the same gate and start at the same time.
-class ccl_qwg_resource_t : public plat::resource::OldResource {
+class ccl_qwg_resource_t : public rmgr::resource_types::OldResource {
 public:
     utils::Vec<utils::UInt> fromcycle;          // qwg is busy from cycle==fromcycle[qwg], inclusive
     utils::Vec<utils::UInt> tocycle;            // qwg is busy to cycle==tocycle[qwg], not inclusive
@@ -47,7 +47,7 @@ public:
     utils::Vec<utils::Str> operations;    // with operation_name==operations[qwg]
     utils::Map<utils::UInt,utils::UInt> qubit2qwg;      // on qwg==qubit2qwg[q]
 
-    ccl_qwg_resource_t(const plat::PlatformRef &platform, plat::resource::Direction dir);
+    ccl_qwg_resource_t(const plat::PlatformRef &platform, rmgr::Direction dir);
 
     utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
     void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
@@ -56,13 +56,13 @@ public:
 // Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.
 // Each one controls a private set of qubits.
 // A measurement unit can control multiple qubits at the same time, but only when they start at the same time.
-class ccl_meas_resource_t : public plat::resource::OldResource {
+class ccl_meas_resource_t : public rmgr::resource_types::OldResource {
 public:
     utils::Vec<utils::UInt> fromcycle;  // last measurement start cycle
     utils::Vec<utils::UInt> tocycle;    // is busy till cycle
     utils::Map<utils::UInt,utils::UInt> qubit2meas;
 
-    ccl_meas_resource_t(const plat::PlatformRef & platform, plat::resource::Direction dir);
+    ccl_meas_resource_t(const plat::PlatformRef & platform, rmgr::Direction dir);
 
     utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
     void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
@@ -77,7 +77,7 @@ public:
 // A parked qubit cannot engage in any gate, so also not a two-qubit gate.
 // As a consequence, for each edge executing a two-qubit gate,
 // certain other edges cannot execute a two-qubit gate in parallel.
-class ccl_edge_resource_t : public plat::resource::OldResource {
+class ccl_edge_resource_t : public rmgr::resource_types::OldResource {
 public:
     // fwd: edge is busy till cycle=state[edge], i.e. all cycles < state[edge] it is busy, i.e. start_cycle must be >= state[edge]
     // bwd: edge is busy from cycle=state[edge], i.e. all cycles >= state[edge] it is busy, i.e. start_cycle+duration must be <= state[edge]
@@ -86,7 +86,7 @@ public:
     utils::Map<qubits_pair_t, utils::UInt> qubits2edge;      // constant helper table to find edge between a pair of qubits
     utils::Map<utils::UInt, utils::Vec<utils::UInt>> edge2edges;  // constant "edges" table from configuration file
 
-    ccl_edge_resource_t(const plat::PlatformRef &platform, plat::resource::Direction dir);
+    ccl_edge_resource_t(const plat::PlatformRef &platform, rmgr::Direction dir);
 
     utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
     void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
@@ -114,7 +114,7 @@ public:
 // so the second, third, etc. of these "flux"s can be scheduled in parallel to the first but not earlier than fromcycle[q],
 // since till that cycle is was likely to be busy with "mw", which doesn't allow a "flux" in parallel. Similar for backward scheduling.
 // The other members contain internal copies of the resource description and grid configuration of the json file.
-class ccl_detuned_qubits_resource_t : public plat::resource::OldResource {
+class ccl_detuned_qubits_resource_t : public rmgr::resource_types::OldResource {
 public:
     utils::Vec<utils::UInt> fromcycle;                              // qubit q is busy from cycle fromcycle[q]
     utils::Vec<utils::UInt> tocycle;                                // till cycle tocycle[q]
@@ -124,7 +124,7 @@ public:
     utils::Map<qubits_pair_t, utils::UInt> qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
     utils::Map<utils::UInt, utils::Vec<utils::UInt>> edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
-    ccl_detuned_qubits_resource_t(const plat::PlatformRef &platform, plat::resource::Direction dir);
+    ccl_detuned_qubits_resource_t(const plat::PlatformRef &platform, rmgr::Direction dir);
 
     utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
     void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
@@ -137,7 +137,7 @@ public:
 // When the communication gate is ready, the two channels can be released.
 // Of those channels only a limited and configurable number may be available for each core.
 // While during scheduling of a communication gate, no such channels are available, the gate is delayed.
-class ccl_channel_resource_t : public plat::resource::OldResource {
+class ccl_channel_resource_t : public rmgr::resource_types::OldResource {
 public:
     utils::UInt ncores;                             // topology.number_of_cores: total number of cores
     utils::UInt nchannels;                          // resources.channels.count: number of channels in each core
@@ -147,7 +147,7 @@ public:
     // i.e. all cycles >= state[core][c] it is busy, i.e. start_cycle+duration must be <= state[core][c]
     utils::Vec<utils::Vec<utils::UInt>> state;
 
-    ccl_channel_resource_t(const plat::PlatformRef &platform, plat::resource::Direction dir);
+    ccl_channel_resource_t(const plat::PlatformRef &platform, rmgr::Direction dir);
 
     utils::Bool available(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) const override;
     void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;

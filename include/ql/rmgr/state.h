@@ -8,12 +8,11 @@
 #include "ql/utils/num.h"
 #include "ql/utils/vec.h"
 #include "ql/ir/ir.h"
-#include "ql/plat/resource/base.h"
-#include "ql/plat/resource/factory.h"
+#include "ql/rmgr/resource_types/base.h"
+#include "ql/rmgr/factory.h"
 
 namespace ql {
-namespace plat {
-namespace resource {
+namespace rmgr {
 
 // Forward declaration for the manager, so we can declare it as a friend.
 class Manager;
@@ -28,7 +27,7 @@ private:
     /**
      * The list of resources and their state.
      */
-    utils::Vec<Ref> resources;
+    utils::Vec<ResourceRef> resources;
 
     /**
      * Set when reserve() returned an error, implying that the resources are in
@@ -93,6 +92,5 @@ public:
 
 };
 
-} // namespace resource
-} // namespace plat
+} // namespace rmgr
 } // namespacq ql

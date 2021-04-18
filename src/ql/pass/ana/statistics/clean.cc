@@ -28,7 +28,7 @@ void CleanStatisticsPass::dump_docs(
  * Constructs a statistics cleaner.
  */
 CleanStatisticsPass::CleanStatisticsPass(
-    const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+    const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
 ) : pmgr::pass_types::ProgramAnalysis(pass_factory, instance_name, type_name) {

@@ -15,141 +15,11 @@
 #include "ql/utils/options.h"
 #include "ql/utils/compat.h"
 #include "ql/ir/ir.h"
-#include "ql/pmgr/pass_types.h"
+#include "ql/pmgr/pass_types/base.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pmgr {
-
-/**
- * A generic group of passes, with no special functionality or default set of
- * passes.
- */
-class PassGroup : public pass_types::Group {
-public:
-
-    /**
-     * Constructs the pass group. No error checking here; this is up to the
-     * parent pass group. Note that the type name is missing, and that
-     * instance_name defaults to the empty string; generic passes always have
-     * an empty type name, and the root group has an empty instance name as
-     * well.
-     */
-    PassGroup(
-        const utils::Ptr<const PassFactory> &pass_factory,
-        const utils::Str &instance_name
-    );
-
-protected:
-
-    /**
-     * Implementation for the initial pass list. This is no-op for a generic
-     * pass group.
-     */
-    void get_passes(
-        const utils::Ptr<const PassFactory> &factory,
-        utils::List<PassRef> &passes
-    ) final;
-
-    /**
-     * Writes the documentation for a basic pass group to the given stream.
-     */
-    void dump_docs(
-        std::ostream &os,
-        const utils::Str &line_prefix
-    ) const override;
-
-};
-
-class PassFactory;
-using PassFactoryRef = utils::Ptr<PassFactory>;
-using CPassFactoryRef = utils::Ptr<const PassFactory>;
-
-/**
- * Factory class for constructing passes.
- */
-class PassFactory {
-private:
-
-    /**
-     * Function pointer object type that is used to construct pass class
-     * instances.
-     */
-    using ConstructorFn = utils::Ptr<
-        std::function<
-            PassRef(
-                const CPassFactoryRef &pass_factory,
-                const utils::Str &instance_name
-            )
-        >
-    >;
-
-    /**
-     * Map from (desugared) pass type name to a constructor function for that
-     * particular pass type.
-     */
-    utils::Map<utils::Str, ConstructorFn> pass_types;
-
-public:
-
-    /**
-     * Constructs a default pass factory for OpenQL.
-     */
-    PassFactory();
-
-    /**
-     * Registers a pass class with the given type name.
-     */
-    template <class PassType>
-    void register_pass(const utils::Str &type_name) {
-        ConstructorFn fn;
-        fn.emplace([type_name](
-            const CPassFactoryRef &pass_factory,
-            const utils::Str &instance_name
-        ) {
-            PassRef pass;
-            pass.emplace<PassType>(pass_factory, type_name, instance_name);
-            return pass;
-        });
-        pass_types.set(type_name) = fn;
-    }
-
-    /**
-     * Returns a copy of this pass factory with the following modifications made
-     * to the map.
-     *
-     *  - Entries with a `dnu` path component in them are removed. If the type
-     *    of the removed entry exists in dnu however, it will be reinserted with
-     *    the `dnu` path component removed.
-     *  - A copy is made of entries that include an `arch.<architecture>`
-     *    component pair, with that pair stripped.
-     *
-     * The original factory is not modified.
-     */
-    CPassFactoryRef configure(
-        const utils::Str &architecture,
-        const utils::Set<utils::Str> &dnu
-    ) const;
-
-    /**
-     * Builds a pass instance.
-     */
-    static PassRef build_pass(
-        const CPassFactoryRef &pass_factory,
-        const utils::Str &type_name,
-        const utils::Str &instance_name
-    );
-
-    /**
-     * Dumps documentation for all pass types known by this factory, as well as
-     * the option documentation for each pass.
-     */
-    static void dump_pass_types(
-        const CPassFactoryRef &pass_factory,
-        std::ostream &os = std::cout,
-        const utils::Str &line_prefix = ""
-    );
-
-};
 
 /**
  * The top-level pass manager class that drives compilation.
@@ -181,13 +51,13 @@ public:
  * with this name other than use it to name log files and such. Periods are used
  * for hierarchy separation, so `a.b` refers to sub-pass `b` of pass `a`.
  */
-class PassManager {
+class Manager {
 private:
 
     /**
      * The pass factory we're using.
      */
-    CPassFactoryRef pass_factory;
+    CFactoryRef pass_factory;
 
     /**
      * The root pass group.
@@ -199,10 +69,10 @@ public:
     /**
      * Constructs a new pass manager.
      */
-    explicit PassManager(
+    explicit Manager(
         const utils::Str &architecture = "",
         const utils::Set<utils::Str> &dnu = {},
-        const PassFactory &factory = {}
+        const Factory &factory = {}
     );
 
     /**
@@ -305,9 +175,9 @@ public:
      * configurable sub-passes depending on its type and configuration; if it
      * doesn't, "group" must not be specified.
      */
-    static PassManager from_json(
+    static Manager from_json(
         const utils::Json &json,
-        const PassFactory &factory = {}
+        const Factory &factory = {}
     );
 
     /**

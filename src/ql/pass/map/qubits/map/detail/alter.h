@@ -9,7 +9,7 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/list.h"
 #include "ql/plat/platform.h"
-#include "ql/plat/resource/manager.h"
+#include "ql/rmgr/manager.h"
 #include "ql/ir/ir.h"
 #include "options.h"
 #include "free_cycle.h"

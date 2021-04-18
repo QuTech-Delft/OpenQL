@@ -46,7 +46,7 @@ void Future::set_kernel(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
         scheduled.set(scheduler->instruction[scheduler->t]) = false;
         avlist.clear();
         avlist.push_back(scheduler->s);
-        scheduler->set_remaining(plat::resource::Direction::FORWARD);          // to know criticality
+        scheduler->set_remaining(rmgr::Direction::FORWARD);          // to know criticality
 
         if (options->write_dot_graphs) {
             utils::Str map_dot;
@@ -126,8 +126,7 @@ void Future::completed_gate(const ir::GateRef &gate) {
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
         input_gatepp = std::next(input_gatepp);
     } else {
-        scheduler->take_available(scheduler->node.at(gate), avlist, scheduled,
-                                  plat::resource::Direction::FORWARD);
+        scheduler->take_available(scheduler->node.at(gate), avlist, scheduled, rmgr::Direction::FORWARD);
     }
 }
 

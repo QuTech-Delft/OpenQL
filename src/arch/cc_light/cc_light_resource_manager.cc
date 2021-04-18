@@ -8,7 +8,7 @@ namespace ql {
 namespace arch {
 
 using namespace utils;
-using namespace plat::resource;
+using namespace rmgr::resource_types;
 
 // in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
 // it is needed to define the extend of the resource occupation in case of multi-cycle operations
@@ -39,7 +39,7 @@ static Str ccl_get_operation_name(const ir::GateRef &ins, const plat::PlatformRe
 
 ccl_qubit_resource_t::ccl_qubit_resource_t(
     const plat::PlatformRef &platform,
-    Direction dir
+    rmgr::Direction dir
 ) :
     OldResource("qubits", dir)
 {
@@ -47,7 +47,7 @@ ccl_qubit_resource_t::ccl_qubit_resource_t(
     count = platform->resources[name]["count"];
     state.resize(count);
     for (UInt q = 0; q < count; q++) {
-        state[q] = (dir == Direction::FORWARD ? 0 : ir::MAX_CYCLE);
+        state[q] = (dir == rmgr::Direction::FORWARD ? 0 : ir::MAX_CYCLE);
     }
 }
 
@@ -60,7 +60,7 @@ Bool ccl_qubit_resource_t::available(
     Str operation_type = ccl_get_operation_type(ins, platform);
 
     for (auto q : ins->operands) {
-        if (direction == Direction::FORWARD) {
+        if (direction == rmgr::Direction::FORWARD) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy till cycle : " << state[q]);
             if (op_start_cycle < state[q]) {
                 QL_DOUT("    " << name << " resource busy ...");
@@ -87,14 +87,14 @@ void ccl_qubit_resource_t::reserve(
     UInt operation_duration = ccl_get_operation_duration(ins, platform);
 
     for (auto q : ins->operands) {
-        state[q] = (direction == Direction::FORWARD ? op_start_cycle + operation_duration : op_start_cycle);
+        state[q] = (direction == rmgr::Direction::FORWARD ? op_start_cycle + operation_duration : op_start_cycle);
         QL_DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " qubit: " << q << " reserved till/from cycle: " << state[q]);
     }
 }
 
 ccl_qwg_resource_t::ccl_qwg_resource_t(
     const plat::PlatformRef &platform,
-    Direction dir
+    rmgr::Direction dir
 ) :
     OldResource("qwgs", dir)
 {
@@ -105,8 +105,8 @@ ccl_qwg_resource_t::ccl_qwg_resource_t(
     operations.resize(count);
 
     for (UInt i = 0; i < count; i++) {
-        fromcycle[i] = (dir == Direction::FORWARD ? 0 : ir::MAX_CYCLE);
-        tocycle[i] = (dir == Direction::FORWARD ? 0 : ir::MAX_CYCLE);
+        fromcycle[i] = (dir == rmgr::Direction::FORWARD ? 0 : ir::MAX_CYCLE);
+        tocycle[i] = (dir == rmgr::Direction::FORWARD ? 0 : ir::MAX_CYCLE);
         operations[i] = "";
     }
     auto & constraints = platform->resources[name]["connection_map"];
@@ -133,7 +133,7 @@ Bool ccl_qwg_resource_t::available(
     if (is_mw) {
         for (auto q : ins->operands) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qwg: " << qubit2qwg.at(q) << " is busy from cycle: " << fromcycle[qubit2qwg.at(q)] << " to cycle: " << tocycle[qubit2qwg.at(q)] << " for operation: " << operations[qubit2qwg.at(q)]);
-            if (direction == Direction::FORWARD) {
+            if (direction == rmgr::Direction::FORWARD) {
                 if (
                     op_start_cycle < fromcycle[qubit2qwg.at(q)]
                     || (op_start_cycle < tocycle[qubit2qwg.at(q)] && operations[qubit2qwg.at(q)] != operation_name)
@@ -168,7 +168,7 @@ void ccl_qwg_resource_t::reserve(
     Bool is_mw = operation_type == "mw";
     if (is_mw) {
         for (auto q : ins->operands) {
-            if (direction == Direction::FORWARD) {
+            if (direction == rmgr::Direction::FORWARD) {
                 if (operations[qubit2qwg.at(q)] == operation_name) {
                     tocycle[qubit2qwg.at(q)] = max(tocycle[qubit2qwg.at(q)], op_start_cycle + operation_duration);
                 } else {
@@ -192,7 +192,7 @@ void ccl_qwg_resource_t::reserve(
 
 ccl_meas_resource_t::ccl_meas_resource_t(
     const plat::PlatformRef &platform,
-    Direction dir
+    rmgr::Direction dir
 ) :
     OldResource("meas_units", dir)
 {
@@ -202,8 +202,8 @@ ccl_meas_resource_t::ccl_meas_resource_t(
     tocycle.resize(count);
 
     for (UInt i=0; i<count; i++) {
-        fromcycle[i] = (dir == Direction::FORWARD ? 0 : ir::MAX_CYCLE);
-        tocycle[i] = (dir == Direction::FORWARD ? 0 : ir::MAX_CYCLE);
+        fromcycle[i] = (dir == rmgr::Direction::FORWARD ? 0 : ir::MAX_CYCLE);
+        tocycle[i] = (dir == rmgr::Direction::FORWARD ? 0 : ir::MAX_CYCLE);
     }
     auto &constraints = platform->resources[name]["connection_map"];
     for (auto it = constraints.begin(); it != constraints.end(); ++it) {
@@ -228,7 +228,7 @@ Bool ccl_meas_resource_t::available(
     if (is_measure) {
         for (auto q : ins->operands) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  meas: " << qubit2meas.at(q) << " is busy from cycle: " << fromcycle[qubit2meas.at(q)] << " to cycle: " << tocycle[qubit2meas.at(q)] );
-            if (direction == Direction::FORWARD) {
+            if (direction == rmgr::Direction::FORWARD) {
                 if (op_start_cycle != fromcycle[qubit2meas.at(q)]) {
                     // If current measurement on same measurement-unit does not start in the
                     // same cycle, then it should wait for current measurement to finish
@@ -273,7 +273,7 @@ void ccl_meas_resource_t::reserve(
 
 ccl_edge_resource_t::ccl_edge_resource_t(
     const plat::PlatformRef &platform,
-    Direction dir
+    rmgr::Direction dir
 ) :
     OldResource("edges", dir)
 {
@@ -282,7 +282,7 @@ ccl_edge_resource_t::ccl_edge_resource_t(
     state.resize(count);
 
     for (UInt i = 0; i < count; i++) {
-        state[i] = (dir == Direction::FORWARD ? 0 : ir::MAX_CYCLE);
+        state[i] = (dir == rmgr::Direction::FORWARD ? 0 : ir::MAX_CYCLE);
     }
 
     if (platform->topology.count("edges") <= 0) {
@@ -345,7 +345,7 @@ Bool ccl_edge_resource_t::available(
                 Vec<UInt> edges2check(edge2edges.get(edge_no));
                 edges2check.push_back(edge_no);
                 for (auto &e : edges2check) {
-                    if (direction == Direction::FORWARD) {
+                    if (direction == rmgr::Direction::FORWARD) {
                         if (op_start_cycle < state[e]) {
                             QL_DOUT("    " << name << " resource busy ...");
                             return false;
@@ -387,7 +387,7 @@ void ccl_edge_resource_t::reserve(
             auto q1 = ins->operands[1];
             qubits_pair_t aqpair(q0, q1);
             auto edge_no = qubits2edge.at(aqpair);
-            if (direction == Direction::FORWARD) {
+            if (direction == rmgr::Direction::FORWARD) {
                 state[edge_no] = op_start_cycle + operation_duration;
                 for (auto &e : edge2edges.get(edge_no)) {
                     state[e] = op_start_cycle + operation_duration;
@@ -407,7 +407,7 @@ void ccl_edge_resource_t::reserve(
 
 ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
     const plat::PlatformRef &platform,
-    Direction dir
+    rmgr::Direction dir
 ) :
     OldResource("detuned_qubits", dir)
 {
@@ -419,8 +419,8 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
 
     // initialize resource state machine to be free for all qubits
     for (UInt i = 0; i < count; i++) {
-        fromcycle[i] = (dir == Direction::FORWARD ? 0 : ir::MAX_CYCLE);
-        tocycle[i] = (dir == Direction::FORWARD ? 0 : ir::MAX_CYCLE);
+        fromcycle[i] = (dir == rmgr::Direction::FORWARD ? 0 : ir::MAX_CYCLE);
+        tocycle[i] = (dir == rmgr::Direction::FORWARD ? 0 : ir::MAX_CYCLE);
         operations[i] = "";
     }
 
@@ -485,7 +485,7 @@ Bool ccl_detuned_qubits_resource_t::available(
 
                 for (auto &q : edge_detunes_qubits.get(edge_no)) {
                     QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " detuning qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
-                    if (direction == Direction::FORWARD) {
+                    if (direction == rmgr::Direction::FORWARD) {
                         if (
                             op_start_cycle < fromcycle[q]
                             || ( op_start_cycle < tocycle[q] && operations[q] != operation_type)
@@ -516,7 +516,7 @@ Bool ccl_detuned_qubits_resource_t::available(
     if (is_mw) {
         for (auto q : ins->operands) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
-            if (direction == Direction::FORWARD) {
+            if (direction == rmgr::Direction::FORWARD) {
                 if (op_start_cycle < fromcycle[q]) {
                     QL_DOUT("    " << name << " busy for rotation: op_start cycle " << op_start_cycle << " < fromcycle[" << q << "] " << fromcycle[q] );
                     return false;
@@ -564,7 +564,7 @@ void ccl_detuned_qubits_resource_t::reserve(
             auto edge_no = qubitpair2edge.at(aqpair);
 
             for (auto &q : edge_detunes_qubits.get(edge_no)) {
-                if (direction == Direction::FORWARD) {
+                if (direction == rmgr::Direction::FORWARD) {
                     if (operations[q] == operation_type) {
                         tocycle[q] = max(tocycle[q], op_start_cycle + operation_duration);
                         QL_DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
@@ -594,7 +594,7 @@ void ccl_detuned_qubits_resource_t::reserve(
     Bool is_mw = operation_type == "mw";
     if (is_mw) {
         for (auto q : ins->operands) {
-            if (direction == Direction::FORWARD) {
+            if (direction == rmgr::Direction::FORWARD) {
                 if (operations[q] == operation_type) {
                     tocycle[q] = max(tocycle[q], op_start_cycle + operation_duration);
                     QL_DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
@@ -622,7 +622,7 @@ void ccl_detuned_qubits_resource_t::reserve(
 
 ccl_channel_resource_t::ccl_channel_resource_t(
     const plat::PlatformRef &platform,
-    Direction dir
+    rmgr::Direction dir
 ) :
     OldResource("channels", dir)
 {
@@ -657,7 +657,7 @@ ccl_channel_resource_t::ccl_channel_resource_t(
     QL_DOUT("Number of channels per core= " << nchannels);
 
     state.resize(ncores);
-    for (UInt i=0; i<ncores; i++) state[i].resize(nchannels, (dir == Direction::FORWARD ? 0 : ir::MAX_CYCLE));
+    for (UInt i=0; i<ncores; i++) state[i].resize(nchannels, (dir == rmgr::Direction::FORWARD ? 0 : ir::MAX_CYCLE));
 }
 
 Bool ccl_channel_resource_t::available(
@@ -671,7 +671,7 @@ Bool ccl_channel_resource_t::available(
     Bool is_ic = (operation_type == "extern");
     if (is_ic) {
         QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
-        if (direction == Direction::FORWARD) {
+        if (direction == rmgr::Direction::FORWARD) {
             for (auto q : ins->operands) {
                 UInt core = q/(platform->qubit_count/ncores);
                 Bool is_avail = false;
@@ -737,7 +737,7 @@ void ccl_channel_resource_t::reserve(
     Bool is_ic = (operation_type == "extern");
     if (is_ic) {
         QL_DOUT(" reserve " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
-        if (direction == Direction::FORWARD) {
+        if (direction == rmgr::Direction::FORWARD) {
             for (auto q : ins->operands) {
                 UInt core = q/(platform->qubit_count/ncores);
                 Bool is_avail = false;

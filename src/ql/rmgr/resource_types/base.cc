@@ -2,23 +2,11 @@
  * Defines the base class for scheduler resources.
  */
 
-#include "ql/plat/resource/base.h"
+#include "ql/rmgr/resource_types/base.h"
 
 namespace ql {
-namespace plat {
-namespace resource {
-
-/**
- * Stream operator for Direction.
- */
-std::ostream &operator<<(std::ostream &os, Direction dir) {
-    switch (dir) {
-        case Direction::FORWARD: os << "forward"; break;
-        case Direction::BACKWARD: os << "backward"; break;
-        case Direction::UNDEFINED: os << "undefined"; break;
-    }
-    return os;
-}
+namespace rmgr {
+namespace resource_types {
 
 /**
  * Constructs the abstract resource. No error checking here; this is up to
@@ -152,6 +140,6 @@ void Base::dump_state(
     on_dump_state(os, line_prefix);
 }
 
-} // namespace resource
-} // namespace plat
+} // namespace resource_types
+} // namespace rmgr
 } // namespace ql

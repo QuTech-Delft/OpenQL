@@ -8,13 +8,12 @@
 #include "ql/utils/str.h"
 #include "ql/utils/list.h"
 #include "ql/utils/map.h"
-#include "ql/plat/resource/base.h"
-#include "ql/plat/resource/factory.h"
-#include "ql/plat/resource/state.h"
+#include "ql/rmgr/resource_types/base.h"
+#include "ql/rmgr/factory.h"
+#include "ql/rmgr/state.h"
 
 namespace ql {
-namespace plat {
-namespace resource {
+namespace rmgr {
 
 /**
  * A collection of resources corresponding to a particular platform.
@@ -35,7 +34,7 @@ private:
     /**
      * The list of resources.
      */
-    utils::Map<utils::Str, Ref> resources;
+    utils::Map<utils::Str, ResourceRef> resources;
 
     /**
      * Returns whether the given user-specified name is a valid resource name.
@@ -180,6 +179,5 @@ public:
 
 };
 
-} // namespace resource
-} // namespace plat
+} // namespace rmgr
 } // namespacq ql

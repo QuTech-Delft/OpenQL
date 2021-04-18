@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ql/pmgr/pass_types.h"
+#include "ql/pmgr/pass_types/specializations.h"
 #include "ql/pass/ana/statistics/annotations.h"
 
 namespace ql {
@@ -63,7 +63,7 @@ public:
      * Constructs a statistics reporter.
      */
     ReportStatisticsPass(
-        const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+        const utils::Ptr<const pmgr::Factory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
     );

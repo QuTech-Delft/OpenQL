@@ -8,72 +8,11 @@
 #include "ql/utils/str.h"
 #include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
+#include "ql/rmgr/types.h"
 
 namespace ql {
-namespace plat {
-namespace resource {
-
-/**
- * The direction in which gates are presented to a resource, allowing the
- * resource to optimize its state.
- */
-enum class Direction {
-
-    /**
-     * Gates are only reserved with non-decreasing cycle numbers.
-     */
-    FORWARD,
-
-    /**
-     * Gates are only reserved with non-increasing cycle numbers.
-     */
-    BACKWARD,
-
-    /**
-     * available() and reserve() may be called with any cycle number.
-     */
-    UNDEFINED
-
-};
-
-/**
- * Stream operator for Direction.
- */
-std::ostream &operator<<(std::ostream &os, Direction dir);
-
-/**
- * Context for constructing resource instances.
- */
-struct Context {
-
-    /**
-     * The full type name for the resource. This is the full name that was used
-     * when the resource was registered with the resource factory. The same
-     * resource class may be registered with multiple type names, in which case
-     * the pass implementation may use this to differentiate.
-     */
-    utils::Str type_name;
-
-    /**
-     * The instance name for the resource, i.e. the name that the user assigned
-     * to it or the name that was assigned to it automatically. Must match
-     * `[a-zA-Z0-9_\-]+`, and must be unique within a resource manager.
-     * Instance names should NOT have a semantic meaning; they are only intended
-     * for logging.
-     */
-    utils::Str instance_name;
-
-    /**
-     * The platform being compiled for.
-     */
-    plat::PlatformRef platform;
-
-    /**
-     * Unparsed JSON configuration data for the resource.
-     */
-    utils::Json configuration;
-
-};
+namespace rmgr {
+namespace resource_types {
 
 /**
  * Base class for scheduling resources. Scheduling resources are used to
@@ -223,10 +162,26 @@ public:
 };
 
 /**
- * A reference to a resource.
+ * A mutable reference to a resource.
  */
 using Ref = utils::ClonablePtr<Base>;
 
-} // namespace resource
-} // namespace plat
+/**
+ * An immutable reference to a resource.
+ */
+using CRef = utils::ClonablePtr<const Base>;
+
+} // namespace resource_types
+
+/**
+ * Shorthand for a reference to any resource type.
+ */
+using ResourceRef = resource_types::Ref;
+
+/**
+ * Shorthand for an immutable reference to any resource type.
+ */
+using CResourceRef = resource_types::CRef;
+
+} // namespace rmgr
 } // namespacq ql

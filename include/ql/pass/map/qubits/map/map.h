@@ -6,7 +6,7 @@
 
 #include "ql/utils/ptr.h"
 #include "ql/com/options.h"
-#include "ql/pmgr/pass_types.h"
+#include "ql/pmgr/pass_types/specializations.h"
 
 namespace ql {
 namespace pass {
@@ -45,7 +45,7 @@ public:
      * Constructs a qubit mapper.
      */
     MapQubitsPass(
-        const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+        const utils::Ptr<const pmgr::Factory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
     );
@@ -54,7 +54,7 @@ public:
      * Builds the options structure for the mapper.
      */
     pmgr::pass_types::NodeType on_construct(
-        const utils::Ptr<const pmgr::PassFactory> &factory,
+        const utils::Ptr<const pmgr::Factory> &factory,
         utils::List<pmgr::PassRef> &passes,
         pmgr::condition::Ref &condition
     ) override;

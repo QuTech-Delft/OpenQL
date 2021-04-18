@@ -10,11 +10,10 @@
 #include "ql/utils/map.h"
 #include "ql/utils/json.h"
 #include "ql/plat/platform.h"
-#include "ql/plat/resource/base.h"
+#include "ql/rmgr/resource_types/base.h"
 
 namespace ql {
-namespace plat {
-namespace resource {
+namespace rmgr {
 
 /**
  * Factory class for constructing resources.
@@ -28,7 +27,7 @@ private:
      */
     using ConstructorFn = utils::Ptr<
         std::function<
-            Ref(
+            ResourceRef(
                 const utils::Str &instance_name,
                 const plat::PlatformRef &platform,
                 const utils::Json &configuration
@@ -60,7 +59,7 @@ public:
             const plat::PlatformRef &platform,
             const utils::Json &configuration
         ) {
-            Ref resource;
+            ResourceRef resource;
             resource.emplace<ResourceType>(Context({
                 type_name,
                 instance_name,
@@ -92,7 +91,7 @@ public:
     /**
      * Builds a resource instance.
      */
-    Ref build_resource(
+    ResourceRef build_resource(
         const utils::Str &type_name,
         const utils::Str &instance_name,
         const plat::PlatformRef &platform,
@@ -109,6 +108,5 @@ public:
 
 };
 
-} // namespace resource
-} // namespace plat
+} // namespace rmgr
 } // namespacq ql

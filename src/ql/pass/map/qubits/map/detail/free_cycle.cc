@@ -16,7 +16,7 @@ namespace detail {
  */
 void FreeCycle::initialize(const plat::PlatformRef &p, const OptionsRef &opt) {
     QL_DOUT("FreeCycle::initialize()");
-    auto rm = plat::resource::Manager::from_defaults(p);   // allocated here and copied below to rm because of platform parameter
+    auto rm = rmgr::Manager::from_defaults(p);   // allocated here and copied below to rm because of platform parameter
                                                            // JvS: I have no idea what ^ means
     QL_DOUT("... created FreeCycle initialize local resource_manager");
     options = opt;
@@ -28,7 +28,7 @@ void FreeCycle::initialize(const plat::PlatformRef &p, const OptionsRef &opt) {
     fcv.clear();
     fcv.resize(nq+nb, 1);   // this 1 implies that cycle of first gate will be 1 and not 0; OpenQL convention!?!?
     QL_DOUT("... about to copy FreeCycle initialize local resource_manager to FreeCycle member rm");
-    rs = rm.build(plat::resource::Direction::FORWARD);
+    rs = rm.build(rmgr::Direction::FORWARD);
     QL_DOUT("... done copy FreeCycle initialize local resource_manager to FreeCycle member rm");
 }
 

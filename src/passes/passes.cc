@@ -571,9 +571,9 @@ static void rcschedule_kernel(
 
     utils::Str schedopt = com::options::get("scheduler");
     if (schedopt == "ASAP") {
-        sched.schedule_asap(plat::resource::Manager::from_defaults(platform));
+        sched.schedule_asap(rmgr::Manager::from_defaults(platform));
     } else if (schedopt == "ALAP") {
-        sched.schedule_alap(plat::resource::Manager::from_defaults(platform));
+        sched.schedule_alap(rmgr::Manager::from_defaults(platform));
     } else {
         QL_FATAL("Not supported scheduler option: scheduler=" << schedopt);
     }
