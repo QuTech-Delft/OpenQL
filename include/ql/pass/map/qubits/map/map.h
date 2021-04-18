@@ -15,7 +15,7 @@ namespace qubits {
 namespace map {
 
 namespace detail {
-class Options;
+struct Options;
 } // namespace detail
 
 /**

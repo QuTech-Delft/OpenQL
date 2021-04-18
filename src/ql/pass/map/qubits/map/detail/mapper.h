@@ -250,8 +250,6 @@ private:
      */
     std::mt19937 rng;
 
-public:
-
     /**
      * Number of swaps added (including moves) to the most recently mapped
      * kernel, set by map_kernel().
@@ -278,8 +276,6 @@ public:
      * Qubit mapping after mapping, set by map_kernel().
      */
     com::QubitMapping v2r_out;
-
-private:
 
     /**
      * Find shortest paths between src and tgt in the grid, bounded by a
