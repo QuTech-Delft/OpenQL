@@ -32,12 +32,12 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
         // add src to this path (so that it becomes a distance 0 path with one qubit, src)
         // and add the Alter to the result list
         Alter a;
-        a.Init(platformp, kernelp, options);
-        a.targetgp = gp;
-        a.Add2Front(src);
+        a.initialize(kernelp, options);
+        a.target_gate = gp;
+        a.add_to_front(src);
         resla.push_back(a);
-        a.DPRINT("... empty path after adding to result list");
-        Alter::DPRINT("... result list after adding empty path", resla);
+        a.debug_print("... empty path after adding to result list");
+        Alter::debug_print("... result list after adding empty path", resla);
         QL_DOUT("... will return now");
         return;
     }
@@ -100,7 +100,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, UInt bu
     // add src to front of all to-be-returned paths from src's neighbors to tgt
     for (auto &a : resla) {
         QL_DOUT("... GenShortestPaths, about to add src=" << src << " in front of path");
-        a.Add2Front(src);
+        a.add_to_front(src);
     }
     QL_DOUT("... GenShortestPaths: returning from call of: " << "src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << which);
 }
@@ -129,7 +129,7 @@ void Mapper::GenShortestPaths(const ir::GateRef &gp, UInt src, UInt tgt, List<Al
 
     // QL_DOUT("about to split the paths");
     for (auto &a : directla) {
-        a.Split(resla);
+        a.split(resla);
     }
     // Alter::DPRINT("... after generating and splitting the paths", resla);
 }
@@ -190,12 +190,12 @@ Alter Mapper::ChooseAlter(List<Alter> &la, Future &future) {
         case TieBreakMethod::CRITICAL: {
             List<ir::GateRef> lag;
             for (auto &a : la) {
-                lag.push_back(a.targetgp);
+                lag.push_back(a.target_gate);
             }
             ir::GateRef gp = future.MostCriticalIn(lag);
             QL_ASSERT(!gp.empty());
             for (auto &a : la) {
-                if (a.targetgp.get_ptr() == gp.get_ptr()) {
+                if (a.target_gate.get_ptr() == gp.get_ptr()) {
                     // QL_DOUT(" ... took first alternative with most critical target gate");
                     return a;
                 }
@@ -250,10 +250,11 @@ void Mapper::MapRoutedGate(ir::GateRef &gp, Past &past) {
 // generating swaps in past
 // and taking it out of future when done with it
 void Mapper::CommitAlter(Alter &resa, Future &future, Past &past) {
-    ir::GateRef resgp = resa.targetgp;   // and the 2q target gate then in resgp
-    resa.DPRINT("... CommitAlter, alternative to commit, will add swaps and then map target 2q gate");
+    ir::GateRef resgp = resa.target_gate;   // and the 2q target gate then in resgp
+    resa.debug_print(
+        "... CommitAlter, alternative to commit, will add swaps and then map target 2q gate");
 
-    resa.AddSwaps(past, options->swap_selection_mode);
+    resa.add_swaps(past, options->swap_selection_mode);
 
     // when only some swaps were added, the resgp might not yet be NN, so recheck
     auto &q = resgp->operands;
@@ -391,9 +392,10 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
 
     QL_DOUT("SelectAlter ENTRY level=" << level << " from " << la.size() << " alternatives");
     if (options->heuristic == Heuristic::BASE || options->heuristic == Heuristic::BASE_RC) {
-        Alter::DPRINT("... SelectAlter base (equally good/best) alternatives:", la);
+        Alter::debug_print(
+            "... SelectAlter base (equally good/best) alternatives:", la);
         resa = ChooseAlter(la, future);
-        resa.DPRINT("... the selected Alter is");
+        resa.debug_print("... the selected Alter is");
         // QL_DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
         return;
     }
@@ -405,12 +407,13 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
 
     // Compute a.score of each alternative relative to basePast, and sort la on it, minimum first
     for (auto &a : la) {
-        a.DPRINT("Considering extension by alternative: ...");
-        a.Extend(past, basePast);           // locally here, past will be cloned and kept in alter
+        a.debug_print("Considering extension by alternative: ...");
+        a.extend(past, basePast);           // locally here, past will be cloned and kept in alter
         // and the extension stored into the a.score
     }
     la.sort([this](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
-    Alter::DPRINT("... SelectAlter sorted all entry alternatives after extension:", la);
+    Alter::debug_print(
+        "... SelectAlter sorted all entry alternatives after extension:", la);
 
     // Reduce sorted list of alternatives (la) to list of good alternatives (gla)
     // suitable to find in recursion which is/are really best;
@@ -435,7 +438,8 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
         }
     }
     // QL_DOUT("SelectAlter mapselectmaxwidth=" << mapselectmaxwidthopt << " level=" << level << " reduced la to gla");
-    Alter::DPRINT("... SelectAlter good alternatives before recursion:", gla);
+    Alter::debug_print("... SelectAlter good alternatives before recursion:",
+                       gla);
 
     // When maxlevel has been reached, stop the recursion, and choose from the best minextend/maxfidelity alternatives
     if (level >= options->recursion_depth_limit) {
@@ -443,9 +447,11 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
         // and make a choice from that list to return as result
         bla = gla;
         bla.remove_if([this,gla](const Alter& a) { return a.score != gla.front().score; });
-        Alter::DPRINT("... SelectAlter reduced to best alternatives to choose result from:", bla);
+        Alter::debug_print(
+            "... SelectAlter reduced to best alternatives to choose result from:",
+            bla);
         resa = ChooseAlter(bla, future);
-        resa.DPRINT("... the selected Alter (STOPPING RECURSION) is");
+        resa.debug_print("... the selected Alter (STOPPING RECURSION) is");
         // QL_DOUT("SelectAlter DONE level=" << level << " from " << bla.size() << " best alternatives");
         return;
     }
@@ -471,11 +477,12 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
     // This anomaly may need correction.
     // QL_DOUT("... SelectAlter level=" << level << " entering recursion with " << gla.size() << " good alternatives");
     for (auto &a : gla) {
-        a.DPRINT("... ... considering alternative:");
+        a.debug_print("... ... considering alternative:");
         Future future_copy = future;            // copy!
         Past   past_copy = past;                // copy!
         CommitAlter(a, future_copy, past_copy);
-        a.DPRINT("... ... committed this alternative first before recursion:");
+        a.debug_print(
+            "... ... committed this alternative first before recursion:");
 
         Bool    havegates;                  // are there still non-NN 2q gates to map?
         List<ir::GateRef> lg;            // list of non-NN 2q gates taken from avlist, as returned from MapMappableGates
@@ -503,7 +510,8 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
             QL_DOUT("... ... SelectAlter level=" << level << ", generated for these 2q gates " << la.size() << " alternatives; RECURSE ... ");
             Alter resa;                         // result alternative selected and returned by next SelectAlter call
             SelectAlter(la, resa, future_copy, past_copy, basePast, level+1); // recurse, best in resa ...
-            resa.DPRINT("... ... SelectAlter, generated for these 2q gates ... ; RECURSE DONE; resulting alternative ");
+            resa.debug_print(
+                "... ... SelectAlter, generated for these 2q gates ... ; RECURSE DONE; resulting alternative ");
             a.score = resa.score;               // extension of deep recursion is treated as extension at current level,
             // by this an alternative started bad may be compensated by deeper alts
         } else {
@@ -515,21 +523,25 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
                 a.score = past_copy.get_max_free_cycle() -
                           basePast.get_max_free_cycle();
             }
-            a.DPRINT("... ... SelectAlter, after committing this alternative, mapped easy gates, no gates to evaluate next; RECURSION BOTTOM");
+            a.debug_print(
+                "... ... SelectAlter, after committing this alternative, mapped easy gates, no gates to evaluate next; RECURSION BOTTOM");
         }
-        a.DPRINT("... ... DONE considering alternative:");
+        a.debug_print("... ... DONE considering alternative:");
     }
     // Sort list of good alternatives (gla) on score resulting after recursion
     gla.sort([this](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
-    Alter::DPRINT("... SelectAlter sorted alternatives after recursion:", gla);
+    Alter::debug_print("... SelectAlter sorted alternatives after recursion:",
+                       gla);
 
     // Reduce list of good alternatives (gla) of before recursion to list of equally minimal best alternatives now (bla)
     // and make a choice from that list to return as result
     bla = gla;
     bla.remove_if([this,gla](const Alter& a) { return a.score != gla.front().score; });
-    Alter::DPRINT("... SelectAlter equally best alternatives on return of RECURSION:", bla);
+    Alter::debug_print(
+        "... SelectAlter equally best alternatives on return of RECURSION:",
+        bla);
     resa = ChooseAlter(bla, future);
-    resa.DPRINT("... the selected Alter is");
+    resa.debug_print("... the selected Alter is");
     // QL_DOUT("... SelectAlter level=" << level << " selecting from " << bla.size() << " equally good alternatives above DONE");
     QL_DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
 }
