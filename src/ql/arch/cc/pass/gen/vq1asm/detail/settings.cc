@@ -1,16 +1,20 @@
 /**
- * @file    arch/cc/settings_cc.cc
+ * @file    arch/cc/pass/gen/vq1asm/detail/settings.cc
  * @date    20201001
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handle JSON settings for the CC backend
  * @note
  */
 
-#include "settings_cc.h"
+#include "settings.h"
 
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 using namespace utils;
 
@@ -326,6 +330,10 @@ Int Settings::findStaticCodewordOverride(const Json &instruction, UInt operandId
 }
 //#endif
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

@@ -1,5 +1,5 @@
 /**
- * @file    arch/cc/codegen_cc.h
+ * @file    arch/cc/pass/gen/vq1asm/detail/codegen.h
  * @date    201810xx
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   code generator backend for the Central Controller
@@ -10,16 +10,20 @@
 #pragma once
 
 #include "ql/plat/platform.h"
-#include "types_cc.h"
-#include "options_cc.h"
+#include "types.h"
+#include "options.h"
 #include "bundle_info.h"
-#include "datapath_cc.h"
-#include "settings_cc.h"
-#include "vcd_cc.h"
+#include "datapath.h"
+#include "settings.h"
+#include "vcd.h"
 
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 class Codegen {
 public: //  functions
@@ -141,6 +145,10 @@ private:    // funcs
 
 }; // class
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

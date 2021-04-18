@@ -1,12 +1,12 @@
 /**
- * @file    arch/cc/vcd_cc.cc
+ * @file    arch/cc/pass/gen/vq1asm/detail/vcd.cc
  * @date    20201001
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handle generation of Value Change Dump file for GTKWave viewer
  * @note
  */
 
-#include "vcd_cc.h"
+#include "vcd.h"
 
 #include <iomanip>
 #include "ql/com/options.h"
@@ -15,6 +15,10 @@
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 using namespace utils;
 
@@ -130,6 +134,10 @@ void Vcd::customGate(const Str &iname, const Vec<UInt> &qops, UInt startCycle, U
     }
 }
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

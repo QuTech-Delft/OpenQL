@@ -1,5 +1,5 @@
 /**
- * @file    arch/cc/datapath_cc.h
+ * @file    arch/cc/pass/gen/vq1asm/detail/datapath.h
  * @date    20201119
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handling of Central Controller datapath (input MUX, Distributed Shared Memory, output PL)
@@ -11,12 +11,16 @@
 #include <iomanip>
 #include "ql/utils/logger.h"
 #include "ql/ir/ir.h"
-#include "types_cc.h"
+#include "types.h"
 #include "bundle_info.h"
 
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 // NB: types shared with codegen_cc. FIXME: move
 struct FeedbackInfo {                                       // information for feedback on single instrument group
@@ -92,6 +96,10 @@ private:    // vars
     Vec<UInt> lastPl = Vec<UInt>(MAX_INSTRS, 0);
 }; // class
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

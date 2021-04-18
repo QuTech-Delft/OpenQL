@@ -1,5 +1,5 @@
 /**
- * @file   arch/cc/backend_cc.h
+ * @file   arch/cc/pass/gen/vq1asm/detail/backend.h
  * @date   201809xx
  * @author Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief  eqasm backend for the Central Controller
@@ -8,14 +8,18 @@
 
 #pragma once
 
-#include "types_cc.h"
+#include "types.h"
 
 #include "ql/ir/ir.h"
-#include "codegen_cc.h"
+#include "codegen.h"
 
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 class Backend {
 public:
@@ -36,6 +40,10 @@ private: // vars
     Int bundleIdx;
 }; // class
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

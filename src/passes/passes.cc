@@ -15,8 +15,7 @@
 #include "ql/pass/map/qubits/map/detail/mapper.h"
 #include "ql/pass/io/cqasm/read.h"
 #include "ql/pass/ana/statistics/report.h"
-
-#include "arch/cc/backend_cc.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/backend.h"
 
 namespace ql {
 
@@ -247,7 +246,7 @@ void BackendCompilerPass::runOnProgram(const ir::ProgramRef &program) {
     //getPassOptions()->getOption("eqasm_compiler_name");
     
     if (eqasm_compiler_name == "eqasm_backend_cc") {
-        arch::cc::Backend().compile(program, program->platform);
+        arch::cc::pass::gen::vq1asm::detail::Backend().compile(program, program->platform);
     } else {
         QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }

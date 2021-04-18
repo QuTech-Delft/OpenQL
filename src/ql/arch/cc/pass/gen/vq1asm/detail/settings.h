@@ -1,5 +1,5 @@
 /**
- * @file    arch/cc/settings_cc.h
+ * @file    arch/cc/pass/gen/vq1asm/detail/settings.h
  * @date    20201001
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handle JSON settings for the CC backend
@@ -9,12 +9,16 @@
 #pragma once
 
 #include "ql/plat/platform.h"
-#include "types_cc.h"
-#include "options_cc.h"
+#include "types.h"
+#include "options.h"
 
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 class Settings {
 public: // types
@@ -80,6 +84,10 @@ private:    // vars
     RawPtr<const Json> jsonSignals;
 }; // class
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

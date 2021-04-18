@@ -1,18 +1,22 @@
 /**
- * @file    arch/cc/datapath_cc.cc
+ * @file    arch/cc/pass/gen/vq1asm/detail/datapath.cc
  * @date    20201119
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handling of Central Controller datapath (input MUX, Distributed Shared Memory, output PL)
  * @note
  */
 
-#include "datapath_cc.h"
+#include "datapath.h"
 
 #include <iomanip>
 
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 using namespace utils;
 
@@ -272,6 +276,10 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
     return alignSm(minSmBit, PL_SM_WIN_SIZE);    // NB: irrelevant if !minMaxValid since SM is not accessed in that case
 }
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

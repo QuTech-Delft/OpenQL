@@ -17,6 +17,10 @@
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 using Bool = utils::Bool;
 using UInt = utils::UInt;
@@ -42,6 +46,10 @@ using Vec = utils::Vec<T>;
 template <class K, class V>
 using Map = utils::Map<K, V>;
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

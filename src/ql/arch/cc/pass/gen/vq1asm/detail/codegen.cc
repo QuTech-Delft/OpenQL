@@ -1,5 +1,5 @@
 /**
- * @file    arch/cc/codegen_cc.cc
+ * @file    arch/cc/pass/gen/vq1asm/detail/codegen.cc
  * @date    201810xx
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   code generator backend for the Central Controller
@@ -7,7 +7,7 @@
  *          functions is correct
  */
 
-#include "codegen_cc.h"
+#include "codegen.h"
 
 #include <iosfwd>
 #include "ql/version.h"
@@ -16,6 +16,10 @@
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 using namespace utils;
 
@@ -1058,6 +1062,10 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
 }
 #endif
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

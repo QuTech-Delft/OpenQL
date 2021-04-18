@@ -1,5 +1,5 @@
 /**
- * @file    arch/cc/options_cc.h
+ * @file    arch/cc/pass/gen/vq1asm/detail/options.h
  * @date    20201007
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   options for Central Controller backend
@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "types_cc.h"
+#include "types.h"
 
 // constants
 #define CC_BACKEND_VERSION_STRING       "0.3.1"
@@ -25,9 +25,17 @@
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 static const UInt MAX_INSTRS = 12;   // maximum number of instruments in config file
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

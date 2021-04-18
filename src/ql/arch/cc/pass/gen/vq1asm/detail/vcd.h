@@ -1,5 +1,5 @@
 /**
- * @file    arch/cc/vcd_cc.h
+ * @file    arch/cc/pass/gen/vq1asm/detail/vcd_cc.h
  * @date    20201001
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief   handle generation of Value Change Dump file for GTKWave viewer
@@ -10,12 +10,16 @@
 
 #include "ql/utils/vcd.h"
 
-#include "types_cc.h"
-#include "settings_cc.h"
+#include "types.h"
+#include "settings.h"
 
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 class Vcd : private utils::Vcd {
 public:     // funcs
@@ -38,6 +42,10 @@ private:    // vars
     Vec<Int> vcdVarCodeword;
 };
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql

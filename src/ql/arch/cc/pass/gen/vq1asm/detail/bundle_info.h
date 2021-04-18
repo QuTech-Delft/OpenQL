@@ -4,13 +4,17 @@
 
 #pragma once
 
-#include "types_cc.h"
-#include "options_cc.h"
-#include "settings_cc.h"
+#include "types.h"
+#include "options.h"
+#include "settings.h"
 
 namespace ql {
 namespace arch {
 namespace cc {
+namespace pass {
+namespace gen {
+namespace vq1asm {
+namespace detail {
 
 class BundleInfo {
 public: // funcs
@@ -41,6 +45,10 @@ public: // vars
 }; // information for an instrument group (of channels), for a single instruction
 // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?
 
+} // namespace detail
+} // namespace vq1asm
+} // namespace gen
+} // namespace pass
 } // namespace cc
 } // namespace arch
 } // namespace ql
