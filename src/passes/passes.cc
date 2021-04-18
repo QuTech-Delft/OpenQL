@@ -307,8 +307,6 @@ void MapperPass::runOnProgram(const ir::ProgramRef &program) {
     auto platform = program->platform;
     auto passname = getPassName();
 
-    using pass::ana::statistics::AdditionalStats;
-
     auto mapopt = com::options::get("mapper");
     if (mapopt == "no") {
         QL_IOUT("Not mapping kernels");
@@ -374,7 +372,7 @@ void MapperPass::runOnProgram(const ir::ProgramRef &program) {
         QL_ASSERT(false);
     }
 
-    parsed_options.recurse_nn_two_qubit = com::options::global["maprecNN2q"].as_bool();
+    parsed_options.recurse_on_nn_two_qubit = com::options::global["maprecNN2q"].as_bool();
 
     if (com::options::global["mapselectmaxlevel"].as_str() == "inf") {
         parsed_options.recursion_depth_limit = utils::MAX;
@@ -382,7 +380,7 @@ void MapperPass::runOnProgram(const ir::ProgramRef &program) {
         parsed_options.recursion_depth_limit = com::options::global["mapselectmaxlevel"].as_uint();
     }
 
-    parsed_options.recursion_width_limit = com::options::global["mapselectmaxwidth"].as_real();
+    parsed_options.recursion_width_factor = com::options::global["mapselectmaxwidth"].as_real();
 
     auto tie_break_method = com::options::global["maptiebreak"].as_str();
     if (tie_break_method == "first") {
@@ -419,52 +417,7 @@ void MapperPass::runOnProgram(const ir::ProgramRef &program) {
     parsed_options_ref.emplace(parsed_options);
 
     detail::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
-    mapper.Init(platform, parsed_options_ref); // platform specifies number of real qubits, i.e. locations for virtual qubits
-
-    UInt total_swaps = 0;        // for reporting, data is mapper specific
-    UInt total_moves = 0;        // for reporting, data is mapper specific
-    Real total_timetaken = 0.0;  // total over kernels of time taken by mapper
-    for (auto &kernel : program->kernels) {
-        QL_IOUT("Mapping kernel: " << kernel->name);
-
-        // compute timetaken, start interval timer here
-        Real timetaken = 0.0;
-        using namespace std::chrono;
-        high_resolution_clock::time_point t1 = high_resolution_clock::now();
-
-        mapper.Map(kernel);
-        // kernel.qubit_count starts off as number of virtual qubits, i.e. highest indexed qubit minus 1
-        // kernel.qubit_count is updated by Map to highest index of real qubits used minus -1
-        program->qubit_count = platform->qubit_count;
-        // program.qubit_count is updated to platform.qubit_number
-
-        // computing timetaken, stop interval timer
-        high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        duration<Real> time_span = t2 - t1;
-        timetaken = time_span.count();
-
-        AdditionalStats::push(kernel, "swaps added: " + to_string(mapper.nswapsadded));
-        AdditionalStats::push(kernel, "of which moves added: " + to_string(mapper.nmovesadded));
-        AdditionalStats::push(kernel, "virt2real map before mapper:" + to_string(mapper.v2r_in.get_virt_to_real()));
-        AdditionalStats::push(kernel, "virt2real map after initial placement:" + to_string(mapper.v2r_ip.get_virt_to_real()));
-        AdditionalStats::push(kernel, "virt2real map after mapper:" + to_string(mapper.v2r_out.get_virt_to_real()));
-        AdditionalStats::push(kernel, "realqubit states before mapper:" + to_string(mapper.v2r_in.get_state()));
-        AdditionalStats::push(kernel, "realqubit states after mapper:" + to_string(mapper.v2r_out.get_state()));
-        AdditionalStats::push(kernel, "time taken: " + to_string(timetaken));
-
-        total_swaps += mapper.nswapsadded;
-        total_moves += mapper.nmovesadded;
-        total_timetaken += timetaken;
-    }
-    AdditionalStats::push(program, "Total no. of swaps: " + to_string(total_swaps));
-    AdditionalStats::push(program, "Total no. of moves of swaps: " + to_string(total_moves));
-    AdditionalStats::push(program, "Total time taken: " + to_string(total_timetaken));
-
-    // kernel qubit/creg/breg counts will have been updated to the platform
-    // counts, so we need to do the same for the program.
-    program->qubit_count = platform->qubit_count;
-    program->creg_count = platform->creg_count;
-    program->breg_count = platform->breg_count;
+    mapper.map(program, parsed_options_ref); // platform specifies number of real qubits, i.e. locations for virtual qubits
 
     report_statistics(program, platform, "out", passname, "# ");
     report_qasm(program, platform, "out", passname);

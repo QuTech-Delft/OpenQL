@@ -136,7 +136,7 @@ private:
     /**
      * State: gate to cycle map, startCycle value of each past gatecycle[gp].
      * cycle[gp] can be different for each gp for each past. gp->cycle is not
-     * used by MapGates, although updated by set_cycle called from
+     * used by map_gates, although updated by set_cycle called from
      * MakeAvailable/TakeAvailable.
      */
     utils::Map<ir::GateRef, utils::UInt> cycle;
@@ -219,7 +219,7 @@ public:
      * to make sure that kernel.c (the current kernel's mapper input/output
      * circuit) is available for this. In class Future, kernel.c is copied into
      * the dependence graph or copied to a local circuit, and in
-     * Mapper::MapCircuit, a temporary local output circuit is used, which is
+     * Mapper::route, a temporary local output circuit is used, which is
      * written to kernel.c only at the very end.
      */
     utils::Bool new_gate(

@@ -280,9 +280,12 @@ Options make_ql_options() {
     options.add_enum(
         "mapselectswaps",
         "When no compiler configuration file is specified, and the mapper is "
-        "enabled, this controls the select_swaps option for the mapper; "
-        "select only one swap, or earliest, or all swaps for one alternative. "
-        "TODO: document better.",
+        "enabled, this controls how routing interacts with speculation. When"
+        "\"all\", all swaps for a particular routing option are committed "
+        "immediately, before trying anything else. When \"one\", only the "
+        "first swap in the route from source to target qubit is committed. When "
+        "\"earliest\", the swap that can be done at the earliest point is "
+        "selected, which might be the one swapping the source or target qubit.",
         "all",
         {"one", "all", "earliest"}
     );
@@ -290,9 +293,8 @@ Options make_ql_options() {
     options.add_bool(
         "maprecNN2q",
         "When no compiler configuration file is specified, and the mapper is "
-        "enabled, this controls the recurse_nn_two_qubit option for the mapper; "
-        "i.e. whether to \"recurse\" on non-nearest-neighbor two-qubit gates. "
-        "TODO: document better."
+        "enabled, this controls the recurse_on_nn_two_qubit option for the "
+        "mapper; i.e. whether to \"recurse\" on nearest-neighbor two-qubit gates."
     );
 
     options.add_int(

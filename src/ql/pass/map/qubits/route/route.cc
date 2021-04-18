@@ -27,10 +27,10 @@ void RouteQubitsPass::dump_docs(
     heuristically inserting swap/move gates to change the mapping on the fly as
     needed.
 
-    NOTE: this pass currently operates purely on a per-kernel basis. Because it
-    may adjust the qubit mapping from input to output, a program consisting of
-    multiple kernels that maintains a quantum state between the kernels may be
-    silently destroyed.
+    WARNING: this pass currently operates purely on a per-kernel basis. Because
+    it may adjust the qubit mapping from input to output, a program consisting
+    of multiple kernels that maintains a quantum state between the kernels may
+    be silently destroyed.
     )");
 }
 
@@ -44,15 +44,8 @@ RouteQubitsPass::RouteQubitsPass(
 ) : pmgr::pass_types::KernelTransformation(pass_factory, instance_name, type_name) {
 
     //========================================================================//
-    // Options controlling heuristic mapping                                  //
+    // Options for the initial virtual to real qubit map                      //
     //========================================================================//
-
-    options.add_enum(
-        "heuristic",
-        "Controls which heuristic the heuristic mapper is to use.",
-        "base",
-        {"base", "baserc", "minextend", "minextendrc", "maxfidelity"}
-    );
 
     options.add_bool(
         "initialize_one_to_one",
@@ -76,10 +69,63 @@ RouteQubitsPass::RouteQubitsPass(
         "quantum state. This allows it to make some optimizations."
     );
 
+    //========================================================================//
+    // Options for the MIP initial placement engine                           //
+    //========================================================================//
+
+    options.add_bool(
+        "enable_mip_placer",
+        "Controls whether the MIP-based initial placement algorithm should be "
+        "run before resorting to heuristic mapping.",
+        false
+    );
+
+    options.add_int(
+        "mip_horizon",
+        "This controls how many two-qubit gates the MIP-based initial placement "
+        "algorithm considers for each kernel (if enabled). If 0 or unspecified, "
+        "all gates are considered.",
+        "0", 0, utils::MAX
+    );
+
+    //========================================================================//
+    // Options controlling the heuristic routing algorithm                    //
+    //========================================================================//
+
+    options.add_enum(
+        "heuristic",
+        "Controls which heuristic the router should use when selecting between "
+        "possible routing operations. \"base\" and \"base_rc\" are the simplest "
+        "forms: all routes are considered equally \"good\", so the tie-breaking "
+        "strategy is just applied immediately. \"minextend\" and "
+        "\"minextendrc\" are way more involved (but also take longer to compute): "
+        "these options will speculate what each option will do in terms of "
+        "extending the duration of the circuit, optionally recursively, to find "
+        "the best alternatives in terms of circuit duration within some"
+        "lookahead window. The existence of the \"rc\" suffix specifies whether "
+        "the internal scheduling for fitness determination should be done with "
+        "or without resource constraints. \"maxfidelity\" is not supported "
+        "in this build of OpenQL.",
+        "base",
+        {"base", "baserc", "minextend", "minextendrc", "maxfidelity"}
+    );
+
+    options.add_enum(
+        "tie_break_method",
+        "Controls how to tie-break equally-scoring alternative mapping "
+        "solutions. \"first\" and \"last\" choose respectively the first and "
+        "last solution in the list (TODO: does this mean anything or is this "
+        "essentially random?), \"random\" uses random number generation to "
+        "select an alternative, and \"critical\" favors the alternative that "
+        "maps the most critical gate as determined by the scheduler (if any).",
+        "random",
+        {"first", "last", "random", "critical"}
+    );
+
     options.add_enum(
         "lookahead_mode",
         "Controls the strategy for selecting the next gate(s) to map. "
-        "TODO: document better.",
+        "TODO JvS: this still confuses me a lot, need to document better.",
         "noroutingfirst",
         {"no", "1qfirst", "noroutingfirst", "all"}
     );
@@ -97,16 +143,21 @@ RouteQubitsPass::RouteQubitsPass(
 
     options.add_enum(
         "swap_selection_mode",
-        "Select only one swap, or earliest, or all swaps for one alternative. "
-        "TODO: document better.",
+        "This controls how routing interacts with speculation. When \"all\", all"
+        "swaps for a particular routing option are committed immediately, before "
+        "trying anything else. When \"one\", only the first swap in the route "
+        "from source to target qubit is committed. When \"earliest\", the swap "
+        "that can be done at the earliest point is selected, which might be "
+        "the one swapping the source or target qubit.",
         "all",
         {"one", "all", "earliest"}
     );
 
     options.add_bool(
-        "recurse_nn_two_qubit",
-        "Whether to recurse on non-nearest-neighbor two-qubit gates. "
-        "TODO: document better."
+        "recurse_on_nn_two_qubit",
+        "When a nearest-neighbor two-qubit gate is the next gate to be "
+        "scheduled, this controls whether the mapper will speculate on adding it "
+        "now or later, or if it will add it immediately without speculation."
     );
 
     options.add_int(
@@ -118,23 +169,20 @@ RouteQubitsPass::RouteQubitsPass(
     );
 
     options.add_real(
-        "recursion_width_limit",
+        "recursion_width_factor",
         "Limits how many alternative mapping solutions are considered as a "
         "factor of the number of best-scoring alternatives, rounded up.",
         "1",
-        0, utils::INF
+        0.0, utils::INF
     );
 
-    options.add_enum(
-        "tie_break_method",
-        "Controls how to tie-break equally-scoring alternative mapping "
-        "solutions. \"first\" and \"last\" choose respectively the first and "
-        "last solution in the list (TODO: does this mean anything or is this "
-        "essentially random?), \"random\" uses random number generation to "
-        "select an alternative, and \"critical\" favors the alternative that "
-        "maps the most critical gate as determined by the scheduler (if any).",
-        "random",
-        {"first", "last", "random", "critical"}
+    options.add_real(
+        "recursion_width_exponent",
+        "Adjustment for recursion_width_factor based on the current recursion "
+        "depth. For each additional level of recursion, the effective width "
+        "factor is multiplied by this number.",
+        "1",
+        0.0, 1.0
     );
 
     options.add_int(
@@ -181,25 +229,6 @@ RouteQubitsPass::RouteQubitsPass(
         false
     );
 
-    //========================================================================//
-    // Options for the MIP initial placement engine                           //
-    //========================================================================//
-
-    options.add_bool(
-        "enable_mip_placer",
-        "Controls whether the MIP-based initial placement algorithm should be "
-        "run before resorting to heuristic mapping.",
-        false
-    );
-
-    options.add_int(
-        "mip_horizon",
-        "This controls how many two-qubit gates the MIP-based initial placement "
-        "algorithm considers for each kernel (if enabled). If 0 or unspecified, "
-        "all gates are considered.",
-        "0", 0, utils::MAX
-    );
-
 }
 
 /**
@@ -217,6 +246,12 @@ pmgr::pass_types::NodeType RouteQubitsPass::on_construct(
     // Build the options structure for the mapper.
     parsed_options.emplace();
 
+    parsed_options->initialize_one_to_one = options["initialize_one_to_one"].as_bool();
+    parsed_options->assume_initialized = options["assume_initialized"].as_bool();
+    parsed_options->assume_prep_only_initializes = options["assume_prep_only_initializes"].as_bool();
+    parsed_options->enable_mip_placer = options["enable_mip_placer"].as_bool();
+    parsed_options->mip_horizon = options["mip_horizon"].as_uint();
+
     auto heuristic = options["heuristic"].as_str();
     if (heuristic == "base") {
         parsed_options->heuristic = detail::Heuristic::BASE;
@@ -232,9 +267,18 @@ pmgr::pass_types::NodeType RouteQubitsPass::on_construct(
         QL_ASSERT(false);
     }
 
-    parsed_options->initialize_one_to_one = options["initialize_one_to_one"].as_bool();
-    parsed_options->assume_initialized = options["assume_initialized"].as_bool();
-    parsed_options->assume_prep_only_initializes = options["assume_prep_only_initializes"].as_bool();
+    auto tie_break_method = options["tie_break_method"].as_str();
+    if (tie_break_method == "first") {
+        parsed_options->tie_break_method = detail::TieBreakMethod::FIRST;
+    } else if (tie_break_method == "last") {
+        parsed_options->tie_break_method = detail::TieBreakMethod::LAST;
+    } else if (tie_break_method == "random") {
+        parsed_options->tie_break_method = detail::TieBreakMethod::RANDOM;
+    } else if (tie_break_method == "critical") {
+        parsed_options->tie_break_method = detail::TieBreakMethod::CRITICAL;
+    } else {
+        QL_ASSERT(false);
+    }
 
     auto lookahead_mode = options["lookahead_mode"].as_str();
     if (lookahead_mode == "no") {
@@ -269,7 +313,7 @@ pmgr::pass_types::NodeType RouteQubitsPass::on_construct(
         QL_ASSERT(false);
     }
 
-    parsed_options->recurse_nn_two_qubit = options["recurse_nn_two_qubit"].as_bool();
+    parsed_options->recurse_on_nn_two_qubit = options["recurse_on_nn_two_qubit"].as_bool();
 
     if (options["recursion_depth_limit"].as_str() == "inf") {
         parsed_options->recursion_depth_limit = utils::MAX;
@@ -277,20 +321,8 @@ pmgr::pass_types::NodeType RouteQubitsPass::on_construct(
         parsed_options->recursion_depth_limit = options["recursion_depth_limit"].as_uint();
     }
 
-    parsed_options->recursion_width_limit = options["recursion_width_limit"].as_real();
-
-    auto tie_break_method = options["tie_break_method"].as_str();
-    if (tie_break_method == "first") {
-        parsed_options->tie_break_method = detail::TieBreakMethod::FIRST;
-    } else if (tie_break_method == "last") {
-        parsed_options->tie_break_method = detail::TieBreakMethod::LAST;
-    } else if (tie_break_method == "random") {
-        parsed_options->tie_break_method = detail::TieBreakMethod::RANDOM;
-    } else if (tie_break_method == "critical") {
-        parsed_options->tie_break_method = detail::TieBreakMethod::CRITICAL;
-    } else {
-        QL_ASSERT(false);
-    }
+    parsed_options->recursion_width_factor = options["recursion_width_factor"].as_real();
+    parsed_options->recursion_width_exponent = options["recursion_width_exponent"].as_real();
 
     auto use_moves = options["use_moves"].as_str();
     if (use_moves == "no") {
@@ -307,8 +339,6 @@ pmgr::pass_types::NodeType RouteQubitsPass::on_construct(
     parsed_options->commute_multi_qubit = options["commute_multi_qubit"].as_bool();
     parsed_options->commute_single_qubit = options["commute_single_qubit"].as_bool();
     parsed_options->print_dot_graphs = options["print_dot_graphs"].as_bool();
-    parsed_options->enable_mip_placer = options["enable_mip_placer"].as_bool();
-    parsed_options->mip_horizon = options["mip_horizon"].as_uint();
 
     return pmgr::pass_types::NodeType::NORMAL;
 }
@@ -324,6 +354,9 @@ utils::Int RouteQubitsPass::run(
 
     // Update options from context.
     parsed_options->output_prefix = context.output_prefix;
+
+    // Run mapping.
+    detail::Mapper().map(program, parsed_options.as_const());
 
     return 0;
 }

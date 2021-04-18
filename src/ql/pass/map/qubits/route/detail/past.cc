@@ -227,7 +227,7 @@ void Past::add(const ir::GateRef &gate) {
  * to make sure that kernel.c (the current kernel's mapper input/output
  * circuit) is available for this. In class Future, kernel.c is copied into
  * the dependence graph or copied to a local circuit, and in
- * Mapper::MapCircuit, a temporary local output circuit is used, which is
+ * Mapper::route, a temporary local output circuit is used, which is
  * written to kernel.c only at the very end.
  */
 utils::Bool Past::new_gate(

@@ -16,16 +16,44 @@ namespace route {
 namespace detail {
 
 /**
- * The available heuristics for mapping.
- *
- * TODO: document variants here.
+ * The available heuristics for mapping. This controls which routing
+ * alternatives are considered to be the best.
  */
 enum class Heuristic {
+
+    /**
+     * Consider all alternatives as equivalent, unintelligently applying the
+     * tie-breaking strategy to all options. No recursion is performed. Internal
+     * gate scheduling (and thus criticality) is determined without resource
+     * constraints.
+     */
     BASE,
+
+    /**
+     * Same as BASE, but with resource constraints.
+     */
     BASE_RC,
+
+    /**
+     * Favor alternatives with minimal cycle time extension when using
+     * non-resource-constrained scheduling. When multiple (good) alternatives
+     * exist, recursion/speculation is used to see which is best. The limits for
+     * this recursion are controlled by recursion_depth_limit and
+     * recursion_width_limit. When the limit is reached, the tie-breaking method
+     * is applied to the best-scoring alternatives.
+     */
     MIN_EXTEND,
+
+    /**
+     * Same as MIN_EXTEND, but using resource-constrained scheduling.
+     */
     MIN_EXTEND_RC,
+
+    /**
+     * No longer supported?
+     */
     MAX_FIDELITY
+
 };
 
 /**
@@ -147,11 +175,6 @@ struct Options {
     utils::Str output_prefix;
 
     /**
-     * Controls which heuristic the heuristic mapper is to use.
-     */
-    Heuristic heuristic = Heuristic::BASE;
-
-    /**
      * Controls whether the mapper should assume that each kernel starts with
      * a one-to-one mapping between virtual and real qubits. When disabled,
      * the initial mapping is treated as undefined.
@@ -173,6 +196,34 @@ struct Options {
     utils::Bool assume_prep_only_initializes = false;
 
     /**
+     * Controls whether MIP-based placement should be attempted before resorting
+     * to heuristics.
+     */
+    utils::Bool enable_mip_placer = false;
+
+    /**
+     * Timeout for the MIP algorithm in seconds, or 0 to disable timeout.
+     */
+    utils::Real mip_timeout = 0.0;
+
+    /**
+     * The placement algorithm will only consider the connectivity required to
+     * perform the first horizon two-qubit gates of a kernel. 0 means that all
+     * gates should be considered.
+     */
+    utils::UInt mip_horizon = 0;
+
+    /**
+     * Controls which heuristic the heuristic mapper is to use.
+     */
+    Heuristic heuristic = Heuristic::BASE;
+
+    /**
+     * Controls how to tie-break equally-scoring alternative mapping solutions.
+     */
+    TieBreakMethod tie_break_method = TieBreakMethod::RANDOM;
+
+    /**
      * Controls the strategy for selecting the next gate(s) to map.
      */
     LookaheadMode lookahead_mode = LookaheadMode::NO_ROUTING_FIRST;
@@ -188,9 +239,9 @@ struct Options {
     SwapSelectionMode swap_selection_mode = SwapSelectionMode::ALL;
 
     /**
-     * Whether to recurse on non-nearest-neighbor two-qubit gates.
+     * Whether to recurse on nearest-neighbor two-qubit gates.
      */
-    utils::Bool recurse_nn_two_qubit = false;
+    utils::Bool recurse_on_nn_two_qubit = false;
 
     /**
      * Controls the maximum recursion depth while searching for alternative
@@ -202,12 +253,13 @@ struct Options {
      * Limits how many alternative mapping solutions are considered as a
      * factor of the number of best-scoring alternatives, rounded up.
      */
-    utils::Real recursion_width_limit = 0.0;
+    utils::Real recursion_width_factor = 0.0;
 
     /**
-     * Controls how to tie-break equally-scoring alternative mapping solutions.
+     * Adjustment factor for recursion_width_factor for each recursion level.
+     * Can be reduced to limit the search space as recursion depth increases.
      */
-    TieBreakMethod tie_break_method = TieBreakMethod::RANDOM;
+    utils::Real recursion_width_exponent = 1.0;
 
     /**
      * Whether to use move gates if possible, instead of always using swap.
@@ -243,24 +295,6 @@ struct Options {
      * scheduler.
      */
     utils::Bool print_dot_graphs = false;
-
-    /**
-     * Controls whether MIP-based placement should be attempted before resorting
-     * to heuristics.
-     */
-    utils::Bool enable_mip_placer = false;
-
-    /**
-     * Timeout for the MIP algorithm in seconds, or 0 to disable timeout.
-     */
-    utils::Real mip_timeout = 0.0;
-
-    /**
-     * The placement algorithm will only consider the connectivity required to
-     * perform the first horizon two-qubit gates of a kernel. 0 means that all
-     * gates should be considered.
-     */
-    utils::UInt mip_horizon = 0;
 
 };
 
