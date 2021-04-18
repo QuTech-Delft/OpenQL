@@ -90,9 +90,9 @@ utils::Int GenerateVQ1AsmPass::run(
     // Parse the options.
     auto parsed_options = utils::Ptr<detail::Options>::make();
     parsed_options->output_prefix = context.output_prefix;
-    parsed_options->map_input_file = options["backend_cc_map_input_file"].as_str();
-    parsed_options->run_once = options["backend_cc_run_once"].as_bool();
-    parsed_options->verbose = options["backend_cc_verbose"].as_bool();
+    parsed_options->map_input_file = options["map_input_file"].as_str();
+    parsed_options->run_once = options["run_once"].as_bool();
+    parsed_options->verbose = options["verbose"].as_bool();
 
     // Run the backend.
     detail::Backend().compile(program, parsed_options.as_const());

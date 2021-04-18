@@ -100,24 +100,24 @@ utils::Int SchedulePass::run(
     // Run the appropriate scheduling algorithm.
     if (options["resource_constraints"].as_bool()) {
         auto rm = rmgr::Manager::from_defaults(kernel->platform);
-        if (options["heuristic"].as_str() == "asap") {
+        if (options["scheduler_heuristic"].as_str() == "asap") {
             sched.schedule_asap(rm);
-        } else if (options["heuristic"].as_str() == "alap") {
+        } else if (options["scheduler_heuristic"].as_str() == "alap") {
             sched.schedule_alap(rm);
         } else {
             utils::StrStrm ss;
             ss << context.full_pass_name << " is configured to use the ";
-            ss << options["heuristic"].as_str() << " scheduling heuristic, ";
+            ss << options["scheduler_heuristic"].as_str() << " scheduling heuristic, ";
             ss << "but is also configured to respect resource constraints, ";
             ss << "and this combination is not supported";
             throw utils::Exception(ss.str());
         }
     } else {
-        if (options["heuristic"].as_str() == "asap") {
+        if (options["scheduler_heuristic"].as_str() == "asap") {
             sched.schedule_asap();
-        } else if (options["heuristic"].as_str() == "alap") {
+        } else if (options["scheduler_heuristic"].as_str() == "alap") {
             sched.schedule_alap();
-        } else if (options["heuristic"].as_str() == "uniform") {
+        } else if (options["scheduler_heuristic"].as_str() == "uniform") {
             sched.schedule_alap_uniform();
         } else {
             utils::StrStrm ss;

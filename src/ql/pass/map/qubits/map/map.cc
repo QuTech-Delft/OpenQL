@@ -252,16 +252,16 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     parsed_options->enable_mip_placer = options["enable_mip_placer"].as_bool();
     parsed_options->mip_horizon = options["mip_horizon"].as_uint();
 
-    auto heuristic = options["heuristic"].as_str();
-    if (heuristic == "base") {
+    auto route_heuristic = options["route_heuristic"].as_str();
+    if (route_heuristic == "base") {
         parsed_options->heuristic = detail::Heuristic::BASE;
-    } else if (heuristic == "baserc") {
+    } else if (route_heuristic == "baserc") {
         parsed_options->heuristic = detail::Heuristic::BASE_RC;
-    } else if (heuristic == "minextend") {
+    } else if (route_heuristic == "minextend") {
         parsed_options->heuristic = detail::Heuristic::MIN_EXTEND;
-    } else if (heuristic == "minextendrc") {
+    } else if (route_heuristic == "minextendrc") {
         parsed_options->heuristic = detail::Heuristic::MIN_EXTEND_RC;
-    } else if (heuristic == "maxfidelity") {
+    } else if (route_heuristic == "maxfidelity") {
         parsed_options->heuristic = detail::Heuristic::MAX_FIDELITY;
     } else {
         QL_ASSERT(false);

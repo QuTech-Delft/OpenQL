@@ -7,6 +7,9 @@
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
 
+// For OPT_CC_SCHEDULE_RC "option"...
+#include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
+
 namespace ql {
 namespace pmgr {
 
@@ -151,6 +154,170 @@ static void add_passes_from_json(
 }
 
 /**
+ * Generates a map from (common!) pass option name to option value based on the
+ * global options for backward-compatibility purposes.
+ *
+ * FIXME: there should probably be some way to namespace option names
+ *  by pass type if we're going to be setting them like this. For
+ *  now the option names are just named such that there are no
+ *  conflicts, so we can make do. But it'd be a bit weird if all the
+ *  option names for a particular pass start with the pass type name
+ *  while configuring, so something more intelligent is needed, and that
+ *  just doesn't exist right now. On the other hand, there shouldn't
+ *  ever be any more global options like this, so maybe this is good
+ *  enough.
+ */
+static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
+    utils::Map<utils::Str, utils::Str> retval;
+
+    // Set output_prefix based on output_dir and unique_output.
+    utils::StrStrm ss;
+    ss << com::options::global["output_dir"].as_str() << "/";
+    if (com::options::global["unique_output"].as_bool()) {
+        ss << "%N";
+    } else {
+        ss << "%n";
+    }
+    ss << "_%P";
+    retval.set("output_prefix") = ss.str();
+
+    // Set the debug option based on write_qasm_files and
+    // write_report_files.
+    if (com::options::global["write_qasm_files"].as_bool()) {
+        if (com::options::global["write_report_files"].as_bool()) {
+            retval.set("debug") = "both";
+        } else {
+            retval.set("debug") = "qasm";
+        }
+    } else if (com::options::global["write_report_files"].as_bool()) {
+        retval.set("debug") = "stats";
+    }
+
+    // Set options for the scheduler.
+    const auto &scheduler = com::options::global["scheduler"];
+    const auto &scheduler_uniform = com::options::global["scheduler_uniform"];
+    if (scheduler.is_set() || scheduler_uniform.is_set()) {
+        if (scheduler_uniform.as_bool()) {
+            retval.set("scheduler_heuristic") = "uniform";
+        } else if (scheduler.as_str() == "ASAP") {
+            retval.set("scheduler_heuristic") = "asap";
+        } else {
+            retval.set("scheduler_heuristic") = "alap";
+        }
+    }
+
+    // Set options for both the scheduler and mapper (since the mapper has
+    // a scheduler built into it, they share some options).
+    const auto &scheduler_commute = com::options::global["scheduler_commute"];
+    if (scheduler_commute.is_set()) {
+        retval.set("commute_multi_qubit") = scheduler_commute.as_str();
+    }
+    const auto &scheduler_commute_rotations = com::options::global["scheduler_commute_rotations"];
+    if (scheduler_commute_rotations.is_set()) {
+        retval.set("commute_single_qubit") = scheduler_commute_rotations.as_str();
+    }
+    const auto &print_dot_graphs = com::options::global["print_dot_graphs"];
+    if (print_dot_graphs.is_set()) {
+        retval.set("write_dot_graphs") = print_dot_graphs.as_str();
+    }
+
+    // Set options for the mapper.
+    const auto &initialplace = com::options::global["initialplace"];
+    if (initialplace.is_set()) {
+        if (initialplace.as_str() == "no") {
+            retval.set("enable_mip_placer") = "no";
+        } else {
+            if (initialplace.as_str() != "yes") {
+                QL_WOUT("timeout set for initial placement, but this is not supported right now");
+            }
+            retval.set("enable_mip_placer") = "yes";
+        }
+    }
+    const auto &initialplace2qhorizon = com::options::global["initialplace2qhorizon"];
+    if (initialplace2qhorizon.is_set()) {
+        retval.set("mip_horizon") = initialplace2qhorizon.as_str();
+    }
+    const auto &mapper = com::options::global["mapper"];
+    if (mapper.is_set() && mapper.as_str() != "no") {
+        retval.set("route_heuristic") = mapper.as_str();
+    }
+    const auto &mapinitone2one = com::options::global["mapinitone2one"];
+    if (mapinitone2one.is_set()) {
+        retval.set("initialize_one_to_one") = mapinitone2one.as_str();
+    }
+    const auto &mapassumezeroinitstate = com::options::global["mapassumezeroinitstate"];
+    if (mapassumezeroinitstate.is_set()) {
+        retval.set("assume_initialized") = mapassumezeroinitstate.as_str();
+    }
+    const auto &mapprepinitsstate = com::options::global["mapprepinitsstate"];
+    if (mapprepinitsstate.is_set()) {
+        retval.set("assume_prep_only_initializes") = mapprepinitsstate.as_str();
+    }
+    const auto &maplookahead = com::options::global["maplookahead"];
+    if (maplookahead.is_set()) {
+        retval.set("lookahead_mode") = maplookahead.as_str();
+    }
+    const auto &mappathselect = com::options::global["mappathselect"];
+    if (mappathselect.is_set()) {
+        retval.set("path_selection_mode") = mappathselect.as_str();
+    }
+    const auto &mapselectswaps = com::options::global["mapselectswaps"];
+    if (mapselectswaps.is_set()) {
+        retval.set("swap_selection_mode") = mapselectswaps.as_str();
+    }
+    const auto &maprecNN2q = com::options::global["maprecNN2q"];
+    if (maprecNN2q.is_set()) {
+        retval.set("recurse_on_nn_two_qubit") = maprecNN2q.as_str();
+    }
+    const auto &mapselectmaxlevel = com::options::global["mapselectmaxlevel"];
+    if (mapselectmaxlevel.is_set()) {
+        retval.set("recursion_depth_limit") = mapselectmaxlevel.as_str();
+    }
+    const auto &mapselectmaxwidth = com::options::global["mapselectmaxwidth"];
+    if (mapselectmaxwidth.is_set()) {
+        if (mapselectmaxwidth.as_str() == "min") {
+            retval.set("recursion_width_factor") = "1.0";
+        } else if (mapselectmaxwidth.as_str() == "minplusone") {
+            retval.set("recursion_width_factor") = "1.0000000001";
+        } else if (mapselectmaxwidth.as_str() == "minplushalfmin") {
+            retval.set("recursion_width_factor") = "1.5";
+        } else if (mapselectmaxwidth.as_str() == "minplusmin") {
+            retval.set("recursion_width_factor") = "2.0";
+        } else {
+            retval.set("recursion_width_factor") = "100000000000";
+        }
+    }
+    const auto &maptiebreak = com::options::global["maptiebreak"];
+    if (maptiebreak.is_set()) {
+        retval.set("tie_break_method") = maptiebreak.as_str();
+    }
+    const auto &mapusemoves = com::options::global["mapusemoves"];
+    if (mapusemoves.is_set()) {
+        retval.set("use_moves") = mapusemoves.as_str();
+    }
+    const auto &mapreverseswap = com::options::global["mapreverseswap"];
+    if (mapreverseswap.is_set()) {
+        retval.set("reverse_swap_if_better") = mapreverseswap.as_str();
+    }
+
+    // Set options for CC backend.
+    const auto &backend_cc_map_input_file = com::options::global["backend_cc_map_input_file"];
+    if (backend_cc_map_input_file.is_set()) {
+        retval.set("map_input_file") = backend_cc_map_input_file.as_str();
+    }
+    const auto &backend_cc_verbose = com::options::global["backend_cc_verbose"];
+    if (backend_cc_verbose.is_set()) {
+        retval.set("verbose") = backend_cc_verbose.as_str();
+    }
+    const auto &backend_cc_run_once = com::options::global["backend_cc_run_once"];
+    if (backend_cc_run_once.is_set()) {
+        retval.set("run_once") = backend_cc_run_once.as_str();
+    }
+
+    return retval;
+}
+
+/**
  * Constructs a pass manager based on the given JSON configuration.
  *
  * Refer to the header file for details.
@@ -235,163 +402,8 @@ Manager Manager::from_json(
     // Build the default pass options record.
     utils::Map<utils::Str, utils::Str> pass_default_options;
     if (compatibility_mode) {
-
-        // FIXME: there should probably be some way to namespace option names
-        //  by pass type if we're going to be setting them like this. For
-        //  now the option names are just named such that there are no
-        //  conflicts, so we can make do. But it'd be a bit weird if all the
-        //  option names for a particular pass start with the pass type name
-        //  while configuring, so something more intelligent is needed, and that
-        //  just doesn't exist right now. On the other hand, there shouldn't
-        //  ever be any more global options like this, so maybe this is good
-        //  enough.
-
-        // Set output_prefix based on output_dir and unique_output.
-        utils::StrStrm ss;
-        ss << com::options::global["output_dir"].as_str() << "/";
-        if (com::options::global["unique_output"].as_bool()) {
-            ss << "%N";
-        } else {
-            ss << "%n";
-        }
-        ss << "_%P";
-        pass_default_options.set("output_prefix") = ss.str();
-
-        // Set the debug option based on write_qasm_files and
-        // write_report_files.
-        if (com::options::global["write_qasm_files"].as_bool()) {
-            if (com::options::global["write_report_files"].as_bool()) {
-                pass_default_options.set("debug") = "both";
-            } else {
-                pass_default_options.set("debug") = "qasm";
-            }
-        } else if (com::options::global["write_report_files"].as_bool()) {
-            pass_default_options.set("debug") = "stats";
-        }
-
-        // Set options for the scheduler.
-        const auto &scheduler = com::options::global["scheduler"];
-        const auto &scheduler_uniform = com::options::global["scheduler_uniform"];
-        if (scheduler.is_set() || scheduler_uniform.is_set()) {
-            if (scheduler_uniform.as_bool()) {
-                pass_default_options.set("scheduler_heuristic") = "uniform";
-            } else if (scheduler.as_str() == "ASAP") {
-                pass_default_options.set("scheduler_heuristic") = "asap";
-            } else {
-                pass_default_options.set("scheduler_heuristic") = "alap";
-            }
-        }
-
-        // Set options for both the scheduler and mapper (since the mapper has
-        // a scheduler built into it, they share some options).
-        const auto &scheduler_commute = com::options::global["scheduler_commute"];
-        if (scheduler_commute.is_set()) {
-            pass_default_options.set("commute_multi_qubit") = scheduler_commute.as_str();
-        }
-        const auto &scheduler_commute_rotations = com::options::global["scheduler_commute_rotations"];
-        if (scheduler_commute_rotations.is_set()) {
-            pass_default_options.set("commute_single_qubit") = scheduler_commute_rotations.as_str();
-        }
-        const auto &print_dot_graphs = com::options::global["print_dot_graphs"];
-        if (print_dot_graphs.is_set()) {
-            pass_default_options.set("write_dot_graphs") = print_dot_graphs.as_str();
-        }
-
-        // Set options for the mapper.
-        const auto &initialplace = com::options::global["initialplace"];
-        if (initialplace.is_set()) {
-            if (initialplace.as_str() == "no") {
-                pass_default_options.set("enable_mip_placer") = "no";
-            } else {
-                if (initialplace.as_str() != "yes") {
-                    QL_WOUT("timeout set for initial placement, but this is not supported right now");
-                }
-                pass_default_options.set("enable_mip_placer") = "yes";
-            }
-        }
-        const auto &initialplace2qhorizon = com::options::global["initialplace2qhorizon"];
-        if (initialplace2qhorizon.is_set()) {
-            pass_default_options.set("mip_horizon") = initialplace2qhorizon.as_str();
-        }
-        const auto &mapper = com::options::global["mapper"];
-        if (mapper.is_set() && mapper.as_str() != "no") {
-            pass_default_options.set("route_heuristic") = mapper.as_str();
-        }
-        const auto &mapinitone2one = com::options::global["mapinitone2one"];
-        if (mapinitone2one.is_set()) {
-            pass_default_options.set("initialize_one_to_one") = mapinitone2one.as_str();
-        }
-        const auto &mapassumezeroinitstate = com::options::global["mapassumezeroinitstate"];
-        if (mapassumezeroinitstate.is_set()) {
-            pass_default_options.set("assume_initialized") = mapassumezeroinitstate.as_str();
-        }
-        const auto &mapprepinitsstate = com::options::global["mapprepinitsstate"];
-        if (mapprepinitsstate.is_set()) {
-            pass_default_options.set("assume_prep_only_initializes") = mapprepinitsstate.as_str();
-        }
-        const auto &maplookahead = com::options::global["maplookahead"];
-        if (maplookahead.is_set()) {
-            pass_default_options.set("lookahead_mode") = maplookahead.as_str();
-        }
-        const auto &mappathselect = com::options::global["mappathselect"];
-        if (mappathselect.is_set()) {
-            pass_default_options.set("path_selection_mode") = mappathselect.as_str();
-        }
-        const auto &mapselectswaps = com::options::global["mapselectswaps"];
-        if (mapselectswaps.is_set()) {
-            pass_default_options.set("swap_selection_mode") = mapselectswaps.as_str();
-        }
-        const auto &maprecNN2q = com::options::global["maprecNN2q"];
-        if (maprecNN2q.is_set()) {
-            pass_default_options.set("recurse_on_nn_two_qubit") = maprecNN2q.as_str();
-        }
-        const auto &mapselectmaxlevel = com::options::global["mapselectmaxlevel"];
-        if (mapselectmaxlevel.is_set()) {
-            pass_default_options.set("recursion_depth_limit") = mapselectmaxlevel.as_str();
-        }
-        const auto &mapselectmaxwidth = com::options::global["mapselectmaxwidth"];
-        if (mapselectmaxwidth.is_set()) {
-            if (mapselectmaxwidth.as_str() == "min") {
-                pass_default_options.set("recursion_width_factor") = "1.0";
-            } else if (mapselectmaxwidth.as_str() == "minplusone") {
-                pass_default_options.set("recursion_width_factor") = "1.0000000001";
-            } else if (mapselectmaxwidth.as_str() == "minplushalfmin") {
-                pass_default_options.set("recursion_width_factor") = "1.5";
-            } else if (mapselectmaxwidth.as_str() == "minplusmin") {
-                pass_default_options.set("recursion_width_factor") = "2.0";
-            } else {
-                pass_default_options.set("recursion_width_factor") = "100000000000";
-            }
-        }
-        const auto &maptiebreak = com::options::global["maptiebreak"];
-        if (maptiebreak.is_set()) {
-            pass_default_options.set("tie_break_method") = maptiebreak.as_str();
-        }
-        const auto &mapusemoves = com::options::global["mapusemoves"];
-        if (mapusemoves.is_set()) {
-            pass_default_options.set("use_moves") = mapusemoves.as_str();
-        }
-        const auto &mapreverseswap = com::options::global["mapreverseswap"];
-        if (mapreverseswap.is_set()) {
-            pass_default_options.set("reverse_swap_if_better") = mapreverseswap.as_str();
-        }
-
-        // Set options for CC backend.
-        const auto &backend_cc_map_input_file = com::options::global["backend_cc_map_input_file"];
-        if (backend_cc_map_input_file.is_set()) {
-            pass_default_options.set("map_input_file") = backend_cc_map_input_file.as_str();
-        }
-        const auto &backend_cc_verbose = com::options::global["backend_cc_verbose"];
-        if (backend_cc_verbose.is_set()) {
-            pass_default_options.set("verbose") = backend_cc_verbose.as_str();
-        }
-        const auto &backend_cc_run_once = com::options::global["backend_cc_run_once"];
-        if (backend_cc_run_once.is_set()) {
-            pass_default_options.set("run_once") = backend_cc_run_once.as_str();
-        }
-
+        pass_default_options = convert_global_to_pass_options();
     }
-
     if (pass_options) {
         for (it = pass_options->begin(); it != pass_options->end(); ++it) {
             pass_default_options.set(it.key()) = option_value_from_json(it.value());
@@ -399,13 +411,163 @@ Manager Manager::from_json(
     }
 
     // Construct the pass manager.
-    Manager pm{architecture, dnu};
+    Manager manager{architecture, dnu};
 
     // Add passes from the pass descriptions.
-    add_passes_from_json(pm.get_root(), *passes, pass_default_options);
+    add_passes_from_json(manager.get_root(), *passes, pass_default_options);
 
-    return pm;
+    return manager;
 }
+
+/**
+ * Generate a pass manager with a strategy that aims to mimic the flow of
+ * the OpenQL compiler as it was before pass management as closely as
+ * possible. The actual pass list is derived from the eqasm_compiler key
+ * in the configuration file and from the global options (similar to the
+ * "compatibility-mode" key in the JSON strategy definition format).
+ */
+Manager Manager::from_defaults(const plat::PlatformRef &platform) {
+
+    // Generate a default manager.
+    Manager manager;
+
+    // Generate preprocessing passes that are common to all eqasm_compiler
+    // names.
+    manager.append_pass(
+        "io.cqasm.Report",
+        "initialqasmwriter",
+        {
+            {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"},
+            {"output_suffix", ".qasm"}
+        }
+    );
+    if (com::options::global["clifford_prescheduler"].as_bool()) {
+        manager.append_pass(
+            "opt.clifford.Optimize",
+            "clifford_prescheduler"
+        );
+    }
+    if (com::options::global["prescheduler"].as_bool()) {
+        manager.append_pass(
+            "sch.Schedule",
+            "prescheduler",
+            {
+                {"resource_constraints", "no"}
+            }
+        );
+    }
+    if (com::options::global["clifford_postscheduler"].as_bool()) {
+        manager.append_pass(
+            "opt.clifford.Optimize",
+            "clifford_postscheduler"
+        );
+    }
+    manager.append_pass(
+        "io.cqasm.Report",
+        "scheduledqasmwriter",
+        {
+            {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"},
+            {"output_suffix", "_scheduled.qasm"}
+        }
+    );
+
+    // Generate a suitable list of passes based on eqasm_compiler_name.
+    if (platform->eqasm_compiler_name.empty()) {
+        throw utils::Exception(
+            "eqasm_compiler name is missing from the platform configuration file."
+        );
+    } else if (platform->eqasm_compiler_name == "none" || platform->eqasm_compiler_name == "qx") {
+
+        // Only the common passes are used, so nothing else to do here.
+
+    } else if (platform->eqasm_compiler_name == "cc_light_compiler") {
+
+        // Mapping.
+        if (com::options::global["clifford_premapper"].as_bool()) {
+            manager.append_pass(
+                "opt.clifford.Optimize",
+                "clifford_premapper"
+            );
+        }
+        if (com::options::global["mapper"].as_str() != "no") {
+            manager.append_pass(
+                "map.qubits.Map",
+                "mapper"
+            );
+        }
+        if (com::options::global["clifford_postmapper"].as_bool()) {
+            manager.append_pass(
+                "opt.clifford.Optimize",
+                "clifford_postmapper"
+            );
+        }
+
+        // Scheduling.
+        manager.append_pass(
+            "sch.Schedule",
+            "rcscheduler",
+            {
+                {"resource_constraints", "yes"}
+            }
+        );
+        manager.append_pass(
+            "io.cqasm.Report",
+            "lastqasmwriter",
+            {
+                {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"},
+                {"output_suffix", "_last.qasm"}
+            }
+        );
+
+        // R.I.P. CC-light code generation; was taken out.
+
+    } else if (platform->eqasm_compiler_name == "eqasm_backend_cc") {
+
+        // Mimic original CC backend.
+        manager.append_pass(
+            "sch.Schedule",
+            "scheduler",
+            {
+#if OPT_CC_SCHEDULE_RC
+                {"resource_constraints", "yes"}
+#else
+                {"resource_constraints", "no"}
+#endif
+            }
+        );
+        manager.append_pass(
+            "arch.cc.gen.VQ1Asm",
+            "codegen",
+            {
+                {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"}
+            }
+        );
+
+    } else {
+        throw utils::Exception(
+            "Unsupported eqasm_compiler value in platform configuration file: "
+            + platform->eqasm_compiler_name
+        );
+    }
+
+    // Set the pass options using the compatibility mode option name/value
+    // converter.
+    auto options = convert_global_to_pass_options();
+    for (const auto &pass : manager.get_passes()) {
+        for (const auto &it : options) {
+            const auto &option = it.first;
+            const auto &value = it.second;
+            if (pass->get_options().has_option(option)) {
+                if (!pass->get_options()[option].is_set()) {
+                    pass->set_option(option, value);
+                }
+            }
+        }
+    }
+
+    return manager;
+}
+
 
 /**
  * Returns a reference to the root pass group.

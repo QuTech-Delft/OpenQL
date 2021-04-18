@@ -559,7 +559,7 @@ void Base::construct_recursive(
         for (const auto &pass : sub_pass_order) {
             pass->construct_recursive(
                 still_preprocessing_platform,
-                full_name + "."
+                full_name.empty() ? "" : (full_name + ".")
             );
         }
     }
@@ -1049,7 +1049,7 @@ void Base::run_sub_passes(
     const ir::ProgramRef &program,
         const Context &context
 ) const {
-    utils::Str sub_prefix = context.full_pass_name + ".";
+    utils::Str sub_prefix = context.full_pass_name.empty() ? "" : (context.full_pass_name + ".");
     for (const auto &pass : sub_pass_order) {
         pass->compile(program, sub_prefix);
     }

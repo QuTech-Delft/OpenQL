@@ -18,6 +18,7 @@ Group::Group(
     const utils::Ptr<const Factory> &pass_factory,
     const utils::Str &instance_name
 ) : pass_types::Group(pass_factory, instance_name, "") {
+    construct();
 }
 
 /**

@@ -82,17 +82,17 @@ Options make_ql_options() {
     //========================================================================//
 
     options.add_bool(
+        "clifford_prescheduler",
+        "When no compiler configuration file is specified, this controls "
+        "whether to run the Clifford optimizer before the prescheduler."
+    );
+
+    options.add_bool(
         "prescheduler",
         "When no compiler configuration file is specified, this controls "
         "whether a basic ASAP/ALAP scheduler without resource constraints "
         "should be run before mapping.",
         true
-    );
-
-    options.add_bool(
-        "clifford_prescheduler",
-        "When no compiler configuration file is specified, this controls "
-        "whether to run the Clifford optimizer before the prescheduler."
     );
 
     options.add_bool(

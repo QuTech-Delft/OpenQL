@@ -18,7 +18,6 @@ Group::Group(
     const utils::Str &instance_name,
     const utils::Str &type_name
 ) : Base(pass_factory, type_name, instance_name) {
-    construct();
 }
 
 /**

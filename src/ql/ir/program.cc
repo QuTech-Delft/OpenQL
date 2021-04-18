@@ -2,6 +2,7 @@
  * Quantum program abstraction implementation.
  */
 
+#include <ql/pmgr/manager.h>
 #include "ql/ir/program.h"
 
 #include "ql/utils/filesystem.h"
@@ -366,38 +367,48 @@ void Program::compile() {
         QL_FATAL("compiling a program with no kernels !");
     }
 
-    // Retrieve the path to the platform configuration file.
-    // This is needed below to circumvent the hardcoding of the compiler configuration file
-    // when this legacy ::compile method is used.
-    // NOTE: For the use of 'compilerCfgPath' below to work, it is assumed the compiler configuration file
-    //       is located in the same folder as the platform configuration file. 
-    std::string compilerCfgPath = dirnameOf(platform->configuration_file_name);
+    static utils::Bool new_pass_manager = true;
+    if (new_pass_manager) {
 
-    //constuct compiler
-    std::unique_ptr<quantum_compiler> compiler(new quantum_compiler("Hard Coded Compiler"));
+        // Use the new pass manager... fingers crossed!
+        pmgr::Manager::from_defaults(platform).compile(ProgramRef::make(*this));
 
-    // backend passes
-    QL_DOUT("Calling backend compiler passes for eqasm_compiler_name: " << platform->eqasm_compiler_name);
-    if (platform->eqasm_compiler_name.empty()) {
-        QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
-    } else if (platform->eqasm_compiler_name == "none" || platform->eqasm_compiler_name == "qx") {
-        QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
-        compiler->loadPassesFromConfigFile("QX_compiler", compilerCfgPath+"qx_compiler_cfg.json");
-    } else if (platform->eqasm_compiler_name == "cc_light_compiler") {
-        compiler->loadPassesFromConfigFile("CCLight_compiler", compilerCfgPath+"cclight_compiler_cfg.json");
-        QL_DOUT("Returned from call backend_compiler->compile for " << platform->eqasm_compiler_name);
-    } else if (platform->eqasm_compiler_name == "eqasm_backend_cc") {
-        compiler->loadPassesFromConfigFile("CC_compiler", compilerCfgPath+"cc_compiler_cfg.json");
     } else {
-        QL_FATAL("the '" << platform->eqasm_compiler_name << "' eqasm compiler backend is not suported !");
+
+        // Retrieve the path to the platform configuration file.
+        // This is needed below to circumvent the hardcoding of the compiler configuration file
+        // when this legacy ::compile method is used.
+        // NOTE: For the use of 'compilerCfgPath' below to work, it is assumed the compiler configuration file
+        //       is located in the same folder as the platform configuration file.
+        std::string compilerCfgPath = dirnameOf(platform->configuration_file_name);
+
+        //constuct compiler
+        std::unique_ptr<quantum_compiler> compiler(new quantum_compiler("Hard Coded Compiler"));
+
+        // backend passes
+        QL_DOUT("Calling backend compiler passes for eqasm_compiler_name: " << platform->eqasm_compiler_name);
+        if (platform->eqasm_compiler_name.empty()) {
+            QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
+        } else if (platform->eqasm_compiler_name == "none" || platform->eqasm_compiler_name == "qx") {
+            QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
+            compiler->loadPassesFromConfigFile("QX_compiler", compilerCfgPath+"qx_compiler_cfg.json");
+        } else if (platform->eqasm_compiler_name == "cc_light_compiler") {
+            compiler->loadPassesFromConfigFile("CCLight_compiler", compilerCfgPath+"cclight_compiler_cfg.json");
+            QL_DOUT("Returned from call backend_compiler->compile for " << platform->eqasm_compiler_name);
+        } else if (platform->eqasm_compiler_name == "eqasm_backend_cc") {
+            compiler->loadPassesFromConfigFile("CC_compiler", compilerCfgPath+"cc_compiler_cfg.json");
+        } else {
+            QL_FATAL("the '" << platform->eqasm_compiler_name << "' eqasm compiler backend is not suported !");
+        }
+
+        //compile with program
+        compiler->compile(ProgramRef::make(*this));
+
+        QL_IOUT("compilation of program '" << name << "' done.");
+
+        compiler.reset();
+
     }
-
-    //compile with program
-    compiler->compile(ProgramRef::make(*this));
-
-    QL_IOUT("compilation of program '" << name << "' done.");
-
-    compiler.reset();
 }
 
 /**

@@ -181,6 +181,15 @@ public:
     );
 
     /**
+     * Generate a pass manager with a strategy that aims to mimic the flow of
+     * the OpenQL compiler as it was before pass management as closely as
+     * possible. The actual pass list is derived from the eqasm_compiler key
+     * in the configuration file and from the global options (similar to the
+     * "compatibility-mode" key in the JSON strategy definition format).
+     */
+    static Manager from_defaults(const plat::PlatformRef &platform);
+
+    /**
      * Returns a reference to the root pass group.
      */
     const PassRef &get_root();
