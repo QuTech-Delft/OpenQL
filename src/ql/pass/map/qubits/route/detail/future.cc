@@ -11,28 +11,27 @@ namespace qubits {
 namespace route {
 namespace detail {
 
-using namespace utils;
-using namespace com;
-
-// just program wide initialization
-void Future::Init(const plat::PlatformRef &p, const OptionsRef &opt) {
+/**
+ * Program-wide initialization function.
+ */
+void Future::initialize(const plat::PlatformRef &p, const OptionsRef &opt) {
     // QL_DOUT("Future::Init ...");
-    platformp = p;
+    platform = p;
     options = opt;
     // QL_DOUT("Future::Init [DONE]");
 }
 
-// Set/switch input to the provided circuit
-// nq, nc and nb are parameters because nc/nb may not be provided by platform but by kernel
-// the latter should be updated when mapping multiple kernels
-void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler> &sched, UInt nq, UInt nc, UInt nb) {
-    QL_DOUT("Future::SetCircuit ...");
-    schedp = sched;
+/**
+ * Set/switch input to the provided kernel.
+ */
+void Future::set_kernel(const ir::KernelRef &kernel, const utils::Ptr<Scheduler> &sched) {
+    QL_DOUT("Future::set_kernel ...");
+    scheduler = sched;
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
         input_gatepv = kernel->c;                               // copy to free original circuit to allow outputing to
         input_gatepp = input_gatepv.begin();                    // iterator set to start of input circuit copy
     } else {
-        schedp->init(
+        scheduler->init(
             kernel,
             options->output_prefix,
             options->commute_multi_qubit,
@@ -43,58 +42,61 @@ void Future::SetCircuit(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
         for (auto &gp : kernel->c) {
             scheduled.set(gp) = false;   // none were scheduled
         }
-        scheduled.set(schedp->instruction[schedp->s]) = false;      // also the dummy nodes not
-        scheduled.set(schedp->instruction[schedp->t]) = false;
+        scheduled.set(scheduler->instruction[scheduler->s]) = false;      // also the dummy nodes not
+        scheduled.set(scheduler->instruction[scheduler->t]) = false;
         avlist.clear();
-        avlist.push_back(schedp->s);
-        schedp->set_remaining(plat::resource::Direction::FORWARD);          // to know criticality
+        avlist.push_back(scheduler->s);
+        scheduler->set_remaining(plat::resource::Direction::FORWARD);          // to know criticality
 
         if (options->print_dot_graphs) {
-            Str map_dot;
-            StrStrm fname;
+            utils::Str map_dot;
+            utils::StrStrm fname;
 
-            schedp->get_dot(map_dot);
+            scheduler->get_dot(map_dot);
 
             fname << options->output_prefix << kernel->name << "_" << "mapper" << ".dot";
             QL_IOUT("writing " << "mapper" << " dependence graph dot file to '" << fname.str() << "' ...");
-            OutFile(fname.str()).write(map_dot);
+            utils::OutFile(fname.str()).write(map_dot);
         }
     }
-    QL_DOUT("Future::SetCircuit [DONE]");
+    QL_DOUT("Future::set_kernel [DONE]");
 }
 
-// Get from avlist all gates that are non-quantum into nonqlg
-// Non-quantum gates include: classical, and dummy (SOURCE/SINK)
-// Return whether some non-quantum gate was found
-Bool Future::GetNonQuantumGates(List<ir::GateRef> &nonqlg) const {
+/**
+ * Get from avlist all gates that are non-quantum into nonqlg. Non-quantum
+ * gates include classical and dummy (SOURCE/SINK). Return whether some
+ * non-quantum gate was found.
+ */
+utils::Bool Future::get_non_quantum_gates(utils::List<ir::GateRef> &nonqlg) const {
     nonqlg.clear();
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
-        ir::GateRef gp = *input_gatepp;
+        ir::GateRef gate = *input_gatepp;
         if (ir::Circuit::const_iterator(input_gatepp) != input_gatepv.end()) {
             if (
-                gp->type() == ir::GateType::CLASSICAL
-                || gp->type() == ir::GateType::DUMMY
+                gate->type() == ir::GateType::CLASSICAL
+                || gate->type() == ir::GateType::DUMMY
             ) {
-                nonqlg.push_back(gp);
+                nonqlg.push_back(gate);
             }
         }
     } else {
         for (auto n : avlist) {
-            ir::GateRef gp = schedp->instruction[n];
+            ir::GateRef gate = scheduler->instruction[n];
             if (
-                gp->type() == ir::GateType::CLASSICAL
-                || gp->type() == ir::GateType::DUMMY
+                gate->type() == ir::GateType::CLASSICAL
+                || gate->type() == ir::GateType::DUMMY
             ) {
-                nonqlg.push_back(gp);
+                nonqlg.push_back(gate);
             }
         }
     }
     return !nonqlg.empty();
 }
 
-// Get all gates from avlist into qlg
-// Return whether some gate was found
-Bool Future::GetGates(List<ir::GateRef> &qlg) const {
+/**
+ * Get all gates from avlist into qlg. Return whether some gate was found.
+ */
+utils::Bool Future::get_gates(utils::List<ir::GateRef> &qlg) const {
     qlg.clear();
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
         if (input_gatepp != input_gatepv.end()) {
@@ -106,7 +108,7 @@ Bool Future::GetGates(List<ir::GateRef> &qlg) const {
         }
     } else {
         for (auto n : avlist) {
-            ir::GateRef gp = schedp->instruction[n];
+            ir::GateRef gp = scheduler->instruction[n];
             if (gp->operands.size() > 2) {
                 QL_FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
             }
@@ -116,24 +118,29 @@ Bool Future::GetGates(List<ir::GateRef> &qlg) const {
     return !qlg.empty();
 }
 
-// Indicate that a gate currently in avlist has been mapped, can be taken out of the avlist
-// and its successors can be made available
-void Future::DoneGate(const ir::GateRef &gp) {
+/**
+ * Indicates that a gate currently in avlist has been mapped, can be
+ * taken out of the avlist, and that its successors can be made available.
+ */
+void Future::completed_gate(const ir::GateRef &gate) {
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
         input_gatepp = std::next(input_gatepp);
     } else {
-        schedp->take_available(schedp->node.at(gp), avlist, scheduled,
-                               plat::resource::Direction::FORWARD);
+        scheduler->take_available(scheduler->node.at(gate), avlist, scheduled,
+                                  plat::resource::Direction::FORWARD);
     }
 }
 
-// Return gp in lag that is most critical (provided lookahead is enabled)
-// This is used in tiebreak, when every other option has failed to make a distinction.
-ir::GateRef Future::MostCriticalIn(const List<ir::GateRef> &lag) const {
+/**
+ * Return the most critical gate in lag (provided lookahead is enabled).
+ * This is used in tiebreak, when every other option has failed to make a
+ * distinction.
+ */
+ir::GateRef Future::get_most_critical(const utils::List<ir::GateRef> &lag) const {
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
         return lag.front();
     } else {
-        return schedp->find_mostcritical(lag);
+        return scheduler->find_mostcritical(lag);
     }
 }
 

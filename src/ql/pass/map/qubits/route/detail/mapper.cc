@@ -192,7 +192,7 @@ Alter Mapper::ChooseAlter(List<Alter> &la, Future &future) {
             for (auto &a : la) {
                 lag.push_back(a.target_gate);
             }
-            ir::GateRef gp = future.MostCriticalIn(lag);
+            ir::GateRef gp = future.get_most_critical(lag);
             QL_ASSERT(!gp.empty());
             for (auto &a : la) {
                 if (a.target_gate.get_ptr() == gp.get_ptr()) {
@@ -262,7 +262,7 @@ void Mapper::CommitAlter(Alter &resa, Future &future, Past &past) {
         // resgp is NN: so done with this 2q gate
         // QL_DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
         MapRoutedGate(resgp, past);     // the 2q target gate is NN now and thus can be mapped
-        future.DoneGate(resgp);         // and then taken out of future
+        future.completed_gate(resgp);         // and then taken out of future
     } else {
         // QL_DOUT("... CommitAlter, target 2q is not NN yet, keep it: " << resgp->qasm());
     }
@@ -293,7 +293,7 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<ir::GateRef> &lg,
 
     QL_DOUT("MapMappableGates entry");
     while (1) {
-        if (future.GetNonQuantumGates(nonqlg)) {
+        if (future.get_non_quantum_gates(nonqlg)) {
             // avlist contains non-quantum gates
             // and GetNonQuantumGates indicates these (in nonqlg) must be done first
             QL_DOUT("MapMappableGates, there is a set of non-quantum gates");
@@ -304,13 +304,13 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<ir::GateRef> &lg,
                     // past only can contain quantum gates, so non-quantum gates must by-pass Past
                     past.bypass(gp);    // this flushes past.lg first to outlg
                 }
-                future.DoneGate(gp); // so on avlist= nonNN2q -> NN2q -> 1q -> nonq: the nonq is done first
+                future.completed_gate(gp); // so on avlist= nonNN2q -> NN2q -> 1q -> nonq: the nonq is done first
                 QL_DOUT("MapMappableGates, done with " << gp->qasm());
             }
             QL_DOUT("MapMappableGates, done with set of non-quantum gates, continuing ...");
             continue;
         }
-        if (!future.GetGates(qlg)) {
+        if (!future.get_gates(qlg)) {
             QL_DOUT("MapMappableGates, no gates anymore, return");
             // avlist doesn't contain any gate
             lg.clear();
@@ -324,7 +324,7 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<ir::GateRef> &lg,
             if (gp->type() == ir::GateType::WAIT || gp->operands.size() == 1) {
                 // a quantum gate not requiring routing ever is found
                 MapRoutedGate(gp, past);
-                future.DoneGate(gp);
+                future.completed_gate(gp);
                 foundone = true;    // a quantum gate was found that never requires routing
                 // so on avlist= nonNN2q -> NN2q -> 1q: the 1q is done first
                 break;
@@ -345,7 +345,7 @@ Bool Mapper::MapMappableGates(Future &future, Past &past, List<ir::GateRef> &lg,
                 if (d == 1) {
                     QL_DOUT("MapMappableGates, NN no routing: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ")");
                     MapRoutedGate(gp, past);
-                    future.DoneGate(gp);
+                    future.completed_gate(gp);
                     foundone = true;    // a 2q quantum gate was found that was mappable
                     // so on avlist= nonNN2q -> NN2q: the NN2q is done first
                     break;
@@ -581,8 +581,8 @@ void Mapper::MapCircuit(const ir::KernelRef &kernel, QubitMapping &v2r) {
     utils::Ptr<Scheduler> sched;
     sched.emplace();        // new scheduler instance (from src/scheduler.h) used for its dependence graph
 
-    future.Init(platformp, options);
-    future.SetCircuit(kernel, sched, nq, nc, nb); // constructs depgraph, initializes avlist, ready for producing gates
+    future.initialize(platformp, options);
+    future.set_kernel(kernel, sched); // constructs depgraph, initializes avlist, ready for producing gates
     kernel->c.reset();      // future has copied kernel.c to private data; kernel.c ready for use by new_gate
     kernelp = kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
