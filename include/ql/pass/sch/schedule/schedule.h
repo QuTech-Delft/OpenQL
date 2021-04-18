@@ -13,26 +13,6 @@ namespace sch {
 namespace schedule {
 
 /**
- * Main entry point of the non-resource-constrained scheduler.
- * FIXME JvS: remove; only used by old pass manager
- */
-void schedule(
-    const ir::ProgramRef &program,
-    const plat::PlatformRef &platform,
-    const utils::Str &passname
-);
-
-/**
- * Main entry point of the resource-constrained scheduler.
- * FIXME JvS: remove; only used by old pass manager
- */
-void rcschedule(
-    const ir::ProgramRef &program,
-    const plat::PlatformRef &platform,
-    const utils::Str &passname
-);
-
-/**
  * Scheduler pass.
  */
 class SchedulePass : public pmgr::pass_types::KernelTransformation {

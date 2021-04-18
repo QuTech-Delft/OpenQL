@@ -65,9 +65,9 @@ public:
     /**
      * Same as dump_for_program(), but writes the result to files in the
      * current globally-configured output directory, using the names
-     * "<kernel>InteractionMatrix.dat".
+     * "<prefix><kernel>InteractionMatrix.dat".
      */
-    static void write_for_program(const ir::ProgramRef &program);
+    static void write_for_program(const utils::Str &output_prefix, const ir::ProgramRef &program);
 
 };
 

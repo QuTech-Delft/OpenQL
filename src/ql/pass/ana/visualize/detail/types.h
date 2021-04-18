@@ -22,9 +22,10 @@ void assertPositive(utils::Int parameterValue, const utils::Str &parameterName);
 void assertPositive(utils::Real parameterValue, const utils::Str &parameterName);
 
 struct VisualizerConfiguration {
-    const utils::Str &visualizationType;
-    const utils::Str &visualizerConfigPath;
-    const utils::Str &waveformMappingPath;
+    utils::Str visualizationType;
+    utils::Str visualizerConfigPath;
+    utils::Str waveformMappingPath;
+    utils::Str output_prefix;
 };
 
 typedef std::array<utils::Byte, 3> Color;

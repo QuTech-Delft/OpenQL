@@ -754,9 +754,6 @@ void PassManager::compile(const ir::ProgramRef &program) {
     // Ensure that all passes are constructed.
     construct();
 
-    // Ensure that the output directory exists.
-    utils::make_dirs(com::options::get("output_dir"));
-
     // Compile the program.
     root->compile(program, "");
 

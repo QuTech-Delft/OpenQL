@@ -236,10 +236,6 @@ void printGatesShort(const Vec<GateProperties> &gates) {
     }
 }
 
-Str generateFilePath(const Str &filename, const Str &extension) {
-    return com::options::get("output_dir") + "/" + filename + "." + extension;
-}
-
 } // namespace detail
 } // namespace visualize
 } // namespace ana

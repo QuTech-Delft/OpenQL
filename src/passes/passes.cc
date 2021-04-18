@@ -157,6 +157,82 @@ void AbstractPass::resetStatistics() {
     statistics = "";
 }
 
+// schedule support for program.h::schedule()
+static void schedule_kernel(
+    ir::KernelRef &kernel,
+    const plat::PlatformRef &platform
+) {
+    utils::Str scheduler = com::options::get("scheduler");
+    utils::Str scheduler_uniform = com::options::get("scheduler_uniform");
+
+    QL_IOUT(scheduler << " scheduling the quantum kernel '" << kernel->name << "'...");
+
+    pass::sch::schedule::detail::Scheduler sched;
+    sched.init(
+        kernel,
+        com::options::get("output_dir") + "/",
+        com::options::get("scheduler_commute") == "yes",
+        com::options::get("scheduler_commute_rotations") == "yes"
+    );
+
+    /*if (com::options::get("print_dot_graphs") == "yes") {
+        // NOTE JvS: basically, this preschedules with ASAP to generate a dot
+        //  file before scheduling... I don't see why you wouldn't be able to do
+        //  this by just prefixing another scheduler pass, so I'm taking this
+        //  one out.
+        utils::Str dot;
+        sched.get_dot(dot);
+        auto fname = com::options::get("output_dir") + "/" + kernel->get_name() + "_dependence_graph.dot";
+        QL_IOUT("writing scheduled dot to '" << fname << "' ...");
+        utils::OutFile(fname).write(dot);
+    }*/
+
+    if (scheduler_uniform == "yes") {
+        sched.schedule_alap_uniform(); // result in current kernel's circuit (k.c)
+    } else if (scheduler == "ASAP") {
+        sched.schedule_asap(); // result in current kernel's circuit (k.c)
+    } else if (scheduler == "ALAP") {
+        sched.schedule_alap(); // result in current kernel's circuit (k.c)
+    } else {
+        QL_FATAL("Not supported scheduler option: scheduler=" << scheduler);
+    }
+
+    if (com::options::get("print_dot_graphs") == "yes") {
+        utils::Str scheduler_opt = com::options::get("scheduler");
+        auto fname = com::options::get("output_dir") + "/" + kernel->get_name() + scheduler_opt + "_scheduled.dot";
+        QL_IOUT("writing scheduled dot to '" << fname << "' ...");
+        utils::OutFile outf{fname};
+        sched.get_dot(false, true, outf.unwrap());
+    }
+
+
+
+    QL_DOUT(scheduler << " scheduling the quantum kernel '" << kernel->name << "' DONE");
+}
+
+/**
+ * Main entry point of the non-resource-constrained scheduler.
+ * FIXME JvS: remove; only used by old pass manager
+ */
+static void schedule(
+    const ir::ProgramRef &program,
+    const plat::PlatformRef &platform,
+    const utils::Str &passname
+) {
+    if (com::options::get("prescheduler") == "yes") {
+        report_statistics(program, platform, "in", passname, "# ");
+        report_qasm(program, platform, "in", passname);
+
+        QL_IOUT("scheduling the quantum program");
+        for (auto &k : program->kernels) {
+            schedule_kernel(k, platform);
+        }
+
+        report_statistics(program, platform, "out", passname, "# ");
+        report_qasm(program, platform, "out", passname);
+    }
+}
+
 /**
  * @brief  Reader pass constructor
  * @param  Name of the read pass
@@ -225,7 +301,7 @@ void SchedulerPass::runOnProgram(const ir::ProgramRef &program) {
     QL_DOUT("run SchedulerPass with name = " << getPassName() << " on program " << program->name);
 
     // prescheduler pass
-    pass::sch::schedule::schedule(program, program->platform, "prescheduler");
+    schedule(program, program->platform, "prescheduler");
 }
 
 /**
@@ -248,7 +324,7 @@ void BackendCompilerPass::runOnProgram(const ir::ProgramRef &program) {
     if (eqasm_compiler_name == "eqasm_backend_cc") {
 
         // This was hardcoded in the CC backend still, taken out now.
-        ql::pass::sch::schedule::schedule(program, program->platform, "scheduler");
+        schedule(program, program->platform, "scheduler");
 
         // Parse options structure from global options.
         namespace detail = arch::cc::pass::gen::vq1asm::detail;
@@ -478,12 +554,61 @@ void CliffordOptimizerPass::runOnProgram(const ir::ProgramRef &program) {
 RCSchedulerPass::RCSchedulerPass(const Str &name) : AbstractPass(name) {
 };
 
+static void rcschedule_kernel(
+    const ir::KernelRef &kernel,
+    const plat::PlatformRef &platform,
+    const utils::Str &passname
+) {
+    QL_IOUT("Resource constraint scheduling ...");
+
+    pass::sch::schedule::detail::Scheduler sched;
+    sched.init(
+        kernel,
+        com::options::get("output_dir") + "/",
+        com::options::get("scheduler_commute") == "yes",
+        com::options::get("scheduler_commute_rotations") == "yes"
+    );
+
+    utils::Str schedopt = com::options::get("scheduler");
+    if (schedopt == "ASAP") {
+        sched.schedule_asap(plat::resource::Manager::from_defaults(platform));
+    } else if (schedopt == "ALAP") {
+        sched.schedule_alap(plat::resource::Manager::from_defaults(platform));
+    } else {
+        QL_FATAL("Not supported scheduler option: scheduler=" << schedopt);
+    }
+
+    if (com::options::get("print_dot_graphs") == "yes") {
+        utils::StrStrm fname;
+        fname << com::options::get("output_dir") << "/" << kernel->name << "_" << passname << ".dot";
+        QL_IOUT("writing " << passname << " dependency graph dot file to '" << fname.str() << "' ...");
+        utils::OutFile outf{fname.str()};
+        sched.get_dot(false, true, outf.unwrap());
+    }
+
+    QL_IOUT("Resource constraint scheduling [Done].");
+}
+
 /**
  * @brief  Resource Constraint Scheduling of the input program
  * @param  Program object to be rcscheduled
  */
 void RCSchedulerPass::runOnProgram(const ir::ProgramRef &program) {
-    pass::sch::schedule::rcschedule(program, program->platform, getPassName());
+    auto platform = program->platform;
+    auto passname = getPassName();
+
+    report_statistics(program, platform, "in", passname, "# ");
+    report_qasm(program, platform, "in", passname);
+
+    for (auto &kernel : program->kernels) {
+        QL_IOUT("Scheduling kernel: " << kernel->name);
+        if (!kernel->c.empty()) {
+            rcschedule_kernel(kernel, platform, passname);
+        }
+    }
+
+    report_statistics(program, platform, "out", passname, "# ");
+    report_qasm(program, platform, "out", passname);
 }
 
 } // namespace ql

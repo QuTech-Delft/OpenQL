@@ -178,7 +178,7 @@ void visualizeMappingGraph(const ir::ProgramRef &program, const VisualizerConfig
 
     // Save the image if enabled.
     if (imageOutput.circuitLayout.saveImage) {
-        imageOutput.image.save(generateFilePath("circuit_visualization", "bmp"));
+        imageOutput.image.save(configuration.output_prefix + ".bmp");
     }
 
     // Display the filled in image.

@@ -92,13 +92,14 @@ void InteractionMatrix::dump_for_program(
  * "<kernel>InteractionMatrix.dat".
  */
 void InteractionMatrix::write_for_program(
+    const utils::Str &output_prefix,
     const ir::ProgramRef &program
 ) {
     for (const auto &k : program->kernels) {
         ql::com::InteractionMatrix imat(k);
         utils::Str mstr = imat.get_string();
 
-        utils::Str fname = com::options::get("output_dir") + "/" + k->get_name() + "InteractionMatrix.dat";
+        utils::Str fname = output_prefix + "/" + k->get_name() + "InteractionMatrix.dat";
         QL_IOUT("writing interaction matrix to '" << fname << "' ...");
         utils::OutFile(fname).write(mstr);
     }

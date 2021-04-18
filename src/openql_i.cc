@@ -461,7 +461,10 @@ void Program::print_interaction_matrix() const {
 }
 
 void Program::write_interaction_matrix() const {
-    ql::com::InteractionMatrix::write_for_program(program);
+    ql::com::InteractionMatrix::write_for_program(
+        ql::com::options::get("output_dir") + "/",
+        program
+    );
 }
 
 cQasmReader::cQasmReader(

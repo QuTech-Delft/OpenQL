@@ -88,14 +88,14 @@ utils::Int GenerateVQ1AsmPass::run(
     }
 
     // Parse the options.
-    auto options = utils::Ptr<detail::Options>::make();
-    options->output_prefix = com::options::get("output_dir") + "/" + program->unique_name;
-    options->map_input_file = com::options::get("backend_cc_map_input_file");
-    options->run_once = com::options::get("backend_cc_run_once") == "yes";
-    options->verbose = com::options::get("backend_cc_verbose") == "yes";
+    auto parsed_options = utils::Ptr<detail::Options>::make();
+    parsed_options->output_prefix = context.output_prefix;
+    parsed_options->map_input_file = options["backend_cc_map_input_file"].as_str();
+    parsed_options->run_once = options["backend_cc_run_once"].as_bool();
+    parsed_options->verbose = options["backend_cc_verbose"].as_bool();
 
     // Run the backend.
-    detail::Backend().compile(program, options.as_const());
+    detail::Backend().compile(program, parsed_options.as_const());
 
     return 0;
 }
