@@ -1,5 +1,9 @@
 /** \file
  * Resource management for CC-light platform.
+ *
+ * FIXME: needs cleanup, generalization, and conversion to new resource types,
+ *  including support for the "undefined" direction (since the mapper was
+ *  apparently already using it)
  */
 
 #pragma once
@@ -13,7 +17,8 @@
 #include "ql/rmgr/resource_types/compat.h"
 
 namespace ql {
-namespace arch {
+namespace resource {
+namespace todo {
 
 // ============ classes of resources that _may_ appear in a configuration file
 // these are a superset of those allocated by the cc_light_resource_manager_t constructor below
@@ -153,5 +158,14 @@ public:
     void reserve(utils::UInt op_start_cycle, const ir::GateRef &ins, const plat::PlatformRef &platform) override;
 };
 
-} // namespace arch
+} // namespace todo
+
+using Qubits = rmgr::resource_types::Compat<todo::ccl_qubit_resource_t>;
+using QWGs = rmgr::resource_types::Compat<todo::ccl_qwg_resource_t>;
+using MeasUnits = rmgr::resource_types::Compat<todo::ccl_meas_resource_t>;
+using Edges = rmgr::resource_types::Compat<todo::ccl_edge_resource_t>;
+using DetunedQubits = rmgr::resource_types::Compat<todo::ccl_detuned_qubits_resource_t>;
+using Channels = rmgr::resource_types::Compat<todo::ccl_channel_resource_t>;
+
+} // namespace resource
 } // namespace ql

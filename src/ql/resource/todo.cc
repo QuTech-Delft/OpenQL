@@ -1,11 +1,16 @@
 /** \file
- * Resource management for CC-light platform.
+ * Resources copied from the CC-light platform.
+ *
+ * FIXME: needs cleanup, generalization, and conversion to new resource types,
+ *  including support for the "undefined" direction (since the mapper was
+ *  apparently already using it)
  */
 
-#include "arch/cc_light/cc_light_resource_manager.h"
+#include "ql/resource/todo.h"
 
 namespace ql {
-namespace arch {
+namespace resource {
+namespace todo {
 
 using namespace utils;
 using namespace rmgr::resource_types;
@@ -781,5 +786,9 @@ void ccl_channel_resource_t::reserve(
     }
 }
 
-} // namespace arch
+} // namespace todo
+
+
+
+} // namespace resource
 } // namespace ql

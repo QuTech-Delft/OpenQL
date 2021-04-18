@@ -214,6 +214,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/factory.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/state.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/manager.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/resource/todo.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/pass_types/base.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/pass_types/specializations.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/condition.cc"
@@ -261,7 +262,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes/passes.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_resource_manager.cc"
 )
 
 # Generate a header file with configuration options that cannot be compiled
