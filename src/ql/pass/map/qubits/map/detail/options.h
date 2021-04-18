@@ -294,7 +294,7 @@ struct Options {
      * Whether to print dot graphs of the schedules created using the embedded
      * scheduler.
      */
-    utils::Bool print_dot_graphs = false;
+    utils::Bool write_dot_graphs = false;
 
 };
 

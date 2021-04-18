@@ -93,7 +93,7 @@ MapQubitsPass::MapQubitsPass(
     //========================================================================//
 
     options.add_enum(
-        "heuristic",
+        "route_heuristic",
         "Controls which heuristic the router should use when selecting between "
         "possible routing operations. \"base\" and \"base_rc\" are the simplest "
         "forms: all routes are considered equally \"good\", so the tie-breaking "
@@ -223,7 +223,7 @@ MapQubitsPass::MapQubitsPass(
     );
 
     options.add_bool(
-        "print_dot_graphs",
+        "write_dot_graphs",
         "Whether to print dot graphs of the schedules created using the "
         "embedded scheduler.",
         false
@@ -338,7 +338,7 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     parsed_options->reverse_swap_if_better = options["reverse_swap_if_better"].as_bool();
     parsed_options->commute_multi_qubit = options["commute_multi_qubit"].as_bool();
     parsed_options->commute_single_qubit = options["commute_single_qubit"].as_bool();
-    parsed_options->print_dot_graphs = options["print_dot_graphs"].as_bool();
+    parsed_options->write_dot_graphs = options["write_dot_graphs"].as_bool();
 
     return pmgr::pass_types::NodeType::NORMAL;
 }

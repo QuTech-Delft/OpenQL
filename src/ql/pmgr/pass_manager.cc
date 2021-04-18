@@ -384,7 +384,6 @@ static void add_passes_from_json(
  */
 PassManager PassManager::from_json(
     const utils::Json &json,
-    utils::Bool compatibility_mode,
     const PassFactory &factory
 ) {
 
@@ -411,6 +410,7 @@ PassManager PassManager::from_json(
     utils::Str architecture = {};
     utils::Set<utils::Str> dnu = {};
     const utils::Json *pass_options = nullptr;
+    utils::Bool compatibility_mode = false;
     const utils::Json *passes = nullptr;
     for (it = strategy.begin(); it != strategy.end(); ++it) {
         if (it.key() == "architecture") {
@@ -439,6 +439,12 @@ PassManager PassManager::from_json(
             } else {
                 throw utils::Exception("strategy.pass-options must be an object");
             }
+        } else if (it.key() == "compatibility-mode") {
+            if (it.value().type() == JsonType::boolean) {
+                compatibility_mode = it.value().get<utils::Bool>();
+            } else {
+                throw utils::Exception("strategy.compatibility-mode must be a boolean if specified");
+            }
         } else if (it.key() == "passes") {
             if (it.value().type() == JsonType::array) {
                 passes = &it.value();
@@ -456,6 +462,16 @@ PassManager PassManager::from_json(
     // Build the default pass options record.
     utils::Map<utils::Str, utils::Str> pass_default_options;
     if (compatibility_mode) {
+
+        // FIXME: there should probably be some way to namespace option names
+        //  by pass type if we're going to be setting them like this. For
+        //  now the option names are just named such that there are no
+        //  conflicts, so we can make do. But it'd be a bit weird if all the
+        //  option names for a particular pass start with the pass type name
+        //  while configuring, so something more intelligent is needed, and that
+        //  just doesn't exist right now. On the other hand, there shouldn't
+        //  ever be any more global options like this, so maybe this is good
+        //  enough.
 
         // Set output_prefix based on output_dir and unique_output.
         utils::StrStrm ss;
@@ -480,9 +496,129 @@ PassManager PassManager::from_json(
             pass_default_options.set("debug") = "stats";
         }
 
+        // Set options for the scheduler.
+        const auto &scheduler = com::options::global["scheduler"];
+        const auto &scheduler_uniform = com::options::global["scheduler_uniform"];
+        if (scheduler.is_set() || scheduler_uniform.is_set()) {
+            if (scheduler_uniform.as_bool()) {
+                pass_default_options.set("scheduler_heuristic") = "uniform";
+            } else if (scheduler.as_str() == "ASAP") {
+                pass_default_options.set("scheduler_heuristic") = "asap";
+            } else {
+                pass_default_options.set("scheduler_heuristic") = "alap";
+            }
+        }
+
+        // Set options for both the scheduler and mapper (since the mapper has
+        // a scheduler built into it, they share some options).
+        const auto &scheduler_commute = com::options::global["scheduler_commute"];
+        if (scheduler_commute.is_set()) {
+            pass_default_options.set("commute_multi_qubit") = scheduler_commute.as_str();
+        }
+        const auto &scheduler_commute_rotations = com::options::global["scheduler_commute_rotations"];
+        if (scheduler_commute_rotations.is_set()) {
+            pass_default_options.set("commute_single_qubit") = scheduler_commute_rotations.as_str();
+        }
+        const auto &print_dot_graphs = com::options::global["print_dot_graphs"];
+        if (print_dot_graphs.is_set()) {
+            pass_default_options.set("write_dot_graphs") = print_dot_graphs.as_str();
+        }
+
+        // Set options for the mapper.
+        const auto &initialplace = com::options::global["initialplace"];
+        if (initialplace.is_set()) {
+            if (initialplace.as_str() == "no") {
+                pass_default_options.set("enable_mip_placer") = "no";
+            } else {
+                if (initialplace.as_str() != "yes") {
+                    QL_WOUT("timeout set for initial placement, but this is not supported right now");
+                }
+                pass_default_options.set("enable_mip_placer") = "yes";
+            }
+        }
+        const auto &initialplace2qhorizon = com::options::global["initialplace2qhorizon"];
+        if (initialplace2qhorizon.is_set()) {
+            pass_default_options.set("mip_horizon") = initialplace2qhorizon.as_str();
+        }
+        const auto &mapper = com::options::global["mapper"];
+        if (mapper.is_set() && mapper.as_str() != "no") {
+            pass_default_options.set("route_heuristic") = mapper.as_str();
+        }
+        const auto &mapinitone2one = com::options::global["mapinitone2one"];
+        if (mapinitone2one.is_set()) {
+            pass_default_options.set("initialize_one_to_one") = mapinitone2one.as_str();
+        }
+        const auto &mapassumezeroinitstate = com::options::global["mapassumezeroinitstate"];
+        if (mapassumezeroinitstate.is_set()) {
+            pass_default_options.set("assume_initialized") = mapassumezeroinitstate.as_str();
+        }
+        const auto &mapprepinitsstate = com::options::global["mapprepinitsstate"];
+        if (mapprepinitsstate.is_set()) {
+            pass_default_options.set("assume_prep_only_initializes") = mapprepinitsstate.as_str();
+        }
+        const auto &maplookahead = com::options::global["maplookahead"];
+        if (maplookahead.is_set()) {
+            pass_default_options.set("lookahead_mode") = maplookahead.as_str();
+        }
+        const auto &mappathselect = com::options::global["mappathselect"];
+        if (mappathselect.is_set()) {
+            pass_default_options.set("path_selection_mode") = mappathselect.as_str();
+        }
+        const auto &mapselectswaps = com::options::global["mapselectswaps"];
+        if (mapselectswaps.is_set()) {
+            pass_default_options.set("swap_selection_mode") = mapselectswaps.as_str();
+        }
+        const auto &maprecNN2q = com::options::global["maprecNN2q"];
+        if (maprecNN2q.is_set()) {
+            pass_default_options.set("recurse_on_nn_two_qubit") = maprecNN2q.as_str();
+        }
+        const auto &mapselectmaxlevel = com::options::global["mapselectmaxlevel"];
+        if (mapselectmaxlevel.is_set()) {
+            pass_default_options.set("recursion_depth_limit") = mapselectmaxlevel.as_str();
+        }
+        const auto &mapselectmaxwidth = com::options::global["mapselectmaxwidth"];
+        if (mapselectmaxwidth.is_set()) {
+            if (mapselectmaxwidth.as_str() == "min") {
+                pass_default_options.set("recursion_width_factor") = "1.0";
+            } else if (mapselectmaxwidth.as_str() == "minplusone") {
+                pass_default_options.set("recursion_width_factor") = "1.0000000001";
+            } else if (mapselectmaxwidth.as_str() == "minplushalfmin") {
+                pass_default_options.set("recursion_width_factor") = "1.5";
+            } else if (mapselectmaxwidth.as_str() == "minplusmin") {
+                pass_default_options.set("recursion_width_factor") = "2.0";
+            } else {
+                pass_default_options.set("recursion_width_factor") = "100000000000";
+            }
+        }
+        const auto &maptiebreak = com::options::global["maptiebreak"];
+        if (maptiebreak.is_set()) {
+            pass_default_options.set("tie_break_method") = maptiebreak.as_str();
+        }
+        const auto &mapusemoves = com::options::global["mapusemoves"];
+        if (mapusemoves.is_set()) {
+            pass_default_options.set("use_moves") = mapusemoves.as_str();
+        }
+        const auto &mapreverseswap = com::options::global["mapreverseswap"];
+        if (mapreverseswap.is_set()) {
+            pass_default_options.set("reverse_swap_if_better") = mapreverseswap.as_str();
+        }
+
+        // Set options for CC backend.
+        const auto &backend_cc_map_input_file = com::options::global["backend_cc_map_input_file"];
+        if (backend_cc_map_input_file.is_set()) {
+            pass_default_options.set("map_input_file") = backend_cc_map_input_file.as_str();
+        }
+        const auto &backend_cc_verbose = com::options::global["backend_cc_verbose"];
+        if (backend_cc_verbose.is_set()) {
+            pass_default_options.set("verbose") = backend_cc_verbose.as_str();
+        }
+        const auto &backend_cc_run_once = com::options::global["backend_cc_run_once"];
+        if (backend_cc_run_once.is_set()) {
+            pass_default_options.set("run_once") = backend_cc_run_once.as_str();
+        }
+
     }
 
-    // TODO: take options from the global options for backward compatibility.
     if (pass_options) {
         for (it = pass_options->begin(); it != pass_options->end(); ++it) {
             pass_default_options.set(it.key()) = option_value_from_json(it.value());

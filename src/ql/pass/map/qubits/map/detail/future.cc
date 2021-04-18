@@ -48,7 +48,7 @@ void Future::set_kernel(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
         avlist.push_back(scheduler->s);
         scheduler->set_remaining(plat::resource::Direction::FORWARD);          // to know criticality
 
-        if (options->print_dot_graphs) {
+        if (options->write_dot_graphs) {
             utils::Str map_dot;
             utils::StrStrm fname;
 

@@ -216,6 +216,7 @@ public:
      *         "architecture": <optional string, default "">,
      *         "dnu": <optional list of strings, default []>,
      *         "pass-options": <optional object, default {}>,
+     *         "compatibility-mode": <optional boolean, default false>,
      *         "passes": [
      *             <pass description>
      *         ]
@@ -247,10 +248,15 @@ public:
      * setting a default option in the root using this record will affect all
      * passes.
      *
-     * If compatibility_mode is enabled, some of OpenQL's global options add
-     * implicit entries to the "pass-options" structure for backward
-     * compatibility. However, entries in "pass-options" take precedence.
-     * TODO: list these options here!
+     * If "compatibility-mode" is enabled, some of OpenQL's global options add
+     * implicit entries to the "pass-options" structure when set, for backward
+     * compatibility. However, entries in "pass-options" always take precedence.
+     * The logic for which options map to which is mostly documented in the
+     * global option docs now, since those options don't do anything else
+     * anymore. Note that the global options by their original design have no
+     * way to specify what pass they refer to, so each option is attempted for
+     * each pass type! Which means we have to be a bit careful with picking
+     * option names for the passes that are included in compatibility mode.
      *
      * Pass descriptions can either be strings (in which case the string is
      * interpreted as a pass type alias and everything else is
@@ -301,7 +307,6 @@ public:
      */
     static PassManager from_json(
         const utils::Json &json,
-        utils::Bool compatibility_mode = false,
         const PassFactory &factory = {}
     );
 

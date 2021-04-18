@@ -498,7 +498,7 @@ void MapperPass::runOnProgram(const ir::ProgramRef &program) {
     parsed_options.reverse_swap_if_better = com::options::global["mapreverseswap"].as_bool();
     parsed_options.commute_multi_qubit = com::options::global["scheduler_commute"].as_bool();
     parsed_options.commute_single_qubit = com::options::global["scheduler_commute_rotations"].as_bool();
-    parsed_options.print_dot_graphs = com::options::global["print_dot_graphs"].as_bool();
+    parsed_options.write_dot_graphs = com::options::global["print_dot_graphs"].as_bool();
     parsed_options.enable_mip_placer = com::options::global["initialplace"].as_bool();
     parsed_options.mip_horizon = com::options::global["initialplace2qhorizon"].as_uint();
 

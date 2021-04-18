@@ -35,13 +35,15 @@ SchedulePass::SchedulePass(
     const utils::Str &instance_name,
     const utils::Str &type_name
 ) : pmgr::pass_types::KernelTransformation(pass_factory, instance_name, type_name) {
+
     options.add_bool(
         "resource_constraints",
         "Whether to respect or ignore resource constraints when scheduling.",
         true
     );
+
     options.add_enum(
-        "heuristic",
+        "scheduler_heuristic",
         "Which scheduling heuristic is to be used; ASAP schedules all gates as "
         "soon as possible, ALAP starts from the last gate and schedules all "
         "gates as late as possible, and uniform tries to smoothen out the "
@@ -53,24 +55,28 @@ SchedulePass::SchedulePass(
         "alap",
         {"asap", "alap", "uniform"}
     );
+
     options.add_bool(
         "commute_multi_qubit",
         "Whether to consider commutation rules for the CZ and CNOT quantum "
         "gates.",
         false
     );
+
     options.add_bool(
         "commute_single_qubit",
         "Whether to consider commutation rules for single-qubit X and Z "
         "rotations.",
         false
     );
+
     options.add_bool(
-        "write_dot_graph",
+        "write_dot_graphs",
         "Whether to emit a graphviz dot graph representation of the schedule "
         "of the kernel. The emitted file will use suffix \"_<kernel>.dot\".",
         false
     );
+
 }
 
 /**
@@ -122,7 +128,7 @@ utils::Int SchedulePass::run(
 
     // Write dot file if requested.
     // TODO: maybe make this a separate pass, actually?
-    if (options["write_dot_graph"].as_bool()) {
+    if (options["write_dot_graphs"].as_bool()) {
         utils::OutFile outf{context.output_prefix + "_" + kernel->name + ".dot"};
         sched.get_dot(false, true, outf.unwrap());
     }
