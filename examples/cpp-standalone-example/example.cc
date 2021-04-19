@@ -20,7 +20,7 @@ int main(int argc, char ** argv)
   k.measure(1);
 
   // add kernel to program
-  prog.add(k);
+  prog.add_kernel(k);
 
   // compile the program
   prog.compile();
