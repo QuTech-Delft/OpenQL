@@ -147,11 +147,6 @@ public:
      */
     void add_for(const ProgramRef &p, utils::UInt iterations);
 
-    /**
-     * Entry point for compilation.
-     */
-    void compile();
-
 };
 
 } // namespace ir

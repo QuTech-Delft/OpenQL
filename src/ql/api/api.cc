@@ -7,6 +7,7 @@
 #include "ql/version.h"
 #include "ql/com/interaction_matrix.h"
 #include "ql/pass/io/sweep_points/annotation.h"
+#include "ql/pmgr/manager.h"
 
 namespace ql {
 namespace api {
@@ -53,8 +54,6 @@ void print_options() {
     ql::com::options::global.help();
 }
 
-Platform::Platform() {}
-
 Platform::Platform(
     const std::string &name,
     const std::string &config_file
@@ -66,31 +65,31 @@ Platform::Platform(
         QL_WOUT("platform constructed before initialize()! In the future, please call initialize() before anything else!");
         initialize();
     }
-    platform.emplace(name, config_file);
+    _platform.emplace(name, config_file);
 }
 
 size_t Platform::get_qubit_number() const {
-    return platform->qubit_count;
+    return _platform->qubit_count;
 }
 
 CReg::CReg(size_t id) {
-    creg.emplace(id);
+    _creg.emplace(id);
 }
 
 Operation::Operation(const CReg &lop, const std::string &op, const CReg &rop) {
-    operation.emplace(*(lop.creg), op, *(rop.creg));
+    _operation.emplace(*(lop._creg), op, *(rop._creg));
 }
 
 Operation::Operation(const std::string &op, const CReg &rop) {
-    operation.emplace(op, *(rop.creg));
+    _operation.emplace(op, *(rop._creg));
 }
 
 Operation::Operation(const CReg &lop) {
-    operation.emplace(*(lop.creg));
+    _operation.emplace(*(lop._creg));
 }
 
 Operation::Operation(int val) {
-    operation.emplace(val);
+    _operation.emplace(val);
 }
 
 Unitary::Unitary(
@@ -99,19 +98,15 @@ Unitary::Unitary(
 ) :
     name(name)
 {
-    unitary.emplace(name, ql::utils::Vec<ql::utils::Complex>(matrix.begin(), matrix.end()));
+    _unitary.emplace(name, ql::utils::Vec<ql::utils::Complex>(matrix.begin(), matrix.end()));
 }
 
 void Unitary::decompose() {
-    unitary->decompose();
+    _unitary->decompose();
 }
 
 bool Unitary::is_decompose_support_enabled() {
     return ql::com::Unitary::is_decompose_support_enabled();
-}
-
-Kernel::Kernel(const std::string &name) : name(name) {
-    throw std::runtime_error("cannot create kernel without a platform anymore");
 }
 
 Kernel::Kernel(
@@ -128,137 +123,137 @@ Kernel::Kernel(
     breg_count(breg_count)
 {
     QL_WOUT("Kernel(name,Platform,#qbit,#creg,#breg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
-    kernel.emplace(name, platform.platform, qubit_count, creg_count, breg_count);
+    _kernel.emplace(name, platform._platform, qubit_count, creg_count, breg_count);
 }
 
 void Kernel::identity(size_t q0) {
-    kernel->identity(q0);
+    _kernel->identity(q0);
 }
 
 void Kernel::hadamard(size_t q0) {
-    kernel->hadamard(q0);
+    _kernel->hadamard(q0);
 }
 
 void Kernel::s(size_t q0) {
-    kernel->s(q0);
+    _kernel->s(q0);
 }
 
 void Kernel::sdag(size_t q0) {
-    kernel->sdag(q0);
+    _kernel->sdag(q0);
 }
 
 void Kernel::t(size_t q0) {
-    kernel->t(q0);
+    _kernel->t(q0);
 }
 
 void Kernel::tdag(size_t q0) {
-    kernel->tdag(q0);
+    _kernel->tdag(q0);
 }
 
 void Kernel::x(size_t q0) {
-    kernel->x(q0);
+    _kernel->x(q0);
 }
 
 void Kernel::y(size_t q0) {
-    kernel->y(q0);
+    _kernel->y(q0);
 }
 
 void Kernel::z(size_t q0) {
-    kernel->z(q0);
+    _kernel->z(q0);
 }
 
 void Kernel::rx90(size_t q0) {
-    kernel->rx90(q0);
+    _kernel->rx90(q0);
 }
 
 void Kernel::mrx90(size_t q0) {
-    kernel->mrx90(q0);
+    _kernel->mrx90(q0);
 }
 
 void Kernel::rx180(size_t q0) {
-    kernel->rx180(q0);
+    _kernel->rx180(q0);
 }
 
 void Kernel::ry90(size_t q0) {
-    kernel->ry90(q0);
+    _kernel->ry90(q0);
 }
 
 void Kernel::mry90(size_t q0) {
-    kernel->mry90(q0);
+    _kernel->mry90(q0);
 }
 
 void Kernel::ry180(size_t q0) {
-    kernel->ry180(q0);
+    _kernel->ry180(q0);
 }
 
 void Kernel::rx(size_t q0, double angle) {
-    kernel->rx(q0, angle);
+    _kernel->rx(q0, angle);
 }
 
 void Kernel::ry(size_t q0, double angle) {
-    kernel->ry(q0, angle);
+    _kernel->ry(q0, angle);
 }
 
 void Kernel::rz(size_t q0, double angle) {
-    kernel->rz(q0, angle);
+    _kernel->rz(q0, angle);
 }
 
 void Kernel::measure(size_t q0) {
     QL_DOUT("Python k.measure([" << q0 << "])");
-    kernel->measure(q0);
+    _kernel->measure(q0);
 }
 
 void Kernel::measure(size_t q0, size_t b0) {
     QL_DOUT("Python k.measure([" << q0 << "], [" << b0 << "])");
-    kernel->measure(q0, b0);
+    _kernel->measure(q0, b0);
 }
 
 void Kernel::prepz(size_t q0) {
-    kernel->prepz(q0);
+    _kernel->prepz(q0);
 }
 
 void Kernel::cnot(size_t q0, size_t q1) {
-    kernel->cnot(q0,q1);
+    _kernel->cnot(q0,q1);
 }
 
 void Kernel::cphase(size_t q0, size_t q1) {
-    kernel->cphase(q0,q1);
+    _kernel->cphase(q0,q1);
 }
 
 void Kernel::cz(size_t q0, size_t q1) {
-    kernel->cz(q0,q1);
+    _kernel->cz(q0,q1);
 }
 
 void Kernel::toffoli(size_t q0, size_t q1, size_t q2) {
-    kernel->toffoli(q0,q1,q2);
+    _kernel->toffoli(q0,q1,q2);
 }
 
 void Kernel::clifford(int id, size_t q0) {
-    kernel->clifford(id, q0);
+    _kernel->clifford(id, q0);
 }
 
 void Kernel::wait(const std::vector<size_t> &qubits, size_t duration) {
-    kernel->wait({qubits.begin(), qubits.end()}, duration);
+    _kernel->wait({qubits.begin(), qubits.end()}, duration);
 }
 
 void Kernel::barrier(const std::vector<size_t> &qubits) {
-    kernel->wait({qubits.begin(), qubits.end()}, 0);
+    _kernel->wait({qubits.begin(), qubits.end()}, 0);
 }
 
 std::string Kernel::get_custom_instructions() const {
-    return kernel->get_gates_definition();
+    return _kernel->get_gates_definition();
 }
 
 void Kernel::display() {
-    kernel->display();
+    _kernel->display();
 }
 
 void Kernel::gate(const std::string &gname, size_t q0) {
-    kernel->gate(gname, q0);
+    _kernel->gate(gname, q0);
 }
 
 void Kernel::gate(const std::string &gname, size_t q0, size_t q1) {
-    kernel->gate(gname, q0, q1);
+    _kernel->gate(gname, q0, q1);
 }
 
 void Kernel::gate(
@@ -287,9 +282,9 @@ void Kernel::gate(
         << ql::utils::Vec<size_t>(condregs.begin(), condregs.end())
         << ")"
     );
-    auto condvalue = kernel->condstr2condvalue(condstring);
+    auto condvalue = _kernel->condstr2condvalue(condstring);
 
-    kernel->gate(
+    _kernel->gate(
         name,
         {qubits.begin(), qubits.end()},
         {},
@@ -312,10 +307,10 @@ void Kernel::gate(
         << ", "
         << ql::utils::Vec<size_t>(qubits.begin(), qubits.end())
         << ",  "
-        << (destination.creg)->id
+        << (destination._creg)->id
         << ") # (name,qubits,creg-destination)"
     );
-    kernel->gate(name, {qubits.begin(), qubits.end()}, {(destination.creg)->id} );
+    _kernel->gate(name, {qubits.begin(), qubits.end()}, {(destination._creg)->id} );
 }
 
 void Kernel::gate_preset_condition(
@@ -323,15 +318,15 @@ void Kernel::gate_preset_condition(
     const std::vector<size_t> &condregs
 ) {
     QL_DOUT("Python k.gate_preset_condition("<<condstring<<", condregs)");
-    kernel->gate_preset_condition(
-        kernel->condstr2condvalue(condstring),
+    _kernel->gate_preset_condition(
+        _kernel->condstr2condvalue(condstring),
         {condregs.begin(), condregs.end()}
     );
 }
 
 void Kernel::gate_clear_condition() {
     QL_DOUT("Python k.gate_clear_condition()");
-    kernel->gate_clear_condition();
+    _kernel->gate_clear_condition();
 }
 
 void Kernel::condgate(
@@ -351,24 +346,24 @@ void Kernel::condgate(
         << ql::utils::Vec<size_t>(condregs.begin(), condregs.end())
         << ")"
     );
-    kernel->condgate(
+    _kernel->condgate(
         name,
         {qubits.begin(), qubits.end()},
-        kernel->condstr2condvalue(condstring),
+        _kernel->condstr2condvalue(condstring),
         {condregs.begin(), condregs.end()}
     );
 }
 
 void Kernel::gate(const Unitary &u, const std::vector<size_t> &qubits) {
-    kernel->gate(*(u.unitary), {qubits.begin(), qubits.end()});
+    _kernel->gate(*(u._unitary), {qubits.begin(), qubits.end()});
 }
 
 void Kernel::classical(const CReg &destination, const Operation &operation) {
-    kernel->classical(*(destination.creg), *(operation.operation));
+    _kernel->classical(*(destination._creg), *(operation._operation));
 }
 
 void Kernel::classical(const std::string &operation) {
-    kernel->classical(operation);
+    _kernel->classical(operation);
 }
 
 void Kernel::controlled(
@@ -376,15 +371,11 @@ void Kernel::controlled(
     const std::vector<size_t> &control_qubits,
     const std::vector<size_t> &ancilla_qubits
 ) {
-    kernel->controlled(*k.kernel, {control_qubits.begin(), control_qubits.end()}, {ancilla_qubits.begin(), ancilla_qubits.end()});
+    _kernel->controlled(*k._kernel, {control_qubits.begin(), control_qubits.end()}, {ancilla_qubits.begin(), ancilla_qubits.end()});
 }
 
 void Kernel::conjugate(const Kernel &k) {
-    kernel->conjugate(*k.kernel);
-}
-
-Program::Program(const std::string &name) : name(name) {
-    throw std::runtime_error("cannot create program without a platform anymore");
+    _kernel->conjugate(*k._kernel);
 }
 
 Program::Program(
@@ -401,22 +392,22 @@ Program::Program(
     breg_count(breg_count)
 {
     QL_WOUT("Program(name,Platform,#qbit,#creg,#breg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
-    program.emplace(name, platform.platform, qubit_count, creg_count, breg_count);
+    _program.emplace(name, platform._platform, qubit_count, creg_count, breg_count);
 }
 
 void Program::set_sweep_points(const std::vector<double> &sweep_points) {
     QL_WOUT("This will soon be deprecated according to issue #76");
     using Annotation = ql::pass::io::sweep_points::Annotation;
-    if (!program->has_annotation<Annotation>()) {
-        program->set_annotation<Annotation>({});
+    if (!_program->has_annotation<Annotation>()) {
+        _program->set_annotation<Annotation>({});
     }
-    program->get_annotation<Annotation>().data = sweep_points;
+    _program->get_annotation<Annotation>().data = sweep_points;
 }
 
 std::vector<double> Program::get_sweep_points() const {
     QL_WOUT("This will soon be deprecated according to issue #76");
     using Annotation = ql::pass::io::sweep_points::Annotation;
-    auto annot = program->get_annotation_ptr<Annotation>();
+    auto annot = _program->get_annotation_ptr<Annotation>();
     if (annot == nullptr) {
         return {};
     } else {
@@ -427,56 +418,61 @@ std::vector<double> Program::get_sweep_points() const {
 void Program::set_config_file(const std::string &config_file_name) {
     QL_WOUT("This will soon be deprecated according to issue #76");
     using Annotation = ql::pass::io::sweep_points::Annotation;
-    if (!program->has_annotation<Annotation>()) {
-        program->set_annotation<Annotation>({});
+    if (!_program->has_annotation<Annotation>()) {
+        _program->set_annotation<Annotation>({});
     }
-    program->get_annotation<Annotation>().config_file_name
+    _program->get_annotation<Annotation>().config_file_name
         = get_option("output_dir") + "/" + config_file_name;
 }
 
 
 void Program::add_kernel(Kernel &k) {
-    program->add(k.kernel);
+    _program->add(k._kernel);
 }
 
 void Program::add_program(Program &p) {
-    program->add_program(p.program);
+    _program->add_program(p._program);
 }
 
 void Program::add_if(Kernel &k, const Operation &operation) {
-    program->add_if(k.kernel, *operation.operation);
+    _program->add_if(k._kernel, *operation._operation);
 }
 
 void Program::add_if(Program &p, const Operation &operation) {
-    program->add_if(p.program, *operation.operation);
+    _program->add_if(p._program, *operation._operation);
 }
 
 void Program::add_if_else(Kernel &k_if, Kernel &k_else, const Operation &operation) {
-    program->add_if_else(k_if.kernel, k_else.kernel, *(operation.operation));
+    _program->add_if_else(k_if._kernel, k_else._kernel, *(operation._operation));
 }
 
 void Program::add_if_else(Program &p_if, Program &p_else, const Operation &operation) {
-    program->add_if_else(p_if.program, p_else.program, *(operation.operation));
+    _program->add_if_else(p_if._program, p_else._program, *(operation._operation));
 }
 
 void Program::add_do_while(Kernel &k, const Operation &operation) {
-    program->add_do_while(k.kernel, *operation.operation);
+    _program->add_do_while(k._kernel, *operation._operation);
 }
 
 void Program::add_do_while(Program &p, const Operation &operation) {
-    program->add_do_while(p.program, *operation.operation);
+    _program->add_do_while(p._program, *operation._operation);
 }
 
 void Program::add_for(Kernel &k, size_t iterations) {
-    program->add_for(k.kernel, iterations);
+    _program->add_for(k._kernel, iterations);
 }
 
 void Program::add_for(Program &p, size_t iterations) {
-    program->add_for(p.program, iterations);
+    _program->add_for(p._program, iterations);
 }
 
 void Program::compile() {
-    program->compile();
+    QL_IOUT("compiling " << name << " ...");
+    QL_WOUT("compiling " << name << " ...");
+    if (_program->kernels.empty()) {
+        QL_FATAL("compiling a program with no kernels !");
+    }
+    ql::pmgr::Manager::from_defaults(_program->platform).compile(_program);
 }
 
 std::string Program::microcode() const {
@@ -490,13 +486,13 @@ std::string Program::microcode() const {
 void Program::print_interaction_matrix() const {
     QL_IOUT("printing interaction matrix...");
 
-    ql::com::InteractionMatrix::dump_for_program(program);
+    ql::com::InteractionMatrix::dump_for_program(_program);
 }
 
 void Program::write_interaction_matrix() const {
     ql::com::InteractionMatrix::write_for_program(
         ql::com::options::get("output_dir") + "/",
-        program
+        _program
     );
 }
 
@@ -507,7 +503,7 @@ cQasmReader::cQasmReader(
     platform(q_platform),
     program(q_program)
 {
-    cqasm_reader.emplace(platform.platform, program.program);
+    _cqasm_reader.emplace(platform._platform, program._program);
 }
 
 cQasmReader::cQasmReader(
@@ -518,15 +514,15 @@ cQasmReader::cQasmReader(
     platform(q_platform),
     program(q_program)
 {
-    cqasm_reader.emplace(platform.platform, program.program, gateset_fname);
+    _cqasm_reader.emplace(platform._platform, program._program, gateset_fname);
 }
 
 void cQasmReader::string2circuit(const std::string &cqasm_str) {
-    cqasm_reader->string2circuit(cqasm_str);
+    _cqasm_reader->string2circuit(cqasm_str);
 }
 
 void cQasmReader::file2circuit(const std::string &cqasm_file_path) {
-    cqasm_reader->file2circuit(cqasm_file_path);
+    _cqasm_reader->file2circuit(cqasm_file_path);
 }
 
 } // namespace api

@@ -25,23 +25,26 @@ void print_options();
  */
 class Platform {
 public:
-    std::string name;
-    std::string config_file;
-    ql::plat::PlatformRef platform;
-    Platform();
+    ql::plat::PlatformRef _platform;
+
+    const std::string name;
+    const std::string config_file;
+
     Platform(const std::string &name, const std::string &config_file);
     size_t get_qubit_number() const;
 };
 
 class CReg {
 public:
-    ql::utils::Ptr<ql::ir::ClassicalRegister> creg;
+    ql::utils::Ptr<ql::ir::ClassicalRegister> _creg;
+
     CReg(size_t id);
 };
 
 class Operation {
 public:
-    ql::utils::Ptr<ql::ir::ClassicalOperation> operation;
+    ql::utils::Ptr<ql::ir::ClassicalOperation> _operation;
+
     Operation(const CReg &lop, const std::string &op, const CReg &rop);
     Operation(const std::string &op, const CReg &rop);
     Operation(const CReg &lop);
@@ -55,8 +58,9 @@ typedef std::complex<double> Complex;
  */
 class Unitary {
 public:
-    std::string name;
-    ql::utils::Ptr<ql::com::Unitary> unitary;
+    ql::utils::Ptr<ql::com::Unitary> _unitary;
+
+    const std::string name;
 
     Unitary(const std::string &name, const std::vector<std::complex<double>> &matrix);
     void decompose();
@@ -68,14 +72,14 @@ public:
  */
 class Kernel {
 public:
-    std::string name;
-    Platform platform;
-    size_t qubit_count;
-    size_t creg_count;
-    size_t breg_count;
-    ql::ir::KernelRef kernel;
+    ql::ir::KernelRef _kernel;
 
-    Kernel(const std::string &name);
+    const std::string name;
+    const Platform platform;
+    const size_t qubit_count;
+    const size_t creg_count;
+    const size_t breg_count;
+
     Kernel(
         const std::string &name,
         const Platform &platform,
@@ -159,14 +163,14 @@ public:
 class Program
 {
 public:
-    std::string name;
-    Platform platform;
-    size_t qubit_count;
-    size_t creg_count;
-    size_t breg_count;
-    ql::ir::ProgramRef program;
+    ql::ir::ProgramRef _program;
 
-    Program(const std::string &name);
+    const std::string name;
+    const Platform platform;
+    const size_t qubit_count;
+    const size_t creg_count;
+    const size_t breg_count;
+
     Program(
         const std::string &name,
         const Platform &platform,
@@ -198,9 +202,10 @@ public:
  */
 class cQasmReader {
 public:
-    ql::utils::Ptr<ql::pass::io::cqasm::read::Reader> cqasm_reader;
-    Platform platform;
-    Program program;
+    ql::utils::Ptr<ql::pass::io::cqasm::read::Reader> _cqasm_reader;
+
+    const Platform platform;
+    const Program program;
 
     cQasmReader(const Platform &q_platform, const Program &q_program);
     cQasmReader(const Platform &q_platform, const Program &q_program, const std::string &gateset_fname);

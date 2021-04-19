@@ -350,17 +350,5 @@ void Program::add_for(const ProgramRef &p, UInt iterations) {
     phi_node_count++;
 }
 
-/**
- * Entry point for compilation.
- */
-void Program::compile() {
-    QL_IOUT("compiling " << name << " ...");
-    QL_WOUT("compiling " << name << " ...");
-    if (kernels.empty()) {
-        QL_FATAL("compiling a program with no kernels !");
-    }
-    pmgr::Manager::from_defaults(platform).compile(ProgramRef::make(*this));
-}
-
 } // namespace ir
 } // namespace ql

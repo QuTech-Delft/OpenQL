@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
     auto qx_platform = ql::Platform("qx_simulator", "hardware_config_qx.json");
 
     // print info
-    qx_platform.platform->print_info();
+    qx_platform._platform->print_info();
 
     int    num_randomizations = 3;
     int    num_circuits       = 13;
