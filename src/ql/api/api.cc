@@ -2,11 +2,14 @@
  * Implementation for Python interface classes.
  */
 
-#include <ql/com/interaction_matrix.h>
-#include "openql_i.h"
+#include "ql/api/api.h"
 
 #include "ql/version.h"
+#include "ql/com/interaction_matrix.h"
 #include "ql/pass/io/sweep_points/annotation.h"
+
+namespace ql {
+namespace api {
 
 static bool initialized = false;
 
@@ -250,6 +253,14 @@ void Kernel::display() {
     kernel->display();
 }
 
+void Kernel::gate(const std::string &gname, size_t q0) {
+    kernel->gate(gname, q0);
+}
+
+void Kernel::gate(const std::string &gname, size_t q0, size_t q1) {
+    kernel->gate(gname, q0, q1);
+}
+
 void Kernel::gate(
     const std::string &name,
     const std::vector<size_t> &qubits,
@@ -413,6 +424,17 @@ std::vector<double> Program::get_sweep_points() const {
     }
 }
 
+void Program::set_config_file(const std::string &config_file_name) {
+    QL_WOUT("This will soon be deprecated according to issue #76");
+    using Annotation = ql::pass::io::sweep_points::Annotation;
+    if (!program->has_annotation<Annotation>()) {
+        program->set_annotation<Annotation>({});
+    }
+    program->get_annotation<Annotation>().config_file_name
+        = get_option("output_dir") + "/" + config_file_name;
+}
+
+
 void Program::add_kernel(Kernel &k) {
     program->add(k.kernel);
 }
@@ -506,3 +528,6 @@ void cQasmReader::string2circuit(const std::string &cqasm_str) {
 void cQasmReader::file2circuit(const std::string &cqasm_file_path) {
     cqasm_reader->file2circuit(cqasm_file_path);
 }
+
+} // namespace api
+} // namespace ql

@@ -256,7 +256,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/settings.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/vcd.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/vq1asm.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/api.cc"
 )
 
 # Generate a header file with configuration options that cannot be compiled

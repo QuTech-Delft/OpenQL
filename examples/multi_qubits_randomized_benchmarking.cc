@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include <openql.h>
+#include <openql>
 
 // clifford inverse lookup table for grounded state
 const size_t inv_clifford_lut_gs[] = {0, 2, 1, 3, 8, 10, 6, 11, 4, 9, 5, 7, 12, 16, 23, 21, 13, 17, 18, 19, 20, 15, 22, 14};
@@ -20,7 +20,7 @@ typedef std::vector<int> cliffords_t;
 /**
  * build rb circuit
  */
-void build_rb(int num_cliffords, ql::ir::KernelRef &k, int qubits=1, bool different=false) {
+void build_rb(int num_cliffords, ql::Kernel &k, int qubits=1, bool different=false) {
     assert((num_cliffords%2) == 0);
     int n = num_cliffords/2;
 
@@ -38,21 +38,21 @@ void build_rb(int num_cliffords, ql::ir::KernelRef &k, int qubits=1, bool differ
 
         // build the circuit
         for (int q=0; q<qubits; q++) {
-            k->prepz(q);
+            k.prepz(q);
         }
 
         for (int i=0; i<num_cliffords; ++i) {
             for (int q=0; q<qubits; q++) {
-                k->clifford(cl[i],q);
+                k.clifford(cl[i],q);
             }
         }
         for (int q=0; q<qubits; q++) {
-            k->measure(q);
+            k.measure(q);
         }
     } else {
         // build the circuit
         for (int q=0; q<qubits; q++) {
-            k->prepz(q);
+            k.prepz(q);
         }
         for (int q=0; q<qubits; q++) {
             cliffords_t cl;
@@ -67,9 +67,9 @@ void build_rb(int num_cliffords, ql::ir::KernelRef &k, int qubits=1, bool differ
             cl.insert(cl.begin(),inv_cl.begin(),inv_cl.end());
 
             for (int i=0; i<num_cliffords; ++i) {
-                k->clifford(cl[i],q);
+                k.clifford(cl[i],q);
             }
-            k->measure(q);
+            k.measure(q);
         }
     }
 }
@@ -83,10 +83,10 @@ int main(int argc, char **argv) {
 
     // create platform
     //ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
-    auto starmon = ql::plat::PlatformRef::make("starmon", "hardware_config_qx.json");
+    auto starmon = ql::Platform("starmon", "hardware_config_qx.json");
 
     // print info
-    starmon->print_info();
+    starmon.platform->print_info();
 
     int   num_qubits = 1;
     int   num_cliffords = 4096;
@@ -107,19 +107,19 @@ int main(int argc, char **argv) {
     // create program
     std::stringstream prog_name;
     prog_name << "rb_" << num_qubits << "_" << (different ? "diff" : "same");
-    auto rb = ql::ir::ProgramRef::make(prog_name.str(), starmon, num_qubits);
+    auto rb = ql::Program(prog_name.str(), starmon, num_qubits);
     //rb->set_sweep_points(sweep_points, num_circuits);
     //rb->set_config_file("rb_config.json");
 
     // create subcircuit
     std::stringstream name;
     name << "rb_" << num_qubits;
-    auto kernel = ql::ir::KernelRef::make(name.str(),starmon,num_qubits);
+    auto kernel = ql::Kernel(name.str(),starmon,num_qubits);
     build_rb(num_cliffords, kernel, num_qubits, different);
-    rb->add(kernel);
+    rb.add_kernel(kernel);
 
     // compile the program
-    rb->compile();
+    rb.compile();
 
     return 0;
 }

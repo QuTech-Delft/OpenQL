@@ -24,23 +24,8 @@ namespace std {
 };
 
 %{
-#include "openql_i.h"
+#include "ql/api/api.h"
 %}
-
-/*
-%pythoncode %{
-import os, errno
-
-def set_output_dir(path):
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-    _openql.set_output_dir_(path)
-%}
-*/
-
 
 %exception {
     try {
@@ -950,4 +935,4 @@ arg3 : str
 """
 
 // Include the header file with above prototypes
-%include "openql_i.h"
+%include "ql/api/api.h"

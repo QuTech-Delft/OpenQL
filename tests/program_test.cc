@@ -8,21 +8,21 @@
 
 #include <time.h>
 
-#include <openql_i.h>
+#include <openql>
 
 int main(int argc, char **argv) {
    size_t nqubits = 5;
    std::vector<double> sweep_points = {1};
 
    // create platform
-   auto qplatform = Platform("target_platform", "hardware_config_cc_light.json");
+   auto qplatform = ql::Platform("target_platform", "hardware_config_cc_light.json");
 
    // create program
-   auto prog = Program("prog", qplatform, nqubits);
+   auto prog = ql::Program("prog", qplatform, nqubits);
    prog.set_sweep_points(sweep_points);
 
    // create a kernel
-   auto kernel = Kernel("my_kernel", qplatform, nqubits);
+   auto kernel = ql::Kernel("my_kernel", qplatform, nqubits);
 
    // add gates to kernel
    kernel.gate("prepz", {0});

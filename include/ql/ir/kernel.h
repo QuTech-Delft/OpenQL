@@ -184,7 +184,7 @@ public:
     void swap(utils::UInt qubit1, utils::UInt qubit2);
     void wait(const utils::Vec<utils::UInt> &qubits, utils::UInt duration);
     void display();
-    void clifford(utils::Int id, utils::UInt qubit=0);
+    void clifford(utils::Int id, utils::UInt qubit);
 
 private:
     // a default gate is the last resort of user gate resolution and is of a build-in form, as below in the code;

@@ -1,4 +1,4 @@
-#include <openql_i.h>
+#include <openql>
 
 void test_dpt(
     std::string v,
@@ -10,80 +10,80 @@ void test_dpt(
     int n = 5;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::options::set("clifford_prescheduler", "yes");
-    ql::options::set("clifford_postscheduler", "yes");
+    ql::set_option("clifford_prescheduler", "yes");
+    ql::set_option("clifford_postscheduler", "yes");
 
-    auto starmon = ql::plat::PlatformRef::make("starmon5", "test_mapper_s5.json");
+    auto starmon = ql::Platform("starmon5", "test_mapper_s5.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    k->gate("prepz", 0);
-    k->gate("prepz", 1);
-    k->gate("prepz", 2);
-    k->gate("prepz", 3);
-    k->gate("prepz", 4);
+    k.gate("prepz", 0);
+    k.gate("prepz", 1);
+    k.gate("prepz", 2);
+    k.gate("prepz", 3);
+    k.gate("prepz", 4);
 
-    k->gate("h", 0);
-    k->gate("h", 1);
-    k->gate("h", 3);
-    k->gate("h", 4);
+    k.gate("h", 0);
+    k.gate("h", 1);
+    k.gate("h", 3);
+    k.gate("h", 4);
 
-    k->gate("cnot", 0,2);
-    k->gate("cnot", 1,2);
-    k->gate("cnot", 3,2);
-    k->gate("cnot", 4,2);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 1,2);
+    k.gate("cnot", 3,2);
+    k.gate("cnot", 4,2);
 
 // Rz(pi t) decomposes to Ry(pi/2) Rx(- pi t) Ry(-pi/2)
-    k->gate("y90", 0);
-    k->gate("rz", {0}, {}, 20, -1.74533);
-    k->gate("ym90", 0);
+    k.gate("y90", 0);
+    k.gate("rz", {0}, 20, -1.74533);
+    k.gate("ym90", 0);
 
-    k->gate("y90", 1);
-    k->gate("rz", {1}, {}, 20, -1.74533);
-    k->gate("ym90", 1);
+    k.gate("y90", 1);
+    k.gate("rz", {1}, 20, -1.74533);
+    k.gate("ym90", 1);
 
-    k->gate("y90", 2);
-    k->gate("rz", {2}, {}, 20, -1.74533);
-    k->gate("ym90", 2);
+    k.gate("y90", 2);
+    k.gate("rz", {2}, 20, -1.74533);
+    k.gate("ym90", 2);
 
-    k->gate("y90", 3);
-    k->gate("rz", {3}, {}, 20, -1.74533);
-    k->gate("ym90", 3);
+    k.gate("y90", 3);
+    k.gate("rz", {3}, 20, -1.74533);
+    k.gate("ym90", 3);
 
-    k->gate("y90", 4);
-    k->gate("rz", {4}, {}, 20, -1.74533);
-    k->gate("ym90", 4);
+    k.gate("y90", 4);
+    k.gate("rz", {4}, 20, -1.74533);
+    k.gate("ym90", 4);
 
-    k->gate("cnot", 4,2);
-    k->gate("cnot", 3,2);
-    k->gate("cnot", 1,2);
-    k->gate("cnot", 0,2);
+    k.gate("cnot", 4,2);
+    k.gate("cnot", 3,2);
+    k.gate("cnot", 1,2);
+    k.gate("cnot", 0,2);
 
-    k->gate("h", 0);
-    k->gate("h", 1);
-    k->gate("h", 3);
-    k->gate("h", 4);
+    k.gate("h", 0);
+    k.gate("h", 1);
+    k.gate("h", 3);
+    k.gate("h", 4);
 
-    k->gate("measure", 0);
-    k->gate("measure", 1);
-    k->gate("measure", 3);
-    k->gate("measure", 4);
+    k.gate("measure", 0);
+    k.gate("measure", 1);
+    k.gate("measure", 3);
+    k.gate("measure", 4);
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile();
+    prog.compile();
 
-    ql::options::set("clifford_prescheduler", "no");
-    ql::options::set("clifford_postscheduler", "no");
+    ql::set_option("clifford_prescheduler", "no");
+    ql::set_option("clifford_postscheduler", "no");
 }
 
 void test_lee(
@@ -96,51 +96,51 @@ void test_lee(
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    k->gate("x", 0);
-    k->gate("x", 1);
-    k->gate("x", 2);
-    k->gate("x", 3);
-    k->gate("h", 4);
-    k->gate("h", 0);
-    k->gate("h", 1);
-    k->gate("ry", {4}, {}, 20, -3.0);
-    k->gate("cnot", 0,2);
-    k->gate("cnot", 1,3);
-    k->gate("cnot", 0,1);
-    k->gate("cnot", 2,3);
-    k->gate("rz", {1}, {}, 20, -0.2);
-    k->gate("rz", {3}, {}, 20, -0.2);
-    k->gate("cnot", 0,1);
-    k->gate("cnot", 2,3);
-    k->gate("cnot", 0,2);
-    k->gate("cnot", 1,3);
-    k->gate("rx", {0}, {}, 20, 0.3);
-    k->gate("rx", {1}, {}, 20, 0.3);
-    k->gate("cnot", 0,2);
-    k->gate("cnot", 1,3);
-    k->gate("ry", {2}, {}, 20, 1.5);
-    k->gate("ry", {3}, {}, 20, 1.5);
-    k->gate("cz", 2,4);
-    k->gate("cz", 3,4);
-    k->gate("h", 4);
-    k->gate("measure", 4);
+    k.gate("x", 0);
+    k.gate("x", 1);
+    k.gate("x", 2);
+    k.gate("x", 3);
+    k.gate("h", 4);
+    k.gate("h", 0);
+    k.gate("h", 1);
+    k.gate("ry", {4}, 20, -3.0);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 1,3);
+    k.gate("cnot", 0,1);
+    k.gate("cnot", 2,3);
+    k.gate("rz", {1}, 20, -0.2);
+    k.gate("rz", {3}, 20, -0.2);
+    k.gate("cnot", 0,1);
+    k.gate("cnot", 2,3);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 1,3);
+    k.gate("rx", {0}, 20, 0.3);
+    k.gate("rx", {1}, 20, 0.3);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 1,3);
+    k.gate("ry", {2}, 20, 1.5);
+    k.gate("ry", {3}, 20, 1.5);
+    k.gate("cz", 2,4);
+    k.gate("cz", 3,4);
+    k.gate("h", 4);
+    k.gate("measure", 4);
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile();
 }
 
 void test_recursion(
@@ -153,28 +153,28 @@ void test_recursion(
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    for (int j=0; j<n; j++) { k->gate("x", j); }
+    for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i != j) { k->gate("cnot", i,j); } } }
+    for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i != j) { k.gate("cnot", i,j); } } }
 
-    for (int j=0; j<n; j++) { k->gate("x", j); }
+    for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // simple program to test (post179) dot printing by the scheduler
@@ -187,31 +187,31 @@ void test_dot(
     int n = 4;
     std::string prog_name = "test_" + v + "_scheduler_post179=" + param1 + "_scheduler=" + param2;
     std::string kernel_name = "test_" + v + "_scheduler_post179=" + param1 + "_scheduler=" + param2;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    k->gate("x", 0);
-    k->gate("x", 3);
+    k.gate("x", 0);
+    k.gate("x", 3);
 
     // one cnot, no swap
-    k->gate("cnot", 0,3);
+    k.gate("cnot", 0,3);
 
-    k->gate("x", 0);
-    k->gate("x", 3);
+    k.gate("x", 0);
+    k.gate("x", 3);
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("mapper", "no");
+    ql::set_option("mapper", "no");
 
-    ql::options::set("scheduler_post179", param1);
-    ql::options::set("scheduler", param2);
+    ql::set_option("scheduler_post179", param1);
+    ql::set_option("scheduler", param2);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // resource constraint presence test
@@ -227,26 +227,26 @@ void test_rc(
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     // no dependency, only a conflict in qwg resource
-    k->gate("x", 0);
-    k->gate("y", 1);
+    k.gate("x", 0);
+    k.gate("y", 1);
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // all cnots (in both directions) with operands that are neighbors in s7
@@ -261,44 +261,44 @@ void test_someNN(
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    for (int j=0; j<7; j++) { k->gate("x", j); }
+    for (int j=0; j<7; j++) { k.gate("x", j); }
 
     // a list of all cnots that are ok in trivial mapping
-    k->gate("cnot", 0,2);
-    k->gate("cnot", 0,3);
-    k->gate("cnot", 1,3);
-    k->gate("cnot", 1,4);
-    k->gate("cnot", 2,0);
-    k->gate("cnot", 2,5);
-    k->gate("cnot", 3,0);
-    k->gate("cnot", 3,1);
-    k->gate("cnot", 3,5);
-    k->gate("cnot", 3,6);
-    k->gate("cnot", 4,1);
-    k->gate("cnot", 4,6);
-    k->gate("cnot", 5,2);
-    k->gate("cnot", 5,3);
-    k->gate("cnot", 6,3);
-    k->gate("cnot", 6,4);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 0,3);
+    k.gate("cnot", 1,3);
+    k.gate("cnot", 1,4);
+    k.gate("cnot", 2,0);
+    k.gate("cnot", 2,5);
+    k.gate("cnot", 3,0);
+    k.gate("cnot", 3,1);
+    k.gate("cnot", 3,5);
+    k.gate("cnot", 3,6);
+    k.gate("cnot", 4,1);
+    k.gate("cnot", 4,6);
+    k.gate("cnot", 5,2);
+    k.gate("cnot", 5,3);
+    k.gate("cnot", 6,3);
+    k.gate("cnot", 6,4);
 
-    for (int j=0; j<7; j++) { k->gate("x", j); }
+    for (int j=0; j<7; j++) { k.gate("x", j); }
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // one cnot with operands that are at distance 2 in s7
@@ -318,31 +318,31 @@ void test_oneD2(
     int n = 4;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    k->gate("x", 2);
-    k->gate("x", 3);
+    k.gate("x", 2);
+    k.gate("x", 3);
 
     // one cnot, but needs one swap
-    k->gate("cnot", 2,3);
+    k.gate("cnot", 2,3);
 
-    k->gate("x", 2);
-    k->gate("x", 3);
+    k.gate("x", 2);
+    k.gate("x", 3);
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // one cnot with operands that are at distance 4 in s7
@@ -361,31 +361,31 @@ void test_oneD4(
     int n = 5;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    k->gate("x", 2);
-    k->gate("x", 4);
+    k.gate("x", 2);
+    k.gate("x", 4);
 
     // one cnot, but needs several swaps
-    k->gate("cnot", 2,4);
+    k.gate("cnot", 2,4);
 
-    k->gate("x", 2);
-    k->gate("x", 4);
+    k.gate("x", 2);
+    k.gate("x", 4);
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // longest string of cnots with operands that could be at distance 1 in s7 when initially placed correctly
@@ -407,35 +407,35 @@ void test_string(
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
 
-    for (int j=0; j<7; j++) { k->gate("x", j); }
+    for (int j=0; j<7; j++) { k.gate("x", j); }
 
     // string of cnots, a good initial placement prevents any swap
-    k->gate("cnot", 0,1);
-    k->gate("cnot", 1,2);
-    k->gate("cnot", 2,3);
-    k->gate("cnot", 3,4);
-    k->gate("cnot", 4,5);
-    k->gate("cnot", 5,6);
+    k.gate("cnot", 0,1);
+    k.gate("cnot", 1,2);
+    k.gate("cnot", 2,3);
+    k.gate("cnot", 3,4);
+    k.gate("cnot", 4,5);
+    k.gate("cnot", 5,6);
 
-    for (int j=0; j<7; j++) { k->gate("x", j); }
+    for (int j=0; j<7; j++) { k.gate("x", j); }
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // all possible cnots in s7, avoiding collisions:
@@ -455,89 +455,89 @@ void test_allDopt(
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    for (int j=0; j<n; j++) { k->gate("x", j); }
+    for (int j=0; j<n; j++) { k.gate("x", j); }
 
-	k->gate("cnot", 0,3);
-	k->gate("cnot", 3,0);
+	k.gate("cnot", 0,3);
+	k.gate("cnot", 3,0);
 
-	k->gate("cnot", 6,4);
-	k->gate("cnot", 4,6);
+	k.gate("cnot", 6,4);
+	k.gate("cnot", 4,6);
 
-	k->gate("cnot", 3,1);
-	k->gate("cnot", 1,3);
+	k.gate("cnot", 3,1);
+	k.gate("cnot", 1,3);
 
-	k->gate("cnot", 5,2);
-	k->gate("cnot", 2,5);
+	k.gate("cnot", 5,2);
+	k.gate("cnot", 2,5);
 
-	k->gate("cnot", 1,4);
-	k->gate("cnot", 4,1);
+	k.gate("cnot", 1,4);
+	k.gate("cnot", 4,1);
 
-	k->gate("cnot", 3,5);
-	k->gate("cnot", 5,3);
+	k.gate("cnot", 3,5);
+	k.gate("cnot", 5,3);
 
-	k->gate("cnot", 6,3);
-	k->gate("cnot", 3,6);
+	k.gate("cnot", 6,3);
+	k.gate("cnot", 3,6);
 
-	k->gate("cnot", 2,0);
-	k->gate("cnot", 0,2);
+	k.gate("cnot", 2,0);
+	k.gate("cnot", 0,2);
 
-	k->gate("cnot", 0,1);
-	k->gate("cnot", 1,0);
+	k.gate("cnot", 0,1);
+	k.gate("cnot", 1,0);
 
-	k->gate("cnot", 3,4);
-	k->gate("cnot", 4,3);
+	k.gate("cnot", 3,4);
+	k.gate("cnot", 4,3);
 
-	k->gate("cnot", 1,6);
-	k->gate("cnot", 6,1);
+	k.gate("cnot", 1,6);
+	k.gate("cnot", 6,1);
 
-	k->gate("cnot", 6,5);
-	k->gate("cnot", 5,6);
+	k.gate("cnot", 6,5);
+	k.gate("cnot", 5,6);
 
-	k->gate("cnot", 3,2);
-	k->gate("cnot", 2,3);
+	k.gate("cnot", 3,2);
+	k.gate("cnot", 2,3);
 
-	k->gate("cnot", 5,0);
-	k->gate("cnot", 0,5);
+	k.gate("cnot", 5,0);
+	k.gate("cnot", 0,5);
 
-	k->gate("cnot", 0,6);
-	k->gate("cnot", 6,0);
+	k.gate("cnot", 0,6);
+	k.gate("cnot", 6,0);
 
-	k->gate("cnot", 1,5);
-	k->gate("cnot", 5,1);
+	k.gate("cnot", 1,5);
+	k.gate("cnot", 5,1);
 
-	k->gate("cnot", 0,4);
-	k->gate("cnot", 4,0);
+	k.gate("cnot", 0,4);
+	k.gate("cnot", 4,0);
 
-	k->gate("cnot", 6,2);
-	k->gate("cnot", 2,6);
+	k.gate("cnot", 6,2);
+	k.gate("cnot", 2,6);
 
-	k->gate("cnot", 2,1);
-	k->gate("cnot", 1,2);
+	k.gate("cnot", 2,1);
+	k.gate("cnot", 1,2);
 
-	k->gate("cnot", 5,4);
-	k->gate("cnot", 4,5);
+	k.gate("cnot", 5,4);
+	k.gate("cnot", 4,5);
 
-	k->gate("cnot", 2,4);
-	k->gate("cnot", 4,2);
+	k.gate("cnot", 2,4);
+	k.gate("cnot", 4,2);
 
-    for (int j=0; j<n; j++) { k->gate("x", j); }
+    for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // all possible cnots in s7, in lexicographic order
@@ -556,28 +556,28 @@ void test_allD(
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    for (int j=0; j<n; j++) { k->gate("x", j); }
+    for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i != j) { k->gate("cnot", i,j); } } }
+    for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i != j) { k.gate("cnot", i,j); } } }
 
-    for (int j=0; j<n; j++) { k->gate("x", j); }
+    for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 void test_allD2(
@@ -590,78 +590,78 @@ void test_allD2(
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    for (int j=0; j<n; j++) { k->gate("x", j); }
+    for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    //for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i < j) { k->gate("cnot", i,j); } } }
+    //for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i < j) { k.gate("cnot", i,j); } } }
 
-    //k->gate("cnot", 0,0);
-    k->gate("cnot", 0,1);
-    k->gate("cnot", 0,2);
-    k->gate("cnot", 0,3);
-    k->gate("cnot", 0,4);
-    k->gate("cnot", 0,5);
-    k->gate("cnot", 0,6);
-    k->gate("cnot", 1,0);
-    //k->gate("cnot", 1,1);
-    k->gate("cnot", 1,2);
-    k->gate("cnot", 1,3);
-    k->gate("cnot", 1,4);
-    k->gate("cnot", 1,5);
-    k->gate("cnot", 1,6);
-    k->gate("cnot", 2,0);
-    k->gate("cnot", 2,1);
-    //k->gate("cnot", 2,2);
-    k->gate("cnot", 2,3);
-    k->gate("cnot", 2,4);
-    k->gate("cnot", 2,5);
-    k->gate("cnot", 2,6);
-    k->gate("cnot", 3,0);
-    k->gate("cnot", 3,1);
-    k->gate("cnot", 3,2);
-    //k->gate("cnot", 3,3);
-    k->gate("cnot", 3,4);
-    k->gate("cnot", 3,5);
-    k->gate("cnot", 3,6);
-    k->gate("cnot", 4,0);
-    k->gate("cnot", 4,1);
-    k->gate("cnot", 4,2);
-    k->gate("cnot", 4,3);
-    //k->gate("cnot", 4,4);
-    k->gate("cnot", 4,5);
-    k->gate("cnot", 4,6);
-    k->gate("cnot", 5,0);
-    k->gate("cnot", 5,1);
-    k->gate("cnot", 5,2);
-    k->gate("cnot", 5,3);
-    k->gate("cnot", 5,4);
-    //k->gate("cnot", 5,5);
-    k->gate("cnot", 5,6);
-    k->gate("cnot", 6,0);
-    k->gate("cnot", 6,1);
-    k->gate("cnot", 6,2);
-    k->gate("cnot", 6,3);
-    k->gate("cnot", 6,4);
-    k->gate("cnot", 6,5);
-    //k->gate("cnot", 6,6);
+    //k.gate("cnot", 0,0);
+    k.gate("cnot", 0,1);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 0,3);
+    k.gate("cnot", 0,4);
+    k.gate("cnot", 0,5);
+    k.gate("cnot", 0,6);
+    k.gate("cnot", 1,0);
+    //k.gate("cnot", 1,1);
+    k.gate("cnot", 1,2);
+    k.gate("cnot", 1,3);
+    k.gate("cnot", 1,4);
+    k.gate("cnot", 1,5);
+    k.gate("cnot", 1,6);
+    k.gate("cnot", 2,0);
+    k.gate("cnot", 2,1);
+    //k.gate("cnot", 2,2);
+    k.gate("cnot", 2,3);
+    k.gate("cnot", 2,4);
+    k.gate("cnot", 2,5);
+    k.gate("cnot", 2,6);
+    k.gate("cnot", 3,0);
+    k.gate("cnot", 3,1);
+    k.gate("cnot", 3,2);
+    //k.gate("cnot", 3,3);
+    k.gate("cnot", 3,4);
+    k.gate("cnot", 3,5);
+    k.gate("cnot", 3,6);
+    k.gate("cnot", 4,0);
+    k.gate("cnot", 4,1);
+    k.gate("cnot", 4,2);
+    k.gate("cnot", 4,3);
+    //k.gate("cnot", 4,4);
+    k.gate("cnot", 4,5);
+    k.gate("cnot", 4,6);
+    k.gate("cnot", 5,0);
+    k.gate("cnot", 5,1);
+    k.gate("cnot", 5,2);
+    k.gate("cnot", 5,3);
+    k.gate("cnot", 5,4);
+    //k.gate("cnot", 5,5);
+    k.gate("cnot", 5,6);
+    k.gate("cnot", 6,0);
+    k.gate("cnot", 6,1);
+    k.gate("cnot", 6,2);
+    k.gate("cnot", 6,3);
+    k.gate("cnot", 6,4);
+    k.gate("cnot", 6,5);
+    //k.gate("cnot", 6,6);
 
-    for (int j=0; j<n; j++) { k->gate("x", j); }
+    for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // actual test kernel of daniel that failed once
@@ -681,258 +681,258 @@ void test_daniel2(
     int n = 6;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1, 2 };
+    std::vector<double> sweep_points = { 1, 2 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s17.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, n);
+    auto prog = ql::Program(prog_name, starmon, n, n);
 
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
 
-    k->gate("x",0);
-    k->gate("cnot",4,0);
-    k->gate("h",0);
-    k->gate("t",1);
-    k->gate("t",5);
-    k->gate("t",0);
-    k->gate("cnot",5,1);
-    k->gate("cnot",0,5);
-    k->gate("cnot",1,0);
-    k->gate("tdag",5);
-    k->gate("cnot",1,5);
-    k->gate("tdag",1);
-    k->gate("tdag",5);
-    k->gate("t",0);
-    k->gate("cnot",0,5);
-    k->gate("cnot",1,0);
-    k->gate("cnot",5,1);
-    k->gate("h",0);
-    k->gate("h",5);
-    k->gate("t",4);
-    k->gate("t",2);
-    k->gate("t",5);
-    k->gate("cnot",2,4);
-    k->gate("cnot",5,2);
-    k->gate("cnot",4,5);
-    k->gate("tdag",2);
-    k->gate("cnot",4,2);
-    k->gate("tdag",4);
-    k->gate("tdag",2);
-    k->gate("t",5);
-    k->gate("cnot",5,2);
-    k->gate("cnot",4,5);
-    k->gate("cnot",2,4);
-    k->gate("h",5);
-    k->gate("h",0);
-    k->gate("t",1);
-    k->gate("t",5);
-    k->gate("t",0);
-    k->gate("cnot",5,1);
-    k->gate("cnot",0,5);
-    k->gate("cnot",1,0);
-    k->gate("tdag",5);
-    k->gate("cnot",1,5);
-    k->gate("tdag",1);
-    k->gate("tdag",5);
-    k->gate("t",0);
-    k->gate("cnot",0,5);
-    k->gate("cnot",1,0);
-    k->gate("cnot",5,1);
-    k->gate("h",0);
-    k->gate("h",5);
-    k->gate("t",4);
-    k->gate("t",2);
-    k->gate("t",5);
-    k->gate("cnot",2,4);
-    k->gate("cnot",5,2);
-    k->gate("cnot",4,5);
-    k->gate("tdag",2);
-    k->gate("cnot",4,2);
-    k->gate("tdag",4);
-    k->gate("tdag",2);
-    k->gate("t",5);
-    k->gate("cnot",5,2);
-    k->gate("cnot",4,5);
-    k->gate("cnot",2,4);
-    k->gate("h",5);
-    k->gate("x",4);
-    k->gate("h",5);
-    k->gate("t",4);
-    k->gate("t",3);
-    k->gate("t",5);
-    k->gate("cnot",3,4);
-    k->gate("cnot",5,3);
-    k->gate("cnot",4,5);
-    k->gate("tdag",3);
-    k->gate("cnot",4,3);
-    k->gate("tdag",4);
-    k->gate("tdag",3);
-    k->gate("t",5);
-    k->gate("cnot",5,3);
-    k->gate("cnot",4,5);
-    k->gate("cnot",3,4);
-    k->gate("h",5);
-    k->gate("h",0);
-    k->gate("t",5);
-    k->gate("t",4);
-    k->gate("t",0);
-    k->gate("cnot",4,5);
-    k->gate("cnot",0,4);
-    k->gate("cnot",5,0);
-    k->gate("tdag",4);
-    k->gate("cnot",5,4);
-    k->gate("tdag",5);
-    k->gate("tdag",4);
-    k->gate("t",0);
-    k->gate("cnot",0,4);
-    k->gate("cnot",5,0);
-    k->gate("cnot",4,5);
-    k->gate("h",0);
-    k->gate("h",4);
-    k->gate("t",2);
-    k->gate("t",1);
-    k->gate("t",4);
-    k->gate("cnot",1,2);
-    k->gate("cnot",4,1);
-    k->gate("cnot",2,4);
-    k->gate("tdag",1);
-    k->gate("cnot",2,1);
-    k->gate("tdag",2);
-    k->gate("tdag",1);
-    k->gate("t",4);
-    k->gate("cnot",4,1);
-    k->gate("cnot",2,4);
-    k->gate("cnot",1,2);
-    k->gate("h",4);
-    k->gate("h",0);
-    k->gate("t",5);
-    k->gate("t",4);
-    k->gate("t",0);
-    k->gate("cnot",4,5);
-    k->gate("cnot",0,4);
-    k->gate("cnot",5,0);
-    k->gate("tdag",4);
-    k->gate("cnot",5,4);
-    k->gate("tdag",5);
-    k->gate("tdag",4);
-    k->gate("t",0);
-    k->gate("cnot",0,4);
-    k->gate("cnot",5,0);
-    k->gate("cnot",4,5);
-    k->gate("h",0);
-    k->gate("h",4);
-    k->gate("t",2);
-    k->gate("t",1);
-    k->gate("t",4);
-    k->gate("cnot",1,2);
-    k->gate("cnot",4,1);
-    k->gate("cnot",2,4);
-    k->gate("tdag",1);
-    k->gate("cnot",2,1);
-    k->gate("tdag",2);
-    k->gate("tdag",1);
-    k->gate("t",4);
-    k->gate("cnot",4,1);
-    k->gate("cnot",2,4);
-    k->gate("cnot",1,2);
-    k->gate("h",4);
-    k->gate("h",5);
-    k->gate("t",4);
-    k->gate("t",3);
-    k->gate("t",5);
-    k->gate("cnot",3,4);
-    k->gate("cnot",5,3);
-    k->gate("cnot",4,5);
-    k->gate("tdag",3);
-    k->gate("cnot",4,3);
-    k->gate("tdag",4);
-    k->gate("tdag",3);
-    k->gate("t",5);
-    k->gate("cnot",5,3);
-    k->gate("cnot",4,5);
-    k->gate("cnot",3,4);
-    k->gate("h",5);
-    k->gate("h",0);
-    k->gate("t",5);
-    k->gate("t",4);
-    k->gate("t",0);
-    k->gate("cnot",4,5);
-    k->gate("cnot",0,4);
-    k->gate("cnot",5,0);
-    k->gate("tdag",4);
-    k->gate("cnot",5,4);
-    k->gate("tdag",5);
-    k->gate("tdag",4);
-    k->gate("t",0);
-    k->gate("cnot",0,4);
-    k->gate("cnot",5,0);
-    k->gate("cnot",4,5);
-    k->gate("h",0);
-    k->gate("h",4);
-    k->gate("t",2);
-    k->gate("t",1);
-    k->gate("t",4);
-    k->gate("cnot",1,2);
-    k->gate("cnot",4,1);
-    k->gate("cnot",2,4);
-    k->gate("tdag",1);
-    k->gate("cnot",2,1);
-    k->gate("tdag",2);
-    k->gate("tdag",1);
-    k->gate("t",4);
-    k->gate("cnot",4,1);
-    k->gate("cnot",2,4);
-    k->gate("cnot",1,2);
-    k->gate("h",4);
-    k->gate("h",0);
-    k->gate("t",5);
-    k->gate("t",4);
-    k->gate("t",0);
-    k->gate("cnot",4,5);
-    k->gate("cnot",0,4);
-    k->gate("cnot",5,0);
-    k->gate("tdag",4);
-    k->gate("cnot",5,4);
-    k->gate("tdag",5);
-    k->gate("tdag",4);
-    k->gate("t",0);
-    k->gate("cnot",0,4);
-    k->gate("cnot",5,0);
-    k->gate("cnot",4,5);
-    k->gate("h",0);
-    k->gate("h",4);
-    k->gate("t",2);
-    k->gate("t",1);
-    k->gate("t",4);
-    k->gate("cnot",1,2);
-    k->gate("cnot",4,1);
-    k->gate("cnot",2,4);
-    k->gate("tdag",1);
-    k->gate("cnot",2,1);
-    k->gate("tdag",2);
-    k->gate("tdag",1);
-    k->gate("t",4);
-    k->gate("cnot",4,1);
-    k->gate("cnot",2,4);
-    k->gate("cnot",1,2);
-    k->gate("h",4);
-    k->gate("cnot",0,4);
+    k.gate("x",0);
+    k.gate("cnot",4,0);
+    k.gate("h",0);
+    k.gate("t",1);
+    k.gate("t",5);
+    k.gate("t",0);
+    k.gate("cnot",5,1);
+    k.gate("cnot",0,5);
+    k.gate("cnot",1,0);
+    k.gate("tdag",5);
+    k.gate("cnot",1,5);
+    k.gate("tdag",1);
+    k.gate("tdag",5);
+    k.gate("t",0);
+    k.gate("cnot",0,5);
+    k.gate("cnot",1,0);
+    k.gate("cnot",5,1);
+    k.gate("h",0);
+    k.gate("h",5);
+    k.gate("t",4);
+    k.gate("t",2);
+    k.gate("t",5);
+    k.gate("cnot",2,4);
+    k.gate("cnot",5,2);
+    k.gate("cnot",4,5);
+    k.gate("tdag",2);
+    k.gate("cnot",4,2);
+    k.gate("tdag",4);
+    k.gate("tdag",2);
+    k.gate("t",5);
+    k.gate("cnot",5,2);
+    k.gate("cnot",4,5);
+    k.gate("cnot",2,4);
+    k.gate("h",5);
+    k.gate("h",0);
+    k.gate("t",1);
+    k.gate("t",5);
+    k.gate("t",0);
+    k.gate("cnot",5,1);
+    k.gate("cnot",0,5);
+    k.gate("cnot",1,0);
+    k.gate("tdag",5);
+    k.gate("cnot",1,5);
+    k.gate("tdag",1);
+    k.gate("tdag",5);
+    k.gate("t",0);
+    k.gate("cnot",0,5);
+    k.gate("cnot",1,0);
+    k.gate("cnot",5,1);
+    k.gate("h",0);
+    k.gate("h",5);
+    k.gate("t",4);
+    k.gate("t",2);
+    k.gate("t",5);
+    k.gate("cnot",2,4);
+    k.gate("cnot",5,2);
+    k.gate("cnot",4,5);
+    k.gate("tdag",2);
+    k.gate("cnot",4,2);
+    k.gate("tdag",4);
+    k.gate("tdag",2);
+    k.gate("t",5);
+    k.gate("cnot",5,2);
+    k.gate("cnot",4,5);
+    k.gate("cnot",2,4);
+    k.gate("h",5);
+    k.gate("x",4);
+    k.gate("h",5);
+    k.gate("t",4);
+    k.gate("t",3);
+    k.gate("t",5);
+    k.gate("cnot",3,4);
+    k.gate("cnot",5,3);
+    k.gate("cnot",4,5);
+    k.gate("tdag",3);
+    k.gate("cnot",4,3);
+    k.gate("tdag",4);
+    k.gate("tdag",3);
+    k.gate("t",5);
+    k.gate("cnot",5,3);
+    k.gate("cnot",4,5);
+    k.gate("cnot",3,4);
+    k.gate("h",5);
+    k.gate("h",0);
+    k.gate("t",5);
+    k.gate("t",4);
+    k.gate("t",0);
+    k.gate("cnot",4,5);
+    k.gate("cnot",0,4);
+    k.gate("cnot",5,0);
+    k.gate("tdag",4);
+    k.gate("cnot",5,4);
+    k.gate("tdag",5);
+    k.gate("tdag",4);
+    k.gate("t",0);
+    k.gate("cnot",0,4);
+    k.gate("cnot",5,0);
+    k.gate("cnot",4,5);
+    k.gate("h",0);
+    k.gate("h",4);
+    k.gate("t",2);
+    k.gate("t",1);
+    k.gate("t",4);
+    k.gate("cnot",1,2);
+    k.gate("cnot",4,1);
+    k.gate("cnot",2,4);
+    k.gate("tdag",1);
+    k.gate("cnot",2,1);
+    k.gate("tdag",2);
+    k.gate("tdag",1);
+    k.gate("t",4);
+    k.gate("cnot",4,1);
+    k.gate("cnot",2,4);
+    k.gate("cnot",1,2);
+    k.gate("h",4);
+    k.gate("h",0);
+    k.gate("t",5);
+    k.gate("t",4);
+    k.gate("t",0);
+    k.gate("cnot",4,5);
+    k.gate("cnot",0,4);
+    k.gate("cnot",5,0);
+    k.gate("tdag",4);
+    k.gate("cnot",5,4);
+    k.gate("tdag",5);
+    k.gate("tdag",4);
+    k.gate("t",0);
+    k.gate("cnot",0,4);
+    k.gate("cnot",5,0);
+    k.gate("cnot",4,5);
+    k.gate("h",0);
+    k.gate("h",4);
+    k.gate("t",2);
+    k.gate("t",1);
+    k.gate("t",4);
+    k.gate("cnot",1,2);
+    k.gate("cnot",4,1);
+    k.gate("cnot",2,4);
+    k.gate("tdag",1);
+    k.gate("cnot",2,1);
+    k.gate("tdag",2);
+    k.gate("tdag",1);
+    k.gate("t",4);
+    k.gate("cnot",4,1);
+    k.gate("cnot",2,4);
+    k.gate("cnot",1,2);
+    k.gate("h",4);
+    k.gate("h",5);
+    k.gate("t",4);
+    k.gate("t",3);
+    k.gate("t",5);
+    k.gate("cnot",3,4);
+    k.gate("cnot",5,3);
+    k.gate("cnot",4,5);
+    k.gate("tdag",3);
+    k.gate("cnot",4,3);
+    k.gate("tdag",4);
+    k.gate("tdag",3);
+    k.gate("t",5);
+    k.gate("cnot",5,3);
+    k.gate("cnot",4,5);
+    k.gate("cnot",3,4);
+    k.gate("h",5);
+    k.gate("h",0);
+    k.gate("t",5);
+    k.gate("t",4);
+    k.gate("t",0);
+    k.gate("cnot",4,5);
+    k.gate("cnot",0,4);
+    k.gate("cnot",5,0);
+    k.gate("tdag",4);
+    k.gate("cnot",5,4);
+    k.gate("tdag",5);
+    k.gate("tdag",4);
+    k.gate("t",0);
+    k.gate("cnot",0,4);
+    k.gate("cnot",5,0);
+    k.gate("cnot",4,5);
+    k.gate("h",0);
+    k.gate("h",4);
+    k.gate("t",2);
+    k.gate("t",1);
+    k.gate("t",4);
+    k.gate("cnot",1,2);
+    k.gate("cnot",4,1);
+    k.gate("cnot",2,4);
+    k.gate("tdag",1);
+    k.gate("cnot",2,1);
+    k.gate("tdag",2);
+    k.gate("tdag",1);
+    k.gate("t",4);
+    k.gate("cnot",4,1);
+    k.gate("cnot",2,4);
+    k.gate("cnot",1,2);
+    k.gate("h",4);
+    k.gate("h",0);
+    k.gate("t",5);
+    k.gate("t",4);
+    k.gate("t",0);
+    k.gate("cnot",4,5);
+    k.gate("cnot",0,4);
+    k.gate("cnot",5,0);
+    k.gate("tdag",4);
+    k.gate("cnot",5,4);
+    k.gate("tdag",5);
+    k.gate("tdag",4);
+    k.gate("t",0);
+    k.gate("cnot",0,4);
+    k.gate("cnot",5,0);
+    k.gate("cnot",4,5);
+    k.gate("h",0);
+    k.gate("h",4);
+    k.gate("t",2);
+    k.gate("t",1);
+    k.gate("t",4);
+    k.gate("cnot",1,2);
+    k.gate("cnot",4,1);
+    k.gate("cnot",2,4);
+    k.gate("tdag",1);
+    k.gate("cnot",2,1);
+    k.gate("tdag",2);
+    k.gate("tdag",1);
+    k.gate("t",4);
+    k.gate("cnot",4,1);
+    k.gate("cnot",2,4);
+    k.gate("cnot",1,2);
+    k.gate("h",4);
+    k.gate("cnot",0,4);
 
     for (int q=0; q<n; q++)
     {
-	    k->gate("measure", q);
+        k.gate("measure", q);
     }
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // real code with 5-qubit short error code checkers in 4 variations next to eachother
@@ -947,154 +947,154 @@ void test_lingling5esm(
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s17.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    k->gate("prepz",5);
-    k->gate("prepz",6);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("x",6);
-    k->gate("ym90",6);
-    k->gate("ym90",0);
-    k->gate("cz",5,0);
-    k->gate("ry90",0);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("ym90",5);
-    k->gate("cz",6,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",1,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",2,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",6,5);
-    k->gate("ry90",5);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("ym90",3);
-    k->gate("cz",5,3);
-    k->gate("ry90",3);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("measure",5);
-    k->gate("measure",6);
+    k.gate("prepz",5);
+    k.gate("prepz",6);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("x",6);
+    k.gate("ym90",6);
+    k.gate("ym90",0);
+    k.gate("cz",5,0);
+    k.gate("ry90",0);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("ym90",5);
+    k.gate("cz",6,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",1,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",2,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",6,5);
+    k.gate("ry90",5);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("ym90",3);
+    k.gate("cz",5,3);
+    k.gate("ry90",3);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("measure",5);
+    k.gate("measure",6);
 
-    k->gate("prepz",5);
-    k->gate("prepz",6);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("x",6);
-    k->gate("ym90",6);
-    k->gate("ym90",1);
-    k->gate("cz",5,1);
-    k->gate("ry90",1);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("ym90",5);
-    k->gate("cz",6,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",2,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",3,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",6,5);
-    k->gate("ry90",5);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("ym90",4);
-    k->gate("cz",5,4);
-    k->gate("ry90",4);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("measure",5);
-    k->gate("measure",6);
+    k.gate("prepz",5);
+    k.gate("prepz",6);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("x",6);
+    k.gate("ym90",6);
+    k.gate("ym90",1);
+    k.gate("cz",5,1);
+    k.gate("ry90",1);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("ym90",5);
+    k.gate("cz",6,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",2,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",3,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",6,5);
+    k.gate("ry90",5);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("ym90",4);
+    k.gate("cz",5,4);
+    k.gate("ry90",4);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("measure",5);
+    k.gate("measure",6);
 
-    k->gate("prepz",5);
-    k->gate("prepz",6);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("x",6);
-    k->gate("ym90",6);
-    k->gate("ym90",2);
-    k->gate("cz",5,2);
-    k->gate("ry90",2);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("ym90",5);
-    k->gate("cz",6,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",3,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",4,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",6,5);
-    k->gate("ry90",5);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("ym90",0);
-    k->gate("cz",5,0);
-    k->gate("ry90",0);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("measure",5);
-    k->gate("measure",6);
+    k.gate("prepz",5);
+    k.gate("prepz",6);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("x",6);
+    k.gate("ym90",6);
+    k.gate("ym90",2);
+    k.gate("cz",5,2);
+    k.gate("ry90",2);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("ym90",5);
+    k.gate("cz",6,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",3,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",4,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",6,5);
+    k.gate("ry90",5);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("ym90",0);
+    k.gate("cz",5,0);
+    k.gate("ry90",0);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("measure",5);
+    k.gate("measure",6);
 
-    k->gate("prepz",5);
-    k->gate("prepz",6);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("x",6);
-    k->gate("ym90",6);
-    k->gate("ym90",3);
-    k->gate("cz",5,3);
-    k->gate("ry90",3);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("ym90",5);
-    k->gate("cz",6,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",4,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",0,5);
-    k->gate("ry90",5);
-    k->gate("ym90",5);
-    k->gate("cz",6,5);
-    k->gate("ry90",5);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("ym90",1);
-    k->gate("cz",5,1);
-    k->gate("ry90",1);
-    k->gate("x",5);
-    k->gate("ym90",5);
-    k->gate("measure",5);
-    k->gate("measure",6);
+    k.gate("prepz",5);
+    k.gate("prepz",6);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("x",6);
+    k.gate("ym90",6);
+    k.gate("ym90",3);
+    k.gate("cz",5,3);
+    k.gate("ry90",3);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("ym90",5);
+    k.gate("cz",6,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",4,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",0,5);
+    k.gate("ry90",5);
+    k.gate("ym90",5);
+    k.gate("cz",6,5);
+    k.gate("ry90",5);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("ym90",1);
+    k.gate("cz",5,1);
+    k.gate("ry90",1);
+    k.gate("x",5);
+    k.gate("ym90",5);
+    k.gate("measure",5);
+    k.gate("measure",6);
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // real code with 7-qubit short error code checkers in 3 variations next to eachother
@@ -1109,138 +1109,138 @@ void test_lingling7esm(
     int n = 9;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s17.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    k->gate("prepz",7);
-    k->gate("prepz",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("ym90",4);
-    k->gate("cz",7,4);
-    k->gate("ry90",4);
-    k->gate("ym90",8);
-    k->gate("cz",0,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",6);
-    k->gate("cz",7,6);
-    k->gate("ry90",6);
-    k->gate("ym90",8);
-    k->gate("cz",2,8);
-    k->gate("ry90",8);
-    k->gate("ym90",3);
-    k->gate("cz",7,3);
-    k->gate("ry90",3);
-    k->gate("ym90",8);
-    k->gate("cz",4,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",5);
-    k->gate("cz",7,5);
-    k->gate("ry90",5);
-    k->gate("ym90",8);
-    k->gate("cz",6,8);
-    k->gate("ry90",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("measure",7);
-    k->gate("measure",8);
+    k.gate("prepz",7);
+    k.gate("prepz",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("ym90",4);
+    k.gate("cz",7,4);
+    k.gate("ry90",4);
+    k.gate("ym90",8);
+    k.gate("cz",0,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",6);
+    k.gate("cz",7,6);
+    k.gate("ry90",6);
+    k.gate("ym90",8);
+    k.gate("cz",2,8);
+    k.gate("ry90",8);
+    k.gate("ym90",3);
+    k.gate("cz",7,3);
+    k.gate("ry90",3);
+    k.gate("ym90",8);
+    k.gate("cz",4,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",5);
+    k.gate("cz",7,5);
+    k.gate("ry90",5);
+    k.gate("ym90",8);
+    k.gate("cz",6,8);
+    k.gate("ry90",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("measure",7);
+    k.gate("measure",8);
 
-    k->gate("prepz",7);
-    k->gate("prepz",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("ym90",5);
-    k->gate("cz",7,5);
-    k->gate("ry90",5);
-    k->gate("ym90",8);
-    k->gate("cz",1,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",6);
-    k->gate("cz",7,6);
-    k->gate("ry90",6);
-    k->gate("ym90",8);
-    k->gate("cz",2,8);
-    k->gate("ry90",8);
-    k->gate("ym90",3);
-    k->gate("cz",7,3);
-    k->gate("ry90",3);
-    k->gate("ym90",8);
-    k->gate("cz",5,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",4);
-    k->gate("cz",7,4);
-    k->gate("ry90",4);
-    k->gate("ym90",8);
-    k->gate("cz",6,8);
-    k->gate("ry90",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("measure",7);
-    k->gate("measure",8);
+    k.gate("prepz",7);
+    k.gate("prepz",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("ym90",5);
+    k.gate("cz",7,5);
+    k.gate("ry90",5);
+    k.gate("ym90",8);
+    k.gate("cz",1,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",6);
+    k.gate("cz",7,6);
+    k.gate("ry90",6);
+    k.gate("ym90",8);
+    k.gate("cz",2,8);
+    k.gate("ry90",8);
+    k.gate("ym90",3);
+    k.gate("cz",7,3);
+    k.gate("ry90",3);
+    k.gate("ym90",8);
+    k.gate("cz",5,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",4);
+    k.gate("cz",7,4);
+    k.gate("ry90",4);
+    k.gate("ym90",8);
+    k.gate("cz",6,8);
+    k.gate("ry90",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("measure",7);
+    k.gate("measure",8);
 
-    k->gate("prepz",7);
-    k->gate("prepz",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("ym90",1);
-    k->gate("cz",7,1);
-    k->gate("ry90",1);
-    k->gate("ym90",8);
-    k->gate("cz",2,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",5);
-    k->gate("cz",7,5);
-    k->gate("ry90",5);
-    k->gate("ym90",8);
-    k->gate("cz",6,8);
-    k->gate("ry90",8);
-    k->gate("ym90",2);
-    k->gate("cz",7,2);
-    k->gate("ry90",2);
-    k->gate("ym90",8);
-    k->gate("cz",0,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",6);
-    k->gate("cz",7,6);
-    k->gate("ry90",6);
-    k->gate("ym90",8);
-    k->gate("cz",4,8);
-    k->gate("ry90",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("measure",7);
-    k->gate("measure",8);
-    prog->add(k);
+    k.gate("prepz",7);
+    k.gate("prepz",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("ym90",1);
+    k.gate("cz",7,1);
+    k.gate("ry90",1);
+    k.gate("ym90",8);
+    k.gate("cz",2,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",5);
+    k.gate("cz",7,5);
+    k.gate("ry90",5);
+    k.gate("ym90",8);
+    k.gate("cz",6,8);
+    k.gate("ry90",8);
+    k.gate("ym90",2);
+    k.gate("cz",7,2);
+    k.gate("ry90",2);
+    k.gate("ym90",8);
+    k.gate("cz",0,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",6);
+    k.gate("cz",7,6);
+    k.gate("ry90",6);
+    k.gate("ym90",8);
+    k.gate("cz",4,8);
+    k.gate("ry90",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("measure",7);
+    k.gate("measure",8);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // real code with 7-qubit short error code checkers in 3 variations next to eachother
@@ -1255,147 +1255,147 @@ void test_lingling7sub(
     int n = 9;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s17.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
 #define SUB1    1
 
 #ifdef SUB1
-    k->gate("prepz",7);
-    k->gate("prepz",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("ym90",4);
-    k->gate("cz",7,4);
-    k->gate("ry90",4);
-    k->gate("ym90",8);
-    k->gate("cz",0,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",6);
-    k->gate("cz",7,6);
-    k->gate("ry90",6);
-    k->gate("ym90",8);
-    k->gate("cz",2,8);
-    k->gate("ry90",8);
-    k->gate("ym90",3);
-    k->gate("cz",7,3);
-    k->gate("ry90",3);
-    k->gate("ym90",8);
-    k->gate("cz",4,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",5);
-    k->gate("cz",7,5);
-    k->gate("ry90",5);
-    k->gate("ym90",8);
-    k->gate("cz",6,8);
-    k->gate("ry90",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("measure",7);
-    k->gate("measure",8);
+    k.gate("prepz",7);
+    k.gate("prepz",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("ym90",4);
+    k.gate("cz",7,4);
+    k.gate("ry90",4);
+    k.gate("ym90",8);
+    k.gate("cz",0,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",6);
+    k.gate("cz",7,6);
+    k.gate("ry90",6);
+    k.gate("ym90",8);
+    k.gate("cz",2,8);
+    k.gate("ry90",8);
+    k.gate("ym90",3);
+    k.gate("cz",7,3);
+    k.gate("ry90",3);
+    k.gate("ym90",8);
+    k.gate("cz",4,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",5);
+    k.gate("cz",7,5);
+    k.gate("ry90",5);
+    k.gate("ym90",8);
+    k.gate("cz",6,8);
+    k.gate("ry90",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("measure",7);
+    k.gate("measure",8);
 #endif
 
 #ifdef SUB2
-    k->gate("prepz",7);
-    k->gate("prepz",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("ym90",5);
-    k->gate("cz",7,5);
-    k->gate("ry90",5);
-    k->gate("ym90",8);
-    k->gate("cz",1,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",6);
-    k->gate("cz",7,6);
-    k->gate("ry90",6);
-    k->gate("ym90",8);
-    k->gate("cz",2,8);
-    k->gate("ry90",8);
-    k->gate("ym90",3);
-    k->gate("cz",7,3);
-    k->gate("ry90",3);
-    k->gate("ym90",8);
-    k->gate("cz",5,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",4);
-    k->gate("cz",7,4);
-    k->gate("ry90",4);
-    k->gate("ym90",8);
-    k->gate("cz",6,8);
-    k->gate("ry90",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("measure",7);
-    k->gate("measure",8);
+    k.gate("prepz",7);
+    k.gate("prepz",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("ym90",5);
+    k.gate("cz",7,5);
+    k.gate("ry90",5);
+    k.gate("ym90",8);
+    k.gate("cz",1,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",6);
+    k.gate("cz",7,6);
+    k.gate("ry90",6);
+    k.gate("ym90",8);
+    k.gate("cz",2,8);
+    k.gate("ry90",8);
+    k.gate("ym90",3);
+    k.gate("cz",7,3);
+    k.gate("ry90",3);
+    k.gate("ym90",8);
+    k.gate("cz",5,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",4);
+    k.gate("cz",7,4);
+    k.gate("ry90",4);
+    k.gate("ym90",8);
+    k.gate("cz",6,8);
+    k.gate("ry90",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("measure",7);
+    k.gate("measure",8);
 #endif
 
 #ifdef SUB3
-    k->gate("prepz",7);
-    k->gate("prepz",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("ym90",1);
-    k->gate("cz",7,1);
-    k->gate("ry90",1);
-    k->gate("ym90",8);
-    k->gate("cz",2,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",5);
-    k->gate("cz",7,5);
-    k->gate("ry90",5);
-    k->gate("ym90",8);
-    k->gate("cz",6,8);
-    k->gate("ry90",8);
-    k->gate("ym90",2);
-    k->gate("cz",7,2);
-    k->gate("ry90",2);
-    k->gate("ym90",8);
-    k->gate("cz",0,8);
-    k->gate("ry90",8);
-    k->gate("ym90",8);
-    k->gate("cz",7,8);
-    k->gate("ry90",8);
-    k->gate("ym90",6);
-    k->gate("cz",7,6);
-    k->gate("ry90",6);
-    k->gate("ym90",8);
-    k->gate("cz",4,8);
-    k->gate("ry90",8);
-    k->gate("x",7);
-    k->gate("ym90",7);
-    k->gate("measure",7);
-    k->gate("measure",8);
+    k.gate("prepz",7);
+    k.gate("prepz",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("ym90",1);
+    k.gate("cz",7,1);
+    k.gate("ry90",1);
+    k.gate("ym90",8);
+    k.gate("cz",2,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",5);
+    k.gate("cz",7,5);
+    k.gate("ry90",5);
+    k.gate("ym90",8);
+    k.gate("cz",6,8);
+    k.gate("ry90",8);
+    k.gate("ym90",2);
+    k.gate("cz",7,2);
+    k.gate("ry90",2);
+    k.gate("ym90",8);
+    k.gate("cz",0,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",6);
+    k.gate("cz",7,6);
+    k.gate("ry90",6);
+    k.gate("ym90",8);
+    k.gate("cz",4,8);
+    k.gate("ry90",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("measure",7);
+    k.gate("measure",8);
 #endif
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 // a maxcut QAOA algorithm inspired by the one in Venturelli et al [2017]'s paper
@@ -1415,85 +1415,85 @@ void test_maxcut(
     int n = 8;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::plat::PlatformRef::make("starmon", "test_mapper_rig.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_rig.json");
     //ql::set_platform(starmon);
-    auto prog = ql::ir::ProgramRef::make(prog_name, starmon, n, 0);
-    auto k = ql::ir::KernelRef::make(kernel_name, starmon, n, 0);
-    //prog->set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
-    k->gate("cz", 1,4);
-    k->gate("cz", 1,3);
-    k->gate("cz", 3,4);
-    k->gate("cz", 3,7);
-    k->gate("cz", 4,7);
-    k->gate("cz", 6,7);
-    k->gate("cz", 5,6);
-    k->gate("cz", 1,5);
+    k.gate("cz", 1,4);
+    k.gate("cz", 1,3);
+    k.gate("cz", 3,4);
+    k.gate("cz", 3,7);
+    k.gate("cz", 4,7);
+    k.gate("cz", 6,7);
+    k.gate("cz", 5,6);
+    k.gate("cz", 1,5);
 
-    k->gate("x", 1);
-    k->gate("x", 3);
-    k->gate("x", 4);
-    k->gate("x", 5);
-    k->gate("x", 6);
-    k->gate("x", 7);
+    k.gate("x", 1);
+    k.gate("x", 3);
+    k.gate("x", 4);
+    k.gate("x", 5);
+    k.gate("x", 6);
+    k.gate("x", 7);
 
     /*
-    k->gate("cz", 1,4);
-    k->gate("cz", 1,3);
-    k->gate("cz", 3,4);
-    k->gate("cz", 3,7);
-    k->gate("cz", 4,7);
-    k->gate("cz", 6,7);
-    k->gate("cz", 5,6);
-    k->gate("cz", 1,5);
+    k.gate("cz", 1,4);
+    k.gate("cz", 1,3);
+    k.gate("cz", 3,4);
+    k.gate("cz", 3,7);
+    k.gate("cz", 4,7);
+    k.gate("cz", 6,7);
+    k.gate("cz", 5,6);
+    k.gate("cz", 1,5);
     */
 
-    prog->add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog->compile( );
+    prog.compile( );
 }
 
 
 int main(int argc, char ** argv) {
     ql::utils::logger::set_log_level("LOG_DEBUG");
     // ql::utils::logger::set_log_level("LOG_NOTHING");
-    ql::options::set("unique_output", "no");
+    ql::set_option("unique_output", "no");
 
-    ql::options::set("write_qasm_files", "yes");
-    ql::options::set("write_report_files", "yes");
-    ql::options::set("print_dot_graphs", "yes");
-    ql::options::set("use_default_gates", "no");
+    ql::set_option("write_qasm_files", "yes");
+    ql::set_option("write_report_files", "yes");
+    ql::set_option("print_dot_graphs", "yes");
+    ql::set_option("use_default_gates", "no");
 
-    ql::options::set("clifford_prescheduler", "no");
-    ql::options::set("clifford_postscheduler", "no");
+    ql::set_option("clifford_prescheduler", "no");
+    ql::set_option("clifford_postscheduler", "no");
 
-    ql::options::set("clifford_premapper", "yes");
-    ql::options::set("mapper", "minextendrc");
-    ql::options::set("mapinitone2one", "yes");
-//parameter1  ql::options::set("maplookahead", "noroutingfirst");
-    ql::options::set("mapselectswaps", "all");
-    ql::options::set("initialplace", "yes");
-    ql::options::set("initialplace2qhorizon", "0");
-    ql::options::set("mappathselect", "all");
-    ql::options::set("mapusemoves", "yes");
-    ql::options::set("mapreverseswap", "yes");
-//parameter3  ql::options::set("mapselectmaxlevel", "0");
-//parameter2  ql::options::set("maprecNN2q", "no");
-//parameter4  ql::options::set("mapselectmaxwidth", "min");
-    ql::options::set("maptiebreak", "random");
+    ql::set_option("clifford_premapper", "yes");
+    ql::set_option("mapper", "minextendrc");
+    ql::set_option("mapinitone2one", "yes");
+//parameter1  ql::set_option("maplookahead", "noroutingfirst");
+    ql::set_option("mapselectswaps", "all");
+    ql::set_option("initialplace", "yes");
+    ql::set_option("initialplace2qhorizon", "0");
+    ql::set_option("mappathselect", "all");
+    ql::set_option("mapusemoves", "yes");
+    ql::set_option("mapreverseswap", "yes");
+//parameter3  ql::set_option("mapselectmaxlevel", "0");
+//parameter2  ql::set_option("maprecNN2q", "no");
+//parameter4  ql::set_option("mapselectmaxwidth", "min");
+    ql::set_option("maptiebreak", "random");
 
-    ql::options::set("clifford_postmapper", "yes");
-    ql::options::set("scheduler_post179", "yes");
-    ql::options::set("scheduler", "ALAP");
-    ql::options::set("scheduler_commute", "yes");
-    ql::options::set("prescheduler", "yes");
+    ql::set_option("clifford_postmapper", "yes");
+    ql::set_option("scheduler_post179", "yes");
+    ql::set_option("scheduler", "ALAP");
+    ql::set_option("scheduler_commute", "yes");
+    ql::set_option("prescheduler", "yes");
 
 //  test_lee("lee", "noroutingfirst", "no", "0", "min");
     test_dpt("dpt", "noroutingfirst", "no", "0", "min");
