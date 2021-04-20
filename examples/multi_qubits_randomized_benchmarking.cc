@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     auto starmon = ql::Platform("starmon", "hardware_config_qx.json");
 
     // print info
-    starmon._platform->print_info();
+    starmon.get_info();
 
     int   num_qubits = 1;
     int   num_cliffords = 4096;

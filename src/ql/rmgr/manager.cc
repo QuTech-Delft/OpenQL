@@ -101,12 +101,7 @@ Manager Manager::from_json(
     if (json.find("resources") == json.end()) {
 
         // Old-style structure. Infer the architecture.
-        utils::Str architecture;
-        if (platform->eqasm_compiler_name == "cc_light_compiler") {
-            architecture = "cc_light";
-        } else if (platform->eqasm_compiler_name == "cc_compiler") {
-            architecture = "cc";
-        }
+        utils::Str architecture = utils::to_string(platform->get_architecture());
 
         // Create the manager.
         Manager manager{platform, architecture, {}, factory};

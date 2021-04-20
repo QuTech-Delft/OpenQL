@@ -124,5 +124,15 @@ Bool pattern_match(const Str &pattern, const Str &str);
  */
 void dump_str(std::ostream &os, const Str &line_prefix, const Str &raw);
 
+/**
+ * Returns whether str starts with front.
+ */
+Bool starts_with(const Str &str, const Str &front);
+
+/**
+ * Returns whether str ends with end.
+ */
+Bool ends_with(const Str &str, const Str &end);
+
 } // namespace utils
 } // namespace ql

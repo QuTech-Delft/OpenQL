@@ -22,12 +22,12 @@ using InstructionMap = utils::Map<utils::Str, CustomGateRef>;
 class HardwareConfiguration {
 public:
     utils::Str config_file_name;
-    utils::Str eqasm_compiler_name;
 
     HardwareConfiguration(const utils::Str &config_file_name);
 
     void load(
         InstructionMap &instruction_map,
+        utils::Json &compiler_settings,
         utils::Json &instruction_settings,
         utils::Json &hardware_settings,
         utils::Json &resources,

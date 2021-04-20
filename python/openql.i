@@ -10,6 +10,7 @@
 %module(docstring=DOCSTRING) openql
 
 %include "std_vector.i"
+%include "std_map.i"
 %include "exception.i"
 %include "std_string.i"
 %include "std_complex.i"
@@ -21,6 +22,7 @@ namespace std {
    %template(vectorf) vector<float>;
    %template(vectord) vector<double>;
    %template(vectorc) vector<std::complex<double>>;
+   %template(mapss) map<std::string, std::string>;
 };
 
 %{

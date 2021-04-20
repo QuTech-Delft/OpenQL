@@ -11,10 +11,38 @@
 namespace ql {
 namespace utils {
 
+/**
+ * Returns whether the given path exists and is a directory.
+ */
 bool is_dir(const Str &path);
+
+/**
+ * Returns whether the given path exists and is a regular file.
+ */
 bool is_file(const Str &path);
+
+/**
+ * Returns whether the given path exists.
+ */
 bool path_exists(const Str &path);
+
+/**
+ * If path looks like it's a relative path, make it relative to base instead.
+ * If path looks like it's absolute, return it unchanged.
+ */
+Str path_relative_to(const Str &base, const Str &path);
+
+/**
+ * Returns the directory of the given path. On Linux and MacOS, this just maps
+ * to dirname() from libgen.h. On Windows, the string is stripped from the last
+ * backslash or slash onward, if any.
+ */
 Str dir_name(const Str &path);
+
+/**
+ * (Recursively) creates a new directory if it does not already exist. Throws
+ * an Exception if creation of the directory fails.
+ */
 void make_dirs(const Str &path);
 
 /**

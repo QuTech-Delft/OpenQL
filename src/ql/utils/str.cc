@@ -212,5 +212,23 @@ void dump_str(std::ostream &os, const Str &line_prefix, const Str &raw) {
 
 }
 
+/**
+ * Returns whether str starts with front.
+ */
+Bool starts_with(const Str &str, const Str &front) {
+    return str.rfind(front, 0) == 0;
+}
+
+/**
+ * Returns whether str ends with end.
+ */
+Bool ends_with(const Str &str, const Str &end) {
+    if (str.size() >= end.size()) {
+        return (str.compare(str.size() - end.size(), end.size(), end) == 0);
+    } else {
+        return false;
+    }
+}
+
 } // namespace utils
 } // namespace ql

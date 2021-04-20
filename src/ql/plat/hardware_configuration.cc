@@ -5,6 +5,7 @@
 #include "ql/plat/hardware_configuration.h"
 
 #include <regex>
+#include "ql/utils/filesystem.h"
 
 namespace ql {
 namespace plat {
@@ -52,6 +53,7 @@ HardwareConfiguration::HardwareConfiguration(
 
 void HardwareConfiguration::load(
     InstructionMap &instruction_map,
+    Json &compiler_settings,
     Json &instruction_settings,
     Json &hardware_settings,
     Json &resources,
@@ -66,41 +68,88 @@ void HardwareConfiguration::load(
                 << Str(e.what()));
     }
 
-    // load eqasm compiler backend
+    // Load compiler configuration.
     if (config.count("eqasm_compiler") <= 0) {
-        QL_FATAL("'eqasm_compiler' is not specified in the hardware config file");
+
+        // Let's be lenient. We have sane defaults regardless of what's
+        // specified here.
+        compiler_settings = "\"\""_json;
+
+    } else if (config["eqasm_compiler"].type() == utils::Json::value_t::object) {
+
+        // Inline configuration object.
+        compiler_settings = config["eqasm_compiler"];
+
+    } else if (config["eqasm_compiler"].type() == utils::Json::value_t::string) {
+
+        // Figure out what kind of string this is.
+        Str s = config["eqasm_compiler"].get<utils::Str>();
+        if (s.empty() || s == "none" || s == "qx") {
+
+            // This is nothing that we do anything with anymore.
+            compiler_settings = "\"\""_json;
+
+        } else if (s == "cc_light_compiler") {
+
+            // This affects the default pass list and resource architecture.
+            compiler_settings = "\"cc_light\""_json;
+
+        } else if (s == "eqasm_backend_cc") {
+
+            // This affects the default pass list and resource architecture.
+            compiler_settings = "\"cc\""_json;
+
+        } else {
+
+            // String is unrecognized, but it could be a filename to a JSON
+            // configuration file (try relative to the platform JSON file or
+            // fall back to relative to the working directory).
+            auto fname = path_relative_to(dir_name(config_file_name), s);
+            if (path_exists(fname)) {
+                compiler_settings = load_json(fname);
+            } else if (path_exists(s)) {
+                compiler_settings = load_json(s);
+            } else {
+
+                // Hmmm. Not sure what this is.
+                if (ends_with(".json", s)) {
+                    QL_FATAL("'eqasm_compiler' looks like a filename, but the file was not found");
+                } else {
+                    QL_FATAL("'eqasm_compiler' doesn't look like anything supported at this time");
+                }
+
+            }
+
+        }
+
     } else {
-        eqasm_compiler_name = config["eqasm_compiler"].get<Str>();
+        QL_FATAL("'eqasm_compiler' must be a string or an object");
     }
 
     // load hardware_settings
     if (config.count("hardware_settings") <= 0) {
-        QL_FATAL(
-            "'hardware_settings' section is not specified in the hardware config file");
+        QL_FATAL("'hardware_settings' section is not specified in the hardware config file");
     } else {
         hardware_settings = config["hardware_settings"];
     }
 
     // load instruction_settings
     if (config.count("instructions") <= 0) {
-        QL_FATAL(
-            "'instructions' section is not specified in the hardware config file");
+        QL_FATAL("'instructions' section is not specified in the hardware config file");
     } else {
         instruction_settings = config["instructions"];
     }
 
     // load platform resources
     if (config.count("resources") <= 0) {
-        QL_FATAL(
-            "'resources' section is not specified in the hardware config file");
+        QL_FATAL("'resources' section is not specified in the hardware config file");
     } else {
         resources = config["resources"];
     }
 
     // load platform topology
     if (config.count("topology") <= 0) {
-        QL_FATAL(
-            "'topology' section is not specified in the hardware config file");
+        QL_FATAL("'topology' section is not specified in the hardware config file");
     } else {
         topology = config["topology"];
     }

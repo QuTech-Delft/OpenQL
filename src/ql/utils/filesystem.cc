@@ -8,6 +8,7 @@
 #include <fstream>
 #include <cerrno>
 #include <algorithm>
+#include <cctype>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -52,6 +53,23 @@ bool is_file(const Str &path) {
 bool path_exists(const Str &path) {
     struct stat info{};
     return !stat(path.c_str(), &info);
+}
+
+/**
+ * If path looks like it's a relative path, make it relative to base instead.
+ * If path looks like it's absolute, return it unchanged.
+ */
+Str path_relative_to(const Str &base, const Str &path) {
+
+    // Detect POSIX absolute paths.
+    if (path.size() >= 1 && path.front() == '/') return path;
+
+    // Detect Windows absolute paths.
+    if (path.size() >= 2 && isalpha(path[0]) && path[1] == ':') return path;
+
+    // Looks relative to me.
+    return base + "/" + path;
+
 }
 
 /**

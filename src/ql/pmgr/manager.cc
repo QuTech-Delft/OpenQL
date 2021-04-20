@@ -428,7 +428,13 @@ Manager Manager::from_json(
  */
 Manager Manager::from_defaults(const plat::PlatformRef &platform) {
 
-    // Generate a default manager.
+    // If the platform includes a compiler configuration JSON object, load from
+    // that.
+    if (platform->compiler_settings.type() == utils::Json::value_t::object) {
+        return from_json(platform->compiler_settings);
+    }
+
+    // Otherwise, generate a default manager.
     Manager manager;
 
     // Generate preprocessing passes that are common to all eqasm_compiler
@@ -472,82 +478,74 @@ Manager Manager::from_defaults(const plat::PlatformRef &platform) {
     );
 
     // Generate a suitable list of passes based on eqasm_compiler_name.
-    if (platform->eqasm_compiler_name.empty()) {
-        throw utils::Exception(
-            "eqasm_compiler name is missing from the platform configuration file."
-        );
-    } else if (platform->eqasm_compiler_name == "none" || platform->eqasm_compiler_name == "qx") {
+    switch (platform->get_architecture()) {
+        case arch::Architecture::CC_LIGHT:
 
-        // Only the common passes are used, so nothing else to do here.
-
-    } else if (platform->eqasm_compiler_name == "cc_light_compiler") {
-
-        // Mapping.
-        if (com::options::global["clifford_premapper"].as_bool()) {
-            manager.append_pass(
-                "opt.clifford.Optimize",
-                "clifford_premapper"
-            );
-        }
-        if (com::options::global["mapper"].as_str() != "no") {
-            manager.append_pass(
-                "map.qubits.Map",
-                "mapper"
-            );
-        }
-        if (com::options::global["clifford_postmapper"].as_bool()) {
-            manager.append_pass(
-                "opt.clifford.Optimize",
-                "clifford_postmapper"
-            );
-        }
-
-        // Scheduling.
-        manager.append_pass(
-            "sch.Schedule",
-            "rcscheduler",
-            {
-                {"resource_constraints", "yes"}
+            // Mapping.
+            if (com::options::global["clifford_premapper"].as_bool()) {
+                manager.append_pass(
+                    "opt.clifford.Optimize",
+                    "clifford_premapper"
+                );
             }
-        );
-        manager.append_pass(
-            "io.cqasm.Report",
-            "lastqasmwriter",
-            {
-                {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"},
-                {"output_suffix", "_last.qasm"}
+            if (com::options::global["mapper"].as_str() != "no") {
+                manager.append_pass(
+                    "map.qubits.Map",
+                    "mapper"
+                );
             }
-        );
+            if (com::options::global["clifford_postmapper"].as_bool()) {
+                manager.append_pass(
+                    "opt.clifford.Optimize",
+                    "clifford_postmapper"
+                );
+            }
 
-        // R.I.P. CC-light code generation; was taken out.
+            // Scheduling.
+            manager.append_pass(
+                "sch.Schedule",
+                "rcscheduler",
+                {
+                    {"resource_constraints", "yes"}
+                }
+            );
+            manager.append_pass(
+                "io.cqasm.Report",
+                "lastqasmwriter",
+                {
+                    {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"},
+                    {"output_suffix", "_last.qasm"}
+                }
+            );
 
-    } else if (platform->eqasm_compiler_name == "eqasm_backend_cc") {
+            // R.I.P. CC-light code generation; was taken out.
+            break;
 
-        // Mimic original CC backend.
-        manager.append_pass(
-            "sch.Schedule",
-            "scheduler",
-            {
+        case arch::Architecture::CC:
+
+            // Mimic original CC backend.
+            manager.append_pass(
+                "sch.Schedule",
+                "scheduler",
+                {
 #if OPT_CC_SCHEDULE_RC
-                {"resource_constraints", "yes"}
+                    {"resource_constraints", "yes"}
 #else
-                {"resource_constraints", "no"}
+                    {"resource_constraints", "no"}
 #endif
-            }
-        );
-        manager.append_pass(
-            "arch.cc.gen.VQ1Asm",
-            "codegen",
-            {
-                {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"}
-            }
-        );
+                }
+            );
+            manager.append_pass(
+                "arch.cc.gen.VQ1Asm",
+                "codegen",
+                {
+                    {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"}
+                }
+            );
+            break;
 
-    } else {
-        throw utils::Exception(
-            "Unsupported eqasm_compiler value in platform configuration file: "
-            + platform->eqasm_compiler_name
-        );
+        default:
+            break;
     }
 
     // Sweep point writing (whatever that is) was done hardcoded at the end of

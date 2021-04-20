@@ -400,5 +400,10 @@ public:
 
 };
 
+/**
+ * A shared pointer reference to a pass manager.
+ */
+using Ref = utils::Ptr<Manager>;
+
 } // namespace pmgr
 } // namespace ql

@@ -599,6 +599,7 @@ void Options::help(std::ostream &os, const utils::Str &line_prefix) const {
     }
     for (const auto &it : options) {
         os << line_prefix << it.second << std::endl;
+        os << line_prefix << std::endl;
     }
 }
 

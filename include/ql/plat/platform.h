@@ -11,24 +11,26 @@
 #include "ql/utils/tree.h"
 #include "ql/plat/hardware_configuration.h"
 #include "ql/plat/topology.h"
+#include "ql/arch/architecture.h"
 
 namespace ql {
 namespace plat {
 
+/**
+ * Platform configuration structure. Represents everything we know about the
+ * target qubit chip, simulator, control architecture, etc.
+ *
+ * TODO: this still needs a lot of work. As much JSON parsing as possible should
+ *  be done while loading, and we need different classes for gate instances and
+ *  types.
+ */
 class Platform : public utils::Node {
 public:
+
     /**
      * User-specified name for the platform.
      */
     utils::Str name;
-
-    /**
-     * Name of the architecture being compiled for.
-     *
-     * TODO: this should be removed, and abstracted entirely to the much more
-     *  generic pass management logic.
-     */
-    utils::Str eqasm_compiler_name;
 
     /**
      * The total number of physical qubits supported by the platform.
@@ -85,6 +87,21 @@ public:
     InstructionMap instruction_map;
 
     /**
+     * Settings for the compiler. This can be:
+     *  - an empty string, if no eqasm_compiler key is specified;
+     *  - a recognized string (none, qx, cc_light_compiler, or
+     *    eqasm_backend_cc);
+     *  - a JSON object representing the compiler configuration structure,
+     *    which may or may not have a strategy.architecture key set to cc or
+     *    cc_light.
+     *
+     * NOTE: while it's nasty that this is here as a raw JSON object, we can't
+     *  construct it into a pass manager until program.compile, because
+     *  construction may use global options in compatibility mode...
+     */
+    utils::Json compiler_settings;
+
+    /**
      * Raw instruction setting data for use by the eqasm backend, corresponding
      * to the `"instructions"` key in the root JSON object.
      *
@@ -124,22 +141,38 @@ public:
     /**
      * Constructs a platform from the given configuration filename.
      */
-    Platform(const utils::Str &name, const utils::Str &configuration_file_name);
+    Platform(
+        const utils::Str &name,
+        const utils::Str &platform_config_file_name,
+        const utils::Str &compiler_config_file_name = ""
+    );
 
     /**
-     * Prints some basic info about the platform to stdout.
+     * Dumps some basic info about the platform to the given stream.
      */
-    void print_info() const;
+    void dump_info(std::ostream &os = std::cout, utils::Str line_prefix = "") const;
 
-    // find settings for custom gate, preventing JSON exceptions
+    /**
+     * Returns the architecture corresponding to this platform.
+     */
+    arch::Architecture get_architecture() const;
+
+    /**
+     * Returns the JSON data for a custom gate, throwing a semi-useful
+     * exception if the instruction is not found.
+     */
     const utils::Json &find_instruction(const utils::Str &iname) const;
 
-    // find instruction type for custom gate
-    utils::Str find_instruction_type(const utils::Str &iname) const;
-
+    /**
+     * Converts the given time in nanoseconds to cycles.
+     */
     utils::UInt time_to_cycles(utils::Real time_ns) const;
+
 };
 
+/**
+ * Smart pointer reference to a platform.
+ */
 using PlatformRef = utils::One<Platform>;
 
 } // namespace plat

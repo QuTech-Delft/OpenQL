@@ -64,6 +64,16 @@ public:
     }
 
     /**
+     * Copy constructor from Stl variant.
+     */
+    UncheckedMap(const Stl &stl) : Stl(stl) {}
+
+    /**
+     * Move constructor from Stl variant.
+     */
+    UncheckedMap(Stl &&stl) : Stl(stl) {}
+
+    /**
      * Implicit conversion for initializer lists.
      */
     UncheckedMap(std::initializer_list<typename Stl::value_type> init) : Stl(init) {
