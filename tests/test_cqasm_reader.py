@@ -59,6 +59,21 @@ class TestcQasmReader(unittest.TestCase):
         program.compile()
         self.assertTrue(file_compare(os.path.join(output_dir, name + '.qasm'), os.path.join(curdir, 'golden', name + '.qasm')))
 
+    def test_cqasm_real_numbers(self):
+        config_fn = os.path.join(curdir, 'hardware_config_qx.json')
+        platform = ql.Platform('seven_qubits_chip', config_fn)
+        number_qubits = platform.get_qubit_number()
+        name = 'test_cqasm_real_numbers'
+        program = ql.Program(name, platform, number_qubits)
+        qasm_rdr = ql.cQasmReader(platform, program)
+        qasm_str = "version 1.0\n"  \
+                   "qubits 5\n"     \
+                   "error_model depolarizing_channel, 0.001\n"  \
+                   "rx q[0], 1.0\n"
+        qasm_rdr.string2circuit(qasm_str)
+        program.compile()
+        self.assertTrue(file_compare(os.path.join(output_dir, name + '.qasm'), os.path.join(curdir, 'golden', name + '.qasm')))
+
     def test_sub_circuit_programs(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
