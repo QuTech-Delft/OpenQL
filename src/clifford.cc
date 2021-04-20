@@ -20,7 +20,7 @@ public:
         const plat::PlatformRef &platform,
         const Str &passname
     ) {
-        QL_DOUT("clifford_optimize_kernel()");
+        QL_IOUT("clifford_optimize_kernel()");
 
         nq = kernel->qubit_count;
         ct = platform->cycle_time;
@@ -287,7 +287,7 @@ void clifford_optimize(
                                                     << passname << " not DONE");
         return;
     }
-    QL_DOUT("Clifford optimization on program " << program->name << " at "
+    QL_IOUT("Clifford optimization on program " << program->name << " at "
                                                 << passname << " ...");
 
     report_statistics(program, platform, "in", passname, "# ");
@@ -300,6 +300,9 @@ void clifford_optimize(
 
     report_statistics(program, platform, "out", passname, "# ");
     report_qasm(program, platform, "out", passname);
+
+    QL_IOUT("Clifford optimization on program " << program->name << " at "
+                                                << passname << " DONE");
 }
 
 }

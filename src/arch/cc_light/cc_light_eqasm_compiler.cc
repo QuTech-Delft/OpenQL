@@ -775,10 +775,13 @@ void cc_light_eqasm_compiler::map(
         return;
     }
 
+    QL_IOUT("Mapper ... statistics/qasm ...");
     report_statistics(program, platform, "in", passname, "# ");
     report_qasm(program, platform, "in", passname);
 
+    QL_IOUT("Mapper ... constructor ...");
     mapper::Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+    QL_IOUT("Mapper ... init ...");
     mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
 
     UInt total_swaps = 0;        // for reporting, data is mapper specific

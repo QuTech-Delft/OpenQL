@@ -24,17 +24,24 @@ using namespace com;
 // initialize mapper internal grid maps from configuration
 // this remains constant over multiple kernels on the same platform
 void Grid::Init(const plat::PlatformRef &p) {
-    QL_DOUT("Grid::Init");
+    QL_IOUT("Grid::Init");
     platformp = p;
     nq = platformp->qubit_count;
     QL_DOUT("... number of real qbits=" << nq);
 
+    QL_IOUT("Grid::Init: InitForm");
     InitForm();     // form: embedded in xy grid (gf_xy) or irregular (gf_irregular) (topology.form)
+    QL_IOUT("Grid::Init: InitCores");
     InitCores();    // ncores: default 1 (topology.ncores)
+    QL_IOUT("Grid::Init: InitXY");
     InitXY();       // x[qi],y[qi] when form==gf_xy, as read from topology.qubits
+    QL_IOUT("Grid::Init: InitNbs");
     InitNbs();      // nbs[qi], read from topology.edges when connectivity is specified, otherwise, when full, computed
+    QL_IOUT("Grid::Init: SortNbs");
     SortNbs();      // when form embedded in grid, sort clock-wise starting from 12:00, to know boundary of search space
+    QL_IOUT("Grid::Init: ComputeDist");
     ComputeDist();  // dist[qi][qj] by Floyd-Warshall, is maximum when not connected
+    QL_IOUT("Grid::Init: DPRINTGrid");
     DPRINTGrid();
 }
 
