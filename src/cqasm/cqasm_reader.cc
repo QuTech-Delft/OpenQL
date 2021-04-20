@@ -188,7 +188,7 @@ public:
         Real val;
         if (auto i = operands[index]->as_const_int()) {
             val = i->value;
-        } else if (auto r = operands[index]->as_const_int()) {
+        } else if (auto r = operands[index]->as_const_real()) {
             val = r->value;
         } else {
             throw Exception("expected a real number at " + location(*operands[index]));
