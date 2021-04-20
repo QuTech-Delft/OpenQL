@@ -903,16 +903,16 @@ void Kernel::condgate(
  */
 ConditionType Kernel::condstr2condvalue(const std::string &condstring) {
     ConditionType condvalue;
-    if      (condstring == "COND_ALWAYS") condvalue = ConditionType::ALWAYS;
-    else if (condstring == "COND_NEVER") condvalue = ConditionType::NEVER;
-    else if (condstring == "COND_UNARY") condvalue = ConditionType::UNARY;
-    else if (condstring == "COND_NOT") condvalue = ConditionType::NOT;
-    else if (condstring == "COND_AND") condvalue = ConditionType::AND;
-    else if (condstring == "COND_NAND") condvalue = ConditionType::NAND;
-    else if (condstring == "COND_OR") condvalue = ConditionType::OR;
-    else if (condstring == "COND_NOR") condvalue = ConditionType::NOR;
-    else if (condstring == "COND_XOR") condvalue = ConditionType::XOR;
-    else if (condstring == "COND_NXOR") condvalue = ConditionType::NXOR;
+    if      (condstring == "COND_ALWAYS" || condstring == "1") condvalue = ConditionType::ALWAYS;
+    else if (condstring == "COND_NEVER" || condstring == "0") condvalue = ConditionType::NEVER;
+    else if (condstring == "COND_UNARY" || condstring.empty()) condvalue = ConditionType::UNARY;
+    else if (condstring == "COND_NOT" || condstring == "!") condvalue = ConditionType::NOT;
+    else if (condstring == "COND_AND" || condstring == "&") condvalue = ConditionType::AND;
+    else if (condstring == "COND_NAND" || condstring == "!&") condvalue = ConditionType::NAND;
+    else if (condstring == "COND_OR" || condstring == "|") condvalue = ConditionType::OR;
+    else if (condstring == "COND_NOR" || condstring == "!|") condvalue = ConditionType::NOR;
+    else if (condstring == "COND_XOR" || condstring == "^") condvalue = ConditionType::XOR;
+    else if (condstring == "COND_NXOR" || condstring == "!^") condvalue = ConditionType::NXOR;
     else {
         throw std::runtime_error("Error: Unknown condition " + condstring);
     }
