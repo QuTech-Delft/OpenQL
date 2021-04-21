@@ -99,8 +99,6 @@ def _fixup_swig_autodoc_signature(sig):
             arg_name = arg_name[0]
             args[i] = arg_name + ': ' + _fixup_swig_autodoc_type(toks[0]) + default_val
 
-        if args[0] == 'self':
-            del args[0]
         args = ', '.join(args)
 
         # Fix return type name.
