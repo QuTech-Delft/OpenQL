@@ -10,7 +10,7 @@
 //                               W A R N I N G                                //
 //----------------------------------------------------------------------------//
 //         Docstrings in this file must manually be kept in sync with         //
-//   python/openql.i! This should be automated at some point, but isn't yet.  //
+//       misc.i! This should be automated at some point, but isn't yet.       //
 //============================================================================//
 
 namespace ql {
@@ -18,7 +18,9 @@ namespace api {
 
 /**
  * Initializes the OpenQL library, for as far as this must be done. This should
- * be called by the user (in Python) before anything else.
+ * ideally be called by the user (in Python) before anything else, but
+ * set_option() and the constructors of Compiler and Platform will automatically
+ * call this when it hasn't been done yet as well.
  *
  * Currently this just resets the options to their default values to give the
  * user a clean slate to work with in terms of global variables (in case someone
@@ -29,7 +31,7 @@ namespace api {
 void initialize();
 
 /**
- * Make sure initialize() has been called.
+ * Calls initialize() if it hasn't been called yet.
  */
 void ensure_initialized();
 
@@ -42,13 +44,13 @@ std::string get_version();
  * Sets a global option for the compiler. Use print_options() to get a list of
  * all available options.
  */
-void set_option(const std::string &option_name, const std::string &option_value);
+void set_option(const std::string &option, const std::string &value);
 
 /**
  * Returns the current value for a global option. Use print_options() to get a
  * list of all available options.
  */
-std::string get_option(const std::string &option_name);
+std::string get_option(const std::string &option);
 
 /**
  * Prints a list of all available options.

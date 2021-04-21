@@ -42,9 +42,19 @@ namespace std {
     }
 }
 
-// Include the header file with above prototypes
-%include "ql/api/api.h"
+// Include API features.
+%include "ql/api/declarations.h"
+%include "ql/api/misc.i"
+%include "ql/api/pass.i"
+%include "ql/api/compiler.i"
+%include "ql/api/platform.i"
+%include "ql/api/creg.i"
+%include "ql/api/operation.i"
+%include "ql/api/unitary.i"
+%include "ql/api/kernel.i"
+%include "ql/api/program.i"
+%include "ql/api/cqasm_reader.i"
 
 namespace std {
-   %template(vectorp) vector<ql::api::Pass>;
+    %template(vectorp) vector<ql::api::Pass>;
 };

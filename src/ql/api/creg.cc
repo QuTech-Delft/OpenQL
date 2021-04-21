@@ -8,7 +8,7 @@
 //                               W A R N I N G                                //
 //----------------------------------------------------------------------------//
 //         Docstrings in this file must manually be kept in sync with         //
-//   python/openql.i! This should be automated at some point, but isn't yet.  //
+//       creg.i! This should be automated at some point, but isn't yet.       //
 //============================================================================//
 
 namespace ql {

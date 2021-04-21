@@ -11,7 +11,7 @@
 //                               W A R N I N G                                //
 //----------------------------------------------------------------------------//
 //         Docstrings in this file must manually be kept in sync with         //
-//   python/openql.i! This should be automated at some point, but isn't yet.  //
+//     compiler.i! This should be automated at some point, but isn't yet.     //
 //============================================================================//
 
 namespace ql {
@@ -230,9 +230,7 @@ public:
     size_t get_num_passes() const;
 
     /**
-     * If this pass constructed into a group of passes, returns a reference to
-     * the list containing all the sub-passes. Otherwise, an exception is
-     * thrown.
+     * Returns a vector with references to all passes in the root hierarchy.
      */
     std::vector<Pass> get_passes() const;
 
@@ -240,7 +238,7 @@ public:
      * Returns an indexable list of references to all passes with the given
      * type within the root hierarchy.
      */
-    std::vector<Pass> get_sub_passes_by_type(const std::string &target) const;
+    std::vector<Pass> get_passes_by_type(const std::string &target) const;
 
     /**
      * Removes the pass with the given target instance name, or throws an
@@ -262,7 +260,7 @@ public:
     /**
      * Ensures that all passes have been constructed, and then runs the passes
      * on the given program. This is the same as Program.compile() when the
-     * program's platform is referencing the same compiler
+     * program is referencing the same compiler.
      */
     void compile(const Program &program);
 

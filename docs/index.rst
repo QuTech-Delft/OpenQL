@@ -42,13 +42,7 @@ While the instruction-level code is platform-specific, the quantum assembly code
    :maxdepth: 1
    :caption: API Reference
 
-   api/openql
-   api/Kernel
-   api/Program
-   api/Compiler
-   api/Platform
-   api/Operation
-   api/CReg
+   api
 
 .. toctree::
    :maxdepth: 3

@@ -44,11 +44,11 @@ master_doc = 'index'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'm2r',
+    #'m2r',
     'sphinx.ext.todo',
- 	'sphinx.ext.autodoc',
- 	'sphinx.ext.napoleon',
- 	'sphinx.ext.autosummary'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.autosummary'
 ]
 
 autodoc_default_flags = ['members']
@@ -69,6 +69,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store',
 	'platform_*.rst', 'mapping.rst', 'scheduling.rst', 'decomposition.rst',
 	'optimization.rst', 'scheduling_ccl.rst', 'scheduling_cc.rst']
 
+def skip(app, what, name, obj, would_skip, options):
+    if name == "__init__":
+        return False
+    return would_skip
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip)
 
 # -- Options for HTML output -------------------------------------------------
 

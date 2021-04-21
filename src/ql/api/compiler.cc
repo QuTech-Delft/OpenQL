@@ -13,7 +13,7 @@
 //                               W A R N I N G                                //
 //----------------------------------------------------------------------------//
 //         Docstrings in this file must manually be kept in sync with         //
-//   python/openql.i! This should be automated at some point, but isn't yet.  //
+//     compiler.i! This should be automated at some point, but isn't yet.     //
 //============================================================================//
 
 namespace ql {
@@ -275,9 +275,7 @@ size_t Compiler::get_num_passes() const {
 }
 
 /**
- * If this pass constructed into a group of passes, returns a reference to
- * the list containing all the sub-passes. Otherwise, an exception is
- * thrown.
+ * Returns a vector with references to all passes in the root hierarchy.
  */
 std::vector<Pass> Compiler::get_passes() const {
     std::vector<Pass> retval;
@@ -291,7 +289,7 @@ std::vector<Pass> Compiler::get_passes() const {
  * Returns an indexable list of references to all passes with the given
  * type within the root hierarchy.
  */
-std::vector<Pass> Compiler::get_sub_passes_by_type(const std::string &target) const {
+std::vector<Pass> Compiler::get_passes_by_type(const std::string &target) const {
     std::vector<Pass> retval;
     for (const auto &pass : pass_manager->get_sub_passes_by_type(target)) {
         retval.push_back(Pass(pass, false));
@@ -325,7 +323,7 @@ void Compiler::construct() {
 /**
  * Ensures that all passes have been constructed, and then runs the passes
  * on the given program. This is the same as Program.compile() when the
- * program's platform is referencing the same compiler
+ * program is referencing the same compiler.
  */
 void Compiler::compile(const Program &program) {
     pass_manager->compile(program.program);
