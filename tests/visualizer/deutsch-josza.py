@@ -5,23 +5,14 @@ from random import random
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'visualizer_example_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-#ql.set_option('scheduler', 'ASAP')
 #ql.set_option('log_level', 'LOG_DEBUG')
 #ql.set_option('log_level', 'LOG_INFO')
 ql.set_option('unique_output', 'yes')
-ql.set_option('write_qasm_files', 'no')
-ql.set_option('write_report_files', 'no')
 
 c = ql.Compiler("testCompiler")
-#c.add_pass("Scheduler")
-c.add_pass("Visualizer")
-c.add_pass("BackendCompiler")
-
-c.set_pass_option("Visualizer", "visualizer_type", "INTERACTION_GRAPH")
-c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config_example1.json"))
-c.set_pass_option("BackendCompiler", "eqasm_compiler_name", "cc_light_compiler")
+#c.append_pass("sch.Schedule", "scheduler", {"scheduler_heuristic": "asap"})
+c.append_pass("ana.visualize.Interaction", "visualizer", {"config": "visualizer_config_example1.json"})
+c.set_option("**.output_prefix", output_dir + "/%N")
 
 platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'hardware_config_cc_light_visualizer2.json'))
 num_qubits = 2
@@ -51,4 +42,4 @@ k.gate('h',[0])
 for q in range(num_qubits):
 	k.gate('measure',[q])
 p.add_kernel(k)
-p.compile()
+c.compile(p)

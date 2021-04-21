@@ -692,7 +692,7 @@ PassRef Manager::insert_pass_after(
     const utils::Str &instance_name,
     const utils::Map<utils::Str, utils::Str> &options
 ) {
-    return root->insert_sub_pass_after(target, type_name, instance_name);
+    return root->insert_sub_pass_after(target, type_name, instance_name, options);
 }
 
 /**
@@ -708,7 +708,7 @@ PassRef Manager::insert_pass_before(
     const utils::Str &instance_name,
     const utils::Map<utils::Str, utils::Str> &options
 ) {
-    return root->insert_sub_pass_before(target, type_name, instance_name);
+    return root->insert_sub_pass_before(target, type_name, instance_name, options);
 }
 
 /**

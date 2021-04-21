@@ -89,7 +89,7 @@ void print_options() {
  * Constructor used internally to build a pass object that belongs to
  * a compiler.
  */
-Pass::Pass(const ql::pmgr::PassRef &pass) : pass(pass) {
+Pass::Pass(const ql::pmgr::PassRef &pass, bool dummy) : pass(pass) {
 }
 
 /**
@@ -268,7 +268,7 @@ Pass Pass::append_sub_pass(
     const std::string &instance_name,
     const std::map<std::string, std::string> &options
 ) {
-    return Pass(pass->append_sub_pass(type_name, instance_name, options));
+    return Pass(pass->append_sub_pass(type_name, instance_name, options), false);
 }
 
 /**
@@ -282,7 +282,7 @@ Pass Pass::prefix_sub_pass(
     const std::string &instance_name,
     const std::map<std::string, std::string> &options
 ) {
-    return Pass(pass->prefix_sub_pass(type_name, instance_name, options));
+    return Pass(pass->prefix_sub_pass(type_name, instance_name, options), false);
 }
 
 /**
@@ -299,7 +299,7 @@ Pass Pass::insert_sub_pass_after(
     const std::string &instance_name,
     const std::map<std::string, std::string> &options
 ) {
-    return Pass(pass->insert_sub_pass_after(target, type_name, instance_name, options));
+    return Pass(pass->insert_sub_pass_after(target, type_name, instance_name, options), false);
 }
 
 /**
@@ -316,7 +316,7 @@ Pass Pass::insert_sub_pass_before(
     const std::string &instance_name,
     const std::map<std::string, std::string> &options
 ) {
-    return Pass(pass->insert_sub_pass_before(target, type_name, instance_name, options));
+    return Pass(pass->insert_sub_pass_before(target, type_name, instance_name, options), false);
 }
 
 /**
@@ -333,7 +333,7 @@ Pass Pass::group_sub_pass(
     const std::string &target,
     const std::string &sub_name
 ) {
-    return Pass(pass->group_sub_pass(target, sub_name));
+    return Pass(pass->group_sub_pass(target, sub_name), false);
 }
 
 /**
@@ -347,7 +347,7 @@ Pass Pass::group_sub_passes(
     const std::string &to,
     const std::string &group_name
 ) {
-    return Pass(pass->group_sub_passes(from, to, group_name));
+    return Pass(pass->group_sub_passes(from, to, group_name), false);
 }
 
 /**
@@ -375,7 +375,7 @@ void Pass::flatten_subgroup(
  * used as hierarchy separators to get nested sub-passes.
  */
 Pass Pass::get_sub_pass(const std::string &target) const {
-    return Pass(pass->get_sub_pass(target));
+    return Pass(pass->get_sub_pass(target), false);
 }
 
 /**
@@ -404,7 +404,7 @@ size_t Pass::get_num_sub_passes() const {
 std::vector<Pass> Pass::get_sub_passes() const {
     std::vector<Pass> retval;
     for (const auto &p : pass->get_sub_passes()) {
-        retval.push_back(Pass(p));
+        retval.push_back(Pass(p, false));
     }
     return retval;
 }
@@ -417,7 +417,7 @@ std::vector<Pass> Pass::get_sub_passes() const {
 std::vector<Pass> Pass::get_sub_passes_by_type(const std::string &target) const {
     std::vector<Pass> retval;
     for (const auto &p : pass->get_sub_passes_by_type(target)) {
-        retval.push_back(Pass(p));
+        retval.push_back(Pass(p, false));
     }
     return retval;
 }
@@ -447,33 +447,40 @@ void Pass::clear_sub_passes() {
 Compiler::Compiler(
     const ql::pmgr::Ref &pass_manager
 ) :
-    pass_manager(pass_manager)
+    pass_manager(pass_manager),
+    name("default")
 { }
 
 /**
  * Creates an empty compiler, with no specified architecture.
  */
 Compiler::Compiler(
+    const std::string &name
 ) :
-    pass_manager(ql::utils::Ptr<ql::pmgr::Manager>::make())
+    pass_manager(ql::utils::Ptr<ql::pmgr::Manager>::make()),
+    name(name)
 { }
 
 /**
  * Creates a compiler configuration from the given JSON file.
  */
 Compiler::Compiler(
-    const std::string &fname
+    const std::string &name,
+    const std::string &filename
 ) :
-    pass_manager(ql::pmgr::Manager::from_json(ql::utils::load_json(fname)))
+    pass_manager(ql::pmgr::Manager::from_json(ql::utils::load_json(filename))),
+    name(name)
 { }
 
 /**
  * Creates a default compiler for the given platform.
  */
 Compiler::Compiler(
+    const std::string &name,
     const Platform &platform
 ) :
-    pass_manager(ql::pmgr::Manager::from_defaults(platform.platform))
+    pass_manager(ql::pmgr::Manager::from_defaults(platform.platform)),
+    name(name)
 { }
 
 /**
@@ -564,7 +571,7 @@ Pass Compiler::append_pass(
     const std::string &instance_name,
     const std::map<std::string, std::string> &options
 ) {
-    return Pass(pass_manager->append_pass(type_name, instance_name, options));
+    return Pass(pass_manager->append_pass(type_name, instance_name, options), false);
 }
 
 /**
@@ -577,7 +584,7 @@ Pass Compiler::prefix_pass(
     const std::string &instance_name,
     const std::map<std::string, std::string> &options
 ) {
-    return Pass(pass_manager->prefix_pass(type_name, instance_name, options));
+    return Pass(pass_manager->prefix_pass(type_name, instance_name, options), false);
 }
 
 /**
@@ -593,7 +600,7 @@ Pass Compiler::insert_pass_after(
     const std::string &instance_name,
     const std::map<std::string, std::string> &options
 ) {
-    return Pass(pass_manager->insert_pass_after(target, type_name, instance_name, options));
+    return Pass(pass_manager->insert_pass_after(target, type_name, instance_name, options), false);
 }
 
 /**
@@ -609,7 +616,7 @@ Pass Compiler::insert_pass_before(
     const std::string &instance_name,
     const std::map<std::string, std::string> &options
 ) {
-    return Pass(pass_manager->insert_pass_before(target, type_name, instance_name, options));
+    return Pass(pass_manager->insert_pass_before(target, type_name, instance_name, options), false);
 }
 
 /**
@@ -625,7 +632,7 @@ Pass Compiler::group_pass(
     const std::string &target,
     const std::string &sub_name
 ) {
-    return Pass(pass_manager->group_pass(target, sub_name));
+    return Pass(pass_manager->group_pass(target, sub_name), false);
 }
 
 /**
@@ -639,7 +646,7 @@ Pass Compiler::group_passes(
     const std::string &to,
     const std::string &group_name
 ) {
-    return Pass(pass_manager->group_passes(from, to, group_name));
+    return Pass(pass_manager->group_passes(from, to, group_name), false);
 }
 
 /**
@@ -664,7 +671,7 @@ void Compiler::flatten_subgroup(
  * separators to get nested sub-passes.
  */
 Pass Compiler::get_pass(const std::string &target) const {
-    return Pass(pass_manager->get_pass(target));
+    return Pass(pass_manager->get_pass(target), false);
 }
 
 /**
@@ -690,7 +697,7 @@ size_t Compiler::get_num_passes() const {
 std::vector<Pass> Compiler::get_passes() const {
     std::vector<Pass> retval;
     for (const auto &pass : pass_manager->get_passes()) {
-        retval.push_back(Pass(pass));
+        retval.push_back(Pass(pass, false));
     }
     return retval;
 }
@@ -702,7 +709,7 @@ std::vector<Pass> Compiler::get_passes() const {
 std::vector<Pass> Compiler::get_sub_passes_by_type(const std::string &target) const {
     std::vector<Pass> retval;
     for (const auto &pass : pass_manager->get_sub_passes_by_type(target)) {
-        retval.push_back(Pass(pass));
+        retval.push_back(Pass(pass, false));
     }
     return retval;
 }
@@ -1341,6 +1348,7 @@ Program::Program(
 {
     if (!qubit_count) qubit_count = platform.platform->qubit_count;
     program.emplace(name, platform.platform, qubit_count, creg_count, breg_count);
+    pass_manager = platform.pass_manager;
 }
 
 /**
@@ -1506,7 +1514,11 @@ void Program::compile() {
     if (program->kernels.empty()) {
         QL_FATAL("compiling a program with no kernels !");
     }
-    ql::pmgr::Manager::from_defaults(program->platform).compile(program);
+    if (pass_manager.has_value()) {
+        pass_manager->compile(program);
+    } else {
+        ql::pmgr::Manager::from_defaults(program->platform).compile(program);
+    }
 }
 
 /**

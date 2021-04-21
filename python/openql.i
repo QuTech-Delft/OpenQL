@@ -44,3 +44,7 @@ namespace std {
 
 // Include the header file with above prototypes
 %include "ql/api/api.h"
+
+namespace std {
+   %template(vectorp) vector<ql::api::Pass>;
+};

@@ -56,7 +56,8 @@ utils::Int VisualizeInteractionPass::run(
         program, {
             "INTERACTION_GRAPH",
             options["config"].as_str(),
-            options["waveform_mapping"].as_str()
+            options["waveform_mapping"].as_str(),
+            context.output_prefix
         }
     );
     return 0;

@@ -69,6 +69,7 @@ class cQasmReader;
  * Wrapper for a pass that belongs to some pass manager.
  */
 class Pass {
+private:
     friend class Compiler;
 
     /**
@@ -79,10 +80,21 @@ class Pass {
     /**
      * Constructor used internally to build a pass object that belongs to
      * a compiler.
+     *
+     * NOTE: the dummy boolean is because the SWIG wrapper otherwise generates
+     *  some inane ambiguity error with the copy/move constructor (even though
+     *  this is private and a different type).
      */
-    explicit Pass(const ql::pmgr::PassRef &pass);
+    explicit Pass(const ql::pmgr::PassRef &pass, bool dummy);
 
 public:
+
+    /**
+     * Default constructor, only exists because the SWIG wrapper breaks
+     * otherwise. Pass objects constructed this way cannot be used! You can only
+     * use Pass objects returned by Compiler.
+     */
+    Pass() = default;
 
     /**
      * Returns the full, desugared type name that this pass was constructed
@@ -378,19 +390,27 @@ private:
 public:
 
     /**
+     * User-given name for this compiler.
+     *
+     * NOTE: not actually used for anything. It's only here for consistency with
+     * the rest of the API objects.
+     */
+    std::string name;
+
+    /**
      * Creates an empty compiler, with no specified architecture.
      */
-    Compiler();
+    explicit Compiler(const std::string &name="");
 
     /**
      * Creates a compiler configuration from the given JSON file.
      */
-    explicit Compiler(const std::string &fname);
+    explicit Compiler(const std::string &name, const std::string &filename);
 
     /**
      * Creates a default compiler for the given platform.
      */
-    explicit Compiler(const Platform &platform);
+    explicit Compiler(const std::string &name, const Platform &platform);
 
     /**
      * Prints documentation for all available pass types, as well as the option

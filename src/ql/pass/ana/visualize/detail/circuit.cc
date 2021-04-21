@@ -1233,21 +1233,23 @@ Vec<QubitLines> generateQubitLines(const Vec<GateProperties> &gates,
 
         for (const GateProperties &gate : gatesPerQubit[qubitIndex]) {
             const EndPoints gateCycles {gate.cycle, gate.cycle + (gate.duration / circuitData.cycleDuration) - 1};
-            const Int codeword = gate.codewords[0];
-            try {
-                const GatePulses gatePulses = pulseVisualization.mapping.at(codeword).at(qubitIndex);
+            if (!gate.codewords.empty()) {
+                const Int codeword = gate.codewords[0];
+                try {
+                    const GatePulses gatePulses = pulseVisualization.mapping.at(codeword).at(qubitIndex);
 
-                if (!gatePulses.microwave.empty())
-                    microwaveLine.segments.push_back({PULSE, gateCycles, {gatePulses.microwave, pulseVisualization.sampleRateMicrowave}});
+                    if (!gatePulses.microwave.empty())
+                        microwaveLine.segments.push_back({PULSE, gateCycles, {gatePulses.microwave, pulseVisualization.sampleRateMicrowave}});
 
-                if (!gatePulses.flux.empty())
-                    fluxLine.segments.push_back({PULSE, gateCycles, {gatePulses.flux, pulseVisualization.sampleRateFlux}});
+                    if (!gatePulses.flux.empty())
+                        fluxLine.segments.push_back({PULSE, gateCycles, {gatePulses.flux, pulseVisualization.sampleRateFlux}});
 
-                if (!gatePulses.readout.empty())
-                    readoutLine.segments.push_back({PULSE, gateCycles, {gatePulses.readout, pulseVisualization.sampleRateReadout}});
-            } catch (const Exception &e) {
-                QL_WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
-                     "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex << "\n\texception: " << e.what());
+                    if (!gatePulses.readout.empty())
+                        readoutLine.segments.push_back({PULSE, gateCycles, {gatePulses.readout, pulseVisualization.sampleRateReadout}});
+                } catch (const Exception &e) {
+                    QL_WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
+                         "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex << "\n\texception: " << e.what());
+                }
             }
         }
 

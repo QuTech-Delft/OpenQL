@@ -56,7 +56,8 @@ utils::Int VisualizeMappingPass::run(
         program, {
             "MAPPING_GRAPH",
             options["config"].as_str(),
-            options["waveform_mapping"].as_str()
+            options["waveform_mapping"].as_str(),
+            context.output_prefix
         }
     );
     return 0;

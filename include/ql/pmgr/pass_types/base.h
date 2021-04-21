@@ -115,7 +115,7 @@ private:
      * Reference to the pass factory that was used to construct this pass,
      * allowing this pass to construct sub-passes.
      */
-    const utils::Ptr<const Factory> &pass_factory;
+    utils::Ptr<const Factory> pass_factory;
 
     /**
      * The full type name for this pass. This is the full name that was used

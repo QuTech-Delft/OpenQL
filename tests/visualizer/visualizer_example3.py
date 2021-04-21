@@ -13,20 +13,6 @@ ql.set_option('unique_output', 'yes')
 ql.set_option('write_qasm_files', 'no')
 ql.set_option('write_report_files', 'no')
 
-c = ql.Compiler("testCompiler")
-c.add_pass("Scheduler")
-c.add_pass("BackendCompiler")
-c.add_pass("Visualizer")
-
-c.set_pass_option("BackendCompiler", "eqasm_compiler_name", "cc_light_compiler")
-c.set_pass_option("ALL", "skip", "no")
-c.set_pass_option("ALL", "write_qasm_files", "no")
-c.set_pass_option("ALL", "write_report_files", "no")
-#c.set_pass_option("Visualizer", "visualizer_type", "INTERACTION_GRAPH")
-c.set_pass_option("Visualizer", "visualizer_type", "CIRCUIT")
-c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config_example3.json"))
-c.set_pass_option("Visualizer", "visualizer_waveform_mapping_path", os.path.join(curdir, "waveform_mapping.json"))
-
 platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'hardware_config_cc_light_visualizer2.json'))
 nqubits = 4
 p = ql.Program("testProgram1", platformCustomGates, nqubits, 0)
@@ -52,4 +38,25 @@ k.gate('measure', [1])
 k.gate('measure', [2])
 #k.gate('measure', [3])
 p.add_kernel(k)
-c.compile(p)
+
+#p.get_compiler().append_pass(
+    #'ana.visualize.Interaction',
+    #'visualize_interaction',
+    #{
+        #'output_prefix': output_dir + '/%N_interaction',
+        #'config': os.path.join(curdir, "visualizer_config_example3.json"),
+        #'waveform_mapping': os.path.join(curdir, "waveform_mapping.json")
+    #}
+#)
+
+p.get_compiler().append_pass(
+    'ana.visualize.Circuit',
+    'visualize_circuit',
+    {
+        'output_prefix': output_dir + '/%N_circuit',
+        'config': os.path.join(curdir, "visualizer_config_example3.json"),
+        'waveform_mapping': os.path.join(curdir, "waveform_mapping.json")
+    }
+)
+
+p.compile()
