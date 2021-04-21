@@ -46,7 +46,8 @@ p.get_compiler().insert_pass_before(
     'ana.visualize.Mapping',
     'before_mapping', {
         'config': os.path.join(curdir, "visualizer_config_example1.json"),
-        'output_prefix': output_dir + '/%N_before'
+        'output_prefix': output_dir + '/%N_before',
+        'interactive': 'yes'
     }
 )
 
@@ -55,7 +56,8 @@ p.get_compiler().insert_pass_after(
     'ana.visualize.Mapping',
     'after_mapping', {
         'config': os.path.join(curdir, "visualizer_config_example1.json"),
-        'output_prefix': output_dir + '/%N_after'
+        'output_prefix': output_dir + '/%N_after',
+        'interactive': 'yes'
     }
 )
 

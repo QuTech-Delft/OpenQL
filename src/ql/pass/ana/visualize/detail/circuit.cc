@@ -550,13 +550,15 @@ void visualizeCircuit(const ir::ProgramRef &program, const VisualizerConfigurati
     ImageOutput imageOutput = generateImage(program, configuration, minCycleWidths, 0);
 
     // Save the image if enabled.
-    if (imageOutput.circuitLayout.saveImage) {
+    if (imageOutput.circuitLayout.saveImage || !configuration.interactive) {
         imageOutput.image.save(configuration.output_prefix + ".bmp");
     }
 
-    // Display the image.
-    QL_DOUT("Displaying image...");
-    imageOutput.image.display("Quantum Circuit");
+    // Display the image if enabled.
+    if (configuration.interactive) {
+        QL_DOUT("Displaying image...");
+        imageOutput.image.display("Quantum Circuit (" + configuration.pass_name + ")");
+    }
 }
 
 ImageOutput generateImage(const ir::ProgramRef &program, const VisualizerConfiguration &configuration, const Vec<Int> &minCycleWidths, const utils::Int extendedImageHeight) {

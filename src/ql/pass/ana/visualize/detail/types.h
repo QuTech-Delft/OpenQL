@@ -25,7 +25,9 @@ struct VisualizerConfiguration {
     utils::Str visualizationType;
     utils::Str visualizerConfigPath;
     utils::Str waveformMappingPath;
+    utils::Bool interactive;
     utils::Str output_prefix;
+    utils::Str pass_name;
 };
 
 typedef std::array<utils::Byte, 3> Color;

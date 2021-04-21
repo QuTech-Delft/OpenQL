@@ -177,12 +177,14 @@ void visualizeMappingGraph(const ir::ProgramRef &program, const VisualizerConfig
     }
 
     // Save the image if enabled.
-    if (imageOutput.circuitLayout.saveImage) {
+    if (imageOutput.circuitLayout.saveImage || !configuration.interactive) {
         imageOutput.image.save(configuration.output_prefix + ".bmp");
     }
 
-    // Display the filled in image.
-    imageOutput.image.display("Mapping Graph");
+    // Display the image if enabled.
+    if (configuration.interactive) {
+        imageOutput.image.display("Mapping Graph (" + configuration.pass_name + ")");
+    }
 }
 
 void computeMappingPerCycle(const MappingGraphLayout &layout,

@@ -39,7 +39,8 @@ p.get_compiler().append_pass(
     {
         'output_prefix': output_dir + '/%N_circuit',
         'config': os.path.join(curdir, "visualizer_config_example4.json"),
-        'waveform_mapping': os.path.join(curdir, "waveform_mapping.json")
+        'waveform_mapping': os.path.join(curdir, "waveform_mapping.json"),
+        'interactive': 'yes'
     }
 )
 

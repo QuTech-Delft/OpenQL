@@ -11,7 +11,7 @@ ql.set_option('unique_output', 'yes')
 
 c = ql.Compiler("testCompiler")
 #c.append_pass("sch.Schedule", "scheduler", {"scheduler_heuristic": "asap"})
-c.append_pass("ana.visualize.Interaction", "visualizer", {"config": "visualizer_config_example1.json"})
+c.append_pass("ana.visualize.Interaction", "visualizer", {"config": "visualizer_config_example1.json", "interactive": "yes"})
 c.set_option("**.output_prefix", output_dir + "/%N")
 
 platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'hardware_config_cc_light_visualizer2.json'))

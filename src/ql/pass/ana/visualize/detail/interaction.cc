@@ -110,13 +110,15 @@ void visualizeInteractionGraph(const ir::ProgramRef &program, const VisualizerCo
         }
 
         // Save the image if enabled.
-        if (layout.saveImage) {
+        if (layout.saveImage || !configuration.interactive) {
             image.save("qubit_interaction_graph.bmp");
         }
 
-        // Display the image.
-        QL_DOUT("Displaying image...");
-        image.display("Qubit Interaction Graph");
+        // Display the image if enabled.
+        if (configuration.interactive) {
+            QL_DOUT("Displaying image...");
+            image.display("Qubit Interaction Graph (" + configuration.pass_name + ")");
+        }
     } else if (qubits.size() == 1) {
         // Draw the single qubit in the middle of the circle.
         //TODO
