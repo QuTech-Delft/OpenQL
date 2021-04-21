@@ -257,7 +257,16 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/settings.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/vcd.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/vq1asm.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/api.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/misc.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/pass.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/compiler.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/platform.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/creg.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/operation.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/unitary.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/kernel.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/program.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
 )
 
 # Generate a header file with configuration options that cannot be compiled
