@@ -288,6 +288,7 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('log_level', 'LOG_INFO')
         program.compile()
 
+    # FIXME: 'not' doesn't produce code, do we want it to?
     def test_cqasm_not(self):
         cqasm_config_fn = os.path.join(curdir, 'cqasm_config_cc.json')
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
