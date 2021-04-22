@@ -991,11 +991,9 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
         // verify signal dimensions
         UInt channelsPergroup = ret.si.ic.controlModeGroupSize;
         if (instructionSignalValue.size() != channelsPergroup) {
-#if 1   // FIXME: we're changing semantics of signals, and are getting some false alarms now
+            // FIXME: we're changing semantics of signals, and are getting some false alarms now
+//            QL_JSON_FATAL(
             QL_WOUT(
-#else
-            QL_JSON_FATAL(
-#endif
                 "signal dimension mismatch on instruction '" << iname
                 << "' : control mode '" << ret.si.ic.refControlMode
                 << "' requires " <<  channelsPergroup
