@@ -432,8 +432,12 @@ cc_resource_manager::cc_resource_manager(
         // FIXME: this adds semantics to "signal_type", whereas the names are otherwise fully up to the user
         if ("measure" == signal_type) {
             Map<UInt,UInt> map = qubit2instrument(instrument, meas_unit);
-#if 0   // FIXME: breaks CI, in utils/map.h
+#if 0   // FIXME: breaks CI, in utils/map.h. Works on CLion/Mac
             qubit2meas.insert(map.begin(), map.end());
+#else
+            for (auto &el : map) {
+                qubit2meas.insert(el);
+            }
 #endif
             meas_unit++;
         } else if ("flux" == signal_type) {
@@ -448,8 +452,12 @@ cc_resource_manager::cc_resource_manager(
                 "measurement" to a gate, but must really work with th signals.
             */
             Map<UInt,UInt> map = qubit2instrument(instrument, 0);
-#if 0   // FIXME: breaks CI, in utils/map.h
+#if 0   // FIXME: breaks CI, in utils/map.h. Works on CLion/Mac
             qubit2flux.insert(map.begin(), map.end());
+#else
+            for (auto &el : map) {
+                qubit2flux.insert(el);
+            }
 #endif
         }
     }
