@@ -37,7 +37,7 @@ c.set_pass_option("ALL", "write_qasm_files", "no")
 c.set_pass_option("ALL", "write_report_files", "no")
 c.set_pass_option("Visualizer", "visualizer_type", "MAPPING_GRAPH")
 c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config_example1.json"))
-# c.set_pass_option("Visualizer", "visualizer_waveform_mapping_path", os.path.join(curdir, "waveform_mapping.json"))
+c.set_pass_option("Visualizer", "visualizer_waveform_mapping_path", os.path.join(curdir, "waveform_mapping.json"))
 
 platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'test_s7.json'))
 nqubits = 7
@@ -45,10 +45,10 @@ p = ql.Program("testProgram1", platformCustomGates, nqubits, 0)
 k = ql.Kernel("aKernel1", platformCustomGates, nqubits, 0)
 
 k.gate("x", [2])
-k.gate("y", [3])
-k.gate("cnot", [2,3])
+k.gate("y", [4])
+k.gate("cnot", [2,4])
 k.gate("x", [2])
-k.gate("y", [3])
+k.gate("y", [4])
 
 p.add_kernel(k)
 c.compile(p)

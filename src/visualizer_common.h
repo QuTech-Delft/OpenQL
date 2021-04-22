@@ -17,6 +17,7 @@ namespace ql {
 
 utils::Vec<GateProperties> parseGates(const quantum_program* program);
 
+utils::Int calculateAmountOfCycles(const utils::Vec<GateProperties> &gates, const utils::Int cycleDuration);
 utils::Int calculateAmountOfBits(const utils::Vec<GateProperties> &gates, const utils::Vec<utils::Int> GateProperties::* operandType);
 
 utils::Int calculateAmountOfGateOperands(const GateProperties &gate);
@@ -29,6 +30,7 @@ utils::Bool isMeasurement(const GateProperties &gate);
 utils::Str generateFilePath(const utils::Str &filename, const utils::Str &extension);
 
 void printGates(const utils::Vec<GateProperties> &gates);
+void printGatesShort(const utils::Vec<GateProperties> &gates);
 
 } // namespace ql
 

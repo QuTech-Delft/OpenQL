@@ -347,7 +347,8 @@ VisualizerPass::VisualizerPass(const Str &name) : AbstractPass(name) {
 void VisualizerPass::runOnProgram(quantum_program *program) {
     QL_DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
     
-    ql::visualize(program, getPassOptions()["visualizer_type"].as_str(), {
+    ql::visualize(program, {
+        getPassOptions()["visualizer_type"].as_str(),
         getPassOptions()["visualizer_config_path"].as_str(),
         getPassOptions()["visualizer_waveform_mapping_path"].as_str()
     });
@@ -522,7 +523,9 @@ QisaCodeGenerationPass::QisaCodeGenerationPass(const Str &name) : AbstractPass(n
  * @param  Program object to be transformed into QISA output
  */
 void QisaCodeGenerationPass::runOnProgram(quantum_program *program) {
-    arch::cc_light_eqasm_compiler().qisa_code_generation(program, program->platform, getPassName());
+    if (options::get("generate_code") == "yes") {
+        arch::cc_light_eqasm_compiler().qisa_code_generation(program, program->platform, getPassName());
+    }
 }
 
 /**

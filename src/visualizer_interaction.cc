@@ -62,7 +62,7 @@ void visualizeInteractionGraph(const quantum_program* program, const VisualizerC
         const Int imageWidth = 2 * (layout.getBorderWidth() + interactionCircleRadius);
         const Int imageHeight = 2 * (layout.getBorderWidth() + interactionCircleRadius);
         Image image(imageWidth, imageHeight);
-        image.fill(255);
+        image.fill(white);
 
         // Draw the edges between interacting qubits.
         Vec<Pair<Int, Int>> drawnEdges;
@@ -285,17 +285,6 @@ Bool isEdgeAlreadyDrawn(const Vec<Pair<Int, Int>> &drawnEdges, const Int first, 
 
     return false;
 }
-
-// bool isEdgeAlreadyDrawn(const std::vector<std::pair<int, int>> &drawnEdges, const int first, const int second) {
-//     // Check if the edge already exists.
-//     for (const std::pair<int, int> &drawnEdge : drawnEdges) {
-//         if ((drawnEdge.first == first && drawnEdge.second == second) || (drawnEdge.first == second && drawnEdge.second == first)) {
-//             return true;
-//         }
-//     }
-
-//     return false;
-// }
 
 void printInteractionList(const Vec<Qubit> &qubits) {
     // Print the qubit interaction list.

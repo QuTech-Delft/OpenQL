@@ -27,38 +27,27 @@ void Grid::Init(const quantum_platform *p) {
     nq = platformp->qubit_number;
     QL_DOUT("... number of real qbits=" << nq);
 
-    Str formstr;
-    if (platformp->topology.count("form") <= 0) {
-        formstr = "xy";
-    } else {
-        formstr = platformp->topology["form"].get<Str>();
-    }
-    if (formstr == "xy") { form = gf_xy; }
-    if (formstr == "irregular") { form = gf_irregular; }
-
-    if (form == gf_irregular) {
-        // irregular can do without topology.x_size, topology.y_size, and topology.qubits
-        nx = 0;
-        ny = 0;
-    } else {
-        // gf_xy have an x/y space; coordinates are explicitly specified
-        nx = platformp->topology["x_size"];
-        ny = platformp->topology["y_size"];
-    }
-    QL_DOUT("... formstr=" << formstr << "; form=" << form << "; nx=" << nx << "; ny=" << ny);
-
-    InitCores();
-    InitXY();
-    InitNbs();
-    SortNbs();
-    ComputeDist();
+    InitForm();     // form: embedded in xy grid (gf_xy) or irregular (gf_irregular) (topology.form)
+    InitCores();    // ncores: default 1 (topology.ncores)
+    InitXY();       // x[qi],y[qi] when form==gf_xy, as read from topology.qubits
+    InitNbs();      // nbs[qi], read from topology.edges when connectivity is specified, otherwise, when full, computed
+    SortNbs();      // when form embedded in grid, sort clock-wise starting from 12:00, to know boundary of search space
+    ComputeDist();  // dist[qi][qj] by Floyd-Warshall, is maximum when not connected
     DPRINTGrid();
+}
+
+// whether qubit is a communication qubit of a core, i.e. can communicate with another core
+Bool Grid::IsCommQubit(UInt qi) const {
+    if (ncores == 1) return true;
+    QL_ASSERT(conn == gc_full);
+    UInt qci = qi%ncores;   // index of qubit local to core
+    return qci < ncommqpc;  // 0..ncommqpc-1 are comm qubits, ncommqpc..nq/ncores-1 are not comm qubits
 }
 
 // core index from qubit index
 // when multi-core assumes full and uniform core connectivity
 UInt Grid::CoreOf(UInt qi) const {
-    if (ncores == 1) return 0;
+    if (ncores == 1) return 1;
     QL_ASSERT(conn == gc_full);
     UInt nqpc = nq/ncores;
     return qi/nqpc;
@@ -79,9 +68,14 @@ UInt Grid::Distance(UInt from_realqi, UInt to_realqi) const {
 }
 
 // coredistance between two qubits
-// when multi-core assumes full and uniform core connectivity
+// the number of inter-core hops that are minimally required on any path between the two qubits
+//
+// Here we assume for multi-core full and uniform core connectivity.
+// When not full, have to compute it and store it in a CoreDistance matrix.
+// Two cores are neighbours when they have communication qubits that are only one hop apart.
 UInt Grid::CoreDistance(UInt from_realqi, UInt to_realqi) const {
     if (CoreOf(from_realqi) == CoreOf(to_realqi)) return 0;
+    QL_ASSERT(conn == gc_full);
     return 1;
 }
 
@@ -90,18 +84,20 @@ UInt Grid::CoreDistance(UInt from_realqi, UInt to_realqi) const {
 //
 // however, in multi-core with inter-core hops, an inter-core hop cannot execute a 2qgate
 // so when the minimum number of hops are all inter-core hops (so distance(from,to) == coredistance(from,to))
-// and no 2qgate has been placed yet, then at least one additional inter-core hop is needed for the 2qgate,
+// and no 2qgate has been placed yet, then at least one additional intra-core hop is needed for the 2qgate,
 // the number of hops required being at least distance+1;
+// but when there is only one comm qubit per core and that qubit is one of the operands of the 2qgate,
+// then one additional intra-core hop is not sufficient,
+// one additional one is needed to go/return to a non-comm qubit on the core;
+// note that in the latter case, the comm qubit is twice in the path; this must not be regarded as a failure!
 //
-// we assume below that a valid path exists with distance+1 hops;
-// this fails when not all qubits in a core support connections to all other cores;
-// see the check in InitNbs
+// we assume below that a valid path exists with distance+2 hops
 UInt Grid::MinHops(UInt from_realqi, UInt to_realqi) const {
     UInt d = Distance(from_realqi, to_realqi);
     UInt cd = CoreDistance(from_realqi, to_realqi);
     QL_ASSERT(cd <= d);
     if (cd == d) {
-        return d+1;
+        return d+2;
     } else {
         return d;
     }
@@ -131,7 +127,7 @@ void Grid::Normalize(UInt src, neighbors_t &nbl) const {
 
     const Real pi = 4 * std::atan(1);
     if (nbl.size() == 1) {
-        // DOUT("... size was 1; unchanged");
+        // QL_DOUT("... size was 1; unchanged");
         return;
     }
 
@@ -168,6 +164,7 @@ void Grid::Normalize(UInt src, neighbors_t &nbl) const {
 }
 
 // Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
+// when not connected, distance remains maximum value
 void Grid::ComputeDist() {
     // initialize all distances to maximum value, to neighbors to 1, to itself to 0
     dist.resize(nq); for (UInt i=0; i<nq; i++) dist[i].resize(nq, MAX_CYCLE);
@@ -246,15 +243,57 @@ void Grid::PrintGrid() const {
     }
 }
 
+// init grid form attributes
+void Grid::InitForm() {
+    Str formstr;
+    if (platformp->topology.count("form") <= 0) {
+        formstr = "xy";
+    } else {
+        formstr = platformp->topology["form"].get<Str>();
+    }
+    if (formstr == "xy") { form = gf_xy; }
+    if (formstr == "irregular") { form = gf_irregular; }
+
+    if (form == gf_irregular) {
+        // irregular can do without topology.x_size, topology.y_size, and topology.qubits
+        nx = 0;
+        ny = 0;
+    } else {
+        // gf_xy have an x/y space; coordinates are explicitly specified
+        nx = platformp->topology["x_size"];
+        ny = platformp->topology["y_size"];
+    }
+    QL_DOUT("... formstr=" << formstr << "; form=" << form << "; nx=" << nx << "; ny=" << ny);
+}
+
 // init multi-core attributes
 void Grid::InitCores() {
     if (platformp->topology.count("number_of_cores") <= 0) {
         ncores = 1;
-        QL_DOUT("Number of cores (topology.number_of_cores) not defined");
+        QL_DOUT("Number of cores (topology[\"number_of_cores\"]) not defined");
     } else {
         ncores = platformp->topology["number_of_cores"];
+        if (ncores <= 0) {
+            QL_FATAL("Number of cores (topology[\"number_of_cores\"]) is not a positive value: " << ncores);
+        }
     }
     QL_DOUT("Numer of cores= " << ncores);
+
+    // when not specified in single-core: == nq (i.e. all qubits)
+    // when not specified in multi-core: == nq/ncores (i.e. all qubits of a core)
+    if (platformp->topology.count("comm_qubits_per_core") <= 0) {
+        ncommqpc = nq/ncores;   // i.e. all are comm qubits
+        QL_DOUT("Number of comm_qubits per core (topology[\"comm_qubits_per_core\"]) not defined; assuming all are comm qubits.");
+    } else {
+        ncommqpc = platformp->topology["comm_qubits_per_core"];
+        if (ncommqpc <= 0) {
+            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is not a positive value: " << ncommqpc);
+        }
+        if (ncommqpc > nq/ncores) {
+            QL_FATAL("Number of communication qubits per core (topology[\"comm_qubits_per_core\"]) is larger than number of qubits per core: " << ncommqpc);
+        }
+    }
+    QL_DOUT("Numer of communication qubits per core= " << ncommqpc);
 }
 
 // init x, and y maps
@@ -343,6 +382,9 @@ void Grid::InitNbs() {
         for (UInt qs = 0; qs < nq; qs++) {
             for (UInt qd = 0; qd < nq; qd++) {
                 if (qs != qd) {
+                    if (IsInterCoreHop(qs,qd) && (!IsCommQubit(qs) || !IsCommQubit(qd)) ) {
+                        continue;
+                    }
                     QL_DOUT("connecting qubit[" << qs << "] to qubit[" << qd << "]");
                     nbs.set(qs).push_back(qd);
                 }
@@ -479,7 +521,7 @@ void Virt2Real::Swap(UInt r0, UInt r1) {
     QL_ASSERT(r0 != r1);
     UInt v0 = GetVirt(r0);
     UInt v1 = GetVirt(r1);
-    // DOUT("... swap between ("<< v0<<"<->"<<r0<<","<<v1<<"<->"<<r1<<") and ("<<v0<<"<->"<<r1<<","<<v1<<"<->"<<r0<<" )");
+    // QL_DOUT("... swap between ("<< v0<<"<->"<<r0<<","<<v1<<"<->"<<r1<<") and ("<<v0<<"<->"<<r1<<","<<v1<<"<->"<<r0<<" )");
     // DPRINT("... before swap");
     QL_ASSERT(v0 != v1);         // also holds when vi == UNDEFINED_QUBIT
 
@@ -562,7 +604,7 @@ void Virt2Real::DPRINTReal(const Str &s, UInt r0, UInt r1) const {
 }
 
 void Virt2Real::PrintReal(const Str &s, UInt r0, UInt r1) const {
-    // DOUT("v2r.PrintReal ...");
+    // QL_DOUT("v2r.PrintReal ...");
     std::cout << s << ":";
 //  std::cout << "... real2Virt(r<-v) " << s << ":";
 
@@ -578,7 +620,7 @@ void Virt2Real::DPRINT(const Str &s) const {
 }
 
 void Virt2Real::Print(const Str &s) const {
-    // DOUT("v2r.Print ...");
+    // QL_DOUT("v2r.Print ...");
     std::cout << s << ":";
 //  std::cout << "... virt2Real(r<-v) " << s << ":";
     for (UInt v = 0; v < nq; v++) {
@@ -747,17 +789,17 @@ UInt FreeCycle::StartCycle(gate *g) {
         UInt baseStartCycle = startCycle;
 
         while (startCycle < MAX_CYCLE) {
-            // DOUT("Startcycle for " << g->qasm() << ": available? at startCycle=" << startCycle);
+            // QL_DOUT("Startcycle for " << g->qasm() << ": available? at startCycle=" << startCycle);
             if (rm.available(startCycle, g, *platformp)) {
-                // DOUT(" ... [" << startCycle << "] resources available for " << g->qasm());
+                // QL_DOUT(" ... [" << startCycle << "] resources available for " << g->qasm());
                 break;
             } else {
-                // DOUT(" ... [" << startCycle << "] Busy resource for " << g->qasm());
+                // QL_DOUT(" ... [" << startCycle << "] Busy resource for " << g->qasm());
                 startCycle++;
             }
         }
         if (baseStartCycle != startCycle) {
-            // DOUT(" ... from [" << baseStartCycle << "] to [" << startCycle-1 << "] busy resource(s) for " << g->qasm());
+            // QL_DOUT(" ... from [" << baseStartCycle << "] to [" << startCycle-1 << "] busy resource(s) for " << g->qasm());
         }
     }
     QL_ASSERT (startCycle < MAX_CYCLE);
@@ -845,7 +887,7 @@ void Past::Print(const Str &s) const {
     std::cout << "... Past " << s << ":";
     v2r.Print("");
     fc.Print("");
-    // DOUT("... list of gates in past");
+    // QL_DOUT("... list of gates in past");
     for (auto &gp : lg) {
         QL_DOUT("[" << cycle.at(gp) << "] " << gp->qasm());
     }
@@ -857,7 +899,7 @@ void Past::Print(const Str &s) const {
 // all new gates, now in waitinglist, get such a cycle assigned below, increased gradually, until definitive
 void Past::Schedule() {
     // the copy includes the resource manager.
-    // DOUT("Schedule ...");
+    // QL_DOUT("Schedule ...");
 
     while (!waitinglg.empty()) {
         UInt      startCycle = MAX_CYCLE;
@@ -889,11 +931,11 @@ void Past::Schedule() {
         }
 
         // add this gate to the maps, scheduling the gate (doing the cycle assignment)
-        // DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
+        // QL_DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
         fc.Add(gp, startCycle);
         cycle.set(gp) = startCycle; // cycle[gp] is private to this past but gp->cycle is private to gp
         gp->cycle = startCycle; // so gp->cycle gets assigned for each alter' Past and finally definitively for mainPast
-        // DOUT("... set " << gp->qasm() << " at cycle " << startCycle);
+        // QL_DOUT("... set " << gp->qasm() << " at cycle " << startCycle);
 
         // insert gate gp in lg, the list of gates, in cycle[gp] order, and inside this order, as late as possible
         //
@@ -1022,7 +1064,7 @@ void Past::GenMove(circuit &circ, UInt &r0, UInt &r1) {
         QL_ASSERT(v2r.GetRs(r0) == rs_nostate || v2r.GetRs(r0) == rs_wasinited);
         // interchange r0 and r1, so that r1 (right-hand operand of move) will be the state-less one
         UInt  tmp = r1; r1 = r0; r0 = tmp;
-        // DOUT("... reversed operands for move to become move(q" << r0 << ",q" << r1 << ") ...");
+        // QL_DOUT("... reversed operands for move to become move(q" << r0 << ",q" << r1 << ") ...");
     }
     QL_ASSERT(v2r.GetRs(r0) == rs_hasstate);    // and r0 will be the one with state
     QL_ASSERT(v2r.GetRs(r1) != rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_wasinited)
@@ -1058,7 +1100,7 @@ void Past::GenMove(circuit &circ, UInt &r0, UInt &r1) {
 
     if (v2r.GetRs(r1) == rs_nostate) {
         // r1 is not in inited state, generate in initcirc the circuit to do so
-        // DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
+        // QL_DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
         circuit initcirc;
 
         created = new_gate(initcirc, "move_init", {r1});
@@ -1127,6 +1169,10 @@ void Past::AddSwap(UInt r0, UInt r1) {
         return;
     }
 
+    // store the virtual qubits corresponding to each real qubit
+    UInt v0 = v2r.GetVirt(r0);
+    UInt v1 = v2r.GetVirt(r1);
+
     circuit circ;   // current kernel copy, clear circuit
     Str mapusemovesopt = options::get("mapusemoves");
     if (mapusemovesopt != "no" && (v2r.GetRs(r0) != rs_hasstate || v2r.GetRs(r1) != rs_hasstate)) {
@@ -1187,8 +1233,14 @@ void Past::AddSwap(UInt r0, UInt r1) {
         }
     }
     nswapsadded++;                       // for reporting at the end
+
+    // add each gate in the resulting circuit
     for (auto &gp : circ) {
         Add(gp);
+        // each gate in circ is part of a swap or move, so add the parameters
+        //TODO: uint to int conversion
+        const swap_parameters swap_params {true, (Int) r0, (Int) r1, (Int) v1, (Int) v0};
+        gp->swap_params = swap_params;
     }
 
     v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
@@ -1301,6 +1353,13 @@ void Past::MakeReal(gate *gp, circuit &circ) {
         }
     }
     QL_DOUT("... MakeReal: new gate created for: " << real_gname << " or " << gname);
+
+    if (gp->swap_params.part_of_swap) {
+        QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");
+        for (gate *gate : circ) {
+            gate->swap_params = gp->swap_params;
+        }
+    }
 }
 
 // as mapper after-burner
@@ -1339,6 +1398,13 @@ void Past::MakePrimitive(gate *gp, circuit &circ) const {
         }
     }
     QL_DOUT("... MakePrimtive: new gate created for: " << prim_gname << " or " << gname);
+
+    if (gp->swap_params.part_of_swap) {
+        QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");
+        for (gate *gate : circ) {
+            gate->swap_params = gp->swap_params;
+        }
+    }
 }
 
 UInt Past::MaxFreeCycle() const {
@@ -1497,7 +1563,7 @@ void Alter::Add2Front(UInt q) {
 // this past can be a path-local one or the main past
 // after having added them, schedule the result into that past
 void Alter::AddSwaps(Past &past, const Str &mapselectswapsopt) const {
-    // DOUT("Addswaps " << mapselectswapsopt);
+    // QL_DOUT("Addswaps " << mapselectswapsopt);
     if (mapselectswapsopt == "one" || mapselectswapsopt == "all") {
         UInt  numberadded = 0;
         UInt  maxnumbertoadd = ("one"==mapselectswapsopt ? 1 : MAX_CYCLE);
@@ -1552,11 +1618,11 @@ void Alter::AddSwaps(Past &past, const Str &mapselectswapsopt) const {
 // compute the total extension of all pasts relative to the base past
 // and store this extension in the alternative's score for later use
 void Alter::Extend(const Past &currPast, const Past &basePast) {
-    // DOUT("... clone past, add swaps, compute overall score and keep it all in current alternative");
+    // QL_DOUT("... clone past, add swaps, compute overall score and keep it all in current alternative");
     past = currPast;   // explicitly clone currPast to an alternative-local copy of it, Alter.past
-    // DOUT("... adding swaps to alternative-local past ...");
+    // QL_DOUT("... adding swaps to alternative-local past ...");
     AddSwaps(past, "all");
-    // DOUT("... done adding/scheduling swaps to alternative-local past");
+    // QL_DOUT("... done adding/scheduling swaps to alternative-local past");
 
     auto mapperopt = options::get("mapper");
     if (mapperopt == "maxfidelity") {
@@ -1581,20 +1647,20 @@ void Alter::Extend(const Past &currPast, const Past &basePast) {
 // index in total:      0           1           2           length-3        length-2        length-1
 // qubit:               2   ->      5   ->      7   ->      3       ->      1       CZ      4
 void Alter::Split(const Grid &grid, List<Alter> &resla) const {
-    // DOUT("Split ...");
+    // QL_DOUT("Split ...");
 
     UInt length = total.size();
     QL_ASSERT (length >= 2);   // distance >= 1 so path at least: source -> target
     for (UInt rightopi = length - 1; rightopi >= 1; rightopi--) {
         UInt leftopi = rightopi - 1;
         QL_ASSERT (leftopi >= 0);
-        // DOUT("... leftopi=" << leftopi);
+        // QL_DOUT("... leftopi=" << leftopi);
         // leftopi is the index in total that holds the qubit that becomes the left operand of the gate
         // rightopi is the index in total that holds the qubit that becomes the right operand of the gate
         // rightopi == leftopi + 1
         if (grid.IsInterCoreHop(total[leftopi], total[rightopi])) {
             // an inter-core hop cannot execute a two-qubit gate, so is not a valid alternative
-            // DOUT("... skip inter-core hop from qubit=" << total[leftopi] << " to qubit=" << total[rightopi]);
+            // QL_DOUT("... skip inter-core hop from qubit=" << total[leftopi] << " to qubit=" << total[rightopi]);
             continue;
         }
 
@@ -1608,31 +1674,31 @@ void Alter::Split(const Grid &grid, List<Alter> &resla) const {
         UInt fromi, toi;
 
         na.fromSource.resize(leftopi+1);
-        // DOUT("... fromSource size=" << na.fromSource.size());
+        // QL_DOUT("... fromSource size=" << na.fromSource.size());
         for (fromi = 0, toi = 0; fromi <= leftopi; fromi++, toi++) {
-            // DOUT("... fromSource: fromi=" << fromi << " toi=" << toi);
+            // QL_DOUT("... fromSource: fromi=" << fromi << " toi=" << toi);
             na.fromSource[toi] = na.total[fromi];
         }
 
         na.fromTarget.resize(length-leftopi-1);
-        // DOUT("... fromTarget size=" << na.fromTarget.size());
+        // QL_DOUT("... fromTarget size=" << na.fromTarget.size());
         for (fromi = length-1, toi = 0; fromi > leftopi; fromi--, toi++) {
-            // DOUT("... fromTarget: fromi=" << fromi << " toi=" << toi);
+            // QL_DOUT("... fromTarget: fromi=" << fromi << " toi=" << toi);
             na.fromTarget[toi] = na.total[fromi];
         }
 
         // na.DPRINT("... copy of alter after split");
         resla.push_back(na);
-        // DOUT("... added to result list");
+        // QL_DOUT("... added to result list");
         // DPRINT("... current alter after split");
     }
 }
 
 // just program wide initialization
 void Future::Init(const quantum_platform *p) {
-    // DOUT("Future::Init ...");
+    // QL_DOUT("Future::Init ...");
     platformp = p;
-    // DOUT("Future::Init [DONE]");
+    // QL_DOUT("Future::Init [DONE]");
 }
 
 // Set/switch input to the provided circuit
@@ -1846,11 +1912,11 @@ public:
 
     // kernel-once initialization
     void Init(Grid *g, const quantum_platform *p) {
-        // DOUT("InitialPlace Init ...");
+        // QL_DOUT("InitialPlace Init ...");
         platformp = p;
         nlocs = p->qubit_number;
         nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
-        // DOUT("... number of real qubits (locations): " << nlocs);
+        // QL_DOUT("... number of real qubits (locations): " << nlocs);
         gridp = g;
         QL_DOUT("Init: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
     }
@@ -1983,31 +2049,31 @@ public:
         //      w[i][k] represents x[i][k] * sum j: sum l: refcount[i][j] * distance(k,l) * x[j][l]
         //       i.e. if facility i not in location k then 0
         //       else for all facilities j in its location l sum refcount[i][j] * distance(k,l)
-        // DOUT("... allocate x column variable");
+        // QL_DOUT("... allocate x column variable");
         Vec<Vec<Mip::Col>> x;
         x.resize(nfac); for (UInt i=0; i<nfac; i++) x[i].resize(nlocs);
-        // DOUT("... allocate w column variable");
+        // QL_DOUT("... allocate w column variable");
         Vec<Vec<Mip::Col>> w;
         w.resize(nfac); for (UInt i=0; i<nfac; i++) w[i].resize(nlocs);
-        // DOUT("... add/initialize x and w column variables with trivial constraints and type");
+        // QL_DOUT("... add/initialize x and w column variables with trivial constraints and type");
         for (UInt i = 0; i < nfac; i++) {
             for (UInt k = 0; k < nlocs; k++) {
                 x[i][k] = mip.addCol();
                 mip.colLowerBound(x[i][k], 0);          // 0 <= x[i][k]
                 mip.colUpperBound(x[i][k], 1);          //      x[i][k] <= 1
                 mip.colType(x[i][k], Mip::INTEGER);     // Int
-                // DOUT("x[" << i << "][" << k << "] INTEGER >= 0 and <= 1");
+                // QL_DOUT("x[" << i << "][" << k << "] INTEGER >= 0 and <= 1");
 
                 w[i][k] = mip.addCol();
                 mip.colLowerBound(w[i][k], 0);          // 0 <= w[i][k]
                 mip.colType(w[i][k], Mip::REAL);        // real
-                // DOUT("w[" << i << "][" << k << "] REAL >= 0");
+                // QL_DOUT("w[" << i << "][" << k << "] REAL >= 0");
             }
         }
 
         // constraints (rows)
         //  forall i: ( sum k: x[i][k] == 1 )
-        // DOUT("... add/initialize sum to 1 constraint rows");
+        // QL_DOUT("... add/initialize sum to 1 constraint rows");
         for (UInt i = 0; i < nfac; i++) {
             Mip::Expr   sum;
             Str s{};
@@ -2027,7 +2093,7 @@ public:
             }
             mip.addRow(sum == 1);
             s += " == 1";
-            // DOUT(s);
+            // QL_DOUT(s);
         }
 
         // constraints (rows)
@@ -2048,13 +2114,13 @@ public:
             }
             mip.addRow(sum <= 1);
             s += " <= 1";
-            // DOUT(s);
+            // QL_DOUT(s);
         }
 
         // constraints (rows)
         //  forall i, k: costmax[i][k] * x[i][k]
         //          + sum j sum l refcount[i][j]*distance[k][l]*x[j][l] - w[i][k] <= costmax[i][k]
-        // DOUT("... add/initialize nfac x nlocs constraint rows based on nfac x nlocs column combinations");
+        // QL_DOUT("... add/initialize nfac x nlocs constraint rows based on nfac x nlocs column combinations");
         for (UInt i = 0; i < nfac; i++) {
             for (UInt k = 0; k < nlocs; k++) {
                 Mip::Expr   left = costmax[i][k] * x[i][k];
@@ -2086,13 +2152,13 @@ public:
                 lefts += "]";
                 Mip::Expr   right = costmax[i][k];
                 mip.addRow(left <= right);
-                // DOUT(lefts << " <= " << costmax[i][k]);
+                // QL_DOUT(lefts << " <= " << costmax[i][k]);
             }
         }
 
         // objective
         Mip::Expr   objective;
-        // DOUT("... add/initialize objective");
+        // QL_DOUT("... add/initialize objective");
         Str objs{};
         Bool started = false;
         mip.min();
@@ -2112,7 +2178,7 @@ public:
             }
         }
         mip.obj(objective);
-        // DOUT("MINIMIZE " << objs);
+        // QL_DOUT("MINIMIZE " << objs);
 
         QL_DOUT("... v2r before solving, nvq=" << nvq);
         for (UInt v = 0; v < nvq; v++) {
@@ -2144,7 +2210,7 @@ public:
         iptimetaken = time_span.count();
         QL_DOUT("..5 nvq=" << nvq);
 
-        // DOUT("... determine result of solving");
+        // QL_DOUT("... determine result of solving");
         Mip::ProblemType pt = mip.type();
         QL_DOUT("..6 nvq=" << nvq);
         if (s != Mip::SOLVED || pt != Mip::OPTIMAL) {
@@ -2338,7 +2404,7 @@ public:
 void Mapper::GenShortestPaths(gate *gp, UInt src, UInt tgt, UInt budget, List<Alter> &resla, whichpaths_t which) {
     List<Alter> genla;    // list that will get the result of a recursive Gen call
 
-    // DOUT("GenShortestPaths: " << "src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << which);
+    QL_DOUT("GenShortestPaths: src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << which);
     QL_ASSERT(resla.empty());
 
     if (src == tgt) {
@@ -2351,14 +2417,15 @@ void Mapper::GenShortestPaths(gate *gp, UInt src, UInt tgt, UInt budget, List<Al
         a.targetgp = gp;
         a.Add2Front(src);
         resla.push_back(a);
-        // a.DPRINT("... empty path after adding to result list");
-        // Alter::DPRINT("... result list after adding empty path", resla);
-        // DOUT("... will return now");
+        a.DPRINT("... empty path after adding to result list");
+        Alter::DPRINT("... result list after adding empty path", resla);
+        QL_DOUT("... will return now");
         return;
     }
 
     // start looking around at neighbors for serious paths
     UInt d = grid.Distance(src, tgt);
+    QL_DOUT("GenShortestPaths: distance(src=" << src << ", tgt=" << tgt << ") = " << d);
     QL_ASSERT(d >= 1);
 
     // reduce neighbors nbs to those n continuing a path within budget
@@ -2367,6 +2434,12 @@ void Mapper::GenShortestPaths(gate *gp, UInt src, UInt tgt, UInt budget, List<Al
     // when budget==d, this defaults to distance(n,tgt) <= d-1
     auto nbl = grid.nbs.get(src);
     nbl.remove_if([this,budget,tgt](const UInt& n) { return grid.Distance(n,tgt) >= budget; });
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
+        QL_DOUT("GenShortestPaths: ... after reducing to steps within budget, nbl: ");
+        for (auto dn : nbl) {
+            QL_DOUT("..." << dn << " ");
+        }
+    }
 
     // rotate neighbor list nbl such that largest difference between angles of adjacent elements is beyond back()
     // this makes only sense when there is an underlying xy grid; when not, which can only be wp_all_shortest
@@ -2380,8 +2453,12 @@ void Mapper::GenShortestPaths(gate *gp, UInt src, UInt tgt, UInt budget, List<Al
         nbl.remove_if( [nbl](const UInt& n) { return n != nbl.front() && n != nbl.back(); } );
     }
 
-    // std::cout << "... before iterating, nbl: ";
-    // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
+        QL_DOUT("GenShortestPaths: ... after normalizing, before iterating, nbl: ");
+        for (auto dn : nbl) {
+            QL_DOUT("..." << dn << " ");
+        }
+    }
 
     // for all resulting neighbors, find all continuations of a shortest path
     for (auto &n : nbl) {
@@ -2402,10 +2479,10 @@ void Mapper::GenShortestPaths(gate *gp, UInt src, UInt tgt, UInt budget, List<Al
 
     // add src to front of all to-be-returned paths from src's neighbors to tgt
     for (auto &a : resla) {
-        // DOUT("... GenShortestPaths, about to add src=" << src << "in front of path");
+        QL_DOUT("... GenShortestPaths, about to add src=" << src << " in front of path");
         a.Add2Front(src);
     }
-    // DOUT("... GenShortestPaths: returning from call of:" << "src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << which);
+    QL_DOUT("... GenShortestPaths: returning from call of: " << "src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << which);
 }
 
 // Generate shortest paths in the grid for making gate gp NN, from qubit src to qubit tgt, with an alternative for each one
@@ -2431,7 +2508,7 @@ void Mapper::GenShortestPaths(gate *gp, UInt src, UInt tgt, List<Alter> &resla) 
         QL_FATAL("Unknown value of mapppathselect option " << mappathselectopt);
     }
 
-    // DOUT("about to split the paths");
+    // QL_DOUT("about to split the paths");
     for (auto &a : directla) {
         a.Split(grid, resla);
     }
@@ -2445,8 +2522,7 @@ void Mapper::GenAltersGate(gate *gp, List<Alter> &la, Past &past) {
     QL_ASSERT (q.size() == 2);
     UInt  src = past.MapQubit(q[0]);  // interpret virtual operands in past's current map
     UInt  tgt = past.MapQubit(q[1]);
-    UInt d = grid.MinHops(src, tgt);     // and find MinHops between real counterparts
-    QL_DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at MinHops=" << d );
+    QL_DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at MinHops=" << grid.MinHops(src, tgt));
     past.DFcPrint();
 
     GenShortestPaths(gp, src, tgt, la);// find shortest paths from src to tgt, and split these
@@ -2461,16 +2537,16 @@ void Mapper::GenAlters(List<gate*> lg, List<Alter> &la, Past &past) {
     Str maplookaheadopt = options::get("maplookahead");
     if (maplookaheadopt == "all") {
         // create alternatives for each gate in lg
-        // DOUT("GenAlters, " << lg.size() << " 2q gates; create an alternative for each");
+        QL_DOUT("GenAlters, " << lg.size() << " 2q gates; create an alternative for each");
         for (auto gp : lg) {
             // gen alternatives for gp and add these to la
-            // DOUT("GenAlters: create alternatives for: " << gp->qasm());
+            QL_DOUT("GenAlters: create alternatives for: " << gp->qasm());
             GenAltersGate(gp, la, past);  // gen all possible variations to make gp NN, in current v2r mapping ("past")
         }
     } else {
         // only take the first gate in avlist, the most critical one, and generate alternatives for it
         gate*  gp = lg.front();
-        // DOUT("GenAlters, " << lg.size() << " 2q gates; take first: " << gp->qasm());
+        QL_DOUT("GenAlters, " << lg.size() << " 2q gates; take first: " << gp->qasm());
         GenAltersGate(gp, la, past);  // gen all possible variations to make gp NN, in current v2r mapping ("past")
     }
 }
@@ -2479,7 +2555,7 @@ void Mapper::GenAlters(List<gate*> lg, List<Alter> &la, Past &past) {
 // that is unique to the microsecond
 void Mapper::RandomInit() {
     auto ts = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    // DOUT("Seeding random generator with " << ts );
+    // QL_DOUT("Seeding random generator with " << ts );
     gen.seed(ts);
 }
 
@@ -2502,7 +2578,7 @@ Alter Mapper::ChooseAlter(List<Alter> &la, Future &future) {
         QL_ASSERT(gp != NULL);
         for (auto &a : la) {
             if (a.targetgp == gp) {
-                // DOUT(" ... took first alternative with most critical target gate");
+                // QL_DOUT(" ... took first alternative with most critical target gate");
                 return a;
             }
         }
@@ -2521,17 +2597,17 @@ Alter Mapper::ChooseAlter(List<Alter> &la, Future &future) {
             }
             i++;
         }
-        // DOUT(" ... took random draw " << choice << " from 0.." << (la.size()-1));
+        // QL_DOUT(" ... took random draw " << choice << " from 0.." << (la.size()-1));
         return res;
     }
 
     if (maptiebreakopt == "last") {
-        // DOUT(" ... took last " << " from 0.." << (la.size()-1));
+        // QL_DOUT(" ... took last " << " from 0.." << (la.size()-1));
         return la.back();
     }
 
     if (maptiebreakopt == "first") {
-        // DOUT(" ... took first " << " from 0.." << (la.size()-1));
+        // QL_DOUT(" ... took first " << " from 0.." << (la.size()-1));
         return la.front();
     }
 
@@ -2569,11 +2645,11 @@ void Mapper::CommitAlter(Alter &resa, Future &future, Past &past) {
     auto &q = resgp->operands;
     if (grid.MinHops(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1) {
         // resgp is NN: so done with this 2q gate
-        // DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
+        // QL_DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
         MapRoutedGate(resgp, past);     // the 2q target gate is NN now and thus can be mapped
         future.DoneGate(resgp);         // and then taken out of future
     } else {
-        // DOUT("... CommitAlter, target 2q is not NN yet, keep it: " << resgp->qasm());
+        // QL_DOUT("... CommitAlter, target 2q is not NN yet, keep it: " << resgp->qasm());
     }
 }
 
@@ -2705,7 +2781,7 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
         Alter::DPRINT("... SelectAlter base (equally good/best) alternatives:", la);
         resa = ChooseAlter(la, future);
         resa.DPRINT("... the selected Alter is");
-        // DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
+        // QL_DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
         return;
     }
     QL_ASSERT(mapperopt == "minextend" || mapperopt == "minextendrc" || mapperopt == "maxfidelity");
@@ -2749,7 +2825,7 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
             gla = la;
         }
     }
-    // DOUT("SelectAlter mapselectmaxwidth=" << mapselectmaxwidthopt << " level=" << level << " reduced la to gla");
+    // QL_DOUT("SelectAlter mapselectmaxwidth=" << mapselectmaxwidthopt << " level=" << level << " reduced la to gla");
     Alter::DPRINT("... SelectAlter good alternatives before recursion:", gla);
 
     // Prepare for recursion;
@@ -2766,7 +2842,7 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
         Alter::DPRINT("... SelectAlter reduced to best alternatives to choose result from:", bla);
         resa = ChooseAlter(bla, future);
         resa.DPRINT("... the selected Alter (STOPPING RECURSION) is");
-        // DOUT("SelectAlter DONE level=" << level << " from " << bla.size() << " best alternatives");
+        // QL_DOUT("SelectAlter DONE level=" << level << " from " << bla.size() << " best alternatives");
         return;
     }
 
@@ -2789,7 +2865,7 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
     // so indeed with only one alternative we may still go into recursion below.
     // This means that recursion always goes to maxlevel or end-of-circuit.
     // This anomaly may need correction.
-    // DOUT("... SelectAlter level=" << level << " entering recursion with " << gla.size() << " good alternatives");
+    // QL_DOUT("... SelectAlter level=" << level << " entering recursion with " << gla.size() << " good alternatives");
     for (auto &a : gla) {
         a.DPRINT("... ... considering alternative:");
         Future future_copy = future;            // copy!
@@ -2814,17 +2890,17 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
         havegates = MapMappableGates(future_copy, past_copy, lg, alsoNN2q); // map all easy gates; remainder returned in lg
 
         if (havegates) {
-            // DOUT("... ... SelectAlter level=" << level << ", committed + mapped easy gates, now facing " << lg.size() << " 2q gates to evaluate next");
+            QL_DOUT("... ... SelectAlter level=" << level << ", committed + mapped easy gates, now facing " << lg.size() << " 2q gates to evaluate next");
             List<Alter> la;                // list that will hold all variations, as returned by GenAlters
             GenAlters(lg, la, past_copy);       // gen all possible variations to make gates in lg NN, in current past.v2r mapping
-            // DOUT("... ... SelectAlter level=" << level << ", generated for these 2q gates " << la.size() << " alternatives; RECURSE ... ");
+            QL_DOUT("... ... SelectAlter level=" << level << ", generated for these 2q gates " << la.size() << " alternatives; RECURSE ... ");
             Alter resa;                         // result alternative selected and returned by next SelectAlter call
             SelectAlter(la, resa, future_copy, past_copy, basePast, level+1); // recurse, best in resa ...
             resa.DPRINT("... ... SelectAlter, generated for these 2q gates ... ; RECURSE DONE; resulting alternative ");
             a.score = resa.score;               // extension of deep recursion is treated as extension at current level,
             // by this an alternative started bad may be compensated by deeper alts
         } else {
-            // DOUT("... ... SelectAlter level=" << level << ", no gates to evaluate next; RECURSION BOTTOM");
+            QL_DOUT("... ... SelectAlter level=" << level << ", no gates to evaluate next; RECURSION BOTTOM");
             auto mapperopt = options::get("mapper");
             if (mapperopt == "maxfidelity") {
                 QL_FATAL("Mapper option maxfidelity has been disabled");
@@ -2847,7 +2923,7 @@ void Mapper::SelectAlter(List<Alter> &la, Alter &resa, Future &future, Past &pas
     Alter::DPRINT("... SelectAlter equally best alternatives on return of RECURSION:", bla);
     resa = ChooseAlter(bla, future);
     resa.DPRINT("... the selected Alter is");
-    // DOUT("... SelectAlter level=" << level << " selecting from " << bla.size() << " equally good alternatives above DONE");
+    // QL_DOUT("... SelectAlter level=" << level << " selecting from " << bla.size() << " equally good alternatives above DONE");
     QL_DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
 }
 
@@ -2999,19 +3075,19 @@ void Mapper::Map(quantum_kernel& kernel) {
 //
 // initialization for a particular kernel is separate (in Map entry)
 void Mapper::Init(const quantum_platform *p) {
-    // DOUT("Mapping initialization ...");
-    // DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
+    // QL_DOUT("Mapping initialization ...");
+    // QL_DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
     platformp = p;
     nq = p->qubit_number;
     // nc = p->creg_number;  // nc should come from platform, but doesn't; is taken from kernel in Map
     // nb = p->breg_number;  // nb should come from platform, but doesn't; is taken from kernel in Map
     RandomInit();
-    // DOUT("... platform/real number of qubits=" << nq << ");
+    // QL_DOUT("... platform/real number of qubits=" << nq << ");
     cycle_time = p->cycle_time;
 
     grid.Init(platformp);
 
-    // DOUT("Mapping initialization [DONE]");
+    // QL_DOUT("Mapping initialization [DONE]");
 }
 
 } // namespace mapper

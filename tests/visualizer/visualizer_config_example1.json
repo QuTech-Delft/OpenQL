@@ -1,5 +1,22 @@
 {
-    "saveImage": false,
+    "saveImage": true,
+    "backgroundColor": [179, 235, 255],
+    "mappingGraph":
+    {
+        "initDefaultVirtuals": false,
+        "showVirtualColors": true,
+        "showRealIndices": true,
+        "useTopology": true,
+        "qubitRadius": 15,
+        "qubitSpacing": 7,
+        "fontHeightReal": 13,
+        "fontHeightVirtual": 13,
+        "textColorReal": [0, 0, 255],
+        "textColorVirtual": [255, 0, 0],
+        "realIndexSpacing": 1,
+        "qubitFillColor": [255, 255, 255],
+        "qubitOutlineColor": [0, 0, 0]
+    },
     "interactionGraph":
     {
         "outputDotFile": true,
@@ -129,6 +146,20 @@
                     }
                 ]
             },
+            "y": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "y",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [70, 210, 230],
+                        "outlineColor": [70, 210, 230]
+                    }
+                ]
+            },
             "h": {
                 "connectionColor": [0, 0, 0],
                 "nodes": [
@@ -143,6 +174,20 @@
                     }
                 ]
             },
+            "y90": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "y90",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [70, 210, 230],
+                        "outlineColor": [70, 210, 230]
+                    }
+                ]
+            },
             "ry90": {
                 "connectionColor": [0, 0, 0],
                 "nodes": [
@@ -150,6 +195,20 @@
                         "type": "GATE",
                         "radius": 13,
                         "displayName": "ry90",
+                        "fontHeight": 13,
+                        "fontColor": [255, 255, 255],
+                        "backgroundColor": [70, 210, 230],
+                        "outlineColor": [70, 210, 230]
+                    }
+                ]
+            },
+            "ym90": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                    {
+                        "type": "GATE",
+                        "radius": 13,
+                        "displayName": "ym90",
                         "fontHeight": 13,
                         "fontColor": [255, 255, 255],
                         "backgroundColor": [70, 210, 230],

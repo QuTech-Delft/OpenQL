@@ -57,6 +57,7 @@ int main(int argc, char ** argv)
     ql::options::set("write_report_files", "yes");
     // ql::options::set("print_dot_graphs", "yes");
     ql::options::set("use_default_gates", "no");
+    ql::options::set("generate_code", "no");
 
     ql::options::set("clifford_prescheduler", "no");
     ql::options::set("clifford_postscheduler", "no");

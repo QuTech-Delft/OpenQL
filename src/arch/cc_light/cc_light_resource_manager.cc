@@ -15,7 +15,7 @@ UInt ccl_get_operation_duration(gate *ins, const quantum_platform &platform) {
     return ceil( static_cast<Real>(ins->duration) / platform.cycle_time);
 }
 
-// operation type is "mw" (for microwave), "flux", or "readout"
+// operation type is "mw" (for microwave), "flux", "readout", or "extern" (used for inter-core)
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
 Str ccl_get_operation_type(gate *ins, const quantum_platform &platform) {
     Str operation_type("cc_light_type");
@@ -42,7 +42,7 @@ ccl_qubit_resource_t::ccl_qubit_resource_t(
 ) :
     resource_t("qubits", dir)
 {
-    // DOUT("... creating " << name << " resource");
+    // QL_DOUT("... creating " << name << " resource");
     count = platform.resources[name]["count"];
     state.resize(count);
     for (UInt q = 0; q < count; q++) {
@@ -107,7 +107,7 @@ ccl_qwg_resource_t::ccl_qwg_resource_t(
 ) :
     resource_t("qwgs", dir)
 {
-    // DOUT("... creating " << name << " resource");
+    // QL_DOUT("... creating " << name << " resource");
     count = platform.resources[name]["count"];
     fromcycle.resize(count);
     tocycle.resize(count);
@@ -215,7 +215,7 @@ ccl_meas_resource_t::ccl_meas_resource_t(
 ) :
     resource_t("meas_units", dir)
 {
-    // DOUT("... creating " << name << " resource");
+    // QL_DOUT("... creating " << name << " resource");
     count = platform.resources[name]["count"];
     fromcycle.resize(count);
     tocycle.resize(count);
@@ -306,7 +306,7 @@ ccl_edge_resource_t::ccl_edge_resource_t(
 ) :
     resource_t("edges", dir)
 {
-    // DOUT("... creating " << name << " resource");
+    // QL_DOUT("... creating " << name << " resource");
     count = platform.resources[name]["count"];
     state.resize(count);
 
@@ -314,6 +314,9 @@ ccl_edge_resource_t::ccl_edge_resource_t(
         state[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
     }
 
+    if (platform.topology.count("edges") <= 0) {
+        QL_FATAL("topology[\"edges\"] not defined in configuration file");
+    }
     for (auto &anedge : platform.topology["edges"]) {
         UInt s = anedge["src"];
         UInt d = anedge["dst"];
@@ -329,6 +332,9 @@ ccl_edge_resource_t::ccl_edge_resource_t(
         }
     }
 
+    if (platform.resources[name].count("connection_map") <= 0) {
+        QL_FATAL("resources[[\"edges\"][\"connection_map\"] not defined in configuration file");
+    }
     auto &constraints = platform.resources[name]["connection_map"];
     for (auto it = constraints.cbegin(); it != constraints.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() << "\n");
@@ -444,7 +450,7 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
 ) :
     resource_t("detuned_qubits", dir)
 {
-    // DOUT("... creating " << name << " resource");
+    // QL_DOUT("... creating " << name << " resource");
     count = platform.resources[name]["count"];
     fromcycle.resize(count);
     tocycle.resize(count);
@@ -458,6 +464,9 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
     }
 
     // initialize qubitpair2edge map from json description; this is a constant map
+    if (platform.topology.count("edges") <= 0) {
+        QL_FATAL("topology[\"edges\"] not defined in configuration file");
+    }
     for (auto &anedge : platform.topology["edges"]) {
         UInt s = anedge["src"];
         UInt d = anedge["dst"];
@@ -474,6 +483,9 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
     }
 
     // initialize edge_detunes_qubits map from json description; this is a constant map
+    if (platform.resources[name].count("connection_map") <= 0) {
+        QL_FATAL("resources[[\"detuned_qubits\"][\"connection_map\"] not defined in configuration file");
+    }
     auto &constraints = platform.resources[name]["connection_map"];
     for (auto it = constraints.cbegin(); it != constraints.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() << "\n");
@@ -657,6 +669,176 @@ void ccl_detuned_qubits_resource_t::reserve(
     }
 }
 
+ccl_channel_resource_t::ccl_channel_resource_t(
+    const quantum_platform &platform,
+    scheduling_direction_t dir
+) :
+    resource_t("channels", dir)
+{
+    QL_DOUT("... creating " << name << " resource");
+
+    // ncores = topology.number_of_cores: total number of cores
+    if (platform.topology.count("number_of_cores") <= 0) {
+        ncores = 1;
+        QL_DOUT("Number of cores (topology[\"number_of_cores\"] not defined; assuming: " << ncores);
+    } else {
+        ncores = platform.topology["number_of_cores"];
+        if (ncores <= 0) {
+            QL_FATAL("Number of cores (topology[\"number_of_cores\"]) is not a positive value: " << ncores);
+        }
+    }
+    QL_DOUT("Number of cores = " << ncores);
+
+    // nchannels = resources.channels.count: number of channels in each core
+    if (platform.resources[name].count("count") <= 0) {
+	    nchannels = platform.qubit_number/ncores;   // i.e. as many as there are qubits in a core
+        QL_DOUT("Number of channels per core (resources[\"channels\"][\"count\"]) not defined; assuming: " << nchannels);
+    } else {
+	    nchannels = platform.resources[name]["count"];
+	    if (nchannels <= 0) {
+	        QL_DOUT("Number of channels per core (resources[\"channels\"][\"count\"]) is not a positive value: " << nchannels);
+	        nchannels = platform.qubit_number/ncores;   // i.e. as many as there are qubits in a core
+	    }
+	    if (nchannels > platform.qubit_number/ncores) {
+	        QL_FATAL("Number of channels per core (resources[\"channels\"][\"count\"]) is larger than number of qubits per core: " << nchannels);
+	    }
+    }
+    QL_DOUT("Number of channels per core= " << nchannels);
+
+    state.resize(ncores);
+    for (UInt i=0; i<ncores; i++) state[i].resize(nchannels, (forward_scheduling == dir ? 0 : MAX_CYCLE));
+}
+
+ccl_channel_resource_t *ccl_channel_resource_t::clone() const & {
+    QL_DOUT("Cloning/copying ccl_channel_resource_t");
+    return new ccl_channel_resource_t(*this);
+}
+
+ccl_channel_resource_t *ccl_channel_resource_t::clone() && {
+    QL_DOUT("Cloning/moving ccl_channel_resource_t");
+    return new ccl_channel_resource_t(std::move(*this));
+}
+Bool ccl_channel_resource_t::available(
+    UInt op_start_cycle,
+    gate *ins,
+    const quantum_platform &platform
+) {
+    Str operation_type = ccl_get_operation_type(ins, platform);
+    UInt      operation_duration = ccl_get_operation_duration(ins, platform);
+
+    Bool is_ic = (operation_type == "extern");
+    if (is_ic) {
+        QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
+        if (direction == forward_scheduling) {
+            for (auto q : ins->operands) {
+                UInt core = q/(platform.qubit_number/ncores);
+                Bool is_avail = false;
+                // fwd: channel c is busy till cycle=state[core][c],
+                // when reserving state[core][c] = start_cycle + duration
+                // i.e. all cycles < state[core][c] it is busy, i.e. available when start_cycle >= state[core][c]
+                QL_DOUT(" available " << name << "? ... q=" << q << " core=" << core);
+                for (UInt c=0; c<nchannels; c++) {
+                    QL_DOUT(" available " << name << "? ... c=" << c);
+                    if (
+                        op_start_cycle >= state[core][c]
+                    ) {
+                        QL_DOUT(" available " << name << "! for qubit: " << q << " in core: " << core << " channel: " << c << " available");
+                        is_avail = true;
+                        break;
+                    }
+                }
+                if (!is_avail) {
+                     QL_DOUT(" busy " << name << "! for qubit: " << q << " in core: " << core << " all channels busy");
+                     return false;
+                }
+            }
+        } else {
+            for (auto q : ins->operands) {
+                UInt core = q/(platform.qubit_number/ncores);
+                Bool is_avail = false;
+                // bwd: channel c is busy from cycle=state[core][c],
+                // when reserving state[core][c] = start_cycle
+                // i.e. all cycles >= state[core][c] it is busy, i.e. available when start_cycle + duration <= state[core][c]
+                QL_DOUT(" available " << name << "? ... q=" << q << " core=" << core);
+                for (UInt c=0; c<nchannels; c++) {
+                    QL_DOUT(" available " << name << "? ... c=" << c);
+                    if (
+                        op_start_cycle + operation_duration <= state[core][c]
+                    ) {
+                        QL_DOUT(" available " << name << "! for qubit: " << q << " in core: " << core << " channel: " << c << " available");
+                        is_avail = true;
+                        break;
+                    }
+                }
+                if (!is_avail) {
+                    QL_DOUT(" busy " << name << "! for qubit: " << q << " in core: " << core << " all channels busy");
+                    return false;
+                }
+            }
+        }
+        QL_DOUT(" available " << name << " resource available for: " << ins->qasm());
+    }
+    return true;
+}
+
+void ccl_channel_resource_t::reserve(
+    UInt op_start_cycle,
+    gate *ins,
+    const quantum_platform &platform
+) {
+    // for each operand:
+    //     find a free channel c and then do
+    //     state[core][c] = (forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle );
+    Str operation_type = ccl_get_operation_type(ins, platform);
+    UInt      operation_duration = ccl_get_operation_duration(ins, platform);
+
+    Bool is_ic = (operation_type == "extern");
+    if (is_ic) {
+        QL_DOUT(" reserve " << name << "? op_start_cycle: " << op_start_cycle  << " for: " << ins->qasm());
+        if (direction == forward_scheduling) {
+            for (auto q : ins->operands) {
+                UInt core = q/(platform.qubit_number/ncores);
+                Bool is_avail = false;
+                // fwd: channel c is busy till cycle=state[core][c],
+                // when reserving state[core][c] = start_cycle + duration
+                // i.e. all cycles < state[core][c] it is busy, i.e. available when start_cycle >= state[core][c]
+                for (UInt c=0; c<nchannels; c++) {
+                    if (
+                        op_start_cycle >= state[core][c]
+                    ) {
+                        state[core][c] = op_start_cycle + operation_duration;
+                        QL_DOUT(" reserved " << name << "? for qubit: " << q << " in core: " << core << " channel: " << c << "till cycle: " << state[core][c]);
+                        is_avail = true;
+                        break;
+                    }
+                }
+                QL_ASSERT(is_avail);
+            }
+        } else {
+            // bwd: channel c is busy from cycle=state[core][c],
+            // i.e. all cycles >= state[core][c] it is busy, i.e. available when start_cycle <= state[core][c]
+            for (auto q : ins->operands) {
+                UInt core = q/(platform.qubit_number/ncores);
+                Bool is_avail = false;
+                // bwd: channel c is busy from cycle=state[core][c],
+                // when reserving state[core][c] = start_cycle
+                // i.e. all cycles >= state[core][c] it is busy, i.e. available when start_cycle <= state[core][c]
+                for (UInt c=0; c<nchannels; c++) {
+                    if (
+                        op_start_cycle + operation_duration <= state[core][c]
+                    ) {
+                        state[core][c] = op_start_cycle;
+                        QL_DOUT(" reserved " << name << "? for qubit: " << q << " in core: " << core << " channel: " << c << " from cycle: " << state[core][c]);
+                        is_avail = true;
+                        break;
+                    }
+                }
+                QL_ASSERT(is_avail);
+            }
+        }
+    }
+}
+
 // Allocate those resources that were specified in the config file.
 // Those that are not specified, are not allocatd, so are not used in scheduling/mapping.
 // The resource names tested below correspond to the names of the resources sections in the config file.
@@ -672,7 +854,7 @@ cc_light_resource_manager_t::cc_light_resource_manager_t(
         // COUT(it.key() << " : " << it.value() << "\n");
         Str n = it.key();
 
-        // DOUT("... about to create " << n << " resource");
+        // QL_DOUT("... about to create " << n << " resource");
         if (n == "qubits") {
             resource_t * ares = new ccl_qubit_resource_t(platform, dir);
             resource_ptrs.push_back( ares );
@@ -688,11 +870,14 @@ cc_light_resource_manager_t::cc_light_resource_manager_t(
         } else if (n == "detuned_qubits") {
             resource_t * ares = new ccl_detuned_qubits_resource_t(platform, dir);
             resource_ptrs.push_back( ares );
+        } else if (n == "channels") {
+            resource_t * ares = new ccl_channel_resource_t(platform, dir);
+            resource_ptrs.push_back( ares );
         } else {
             QL_FATAL("Error : Un-modelled resource, i.e. resource not supported by implementation: '" << n << "'");
         }
     }
-    // DOUT("Done constructing inited platform_resource_manager_t");
+    // QL_DOUT("Done constructing inited platform_resource_manager_t");
 }
 
 cc_light_resource_manager_t *cc_light_resource_manager_t::clone() const & {

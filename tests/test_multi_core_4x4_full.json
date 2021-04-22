@@ -31,7 +31,8 @@
     {
         "number_of_cores":  4,
         "connectivity": "full",
-        "form": "irregular"
+        "form": "irregular",
+        "comm_qubits_per_core": 4
     },
 
     "resources":
@@ -40,6 +41,11 @@
         {
             "description": "Each qubit can be used by only one gate at a time. There are 'count' qubits.",
             "count": 16
+        },
+        "channels":
+        {
+            "description": "Each inter-core gate uses one channel in each core. There are 'count' such channels per core.",
+            "count": 4
         }
     },
 
@@ -334,29 +340,71 @@
             "cc_light_instr": "move",
             "cc_light_opcode": 128
         },
-        "tswap": {
+        "teleportswap": {
             "duration": 1000,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": true,
-            "type": "flux",
+            "type": "extern",
             "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "swap",
+            "cc_light_instr": "teleportswap",
             "cc_light_opcode": 128
         },
-        "tmove": {
+        "teleportmove": {
             "duration": 600,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": true,
-            "type": "flux",
+            "type": "extern",
             "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "move",
+            "cc_light_instr": "teleportmove",
+            "cc_light_opcode": 128
+        },
+        "preswap": {
+            "duration": 100,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": true,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "preswap",
+            "cc_light_opcode": 128
+        },
+        "premove": {
+            "duration": 100,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": true,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "premove",
+            "cc_light_opcode": 128
+        },
+        "postswap": {
+            "duration": 100,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": true,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "postswap",
+            "cc_light_opcode": 128
+        },
+        "postmove": {
+            "duration": 100,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": true,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "postmove",
             "cc_light_opcode": 128
         }
     },
 
     "gate_decomposition": {
+        "tswap_real %0,%1": ["preswap %0","teleportswap %0,%1","postswap %1"],
+        "tmove_real %0,%1": ["premove %0","teleportmove %0,%1","postmove %1"],
         "rx180 %0" : ["x %0"],
         "ry180 %0" : ["y %0"],
         "rx90 %0" : ["x90 %0"],
