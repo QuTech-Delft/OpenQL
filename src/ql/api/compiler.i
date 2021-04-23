@@ -18,17 +18,14 @@ must have the following structure:
 .. code-block::
 
    {
-       \"strategy\": {
-           \"architecture\": <optional string, default \"\">,
-           \"dnu\": <optional list of strings, default []>,
-           \"pass-options\": <optional object, default {}>,
-           \"compatibility-mode\": <optional boolean, default false>,
-           \"passes\": [
-               <pass description>
-           ]
-       },
-       <any other keys are ignored>
-   }
+       \"architecture\": <optional string, default \"\">,
+       \"dnu\": <optional list of strings, default []>,
+       \"pass-options\": <optional object, default {}>,
+       \"compatibility-mode\": <optional boolean, default false>,
+       \"passes\": [
+           <pass description>
+       ]
+   },
 
 The optional \"architecture\" key may be used to make shorthands for
 architecture- specific passes, normally prefixed with

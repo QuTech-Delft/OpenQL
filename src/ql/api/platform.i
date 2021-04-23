@@ -3,9 +3,16 @@
 """
 Quantum platform description. This describes everything that the compiler
 needs to know about the target quantum chip, instruments, etc. Platforms are
-created from JSON (+ comments) configuration files: there is no way to
-modify a platform using the API, and introspection is limited. The syntax of
-the platform configuration file is too extensive to describe here.
+created from either the default configuration for a particular architecture
+or from JSON (+ comments) configuration files: there is no way to modify a
+platform using the API, and introspection is limited. The syntax of the
+platform configuration file is too extensive to describe here, and has its own
+section in the manual.
+
+In order to use a default configuration for a particular architecture, simply
+set the platform_config_file parameter to the namespace of said architecture,
+instead of to a JSON filename. The default configuration file for a platform
+is listed in the documentation for that platform.
 
 In addition to the platform itself, the Platform object provides an interface
 for obtaining a Compiler object. This object describes the *strategy* for

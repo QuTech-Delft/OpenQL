@@ -3,4 +3,19 @@ Supported resources
 
 This section lists the scheduler resource types currently supported by OpenQL.
 
+Roughly speaking, resources control whether two (or more) quantum gates may
+execute in parallel, and under what conditions. The most obvious one is that
+two quantum gates operating on the same qubit physically cannot be executed at
+the same time, but quantum chips typically have more subtle constraints as
+well. For example, execution of an X gate on one qubit may require generation
+of a particular waveform by a waveform generator shared between a number of
+qubits; in this case, it might be possible to do an X gate on another qubit
+in parallel, but not a Y gate.
+
+Resources are of course used by the (resource-constrained) scheduler, but other
+passes may also make use of them. For example, the mapper uses them in its
+heuristic routing algorithm to try to overlap swaps with the rest of the
+circuit as much as possible, in such a way that resource constraints are not
+violated.
+
 {resources}

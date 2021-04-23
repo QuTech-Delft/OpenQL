@@ -6,6 +6,7 @@
 
 #include <regex>
 #include "ql/utils/filesystem.h"
+#include "ql/arch/factory.h"
 
 namespace ql {
 namespace plat {
@@ -47,25 +48,37 @@ static CustomGateRef load_instruction(const Str &name, Json &instr) {
 }
 
 HardwareConfiguration::HardwareConfiguration(
-    const Str &config_file_name
-) : config_file_name(config_file_name) {
+    const Str &config
+) : config(config) {
 }
 
 void HardwareConfiguration::load(
     InstructionMap &instruction_map,
+    arch::CInfoRef &architecture,
     Json &compiler_settings,
     Json &instruction_settings,
     Json &hardware_settings,
     Json &resources,
     Json &topology
 ) {
+    arch::Factory arch_factory = {};
+
+    // If the configuration filename itself is a recognized architecture name,
+    // query the default configuration for that architecture. Otherwise
+    // interpret it as a filename, which it's historically always been.
     Json config;
-    try {
-        config = load_json(config_file_name);
-    } catch (Json::exception &e) {
-        QL_FATAL(
-            "failed to load the hardware config file : malformed json file: \n\t"
-                << Str(e.what()));
+    architecture = arch_factory.build_from_namespace(this->config);
+    if (architecture.has_value()) {
+        std::istringstream is{architecture->get_default_platform()};
+        config = parse_json(is);
+    } else {
+        try {
+            config = load_json(this->config);
+        } catch (Json::exception &e) {
+            QL_FATAL(
+                "failed to load the hardware config file : malformed json file: \n\t"
+                    << Str(e.what()));
+        }
     }
 
     // Load compiler configuration.
@@ -73,6 +86,7 @@ void HardwareConfiguration::load(
 
         // Let's be lenient. We have sane defaults regardless of what's
         // specified here.
+        architecture = arch_factory.build_from_namespace("none");
         compiler_settings = "\"\""_json;
 
     } else if (config["eqasm_compiler"].type() == utils::Json::value_t::object) {
@@ -84,27 +98,13 @@ void HardwareConfiguration::load(
 
         // Figure out what kind of string this is.
         Str s = config["eqasm_compiler"].get<utils::Str>();
-        if (s.empty() || s == "none" || s == "qx") {
-
-            // This is nothing that we do anything with anymore.
-            compiler_settings = "\"\""_json;
-
-        } else if (s == "cc_light_compiler") {
-
-            // This affects the default pass list and resource architecture.
-            compiler_settings = "\"cc_light\""_json;
-
-        } else if (s == "eqasm_backend_cc") {
-
-            // This affects the default pass list and resource architecture.
-            compiler_settings = "\"cc\""_json;
-
-        } else {
+        architecture = arch_factory.build_from_eqasm_compiler(s);
+        if (!architecture.has_value()) {
 
             // String is unrecognized, but it could be a filename to a JSON
             // configuration file (try relative to the platform JSON file or
             // fall back to relative to the working directory).
-            auto fname = path_relative_to(dir_name(config_file_name), s);
+            auto fname = path_relative_to(dir_name(config), s);
             if (path_exists(fname)) {
                 compiler_settings = load_json(fname);
             } else if (path_exists(s)) {
@@ -125,6 +125,27 @@ void HardwareConfiguration::load(
     } else {
         QL_FATAL("'eqasm_compiler' must be a string or an object");
     }
+
+    // If eqasm_compiler was either an inline compiler configuration or a
+    // reference to one, detect the architecture from it instead.
+    if (!architecture.has_value()) {
+        auto it = compiler_settings.find("architecture");
+        if (it == compiler_settings.end() || it->type() != Json::value_t::string) {
+               architecture = arch_factory.build_from_namespace("none");
+        }
+        auto s = it->get<utils::Str>();
+        architecture = arch_factory.build_from_namespace(s);
+        if (!architecture.has_value()) {
+            throw utils::Exception("unknown architecture name " + s);
+        }
+    }
+
+    // If this fails, the above logic failed to make an architecture. It should
+    // always at least generate the default no-op architecture!
+    QL_ASSERT(architecture.has_value());
+
+    // Do architecture-specific preprocessing before anything else.
+    architecture->preprocess_platform(config);
 
     // load hardware_settings
     if (config.count("hardware_settings") <= 0) {

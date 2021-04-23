@@ -11,7 +11,7 @@
 #include "ql/utils/tree.h"
 #include "ql/plat/hardware_configuration.h"
 #include "ql/plat/topology.h"
-#include "ql/arch/architecture.h"
+#include "ql/arch/info_base.h"
 
 namespace ql {
 namespace plat {
@@ -73,18 +73,14 @@ public:
     utils::UInt cycle_time;
 
     /**
-     * Path to the JSON file that was used to configure this platform.
-     *
-     * FIXME: it's wrong that things are using this. Once constructed, the
-     *  filename should be don't care (in theory, there doesn't even need to be
-     *  a file).
-     */
-    utils::Str configuration_file_name;
-
-    /**
      * The gate/instruction set supported by this platform.
      */
     InstructionMap instruction_map;
+
+    /**
+     * Architecture information object.
+     */
+    arch::CInfoRef architecture;
 
     /**
      * Settings for the compiler. This can be:
@@ -143,19 +139,14 @@ public:
      */
     Platform(
         const utils::Str &name,
-        const utils::Str &platform_config_file_name,
-        const utils::Str &compiler_config_file_name = ""
+        const utils::Str &platform_config,
+        const utils::Str &compiler_config = ""
     );
 
     /**
      * Dumps some basic info about the platform to the given stream.
      */
     void dump_info(std::ostream &os = std::cout, utils::Str line_prefix = "") const;
-
-    /**
-     * Returns the architecture corresponding to this platform.
-     */
-    arch::Architecture get_architecture() const;
 
     /**
      * Returns the JSON data for a custom gate, throwing a semi-useful

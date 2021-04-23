@@ -234,41 +234,48 @@ void Base::dump_strategy(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
-    utils::Str indent;
+    utils::Str first_indent, indent;
     if (!is_root()) {
         os << line_prefix << "- " << instance_name;
         if (!type_name.empty()) {
             os << ": " << type_name << "\n";
         }
-        os << "\n";
-        indent = line_prefix + "  ";
+        options.dump_options(true, os, line_prefix + "   |- ");
+        first_indent = line_prefix + "   '- ";
+        indent = line_prefix + "      ";
     } else {
+        first_indent = line_prefix;
         indent = line_prefix;
     }
-    options.dump_options(true, os, line_prefix + "  ");
     if (is_group()) {
         switch (node_type) {
             case NodeType::GROUP_IF:
-                os << indent << "if " << condition->to_string() << ":\n";
+                os << first_indent << "if " << condition->to_string() << ":\n";
                 break;
             case NodeType::GROUP_WHILE:
-                os << indent << "while " << condition->to_string() << ":\n";
+                os << first_indent << "while " << condition->to_string() << ":\n";
                 break;
             case NodeType::GROUP_REPEAT_UNTIL_NOT:
-                os << indent << "repeat:\n";
+                os << first_indent << "repeat:\n";
                 break;
             default:
-                os << indent << "passes:\n";
+                if (!is_root()) {
+                    os << first_indent << "passes:\n";
+                }
                 break;
         }
         for (const auto &pass : sub_pass_order) {
-            pass->dump_strategy(os, line_prefix + "   |");
+            if (is_root()) {
+                pass->dump_strategy(os, indent);
+            } else {
+                pass->dump_strategy(os, indent + " |");
+            }
         }
         if (node_type == NodeType::GROUP_REPEAT_UNTIL_NOT) {
-            os << line_prefix << "until " << condition->to_string() << "\n";
+            os << indent << "until " << condition->to_string() << "\n";
         }
     }
-    os << std::endl;
+    os << line_prefix << std::endl;
 }
 
 /**

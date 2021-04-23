@@ -6,7 +6,6 @@
 
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
-#include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
 #include "ql/rmgr/types.h"
 

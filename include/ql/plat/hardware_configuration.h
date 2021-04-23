@@ -8,6 +8,7 @@
 #include "ql/utils/map.h"
 #include "ql/utils/ptr.h"
 #include "ql/ir/gate.h"
+#include "ql/arch/info_base.h"
 
 namespace ql {
 namespace plat {
@@ -21,12 +22,13 @@ using InstructionMap = utils::Map<utils::Str, CustomGateRef>;
  */
 class HardwareConfiguration {
 public:
-    utils::Str config_file_name;
+    utils::Str config;
 
-    HardwareConfiguration(const utils::Str &config_file_name);
+    HardwareConfiguration(const utils::Str &config);
 
     void load(
         InstructionMap &instruction_map,
+        arch::CInfoRef &architecture,
         utils::Json &compiler_settings,
         utils::Json &instruction_settings,
         utils::Json &hardware_settings,

@@ -14,16 +14,21 @@ using namespace utils;
  */
 Platform::Platform(
     const Str &name,
-    const Str &platform_config_file_name,
-    const Str &compiler_config_file_name
-) :
-    name(name),
-    configuration_file_name(platform_config_file_name)
-{
-    HardwareConfiguration hwc(platform_config_file_name);
-    hwc.load(instruction_map, compiler_settings, instruction_settings, hardware_settings, resources, topology);
-    if (!compiler_config_file_name.empty()) {
-        compiler_settings = load_json(compiler_config_file_name);
+    const Str &platform_config,
+    const Str &compiler_config
+) : name(name) {
+    HardwareConfiguration hwc(platform_config);
+    hwc.load(
+        instruction_map,
+        architecture,
+        compiler_settings,
+        instruction_settings,
+        hardware_settings,
+        resources,
+        topology
+    );
+    if (!compiler_config.empty()) {
+        compiler_settings = load_json(compiler_config);
     }
 
     if (hardware_settings.count("qubit_number") <= 0) {
@@ -63,33 +68,11 @@ void Platform::dump_info(std::ostream &os, utils::Str line_prefix) const {
     os << line_prefix << "[+] qubit number       : " << qubit_count << "\n";
     os << line_prefix << "[+] creg number        : " << creg_count << "\n";
     os << line_prefix << "[+] breg number        : " << breg_count << "\n";
-    os << line_prefix << "[+] configuration file : " << configuration_file_name << "\n";
-    os << line_prefix << "[+] architecture       : " << get_architecture() << "\n";
+    os << line_prefix << "[+] architecture       : " << architecture->get_friendly_name() << "\n";
     os << line_prefix << "[+] supported instructions:" << "\n";
     for (const auto &i : instruction_map) {
         os << line_prefix << "  |-- " << i.first << "\n";
     }
-}
-
-/**
- * Returns the architecture corresponding to this platform.
- */
-arch::Architecture Platform::get_architecture() const {
-    if (compiler_settings.type() == Json::value_t::string) {
-        return arch::architecture_from_string(compiler_settings.get<utils::Str>());
-    } else if (compiler_settings.type() == Json::value_t::object) {
-        auto it = compiler_settings.find("strategy");
-        if (it == compiler_settings.end() || it->type() != Json::value_t::object) {
-            return arch::Architecture::NONE;
-        }
-        const auto &strategy = *it;
-        it = strategy.find("architecture");
-        if (it == strategy.end() || it->type() != Json::value_t::string) {
-            return arch::Architecture::NONE;
-        }
-        return arch::architecture_from_string(it->get<utils::Str>());
-    }
-    return arch::Architecture::NONE;
 }
 
 /**

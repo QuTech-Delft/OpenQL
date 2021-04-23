@@ -3,4 +3,33 @@ Supported architectures
 
 This section lists the backend architectures currently supported by OpenQL.
 
+The active architecture is selected in one of the following ways:
+
+ - by specifying the namespace name of the desired architecture directly to the
+   ``ql.Platform`` constructor (the architecture will then infer use a default
+   configuration);
+ - by specifying a recognized string for the ``"eqasm_compiler"`` key in the
+   platform configuration file;
+ - if ``"eqasm_compiler"`` is instead used for an inline compiler
+   configuration, by setting ``"eqasm_compiler"."architecture"`` to the
+   namespace name of the desired architecture;
+ - if none of the above apply, the dummy `"none"` architecture will be
+   selected.
+
+Architecture selection affects the following things:
+
+ - the default platform configuration file, if no platform configuration file
+   is specified;
+ - potential custom preprocessing logic for the platform configuration file;
+ - the default compiler configuration/pass list; and
+ - availability of shorthand names for the passes and scheduler resources for
+   that particular architecture (the ``arch.*.`` prefix becomes optional).
+
+Other than those things, everything in OpenQL is configured in an
+architecture-agnostic way through the platform and/or compiler configuration
+files. This means that if you want to compile for an architecture similar to
+an existing one, you may not even have to change or add to OpenQL's codebase.
+This is intentional: the control architectures are still as much in flux as
+the quantum chips themselves, so rapid prototyping is a must.
+
 {architectures}

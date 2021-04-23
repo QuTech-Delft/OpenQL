@@ -17,6 +17,7 @@
 #include "ql/ir/ir.h"
 #include "ql/pmgr/pass_types/base.h"
 #include "ql/pmgr/factory.h"
+#include "ql/pmgr/manager_decl.h"
 
 namespace ql {
 namespace pmgr {
@@ -82,16 +83,13 @@ public:
      *
      * ```json
      * {
-     *     "strategy": {
-     *         "architecture": <optional string, default "">,
-     *         "dnu": <optional list of strings, default []>,
-     *         "pass-options": <optional object, default {}>,
-     *         "compatibility-mode": <optional boolean, default false>,
-     *         "passes": [
-     *             <pass description>
-     *         ]
-     *     },
-     *     <any other keys are ignored>
+     *     "architecture": <optional string, default "">,
+     *     "dnu": <optional list of strings, default []>,
+     *     "pass-options": <optional object, default {}>,
+     *     "compatibility-mode": <optional boolean, default false>,
+     *     "passes": [
+     *         <pass description>
+     *     ]
      * }
      * ```
      *

@@ -7,9 +7,6 @@
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
 
-// For OPT_CC_SCHEDULE_RC "option"...
-#include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
-
 namespace ql {
 namespace pmgr {
 
@@ -335,24 +332,13 @@ Manager Manager::from_json(
         throw utils::Exception("pass manager configuration must be an object");
     }
 
-    // Look for the strategy key. Ignore any other keys in the toplevel
-    // structure.
-    auto it = json.find("strategy");
-    if (it == json.end()) {
-        throw utils::Exception("missing strategy key");
-    }
-    const auto &strategy = *it;
-    if (strategy.type() != JsonType::object) {
-        throw utils::Exception("strategy key must be an object");
-    }
-
     // Read the strategy structure.
     utils::Str architecture = {};
     utils::Set<utils::Str> dnu = {};
     const utils::Json *pass_options = nullptr;
     utils::Bool compatibility_mode = false;
     const utils::Json *passes = nullptr;
-    for (it = strategy.begin(); it != strategy.end(); ++it) {
+    for (auto it = json.begin(); it != json.end(); ++it) {
         if (it.key() == "architecture") {
             if (it.value().type() == JsonType::string) {
                 architecture = it.value().get<utils::Str>();
@@ -405,7 +391,7 @@ Manager Manager::from_json(
         pass_default_options = convert_global_to_pass_options();
     }
     if (pass_options) {
-        for (it = pass_options->begin(); it != pass_options->end(); ++it) {
+        for (auto it = pass_options->begin(); it != pass_options->end(); ++it) {
             pass_default_options.set(it.key()) = option_value_from_json(it.value());
         }
     }
@@ -477,76 +463,8 @@ Manager Manager::from_defaults(const plat::PlatformRef &platform) {
         }
     );
 
-    // Generate a suitable list of passes based on eqasm_compiler_name.
-    switch (platform->get_architecture()) {
-        case arch::Architecture::CC_LIGHT:
-
-            // Mapping.
-            if (com::options::global["clifford_premapper"].as_bool()) {
-                manager.append_pass(
-                    "opt.clifford.Optimize",
-                    "clifford_premapper"
-                );
-            }
-            if (com::options::global["mapper"].as_str() != "no") {
-                manager.append_pass(
-                    "map.qubits.Map",
-                    "mapper"
-                );
-            }
-            if (com::options::global["clifford_postmapper"].as_bool()) {
-                manager.append_pass(
-                    "opt.clifford.Optimize",
-                    "clifford_postmapper"
-                );
-            }
-
-            // Scheduling.
-            manager.append_pass(
-                "sch.Schedule",
-                "rcscheduler",
-                {
-                    {"resource_constraints", "yes"}
-                }
-            );
-            manager.append_pass(
-                "io.cqasm.Report",
-                "lastqasmwriter",
-                {
-                    {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"},
-                    {"output_suffix", "_last.qasm"}
-                }
-            );
-
-            // R.I.P. CC-light code generation; was taken out.
-            break;
-
-        case arch::Architecture::CC:
-
-            // Mimic original CC backend.
-            manager.append_pass(
-                "sch.Schedule",
-                "scheduler",
-                {
-#if OPT_CC_SCHEDULE_RC
-                    {"resource_constraints", "yes"}
-#else
-                    {"resource_constraints", "no"}
-#endif
-                }
-            );
-            manager.append_pass(
-                "arch.cc.gen.VQ1Asm",
-                "codegen",
-                {
-                    {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"}
-                }
-            );
-            break;
-
-        default:
-            break;
-    }
+    // Generate the backend passes.
+    platform->architecture->populate_backend_passes(manager);
 
     // Sweep point writing (whatever that is) was done hardcoded at the end of
     // even the initial pass manager implementation. Now it's an actual pass.

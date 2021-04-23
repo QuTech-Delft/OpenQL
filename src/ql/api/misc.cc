@@ -7,7 +7,7 @@
 #include "ql/version.h"
 #include "ql/utils/logger.h"
 #include "ql/com/options.h"
-#include "ql/arch/architecture.h"
+#include "ql/arch/factory.h"
 #include "ql/pmgr/factory.h"
 #include "ql/rmgr/factory.h"
 
@@ -102,7 +102,7 @@ std::string get_options() {
  * Prints the documentation for all available target architectures.
  */
 void print_architectures() {
-    ql::arch::dump_architectures();
+    ql::arch::Factory().dump_architectures();
 }
 
 /**
@@ -110,7 +110,7 @@ void print_architectures() {
  */
 std::string get_architectures() {
     std::ostringstream ss;
-    ql::arch::dump_architectures(ss);
+    ql::arch::Factory().dump_architectures(ss);
     return ss.str();
 }
 

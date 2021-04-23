@@ -208,6 +208,25 @@ Within a local namespace, use whatever you want (`using namespace` etc) as you
 see fit, although more selective inclusions and abbreviations using
 `namespace x = ...` and `using T = ...` is preferred.
 
+## `#include` syntax
+
+Some general rules for `#include` directive consistency.
+
+ - Always use `#include "ql/..."` to refer to public header files of OpenQL.
+   That is, use the `""` syntax rather than the `<>` syntax, and use the
+   full path from `ql` onward.
+ - Usage of relative paths is allowed only to refer to private/`detail` header
+   files.
+ - The first directive in a `.cc` file must be inclusion of its respective
+   header file. The next line should be blank. Any header files needed for the
+   `.cc` file that are not needed for the corresponding `.h` file follow after
+   this blank line.
+ - Try to keep `#include` directives ordered as follows:
+    - system header files (standard library, etc);
+    - OpenQL's dependencies from the `deps` folder (lemon, libqasm, etc); and
+    - include OpenQL's own headers in the same order that the namespaces are
+      listed in the previous section.
+
 ## "Runtime" documentation and dump() functions
 
 In order to aid the synchronization of the user-facing documentation and the

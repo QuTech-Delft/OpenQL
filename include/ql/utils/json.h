@@ -144,6 +144,14 @@ public:
 
 using Json = nlohmann::json;
 
+/**
+ * Parses JSON data that may include // comments.
+ */
+Json parse_json(std::istream &is);
+
+/**
+ * Loads a JSON file that may include // comments.
+ */
 Json load_json(const Str &file_name);
 
 // get json value with error notification

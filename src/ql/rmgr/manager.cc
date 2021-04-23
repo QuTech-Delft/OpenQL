@@ -101,7 +101,7 @@ Manager Manager::from_json(
     if (json.find("resources") == json.end()) {
 
         // Old-style structure. Infer the architecture.
-        utils::Str architecture = utils::to_string(platform->get_architecture());
+        utils::Str architecture = platform->architecture->get_namespace_name();
 
         // Create the manager.
         Manager manager{platform, architecture, {}, factory};
