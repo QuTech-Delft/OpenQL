@@ -20,7 +20,41 @@ namespace api {
 
 /**
  * Represents a kernel of a quantum program, a.k.a. a basic block. Kernels are
- * just sequences of gates with no classical control-flow in between.
+ * just sequences of gates with no classical control-flow in between: they may
+ * end in a (conditional) branch to the start of another kernel, but otherwise,
+ * they may only consist of quantum gates and mixed quantum-classical data flow
+ * operations.
+ *
+ * Currently, kernels can be constructed only by adding gates and classical data
+ * flow instructions in the order in which they are to be executed, and there is
+ * no way to get information about which gates are in the kernel after the fact.
+ * If you need this kind of bookkeeping, you will have to wrap OpenQL's kernels
+ * for now.
+ *
+ * Classical flow-control is configured when a completed kernel is added to a
+ * program, via basic structured control-flow paradigms (if-else, do-while, and
+ * loops with a fixed iteration count).
+ *
+ * NOTE: the way gates are represented in OpenQL is on the list to be completely
+ * revised. Currently OpenQL works using a mixture of "default gates" and the
+ * "custom gates" that you can specify in the platform configuration file, but
+ * these two things are not orthogonal and largely incompatible with each other,
+ * yet are currently used interchangeably. Furthermore, there is no proper way
+ * to specify lists of generic arguments to a gate, leading to lots of code
+ * duplication inside OpenQL and long gate() argument lists. Finally, the
+ * semantics of gates are largely derived by undocumented and somewhat heuristic
+ * string comparisons with the names of gates, which is terrible design in
+ * combination with user-specified instruction sets via the platform
+ * configuration file. The interface for adding simple *quantum* gates to a
+ * kernel is something we want to keep 100% backward compatible, but the more
+ * advanced gate() signatures may change in the (near) future.
+ *
+ * NOTE: classical logic is on the list to be completely revised. This interface
+ * may change in the (near) future.
+ *
+ * NOTE: the higher-order functions for constructing controlled kernels and
+ * conjugating kernels have not been maintained for a while and thus probably
+ * won't work right. They may be removed entirely in a later version of OpenQL.
  */
 class Kernel {
 private:
@@ -74,139 +108,242 @@ public:
     );
 
     /**
-     * Shorthand for an "identity" gate with a single qubit.
+     * Returns a newline-separated list of all custom gates supported by the
+     * platform.
+     */
+    std::string get_custom_instructions() const;
+
+    /**
+     * Sets the condition for all gates subsequently added to this kernel.
+     * Thus, essentially shorthand notation. Reset with gate_clear_condition().
+     */
+    void gate_preset_condition(
+        const std::string &condstring,
+        const std::vector<size_t> &condregs
+    );
+
+    /**
+     * Clears a condition previously set via gate_preset_condition().
+     */
+    void gate_clear_condition();
+
+    /**
+     * Shorthand for appending the given gate name with a single qubit.
+     */
+    void gate(const std::string &name, size_t q0);
+
+    /**
+     * Shorthand for appending the given gate name with two qubits.
+     */
+    void gate(const std::string &name, size_t q0, size_t q1);
+
+    /**
+     * Main function for appending arbitrary quantum gates.
+     *
+     * Note that OpenQL currently uses string comparisons with gate names all
+     * over the place to derive functionality, and to derive what the actual
+     * arguments do. This is inherently a bad idea and something we want to
+     * move away from, so documenting it all would not be worthwhile.
+     *
+     * For conditional gates, the following condition strings are supported:
+     *
+     *  - "COND_ALWAYS" or "1": no condition; gate is always executed.
+     *  - "COND_NEVER" or "0": no condition; gate is never executed.
+     *  - "COND_UNARY" or "" (empty): gate is executed if the single bit
+     *    specified via condregs is 1.
+     *  - "COND_NOT" or "!": gate is executed if the single bit specified via
+     *    condregs is 0.
+     *  - "COND_AND" or "&": gate is executed if the two bits specified via
+     *    condregs are both 1.
+     *  - "COND_NAND" or "!&": gate is executed if either of the two bits
+     *    specified via condregs is zero.
+     *  - "COND_OR" or "|": gate is executed if either of the two bits specified
+     *    via condregs is one.
+     *  - "COND_NOR" or "!|": no condition; gate is always executed.
+     */
+    void gate(
+        const std::string &name,
+        const std::vector<size_t> &qubits,
+        size_t duration = 0,
+        double angle = 0.0,
+        const std::vector<size_t> &bregs = {},
+        const std::string &condstring = "COND_ALWAYS",
+        const std::vector<size_t> &condregs = {}
+    );
+
+    /**
+     * Main function for appending mixed quantum-classical gates involving
+     * integer registers.
+     */
+    void gate(
+        const std::string &name,
+        const std::vector<size_t> &qubits,
+        const CReg &destination
+    );
+
+    /**
+     * Appends a unitary gate to the circuit. The size of the unitary gate must
+     * of course align with the number of qubits presented.
+     */
+    void gate(const Unitary &u, const std::vector<size_t> &qubits);
+
+    /**
+     * Alternative function for appending normal conditional quantum gates.
+     * Avoids having to specify duration, angle, and bregs.
+     */
+    void condgate(
+        const std::string &name,
+        const std::vector<size_t> &qubits,
+        const std::string &condstring,
+        const std::vector<size_t> &condregs
+    );
+
+    /**
+     * Appends a classical assignment gate to the circuit. The classical integer
+     * register is assigned to the result of the given operation.
+     */
+    void classical(const CReg &destination, const Operation &operation);
+
+    /**
+     * Appends a classical gate without operands. Only "nop" is currently (more
+     * or less) supported.
+     */
+    void classical(const std::string &operation);
+
+    /**
+     * Shorthand for appending an "identity" gate with a single qubit.
      */
     void identity(size_t q0);
 
     /**
-     * Shorthand for a "hadamard" gate with a single qubit.
+     * Shorthand for appending a "hadamard" gate with a single qubit.
      */
     void hadamard(size_t q0);
 
     /**
-     * Shorthand for a "s" gate with a single qubit.
+     * Shorthand for appending an "s" gate with a single qubit.
      */
     void s(size_t q0);
 
     /**
-     * Shorthand for a "sdag" gate with a single qubit.
+     * Shorthand for appending an "sdag" gate with a single qubit.
      */
     void sdag(size_t q0);
 
     /**
-     * Shorthand for a "t" gate with a single qubit.
+     * Shorthand for appending a "t" gate with a single qubit.
      */
     void t(size_t q0);
 
     /**
-     * Shorthand for a "tdag" gate with a single qubit.
+     * Shorthand for appending a "tdag" gate with a single qubit.
      */
     void tdag(size_t q0);
 
     /**
-     * Shorthand for a "x" gate with a single qubit.
+     * Shorthand for appending an "x" gate with a single qubit.
      */
     void x(size_t q0);
 
     /**
-     * Shorthand for a "y" gate with a single qubit.
+     * Shorthand for appending a "y" gate with a single qubit.
      */
     void y(size_t q0);
 
     /**
-     * Shorthand for a "z" gate with a single qubit.
+     * Shorthand for appending a "z" gate with a single qubit.
      */
     void z(size_t q0);
 
     /**
-     * Shorthand for an "rx90" gate with a single qubit.
+     * Shorthand for appending an "rx90" gate with a single qubit.
      */
     void rx90(size_t q0);
 
     /**
-     * Shorthand for an "mrx90" gate with a single qubit.
+     * Shorthand for appending an "mrx90" gate with a single qubit.
      */
     void mrx90(size_t q0);
 
     /**
-     * Shorthand for an "rx180" gate with a single qubit.
+     * Shorthand for appending an "rx180" gate with a single qubit.
      */
     void rx180(size_t q0);
 
     /**
-     * Shorthand for an "ry90" gate with a single qubit.
+     * Shorthand for appending an "ry90" gate with a single qubit.
      */
     void ry90(size_t q0);
 
     /**
-     * Shorthand for an "mry90" gate with a single qubit.
+     * Shorthand for appending an "mry90" gate with a single qubit.
      */
     void mry90(size_t q0);
 
     /**
-     * Shorthand for an "ry180" gate with a single qubit.
+     * Shorthand for appending an "ry180" gate with a single qubit.
      */
     void ry180(size_t q0);
 
     /**
-     * Shorthand for an "rx" gate with a single qubit and the given rotation in
-     * radians.
+     * Shorthand for appending an "rx" gate with a single qubit and the given
+     * rotation in radians.
      */
     void rx(size_t q0, double angle);
 
     /**
-     * Shorthand for an "ry" gate with a single qubit and the given rotation in
-     * radians.
+     * Shorthand for appending an "ry" gate with a single qubit and the given
+     * rotation in radians.
      */
     void ry(size_t q0, double angle);
 
     /**
-     * Shorthand for an "rz" gate with a single qubit and the given rotation in
-     * radians.
+     * Shorthand for appending an "rz" gate with a single qubit and the given
+     * rotation in radians.
      */
     void rz(size_t q0, double angle);
 
     /**
-     * Shorthand for a "measure" gate with a single qubit and implicit result
-     * bit register.
+     * Shorthand for appending a "measure" gate with a single qubit and implicit
+     * result bit register.
      */
     void measure(size_t q0);
 
     /**
-     * Shorthand for a "measure" gate with a single qubit and explicit result
-     * bit register.
+     * Shorthand for appending a "measure" gate with a single qubit and explicit
+     * result bit register.
      */
     void measure(size_t q0, size_t b0);
 
     /**
-     * Shorthand for a "prepz" gate with a single qubit.
+     * Shorthand for appending a "prepz" gate with a single qubit.
      */
     void prepz(size_t q0);
 
     /**
-     * Shorthand for a "cnot" gate with two qubits.
+     * Shorthand for appending a "cnot" gate with two qubits.
      */
     void cnot(size_t q0, size_t q1);
 
     /**
-     * Shorthand for a "cphase" gate with two qubits.
+     * Shorthand for appending a "cphase" gate with two qubits.
      */
     void cphase(size_t q0, size_t q1);
 
     /**
-     * Shorthand for a "cz" gate with two qubits.
+     * Shorthand for appending a "cz" gate with two qubits.
      */
     void cz(size_t q0, size_t q1);
 
     /**
-     * Shorthand for a "toffoli" gate with three qubits.
+     * Shorthand for appending a "toffoli" gate with three qubits.
      */
     void toffoli(size_t q0, size_t q1, size_t q2);
 
     /**
-     * Shorthand for the Clifford gate with the specific number using the
-     * minimal number of rx90, rx180, mrx90, ry90, ry180, mry90 and Y gates.
-     * These are as follows:
+     * Shorthand for appending the Clifford gate with the specific number using
+     * the minimal number of rx90, rx180, mrx90, ry90, ry180, and mry90 gates.
+     * The expansions are as follows:
      *
      *  - 0: no gates inserted.
      *  - 1: ry90; rx90
@@ -236,132 +373,29 @@ public:
     void clifford(int id, size_t q0);
 
     /**
-     * Shorthand for a "wait" gate with the specified qubits and duration in
-     * nanoseconds. If no qubits are specified, the wait applies to all qubits
-     * instead (a wait with no qubits is meaningless). Note that the duration
-     * will usually end up being rounded up to multiples of the platform's cycle
-     * time.
+     * Shorthand for appending a "wait" gate with the specified qubits and
+     * duration in nanoseconds. If no qubits are specified, the wait applies to
+     * all qubits instead (a wait with no qubits is meaningless). Note that the
+     * duration will usually end up being rounded up to multiples of the
+     * platform's cycle time.
      */
     void wait(const std::vector<size_t> &qubits, size_t duration);
 
     /**
-     * Shorthand for a "wait" gate with the specified qubits and duration 0. If
-     * no qubits are specified, the wait applies to all qubits instead (a wait
-     * with no qubits is meaningless).
+     * Shorthand for appending a "wait" gate with the specified qubits and
+     * duration 0. If no qubits are specified, the wait applies to all qubits
+     * instead (a wait with no qubits is meaningless).
      */
     void barrier(const std::vector<size_t> &qubits = std::vector<size_t>());
 
     /**
-     * Returns a newline-separated list of all custom gates supported by the
-     * platform.
-     */
-    std::string get_custom_instructions() const;
-
-    /**
-     * Shorthand for a "display" gate with no qubits.
+     * Shorthand for appending a "display" gate with no qubits.
      */
     void display();
 
     /**
-     * Shorthand for the given gate name with a single qubit.
-     */
-    void gate(const std::string &gname, size_t q0);
-
-    /**
-     * Shorthand for the given gate name with two qubits.
-     */
-    void gate(const std::string &gname, size_t q0, size_t q1);
-
-    /**
-     * Main function for adding arbitrary quantum gates.
-     *
-     * Note that OpenQL currently uses string comparisons with gate names all
-     * over the place to derive functionality, and to derive what the actual
-     * arguments do. This is inherently a bad idea and something we want to
-     * move away from, so documenting it all would not be worthwhile.
-     *
-     * For conditional gates, the following condition strings are supported:
-     *
-     *  - "COND_ALWAYS" or "1": no condition; gate is always executed.
-     *  - "COND_NEVER" or "0": no condition; gate is never executed.
-     *  - "COND_UNARY" or "" (empty): gate is executed if the single bit
-     *    specified via condregs is 1.
-     *  - "COND_NOT" or "!": gate is executed if the single bit specified via
-     *    condregs is 0.
-     *  - "COND_AND" or "&": gate is executed if the two bits specified via
-     *    condregs are both 1.
-     *  - "COND_NAND" or "!&": gate is executed if either of the two bits
-     *    specified via condregs is zero.
-     *  - "COND_OR" or "|": gate is executed if either of the two bits specified
-     *    via condregs is one.
-     *  - "COND_NOR" or "1": no condition; gate is always executed.
-     */
-    void gate(
-        const std::string &name,
-        const std::vector<size_t> &qubits,
-        size_t duration = 0,
-        double angle = 0.0,
-        const std::vector<size_t> &bregs = {},
-        const std::string &condstring = "COND_ALWAYS",
-        const std::vector<size_t> &condregs = {}
-    );
-
-    /**
-     * Alternative function for adding normal conditional quantum gates. Avoids
-     * having to specify duration, angle, and bregs.
-     */
-    void condgate(
-        const std::string &name,
-        const std::vector<size_t> &qubits,
-        const std::string &condstring,
-        const std::vector<size_t> &condregs
-    );
-
-    /**
-     * Main function for mixed quantum-classical gates involving integer
-     * registers.
-     */
-    void gate(
-        const std::string &name,
-        const std::vector<size_t> &qubits,
-        const CReg &destination
-    );
-
-    /**
-     * Adds a unitary gate to the circuit. The size of the unitary gate must of
-     * course align with the number of qubits presented.
-     */
-    void gate(const Unitary &u, const std::vector<size_t> &qubits);
-
-    /**
-     * Adds a classical assignment gate to the circuit. The classical integer
-     * register is assigned to the result of the given operation.
-     */
-    void classical(const CReg &destination, const Operation &operation);
-
-    /**
-     * Adds a classical gate without operands. Only "nop" is currently (more or
-     * less) supported.
-     */
-    void classical(const std::string &operation);
-
-    /**
-     * Sets the condition for all gates subsequently added to this kernel.
-     * Thus, essentially shorthand notation. Reset with gate_clear_condition().
-     */
-    void gate_preset_condition(
-        const std::string &condstring,
-        const std::vector<size_t> &condregs
-    );
-
-    /**
-     * Clears a condition previously set via gate_preset_condition().
-     */
-    void gate_clear_condition();
-
-    /**
-     * Adds a controlled kernel. The number of control and ancilla qubits must
-     * be equal.
+     * Appends a controlled kernel. The number of control and ancilla qubits
+     * must be equal.
      *
      * NOTE: this high-level functionality is poorly/not maintained, and relies
      * on default gates, which are on the list for removal.
@@ -373,7 +407,7 @@ public:
     );
 
     /**
-     * Adds the conjugate of the given kernel to this kernel.
+     * Appends the conjugate of the given kernel to this kernel.
      *
      * NOTE: this high-level functionality is poorly/not maintained, and relies
      * on default gates, which are on the list for removal.

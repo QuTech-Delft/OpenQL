@@ -66,6 +66,18 @@ Note that OpenQL only uses an argument if it is referred to in one of the
 """
 
 
+%feature("docstring") ql::api::cQasmReader::platform
+"""
+The platform associated with the reader.
+"""
+
+
+%feature("docstring") ql::api::cQasmReader::program
+"""
+The program that the cQASM circuits will be added to.
+"""
+
+
 %feature("docstring") ql::api::cQasmReader::string2circuit
 """
 Interprets a string as cQASM file and adds its contents to the program

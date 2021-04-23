@@ -62,10 +62,10 @@ def _fixup_swig_autodoc_type(typ):
         'string': 'str',
         'size_t': 'int',
         'double': 'float',
-        'mapss': 'dict[str, str]',
-        'vectorp': 'list[Pass]',
-        'vectorui': 'list[int]',
-        'vectord': 'list[float]'
+        'mapss': 'Dict[str, str]',
+        'vectorp': 'List[Pass]',
+        'vectorui': 'List[int]',
+        'vectord': 'List[float]'
     }.get(typ, typ)
     return typ
 
@@ -114,7 +114,7 @@ def _fixup_swig_autodoc_signature(sig):
 
     return sig
 
-def _fixup_swig_autodoc(ob, keep_docs):
+def _fixup_swig_autodoc(ob, keep_sig, keep_docs):
     try:
         lines = ob.__doc__.split('\n')
         new_lines = []
@@ -123,11 +123,12 @@ def _fixup_swig_autodoc(ob, keep_docs):
             if state == 0:
                 if line.strip():
                     state = 1
-                    new_lines.append(_fixup_swig_autodoc_signature(line))
+                    if keep_sig:
+                        new_lines.append(_fixup_swig_autodoc_signature(line))
             elif state == 1:
                 if not line.strip():
                     state = 2
-                else:
+                elif keep_sig:
                     new_lines[-1] += ' \\'
                     new_lines.append(_fixup_swig_autodoc_signature(line))
             elif keep_docs:
@@ -143,9 +144,12 @@ for ob in __all__:
     if type(ob) == type:
         for mem in dir(ob):
             if mem == '__init__':
-                _fixup_swig_autodoc(getattr(ob, mem), False)
+                _fixup_swig_autodoc(getattr(ob, mem), True, False)
             elif not mem.startswith('_'):
-                _fixup_swig_autodoc(getattr(ob, mem), True)
+                if isinstance(getattr(ob, mem), property):
+                    _fixup_swig_autodoc(getattr(ob, mem), False, True)
+                else:
+                    _fixup_swig_autodoc(getattr(ob, mem), True, True)
 
     else:
-        _fixup_swig_autodoc(ob, True)
+        _fixup_swig_autodoc(ob, True, True)

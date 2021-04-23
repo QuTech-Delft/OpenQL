@@ -112,6 +112,15 @@ doesn't, \"group\" must not be specified.
 """
 
 
+%feature("docstring") ql::api::Compiler::name
+"""
+User-given name for this compiler.
+
+NOTE: not actually used for anything. It's only here for consistency with
+the rest of the API objects.
+"""
+
+
 %feature("docstring") ql::api::Compiler::print_pass_types
 """
 Prints documentation for all available pass types, as well as the option
