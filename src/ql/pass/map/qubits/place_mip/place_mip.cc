@@ -74,6 +74,13 @@ void PlaceQubitsPass::dump_docs(
 }
 
 /**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str PlaceQubitsPass::get_friendly_type() const {
+    return "MIP-based initial placer";
+}
+
+/**
  * Constructs an initial qubit placer.
  */
 PlaceQubitsPass::PlaceQubitsPass(

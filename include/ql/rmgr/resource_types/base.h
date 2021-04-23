@@ -103,6 +103,11 @@ public:
     virtual ~Base() = default;
 
     /**
+     * Returns a user-friendly type name for this resource.
+     */
+    virtual utils::Str get_friendly_type() const = 0;
+
+    /**
      * Returns the type name for this resource.
      */
     const utils::Str &get_type() const;

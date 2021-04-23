@@ -33,6 +33,13 @@ void CliffordOptimizePass::dump_docs(
 }
 
 /**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str CliffordOptimizePass::get_friendly_type() const {
+    return "Clifford gate optimizer";
+}
+
+/**
  * Constructs a Clifford optimizer.
  */
 CliffordOptimizePass::CliffordOptimizePass(

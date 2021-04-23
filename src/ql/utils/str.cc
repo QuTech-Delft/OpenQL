@@ -213,6 +213,69 @@ void dump_str(std::ostream &os, const Str &line_prefix, const Str &raw) {
 }
 
 /**
+ * Takes a (documentation) string, and:
+ *  - wraps long lines at column 80;
+ *  - prefixes all resulting lines with line_prefix; and
+ *  - dumps the resulting lines to the given stream.
+ *
+ * Indentation tries to be smart about lists with - bullets, but other than that
+ * it's pretty stupid. Newlines are not converted to spaces prior to wrapping,
+ * so the incoming documentation should not be pre-wrapped.
+ */
+void wrap_str(std::ostream &os, const Str &line_prefix, const Str &raw) {
+    static const UInt NCOLS = 80;
+
+    // Split into lines.
+    UInt prev = 0;
+    while (true) {
+        UInt next = raw.find('\n', prev);
+        auto line = raw.substr(prev, next - prev);
+
+        // Wrap each line, using an indent width based on the spacing at the
+        // start of the line.
+        auto indent_width = line.find_first_not_of(" -");
+        if (indent_width == Str::npos) indent_width = 0;
+        auto indent = Str(indent_width, ' ');
+
+        // Split the line up into fragments that fit in 100 columns (ignoring
+        // indentation and line_prefix size!), and emit them to the output
+        // stream.
+        Bool first_fragment = true;
+        UInt wrap_from = 0;
+        while (wrap_from != Str::npos) {
+            UInt wrap_to, wrap_next;
+            if (wrap_from + NCOLS < line.size()) {
+                wrap_to = line.rfind(' ', wrap_from + NCOLS + (first_fragment ? indent_width : 0));
+                if (wrap_to == Str::npos) {
+                    wrap_to = wrap_from + NCOLS;
+                    wrap_next = wrap_to;
+                } else {
+                    wrap_next = wrap_to + 1;
+                }
+            } else {
+                wrap_to = line.size();
+                wrap_next = Str::npos;
+            }
+            auto fragment = line.substr(wrap_from, wrap_to - wrap_from);
+            if (first_fragment) {
+                os << line_prefix << fragment << '\n';
+                first_fragment = false;
+            } else {
+                os << line_prefix << indent << fragment << '\n';
+            }
+            wrap_from = wrap_next;
+        }
+
+        // Advance to the next line.
+        if (next == Str::npos) break;
+        prev = next + 1;
+
+    }
+
+    os.flush();
+}
+
+/**
  * Returns whether str starts with front.
  */
 Bool starts_with(const Str &str, const Str &front) {

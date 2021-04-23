@@ -38,6 +38,13 @@ void VisualizeMappingPass::dump_docs(
 }
 
 /**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str VisualizeMappingPass::get_friendly_type() const {
+    return "Qubit mapping graph visualizer";
+}
+
+/**
  * Constructs a mapping graph visualizer pass.
  */
 VisualizeMappingPass::VisualizeMappingPass(

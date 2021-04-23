@@ -11,9 +11,9 @@ While the instruction-level code is platform-specific, the quantum assembly code
    :maxdepth: 2
    :caption: Getting started
 
-   overview
-   installation
-   start
+   gs_overview
+   gs_installation
+   gs_start
 
 .. toctree::
    :maxdepth: 2
@@ -32,29 +32,33 @@ While the instruction-level code is platform-specific, the quantum assembly code
    :maxdepth: 3
    :caption: Tutorials
 
-   qx_example
-   dqcsim_example
+   ex_qx
+   ex_dqcsim
 
 .. toctree::
    :maxdepth: 1
-   :caption: API reference
+   :caption: Reference
 
-   python_api
-   cpp_api
+   ref_python
+   ref_cpp
+   gen/ref_architectures
+   gen/ref_options
+   gen/ref_passes
+   gen/ref_resources
 
 .. toctree::
    :maxdepth: 1
    :caption: Developer documentation
 
-   coding_conventions
-   doxygen_documentation
+   dev_coding_conventions
+   dev_doxygen_documentation
 
 .. toctree::
    :maxdepth: 1
    :caption: Colophon
 
-   changelog
-   contributors
+   col_changelog
+   col_contributors
 
 Indices and tables
 

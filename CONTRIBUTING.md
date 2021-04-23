@@ -196,7 +196,109 @@ are:
 
  - `api`: this namespace contains all user-facing API wrappers.
 
-## Utils types and functions
+Private functionality for a logical piece of code within OpenQL (usually a
+pass) should go into a subnamespace named `detail`. This namespace should only
+have files in `src`, and as such, the non-`detail` parts of the code should
+only refer to it from `.cc` files (so NOT from the `include` header files).
+This enforces sectioning off local implementation details from the rest of the
+OpenQL code, preventing excessive compilation time by keeping the (public)
+header files as lean as possible.
+
+Within a local namespace, use whatever you want (`using namespace` etc) as you
+see fit, although more selective inclusions and abbreviations using
+`namespace x = ...` and `using T = ...` is preferred.
+
+## "Runtime" documentation and dump() functions
+
+In order to aid the synchronization of the user-facing documentation and the
+internal codebase, and to make it easier for users to access the documentation,
+a good portion of the documentation is placed in the OpenQL codebase itself as
+strings. These strings can then be queried via the API by the user directly, or
+by the ReadTheDocs/Sphinx conf.py script to generate online documentation pages
+from them. Consistency is key for making this all work smoothly:
+inconsistensies are not only ugly when reading the documentation (say for
+instance that one person uses regular English interpunction while the other
+uses a more comment-like lack of interpunction and capitalization), but may
+also easily break the generators. After all, the output of these documentation
+functions is fed through some Python magic to Sphinx' reStructuredText parser.
+
+In order to make the documentation readable from within Python as well,
+indentation is used for sectioning, rather than RST section headers. This means
+that each documentation printing function needs to be aware of the current
+indentation level; simply returning a string is not enough. To solve this and
+a few other problems all functions that print documentation-like information to
+the user must have the following signature:
+
+`dump_*(std::ostream &os = std::cout, const utils::Str &line_prefix = "")`
+
+The following contract must be adhered to:
+
+ - at least one line must be written to `os`;
+ - all lines must start with `line_prefix` and end with `"\n"`;
+ - the `<iomanip>` stream state of `os` must not be mangled;
+ - the stream should be flushed at the end (either via `std::endl` or an
+   explicit call to `flush()`).
+
+To open a subsection in the output stream (for a recursive call to a dump
+function, for instance):
+
+ - there must be at least one blank line (or the start of the input) before
+   the section header;
+ - the section header must have the same indentation level as the parent
+   (so whatever is in `line_prefix`);
+ - the header must be exactly of the form `<line_prefix>* <text> *\n`; and
+ - the body of the section must be indented by two additional spaces.
+
+Do NOT use RST or markdown headers in the section bodies; use only indented
+sections as described above. Violating this rule or any of the other rules
+above will likely break the converter for the RTD pages.
+
+The text inside the documentation strings is interpreted as *markdown*,
+converted to reStructuredText for Sphinx/ReadTheDocs via `m2r2`. Markdown is
+used rather than RST because it's way more pleasing to read raw, for example
+when dumped from within an interactive Python interpreter. `m2r2` passes most
+RST tags straight through however, so you still need to be careful not to
+accidentally put something that looks like RST in a docstring.
+
+In addition `m2r2`'s logic, the following conversions are made:
+
+ - section headers are detected and converted to appropriate RST header
+   levels;
+ - section bodies are un-indented; and
+ - `NOTE: ` or `WARNING: ` at the start of a markdown paragraph (blank line
+   before and after) is converted to an RST `.. note::`/`.. warning::` block.
+   The first letter of the sentence (fragment) following the header is
+   automatically capitalized, so it can be lowercase in the raw output while
+   still being appropriately capitalized on ReadTheDocs.
+
+To aid writing these long documentation strings inside C++, two functions are
+available in `utils/str.h`:
+
+ - `dump_str`: useful for writing long dumpable strings by means of
+   manually-wrapped raw strings. For example:
+
+   ```c++
+   utils::dump_str(os, line_prefix, R"(
+   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum at
+   lacus porttitor mi consectetur ultrices. Aenean malesuada tristique nisl,
+   eu ultrices enim sodales eu. Cras sed nulla enim. Nunc pretium pretium
+   tortor, ut cursus nulla commodo sit amet.
+   )");
+   ```
+
+   `dump_str` ensures that the C++ indentation level is stripped from each line
+   of the raw string, and that line_prefix is inserted before each line.
+
+ - `wrap_str`: similar to the above, but assumes that the input is not wrapped
+   yet. This is more useful for shorter pieces of text where you don't want to
+   be bothered by wrapping manually, or generated text where doing so
+   consistently would otherwise be impossible. However, while the wrapper tries
+   to be smart about maintaining indentation for multiple paragraphs in its
+   input, it is not infallible. Hence, for long pieces of relatively
+   complicated documentation code (that includes code blocks etc.) `dump_str`
+   is more helpful.
+
+## Utility types and functions
 
 The `ql::utils` namespace provides a bunch of typedefs and wrappers for C++
 standard library stuff, modified to improve safety, reduce undefined behavior,

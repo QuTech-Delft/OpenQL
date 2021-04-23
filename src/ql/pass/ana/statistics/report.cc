@@ -91,6 +91,13 @@ void ReportStatisticsPass::dump_docs(
 }
 
 /**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str ReportStatisticsPass::get_friendly_type() const {
+    return "Statistics reporter";
+}
+
+/**
  * Constructs a statistics reporter.
  */
 ReportStatisticsPass::ReportStatisticsPass(

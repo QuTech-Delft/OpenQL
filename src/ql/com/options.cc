@@ -42,7 +42,7 @@ Options make_ql_options() {
 
     options.add_bool(
         "use_default_gates",
-        "Use default gates or not. TODO: document better, and work out what to"
+        "Use default gates or not. TODO: document better, and work out what to "
         "do with default gates to begin with.",
         true
     );
@@ -51,7 +51,7 @@ Options make_ql_options() {
         "decompose_toffoli",
         "Controls the behavior of Kernel.toffoli(); either decompose "
         "immediately via the given substitution, or insert the Toffoli gate "
-        "into the circuit as-is if \"no\" or unspecified.",
+        "into the circuit as-is if `no` or unspecified.",
         "no",
         {"no", "NC", "AM"}
     );
@@ -74,7 +74,7 @@ Options make_ql_options() {
         "with this option set, a numeric suffix will be automatically added to "
         "the program name, starting from 2. The generated suffix can be reset "
         "by simply removing the .unique file. Note that the uniquified name is "
-        "only used when %N is used in the \"output_prefix\" common pass option."
+        "only used when %N is used in the `output_prefix` common pass option."
     );
 
     //========================================================================//
@@ -120,8 +120,8 @@ Options make_ql_options() {
     options.add_str(
         "output_dir",
         "When no compiler configuration file is specified, this controls "
-        "the \"output_prefix\" option for all passes; it will be set to "
-        "\"<output_dir>/%N_%P\". Defaults to \"test_output\" for  compatibility "
+        "the `output_prefix` option for all passes; it will be set to "
+        "`<output_dir>/%N_%P`. Defaults to `test_output` for compatibility "
         "reasons. The directory will automatically be created if it does not "
         "already exist when the first output file is written.",
         "test_output"
@@ -131,7 +131,7 @@ Options make_ql_options() {
         "write_qasm_files",
         "When no compiler configuration file is specified, this enables "
         "writing cQASM files before and after each default pass. When a "
-        "compiler configuration file is specified, use the \"debug\" pass "
+        "compiler configuration file is specified, use the `debug` pass "
         "option common to all passes instead."
         "write_report_files."
     );
@@ -140,7 +140,7 @@ Options make_ql_options() {
         "write_report_files",
         "When no compiler configuration file is specified, this enables "
         "writing statistics report files before and after each default pass. "
-        "When a compiler configuration file is specified, use the \"debug\" "
+        "When a compiler configuration file is specified, use the `debug` "
         "pass option common to all passes instead."
     );
 
@@ -162,7 +162,7 @@ Options make_ql_options() {
         "scheduler_uniform",
         "When no compiler configuration file is specified, this controls "
         "whether uniform scheduling should be done instead of ASAP/ALAP (i.e. "
-        "the \"scheduler\" option will be ignored). Both the pre-mapping and "
+        "the `scheduler` option will be ignored). Both the pre-mapping and "
         "post-mapping schedulers are affected."
     );
 
@@ -224,7 +224,7 @@ Options make_ql_options() {
         "mapper",
         "When no compiler configuration file is specified, this controls "
         "whether the heuristic mapper will be run, and if so, which heuristic "
-        "it should use. When \"no\", MIP-based placement is also disabled.",
+        "it should use. When `no`, MIP-based placement is also disabled.",
         "no",
         {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"}
     );
@@ -281,10 +281,10 @@ Options make_ql_options() {
         "mapselectswaps",
         "When no compiler configuration file is specified, and the mapper is "
         "enabled, this controls how routing interacts with speculation. When"
-        "\"all\", all swaps for a particular routing option are committed "
-        "immediately, before trying anything else. When \"one\", only the "
+        "`all`, all swaps for a particular routing option are committed "
+        "immediately, before trying anything else. When `one`, only the "
         "first swap in the route from source to target qubit is committed. When "
-        "\"earliest\", the swap that can be done at the earliest point is "
+        "`earliest`, the swap that can be done at the earliest point is "
         "selected, which might be the one swapping the source or target qubit.",
         "all",
         {"one", "all", "earliest"}
@@ -294,7 +294,7 @@ Options make_ql_options() {
         "maprecNN2q",
         "When no compiler configuration file is specified, and the mapper is "
         "enabled, this controls the recurse_on_nn_two_qubit option for the "
-        "mapper; i.e. whether to \"recurse\" on nearest-neighbor two-qubit gates."
+        "mapper; i.e. whether to `recurse` on nearest-neighbor two-qubit gates."
     );
 
     options.add_int(
@@ -310,11 +310,11 @@ Options make_ql_options() {
         "mapselectmaxwidth",
         "When no compiler configuration file is specified, and the mapper is "
         "enabled, this limits how many alternative mapping solutions are "
-        "considered. \"min\" means only the best-scoring alternatives are "
-        "considered, \"minplusone\" means the best scoring alternatives plus "
-        "one more are considered, \"minplushalfmin\" means 1.5x the number of "
-        "best-scoring alternatives are considered, \"minplusmin\" means 2x, "
-        "and \"all\" means they are all considered.",
+        "considered. `min` means only the best-scoring alternatives are "
+        "considered, `minplusone` means the best scoring alternatives plus "
+        "one more are considered, `minplushalfmin` means 1.5x the number of "
+        "best-scoring alternatives are considered, `minplusmin` means 2x, "
+        "and `all` means they are all considered.",
         "min",
         {"min", "minplusone", "minplushalfmin", "minplusmin", "all"}
     );
@@ -323,10 +323,10 @@ Options make_ql_options() {
         "maptiebreak",
         "When no compiler configuration file is specified, and the mapper is "
         "enabled, this controls how to tie-break equally-scoring alternative "
-        "mapping solutions. \"first\" and \"last\" choose respectively the "
+        "mapping solutions. `first` and `last` choose respectively the "
         "first and last solution in the list (TODO: does this mean anything or "
-        "is this essentially random?), \"random\" uses random number generation "
-        "to select an alternative, and \"critical\" favors the alternative that "
+        "is this essentially random?), `random` uses random number generation "
+        "to select an alternative, and `critical` favors the alternative that "
         "maps the most critical gate as determined by the scheduler (if any).",
         "random",
         {"first", "last", "random", "critical"}
@@ -336,10 +336,10 @@ Options make_ql_options() {
         "mapusemoves",
         "When no compiler configuration file is specified, and the mapper is "
         "enabled, this controls if/when the mapper inserts move gates rather "
-        "than swap gates to perform routing. If \"no\", swap gates are always "
+        "than swap gates to perform routing. If `no`, swap gates are always "
         "used. Otherwise, a move gate is used if the other qubit has been "
         "initialized, or if initializing it only extends the circuit by the "
-        "given number of cycles. \"yes\" implies this limit is 0 cycles.",
+        "given number of cycles. `yes` implies this limit is 0 cycles.",
         "yes",
         0, 20, {"no", "yes"}
     );
@@ -360,14 +360,14 @@ Options make_ql_options() {
     options.add_str(
         "backend_cc_map_input_file",
         "When no compiler configuration file is specified, and the CC backend "
-        "pass is inserted automatically, this controls its \"map_input_file\" "
+        "pass is inserted automatically, this controls its `map_input_file` "
         "option, which specifies the input map filename."
     );
 
     options.add_bool(
         "backend_cc_verbose",
         "When no compiler configuration file is specified, and the CC backend "
-        "pass is inserted automatically, this controls its \"verbose\" option, "
+        "pass is inserted automatically, this controls its `verbose` option, "
         "which selects whether verbose comments should be added to the "
         "generated .vq1asm file.",
         true
@@ -376,7 +376,7 @@ Options make_ql_options() {
     options.add_bool(
         "backend_cc_run_once",
         "When no compiler configuration file is specified, and the CC backend "
-        "pass is inserted automatically, this controls its \"run_once\" option, "
+        "pass is inserted automatically, this controls its `run_once` option, "
         "which creates a .vq1asm program that runs once instead of repeating "
         "indefinitely."
     );
@@ -391,7 +391,7 @@ Options make_ql_options() {
     options.add_enum(
         "quantumsim",
         "Quantumsim output is no longer supported by OpenQL. This option only "
-        "exists to not break existing code that sets the option to \"no\".",
+        "exists to not break existing code that sets the option to `no`.",
         "no", {"no"}
     );
 

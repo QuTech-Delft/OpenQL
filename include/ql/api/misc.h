@@ -53,9 +53,44 @@ void set_option(const std::string &option, const std::string &value);
 std::string get_option(const std::string &option);
 
 /**
- * Prints a list of all available options.
+ * Prints the documentation for all available global options.
  */
 void print_options();
+
+/**
+ * Returns the result of print_options() as a string.
+ */
+std::string get_options();
+
+/**
+ * Prints the documentation for all available target architectures.
+ */
+void print_architectures();
+
+/**
+ * Returns the result of print_architectures() as a string.
+ */
+std::string get_architectures();
+
+/**
+ * Prints the documentation for all available passes.
+ */
+void print_passes();
+
+/**
+ * Returns the result of print_passes() as a string.
+ */
+std::string get_passes();
+
+/**
+ * Prints the documentation for all available scheduler resources.
+ */
+void print_resources();
+
+/**
+ * Returns the result of print_resources() as a string.
+ */
+std::string get_resources();
 
 } // namespace api
 } // namespace ql

@@ -266,6 +266,12 @@ public:
     virtual ~Base() = default;
 
     /**
+     * Returns a user-friendly type name for this pass. Used for documentation
+     * generation.
+     */
+    virtual utils::Str get_friendly_type() const = 0;
+
+    /**
      * Returns the full, desugared type name that this pass was constructed
      * with.
      */

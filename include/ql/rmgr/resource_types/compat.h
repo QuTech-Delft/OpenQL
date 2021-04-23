@@ -86,6 +86,13 @@ public:
     }
 
     /**
+     * Returns a user-friendly type name for this resource.
+     */
+    utils::Str get_friendly_type() const override {
+        return utils::Str("Compatibility wrapper for ") + typeid(T).name();
+    }
+
+    /**
      * Abstract implementation for dump_config().
      */
     void on_dump_config(

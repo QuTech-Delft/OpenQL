@@ -64,7 +64,6 @@ void dump_with_statistics(
     ana::statistics::report::dump(program, os, "# ");
 }
 
-
 /**
  * Dumps docs for the cQASM writer.
  */
@@ -75,6 +74,13 @@ void ReportCQasmPass::dump_docs(
     utils::dump_str(os, line_prefix, R"(
     This pass writes the current program out as a cQASM file.
     )");
+}
+
+/**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str ReportCQasmPass::get_friendly_type() const {
+    return "cQASM writer";
 }
 
 /**

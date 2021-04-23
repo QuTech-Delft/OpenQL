@@ -7,6 +7,9 @@
 #include "ql/version.h"
 #include "ql/utils/logger.h"
 #include "ql/com/options.h"
+#include "ql/arch/architecture.h"
+#include "ql/pmgr/factory.h"
+#include "ql/rmgr/factory.h"
 
 //============================================================================//
 //                               W A R N I N G                                //
@@ -80,10 +83,67 @@ std::string get_option(const std::string &option) {
 }
 
 /**
- * Prints a list of all available options.
+ * Prints the documentation for all available global options.
  */
 void print_options() {
-    ql::com::options::global.help();
+    ql::com::options::global.dump_help();
+}
+
+/**
+ * Returns the result of print_options() as a string.
+ */
+std::string get_options() {
+    std::ostringstream ss;
+    ql::com::options::global.dump_help(ss);
+    return ss.str();
+}
+
+/**
+ * Prints the documentation for all available target architectures.
+ */
+void print_architectures() {
+    ql::arch::dump_architectures();
+}
+
+/**
+ * Returns the result of print_architectures() as a string.
+ */
+std::string get_architectures() {
+    std::ostringstream ss;
+    ql::arch::dump_architectures(ss);
+    return ss.str();
+}
+
+/**
+ * Prints the documentation for all available passes.
+ */
+void print_passes() {
+    ql::pmgr::Factory::dump_pass_types(ql::pmgr::Factory());
+}
+
+/**
+ * Returns the result of print_passes() as a string.
+ */
+std::string get_passes() {
+    std::ostringstream ss;
+    ql::pmgr::Factory::dump_pass_types(ql::pmgr::Factory(), ss);
+    return ss.str();
+}
+
+/**
+ * Prints the documentation for all available scheduler resources.
+ */
+void print_resources() {
+    ql::rmgr::Factory().dump_resource_types();
+}
+
+/**
+ * Returns the result of print_resources() as a string.
+ */
+std::string get_resources() {
+    std::ostringstream ss;
+    ql::rmgr::Factory().dump_resource_types(ss);
+    return ss.str();
 }
 
 } // namespace api

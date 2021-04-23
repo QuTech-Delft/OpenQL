@@ -153,14 +153,14 @@ Base::Base(
     options.add_str(
         "output_prefix",
         "Format string for the prefix used for all output products. "
-        "%n is substituted with the user-specified name of the program. "
-        "%N is substituted with the optionally uniquified name of the program. "
-        "%p is substituted with the local name of the pass within its group. "
-        "%P is substituted with the fully-qualified name of the pass, using "
+        "`%n` is substituted with the user-specified name of the program. "
+        "`%N` is substituted with the optionally uniquified name of the program. "
+        "`%p` is substituted with the local name of the pass within its group. "
+        "`%P` is substituted with the fully-qualified name of the pass, using "
         "periods as hierarchy separators (guaranteed unique). "
-        "%U is substituted with the fully-qualified name of the pass, using "
+        "`%U` is substituted with the fully-qualified name of the pass, using "
         "underscores as hierarchy separators. This may not be completely unique,"
-        "%D is substituted with the fully-qualified name of the pass, using "
+        "`%D` is substituted with the fully-qualified name of the pass, using "
         "slashes as hierarchy separators. "
         "Any directories that don't exist will be created as soon as an output "
         "file is written.",
@@ -169,16 +169,16 @@ Base::Base(
     options.add_enum(
         "debug",
         "May be used to implicitly surround this pass with cQASM/report file "
-        "output printers, to aid in debugging. Set to \"no\" to disable this "
-        "functionality or to \"yes\" to write a cQASM file before and after "
+        "output printers, to aid in debugging. Set to `no` to disable this "
+        "functionality or to `yes` to write a cQASM file before and after "
         "that includes statistics as comments. The filename is built using "
-        "the output_prefix option, using suffix \"_debug_[in|out].cq\". "
-        "The option values \"stats\", \"cqasm\", and \"both\" are used for "
-        "backward compatibility with the \"write_qasm_files\" and "
-        "\"write_report_files\" global options; for \"stats\" and \"both\" a "
-        "statistics report file is written with suffix \"_[in|out].report\", "
-        "and for \"qasm\" and \"both\" a cQASM file is written (without stats "
-        "in the comments) with suffix \"_[in|out].qasm\".",
+        "the output_prefix option, using suffix `_debug_[in|out].cq`. "
+        "The option values `stats`, `cqasm`, and `both` are used for "
+        "backward compatibility with the `write_qasm_files` and "
+        "`write_report_files` global options; for `stats` and `both` a "
+        "statistics report file is written with suffix `_[in|out].report`, "
+        "and for `qasm` and `both` a cQASM file is written (without stats "
+        "in the comments) with suffix `_[in|out].qasm`.",
         "no",
         {"no", "yes", "stats", "qasm", "both"}
     );
@@ -208,9 +208,9 @@ void Base::dump_help(
 ) const {
     dump_docs(os, line_prefix);
     os << line_prefix << "\n";
-    os << line_prefix << "Available options:\n";
+    os << line_prefix << "* Options *\n";
     os << line_prefix << "\n";
-    options.help(os, line_prefix + "  ");
+    options.dump_help(os, line_prefix + "  ");
 }
 
 /**
@@ -223,7 +223,7 @@ void Base::dump_options(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
-    options.dump(only_set, os, line_prefix);
+    options.dump_options(only_set, os, line_prefix);
 }
 
 /**
@@ -245,7 +245,7 @@ void Base::dump_strategy(
     } else {
         indent = line_prefix;
     }
-    options.dump(true, os, line_prefix + "  ");
+    options.dump_options(true, os, line_prefix + "  ");
     if (is_group()) {
         switch (node_type) {
             case NodeType::GROUP_IF:

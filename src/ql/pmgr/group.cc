@@ -44,5 +44,12 @@ void Group::dump_docs(
     os << line_prefix << "putting all the contained passes in the parent pass group.\n";
 }
 
+/**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str Group::get_friendly_type() const {
+    return "Generic group";
+}
+
 } // namespace pmgr
 } // namespace ql

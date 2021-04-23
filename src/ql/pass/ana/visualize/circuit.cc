@@ -37,6 +37,13 @@ void VisualizeCircuitPass::dump_docs(
 }
 
 /**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str VisualizeCircuitPass::get_friendly_type() const {
+    return "Circuit visualizer";
+}
+
+/**
  * Constructs a circuit visualizer pass.
  */
 VisualizeCircuitPass::VisualizeCircuitPass(

@@ -126,47 +126,54 @@ void ReadCQasmPass::dump_docs(
     option. This must be a JSON file consisting of an array of objects, where
     each object has the following form.
 
-    {
-        "name": "<name>",               # mandatory
-        "params": "<typespec>",         # mandatory, refer to cqasm::types::from_spec()
-        "allow_conditional": <bool>,    # whether conditional gates of this type are accepted,
-                                        #   defaults to true
-        "allow_parallel": <bool>,       # whether parallel gates of this type are accepted,
-                                        #   defaults to true
-        "allow_reused_qubits": <bool>,  # whether reused qubit args for this type are accepted,
-                                        #   defaults to false
-        "ql_name": "<name>",            # defaults to "name"
-        "ql_qubits": [                  # list or "all", defaults to the "Q" args
-            0,                          # hardcoded qubit index
-            "%0"                        # reference to argument 0, which can be a qubitref, bitref,
-                                        #   or int
-        ],
-        "ql_cregs": [                   # list or "all", defaults to the "I" args
-            0,                          # hardcoded creg index
-            "%0"                        # reference to argument 0, which can be an int variable
-                                        #   reference, or int for creg index
-        ],
-        "ql_bregs": [                   # list or "all", defaults to the "B" args
-            0,                          # hardcoded breg index
-            "%0"                        # reference to argument 0, which can be an int variable
-                                        #   reference, or int for creg index
-        ],
-        "ql_duration": 0,               # duration; int to hardcode or "%i" to take from param i
-                                        #   (must be of type int), defaults to 0
-        "ql_angle": 0.0,                # angle; float to hardcode or "%i" to take from param i
-                                        #   (must be of type int or real), defaults to first arg
-                                        #   of type real or 0.0
-        "ql_angle_type": "<type>",      # interpretation of angle arg; one of "rad" (radians),
-                                        #   "deg" (degrees), or "pow2" (2pi/2^k radians), defaults
-                                        #   to "rad"
-        "implicit_sgmq": <bool>,        # if multiple qubit args are present, a single-qubit gate
-                                        #   of this type should be replicated for these qubits
-                                        #   (instead of a single gate with many qubits)
-        "implicit_breg": <bool>         # the breg operand(s) that implicitly belongs to the qubit
-                                        #   operand(s) in the gate should be added to the OpenQL
-                                        #   operand list
-    }
+        {
+            "name": "<name>",               # mandatory
+            "params": "<typespec>",         # mandatory, refer to cqasm::types::from_spec()
+            "allow_conditional": <bool>,    # whether conditional gates of this type are accepted,
+                                            #   defaults to true
+            "allow_parallel": <bool>,       # whether parallel gates of this type are accepted,
+                                            #   defaults to true
+            "allow_reused_qubits": <bool>,  # whether reused qubit args for this type are accepted,
+                                            #   defaults to false
+            "ql_name": "<name>",            # defaults to "name"
+            "ql_qubits": [                  # list or "all", defaults to the "Q" args
+                0,                          # hardcoded qubit index
+                "%0"                        # reference to argument 0, which can be a qubitref, bitref,
+                                            #   or int
+            ],
+            "ql_cregs": [                   # list or "all", defaults to the "I" args
+                0,                          # hardcoded creg index
+                "%0"                        # reference to argument 0, which can be an int variable
+                                            #   reference, or int for creg index
+            ],
+            "ql_bregs": [                   # list or "all", defaults to the "B" args
+                0,                          # hardcoded breg index
+                "%0"                        # reference to argument 0, which can be an int variable
+                                            #   reference, or int for creg index
+            ],
+            "ql_duration": 0,               # duration; int to hardcode or "%i" to take from param i
+                                            #   (must be of type int), defaults to 0
+            "ql_angle": 0.0,                # angle; float to hardcode or "%i" to take from param i
+                                            #   (must be of type int or real), defaults to first arg
+                                            #   of type real or 0.0
+            "ql_angle_type": "<type>",      # interpretation of angle arg; one of "rad" (radians),
+                                            #   "deg" (degrees), or "pow2" (2pi/2^k radians), defaults
+                                            #   to "rad"
+            "implicit_sgmq": <bool>,        # if multiple qubit args are present, a single-qubit gate
+                                            #   of this type should be replicated for these qubits
+                                            #   (instead of a single gate with many qubits)
+            "implicit_breg": <bool>         # the breg operand(s) that implicitly belongs to the qubit
+                                            #   operand(s) in the gate should be added to the OpenQL
+                                            #   operand list
+        }
     )");
+}
+
+/**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str ReadCQasmPass::get_friendly_type() const {
+    return "cQASM reader";
 }
 
 /**

@@ -89,7 +89,7 @@ str
 
 %feature("docstring") print_options
 """
-Prints a list of all available options.
+Prints the documentation for all available global options.
 
 Parameters
 ----------
@@ -99,5 +99,108 @@ Returns
 -------
 None
 """
+
+
+%feature("docstring") get_options
+"""
+Returns the result of print_options() as a string.
+
+Parameters
+----------
+None
+
+Returns
+-------
+str
+    The documentation for the options.
+"""
+
+
+%feature("docstring") print_architectures
+"""
+Prints the documentation for all available target architectures.
+
+Parameters
+----------
+None
+
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") get_architectures
+"""
+Returns the result of print_architectures() as a string.
+
+Parameters
+----------
+None
+
+Returns
+-------
+str
+    The documentation for the supported architectures.
+"""
+
+
+%feature("docstring") print_passes
+"""
+Prints the documentation for all available passes.
+
+Parameters
+----------
+None
+
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") get_passes
+"""
+Returns the result of print_passes() as a string.
+
+Parameters
+----------
+None
+
+Returns
+-------
+str
+    The documentation for the supported passes.
+"""
+
+
+%feature("docstring") print_resources
+"""
+Prints the documentation for all available scheduler resources.
+
+Parameters
+----------
+None
+
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") get_resources
+"""
+Returns the result of print_resources() as a string.
+
+Parameters
+----------
+None
+
+Returns
+-------
+str
+    The documentation for the supported scheduler resources.
+"""
+
 
 %include "ql/api/misc.h"

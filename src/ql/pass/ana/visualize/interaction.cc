@@ -35,6 +35,13 @@ void VisualizeInteractionPass::dump_docs(
 }
 
 /**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str VisualizeInteractionPass::get_friendly_type() const {
+    return "Qubit interaction graph visualizer";
+}
+
+/**
  * Constructs a interaction graph visualizer pass.
  */
 VisualizeInteractionPass::VisualizeInteractionPass(

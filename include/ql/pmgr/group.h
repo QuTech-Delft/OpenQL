@@ -52,6 +52,13 @@ protected:
         const utils::Str &line_prefix
     ) const override;
 
+public:
+
+    /**
+     * Returns a user-friendly type name for this pass.
+     */
+    utils::Str get_friendly_type() const override;
+
 };
 
 } // namespace pmgr

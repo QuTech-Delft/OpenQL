@@ -84,7 +84,7 @@ about. If it's not specified or empty, a group is made instead, and
 \"group\" must be specified for the group to do anything.
 
 The \"name\" key, if specified, is a user-defined name for the pass, that
-must match `[a-zA-Z0-9_\\\\-]+` and be unique within the surrounding pass
+must match ``[a-zA-Z0-9_\\\\-]+`` and be unique within the surrounding pass
 list. If not specified, a name that complies with these requirements is
 generated automatically, but the actual generated name should not be
 relied upon to be consistent between OpenQL versions. The name may be

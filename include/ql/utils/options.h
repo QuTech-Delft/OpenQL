@@ -159,7 +159,7 @@ public:
     /**
      * Writes a help message for this option to the given stream (or stdout).
      */
-    void help(std::ostream &os = std::cout) const;
+    void dump_help(std::ostream &os = std::cout, const utils::Str &line_prefix = "") const;
 
     /**
      * Registers a callback, to be called when the option changes.
@@ -467,7 +467,7 @@ public:
     /**
      * Writes a help message for this option to the given stream (or stdout).
      */
-    void help(
+    void dump_help(
         std::ostream &os = std::cout,
         const utils::Str &line_prefix = ""
     ) const;
@@ -476,7 +476,7 @@ public:
      * Dumps all options (or only options which were explicitly set) to the
      * given stream (or stdout).
      */
-    void dump(
+    void dump_options(
         bool only_set = false,
         std::ostream &os = std::cout,
         const utils::Str &line_prefix = ""

@@ -41,6 +41,13 @@ For more advanced usage of the OpenQL compiler, the default compilation strategy
       set_option
       get_option
       print_options
+      get_options
+      print_architectures
+      get_architectures
+      print_passes
+      get_passes
+      print_resources
+      get_resources
 
    .. rubric:: Classes
 

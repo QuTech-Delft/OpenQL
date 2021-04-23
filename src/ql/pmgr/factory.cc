@@ -189,14 +189,12 @@ void Factory::dump_pass_types(
 
     // Dump docs for the discovered passes.
     for (const auto &pair : pass_types) {
-        const auto &full_type_name = pair.first;
         const auto &pass = pair.second.first;
         const auto &type_aliases = pair.second.second;
 
-        os << line_prefix << "Pass " << full_type_name;
-        os << " with alias(es) " << type_aliases.to_string("", ", ", "", ", or ", " or ");
-        os << ":\n";
-        os << line_prefix << "\n";
+        os << line_prefix << "* " << pass->get_friendly_type() << " *\n";
+        os << line_prefix << "  Type name(s): " << type_aliases.to_string("`", "`, `", "`", "`, or `", "` or `") << ".\n";
+        os << line_prefix << "  \n";
         pass->dump_help(os, line_prefix + "  ");
         os << line_prefix << "\n";
     }

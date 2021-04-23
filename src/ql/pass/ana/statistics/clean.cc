@@ -25,6 +25,13 @@ void CleanStatisticsPass::dump_docs(
 }
 
 /**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str CleanStatisticsPass::get_friendly_type() const {
+    return "Statistics cleaner";
+}
+
+/**
  * Constructs a statistics cleaner.
  */
 CleanStatisticsPass::CleanStatisticsPass(

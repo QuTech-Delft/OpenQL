@@ -72,8 +72,8 @@ public:
     }
 
     /**
-     * Returns a copy of this pass factory with the following modifications made
-     * to the map.
+     * Returns a copy of this resource factory with the following modifications
+     * made to the map.
      *
      *  - Entries with a `dnu` path component in them are removed. If the type
      *    of the removed entry exists in dnu however, it will be reinserted with

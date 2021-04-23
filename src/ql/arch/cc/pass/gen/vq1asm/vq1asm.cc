@@ -26,19 +26,26 @@ void GenerateVQ1AsmPass::dump_docs(
     Controller, version )" CC_BACKEND_VERSION_STRING R"(
 
     This pass actually generates three files:
-     - <prefix>.vq1asm: the assembly code output file;
-     - <prefix>.map: the instrument configuration file; and
-     - <prefix>.vcd: a VCD (value change dump) file for viewing the waveforms
+     - `<prefix>.vq1asm`: the assembly code output file;
+     - `<prefix>.map`: the instrument configuration file; and
+     - `<prefix>.vcd`: a VCD (value change dump) file for viewing the waveforms
        that the program outputs.
 
     The pass is compile-time configured with the following options:
-     - OPT_CC_SCHEDULE_RC = )"           + utils::to_string(OPT_CC_SCHEDULE_RC)           + R"(
-     - OPT_SUPPORT_STATIC_CODEWORDS = )" + utils::to_string(OPT_SUPPORT_STATIC_CODEWORDS) + R"(
-     - OPT_STATIC_CODEWORDS_ARRAYS = )"  + utils::to_string(OPT_STATIC_CODEWORDS_ARRAYS)  + R"(
-     - OPT_VECTOR_MODE = )"              + utils::to_string(OPT_VECTOR_MODE)              + R"(
-     - OPT_FEEDBACK = )"                 + utils::to_string(OPT_FEEDBACK)                 + R"(
-     - OPT_PRAGMA = )"                   + utils::to_string(OPT_PRAGMA)                   + R"(
+     - `OPT_CC_SCHEDULE_RC` = )"           + utils::to_string(OPT_CC_SCHEDULE_RC)           + R"(
+     - `OPT_SUPPORT_STATIC_CODEWORDS` = )" + utils::to_string(OPT_SUPPORT_STATIC_CODEWORDS) + R"(
+     - `OPT_STATIC_CODEWORDS_ARRAYS` = )"  + utils::to_string(OPT_STATIC_CODEWORDS_ARRAYS)  + R"(
+     - `OPT_VECTOR_MODE` = )"              + utils::to_string(OPT_VECTOR_MODE)              + R"(
+     - `OPT_FEEDBACK` = )"                 + utils::to_string(OPT_FEEDBACK)                 + R"(
+     - `OPT_PRAGMA` = )"                   + utils::to_string(OPT_PRAGMA)                   + R"(
     )");
+}
+
+/**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str GenerateVQ1AsmPass::get_friendly_type() const {
+    return "Central Controller code generator";
 }
 
 /**

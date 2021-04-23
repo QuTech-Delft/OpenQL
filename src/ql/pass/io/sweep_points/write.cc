@@ -20,9 +20,26 @@ void WriteSweepPointsPass::dump_docs(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
-    utils::dump_str(os, line_prefix, R"(
-    TODO
+    utils::dump_str( os, line_prefix, R"(
+    Writes a simple JSON file of the following form:
+
+        { "measurement_points": [...] }
+
+    wherein the ellipsis is populated with the contents of the sweep
+    points array specified to the program through the set_sweep_points().
+    API call. The filename defaults to `<output_prefix>.json`, but this may
+    be overridden using the set_config_file() API call on program.
+
+    This pass has no further use and only exists for backward
+    compatibility. It may be removed entirely in a later version of OpenQL.
     )");
+}
+
+/**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str WriteSweepPointsPass::get_friendly_type() const {
+    return "Sweep points writer";
 }
 
 /**

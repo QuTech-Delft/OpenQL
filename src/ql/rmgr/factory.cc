@@ -29,7 +29,7 @@ Factory::Factory() {
 }
 
 /**
- * Returns a copy of this pass factory with the following modifications made
+ * Returns a copy of this resource factory with the following modifications made
  * to the map.
  *
  *  - Entries with a `dnu` path component in them are removed. If the type
@@ -45,7 +45,7 @@ Factory Factory::configure(
     const utils::Set<utils::Str> &dnu
 ) const {
 
-    // Clone this pass factory into a smart pointer.
+    // Clone this resource factory into a smart pointer.
     Factory retval(*this);
 
     // Pull the selected DNU resources into the main namespace, and remove all
@@ -130,7 +130,7 @@ ResourceRef Factory::build_resource(
 ) const {
     auto it = resource_types.find(type_name);
     if (it == resource_types.end()) {
-        throw utils::Exception("unknown pass type \"" + type_name + "\"");
+        throw utils::Exception("unknown resource type \"" + type_name + "\"");
     }
     return (*it->second)(instance_name, platform, configuration);
 }
@@ -143,7 +143,7 @@ void Factory::dump_resource_types(
     const utils::Str &line_prefix
 ) const {
 
-    // Gather all aliases for each particular pass type.
+    // Gather all aliases for each particular resource type.
     utils::Map<const ConstructorFn::Data*, utils::List<utils::Str>> aliases;
     for (const auto &pair : resource_types) {
         const auto &type_name = pair.first;
@@ -151,28 +151,26 @@ void Factory::dump_resource_types(
         aliases.set(constructor_fn.unwrap().get()).push_back(type_name);
     }
 
-    // Sort pass types by full pass type name.
-    utils::Map<utils::Str, utils::Pair<ResourceRef, utils::List<utils::Str>>> pass_types;
+    // Sort resource types by full resource type name.
+    utils::Map<utils::Str, utils::Pair<ResourceRef, utils::List<utils::Str>>> resource_types;
     for (const auto &pair : aliases) {
         const auto *constructor_fn_ptr = pair.first;
         const auto &type_aliases = pair.second;
-        auto pass = (*constructor_fn_ptr)("", {}, {});
-        const auto &full_type_name = pass->get_type();
-        QL_ASSERT(pass_types.find(full_type_name) == pass_types.end());
-        pass_types.set(full_type_name) = {pass, type_aliases};
+        auto resource = (*constructor_fn_ptr)("", {}, {});
+        const auto &full_type_name = resource->get_type();
+        QL_ASSERT(resource_types.find(full_type_name) == resource_types.end());
+        resource_types.set(full_type_name) = {resource, type_aliases};
     }
 
-    // Dump docs for the discovered passes.
-    for (const auto &pair : pass_types) {
-        const auto &full_type_name = pair.first;
-        const auto &pass = pair.second.first;
+    // Dump docs for the discovered resourcees.
+    for (const auto &pair : resource_types) {
+        const auto &resource = pair.second.first;
         const auto &type_aliases = pair.second.second;
 
-        os << line_prefix << "Pass " << full_type_name;
-        os << " with alias(es) " << type_aliases.to_string("", ", ", "", ", or ", " or ");
-        os << ":\n";
-        os << line_prefix << "\n";
-        pass->dump_docs(os, line_prefix + "  ");
+        os << line_prefix << "* " << resource->get_friendly_type() << " *\n";
+        os << line_prefix << "  Type names: " << type_aliases.to_string("`", "`, `", "`", "`, or `", "` or `") << ".\n";
+        os << line_prefix << "  \n";
+        resource->dump_docs(os, line_prefix + "  ");
         os << line_prefix << "\n";
     }
 

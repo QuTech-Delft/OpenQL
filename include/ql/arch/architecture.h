@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <iostream>
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 
@@ -48,6 +49,11 @@ std::ostream &operator<<(std::ostream &os, Architecture a);
  * Inverse of operator<< for architecture.
  */
 Architecture architecture_from_string(const utils::Str &s);
+
+/**
+ * Dumps help information about the available architectures.
+ */
+void dump_architectures(std::ostream &os = std::cout, const utils::Str &line_prefix = "");
 
 } // namespace arch
 } // namespace ql

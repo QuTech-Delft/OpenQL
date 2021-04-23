@@ -28,6 +28,13 @@ void SchedulePass::dump_docs(
 }
 
 /**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str SchedulePass::get_friendly_type() const {
+    return "Scheduler";
+}
+
+/**
  * Constructs a scheduler.
  */
 SchedulePass::SchedulePass(
@@ -73,7 +80,7 @@ SchedulePass::SchedulePass(
     options.add_bool(
         "write_dot_graphs",
         "Whether to emit a graphviz dot graph representation of the schedule "
-        "of the kernel. The emitted file will use suffix \"_<kernel>.dot\".",
+        "of the kernel. The emitted file will use suffix `_<kernel>.dot`.",
         false
     );
 

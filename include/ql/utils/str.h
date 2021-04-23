@@ -125,6 +125,18 @@ Bool pattern_match(const Str &pattern, const Str &str);
 void dump_str(std::ostream &os, const Str &line_prefix, const Str &raw);
 
 /**
+ * Takes a (documentation) string, and:
+ *  - wraps long lines at column 80;
+ *  - prefixes all resulting lines with line_prefix; and
+ *  - dumps the resulting lines to the given stream.
+ *
+ * Indentation tries to be smart about lists with - bullets, but other than that
+ * it's pretty stupid. Newlines are not converted to spaces prior to wrapping,
+ * so the incoming documentation should not be pre-wrapped.
+ */
+void wrap_str(std::ostream &os, const Str &line_prefix, const Str &raw);
+
+/**
  * Returns whether str starts with front.
  */
 Bool starts_with(const Str &str, const Str &front);

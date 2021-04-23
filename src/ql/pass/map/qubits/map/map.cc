@@ -35,6 +35,13 @@ void MapQubitsPass::dump_docs(
 }
 
 /**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str MapQubitsPass::get_friendly_type() const {
+    return "Mapper";
+}
+
+/**
  * Constructs a qubit mapper.
  */
 MapQubitsPass::MapQubitsPass(

@@ -36,5 +36,12 @@ Architecture architecture_from_string(const utils::Str &s) {
     }
 }
 
+/**
+ * Dumps help information about the available architectures.
+ */
+void dump_architectures(std::ostream &os, const utils::Str &line_prefix) {
+    os << line_prefix << "TODO" << std::endl;
+}
+
 } // namespace arch
 } // namespace ql
