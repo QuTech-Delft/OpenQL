@@ -42,7 +42,7 @@ Result Algorithm::body(com::QubitMapping &v2r) {
     QL_DOUT("InitialPlace.body ...");
 
     // check validity of circuit
-    for (auto &gp : kernel->c) {
+    for (auto &gp : kernel->gates) {
         auto &q = gp->operands;
         if (q.size() > 2) {
             QL_FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
@@ -64,7 +64,7 @@ Result Algorithm::body(com::QubitMapping &v2r) {
     v2i.resize(nvq, com::UNDEFINED_QUBIT);// virtual qubit v not used by circuit as gate operand
 
     UInt twoqubitcount = 0;
-    for (auto &gp : kernel->c) {
+    for (auto &gp : kernel->gates) {
         if (options.horizon == 0 || twoqubitcount < options.horizon) {
             for (auto v : gp->operands) {
                 ipusecount[v] += 1;
@@ -95,7 +95,7 @@ Result Algorithm::body(com::QubitMapping &v2r) {
     Bool currmap = true;   // true when in current map all two-qubit gates are NN
 
     twoqubitcount = 0;
-    for (auto &gp : kernel->c) {
+    for (auto &gp : kernel->gates) {
         auto &q = gp->operands;
         if (q.size() == 2) {
             if (options.horizon == 0 || twoqubitcount < options.horizon) {

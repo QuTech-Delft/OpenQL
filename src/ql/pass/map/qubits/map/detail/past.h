@@ -198,8 +198,8 @@ public:
      * init_circuit before the inevitable circuit.
      */
     utils::Int get_insertion_cost(
-        const ir::Circuit &init_circuit,
-        const ir::Circuit &circuit
+        const ir::GateRefs &init_circuit,
+        const ir::GateRefs &circuit
     ) const;
 
     /**
@@ -223,7 +223,7 @@ public:
      * written to kernel.c only at the very end.
      */
     utils::Bool new_gate(
-        ir::Circuit &circ,
+        ir::GateRefs &circ,
         const utils::Str &gname,
         const utils::Vec<utils::UInt> &qubits,
         const utils::Vec<utils::UInt> &cregs = {},
@@ -262,7 +262,7 @@ public:
      * seen from whether circ was extended. Please note that the reversal of
      * operands may have been done also when generate_move() was not successful.
      */
-    void generate_move(ir::Circuit &circuit, utils::UInt &r0, utils::UInt &r1);
+    void generate_move(ir::GateRefs &circuit, utils::UInt &r0, utils::UInt &r1);
 
     /**
      * Generates a single swap/move with real operands and adds it to the
@@ -336,14 +336,14 @@ public:
      *   4. Final schedule: the resulting gates are subject to final scheduling
      *      (the original resource-constrained scheduler).
      */
-    void make_real(const ir::GateRef &gate, ir::Circuit &circuit);
+    void make_real(const ir::GateRef &gate, ir::GateRefs &circuit);
 
     /**
      * Mapper after-burner. Used to make primitives of all gates that also have
      * a config file entry with _prim appended to their name, decomposing it
      * according to the config file gate decomposition.
      */
-    void make_primitive(const ir::GateRef &gate, ir::Circuit &circuit) const;
+    void make_primitive(const ir::GateRef &gate, ir::GateRefs &circuit) const;
 
     /**
      * Returns the first completely free cycle.
@@ -374,7 +374,7 @@ public:
     /**
      * Flushes the output gate list to the given circuit.
      */
-    void flush_to_circuit(ir::Circuit &output_circuit);
+    void flush_to_circuit(ir::GateRefs &output_circuit);
 
 };
 

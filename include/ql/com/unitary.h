@@ -60,7 +60,7 @@ public:
 
     /**
      * Explicitly runs the matrix decomposition algorithm. Used to be required,
-     * nowadays is called implicitly by get_circuit() if not done explicitly.
+     * nowadays is called implicitly by get_decomposition() if not done explicitly.
      */
     void decompose();
 
@@ -73,7 +73,7 @@ public:
     /**
      * Returns the decomposed circuit.
      */
-    ir::Circuit get_circuit(const utils::Vec<utils::UInt> &qubits);
+    ir::GateRefs get_decomposition(const utils::Vec<utils::UInt> &qubits);
 
 };
 

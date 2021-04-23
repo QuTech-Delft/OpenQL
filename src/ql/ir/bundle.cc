@@ -13,24 +13,26 @@ using namespace utils;
 
 /**
  * Create a circuit with valid cycle values from the bundled internal
- * representation.
+ * representation. The bundles are assumed to be ordered by cycle number.
  */
-ir::Circuit circuiter(const ir::Bundles &bundles) {
-    ir::Circuit circ;
+ir::GateRefs circuiter(const ir::Bundles &bundles) {
+    ir::GateRefs gates;
 
-    for (const Bundle &abundle : bundles) {
-        for (auto sec_it = abundle.parallel_sections.begin(); sec_it != abundle.parallel_sections.end(); ++sec_it) {
-            for (auto gp : *sec_it) {
-                gp->cycle = abundle.start_cycle;
-                circ.add(gp);
-            }
+    UInt cycle = 0;
+    for (const Bundle &bundle : bundles) {
+        QL_ASSERT(bundle.start_cycle > cycle);
+        cycle = bundle.start_cycle;
+        for (const auto &gate : bundle.gates) {
+            gate->cycle = cycle;
+            gates.add(gate);
         }
     }
+
     // the bundles are in increasing order of their start_cycle
     // so the gates in the new circuit are also in non-decreasing cycle value order;
     // hence it doesn't need to be sorted and is valid
     // FIXME HvS cycles_valid should be set after this
-    return circ;
+    return gates;
 }
 
 /**
@@ -45,28 +47,24 @@ Str qasm(const ir::Bundles &bundles) {
         skipgate = "skip";
     }
 
-    for (const Bundle &abundle : bundles) {
-        auto st_cycle = abundle.start_cycle;
+    for (const Bundle &bundle : bundles) {
+        auto st_cycle = bundle.start_cycle;
         auto delta = st_cycle - curr_cycle;
         if (delta > 1) {
             ssqasm << "    " << skipgate << " " << delta - 1 << std::endl;
         }
 
         auto ngates = 0;
-        for (auto sec_it = abundle.parallel_sections.begin(); sec_it != abundle.parallel_sections.end(); ++sec_it) {
-            ngates += sec_it->size();
-        }
+        ngates += bundle.gates.size();
         ssqasm << "    ";
         if (ngates > 1) ssqasm << "{ ";
         auto isfirst = 1;
-        for (auto sec_it = abundle.parallel_sections.begin(); sec_it != abundle.parallel_sections.end(); ++sec_it) {
-            for (auto gp : *sec_it) {
-                if (isfirst == 0) {
-                    ssqasm << " | ";
-                }
-                ssqasm << gp->qasm();
-                isfirst = 0;
+        for (const auto &gate : bundle.gates) {
+            if (isfirst == 0) {
+                ssqasm << " | ";
             }
+            ssqasm << gate->qasm();
+            isfirst = 0;
         }
         if (ngates > 1) ssqasm << " }";
         curr_cycle+=delta;
@@ -85,18 +83,14 @@ Str qasm(const ir::Bundles &bundles) {
 }
 
 /**
- * Create a bundled internal representation from the circuit with valid cycle
- * information.
- *
- * assumes gatep->cycle attribute reflects the cycle assignment;
- * assumes circuit being a vector of gate pointers is ordered by this cycle value;
- * create bundles in a single scan over the circuit, using currBundle and currCycle as state:
- *  - currBundle: bundle that is being put together; currBundle copied into output bundles when the bundle has been done
- *  - currCycle: cycle at which currBundle will be put; equals cycle value of all contained gates
- *
- * FIXME HvS cycles_valid must be true before each call to this bundler
+ * Create a bundled internal representation from the given kernel with valid
+ * cycle information.
  */
-ir::Bundles bundler(const ir::Circuit &circ, UInt cycle_time) {
+ir::Bundles bundler(const KernelRef &kernel) {
+    QL_ASSERT(kernel->cycles_valid);
+
+    auto cycle_time = kernel->platform->cycle_time;
+
     ir::Bundles bundles;        // result bundles
 
     ir::Bundle  currBundle;     // current bundle at currCycle that is being filled
@@ -107,7 +101,14 @@ ir::Bundles bundler(const ir::Circuit &circ, UInt cycle_time) {
 
     QL_DOUT("bundler ...");
 
-    for (auto &gp : circ) {
+    // Create bundles in a single scan over the circuit, using currBundle and
+    // currCycle as state:
+    //  - currBundle: bundle that is being put together; currBundle copied into
+    //    output bundles when the bundle has been done
+    //  - currCycle: cycle at which currBundle will be put; equals cycle value
+    //    of all contained gates
+
+    for (auto &gp : kernel->gates) {
         QL_DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
         if (gp->type() == GateType::WAIT ||    // FIXME HvS: wait must be written as well
             gp->type() == GateType::DUMMY
@@ -120,7 +121,7 @@ ir::Bundles bundler(const ir::Circuit &circ, UInt cycle_time) {
             QL_FATAL("Error: circuit not ordered by cycle value");
         }
         if (newCycle > currCycle) {
-            if (!currBundle.parallel_sections.empty()) {
+            if (!currBundle.gates.empty()) {
                 // finish currBundle at currCycle
                 // DOUT(".. bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
                 // for (auto &s : currBundle.parallel_sections)
@@ -132,7 +133,7 @@ ir::Bundles bundler(const ir::Circuit &circ, UInt cycle_time) {
                 // }
                 bundles.push_back(currBundle);
                 QL_DOUT(".. ready with bundle at cycle " << currCycle);
-                currBundle.parallel_sections.clear();
+                currBundle.gates.clear();
             }
 
             // new empty currBundle at newCycle
@@ -143,13 +144,11 @@ ir::Bundles bundler(const ir::Circuit &circ, UInt cycle_time) {
         }
 
         // add gp to currBundle
-        ir::Section asec;
-        asec.push_back(gp);
-        currBundle.parallel_sections.push_back(asec);
+        currBundle.gates.push_back(gp);
         // DOUT("... gate: " << gp->qasm() << " in private parallel section");
         currBundle.duration_in_cycles = max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time);
     }
-    if (!currBundle.parallel_sections.empty()) {
+    if (!currBundle.gates.empty()) {
         // finish currBundle (which is last bundle) at currCycle
         // DOUT("... bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
         // for (auto &s : currBundle.parallel_sections)
@@ -179,16 +178,13 @@ ir::Bundles bundler(const ir::Circuit &circ, UInt cycle_time) {
  * Print the bundles with an indication (taken from 'at') from where this
  * function was called.
  */
-void DebugBundles(const Str &at, const ir::Bundles &bundles) {
-    QL_DOUT("DebugBundles at: " << at << " showing " << bundles.size() << " bundles");
-    for (const auto& abundle : bundles) {
-        QL_DOUT("... bundle with nsections: " << abundle.parallel_sections.size());
-        for (auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt) {
-            QL_DOUT("... section with ngates: " << secIt->size());
-            for (auto gp : *secIt) {
-                // auto n = get_cc_light_instruction_name(gp->name, platform);
-                QL_DOUT("... ... gate: " << gp->qasm() << " name: " << gp->name << " cc_light_iname: " << "?");
-            }
+void debug_bundles(const Str &at, const ir::Bundles &bundles) {
+    QL_DOUT("debug_bundles at: " << at << " showing " << bundles.size() << " bundles");
+    for (const auto &bundle : bundles) {
+        QL_DOUT("... bundle with ngates: " << bundle.gates.size());
+        for (const auto &gate : bundle.gates) {
+            // auto n = get_cc_light_instruction_name(gp->name, platform);
+            QL_DOUT("... ... gate: " << gate->qasm() << " name: " << gate->name << " cc_light_iname: " << "?");
         }
     }
 }

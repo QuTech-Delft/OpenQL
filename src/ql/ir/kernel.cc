@@ -23,6 +23,17 @@ namespace ir {
 
 using namespace utils;
 
+/**
+ * Generates cQASM for a given circuit.
+ */
+Str qasm(const GateRefs &c) {
+    StrStrm ss;
+    for (auto gate : c) {
+        ss << gate->qasm() << "\n";
+    }
+    return ss.str();
+}
+
 Kernel::Kernel(
     const Str &name,
     const plat::PlatformRef &platform,
@@ -102,14 +113,6 @@ Str Kernel::get_name() const {
     return name;
 }
 
-Circuit &Kernel::get_circuit() {
-    return c;
-}
-
-const Circuit &Kernel::get_circuit() const {
-    return c;
-}
-
 void Kernel::identity(UInt qubit) {
     gate("identity", qubit);
 }
@@ -127,23 +130,23 @@ void Kernel::h(UInt qubit) {
 }
 
 void Kernel::rx(UInt qubit, Real angle) {
-    c.emplace<gates::RX>(qubit, angle);
-    c.back()->condition = condition;
-    c.back()->cond_operands = cond_operands;;
+    gates.emplace<gate_types::RX>(qubit, angle);
+    gates.back()->condition = condition;
+    gates.back()->cond_operands = cond_operands;;
     cycles_valid = false;
 }
 
 void Kernel::ry(UInt qubit, Real angle) {
-    c.emplace<gates::RY>(qubit, angle);
-    c.back()->condition = condition;
-    c.back()->cond_operands = cond_operands;;
+    gates.emplace<gate_types::RY>(qubit, angle);
+    gates.back()->condition = condition;
+    gates.back()->cond_operands = cond_operands;;
     cycles_valid = false;
 }
 
 void Kernel::rz(UInt qubit, Real angle) {
-    c.emplace<gates::RZ>(qubit, angle);
-    c.back()->condition = condition;
-    c.back()->cond_operands = cond_operands;;
+    gates.emplace<gate_types::RZ>(qubit, angle);
+    gates.back()->condition = condition;
+    gates.back()->cond_operands = cond_operands;;
     cycles_valid = false;
 }
 
@@ -225,9 +228,9 @@ void Kernel::cphase(UInt qubit1, UInt qubit2) {
 
 void Kernel::toffoli(UInt qubit1, UInt qubit2, UInt qubit3) {
     // TODO add custom gate check if needed
-    c.emplace<gates::Toffoli>(qubit1, qubit2, qubit3);
-    c.back()->condition = condition;
-    c.back()->cond_operands = cond_operands;;
+    gates.emplace<gate_types::Toffoli>(qubit1, qubit2, qubit3);
+    gates.back()->condition = condition;
+    gates.back()->cond_operands = cond_operands;;
     cycles_valid = false;
 }
 
@@ -240,7 +243,7 @@ void Kernel::wait(const Vec<UInt> &qubits, UInt duration) {
 }
 
 void Kernel::display() {
-    c.emplace<gates::Display>();
+    gates.emplace<gate_types::Display>();
     cycles_valid = false;
 }
 
@@ -390,80 +393,80 @@ Bool Kernel::add_default_gate_if_available(
     }
 
     if (gname == "identity" || gname == "i") {
-        c.emplace<gates::Identity>(qubits[0]);
+        gates.emplace<gate_types::Identity>(qubits[0]);
         result = true;
     } else if (gname == "hadamard" || gname == "h") {
-        c.emplace<gates::Hadamard>(qubits[0]);
+        gates.emplace<gate_types::Hadamard>(qubits[0]);
         result = true;
     } else if (gname == "pauli_x" || gname == "x") {
-        c.emplace<gates::PauliX>(qubits[0]);
+        gates.emplace<gate_types::PauliX>(qubits[0]);
         result = true;
     } else if( gname == "pauli_y" || gname == "y") {
-        c.emplace<gates::PauliY>(qubits[0]);
+        gates.emplace<gate_types::PauliY>(qubits[0]);
         result = true;
     } else if (gname == "pauli_z" || gname == "z") {
-        c.emplace<gates::PauliZ>(qubits[0]);
+        gates.emplace<gate_types::PauliZ>(qubits[0]);
         result = true;
     } else if (gname == "s" || gname == "phase") {
-        c.emplace<gates::Phase>(qubits[0]);
+        gates.emplace<gate_types::Phase>(qubits[0]);
         result = true;
     } else if (gname == "sdag" || gname == "phasedag") {
-        c.emplace<gates::PhaseDag>(qubits[0]);
+        gates.emplace<gate_types::PhaseDag>(qubits[0]);
         result = true;
     } else if (gname == "t") {
-        c.emplace<gates::T>(qubits[0]);
+        gates.emplace<gate_types::T>(qubits[0]);
         result = true;
     } else if (gname == "tdag") {
-        c.emplace<gates::TDag>(qubits[0]);
+        gates.emplace<gate_types::TDag>(qubits[0]);
         result = true;
     } else if (gname == "rx") {
-        c.emplace<gates::RX>(qubits[0], angle);
+        gates.emplace<gate_types::RX>(qubits[0], angle);
         result = true;
     } else if (gname == "ry") {
-        c.emplace<gates::RY>(qubits[0], angle);
+        gates.emplace<gate_types::RY>(qubits[0], angle);
         result = true;
     } else if( gname == "rz") {
-        c.emplace<gates::RZ>(qubits[0], angle);
+        gates.emplace<gate_types::RZ>(qubits[0], angle);
         result = true;
     } else if (gname == "rx90") {
-        c.emplace<gates::RX90>(qubits[0]);
+        gates.emplace<gate_types::RX90>(qubits[0]);
         result = true;
     } else if (gname == "mrx90") {
-        c.emplace<gates::MRX90>(qubits[0]);
+        gates.emplace<gate_types::MRX90>(qubits[0]);
         result = true;
     } else if (gname == "rx180") {
-        c.emplace<gates::RX180>(qubits[0]);
+        gates.emplace<gate_types::RX180>(qubits[0]);
         result = true;
     } else if (gname == "ry90") {
-        c.emplace<gates::RY90>(qubits[0]);
+        gates.emplace<gate_types::RY90>(qubits[0]);
         result = true;
     } else if (gname == "mry90") {
-        c.emplace<gates::MRY90>(qubits[0]);
+        gates.emplace<gate_types::MRY90>(qubits[0]);
         result = true;
     } else if (gname == "ry180") {
-        c.emplace<gates::RY180>(qubits[0]);
+        gates.emplace<gate_types::RY180>(qubits[0]);
         result = true;
     } else if (gname == "measure") {
         if (cregs.empty()) {
-            c.emplace<gates::Measure>(qubits[0]);
+            gates.emplace<gate_types::Measure>(qubits[0]);
         } else {
-            c.emplace<gates::Measure>(qubits[0], cregs[0]);
+            gates.emplace<gate_types::Measure>(qubits[0], cregs[0]);
         }
         result = true;
     } else if (gname == "prepz") {
-        c.emplace<gates::PrepZ>(qubits[0]);
+        gates.emplace<gate_types::PrepZ>(qubits[0]);
         result = true;
     } else if (gname == "cnot") {
-        c.emplace<gates::CNot>(qubits[0], qubits[1]);
+        gates.emplace<gate_types::CNot>(qubits[0], qubits[1]);
         result = true;
     } else if (gname == "cz" || gname == "cphase") {
-        c.emplace<gates::CPhase>(qubits[0], qubits[1]);
+        gates.emplace<gate_types::CPhase>(qubits[0], qubits[1]);
         result = true;
     } else if (gname == "toffoli") {
-        c.emplace<gates::Toffoli>(qubits[0], qubits[1], qubits[2]);
+        gates.emplace<gate_types::Toffoli>(qubits[0], qubits[1], qubits[2]);
         result = true;
     } else if (gname == "swap") {
-        c.emplace<gates::Swap>(qubits[0], qubits[1]);
+        gates.emplace<gate_types::Swap>(qubits[0], qubits[1]);
         result = true;
     } else if (gname == "barrier") {
         /*
@@ -475,9 +478,9 @@ Bool Kernel::add_default_gate_if_available(
             for (UInt q = 0; q < qubit_count; q++) {
                 all_qubits.push_back(q);
             }
-            c.emplace<gates::Wait>(all_qubits, 0, 0);
+            gates.emplace<gate_types::Wait>(all_qubits, 0, 0);
         } else {
-            c.emplace<gates::Wait>(qubits, 0, 0);
+            gates.emplace<gate_types::Wait>(qubits, 0, 0);
         }
         result = true;
     } else if (gname == "wait") {
@@ -491,9 +494,9 @@ Bool Kernel::add_default_gate_if_available(
             for (UInt q = 0; q < qubit_count; q++) {
                 all_qubits.push_back(q);
             }
-            c.emplace<gates::Wait>(all_qubits, duration, duration_in_cycles);
+            gates.emplace<gate_types::Wait>(all_qubits, duration, duration_in_cycles);
         } else {
-            c.emplace<gates::Wait>(qubits, duration, duration_in_cycles);
+            gates.emplace<gate_types::Wait>(qubits, duration, duration_in_cycles);
         }
         result = true;
     } else {
@@ -501,14 +504,14 @@ Bool Kernel::add_default_gate_if_available(
     }
 
     if (result) {
-        c.back()->breg_operands = bregs;
+        gates.back()->breg_operands = bregs;
         if (gcond != ConditionType::ALWAYS && is_non_conditional_gate ) {
             QL_WOUT("Condition " << gcond << " on default gate '" << gname << "' specified while gate cannot be executed conditionally; condition will be ignored");
-            c.back()->condition = ConditionType::ALWAYS;
-            c.back()->cond_operands = {};
+            gates.back()->condition = ConditionType::ALWAYS;
+            gates.back()->cond_operands = {};
         } else {
-            c.back()->condition = gcond;
-            c.back()->cond_operands = gcondregs;
+            gates.back()->condition = gcond;
+            gates.back()->cond_operands = gcondregs;
         }
         cycles_valid = false;
     }
@@ -556,7 +559,7 @@ Bool Kernel::add_custom_gate_if_available(
         return false;
     }
 
-    auto g = GateRef::make<gates::Custom>(*(it->second));
+    auto g = GateRef::make<gate_types::Custom>(*(it->second));
     for (auto qubit : qubits) {
         g->operands.push_back(qubit);
     }
@@ -572,7 +575,7 @@ Bool Kernel::add_custom_gate_if_available(
     g->angle = angle;
     g->condition = gcond;
     g->cond_operands = gcondregs;
-    c.add(g);
+    gates.add(g);
 
     QL_DOUT("custom gate added for " << gname);
     cycles_valid = false;
@@ -583,7 +586,7 @@ Bool Kernel::add_custom_gate_if_available(
 // return the subinstructions of a composite gate
 // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
 void Kernel::get_decomposed_ins(
-    const gates::Composite &gate,
+    const gate_types::Composite &gate,
     Vec<Str> &sub_instructions
 ) const {
     auto &sub_gates = gate.gs;
@@ -639,7 +642,7 @@ Bool Kernel::add_spec_decomposed_gate_if_available(
             QL_DOUT("not a composite gate type");
             return false;
         }
-        auto gptr = it->second.as<gates::Composite>();
+        auto gptr = it->second.as<gate_types::Composite>();
         if (gptr.empty()) {
             QL_DOUT("not a composite gate type");
             return false;
@@ -738,7 +741,7 @@ Bool Kernel::add_param_decomposed_gate_if_available(
             QL_DOUT("not a composite gate type");
             return false;
         }
-        auto gptr = it->second.as<gates::Composite>();
+        auto gptr = it->second.as<gate_types::Composite>();
         if (gptr.empty()) {
             QL_DOUT("not a composite gate type");
             return false;
@@ -1031,7 +1034,7 @@ void Kernel::gate(
 ) {
     QL_DOUT("Adding decomposed unitary to kernel ...");
     cycles_valid = false;
-    c.extend(u.get_circuit(qubits));
+    gates.extend(u.get_decomposition(qubits));
 }
 
 /**
@@ -1092,8 +1095,8 @@ Str Kernel::qasm() const {
 
     ss << get_prologue();
 
-    for (UInt i = 0; i < c.size(); ++i) {
-        ss << "    " << c[i]->qasm() << "\n";
+    for (UInt i = 0; i < gates.size(); ++i) {
+        ss << "    " << gates[i]->qasm() << "\n";
     }
 
     ss << get_epilogue();
@@ -1121,12 +1124,12 @@ void Kernel::classical(const ClassicalRegister &destination, const ClassicalOper
         }
     }
 
-    c.emplace<gates::Classical>(destination, oper);
+    gates.emplace<gate_types::Classical>(destination, oper);
     cycles_valid = false;
 }
 
 void Kernel::classical(const Str &operation) {
-    c.emplace<gates::Classical>(operation);
+    gates.emplace<gate_types::Classical>(operation);
     cycles_valid = false;
 }
 
@@ -1368,8 +1371,7 @@ void Kernel::controlled_single(
     UInt control_qubit,
     UInt ancilla_qubit
 ) {
-    const Circuit &ckt = k.get_circuit();
-    for (auto &g : ckt) {
+    for (auto &g : k.gates) {
         Str gname = g->name;
         GateType gtype = g->type();
         Vec<UInt> goperands = g->operands;
@@ -1521,8 +1523,7 @@ void Kernel::controlled(
 
 void Kernel::conjugate(const Kernel &k) {
     QL_COUT("Generating conjugate kernel");
-    const Circuit &ckt = k.get_circuit();
-    for (auto rgit = ckt.get_vec().rbegin(); rgit != ckt.get_vec().rend(); ++rgit) {
+    for (auto rgit = k.gates.get_vec().rbegin(); rgit != k.gates.get_vec().rend(); ++rgit) {
         auto g = *rgit;
         Str gname = g->name;
         GateType gtype = g->type();

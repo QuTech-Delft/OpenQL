@@ -198,7 +198,7 @@ public:
     void set_cycle(rmgr::Direction dir);
 
     // sort circuit by the gates' cycle attribute in non-decreasing order
-    static void sort_by_cycle(ir::Circuit &cp);
+    static void sort_by_cycle(ir::GateRefs &cp);
 
     // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
     void schedule_asap();

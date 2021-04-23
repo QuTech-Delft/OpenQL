@@ -68,7 +68,7 @@ void QubitUsageCount::process_gate(const ir::GateRef &gate) {
  * Qubit cycle usage counting metric.
  */
 void QubitUsedCycleCount::process_kernel(const ir::KernelRef &kernel) {
-    for (auto &gp : kernel->c) {
+    for (auto &gp : kernel->gates) {
         switch (gp->type()) {
             case ir::GateType::CLASSICAL:
             case ir::GateType::WAIT:
@@ -89,12 +89,12 @@ void QubitUsedCycleCount::process_kernel(const ir::KernelRef &kernel) {
  * Kernel duration metric.
  */
 void Latency::process_kernel(const ir::KernelRef &kernel) {
-    if (!kernel->c.empty() && kernel->c.back()->cycle != ir::MAX_CYCLE) {
+    if (!kernel->gates.empty() && kernel->gates.back()->cycle != ir::MAX_CYCLE) {
         // NOTE JvS: this used to just check the last gate in the circuit, but
         // that isn't sufficient. Worst case the first gate could be setting the
         // kernel duration, even if issued in the first cycle, due to it just
         // having a very long duration itself.
-        for (const auto &gate : kernel->c) {
+        for (const auto &gate : kernel->gates) {
             value = utils::max(
                 value,
                 gate->cycle + utils::div_ceil(

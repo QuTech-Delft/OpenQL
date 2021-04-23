@@ -111,13 +111,13 @@ public:
 };
 
 using GateRef = utils::One<Gate>;
-using Gates = utils::Any<Gate>;
+using GateRefs = utils::Any<Gate>;
 
 /****************************************************************************\
 | Standard gates
 \****************************************************************************/
 
-namespace gates {
+namespace gate_types {
 
 class Identity : public Gate {
 public:
@@ -343,9 +343,9 @@ public:
 
 class Composite : public Custom {
 public:
-    Gates gs;
+    GateRefs gs;
     explicit Composite(const utils::Str &name);
-    Composite(const utils::Str &name, const Gates &seq);
+    Composite(const utils::Str &name, const GateRefs &seq);
     Instruction qasm() const override;
     GateType type() const override;
 };

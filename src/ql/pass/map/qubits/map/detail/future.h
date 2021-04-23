@@ -85,7 +85,7 @@ public:
     /**
      * Input circuit when not using scheduler based avlist.
      */
-    ir::Circuit input_gatepv;
+    ir::GateRefs input_gatepv;
 
     /**
      * State: has gate been scheduled, here: done from future?
@@ -100,7 +100,7 @@ public:
     /**
      * State: alternative iterator in input_gatepv.
      */
-    ir::Circuit::iterator input_gatepp;
+    ir::GateRefs::iterator input_gatepp;
 
     /**
      * Program-wide initialization function.

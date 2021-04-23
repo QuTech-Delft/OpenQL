@@ -74,7 +74,7 @@ public:
     ClassicalOperation(const utils::Str &op, const ClassicalRegister &r);
 };
 
-namespace gates {
+namespace gate_types {
 
 class Classical : public Gate {
 public:

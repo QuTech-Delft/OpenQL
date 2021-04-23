@@ -157,7 +157,7 @@ ClassicalOperation::ClassicalOperation(const Str &op, const ClassicalRegister &r
     }
 }
 
-namespace gates {
+namespace gate_types {
 
 Classical::Classical(const ClassicalRegister &dest, const ClassicalOperation &oper) {
     QL_DOUT("Classical gate constructor with destination for "

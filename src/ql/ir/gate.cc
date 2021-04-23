@@ -119,7 +119,7 @@ Bool Gate::is_valid_cond(ConditionType condition, const Vec<UInt> &cond_operands
     return false;
 }
 
-namespace gates {
+namespace gate_types {
 
 Identity::Identity(UInt q) {
     name = "i";
@@ -695,7 +695,7 @@ Composite::Composite(const Str &name) : Custom(name) {
     duration = 0;
 }
 
-Composite::Composite(const Str &name, const Gates &seq) : Custom(name) {
+Composite::Composite(const Str &name, const GateRefs &seq) : Custom(name) {
     duration = 0;
     for (const auto &g : seq) {
         gs.add(g);

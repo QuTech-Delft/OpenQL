@@ -140,7 +140,7 @@ utils::Int PlaceQubitsPass::run(
         //  with the pass manager (it's commented out), and is for now still
         //  part of map.qubits.Route.
         QL_ASSERT(false);
-        for (const auto &gate : kernel->c) {
+        for (const auto &gate : kernel->gates) {
             for (auto &qubit : gate->operands) {
                 qubit = mapping[qubit];
             }

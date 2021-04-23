@@ -490,7 +490,7 @@ void Codegen::bundleFinish(
 // helper
 static Str qasm(const Str &iname, const Vec<UInt> &operands, const Vec<UInt> &breg_operands) {
     // FIXME: hack
-    ir::gates::Custom g(iname);
+    ir::gate_types::Custom g(iname);
     g.operands = operands;
     g.breg_operands = breg_operands;
     return g.qasm();

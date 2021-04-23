@@ -30,7 +30,7 @@ void Future::set_kernel(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
     QL_DOUT("Future::set_kernel ...");
     scheduler = sched;
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
-        input_gatepv = kernel->c;                               // copy to free original circuit to allow outputing to
+        input_gatepv = kernel->gates;                           // copy to free original circuit to allow outputing to
         input_gatepp = input_gatepv.begin();                    // iterator set to start of input circuit copy
     } else {
         scheduler->init(
@@ -41,7 +41,7 @@ void Future::set_kernel(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
         );
 
         // and so also the original circuit can be output to after this
-        for (auto &gp : kernel->c) {
+        for (auto &gp : kernel->gates) {
             scheduled.set(gp) = false;   // none were scheduled
         }
         scheduled.set(scheduler->instruction[scheduler->s]) = false;      // also the dummy nodes not
@@ -73,7 +73,7 @@ utils::Bool Future::get_non_quantum_gates(utils::List<ir::GateRef> &nonqlg) cons
     nonqlg.clear();
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
         ir::GateRef gate = *input_gatepp;
-        if (ir::Circuit::const_iterator(input_gatepp) != input_gatepv.end()) {
+        if (ir::GateRefs::const_iterator(input_gatepp) != input_gatepv.end()) {
             if (
                 gate->type() == ir::GateType::CLASSICAL
                 || gate->type() == ir::GateType::DUMMY

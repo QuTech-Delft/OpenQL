@@ -333,9 +333,9 @@ void Mapper::map_routed_gate(const ir::GateRef &gate, Past &past) {
     // is created; when that new gate is a composite gate, it is immediately
     // decomposed (by gate creation). The resulting gate/expansion (anyhow a
     // sequence of gates) is collected in circuit.
-    ir::Circuit circuit;
-    past.make_real(gate, circuit);
-    for (const auto &new_gate : circuit) {
+    ir::GateRefs gates;
+    past.make_real(gate, gates);
+    for (const auto &new_gate : gates) {
         QL_DOUT(" ... new mapped real gate, about to be added to past: " << new_gate->qasm());
         past.add_and_schedule(new_gate);
     }
@@ -842,7 +842,7 @@ void Mapper::route(const ir::KernelRef &k, QubitMapping &v2r) {
     // Future has now copied kernel->c to private data, making kernel->c ready
     // for use by Past::new_gate(), for the kludge we need because gates can
     // only be constructed in the context of and at the end of a kernel.
-    k->c.reset();
+    k->gates.reset();
     kernel = k;
     past.initialize(kernel, options);
     past.import_mapping(v2r);
@@ -856,8 +856,8 @@ void Mapper::route(const ir::KernelRef &k, QubitMapping &v2r) {
     // Copy the gates into the kernel's circuit.
     // mainPast.DPRINT("end mapping");
     QL_DOUT("... retrieving outCirc from mainPast.outlg; swapping outCirc with kernel.c, kernel.c contains output circuit");
-    k->c.reset();
-    past.flush_to_circuit(k->c);
+    k->gates.reset();
+    past.flush_to_circuit(k->gates);
 
     // The mapper also schedules internally, including any decompositions it
     // does to make things primitive. Thus, cycle numbers are now valid.
@@ -881,8 +881,8 @@ void Mapper::decompose_to_primitives(const ir::KernelRef &k) {
     QL_DOUT("decompose_to_primitives circuit ...");
 
     // Copy to allow kernel.c use by Past.new_gate.
-    ir::Circuit circuit = k->c;
-    k->c.reset();
+    ir::GateRefs circuit = k->gates;
+    k->gates.reset();
 
     // Output window in which gates are scheduled.
     Past past;
@@ -892,11 +892,11 @@ void Mapper::decompose_to_primitives(const ir::KernelRef &k) {
 
         // Decompose gate into prim_circuit. On failure, this copies the
         // original gate directly into it.
-        ir::Circuit prim_circuit;
-        past.make_primitive(gate, prim_circuit);
+        ir::GateRefs prim_gates;
+        past.make_primitive(gate, prim_gates);
 
         // Schedule the potentially decomposed gates.
-        for (const auto &prim_gate : prim_circuit) {
+        for (const auto &prim_gate : prim_gates) {
             past.add_and_schedule(prim_gate);
         }
 
@@ -904,7 +904,7 @@ void Mapper::decompose_to_primitives(const ir::KernelRef &k) {
 
     // Update the output circuit based on the scheduling result.
     past.flush_all();
-    past.flush_to_circuit(k->c);
+    past.flush_to_circuit(k->gates);
     k->cycles_valid = true;
 
     QL_DOUT("decompose_to_primitives circuit [DONE]");

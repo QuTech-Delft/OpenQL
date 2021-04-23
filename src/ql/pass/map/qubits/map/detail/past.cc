@@ -27,7 +27,7 @@ void Past::initialize(const ir::KernelRef &k, const OptionsRef &opt) {
     nb = platform->breg_count;
     ct = platform->cycle_time;
 
-    QL_ASSERT(kernel->c.empty());     // kernelp->c will be used by new_gate to return newly created gates into
+    QL_ASSERT(kernel->gates.empty());     // kernelp->c will be used by new_gate to return newly created gates into
     v2r.resize(                       // v2r initializtion until v2r is imported from context
         nq,
         options->initialize_one_to_one,
@@ -177,8 +177,8 @@ void Past::schedule() {
  * init_circuit before the inevitable circuit.
  */
 utils::Int Past::get_insertion_cost(
-    const ir::Circuit &init_circuit,
-    const ir::Circuit &circuit
+    const ir::GateRefs &init_circuit,
+    const ir::GateRefs &circuit
 ) const {
 
     // First fake-schedule init_circuit followed by circuit in a private
@@ -231,7 +231,7 @@ void Past::add(const ir::GateRef &gate) {
  * written to kernel.c only at the very end.
  */
 utils::Bool Past::new_gate(
-    ir::Circuit &circ,
+    ir::GateRefs &circ,
     const utils::Str &gname,
     const utils::Vec<utils::UInt> &qubits,
     const utils::Vec<utils::UInt> &cregs,
@@ -243,11 +243,11 @@ utils::Bool Past::new_gate(
 ) const {
     utils::Bool added;
     QL_ASSERT(circ.empty());
-    QL_ASSERT(kernel->c.empty());
+    QL_ASSERT(kernel->gates.empty());
     // create gate(s) in kernelp->c
     added = kernel->gate_nonfatal(gname, qubits, cregs, duration, angle, bregs, gcond, gcondregs);
-    circ = kernel->c;
-    kernel->c.reset();
+    circ = kernel->gates;
+    kernel->gates.reset();
     for (const auto &gate : circ) {
         QL_DOUT("new_gate added: " << gate->qasm());
     }
@@ -296,7 +296,7 @@ utils::Bool Past::is_first_swap_earliest(
  * seen from whether circ was extended. Please note that the reversal of
  * operands may have been done also when generate_move() was not successful.
  */
-void Past::generate_move(ir::Circuit &circuit, utils::UInt &r0, utils::UInt &r1) {
+void Past::generate_move(ir::GateRefs &circuit, utils::UInt &r0, utils::UInt &r1) {
     if (v2r.get_state(r0) != com::QubitState::LIVE) {
         QL_ASSERT(
             v2r.get_state(r0) == com::QubitState::NONE ||
@@ -341,7 +341,7 @@ void Past::generate_move(ir::Circuit &circuit, utils::UInt &r0, utils::UInt &r1)
     if (v2r.get_state(r1) == com::QubitState::NONE) {
         // r1 is not in inited state, generate in initcirc the circuit to do so
         // QL_DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
-        ir::Circuit init_circuit;
+        ir::GateRefs init_circuit;
 
         created = new_gate(init_circuit, "move_init", {r1});
         if (!created) {
@@ -424,7 +424,7 @@ void Past::add_swap(utils::UInt r0, utils::UInt r1) {
     utils::UInt v0 = v2r.get_virtual(r0);
     utils::UInt v1 = v2r.get_virtual(r1);
 
-    ir::Circuit circuit;   // current kernel copy, clear circuit
+    ir::GateRefs circuit;   // current kernel copy, clear circuit
     if (options->use_move_gates && (v2r.get_state(r0) != com::QubitState::LIVE ||
         v2r.get_state(r1) != com::QubitState::LIVE)) {
         generate_move(circuit, r0, r1);
@@ -536,7 +536,7 @@ static void strip_name(utils::Str &name) {
  *
  * See header file for more information.
  */
-void Past::make_real(const ir::GateRef &gate, ir::Circuit &circuit) {
+void Past::make_real(const ir::GateRef &gate, ir::GateRefs &circuit) {
     QL_DOUT("make_real: " << gate->qasm());
 
     utils::Str gname = gate->name;
@@ -602,7 +602,7 @@ void Past::make_real(const ir::GateRef &gate, ir::Circuit &circuit) {
  * a config file entry with _prim appended to their name, decomposing it
  * according to the config file gate decomposition.
  */
-void Past::make_primitive(const ir::GateRef &gate, ir::Circuit &circuit) const {
+void Past::make_primitive(const ir::GateRef &gate, ir::GateRefs &circuit) const {
     utils::Str gname = gate->name;
     strip_name(gname);
     utils::Str prim_gname = gname;
@@ -690,7 +690,7 @@ void Past::bypass(const ir::GateRef &gate) {
 /**
  * Flushes the output gate list to the given circuit.
  */
-void Past::flush_to_circuit(ir::Circuit &output_circuit) {
+void Past::flush_to_circuit(ir::GateRefs &output_circuit) {
     for (const auto &gate : output_gates) {
         output_circuit.add(gate);
     }

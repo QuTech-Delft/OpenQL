@@ -351,7 +351,7 @@ void Scheduler::init(
     {
         // add dummy source node
         auto srcNode = graph.addNode();
-        instruction[srcNode].emplace<ir::gates::Source>();    // so SOURCE is defined as instruction[s], not unique in itself
+        instruction[srcNode].emplace<ir::gate_types::Source>();    // so SOURCE is defined as instruction[s], not unique in itself
         node.set(instruction[srcNode]) = srcNode;
         name[srcNode] = instruction[srcNode]->qasm();
         s = srcNode;
@@ -373,7 +373,7 @@ void Scheduler::init(
     last_b_readers.resize(breg_count);                      // start off as empty list, no Breader seen yet
 
     // for each gate pointer ins in the circuit, add a node and add dependencies on previous gates to it
-    for (const auto &ins : kernel->c) {
+    for (const auto &ins : kernel->gates) {
         QL_DOUT("Current instruction's name: `" << ins->name << "'");
         QL_DOUT(".. Qasm(): " << ins->qasm());
         for (auto operand : ins->operands) {
@@ -558,7 +558,7 @@ void Scheduler::init(
         // add dummy target node
         ListDigraph::Node curr_node = graph.addNode();
         int curr_id = graph.id(curr_node);
-        instruction[curr_node].emplace<ir::gates::Sink>();    // so SINK is defined as instruction[t], not unique in itself
+        instruction[curr_node].emplace<ir::gate_types::Sink>();    // so SINK is defined as instruction[t], not unique in itself
         node.set(instruction[curr_node]) = curr_node;
         name[curr_node] = instruction[curr_node]->qasm();
         t = curr_node;
@@ -707,7 +707,7 @@ void Scheduler::set_cycle(rmgr::Direction dir) {
     }
     if (dir == rmgr::Direction::FORWARD) {
         set_cycle_gate(instruction[s], dir);
-        for (auto gpit = kernel->c.begin(); gpit != kernel->c.end(); gpit++) {
+        for (auto gpit = kernel->gates.begin(); gpit != kernel->gates.end(); gpit++) {
             if ((*gpit)->cycle == ir::MAX_CYCLE) {
                 set_cycle_gate(*gpit, dir);
             }
@@ -715,7 +715,7 @@ void Scheduler::set_cycle(rmgr::Direction dir) {
         set_cycle_gate(instruction[t], dir);
     } else {
         set_cycle_gate(instruction[t], dir);
-        for (auto gpit = kernel->c.rbegin(); gpit != kernel->c.rend(); gpit++) {
+        for (auto gpit = kernel->gates.rbegin(); gpit != kernel->gates.rend(); gpit++) {
             if ((*gpit)->cycle == ir::MAX_CYCLE) {
                 set_cycle_gate(*gpit, dir);
             }
@@ -727,7 +727,7 @@ void Scheduler::set_cycle(rmgr::Direction dir) {
         QL_DOUT("... readjusting cycle values by -" << SOURCECycle);
 
         instruction[t]->cycle -= SOURCECycle;
-        for (auto &gp : kernel->c) {
+        for (auto &gp : kernel->gates) {
             gp->cycle -= SOURCECycle;
         }
         instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
@@ -739,7 +739,7 @@ static Bool cycle_lessthan(const ir::GateRef &gp1, const ir::GateRef &gp2) {
 }
 
 // sort circuit by the gates' cycle attribute in non-decreasing order
-void Scheduler::sort_by_cycle(ir::Circuit &cp) {
+void Scheduler::sort_by_cycle(ir::GateRefs &cp) {
     QL_DOUT("... before sorting on cycle value");
     // for ( circuit::iterator gpit = cp->begin(); gpit != cp->end(); gpit++)
     // {
@@ -762,7 +762,7 @@ void Scheduler::sort_by_cycle(ir::Circuit &cp) {
 void Scheduler::schedule_asap() {
     QL_DOUT("Scheduling ASAP ...");
     set_cycle(rmgr::Direction::FORWARD);
-    sort_by_cycle(kernel->c);
+    sort_by_cycle(kernel->gates);
     kernel->cycles_valid = true;
     QL_DOUT("Scheduling ASAP [DONE]");
 }
@@ -771,7 +771,7 @@ void Scheduler::schedule_asap() {
 void Scheduler::schedule_alap() {
     QL_DOUT("Scheduling ALAP ...");
     set_cycle(rmgr::Direction::BACKWARD);
-    sort_by_cycle(kernel->c);
+    sort_by_cycle(kernel->gates);
     kernel->cycles_valid = true;
     QL_DOUT("Scheduling ALAP [DONE]");
 }
@@ -817,7 +817,7 @@ void Scheduler::set_remaining(rmgr::Direction dir) {
     if (dir == rmgr::Direction::FORWARD) {
         // remaining until SINK (i.e. the SINK.cycle-ALAP value)
         set_remaining_gate(instruction[t], dir);
-        for (auto gpit = kernel->c.rbegin(); gpit != kernel->c.rend(); gpit++) {
+        for (auto gpit = kernel->gates.rbegin(); gpit != kernel->gates.rend(); gpit++) {
             if (remaining.at(node.at(*gpit)) == ir::MAX_CYCLE) {
                 set_remaining_gate(*gpit, dir);
             }
@@ -826,7 +826,7 @@ void Scheduler::set_remaining(rmgr::Direction dir) {
     } else {
         // remaining until SOURCE (i.e. the ASAP value)
         set_remaining_gate(instruction[s], dir);
-        for (auto gpit = kernel->c.begin(); gpit != kernel->c.end(); gpit++) {
+        for (auto gpit = kernel->gates.begin(); gpit != kernel->gates.end(); gpit++) {
             if (remaining.at(node.at(*gpit)) == ir::MAX_CYCLE) {
                 set_remaining_gate(*gpit, dir);
             }
@@ -1226,7 +1226,7 @@ void Scheduler::schedule(
     }
 
     QL_DOUT("... sorting on cycle value");
-    sort_by_cycle(kernel->c);
+    sort_by_cycle(kernel->gates);
 
     if (dir == rmgr::Direction::BACKWARD) {
         // readjust cycle values of gates so that SOURCE is at 0
@@ -1234,7 +1234,7 @@ void Scheduler::schedule(
         QL_DOUT("... readjusting cycle values by -" << SOURCECycle);
 
         instruction[t]->cycle -= SOURCECycle;
-        for (auto &gp : kernel->c) {
+        for (auto &gp : kernel->gates) {
             gp->cycle -= SOURCECycle;
         }
         instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
@@ -1305,7 +1305,7 @@ void Scheduler::schedule_alap_uniform() {
     // create gates_per_cycle[cycle] = for each cycle the list of gates at cycle cycle
     // this is the basic map to be operated upon by the uniforming scheduler below;
     Map<UInt, List<ir::GateRef>> gates_per_cycle;
-    for (const auto &gp : kernel->c) {
+    for (const auto &gp : kernel->gates) {
         gates_per_cycle.set(gp->cycle).push_back(gp);
     }
 
@@ -1451,7 +1451,7 @@ void Scheduler::schedule_alap_uniform() {
     }   // end curr_cycle loop; curr_cycle is bundle which must be enlarged when too small
 
     // new cycle values computed; reflect this in circuit's gate order
-    sort_by_cycle(kernel->c);
+    sort_by_cycle(kernel->gates);
     kernel->cycles_valid = true;
 
     // recompute and print statistics reporting on uniform scheduling performance
@@ -1522,11 +1522,11 @@ void Scheduler::get_dot(
     if (with_cycles) {
         // Print cycle numbers as timeline, as shown below
         UInt total_cycles;
-        if (kernel->c.empty()) {
+        if (kernel->gates.empty()) {
             total_cycles = 1;    // +1 is SOURCE's duration in cycles
         } else {
-            total_cycles = kernel->c.back()->cycle + (kernel->c.back()->duration + cycle_time - 1) / cycle_time
-                           - kernel->c.front()->cycle + 1;    // +1 is SOURCE's duration in cycles
+            total_cycles = kernel->gates.back()->cycle + (kernel->gates.back()->duration + cycle_time - 1) / cycle_time
+                           - kernel->gates.front()->cycle + 1;    // +1 is SOURCE's duration in cycles
         }
         dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
         for (UInt cn = 0; cn <= total_cycles; ++cn) {
@@ -1539,7 +1539,7 @@ void Scheduler::get_dot(
 
         // Now print ranks, as shown below
         dotout << "{ rank=same; Cycle" << instruction[s]->cycle <<"; " << graph.id(s) << "; }\n";
-        for (const auto &gp : kernel->c) {
+        for (const auto &gp : kernel->gates) {
             dotout << "{ rank=same; Cycle" << gp->cycle <<"; " << graph.id(node.at(gp)) << "; }\n";
         }
         dotout << "{ rank=same; Cycle" << instruction[t]->cycle <<"; " << graph.id(t) << "; }\n";
@@ -1576,7 +1576,7 @@ void Scheduler::get_dot(
 
 void Scheduler::get_dot(Str &dot) {
     set_cycle(rmgr::Direction::FORWARD);
-    sort_by_cycle(kernel->c);
+    sort_by_cycle(kernel->gates);
 
     StrStrm ssdot;
     get_dot(false, true, ssdot);

@@ -17,7 +17,7 @@ InteractionMatrix::InteractionMatrix(
     const ir::KernelRef &kernel
 ) : size(kernel->qubit_count) {
     matrix.resize(size, Vec<UInt>(size, 0));
-    for (auto ins : kernel->c) {
+    for (auto ins : kernel->gates) {
         Str insName = ins->qasm();
         if (insName.find("cnot") != Str::npos) {
             // for now the interaction matrix only for cnot

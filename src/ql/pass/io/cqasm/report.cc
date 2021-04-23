@@ -36,7 +36,7 @@ void dump(
     for (auto &kernel : program->kernels) {
         if (kernel->cycles_valid) {
             os << kernel->get_prologue();
-            ir::Bundles bundles = ir::bundler(kernel->c, program->platform->cycle_time);
+            ir::Bundles bundles = ir::bundler(kernel);
             os << ir::qasm(bundles);
             os << kernel->get_epilogue();
         } else {

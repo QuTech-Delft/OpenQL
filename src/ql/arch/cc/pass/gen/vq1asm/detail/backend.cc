@@ -80,9 +80,8 @@ void Backend::compile(const ir::ProgramRef &program, const OptionsRef &options) 
         QL_IOUT("Compiling kernel: " << kernel->name);
         codegenKernelPrologue(kernel);
 
-        ir::Circuit &circuit = kernel->c;
-        if (!circuit.empty()) {
-            ir::Bundles bundles = ir::bundler(circuit, program->platform->cycle_time);
+        if (!kernel->gates.empty()) {
+            ir::Bundles bundles = ir::bundler(kernel);
             codegen.kernelStart();
             codegenBundles(bundles, program->platform);
             codegen.kernelFinish(kernel->name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
@@ -251,63 +250,52 @@ void Backend::codegenBundles(ir::Bundles &bundles, const plat::PlatformRef &plat
         // and if a non-zero duration is specified that duration is reflected in 'start_cycle' of the subsequent instruction
 
         // generate code for this bundle
-        for (auto section = bundle.parallel_sections.begin(); section != bundle.parallel_sections.end(); ++section ) {
+        for (const auto &instr : bundle.gates) {
             // check whether section defines classical gate
-            ir::GateRef firstInstr = *section->begin();
-            auto firstInstrType = firstInstr->type();
-            if (firstInstrType == ir::GateType::CLASSICAL) {
-                QL_DOUT(QL_SS2S("Classical bundle: instr='" << firstInstr->name << "'"));
-                if (section->size() != 1) {
-                    QL_FATAL("Inconsistency detected in bundle contents: classical gate with parallel sections");
-                }
-                codegenClassicalInstruction(firstInstr);
+            if (instr->type() == ir::GateType::CLASSICAL) {
+                QL_DOUT(QL_SS2S("Classical bundle: instr='" << instr->name << "'"));
+                codegenClassicalInstruction(instr);
             } else {
-                /* iterate over all instructions in section.
-                 * NB: our strategy differs from cc_light_eqasm_compiler, we have no special treatment of first instruction
-                 * and don't require all instructions to be identical
-                 */
-                for (auto instr : *section) {
-                    ir::GateType itype = instr->type();
-                    Str iname = instr->name;
-                    QL_DOUT(QL_SS2S("Bundle section: instr='" << iname << "'"));
+                ir::GateType itype = instr->type();
+                Str iname = instr->name;
+                QL_DOUT(QL_SS2S("Bundle section: instr='" << iname << "'"));
 
-                    switch (itype) {
-                        case ir::GateType::NOP:       // a quantum "nop", see gate.h
-                            codegen.nopGate();
-                            break;
+                switch (itype) {
+                    case ir::GateType::NOP:       // a quantum "nop", see gate.h
+                        codegen.nopGate();
+                        break;
 
-                        case ir::GateType::CLASSICAL:
-                            QL_FATAL("Inconsistency detected in bundle contents: classical gate found after first section (which itself was non-classical)");
-                            break;
+                    case ir::GateType::CLASSICAL:
+                        QL_FATAL("Inconsistency detected in bundle contents: classical gate found after first section (which itself was non-classical)");
+                        break;
 
-                        case ir::GateType::CUSTOM:
-                            QL_DOUT(QL_SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration) << " ns");
-                            codegen.customGate(
-                                iname,
-                                instr->operands,            // qubit operands (FKA qops)
-                                instr->creg_operands,        // classic operands (FKA cops)
-                                instr->breg_operands,         // bit operands e.g. assigned to by measure
-                                instr->condition,
-                                instr->cond_operands,        // 0, 1 or 2 bit operands of condition
-                                   instr->angle,
-                                   bundle.start_cycle, platform->time_to_cycles(instr->duration)
-                            );
-                            break;
+                    case ir::GateType::CUSTOM:
+                        QL_DOUT(QL_SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration) << " ns");
+                        codegen.customGate(
+                            iname,
+                            instr->operands,            // qubit operands (FKA qops)
+                            instr->creg_operands,        // classic operands (FKA cops)
+                            instr->breg_operands,         // bit operands e.g. assigned to by measure
+                            instr->condition,
+                            instr->cond_operands,        // 0, 1 or 2 bit operands of condition
+                               instr->angle,
+                               bundle.start_cycle, platform->time_to_cycles(instr->duration)
+                        );
+                        break;
 
-                        case ir::GateType::DISPLAY:
-                            QL_FATAL("Gate type __display__ not supported");           // QX specific, according to openql.pdf
-                            break;
+                    case ir::GateType::DISPLAY:
+                        QL_FATAL("Gate type __display__ not supported");           // QX specific, according to openql.pdf
+                        break;
 
-                        case ir::GateType::MEASURE:
-                            QL_FATAL("Gate type __measure_gate__ not supported");      // no use, because there is no way to define CC-specifics
-                            break;
+                    case ir::GateType::MEASURE:
+                        QL_FATAL("Gate type __measure_gate__ not supported");      // no use, because there is no way to define CC-specifics
+                        break;
 
-                        default:
-                            QL_FATAL(
-                                "Unsupported builtin gate, type: " << itype
-                                << ", instruction: '" << instr->qasm() << "'");
-                    }   // switch(itype)
-                } // for(section...)
+                    default:
+                        QL_FATAL(
+                            "Unsupported builtin gate, type: " << itype
+                            << ", instruction: '" << instr->qasm() << "'");
+                }   // switch(itype)
             }
         }
 

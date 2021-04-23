@@ -167,8 +167,8 @@ utils::UInt Clifford::optimize_kernel(const ir::KernelRef &kernel) {
 
     // copy circuit kernel.c to take input from;
     // output will fill kernel.c again
-    ir::Circuit input_circuit = kernel->c;
-    kernel->c.reset();
+    auto input_gates = kernel->gates;
+    kernel->gates.reset();
 
     cliffstate.resize(nq, 0);       // 0 is identity; for all qubits accumulated state is set to identity
     cliffcycles.resize(nq, 0);      // for all qubits, no accumulated cycles
@@ -208,45 +208,45 @@ utils::UInt Clifford::optimize_kernel(const ir::KernelRef &kernel) {
     - those affecting a single qubit and being a conditional gate: push out state for that qubit, clearing it
     - remaining case is a single qubit clifford: add it to the state
     */
-    for (auto gp : input_circuit) {
-        QL_DOUT("... gate: " << gp->qasm());
+    for (const auto &gate : input_gates) {
+        QL_DOUT("... gate: " << gate->qasm());
 
         if (
-            gp->type() == ir::GateType::CLASSICAL               // classical gates (really being pessimistic here about these)
-            || gp->operands.empty()                             // gates without operands which may affect ALL qubits
+            gate->type() == ir::GateType::CLASSICAL               // classical gates (really being pessimistic here about these)
+            || gate->operands.empty()                             // gates without operands which may affect ALL qubits
         ) {
             // sync all qubits: create gate sequences corresponding to what was accumulated in cliffstate, for all qubits
             sync_all(kernel);
-            kernel->c.add(gp);
-        } else if (gp->operands.size() != 1) {                 // gates like CNOT/CZ/TOFFOLI
+            kernel->gates.add(gate);
+        } else if (gate->operands.size() != 1) {                 // gates like CNOT/CZ/TOFFOLI
             // sync particular qubits: create gate sequences corresponding to what was accumulated in cliffstate, for those particular operand qubits
-            for (auto q : gp->operands) {
+            for (auto q : gate->operands) {
                 sync(kernel, q);
             }
-            kernel->c.add(gp);
+            kernel->gates.add(gate);
         } else {
             // unary quantum gates like x/y/z/h/xm90/y90/s/wait/meas/prepz
-            UInt q = gp->operands[0];
-            Int cs = gate2cs(gp);
+            UInt q = gate->operands[0];
+            Int cs = gate2cs(gate);
             if (
                 cs == -1                                        // non-clifford unary gates (wait, meas, prepz, ...)
-                || gp->is_conditional()                         // conditional unary (clifford) gates
+                || gate->is_conditional()                         // conditional unary (clifford) gates
             ) {
                 // sync particular single qubit: create gate sequence corresponding to what was accumulated in cliffstate, for this particular operand qubit
-                QL_DOUT("... unary gate not a clifford gate or conditional: " << gp->qasm());
+                QL_DOUT("... unary gate not a clifford gate or conditional: " << gate->qasm());
                 sync(kernel, q);
-                kernel->c.add(gp);
+                kernel->gates.add(gate);
             } else {
                 // unary quantum clifford gates like x/y/z/h/xm90/y90/s/...
                 // don't emit gate but accumulate gate in cliffstate
                 // also record accumulated cycles to compute savings
-                cliffcycles[q] += (gp->duration + ct - 1) / ct;
+                cliffcycles[q] += (gate->duration + ct - 1) / ct;
                 Int csq = cliffstate[q];
                 QL_DOUT("... from " << cs2string(csq) << " to " << cs2string(TRANSITION_TABLE[csq][cs]));
                 cliffstate[q] = TRANSITION_TABLE[csq][cs];
             }
         }
-        QL_DOUT("... gate: " << gp->qasm() << " DONE");
+        QL_DOUT("... gate: " << gate->qasm() << " DONE");
     }
     sync_all(kernel);
     kernel->cycles_valid = false;

@@ -41,7 +41,7 @@ public:
      * calls process_gate for each contained gate.
      */
     virtual void process_kernel(const ir::KernelRef &kernel) {
-        for (const auto &gate : kernel->c) {
+        for (const auto &gate : kernel->gates) {
             process_gate(gate);
         }
     }

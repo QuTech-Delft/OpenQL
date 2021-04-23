@@ -28,7 +28,7 @@ static Str sanitize_instruction_name(Str name) {
 }
 
 static CustomGateRef load_instruction(const Str &name, Json &instr) {
-    auto g = CustomGateRef::make<ir::gates::Custom>(name);
+    auto g = CustomGateRef::make<ir::gate_types::Custom>(name);
     // skip alias fo now
     if (instr.count("alias") > 0) {
         // todo : look for the target aliased gate
@@ -242,7 +242,7 @@ void HardwareConfiguration::load(
                         << comp_ins << "' is malformed (not an array)");
             }
 
-            ir::Gates gs;
+            ir::GateRefs gs;
             for (UInt i = 0; i < sub_instructions.size(); i++) {
                 // standardize name of sub instruction
                 Str sub_ins = sub_instructions[i];
@@ -260,14 +260,14 @@ void HardwareConfiguration::load(
                            Str::npos) {              // parameterized composite gate? FIXME: no syntax check
                     // adding new sub ins if not already available, e.g. "x %0"
                     QL_DOUT("adding new sub instr : " << sub_ins);
-                    instruction_map.set(sub_ins).emplace<ir::gates::Custom>(sub_ins);
+                    instruction_map.set(sub_ins).emplace<ir::gate_types::Custom>(sub_ins);
                     gs.add(instruction_map.at(sub_ins));
                 } else {
 #if OPT_DECOMPOSE_WAIT_BARRIER   // allow wait/barrier, e.g. "barrier q2,q3,q4"
                     // FIXME: just save whatever we find as a *custom* gate (there is no better alternative)
                     // FIXME: also see additions (hacks) to kernel.h
                     QL_DOUT("adding new sub instr : " << sub_ins);
-                    instruction_map.set(sub_ins).emplace<ir::gates::Custom>(sub_ins);
+                    instruction_map.set(sub_ins).emplace<ir::gate_types::Custom>(sub_ins);
                     gs.add(instruction_map.at(sub_ins));
 #else
                     // for specialized custom instructions, raise error if instruction
@@ -276,7 +276,7 @@ void HardwareConfiguration::load(
 #endif
                 }
             }
-            instruction_map.set(comp_ins).emplace<ir::gates::Composite>(comp_ins, gs);
+            instruction_map.set(comp_ins).emplace<ir::gate_types::Composite>(comp_ins, gs);
         }
     }
 }

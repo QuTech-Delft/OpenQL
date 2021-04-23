@@ -129,7 +129,7 @@ UInt Datapath::getSizeTag(UInt numReadouts) {
 
 static Str cond_qasm(ir::ConditionType condition, const Vec<UInt> &cond_operands) {
     // FIXME: hack
-    ir::gates::Custom g("foo");
+    ir::gate_types::Custom g("foo");
     g.condition = condition;
     g.cond_operands = cond_operands;
     return g.cond_qasm();

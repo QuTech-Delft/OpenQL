@@ -877,13 +877,13 @@ void ReaderImpl::handle_parse_result(lqa::AnalysisResult &&ar) {
 
                         // If that added more than one gate, invalidate
                         // timing information.
-                        if (kernel->c.size() > num_gates + 1) {
+                        if (kernel->gates.size() > num_gates + 1) {
                             cycles_might_be_valid = false;
                         }
 
                         // Set timing information for the added gates.
-                        while (num_gates < kernel->c.size()) {
-                            kernel->c.at(num_gates++)->cycle = cycle;
+                        while (num_gates < kernel->gates.size()) {
+                            kernel->gates.at(num_gates++)->cycle = cycle;
                         }
 
                     }

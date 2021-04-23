@@ -10,7 +10,6 @@
 #include "ql/utils/opt.h"
 #include "ql/plat/platform.h"
 #include "ql/ir/gate.h"
-#include "ql/ir/circuit.h"
 #include "ql/ir/classical.h"
 
 namespace ql {
@@ -23,6 +22,11 @@ class Unitary;
 } // namespace com
 
 namespace ir {
+
+/**
+ * Generates cQASM for a given circuit.
+ */
+utils::Str qasm(const GateRefs &c);
 
 /**
  * The role of a kernel in control-flow representation.
@@ -93,7 +97,7 @@ public: // FIXME: should be private
     /**
      * The list of gates that forms the body of the kernel.
      */
-    Circuit c;
+    GateRefs gates;
 
     /**
      * The classical control-flow behavior of this kernel.
@@ -151,8 +155,6 @@ public:
 
     utils::Str get_gates_definition() const;
     utils::Str get_name() const;
-    Circuit &get_circuit();
-    const Circuit &get_circuit() const;
 
     void identity(utils::UInt qubit);
     void i(utils::UInt qubit);
@@ -222,7 +224,7 @@ private:
     // return the subinstructions of a composite gate
     // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
     void get_decomposed_ins(
-        const gates::Composite &gate,
+        const gate_types::Composite &gate,
         utils::Vec<utils::Str> &sub_instructons
     ) const;
 

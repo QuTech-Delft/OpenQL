@@ -13,7 +13,7 @@
 namespace ql {
 namespace plat {
 
-using CustomGateRef = utils::One<ir::gates::Custom>;
+using CustomGateRef = utils::One<ir::gate_types::Custom>;
 
 using InstructionMap = utils::Map<utils::Str, CustomGateRef>;
 

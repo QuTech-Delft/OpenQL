@@ -206,7 +206,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/gate.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/classical.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/bundle.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/circuit.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/program.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/resource_types/base.cc"
