@@ -89,7 +89,7 @@ public:
     /**
      * Returns the string printed by print_strategy().
      */
-    std::string dump_strategy() const;
+    std::string get_strategy() const;
 
     /**
      * Sets an option. Periods may be used as hierarchy separators to set

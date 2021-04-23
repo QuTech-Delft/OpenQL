@@ -15,7 +15,7 @@ namespace ql {
 namespace api {
 
 /**
- * Creates a unitary matrix from the given row-major, square, unitary
+ * Creates a unitary gate from the given row-major, square, unitary
  * matrix.
  */
 Unitary::Unitary(

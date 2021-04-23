@@ -80,7 +80,7 @@ void Pass::print_strategy() const {
 /**
  * Returns the string printed by print_strategy().
  */
-std::string Pass::dump_strategy() const {
+std::string Pass::get_strategy() const {
     std::ostringstream ss;
     pass->dump_strategy(ss);
     return ss.str();

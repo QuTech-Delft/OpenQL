@@ -7,11 +7,17 @@ end in a (conditional) branch to the start of another kernel, but otherwise,
 they may only consist of quantum gates and mixed quantum-classical data flow
 operations.
 
-Currently, kernels can be constructed only by adding gates and classical data
-flow instructions in the order in which they are to be executed, and there is
-no way to get information about which gates are in the kernel after the fact.
-If you need this kind of bookkeeping, you will have to wrap OpenQL's kernels
-for now.
+The constructor creates a new kernel with the given name, using the given
+platform. The third, fourth, and fifth arguments optionally specify the
+desired number of qubits, classical integer registers, and classical bit
+registers. If not specified, the number of qubits is taken from the
+platform, and no classical or bit registers will be allocated.
+
+Currently, the contents of a kernel can only be constructed by adding gates
+and classical data flow instructions in the order in which they are to be
+executed, and there is no way to get information about which gates are in the
+kernel after the fact. If you need this kind of bookkeeping, you will have to
+wrap OpenQL's kernels for now.
 
 Classical flow-control is configured when a completed kernel is added to a
 program, via basic structured control-flow paradigms (if-else, do-while, and

@@ -20,8 +20,30 @@ namespace ql {
 namespace api {
 
 /**
- * Quantum platform description. Describes everything that the compiler needs to
- * know about the target quantum chip, instruments, etc.
+ * Quantum platform description. This describes everything that the compiler
+ * needs to know about the target quantum chip, instruments, etc. Platforms are
+ * created from JSON (+ comments) configuration files: there is no way to
+ * modify a platform using the API, and introspection is limited. The syntax of
+ * the platform configuration file is too extensive to describe here.
+ *
+ * In addition to the platform itself, the Platform object provides an interface
+ * for obtaining a Compiler object. This object describes the *strategy* for
+ * transforming the quantum algorithm to something that can be executed on the
+ * device described by the platform. You can think of the difference between
+ * them as the difference between a verb and a noun: the platform describes
+ * something that just exists, while the compilation strategy describes how to
+ * get there.
+ *
+ * The (initial) strategy can be set using a separate configuration file
+ * (compiler_config_file), directly from within the platform configuration file,
+ * or one can be inferred based on the previously hardcoded defaults. Unlike the
+ * platform itself however, an extensive API is available for adjusting the
+ * strategy as you see fit; just use get_compiler() to get a reference to a
+ * Compiler object that may be used for this purpose. If you don't do anything
+ * with the compiler methods and object, don't specify the compiler_config_file
+ * parameter, and the "eqasm_compiler" key of the platform configuration file
+ * refers to one of the previously-hardcoded compiler, a strategy will be
+ * generated to mimic the old logic for backward compatibility.
  */
 class Platform {
 private:
@@ -82,7 +104,7 @@ public:
     std::string get_info() const;
 
     /**
-     * Whether a custom compiler configuration has been attached to this
+     * Returns whether a custom compiler configuration has been attached to this
      * platform. When this is the case, programs constructed from this platform
      * will use it to implement Program.compile(), rather than generating the
      * compiler in-place from defaults and global options during the call.

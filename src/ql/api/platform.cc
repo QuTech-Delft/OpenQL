@@ -59,7 +59,7 @@ std::string Platform::get_info() const {
 }
 
 /**
- * Whether a custom compiler configuration has been attached to this
+ * Returns whether a custom compiler configuration has been attached to this
  * platform. When this is the case, programs constructed from this platform
  * will use it to implement Program.compile(), rather than generating the
  * compiler in-place from defaults and global options during the call.

@@ -104,10 +104,10 @@ def _fixup_swig_autodoc_signature(sig):
         # Fix return type name.
         if return_type:
             return_type = _fixup_swig_autodoc_type(return_type)
+        else:
+            return_type = 'None'
 
-        sig = spacing + name + '(' + args + ')'
-        if return_type:
-            sig += ' -> ' + return_type
+        sig = spacing + name + '(' + args + ') -> ' + return_type
 
     except (Exception, AssertionError):
         pass

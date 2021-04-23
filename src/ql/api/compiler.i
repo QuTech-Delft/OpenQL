@@ -212,7 +212,7 @@ int
 """
 
 
-%feature("docstring") ql::api::Compiler::set_option
+%feature("docstring") ql::api::Compiler::set_option_recursively
 """
 Sets an option for all passes recursively. The return value is the number
 of passes that were affected; passes are only affected when they have an
