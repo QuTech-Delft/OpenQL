@@ -1,5 +1,5 @@
-OpenQL C++ Coding Conventions
-=============================
+C++ coding conventions
+======================
 
 In order to maintain the code homogeneous and consistent, all contibutors are
 invited to follow this coding convention.
@@ -7,11 +7,16 @@ invited to follow this coding convention.
 NOTE: at the time of writing, not all of OpenQL has been converted to this
 code style completely yet.
 
+In general, consistency is considered to be more important than any of these
+rules. If a significant piece of code violates a rule consistently, either
+change the entire piece of code to conform, or make your changes in the same
+style as the original code.
+
 ## File and directory organization
 
 C++ header files should be named `.h`. Header files private to OpenQL go in
-the `src` directory, header files that a user needs to access as well (the vast
-majority) go in `include`.
+the `src` directory, preferably in a `detail` subdirectory. Header files that
+a user needs to access as well (the vast majority) go in `include`.
 
 All definitions must go into source files; header files should only declare
 things. Therefore, almost all header files need a corresponding source file.
@@ -19,6 +24,14 @@ This file must have the same name and path relative to the src/include
 directory as the corresponding header file.
 
 All filenames are lowercase, separated by `_` when composed of multiple words.
+
+The filename and directory structure (loosely) follows the namespace structure
+of OpenQL and vice versa. When a namespace is only comprised of only a single
+file, the filename will be the name of the namespace, and the directory it's
+placed in is the name of the parent namespace (and so on). When a namespace
+consists of multiple files, the entire namespace path is represented as
+directories, and the contained files should be named after the (main) class
+(in lower_case) or functionality that they provide.
 
 ## Naming conventions
 
@@ -37,13 +50,151 @@ largest amount of conflicting styles. Therefore, it makes more sense to just
 stick to Python. The only annoying conflict is that the standard library
 types are lowercase.
 
-Since OpenQL is a library, it's important not to pollute the global namespace
-with stuff. Imagine, for instance, if OpenQL would define the type `Bit` to
-represent a classical bit in the global namespace, and someone using the library
-from C++ also includes a bit manipulation library that happens to also define
-`Bit`; this would be a naming conflict that's impossible to resolve for the
-user. Therefore, everything defined by OpenQL should be in the `ql` namespace,
-and all preprocessor macros (which can't be namespaced) should start with `QL_`.
+When naming things, try to be explicit and precise, but only within the context
+of the current namespace. For example, if you have a class representing a red
+apple, and you place it in namespace `apple`, call the class `Red` instead of
+`RedApple`. This saves you typing within the `apple` namespace, doesn't cost
+someone outside your namespace much extra typing for occasional apple usage
+(`apple::Red` isn't much longer than `RedApple` after all), and someone using
+lots of apples within some scope can just do `using namespace apple` locally
+to save more typing.
+
+When you use polymorphism for a group of objects, the base class is typically
+called `Base`. Continuing with the apple example, the `apple` namespace may
+have a class `Base` declared in `base.h`, `Red : public Base` in `red.h`, and
+`Green : public Base` in `green.h`. Using `Base` instead of `Apple` avoids
+annoying constructions like `apple::Apple`.
+
+Avoid abbreviations of "words" within a name, except maybe for very local
+variables like loop iterators. A little typing overhead while writing the code
+saves a lot of overhead when someone else later has to read and understand your
+code. However, typedefs (using the `using` keyword, C-style `typedef`s are
+comparatively hard to read) are encouraged, to remove parts of names or
+namespace paths that are obvious within context.
+
+## Namespaces
+
+Since OpenQL may be used as a C++ library, it's common courtesy not to pollute
+the global namespace with stuff. Imagine, for instance, if OpenQL would define
+the type `Bit` to represent a classical bit in the global namespace, and
+someone using the library from C++ also includes a bit manipulation library
+that happens to also define `Bit`; this would be a naming conflict that's
+impossible to resolve for the user. Therefore, everything defined by OpenQL
+should be within the `ql` namespace, and all preprocessor macros (which can't
+be namespaced) should start with `QL_`.
+
+Furthermore, nothing except the main C++-style `openql` header in `include`
+should define anything directly in `ql`. This namespace is reserved for the
+API layer that the user is expected to access, and must thus remain as
+consistent from version to version as possible. The main header currently
+does a `using namespace api` to pull the contents of `ql::api` into `ql`,
+but if internal changes are made to OpenQL again later, this translation may
+become more complex.
+
+OpenQL has a well-defined namespace tree used to structure its components and
+keep things disjoint. Roughly speaking, the namespaces serve as library for
+dependent namespaces, although some dependency cycles still remain at this
+abstraction level. The `ql` subnamespaces, roughly ordered by dependencies,
+are:
+
+ - `utils`: extensions to (standard) libraries, wrappers, etc. not specific to
+   OpenQL or compilers in any way.
+
+ - `plat`: the platform tree. Contains most of the data structures needed to
+   describe a quantum platform. This should be light on actual functionality,
+   such that it might be generated by tree-gen at some point.
+
+ - `ir`: intermediate representation. Contains most of the data structures
+   needed to represent a quantum program as it's being compiled. This should be
+   light on actual functionality, such that it might be generated by tree-gen
+   at some point.
+
+ - `com`: common operations. This contains all OpenQL/compiler-specific code
+   operating on the platform and IR trees that is reusable for various passes.
+   For example DFG or CFG construction might live here.
+
+ - `pmgr`: pass management. This contains all the logic that manages the
+   compilation process.
+
+ - `pmgr::pass_types`: defines the abstract base classes for the compiler
+   passes.
+
+ - `pass`: pass implementations. This contains a subtree of namespaces that
+   eventually define the architecture-agnostic compiler passes of OpenQL. This
+   tree should correspond exactly to the namespace paths in the path types as
+   the pass factory knows them. The first namespace level is standardized as
+   follows:
+
+    - `pre`: passes that perform pre-processing of the platform tree.
+      (NOTE: at the time of writing these don't exist yet, and pass management
+      isn't quite ready for it yet due to issues with backward compatibility of
+      the API)
+
+    - `io`: I/O passes that load the IR from a file or save (parts of the IR)
+      to a file without significant transformation. Mostly cQASM, but would
+      also include conversion of the IR to different formats (OpenQASM?
+      QuantumSim?).
+
+    - `ana`: passes that leave the IR and platform as is (save for
+      annotations), and only analyze the content of the platform/IR. For
+      example statistics reporting, visualization, error checking, consistency
+      checking for debugging, etc.
+
+    - `dec`: passes that decompose code (instructions, gates, etc) to more
+      primitive components or otherwise lower algorithm abstraction level.
+      Should includes of course gate decomposition passes (once that
+      functionality is pulled out of Kernel), but something like reduction of
+      structured control flow to only labels and goto's would also go here.
+
+    - `map` passes that map qubits or classical storage elements to something
+      closer to hardware. Right now that would be "the mapper," but would also
+      include a hypothetical pass that automatically applies some error
+      correction code to the user-specified algorithm, mapping variables to
+      classical registers and memory, reduction to single-static-assignment
+      form, etc.
+
+    - `opt`: optimization passes, i.e. passes that do not lower IR abstraction
+      level, but instead transmute the IR to a "better" equivalent
+      representation.
+
+    - `sch` passes that shuffle instructions around and add timing information.
+
+    - `gen` passes that internally convert the common IR into their own IR to
+      reduce it further, to eventually generate architecture-specific assembly
+      or machine code. These should only ever be part of `arch`.
+
+    - `misc`: any passes that don't fit in the above categories, for example a
+      Python pass wrapper if we ever make one, which could logically be any
+      kind of pass.
+
+    - `dnu`: "Do Not Use:" code exists only for compatibility purposes, only
+      works in very particular cases, is generally unfinished, or is so old
+      that we're not sure if it even works anymore. This receives special
+      treatment in the pass factory: passes prefixed with `dnu` must be
+      explicitly enabled in the compiler configuration file.
+
+       - `io`..`misc`: the other categories reappear as namespaces within
+         `dnu`.
+
+ - `rmgr`: resource management. This contains the logic that functionally
+   describes the scheduling resources of a platform, used to define for
+   example instrument constraints.
+
+ - `pmgr::resource_types`: defines the abstract base classes for the
+   scheduling resources.
+
+ - `resource`: defines the architecture-agnostic scheduling resources built
+   into OpenQL.
+
+ - `resource::dnu`: similar to `pass::dnu`, defunct or work-in-progress
+   resources should be placed in here.
+
+ - `arch::<name>`: the place for all architecture-specific stuff. Specifically,
+   this may include `com`, `pass`, and `resource` sub-namespaces that provide
+   architecture-specific additions or overrides for the respective `ql`
+   subnamespaces.
+
+ - `api`: this namespace contains all user-facing API wrappers.
 
 ## Utils types and functions
 
@@ -51,9 +202,10 @@ The `ql::utils` namespace provides a bunch of typedefs and wrappers for C++
 standard library stuff, modified to improve safety, reduce undefined behavior,
 simplify stuff where OpenQL doesn't need the full expressive power of the
 standard library, improve consistency in terms of naming conventions, or just
-to reduce typing. In cc files there is usually a `using namespace utils` to
-reduce typing further (but don't do this in header files!). You should use
-types and functions from here as much as possible. Here are the important ones.
+to reduce typing. In cc files there is sometimes a `using namespace utils` to
+reduce typing further, but never do this in header files! You should use
+types and functions from here as much as possible. Here are some important
+ones.
 
  - From `utils/num.h`:
     - `Bool` for booleans;

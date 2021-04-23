@@ -1,5 +1,5 @@
-The openql module
-=================
+Python API
+==========
 
 To use OpenQL from Python, you need to install the ``qutechopenql`` module using ``pip``, and then
 

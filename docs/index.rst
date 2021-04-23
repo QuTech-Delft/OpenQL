@@ -9,16 +9,15 @@ While the instruction-level code is platform-specific, the quantum assembly code
 
 .. toctree::
    :maxdepth: 2
-   :caption: Getting Started
+   :caption: Getting started
 
    overview
    installation
    start
 
-
 .. toctree::
    :maxdepth: 2
-   :caption: OpenQL Basics
+   :caption: OpenQL basics
 
    program
    kernel
@@ -29,6 +28,26 @@ While the instruction-level code is platform-specific, the quantum assembly code
    compiler_passes
    visualizer
 
+.. toctree::
+   :maxdepth: 3
+   :caption: Tutorials
+
+   qx_example
+   dqcsim_example
+
+.. toctree::
+   :maxdepth: 1
+   :caption: API reference
+
+   python_api
+   cpp_api
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Developer documentation
+
+   coding_conventions
+   doxygen_documentation
 
 .. toctree::
    :maxdepth: 1
@@ -36,27 +55,6 @@ While the instruction-level code is platform-specific, the quantum assembly code
 
    changelog
    contributors
-
-
-.. toctree::
-   :maxdepth: 1
-   :caption: API Reference
-
-   api
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Tutorials:
-
-   qx_example
-   dqcsim_example
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Developer Documentation
-
-   cppref
-
 
 Indices and tables
 

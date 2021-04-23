@@ -1,7 +1,7 @@
 .. _qxplatform:
 
 QX Platform
-----------
+-----------
 
 Details of the configuration file for the QX simulator platform. [TBD]
 

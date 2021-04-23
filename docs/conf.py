@@ -33,7 +33,7 @@ html_extra_path = ['doxygen']
 # -- Project information -----------------------------------------------------
 
 project = 'OpenQL'
-copyright = '2016, Nader Khammassi & Imran Ashraf, QuTech, TU Delft'
+copyright = '2016-2021, QuTech, TU Delft'
 author = 'QuTech, TU Delft'
 
 master_doc = 'index'
@@ -44,7 +44,7 @@ master_doc = 'index'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    #'m2r',
+    'm2r2',
     'sphinx.ext.todo',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
