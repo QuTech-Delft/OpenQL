@@ -304,7 +304,7 @@ utils::Str Info::get_default_platform() const {
         "cl_22 %0": ["rxm90 %0", "ry180 %0"],
         "cl_23 %0": ["rx90 %0", "ry90 %0", "rxm90 %0"],
         "measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"]
-    },
+    },)" R"(
     "instructions": {
         "i": {
             "duration": 20,
@@ -454,7 +454,7 @@ utils::Str Info::get_default_platform() const {
                 ],
                 "static_codeword_override": [0]
             }
-        },
+        },)" R"(
         "_wait_uhfqa": {
             "duration": 220,
             "cc": {
@@ -713,7 +713,7 @@ utils::Str Info::get_default_platform() const {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [7]
             }
-        },
+        },)" R"(
         "cw_28": {
             "duration": 20,
             "cc": {

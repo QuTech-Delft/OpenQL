@@ -165,7 +165,7 @@ utils::Str Info::get_default_platform() const {
             { "id": 15, "src": 4, "dst": 6 }
         ]
     },
-
+)" R"(
     "instructions": {
         "prepx q0": {
             "duration": 40,
@@ -369,7 +369,7 @@ utils::Str Info::get_default_platform() const {
             "qubits": ["q6"],
             "type": "readout",
             "cc_light_instr": "measz"
-        },
+        },)" R"(
         "measure q0": {
             "duration": 40,
             "latency": 0,
@@ -796,7 +796,7 @@ utils::Str Info::get_default_platform() const {
             "qubits": ["q4"],
             "type": "mw",
             "cc_light_instr": "x90"
-        },
+        },)" R"(
         "rx90 q5": {
             "duration": 40,
             "latency": 0,
@@ -1160,7 +1160,7 @@ utils::Str Info::get_default_platform() const {
             "qubits": ["q0"],
             "type": "mw",
             "cc_light_instr": "ry180"
-        },
+        },)" R"(
         "cnot q2,q0": {
             "duration": 80,
             "latency": 0,
@@ -1357,7 +1357,7 @@ utils::Str Info::get_default_platform() const {
             "qubits": ["q1","q4"],
             "type": "flux",
             "cc_light_instr": "cz"
-        },
+        },)" R"(
         "cz q2,q5": {
             "duration": 80,
             "latency": 0,

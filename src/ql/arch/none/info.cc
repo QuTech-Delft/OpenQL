@@ -122,7 +122,7 @@ utils::Str Info::get_default_platform() const {
         "y180" : {
             "duration": 40
         },
-
+)" R"(
         "mx90" : {
             "duration": 40
         },
