@@ -160,7 +160,6 @@ public:
 
 } // namespace todo
 
-using Qubits = rmgr::resource_types::Compat<todo::ccl_qubit_resource_t>;
 using QWGs = rmgr::resource_types::Compat<todo::ccl_qwg_resource_t>;
 using MeasUnits = rmgr::resource_types::Compat<todo::ccl_meas_resource_t>;
 using Edges = rmgr::resource_types::Compat<todo::ccl_edge_resource_t>;

@@ -66,12 +66,17 @@ void Factory::dump_architectures(std::ostream &os, const utils::Str &line_prefix
         os << line_prefix << "    \n";
         os << line_prefix << "  * Default pass list *\n";
         os << line_prefix << "    \n";
-        os << line_prefix << "    For the current/default global option values, "
-                          << "the following backend passes are used by default.\n";
-        os << line_prefix << "    \n";
         pmgr::Manager manager;
         arch->populate_backend_passes(manager);
-        manager.dump_strategy(os, line_prefix + "        ");
+        if (manager.get_num_passes() > 0) {
+            os << line_prefix << "    For the current/default global option values, "
+                              << "the following backend passes are used by default.\n";
+            os << line_prefix << "    \n";
+            manager.dump_strategy(os, line_prefix + "        ");
+        } else {
+            os << line_prefix << "    For the current/default global option values, "
+                              << "this architecture does not insert any backend passes.\n";
+        }
         os << line_prefix << "    \n";
         os << line_prefix << "  * Default configuration file *\n";
         os << line_prefix << "    \n";

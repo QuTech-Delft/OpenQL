@@ -82,17 +82,17 @@ public:
      * ```
      *
      * The optional "architecture" key may be used to make shorthands for
-     * architecture- specific passes, normally prefixed with
-     * "arch.<architecture>.". If it's not specified or an empty string, no
-     * shorthand aliases are made.
+     * architecture- specific resources, normally prefixed with
+     * "arch.<architecture>.". If it's not specified or an empty string,
+     * the architecture is derived from the platform.
      *
-     * The optional "dnu" key may be used to specify a list of do-not-use pass
-     * types (experimental passes, deprecated passes, or any other pass that's
+     * The optional "dnu" key may be used to specify a list of do-not-use
+     * resource types (experimental, deprecated, or any other resource that's
      * considered unfit for "production" use) that you explicitly want to use,
      * including the "dnu" namespace they are defined in. Once specified, you'll
-     * be able to use the pass type without the "dnu" namespace element. For
-     * example, if you would include "dnu.whatever" in the list, the pass type
-     * "whatever" may be used to add the pass.
+     * be able to use the resource type without the "dnu" namespace element. For
+     * example, if you would include "dnu.whatever" in the list, the resource
+     * type "whatever" may be used to add the resource.
      *
      * The "resources" key specifies the actual resource list. This consists of
      * a map from unique resource names matching `[a-zA-Z0-9_\-]+` to a resource

@@ -96,17 +96,17 @@ Manager Manager::from_json(
         throw utils::Exception("resource manager configuration must be an object");
     }
 
+    // Infer (default) architecture from the rest of the platform.
+    utils::Str architecture = platform->architecture->get_namespace_name();
+
     // If a "resources" key exists, this is a new-style resource configuration
     // structure. Otherwise it's an old-style structure.
     if (json.find("resources") == json.end()) {
 
-        // Old-style structure. Infer the architecture.
-        utils::Str architecture = platform->architecture->get_namespace_name();
-
-        // Create the manager.
+        // Old-style structure. Create the manager using defaults.
         Manager manager{platform, architecture, {}, factory};
 
-        // Add resources to it.
+        // Add resources to it using the old JSON syntax.
         for (auto it = platform->resources.begin(); it != platform->resources.end(); ++it) {
             if (it.value().type() != JsonType::object) {
                 throw utils::Exception("resource configuration must be an object");
@@ -119,7 +119,6 @@ Manager Manager::from_json(
 
     // New-style structure.
     // Read the strategy structure.
-    utils::Str architecture = {};
     utils::Set<utils::Str> dnu = {};
     const utils::Json *resources = nullptr;
     for (auto it = json.begin(); it != json.end(); ++it) {
