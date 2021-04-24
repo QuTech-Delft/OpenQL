@@ -19,6 +19,7 @@ using Set = std::set<T, Compare, Allocator>;
 } // namespace utils
 } // namespace ql
 
+// FIXME: need a *reasonable* solution for this...
 namespace std {
 
 /**
@@ -40,4 +41,4 @@ std::ostream &operator<<(std::ostream &os, const std::set<T> &set) {
     return os;
 }
 
-}
+} // namespace std

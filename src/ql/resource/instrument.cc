@@ -423,7 +423,7 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
                 for (const auto &edge_id : elements) {
                     auto edge = context->platform->grid->get_edge_qubits(edge_id);
                     if (edge == Edge(0, 0)) {
-                        ERROR("invalid edge ID in edge list: " + utils::to_string(edge));
+                        ERROR("invalid edge ID in edge list: " + utils::to_string(edge_id));
                     }
                     cfg->two_qubit_edge_instrument.set(edge).push_back(index);
                 }

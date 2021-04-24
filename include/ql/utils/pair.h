@@ -16,6 +16,12 @@ namespace utils {
 template <typename T1, typename T2>
 using Pair = std::pair<T1, T2>;
 
+} // namespace utils
+} // namespace ql
+
+// FIXME: need a *reasonable* solution for this...
+namespace std {
+
 /**
  * Stream << overload for Pair<>.
  */
@@ -25,5 +31,4 @@ std::ostream &operator<<(std::ostream &os, const ::ql::utils::Pair<T1, T2> &pair
     return os;
 }
 
-} // namespace utils
-} // namespace ql
+} // namespace std
