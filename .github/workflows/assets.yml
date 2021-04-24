@@ -165,84 +165,92 @@ jobs:
         asset_name: ${{ steps.wheel.outputs.wheel }}
         asset_content_type: application/zip
 
-  conda:
-    name: Conda wheels
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-        - ubuntu-latest
-        - macos-latest
-        - windows-2016
-        python-version:
-        - '3.6'
-        - '3.7'
-        - '3.8'
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: Set up conda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        auto-update-conda: true
-        miniconda-version: "latest"
-        channel-priority: strict
-        channels: conda-forge
-        show-channel-urls: true
-        use-only-tar-bz2: true
-    - name: Install Windows dependencies
-      if: matrix.os == 'windows-2016'
-      run: choco install winflexbison3 --version 2.5.18.20190508
-    - name: Install conda dependencies
-      run: conda install conda-build conda-verify -y
-    - name: Build & test
-      env:
-        NPROCS: 5
-      run: conda build conda-recipe --python=${{ matrix.python-version }}
-    - name: Wheel path
-      id: wheel
-      run: |
-        python -c "import sys,os; print('##[set-output name=path;]' + os.path.abspath(sys.argv[1])); print('##[set-output name=wheel;]' + os.path.basename(sys.argv[1]));" "$(conda build conda-recipe --python=${{ matrix.python-version }} --output)"
-        python -c "import sys; print('##[set-output name=os;]' + ('linux' if sys.argv[1].startswith('ubuntu') else 'macos' if sys.argv[1].startswith('macos') else 'windows' if sys.argv[1].startswith('windows') else 0/0))" ${{ matrix.os }}
-    - uses: actions/upload-artifact@v2
-      with:
-        name: conda-${{ steps.wheel.outputs.os }}-py${{ matrix.python-version }}
-        path: ${{ steps.wheel.outputs.path }}
-    - uses: actions/upload-release-asset@v1
-      if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ${{ steps.wheel.outputs.path }}
-        asset_name: ${{ steps.wheel.outputs.wheel }}
-        asset_content_type: application/x-bzip2
-
-  publish:
-    name: Publish
-    if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
-    needs:
-    - macos
-    - manylinux
-    - windows
-    - conda
-    runs-on: ubuntu-latest
-    steps:
-    - name: Download artifacts
-      uses: actions/download-artifact@v2
-      id: download
-    - name: Publish to Anaconda cloud
-      run: |
-        conda install -c anaconda anaconda-client -y
-        conda run anaconda login --username ${{ secrets.ANACONDA_USER }} --password ${{ secrets.ANACONDA_PASSWORD }}
-        conda run anaconda upload ${{ steps.download.outputs.download-path }}/conda-*/*.bz2
-        conda run anaconda logout
-    - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.3.1
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_TOKEN }}
-        packages_dir: ${{ steps.download.outputs.download-path }}/pypi-*
+# NOTE: disabled conda completely because it is INCREDIBLY slow on CI (multiple
+# hours!) and occasionally just breaks the runners entirely after ~6 hours. It
+# also doesn't appear like anyone is actually using Conda within the lab
+# (anymore), as everything goes through pycQED and it is pip-only.
+#
+# For a release, if conda is really still necessary, it will just have to be
+# done manually.
+#
+#  conda:
+#    name: Conda wheels
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        os:
+#        - ubuntu-latest
+#        - macos-latest
+#        - windows-2016
+#        python-version:
+#        - '3.6'
+#        - '3.7'
+#        - '3.8'
+#    steps:
+#    - uses: actions/checkout@v2
+#      with:
+#        submodules: recursive
+#    - name: Set up conda
+#      uses: conda-incubator/setup-miniconda@v2
+#      with:
+#        auto-update-conda: true
+#        miniconda-version: "latest"
+#        channel-priority: strict
+#        channels: conda-forge
+#        show-channel-urls: true
+#        use-only-tar-bz2: true
+#    - name: Install Windows dependencies
+#      if: matrix.os == 'windows-2016'
+#      run: choco install winflexbison3 --version 2.5.18.20190508
+#    - name: Install conda dependencies
+#      run: conda install conda-build conda-verify -y
+#    - name: Build & test
+#      env:
+#        NPROCS: 5
+#      run: conda build conda-recipe --python=${{ matrix.python-version }}
+#    - name: Wheel path
+#      id: wheel
+#      run: |
+#        python -c "import sys,os; print('##[set-output name=path;]' + os.path.abspath(sys.argv[1])); print('##[set-output name=wheel;]' + os.path.basename(sys.argv[1]));" "$(conda build conda-recipe --python=${{ matrix.python-version }} --output)"
+#        python -c "import sys; print('##[set-output name=os;]' + ('linux' if sys.argv[1].startswith('ubuntu') else 'macos' if sys.argv[1].startswith('macos') else 'windows' if sys.argv[1].startswith('windows') else 0/0))" ${{ matrix.os }}
+#    - uses: actions/upload-artifact@v2
+#      with:
+#        name: conda-${{ steps.wheel.outputs.os }}-py${{ matrix.python-version }}
+#        path: ${{ steps.wheel.outputs.path }}
+#    - uses: actions/upload-release-asset@v1
+#      if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ github.event.release.upload_url }}
+#        asset_path: ${{ steps.wheel.outputs.path }}
+#        asset_name: ${{ steps.wheel.outputs.wheel }}
+#        asset_content_type: application/x-bzip2
+#
+#  publish:
+#    name: Publish
+#    if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+#    needs:
+#    - macos
+#    - manylinux
+#    - windows
+#    - conda
+#    runs-on: ubuntu-latest
+#    steps:
+#    - name: Download artifacts
+#      uses: actions/download-artifact@v2
+#      id: download
+#    - name: Publish to Anaconda cloud
+#      run: |
+#        conda install -c anaconda anaconda-client -y
+#        conda run anaconda login --username ${{ secrets.ANACONDA_USER }} --password ${{ secrets.ANACONDA_PASSWORD }}
+#        conda run anaconda upload ${{ steps.download.outputs.download-path }}/conda-*/*.bz2
+#        conda run anaconda logout
+#    - name: Publish to PyPI
+#      uses: pypa/gh-action-pypi-publish@v1.3.1
+#      with:
+#        user: __token__
+#        password: ${{ secrets.PYPI_TOKEN }}
+#        packages_dir: ${{ steps.download.outputs.download-path }}/pypi-*
 
