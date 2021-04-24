@@ -26,12 +26,12 @@ Factory::Factory() {
 
     // Register with old CC-light names for backward-compatibility.
     resource_types.set("arch.cc_light.qubits") = resource_types.at("Qubits");
-    //register_resource<resource::instrument::Resource>("arch.cc_light.qwgs");
-    //register_resource<resource::instrument::Resource>("arch.cc_light.meas_units");
+    register_resource<resource::instrument::Resource>("arch.cc_light.qwgs");
+    register_resource<resource::instrument::Resource>("arch.cc_light.meas_units");
     //register_resource<resource::instrument::Resource>("arch.cc_light.edges");
     //register_resource<resource::instrument::Resource>("arch.cc_light.detuned_qubits");
-    register_resource<resource::QWGs>("arch.cc_light.qwgs");
-    register_resource<resource::MeasUnits>("arch.cc_light.meas_units");
+    //register_resource<resource::QWGs>("arch.cc_light.qwgs");
+    //register_resource<resource::MeasUnits>("arch.cc_light.meas_units");
     register_resource<resource::Edges>("arch.cc_light.edges");
     register_resource<resource::DetunedQubits>("arch.cc_light.detuned_qubits");
     register_resource<resource::Channels>("arch.cc_light.channels");
