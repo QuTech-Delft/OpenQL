@@ -222,102 +222,16 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
         } else if (!it->is_object()) {
             ERROR("edge connection_map key must be an object");
         }
-        utils::Map<utils::UInt, utils::Ptr<utils::Set<utils::UInt>>> groups;
         for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
             if (!it2->is_array()) {
                 ERROR("edge connection_map values must be arrays of edges");
             }
-
-            // Gather all the edges for this group.
-            utils::Vec<utils::UInt> es;
-            es.push_back(utils::parse_uint(it2.key()));
-            for (const auto &e : *it2) {
-                if (!e.is_number_unsigned()) {
-                    ERROR(
-                        "edge connection_map array values must be edge identifiers "
-                        "(found one that's not an integer)"
-                    );
-                }
-                es.push_back(e.get<utils::UInt>());
-            }
-
-            // Connect them all together in groups.
-            utils::Ptr<utils::Set<utils::UInt>> group;
-            for (auto e : es) {
-                if (context->platform->grid->get_edge_qubits(e) == Edge(0, 0)) {
-                    ERROR(
-                        "edge connection_map array values must be edge identifiers "
-                        "(unknown edge " + utils::to_string(e) + ")"
-                    );
-                }
-                auto git = groups.find(e);
-                if (git == groups.end()) {
-                    if (!group.has_value()) {
-
-                        // Edge not seen before, make a new group.
-                        groups.set(e).emplace();
-                        group = groups.at(e);
-                        group->insert(e);
-
-                    } else {
-
-                        // Edge not seen before, but we already have a group.
-                        groups.set(e) = group;
-                        group->insert(e);
-
-                    }
-                } else {
-                    if (!group.has_value()) {
-
-                        // Seen this edge before, but this is the first edge
-                        // in this connection map entry.
-                        group = git->second;
-
-                    } else if (git->second.unwrap() != group.unwrap()) {
-
-                        // Edge seen before, but not grouped together with this
-                        // group yet. So merge the two groups.
-                        group->insert(git->second->begin(), git->second->end());
-                        git->second = group;
-
-                    }
-                }
-            }
-        }
-        utils::Set<utils::UInt> groups_seen;
-        for (const auto &it2 : groups) {
-            auto p = (utils::UInt)it2.second.unwrap().get();
-            if (groups_seen.count(p)) {
-                continue;
-            }
-            groups_seen.insert(p);
-            const auto &group = *it2.second;
-            if (group.size() < 2) {
-                continue;
-            }
-
-            // Devise a name for the group based on the qubits on the edges.
-            utils::Set<Edge> edges;
-            for (const auto &edge_id : group) {
-                auto edge = context->platform->grid->get_edge_qubits(edge_id);
-                if (edge.second < edge.first) {
-                    edge = {edge.second, edge.first};
-                }
-                edges.insert(edge);
-            }
-            utils::StrStrm ss;
-            ss << "edge";
-            for (const auto &edge : edges) {
-                ss << "-" << edge.first << "_" << edge.second;
-            }
-            utils::Str name = ss.str();
-
-            // Add the group.
-            cfg->json["instruments"].push_back({
-                {"name", name},
-                {"edge", std::vector<utils::UInt>{group.begin(), group.end()}}
-            });
-
+            utils::Json instrument_def = {
+                {"name", "MEAS" + it2.key()},
+                {"edge", *it2}
+            };
+            instrument_def["edge"].push_back(utils::parse_uint(it2.key()));
+            cfg->json["instruments"].push_back(instrument_def);
         }
 
     } else if (context->type_name == "arch.cc_light.detuned_qubits") {
@@ -328,7 +242,7 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
         {
             "predicate_1q": { "type": "mw" },
             "predicate_2q": { "type": "flux" },
-            "function": "exclusive",
+            "function": [ "type" ],
             "instruments": []
         }
         )"_json;
@@ -1041,7 +955,7 @@ void InstrumentResource::on_dump_docs(
       {
           "predicate_1q": { "type": "mw" },
           "predicate_2q": { "type": "flux" },
-          "function": "exclusive",
+          "function": [ "type" ],
           "instruments": [
               {
                   "name": "edge-0-2",
