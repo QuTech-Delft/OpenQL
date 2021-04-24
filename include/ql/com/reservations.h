@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <functional>
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/pair.h"
@@ -364,8 +365,10 @@ public:
      * Dumps the state of this reservation tracker.
      */
     void dump_state(
-        std::ostream &os,
-        const utils::Str &line_prefix
+        std::ostream &os = std::cout,
+        const utils::Str &line_prefix = "",
+        std::function<void(std::ostream&, const T&)> printer
+            = [](std::ostream &os, const T &val){ os << utils::try_to_string(val); }
     ) const {
         if (reservations.empty()) {
             os << line_prefix << "no reservations" << std::endl;
@@ -373,7 +376,8 @@ public:
         }
         for (const auto &it : reservations) {
             os << line_prefix << "[" << it.first.first << "," << it.first.second << ") = ";
-            os << utils::try_to_string(it.second) << "\n";
+            printer(os, it.second);
+            os << "\n";
         }
     }
 

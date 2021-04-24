@@ -7,6 +7,7 @@
 
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
+#include "ql/utils/pair.h"
 #include "ql/utils/list.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/map.h"
@@ -86,6 +87,16 @@ public:
     using Qubit = utils::UInt;
 
     /**
+     * Shorthand for a pair of qubits.
+     */
+    using QubitPair = utils::Pair<Qubit, Qubit>;
+
+    /**
+     * Shorthand for an edge index.
+     */
+    using Edge = utils::Int;
+
+    /**
      * A list of neighboring qubits.
      */
     using Neighbors = utils::List<Qubit>;
@@ -141,6 +152,16 @@ private:
      * The list of neighboring qubits for each qubit.
      */
     QubitMap<Neighbors> neighbors;
+
+    /**
+     * Edge to qubit pair map. Only used for specified connectivity.
+     */
+    utils::Map<Edge, QubitPair> edge_to_qubits;
+
+    /**
+     * Qubit pair to edge index. Only used for specified connectivity.
+     */
+    utils::Map<QubitPair, Edge> qubits_to_edge;
 
     /**
      * The distance (number of edges) between a pair of qubits.
@@ -211,6 +232,7 @@ public:
      *
      * ```json
      * {
+     *     "id": <optional unique identifying integer>,
      *     "src": <source qubit index, mandatory>,
      *     "dst": <target qubit index, mandatory>,
      *     ...
@@ -218,8 +240,11 @@ public:
      * ```
      *
      * Edges are directional; to allow qubits to interact "in both ways," both
-     * directions must be specified. Any additional keys in the object are
-     * silently ignored, as other parts of OpenQL may use the structure as well.
+     * directions must be specified. If any identifiers are specified, all edges
+     * should get one, and they should all be unique; otherwise, indices are
+     * generated using src*nq+dst. Any additional keys in the object are
+     * silently ignored, as other parts of OpenQL may use the structure as well
+     * (although they should preferably just extend this class).
      *
      * When "connectivity" is set to "full" in a multi-core environment,
      * inter-core edges are only generated when both the source and destination
@@ -232,6 +257,18 @@ public:
      * other parts of OpenQL may use the structure as well.
      */
     Grid(utils::UInt num_qubits, const utils::Json &topology);
+
+    /**
+     * Returns the edge index for the given qubit pair, or returns -1 when there
+     * is no defined edge index for the given qubit pair.
+     */
+    Edge get_edge_index(QubitPair qs) const;
+
+    /**
+     * Returns the qubit pair corresponding with the given edge, or returns 0,0
+     * when there is no edge with the given index.
+     */
+    QubitPair get_edge_qubits(Edge edge) const;
 
     /**
      * Returns the indices of the neighboring qubits for the given qubit.

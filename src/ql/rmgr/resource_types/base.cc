@@ -102,8 +102,9 @@ utils::Bool Base::gate(
         throw utils::Exception("resource gate() called before initialization");
     }
 
-    // Verify that the scheduling direction (if any) is respected.
-    // FIXME JvS: this is off because it "breaks" the mapper tests.
+    // Verify that the scheduling direction (if any) is respected. If not,
+    // simply return false. The behavior of the old resources was basically
+    // undefined, which we're not going to emulate...
     QL_DOUT("commit = " << commit << ", cycle = " << cycle << ", prev = " << prev_cycle);
     utils::Bool out_of_order = false;
     switch (direction) {
@@ -111,10 +112,9 @@ utils::Bool Base::gate(
         case Direction::BACKWARD: out_of_order = cycle > prev_cycle; break;
         default: void();
     }
-    (void)out_of_order;
-    /*if (out_of_order) {
+    if (out_of_order) {
         return false;
-    }*/
+    }
 
     // Run the resource implementation.
     utils::Bool retval = on_gate(cycle, gate, commit);

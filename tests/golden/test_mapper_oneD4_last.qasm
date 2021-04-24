@@ -3,24 +3,25 @@ version 1.0
 qubits 7
 
 .kernel_oneD4
-    { y q[4] | ym90 q[6] }
-    cz q[4],q[6]
+    y q[4]
+    { x q[2] | ym90 q[0] | ym90 q[1] }
+    { cz q[2],q[0] | cz q[4],q[1] }
     wait 1
-    { y90 q[6] | ym90 q[4] }
-    cz q[6],q[4]
-    x q[2]
-    { ym90 q[0] | y90 q[4] | ym90 q[6] }
-    { cz q[2],q[0] | cz q[4],q[6] }
+    { y90 q[0] | ym90 q[2] | y90 q[1] | ym90 q[4] }
+    { cz q[0],q[2] | cz q[1],q[4] }
     wait 1
-    { y90 q[0] | ym90 q[2] | y90 q[6] | ym90 q[3] }
-    { cz q[0],q[2] | cz q[6],q[3] }
+    { y90 q[2] | ym90 q[0] | y90 q[4] | ym90 q[1] }
+    { cz q[2],q[0] | cz q[4],q[1] }
     wait 1
-    { y90 q[2] | ym90 q[0] | y90 q[3] | ym90 q[6] }
-    { cz q[2],q[0] | cz q[3],q[6] }
+    { y90 q[1] | ym90 q[3] }
+    cz q[1],q[3]
+    wait 1
+    { y90 q[3] | ym90 q[1] }
+    cz q[3],q[1]
     wait 1
     { ym90 q[3] | y90 q[0] }
     cz q[0],q[3]
-    y90 q[6]
-    cz q[6],q[3]
+    y90 q[1]
+    cz q[1],q[3]
     wait 1
     { x q[0] | ym90 q[3] }

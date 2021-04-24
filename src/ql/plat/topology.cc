@@ -241,6 +241,8 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
         } else if (it->type() != JsonType::array) {
             throw utils::Exception("topology.edges key must be an array of objects if specified");
         } else {
+            utils::Bool first_edge = true;
+            utils::Bool edges_have_ids = false;
             for (const auto &edge : *it) {
                 if (edge.type() != JsonType::object) {
                     throw utils::Exception("topology.edges entries must be objects");
@@ -274,7 +276,7 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
                     throw utils::Exception("topology.edges.*.dst is out of range");
                 }
 
-                // Check uniqueness and add.
+                // Check uniqueness and add to neighbors lookup.
                 for (auto neighbor : neighbors.get(src)) {
                     if (neighbor == dst) {
                         throw utils::Exception(
@@ -284,6 +286,26 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
                     }
                 }
                 neighbors.set(src).push_back(dst);
+
+                // Read ID.
+                auto it3 = edge.find("id");
+                if (first_edge) {
+                    edges_have_ids = it3 != edge.end();
+                    first_edge = false;
+                }
+                if (edges_have_ids != (it3 != edge.end())) {
+                    throw utils::Exception("topology.edges.*.id must be specified for all or none of the edges");
+                } else if (it3 != edge.end()) {
+                    if (it3->type() != JsonType::number_unsigned) {
+                        throw utils::Exception("topology.edges.*.id must be an unsigned integer if specified");
+                    }
+                    utils::UInt id = it3->get<utils::UInt>();
+                    if (edge_to_qubits.find(id) != edge_to_qubits.end()) {
+                        throw utils::Exception("topology.edges.*.id is not unique (" + utils::to_string(id) + ")");
+                    }
+                    edge_to_qubits.set(id) = {src, dst};
+                    qubits_to_edge.set({src, dst}) = id;
+                }
 
             }
         }
@@ -366,6 +388,50 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
         dump();
     }
 
+}
+
+/**
+ * Returns the edge index for the given qubit pair, or returns -1 when there
+ * is no defined edge index for the given qubit pair.
+ */
+Grid::Edge Grid::get_edge_index(QubitPair qs) const {
+    if (qubits_to_edge.empty()) {
+        if (get_distance(qs.first, qs.second) != 1) {
+            return -1;
+        } else {
+            return qs.first * num_qubits + qs.second;
+        }
+    } else {
+        auto it = qubits_to_edge.find(qs);
+        if (it == qubits_to_edge.end()) {
+            return -1;
+        } else {
+            return it->second;
+        }
+    }
+}
+
+/**
+ * Returns the qubit pair corresponding with the given edge, or returns 0,0
+ * when there is no edge with the given index.
+ */
+Grid::QubitPair Grid::get_edge_qubits(Edge edge) const {
+    if (edge < 0) {
+        return {0, 0};
+    } else if (edge_to_qubits.empty()) {
+        if ((utils::UInt)edge >= num_qubits * num_qubits) {
+            return {0, 0};
+        } else {
+            return {edge / num_qubits, edge % num_qubits};
+        }
+    } else {
+        auto it = edge_to_qubits.find((utils::UInt)edge);
+        if (it == edge_to_qubits.end()) {
+            return {0, 0};
+        } else {
+            return it->second;
+        }
+    }
 }
 
 /**
