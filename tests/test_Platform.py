@@ -17,13 +17,19 @@ class Test_platform(unittest.TestCase):
 
     def test_platform_name(self):
         platf_name = 'starmon_platform'
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platf = ql.Platform(platf_name, config_fn)
+        platf = ql.Platform(platf_name, 'none')
         self.assertEqual(platf.name, platf_name)
 
-    def test_config_file(self):
+    def test_platform_architectures(self):
+        ql.Platform('x', 'cc_light')
+        ql.Platform('x', 'cc_light.s5')
+        ql.Platform('x', 'cc_light.s7')
+        ql.Platform('x', 'cc_light.s17')
+        ql.Platform('x', 'cc')
+
+    def test_platform_from_config(self):
         platf_name = 'starmon_platform'
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+        config_fn = os.path.join(curdir, 'test_cfg_none.json')
         platf = ql.Platform(platf_name, config_fn)
         self.assertEqual(platf.config_file, config_fn)
 

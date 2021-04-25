@@ -10,7 +10,7 @@ output_dir = os.path.join(curdir, 'test_output')
 
 class Test_Alap_Rc_Schedule(unittest.TestCase):
     _SCHEDULER = 'ALAP'
-    config = os.path.join(curdir, "hardware_config_cc_light.json")
+    config = 'cc_light'
 
     def setUp(self):
         ql.initialize()

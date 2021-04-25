@@ -176,7 +176,34 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Windows weirdness: need a .lib file to link against a DLL at compile-time
 # (I think), but only the .dll is generated when there are no exported symbols.
 # This sort of fixes that (https://stackoverflow.com/questions/1941443)
-SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+
+#=============================================================================#
+# Compile code generators                                                     #
+#=============================================================================#
+
+# Simple program that generates resource include files, to include the contents
+# of a file as a constant inside the OpenQL library.
+add_executable(resource src/resource/main.cpp)
+function(create_resource fname)
+    set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${fname}")
+    get_filename_component(outdir "${CMAKE_CURRENT_BINARY_DIR}/${fname}" DIRECTORY)
+    get_filename_component(outname "${CMAKE_CURRENT_BINARY_DIR}/${fname}" NAME_WE)
+    set(outfile "${outdir}/${outname}.inc")
+    add_custom_command(
+        OUTPUT "${outfile}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${outdir}"
+        COMMAND resource "${infile}" "${outdir}" "${outname}"
+        DEPENDS "${infile}" resource
+    )
+    string(REGEX REPLACE "[\\./\\]" "_" target_name "${fname}")
+    add_custom_target(
+        ${target_name}
+        DEPENDS "${outfile}"
+    )
+    add_dependencies(ql ${target_name})
+endfunction()
 
 
 #=============================================================================#
@@ -276,6 +303,14 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
 )
 
+# Specify resources.
+create_resource("src/ql/arch/cc/resources/hwconf_default.json")
+create_resource("src/ql/arch/cc_light/resources/hwconf_default.json")
+create_resource("src/ql/arch/cc_light/resources/hwconf_s5.json")
+create_resource("src/ql/arch/cc_light/resources/hwconf_s7.json")
+create_resource("src/ql/arch/cc_light/resources/hwconf_s17.json")
+create_resource("src/ql/arch/none/resources/hwconf_default.json")
+
 # Generate a header file with configuration options that cannot be compiled
 # (entirely) into the shared/static library due to use of templates.
 set(QL_CHECKED_VEC ${OPENQL_CHECKED_VEC})
@@ -298,7 +333,8 @@ target_compile_definitions(ql PUBLIC OPT_DECOMPOSE_WAIT_BARRIER)
 # and they'r all in the source directory. Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/" # FIXME JvS: make private
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
 )

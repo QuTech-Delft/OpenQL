@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
 
     // create platform
     //ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
-    auto starmon = ql::Platform("starmon", "hardware_config_qx.json");
+    auto starmon = ql::Platform("starmon", "none");
 
     // print info
     starmon.get_info();

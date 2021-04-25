@@ -15,7 +15,7 @@ void test_dpt(
     ql::set_option("clifford_prescheduler", "yes");
     ql::set_option("clifford_postscheduler", "yes");
 
-    auto starmon = ql::Platform("starmon5", "test_mapper_s5.json");
+    auto starmon = ql::Platform("starmon5", "cc_light.s7");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -98,7 +98,7 @@ void test_lee(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -155,7 +155,7 @@ void test_recursion(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -189,7 +189,7 @@ void test_dot(
     std::string kernel_name = "test_" + v + "_scheduler_post179=" + param1 + "_scheduler=" + param2;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -263,7 +263,7 @@ void test_someNN(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -320,7 +320,7 @@ void test_oneD2(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -363,7 +363,7 @@ void test_oneD4(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -409,7 +409,7 @@ void test_string(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -457,7 +457,7 @@ void test_allDopt(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -558,7 +558,7 @@ void test_allD(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -683,7 +683,7 @@ void test_daniel2(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1, 2 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s17");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, n);
 
@@ -949,7 +949,7 @@ void test_lingling5esm(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s17");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -1111,7 +1111,7 @@ void test_lingling7esm(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s17");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
@@ -1257,7 +1257,7 @@ void test_lingling7sub(
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::vector<double> sweep_points = { 1 };
 
-    auto starmon = ql::Platform("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s17");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);

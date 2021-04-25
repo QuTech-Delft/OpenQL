@@ -27,14 +27,13 @@ class Test_condex(unittest.TestCase):
     def test_condex_basic(self):
         # parameters
         v = 'basic'
-        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
         num_bregs = num_qubits
 
         # create and set platform
         prog_name = "test_condex_" + v
         kernel_name = "kernel_" + v
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", "cc_light.s7")
         prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
 
@@ -90,14 +89,13 @@ class Test_condex(unittest.TestCase):
     def test_condex_measure(self):
         # parameters
         v = 'measure'
-        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
         num_bregs = num_qubits
 
         # create and set platform
         prog_name = "test_condex_" + v
         kernel_name = "kernel_" + v
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", "cc_light.s7")
         prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
 
@@ -119,14 +117,13 @@ class Test_condex(unittest.TestCase):
         # check whether condex works with conditional cnot gate which is to be decomposed by mapper
         # parameters
         v = 'cnot'
-        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
         num_bregs = num_qubits
 
         # create and set platform
         prog_name = "test_condex_" + v
         kernel_name = "kernel_" + v
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", "cc_light.s7")
         prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
 
@@ -164,14 +161,13 @@ class Test_condex(unittest.TestCase):
         # check whether condex works with conditional toffoli gate which is to be decomposed by toffoli decomposition
         # parameters
         v = 'toffoli_composgate'
-        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
         num_bregs = num_qubits
 
         # create and set platform
         prog_name = "test_condex_" + v
         kernel_name = "kernel_" + v
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", "cc_light.s7")
         prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
 

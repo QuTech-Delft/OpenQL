@@ -25,8 +25,7 @@ class Test_basic(unittest.TestCase):
     def test_compilation(self):
 
         print('output dir : {}'.format( ql.get_option('output_dir') ) )
-        config_fn = os.path.join(curdir, 'hardware_config_qx.json')
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", 'none')
         sweep_points = [1]
         nqubits = 2
         p = ql.Program("basic", platf, nqubits, nqubits)

@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     srand(0);
 
     // create platform
-    auto qx_platform = ql::Platform("qx_simulator", "hardware_config_qx.json");
+    auto qx_platform = ql::Platform("qx_simulator", "none");
 
     // print info
     qx_platform.print_info();

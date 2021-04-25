@@ -22,8 +22,7 @@ class Test_bugs(unittest.TestCase):
         sweep_points = [1,2]
         num_circuits = 1
         num_qubits = 2
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", 'cc_light')
         p = ql.Program('test_bug', platf, num_qubits)
         p.set_sweep_points(sweep_points)
         k = ql.Kernel('kernel1', platf, num_qubits)
@@ -53,8 +52,7 @@ class Test_bugs(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
 
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform = ql.Platform("myPlatform", config_fn)
+        platform = ql.Platform("myPlatform", 'cc_light')
 
         sweep_points = [1]
         nqubits = 3

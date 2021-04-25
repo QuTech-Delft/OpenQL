@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
     std::vector<double> sweep_points = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
 
     // create platform
-    auto qx_platform = ql::Platform("qx_simulator", "hardware_config_qx.json");
+    auto qx_platform = ql::Platform("qx_simulator", "none");
 
     // print info
     qx_platform.get_info();

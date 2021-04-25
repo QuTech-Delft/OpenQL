@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
    std::vector<double> sweep_points = {1};
 
    // create platform
-   auto qplatform = ql::Platform("target_platform", "hardware_config_cc_light.json");
+   auto qplatform = ql::Platform("target_platform", "cc_light");
 
    // create program
    auto prog = ql::Program("prog", qplatform, nqubits);

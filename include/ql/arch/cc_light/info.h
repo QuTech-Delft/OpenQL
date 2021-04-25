@@ -49,6 +49,27 @@ public:
     utils::List<utils::Str> get_eqasm_compiler_names() const override;
 
     /**
+     * Returns a list of platform variants for this architecture. For instance,
+     * the CC-light may control different kinds of chips (surface-5, surface-7,
+     * surface-17, etc), yet still in essence be a CC-light. Variants may be
+     * specified by the user by adding a dot-separated suffix to the
+     * "eqasm_compiler" key or architecture namespace. If specified, the variant
+     * must match a variant from this list. If not specified, the first variant
+     * returned by this function serves as the default value.
+     */
+    utils::List<utils::Str> get_variant_names() const override;
+
+    /**
+     * Writes documentation for a particular variant of this architecture to the
+     * given output stream.
+     */
+    void dump_variant_docs(
+        const utils::Str &variant,
+        std::ostream &os,
+        const utils::Str &line_prefix
+    ) const override;
+
+    /**
      * Should generate a sane default platform JSON file for the given variant
      * of this architecture. This JSON data will still be preprocessed by
      * preprocess_platform().
