@@ -5,6 +5,7 @@
 #include "ql/rmgr/manager.h"
 
 #include <regex>
+#include "ql/arch/architecture.h"
 
 namespace ql {
 namespace rmgr {
@@ -97,7 +98,7 @@ Manager Manager::from_json(
     }
 
     // Infer (default) architecture from the rest of the platform.
-    utils::Str architecture = platform->architecture->get_namespace_name();
+    utils::Str architecture = platform->architecture->family->get_namespace_name();
 
     // If a "resources" key exists, this is a new-style resource configuration
     // structure. Otherwise it's an old-style structure.

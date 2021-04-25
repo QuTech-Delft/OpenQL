@@ -22,8 +22,8 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
 }
 
 /**
- * Returns a user-friendly type name for this pass. Used for documentation
- * generation.
+ * Returns a user-friendly type name for this architecture. Used for
+ * documentation generation.
  */
 utils::Str Info::get_friendly_name() const {
     return "QuTech Central Controller";
@@ -47,10 +47,11 @@ utils::List<utils::Str> Info::get_eqasm_compiler_names() const {
 }
 
 /**
- * Should generate a sane default platform JSON file. This JSON data will
- * still be preprocessed by preprocess_platform().
+ * Should generate a sane default platform JSON file for the given variant
+ * of this architecture. This JSON data will still be preprocessed by
+ * preprocess_platform().
  */
-utils::Str Info::get_default_platform() const {
+utils::Str Info::get_default_platform(const utils::Str &variant) const {
 
     // NOTE: based on tests/cc/cc_s5_direct_iq.json at the time of writing.
     return R"({
@@ -932,7 +933,7 @@ utils::Str Info::get_default_platform() const {
  * platform, to save typing in the configuration file (and reduce the amount
  * of mistakes made).
  */
-void Info::preprocess_platform(utils::Json &data) const {
+void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) const {
 
     // TODO Wouter: any CC-specific platform configuration file preprocessing
     //  you might want to do for the resources can go here!
@@ -946,7 +947,7 @@ void Info::preprocess_platform(utils::Json &data) const {
  * code generation pass, but anything after prescheduling and optimization
  * is considered a backend pass.
  */
-void Info::populate_backend_passes(pmgr::Manager &manager) const {
+void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
 
     // Mimic original CC backend.
     manager.append_pass(

@@ -8,7 +8,7 @@
 #include "ql/utils/map.h"
 #include "ql/utils/ptr.h"
 #include "ql/ir/gate.h"
-#include "ql/arch/info_base.h"
+#include "ql/arch/architecture.h"
 
 namespace ql {
 namespace plat {
@@ -28,7 +28,7 @@ public:
 
     void load(
         InstructionMap &instruction_map,
-        arch::CInfoRef &architecture,
+        arch::CArchitectureRef &architecture,
         utils::Json &compiler_settings,
         utils::Json &instruction_settings,
         utils::Json &hardware_settings,

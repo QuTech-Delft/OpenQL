@@ -11,7 +11,7 @@
 #include "ql/utils/tree.h"
 #include "ql/plat/hardware_configuration.h"
 #include "ql/plat/topology.h"
-#include "ql/arch/info_base.h"
+#include "ql/arch/declarations.h"
 
 namespace ql {
 namespace plat {
@@ -80,7 +80,7 @@ public:
     /**
      * Architecture information object.
      */
-    arch::CInfoRef architecture;
+    arch::CArchitectureRef architecture;
 
     /**
      * Settings for the compiler. This can be:

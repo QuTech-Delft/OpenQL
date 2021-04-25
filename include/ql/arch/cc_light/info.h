@@ -30,8 +30,8 @@ public:
     void dump_docs(std::ostream &os, const utils::Str &line_prefix) const override;
 
     /**
-     * Returns a user-friendly type name for this pass. Used for documentation
-     * generation.
+     * Returns a user-friendly type name for this architecture. Used for
+     * documentation generation.
      */
     utils::Str get_friendly_name() const override;
 
@@ -49,10 +49,11 @@ public:
     utils::List<utils::Str> get_eqasm_compiler_names() const override;
 
     /**
-     * Should generate a sane default platform JSON file. This JSON data will
-     * still be preprocessed by preprocess_platform().
+     * Should generate a sane default platform JSON file for the given variant
+     * of this architecture. This JSON data will still be preprocessed by
+     * preprocess_platform().
      */
-    utils::Str get_default_platform() const override;
+    utils::Str get_default_platform(const utils::Str &variant) const override;
 
     /**
      * Adds the default "backend passes" for this platform. Called by
@@ -61,7 +62,7 @@ public:
      * code generation pass, but anything after prescheduling and optimization
      * is considered a backend pass.
      */
-    void populate_backend_passes(pmgr::Manager &manager) const override;
+    void populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const override;
 
 };
 

@@ -26,8 +26,8 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
 }
 
 /**
- * Returns a user-friendly type name for this pass. Used for documentation
- * generation.
+ * Returns a user-friendly type name for this architecture. Used for
+ * documentation generation.
  */
 utils::Str Info::get_friendly_name() const {
     return "None";
@@ -51,10 +51,15 @@ utils::List<utils::Str> Info::get_eqasm_compiler_names() const {
 }
 
 /**
- * Should generate a sane default platform JSON file. This JSON data will
- * still be preprocessed by preprocess_platform().
+ * Should generate a sane default platform JSON file, for when the user
+ * constructs a Platform without JSON data. This is done by specifying an
+ * architecture namespace identifier instead of a JSON filename. Optionally,
+ * the user may specify a variant suffix, separated using a dot, to select
+ * a variation of the architecture; for instance, for CC-light, there might
+ * be variations for surface-5, surface-7, and surface-17. This JSON data
+ * will still be preprocessed by preprocess_platform().
  */
-utils::Str Info::get_default_platform() const {
+utils::Str Info::get_default_platform(const utils::Str &variant) const {
 
     // NOTE: based on tests/hardware_config_qx.json at the time of writing.
     return R"({

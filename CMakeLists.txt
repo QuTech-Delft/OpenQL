@@ -253,6 +253,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/detail/mapper.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/map.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/info_base.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/architecture.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/factory.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/info.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc"

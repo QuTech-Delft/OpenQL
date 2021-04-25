@@ -21,8 +21,8 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
 }
 
 /**
- * Returns a user-friendly type name for this pass. Used for documentation
- * generation.
+ * Returns a user-friendly type name for this architecture. Used for
+ * documentation generation.
  */
 utils::Str Info::get_friendly_name() const {
     return "CC-light";
@@ -46,10 +46,11 @@ utils::List<utils::Str> Info::get_eqasm_compiler_names() const {
 }
 
 /**
- * Should generate a sane default platform JSON file. This JSON data will
- * still be preprocessed by preprocess_platform().
+ * Should generate a sane default platform JSON file for the given variant
+ * of this architecture. This JSON data will still be preprocessed by
+ * preprocess_platform().
  */
-utils::Str Info::get_default_platform() const {
+utils::Str Info::get_default_platform(const utils::Str &variant) const {
 
     // NOTE: based on tests/hardware_config_cc_light.json at the time of
     // writing.
@@ -1459,7 +1460,7 @@ utils::Str Info::get_default_platform() const {
  * code generation pass, but anything after prescheduling and optimization
  * is considered a backend pass.
  */
-void Info::populate_backend_passes(pmgr::Manager &manager) const {
+void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
 
     // Mapping.
     if (com::options::global["clifford_premapper"].as_bool()) {

@@ -18,12 +18,40 @@ utils::List<utils::Str> InfoBase::get_eqasm_compiler_names() const {
 }
 
 /**
+ * Returns a list of platform variants for this architecture. Variants may
+ * be specified by the user by adding a dot-separated suffix to the
+ * "eqasm_compiler" key or architecture namespace. If specified, the variant
+ * must match a variant from this list. If not specified, the first variant
+ * returned by this function serves as the default value.
+ */
+utils::List<utils::Str> InfoBase::get_variant_names() const {
+    return {"default"};
+}
+
+/**
+ * Writes documentation for a particular variant of this architecture to the
+ * given output stream.
+ */
+void InfoBase::dump_variant_docs(
+    const utils::Str &variant,
+    std::ostream &os,
+    const utils::Str &line_prefix
+) const {
+    if (variant == "default") {
+        utils::dump_str(os, line_prefix, R"(
+        This architecture does not have multiple variants.
+        )");
+    }
+    QL_ASSERT(false);
+}
+
+/**
  * Preprocessing logic for the platform JSON configuration file. May be used
  * to generate/expand certain things that are always the same for that
  * platform, to save typing in the configuration file (and reduce the amount
  * of mistakes made).
  */
-void InfoBase::preprocess_platform(utils::Json &data) const {
+void InfoBase::preprocess_platform(utils::Json &data, const utils::Str &variant) const {
 }
 
 /**
@@ -33,7 +61,7 @@ void InfoBase::preprocess_platform(utils::Json &data) const {
  * code generation pass, but anything after prescheduling and optimization
  * is considered a backend pass.
  */
-void InfoBase::populate_backend_passes(pmgr::Manager &manager) const {
+void InfoBase::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
 }
 
 } // namespace arch

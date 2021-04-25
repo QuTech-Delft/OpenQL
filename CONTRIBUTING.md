@@ -208,7 +208,7 @@ Within a local namespace, use whatever you want (`using namespace` etc) as you
 see fit, although more selective inclusions and abbreviations using
 `namespace x = ...` and `using T = ...` is preferred.
 
-## `#include` syntax
+## Header files and `#include` syntax
 
 Some general rules for `#include` directive consistency.
 
@@ -226,6 +226,18 @@ Some general rules for `#include` directive consistency.
     - OpenQL's dependencies from the `deps` folder (lemon, libqasm, etc); and
     - include OpenQL's own headers in the same order that the namespaces are
       listed in the previous section.
+
+Sometimes you may end up with an include dependency loop. For example, the
+platform structure includes a reference to an architecture structure, but the
+architecture-specific logic certainly makes use of the platform structure. The
+typical symptom is an error message that some type has not been declared yet,
+with a long include chain at the top. This can usually be bypassed by making
+a `declarations.h` file for the namespace for which forward references are
+needed. This header file should make forward declarations for the types defined
+in the namespace (just `class X;` etc.) and declare any pointer/reference
+typedefs needed for them. Note that the files that actually define the classes
+should always include this file as well, so the compiler will actually warn you
+when there are inconsistencies!
 
 ## "Runtime" documentation and dump() functions
 

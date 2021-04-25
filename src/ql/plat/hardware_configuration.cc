@@ -54,7 +54,7 @@ HardwareConfiguration::HardwareConfiguration(
 
 void HardwareConfiguration::load(
     InstructionMap &instruction_map,
-    arch::CInfoRef &architecture,
+    arch::CArchitectureRef &architecture,
     Json &compiler_settings,
     Json &instruction_settings,
     Json &hardware_settings,

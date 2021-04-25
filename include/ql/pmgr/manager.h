@@ -17,7 +17,7 @@
 #include "ql/ir/ir.h"
 #include "ql/pmgr/pass_types/base.h"
 #include "ql/pmgr/factory.h"
-#include "ql/pmgr/manager_decl.h"
+#include "ql/pmgr/declarations.h"
 
 namespace ql {
 namespace pmgr {

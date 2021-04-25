@@ -7,9 +7,11 @@
 #include <functional>
 #include "ql/utils/ptr.h"
 #include "ql/utils/str.h"
+#include "ql/utils/pair.h"
 #include "ql/utils/map.h"
 #include "ql/utils/json.h"
 #include "ql/arch/info_base.h"
+#include "ql/arch/architecture.h"
 
 namespace ql {
 namespace arch {
@@ -39,6 +41,19 @@ public:
      */
     Factory();
 
+private:
+
+    /**
+     * Implementation of build_from_namespace() and build_from_eqasm_compiler(),
+     * using the given map for the lookup.
+     */
+    CArchitectureRef build_from_map(
+        const utils::Map<utils::Str, InfoRef> &map,
+        const utils::Str &str
+    ) const;
+
+public:
+
     /**
      * Registers an architecture class with the given type name.
      */
@@ -53,16 +68,18 @@ public:
     }
 
     /**
-     * Builds an architecture from a namespace name. Returns an empty reference
-     * if none was found.
+     * Builds an architecture from an "eqasm_compiler" name. Returns a reference
+     * to the architecture variant object if one was found. Otherwise, an empty
+     * reference is returned.
      */
-    CInfoRef build_from_namespace(const utils::Str &namspace) const;
+    CArchitectureRef build_from_namespace(const utils::Str &namspace) const;
 
     /**
-     * Builds an architecture from an "eqasm_compiler" name. Returns an empty
-     * reference if none was found.
+     * Builds an architecture from an "eqasm_compiler" name. Returns a reference
+     * to the architecture variant object if one was found. Otherwise, an empty
+     * reference is returned.
      */
-    CInfoRef build_from_eqasm_compiler(const utils::Str &eqasm_compiler) const;
+    CArchitectureRef build_from_eqasm_compiler(const utils::Str &eqasm_compiler) const;
 
     /**
      * Dumps documentation for all architectures known by this factory.

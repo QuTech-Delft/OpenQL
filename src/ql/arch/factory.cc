@@ -21,29 +21,61 @@ Factory::Factory() {
 }
 
 /**
- * Builds an architecture from a namespace name. Returns an empty reference
- * if none was found.
+ * Implementation of build_from_namespace() and build_from_eqasm_compiler(),
+ * using the given map for the lookup.
  */
-CInfoRef Factory::build_from_namespace(const utils::Str &namspace) const {
-    auto it = namespace_names.find(namspace);
-    if (it == namespace_names.end()) {
-        return {};
-    } else {
-        return it->second.as_const();
+CArchitectureRef Factory::build_from_map(
+    const utils::Map<utils::Str, InfoRef> &map,
+    const utils::Str &str
+) const {
+    auto pos = str.find('.');
+    auto name = str.substr(0, pos);
+    utils::Str variant;
+    if (pos != utils::Str::npos) {
+        variant = str.substr(pos + 1);
     }
+    auto it = map.find(name);
+    if (it == map.end()) {
+        return {};
+    }
+    auto architecture = it->second.as_const();
+    if (variant.empty()) {
+        variant = architecture->get_variant_names().front();
+    } else {
+        utils::Bool ok = false;
+        for (const auto &existing_variant : architecture->get_variant_names()) {
+            if (variant == existing_variant) {
+                ok = true;
+                break;
+            }
+        }
+        if (!ok) {
+            return {};
+        }
+    }
+    return Architecture(architecture, variant);
 }
 
 /**
- * Builds an architecture from an "eqasm_compiler" name. Returns an empty
- * reference if none was found.
+ * Builds an architecture from an "eqasm_compiler" name. Returns a reference
+ * to the architecture variant object if one was found. Otherwise, an empty
+ * reference is returned.
  */
-CInfoRef Factory::build_from_eqasm_compiler(const utils::Str &eqasm_compiler) const {
-    auto it = eqasm_compiler_names.find(eqasm_compiler);
-    if (it == eqasm_compiler_names.end()) {
-        return {};
-    } else {
-        return it->second.as_const();
-    }
+CArchitectureRef Factory::build_from_namespace(
+    const utils::Str &namspace
+) const {
+    return build_from_map(namespace_names, namspace);
+}
+
+/**
+ * Builds an architecture from an "eqasm_compiler" name. Returns a reference
+ * to the architecture variant object if one was found. Otherwise, an empty
+ * reference is returned.
+ */
+CArchitectureRef Factory::build_from_eqasm_compiler(
+    const utils::Str &eqasm_compiler
+) const {
+    return build_from_map(eqasm_compiler_names, eqasm_compiler);
 }
 
 /**
@@ -67,9 +99,11 @@ void Factory::dump_architectures(std::ostream &os, const utils::Str &line_prefix
         os << line_prefix << "  * Default pass list *\n";
         os << line_prefix << "    \n";
         pmgr::Manager manager;
-        arch->populate_backend_passes(manager);
+        auto variants = arch->get_variant_names();
+        arch->populate_backend_passes(manager, variants.front());
         if (manager.get_num_passes() > 0) {
-            os << line_prefix << "    For the current/default global option values, "
+            os << line_prefix << "    For the current/default global option values "
+                              << "and the default variant (`" << variants.front() << "`), "
                               << "the following backend passes are used by default.\n";
             os << line_prefix << "    \n";
             manager.dump_strategy(os, line_prefix + "        ");
@@ -77,15 +111,31 @@ void Factory::dump_architectures(std::ostream &os, const utils::Str &line_prefix
             os << line_prefix << "    For the current/default global option values, "
                               << "this architecture does not insert any backend passes.\n";
         }
-        os << line_prefix << "    \n";
-        os << line_prefix << "  * Default configuration file *\n";
-        os << line_prefix << "    \n";
-        os << line_prefix << "    When no platform configuration file is specified, "
-                          << "    the following default file is used instead.\n";
-        os << line_prefix << "    \n";
-        os << line_prefix << "    ```json\n";
-        utils::dump_str(os, line_prefix + "    ", arch->get_default_platform());
-        os << line_prefix << "    ```\n";
+        if (variants.size() <= 1) {
+            os << line_prefix << "    \n";
+            os << line_prefix << "  * Default configuration file *\n";
+            os << line_prefix << "    \n";
+            os << line_prefix << "    When no platform configuration file is specified, "
+                              << "    the following default file is used instead.\n";
+            os << line_prefix << "    \n";
+            os << line_prefix << "    ```json\n";
+            utils::dump_str(os, line_prefix + "    ", arch->get_default_platform(variants.front()));
+            os << line_prefix << "    ```\n";
+        } else {
+            for (const auto &variant : variants) {
+                os << line_prefix << "    \n";
+                os << line_prefix << "  * `" << variant << "` variant *\n";
+                os << line_prefix << "    \n";
+                arch->dump_variant_docs(variant, os, line_prefix + "    ");
+                os << line_prefix << "    \n";
+                os << line_prefix << "    When no platform configuration file is specified, "
+                                  << "    the following default file is used instead.\n";
+                os << line_prefix << "    \n";
+                os << line_prefix << "    ```json\n";
+                utils::dump_str(os, line_prefix + "    ", arch->get_default_platform(variant));
+                os << line_prefix << "    ```\n";
+            }
+        }
         os << line_prefix << "\n";
 
     }

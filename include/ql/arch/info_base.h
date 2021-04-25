@@ -10,7 +10,8 @@
 #include "ql/utils/list.h"
 #include "ql/utils/ptr.h"
 #include "ql/utils/json.h"
-#include "ql/pmgr/manager_decl.h"
+#include "ql/pmgr/declarations.h"
+#include "ql/arch/declarations.h"
 
 namespace ql {
 namespace arch {
@@ -29,8 +30,8 @@ public:
     virtual void dump_docs(std::ostream &os, const utils::Str &line_prefix) const = 0;
 
     /**
-     * Returns a user-friendly type name for this pass. Used for documentation
-     * generation.
+     * Returns a user-friendly type name for this architecture. Used for
+     * documentation generation.
      */
     virtual utils::Str get_friendly_name() const = 0;
 
@@ -48,10 +49,32 @@ public:
     virtual utils::List<utils::Str> get_eqasm_compiler_names() const;
 
     /**
-     * Should generate a sane default platform JSON file. This JSON data will
-     * still be preprocessed by preprocess_platform().
+     * Returns a list of platform variants for this architecture. For instance,
+     * the CC-light may control different kinds of chips (surface-5, surface-7,
+     * surface-17, etc), yet still in essence be a CC-light. Variants may be
+     * specified by the user by adding a dot-separated suffix to the
+     * "eqasm_compiler" key or architecture namespace. If specified, the variant
+     * must match a variant from this list. If not specified, the first variant
+     * returned by this function serves as the default value.
      */
-    virtual utils::Str get_default_platform() const = 0;
+    virtual utils::List<utils::Str> get_variant_names() const;
+
+    /**
+     * Writes documentation for a particular variant of this architecture to the
+     * given output stream.
+     */
+    virtual void dump_variant_docs(
+        const utils::Str &variant,
+        std::ostream &os,
+        const utils::Str &line_prefix
+    ) const;
+
+    /**
+     * Should generate a sane default platform JSON file for the given variant
+     * of this architecture. This JSON data will still be preprocessed by
+     * preprocess_platform().
+     */
+    virtual utils::Str get_default_platform(const utils::Str &variant) const = 0;
 
     /**
      * Preprocessing logic for the platform JSON configuration file. May be used
@@ -59,7 +82,7 @@ public:
      * platform, to save typing in the configuration file (and reduce the amount
      * of mistakes made).
      */
-    virtual void preprocess_platform(utils::Json &data) const;
+    virtual void preprocess_platform(utils::Json &data, const utils::Str &variant) const;
 
     /**
      * Adds the default "backend passes" for this platform. Called by
@@ -68,19 +91,9 @@ public:
      * code generation pass, but anything after prescheduling and optimization
      * is considered a backend pass.
      */
-    virtual void populate_backend_passes(pmgr::Manager &manager) const;
+    virtual void populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const;
 
 };
-
-/**
- * Shared pointer reference to an architecture information wrapper.
- */
-using InfoRef = utils::Ptr<InfoBase>;
-
-/**
- * Immutable shared pointer reference to an architecture information wrapper.
- */
-using CInfoRef = utils::Ptr<const InfoBase>;
 
 } // namespace arch
 } // namespace ql
