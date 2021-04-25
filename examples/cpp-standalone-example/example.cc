@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv) {
     // create platform
-    auto platf = ql::Platform("seven_qubits_chip", "hardware_config_cc_light.json");
+    auto platf = ql::Platform("seven_qubits_chip", "cc_light");
 
     // create program
     auto prog = ql::Program("aProgram", platf, 2);
