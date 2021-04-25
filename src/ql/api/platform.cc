@@ -4,6 +4,9 @@
 
 #include "ql/api/platform.h"
 
+#include "ql/utils/filesystem.h"
+#include "ql/utils/exception.h"
+#include "ql/arch/factory.h"
 #include "ql/api/misc.h"
 
 //============================================================================//
@@ -17,6 +20,24 @@ namespace ql {
 namespace api {
 
 /**
+ * Internal constructor to implement from_json. The dummy argument serves
+ * only to differentiate with the public constructors.
+ */
+Platform::Platform(
+    const std::string &name,
+    const std::string &platform_config_json,
+    const std::string &compiler_config,
+    bool dummy
+) :
+    name(name),
+    config_file()
+{
+    (void)dummy;
+    ensure_initialized();
+    platform.emplace(name, utils::parse_json(platform_config_json), compiler_config);
+}
+
+/**
  * Constructs a platform. name is any name the user wants to give to the
  * platform; it is only used for report messages. platform_config_file must
  * point to a JSON file that represents the platform. Optionally,
@@ -25,14 +46,64 @@ namespace api {
  */
 Platform::Platform(
     const std::string &name,
-    const std::string &platform_config_file,
-    const std::string &compiler_config_file
+    const std::string &platform_config,
+    const std::string &compiler_config
 ) :
     name(name),
-    config_file(platform_config_file)
+    config_file(platform_config)
 {
     ensure_initialized();
-    platform.emplace(name, platform_config_file, compiler_config_file);
+    platform.emplace(name, platform_config, compiler_config);
+}
+
+/**
+ * Shorthand for constructing a platform. name is used both for the
+ * user-given name of the platform and for the architecture/variant
+ * configuration string.
+ */
+Platform::Platform(
+    const std::string &name
+) :
+    name(name),
+    config_file(name)
+{
+    ensure_initialized();
+    platform.emplace(name, name);
+}
+
+/**
+ * Returns the default platform JSON configuration file for the given
+ * platform configuration string. This can be either an architecture name,
+ * an architecture variant name, or a JSON configuration filename. In the
+ * latter case, this just loads the file into a string and returns it.
+ */
+std::string Platform::get_platform_json_string(const std::string &platform_config) {
+    ensure_initialized();
+    auto architecture = ql::arch::Factory().build_from_namespace(platform_config);
+    if (architecture.has_value()) {
+        return architecture->get_default_platform();
+    } else if (utils::is_file(platform_config)) {
+        return utils::InFile(platform_config).read();
+    } else if (utils::ends_with(platform_config, ".json")) {
+        throw utils::Exception(
+            "The given platform configuration string looks like a JSON filename, "
+            "but the file was not found: " + platform_config);
+    } else {
+        throw utils::Exception(
+            "The given platform configuration string does not map to a known "
+            "architecture variant: " + platform_config);
+    }
+}
+
+/**
+ * Builds a platform from the given JSON *data*.
+ */
+Platform Platform::from_json_string(
+    const std::string &name,
+    const std::string &platform_config_json,
+    const std::string &compiler_config
+) {
+    return Platform(name, platform_config_json, compiler_config, false);
 }
 
 /**

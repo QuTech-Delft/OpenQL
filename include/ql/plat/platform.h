@@ -25,6 +25,17 @@ namespace plat {
  *  types.
  */
 class Platform : public utils::Node {
+private:
+
+    /**
+     * Loads the platform members from the given JSON data and optional
+     * auxiliary compiler configuration file.
+     */
+    void load(
+        const utils::Json &platform_config,
+        const utils::Str &compiler_config = ""
+    );
+
 public:
 
     /**
@@ -140,6 +151,15 @@ public:
     Platform(
         const utils::Str &name,
         const utils::Str &platform_config,
+        const utils::Str &compiler_config = ""
+    );
+
+    /**
+     * Constructs a platform from the given configuration *data*.
+     */
+    Platform(
+        const utils::Str &name,
+        const utils::Json &platform_config,
         const utils::Str &compiler_config = ""
     );
 

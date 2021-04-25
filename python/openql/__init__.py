@@ -160,3 +160,73 @@ for ob in __all__:
 
     else:
         _fixup_swig_autodoc(ob, True, True)
+
+
+# Monkey-patch some pure-Python functions into Platform.
+@staticmethod
+def get_platform_json(platform_config='none'):
+    """
+    get_platform_json(platform_config: str) -> Dict[...] \
+    get_platform_json() -> Dict[...]
+
+    Returns the default platform configuration data as the Python object
+    representation of the JSON data (as returned by json.loads()).
+
+    Parameters
+    ----------
+    platform_config : str
+        The platform configuration. Same syntax as the platform constructor, so
+        this supports architecture names, architecture variant names, or JSON
+        filenames. In the latter case, this function just parses the file
+        contents and returns it.
+
+    Returns
+    -------
+    str
+        The Python object representation of the JSON data corresponding to the
+        given platform configuration string.
+    """
+    import json
+    lines = Platform.get_platform_json_string(platform_config).split('\n')
+    for i in range(len(lines)):
+        lines[i] = lines[i].split('//')[0]
+    return json.loads('\n'.join(lines))
+Platform.get_platform_json = get_platform_json
+del get_platform_json
+
+@staticmethod
+def from_json(name, platform_config_json, compiler_config=''):
+    """
+    from_json(name: str, platform_config_json: Dict[...], compiler_config: str) -> Platform \\
+    from_json(name: str, platform_config_json: Dict[...]) -> Platform
+
+    Alternative constructor. Instead of the platform JSON data being loaded from
+    a file, they are loaded from the given Python object representation of the
+    JSON platform configuration data.
+
+    This is useful when you only need to change a builtin platform for some
+    architecture variant a little bit. In this case, you can get the default
+    JSON data using get_platform_json(), introspect and modify it
+    programmatically, and then use this to build the platform from the modified
+    configuration.
+
+    Parameters
+    ----------
+    name : str
+        The name for the platform.
+    platform_config_json : JSON-like object
+        The platform JSON configuration data in Python object representation
+        (anything accepted by json.dumps()).
+    compiler_config : str
+        Optional compiler configuration JSON filename. This is *NOT* JSON data.
+
+    Returns
+    -------
+    Platform
+        The constructed platform.
+    """
+    import json
+    platform_config_json = json.dumps(platform_config_json)
+    return Platform.from_json_string(name, platform_config_json, compiler_config)
+Platform.from_json = from_json
+del from_json

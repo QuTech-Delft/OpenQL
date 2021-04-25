@@ -66,6 +66,14 @@ Json parse_json(std::istream &is) {
 }
 
 /**
+ * Parses JSON data that may include // comments.
+ */
+Json parse_json(const Str &data) {
+    auto is = std::istringstream(data);
+    return parse_json(is);
+}
+
+/**
  * Loads a JSON file that may include // comments.
  */
 Json load_json(const Str &path) {

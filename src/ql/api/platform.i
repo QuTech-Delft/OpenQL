@@ -4,15 +4,14 @@
 Quantum platform description. This describes everything that the compiler
 needs to know about the target quantum chip, instruments, etc. Platforms are
 created from either the default configuration for a particular architecture
-or from JSON (+ comments) configuration files: there is no way to modify a
-platform using the API, and introspection is limited. The syntax of the
-platform configuration file is too extensive to describe here, and has its own
-section in the manual.
+variant or from JSON (+ comments) configuration files: there is no way to modify
+a platform using the API, and introspection is limited. Instead, if you want to
+use a custom configuration, you will need to write a JSON configuration file
+for it, or use get_platform_json() and from_json() to modify an existing one
+from within Python.
 
-In order to use a default configuration for a particular architecture, simply
-set the platform_config_file parameter to the namespace of said architecture,
-instead of to a JSON filename. The default configuration file for a platform
-is listed in the documentation for that platform.
+The syntax of the platform configuration file is too extensive to describe here.
+It has its own section in the manual.
 
 In addition to the platform itself, the Platform object provides an interface
 for obtaining a Compiler object. This object describes the *strategy* for
@@ -23,7 +22,7 @@ something that just exists, while the compilation strategy describes how to
 get there.
 
 The (initial) strategy can be set using a separate configuration file
-(compiler_config_file), directly from within the platform configuration file,
+(compiler_config), directly from within the platform configuration file,
 or one can be inferred based on the previously hardcoded defaults. Unlike the
 platform itself however, an extensive API is available for adjusting the
 strategy as you see fit; just use get_compiler() to get a reference to a
@@ -32,6 +31,27 @@ with the compiler methods and object, don't specify the compiler_config_file
 parameter, and the \"eqasm_compiler\" key of the platform configuration file
 refers to one of the previously-hardcoded compiler, a strategy will be
 generated to mimic the old logic for backward compatibility.
+
+Eight constructors are provided:
+
+ - Platform(): shorthand for Platform('none', 'none').
+ - Platform(name): shorthand for Platform(name, name).
+ - Platform(name, platform_config): builds a platform with the given name (only
+   used for log messages) and platform configuration, the latter of which can
+   be either a recognized platform name with or without variant suffix (for
+   example \"cc\" or \"cc_light.s7\"), or a path to a JSON configuration
+   filename.
+ - Platform(name, platform_config, compiler_config): as above, but specifies a
+   custom compiler configuration file in addition.
+ - Platform.from_json(name, platform_config_json): instead of loading the
+   platform JSON data from a file, it is taken from its Python object
+   representation (as per json.loads()/dumps()).
+ - Platform.from_json(name, platform_config_json, compiler_config): as above,
+   with compiler JSON file override.
+ - Platform.from_json_string(name, platform_config_json): as from_json, but
+   loads the data from a string rather than a Python object.
+ - Platform.from_json_string(name, platform_config_json, compiler_config): as
+   from_json, but loads the data from a string rather than a Python object.
 """
 
 
@@ -44,6 +64,51 @@ The user-given name of the platform.
 %feature("docstring") ql::api::Platform::config_file
 """
 The configuration file that the platform was loaded from.
+"""
+
+
+%feature("docstring") ql::api::Platform::from_json_string
+"""
+Alternative constructor. Instead of the platform JSON data being loaded from a
+file, they are loaded from the given string. See also from_json().
+
+Parameters
+----------
+name : str
+    The name for the platform.
+platform_config_json : str
+    The platform JSON configuration data as a string. This will accept anything
+    that the normal constructor accepts when it reads the configuration from a
+    file.
+compiler_config : str
+    Optional compiler configuration JSON filename. This is *NOT* JSON data.
+
+Returns
+-------
+Platform
+    The constructed platform.
+"""
+
+
+%feature("docstring") ql::api::Platform::get_platform_json_string
+"""
+Returns the default platform configuration data as a JSON + comments string.
+The comments use double-slash syntax. Note that JSON itself does not support
+such comments (or comments of any kind), so these comments need to be removed
+from the data before the JSON data can be parsed.
+
+Parameters
+----------
+platform_config : str
+    The platform configuration. Same syntax as the platform constructor, so this
+    supports architecture names, architecture variant names, or JSON filenames.
+    In the latter case, this function just loads the file contents into a string
+    and returns it.
+
+Returns
+-------
+str
+    The JSON + comments data for the given platform configuration string.
 """
 
 

@@ -4,19 +4,21 @@
 
 #include "ql/plat/platform.h"
 
+#include "ql/arch/factory.h"
+
 namespace ql {
 namespace plat {
 
 using namespace utils;
 
 /**
- * Constructs a platform from the given configuration filename.
+ * Loads the platform members from the given JSON data and optional
+ * auxiliary compiler configuration file.
  */
-Platform::Platform(
-    const Str &name,
-    const Str &platform_config,
-    const Str &compiler_config
-) : name(name) {
+void Platform::load(
+    const utils::Json &platform_config,
+    const utils::Str &compiler_config
+) {
     HardwareConfiguration hwc(platform_config);
     hwc.load(
         instruction_map,
@@ -58,6 +60,50 @@ Platform::Platform(
     }
 
     grid.emplace(qubit_count, topology);
+}
+
+/**
+ * Constructs a platform from the given configuration filename.
+ */
+Platform::Platform(
+    const Str &name,
+    const Str &platform_config,
+    const Str &compiler_config
+) : name(name) {
+
+    arch::Factory arch_factory = {};
+
+    // If the configuration filename itself is a recognized architecture name,
+    // query the default configuration for that architecture. Otherwise
+    // interpret it as a filename, which it's historically always been.
+    Json config;
+    architecture = arch_factory.build_from_namespace(platform_config);
+    if (architecture.has_value()) {
+        std::istringstream is{architecture->get_default_platform()};
+        config = parse_json(is);
+    } else {
+        try {
+            config = load_json(platform_config);
+        } catch (Json::exception &e) {
+            QL_FATAL(
+                "failed to load the hardware config file : malformed json file: \n\t"
+                    << Str(e.what()));
+        }
+    }
+
+    load(config, compiler_config);
+}
+
+/**
+ * Constructs a platform from the given configuration *data*. The dummy
+ * argument only serves to differentiate from the previous constructor.
+ */
+Platform::Platform(
+    const utils::Str &name,
+    const utils::Json &platform_config,
+    const Str &compiler_config
+) : name(name) {
+    load(platform_config, compiler_config);
 }
 
 /**

@@ -22,9 +22,9 @@ using InstructionMap = utils::Map<utils::Str, CustomGateRef>;
  */
 class HardwareConfiguration {
 public:
-    utils::Str config;
+    utils::Json config;
 
-    HardwareConfiguration(const utils::Str &config);
+    HardwareConfiguration(const utils::Json &config);
 
     void load(
         InstructionMap &instruction_map,

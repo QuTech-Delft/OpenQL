@@ -150,6 +150,11 @@ using Json = nlohmann::json;
 Json parse_json(std::istream &is);
 
 /**
+ * Parses JSON data that may include // comments.
+ */
+Json parse_json(const Str &data);
+
+/**
  * Loads a JSON file that may include // comments.
  */
 Json load_json(const Str &file_name);

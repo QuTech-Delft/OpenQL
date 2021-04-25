@@ -48,7 +48,7 @@ static CustomGateRef load_instruction(const Str &name, Json &instr) {
 }
 
 HardwareConfiguration::HardwareConfiguration(
-    const Str &config
+    const Json &config
 ) : config(config) {
 }
 
@@ -62,24 +62,6 @@ void HardwareConfiguration::load(
     Json &topology
 ) {
     arch::Factory arch_factory = {};
-
-    // If the configuration filename itself is a recognized architecture name,
-    // query the default configuration for that architecture. Otherwise
-    // interpret it as a filename, which it's historically always been.
-    Json config;
-    architecture = arch_factory.build_from_namespace(this->config);
-    if (architecture.has_value()) {
-        std::istringstream is{architecture->get_default_platform()};
-        config = parse_json(is);
-    } else {
-        try {
-            config = load_json(this->config);
-        } catch (Json::exception &e) {
-            QL_FATAL(
-                "failed to load the hardware config file : malformed json file: \n\t"
-                    << Str(e.what()));
-        }
-    }
 
     // Load compiler configuration.
     if (config.count("eqasm_compiler") <= 0) {
