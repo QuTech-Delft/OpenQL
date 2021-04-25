@@ -276,6 +276,11 @@ public:
     const Neighbors &get_neighbors(Qubit qubit) const;
 
     /**
+     * Returns the number of cores.
+     */
+    utils::UInt get_num_cores() const;
+
+    /**
      * Returns whether the given qubit is a communication qubit of a core.
      */
     utils::Bool is_comm_qubit(Qubit qubit) const;

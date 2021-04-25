@@ -243,7 +243,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/manager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/resource/qubit.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/resource/instrument.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/resource/todo.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/resource/inter_core_channel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/pass_types/base.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/pass_types/specializations.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/condition.cc"

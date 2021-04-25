@@ -435,6 +435,13 @@ Grid::QubitPair Grid::get_edge_qubits(Edge edge) const {
 }
 
 /**
+ * Returns the number of cores.
+ */
+utils::UInt Grid::get_num_cores() const {
+    return num_cores;
+}
+
+/**
  * Returns the indices of the neighboring qubits for the given qubit.
  */
 const Grid::Neighbors &Grid::get_neighbors(Qubit qubit) const {

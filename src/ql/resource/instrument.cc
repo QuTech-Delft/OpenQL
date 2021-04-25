@@ -1163,13 +1163,13 @@ InstrumentResource::InstrumentResource(
  */
 utils::Str InstrumentResource::get_friendly_type() const {
     if (context->type_name == "arch.cc_light.qwgs") {
-        return "CC-light QWG resource";
+        return "CC-light qwgs resource";
     } else if (context->type_name == "arch.cc_light.meas_units") {
-        return "CC-light measurement unit resource";
+        return "CC-light meas_units resource";
     } else if (context->type_name == "arch.cc_light.edges") {
-        return "CC-light edge resource";
+        return "CC-light edges resource";
     } else if (context->type_name == "arch.cc_light.detuned_qubits") {
-        return "CC-light detuned qubits resource";
+        return "CC-light detuned_qubits resource";
     }
     return "Instrument resource";
 }
