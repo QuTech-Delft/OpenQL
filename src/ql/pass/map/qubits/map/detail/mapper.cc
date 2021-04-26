@@ -75,7 +75,7 @@ void Mapper::gen_shortest_paths(
     }
 
     // Start looking around at neighbors for serious paths.
-    UInt d = platform->grid->get_distance(src, tgt);
+    UInt d = platform->topology->get_distance(src, tgt);
     QL_DOUT("gen_shortest_paths: distance(src=" << src << ", tgt=" << tgt << ") = " << d);
     QL_ASSERT(d >= 1);
 
@@ -83,8 +83,8 @@ void Mapper::gen_shortest_paths(
     // src=>tgt is distance d, budget>=d is allowed, attempt src->n=>tgt
     // src->n is one hop, budget from n is one less so distance(n,tgt) <= budget-1 (i.e. distance < budget)
     // when budget==d, this defaults to distance(n,tgt) <= d-1
-    auto neighbors = platform->grid->get_neighbors(src);
-    neighbors.remove_if([this,budget,tgt](const UInt& n) { return platform->grid->get_distance(n, tgt) >= budget; });
+    auto neighbors = platform->topology->get_neighbors(src);
+    neighbors.remove_if([this,budget,tgt](const UInt& n) { return platform->topology->get_distance(n, tgt) >= budget; });
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         QL_DOUT("gen_shortest_paths: ... after reducing to steps within budget, nbl: ");
         for (auto dn : neighbors) {
@@ -95,8 +95,8 @@ void Mapper::gen_shortest_paths(
     // Rotate neighbor list nbl such that largest difference between angles of
     // adjacent elements is beyond back(). This only makes sense when there is
     // an underlying xy grid; when not, only the ALL strategy is supported.
-    QL_ASSERT(platform->grid->has_coordinates() || strategy == PathStrategy::ALL);
-    platform->grid->sort_neighbors_by_angle(src, neighbors);
+    QL_ASSERT(platform->topology->has_coordinates() || strategy == PathStrategy::ALL);
+    platform->topology->sort_neighbors_by_angle(src, neighbors);
     // subset to those neighbors that continue in direction(s) we want
     if (strategy == PathStrategy::LEFT) {
         neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.front(); } );
@@ -175,7 +175,7 @@ void Mapper::gen_shortest_paths(const ir::GateRef &gate, UInt src, UInt tgt, Lis
     List<Alter> direct_paths;
 
     // Compute budget.
-    UInt budget = platform->grid->get_min_hops(src, tgt);
+    UInt budget = platform->topology->get_min_hops(src, tgt);
 
     // Generate paths using the configured path selection strategy.
     if (options->path_selection_mode == PathSelectionMode::ALL) {
@@ -207,7 +207,7 @@ void Mapper::gen_alters_gate(const ir::GateRef &gate, List<Alter> &alters, Past 
     UInt src = past.map_qubit(q[0]);
     UInt tgt = past.map_qubit(q[1]);
 
-    QL_DOUT("gen_alters_gate: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ") at get_min_hops=" << platform->grid->get_min_hops(src, tgt));
+    QL_DOUT("gen_alters_gate: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ") at get_min_hops=" << platform->topology->get_min_hops(src, tgt));
     past.debug_print_fc();
 
     // Find shortest paths from src to tgt, and split these.
@@ -361,7 +361,7 @@ void Mapper::commit_alter(Alter &alter, Future &future, Past &past) {
     // When only some swaps were added (based on configuration), the target
     // might not yet be nearest-neighbor, so recheck.
     auto &q = target->operands;
-    if (platform->grid->get_min_hops(past.map_qubit(q[0]), past.map_qubit(q[1])) == 1) {
+    if (platform->topology->get_min_hops(past.map_qubit(q[0]), past.map_qubit(q[1])) == 1) {
 
         // Target is nearest-neighbor, so we;re done with this gate.
         // QL_DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
@@ -486,7 +486,7 @@ Bool Mapper::map_mappable_gates(
                 UInt tgt = past.map_qubit(q[1]);
 
                 // Find minimum number of hops between real counterparts.
-                UInt d = platform->grid->get_min_hops(src, tgt);
+                UInt d = platform->topology->get_min_hops(src, tgt);
 
                 if (d == 1) {
 

@@ -133,17 +133,9 @@ public:
     utils::Json resources;
 
     /**
-     * Topology/qubit grid description, corresponding to the `"topology"` key
-     * in the root of the JSON object.
-     *
-     * FIXME: this shouldn't be here as a raw JSON object.
-     */
-    utils::Json topology;
-
-    /**
      * Parsed topology/qubit grid information.
      */
-    utils::Opt<Grid> grid;
+    utils::Opt<Topology> topology;
 
     /**
      * Constructs a platform from the given configuration filename.

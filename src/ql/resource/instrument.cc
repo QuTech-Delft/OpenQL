@@ -261,7 +261,7 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
                 continue;
             }
             auto edge_id = utils::parse_uint(it2.key());
-            auto edge = context->platform->grid->get_edge_qubits(edge_id);
+            auto edge = context->platform->topology->get_edge_qubits(edge_id);
             if (edge == Edge(0, 0)) {
                 ERROR(
                     "edge connection_map keys must be edges "
@@ -421,7 +421,7 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
                 }
             } else if (it.key() == "edge") {
                 for (const auto &edge_id : elements) {
-                    auto edge = context->platform->grid->get_edge_qubits(edge_id);
+                    auto edge = context->platform->topology->get_edge_qubits(edge_id);
                     if (edge == Edge(0, 0)) {
                         ERROR("invalid edge ID in edge list: " + utils::to_string(edge_id));
                     }

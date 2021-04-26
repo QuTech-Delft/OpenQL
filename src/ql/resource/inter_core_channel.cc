@@ -84,7 +84,7 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
     cfg.emplace();
 
     // Set the easy stuff.
-    cfg->num_cores = context->platform->grid->get_num_cores();
+    cfg->num_cores = context->platform->topology->get_num_cores();
     cfg->optimize = direction != rmgr::Direction::UNDEFINED;
     cfg->cycle_time = context->platform->cycle_time;
 
@@ -230,7 +230,7 @@ utils::Bool InterCoreChannelResource::on_gate(
         << " with commit set to " << commit
     );
 
-    const auto &grid = *context->platform->grid;
+    const auto &grid = *context->platform->topology;
 
     // We don't do anything with gates that don't have qubit operands.
     if (gate->operands.size() == 0) {

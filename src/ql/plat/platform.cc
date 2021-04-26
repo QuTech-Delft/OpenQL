@@ -20,6 +20,7 @@ void Platform::load(
     const utils::Str &compiler_config
 ) {
     HardwareConfiguration hwc(platform_config);
+    utils::Json topology_json;
     hwc.load(
         instruction_map,
         architecture,
@@ -27,7 +28,7 @@ void Platform::load(
         instruction_settings,
         hardware_settings,
         resources,
-        topology
+        topology_json
     );
     if (!compiler_config.empty()) {
         compiler_settings = load_json(compiler_config);
@@ -59,7 +60,7 @@ void Platform::load(
         cycle_time = hardware_settings["cycle_time"];
     }
 
-    grid.emplace(qubit_count, topology);
+    topology.emplace(qubit_count, topology_json);
 }
 
 /**

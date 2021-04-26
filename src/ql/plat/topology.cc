@@ -56,7 +56,7 @@ std::ostream &operator<<(std::ostream &os, GridConnectivity gc) {
  *
  * See header file for JSON format documentation.
  */
-Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
+Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
 
     // Shorthand.
     using JsonType = utils::Json::value_t;
@@ -147,12 +147,8 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
                 if (x < 0) {
                     throw utils::Exception("topology.qubits.*.x cannot be negative");
                 }
-                if (xy_size.x > 0) {
-                    if (x >= xy_size.x) {
-                        throw utils::Exception("topology.qubits.*.x is out of range");
-                    } else {
-                        xy_size.x = utils::max(xy_size.x, x);
-                    }
+                if (xy_size.x > 0 && x >= xy_size.x) {
+                    throw utils::Exception("topology.qubits.*.x is out of range");
                 }
 
                 // Read Y coordinate.
@@ -168,12 +164,8 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
                 if (y < 0) {
                     throw utils::Exception("topology.qubits.*.y cannot be negative");
                 }
-                if (xy_size.y > 0) {
-                    if (y >= xy_size.y) {
-                        throw utils::Exception("topology.qubits.*.y is out of range");
-                    } else {
-                        xy_size.y = utils::max(xy_size.y, y);
-                    }
+                if (xy_size.y > 0 && y >= xy_size.y) {
+                    throw utils::Exception("topology.qubits.*.y is out of range");
                 }
 
                 // Save the position.
@@ -181,6 +173,19 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
 
             }
         }
+
+        // If x_size and y_size were not configured, compute them.
+        if (xy_size.x == 0) {
+            for (const auto &coord : xy_coord) {
+                xy_size.x = utils::max(xy_size.x, coord.second.x + 1);
+            }
+        }
+        if (xy_size.y == 0) {
+            for (const auto &coord : xy_coord) {
+                xy_size.y = utils::max(xy_size.y, coord.second.y + 1);
+            }
+        }
+
     }
 
     // Handle number of cores.
@@ -232,6 +237,7 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
     }
 
     // Handle edges.
+    max_edge = 0;
     if (connectivity == GridConnectivity::SPECIFIED) {
 
         // Parse connectivity from JSON.
@@ -299,12 +305,13 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
                     if (it3->type() != JsonType::number_unsigned) {
                         throw utils::Exception("topology.edges.*.id must be an unsigned integer if specified");
                     }
-                    utils::UInt id = it3->get<utils::UInt>();
+                    Edge id = it3->get<utils::Int>();
                     if (edge_to_qubits.find(id) != edge_to_qubits.end()) {
                         throw utils::Exception("topology.edges.*.id is not unique (" + utils::to_string(id) + ")");
                     }
                     edge_to_qubits.set(id) = {src, dst};
                     qubits_to_edge.set({src, dst}) = id;
+                    max_edge = utils::max(max_edge, id + 1);
                 }
 
             }
@@ -324,6 +331,15 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
                 neighbors.set(qs).push_back(qd);
             }
         }
+
+    }
+    if (max_edge == 0) {
+
+        // Full connectivity (within a core) or no edge indices specified by
+        // the user. In this case, qubit edge indices are generated on-the-fly
+        // using src*nq + dst, so max_edge is simply num_qubits**2.
+        // edge_to_qubits and qubits_to_edge can stay empty.
+        max_edge = num_qubits * num_qubits;
 
     }
 
@@ -391,10 +407,27 @@ Grid::Grid(utils::UInt num_qubits, const utils::Json &topology) {
 }
 
 /**
+ * Returns the size of the qubit grid, if coordinates have been specified.
+ * If not, this returns (0, 0).
+ */
+XYCoordinate Topology::get_grid_size() const {
+    return xy_size;
+}
+
+/**
+ * Returns the coordinate of the given qubit, if coordinates have been
+ * specified. If not, or if the qubit index is out of range, this returns
+ * (0, 0).
+ */
+XYCoordinate Topology::get_qubit_coordinate(Qubit q) const {
+    return xy_coord.get(q, {0, 0});
+}
+
+/**
  * Returns the edge index for the given qubit pair, or returns -1 when there
  * is no defined edge index for the given qubit pair.
  */
-Grid::Edge Grid::get_edge_index(QubitPair qs) const {
+Topology::Edge Topology::get_edge_index(QubitPair qs) const {
     if (qubits_to_edge.empty()) {
         if (get_distance(qs.first, qs.second) != 1) {
             return -1;
@@ -415,7 +448,7 @@ Grid::Edge Grid::get_edge_index(QubitPair qs) const {
  * Returns the qubit pair corresponding with the given edge, or returns 0,0
  * when there is no edge with the given index.
  */
-Grid::QubitPair Grid::get_edge_qubits(Edge edge) const {
+Topology::QubitPair Topology::get_edge_qubits(Edge edge) const {
     if (edge < 0) {
         return {0, 0};
     } else if (edge_to_qubits.empty()) {
@@ -435,23 +468,32 @@ Grid::QubitPair Grid::get_edge_qubits(Edge edge) const {
 }
 
 /**
+ * Returns the highest used edge index plus one. Note that not all edge
+ * indices between 0 and max-1 actually need to be in use, so this is not
+ * necessarily the total number of edges.
+ */
+Topology::Edge Topology::get_max_edge() const {
+    return max_edge;
+}
+
+/**
  * Returns the number of cores.
  */
-utils::UInt Grid::get_num_cores() const {
+utils::UInt Topology::get_num_cores() const {
     return num_cores;
 }
 
 /**
  * Returns the indices of the neighboring qubits for the given qubit.
  */
-const Grid::Neighbors &Grid::get_neighbors(Qubit qubit) const {
+const Topology::Neighbors &Topology::get_neighbors(Qubit qubit) const {
     return neighbors.get(qubit);
 }
 
 /**
  * Returns whether the given qubit is a communication qubit of a core.
  */
-utils::Bool Grid::is_comm_qubit(Qubit qubit) const {
+utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
     if (num_cores == 1) return true;
     QL_ASSERT(connectivity == GridConnectivity::FULL);
 
@@ -465,7 +507,7 @@ utils::Bool Grid::is_comm_qubit(Qubit qubit) const {
 /**
  * Returns the core index for the given qubit in a multi-core environment.
  */
-utils::UInt Grid::get_core_index(Qubit qubit) const {
+utils::UInt Topology::get_core_index(Qubit qubit) const {
     if (num_cores == 1) return 1;
     QL_ASSERT(connectivity == GridConnectivity::FULL);
     utils::UInt nqpc = num_qubits / num_cores;
@@ -476,7 +518,7 @@ utils::UInt Grid::get_core_index(Qubit qubit) const {
  * Returns whether communication between the given two qubits involves
  * inter-core communication.
  */
-utils::Bool Grid::is_inter_core_hop(Qubit source, Qubit target) const {
+utils::Bool Topology::is_inter_core_hop(Qubit source, Qubit target) const {
     return get_core_index(source) != get_core_index(target);
 }
 
@@ -484,14 +526,14 @@ utils::Bool Grid::is_inter_core_hop(Qubit source, Qubit target) const {
  * Returns the distance between the two given qubits in number of hops.
  * Returns 0 iff source == target.
  */
-utils::UInt Grid::get_distance(Qubit source, Qubit target) const {
+utils::UInt Topology::get_distance(Qubit source, Qubit target) const {
     return distance[source][target];
 }
 
 /**
  * Returns the distance between the given two qubits in terms of cores.
  */
-utils::UInt Grid::get_core_distance(Qubit source, Qubit target) const {
+utils::UInt Topology::get_core_distance(Qubit source, Qubit target) const {
     if (get_core_index(source) == get_core_index(target)) return 0;
     QL_ASSERT(connectivity == GridConnectivity::FULL);
     return 1;
@@ -512,7 +554,7 @@ utils::UInt Grid::get_core_distance(Qubit source, Qubit target) const {
  * when not all qubits in a core support connections to all other cores.
  * See the check in initialization of neighbors.
  */
-utils::UInt Grid::get_min_hops(Qubit source, Qubit target) const {
+utils::UInt Topology::get_min_hops(Qubit source, Qubit target) const {
     utils::UInt d = get_distance(source, target);
     utils::UInt cd = get_core_distance(source, target);
     QL_ASSERT(cd <= d);
@@ -526,7 +568,7 @@ utils::UInt Grid::get_min_hops(Qubit source, Qubit target) const {
 /**
  * Returns whether qubits have coordinates associated with them.
  */
-utils::Bool Grid::has_coordinates() const {
+utils::Bool Topology::has_coordinates() const {
     return form != GridForm::IRREGULAR;
 }
 
@@ -539,7 +581,7 @@ utils::Bool Grid::has_coordinates() const {
  * TODO JvS: does this even belong in grid now that it's not part of the
  *  mapper anymore? It feels like a very specific thing.
  */
-void Grid::sort_neighbors_by_angle(Qubit src, Neighbors &nbl) const {
+void Topology::sort_neighbors_by_angle(Qubit src, Neighbors &nbl) const {
     if (form != GridForm::XY) {
         return;
     }
@@ -588,7 +630,7 @@ void Grid::sort_neighbors_by_angle(Qubit src, Neighbors &nbl) const {
 /**
  * Dumps the grid configuration to the given stream.
  */
-void Grid::dump(std::ostream &os, const utils::Str &line_prefix) const {
+void Topology::dump(std::ostream &os, const utils::Str &line_prefix) const {
     os << line_prefix << "grid form = " << form << "\n";
     for (utils::UInt i = 0; i < num_qubits; i++) {
         os << line_prefix << "qubit[" << i << "]=" << xy_coord.dbg(i);

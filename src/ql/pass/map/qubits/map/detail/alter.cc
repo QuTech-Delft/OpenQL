@@ -212,7 +212,7 @@ void Alter::split(utils::List<Alter> &result) const {
         // leftopi is the index in total that holds the qubit that becomes the left operand of the gate
         // rightopi is the index in total that holds the qubit that becomes the right operand of the gate
         // rightopi == leftopi + 1
-        if (platform->grid->is_inter_core_hop(total[leftopi], total[rightopi])) {
+        if (platform->topology->is_inter_core_hop(total[leftopi], total[rightopi])) {
             // an inter-core hop cannot execute a two-qubit gate, so is not a valid alternative
             // QL_DOUT("... skip inter-core hop from qubit=" << total[leftopi] << " to qubit=" << total[rightopi]);
             continue;

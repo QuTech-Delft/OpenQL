@@ -78,7 +78,7 @@ std::ostream &operator<<(std::ostream &os, GridConnectivity gc);
 /**
  * Qubit grid abstraction layer.
  */
-class Grid {
+class Topology {
 public:
 
     /**
@@ -162,6 +162,13 @@ private:
      * Qubit pair to edge index. Only used for specified connectivity.
      */
     utils::Map<QubitPair, Edge> qubits_to_edge;
+
+    /**
+     * The highest used edge index plus one. For specified connectivity, this
+     * is computed from the user-specified edge indices. For unspecified, it is
+     * set to num_qubits**2.
+     */
+    Edge max_edge;
 
     /**
      * The distance (number of edges) between a pair of qubits.
@@ -256,7 +263,20 @@ public:
      * Any additional keys in the topology root object are silently ignored, as
      * other parts of OpenQL may use the structure as well.
      */
-    Grid(utils::UInt num_qubits, const utils::Json &topology);
+    Topology(utils::UInt num_qubits, const utils::Json &topology);
+
+    /**
+     * Returns the size of the qubit grid, if coordinates have been specified.
+     * If not, this returns (0, 0).
+     */
+    XYCoordinate get_grid_size() const;
+
+    /**
+     * Returns the coordinate of the given qubit, if coordinates have been
+     * specified. If not, or if the qubit index is out of range, this returns
+     * (0, 0).
+     */
+    XYCoordinate get_qubit_coordinate(Qubit q) const;
 
     /**
      * Returns the edge index for the given qubit pair, or returns -1 when there
@@ -269,6 +289,13 @@ public:
      * when there is no edge with the given index.
      */
     QubitPair get_edge_qubits(Edge edge) const;
+
+    /**
+     * Returns the highest used edge index plus one. Note that not all edge
+     * indices between 0 and max-1 actually need to be in use, so this is not
+     * necessarily the total number of edges.
+     */
+    Edge get_max_edge() const;
 
     /**
      * Returns the indices of the neighboring qubits for the given qubit.

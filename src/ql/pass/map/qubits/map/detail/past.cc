@@ -312,7 +312,7 @@ void Past::generate_move(ir::GateRefs &circuit, utils::UInt &r0, utils::UInt &r1
 
     // First (optimistically) create the move circuit and add it to circuit.
     utils::Bool created;
-    if (platform->grid->is_inter_core_hop(r0, r1)) {
+    if (platform->topology->is_inter_core_hop(r0, r1)) {
         if (options->heuristic == Heuristic::MAX_FIDELITY) {
             created = new_gate(circuit, "tmove_prim", {r0, r1});    // gates implementing tmove returned in circ
         } else {
@@ -453,7 +453,7 @@ void Past::add_swap(utils::UInt r0, utils::UInt r1) {
                 QL_DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
             }
         }
-        if (platform->grid->is_inter_core_hop(r0, r1)) {
+        if (platform->topology->is_inter_core_hop(r0, r1)) {
             if (options->heuristic == Heuristic::MAX_FIDELITY) {
                 created = new_gate(circuit, "tswap_prim", {r0, r1});    // gates implementing tswap returned in circ
             } else {
