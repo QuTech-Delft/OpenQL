@@ -37,7 +37,7 @@ void visualizeInteractionGraph(const ir::ProgramRef &program, const VisualizerCo
 
     // Generate the DOT file if enabled.
     if (layout.isDotFileOutputEnabled()) {
-        generateAndSaveDOTFile(qubits);
+        generateAndSaveDOTFile(configuration.output_prefix, qubits);
     }
 
     if (qubits.size() > 1) {
@@ -110,13 +110,15 @@ void visualizeInteractionGraph(const ir::ProgramRef &program, const VisualizerCo
         }
 
         // Save the image if enabled.
-        if (layout.saveImage) {
+        if (layout.saveImage || !configuration.interactive) {
             image.save("qubit_interaction_graph.bmp");
         }
 
-        // Display the image.
-        QL_DOUT("Displaying image...");
-        image.display("Qubit Interaction Graph");
+        // Display the image if enabled.
+        if (configuration.interactive) {
+            QL_DOUT("Displaying image...");
+            image.display("Qubit Interaction Graph (" + configuration.pass_name + ")");
+        }
     } else if (qubits.size() == 1) {
         // Draw the single qubit in the middle of the circle.
         //TODO
@@ -125,12 +127,12 @@ void visualizeInteractionGraph(const ir::ProgramRef &program, const VisualizerCo
     }
 }
 
-void generateAndSaveDOTFile(const Vec<Qubit> &qubits) {
+void generateAndSaveDOTFile(const Str &output_prefix, const Vec<Qubit> &qubits) {
     try
     {
         QL_IOUT("Generating DOT file for qubit interaction graph...");
 
-        std::ofstream output(generateFilePath("qubit_interaction_graph", "dot"));
+        std::ofstream output(output_prefix + ".dot");
         output << "graph qubit_interaction_graph {\n";
         output << "    node [shape=circle];\n";
 

@@ -19,26 +19,48 @@ void VisualizeMappingPass::dump_docs(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
-    os << line_prefix << "TODO" << std::endl;
+    utils::dump_str(os, line_prefix,
+#ifdef WITH_VISUALIZER
+    R"(
+    Visualizes the incoming quantum circuit alongside the qubit grid for the
+    target chip, showing the virtual-to-real qubit mapping as the circuit
+    progresses. Note that the circuit is considered to be the concatenation of
+    all the kernels in the program, regardless of any control-flow relationship.
+    )"
+#else
+    R"(
+    The visualizer was not compiled into this build of OpenQL. If this was
+    not intended, and OpenQL is running on Linux or Mac, the X11 library
+    development headers might be missing and the visualizer has disabled itself.
+    )"
+#endif
+    );
+}
+
+/**
+ * Returns a user-friendly type name for this pass.
+ */
+utils::Str VisualizeMappingPass::get_friendly_type() const {
+    return "Qubit mapping graph visualizer";
 }
 
 /**
  * Constructs a mapping graph visualizer pass.
  */
 VisualizeMappingPass::VisualizeMappingPass(
-    const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+    const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
 ) : ProgramAnalysis(pass_factory, instance_name, type_name) {
     options.add_str(
         "config",
-        "path to the visualizer configuration file",
+        "Path to the visualizer configuration file.",
         "visualizer_config.json"
     );
-    options.add_str(
-        "waveform_mapping",
-        "path to the visualizer waveform mapping file",
-        "waveform_mapping.json"
+    options.add_bool(
+        "interactive",
+        "When yes, the visualizer will open a window when the pass is run. "
+        "When no, an image will be saved as <output_prefix>.bmp instead."
     );
 }
 
@@ -54,7 +76,10 @@ utils::Int VisualizeMappingPass::run(
         program, {
             "MAPPING_GRAPH",
             options["config"].as_str(),
-            options["waveform_mapping"].as_str()
+            "", // unused
+            options["interactive"].as_bool(),
+            context.output_prefix,
+            context.full_pass_name
         }
     );
     return 0;

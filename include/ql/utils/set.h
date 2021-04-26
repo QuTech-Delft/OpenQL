@@ -8,6 +8,7 @@
 #pragma once
 
 #include <set>
+#include <iostream>
 
 namespace ql {
 namespace utils {
@@ -17,3 +18,27 @@ using Set = std::set<T, Compare, Allocator>;
 
 } // namespace utils
 } // namespace ql
+
+// FIXME: need a *reasonable* solution for this...
+namespace std {
+
+/**
+ * Stream << overload for Set<>.
+ */
+template <class T>
+std::ostream &operator<<(std::ostream &os, const std::set<T> &set) {
+    os << "[";
+    bool first = true;
+    for (const auto &it : set) {
+        if (first) {
+            first = false;
+        } else {
+            os << ", ";
+        }
+        os << it;
+    }
+    os << "]";
+    return os;
+}
+
+} // namespace std

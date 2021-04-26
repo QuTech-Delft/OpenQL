@@ -27,7 +27,7 @@ void visualizeMappingGraph(const ir::ProgramRef &program, const VisualizerConfig
 
     // Parse the topology if it exists in the platform configuration file.
     Topology topology;
-    const Bool parsedTopology = layout.getUseTopology() ? parseTopology(program->platform->topology, topology) : false;
+    const Bool parsedTopology = layout.getUseTopology() ? parseTopology(program->platform, topology) : false;
     if (parsedTopology) {
         QL_DOUT("Succesfully parsed topology.");
         QL_DOUT("xSize: " << topology.xSize);
@@ -177,12 +177,14 @@ void visualizeMappingGraph(const ir::ProgramRef &program, const VisualizerConfig
     }
 
     // Save the image if enabled.
-    if (imageOutput.circuitLayout.saveImage) {
-        imageOutput.image.save(generateFilePath("circuit_visualization", "bmp"));
+    if (imageOutput.circuitLayout.saveImage || !configuration.interactive) {
+        imageOutput.image.save(configuration.output_prefix + ".bmp");
     }
 
-    // Display the filled in image.
-    imageOutput.image.display("Mapping Graph");
+    // Display the image if enabled.
+    if (configuration.interactive) {
+        imageOutput.image.display("Mapping Graph (" + configuration.pass_name + ")");
+    }
 }
 
 void computeMappingPerCycle(const MappingGraphLayout &layout,
@@ -273,50 +275,26 @@ void computeMappingPerCycle(const MappingGraphLayout &layout,
     }
 }
 
-Bool parseTopology(const Json &topologyJson, Topology &topology) {
-    const Str fallbackMessage = "Falling back on basic visualization. Missing attribute: ";
-    if (topologyJson.count("x_size") == 1) { topology.xSize = topologyJson["x_size"]; } else { QL_IOUT(fallbackMessage << "x_size"); return false; }
-    if (topologyJson.count("y_size") == 1) { topology.ySize = topologyJson["y_size"]; } else { QL_IOUT(fallbackMessage << "y_size"); return false; }
-
-    if (topologyJson.count("qubits") == 1) {
-        const Json qubits = topologyJson["qubits"];
-        topology.vertices.resize(qubits.size(), { 0, 0 });
-        for (const Json qubit : qubits) {
-            if (qubit.count("id") == 1 && qubit.count("x") == 1 && qubit.count("y") == 1) {
-                const Int id = qubit["id"];
-                const Int x = qubit["x"];
-                const Int y = qubit["y"];
-                topology.vertices[id].x = x;
-                topology.vertices[id].y = y;
-            }
-            else {
-                QL_IOUT(fallbackMessage << "id, or x or y");
-                return false;
-            }
-        }
-    } else {
-        QL_IOUT(fallbackMessage << " qubits");
+Bool parseTopology(const plat::PlatformRef &platform, Topology &topology) {
+    auto size = platform->topology->get_grid_size();
+    if (size.x == 0 || size.y == 0) {
+        QL_IOUT("Falling back on basic visualization; missing qubit coordinates in topology section");
         return false;
     }
-
-    if (topologyJson.count("edges") == 1) {
-        const Json edges = topologyJson["edges"];
-        topology.edges.resize(edges.size(), { 0, 0 });
-        for (const Json edge : edges) {
-            if (edge.count("id") == 1 && edge.count("src") == 1 && edge.count("dst") == 1) {
-                const Int id = edge["id"];
-                topology.edges[id].src = edge["src"];
-                topology.edges[id].dst = edge["dst"];
-            } else {
-                QL_IOUT(fallbackMessage << " id, or src or dst");
-                return false;
-            }
-        }
-    } else {
-        QL_IOUT(fallbackMessage << " edges");
-        return false;
+    topology.xSize = size.x;
+    topology.ySize = size.y;
+    topology.vertices.resize(platform->qubit_count, { 0, 0 });
+    for (utils::UInt q = 0; q < platform->qubit_count; q++) {
+        auto coord = platform->topology->get_qubit_coordinate(q);
+        topology.vertices[q].x = coord.x;
+        topology.vertices[q].y = coord.y;
     }
-
+    for (utils::Int e = 0; e < platform->topology->get_max_edge(); e++) {
+        auto pair = platform->topology->get_edge_qubits(e);
+        if (pair.first != 0 || pair.first != 0) {
+            topology.edges.push_back({(utils::Int)pair.first, (utils::Int)pair.second});
+        }
+    }
     return true;
 }
 
@@ -357,23 +335,23 @@ MappingGraphLayout parseMappingGraphLayout(const Str &configPath) {
 
     // Load the parameters.
     if (config.count("initDefaultVirtuals") == 1)   layout.setInitDefaultVirtuals(config["initDefaultVirtuals"]);
-    if (config.count("showVirtualColors") == 1)   layout.setShowVirtualColors(config["showVirtualColors"]);
-    if (config.count("showRealIndices") == 1)   layout.setShowRealIndices(config["showRealIndices"]);
-    if (config.count("useTopology") == 1)       layout.setUseTopology(config["useTopology"]);
+    if (config.count("showVirtualColors") == 1)     layout.setShowVirtualColors(config["showVirtualColors"]);
+    if (config.count("showRealIndices") == 1)       layout.setShowRealIndices(config["showRealIndices"]);
+    if (config.count("useTopology") == 1)           layout.setUseTopology(config["useTopology"]);
 
-    if (config.count("qubitRadius") == 1)       layout.setQubitRadius(config["qubitRadius"]);
-    if (config.count("qubitSpacing") == 1)      layout.setQubitSpacing(config["qubitSpacing"]);
-    if (config.count("fontHeightReal") == 1)      layout.setFontHeightReal(config["fontHeightReal"]);
-    if (config.count("fontHeightVirtual") == 1)      layout.setFontHeightVirtual(config["fontHeightVirtual"]);
+    if (config.count("qubitRadius") == 1)           layout.setQubitRadius(config["qubitRadius"]);
+    if (config.count("qubitSpacing") == 1)          layout.setQubitSpacing(config["qubitSpacing"]);
+    if (config.count("fontHeightReal") == 1)        layout.setFontHeightReal(config["fontHeightReal"]);
+    if (config.count("fontHeightVirtual") == 1)     layout.setFontHeightVirtual(config["fontHeightVirtual"]);
 
-    if (config.count("textColorReal") == 1)      layout.setTextColorReal(config["textColorReal"]);
+    if (config.count("textColorReal") == 1)         layout.setTextColorReal(config["textColorReal"]);
     if (config.count("textColorVirtual") == 1)      layout.setTextColorVirtual(config["textColorVirtual"]);
-    if (config.count("qubitFillColor") == 1)      layout.setQubitFillColor(config["qubitFillColor"]);
-    if (config.count("qubitOutlineColor") == 1)      layout.setQubitOutlineColor(config["qubitOutlineColor"]);
+    if (config.count("qubitFillColor") == 1)        layout.setQubitFillColor(config["qubitFillColor"]);
+    if (config.count("qubitOutlineColor") == 1)     layout.setQubitOutlineColor(config["qubitOutlineColor"]);
 
     if (config.count("realIndexSpacing") == 1)      layout.setRealIndexSpacing(config["realIndexSpacing"]);
 
-    if (gridConfig.count("borderSize") == 1)    layout.setBorderSize(gridConfig["borderSize"]);
+    if (gridConfig.count("borderSize") == 1)        layout.setBorderSize(gridConfig["borderSize"]);
 
     return layout;
 }

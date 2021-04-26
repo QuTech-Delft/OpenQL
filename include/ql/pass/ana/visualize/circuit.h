@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ql/pmgr/pass_types.h"
+#include "ql/pmgr/pass_types/specializations.h"
 
 namespace ql {
 namespace pass {
@@ -29,10 +29,15 @@ protected:
 public:
 
     /**
+     * Returns a user-friendly type name for this pass.
+     */
+    utils::Str get_friendly_type() const override;
+
+    /**
      * Constructs a circuit visualizer pass.
      */
     VisualizeCircuitPass(
-        const utils::Ptr<const pmgr::PassFactory> &pass_factory,
+        const utils::Ptr<const pmgr::Factory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
     );

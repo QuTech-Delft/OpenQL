@@ -1,0 +1,12 @@
+Supported global options
+========================
+
+This section lists all the global options currently supported by OpenQL.
+
+.. note::
+   Most of these options exist only for backward compatibility, having been
+   superseded by pass options. They will be used only when the pass list is
+   automatically generated to mimic legacy behavior, or when compatibility
+   mode is enabled in the compiler configuration file.
+
+{options}

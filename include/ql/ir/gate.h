@@ -9,7 +9,6 @@
 #include "ql/utils/json.h"
 #include "ql/utils/misc.h"
 #include "ql/utils/tree.h"
-#include "ql/ir/matrix.h"
 
 namespace ql {
 namespace ir {
@@ -106,365 +105,194 @@ public:
     virtual ~Gate() = default;
     virtual Instruction qasm() const = 0;
     virtual GateType      type() const = 0;
-    virtual Complex2by2Matrix        mat()  const = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
-    utils::Str visual_type = ""; // holds the visualization type of this gate that will be linked to a specific configuration in the visualizer
     utils::Bool is_conditional() const;           // whether gate has condition that is NOT cond_always
     Instruction cond_qasm() const;              // returns the condition expression in qasm layout
     static utils::Bool is_valid_cond(ConditionType condition, const utils::Vec<utils::UInt> &cond_operands);
 };
 
 using GateRef = utils::One<Gate>;
-using Gates = utils::Any<Gate>;
+using GateRefs = utils::Any<Gate>;
 
 /****************************************************************************\
 | Standard gates
 \****************************************************************************/
 
-namespace gates {
-namespace matrices {
-
-const utils::Complex IDENTITY[] = {
-    1.0, 0.0,
-    0.0, 1.0
-};
-
-const utils::Complex PAULI_X[] {
-    0.0, 1.0,
-    1.0, 0.0
-};
-
-const utils::Complex PAULI_Y[] {
-    0.0, -utils::IM,
-    utils::IM, 0.0
-};
-
-const utils::Complex PAULI_Z[] {
-    1.0, 0.0,
-    0.0, -1.0
-};
-
-const utils::Complex HADAMARD[] = {
-    utils::sqrt(0.5), utils::sqrt(0.5),
-    utils::sqrt(0.5), -utils::sqrt(0.5)
-};
-
-const utils::Complex PHASE[] {
-    1.0, 0.0,
-    0.0, utils::IM
-};
-
-const utils::Complex PHASE_DAG[] = {
-    1.0, 0.0,
-    0.0, -utils::IM
-};
-
-const utils::Complex T[] = {
-    1.0, 0.0,
-    0.0, utils::expi(0.25 * utils::PI)
-};
-
-const utils::Complex T_DAG[] = {
-    1.0, 0.0,
-    0.0, utils::expi(-0.25 * utils::PI)
-};
-
-const utils::Complex RX90[] = {
-    utils::sqrt(0.5), -utils::IM * utils::sqrt(0.5),
-    -utils::IM * utils::sqrt(0.5), utils::sqrt(0.5)
-};
-
-const utils::Complex RY90[] = {
-    utils::sqrt(0.5), -utils::sqrt(0.5),
-    utils::sqrt(0.5), utils::sqrt(0.5)
-};
-
-const utils::Complex MRX90[] = {
-    utils::sqrt(0.5), utils::IM * utils::sqrt(0.5),
-    utils::IM * utils::sqrt(0.5), utils::sqrt(0.5)
-};
-
-const utils::Complex MRY90[] = {
-    utils::sqrt(0.5), utils::sqrt(0.5),
-    -utils::sqrt(0.5), utils::sqrt(0.5)
-};
-
-const utils::Complex RX180[] = {
-    0.0, -utils::IM,
-    -utils::IM, 0.0
-};
-
-const utils::Complex RY180[] = {
-    0.0, -utils::IM,
-    utils::IM, 0.0
-};
-
-/**
- * to do : multi-qubit gates should not be represented by their matrix (the matrix depends on the ctrl/target qubit locations, the simulation using such matrix is inefficient as well...)
- */
-
-const utils::Complex CNOT[] = {
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 1.0,
-    0.0, 0.0, 1.0, 0.0
-};
-
-const utils::Complex CPHASE[] = {
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 1.0, 0.0,
-    0.0, 0.0, 0.0, -1.0
-};
-
-const utils::Complex SWAP[] = {
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 1.0, 0.0,
-    0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 1.0
-};
-
-const utils::Complex TOFFOLI[] = {
-    1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
-};
-
-const utils::Complex NOP[] = {
-    1.0, 0.0,
-    0.0, 1.0
-};
-
-} // namespace matrices
+namespace gate_types {
 
 class Identity : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit Identity(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Hadamard : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit Hadamard(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Phase : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit Phase(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class PhaseDag : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit PhaseDag(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class RX : public Gate {
 public:
-    Complex2by2Matrix m;
     RX(utils::UInt q, utils::Real theta);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class RY : public Gate {
 public:
-    Complex2by2Matrix m;
     RY(utils::UInt q, utils::Real theta);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class RZ : public Gate {
 public:
-    Complex2by2Matrix m;
     RZ(utils::UInt q, utils::Real theta);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class T : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit T(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class TDag : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit TDag(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class PauliX : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit PauliX(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class PauliY : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit PauliY(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class PauliZ : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit PauliZ(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class RX90 : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit RX90(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class MRX90 : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit MRX90(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class RX180 : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit RX180(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class RY90 : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit RY90(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class MRY90 : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit MRY90(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class RY180 : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit RY180(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Measure : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit Measure(utils::UInt q);
     Measure(utils::UInt q, utils::UInt c);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class PrepZ : public Gate {
 public:
-    Complex2by2Matrix m;
     explicit PrepZ(utils::UInt q);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class CNot : public Gate {
 public:
-    Complex2by2Matrix m;
     CNot(utils::UInt q1, utils::UInt q2);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class CPhase : public Gate {
 public:
-    Complex2by2Matrix m;
     CPhase(utils::UInt q1, utils::UInt q2);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Toffoli : public Gate {
 public:
-    Complex2by2Matrix m;
     Toffoli(utils::UInt q1, utils::UInt q2, utils::UInt q3);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Nop : public Gate {
 public:
-    Complex2by2Matrix m;
     Nop();
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Swap : public Gate {
 public:
-    Complex2by2Matrix m;
     Swap(utils::UInt q1, utils::UInt q2);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 /****************************************************************************\
@@ -473,46 +301,36 @@ public:
 
 class Wait : public Gate {
 public:
-    Complex2by2Matrix m;
     utils::UInt duration_in_cycles;
 
     Wait(utils::Vec<utils::UInt> qubits, utils::UInt d, utils::UInt dc);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Source : public Gate {
 public:
-    Complex2by2Matrix m;
     Source();
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Sink : public Gate {
 public:
-    Complex2by2Matrix m;
     Sink();
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Display : public Gate {
 public:
-    Complex2by2Matrix m;
     Display();
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Custom : public Gate {
 public:
-    Complex2by2Matrix m; // matrix representation
-    utils::Str arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
     explicit Custom(const utils::Str &name);
     Custom(const Custom &g);
     static bool is_qubit_id(const utils::Str &str);
@@ -521,18 +339,15 @@ public:
     void print_info() const;
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 class Composite : public Custom {
 public:
-    Complex2by2Matrix m;
-    Gates gs;
+    GateRefs gs;
     explicit Composite(const utils::Str &name);
-    Composite(const utils::Str &name, const Gates &seq);
+    Composite(const utils::Str &name, const GateRefs &seq);
     Instruction qasm() const override;
     GateType type() const override;
-    Complex2by2Matrix mat() const override;
 };
 
 } // namespace gates

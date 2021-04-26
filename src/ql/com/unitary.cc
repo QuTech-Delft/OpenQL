@@ -46,7 +46,7 @@ UInt Unitary::size() const {
 
 /**
  * Explicitly runs the matrix decomposition algorithm. Used to be required,
- * nowadays is called implicitly by get_circuit() if not done explicitly.
+ * nowadays is called implicitly by get_decomposition() if not done explicitly.
  */
 void Unitary::decompose() {
     throw Exception("unitary decomposition was explicitly disabled in this build!");
@@ -549,7 +549,7 @@ Bool Unitary::is_decompose_support_enabled() {
 
 //controlled qubit is the first in the list.
 static void multicontrolled_rz(
-    ir::Circuit &c,
+    ir::GateRefs &c,
     const Vec<Real> &instruction_list,
     UInt start_index,
     UInt end_index,
@@ -558,21 +558,21 @@ static void multicontrolled_rz(
     // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << to_string(qubits, "qubits: "));
     UInt idx;
     //The first one is always controlled from the last to the first qubit.
-    c.emplace<ir::gates::RZ>(qubits.back(),-instruction_list[start_index]);
-    c.emplace<ir::gates::CNot>(qubits[0], qubits.back());
+    c.emplace<ir::gate_types::RZ>(qubits.back(), -instruction_list[start_index]);
+    c.emplace<ir::gate_types::CNot>(qubits[0], qubits.back());
     for (UInt i = 1; i < end_index - start_index; i++) {
         idx = log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
-        c.emplace<ir::gates::RZ>(qubits.back(),-instruction_list[i+start_index]);
-        c.emplace<ir::gates::CNot>(qubits[idx], qubits.back());
+        c.emplace<ir::gate_types::RZ>(qubits.back(), -instruction_list[i + start_index]);
+        c.emplace<ir::gate_types::CNot>(qubits[idx], qubits.back());
     }
     // The last one is always controlled from the next qubit to the first qubit
-    c.emplace<ir::gates::RZ>(qubits.back(),-instruction_list[end_index]);
-    c.emplace<ir::gates::CNot>(qubits.end()[-2], qubits.back());
+    c.emplace<ir::gate_types::RZ>(qubits.back(), -instruction_list[end_index]);
+    c.emplace<ir::gate_types::CNot>(qubits.end()[-2], qubits.back());
 }
 
 //controlled qubit is the first in the list.
 static void multicontrolled_ry(
-    ir::Circuit &c,
+    ir::GateRefs &c,
     const Vec<Real> &instruction_list,
     UInt start_index,
     UInt end_index,
@@ -582,24 +582,24 @@ static void multicontrolled_ry(
     UInt idx;
 
     //The first one is always controlled from the last to the first qubit.
-    c.emplace<ir::gates::RY>(qubits.back(),-instruction_list[start_index]);
-    c.emplace<ir::gates::CNot>(qubits[0], qubits.back());
+    c.emplace<ir::gate_types::RY>(qubits.back(), -instruction_list[start_index]);
+    c.emplace<ir::gate_types::CNot>(qubits[0], qubits.back());
 
     for (UInt i = 1; i < end_index - start_index; i++) {
         idx = log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
-        c.emplace<ir::gates::RY>(qubits.back(),-instruction_list[i+start_index]);
-        c.emplace<ir::gates::CNot>(qubits[idx], qubits.back());
+        c.emplace<ir::gate_types::RY>(qubits.back(), -instruction_list[i + start_index]);
+        c.emplace<ir::gate_types::CNot>(qubits[idx], qubits.back());
     }
     // Last one is controlled from the next qubit to the first one.
-    c.emplace<ir::gates::RY>(qubits.back(),-instruction_list[end_index]);
-    c.emplace<ir::gates::CNot>(qubits.end()[-2], qubits.back());
+    c.emplace<ir::gate_types::RY>(qubits.back(), -instruction_list[end_index]);
+    c.emplace<ir::gate_types::CNot>(qubits.end()[-2], qubits.back());
 }
 
 //recursive gate count function
 //n is number of qubits
 //i is the start point for the instructionlist
 static Int recursiveRelationsForUnitaryDecomposition(
-    ir::Circuit &c,
+    ir::GateRefs &c,
     const Vec<Real> &insns,
     const Vec<UInt> &qubits,
     UInt n,
@@ -656,9 +656,9 @@ static Int recursiveRelationsForUnitaryDecomposition(
     } else { //n=1
         // DOUT("Adding the zyz decomposition gates at index: "<< i);
         // zyz gates happen on the only qubit in the list.
-        c.emplace<ir::gates::RZ>(qubits.back(), insns[i]);
-        c.emplace<ir::gates::RY>(qubits.back(), insns[i + 1]);
-        c.emplace<ir::gates::RZ>(qubits.back(), insns[i + 2]);
+        c.emplace<ir::gate_types::RZ>(qubits.back(), insns[i]);
+        c.emplace<ir::gate_types::RY>(qubits.back(), insns[i + 1]);
+        c.emplace<ir::gate_types::RZ>(qubits.back(), insns[i + 2]);
         // How many gates this took
         return 3;
     }
@@ -667,7 +667,7 @@ static Int recursiveRelationsForUnitaryDecomposition(
 /**
  * Returns the decomposed circuit.
  */
-ir::Circuit Unitary::get_circuit(const utils::Vec<utils::UInt> &qubits) {
+ir::GateRefs Unitary::get_decomposition(const utils::Vec<utils::UInt> &qubits) {
 
     // Decompose now if not done yet.
     if (!decomposed) {
@@ -696,7 +696,7 @@ ir::Circuit Unitary::get_circuit(const utils::Vec<utils::UInt> &qubits) {
     QL_DOUT("Applying unitary '" << name << "' to qubits: " << qubits);
     QL_DOUT("The list is this many items long: " << instruction_list.size());
     //COUT("Instructionlist" << to_string(u.instructionlist));
-    ir::Circuit c;
+    ir::GateRefs c;
     Int end_index = recursiveRelationsForUnitaryDecomposition(c, instruction_list, qubits, u_size, 0);
     QL_DOUT("Total number of gates added: " << end_index);
 

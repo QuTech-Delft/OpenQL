@@ -109,5 +109,42 @@ Str to_lower(Str str);
  */
 Str replace_all(Str str, const Str &from, const Str &to);
 
+/**
+ * Returns whether str matches the pattern specified by pattern. Pattern syntax
+ * is the usual one with * and ?, where * represents zero or more characters,
+ * and ? represents exactly one character.
+ */
+Bool pattern_match(const Str &pattern, const Str &str);
+
+/**
+ * Takes a raw string and replaces its line prefix accordingly. Any prefixed
+ * spacing common to all non-empty lines is removed, as are any empty lines at
+ * the start and end. The remaining lines are then prefixed with line_prefix and
+ * terminated with a single newline before being written to os.
+ */
+void dump_str(std::ostream &os, const Str &line_prefix, const Str &raw);
+
+/**
+ * Takes a (documentation) string, and:
+ *  - wraps long lines at column 80;
+ *  - prefixes all resulting lines with line_prefix; and
+ *  - dumps the resulting lines to the given stream.
+ *
+ * Indentation tries to be smart about lists with - bullets, but other than that
+ * it's pretty stupid. Newlines are not converted to spaces prior to wrapping,
+ * so the incoming documentation should not be pre-wrapped.
+ */
+void wrap_str(std::ostream &os, const Str &line_prefix, const Str &raw);
+
+/**
+ * Returns whether str starts with front.
+ */
+Bool starts_with(const Str &str, const Str &front);
+
+/**
+ * Returns whether str ends with end.
+ */
+Bool ends_with(const Str &str, const Str &end);
+
 } // namespace utils
 } // namespace ql

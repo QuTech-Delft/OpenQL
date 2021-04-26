@@ -22,7 +22,7 @@ typedef std::vector<int> cliffords_t;
 /**
  * build rb circuit
  */
-void build_rb(int num_cliffords, ql::ir::KernelRef &k) {
+void build_rb(int num_cliffords, ql::Kernel &k) {
     assert((num_cliffords%2) == 0);
     int n = num_cliffords/2;
 
@@ -37,48 +37,48 @@ void build_rb(int num_cliffords, ql::ir::KernelRef &k) {
     }
     cl.insert(cl.begin(),inv_cl.begin(),inv_cl.end());
 
-    k->prepz(0);
+    k.prepz(0);
     // build the circuit
     for (int i=0; i<num_cliffords; ++i) {
-        k->clifford(cl[i]);
+        k.clifford(cl[i], 0);
     }
-    k->measure(0);
+    k.measure(0);
 }
 
 int main(int argc, char **argv) {
     srand(0);
 
     // create platform
-    auto qx_platform = ql::plat::PlatformRef::make("qx_simulator", "hardware_config_qx.json");
+    auto qx_platform = ql::Platform("qx_simulator", "none");
 
     // print info
-    qx_platform->print_info();
+    qx_platform.print_info();
 
     int    num_randomizations = 3;
     int    num_circuits       = 13;
-    double sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
+    std::vector<double> sweep_points = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
 
     for (int r=0; r<num_randomizations; r++)
     {
         // create program
         std::stringstream prog_name;
         prog_name << "rb_" << r;
-        auto rb = ql::ir::ProgramRef::make(prog_name.str(), qx_platform, 1);
-        rb->set_sweep_points(sweep_points, num_circuits);
-        rb->set_config_file("rb_config.json");
+        auto rb = ql::Program(prog_name.str(), qx_platform, 1);
+        rb.set_sweep_points(sweep_points);
+        rb.set_config_file("rb_config.json");
 
         for (int j=0; j<num_circuits-4; j++) {
             int c_size = sweep_points[j];
             // create subcircuit
             std::stringstream name;
             name << "rb" << c_size;
-            auto kernel = ql::ir::KernelRef::make(name.str(),qx_platform, 1);
+            auto kernel = ql::Kernel(name.str(),qx_platform, 1);
             build_rb(c_size, kernel);
-            rb->add(kernel);
+            rb.add_kernel(kernel);
         }
 
         // compile the program
-        rb->compile();
+        rb.compile();
     }
 
     return 0;

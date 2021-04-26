@@ -64,6 +64,16 @@ public:
     }
 
     /**
+     * Copy constructor from Stl variant.
+     */
+    UncheckedMap(const Stl &stl) : Stl(stl) {}
+
+    /**
+     * Move constructor from Stl variant.
+     */
+    UncheckedMap(Stl &&stl) : Stl(stl) {}
+
+    /**
      * Implicit conversion for initializer lists.
      */
     UncheckedMap(std::initializer_list<typename Stl::value_type> init) : Stl(init) {
@@ -886,10 +896,13 @@ public:
      * No iterators or references are invalidated.
      */
     template <class... Args>
-    std::pair<iterator, bool> emplace_hint(const ConstIter &pos, Args&&... args) {
+    iterator emplace_hint(const ConstIter &pos, Args&&... args) {
         pos.check(data_ptr);
-        auto p = get_data().get_mut_element_only().emplace_hint(std::forward<Args>(args)...);
-        return std::make_pair<iterator, bool>(iterator(std::move(p.first), data_ptr), std::move(p.second));
+        auto p = get_data().get_mut_element_only().emplace_hint(
+            pos.iter,
+            std::forward<Args>(args)...
+        );
+        return iterator(std::move(p), data_ptr);
     }
 
     /**

@@ -40,7 +40,7 @@ void computeMappingPerCycle(const MappingGraphLayout &layout,
                             utils::Int amountOfCycles,
                             utils::Int amountOfQubits);
 
-utils::Bool parseTopology(const utils::Json &hardware_settings, Topology &topology);
+utils::Bool parseTopology(const plat::PlatformRef &platform, Topology &topology);
 MappingGraphLayout parseMappingGraphLayout(const utils::Str &configPath);
 
 } // namespace detail

@@ -8,29 +8,48 @@
 #include "ql/utils/str.h"
 #include "ql/utils/list.h"
 #include "ql/ir/gate.h"
-#include "ql/ir/circuit.h"
+#include "ql/ir/kernel.h"
 
 namespace ql {
 namespace ir {
 
-using Section = utils::List<ir::GateRef>;
+/**
+ * start_cycle of first Bundle in Bundles, see discussion in PR #398
+ */
+const int BUNDLE_START_CYCLE = 1;
 
-const int BUNDLE_START_CYCLE = 1;                   // start_cycle of first bundle_t in bundles_t, see discussion in PR #398
+/**
+ * A bundle of gates that start in the same cycle.
+ */
+struct Bundle {
 
-class Bundle {
-public:
-    utils::UInt start_cycle;                         // start cycle for all gates in parallel_sections
-    utils::UInt duration_in_cycles;                  // the maximum gate duration in parallel_sections
-    utils::List<Section> parallel_sections;
+    /**
+     * The start cycle for all gates in this bundle.
+     */
+    utils::UInt start_cycle = 1;
+
+    /**
+     * The maximum gate duration of the gates in this bundle.
+     */
+    utils::UInt duration_in_cycles = 0;
+
+    /**
+     * The list of parallel gates in this bundle.
+     */
+    utils::List<ir::GateRef> gates = {};
+
 };
 
-using Bundles = utils::List<Bundle>;          // note that subsequent bundles can overlap in time
+/**
+* A list of bundles. Note that subsequent bundles can overlap in time.
+ */
+using Bundles = utils::List<Bundle>;
 
 /**
  * Create a circuit with valid cycle values from the bundled internal
- * representation.
+ * representation. The bundles are assumed to be ordered by cycle number.
  */
-Circuit circuiter(const Bundles &bundles);
+GateRefs circuiter(const Bundles &bundles);
 
 /**
  * Create a bundled-qasm external representation from the bundled internal
@@ -39,24 +58,16 @@ Circuit circuiter(const Bundles &bundles);
 utils::Str qasm(const Bundles &bundles);
 
 /**
- * Create a bundled internal representation from the circuit with valid cycle
- * information.
- *
- * assumes gatep->cycle attribute reflects the cycle assignment;
- * assumes circuit being a vector of gate pointers is ordered by this cycle value;
- * create bundles in a single scan over the circuit, using currBundle and currCycle as state:
- *  - currBundle: bundle that is being put together; currBundle copied into output bundles when the bundle has been done
- *  - currCycle: cycle at which currBundle will be put; equals cycle value of all contained gates
- *
- * FIXME HvS cycles_valid must be true before each call to this bundler
+ * Create a bundled internal representation from the given kernel with valid
+ * cycle information.
  */
-Bundles bundler(const Circuit &circ, utils::UInt cycle_time);
+Bundles bundler(const KernelRef &kernel);
 
 /**
  * Print the bundles with an indication (taken from 'at') from where this
  * function was called.
  */
-void DebugBundles(const utils::Str &at, const Bundles &bundles);
+void debug_bundles(const utils::Str &at, const Bundles &bundles);
 
 } // namespace ir
 } // namespace ql

@@ -22,8 +22,7 @@ class Test_bugs(unittest.TestCase):
         sweep_points = [1,2]
         num_circuits = 1
         num_qubits = 2
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", 'cc_light')
         p = ql.Program('test_bug', platf, num_qubits)
         p.set_sweep_points(sweep_points)
         k = ql.Kernel('kernel1', platf, num_qubits)
@@ -42,41 +41,6 @@ class Test_bugs(unittest.TestCase):
         p.add_kernel(k)
 
 
-
-    def test_operation_order_190(self):
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform = ql.Platform("myPlatform", config_fn)
-
-        sweep_points = [1]
-        nqubits = 4
-        nregs = 4
-
-        p1 = ql.Program("order1_prog", platform, nqubits, nregs)
-        p2 = ql.Program("order2_prog", platform, nqubits, nregs)
-        p1.set_sweep_points(sweep_points)
-        p2.set_sweep_points(sweep_points)
-        k1 = ql.Kernel("aKernel", platform, nqubits, nregs)
-        k2 = ql.Kernel("aKernel", platform, nqubits, nregs)
-
-
-        k1.gate('x', [0])
-        k1.gate('y', [2])
-
-        # gates are added in reverse order
-        k2.gate('y', [2])
-        k2.gate('x', [0])
-
-        p1.add_kernel(k1)
-        p2.add_kernel(k2)
-
-        p1.compile()
-        self.setUpClass()
-        p2.compile()
-        self.assertTrue( file_compare(
-            os.path.join(output_dir, p1.name+'.qisa'),
-            os.path.join(output_dir, p2.name+'.qisa')) )
-
-
     # relates to https://github.com/QE-Lab/OpenQL/issues/171
     # various runs of compiles were generating different results or in the best
     # case strange errors. So multiple (NCOMPILES) runs of compile are executed
@@ -88,8 +52,7 @@ class Test_bugs(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
 
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform = ql.Platform("myPlatform", config_fn)
+        platform = ql.Platform("myPlatform", 'cc_light')
 
         sweep_points = [1]
         nqubits = 3
@@ -114,16 +77,16 @@ class Test_bugs(unittest.TestCase):
         p.add_kernel(k)
 
         NCOMPILES=50
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'_last.qasm')
         for i in range(NCOMPILES):
             p.compile()
             self.setUpClass()
-            QISA_fn_i = os.path.join(output_dir, p.name+'_'+str(i)+'.qisa')
+            QISA_fn_i = os.path.join(output_dir, p.name+'_'+str(i)+'_last.qasm')
             os.rename(QISA_fn,QISA_fn_i)
 
         for i in range(NCOMPILES-1):
-            QISA_fn_1 = os.path.join(output_dir, p.name+'_'+str(i)+'.qisa')
-            QISA_fn_2 = os.path.join(output_dir, p.name+'_'+str(i+1)+'.qisa')
+            QISA_fn_1 = os.path.join(output_dir, p.name+'_'+str(i)+'_last.qasm')
+            QISA_fn_2 = os.path.join(output_dir, p.name+'_'+str(i+1)+'_last.qasm')
             self.assertTrue( file_compare(QISA_fn_1, QISA_fn_2))
 
 

@@ -94,8 +94,6 @@ utils::Pair<GateOperand, GateOperand> calculateEdgeOperands(const utils::Vec<Gat
 void fixMeasurementOperands(utils::Vec<GateProperties> &gates);
 utils::Bool isMeasurement(const GateProperties &gate);
 
-utils::Str generateFilePath(const utils::Str &filename, const utils::Str &extension);
-
 void printGates(const utils::Vec<GateProperties> &gates);
 void printGatesShort(const utils::Vec<GateProperties> &gates);
 

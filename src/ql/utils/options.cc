@@ -156,21 +156,25 @@ bool Option::is_set() const {
 /**
  * Writes a help message for this option to the given stream (or stdout).
  */
-void Option::help(std::ostream &os) const {
-    os << "Option " << name << ": " << syntax() << ", ";
+void Option::dump_help(std::ostream &os, const utils::Str &line_prefix) const {
+    os << line_prefix << "* `" << name << "` *\n";
+    StrStrm ss;
+    ss << "Must be " << syntax() << ", ";
     if (configured) {
-        os << "currently " << current_value;
+        ss << "currently `" << current_value << "`";
         if (!default_value.empty()) {
-            os << " (default " << default_value << ")";
+            ss << " (default `" << default_value << "`)";
         }
     } else if (current_value.empty()) {
-        os << "not configured";
+        ss << "no default value";
     } else {
-        os << "using default " << current_value;
+        ss << "default `" << current_value << "`";
     }
+    ss << ".";
     if (!description.empty()) {
-        os << ": " << description;
+        ss << " " << description;
     }
+    wrap_str(os, line_prefix + "  ", ss.str());
 }
 
 /**
@@ -185,7 +189,7 @@ Option &Option::with_callback(const std::function<void(Option&)> &callback) {
  * Stream write operator for Option.
  */
 std::ostream &operator<<(std::ostream &os, const Option &option) {
-    option.help(os);
+    option.dump_help(os);
     return os;
 }
 
@@ -193,7 +197,7 @@ std::ostream &operator<<(std::ostream &os, const Option &option) {
  * Returns a description of the syntax for allowable values.
  */
 Str BooleanOption::syntax() const {
-    return "yes or no";
+    return "`yes` or `no`";
 }
 
 /**
@@ -249,7 +253,7 @@ Str EnumerationOption::validate_(const Str &val) const {
  * Returns a description of the syntax for allowable values.
  */
 Str EnumerationOption::syntax() const {
-    return "one of " + options.to_string("", ", ", "", ", or ", " or ");
+    return "one of " + options.to_string("`", "`, `", "`", "`, or `", "` or `");
 }
 
 /**
@@ -326,7 +330,7 @@ Str IntegerOption::syntax() const {
         if (string_options.size() == 1) {
             s << " or " << string_options.front();
         } else {
-            s << " or one of " + string_options.to_string("", ", ", "", ", or ", " or ");
+            s << " or one of " + string_options.to_string("`", "`, `", "`", "`, or `", "` or `");
         }
     }
     return s.str();
@@ -410,7 +414,7 @@ Str RealOption::syntax() const {
         if (string_options.size() == 1) {
             s << " or " << string_options.front();
         } else {
-            s << " or one of " + string_options.to_string("", ", ", "", ", or ", " or ");
+            s << " or one of " + string_options.to_string("`", "`, `", "`", "`, or `", "` or `");
         }
     }
     return s.str();
@@ -592,13 +596,14 @@ void Options::reset() {
 /**
  * Writes a help message for this option to the given stream (or stdout).
  */
-void Options::help(std::ostream &os, const utils::Str &line_prefix) const {
+void Options::dump_help(std::ostream &os, const utils::Str &line_prefix) const {
     if (options.empty()) {
         os << line_prefix << "no options exist" << std::endl;
         return;
     }
     for (const auto &it : options) {
-        os << line_prefix << it.second << std::endl;
+        it.second->dump_help(os, line_prefix);
+        os << std::endl;
     }
 }
 
@@ -606,7 +611,7 @@ void Options::help(std::ostream &os, const utils::Str &line_prefix) const {
  * Dumps all options (or only options which were explicitly set) to the
  * given stream (or stdout).
  */
-void Options::dump(bool only_set, std::ostream &os, const utils::Str &line_prefix) const {
+void Options::dump_options(bool only_set, std::ostream &os, const utils::Str &line_prefix) const {
     bool any = false;
     for (const auto &it : options) {
         if (it.second->is_set() || !only_set) {
@@ -623,7 +628,7 @@ void Options::dump(bool only_set, std::ostream &os, const utils::Str &line_prefi
  * Stream write operator for Options.
  */
 std::ostream &operator<<(std::ostream &os, const Options &options) {
-    options.help(os);
+    options.dump_help(os);
     return os;
 }
 

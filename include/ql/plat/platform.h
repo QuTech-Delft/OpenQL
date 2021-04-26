@@ -6,27 +6,59 @@
 
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
+#include "ql/utils/opt.h"
 #include "ql/utils/json.h"
 #include "ql/utils/tree.h"
-#include "ql/plat/hardware_configuration.h"
+#include "ql/ir/gate.h"
+#include "ql/plat/topology.h"
+#include "ql/arch/declarations.h"
 
 namespace ql {
 namespace plat {
 
+using CustomGateRef = utils::One<ir::gate_types::Custom>;
+
+using InstructionMap = utils::Map<utils::Str, CustomGateRef>;
+
+/**
+ * Platform configuration structure. Represents everything we know about the
+ * target qubit chip, simulator, control architecture, etc.
+ *
+ * TODO: this still needs a lot of work. As much JSON parsing as possible should
+ *  be done while loading, and we need different classes for gate instances and
+ *  types.
+ */
 class Platform : public utils::Node {
 public:
+
+    /**
+     * Dumps the documentation for the platform configuration file structure.
+     */
+    static void dump_docs(std::ostream &os = std::cout, const utils::Str &line_prefix = "");
+
+private:
+
+    /**
+     * Loads the platform members from the given JSON data and optional
+     * auxiliary compiler configuration file.
+     */
+    void load(
+        utils::Json &platform_config,
+        const utils::Str &compiler_config = ""
+    );
+
+    /**
+     * Raw instruction setting data for use by the eqasm backend, corresponding
+     * to the `"instructions"` key in the root JSON object.
+     */
+    utils::Json instruction_settings;
+
+public:
+
     /**
      * User-specified name for the platform.
      */
     utils::Str name;
-
-    /**
-     * Name of the architecture being compiled for.
-     *
-     * TODO: this should be removed, and abstracted entirely to the much more
-     *  generic pass management logic.
-     */
-    utils::Str eqasm_compiler_name;
 
     /**
      * The total number of physical qubits supported by the platform.
@@ -69,27 +101,29 @@ public:
     utils::UInt cycle_time;
 
     /**
-     * Path to the JSON file that was used to configure this platform.
-     *
-     * FIXME: it's wrong that things are using this. Once constructed, the
-     *  filename should be don't care (in theory, there doesn't even need to be
-     *  a file).
-     */
-    utils::Str configuration_file_name;
-
-    /**
      * The gate/instruction set supported by this platform.
      */
     InstructionMap instruction_map;
 
     /**
-     * Raw instruction setting data for use by the eqasm backend, corresponding
-     * to the `"instructions"` key in the root JSON object.
-     *
-     * FIXME: this shouldn't be here. Extra data should be part of the gate
-     *  types (but there are no gate types yet, of course).
+     * Architecture information object.
      */
-    utils::Json instruction_settings;
+    arch::CArchitectureRef architecture;
+
+    /**
+     * Settings for the compiler. This can be:
+     *  - an empty string, if no eqasm_compiler key is specified;
+     *  - a recognized string (none, qx, cc_light_compiler, or
+     *    eqasm_backend_cc);
+     *  - a JSON object representing the compiler configuration structure,
+     *    which may or may not have a strategy.architecture key set to cc or
+     *    cc_light.
+     *
+     * NOTE: while it's nasty that this is here as a raw JSON object, we can't
+     *  construct it into a pass manager until program.compile, because
+     *  construction may use global options in compatibility mode...
+     */
+    utils::Json compiler_settings;
 
     /**
      * Additional hardware settings (to use by the eqasm backend), corresponding
@@ -102,37 +136,71 @@ public:
      * constraints), corresponding to the `"resources"` key in the root JSON
      * object.
      *
-     * FIXME: this shouldn't be here as a raw JSON object.
+     * FIXME: this shouldn't be here as a raw JSON object. Right now the
+     *  resource manager does the parsing, but it's much better if the platform
+     *  does it, so problems are caught earlier. (People need to stop writing
+     *  broken config files just because they're not using parts of it! Either
+     *  there should be a sane default for something, which there is in this
+     *  case (namely nothing) or they need to specify a valid structure.
+     *  Period.)
      */
     utils::Json resources;
 
     /**
-     * Resource description, corresponding to the `"resources"` key in the root
-     * JSON object.
-     *
-     * FIXME: this shouldn't be here as a raw JSON object.
+     * Parsed topology/qubit grid information.
      */
-    utils::Json topology;
+    utils::Opt<Topology> topology;
 
     /**
      * Constructs a platform from the given configuration filename.
      */
-    Platform(const utils::Str &name, const utils::Str &configuration_file_name);
+    Platform(
+        const utils::Str &name,
+        const utils::Str &platform_config,
+        const utils::Str &compiler_config = ""
+    );
 
     /**
-     * Prints some basic info about the platform to stdout.
+     * Constructs a platform from the given configuration *data*.
      */
-    void print_info() const;
+    Platform(
+        const utils::Str &name,
+        const utils::Json &platform_config,
+        const utils::Str &compiler_config = ""
+    );
 
-    // find settings for custom gate, preventing JSON exceptions
+    /**
+     * Dumps some basic info about the platform to the given stream.
+     */
+    void dump_info(std::ostream &os = std::cout, utils::Str line_prefix = "") const;
+
+    /**
+     * Returns the JSON data for a custom gate, throwing a semi-useful
+     * exception if the instruction is not found.
+     *
+     * FIXME: this shouldn't be here. Extra data should be part of the gate
+     *  types (but there are no gate types yet, of course).
+     */
     const utils::Json &find_instruction(const utils::Str &iname) const;
 
-    // find instruction type for custom gate
-    utils::Str find_instruction_type(const utils::Str &iname) const;
+    /**
+     * Returns the JSON data for all instructions as a JSON map.
+     *
+     * FIXME: something like this is needed, but the structure should already
+     *  have been parsed rather than be in JSON form.
+     */
+    const utils::Json &get_instructions() const;
 
+    /**
+     * Converts the given time in nanoseconds to cycles.
+     */
     utils::UInt time_to_cycles(utils::Real time_ns) const;
+
 };
 
+/**
+ * Smart pointer reference to a platform.
+ */
 using PlatformRef = utils::One<Platform>;
 
 } // namespace plat

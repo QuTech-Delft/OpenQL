@@ -8,7 +8,7 @@ output_dir = os.path.join(curdir, 'test_output')
 
 # s5 would do as well
 # cnot, t, z, etc. must not have been decomposed to exploit their commute properties
-conffile = 'test_mapper_s7.json'
+config = 'cc_light.s7'
 
 class Test_commutation(unittest.TestCase):
 
@@ -28,8 +28,7 @@ class Test_commutation(unittest.TestCase):
         ql.set_option('clifford_postmapper', 'no')
 
     def test_cnot_z_NN_commute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'no');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -63,8 +62,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_z_2N_commute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -98,8 +96,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_z_2R_commute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'yes');
@@ -134,8 +131,7 @@ class Test_commutation(unittest.TestCase):
 
 
     def test_cnot_x_NN_commute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'no');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -169,8 +165,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_x_2N_commute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -204,8 +199,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_x_2R_commute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'yes');
@@ -240,8 +234,7 @@ class Test_commutation(unittest.TestCase):
 
 
     def test_cnot_NN_noncommute_RAD(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'no');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -276,8 +269,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_2R_noncommute_RAD(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'yes');
@@ -312,8 +304,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_NN_noncommute_DAR(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'no');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -349,8 +340,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_2R_noncommute_DAR(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'yes');
@@ -386,8 +376,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_NN_controlcommute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'no');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -419,8 +408,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_2N_controlcommute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -452,8 +440,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_2R_controlcommute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'yes');
@@ -485,8 +472,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_NN_targetcommute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'no');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -518,8 +504,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_2N_targetcommute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -551,8 +536,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_2R_targetcommute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'yes');
@@ -584,8 +568,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cz_NN_anycommute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'no');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -617,8 +600,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cz_2N_anycommute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'no');
@@ -650,8 +632,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cz_2R_anycommute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'yes');
@@ -683,8 +664,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_mixedcommute(self):
-        config_fn = os.path.join(curdir, conffile)
-        platf = ql.Platform("starmon", config_fn)
+        platf = ql.Platform("starmon", config)
 
         ql.set_option("scheduler_commute", 'yes');
         ql.set_option("scheduler_commute_rotations", 'yes');
@@ -732,8 +712,7 @@ class Test_commutation(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 #    def test_cnot_variations(self):
-#        config_fn = os.path.join(curdir, conffile)
-#        platf = ql.Platform("starmon", config_fn)
+##        platf = ql.Platform("starmon", config)
 #        ql.set_option("scheduler", 'ALAP');
 #        ql.set_option("scheduler_commute", 'yes');
 #        ql.set_option("vary_commutations", 'yes');

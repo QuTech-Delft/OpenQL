@@ -22,7 +22,7 @@ Vec<GateProperties> parseGates(const ir::ProgramRef &program) {
     Vec<GateProperties> gates;
 
     for (const auto &kernel : program->kernels) {
-        for (const auto &gate : kernel->get_circuit()) {
+        for (const auto &gate : kernel->gates) {
             Vec<Int> operands;
             Vec<Int> creg_operands;
             for (const UInt operand : gate->operands) { operands.push_back(utoi(operand)); }
@@ -234,10 +234,6 @@ void printGatesShort(const Vec<GateProperties> &gates) {
 
         QL_IOUT(nameSection << swapSection << cycleSection << realOperandsSection << " and " << vOperands);
     }
-}
-
-Str generateFilePath(const Str &filename, const Str &extension) {
-    return com::options::get("output_dir") + "/" + filename + "." + extension;
 }
 
 } // namespace detail

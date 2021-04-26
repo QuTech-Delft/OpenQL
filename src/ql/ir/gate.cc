@@ -119,9 +119,9 @@ Bool Gate::is_valid_cond(ConditionType condition, const Vec<UInt> &cond_operands
     return false;
 }
 
-namespace gates {
+namespace gate_types {
 
-Identity::Identity(UInt q) : m(matrices::IDENTITY) {
+Identity::Identity(UInt q) {
     name = "i";
     duration = 40;
     operands.push_back(q);
@@ -135,11 +135,7 @@ GateType Identity::type() const {
     return GateType::IDENTITY;
 }
 
-Complex2by2Matrix Identity::mat() const {
-    return m;
-}
-
-Hadamard::Hadamard(UInt q) : m(matrices::HADAMARD) {
+Hadamard::Hadamard(UInt q) {
     name = "h";
     duration = 40;
     operands.push_back(q);
@@ -153,11 +149,7 @@ GateType Hadamard::type() const {
     return GateType::HADAMARD;
 }
 
-Complex2by2Matrix Hadamard::mat() const {
-    return m;
-}
-
-Phase::Phase(UInt q) : m(matrices::PHASE) {
+Phase::Phase(UInt q) {
     name = "s";
     duration = 40;
     operands.push_back(q);
@@ -171,11 +163,7 @@ GateType Phase::type() const {
     return GateType::PHASE;
 }
 
-Complex2by2Matrix Phase::mat() const {
-    return m;
-}
-
-PhaseDag::PhaseDag(UInt q) : m(matrices::PHASE_DAG) {
+PhaseDag::PhaseDag(UInt q) {
     name = "sdag";
     duration = 40;
     operands.push_back(q);
@@ -189,19 +177,11 @@ GateType PhaseDag::type() const {
     return GateType::PHASE_DAG;
 }
 
-Complex2by2Matrix PhaseDag::mat() const {
-    return m;
-}
-
 RX::RX(UInt q, double theta) {
     name = "rx";
     duration = 40;
     angle = theta;
     operands.push_back(q);
-    m(0,0) = cos(angle/2);
-    m(0,1) = Complex(0, -sin(angle/2));
-    m(1,0) = Complex(0, -sin(angle/2));
-    m(1,1) = cos(angle/2);
 }
 
 Instruction RX::qasm() const {
@@ -212,19 +192,11 @@ GateType RX::type() const {
     return GateType::RX;
 }
 
-Complex2by2Matrix RX::mat() const {
-    return m;
-}
-
 RY::RY(UInt q, double theta) {
     name = "ry";
     duration = 40;
     angle = theta;
     operands.push_back(q);
-    m(0,0) = cos(angle/2);
-    m(0,1) = -sin(angle/2);
-    m(1,0) = sin(angle/2);
-    m(1,1) = cos(angle/2);
 }
 
 Instruction RY::qasm() const {
@@ -235,19 +207,11 @@ GateType RY::type() const {
     return GateType::RY;
 }
 
-Complex2by2Matrix RY::mat() const {
-    return m;
-}
-
 RZ::RZ(UInt q, double theta) {
     name = "rz";
     duration = 40;
     angle = theta;
     operands.push_back(q);
-    m(0,0) = Complex(cos(-angle/2), sin(-angle/2));
-    m(0,1) = 0;
-    m(1,0) = 0;
-    m(1,1) = Complex(cos(angle/2), sin(angle/2));
 }
 
 Instruction RZ::qasm() const {
@@ -258,11 +222,7 @@ GateType RZ::type() const {
     return GateType::RZ;
 }
 
-Complex2by2Matrix RZ::mat() const {
-    return m;
-}
-
-T::T(UInt q) : m(matrices::T) {
+T::T(UInt q) {
     name = "t";
     duration = 40;
     operands.push_back(q);
@@ -276,11 +236,7 @@ GateType T::type() const {
     return GateType::T;
 }
 
-Complex2by2Matrix T::mat() const {
-    return m;
-}
-
-TDag::TDag(UInt q) : m(matrices::T_DAG) {
+TDag::TDag(UInt q) {
     name = "tdag";
     duration = 40;
     operands.push_back(q);
@@ -294,11 +250,7 @@ GateType TDag::type() const {
     return GateType::T_DAG;
 }
 
-Complex2by2Matrix TDag::mat() const {
-    return m;
-}
-
-PauliX::PauliX(UInt q) : m(matrices::PAULI_X) {
+PauliX::PauliX(UInt q) {
     name = "x";
     duration = 40;
     operands.push_back(q);
@@ -312,11 +264,7 @@ GateType PauliX::type() const {
     return GateType::PAULI_X;
 }
 
-Complex2by2Matrix PauliX::mat() const {
-    return m;
-}
-
-PauliY::PauliY(UInt q) : m(matrices::PAULI_Y) {
+PauliY::PauliY(UInt q) {
     name = "y";
     duration = 40;
     operands.push_back(q);
@@ -330,11 +278,7 @@ GateType PauliY::type() const {
     return GateType::PAULI_Y;
 }
 
-Complex2by2Matrix PauliY::mat() const {
-    return m;
-}
-
-PauliZ::PauliZ(UInt q) : m(matrices::PAULI_Z) {
+PauliZ::PauliZ(UInt q) {
     name = "z";
     duration = 40;
     operands.push_back(q);
@@ -348,11 +292,7 @@ GateType PauliZ::type() const {
     return GateType::PAULI_Z;
 }
 
-Complex2by2Matrix PauliZ::mat() const {
-    return m;
-}
-
-RX90::RX90(UInt q) : m(matrices::RX90) {
+RX90::RX90(UInt q) {
     name = "x90";
     duration = 40;
     operands.push_back(q);
@@ -366,11 +306,7 @@ GateType RX90::type() const {
     return GateType::RX90;
 }
 
-Complex2by2Matrix RX90::mat() const {
-    return m;
-}
-
-MRX90::MRX90(UInt q) : m(matrices::MRX90) {
+MRX90::MRX90(UInt q) {
     name = "mx90";
     duration = 40;
     operands.push_back(q);
@@ -384,11 +320,7 @@ GateType MRX90::type() const {
     return GateType::MRX90;
 }
 
-Complex2by2Matrix MRX90::mat() const {
-    return m;
-}
-
-RX180::RX180(UInt q) : m(matrices::RX180) {
+RX180::RX180(UInt q) {
     name = "x180";
     duration = 40;
     operands.push_back(q);
@@ -402,11 +334,7 @@ GateType RX180::type() const {
     return GateType::RX180;
 }
 
-Complex2by2Matrix RX180::mat() const {
-    return m;
-}
-
-RY90::RY90(UInt q) : m(matrices::RY90) {
+RY90::RY90(UInt q) {
     name = "y90";
     duration = 40;
     operands.push_back(q);
@@ -420,11 +348,7 @@ GateType RY90::type() const {
     return GateType::RY90;
 }
 
-Complex2by2Matrix RY90::mat() const {
-    return m;
-}
-
-MRY90::MRY90(UInt q) : m(matrices::MRY90) {
+MRY90::MRY90(UInt q) {
     name = "my90";
     duration = 40;
     operands.push_back(q);
@@ -438,11 +362,7 @@ GateType MRY90::type() const {
     return GateType::MRY90;
 }
 
-Complex2by2Matrix MRY90::mat() const {
-    return m;
-}
-
-RY180::RY180(UInt q) : m(matrices::RY180) {
+RY180::RY180(UInt q) {
     name = "y180";
     duration = 40;
     operands.push_back(q);
@@ -456,17 +376,13 @@ GateType RY180::type() const {
     return GateType::RY180;
 }
 
-Complex2by2Matrix RY180::mat() const {
-    return m;
-}
-
-Measure::Measure(UInt q) : m(matrices::IDENTITY) {
+Measure::Measure(UInt q) {
     name = "measure";
     duration = 40;
     operands.push_back(q);
 }
 
-Measure::Measure(UInt q, UInt c) : m(matrices::IDENTITY) {
+Measure::Measure(UInt q, UInt c) {
     name = "measure";
     duration = 40;
     operands.push_back(q);
@@ -488,11 +404,7 @@ GateType Measure::type() const {
     return GateType::MEASURE;
 }
 
-Complex2by2Matrix Measure::mat() const {
-    return m;
-}
-
-PrepZ::PrepZ(UInt q) : m(matrices::IDENTITY) {
+PrepZ::PrepZ(UInt q) {
     name = "prep_z";
     duration = 40;
     operands.push_back(q);
@@ -506,11 +418,7 @@ GateType PrepZ::type() const {
     return GateType::PREP_Z;
 }
 
-Complex2by2Matrix PrepZ::mat() const {
-    return m;
-}
-
-CNot::CNot(UInt q1, UInt q2) : m(matrices::CNOT) {
+CNot::CNot(UInt q1, UInt q2) {
     name = "cnot";
     duration = 80;
     operands.push_back(q1);
@@ -526,11 +434,7 @@ GateType CNot::type() const {
     return GateType::CNOT;
 }
 
-Complex2by2Matrix CNot::mat() const {
-    return m;
-}
-
-CPhase::CPhase(UInt q1, UInt q2) : m(matrices::CPHASE) {
+CPhase::CPhase(UInt q1, UInt q2) {
     name = "cz";
     duration = 80;
     operands.push_back(q1);
@@ -546,11 +450,7 @@ GateType CPhase::type() const {
     return GateType::CPHASE;
 }
 
-Complex2by2Matrix CPhase::mat() const {
-    return m;
-}
-
-Toffoli::Toffoli(UInt q1, UInt q2, UInt q3) : m(matrices::TOFFOLI) {
+Toffoli::Toffoli(UInt q1, UInt q2, UInt q3) {
     name = "toffoli";
     duration = 160;
     operands.push_back(q1);
@@ -568,11 +468,7 @@ GateType Toffoli::type() const {
     return GateType::TOFFOLI;
 }
 
-Complex2by2Matrix Toffoli::mat() const {
-    return m;
-}
-
-Nop::Nop() : m(matrices::NOP) {
+Nop::Nop() {
     name = "wait";
     duration = 20;
 }
@@ -585,11 +481,7 @@ GateType Nop::type() const {
     return GateType::NOP;
 }
 
-Complex2by2Matrix Nop::mat() const {
-    return m;
-}
-
-Swap::Swap(UInt q1, UInt q2) : m(matrices::SWAP) {
+Swap::Swap(UInt q1, UInt q2) {
     name = "swap";
     duration = 80;
     operands.push_back(q1);
@@ -605,15 +497,11 @@ GateType Swap::type() const {
     return GateType::SWAP;
 }
 
-Complex2by2Matrix Swap::mat() const {
-    return m;
-}
-
 /****************************************************************************\
 | Special gates
 \****************************************************************************/
 
-Wait::Wait(Vec<UInt> qubits, UInt d, UInt dc) : m(matrices::NOP) {
+Wait::Wait(Vec<UInt> qubits, UInt d, UInt dc) {
     name = "wait";
     duration = d;
     duration_in_cycles = dc;
@@ -630,11 +518,7 @@ GateType Wait::type() const {
     return GateType::WAIT;
 }
 
-Complex2by2Matrix Wait::mat() const {
-    return m;
-}
-
-Source::Source() : m(matrices::NOP) {
+Source::Source() {
     name = "SOURCE";
     duration = 1;
 }
@@ -647,11 +531,7 @@ GateType Source::type() const {
     return GateType::DUMMY;
 }
 
-Complex2by2Matrix Source::mat() const {
-    return m;
-}
-
-Sink::Sink() : m(matrices::NOP) {
+Sink::Sink() {
     name = "Sink";
     duration = 1;
 }
@@ -664,11 +544,7 @@ GateType Sink::type() const {
     return GateType::DUMMY;
 }
 
-Complex2by2Matrix Sink::mat() const {
-    return m;
-}
-
-Display::Display() : m(matrices::NOP) {
+Display::Display() {
     name = "display";
     duration = 0;
 }
@@ -679,10 +555,6 @@ Instruction Display::qasm() const {
 
 GateType Display::type() const {
     return GateType::DISPLAY;
-}
-
-Complex2by2Matrix Display::mat() const {
-    return m;
 }
 
 Custom::Custom(const Str &name) {
@@ -701,10 +573,6 @@ Custom::Custom(const Custom &g) {
     duration = g.duration;
     // angle = g.angle; FIXME
     // cycle = g.cycle; FIXME
-    m.m[0] = g.m.m[0];
-    m.m[1] = g.m.m[1];
-    m.m[2] = g.m.m[2];
-    m.m[3] = g.m.m[3];
 }
 
 /**
@@ -759,11 +627,7 @@ void Custom::load(nlohmann::json &instr) {
         // FIXME: make matrix optional, default to NaN
         auto mat = instr["matrix"];
         QL_DOUT("matrix: " << instr["matrix"]);
-        m.m[0] = Complex(mat[0][0], mat[0][1]);
-        m.m[1] = Complex(mat[1][0], mat[1][1]);
-        m.m[2] = Complex(mat[2][0], mat[2][1]);
-        m.m[3] = Complex(mat[3][0], mat[3][1]);
-        
+
     } catch (Json::exception &e) {
         QL_EOUT("while loading instruction '" << name << "' (attr: " << l_attr
                                               << ") : " << e.what());
@@ -772,10 +636,6 @@ void Custom::load(nlohmann::json &instr) {
             name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
     }
 
-    if (instr.count("cc_light_instr") > 0) {	// FIXME: platform dependency
-        arch_operation_name = instr["cc_light_instr"].get<Str>();
-        QL_DOUT("cc_light_instr: " << instr["cc_light_instr"]);
-    }
 }
 
 void Custom::print_info() const {
@@ -783,7 +643,6 @@ void Custom::print_info() const {
     QL_PRINTLN("    |- name     : " << name);
     QL_PRINTLN("    |- qubits   : " << to_string(operands));
     QL_PRINTLN("    |- duration : " << duration);
-    QL_PRINTLN("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
 }
 
 Instruction Custom::qasm() const {
@@ -832,15 +691,11 @@ GateType Custom::type() const {
     return GateType::CUSTOM;
 }
 
-Complex2by2Matrix Custom::mat() const {
-    return m;
-}
-
 Composite::Composite(const Str &name) : Custom(name) {
     duration = 0;
 }
 
-Composite::Composite(const Str &name, const Gates &seq) : Custom(name) {
+Composite::Composite(const Str &name, const GateRefs &seq) : Custom(name) {
     duration = 0;
     for (const auto &g : seq) {
         gs.add(g);
@@ -859,10 +714,6 @@ Instruction Composite::qasm() const {
 
 GateType Composite::type() const {
     return GateType::COMPOSITE;
-}
-
-Complex2by2Matrix Composite::mat() const {
-    return m;   // FIXME: never initialized
 }
 
 } // namespace gates

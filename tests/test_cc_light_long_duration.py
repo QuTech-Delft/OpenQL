@@ -56,8 +56,8 @@ class Test_CCL_long_duration(unittest.TestCase):
 
         p.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '_last.qasm')
+        QISA_fn = os.path.join(output_dir, p.name+'_last.qasm')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 

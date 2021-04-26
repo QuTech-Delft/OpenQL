@@ -32,7 +32,7 @@ struct Qubit {
 
 void visualizeInteractionGraph(const ir::ProgramRef &program, const VisualizerConfiguration &configuration);
 
-void generateAndSaveDOTFile(const utils::Vec<Qubit> &qubits);
+void generateAndSaveDOTFile(const utils::Str &output_prefix, const utils::Vec<Qubit> &qubits);
 
 InteractionGraphLayout parseInteractionGraphLayout(const utils::Str &configPath);
 

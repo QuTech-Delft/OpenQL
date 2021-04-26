@@ -550,13 +550,15 @@ void visualizeCircuit(const ir::ProgramRef &program, const VisualizerConfigurati
     ImageOutput imageOutput = generateImage(program, configuration, minCycleWidths, 0);
 
     // Save the image if enabled.
-    if (imageOutput.circuitLayout.saveImage) {
-        imageOutput.image.save(generateFilePath("circuit_visualization", "bmp"));
+    if (imageOutput.circuitLayout.saveImage || !configuration.interactive) {
+        imageOutput.image.save(configuration.output_prefix + ".bmp");
     }
 
-    // Display the image.
-    QL_DOUT("Displaying image...");
-    imageOutput.image.display("Quantum Circuit");
+    // Display the image if enabled.
+    if (configuration.interactive) {
+        QL_DOUT("Displaying image...");
+        imageOutput.image.display("Quantum Circuit (" + configuration.pass_name + ")");
+    }
 }
 
 ImageOutput generateImage(const ir::ProgramRef &program, const VisualizerConfiguration &configuration, const Vec<Int> &minCycleWidths, const utils::Int extendedImageHeight) {
@@ -568,7 +570,7 @@ ImageOutput generateImage(const ir::ProgramRef &program, const VisualizerConfigu
     }
 
     // Parse and validate the layout and instruction configuration file.
-    CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program->platform->instruction_settings);
+    CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program->platform->get_instructions());
     validateCircuitLayout(layout, configuration.visualizationType);
 
     // Calculate circuit properties.
@@ -774,6 +776,9 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
 
         Vec<Int> codewords;
         // Load the codewords of the instruction if provided.
+        // TODO JvS: cc_light has been phased out, so this code is no longer
+        //  relevant. Nevertheless, being able to view codewords with the
+        //  visualizer probably is.
         if (instruction.count("cc_light_codeword") == 1) {
             codewords.push_back(instruction["cc_light_codeword"]);
             QL_DOUT("codewords: " << codewords[0]);
@@ -1230,21 +1235,23 @@ Vec<QubitLines> generateQubitLines(const Vec<GateProperties> &gates,
 
         for (const GateProperties &gate : gatesPerQubit[qubitIndex]) {
             const EndPoints gateCycles {gate.cycle, gate.cycle + (gate.duration / circuitData.cycleDuration) - 1};
-            const Int codeword = gate.codewords[0];
-            try {
-                const GatePulses gatePulses = pulseVisualization.mapping.at(codeword).at(qubitIndex);
+            if (!gate.codewords.empty()) {
+                const Int codeword = gate.codewords[0];
+                try {
+                    const GatePulses gatePulses = pulseVisualization.mapping.at(codeword).at(qubitIndex);
 
-                if (!gatePulses.microwave.empty())
-                    microwaveLine.segments.push_back({PULSE, gateCycles, {gatePulses.microwave, pulseVisualization.sampleRateMicrowave}});
+                    if (!gatePulses.microwave.empty())
+                        microwaveLine.segments.push_back({PULSE, gateCycles, {gatePulses.microwave, pulseVisualization.sampleRateMicrowave}});
 
-                if (!gatePulses.flux.empty())
-                    fluxLine.segments.push_back({PULSE, gateCycles, {gatePulses.flux, pulseVisualization.sampleRateFlux}});
+                    if (!gatePulses.flux.empty())
+                        fluxLine.segments.push_back({PULSE, gateCycles, {gatePulses.flux, pulseVisualization.sampleRateFlux}});
 
-                if (!gatePulses.readout.empty())
-                    readoutLine.segments.push_back({PULSE, gateCycles, {gatePulses.readout, pulseVisualization.sampleRateReadout}});
-            } catch (const Exception &e) {
-                QL_WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
-                     "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex << "\n\texception: " << e.what());
+                    if (!gatePulses.readout.empty())
+                        readoutLine.segments.push_back({PULSE, gateCycles, {gatePulses.readout, pulseVisualization.sampleRateReadout}});
+                } catch (const Exception &e) {
+                    QL_WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
+                         "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex << "\n\texception: " << e.what());
+                }
             }
         }
 
