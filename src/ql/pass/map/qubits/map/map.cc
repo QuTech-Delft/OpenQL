@@ -117,6 +117,15 @@ MapQubitsPass::MapQubitsPass(
         {"base", "baserc", "minextend", "minextendrc", "maxfidelity"}
     );
 
+    options.add_int(
+        "max_alternative_routes",
+        "Controls the maximum number of alternative routing solutions to "
+        "generate before applying the heuristic and/or tie-breaking method to "
+        "choose one. Leave unspecified or set to 0 to disable this limit.",
+        "0",
+        0, utils::MAX
+    );
+
     options.add_enum(
         "tie_break_method",
         "Controls how to tie-break equally-scoring alternative mapping "
@@ -229,6 +238,14 @@ MapQubitsPass::MapQubitsPass(
         false
     );
 
+    options.add_enum(
+        "scheduler_heuristic",
+        "This controls what scheduling heuristic should be used for ordering "
+        "the list of available gates by criticality.",
+        "path_length",
+        {"path_length", "random"}
+    );
+
     options.add_bool(
         "write_dot_graphs",
         "Whether to print dot graphs of the schedules created using the "
@@ -273,6 +290,8 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     } else {
         QL_ASSERT(false);
     }
+
+    parsed_options->max_alters = options["max_alternative_routes"].as_uint();
 
     auto tie_break_method = options["tie_break_method"].as_str();
     if (tie_break_method == "first") {
@@ -345,6 +364,7 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     parsed_options->reverse_swap_if_better = options["reverse_swap_if_better"].as_bool();
     parsed_options->commute_multi_qubit = options["commute_multi_qubit"].as_bool();
     parsed_options->commute_single_qubit = options["commute_single_qubit"].as_bool();
+    parsed_options->enable_criticality = options["scheduler_heuristic"].as_str() == "path_length";
     parsed_options->write_dot_graphs = options["write_dot_graphs"].as_bool();
 
     return pmgr::pass_types::NodeType::NORMAL;

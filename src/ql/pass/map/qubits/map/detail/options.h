@@ -219,6 +219,12 @@ struct Options {
     Heuristic heuristic = Heuristic::BASE;
 
     /**
+     * Maximum number of alternative routing solutions to generate before
+     * picking one via the heuristic and tie-breaking method. 0 means no limit.
+     */
+    utils::UInt max_alters = 0;
+
+    /**
      * Controls how to tie-break equally-scoring alternative mapping solutions.
      */
     TieBreakMethod tie_break_method = TieBreakMethod::RANDOM;
@@ -289,6 +295,12 @@ struct Options {
      * Z rotations.
      */
     utils::Bool commute_single_qubit = false;
+
+    /**
+     * Whether the critical path selection logic of the embedded scheduler is
+     * enabled.
+     */
+    utils::Bool enable_criticality = true;
 
     /**
      * Whether to print dot graphs of the schedules created using the embedded

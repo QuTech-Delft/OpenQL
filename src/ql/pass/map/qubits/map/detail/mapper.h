@@ -276,21 +276,35 @@ private:
      */
     com::QubitMapping v2r_out;
 
+    struct Path {
+        utils::UInt qubit;
+        utils::RawPtr<Path> prev;
+    };
+
     /**
      * Find shortest paths between src and tgt in the grid, bounded by a
-     * particular strategy. budget is the maximum number of hops allowed in the
-     * path from src and is at least distance to tgt, but can be higher when not
-     * all hops qualify for doing a two-qubit gate or to find more than just the
-     * shortest paths. This recursively calls itself with src replaced with its
-     * neighbors (and additional bookkeeping) until src equals tgt, adding all
-     * alternatives to the alters list as it goes.
+     * particular strategy. path is a linked-list node representing the complete
+     * path from the initial src qubit to src in reverse order, not including src;
+     * it will be null for the initial call. budget is the maximum number of hops
+     * allowed in the path from src and is at least distance to tgt, but can be
+     * higher when not all hops qualify for doing a two-qubit gate or to find
+     * more than just the shortest paths. This recursively calls itself with src
+     * replaced with its neighbors (and additional bookkeeping) until src equals
+     * tgt, adding all alternatives to the alters list as it goes. For each path,
+     * the alters are further split into all feasible alternatives for the
+     * location of the non-nearest-neighbor two-qubit gate that started the
+     * routing request. If max_alters is nonzero, recursion will stop once the
+     * total number of entries in alters reaches or surpasses the limit (it may
+     * surpass due to the checks only happening before splitting).
      */
     void gen_shortest_paths(
         const ir::GateRef &gate,
+        utils::RawPtr<Path> path,
         utils::UInt src,
         utils::UInt tgt,
         utils::UInt budget,
         utils::List<Alter> &alters,
+        utils::UInt max_alters,
         PathStrategy strategy
     );
 

@@ -37,7 +37,8 @@ void Future::set_kernel(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
             kernel,
             options->output_prefix,
             options->commute_multi_qubit,
-            options->commute_single_qubit
+            options->commute_single_qubit,
+            options->enable_criticality
         );
 
         // and so also the original circuit can be output to after this

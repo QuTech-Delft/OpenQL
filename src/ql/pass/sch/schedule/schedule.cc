@@ -50,7 +50,7 @@ SchedulePass::SchedulePass(
     );
 
     options.add_enum(
-        "scheduler_heuristic",
+        "scheduler_target",
         "Which scheduling heuristic is to be used; ASAP schedules all gates as "
         "soon as possible, ALAP starts from the last gate and schedules all "
         "gates as late as possible, and uniform tries to smoothen out the "
@@ -61,6 +61,14 @@ SchedulePass::SchedulePass(
         "as much as possible to reduce state lifetime.",
         "alap",
         {"asap", "alap", "uniform"}
+    );
+
+    options.add_enum(
+        "scheduler_heuristic",
+        "This controls what scheduling heuristic should be used for ordering "
+        "the list of available gates by criticality.",
+        "path_length",
+        {"path_length", "random"}
     );
 
     options.add_bool(
@@ -101,34 +109,35 @@ utils::Int SchedulePass::run(
         kernel,
         context.output_prefix,
         options["commute_multi_qubit"].as_bool(),
-        options["commute_single_qubit"].as_bool()
+        options["commute_single_qubit"].as_bool(),
+        options["scheduler_heuristic"].as_str() == "path_length"
     );
 
     // Run the appropriate scheduling algorithm.
     if (options["resource_constraints"].as_bool()) {
         auto rm = rmgr::Manager::from_defaults(kernel->platform);
-        if (options["scheduler_heuristic"].as_str() == "asap") {
+        if (options["scheduler_target"].as_str() == "asap") {
             sched.schedule_asap(rm);
-        } else if (options["scheduler_heuristic"].as_str() == "alap") {
+        } else if (options["scheduler_target"].as_str() == "alap") {
             sched.schedule_alap(rm);
         } else {
             utils::StrStrm ss;
             ss << context.full_pass_name << " is configured to use the ";
-            ss << options["scheduler_heuristic"].as_str() << " scheduling heuristic, ";
+            ss << options["scheduler_target"].as_str() << " scheduling target, ";
             ss << "but is also configured to respect resource constraints, ";
             ss << "and this combination is not supported";
             throw utils::Exception(ss.str());
         }
     } else {
-        if (options["scheduler_heuristic"].as_str() == "asap") {
+        if (options["scheduler_target"].as_str() == "asap") {
             sched.schedule_asap();
-        } else if (options["scheduler_heuristic"].as_str() == "alap") {
+        } else if (options["scheduler_target"].as_str() == "alap") {
             sched.schedule_alap();
-        } else if (options["scheduler_heuristic"].as_str() == "uniform") {
+        } else if (options["scheduler_target"].as_str() == "uniform") {
             sched.schedule_alap_uniform();
         } else {
             utils::StrStrm ss;
-            ss << "unimplemented scheduling heuristic for " << context.full_pass_name;
+            ss << "unimplemented scheduling target for " << context.full_pass_name;
             throw utils::Exception(ss.str());
         }
     }

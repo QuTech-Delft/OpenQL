@@ -196,11 +196,11 @@ static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
     const auto &scheduler_uniform = com::options::global["scheduler_uniform"];
     if (scheduler.is_set() || scheduler_uniform.is_set()) {
         if (scheduler_uniform.as_bool()) {
-            retval.set("scheduler_heuristic") = "uniform";
+            retval.set("scheduler_target") = "uniform";
         } else if (scheduler.as_str() == "ASAP") {
-            retval.set("scheduler_heuristic") = "asap";
+            retval.set("scheduler_target") = "asap";
         } else {
-            retval.set("scheduler_heuristic") = "alap";
+            retval.set("scheduler_target") = "alap";
         }
     }
 
@@ -213,6 +213,10 @@ static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
     const auto &scheduler_commute_rotations = com::options::global["scheduler_commute_rotations"];
     if (scheduler_commute_rotations.is_set()) {
         retval.set("commute_single_qubit") = scheduler_commute_rotations.as_str();
+    }
+    const auto &scheduler_heuristic = com::options::global["scheduler_heuristic"];
+    if (scheduler_heuristic.is_set()) {
+        retval.set("scheduler_heuristic") = scheduler_heuristic.as_str();
     }
     const auto &print_dot_graphs = com::options::global["print_dot_graphs"];
     if (print_dot_graphs.is_set()) {
@@ -238,6 +242,10 @@ static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
     const auto &mapper = com::options::global["mapper"];
     if (mapper.is_set() && mapper.as_str() != "no") {
         retval.set("route_heuristic") = mapper.as_str();
+    }
+    const auto &mapmaxalters = com::options::global["mapmaxalters"];
+    if (mapmaxalters.is_set()) {
+        retval.set("max_alternative_routes") = mapmaxalters.as_str();
     }
     const auto &mapinitone2one = com::options::global["mapinitone2one"];
     if (mapinitone2one.is_set()) {

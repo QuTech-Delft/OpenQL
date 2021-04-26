@@ -177,6 +177,11 @@ private:
      */
     utils::Vec<utils::Vec<utils::UInt>> distance;
 
+    /**
+     * Generates the neighbor list for the given qubit for full connectivity.
+     */
+    void generate_neighbors_list(utils::UInt qs, Neighbors &qubits) const;
+
 public:
 
     /**
@@ -302,7 +307,7 @@ public:
     /**
      * Returns the indices of the neighboring qubits for the given qubit.
      */
-    const Neighbors &get_neighbors(Qubit qubit) const;
+    Neighbors get_neighbors(Qubit qubit) const;
 
     /**
      * Returns the number of cores.

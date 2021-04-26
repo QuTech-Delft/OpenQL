@@ -51,6 +51,25 @@ std::ostream &operator<<(std::ostream &os, GridConnectivity gc) {
 }
 
 /**
+ * Generates the neighbor list for the given qubit for full connectivity.
+ */
+void Topology::generate_neighbors_list(utils::UInt qs, Neighbors &qubits) const {
+    QL_ASSERT(connectivity == GridConnectivity::FULL);
+
+    // Generate neighbors for qubit qs for full connectivity per core.
+    for (utils::UInt qd = 0; qd < num_qubits; qd++) {
+        if (qs == qd) {
+            continue;
+        }
+        if (is_inter_core_hop(qs, qd) && (!is_comm_qubit(qs) || !is_comm_qubit(qd))) {
+            continue;
+        }
+        qubits.push_back(qd);
+    }
+
+}
+
+/**
  * Constructs the grid for the given number of qubits from the given JSON
  * object.
  *
@@ -358,17 +377,17 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
 
     } else if (connectivity == GridConnectivity::FULL) {
 
-        // Generate full connectivity.
-        for (utils::UInt qs = 0; qs < num_qubits; qs++) {
-            for (utils::UInt qd = 0; qd < num_qubits; qd++) {
-                if (qs == qd) {
-                    continue;
-                }
-                if (is_inter_core_hop(qs, qd) && (!is_comm_qubit(qs) || !is_comm_qubit(qd))) {
-                    continue;
-                }
-                neighbors.set(qs).push_back(qd);
+        // If we have full connectivity and the qubits have coordinates, we
+        // want neighbor lists for each qubit sorted based on angle. So, in this
+        // case, we should generate the neighbors list. If not, we can easily
+        // figure out neighbors on-the-fly.
+        if (has_coordinates()) {
+
+            // Pre-generate full connectivity.
+            for (utils::UInt qs = 0; qs < num_qubits; qs++) {
+                generate_neighbors_list(qs, neighbors.set(qs));
             }
+
         }
 
     }
@@ -385,16 +404,13 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
     // When qubits have coordinates, sort neighbor lists clockwise starting from
     // 12:00, to know boundary of search space.
     if (has_coordinates()) {
-        for (utils::UInt qi = 0; qi < num_qubits; qi++) {
-            auto nbsq = neighbors.find(qi);
-            if (nbsq != neighbors.end()) {
-                nbsq->second.sort(
-                    [this, qi](const utils::UInt &i, const utils::UInt &j) {
-                        return get_angle(xy_coord.at(qi), xy_coord.at(i)) <
-                               get_angle(xy_coord.at(qi), xy_coord.at(j));
-                    }
-                );
-            }
+        for (auto &it : neighbors) {
+            it.second.sort(
+                [this, it](const utils::UInt &i, const utils::UInt &j) {
+                    return get_angle(xy_coord.at(it.first), xy_coord.at(i)) <
+                           get_angle(xy_coord.at(it.first), xy_coord.at(j));
+                }
+            );
         }
     }
 
@@ -486,8 +502,14 @@ utils::UInt Topology::get_num_cores() const {
 /**
  * Returns the indices of the neighboring qubits for the given qubit.
  */
-const Topology::Neighbors &Topology::get_neighbors(Qubit qubit) const {
-    return neighbors.get(qubit);
+Topology::Neighbors Topology::get_neighbors(Qubit qubit) const {
+    if (connectivity != GridConnectivity::FULL || has_coordinates()) {
+        return neighbors.get(qubit);
+    } else {
+        Neighbors retval;
+        generate_neighbors_list(qubit, retval);
+        return retval;
+    }
 }
 
 /**
@@ -652,7 +674,7 @@ void Topology::dump(std::ostream &os, const utils::Str &line_prefix) const {
     for (utils::UInt i = 0; i < num_qubits; i++) {
         os << line_prefix << "qubit[" << i << "]=" << xy_coord.dbg(i);
         os << " has neighbors";
-        for (auto &n : neighbors.get(i)) {
+        for (auto &n : get_neighbors(i)) {
             os << " qubit[" << n << "]=" << xy_coord.dbg(i);
         }
         os << "\n";
