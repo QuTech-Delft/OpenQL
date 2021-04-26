@@ -48,6 +48,8 @@ For more advanced usage of the OpenQL compiler, the default compilation strategy
       get_passes
       print_resources
       get_resources
+      print_platform_docs
+      get_platform_docs
 
    .. rubric:: Classes
 

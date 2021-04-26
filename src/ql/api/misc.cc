@@ -146,5 +146,22 @@ std::string get_resources() {
     return ss.str();
 }
 
+/**
+ * Prints the documentation for platform configuration files.
+ */
+void print_platform_docs() {
+    ql::plat::Platform::dump_docs();
+}
+
+/**
+ * Returns the result of print_platform_docs() as a string.
+ */
+std::string get_platform_docs() {
+    std::ostringstream ss;
+    ql::plat::Platform::dump_docs(ss);
+    return ss.str();
+}
+
+
 } // namespace api
 } // namespace ql

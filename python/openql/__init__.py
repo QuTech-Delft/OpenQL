@@ -45,6 +45,8 @@ __all__ = [
     'get_passes',
     'print_resources',
     'get_resources',
+    'print_platform_docs',
+    'get_platform_docs',
     'Platform',
     'Program',
     'Kernel',

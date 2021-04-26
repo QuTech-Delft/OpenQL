@@ -41,6 +41,7 @@ While the instruction-level code is platform-specific, the quantum assembly code
 
    ref_python
    ref_cpp
+   gen/ref_configuration
    gen/ref_architectures
    gen/ref_options
    gen/ref_passes

@@ -6,6 +6,7 @@
 
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
+#include "ql/arch/architecture.h"
 
 namespace ql {
 namespace pmgr {

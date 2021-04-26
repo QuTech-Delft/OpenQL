@@ -570,7 +570,7 @@ ImageOutput generateImage(const ir::ProgramRef &program, const VisualizerConfigu
     }
 
     // Parse and validate the layout and instruction configuration file.
-    CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program->platform->instruction_settings);
+    CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program->platform->get_instructions());
     validateCircuitLayout(layout, configuration.visualizationType);
 
     // Calculate circuit properties.

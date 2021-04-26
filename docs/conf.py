@@ -139,6 +139,12 @@ with open('ref_resources.rst.template', 'r') as f:
 with open('gen/ref_resources.rst', 'w') as f:
     f.write(docs)
 
+# Configuration file reference.
+with open('ref_configuration.rst.template', 'r') as f:
+    docs = f.read().replace('{platform}', docs_to_rst_magic(ql.get_platform_docs(), 3))
+with open('gen/ref_configuration.rst', 'w') as f:
+    f.write(docs)
+
 # -- Project information -----------------------------------------------------
 
 project = 'OpenQL'

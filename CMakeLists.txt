@@ -228,7 +228,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/metrics.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/interaction_matrix.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/reservations.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/hardware_configuration.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/platform.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/topology.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/gate.cc"

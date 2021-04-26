@@ -92,5 +92,15 @@ void print_resources();
  */
 std::string get_resources();
 
+/**
+ * Prints the documentation for platform configuration files.
+ */
+void print_platform_docs();
+
+/**
+ * Returns the result of print_platform_docs() as a string.
+ */
+std::string get_platform_docs();
+
 } // namespace api
 } // namespace ql

@@ -9,12 +9,16 @@
 #include "ql/utils/opt.h"
 #include "ql/utils/json.h"
 #include "ql/utils/tree.h"
-#include "ql/plat/hardware_configuration.h"
+#include "ql/ir/gate.h"
 #include "ql/plat/topology.h"
 #include "ql/arch/declarations.h"
 
 namespace ql {
 namespace plat {
+
+using CustomGateRef = utils::One<ir::gate_types::Custom>;
+
+using InstructionMap = utils::Map<utils::Str, CustomGateRef>;
 
 /**
  * Platform configuration structure. Represents everything we know about the
@@ -25,6 +29,13 @@ namespace plat {
  *  types.
  */
 class Platform : public utils::Node {
+public:
+
+    /**
+     * Dumps the documentation for the platform configuration file structure.
+     */
+    static void dump_docs(std::ostream &os = std::cout, const utils::Str &line_prefix = "");
+
 private:
 
     /**
@@ -32,9 +43,15 @@ private:
      * auxiliary compiler configuration file.
      */
     void load(
-        const utils::Json &platform_config,
+        utils::Json &platform_config,
         const utils::Str &compiler_config = ""
     );
+
+    /**
+     * Raw instruction setting data for use by the eqasm backend, corresponding
+     * to the `"instructions"` key in the root JSON object.
+     */
+    utils::Json instruction_settings;
 
 public:
 
@@ -109,15 +126,6 @@ public:
     utils::Json compiler_settings;
 
     /**
-     * Raw instruction setting data for use by the eqasm backend, corresponding
-     * to the `"instructions"` key in the root JSON object.
-     *
-     * FIXME: this shouldn't be here. Extra data should be part of the gate
-     *  types (but there are no gate types yet, of course).
-     */
-    utils::Json instruction_settings;
-
-    /**
      * Additional hardware settings (to use by the eqasm backend), corresponding
      * to the `"hardware_settings"` key in the root JSON object.
      */
@@ -128,7 +136,13 @@ public:
      * constraints), corresponding to the `"resources"` key in the root JSON
      * object.
      *
-     * FIXME: this shouldn't be here as a raw JSON object.
+     * FIXME: this shouldn't be here as a raw JSON object. Right now the
+     *  resource manager does the parsing, but it's much better if the platform
+     *  does it, so problems are caught earlier. (People need to stop writing
+     *  broken config files just because they're not using parts of it! Either
+     *  there should be a sane default for something, which there is in this
+     *  case (namely nothing) or they need to specify a valid structure.
+     *  Period.)
      */
     utils::Json resources;
 
@@ -163,8 +177,19 @@ public:
     /**
      * Returns the JSON data for a custom gate, throwing a semi-useful
      * exception if the instruction is not found.
+     *
+     * FIXME: this shouldn't be here. Extra data should be part of the gate
+     *  types (but there are no gate types yet, of course).
      */
     const utils::Json &find_instruction(const utils::Str &iname) const;
+
+    /**
+     * Returns the JSON data for all instructions as a JSON map.
+     *
+     * FIXME: something like this is needed, but the structure should already
+     *  have been parsed rather than be in JSON form.
+     */
+    const utils::Json &get_instructions() const;
 
     /**
      * Converts the given time in nanoseconds to cycles.

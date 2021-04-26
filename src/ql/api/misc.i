@@ -203,4 +203,33 @@ str
 """
 
 
+%feature("docstring") print_platform_docs
+"""
+Prints the documentation for platform configuration files.
+
+Parameters
+----------
+None
+
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") get_platform_docs
+"""
+Returns the result of print_platform_docs() as a string.
+
+Parameters
+----------
+None
+
+Returns
+-------
+str
+    The documentation for the supported scheduler resources.
+"""
+
+
 %include "ql/api/misc.h"
