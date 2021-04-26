@@ -526,11 +526,9 @@ void Base::construct() {
 
 /**
  * Recursively constructs this pass and all its sub-passes (if it constructs
- * or previously constructed into a group). Also checks that all platform
- * preprocessing passes come before regular passes.
+ * or previously constructed into a group).
  */
 void Base::construct_recursive(
-    utils::Bool &still_preprocessing_platform,
     const utils::Str &pass_name_prefix
 ) {
 
@@ -538,34 +536,10 @@ void Base::construct_recursive(
     auto full_name = pass_name_prefix + instance_name;
     construct();
 
-    // Check platform preprocessing order.
-    if (!run_transforms_platform()) {
-        if (!is_collapsible()) {
-
-            // Not a trivial/unprocessed run() function, and run() does not
-            // modify the platform (and thus is allowed to operate on the
-            // program, making use of the platform). After such a pass, we
-            // shouldn't modify the platform anymore.
-            still_preprocessing_platform = false;
-
-        }
-    } else if (!still_preprocessing_platform) {
-
-        // Our run() function modifies the platform, but previous passes have
-        // already used it under the assumption that it's frozen. Thus, the
-        // strategy is invalid.
-        throw utils::Exception(
-            "pass \"" + full_name + "\" of type \"" + type_name + "\" modifies "
-            "the platform, but regular passes are scheduled to happen before it!"
-        );
-
-    }
-
     // If we constructed into a group, construct the sub-passes recursively.
     if (is_group()) {
         for (const auto &pass : sub_pass_order) {
             pass->construct_recursive(
-                still_preprocessing_platform,
                 full_name.empty() ? "" : (full_name + ".")
             );
         }
@@ -602,21 +576,6 @@ utils::Bool Base::is_collapsible() const {
  */
 utils::Bool Base::is_root() const {
     return instance_name.empty();
-}
-
-/**
- * Returns whether this pass transforms the platform tree.
- */
-utils::Bool Base::is_platform_transformer() const {
-    if (run_transforms_platform()) {
-        return true;
-    }
-    if (is_group()) {
-        for (const auto &pass : sub_pass_order) {
-            if (pass->run_transforms_platform()) return true;
-        }
-    }
-    return false;
 }
 
 /**

@@ -252,12 +252,6 @@ protected:
         const Context &context
     ) const = 0;
 
-    /**
-     * Whether the run_internal()/run() implementation transforms the platform
-     * tree.
-     */
-    virtual utils::Bool run_transforms_platform() const = 0;
-
 public:
 
     /**
@@ -375,13 +369,9 @@ private:
 
     /**
      * Recursively constructs this pass and all its sub-passes (if it constructs
-     * or previously constructed into a group). Also checks that all platform
-     * preprocessing passes come before regular passes.
+     * or previously constructed into a group).
      */
-    void construct_recursive(
-        utils::Bool &still_preprocessing_platform,
-        const utils::Str &pass_name_prefix = ""
-    );
+    void construct_recursive(const utils::Str &pass_name_prefix = "");
 
 public:
 
@@ -405,11 +395,6 @@ public:
      * Returns whether this is the root pass group in a pass manager.
      */
     utils::Bool is_root() const;
-
-    /**
-     * Returns whether this pass transforms the platform tree.
-     */
-    utils::Bool is_platform_transformer() const;
 
     /**
      * Returns whether this pass contains a conditionally-executed group.

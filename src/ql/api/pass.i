@@ -285,21 +285,6 @@ bool
 """
 
 
-%feature("docstring") ql::api::Pass::is_platform_transformer
-"""
-Returns whether this pass transforms the platform tree.
-
-Parameters
-----------
-None
-
-Returns
--------
-bool
-    Whether this pass transforms the platform tree.
-"""
-
-
 %feature("docstring") ql::api::Pass::is_conditional
 """
 Returns whether this pass contains a conditionally-executed group.

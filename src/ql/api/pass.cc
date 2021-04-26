@@ -173,13 +173,6 @@ bool Pass::is_root() const {
 }
 
 /**
- * Returns whether this pass transforms the platform tree.
- */
-bool Pass::is_platform_transformer() const {
-    return pass->is_platform_transformer();
-}
-
-/**
  * Returns whether this pass contains a conditionally-executed group.
  */
 bool Pass::is_conditional() const {

@@ -162,11 +162,6 @@ public:
     bool is_root() const;
 
     /**
-     * Returns whether this pass transforms the platform tree.
-     */
-    bool is_platform_transformer() const;
-
-    /**
      * Returns whether this pass contains a conditionally-executed group.
      */
     bool is_conditional() const;

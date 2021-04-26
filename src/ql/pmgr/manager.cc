@@ -736,8 +736,7 @@ void Manager::clear_passes() {
  * allows subtrees to be modified.
  */
 void Manager::construct() {
-    utils::Bool still_preprocessing_platform = true;
-    root->construct_recursive(still_preprocessing_platform);
+    root->construct_recursive();
 }
 
 /**

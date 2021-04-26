@@ -55,12 +55,6 @@ protected:
     ) const final;
 
     /**
-     * Group passes don't call run, so run_internal() method doesn't affect the
-     * platform tree, so this always returns false.
-     */
-    utils::Bool run_transforms_platform() const final;
-
-    /**
      * Overridable implementation that returns the initial pass list for this
      * pass group. The default implementation is no-op.
      */
@@ -103,49 +97,6 @@ protected:
 };
 
 /**
- * A pass type for passes that expand target-specific stuff in the platform
- * tree. Passes of this type must be placed before any other passes.
- *
- * TODO: these passes must not modify anything that the Kernel and Program APIs
- *  make use of, otherwise inconsistencies may arise.
- */
-class PlatformTransformation : public Normal {
-protected:
-
-    /**
-     * Constructs the pass. No error checking here; this is up to the parent
-     * pass group.
-     */
-    PlatformTransformation(
-        const utils::Ptr<const Factory> &pass_factory,
-        const utils::Str &instance_name,
-        const utils::Str &type_name
-    );
-
-    /**
-     * Implementation for on_compile() that calls run() appropriately.
-     */
-    utils::Int run_internal(
-        const ir::ProgramRef &program,
-        const Context &context
-    ) const final;
-
-    /**
-     * Returns true, as this is a platform transformation.
-     */
-    utils::Bool run_transforms_platform() const final;
-
-    /**
-     * The virtual implementation for this pass.
-     */
-    virtual utils::Int run(
-        const plat::PlatformRef &platform,
-        const Context &context
-    ) const = 0;
-
-};
-
-/**
  * A pass type for passes that apply a program-wide transformation. The platform
  * may not be modified.
  *
@@ -172,11 +123,6 @@ protected:
         const ir::ProgramRef &program,
         const Context &context
     ) const final;
-
-    /**
-     * Returns false, as this is not a platform transformation.
-     */
-    utils::Bool run_transforms_platform() const final;
 
     /**
      * The virtual implementation for this pass.
@@ -216,11 +162,6 @@ protected:
         const ir::ProgramRef &program,
         const Context &context
     ) const final;
-
-    /**
-     * Returns false, as this is not a platform transformation.
-     */
-    utils::Bool run_transforms_platform() const final;
 
     /**
      * Initial accumulator value for the return value. Defaults to zero.
@@ -272,11 +213,6 @@ protected:
     ) const final;
 
     /**
-     * Returns false, as this is not a platform transformation.
-     */
-    utils::Bool run_transforms_platform() const final;
-
-    /**
      * The virtual implementation for this pass. The contents of platform and
      * program must not be modified.
      */
@@ -314,11 +250,6 @@ protected:
         const ir::ProgramRef &program,
         const Context &context
     ) const final;
-
-    /**
-     * Returns false, as this is not a platform transformation.
-     */
-    utils::Bool run_transforms_platform() const final;
 
     /**
      * Initial accumulator value for the return value. Defaults to zero.
