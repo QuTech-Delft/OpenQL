@@ -10,6 +10,7 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/list.h"
 #include "ql/utils/map.h"
+#include "ql/utils/progress.h"
 #include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
 #include "ql/com/qubit_mapping.h"
@@ -248,6 +249,11 @@ private:
      * Random-number generator for the "random" tie-breaking option.
      */
     std::mt19937 rng;
+
+    /**
+     * Routing progress tracker.
+     */
+    utils::Progress routing_progress;
 
     /**
      * Number of swaps added (including moves) to the most recently mapped

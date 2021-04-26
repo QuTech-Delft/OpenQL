@@ -28,6 +28,8 @@ void Future::initialize(const plat::PlatformRef &p, const OptionsRef &opt) {
  */
 void Future::set_kernel(const ir::KernelRef &kernel, const utils::Ptr<Scheduler> &sched) {
     QL_DOUT("Future::set_kernel ...");
+    approx_gates_total = kernel->gates.size();
+    approx_gates_remaining = approx_gates_total;
     scheduler = sched;
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
         input_gatepv = kernel->gates;                           // copy to free original circuit to allow outputing to
@@ -126,6 +128,9 @@ utils::Bool Future::get_gates(utils::List<ir::GateRef> &qlg) const {
  * taken out of the avlist, and that its successors can be made available.
  */
 void Future::completed_gate(const ir::GateRef &gate) {
+    if (approx_gates_remaining) {
+        approx_gates_remaining--;
+    }
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
         input_gatepp = std::next(input_gatepp);
     } else {

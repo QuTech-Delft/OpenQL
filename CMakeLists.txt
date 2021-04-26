@@ -222,6 +222,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/json.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/vcd.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/options.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/progress.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/options.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/unitary.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/qubit_mapping.cc"

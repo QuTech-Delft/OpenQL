@@ -440,6 +440,13 @@ Bool Mapper::map_mappable_gates(
     QL_DOUT("map_mappable_gates entry");
     while (true) {
 
+        // Print progress every once in a while if we're taking long.
+        Real progress = 1.0;
+        if (future.approx_gates_total) {
+            progress -= ((Real)future.approx_gates_remaining / (Real)future.approx_gates_total);
+        }
+        routing_progress.feed(progress);
+
         // Handle non-quantum gates that need to be done first.
         if (future.get_non_quantum_gates(av_non_quantum_gates)) {
 
@@ -789,6 +796,8 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
         || options->lookahead_mode == LookaheadMode::ALL
     );
 
+    routing_progress = Progress("router", 1000);
+
     // Handle all the gates one by one. map_mappable_gates returns false when no
     // gates remain.
     while (map_mappable_gates(future, past, gates, also_nn_two_qubit_gates)) {
@@ -810,7 +819,16 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
         // (depending on configuration) to THIS past, and schedules them/it in.
         commit_alter(alter, future, past);
 
+        // Print progress every once in a while if we're taking long.
+        Real progress = 1.0;
+        if (future.approx_gates_total) {
+            progress -= ((Real)future.approx_gates_remaining / (Real)future.approx_gates_total);
+        }
+        routing_progress.feed(progress);
+
     }
+
+    routing_progress.complete();
 }
 
 /**
