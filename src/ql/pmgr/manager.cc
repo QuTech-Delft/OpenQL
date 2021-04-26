@@ -196,11 +196,11 @@ static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
     const auto &scheduler_uniform = com::options::global["scheduler_uniform"];
     if (scheduler.is_set() || scheduler_uniform.is_set()) {
         if (scheduler_uniform.as_bool()) {
-            retval.set("scheduler_heuristic") = "uniform";
+            retval.set("scheduler_target") = "uniform";
         } else if (scheduler.as_str() == "ASAP") {
-            retval.set("scheduler_heuristic") = "asap";
+            retval.set("scheduler_target") = "asap";
         } else {
-            retval.set("scheduler_heuristic") = "alap";
+            retval.set("scheduler_target") = "alap";
         }
     }
 
