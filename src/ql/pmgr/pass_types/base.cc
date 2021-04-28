@@ -1145,7 +1145,7 @@ void Base::compile(
     }
 
     // Handle configured debugging actions after running the pass.
-    handle_debugging(program, context, false);
+    handle_debugging(program, context, true);
 
 }
 
