@@ -1,9 +1,44 @@
 Configuration
 =============
 
-TODO
+Configurability is a primary design goal of OpenQL: instead of hardcoding the way in which an algorithm is compiled for a particular platform, both the platform and the strategy for compiling to it are completely configurable. As such, OpenQL has quite a complex configuration system.
 
-Platform configuration data
----------------------------
+Most of the configuration is provided to OpenQL via JSON files. OpenQL uses a superset of the JSON file format for all input files, namely one that allows ``//``-based single-line comments; therefore, a configuration file written for OpenQL is not strictly valid JSON, but OpenQL can parse any valid JSON file (as long as it complies with the expected structure).
+
+The two most important configuration file types are the *platform* and *compiler* configuration files.
+
+ - The platform configuration file includes everything OpenQL needs to know about the target platform (i.e., what the quantum chip and microarchitecture looks like), and optionally includes information about how to compile for it. This file is passed to OpenQL when you construct a ``ql.Platform``. OpenQL also has a number of default platform configuration files built into it; one for each architecture variant. Furthermore, architecture variants may include preprocessing logic for the platform configuration file, such that repetitive things for a particular platform can automatically be expanded; in this case, the description below documents the *resulting* structure, not necessarily what you would write (although the preprocessing logic should be minimal, such as only providing additional default values). See also the section on supported architectures.
+
+ - The compiler configuration file describes the steps that OpenQL should take to transform the incoming program to something that can run on the platform (or at least is no further away from being able to run on it). This is also referred to as the pass list or compilation strategy. Besides configuration via JSON, the strategy can also be configured using the Python/C++ API directly; this is particularly useful when you for example only want to insert a visualizer pass into the existing, default pass list, or when you're doing design-space exploration to determine the optimal compilation strategy for a particular algorithm.
+
+The structure of the most important configuration files of OpenQL are documented below.
+
+
+Platform configuration
+----------------------
 
 {platform}
+
+
+Compiler configuration
+----------------------
+
+TODO
+
+
+cQASM reader configuration
+--------------------------
+
+TODO
+
+
+Visualizer main configuration
+-----------------------------
+
+TODO
+
+
+Visualizer waveform configuration
+---------------------------------
+
+TODO

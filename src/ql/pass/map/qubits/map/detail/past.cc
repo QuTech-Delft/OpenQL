@@ -638,8 +638,8 @@ void Past::make_primitive(const ir::GateRef &gate, ir::GateRefs &circuit) const 
 
     if (gate->swap_params.part_of_swap) {
         QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");
-        for (const ir::GateRef &gate : circuit) {
-            gate->swap_params = gate->swap_params;
+        for (const ir::GateRef &it : circuit) {
+            it->swap_params = gate->swap_params;
         }
     }
 }

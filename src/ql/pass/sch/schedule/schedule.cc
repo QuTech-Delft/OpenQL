@@ -51,7 +51,7 @@ SchedulePass::SchedulePass(
 
     options.add_enum(
         "scheduler_target",
-        "Which scheduling heuristic is to be used; ASAP schedules all gates as "
+        "Which scheduling target is to be used; ASAP schedules all gates as "
         "soon as possible, ALAP starts from the last gate and schedules all "
         "gates as late as possible, and uniform tries to smoothen out the "
         "amount of parallelism throughout each kernel. Uniform scheduling is "
