@@ -31,7 +31,7 @@ For more advanced usage of the OpenQL compiler, the default compilation strategy
    :noindex:
 
 
-   .. rubric:: Functions
+   .. rubric:: Regular functions
 
    .. autosummary::
 
@@ -40,16 +40,6 @@ For more advanced usage of the OpenQL compiler, the default compilation strategy
       get_version
       set_option
       get_option
-      print_options
-      get_options
-      print_architectures
-      get_architectures
-      print_passes
-      get_passes
-      print_resources
-      get_resources
-      print_platform_docs
-      get_platform_docs
 
    .. rubric:: Classes
 
@@ -64,6 +54,22 @@ For more advanced usage of the OpenQL compiler, the default compilation strategy
       Compiler
       Pass
       cQasmReader
+
+   .. rubric:: Documentation retrieval functions
+
+   .. autosummary::
+
+      print_options
+      get_options
+      print_architectures
+      get_architectures
+      print_passes
+      get_passes
+      print_resources
+      get_resources
+      print_platform_docs
+      get_platform_docs
+
 
 
 .. automodule:: openql

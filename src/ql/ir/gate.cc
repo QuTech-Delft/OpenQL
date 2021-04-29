@@ -641,6 +641,8 @@ void Custom::load(const Json &instr, UInt num_qubits, UInt cycle_time) {
         d = (Int)ceil(it->get<Real>() * duration_multiplier);
     } else if (it->is_number_integer()) {
         d = it->get<Int>() * duration_multiplier;
+    } else {
+        ERROR("duration(_cycles) must be a number when specified");
     }
     if (d < 0) {
         ERROR("found negative duration (or integer overflow occurred)");

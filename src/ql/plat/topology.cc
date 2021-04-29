@@ -51,10 +51,97 @@ std::ostream &operator<<(std::ostream &os, GridConnectivity gc) {
 }
 
 /**
+ * Dumps the documentation for the topology JSON structure.
+ */
+void Topology::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
+    utils::dump_str(os, line_prefix, R"(
+    The topology JSON object must have the following structure.
+
+    ```
+    {
+        "form": <optional string, either "xy" or "irregular">,
+        "x_size": <optional integer for form="xy">,
+        "y_size": <optional integer for form="xy">,
+        "qubits": <mandatory array of objects for form="xy", unused for "irregular">,
+        "number_of_cores": <optional positive integer, default 1>,
+        "comm_qubits_per_core": <optional positive integer, num_qubits / number_of_cores>,
+        "connectivity": <optional string, either "specified" or "full">,
+        "edges": <mandatory array of objects for connectivity="specified", unused for "full">
+        ...
+    }
+    ```
+
+    The `"form"` key specifies whether the qubits can be arranged in a 2D grid
+    of integer coordinates (`"xy"`) or not (`"irregular"`). If irregular, mapper
+    heuristics that rely on sorting possible paths by angle are unavailable.
+    If `"xy"`, `"x_size"` and `"y_size"` specify the coordinate ranges (from
+    zero to the limit minus one), and `"qubits"` specifies the coordinates.
+    `"qubits"` must then be an array of objects of the following form:
+
+    ```
+    {
+        "id": <qubit index, mandatory>,
+        "x": <X coordinate, mandatory>,
+        "y": <Y coordinate, mandatory>,
+        ...
+    }
+    ```
+
+    Each qubit must be specified exactly once. Any additional keys in the
+    object are silently ignored, as other parts of OpenQL may use the
+    structure as well.
+
+    If the `"form"` key is missing, its value is derived from whether a
+    `"qubits"` list is given. If `"x_size"` or `"y_size"` are missing, the
+    values are inferred from the largest coordinate found in `"qubits"`.
+)" R"(
+    The `"number_of_cores"` key is used to specify multi-core architectures.
+    It must be a positive integer. Each core is assumed to have the same
+    number of qubits, so the total number of qubits must be divisible by this
+    number.
+
+    Cores can communicate only via communication qubits. The amount of these
+    qubits per cores may be set using the `"comm_qubits_per_core"` key. Its
+    value must range between 1 and the number of qubits per core, and
+    defaults to the latter. The first N qubits for each core are considered
+    to be communication qubits, whereas the remainder are local qubits.
+
+    The `"connectivity"` key specifies whether there are qubit connectivity
+    constraints (`"specified"`) or all qubits (within a core) are connected
+    (`"full"`). In the former case, the `"edges"` key must map to an array of
+    objects of the following form:
+
+    ```
+    {
+        "id": <optional unique identifying integer>,
+        "src": <source qubit index, mandatory>,
+        "dst": <target qubit index, mandatory>,
+        ...
+    }
+    ```
+
+    Edges are directional; to allow qubits to interact "in both ways," both
+    directions must be specified. If any identifiers are specified, all edges
+    should get one, and they should all be unique; otherwise, indices are
+    generated using src*nq+dst. Any additional keys in the object are
+    silently ignored, as other parts of OpenQL may use the structure as well
+    (although they should preferably just extend this class).
+
+    When `"connectivity"` is set to `"full"` in a multi-core environment,
+    inter-core edges are only generated when both the source and destination
+    qubit is a communication qubit.
+
+    If the `"connectivity"` key is missing, its value is derived from whether
+    an "edges" list is given.
+
+    Any additional keys in the topology root object are silently ignored, as
+    other parts of OpenQL may use the structure as well.
+    )");
+}
+
+/**
  * Constructs the grid for the given number of qubits from the given JSON
- * object.
- *
- * See header file for JSON format documentation.
+ * object. Refer to dump_docs() for details.
  */
 Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
 

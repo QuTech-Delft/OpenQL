@@ -42,6 +42,7 @@ def docs_to_rst_magic(text, header_level=1):
     # Perform conversion magic.
     output = []
     rst_block = False
+    remove = False
     blank = True
     indent = 0
     for line in text.split('\n'):
@@ -49,7 +50,12 @@ def docs_to_rst_magic(text, header_level=1):
         # Handle blank lines.
         if not line.strip():
             rst_block = False
+            remove = False
             blank = True
+            continue
+
+        # Drop lines if we're in a removed section.
+        if remove:
             continue
 
         # Strip section indentation.
@@ -75,6 +81,13 @@ def docs_to_rst_magic(text, header_level=1):
                 output.append('.. note::')
                 rst_block = True
                 line = line[6:]
+
+            # Handle removed note blocks. This is used for "X is not included
+            # in this build" notifications that are naturally the case when
+            # ReadTheDocs is building OpenQL.
+            elif line.startswith('NOTE*: '):
+                remove = True
+                continue
 
             # Handle "warning" block.
             elif line.startswith('WARNING: '):
@@ -117,31 +130,37 @@ if not os.path.exists('gen'):
 
 # Architecture list.
 with open('ref_architectures.rst.template', 'r') as f:
-    docs = f.read().replace('{architectures}', docs_to_rst_magic(ql.get_architectures(), 2))
+    docs = f.read()
+docs = docs.replace('{architectures}', docs_to_rst_magic(ql.get_architectures(), 2))
 with open('gen/ref_architectures.rst', 'w') as f:
     f.write(docs)
 
 # Global option list.
 with open('ref_options.rst.template', 'r') as f:
-    docs = f.read().replace('{options}', docs_to_rst_magic(ql.get_options(), 2))
+    docs = f.read()
+docs = docs.replace('{options}', docs_to_rst_magic(ql.get_options(), 2))
 with open('gen/ref_options.rst', 'w') as f:
     f.write(docs)
 
 # Pass list.
 with open('ref_passes.rst.template', 'r') as f:
-    docs = f.read().replace('{passes}', docs_to_rst_magic(ql.get_passes(), 2))
+    docs = f.read()
+docs = docs.replace('{passes}', docs_to_rst_magic(ql.get_passes(), 2))
 with open('gen/ref_passes.rst', 'w') as f:
     f.write(docs)
 
 # Resource list.
 with open('ref_resources.rst.template', 'r') as f:
-    docs = f.read().replace('{resources}', docs_to_rst_magic(ql.get_resources(), 2))
+    docs = f.read()
+docs = docs.replace('{resources}', docs_to_rst_magic(ql.get_resources(), 2))
 with open('gen/ref_resources.rst', 'w') as f:
     f.write(docs)
 
 # Configuration file reference.
 with open('ref_configuration.rst.template', 'r') as f:
-    docs = f.read().replace('{platform}', docs_to_rst_magic(ql.get_platform_docs(), 3))
+    docs = f.read()
+docs = docs.replace('{platform}', docs_to_rst_magic(ql.get_platform_docs(), 3))
+docs = docs.replace('{compiler}', docs_to_rst_magic(ql.get_compiler_docs(), 3))
 with open('gen/ref_configuration.rst', 'w') as f:
     f.write(docs)
 

@@ -9,6 +9,7 @@
 #include "ql/com/options.h"
 #include "ql/arch/factory.h"
 #include "ql/pmgr/factory.h"
+#include "ql/pmgr/manager.h"
 #include "ql/rmgr/factory.h"
 
 //============================================================================//
@@ -162,6 +163,21 @@ std::string get_platform_docs() {
     return ss.str();
 }
 
+/**
+ * Prints the documentation for compiler configuration files.
+ */
+void print_compiler_docs() {
+    ql::pmgr::Manager::dump_docs();
+}
+
+/**
+ * Returns the result of print_compiler_docs() as a string.
+ */
+std::string get_compiler_docs() {
+    std::ostringstream ss;
+    ql::pmgr::Manager::dump_docs(ss);
+    return ss.str();
+}
 
 } // namespace api
 } // namespace ql

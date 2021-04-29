@@ -47,6 +47,8 @@ __all__ = [
     'get_resources',
     'print_platform_docs',
     'get_platform_docs',
+    'print_compiler_docs',
+    'get_compiler_docs',
     'Platform',
     'Program',
     'Kernel',

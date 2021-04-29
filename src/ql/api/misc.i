@@ -228,7 +228,36 @@ None
 Returns
 -------
 str
-    The documentation for the supported scheduler resources.
+    The documentation for the platform configuration file.
+"""
+
+
+%feature("docstring") print_compiler_docs
+"""
+Prints the documentation for compiler configuration files.
+
+Parameters
+----------
+None
+
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") get_compiler_docs
+"""
+Returns the result of print_compiler_docs() as a string.
+
+Parameters
+----------
+None
+
+Returns
+-------
+str
+    The documentation for the compiler configuration file.
 """
 
 

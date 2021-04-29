@@ -122,7 +122,7 @@ void ReadCQasmPass::dump_docs(
 
     Because libqasm needs information about gate prototypes that does not
     currently exist in the platform configuration file, an additional
-    configuration file is needed for this, specified using the gateset_file
+    configuration file is needed for this, specified using the `gateset_file`
     option. This must be a JSON file consisting of an array of objects, where
     each object has the following form.
 

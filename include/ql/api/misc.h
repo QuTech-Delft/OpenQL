@@ -102,5 +102,15 @@ void print_platform_docs();
  */
 std::string get_platform_docs();
 
+/**
+ * Prints the documentation for compiler configuration files.
+ */
+void print_compiler_docs();
+
+/**
+ * Returns the result of print_compiler_docs() as a string.
+ */
+std::string get_compiler_docs();
+
 } // namespace api
 } // namespace ql
