@@ -3,6 +3,10 @@
 Creating your first Program
 ===========================
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 In the OpenQL framework,
 the quantum program (including kernels and gates)
 is created by API calls which are contained in a C++ or Python program.

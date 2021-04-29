@@ -1,6 +1,10 @@
 Installation
 ============
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 OpenQL is supported on Linux, Windows and OSX. OpenQL can be installed on
 these platforms as a pre-built package as well as can be compiled from
 sources.

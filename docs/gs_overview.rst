@@ -1,6 +1,10 @@
 Overview
 ========
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 OpenQL is a framework for high-level quantum programming in C++/Python.
 The framework provides a compiler for compiling and optimizing quantum code.
 

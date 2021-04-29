@@ -1,6 +1,10 @@
 DQCsim Simulation
 =================
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 This tutorial modifies the QX simulation tutorial to use `DQCsim <https://qe-lab.github.io/dqcsim/>`__. In short, DQCsim is a framework that allows simulations to be constructed by chaining plugins operating on a stream of gates and measurement results, thus making it easier to play around with error models, gather runtime statistics, and connect different quantum simulators to different algorithm file formats. In this tutorial, we will use it to simulate the toy example modelling an 8-faced die with QX and QuantumSim's error models.
 
 Note that DQCsim currently does not work on Windows. If you're using a Windows workstation, you'll need to work in a virtual machine or on a Linux server.

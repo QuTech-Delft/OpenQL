@@ -3,6 +3,10 @@
 Platform
 ========
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 OpenQL supports various target platforms.
 These platforms can be software simulators or architectures targetting hardware quantum computers.
 The following platforms are supported by OpenQL:

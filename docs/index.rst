@@ -1,6 +1,18 @@
 Welcome to OpenQL's documentation!
 ==================================
 
+.. warning::
+   A major refactoring/revision of the documentation is currently underway, to
+   synchronize with all the changes made as part of the modularization and
+   refactoring effort. Many pages are still out of date; these pages are marked
+   with a warning at the top. For up-to-date reference information about
+   OpenQL, refer to the reference and developer documentation sections: these
+   sections are largely generated from code, and are thus naturally in sync,
+   but not all (reference) information from the "basics" section has been
+   copied into it yet, and a proper "basics" section (i.e. one that doesn't
+   rely on internal knowledge of OpenQL and/or require a compiler construction
+   background) is yet to be written.
+
 OpenQL is a framework for high-level quantum programming in C++/Python.
 The framework provides a compiler for compiling and optimizing quantum code.
 The compiler produces quantum assembly and instruction-level code for various target platforms.

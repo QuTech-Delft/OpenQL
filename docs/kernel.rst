@@ -3,6 +3,10 @@
 Kernel
 ======
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 A kernel conventionally models a circuit with quantum gates ending in one or more measurements.
 In OpenQL, this has been extended with:
 

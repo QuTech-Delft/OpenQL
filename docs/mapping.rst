@@ -3,6 +3,10 @@
 Mapping
 -------
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 The circuits of all kernels are transformed
 such that after mapping for any two-qubit gate the operand qubits are connected
 (are NN, Nearest Neighbor) in the platform's topology;
