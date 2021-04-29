@@ -333,9 +333,7 @@ class Custom : public Gate {
 public:
     explicit Custom(const utils::Str &name);
     Custom(const Custom &g);
-    static bool is_qubit_id(const utils::Str &str);
-    static utils::UInt qubit_id(const utils::Str &qubit);
-    void load(nlohmann::json &instr);
+    void load(const utils::Json &instr, utils::UInt num_qubits, utils::UInt cycle_time);
     void print_info() const;
     Instruction qasm() const override;
     GateType type() const override;

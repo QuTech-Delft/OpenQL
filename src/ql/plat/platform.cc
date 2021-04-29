@@ -34,7 +34,12 @@ static utils::Str sanitize_instruction_name(utils::Str name) {
     return name;
 }
 
-static CustomGateRef load_instruction(const utils::Str &name, utils::Json &instr) {
+static CustomGateRef load_instruction(
+    const utils::Str &name,
+    utils::Json &instr,
+    utils::UInt num_qubits,
+    utils::UInt cycle_time
+) {
     auto g = CustomGateRef::make<ir::gate_types::Custom>(name);
     // skip alias fo now
     if (instr.count("alias") > 0) {
@@ -44,7 +49,7 @@ static CustomGateRef load_instruction(const utils::Str &name, utils::Json &instr
         return g;
     }
     try {
-        g->load(instr);
+        g->load(instr, num_qubits, cycle_time);
     } catch (utils::Exception &e) {
         QL_EOUT("error while loading instruction '" << name << "' : " << e.what());
         throw;
@@ -162,7 +167,8 @@ void Platform::load(
             compat_implicit_breg_count = false;
         }
         if (hardware_settings.count("cycle_time") <= 0) {
-            QL_FATAL("cycle time of the platform is not specified in the configuration file !");
+            QL_WOUT("hardware_settings.cycle_time is not specified in the configuration file; assuming 1 \"ns\" for ease of calculation");
+            cycle_time = 1;
         } else {
             cycle_time = hardware_settings["cycle_time"];
         }
@@ -177,14 +183,16 @@ void Platform::load(
 
     // load platform resources
     if (platform_config.count("resources") <= 0) {
-        QL_FATAL("'resources' section is not specified in the hardware config file");
+        QL_WOUT("'resources' section is not specified in the hardware config file; assuming that there are none");
+        resources = "{}"_json;
     } else {
         resources = platform_config["resources"];
     }
 
     // load platform topology
     if (platform_config.count("topology") <= 0) {
-        QL_FATAL("'topology' section is not specified in the hardware config file");
+        QL_WOUT("'topology' section is not specified in the hardware config file; a fully-connected topology will be generated");
+        topology.emplace(qubit_count, "{}"_json);
     } else {
         topology.emplace(qubit_count, platform_config["topology"]);
     }
@@ -194,16 +202,18 @@ void Platform::load(
     static const std::regex comma_space_pattern("\\s*,\\s*");
 
     for (auto it = instructions.begin(); it != instructions.end(); ++it) {
-        utils::Str name = it.key();
+        utils::Str instr_name = it.key();
         utils::Json attr = *it; //.value();
 
-        name = sanitize_instruction_name(name);
-        name = std::regex_replace(name, comma_space_pattern, ",");
+        instr_name = sanitize_instruction_name(instr_name);
+        instr_name = std::regex_replace(instr_name, comma_space_pattern, ",");
 
         // check for duplicate operations
-        if (instruction_map.find(name) != instruction_map.end()) {
-            QL_WOUT("instruction '" << name
-                                    << "' redefined : the old definition is overwritten !");
+        if (instruction_map.find(instr_name) != instruction_map.end()) {
+            QL_WOUT(
+                "instruction '" << instr_name << "' redefined: "
+                "the old definition will be overwritten!"
+            );
         }
 
         // format in json.instructions:
@@ -213,8 +223,8 @@ void Platform::load(
         // format of key and value (which is a custom_gate)'s name in instruction_map:
         //  "^(token|(token token(,token)*))$"
         //  so with a comma between any operands
-        instruction_map.set(name) = load_instruction(name, attr);
-        QL_DOUT("instruction '" << name << "' loaded.");
+        instruction_map.set(instr_name) = load_instruction(instr_name, attr, qubit_count, cycle_time);
+        QL_DOUT("instruction '" << instr_name << "' loaded.");
     }
 
     // load optional section gate_decomposition
@@ -244,16 +254,19 @@ void Platform::load(
 
             // check for duplicate operations
             if (instruction_map.find(comp_ins) != instruction_map.end()) {
-                QL_WOUT("composite instruction '" << comp_ins
-                                                  << "' redefined : the old definition is overwritten !");
+                QL_WOUT(
+                    "composite instruction '" << comp_ins << "' redefined: "
+                    "the old definition will be overwritten!"
+                );
             }
 
             // check that we're looking at array
             utils::Json sub_instructions = *it;
             if (!sub_instructions.is_array()) {
                 QL_FATAL(
-                    "ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"
-                        << comp_ins << "' is malformed (not an array)");
+                    "gate decomposition rule for '" << comp_ins << "' is "
+                    "malformed (not an array)"
+                );
             }
 
             ir::GateRefs gs;
