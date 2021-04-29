@@ -20,7 +20,20 @@ namespace cc_light {
  */
 void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
     utils::dump_str(os, line_prefix, R"(
-    TODO: port from docs/platform_ccl.rst
+    This architecture represents what remains of the CC-light backend from past
+    versions of OpenQL. The CC-light is being/has been phased out in our labs,
+    thus code generation was no longer necessary, and has thus been removed
+    entirely. However, most test cases and most compiler-development-related
+    activities still rely on parts of the CC-light architecture, hence the
+    architecture itself remains. It is also useful as an example for what a
+    basic architecture should look like within OpenQL's codebase.
+
+    For extensive documentation on what the architecture was and how it worked,
+    please refer to the documentation pages of older versions of OpenQL. What
+    still remains in OpenQL now is almost entirely based on configuring
+    reusable generalizations of CC-light specific code; therefore, its function
+    can largely be derived from the default configuration file and the
+    documentation that documents the relevant sections of it.
     )");
 }
 
