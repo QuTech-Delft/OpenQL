@@ -89,10 +89,11 @@ public:
 
     /**
      * Constructs a platform. name is any name the user wants to give to the
-     * platform; it is only used for report messages. platform_config_file must
-     * point to a JSON file that represents the platform. Optionally,
-     * compiler_config_file can be specified to override the compiler
-     * configuration specified by the platform (if any).
+     * platform; it is only used for report messages. platform_config must be
+     * a recognized architecture (variant) name, or must point to a JSON file
+     * that represents the platform directly. Optionally, compiler_config can be
+     * specified to override the compiler configuration specified by the
+     * platform (if any).
      */
     Platform(
         const std::string &name,
