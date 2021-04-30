@@ -71,7 +71,7 @@ public:
      * Returns documentation for all available pass types, as well as the option
      * documentation for the passes.
      */
-    std::string get_pass_types() const;
+    std::string dump_pass_types() const;
 
     /**
      * Prints the currently configured compilation strategy.
@@ -81,7 +81,7 @@ public:
     /**
      * Returns the currently configured compilation strategy as a string.
      */
-    std::string get_strategy() const;
+    std::string dump_strategy() const;
 
     /**
      * Sets a pass option. Periods are used as hierarchy separators; the last

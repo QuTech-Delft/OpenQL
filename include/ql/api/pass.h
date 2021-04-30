@@ -67,7 +67,7 @@ public:
     /**
      * Returns the documentation for this pass as a string.
      */
-    std::string get_pass_documentation() const;
+    std::string dump_pass_documentation() const;
 
     /**
      * Prints the current state of the options. If only_set is set to true, only
@@ -78,7 +78,7 @@ public:
     /**
      * Returns the string printed by print_options().
      */
-    std::string get_options(bool only_set = false) const;
+    std::string dump_options(bool only_set = false) const;
 
     /**
      * Prints the entire compilation strategy including configured options of
@@ -89,7 +89,7 @@ public:
     /**
      * Returns the string printed by print_strategy().
      */
-    std::string get_strategy() const;
+    std::string dump_strategy() const;
 
     /**
      * Sets an option. Periods may be used as hierarchy separators to set

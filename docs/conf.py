@@ -131,36 +131,36 @@ if not os.path.exists('gen'):
 # Architecture list.
 with open('ref_architectures.rst.template', 'r') as f:
     docs = f.read()
-docs = docs.replace('{architectures}', docs_to_rst_magic(ql.get_architectures(), 2))
+docs = docs.replace('{architectures}', docs_to_rst_magic(ql.dump_architectures(), 2))
 with open('gen/ref_architectures.rst', 'w') as f:
     f.write(docs)
 
 # Global option list.
 with open('ref_options.rst.template', 'r') as f:
     docs = f.read()
-docs = docs.replace('{options}', docs_to_rst_magic(ql.get_options(), 2))
+docs = docs.replace('{options}', docs_to_rst_magic(ql.dump_options(), 2))
 with open('gen/ref_options.rst', 'w') as f:
     f.write(docs)
 
 # Pass list.
 with open('ref_passes.rst.template', 'r') as f:
     docs = f.read()
-docs = docs.replace('{passes}', docs_to_rst_magic(ql.get_passes(), 2))
+docs = docs.replace('{passes}', docs_to_rst_magic(ql.dump_passes(), 2))
 with open('gen/ref_passes.rst', 'w') as f:
     f.write(docs)
 
 # Resource list.
 with open('ref_resources.rst.template', 'r') as f:
     docs = f.read()
-docs = docs.replace('{resources}', docs_to_rst_magic(ql.get_resources(), 2))
+docs = docs.replace('{resources}', docs_to_rst_magic(ql.dump_resources(), 2))
 with open('gen/ref_resources.rst', 'w') as f:
     f.write(docs)
 
 # Configuration file reference.
 with open('ref_configuration.rst.template', 'r') as f:
     docs = f.read()
-docs = docs.replace('{platform}', docs_to_rst_magic(ql.get_platform_docs(), 3))
-docs = docs.replace('{compiler}', docs_to_rst_magic(ql.get_compiler_docs(), 3))
+docs = docs.replace('{platform}', docs_to_rst_magic(ql.dump_platform_docs(), 3))
+docs = docs.replace('{compiler}', docs_to_rst_magic(ql.dump_compiler_docs(), 3))
 with open('gen/ref_configuration.rst', 'w') as f:
     f.write(docs)
 

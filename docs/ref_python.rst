@@ -62,15 +62,15 @@ For more advanced usage of the OpenQL compiler, the default compilation strategy
    .. autosummary::
 
       print_options
-      get_options
+      dump_options
       print_architectures
-      get_architectures
+      dump_architectures
       print_passes
-      get_passes
+      dump_passes
       print_resources
-      get_resources
+      dump_resources
       print_platform_docs
-      get_platform_docs
+      dump_platform_docs
 
 
 

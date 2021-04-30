@@ -140,6 +140,11 @@ public:
     /**
      * Returns the result of print_info() as a string.
      */
+    std::string dump_info() const;
+
+    /**
+     * Old alias for dump_info(). Deprecated.
+     */
     std::string get_info() const;
 
     /**

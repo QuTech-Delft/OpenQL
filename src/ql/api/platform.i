@@ -141,9 +141,24 @@ None
 """
 
 
-%feature("docstring") ql::api::Platform::get_info
+%feature("docstring") ql::api::Platform::dump_info
 """
 Returns the result of print_info() as a string.
+
+Parameters
+----------
+None
+
+Returns
+-------
+str
+    The result of print_info() as a string.
+"""
+
+
+%feature("docstring") ql::api::Platform::get_info
+"""
+Old alias for dump_info(). Deprecated.
 
 Parameters
 ----------

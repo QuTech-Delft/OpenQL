@@ -93,7 +93,7 @@ void print_options() {
 /**
  * Returns the result of print_options() as a string.
  */
-std::string get_options() {
+std::string dump_options() {
     std::ostringstream ss;
     ql::com::options::global.dump_help(ss);
     return ss.str();
@@ -109,7 +109,7 @@ void print_architectures() {
 /**
  * Returns the result of print_architectures() as a string.
  */
-std::string get_architectures() {
+std::string dump_architectures() {
     std::ostringstream ss;
     ql::arch::Factory().dump_architectures(ss);
     return ss.str();
@@ -125,7 +125,7 @@ void print_passes() {
 /**
  * Returns the result of print_passes() as a string.
  */
-std::string get_passes() {
+std::string dump_passes() {
     std::ostringstream ss;
     ql::pmgr::Factory::dump_pass_types(ql::pmgr::Factory(), ss);
     return ss.str();
@@ -141,7 +141,7 @@ void print_resources() {
 /**
  * Returns the result of print_resources() as a string.
  */
-std::string get_resources() {
+std::string dump_resources() {
     std::ostringstream ss;
     ql::rmgr::Factory().dump_resource_types(ss);
     return ss.str();
@@ -157,7 +157,7 @@ void print_platform_docs() {
 /**
  * Returns the result of print_platform_docs() as a string.
  */
-std::string get_platform_docs() {
+std::string dump_platform_docs() {
     std::ostringstream ss;
     ql::plat::Platform::dump_docs(ss);
     return ss.str();
@@ -173,7 +173,7 @@ void print_compiler_docs() {
 /**
  * Returns the result of print_compiler_docs() as a string.
  */
-std::string get_compiler_docs() {
+std::string dump_compiler_docs() {
     std::ostringstream ss;
     ql::pmgr::Manager::dump_docs(ss);
     return ss.str();

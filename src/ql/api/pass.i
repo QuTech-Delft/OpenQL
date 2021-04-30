@@ -53,7 +53,7 @@ None
 """
 
 
-%feature("docstring") ql::api::Pass::get_pass_documentation
+%feature("docstring") ql::api::Pass::dump_pass_documentation
 """
 Returns the documentation for this pass as a string.
 
@@ -83,7 +83,7 @@ None
 """
 
 
-%feature("docstring") ql::api::Pass::get_options
+%feature("docstring") ql::api::Pass::dump_options
 """
 Returns the string printed by print_options().
 
@@ -114,7 +114,7 @@ None
 """
 
 
-%feature("docstring") ql::api::Pass::get_strategy
+%feature("docstring") ql::api::Pass::dump_strategy
 """
 Returns the string printed by print_strategy().
 

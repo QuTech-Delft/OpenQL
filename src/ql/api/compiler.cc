@@ -80,7 +80,7 @@ void Compiler::print_pass_types() const {
  * Returns documentation for all available pass types, as well as the option
  * documentation for the passes.
  */
-std::string Compiler::get_pass_types() const {
+std::string Compiler::dump_pass_types() const {
     std::ostringstream ss;
     pass_manager->dump_pass_types(ss);
     return ss.str();
@@ -96,7 +96,7 @@ void Compiler::print_strategy() const {
 /**
  * Returns the currently configured compilation strategy as a string.
  */
-std::string Compiler::get_strategy() const {
+std::string Compiler::dump_strategy() const {
     std::ostringstream ss;
     pass_manager->dump_strategy(ss);
     return ss.str();

@@ -101,7 +101,7 @@ None
 """
 
 
-%feature("docstring") get_options
+%feature("docstring") dump_options
 """
 Returns the result of print_options() as a string.
 
@@ -130,7 +130,7 @@ None
 """
 
 
-%feature("docstring") get_architectures
+%feature("docstring") dump_architectures
 """
 Returns the result of print_architectures() as a string.
 
@@ -159,7 +159,7 @@ None
 """
 
 
-%feature("docstring") get_passes
+%feature("docstring") dump_passes
 """
 Returns the result of print_passes() as a string.
 
@@ -188,7 +188,7 @@ None
 """
 
 
-%feature("docstring") get_resources
+%feature("docstring") dump_resources
 """
 Returns the result of print_resources() as a string.
 
@@ -217,7 +217,7 @@ None
 """
 
 
-%feature("docstring") get_platform_docs
+%feature("docstring") dump_platform_docs
 """
 Returns the result of print_platform_docs() as a string.
 
@@ -246,7 +246,7 @@ None
 """
 
 
-%feature("docstring") get_compiler_docs
+%feature("docstring") dump_compiler_docs
 """
 Returns the result of print_compiler_docs() as a string.
 

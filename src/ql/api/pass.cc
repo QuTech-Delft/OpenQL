@@ -46,7 +46,7 @@ void Pass::print_pass_documentation() const {
 /**
  * Returns the documentation for this pass as a string.
  */
-std::string Pass::get_pass_documentation() const {
+std::string Pass::dump_pass_documentation() const {
     std::ostringstream ss;
     pass->dump_help(ss);
     return ss.str();
@@ -63,7 +63,7 @@ void Pass::print_options(bool only_set) const {
 /**
  * Returns the string printed by print_options().
  */
-std::string Pass::get_options(bool only_set) const {
+std::string Pass::dump_options(bool only_set) const {
     std::ostringstream ss;
     pass->dump_help(ss);
     return ss.str();
@@ -80,7 +80,7 @@ void Pass::print_strategy() const {
 /**
  * Returns the string printed by print_strategy().
  */
-std::string Pass::get_strategy() const {
+std::string Pass::dump_strategy() const {
     std::ostringstream ss;
     pass->dump_strategy(ss);
     return ss.str();

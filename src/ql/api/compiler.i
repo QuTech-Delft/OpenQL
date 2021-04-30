@@ -133,7 +133,7 @@ None
 """
 
 
-%feature("docstring") ql::api::Compiler::get_pass_types
+%feature("docstring") ql::api::Compiler::dump_pass_types
 """
 Returns documentation for all available pass types, as well as the option
 documentation for the passes.
@@ -163,7 +163,7 @@ None
 """
 
 
-%feature("docstring") ql::api::Compiler::get_strategy
+%feature("docstring") ql::api::Compiler::dump_strategy
 """
 Returns the currently configured compilation strategy as a string.
 

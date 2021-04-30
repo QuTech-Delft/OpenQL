@@ -124,10 +124,17 @@ void Platform::print_info() const {
 /**
  * Returns the result of print_info() as a string.
  */
-std::string Platform::get_info() const {
+std::string Platform::dump_info() const {
     std::ostringstream ss;
     platform->dump_info(ss);
     return ss.str();
+}
+
+/**
+ * Old alias for dump_info(). Deprecated.
+ */
+std::string Platform::get_info() const {
+    return dump_info();
 }
 
 /**
