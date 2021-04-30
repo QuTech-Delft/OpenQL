@@ -62,8 +62,12 @@ While the instruction-level code is platform-specific, the quantum assembly code
    :maxdepth: 1
    :caption: Developer documentation
 
-   dev_coding_conventions
-   dev_doxygen_documentation
+   dev_readme
+   dev_build
+   dev_automation
+   dev_release
+   dev_conventions
+   dev_doxygen
 
 .. toctree::
    :maxdepth: 1

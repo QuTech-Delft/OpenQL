@@ -10,8 +10,8 @@ secrets are configured correctly.
    is to be released. For example, `release-0.0.1`, but the suffix doesn't
    matter.
 
- - Change the version in `src/version.h` (this is the only place where the
-   version is hardcoded) and change any other files where applicable
+ - Change the version in `include/ql/version.h` (this is the only place where
+   the version is hardcoded) and change any other files where applicable
    (changelog, etc), then commit and make a PR for it.
 
  - CI will now run not only the test workflow, but also the assets workflow.
@@ -30,7 +30,7 @@ secrets are configured correctly.
  - If needed, also merge to `master`.
 
  - Draft a new release through the GitHub interface. Set the "tag version"
-   to the same version you put in `src/version.h`, the title to
+   to the same version you put in `include/ql/version.h`, the title to
    "Release `version`: `name`", and write a short changelog in the body.
    For releases that don't go to master, check the "prerelease" box, so it
    won't show up as the latest release.

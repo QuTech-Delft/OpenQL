@@ -1,3 +1,5 @@
+.. _dev_doxygen:
+
 Doxygen documentation
 =====================
 
