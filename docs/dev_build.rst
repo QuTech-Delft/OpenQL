@@ -72,7 +72,7 @@ first.
 
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
 
-- Install [PowerShell Community Extensions] (https://www.google.com "PowerShell Community Extensions")
+- Install PowerShell Community Extensions:
 
 ::
 
@@ -171,7 +171,7 @@ Running the following command in a terminal/Power Shell from the root of the Ope
 
 ::
 
-    pip install -v
+    pip install -v .
 
 Or in editable mode by the command:
 
