@@ -257,9 +257,10 @@ Options make_ql_options() {
     options.add_enum(
         "maplookahead",
         "When no compiler configuration file is specified, and the mapper is "
-        "enabled, this controls the lookahead option for the mapper, "
-        "controlling the strategy for selecting the next gate(s) to map. "
-        "TODO: document better.",
+        "enabled, this controls the `lookahead_mode` option for the mapper, "
+        "controlling the strategy for selecting the next gate(s) to map. Refer "
+        "to the mapper pass documentation for `lookahead_mode` for more "
+        "information.",
         "noroutingfirst",
         {"no", "1qfirst", "noroutingfirst", "all"}
     );
@@ -292,15 +293,22 @@ Options make_ql_options() {
     options.add_bool(
         "maprecNN2q",
         "When no compiler configuration file is specified, and the mapper is "
-        "enabled, this controls the recurse_on_nn_two_qubit option for the "
-        "mapper; i.e. whether to `recurse` on nearest-neighbor two-qubit gates."
+        "enabled, this controls the `recurse_on_nn_two_qubit` option for the "
+        "mapper; i.e. whether to \"recurse\" on nearest-neighbor two-qubit "
+        "gates. "
+        "NOTE: this is an advanced/unstable option; don't use it unless you "
+        "know what you're doing. May be removed or changed in a later version "
+        "of OpenQL."
     );
 
     options.add_int(
         "mapselectmaxlevel",
         "When no compiler configuration file is specified, and the mapper is "
         "enabled, this controls the maximum recursion depth while searching "
-        "for alternative mapping solutions.",
+        "for alternative mapping solutions. "
+        "NOTE: this is an advanced/unstable option; don't use it unless you "
+        "know what you're doing. May be removed or changed in a later version "
+        "of OpenQL.",
         "0",
         0, 10, {"inf"}
     );
@@ -313,7 +321,10 @@ Options make_ql_options() {
         "considered, `minplusone` means the best scoring alternatives plus "
         "one more are considered, `minplushalfmin` means 1.5x the number of "
         "best-scoring alternatives are considered, `minplusmin` means 2x, "
-        "and `all` means they are all considered.",
+        "and `all` means they are all considered. "
+        "NOTE: this is an advanced/unstable option; don't use it unless you "
+        "know what you're doing. May be removed or changed in a later version "
+        "of OpenQL.",
         "min",
         {"min", "minplusone", "minplushalfmin", "minplusmin", "all"}
     );
@@ -351,8 +362,11 @@ Options make_ql_options() {
         "mapreverseswap",
         "When no compiler configuration file is specified, and the mapper is "
         "enabled, this controls whether the mapper will reverse the operands "
-        "for a swap gate when reversal improves the schedule. This assumes that "
-        "the second operand is used earlier than the first operand.",
+        "for a swap gate when reversal improves the schedule. NOTE: this "
+        "currently assumes that the second qubit operand of the swap gate "
+        "decomposition in the platform configuration file is used before than "
+        "the first operand; if this is not the case, enabling this will worsen "
+        "the routing result rather than improve it.",
         true
     );
 

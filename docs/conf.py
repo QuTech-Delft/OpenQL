@@ -98,12 +98,12 @@ def docs_to_rst_magic(text, header_level=1):
             # A new RST block (note or warning) was opened, which means we need
             # to capitalize the first letter.
             if rst_block:
-                output.append('   ' + line[:1].upper() + line[1:])
+                output.append('   ' + m2r2.convert(line[:1].upper() + line[1:]).strip())
                 continue
 
         # Indent followup lines of RST blocks.
         if rst_block:
-            line = '   ' + line
+            line = '   ' + m2r2.convert(line).strip()
 
         # Finished converting stuff.
         output.append(line)
