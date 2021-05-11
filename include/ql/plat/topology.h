@@ -285,8 +285,8 @@ public:
      * from a node is wanted (mappathselect==borders). This can only be computed
      * when there is an underlying x/y grid (so not for form==gf_irregular).
      *
-     * TODO JvS: does this even belong in grid now that it's not part of the
-     *  mapper anymore? It feels like a very specific thing.
+     * TODO/FIXME: see
+     *  https://github.com/QE-Lab/OpenQL/pull/405#issuecomment-831247204
      */
     void sort_neighbors_by_angle(Qubit src, Neighbors &nbl) const;
 
