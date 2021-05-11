@@ -102,16 +102,16 @@ MapQubitsPass::MapQubitsPass(
     options.add_enum(
         "route_heuristic",
         "Controls which heuristic the router should use when selecting between "
-        "possible routing operations. \"base\" and \"base_rc\" are the simplest "
-        "forms: all routes are considered equally \"good\", so the tie-breaking "
-        "strategy is just applied immediately. \"minextend\" and "
-        "\"minextendrc\" are way more involved (but also take longer to compute): "
+        "possible routing operations. `base` and `base_rc` are the simplest "
+        "forms: all routes are considered equally `good`, so the tie-breaking "
+        "strategy is just applied immediately. `minextend` and "
+        "`minextendrc` are way more involved (but also take longer to compute): "
         "these options will speculate what each option will do in terms of "
         "extending the duration of the circuit, optionally recursively, to find "
         "the best alternatives in terms of circuit duration within some"
-        "lookahead window. The existence of the \"rc\" suffix specifies whether "
+        "lookahead window. The existence of the `rc` suffix specifies whether "
         "the internal scheduling for fitness determination should be done with "
-        "or without resource constraints. \"maxfidelity\" is not supported "
+        "or without resource constraints. `maxfidelity` is not supported "
         "in this build of OpenQL.",
         "base",
         {"base", "baserc", "minextend", "minextendrc", "maxfidelity"}
@@ -120,10 +120,14 @@ MapQubitsPass::MapQubitsPass(
     options.add_enum(
         "tie_break_method",
         "Controls how to tie-break equally-scoring alternative mapping "
-        "solutions. \"first\" and \"last\" choose respectively the first and "
-        "last solution in the list (TODO: does this mean anything or is this "
-        "essentially random?), \"random\" uses random number generation to "
-        "select an alternative, and \"critical\" favors the alternative that "
+        "solutions. `first` and `last` choose respectively the first and "
+        "last solution in the list (assuming the qubits have planar coordinates "
+        "specified in the topology section, `first` selects the left-most "
+        "alternative with the two-qubit gate near target, and `last` selects "
+        "the right-most alternative with the two-qubit gate near source; when "
+        "no coordinates are given the choice is undefined, though "
+        "deterministic), `random` uses random number generation to "
+        "select an alternative, and `critical` favors the alternative that "
         "maps the most critical gate as determined by the scheduler (if any).",
         "random",
         {"first", "last", "random", "critical"}
@@ -140,20 +144,20 @@ MapQubitsPass::MapQubitsPass(
     options.add_enum(
         "path_selection_mode",
         "Controls whether to consider all paths from a source to destination "
-        "qubit while routing, or to favor routing along the borders of the "
-        "chip. The latter is only supported when the qubits are given "
-        "coordinates in the topology section of the platform configuration "
-        "file.",
+        "qubit while routing, or to favor routing along the route search space. "
+        "The latter is only supported and sensible when the qubits are given "
+        "planar coordinates in the topology section of the platform "
+        "configuration file.",
         "all",
         {"all", "borders"}
     );
 
     options.add_enum(
         "swap_selection_mode",
-        "This controls how routing interacts with speculation. When \"all\", all"
+        "This controls how routing interacts with speculation. When `all`, all"
         "swaps for a particular routing option are committed immediately, before "
-        "trying anything else. When \"one\", only the first swap in the route "
-        "from source to target qubit is committed. When \"earliest\", the swap "
+        "trying anything else. When `one`, only the first swap in the route "
+        "from source to target qubit is committed. When `earliest`, the swap "
         "that can be done at the earliest point is selected, which might be "
         "the one swapping the source or target qubit.",
         "all",
@@ -195,10 +199,10 @@ MapQubitsPass::MapQubitsPass(
     options.add_int(
         "use_moves",
         "Controls if/when the mapper inserts move gates rather than swap gates "
-        "to perform routing. If \"no\", swap gates are always used. Otherwise, "
+        "to perform routing. If `no`, swap gates are always used. Otherwise, "
         "a move gate is used if the other qubit has been initialized, or if "
         "initializing it only extends the circuit by the given number of "
-        "cycles. \"yes\" implies this limit is 0 cycles.",
+        "cycles. `yes` implies this limit is 0 cycles.",
         "yes",
         0, utils::MAX, {"no", "yes"}
     );
