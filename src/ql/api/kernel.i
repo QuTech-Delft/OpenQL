@@ -78,7 +78,36 @@ The number of classical bit registers allocated for the kernel.
 
 %feature("docstring") ql::api::Kernel::get_custom_instructions
 """
-Returns a newline-separated list of all custom gates supported by the platform.
+Old alias for dump_custom_instructions(). Deprecated.
+
+Parameters
+----------
+None
+
+Returns
+-------
+str
+    A newline-separated list of all custom gates supported by the platform.
+"""
+
+
+%feature("docstring") ql::api::Kernel::print_custom_instructions
+"""
+Prints a list of all custom gates supported by the platform.
+
+Parameters
+----------
+None
+
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") ql::api::Kernel::dump_custom_instructions
+"""
+Returns the result of print_custom_instructions() as a string.
 
 Parameters
 ----------

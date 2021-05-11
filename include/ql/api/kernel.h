@@ -108,10 +108,19 @@ public:
     );
 
     /**
-     * Returns a newline-separated list of all custom gates supported by the
-     * platform.
+     * Old alias for dump_custom_instructions(). Deprecated.
      */
     std::string get_custom_instructions() const;
+
+    /**
+     * Prints a list of all custom gates supported by the platform.
+     */
+    void print_custom_instructions() const;
+
+    /**
+     * Returns the result of print_custom_instructions() as a string.
+     */
+    std::string dump_custom_instructions() const;
 
     /**
      * Sets the condition for all gates subsequently added to this kernel.
