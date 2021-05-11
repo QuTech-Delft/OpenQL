@@ -29,7 +29,7 @@ The following packages are required to compile OpenQL from sources:
    - [Optional] ``pytest`` (for testing)
    - [Optional] ``numpy`` (for testing)
    - [Optional] ``libqasm`` (for testing)
-   - [Optional] ``sphinx`` (for documentation generation)
+   - [Optional] ``sphinx==3.5.4`` (for documentation generation)
    - [Optional] ``sphinx-rtd-theme`` (for documentation generation)
    - [Optional] ``m2r2`` (for documentation generation)
 - [Optional] Doxygen (for documentation generation)
@@ -37,6 +37,12 @@ The following packages are required to compile OpenQL from sources:
 - [Optional] XDot (to visualize generated graphs in dot format)
 - [Optional] GLPK (if you want initial placement support)
 - [Optional] make (required for documentation generation; other CMake backends can be used for everything else)
+
+.. note::
+   The connection between Sphinx' and SWIG's autodoc functionalities is very iffy, but aside from tracking everything
+   manually or forking SWIG there is not much that can be done about it. Because of this, not all Sphinx versions will
+   build correctly, hence why the Sphinx version is pinned. Sphinx 4.x for example crashes on getting the function
+   signature of property getters/setters.
 
 Windows-specific instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -128,7 +134,7 @@ All dependencies can be installed using `Homebrew <https://brew.sh>`_ and pip:
 
     brew update
     brew install llvm flex bison cmake swig python3 doxygen graphviz glpk
-    pip3 install wheel plumbum pytest numpy sphinx sphinx-rtd-theme m2r2
+    pip3 install wheel plumbum pytest numpy sphinx==3.5.4 sphinx-rtd-theme m2r2
 
 Make sure the above mentioned binaries are added to the system path in front of ``/usr/bin``, otherwise CMake finds the default versions.
 
