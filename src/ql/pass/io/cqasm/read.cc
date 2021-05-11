@@ -120,11 +120,12 @@ void ReadCQasmPass::dump_docs(
     This pass completely discards the incoming program and replaces it with the
     program described by the given cQASM file.
 
-    Because libqasm needs information about gate prototypes that does not
-    currently exist in the platform configuration file, an additional
-    configuration file is needed for this, specified using the `gateset_file`
-    option. This must be a JSON file consisting of an array of objects, where
-    each object has the following form.
+    Because libqasm (the library used by this pass to parse cQASM files;
+    see http://libqasm.readthedocs.io/) needs information about gate prototypes
+    that does not currently exist in the platform configuration file, an
+    additional configuration file is needed for this, specified using the
+    `gateset_file` option. This must be a JSON file consisting of an array of
+    objects, where each object has the following form.
 
         {
             "name": "<name>",               # mandatory
