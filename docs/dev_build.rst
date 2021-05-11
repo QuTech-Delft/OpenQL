@@ -32,6 +32,7 @@ The following packages are required to compile OpenQL from sources:
    - [Optional] ``sphinx`` (for documentation generation)
    - [Optional] ``sphinx-rtd-theme`` (for documentation generation)
    - [Optional] ``m2r2`` (for documentation generation)
+- [Optional] Doxygen (for documentation generation)
 - [Optional] Graphviz Dot utility (to convert graphs from dot to pdf, png etc)
 - [Optional] XDot (to visualize generated graphs in dot format)
 - [Optional] GLPK (if you want initial placement support)
