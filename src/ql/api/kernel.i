@@ -597,7 +597,7 @@ Parameters
 q0 : int
     The qubit to measure.
 
-b0 : float
+b0 : int
     The bit register to store the result in. If not specified, the result will
     be placed in the bit register corresponding to the index of the measured
     qubit.
