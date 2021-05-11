@@ -98,7 +98,9 @@ void Topology::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
     The `"number_of_cores"` key is used to specify multi-core architectures.
     It must be a positive integer. Each core is assumed to have the same
     number of qubits, so the total number of qubits must be divisible by this
-    number.
+    number. The first N qubits belong to core 0, the next N belong to core 1,
+    etc, where N equals the total number of qubits divided by the number of
+    cores.
 
     Cores can communicate only via communication qubits. The amount of these
     qubits per cores may be set using the `"comm_qubits_per_core"` key. Its
