@@ -3,15 +3,19 @@ version 1.0
 qubits 7
 
 .aKernel
-    { prepz q[0] | prepz q[1] | prepz q[2] | prepz q[3] }
+    { prepz q[0] | prepz q[1] | prepz q[2] | prepz q[3] | ym90 q[4] }
     wait 1
     { h q[0] | h q[1] | x q[2] | x q[3] }
     wait 1
-    { ry90 q[2] | ry90 q[1] | measure q[3] }
+    { ym90 q[0] | cz q[1],q[4] | measure q[3] }
     wait 1
-    { cz q[2],q[0] | cz q[1],q[4] }
-    wait 3
-    { ry90 q[0] | ry90 q[2] | ry90 q[4] | measure q[1] }
+    cz q[2],q[0]
+    wait 1
+    { ry90 q[4] | measure q[1] }
+    wait 1
+    ry90 q[0]
+    wait 1
+    ym90 q[0]
     wait 1
     cz q[2],q[0]
     wait 3

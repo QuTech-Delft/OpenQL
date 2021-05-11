@@ -3,13 +3,11 @@ version 1.0
 qubits 7
 
 .aKernel
-    { prepz q[0] | y q[1] | z q[5] }
+    { prepz q[0] | y q[1] | z q[5] | ym90 q[3] }
     wait 1
     x q[0]
     wait 1
     rx90 q[0]
-    wait 1
-    ry90 q[0]
     wait 1
     cz q[0],q[3]
     wait 3
