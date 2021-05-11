@@ -67,19 +67,33 @@ void Manager::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
     Pass descriptions can either be strings (in which case the string is
     interpreted as a pass type alias and everything else is
     inferred/default), or an object with the following structure.
-
+    )"
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
+    R"(
     ```
     {
         "type": <optional string, default "">,
         "name": <optional string, default "">,
-        "options": <optional object, default {}>
+        "options": <optional object, default {}>,
         "group-options": <optional object, default {}>,
         "group": [
             <optional list of pass descriptions>
         ]
     }
     ```
-
+)"
+#else
+    R"(
+    ```
+    {
+        "type": <optional string, default "">,
+        "name": <optional string, default "">,
+        "options": <optional object, default {}>
+    }
+    ```
+    )"
+#endif
+    R"(
     The `"type"` key, if specified, must identify a pass type that OpenQL knows
     about. You can call `print_pass_types()` on a `ql.Compiler` object to get
     the list of available pass types (and their documentation) for your
@@ -102,7 +116,9 @@ void Manager::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
     but nothing else. Null is used to enforce usage of the OpenQL-default
     value for the option. The option names and values must be supported by
     the particular pass type.
-
+    )"
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
+    R"(
     The `"group-options"` key, if specified, works just like "pass-options" in
     the root, but affects only the sub-passes of this pass (so *not* this
     pass itself). Any option specified here will override any
@@ -115,6 +131,9 @@ void Manager::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
     configurable sub-passes depending on its type and configuration; if it
     doesn't, `"group"` must not be specified.
     )");
+#else
+    );
+#endif
 }
 
 /**
@@ -197,6 +216,7 @@ static void add_passes_from_json(
                     } else {
                         throw utils::Exception("pass options must be an object if specified");
                     }
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
                 } else if (it.key() == "group-options") {
                     if (it.value().type() == JsonType::object) {
                         for (auto opt_it = it->begin(); opt_it != it->end(); ++opt_it) {
@@ -211,6 +231,7 @@ static void add_passes_from_json(
                     } else {
                         throw utils::Exception("pass group must be an array of pass descriptions");
                     }
+#endif
                 } else {
                     throw utils::Exception("unknown key in pass description: " + it.key());
                 }
@@ -244,6 +265,7 @@ static void add_passes_from_json(
 
         }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
         // If the pass has sub-passes, construct it and add them by recursively
         // calling ourselves.
         if (sub_passes != nullptr) {
@@ -253,6 +275,7 @@ static void add_passes_from_json(
             }
             add_passes_from_json(pass, *sub_passes, sub_pass_default_options);
         }
+#endif
 
     }
 }

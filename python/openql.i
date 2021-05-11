@@ -42,6 +42,9 @@ namespace std {
     }
 }
 
+// Include preprocessor configuration.
+%include "ql/config.h"
+
 // Include API features.
 %include "ql/api/declarations.h"
 %include "ql/api/misc.i"
