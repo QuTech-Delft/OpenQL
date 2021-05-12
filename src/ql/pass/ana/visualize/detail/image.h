@@ -21,7 +21,7 @@
 
 namespace cimg_library {
 template <typename T>
-class CImg;
+struct CImg;
 };
 
 namespace ql {

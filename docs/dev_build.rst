@@ -37,6 +37,7 @@ The following packages are required to compile OpenQL from sources:
 - [Optional] XDot (to visualize generated graphs in dot format)
 - [Optional] GLPK (if you want initial placement support)
 - [Optional] make (required for documentation generation; other CMake backends can be used for everything else)
+- [Optional, MacOS only] XQuartz (only if you want to use the visualizer)
 
 .. note::
    The connection between Sphinx' and SWIG's autodoc functionalities is very iffy, but aside from tracking everything
@@ -133,7 +134,7 @@ All dependencies can be installed using `Homebrew <https://brew.sh>`_ and pip:
 ::
 
     brew update
-    brew install llvm flex bison cmake swig python3 doxygen graphviz glpk
+    brew install llvm flex bison cmake swig python3 doxygen graphviz glpk xquartz
     pip3 install wheel plumbum pytest numpy sphinx==3.5.4 sphinx-rtd-theme m2r2
 
 Make sure the above mentioned binaries are added to the system path in front of ``/usr/bin``, otherwise CMake finds the default versions.
