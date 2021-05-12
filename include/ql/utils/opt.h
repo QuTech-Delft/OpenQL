@@ -22,7 +22,8 @@ class Opt {
 private:
 
     /**
-     * The contained value, wrapped in a unique_ptr.
+     * The contained value, wrapped in a shared_ptr for simplicity. A unique_ptr
+     * would do, but its interface is a bit more annoying.
      */
     std::shared_ptr<T> v{};
 
@@ -86,7 +87,7 @@ public:
      * move constructor of the contained object type.
      */
     Opt &operator=(T &&rhs) {
-        v = std::unique_ptr<T>(new T(std::forward<T>(rhs)));
+        v = std::shared_ptr<T>(new T(std::forward<T>(rhs)));
         return *this;
     }
 
@@ -125,16 +126,16 @@ public:
     }
 
     /**
-     * Returns the raw unique_ptr.
+     * Returns the raw shared_ptr.
      */
-    const std::unique_ptr<T> &unwrap() const {
+    const std::shared_ptr<T> &unwrap() const {
         return v;
     }
 
     /**
-     * Returns the raw unique_ptr.
+     * Returns the raw shared_ptr.
      */
-    std::unique_ptr<T> &unwrap() {
+    std::shared_ptr<T> &unwrap() {
         return v;
     }
 
