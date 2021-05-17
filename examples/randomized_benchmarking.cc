@@ -22,8 +22,7 @@ typedef std::vector<int> cliffords_t;
 /**
  * build rb circuit
  */
-void build_rb(int num_cliffords, ql::quantum_kernel& k)
-{
+void build_rb(int num_cliffords, ql::Kernel &k) {
     assert((num_cliffords%2) == 0);
     int n = num_cliffords/2;
 
@@ -31,8 +30,7 @@ void build_rb(int num_cliffords, ql::quantum_kernel& k)
     cliffords_t inv_cl;
 
     // add the clifford and its reverse
-    for (int i=0; i<n; ++i)
-    {
+    for (int i=0; i<n; ++i) {
         int r = rand()%24;
         cl.push_back(r);
         inv_cl.insert(inv_cl.begin(), inv_clifford_lut_gs[r]);
@@ -41,46 +39,42 @@ void build_rb(int num_cliffords, ql::quantum_kernel& k)
 
     k.prepz(0);
     // build the circuit
-    for (int i=0; i<num_cliffords; ++i)
-        k.clifford(cl[i]);
+    for (int i=0; i<num_cliffords; ++i) {
+        k.clifford(cl[i], 0);
+    }
     k.measure(0);
-
-    return;
 }
 
-
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
     srand(0);
 
     // create platform
-    ql::quantum_platform qx_platform("qx_simulator","hardware_config_qx.json");
+    auto qx_platform = ql::Platform("qx_simulator", "none");
 
     // print info
     qx_platform.print_info();
 
     int    num_randomizations = 3;
     int    num_circuits       = 13;
-    double sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
+    std::vector<double> sweep_points = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
 
     for (int r=0; r<num_randomizations; r++)
     {
         // create program
         std::stringstream prog_name;
         prog_name << "rb_" << r;
-        ql::quantum_program rb(prog_name.str(), qx_platform, 1);
-        rb.set_sweep_points(sweep_points, num_circuits);
+        auto rb = ql::Program(prog_name.str(), qx_platform, 1);
+        rb.set_sweep_points(sweep_points);
         rb.set_config_file("rb_config.json");
 
-        for (int j=0; j<num_circuits-4; j++)
-        {
+        for (int j=0; j<num_circuits-4; j++) {
             int c_size = sweep_points[j];
             // create subcircuit
             std::stringstream name;
             name << "rb" << c_size;
-            ql::quantum_kernel kernel(name.str(),qx_platform, 1);
+            auto kernel = ql::Kernel(name.str(),qx_platform, 1);
             build_rb(c_size, kernel);
-            rb.add(kernel);
+            rb.add_kernel(kernel);
         }
 
         // compile the program

@@ -1,0 +1,225 @@
+{
+    "eqasm_compiler": "cc_light",
+
+    "hardware_settings": {
+        "qubit_number": 7,
+        "cycle_time": 20
+    },
+
+    "topology": {
+        "form": "xy",
+        "qubits": [
+            { "id": 0, "x": 1, "y": 2 },
+            { "id": 1, "x": 3, "y": 2 },
+            { "id": 2, "x": 0, "y": 1 },
+            { "id": 3, "x": 2, "y": 1 },
+            { "id": 4, "x": 4, "y": 1 },
+            { "id": 5, "x": 1, "y": 0 },
+            { "id": 6, "x": 3, "y": 0 }
+        ],
+        "edges": [
+            { "id": 0, "src": 2, "dst": 0 },
+            { "id": 1, "src": 0, "dst": 3 },
+            { "id": 2, "src": 3, "dst": 1 },
+            { "id": 3, "src": 1, "dst": 4 },
+            { "id": 4, "src": 2, "dst": 5 },
+            { "id": 5, "src": 5, "dst": 3 },
+            { "id": 6, "src": 3, "dst": 6 },
+            { "id": 7, "src": 6, "dst": 4 },
+            { "id": 8, "src": 0, "dst": 2 },
+            { "id": 9, "src": 3, "dst": 0 },
+            { "id": 10, "src": 1, "dst": 3 },
+            { "id": 11, "src": 4, "dst": 1 },
+            { "id": 12, "src": 5, "dst": 2 },
+            { "id": 13, "src": 3, "dst": 5 },
+            { "id": 14, "src": 6, "dst": 3 },
+            { "id": 15, "src": 4, "dst": 6 }
+        ]
+    },
+
+    "resources": {
+        "qubits": {},
+        "qwgs": {
+            "connection_map": {
+                "0": [0, 1],
+                "1": [2, 3, 4],
+                "2": [5, 6]
+            }
+        },
+        "meas_units": {
+            "connection_map": {
+                "0": [0, 2, 3, 5, 6],
+                "1": [1, 4]
+            }
+        },
+        "edges": {
+            "connection_map": {
+                "0": [2, 10],
+                "1": [3, 11],
+                "2": [0, 8],
+                "3": [1, 9],
+                "4": [6, 14],
+                "5": [7, 15],
+                "6": [4, 12],
+                "7": [5, 13],
+                "8": [2, 10],
+                "9": [3, 11],
+                "10": [0, 8],
+                "11": [1, 9],
+                "12": [6, 14],
+                "13": [7, 15],
+                "14": [4, 12],
+                "15": [5, 13]
+            }
+        },
+        "detuned_qubits": {
+            "connection_map": {
+                "0": [3],
+                "1": [2],
+                "2": [4],
+                "3": [3],
+                "4": [],
+                "5": [6],
+                "6": [5],
+                "7": [],
+                "8": [3],
+                "9": [2],
+                "10": [4],
+                "11": [3],
+                "12": [],
+                "13": [6],
+                "14": [5],
+                "15": []
+            }
+        }
+    },
+
+    "instructions": {
+        "prepx": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "prepx"
+        },
+        "prepz": {
+            "duration": 40,
+            "type": "none",
+            "cc_light_instr": "prepz"
+        },
+        "cprepz": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "cprepz"
+        },
+        "measz": {
+            "duration": 40,
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measure": {
+            "duration": 40,
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "i": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "i"
+        },
+        "x": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "x"
+        },
+        "y": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "y"
+        },
+        "z": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "z"
+        },
+        "h": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "h"
+        },
+        "s": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "s"
+        },
+        "sdag": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "sdag"
+        },
+        "rx90": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "x90"
+        },
+        "xm90": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "xm90"
+        },
+        "ry90": {
+            "duration": 40,
+            "qubits": ["q0"],
+            "type": "mw",
+            "cc_light_instr": "y90"
+        },
+        "ym90": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "ym90"
+        },
+        "t": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "t"
+        },
+        "tdag": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "tdag"
+        },
+        "x45": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "x45"
+        },
+        "xm45": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "xm45"
+        },
+        "ry180": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "ry180"
+        },
+        "cnot": {
+            "duration": 80,
+            "type": "flux",
+            "cc_light_instr": "cnot"
+        },
+        "sqf": {
+            "duration": 80,
+            "type": "flux",
+            "cc_light_instr": "sqf"
+        },
+        "cz": {
+            "duration": 80,
+            "type": "flux",
+            "cc_light_instr": "cz"
+        }
+    },
+
+    "gate_decomposition": {
+        "rx180 %0" : ["x %0"],
+        "cnot %0,%1" : ["ym90 %1","cz %0,%1","ry90 %1"]
+    }
+}

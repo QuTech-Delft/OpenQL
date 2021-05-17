@@ -28,17 +28,6 @@ ql.set_option('unique_output', 'yes')
 ql.set_option('write_qasm_files', 'no')
 ql.set_option('write_report_files', 'no')
 
-c = ql.Compiler("testCompiler")
-c.add_pass("BackendCompiler")
-c.add_pass("Visualizer")
-
-c.set_pass_option("ALL", "skip", "no")
-c.set_pass_option("ALL", "write_qasm_files", "no")
-c.set_pass_option("ALL", "write_report_files", "no")
-c.set_pass_option("Visualizer", "visualizer_type", "MAPPING_GRAPH")
-c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config_example1.json"))
-c.set_pass_option("Visualizer", "visualizer_waveform_mapping_path", os.path.join(curdir, "waveform_mapping.json"))
-
 platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'test_s7.json'))
 nqubits = 7
 p = ql.Program("testProgram1", platformCustomGates, nqubits, 0)
@@ -51,4 +40,25 @@ k.gate("x", [2])
 k.gate("y", [3])
 
 p.add_kernel(k)
-c.compile(p)
+
+p.get_compiler().insert_pass_before(
+    'mapper',
+    'ana.visualize.Mapping',
+    'before_mapping', {
+        'config': os.path.join(curdir, "visualizer_config_example1.json"),
+        'output_prefix': output_dir + '/%N_before',
+        'interactive': 'yes'
+    }
+)
+
+p.get_compiler().insert_pass_after(
+    'mapper',
+    'ana.visualize.Mapping',
+    'after_mapping', {
+        'config': os.path.join(curdir, "visualizer_config_example1.json"),
+        'output_prefix': output_dir + '/%N_after',
+        'interactive': 'yes'
+    }
+)
+
+p.compile()

@@ -130,25 +130,5 @@ class Test_controlled_kernel(unittest.TestCase):
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue(file_compare(qasm_fn, gold_fn))
 
-    def test_decompose_toffoli(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform  = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
-
-        p = ql.Program('test_decompose_toffoli', platform, num_qubits)
-        k = ql.Kernel('kernel1', platform, num_qubits)
-
-        k.hadamard(2)
-        k.toffoli(0, 1, 2)
-        k.hadamard(2)
-
-        p.add_kernel(k)
-        ql.set_option('decompose_toffoli', 'NC')
-        p.compile()
-
-        gold_fn = curdir + '/golden/' + p.name +'_scheduled.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        self.assertTrue(file_compare(qasm_fn, gold_fn))
-
 if __name__ == '__main__':
     unittest.main()

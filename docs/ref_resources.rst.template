@@ -1,0 +1,86 @@
+.. _ref_resources:
+
+Supported resources
+===================
+
+This section lists the scheduler resource types currently supported by OpenQL.
+
+Roughly speaking, resources control whether two (or more) quantum gates may
+execute in parallel, and under what conditions. The most obvious one is that
+two quantum gates operating on the same qubit physically cannot be executed at
+the same time, but quantum chips typically have more subtle constraints as
+well. For example, execution of an X gate on one qubit may require generation
+of a particular waveform by a waveform generator shared between a number of
+qubits; in this case, it might be possible to do an X gate on another qubit
+in parallel, but not a Y gate.
+
+Resources are of course used by the (resource-constrained) scheduler, but other
+passes may also make use of them. For example, the mapper uses them in its
+heuristic routing algorithm to try to overlap swaps with the rest of the
+circuit as much as possible, in such a way that resource constraints are not
+violated.
+
+Resource specification
+----------------------
+
+Resources are specified using the ``"resources"`` section of the platform
+configuration file. Two flavors are supported for its contents: one for
+compatibility with older platform configuration files, and one extended
+structure. The extended structure has the following syntax.
+
+.. code::
+
+   "resources": {
+       "architecture": <optional string, default "">,
+       "dnu": <optional list of strings, default []>,
+       "resources": {
+           "<name>": {
+               "type": "<type>",
+               "config": {
+                   <optional configuration>
+               }
+           }
+           ...
+       }
+   }
+
+The optional ``"architecture"`` key may be used to make shorthands for
+architecture- specific resources, normally prefixed with
+``"arch.<architecture>."``. If it's not specified or an empty string,
+the architecture is derived from the ``"eqasm_compiler"`` key.
+
+The optional ``"dnu"`` key may be used to specify a list of do-not-use
+resource types (experimental, deprecated, or any other resource that's
+considered unfit for "production" use) that you explicitly want to use,
+including the "dnu" namespace they are defined in. Once specified, you'll
+be able to use the resource type without the ``"dnu"`` namespace element.
+For example, if you would include ``"dnu.whatever"`` in the list, the
+resource type ``"whatever"`` may be used to add the resource.
+
+The ``"resources"`` subkey specifies the actual resource list. This
+consists of a map from unique resource names matching ``[a-zA-Z0-9_\-]+``
+to a resource configuration. The configuration object must have a
+``"type"`` key, which must identify a resource type that OpenQL knows
+about; the type names are listed in the sections below. The ``"config"``
+key is optional, and is used to pass type-specific configuration data to
+the resource. If not specified, an empty JSON object will be passed to
+the resource instead.
+
+If the ``"resources"`` **sub**\ key is not present, the old structure is
+used instead. This has the following, simpler form:
+
+.. code::
+
+   "resources": {
+       "<type>": {
+           <configuration>
+       },
+       ...
+   }
+
+
+This is limited to one resource per type alias. The names for the resources
+are inferred, and the architecture namespace is in this case always based
+upon the contents of the ``"eqasm_compiler"`` key.
+
+{resources}

@@ -22,59 +22,54 @@ typedef std::vector<int> cliffords_t;
 /**
  * build rb circuit
  */
-void build_rb(int num_cliffords, ql::quantum_kernel& k)
-{
-   assert((num_cliffords%2) == 0);
-   int n = num_cliffords/2;
+void build_rb(int num_cliffords, ql::Kernel &k) {
+    assert((num_cliffords%2) == 0);
+    int n = num_cliffords/2;
 
-   cliffords_t cl;
-   cliffords_t inv_cl;
+    cliffords_t cl;
+    cliffords_t inv_cl;
 
-   // add the clifford and its reverse
-   for (int i=0; i<n; ++i)
-   {
-      int r = rand()%24;
-      cl.push_back(r);
-      inv_cl.insert(inv_cl.begin(), inv_clifford_lut_gs[r]);
-   }
-   cl.insert(cl.begin(),inv_cl.begin(),inv_cl.end());
+    // add the clifford and its reverse
+    for (int i=0; i<n; ++i) {
+        int r = rand()%24;
+        cl.push_back(r);
+        inv_cl.insert(inv_cl.begin(), inv_clifford_lut_gs[r]);
+    }
+    cl.insert(cl.begin(),inv_cl.begin(),inv_cl.end());
 
-   k.prepz(0);
-   // build the circuit
-   for (int i=0; i<num_cliffords; ++i)
-      k.clifford(cl[i]);
-   k.measure(0);
-
-   return;
+    k.prepz(0);
+    // build the circuit
+    for (int i=0; i<num_cliffords; ++i) {
+        k.clifford(cl[i], 0);
+    }
+    k.measure(0);
 }
 
 
-int main(int argc, char ** argv)
-{
-   srand(0);
+int main(int argc, char **argv) {
+    srand(0);
 
-   int    num_circuits       = 4;
-   double sweep_points[]   = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
+    std::vector<double> sweep_points = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
 
-   // create platform
-   ql::quantum_platform qx_platform("qx_simulator","hardware_config_qx.json");
+    // create platform
+    auto qx_platform = ql::Platform("qx_simulator", "none");
 
-   // print info
-   qx_platform.print_info();
+    // print info
+    qx_platform.get_info();
 
-   ql::quantum_program rb("rb", qx_platform, 1);
+    auto rb = ql::Program("rb", qx_platform, 1);
 
-   rb.set_sweep_points(sweep_points, num_circuits);
+    rb.set_sweep_points(sweep_points);
 
-   ql::quantum_kernel kernel("rb1024", qx_platform, 1);
+    auto kernel = ql::Kernel("rb1024", qx_platform, 1);
 
-   build_rb(1024, kernel);
+    build_rb(1024, kernel);
 
-   rb.add(kernel);
-   rb.compile();
+    rb.add_kernel(kernel);
+    rb.compile();
 
-   // std::cout<< rb.qasm() << std::endl;
-   // std::cout << rb.qasm() << std::endl;
+    // std::cout<< rb.qasm() << std::endl;
+    // std::cout << rb.qasm() << std::endl;
 
-   return 0;
+    return 0;
 }

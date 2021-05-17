@@ -1,0 +1,51 @@
+Installation
+============
+
+OpenQL is available from PyPI as a pre-built package for Windows, MacOS, and
+Linux for all active Python 3.x versions. Once you have Python and have access
+to a command line you can get it as follows:
+
+::
+
+    pip install qutechopenql
+
+after which you should be able to run
+
+::
+
+    python -c 'import openql; print(openql.get_version())'
+
+to see if it works.
+
+.. note::
+   Depending on your OS and Python configuration, you may need to use
+   ``python3`` instead of just ``python`` to disambiguate with a Python 2.7
+   installation, and/or use ``pip3`` or ``python -m pip`` instead of just
+   ``pip``. You may also need to add ``--user`` at the end of the ``pip``
+   command to avoid permission problems. If you're unsure of what all of the
+   above means, first read up on how Python and pip work on your operating
+   system in the relevant Python (or Linux distribution) documentation;
+   installation of Python packages is rather fundamental to Python and out of
+   scope for this manual.
+
+.. warning::
+   The documentation you're reading now is generated for version **{version}**.
+   If there is a mismatch, be aware that there may be an API mismatch as well!
+   The reference information can, however, be queried from within Python using
+   the ``help()`` builtin and (from 0.8.1.dev6 onwards) using the various
+   ``dump_*()`` functions.
+
+If you're on MacOS and want to use the visualizer, you'll need XQuartz in
+addition. You can install this using `Brew <https://formulae.brew.sh/cask/xquartz>`_.
+
+Some of OpenQL's components are optional when OpenQL itself is compiled. In
+general, the pre-built package includes everything, *except* for initial
+placement due to a license conflict. If you need initial placement, you'll
+need to :ref:`compile manually<dev_build>`.
+
+OpenQL used to support Conda in addition to PyPI/pip for Python package
+management, but ultimately this was disabled due to excessive time spent on
+dependency resolution. Nevertheless, the Conda recipe is still available, so
+it may or may not work, but for this you'll also have to
+:ref:`compile manually<dev_build>`, as the prebuilt Conda packages are likely
+out of date.

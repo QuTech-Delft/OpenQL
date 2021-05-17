@@ -40,7 +40,7 @@ class Test_skip(unittest.TestCase):
         # parameters
         ql.set_option('issue_skip_319', 'yes')
         v = 'yes'
-        config = os.path.join(curdir, "test_mapper_s7.json")
+        config = "cc_light.s7"
         num_qubits = 7
 
         # create and set platform

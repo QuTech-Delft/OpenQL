@@ -1,29 +1,28 @@
 #include <iostream>
-#include <openql_i.h>
+#include <openql>
 
-int main(int argc, char ** argv)
-{
-  // create platform
-  ql::quantum_platform platf("seven_qubits_chip", "hardware_config_cc_light.json");
+int main(int argc, char **argv) {
+    // create platform
+    auto platf = ql::Platform("seven_qubits_chip", "cc_light");
 
-  // create program
-  ql::quantum_program prog("aProgram", platf, 2);
+    // create program
+    auto prog = ql::Program("aProgram", platf, 2);
 
-  // create kernel
-  ql::quantum_kernel k("aKernel", platf, 2);
+    // create kernel
+    auto k = ql::Kernel("aKernel", platf, 2);
 
-  k.gate("prepz", 0);
-  k.gate("prepz", 1);
-  k.gate("x", 0);
-  k.gate("y", 1);
-  k.measure(0);
-  k.measure(1);
+    k.gate("prepz", 0);
+    k.gate("prepz", 1);
+    k.gate("x", 0);
+    k.gate("y", 1);
+    k.measure(0);
+    k.measure(1);
 
-  // add kernel to program
-  prog.add(k);
+    // add kernel to program
+    prog.add_kernel(k);
 
-  // compile the program
-  prog.compile();
+    // compile the program
+    prog.compile();
 
-  return 0;
+    return 0;
 }

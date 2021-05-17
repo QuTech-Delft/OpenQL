@@ -3,6 +3,10 @@
 Compiler
 =========
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 To compile a program, the user needs to configure a compiler first. Until version 0.8, this program compilation was done using a monolithic hard-coded sequence of compiler passes inside the program itself when ``program.compile()`` function was called. This is the legacy operation mode, which is currently described in the :ref:`Program` documentation page. However, starting with version 0.8.0.dev1, the programer has the ability to configure its own pass sequence using the :ref:`Compiler API <compiler_api>`. 
 
 There are two options on how to configure a compiler. The first and the most straightforward is to define a compiler object giving it as the second parameter the name of a json configuration, similar of how the :ref:`Platform` is defined. The following code line shows an example of a such initialization:

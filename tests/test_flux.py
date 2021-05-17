@@ -41,13 +41,12 @@ class Test_mapper(unittest.TestCase):
 
     def test_flux_all(self):
         v = 'all'
-        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
         prog_name = "test_flux_" + v
         kernel_name = "kernel_" + v
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", "cc_light.s7")
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
 

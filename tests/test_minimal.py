@@ -3,8 +3,7 @@ import unittest
 from openql import openql as ql
 
 curdir = os.path.dirname(os.path.realpath(__file__))
-config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-platf = ql.Platform("starmon", config_fn)
+platf = ql.Platform("starmon", "cc_light")
 
 output_dir = os.path.join(curdir, 'test_output')
 
@@ -16,7 +15,7 @@ class Test_kernel(unittest.TestCase):
         ql.initialize()
         ql.set_option('output_dir', output_dir)
 
-    def minimal(self):
+    def test_minimal(self):
         nqubits = 1
 
         # create a kernel
@@ -31,7 +30,7 @@ class Test_kernel(unittest.TestCase):
 
         # create a program
         p = ql.Program("minimal", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         # add kernel to program
         p.add_kernel(k)

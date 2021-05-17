@@ -88,3 +88,5 @@ Note: please fill your contributions in this file
 - [Jeroen van Straten](https://github.com/jvanstraten)
     -   tutorial on DQCsim + OpenQL interoperation
     -   doxygen documentation
+    -   improved pass management
+    -   extensive cleanup; basically a rewrite of everything at this point

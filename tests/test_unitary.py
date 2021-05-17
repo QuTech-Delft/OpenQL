@@ -71,21 +71,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-	
-    def test_unitary_undecomposed(self):
-        num_qubits = 3
-        p = ql.Program('test_unitary_pass', platform, num_qubits)
-        k = ql.Kernel('akernel', platform, num_qubits)
-
-        u = ql.Unitary('u1', [  complex(1.0, 0.0), complex(0.0, 0.0),
-                                complex(0.0, 0.0), complex(0.0, 1.0)])
-        k.gate("s", [0])
-
-        # adding un-decomposed u to kernel should raise error
-        with self.assertRaises(Exception) as cm:
-            k.gate(u, [2])
-
-        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unitary \'u1\' not decomposed. Cannot be added to kernel!')
 
     def test_unitary_wrongnumberofqubits(self):
         num_qubits = 3
@@ -101,22 +86,22 @@ class Test_conjugated_kernel(unittest.TestCase):
             k.gate(u, [1,2])
 
         self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 2 and not 1')
-    
-    def test_unitary_wrongnumberofqubits_toofew(self):
-        num_qubits = 3
-        p = ql.Program('test_unitary_pass', platform, num_qubits)
-        k = ql.Kernel('akernel', platform, num_qubits)
 
-
-        u = ql.Unitary('u1', [-0.43874989-0.10659111j, -0.47325212+0.12917344j, -0.58227163+0.20750072j, -0.29075334+0.29807585j,  
-                    0.30168601-0.22307459j,  0.32626   +0.4534935j , -0.20523265-0.42403593j, -0.01012565+0.5701683j , 
-                    -0.40954341-0.49946371j,  0.28560698-0.06740801j,  0.52146754+0.1833513j , -0.37248653+0.22891636j,  
-                    0.03113162-0.48703302j, -0.57180014+0.18486244j,  0.2943625 -0.06148912j,  0.55533888+0.04322811j])
-        # adding un-decomposed u to kernel should raise error
-        with self.assertRaises(Exception) as cm:
-            k.gate(u, [0])
-
-        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 1 and not 2')
+#    def test_unitary_wrongnumberofqubits_toofew(self):
+#        num_qubits = 3
+#        p = ql.Program('test_unitary_pass', platform, num_qubits)
+#        k = ql.Kernel('akernel', platform, num_qubits)
+#
+#
+#        u = ql.Unitary('u1', [-0.43874989-0.10659111j, -0.47325212+0.12917344j, -0.58227163+0.20750072j, -0.29075334+0.29807585j,  
+#                    0.30168601-0.22307459j,  0.32626   +0.4534935j , -0.20523265-0.42403593j, -0.01012565+0.5701683j , 
+#                    -0.40954341-0.49946371j,  0.28560698-0.06740801j,  0.52146754+0.1833513j , -0.37248653+0.22891636j,  
+#                    0.03113162-0.48703302j, -0.57180014+0.18486244j,  0.2943625 -0.06148912j,  0.55533888+0.04322811j])
+#        # adding un-decomposed u to kernel should raise error
+#        with self.assertRaises(Exception) as cm:
+#            k.gate(u, [0])
+#
+#        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 1 and not 2')
 
     @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_I(self):

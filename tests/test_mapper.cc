@@ -1,21 +1,25 @@
-#include <openql_i.h>
+#include <openql>
 
-void
-test_dpt(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_dpt(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 5;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::options::set("clifford_prescheduler", "yes");
-    ql::options::set("clifford_postscheduler", "yes");
+    ql::set_option("clifford_prescheduler", "yes");
+    ql::set_option("clifford_postscheduler", "yes");
 
-    ql::quantum_platform starmon("starmon5", "test_mapper_s5.json");
+    auto starmon = ql::Platform("starmon5", "cc_light.s7");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     k.gate("prepz", 0);
     k.gate("prepz", 1);
@@ -35,23 +39,23 @@ test_dpt(std::string v, std::string param1, std::string param2, std::string para
 
 // Rz(pi t) decomposes to Ry(pi/2) Rx(- pi t) Ry(-pi/2)
     k.gate("y90", 0);
-    k.gate("rz", {0}, {}, 20, -1.74533);
+    k.gate("rz", {0}, 20, -1.74533);
     k.gate("ym90", 0);
 
     k.gate("y90", 1);
-    k.gate("rz", {1}, {}, 20, -1.74533);
+    k.gate("rz", {1}, 20, -1.74533);
     k.gate("ym90", 1);
 
     k.gate("y90", 2);
-    k.gate("rz", {2}, {}, 20, -1.74533);
+    k.gate("rz", {2}, 20, -1.74533);
     k.gate("ym90", 2);
 
     k.gate("y90", 3);
-    k.gate("rz", {3}, {}, 20, -1.74533);
+    k.gate("rz", {3}, 20, -1.74533);
     k.gate("ym90", 3);
 
     k.gate("y90", 4);
-    k.gate("rz", {4}, {}, 20, -1.74533);
+    k.gate("rz", {4}, 20, -1.74533);
     k.gate("ym90", 4);
 
     k.gate("cnot", 4,2);
@@ -69,32 +73,36 @@ test_dpt(std::string v, std::string param1, std::string param2, std::string para
     k.gate("measure", 3);
     k.gate("measure", 4);
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog.compile( );
+    prog.compile();
 
-    ql::options::set("clifford_prescheduler", "no");
-    ql::options::set("clifford_postscheduler", "no");
+    ql::set_option("clifford_prescheduler", "no");
+    ql::set_option("clifford_postscheduler", "no");
 }
 
-void
-test_lee(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_lee(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     k.gate("x", 0);
     k.gate("x", 1);
@@ -103,51 +111,55 @@ test_lee(std::string v, std::string param1, std::string param2, std::string para
     k.gate("h", 4);
     k.gate("h", 0);
     k.gate("h", 1);
-    k.gate("ry", {4}, {}, 20, -3.0);
+    k.gate("ry", {4}, 20, -3.0);
     k.gate("cnot", 0,2);
     k.gate("cnot", 1,3);
     k.gate("cnot", 0,1);
     k.gate("cnot", 2,3);
-    k.gate("rz", {1}, {}, 20, -0.2);
-    k.gate("rz", {3}, {}, 20, -0.2);
+    k.gate("rz", {1}, 20, -0.2);
+    k.gate("rz", {3}, 20, -0.2);
     k.gate("cnot", 0,1);
     k.gate("cnot", 2,3);
     k.gate("cnot", 0,2);
     k.gate("cnot", 1,3);
-    k.gate("rx", {0}, {}, 20, 0.3);
-    k.gate("rx", {1}, {}, 20, 0.3);
+    k.gate("rx", {0}, 20, 0.3);
+    k.gate("rx", {1}, 20, 0.3);
     k.gate("cnot", 0,2);
     k.gate("cnot", 1,3);
-    k.gate("ry", {2}, {}, 20, 1.5);
-    k.gate("ry", {3}, {}, 20, 1.5);
+    k.gate("ry", {2}, 20, 1.5);
+    k.gate("ry", {3}, 20, 1.5);
     k.gate("cz", 2,4);
     k.gate("cz", 3,4);
     k.gate("h", 4);
     k.gate("measure", 4);
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
-    prog.compile( );
+    prog.compile();
 }
 
-void
-test_recursion(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_recursion(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
@@ -155,31 +167,33 @@ test_recursion(std::string v, std::string param1, std::string param2, std::strin
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
 
 // simple program to test (post179) dot printing by the scheduler
 // excludes mapper
-void
-test_dot(std::string v, std::string param1, std::string param2)
-{
+void test_dot(
+    std::string v,
+    std::string param1,
+    std::string param2
+) {
     int n = 4;
     std::string prog_name = "test_" + v + "_scheduler_post179=" + param1 + "_scheduler=" + param2;
     std::string kernel_name = "test_" + v + "_scheduler_post179=" + param1 + "_scheduler=" + param2;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     k.gate("x", 0);
     k.gate("x", 3);
@@ -190,12 +204,12 @@ test_dot(std::string v, std::string param1, std::string param2)
     k.gate("x", 0);
     k.gate("x", 3);
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("mapper", "no");
+    ql::set_option("mapper", "no");
 
-    ql::options::set("scheduler_post179", param1);
-    ql::options::set("scheduler", param2);
+    ql::set_option("scheduler_post179", param1);
+    ql::set_option("scheduler", param2);
 
     prog.compile( );
 }
@@ -203,49 +217,57 @@ test_dot(std::string v, std::string param1, std::string param2)
 // resource constraint presence test
 // the resource constraints of qwg prohibit both gates to execute in a single cycle
 // no non-NN two-qubit gates so mapper neutral
-void
-test_rc(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_rc(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     // no dependency, only a conflict in qwg resource
     k.gate("x", 0);
     k.gate("y", 1);
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
 
 // all cnots (in both directions) with operands that are neighbors in s7
 // no non-NN two-qubit gates so mapper neutral
-void
-test_someNN(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_someNN(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     for (int j=0; j<7; j++) { k.gate("x", j); }
 
@@ -269,12 +291,12 @@ test_someNN(std::string v, std::string param1, std::string param2, std::string p
 
     for (int j=0; j<7; j++) { k.gate("x", j); }
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -286,19 +308,23 @@ test_someNN(std::string v, std::string param1, std::string param2, std::string p
 // so it basically tests path finding, placing a cnot in a path,
 // generating swap code into each alternative, and comparing the alternatives;
 // but these are all equally optimal so it at most tests the tiebreak to force a selection at the end
-void
-test_oneD2(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_oneD2(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 4;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     k.gate("x", 2);
     k.gate("x", 3);
@@ -309,12 +335,12 @@ test_oneD2(std::string v, std::string param1, std::string param2, std::string pa
     k.gate("x", 2);
     k.gate("x", 3);
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -325,19 +351,23 @@ test_oneD2(std::string v, std::string param1, std::string param2, std::string pa
 // with distance 4 there are already 12 variations to map; each generates 3 swaps;
 // with multiple swaps to insert, it will find a meet-in-the-middle solution as optimal one,
 // but there are several of these, and the combination of path finding and tiebreak will decide which
-void
-test_oneD4(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_oneD4(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 5;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     k.gate("x", 2);
     k.gate("x", 4);
@@ -348,12 +378,12 @@ test_oneD4(std::string v, std::string param1, std::string param2, std::string pa
     k.gate("x", 2);
     k.gate("x", 4);
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -367,19 +397,23 @@ test_oneD4(std::string v, std::string param1, std::string param2, std::string pa
 // it will probably leave 0 or 1 where it is and move the other one,
 // which already precludes the most optimal solution;
 // lookahead, minextend and recursion (selectmaxlevel, selectmaxwidth and recNN2q) influence the result
-void
-test_string(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_string(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
 
     for (int j=0; j<7; j++) { k.gate("x", j); }
@@ -394,12 +428,12 @@ test_string(std::string v, std::string param1, std::string param2, std::string p
 
     for (int j=0; j<7; j++) { k.gate("x", j); }
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -411,19 +445,23 @@ test_string(std::string v, std::string param1, std::string param2, std::string p
 // the original order in the circuit seems to be an optimal one to do the mapping,
 // but lookahead and minextend try to find an optimal solution;
 // still the result of allDopt will be better dan of allD
-void
-test_allDopt(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_allDopt(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
@@ -492,12 +530,12 @@ test_allDopt(std::string v, std::string param1, std::string param2, std::string 
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -508,19 +546,23 @@ test_allDopt(std::string v, std::string param1, std::string param2, std::string 
 // so critical path selection and/or recursion really pay off;
 // nevertheless, this is artifical code, the worst to map,
 // so what does being able to map it optimally say about mapping real circuits?
-void
-test_allD(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_allD(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s7");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
@@ -528,29 +570,33 @@ test_allD(std::string v, std::string param1, std::string param2, std::string par
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
 
-void
-test_allD2(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_allD2(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_s7.json");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
@@ -608,12 +654,12 @@ test_allD2(std::string v, std::string param1, std::string param2, std::string pa
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -625,20 +671,24 @@ test_allD2(std::string v, std::string param1, std::string param2, std::string pa
 // so this tests moves, qubit initialization, qubit states, adding ancilla's;
 // also the circuit has more gates (around 220) than those above (around 50);
 // and it executes on s17 (although it should also run on s7)
-void
-test_daniel2(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_daniel2(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 6;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1, 2 };
+    std::vector<double> sweep_points = { 1, 2 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s17");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, n);
+    auto prog = ql::Program(prog_name, starmon, n, n);
 
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
 
     k.gate("x",0);
@@ -872,34 +922,38 @@ test_daniel2(std::string v, std::string param1, std::string param2, std::string 
 
     for (int q=0; q<n; q++)
     {
-	    k.gate("measure", q);
+        k.gate("measure", q);
     }
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
 
 // real code with 5-qubit short error code checkers in 4 variations next to eachother
 // must fit somehow in s17
-void
-test_lingling5esm(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_lingling5esm(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s17");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     k.gate("prepz",5);
     k.gate("prepz",6);
@@ -1033,31 +1087,35 @@ test_lingling5esm(std::string v, std::string param1, std::string param2, std::st
     k.gate("measure",5);
     k.gate("measure",6);
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
 
 // real code with 7-qubit short error code checkers in 3 variations next to eachother
 // must fit somehow in s17
-void
-test_lingling7esm(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_lingling7esm(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 9;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s17");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     k.gate("prepz",7);
     k.gate("prepz",8);
@@ -1175,31 +1233,35 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
     k.gate("ym90",7);
     k.gate("measure",7);
     k.gate("measure",8);
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
 
 // real code with 7-qubit short error code checkers in 3 variations next to eachother
 // must fit somehow in s17
-void
-test_lingling7sub(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_lingling7sub(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 9;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
+    auto starmon = ql::Platform("starmon", "cc_light.s17");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
 #define SUB1    1
 
@@ -1326,12 +1388,12 @@ test_lingling7sub(std::string v, std::string param1, std::string param2, std::st
     k.gate("measure",8);
 #endif
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -1343,19 +1405,23 @@ test_lingling7sub(std::string v, std::string param1, std::string param2, std::st
 // one might pay off in finding an optimal minimal latency;
 // and the swaps take only 2 cycles, where a cz takes 3 or 4 cycles,
 // so there is a different balance during evaluation of alternatives
-void
-test_maxcut(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
+void test_maxcut(
+    std::string v,
+    std::string param1,
+    std::string param2,
+    std::string param3,
+    std::string param4
+) {
     int n = 8;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    double sweep_points[] = { 1 };
+    std::vector<double> sweep_points = { 1 };
 
-    ql::quantum_platform starmon("starmon", "test_mapper_rig.json");
+    auto starmon = ql::Platform("starmon", "test_mapper_rig.json");
     //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(double));
+    auto prog = ql::Program(prog_name, starmon, n, 0);
+    auto k = ql::Kernel(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points);
 
     k.gate("cz", 1,4);
     k.gate("cz", 1,3);
@@ -1384,51 +1450,50 @@ test_maxcut(std::string v, std::string param1, std::string param2, std::string p
     k.gate("cz", 1,5);
     */
 
-    prog.add(k);
+    prog.add_kernel(k);
 
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapselectmaxlevel", param3);
-    ql::options::set("mapselectmaxwidth", param4);
+    ql::set_option("maplookahead", param1);
+    ql::set_option("maprecNN2q", param2);
+    ql::set_option("mapselectmaxlevel", param3);
+    ql::set_option("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
 
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char ** argv) {
     ql::utils::logger::set_log_level("LOG_DEBUG");
     // ql::utils::logger::set_log_level("LOG_NOTHING");
-    ql::options::set("unique_output", "no");
+    ql::set_option("unique_output", "no");
 
-    ql::options::set("write_qasm_files", "yes");
-    ql::options::set("write_report_files", "yes");
-    ql::options::set("print_dot_graphs", "yes");
-    ql::options::set("use_default_gates", "no");
+    ql::set_option("write_qasm_files", "yes");
+    ql::set_option("write_report_files", "yes");
+    ql::set_option("print_dot_graphs", "yes");
+    ql::set_option("use_default_gates", "no");
 
-    ql::options::set("clifford_prescheduler", "no");
-    ql::options::set("clifford_postscheduler", "no");
+    ql::set_option("clifford_prescheduler", "no");
+    ql::set_option("clifford_postscheduler", "no");
 
-    ql::options::set("clifford_premapper", "yes");
-    ql::options::set("mapper", "minextendrc");
-    ql::options::set("mapinitone2one", "yes");
-//parameter1  ql::options::set("maplookahead", "noroutingfirst");
-    ql::options::set("mapselectswaps", "all");
-    ql::options::set("initialplace", "yes");
-    ql::options::set("initialplace2qhorizon", "0");
-    ql::options::set("mappathselect", "all");
-    ql::options::set("mapusemoves", "yes");
-    ql::options::set("mapreverseswap", "yes");
-//parameter3  ql::options::set("mapselectmaxlevel", "0");
-//parameter2  ql::options::set("maprecNN2q", "no");
-//parameter4  ql::options::set("mapselectmaxwidth", "min");
-    ql::options::set("maptiebreak", "random");
+    ql::set_option("clifford_premapper", "yes");
+    ql::set_option("mapper", "minextendrc");
+    ql::set_option("mapinitone2one", "yes");
+//parameter1  ql::set_option("maplookahead", "noroutingfirst");
+    ql::set_option("mapselectswaps", "all");
+    ql::set_option("initialplace", "yes");
+    ql::set_option("initialplace2qhorizon", "0");
+    ql::set_option("mappathselect", "all");
+    ql::set_option("mapusemoves", "yes");
+    ql::set_option("mapreverseswap", "yes");
+//parameter3  ql::set_option("mapselectmaxlevel", "0");
+//parameter2  ql::set_option("maprecNN2q", "no");
+//parameter4  ql::set_option("mapselectmaxwidth", "min");
+    ql::set_option("maptiebreak", "random");
 
-    ql::options::set("clifford_postmapper", "yes");
-    ql::options::set("scheduler_post179", "yes");
-    ql::options::set("scheduler", "ALAP");
-    ql::options::set("scheduler_commute", "yes");
-    ql::options::set("prescheduler", "yes");
+    ql::set_option("clifford_postmapper", "yes");
+    ql::set_option("scheduler_post179", "yes");
+    ql::set_option("scheduler", "ALAP");
+    ql::set_option("scheduler_commute", "yes");
+    ql::set_option("prescheduler", "yes");
 
 //  test_lee("lee", "noroutingfirst", "no", "0", "min");
     test_dpt("dpt", "noroutingfirst", "no", "0", "min");

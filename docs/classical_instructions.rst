@@ -3,6 +3,10 @@
 Classical Instructions
 ======================
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 OpenQL supports a mix of quantum and classical computing at the gate level.
 Please recall that classical gates are gates that don't have any qubit as operand,
 only zero or more classical registers and execute in classical hardware.

@@ -1,0 +1,66 @@
+.. _ref_architectures:
+
+Supported architectures
+=======================
+
+This section lists the backend architectures currently supported by OpenQL.
+
+Architectures are organized into *families*, *variants*, and *platforms*. The
+architecture family typically refers to a particular control architecture, and
+may include custom passes and scheduler resources needed to compile for that
+control architecture. The variant usually refers to the kind of qubit chip being
+controlled by said control architecture, such as surface-5, surface-7, or
+surface-17 for CC-light. Finally, architecture variants may be configured with
+a JSON configuration file to get a complete target description, referred to as
+the platform.
+
+.. note::
+   In older versions of OpenQL, there was no hierarchical definition like this.
+   Instead, there was only a platform, defined by a hard-to-write JSON
+   configuration file, with a backend selection using the ``"eqasm_compiler"``
+   key in the configuration file. The new system is fully backward-compatible:
+   you can still just pass any custom JSON configuration file to the platform
+   constructor, in which case the architecture family will be chosen based on
+   the value in ``"eqasm_compiler"``, and the default variant for that family
+   will be used. The purpose of the new system is to make the learning curve
+   for using OpenQL less steep; instead of having to pluck one of the many JSON
+   files from OpenQL's ``tests`` directory and usually needing to modify it
+   manually, you can start off by just using one of the architecture variants as
+   default. Furthermore, each architecture variant may have its own set of
+   defaults and preprocessing rules for the platform configuration file, such
+   that even if you do need to make changes, it should be way easier to do so.
+
+The active architecture is selected in one of the following ways:
+
+ - by specifying the namespace name/variant pair for the desired architecture
+   directly to the ``ql.Platform`` constructor (the architecture will then use
+   the default platform configuration for that pair);
+ - by specifying a recognized string for the ``"eqasm_compiler"`` key in the
+   platform configuration file;
+ - if ``"eqasm_compiler"`` is instead used for an inline compiler
+   configuration, by setting ``"eqasm_compiler"."architecture"`` to the
+   namespace name and variant of the desired architecture;
+ - if none of the above apply, the dummy `"none"` architecture will be
+   selected.
+
+The variant is separated from the namespace name or ``eqasm_compiler`` name
+using a ``.``\ .
+
+Ultimately, the architecture variant system only serves to inject sane defaults
+into the platform and compiler configuration structures, and to separate
+unavoidable architecture-specific logic from architecture-agnostic logic in
+OpenQL's codebase. That is, everything boils down to these (internal) platform
+and compiler configuration structures during platform construction, after which
+everything is agnostic to the selected architecture. This means that if you want
+to compile for a new architecture that's sufficiently similar to an existing
+one to not need any new passes or resources, you may not even have to change or
+add to OpenQL's codebase; you can just use the ``none.default`` architecture and
+build the platform and compiler configuration structures from scratch. This is
+intentional: the control architectures are still as much in flux as the quantum
+chips themselves, so being able to quickly piece together a compiler for an
+architecture we haven't even thought of yet is important. It's also very useful
+for design-space exploration, and doing research into compilation strategies and
+control architectures that will become relevant only when the quantum chips
+mature further.
+
+{architectures}

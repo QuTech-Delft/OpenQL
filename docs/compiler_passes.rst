@@ -3,6 +3,10 @@
 Compiler Passes
 ===============
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 Most of the passes in their function and implementation are platform independent,
 deriving their platform dependent information from options and/or the configuration file.
 This holds also for mapping, although one wouldn't think so first,
