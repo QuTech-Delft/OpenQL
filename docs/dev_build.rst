@@ -215,6 +215,12 @@ to remember to uninstall if you ever end up moving it.
    In bash-like terminals, you can just put them in front of the pip command like so: ``NPROCS=10 pip ...``. In
    Powershell, you can use ``$env:NPROCS = '10'`` in a command preceding the ``pip`` command.
 
+.. note::
+   You may find that CMake notes that some packages it's looking for are missing. This is fine: some things are only
+   needed for optional components (which will automatically disable themselves when dependencies are missing) and
+   some things are only quality-of-life things, for example for generating backtraces for the exception messages.
+   As long as the tests pass, the core OpenQL components should all work.
+
 Once installed, and assuming you have the requisite optional dependencies installed, you can run the test suite (still
 from the root of the OpenQL repository) using
 
