@@ -31,6 +31,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - allow specification of 2 triggers in JSON field "control_modes/*/trigger_bits" to support dual-QWG
     - changed label in generated code from "mainLoop" to "__mainLoop". Do not start kernel names with "__" (this should be specified by the API)
     - removed initial 1 cycle (20 ns) delay at start of kernels (resulting from bundle start_cycle starting at 1)
+    - correctly handle kernel names containing "_" in conjunction with looping (formerly duplicate labels could arise)
+    - added "seq_out 0,1" to program start to allow tracing of actual program start
 
 ### Removed
 - CC-light code generation, as the CC-light is being phased out in the lab, and its many passes were obstacles for pass management and refactoring

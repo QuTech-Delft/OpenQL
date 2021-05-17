@@ -1067,6 +1067,7 @@ Str Kernel::get_prologue() const  {
     return ss.str();
 }
 
+// FIXME: generates duplicate labels for names that match up to the first "_", see Backend::loopLabel()
 Str Kernel::get_epilogue() const {
     StrStrm ss;
 
