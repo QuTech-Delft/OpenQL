@@ -125,8 +125,30 @@ def docs_to_rst_magic(text, header_level=1):
 
     return text
 
+def get_version(verbose=0):
+    """ Extract version information from source code """
+
+    matcher = re.compile('[\t ]*#define[\t ]+OPENQL_VERSION_STRING[\t ]+"(.*)"')
+    with open(os.path.join('..', 'include', 'ql', 'version.h'), 'r') as f:
+        for ln in f:
+            m = matcher.match(ln)
+            if m:
+                version = m.group(1)
+                break
+        else:
+            raise Exception('failed to parse version string from include/ql/version.h')
+
+    return version
+
 if not os.path.exists('gen'):
     os.makedirs('gen')
+
+# Version in installation instructions.
+with open('gs_installation.rst.template', 'r') as f:
+    docs = f.read()
+docs = docs.replace('{version}', get_version())
+with open('gen/gs_installation.rst', 'w') as f:
+    f.write(docs)
 
 # Architecture list.
 with open('ref_architectures.rst.template', 'r') as f:

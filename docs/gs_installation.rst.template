@@ -28,6 +28,13 @@ to see if it works.
    installation of Python packages is rather fundamental to Python and out of
    scope for this manual.
 
+.. warning::
+   The documentation you're reading now is generated for version **{version}**.
+   If there is a mismatch, be aware that there may be an API mismatch as well!
+   The reference information can, however, be queried from within Python using
+   the ``help()`` builtin and (from 0.8.1.dev6 onwards) using the various
+   ``dump_*()`` functions.
+
 If you're on MacOS and want to use the visualizer, you'll need XQuartz in
 addition. You can install this using `Brew <https://formulae.brew.sh/cask/xquartz>`_.
 
