@@ -43,10 +43,23 @@ Kernel::Kernel(
 }
 
 /**
- * Returns a newline-separated list of all custom gates supported by the
- * platform.
+ * Old alias for dump_custom_instructions(). Deprecated.
  */
 std::string Kernel::get_custom_instructions() const {
+    return kernel->get_gates_definition();
+}
+
+/**
+ * Prints a list of all custom gates supported by the platform.
+ */
+void Kernel::print_custom_instructions() const {
+    std::cout << kernel->get_gates_definition();
+}
+
+/**
+ * Returns the result of print_custom_instructions() as a string.
+ */
+std::string Kernel::dump_custom_instructions() const {
     return kernel->get_gates_definition();
 }
 

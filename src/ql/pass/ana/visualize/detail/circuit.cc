@@ -776,16 +776,13 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
 
         Vec<Int> codewords;
         // Load the codewords of the instruction if provided.
-        // TODO JvS: cc_light has been phased out, so this code is no longer
-        //  relevant. Nevertheless, being able to view codewords with the
-        //  visualizer probably is.
-        if (instruction.count("cc_light_codeword") == 1) {
-            codewords.push_back(instruction["cc_light_codeword"]);
+        if (instruction.count("visual_codeword") == 1) {
+            codewords.push_back(instruction["visual_codeword"]);
             QL_DOUT("codewords: " << codewords[0]);
         } else {
-            if (instruction.count("cc_light_right_codeword") == 1 && instruction.count("cc_light_left_codeword") == 1) {
-                codewords.push_back(instruction["cc_light_right_codeword"]);
-                codewords.push_back(instruction["cc_light_left_codeword"]);
+            if (instruction.count("visual_right_codeword") == 1 && instruction.count("visual_left_codeword") == 1) {
+                codewords.push_back(instruction["visual_right_codeword"]);
+                codewords.push_back(instruction["visual_left_codeword"]);
                 QL_DOUT("codewords: " << codewords[0] << "," << codewords[1]);
             } else {
                 if (circuitConfig.count("pulses") == 1) {

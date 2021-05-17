@@ -5,23 +5,21 @@ qubits 7
 .aKernel01
     { prepz q[0] | y q[3] | z q[5] }
     wait 1
-    { x q[2] | rx90 q[0] }
-    wait 1
-    ry90 q[0]
+    { rx90 q[0] | ym90 q[3] }
     wait 1
     cz q[0],q[3]
     wait 3
-    { ry90 q[3] | measure q[0] }
+    { x q[2] | measure q[0] }
+    wait 1
+    ry90 q[3]
     wait 1
 
 .aKernel02
-    { prepz q[0] | y q[1] | z q[5] }
+    { prepz q[0] | y q[1] | z q[5] | ym90 q[3] }
     wait 1
     x q[0]
     wait 1
     rx90 q[0]
-    wait 1
-    ry90 q[0]
     wait 1
     cz q[0],q[3]
     wait 3

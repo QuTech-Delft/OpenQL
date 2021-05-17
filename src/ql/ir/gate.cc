@@ -576,66 +576,80 @@ Custom::Custom(const Custom &g) {
 }
 
 /**
- * match qubit id
+ * Converts the given JSON to a qubit index, checking for errors along the way.
  */
-Bool Custom::is_qubit_id(const Str &str) {
-    if (str[0] != 'q') {
-        return false;
-    }
-    UInt l = str.length();
-    for (UInt i = 1; i < l; ++i) {
-        if (!std::isdigit(str[i])) {
-            return false;
+static UInt json_to_qubit_id(const Json &json, UInt num_qubits) {
+    UInt index;
+    if (json.is_number_unsigned()) {
+        index = json.get<utils::UInt>();
+    } else if (json.is_string()) {
+        auto str = json.get<utils::Str>();
+        if (!utils::starts_with(str, "q")) {
+            throw utils::Exception("\"" + str + "\" is not a valid qubit index");
         }
-    }
-    return true;
-}
-
-/**
- * return qubit id
- */
-UInt Custom::qubit_id(const Str &qubit) {
-    Str id = qubit.substr(1);
-    return parse_uint(id.c_str());
-}
-
-/**
- * load instruction from json map
- */
-void Custom::load(nlohmann::json &instr) {
-    QL_DOUT("loading instruction '" << name << "'...");
-    Str l_attr = "(none)";
-    try {
-        l_attr = "qubits";
-        QL_DOUT("qubits: " << instr["qubits"]);
-        UInt parameters = instr["qubits"].size();
-        for (UInt i = 0; i < parameters; ++i) {
-            Str qid = instr["qubits"][i];
-            if (!is_qubit_id(qid)) {
-                QL_EOUT("invalid qubit id in attribute 'qubits' !");
-                throw Exception(
-                    "[x] error : ql::custom_gate() : error while loading instruction '" +
-                    name + "' : attribute 'qubits' : invalid qubit id !",
-                    false);
+        for (UInt i = 1; i < str.size(); ++i) {
+            if (!std::isdigit(str[i])) {
+                throw utils::Exception("\"" + str + "\" is not a valid qubit index");
             }
-            operands.push_back(qubit_id(qid));
         }
-        l_attr = "duration";
-        duration = instr["duration"];
-        QL_DOUT("duration: " << instr["duration"]);
-        l_attr = "matrix";
-        // FIXME: make matrix optional, default to NaN
-        auto mat = instr["matrix"];
-        QL_DOUT("matrix: " << instr["matrix"]);
+        index = parse_uint(str.substr(1));
+    } else {
+        throw utils::Exception(utils::Str(json) + " is not a valid qubit index");
+    }
+    if (index >= num_qubits) {
+        throw utils::Exception("qubit index " + utils::Str(json) + " is out of range");
+    }
+    return index;
+}
 
-    } catch (Json::exception &e) {
-        QL_EOUT("while loading instruction '" << name << "' (attr: " << l_attr
-                                              << ") : " << e.what());
-        throw Exception(
-            "[x] error : ql::custom_gate() : error while loading instruction '" +
-            name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
+/**
+ * Loads instruction data from the given JSON record.
+ */
+void Custom::load(const Json &instr, UInt num_qubits, UInt cycle_time) {
+#define ERROR(s) throw utils::Exception(utils::Str("in gate description for '" + name + "': ") + (s))
+    QL_DOUT("loading instruction '" << name << "'...");
+
+    // Load list of qubit operands.
+    auto it = instr.find("qubits");
+    if (it != instr.end()) {
+        if (it->is_array()) {
+            for (const auto &it2 : *it) {
+                operands.push_back(json_to_qubit_id(it2, num_qubits));
+            }
+        } else if (it->is_number_unsigned() || it->is_string()) {
+            operands.push_back(json_to_qubit_id(*it, num_qubits));
+        } else {
+            ERROR("\"qubits\" must be an array of qubit indices or a single qubit index if specified");
+        }
     }
 
+    // Load duration, defaulting to 1 cycle.
+    UInt duration_multiplier = 1;
+    it = instr.find("duration");
+    if (it == instr.end()) {
+        it = instr.find("duration_cycles");
+        duration_multiplier = cycle_time;
+    } else if (instr.find("duration_cycles") != instr.end()) {
+        ERROR("both duration and duration_cycles are specified; please specify one or the other");
+    }
+    Int d = cycle_time;
+    if (it->is_number_float()) {
+        QL_WOUT(
+            "found non-integer-nanosecond instruction duration; "
+            "this is not supported (yet), so the duration will be rounded up"
+        );
+        d = (Int)ceil(it->get<Real>() * duration_multiplier);
+    } else if (it->is_number_integer()) {
+        d = it->get<Int>() * duration_multiplier;
+    } else {
+        ERROR("duration(_cycles) must be a number when specified");
+    }
+    if (d < 0) {
+        ERROR("found negative duration (or integer overflow occurred)");
+    }
+    duration = (UInt)d;
+
+#undef ERROR
 }
 
 void Custom::print_info() const {

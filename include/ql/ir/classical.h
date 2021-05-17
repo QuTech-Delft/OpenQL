@@ -15,7 +15,7 @@ namespace ql {
 namespace ir {
 
 enum class ClassicalOperationType {
-    ARITHMATIC, RELATIONAL, BITWISE
+    ARITHMETIC, RELATIONAL, BITWISE
 };
 
 enum class ClassicalOperandType {

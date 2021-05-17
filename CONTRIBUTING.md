@@ -208,6 +208,25 @@ Within a local namespace, use whatever you want (`using namespace` etc) as you
 see fit, although more selective inclusions and abbreviations using
 `namespace x = ...` and `using T = ...` is preferred.
 
+As for code style, please stick to the following.
+
+```cpp
+// Namespaces do not receive indentation, because then everything would be
+// indented. But the closing brace must be clearly marked as such (using the
+// depicted style) to compensate.
+namespace ql {
+
+... // namespace contents are not indented...
+
+} // namespace ql
+
+// "using namespace" is allowed only in .cc files, private header files, or
+// in local scopes. If you're working deep inside the namespace tree, it is
+// sometimes useful to pull another namespace into it, which is fine, but
+// it's preferred to include things selectively with `using x = y` or to
+// abbreviate namespaces if needed using `namespace x = a::b::c`.
+```
+
 ## Header files and `#include` syntax
 
 Some general rules for `#include` directive consistency.
@@ -604,24 +623,6 @@ do {
 for (auto &el : sequence) { el = 0; }
 ```
 
-## Namespaces
-
-```cpp
-// Namespaces do not receive indentation, because then everything would be
-// indented. But the closing brace must be clearly marked as such (using the
-// depicted style) to compensate.
-namespace ql {
-
-... // namespace contents are not indented...
-
-} // namespace ql
-
-// "using namespace" is allowed only in .cc files, NEVER in header files, and
-// CERTAINLY NEVER in the global namespace; a single "using namespace" in any
-// header completely destroys the idea behind namespaces (that is, preventing
-// name conflicts or long names with many redundant parts in them).
-```
-
 ## Enumerations
 
 ```cpp
@@ -677,13 +678,20 @@ public:
 // less magical, and honestly, I doubt you'll notice the performance penalty of
 // the lack of inlining in practice (and there's always LTO nowadays).
 
-// AVOID "virgin constructors": the constructor of a class must also initialize
-// that class. C++ utilizes the RAII principle (resource acquisition is
-// initialization): if you have a class instance, you may assume it has been
-// initialized. These virgin constructors combined with an init method nuke
-// this principle and result in the worst of both worlds; you still have a
-// complaining compiler, but don't have any of the benefits. They simply should
-// not exist.
+// Avoid "virgin constructors": the constructor of a class should also
+// initialize that class. C++ utilizes the RAII principle (resource acquisition
+// is initialization): if you have a class instance, you should be able to
+// assume it has already been initialized and that you can use it. Virgin
+// constructors combined with an init method nuke this principle, making it
+// relatively easy to accidentally get undefined behavior by using an object
+// before initializing it. If you're faced with spaghetti in the member
+// initialization part of a constructor (the part between the : and the
+// function body) because members don't have a virgin constructor, wrap them in
+// utils::Opt or utils::Ptr and call emplace() on them instead of what would
+// have been init(); this lets you do everything that you would be able to do
+// with the virgin constructor method, but without breaking RAII and with
+// runtime detection of use-before-init (since dereferencing an empty Opt or
+// Ptr will throw an exception).
 
 // Constructions where you think you need this should be avoided. If you really
 // need it anyway, use ql::Opt<T> instead of T directly. You can then use

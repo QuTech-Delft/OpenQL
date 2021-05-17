@@ -82,10 +82,10 @@ ClassicalOperation::ClassicalOperation(
     operands.emplace<ClassicalRegister>(r);
     if (op == "+") {
         operation_name = "add";
-        operation_type = ClassicalOperationType::ARITHMATIC;
+        operation_type = ClassicalOperationType::ARITHMETIC;
     } else if (op == "-") {
         operation_name = "sub";
-        operation_type = ClassicalOperationType::ARITHMATIC;
+        operation_type = ClassicalOperationType::ARITHMETIC;
     } else if (op == "&") {
         operation_name = "and";
         operation_type = ClassicalOperationType::BITWISE;
@@ -128,21 +128,21 @@ ClassicalOperation::ClassicalOperation(
 // used for assign
 ClassicalOperation::ClassicalOperation(const ClassicalRegister &l) {
     operation_name = "mov";
-    operation_type = ClassicalOperationType::ARITHMATIC;
+    operation_type = ClassicalOperationType::ARITHMETIC;
     operands.emplace<ClassicalRegister>(l);
 }
 
 // used for initializing with an imm
 ClassicalOperation::ClassicalOperation(const ClassicalValue &v) {
     operation_name = "ldi";
-    operation_type = ClassicalOperationType::ARITHMATIC;
+    operation_type = ClassicalOperationType::ARITHMETIC;
     operands.emplace<ClassicalValue>(v);
 }
 
 // used for initializing with an imm
 ClassicalOperation::ClassicalOperation(Int val) {
     operation_name = "ldi";
-    operation_type = ClassicalOperationType::ARITHMATIC;
+    operation_type = ClassicalOperationType::ARITHMETIC;
     operands.emplace<ClassicalValue>(val);
 }
 

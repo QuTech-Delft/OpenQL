@@ -15,10 +15,10 @@ jobs:
     strategy:
       matrix:
         python:
-        - '3.5'
         - '3.6'
         - '3.7'
         - '3.8'
+        - '3.9'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -28,7 +28,7 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: Install dependencies
       run: |
-        brew install bison flex swig
+        brew install bison flex swig xquartz
         echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
         echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
         python -m pip install --upgrade pip setuptools wheel
@@ -68,10 +68,10 @@ jobs:
         manylinux:
         - 2014
         cpython_version:
-        - 'cp35-cp35m'
         - 'cp36-cp36m'
         - 'cp37-cp37m'
         - 'cp38-cp38'
+        - 'cp39-cp39'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -120,10 +120,10 @@ jobs:
     strategy:
       matrix:
         python:
-        - '3.5'
         - '3.6'
         - '3.7'
         - '3.8'
+        - '3.9'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -187,6 +187,7 @@ jobs:
 #        - '3.6'
 #        - '3.7'
 #        - '3.8'
+#        - '3.9'
 #    steps:
 #    - uses: actions/checkout@v2
 #      with:

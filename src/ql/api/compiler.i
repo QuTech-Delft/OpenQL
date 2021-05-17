@@ -3,7 +3,9 @@
 """
 Wrapper for the compiler/pass manager.
 
-You can get access to a Compiler via several methods:
+This allows you to change the compilation strategy, if the defaults are
+insufficient for your application. You can get access to a Compiler via
+several methods:
 
  - using Platform.get_compiler();
  - using Program.get_compiler();
@@ -12,100 +14,9 @@ You can get access to a Compiler via several methods:
 Using the constructors, you can get an empty compiler (by specifying no
 arguments or only specifying name), a default compiler for a given platform
 (by specifying a name and a platform), or a compiler based on a compiler
-configuration JSON file (by specifying a name and a filename). This JSON file
-must have the following structure:
-
-.. code-block::
-
-   {
-       \"architecture\": <optional string, default \"\">,
-       \"dnu\": <optional list of strings, default []>,
-       \"pass-options\": <optional object, default {}>,
-       \"compatibility-mode\": <optional boolean, default false>,
-       \"passes\": [
-           <pass description>
-       ]
-   },
-
-The optional \"architecture\" key may be used to make shorthands for
-architecture- specific passes, normally prefixed with
-\"arch.<architecture>.\". If it's not specified or an empty string, no
-shorthand aliases are made.
-
-The optional \"dnu\" key may be used to specify a list of do-not-use pass
-types (experimental passes, deprecated passes, or any other pass that's
-considered unfit for \"production\" use) that you explicitly want to use,
-including the \"dnu\" namespace they are defined in. Once specified, you'll
-be able to use the pass type without the \"dnu\" namespace element. For
-example, if you would include \"dnu.whatever\" in the list, the pass type
-\"whatever\" may be used to add the pass.
-
-The optional \"pass-options\" key may be used to specify options common to
-all passes. The values may be booleans, integers, strings, or null, but
-nothing else. Null is used to reset an option to its hardcoded default
-value. An option need not exist for each pass affected by it; if it
-doesn't, the default value is silently ignored for that pass. However, if
-it *does* exist, it must be a valid value for the option with that name.
-These option values propagate through the pass tree recursively, so
-setting a default option in the root using this record will affect all
-passes.
-
-If \"compatibility-mode\" is enabled, some of OpenQL's global options add
-implicit entries to the \"pass-options\" structure when set, for backward
-compatibility. However, entries in \"pass-options\" always take precedence.
-The logic for which options map to which is mostly documented in the
-global option docs now, since those options don't do anything else
-anymore. Note that the global options by their original design have no
-way to specify what pass they refer to, so each option is attempted for
-each pass type! Which means we have to be a bit careful with picking
-option names for the passes that are included in compatibility mode.
-
-Pass descriptions can either be strings (in which case the string is
-interpreted as a pass type alias and everything else is
-inferred/default), or an object with the following structure.
-
-.. code-block::
-
-   {
-       \"type\": <optional string, default \"\">,
-       \"name\": <optional string, default \"\">,
-       \"options\": <optional object, default {}>
-       \"group-options\": <optional object, default {}>,
-       \"group\": [
-           <optional list of pass descriptions>
-       ]
-   }
-
-The \"type\" key, if specified, must identify a pass type that OpenQL knows
-about. If it's not specified or empty, a group is made instead, and
-\"group\" must be specified for the group to do anything.
-
-The \"name\" key, if specified, is a user-defined name for the pass, that
-must match ``[a-zA-Z0-9_\\\\-]+`` and be unique within the surrounding pass
-list. If not specified, a name that complies with these requirements is
-generated automatically, but the actual generated name should not be
-relied upon to be consistent between OpenQL versions. The name may be
-used to programmatically refer to passes after construction, and passes
-may use it for logging or unique output filenames. However, passes should
-not use the name for anything that affects the behavior of the pass.
-
-The \"options\" key, if specified, may be an object that maps option names
-to option values. The values may be booleans, integers, strings, or null,
-but nothing else. Null is used to enforce usage of the OpenQL-default
-value for the option. The option names and values must be supported by
-the particular pass type.
-
-The \"group-options\" key, if specified, works just like \"pass-options\" in
-the root, but affects only the sub-passes of this pass (so *not* this
-pass itself). Any option specified here will override any
-previously-specified option. Specifying null resets the option to its
-OpenQL-hardcoded default value.
-
-The \"group\" key must only be used when \"type\" is set to an empty string
-or left unspecified, turning the pass into a basic group. The list then
-specifies the sub-passes for the group. A normal pass may or may not have
-configurable sub-passes depending on its type and configuration; if it
-doesn't, \"group\" must not be specified.
+configuration JSON file (by specifying a name and a filename). For the structure
+of this JSON file, refer to the configuration section of the ReadTheDocs
+documentation or, equivalently, the result of `openql.print_compiler_docs()`.
 """
 
 
@@ -133,7 +44,7 @@ None
 """
 
 
-%feature("docstring") ql::api::Compiler::get_pass_types
+%feature("docstring") ql::api::Compiler::dump_pass_types
 """
 Returns documentation for all available pass types, as well as the option
 documentation for the passes.
@@ -163,7 +74,7 @@ None
 """
 
 
-%feature("docstring") ql::api::Compiler::get_strategy
+%feature("docstring") ql::api::Compiler::dump_strategy
 """
 Returns the currently configured compilation strategy as a string.
 
@@ -178,6 +89,7 @@ str
 """
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::set_option
 """
 Sets a pass option. Periods are used as hierarchy separators; the last
@@ -207,8 +119,33 @@ Returns
 int
     The number of pass options affected.
 """
+#else
+%feature("docstring") ql::api::Compiler::set_option
+"""
+Sets a pass option. The path must consist of the target pass instance name
+and the option name, separated by a period. The former may include * or ?
+wildcards. If must_exist is set an exception will be thrown if none of the
+passes were affected, otherwise 0 will be returned.
+
+Parameters
+----------
+path : str
+    The path to the option, consisting of the pass name and the option name
+    separated by a period.
+value : str
+    The value to set the option to.
+must_exist : bool
+    When set, an exception will be thrown when no options matched the path.
+
+Returns
+-------
+int
+    The number of pass options affected.
+"""
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::set_option_recursively
 """
 Sets an option for all passes recursively. The return value is the number
@@ -231,8 +168,10 @@ Returns
 int
     The number of pass options affected.
 """
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::get_option
 """
 Returns the current value of an option. Periods are used as hierarchy
@@ -251,8 +190,27 @@ str
     The value of the option. If the option has not been set, the default value
     is returned.
 """
+#else
+%feature("docstring") ql::api::Compiler::get_option
+"""
+Returns the current value of an option.
+
+Parameters
+----------
+path : str
+    The path to the option, consisting of pass name and the actual option name
+    separated by a period.
+
+Returns
+-------
+str
+    The value of the option. If the option has not been set, the default value
+    is returned.
+"""
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::append_pass
 """
 Appends a pass to the end of the pass list. If type_name is empty
@@ -275,8 +233,32 @@ Returns
 Pass
     A reference to the added pass.
 """
+#else
+%feature("docstring") ql::api::Compiler::append_pass
+"""
+Appends a pass to the end of the pass list. Returns a reference to the
+constructed pass.
+
+Parameters
+----------
+type_name : str
+    The type of the pass to add.
+instance_name : str
+    A unique name for the pass instance. If empty or unspecified, a name will
+    be generated.
+options : dict[str, str]
+    A list of initial options to set for the pass. This is just shorthand
+    notation for calling set_option() on the returned Pass object.
+
+Returns
+-------
+Pass
+    A reference to the added pass.
+"""
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::prefix_pass
 """
 Appends a pass to the beginning of the pass list. If type_name is empty
@@ -299,8 +281,32 @@ Returns
 Pass
     A reference to the added pass.
 """
+#else
+%feature("docstring") ql::api::Compiler::prefix_pass
+"""
+Appends a pass to the beginning of the pass list. Returns a reference to the
+constructed pass.
+
+Parameters
+----------
+type_name : str
+    The type of the pass to add.
+instance_name : str
+    A unique name for the pass instance. If empty or unspecified, a name will
+    be generated.
+options : dict[str, str]
+    A list of initial options to set for the pass. This is just shorthand
+    notation for calling set_option() on the returned Pass object.
+
+Returns
+-------
+Pass
+    A reference to the added pass.
+"""
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::insert_pass_after
 """
 Inserts a pass immediately after the target pass (named by instance). If
@@ -327,8 +333,35 @@ Returns
 Pass
     A reference to the added pass.
 """
+#else
+%feature("docstring") ql::api::Compiler::insert_pass_after
+"""
+Inserts a pass immediately after the target pass (named by instance). If
+target does not exist, an exception is thrown. Returns a reference to the
+constructed pass.
+
+Parameters
+----------
+target : str
+    The name of the pass to insert the new pass after.
+type_name : str
+    The type of the pass to add.
+instance_name : str
+    A unique name for the pass instance. If empty or unspecified, a name will
+    be generated.
+options : dict[str, str]
+    A list of initial options to set for the pass. This is just shorthand
+    notation for calling set_option() on the returned Pass object.
+
+Returns
+-------
+Pass
+    A reference to the added pass.
+"""
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::insert_pass_before
 """
 Inserts a pass immediately before the target pass (named by instance). If
@@ -355,8 +388,35 @@ Returns
 Pass
     A reference to the added pass.
 """
+#else
+%feature("docstring") ql::api::Compiler::insert_pass_before
+"""
+Inserts a pass immediately before the target pass (named by instance). If
+target does not exist, an exception is thrown. Returns a reference to the
+constructed pass.
+
+Parameters
+----------
+target : str
+    The name of the pass to insert the new pass before.
+type_name : str
+    The type of the pass to add.
+instance_name : str
+    A unique name for the pass instance. If empty or unspecified, a name will
+    be generated.
+options : dict[str, str]
+    A list of initial options to set for the pass. This is just shorthand
+    notation for calling set_option() on the returned Pass object.
+
+Returns
+-------
+Pass
+    A reference to the added pass.
+"""
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::group_pass
 """
 Looks for the pass with the target instance name, and embeds it into a
@@ -379,8 +439,10 @@ Returns
 Pass
     A reference to the constructed pass group.
 """
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::group_passes
 """
 Like group_pass(), but groups an inclusive range of passes into a
@@ -402,8 +464,10 @@ Returns
 Pass
     A reference to the constructed pass group.
 """
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::flatten_subgroup
 """
 Looks for an unconditional pass group with the target instance name and
@@ -426,8 +490,10 @@ Returns
 -------
 None
 """
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::get_pass
 """
 Returns a reference to the pass with the given instance name. If no such
@@ -444,8 +510,26 @@ Returns
 Pass
     A reference to the targeted pass.
 """
+#else
+%feature("docstring") ql::api::Compiler::get_pass
+"""
+Returns a reference to the pass with the given instance name. If no such
+pass exists, an exception is thrown.
+
+Parameters
+----------
+target : str
+    The name of the pass to retrieve a reference to.
+
+Returns
+-------
+Pass
+    A reference to the targeted pass.
+"""
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::does_pass_exist
 """
 Returns whether a pass with the target instance name exists. Periods may
@@ -461,6 +545,22 @@ Returns
 bool
     Whether a pass with the target name exists.
 """
+#else
+%feature("docstring") ql::api::Compiler::does_pass_exist
+"""
+Returns whether a pass with the target instance name exists.
+
+Parameters
+----------
+target : str
+    The name of the pass to query existence of.
+
+Returns
+-------
+bool
+    Whether a pass with the target name exists.
+"""
+#endif
 
 
 %feature("docstring") ql::api::Compiler::get_num_passes
@@ -540,6 +640,7 @@ None
 """
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Compiler::construct
 """
 Constructs all passes recursively. This freezes the pass options, but
@@ -553,6 +654,7 @@ Returns
 -------
 None
 """
+#endif
 
 
 %feature("docstring") ql::api::Compiler::compile

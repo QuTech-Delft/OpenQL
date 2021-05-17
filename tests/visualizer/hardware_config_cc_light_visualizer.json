@@ -134,7 +134,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepx",
-        "cc_light_codeword": 10,
+        "visual_codeword": 10,
         "cc_light_opcode": 1,
         "visual_type": "prepx"
      },
@@ -146,7 +146,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepx",
-        "cc_light_codeword": 11,
+        "visual_codeword": 11,
         "cc_light_opcode": 1,
         "visual_type": "prepx"
      },
@@ -158,7 +158,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepx",
-        "cc_light_codeword": 12,
+        "visual_codeword": 12,
         "cc_light_opcode": 1,
         "visual_type": "prepx"
      },
@@ -170,7 +170,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepx",
-        "cc_light_codeword": 13,
+        "visual_codeword": 13,
         "cc_light_opcode": 1,
         "visual_type": "prepx"
      },
@@ -182,7 +182,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepx",
-        "cc_light_codeword": 14,
+        "visual_codeword": 14,
         "cc_light_opcode": 1,
         "visual_type": "prepx"
      },
@@ -194,7 +194,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepx",
-        "cc_light_codeword": 15,
+        "visual_codeword": 15,
         "cc_light_opcode": 1,
         "visual_type": "prepx"
      },
@@ -206,7 +206,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepx",
-        "cc_light_codeword": 16,
+        "visual_codeword": 16,
         "cc_light_opcode": 1,
         "visual_type": "prepx"
      },
@@ -218,7 +218,7 @@
         "type": "none",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepz",
-        "cc_light_codeword": 20,
+        "visual_codeword": 20,
         "cc_light_opcode": 2,
         "visual_type": "prepz"
      },
@@ -230,7 +230,7 @@
         "type": "none",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepz",
-        "cc_light_codeword": 21,
+        "visual_codeword": 21,
         "cc_light_opcode": 2,
         "visual_type": "prepz"
      },
@@ -242,7 +242,7 @@
         "type": "none",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepz",
-        "cc_light_codeword": 22,
+        "visual_codeword": 22,
         "cc_light_opcode": 2,
         "visual_type": "prepz"
      },
@@ -254,7 +254,7 @@
         "type": "none",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepz",
-        "cc_light_codeword": 23,
+        "visual_codeword": 23,
         "cc_light_opcode": 2,
         "visual_type": "prepz"
      },
@@ -266,7 +266,7 @@
         "type": "none",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepz",
-        "cc_light_codeword": 24,
+        "visual_codeword": 24,
         "cc_light_opcode": 2,
         "visual_type": "prepz"
      },
@@ -278,7 +278,7 @@
         "type": "none",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepz",
-        "cc_light_codeword": 25,
+        "visual_codeword": 25,
         "cc_light_opcode": 2,
         "visual_type": "prepz"
      },
@@ -290,7 +290,7 @@
         "type": "none",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "prepz",
-        "cc_light_codeword": 26,
+        "visual_codeword": 26,
         "cc_light_opcode": 2,
         "visual_type": "prepz"
      },
@@ -302,7 +302,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "cprepz",
-        "cc_light_codeword": 27,
+        "visual_codeword": 27,
         "cc_light_opcode": 75,
         "cc_light_cond" : 1,
         "visual_type": "UNDEFINED"
@@ -315,7 +315,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measx",
-        "cc_light_codeword": 30,
+        "visual_codeword": 30,
         "cc_light_opcode": 4,
         "visual_type": "measx"
      },
@@ -327,7 +327,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measx",
-        "cc_light_codeword": 31,
+        "visual_codeword": 31,
         "cc_light_opcode": 4,
         "visual_type": "measx"
      },
@@ -339,7 +339,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measx",
-        "cc_light_codeword": 32,
+        "visual_codeword": 32,
         "cc_light_opcode": 4,
         "visual_type": "measx"
      },
@@ -351,7 +351,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measx",
-        "cc_light_codeword": 33,
+        "visual_codeword": 33,
         "cc_light_opcode": 4,
         "visual_type": "measx"
      },
@@ -363,7 +363,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measx",
-        "cc_light_codeword": 34,
+        "visual_codeword": 34,
         "cc_light_opcode": 4,
         "visual_type": "measx"
      },
@@ -375,7 +375,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measx",
-        "cc_light_codeword": 35,
+        "visual_codeword": 35,
         "cc_light_opcode": 4,
         "visual_type": "measx"
      },
@@ -387,7 +387,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measx",
-        "cc_light_codeword": 36,
+        "visual_codeword": 36,
         "cc_light_opcode": 4,
         "visual_type": "measx"
      },
@@ -399,7 +399,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 40,
+        "visual_codeword": 40,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -411,7 +411,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 41,
+        "visual_codeword": 41,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -423,7 +423,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 42,
+        "visual_codeword": 42,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -435,7 +435,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 43,
+        "visual_codeword": 43,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -447,7 +447,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 44,
+        "visual_codeword": 44,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -459,7 +459,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 45,
+        "visual_codeword": 45,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -471,7 +471,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 46,
+        "visual_codeword": 46,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -483,7 +483,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 40,
+        "visual_codeword": 40,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -495,7 +495,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 41,
+        "visual_codeword": 41,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -507,7 +507,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 42,
+        "visual_codeword": 42,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -519,7 +519,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 43,
+        "visual_codeword": 43,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -531,7 +531,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 44,
+        "visual_codeword": 44,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -543,7 +543,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 45,
+        "visual_codeword": 45,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -555,7 +555,7 @@
         "type": "readout",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "measz",
-        "cc_light_codeword": 46,
+        "visual_codeword": 46,
         "cc_light_opcode": 4,
         "visual_type": "measz"
      },
@@ -567,7 +567,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "i",
-        "cc_light_codeword": 50,
+        "visual_codeword": 50,
         "cc_light_opcode": 5,
         "visual_type": "i"
      },
@@ -579,7 +579,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "i",
-        "cc_light_codeword": 51,
+        "visual_codeword": 51,
         "cc_light_opcode": 5,
         "visual_type": "i"
      },
@@ -591,7 +591,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "i",
-        "cc_light_codeword": 52,
+        "visual_codeword": 52,
         "cc_light_opcode": 5,
         "visual_type": "i"
      },
@@ -603,7 +603,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "i",
-        "cc_light_codeword": 53,
+        "visual_codeword": 53,
         "cc_light_opcode": 5,
         "visual_type": "i"
      },
@@ -615,7 +615,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "i",
-        "cc_light_codeword": 54,
+        "visual_codeword": 54,
         "cc_light_opcode": 5,
         "visual_type": "i"
      },
@@ -627,7 +627,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "i",
-        "cc_light_codeword": 55,
+        "visual_codeword": 55,
         "cc_light_opcode": 5,
         "visual_type": "i"
      },
@@ -639,7 +639,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "i",
-        "cc_light_codeword": 56,
+        "visual_codeword": 56,
         "cc_light_opcode": 5,
         "visual_type": "i"
      },
@@ -651,7 +651,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x",
-        "cc_light_codeword": 60,
+        "visual_codeword": 60,
         "cc_light_opcode": 6,
         "visual_type": "x"
      },
@@ -663,7 +663,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x",
-        "cc_light_codeword": 61,
+        "visual_codeword": 61,
         "cc_light_opcode": 6,
         "visual_type": "x"
      },
@@ -675,7 +675,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x",
-        "cc_light_codeword": 62,
+        "visual_codeword": 62,
         "cc_light_opcode": 6,
         "visual_type": "x"
      },
@@ -687,7 +687,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x",
-        "cc_light_codeword": 63,
+        "visual_codeword": 63,
         "cc_light_opcode": 6,
         "visual_type": "x"
      },
@@ -699,7 +699,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x",
-        "cc_light_codeword": 64,
+        "visual_codeword": 64,
         "cc_light_opcode": 6,
         "visual_type": "x"
      },
@@ -711,7 +711,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x",
-        "cc_light_codeword": 65,
+        "visual_codeword": 65,
         "cc_light_opcode": 6,
         "visual_type": "x"
      },
@@ -723,7 +723,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x",
-        "cc_light_codeword": 66,
+        "visual_codeword": 66,
         "cc_light_opcode": 6,
         "visual_type": "x"
      },
@@ -735,7 +735,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y",
-        "cc_light_codeword": 70,
+        "visual_codeword": 70,
         "cc_light_opcode": 7,
         "visual_type": "y"
      },
@@ -747,7 +747,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y",
-        "cc_light_codeword": 71,
+        "visual_codeword": 71,
         "cc_light_opcode": 7,
         "visual_type": "y"
      },
@@ -759,7 +759,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y",
-        "cc_light_codeword": 72,
+        "visual_codeword": 72,
         "cc_light_opcode": 7,
         "visual_type": "y"
      },
@@ -771,7 +771,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y",
-        "cc_light_codeword": 73,
+        "visual_codeword": 73,
         "cc_light_opcode": 7,
         "visual_type": "y"
      },
@@ -783,7 +783,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y",
-        "cc_light_codeword": 74,
+        "visual_codeword": 74,
         "cc_light_opcode": 7,
         "visual_type": "y"
      },
@@ -795,7 +795,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y",
-        "cc_light_codeword": 75,
+        "visual_codeword": 75,
         "cc_light_opcode": 7,
         "visual_type": "y"
      },
@@ -807,7 +807,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y",
-        "cc_light_codeword": 76,
+        "visual_codeword": 76,
         "cc_light_opcode": 7,
         "visual_type": "y"
      },
@@ -819,7 +819,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "z",
-        "cc_light_codeword": 80,
+        "visual_codeword": 80,
         "cc_light_opcode": 8,
         "visual_type": "z"
      },
@@ -831,7 +831,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "z",
-        "cc_light_codeword": 81,
+        "visual_codeword": 81,
         "cc_light_opcode": 8,
         "visual_type": "z"
      },
@@ -843,7 +843,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "z",
-        "cc_light_codeword": 82,
+        "visual_codeword": 82,
         "cc_light_opcode": 8,
         "visual_type": "z"
      },
@@ -855,7 +855,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "z",
-        "cc_light_codeword": 83,
+        "visual_codeword": 83,
         "cc_light_opcode": 8,
         "visual_type": "z"
      },
@@ -867,7 +867,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "z",
-        "cc_light_codeword": 84,
+        "visual_codeword": 84,
         "cc_light_opcode": 8,
         "visual_type": "z"
      },
@@ -879,7 +879,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "z",
-        "cc_light_codeword": 85,
+        "visual_codeword": 85,
         "cc_light_opcode": 8,
         "visual_type": "z"
      },
@@ -891,7 +891,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "z",
-        "cc_light_codeword": 86,
+        "visual_codeword": 86,
         "cc_light_opcode": 8,
         "visual_type": "z"
      },
@@ -903,7 +903,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "h",
-        "cc_light_codeword": 90,
+        "visual_codeword": 90,
         "cc_light_opcode": 9,
         "visual_type": "h"
      },
@@ -915,7 +915,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "h",
-        "cc_light_codeword": 91,
+        "visual_codeword": 91,
         "cc_light_opcode": 9,
         "visual_type": "h"
      },
@@ -927,7 +927,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "h",
-        "cc_light_codeword": 92,
+        "visual_codeword": 92,
         "cc_light_opcode": 9,
         "visual_type": "h"
      },
@@ -939,7 +939,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "h",
-        "cc_light_codeword": 93,
+        "visual_codeword": 93,
         "cc_light_opcode": 9,
         "visual_type": "h"
      },
@@ -951,7 +951,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "h",
-        "cc_light_codeword": 94,
+        "visual_codeword": 94,
         "cc_light_opcode": 9,
         "visual_type": "h"
      },
@@ -963,7 +963,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "h",
-        "cc_light_codeword": 95,
+        "visual_codeword": 95,
         "cc_light_opcode": 9,
         "visual_type": "h"
      },
@@ -975,7 +975,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "h",
-        "cc_light_codeword": 96,
+        "visual_codeword": 96,
         "cc_light_opcode": 9,
         "visual_type": "h"
      },
@@ -987,7 +987,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "s",
-        "cc_light_codeword": 100,
+        "visual_codeword": 100,
         "cc_light_opcode": 10,
         "visual_type": "s"
      },
@@ -999,7 +999,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "s",
-        "cc_light_codeword": 101,
+        "visual_codeword": 101,
         "cc_light_opcode": 10,
         "visual_type": "s"
      },
@@ -1011,7 +1011,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "s",
-        "cc_light_codeword": 102,
+        "visual_codeword": 102,
         "cc_light_opcode": 10,
         "visual_type": "s"
      },
@@ -1023,7 +1023,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "s",
-        "cc_light_codeword": 103,
+        "visual_codeword": 103,
         "cc_light_opcode": 10,
         "visual_type": "s"
      },
@@ -1035,7 +1035,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "s",
-        "cc_light_codeword": 104,
+        "visual_codeword": 104,
         "cc_light_opcode": 10,
         "visual_type": "s"
      },
@@ -1047,7 +1047,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "s",
-        "cc_light_codeword": 105,
+        "visual_codeword": 105,
         "cc_light_opcode": 10,
         "visual_type": "s"
      },
@@ -1059,7 +1059,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "s",
-        "cc_light_codeword": 106,
+        "visual_codeword": 106,
         "cc_light_opcode": 10,
         "visual_type": "s"
      },
@@ -1071,7 +1071,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sdag",
-        "cc_light_codeword": 110,
+        "visual_codeword": 110,
         "cc_light_opcode": 11,
         "visual_type": "sdag"
      },
@@ -1083,7 +1083,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sdag",
-        "cc_light_codeword": 111,
+        "visual_codeword": 111,
         "cc_light_opcode": 11,
         "visual_type": "sdag"
      },
@@ -1095,7 +1095,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sdag",
-        "cc_light_codeword": 112,
+        "visual_codeword": 112,
         "cc_light_opcode": 11,
         "visual_type": "sdag"
      },
@@ -1107,7 +1107,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sdag",
-        "cc_light_codeword": 113,
+        "visual_codeword": 113,
         "cc_light_opcode": 11,
         "visual_type": "sdag"
      },
@@ -1119,7 +1119,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sdag",
-        "cc_light_codeword": 114,
+        "visual_codeword": 114,
         "cc_light_opcode": 11,
         "visual_type": "sdag"
      },
@@ -1131,7 +1131,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sdag",
-        "cc_light_codeword": 115,
+        "visual_codeword": 115,
         "cc_light_opcode": 11,
         "visual_type": "sdag"
      },
@@ -1143,7 +1143,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sdag",
-        "cc_light_codeword": 116,
+        "visual_codeword": 116,
         "cc_light_opcode": 11,
         "visual_type": "sdag"
      },
@@ -1155,7 +1155,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x90",
-        "cc_light_codeword": 120,
+        "visual_codeword": 120,
         "cc_light_opcode": 12,
         "visual_type": "rx90"
      },
@@ -1167,7 +1167,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x90",
-        "cc_light_codeword": 121,
+        "visual_codeword": 121,
         "cc_light_opcode": 12,
         "visual_type": "rx90"
      },
@@ -1179,7 +1179,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x90",
-        "cc_light_codeword": 122,
+        "visual_codeword": 122,
         "cc_light_opcode": 12,
         "visual_type": "rx90"
      },
@@ -1191,7 +1191,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x90",
-        "cc_light_codeword": 123,
+        "visual_codeword": 123,
         "cc_light_opcode": 12,
         "visual_type": "rx90"
      },
@@ -1203,7 +1203,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x90",
-        "cc_light_codeword": 124,
+        "visual_codeword": 124,
         "cc_light_opcode": 12,
         "visual_type": "rx90"
      },
@@ -1215,7 +1215,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x90",
-        "cc_light_codeword": 125,
+        "visual_codeword": 125,
         "cc_light_opcode": 12,
         "visual_type": "rx90"
      },
@@ -1227,7 +1227,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x90",
-        "cc_light_codeword": 126,
+        "visual_codeword": 126,
         "cc_light_opcode": 12,
         "visual_type": "rx90"
      },
@@ -1239,7 +1239,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm90",
-        "cc_light_codeword": 130,
+        "visual_codeword": 130,
         "cc_light_opcode": 13,
         "visual_type": "xm90"
      },
@@ -1251,7 +1251,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm90",
-        "cc_light_codeword": 131,
+        "visual_codeword": 131,
         "cc_light_opcode": 13,
         "visual_type": "xm90"
      },
@@ -1263,7 +1263,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm90",
-        "cc_light_codeword": 132,
+        "visual_codeword": 132,
         "cc_light_opcode": 13,
         "visual_type": "xm90"
      },
@@ -1275,7 +1275,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm90",
-        "cc_light_codeword": 133,
+        "visual_codeword": 133,
         "cc_light_opcode": 13,
         "visual_type": "xm90"
      },
@@ -1287,7 +1287,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm90",
-        "cc_light_codeword": 134,
+        "visual_codeword": 134,
         "cc_light_opcode": 13,
         "visual_type": "xm90"
      },
@@ -1299,7 +1299,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm90",
-        "cc_light_codeword": 135,
+        "visual_codeword": 135,
         "cc_light_opcode": 13,
         "visual_type": "xm90"
      },
@@ -1311,7 +1311,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm90",
-        "cc_light_codeword": 136,
+        "visual_codeword": 136,
         "cc_light_opcode": 13,
         "visual_type": "xm90"
      },
@@ -1323,7 +1323,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y90",
-        "cc_light_codeword": 140,
+        "visual_codeword": 140,
         "cc_light_opcode": 14,
         "visual_type": "ry90"
      },
@@ -1335,7 +1335,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y90",
-        "cc_light_codeword": 141,
+        "visual_codeword": 141,
         "cc_light_opcode": 14,
         "visual_type": "ry90"
      },
@@ -1347,7 +1347,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y90",
-        "cc_light_codeword": 142,
+        "visual_codeword": 142,
         "cc_light_opcode": 14,
         "visual_type": "ry90"
      },
@@ -1359,7 +1359,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y90",
-        "cc_light_codeword": 143,
+        "visual_codeword": 143,
         "cc_light_opcode": 14,
         "visual_type": "ry90"
      },
@@ -1371,7 +1371,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y90",
-        "cc_light_codeword": 144,
+        "visual_codeword": 144,
         "cc_light_opcode": 14,
         "visual_type": "ry90"
      },
@@ -1383,7 +1383,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y90",
-        "cc_light_codeword": 145,
+        "visual_codeword": 145,
         "cc_light_opcode": 14,
         "visual_type": "ry90"
      },
@@ -1395,7 +1395,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "y90",
-        "cc_light_codeword": 146,
+        "visual_codeword": 146,
         "cc_light_opcode": 14,
         "visual_type": "ry90"
      },
@@ -1407,7 +1407,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "ym90",
-        "cc_light_codeword": 150,
+        "visual_codeword": 150,
         "cc_light_opcode": 15,
         "visual_type": "ym90"
      },
@@ -1419,7 +1419,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "ym90",
-        "cc_light_codeword": 151,
+        "visual_codeword": 151,
         "cc_light_opcode": 15,
         "visual_type": "ym90"
      },
@@ -1431,7 +1431,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "ym90",
-        "cc_light_codeword": 152,
+        "visual_codeword": 152,
         "cc_light_opcode": 15,
         "visual_type": "ym90"
      },
@@ -1443,7 +1443,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "ym90",
-        "cc_light_codeword": 153,
+        "visual_codeword": 153,
         "cc_light_opcode": 15,
         "visual_type": "ym90"
      },
@@ -1455,7 +1455,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "ym90",
-        "cc_light_codeword": 154,
+        "visual_codeword": 154,
         "cc_light_opcode": 15,
         "visual_type": "ym90"
      },
@@ -1467,7 +1467,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "ym90",
-        "cc_light_codeword": 155,
+        "visual_codeword": 155,
         "cc_light_opcode": 15,
         "visual_type": "ym90"
      },
@@ -1479,7 +1479,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "ym90",
-        "cc_light_codeword": 156,
+        "visual_codeword": 156,
         "cc_light_opcode": 15,
         "visual_type": "ym90"
      },
@@ -1491,7 +1491,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "t",
-        "cc_light_codeword": 160,
+        "visual_codeword": 160,
         "cc_light_opcode": 16,
         "visual_type": "t"
      },
@@ -1503,7 +1503,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "t",
-        "cc_light_codeword": 161,
+        "visual_codeword": 161,
         "cc_light_opcode": 16,
         "visual_type": "t"
      },
@@ -1515,7 +1515,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "t",
-        "cc_light_codeword": 162,
+        "visual_codeword": 162,
         "cc_light_opcode": 16,
         "visual_type": "t"
      },
@@ -1527,7 +1527,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "t",
-        "cc_light_codeword": 163,
+        "visual_codeword": 163,
         "cc_light_opcode": 16,
         "visual_type": "t"
      },
@@ -1539,7 +1539,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "t",
-        "cc_light_codeword": 164,
+        "visual_codeword": 164,
         "cc_light_opcode": 16,
         "visual_type": "t"
      },
@@ -1551,7 +1551,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "t",
-        "cc_light_codeword": 165,
+        "visual_codeword": 165,
         "cc_light_opcode": 16,
         "visual_type": "t"
      },
@@ -1563,7 +1563,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "t",
-        "cc_light_codeword": 166,
+        "visual_codeword": 166,
         "cc_light_opcode": 16,
         "visual_type": "t"
      },
@@ -1575,7 +1575,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "tdag",
-        "cc_light_codeword": 170,
+        "visual_codeword": 170,
         "cc_light_opcode": 17,
         "visual_type": "tdag"
      },
@@ -1587,7 +1587,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "tdag",
-        "cc_light_codeword": 171,
+        "visual_codeword": 171,
         "cc_light_opcode": 17,
         "visual_type": "tdag"
      },
@@ -1599,7 +1599,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "tdag",
-        "cc_light_codeword": 172,
+        "visual_codeword": 172,
         "cc_light_opcode": 17,
         "visual_type": "tdag"
      },
@@ -1611,7 +1611,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "tdag",
-        "cc_light_codeword": 173,
+        "visual_codeword": 173,
         "cc_light_opcode": 17,
         "visual_type": "tdag"
      },
@@ -1623,7 +1623,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "tdag",
-        "cc_light_codeword": 174,
+        "visual_codeword": 174,
         "cc_light_opcode": 17,
         "visual_type": "tdag"
      },
@@ -1635,7 +1635,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "tdag",
-        "cc_light_codeword": 175,
+        "visual_codeword": 175,
         "cc_light_opcode": 17,
         "visual_type": "tdag"
      },
@@ -1647,7 +1647,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "tdag",
-        "cc_light_codeword": 176,
+        "visual_codeword": 176,
         "cc_light_opcode": 17,
         "visual_type": "tdag"
      },
@@ -1659,7 +1659,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x45",
-        "cc_light_codeword": 180,
+        "visual_codeword": 180,
         "cc_light_opcode": 18,
         "visual_type": "x45"
      },
@@ -1671,7 +1671,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x45",
-        "cc_light_codeword": 181,
+        "visual_codeword": 181,
         "cc_light_opcode": 18,
         "visual_type": "x45"
      },
@@ -1683,7 +1683,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x45",
-        "cc_light_codeword": 182,
+        "visual_codeword": 182,
         "cc_light_opcode": 18,
         "visual_type": "x45"
      },
@@ -1695,7 +1695,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x45",
-        "cc_light_codeword": 183,
+        "visual_codeword": 183,
         "cc_light_opcode": 18,
         "visual_type": "x45"
      },
@@ -1707,7 +1707,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x45",
-        "cc_light_codeword": 184,
+        "visual_codeword": 184,
         "cc_light_opcode": 18,
         "visual_type": "x45"
      },
@@ -1719,7 +1719,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x45",
-        "cc_light_codeword": 185,
+        "visual_codeword": 185,
         "cc_light_opcode": 18,
         "visual_type": "x45"
      },
@@ -1731,7 +1731,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "x45",
-        "cc_light_codeword": 186,
+        "visual_codeword": 186,
         "cc_light_opcode": 18,
         "visual_type": "x45"
      },
@@ -1743,7 +1743,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm45",
-        "cc_light_codeword": 190,
+        "visual_codeword": 190,
         "cc_light_opcode": 19,
         "visual_type": "xm45"
      },
@@ -1755,7 +1755,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm45",
-        "cc_light_codeword": 191,
+        "visual_codeword": 191,
         "cc_light_opcode": 19,
         "visual_type": "xm45"
      },
@@ -1767,7 +1767,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm45",
-        "cc_light_codeword": 192,
+        "visual_codeword": 192,
         "cc_light_opcode": 19,
         "visual_type": "xm45"
      },
@@ -1779,7 +1779,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm45",
-        "cc_light_codeword": 193,
+        "visual_codeword": 193,
         "cc_light_opcode": 19,
         "visual_type": "xm45"
      },
@@ -1791,7 +1791,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm45",
-        "cc_light_codeword": 194,
+        "visual_codeword": 194,
         "cc_light_opcode": 19,
         "visual_type": "xm45"
      },
@@ -1803,7 +1803,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm45",
-        "cc_light_codeword": 195,
+        "visual_codeword": 195,
         "cc_light_opcode": 19,
         "visual_type": "xm45"
      },
@@ -1815,7 +1815,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "xm45",
-        "cc_light_codeword": 196,
+        "visual_codeword": 196,
         "cc_light_opcode": 19,
         "visual_type": "xm45"
      },
@@ -1827,7 +1827,7 @@
         "type": "mw",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "ry180",
-        "cc_light_codeword": 198,
+        "visual_codeword": 198,
         "cc_light_opcode": 35,
         "visual_type": "ry180"
      },
@@ -1839,8 +1839,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 127,
-        "cc_light_left_codeword": 135,
+        "visual_right_codeword": 127,
+        "visual_left_codeword": 135,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1852,8 +1852,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 128,
-        "cc_light_left_codeword": 136,
+        "visual_right_codeword": 128,
+        "visual_left_codeword": 136,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1865,8 +1865,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 129,
-        "cc_light_left_codeword": 137,
+        "visual_right_codeword": 129,
+        "visual_left_codeword": 137,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1878,8 +1878,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 130,
-        "cc_light_left_codeword": 138,
+        "visual_right_codeword": 130,
+        "visual_left_codeword": 138,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1891,8 +1891,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 131,
-        "cc_light_left_codeword": 139,
+        "visual_right_codeword": 131,
+        "visual_left_codeword": 139,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1904,8 +1904,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 132,
-        "cc_light_left_codeword": 140,
+        "visual_right_codeword": 132,
+        "visual_left_codeword": 140,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1917,8 +1917,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 133,
-        "cc_light_left_codeword": 141,
+        "visual_right_codeword": 133,
+        "visual_left_codeword": 141,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1930,8 +1930,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 134,
-        "cc_light_left_codeword": 142,
+        "visual_right_codeword": 134,
+        "visual_left_codeword": 142,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1943,8 +1943,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 135,
-        "cc_light_left_codeword": 143,
+        "visual_right_codeword": 135,
+        "visual_left_codeword": 143,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1956,8 +1956,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 136,
-        "cc_light_left_codeword": 144,
+        "visual_right_codeword": 136,
+        "visual_left_codeword": 144,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1969,8 +1969,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 137,
-        "cc_light_left_codeword": 145,
+        "visual_right_codeword": 137,
+        "visual_left_codeword": 145,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1982,8 +1982,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 138,
-        "cc_light_left_codeword": 146,
+        "visual_right_codeword": 138,
+        "visual_left_codeword": 146,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -1995,8 +1995,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 139,
-        "cc_light_left_codeword": 147,
+        "visual_right_codeword": 139,
+        "visual_left_codeword": 147,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -2008,8 +2008,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 140,
-        "cc_light_left_codeword": 148,
+        "visual_right_codeword": 140,
+        "visual_left_codeword": 148,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -2021,8 +2021,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 141,
-        "cc_light_left_codeword": 149,
+        "visual_right_codeword": 141,
+        "visual_left_codeword": 149,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -2034,8 +2034,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cnot",
-        "cc_light_right_codeword": 142,
-        "cc_light_left_codeword": 150,
+        "visual_right_codeword": 142,
+        "visual_left_codeword": 150,
         "cc_light_opcode": 128,
         "visual_type": "cnot"
      },
@@ -2048,7 +2048,7 @@
         "type": "flux",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sqf",
-        "cc_light_codeword": 115,
+        "visual_codeword": 115,
         "cc_light_opcode": 129,
         "visual_type": "sqf"
      },
@@ -2061,7 +2061,7 @@
         "type": "flux",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sqf",
-        "cc_light_codeword": 115,
+        "visual_codeword": 115,
         "cc_light_opcode": 129,
         "visual_type": "sqf"
      },
@@ -2074,7 +2074,7 @@
         "type": "flux",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sqf",
-        "cc_light_codeword": 115,
+        "visual_codeword": 115,
         "cc_light_opcode": 129,
         "visual_type": "sqf"
      },
@@ -2087,7 +2087,7 @@
         "type": "flux",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sqf",
-        "cc_light_codeword": 115,
+        "visual_codeword": 115,
         "cc_light_opcode": 129,
         "visual_type": "sqf"
      },
@@ -2100,7 +2100,7 @@
         "type": "flux",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sqf",
-        "cc_light_codeword": 115,
+        "visual_codeword": 115,
         "cc_light_opcode": 129,
         "visual_type": "sqf"
      },
@@ -2113,7 +2113,7 @@
         "type": "flux",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sqf",
-        "cc_light_codeword": 115,
+        "visual_codeword": 115,
         "cc_light_opcode": 129,
         "visual_type": "sqf"
      },
@@ -2126,7 +2126,7 @@
         "type": "flux",
         "cc_light_instr_type": "single_qubit_gate",
         "cc_light_instr": "sqf",
-        "cc_light_codeword": 115,
+        "visual_codeword": 115,
         "cc_light_opcode": 129,
         "visual_type": "sqf"
      },
@@ -2139,8 +2139,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 143,
-        "cc_light_left_codeword": 151,
+        "visual_right_codeword": 143,
+        "visual_left_codeword": 151,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2152,8 +2152,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2165,8 +2165,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2178,8 +2178,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2191,8 +2191,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2204,8 +2204,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2217,8 +2217,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2230,8 +2230,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2243,8 +2243,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2256,8 +2256,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2269,8 +2269,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2282,8 +2282,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2295,8 +2295,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2308,8 +2308,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2321,8 +2321,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      },
@@ -2334,8 +2334,8 @@
         "type": "flux",
         "cc_light_instr_type": "two_qubit_gate",
         "cc_light_instr": "cz",
-        "cc_light_right_codeword": 144,
-        "cc_light_left_codeword": 152,
+        "visual_right_codeword": 144,
+        "visual_left_codeword": 152,
         "cc_light_opcode": 129,
         "visual_type": "cz"
      }

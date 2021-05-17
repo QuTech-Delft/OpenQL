@@ -3,6 +3,10 @@
 Optimization
 ------------
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 Optimization of circuits [TBD]
 
 Optimize

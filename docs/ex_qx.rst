@@ -1,6 +1,10 @@
 QX Simulation
 =============
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 This tutorial explains how to compile an OpenQL program and execute it on QX. We will use the example of rolling an 8-faced dice. Rolling this dice results in 1 out of 8 outcomes. The complete code for this example is available in ``examples/dice.py``. You can also copy the snippits over to your own script as we walk through it.
 
 .. figure:: figures/dice.png

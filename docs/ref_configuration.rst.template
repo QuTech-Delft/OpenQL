@@ -1,3 +1,5 @@
+.. _ref_configuration:
+
 Configuration
 =============
 
@@ -11,7 +13,7 @@ The two most important configuration file types are the *platform* and *compiler
 
  - The compiler configuration file describes the steps that OpenQL should take to transform the incoming program to something that can run on the platform (or at least is no further away from being able to run on it). This is also referred to as the pass list or compilation strategy. Besides configuration via JSON, the strategy can also be configured using the Python/C++ API directly; this is particularly useful when you for example only want to insert a visualizer pass into the existing, default pass list, or when you're doing design-space exploration to determine the optimal compilation strategy for a particular algorithm.
 
-The structure of the most important configuration files of OpenQL are documented below.
+The structure of these files is documented below.
 
 
 Platform configuration
@@ -23,22 +25,4 @@ Platform configuration
 Compiler configuration
 ----------------------
 
-TODO
-
-
-cQASM reader configuration
---------------------------
-
-TODO
-
-
-Visualizer main configuration
------------------------------
-
-TODO
-
-
-Visualizer waveform configuration
----------------------------------
-
-TODO
+{compiler}

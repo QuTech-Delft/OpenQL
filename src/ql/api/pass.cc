@@ -46,7 +46,7 @@ void Pass::print_pass_documentation() const {
 /**
  * Returns the documentation for this pass as a string.
  */
-std::string Pass::get_pass_documentation() const {
+std::string Pass::dump_pass_documentation() const {
     std::ostringstream ss;
     pass->dump_help(ss);
     return ss.str();
@@ -63,12 +63,13 @@ void Pass::print_options(bool only_set) const {
 /**
  * Returns the string printed by print_options().
  */
-std::string Pass::get_options(bool only_set) const {
+std::string Pass::dump_options(bool only_set) const {
     std::ostringstream ss;
     pass->dump_help(ss);
     return ss.str();
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Prints the entire compilation strategy including configured options of
  * this pass and all sub-passes.
@@ -76,16 +77,20 @@ std::string Pass::get_options(bool only_set) const {
 void Pass::print_strategy() const {
     pass->dump_strategy();
 }
+#endif
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Returns the string printed by print_strategy().
  */
-std::string Pass::get_strategy() const {
+std::string Pass::dump_strategy() const {
     std::ostringstream ss;
     pass->dump_strategy(ss);
     return ss.str();
 }
+#endif
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Sets an option. Periods may be used as hierarchy separators to set
  * options for sub-passes; the last element will be the option name, and the
@@ -107,7 +112,19 @@ size_t Pass::set_option(
 ) {
     return pass->set_option(option, value, must_exist);
 }
+#else
+/**
+ * Sets an option.
+ */
+void Pass::set_option(
+    const std::string &option,
+    const std::string &value
+) {
+    pass->set_option(option, value, true);
+}
+#endif
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Sets an option for all sub-passes recursively. The return value is the
  * number of passes that were affected; passes are only affected when they
@@ -122,15 +139,23 @@ size_t Pass::set_option_recursively(
 ) {
     return pass->set_option_recursively(option, value, must_exist);
 }
+#endif
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Returns the current value of an option. Periods may be used as hierarchy
  * separators to get options from sub-passes (if any).
  */
+#else
+/**
+ * Returns the current value of an option.
+ */
+#endif
 std::string Pass::get_option(const std::string &option) const {
     return pass->get_option(option).as_str();
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Constructs this pass. During construction, the pass implementation may
  * decide, based on its options, to become a group of passes or a normal
@@ -361,6 +386,7 @@ void Pass::remove_sub_pass(const std::string &target) {
 void Pass::clear_sub_passes() {
     pass->clear_sub_passes();
 }
+#endif
 
 } // namespace api
 } // namespace ql

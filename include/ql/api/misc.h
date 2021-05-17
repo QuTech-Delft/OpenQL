@@ -60,7 +60,7 @@ void print_options();
 /**
  * Returns the result of print_options() as a string.
  */
-std::string get_options();
+std::string dump_options();
 
 /**
  * Prints the documentation for all available target architectures.
@@ -70,7 +70,7 @@ void print_architectures();
 /**
  * Returns the result of print_architectures() as a string.
  */
-std::string get_architectures();
+std::string dump_architectures();
 
 /**
  * Prints the documentation for all available passes.
@@ -80,7 +80,7 @@ void print_passes();
 /**
  * Returns the result of print_passes() as a string.
  */
-std::string get_passes();
+std::string dump_passes();
 
 /**
  * Prints the documentation for all available scheduler resources.
@@ -90,7 +90,7 @@ void print_resources();
 /**
  * Returns the result of print_resources() as a string.
  */
-std::string get_resources();
+std::string dump_resources();
 
 /**
  * Prints the documentation for platform configuration files.
@@ -100,7 +100,17 @@ void print_platform_docs();
 /**
  * Returns the result of print_platform_docs() as a string.
  */
-std::string get_platform_docs();
+std::string dump_platform_docs();
+
+/**
+ * Prints the documentation for compiler configuration files.
+ */
+void print_compiler_docs();
+
+/**
+ * Returns the result of print_compiler_docs() as a string.
+ */
+std::string dump_compiler_docs();
 
 } // namespace api
 } // namespace ql

@@ -42,6 +42,7 @@ def docs_to_rst_magic(text, header_level=1):
     # Perform conversion magic.
     output = []
     rst_block = False
+    remove = False
     blank = True
     indent = 0
     for line in text.split('\n'):
@@ -49,7 +50,12 @@ def docs_to_rst_magic(text, header_level=1):
         # Handle blank lines.
         if not line.strip():
             rst_block = False
+            remove = False
             blank = True
+            continue
+
+        # Drop lines if we're in a removed section.
+        if remove:
             continue
 
         # Strip section indentation.
@@ -76,6 +82,13 @@ def docs_to_rst_magic(text, header_level=1):
                 rst_block = True
                 line = line[6:]
 
+            # Handle removed note blocks. This is used for "X is not included
+            # in this build" notifications that are naturally the case when
+            # ReadTheDocs is building OpenQL.
+            elif line.startswith('NOTE*: '):
+                remove = True
+                continue
+
             # Handle "warning" block.
             elif line.startswith('WARNING: '):
                 output.append('.. warning::')
@@ -85,12 +98,12 @@ def docs_to_rst_magic(text, header_level=1):
             # A new RST block (note or warning) was opened, which means we need
             # to capitalize the first letter.
             if rst_block:
-                output.append('   ' + line[:1].upper() + line[1:])
+                output.append('   ' + m2r2.convert(line[:1].upper() + line[1:]).strip())
                 continue
 
         # Indent followup lines of RST blocks.
         if rst_block:
-            line = '   ' + line
+            line = '   ' + m2r2.convert(line).strip()
 
         # Finished converting stuff.
         output.append(line)
@@ -112,36 +125,64 @@ def docs_to_rst_magic(text, header_level=1):
 
     return text
 
+def get_version(verbose=0):
+    """ Extract version information from source code """
+
+    matcher = re.compile('[\t ]*#define[\t ]+OPENQL_VERSION_STRING[\t ]+"(.*)"')
+    with open(os.path.join('..', 'include', 'ql', 'version.h'), 'r') as f:
+        for ln in f:
+            m = matcher.match(ln)
+            if m:
+                version = m.group(1)
+                break
+        else:
+            raise Exception('failed to parse version string from include/ql/version.h')
+
+    return version
+
 if not os.path.exists('gen'):
     os.makedirs('gen')
 
+# Version in installation instructions.
+with open('gs_installation.rst.template', 'r') as f:
+    docs = f.read()
+docs = docs.replace('{version}', get_version())
+with open('gen/gs_installation.rst', 'w') as f:
+    f.write(docs)
+
 # Architecture list.
 with open('ref_architectures.rst.template', 'r') as f:
-    docs = f.read().replace('{architectures}', docs_to_rst_magic(ql.get_architectures(), 2))
+    docs = f.read()
+docs = docs.replace('{architectures}', docs_to_rst_magic(ql.dump_architectures(), 2))
 with open('gen/ref_architectures.rst', 'w') as f:
     f.write(docs)
 
 # Global option list.
 with open('ref_options.rst.template', 'r') as f:
-    docs = f.read().replace('{options}', docs_to_rst_magic(ql.get_options(), 2))
+    docs = f.read()
+docs = docs.replace('{options}', docs_to_rst_magic(ql.dump_options(), 2))
 with open('gen/ref_options.rst', 'w') as f:
     f.write(docs)
 
 # Pass list.
 with open('ref_passes.rst.template', 'r') as f:
-    docs = f.read().replace('{passes}', docs_to_rst_magic(ql.get_passes(), 2))
+    docs = f.read()
+docs = docs.replace('{passes}', docs_to_rst_magic(ql.dump_passes(), 2))
 with open('gen/ref_passes.rst', 'w') as f:
     f.write(docs)
 
 # Resource list.
 with open('ref_resources.rst.template', 'r') as f:
-    docs = f.read().replace('{resources}', docs_to_rst_magic(ql.get_resources(), 2))
+    docs = f.read()
+docs = docs.replace('{resources}', docs_to_rst_magic(ql.dump_resources(), 2))
 with open('gen/ref_resources.rst', 'w') as f:
     f.write(docs)
 
 # Configuration file reference.
 with open('ref_configuration.rst.template', 'r') as f:
-    docs = f.read().replace('{platform}', docs_to_rst_magic(ql.get_platform_docs(), 3))
+    docs = f.read()
+docs = docs.replace('{platform}', docs_to_rst_magic(ql.dump_platform_docs(), 3))
+docs = docs.replace('{compiler}', docs_to_rst_magic(ql.dump_compiler_docs(), 3))
 with open('gen/ref_configuration.rst', 'w') as f:
     f.write(docs)
 

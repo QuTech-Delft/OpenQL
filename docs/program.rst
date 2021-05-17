@@ -3,6 +3,10 @@
 Program
 =======
 
+.. warning::
+   This page has not been revised yet since modularization and refactoring,
+   and may thus be out of date.
+
 In the OpenQL programming model, one first creates the platform object and then with it the program object.
 After that, one creates kernels with gates and adds these kernels to the program.
 Finally, one compiles the program and executes it.

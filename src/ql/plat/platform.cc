@@ -6,6 +6,7 @@
 
 #include <regex>
 #include "ql/utils/filesystem.h"
+#include "ql/rmgr/manager.h"
 #include "ql/arch/factory.h"
 
 namespace ql {
@@ -16,7 +17,202 @@ namespace plat {
  */
 void Platform::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
     utils::dump_str(os, line_prefix, R"(
-    TODO
+    The platform configuration JSON file (or JSON data, as it's not necessarily
+    always in file form) represents a complete description of what the target
+    platform looks like, and optionally how to compile for it. At the top level,
+    the structure is a JSON object, with the following keys recognized by
+    OpenQL's platform-agnostic logic, customarily written in the following
+    order.
+
+     - `"eqasm_compiler"`: an optional description of how to compile for this
+       platform.
+     - `"hardware_settings"`: contains basic descriptors for the hardware, such
+       as qubit count and cycle time.
+     - `"topology"`: optionally provides a more in-depth description of how the
+       qubits are organized.
+     - `"resources"`: optionally provides information about scheduling
+       constraints, for example due to a number of qubits sharing a single
+       waveform generator.
+     - `"instructions"`: lists the instruction set supported by the platform.
+     - `"gate_decomposition"`: optionally lists a set of decomposition rules
+       that are immediately applied when a gate with a particular name is added.
+
+    NOTE: the plan is to move away from on-the-fly gate decomposition, and
+    instead make a gate decomposition pass. The exact design for this has not
+    been made yet, but it's possible that the gate decomposition section will
+    change in minor ways in the future, or will be deprecated in favor of an
+    entirely new configuration file section.
+
+    Depending on the architecture being compiled for, as specified through the
+    `"eqasm_compiler"` key or via the compiler configuration file override
+    during platform construction, additional sections or keys may be optional or
+    required, or entire sections may even be generated. Refer to the
+    architecture documentation for details to this end. The `"none"`
+    architecture by definition does not do any of this, and can thus always be
+    used as an override of sorts for this behavior; the only thing that the
+    architecture variant specification does is provide better defaults for the
+    platform and compiler configuration, so everything can always be specified
+    using the `"none"` architecture if need be. The remainder of this page thus
+    describes the "universal" structure as used by `"none"`, while the
+    architecture documentation may make achitecture-specific addenda.
+
+    In addition, passes are allowed to make use of additional structures in the
+    configuration file. This implies that the common OpenQL code will *not*
+    check for or warn you about unrecognized keys: it assumes that these will
+    be read by something it is not aware of.
+)" R"(
+    * `"eqasm_compiler"` section *
+
+      The `"eqasm_compiler"` key can take assume of the following types of
+      values.
+
+       - No value/unspecified: the defaults for the "none" architecture will
+         implicitly be used.
+       - A string matching one of the available architectures or architecture
+         variants, for example `"cc"` or `"cc_light.s7"`: the defaults for that
+         architecture (variant) will be used. Legacy values, such as
+         `"eqasm_compiler_cc"` or `"qx"` may also be used. Refer to the
+         architecture documentation for a full and up-to-date list of recognized
+         values.
+       - A filename: the specified file will be interpreted as a compiler
+         configuration file, fully specifying what the compiler looks like.
+       - A JSON object: the contents of the object will be interpreted as a
+         compiler configuration file, again fully specifying what the compiler
+         looks like, but without the extra file indirection.
+
+      This key can also be completely overridden by explicitly specifying a
+      compiler configuration file during platform construction, thus allowing
+      the platform and compiler configuration files to be completely disjoint,
+      if this is preferred for the intended application.
+)" R"(
+    * `"hardware_settings"` section *
+
+      This must map to an object containing the basic parameters that describe
+      the platform. OpenQL's common code recognizes the following.
+
+       - `"qubit_number"`: must map to an integer specifying the total number
+         of qubits in the platform. Qubit indices start at zero, so all indices
+         must be in the range 0..N-1, where N is this value.
+       - `"creg_number"`: optionally specifies the number of 32-bit integer
+         classical registers available in the platform. If not specified, the
+         value will be inferred from the constructor of `ql.Program`.
+       - `"breg_number"`: optionally specifies the number of single-bit
+         classical registers available in the platform, used for receiving
+         measurement results and predicates. If not specified, the value will be
+         inferred from the constructor of `ql.Program`.
+       - `"cycle_time"`: optionally specifies the cycle time used by the
+         platform in nanoseconds. Currently this must be an integer value. If
+         not specified, 1 will be used as a default, thus equating the
+         nanosecond values to cycle values.
+
+    * `"topology"` section *
+
+    )");
+    Topology::dump_docs(os, line_prefix + "  ");
+    os << line_prefix << std::endl;
+    utils::dump_str(os, line_prefix, R"(
+    * `"resources"` section *
+
+    )");
+    rmgr::Manager::dump_docs(os, line_prefix + "  ");
+    os << line_prefix << std::endl;
+    utils::dump_str(os, line_prefix, R"(
+    * `"instructions"` section *
+
+      This section specifies the instruction set of the architecture. It must
+      be an object, where each key represents the name of a gate, and the value
+      is again an object, containing any semantical information needed to
+      describe the instruction.
+
+      NOTE: OpenQL currently derives much of the semantics from the gate name.
+      For example, the cQASM writer determines whether it should emit a gate
+      angle parameter based on whether the name of the gate equals a set of
+      gate names that would logically have an angle. This is behavior is very
+      much legacy, and is to be replaced with checking for keys in the
+      instruction definition (though of course using appropriate defaults for
+      backward compatibility).
+
+      OpenQL supports two classes of instructions: *generalized gates* and
+      *specialized gates*. For generalized gates, the gate name (i.e. the JSON
+      object key) must be a single identifier matching `[a-zA-Z_][a-zA-Z0-9_]*`.
+      This means that the gate can be applied to any set of operands.
+      Specialized gates, on the other hand, have a fixed set of qubit operands.
+      Their JSON key must be of the form `<name> <qubits>`, where `<name>` is
+      as above, and `<qubits>` is a comma-separated list (without spaces) of
+      qubit indices, each of the form `q<index>`. For example, a correct name
+      for a specialized two-qubit gate would be `cz q0,q1`. Specialized gates
+      allow different semantical parameters to be specified for each possible
+      set of qubit operands: for example, the duration for a particular gate on
+      a particular architecture may depend on the operands.
+
+      NOTE: if you're using the mapper, and thus the input to your program is
+      unmapped, OpenQL will also use the gate specializations when the gates
+      still operate on virtual qubits. Therefore, you *must* specify a
+      specialization for all possible qubit operand combinations of a particular
+      gate, even if the gate does not exist for a particular combination due to
+      for example connectivity constraints. Alternatively, you may specify a
+      fallback using a generalized gate, as OpenQL will favor specialized gates
+      when they exist.
+
+      Within the instruction definition object, OpenQL's
+      architecture/pass-agnostic logic currently only recognizes the following
+      keys.
+
+       - `"duration"` or `"duration_cycles"`: specifies the duration of the
+         instruction in nanoseconds or cycles. OpenQL currently only supports
+         durations that are an integer number of nanoseconds, so any fractions
+         will be rounded up to the nearest nanosecond. Furthermore, in almost
+         all contexts, the duration of an instruction will be rounded up to the
+         nearest integer cycle count.
+       - `"qubits"`: this *must* map to a single qubit index or a list of qubit
+         indices that corresponds to the qubits in the specialization. For
+         generalized instructions, the list must either be empty or unspecified.
+         This field will be removed in the future as it is redundant, from which
+         point onward it will be ignored. The qubit indices themselves can be
+         specified as either a string of the form `"q<index>"` or an integer
+         with just the index.
+
+      NOTE: older versions of OpenQL recognized and required the existence of
+      many more keys, such as `"matrix"` and `"latency"`. All passes relying on
+      this information have since been cleaned out as they were no longer in
+      use, and all requirements on the existence of these keys have likewise
+      been lifted.
+)" R"(
+    * `"gate_decomposition"` section *
+
+      This section specifies the decomposition rules for gates/instructions that
+      are applied immediately when a gate is constructed. If specified, it must
+      be an object, where each key represents the name of the gate, along with
+      capture groups for the qubit operands. The keys must map to arrays of
+      strings, wherein each string represents a gate in the decomposition.
+
+      Examples of two decompositions are shown below. `%0` and `%1` refer to the
+      first argument and the second argument. This means according to the
+      decomposition on line 2, `rx180 %0` will allow us to decompose `rx180 q0`
+      to `x q0`. Similarly, the decomposition on line 3 will allow us to
+      decompose `cnot q2, q0` to three instructions, namely: `ry90 q0`,
+      `cz q2, q0`, and `ry90 q0`.
+
+      ```
+      "gate_decomposition": {
+          "rx180 %0" : ["x %0"],
+          "cnot %0,%1" : ["ry90 %1","cz %0,%1","ry90 %1"]
+      }
+      ```
+
+      These decompositions are simple macros (in-place substitutions) which
+      allow programmer to manually specify a decomposition. These take place at
+      the time of creation of a gate in a kernel. This means the scheduler
+      will schedule decomposed instructions.
+
+      NOTE: decomposition rules may only refer to custom gates that have already
+      been defined in the instruction set.
+
+      NOTE: recursive decomposition rules, i.e. decompositions that make use of
+      other decomposed gate definitions, are not supported.
+
+      NOTE: these decomposition rules are intended to be replaced by a more
+      powerful system in the future.
     )");
 }
 
@@ -34,8 +230,13 @@ static utils::Str sanitize_instruction_name(utils::Str name) {
     return name;
 }
 
-static CustomGateRef load_instruction(const utils::Str &name, utils::Json &instr) {
-    auto g = CustomGateRef::make<ir::gate_types::Custom>(name);
+static ir::GateRef load_instruction(
+    const utils::Str &name,
+    utils::Json &instr,
+    utils::UInt num_qubits,
+    utils::UInt cycle_time
+) {
+    auto g = ir::GateRef::make<ir::gate_types::Custom>(name);
     // skip alias fo now
     if (instr.count("alias") > 0) {
         // todo : look for the target aliased gate
@@ -44,7 +245,7 @@ static CustomGateRef load_instruction(const utils::Str &name, utils::Json &instr
         return g;
     }
     try {
-        g->load(instr);
+        g.as<ir::gate_types::Custom>()->load(instr, num_qubits, cycle_time);
     } catch (utils::Exception &e) {
         QL_EOUT("error while loading instruction '" << name << "' : " << e.what());
         throw;
@@ -162,7 +363,8 @@ void Platform::load(
             compat_implicit_breg_count = false;
         }
         if (hardware_settings.count("cycle_time") <= 0) {
-            QL_FATAL("cycle time of the platform is not specified in the configuration file !");
+            QL_WOUT("hardware_settings.cycle_time is not specified in the configuration file; assuming 1 \"ns\" for ease of calculation");
+            cycle_time = 1;
         } else {
             cycle_time = hardware_settings["cycle_time"];
         }
@@ -177,14 +379,16 @@ void Platform::load(
 
     // load platform resources
     if (platform_config.count("resources") <= 0) {
-        QL_FATAL("'resources' section is not specified in the hardware config file");
+        QL_WOUT("'resources' section is not specified in the hardware config file; assuming that there are none");
+        resources = "{}"_json;
     } else {
         resources = platform_config["resources"];
     }
 
     // load platform topology
     if (platform_config.count("topology") <= 0) {
-        QL_FATAL("'topology' section is not specified in the hardware config file");
+        QL_WOUT("'topology' section is not specified in the hardware config file; a fully-connected topology will be generated");
+        topology.emplace(qubit_count, "{}"_json);
     } else {
         topology.emplace(qubit_count, platform_config["topology"]);
     }
@@ -194,16 +398,18 @@ void Platform::load(
     static const std::regex comma_space_pattern("\\s*,\\s*");
 
     for (auto it = instructions.begin(); it != instructions.end(); ++it) {
-        utils::Str name = it.key();
+        utils::Str instr_name = it.key();
         utils::Json attr = *it; //.value();
 
-        name = sanitize_instruction_name(name);
-        name = std::regex_replace(name, comma_space_pattern, ",");
+        instr_name = sanitize_instruction_name(instr_name);
+        instr_name = std::regex_replace(instr_name, comma_space_pattern, ",");
 
         // check for duplicate operations
-        if (instruction_map.find(name) != instruction_map.end()) {
-            QL_WOUT("instruction '" << name
-                                    << "' redefined : the old definition is overwritten !");
+        if (instruction_map.find(instr_name) != instruction_map.end()) {
+            QL_WOUT(
+                "instruction '" << instr_name << "' redefined: "
+                "the old definition will be overwritten!"
+            );
         }
 
         // format in json.instructions:
@@ -213,8 +419,8 @@ void Platform::load(
         // format of key and value (which is a custom_gate)'s name in instruction_map:
         //  "^(token|(token token(,token)*))$"
         //  so with a comma between any operands
-        instruction_map.set(name) = load_instruction(name, attr);
-        QL_DOUT("instruction '" << name << "' loaded.");
+        instruction_map.set(instr_name) = load_instruction(instr_name, attr, qubit_count, cycle_time);
+        QL_DOUT("instruction '" << instr_name << "' loaded.");
     }
 
     // load optional section gate_decomposition
@@ -244,16 +450,19 @@ void Platform::load(
 
             // check for duplicate operations
             if (instruction_map.find(comp_ins) != instruction_map.end()) {
-                QL_WOUT("composite instruction '" << comp_ins
-                                                  << "' redefined : the old definition is overwritten !");
+                QL_WOUT(
+                    "composite instruction '" << comp_ins << "' redefined: "
+                    "the old definition will be overwritten!"
+                );
             }
 
             // check that we're looking at array
             utils::Json sub_instructions = *it;
             if (!sub_instructions.is_array()) {
                 QL_FATAL(
-                    "ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"
-                        << comp_ins << "' is malformed (not an array)");
+                    "gate decomposition rule for '" << comp_ins << "' is "
+                    "malformed (not an array)"
+                );
             }
 
             ir::GateRefs gs;

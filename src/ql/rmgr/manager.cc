@@ -11,6 +11,68 @@ namespace ql {
 namespace rmgr {
 
 /**
+ * Dumps the documentation for the resource JSON configuration structure.
+ */
+void Manager::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
+    utils::dump_str(os, line_prefix, R"(
+    Two JSON structures are supported: one for compatibility with older
+    platform configuration files, and one extended structure. The extended
+    structure has the following syntax:
+
+    ```
+    {
+        "architecture": <optional string, default "">,
+        "dnu": <optional list of strings, default []>,
+        "resources": {
+            "<name>": {
+                "type": "<type>",
+                "config": {
+                    <optional configuration>
+                }
+            }
+            ...
+        }
+    }
+    ```
+
+    The optional `"architecture"` key may be used to make shorthands for
+    architecture- specific resources, normally prefixed with
+    `"arch.<architecture>."`. If it's not specified or an empty string,
+    the architecture is derived from the compiler configuration
+    (either `"eqasm_compiler"` or as overridden by the compiler configuration
+    file passed to the platform constructor).
+
+    The optional `"dnu"` key may be used to specify a list of do-not-use
+    resource types (experimental, deprecated, or any other resource that's
+    considered unfit for "production" use) that you explicitly want to use,
+    including the `"dnu"` namespace they are defined in. Once specified, you'll
+    be able to use the resource type without the `"dnu"` namespace element. For
+    example, if you would include `"dnu.whatever"` in the list, the resource
+    type `"whatever"` may be used to add the resource.
+
+    The `"resources"` key specifies the actual resource list. This consists of
+    a map from unique resource names matching `[a-zA-Z0-9_\-]+` to a resource
+    configuration. The configuration object must have a "type" key, which
+    must identify a resource type that OpenQL knows about. The "config" key
+    is optional, and is used to pass type-specific configuration data to the
+    resource. If not specified, an empty JSON object will be passed to the
+    resource instead.
+
+    If the `"resources"` key is not present, the old structure is used instead.
+    This has the following simplified form:
+
+    ```
+    {
+        "<type>": {
+            <configuration>
+        },
+        ...
+    }
+    ```
+    )");
+}
+
+/**
  * Returns whether the given user-specified name is a valid resource name.
  */
 void Manager::check_resource_name(
@@ -81,8 +143,7 @@ Manager::Manager(
 
 /**
  * Constructs a resource manager based on the given JSON configuration.
- *
- * Refer to the header file for details.
+ * Refer to dump_docs() for more information.
  */
 Manager Manager::from_json(
     const plat::PlatformRef &platform,

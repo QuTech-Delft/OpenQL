@@ -80,7 +80,7 @@ void Compiler::print_pass_types() const {
  * Returns documentation for all available pass types, as well as the option
  * documentation for the passes.
  */
-std::string Compiler::get_pass_types() const {
+std::string Compiler::dump_pass_types() const {
     std::ostringstream ss;
     pass_manager->dump_pass_types(ss);
     return ss.str();
@@ -96,12 +96,13 @@ void Compiler::print_strategy() const {
 /**
  * Returns the currently configured compilation strategy as a string.
  */
-std::string Compiler::get_strategy() const {
+std::string Compiler::dump_strategy() const {
     std::ostringstream ss;
     pass_manager->dump_strategy(ss);
     return ss.str();
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Sets a pass option. Periods are used as hierarchy separators; the last
  * element will be the option name, and the preceding elements represent
@@ -115,6 +116,14 @@ std::string Compiler::get_strategy() const {
  * with the specified name. If must_exist is set an exception will be thrown
  * if none of the passes were affected, otherwise 0 will be returned.
  */
+#else
+/**
+ * Sets a pass option. The path must consist of the target pass instance name
+ * and the option name, separated by a period. The former may include * or ?
+ * wildcards. If must_exist is set an exception will be thrown if none of the
+ * passes were affected, otherwise 0 will be returned.
+ */
+#endif
 size_t Compiler::set_option(
     const std::string &path,
     const std::string &value,
@@ -123,6 +132,7 @@ size_t Compiler::set_option(
     return pass_manager->set_option(path, value, must_exist);
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Sets an option for all passes recursively. The return value is the number
  * of passes that were affected; passes are only affected when they have an
@@ -136,21 +146,36 @@ size_t Compiler::set_option_recursively(
 ) {
     return pass_manager->set_option_recursively(option, value, must_exist);
 }
+#endif
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Returns the current value of an option. Periods are used as hierarchy
  * separators; the last element will be the option name, and the preceding
  * elements represent pass instance names.
  */
+#else
+/**
+ * Returns the current value of an option. path must consist of the pass
+ * instance name and the option name separated by a period.
+ */
+#endif
 std::string Compiler::get_option(const std::string &path) const {
     return pass_manager->get_option(path).as_str();
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Appends a pass to the end of the pass list. If type_name is empty
  * or unspecified, a generic subgroup is added. Returns a reference to the
  * constructed pass.
  */
+#else
+/**
+ * Appends a pass to the end of the pass list. Returns a reference to the
+ * constructed pass.
+ */
+#endif
 Pass Compiler::append_pass(
     const std::string &type_name,
     const std::string &instance_name,
@@ -159,11 +184,18 @@ Pass Compiler::append_pass(
     return Pass(pass_manager->append_pass(type_name, instance_name, options), false);
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Appends a pass to the beginning of the pass list. If type_name is empty
  * or unspecified, a generic subgroup is added. Returns a reference to the
  * constructed pass.
  */
+#else
+/**
+ * Appends a pass to the beginning of the pass list. Returns a reference to the
+ * constructed pass.
+ */
+#endif
 Pass Compiler::prefix_pass(
     const std::string &type_name,
     const std::string &instance_name,
@@ -172,6 +204,7 @@ Pass Compiler::prefix_pass(
     return Pass(pass_manager->prefix_pass(type_name, instance_name, options), false);
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Inserts a pass immediately after the target pass (named by instance). If
  * target does not exist, an exception is thrown. If type_name is empty or
@@ -179,6 +212,14 @@ Pass Compiler::prefix_pass(
  * constructed pass. Periods may be used in target to traverse deeper into
  * the pass hierarchy.
  */
+#else
+/**
+ * Inserts a pass immediately after the target pass (named by instance). If
+ * target does not exist, an exception is thrown. If type_name is empty or
+ * unspecified, a generic subgroup is added. Returns a reference to the
+ * constructed pass.
+ */
+#endif
 Pass Compiler::insert_pass_after(
     const std::string &target,
     const std::string &type_name,
@@ -188,6 +229,7 @@ Pass Compiler::insert_pass_after(
     return Pass(pass_manager->insert_pass_after(target, type_name, instance_name, options), false);
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Inserts a pass immediately before the target pass (named by instance). If
  * target does not exist, an exception is thrown. If type_name is empty or
@@ -195,6 +237,14 @@ Pass Compiler::insert_pass_after(
  * constructed pass. Periods may be used in target to traverse deeper into
  * the pass hierarchy.
  */
+#else
+/**
+ * Inserts a pass immediately before the target pass (named by instance). If
+ * target does not exist, an exception is thrown. If type_name is empty or
+ * unspecified, a generic subgroup is added. Returns a reference to the
+ * constructed pass.
+ */
+#endif
 Pass Compiler::insert_pass_before(
     const std::string &target,
     const std::string &type_name,
@@ -204,6 +254,7 @@ Pass Compiler::insert_pass_before(
     return Pass(pass_manager->insert_pass_before(target, type_name, instance_name, options), false);
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Looks for the pass with the target instance name, and embeds it into a
  * newly generated group. The group will assume the name of the original
@@ -219,7 +270,9 @@ Pass Compiler::group_pass(
 ) {
     return Pass(pass_manager->group_pass(target, sub_name), false);
 }
+#endif
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Like group_pass(), but groups an inclusive range of passes into a
  * group with the given name, leaving the original pass names unchanged.
@@ -233,7 +286,9 @@ Pass Compiler::group_passes(
 ) {
     return Pass(pass_manager->group_passes(from, to, group_name), false);
 }
+#endif
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Looks for an unconditional pass group with the target instance name and
  * flattens its contained passes into its parent group. The names of the
@@ -249,20 +304,34 @@ void Compiler::flatten_subgroup(
 ) {
     pass_manager->flatten_subgroup(target, name_prefix);
 }
+#endif
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Returns a reference to the pass with the given instance name. If no such
  * pass exists, an exception is thrown. Periods may be used as hierarchy
  * separators to get nested sub-passes.
  */
+#else
+/**
+ * Returns a reference to the pass with the given instance name. If no such
+ * pass exists, an exception is thrown.
+ */
+#endif
 Pass Compiler::get_pass(const std::string &target) const {
     return Pass(pass_manager->get_pass(target), false);
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Returns whether a pass with the target instance name exists. Periods may
  * be used in target to traverse deeper into the pass hierarchy.
  */
+#else
+/**
+ * Returns whether a pass with the target instance name exists.
+ */
+#endif
 bool Compiler::does_pass_exist(const std::string &target) const {
     return pass_manager->does_pass_exist(target);
 }
@@ -312,6 +381,7 @@ void Compiler::clear_passes() {
     pass_manager->clear_passes();
 }
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 /**
  * Constructs all passes recursively. This freezes the pass options, but
  * allows subtrees to be modified.
@@ -319,6 +389,7 @@ void Compiler::clear_passes() {
 void Compiler::construct() {
     pass_manager->construct();
 }
+#endif
 
 /**
  * Ensures that all passes have been constructed, and then runs the passes
