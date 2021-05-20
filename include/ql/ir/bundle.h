@@ -14,9 +14,9 @@ namespace ql {
 namespace ir {
 
 /**
- * start_cycle of first Bundle in Bundles, see discussion in PR #398
+ * Cycle numbers in OpenQL, for some historic reason, start at 1 (see discussion in PR #398).
  */
-const int BUNDLE_START_CYCLE = 1;
+static const utils::UInt FIRST_CYCLE = 1;
 
 /**
  * A bundle of gates that start in the same cycle.
@@ -26,7 +26,7 @@ struct Bundle {
     /**
      * The start cycle for all gates in this bundle.
      */
-    utils::UInt start_cycle = BUNDLE_START_CYCLE;
+    utils::UInt start_cycle = FIRST_CYCLE;
 
     /**
      * The maximum gate duration of the gates in this bundle.

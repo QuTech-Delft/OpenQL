@@ -135,6 +135,17 @@ std::string to_lower(std::string str) {
 }
 
 /**
+ * Converts the given string to uppercase.
+ */
+std::string to_upper(std::string str) {
+    std::transform(
+        str.begin(), str.end(), str.begin(),
+        [](unsigned char c){ return std::toupper(c); }
+    );
+    return str;
+}
+
+/**
  * Replaces all occurrences of from in str with to.
  */
 std::string replace_all(std::string str, const std::string &from, const std::string &to) {

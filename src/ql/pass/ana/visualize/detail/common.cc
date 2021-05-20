@@ -21,7 +21,26 @@ using namespace utils;
 Vec<GateProperties> parseGates(const ir::ProgramRef &program) {
     Vec<GateProperties> gates;
 
+    // Determine whether the program is scheduled or not. If not, the program
+    // will be visualized sequentially. Otherwise we compute program-wide,
+    // zero-referenced cycle numbers below (within the IR cycles start at
+    // ir::FIRST_CYCLE and are referenced to the start of the kernel rather than
+    // to the complete program).
+    Bool cycles_valid = true;
     for (const auto &kernel : program->kernels) {
+        cycles_valid &= kernel->cycles_valid;
+        for (const auto &gate : kernel->gates) {
+            if (gate->cycle < ir::FIRST_CYCLE || gate->cycle >= ir::MAX_CYCLE) {
+                cycles_valid = false;
+                break;
+            }
+        }
+        if (!cycles_valid) break;
+    }
+
+    UInt kernel_cycle_offset = 0;
+    for (const auto &kernel : program->kernels) {
+        UInt kernel_duration = 0;
         for (const auto &gate : kernel->gates) {
             Vec<Int> operands;
             Vec<Int> creg_operands;
@@ -33,13 +52,21 @@ Vec<GateProperties> parseGates(const ir::ProgramRef &program) {
                 creg_operands,
                 gate->swap_params,
                 utoi(gate->duration),
-                utoi(gate->cycle),
+                0,
                 gate->type(),
                 {},
                 "UNDEFINED"
             };
+            if (cycles_valid) {
+                UInt end = program->platform->time_to_cycles(gate->duration) + gate->cycle;
+                kernel_duration = max(kernel_duration, end) - ir::FIRST_CYCLE;
+                gateProperties.cycle = utoi(gate->cycle + kernel_cycle_offset - ir::FIRST_CYCLE);
+            } else {
+                gateProperties.cycle = ir::MAX_CYCLE;
+            }
             gates.push_back(gateProperties);
         }
+        kernel_cycle_offset += kernel_duration;
     }
 
     return gates;
