@@ -105,6 +105,11 @@ Real parse_real(const Str &str, Real dflt, bool *success=nullptr);
 Str to_lower(Str str);
 
 /**
+ * Converts the given string to uppercase.
+ */
+Str to_upper(Str str);
+
+/**
  * Replaces all occurrences of from in str with to.
  */
 Str replace_all(Str str, const Str &from, const Str &to);
