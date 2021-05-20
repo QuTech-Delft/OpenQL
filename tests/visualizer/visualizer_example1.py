@@ -41,6 +41,16 @@ k.gate("y", [3])
 
 p.add_kernel(k)
 
+k = ql.Kernel("aKernel2", platformCustomGates, nqubits, 0)
+
+k.gate("x", [2])
+k.gate("y", [3])
+k.gate("cnot", [2,3])
+k.gate("x", [2])
+k.gate("y", [3])
+
+p.add_kernel(k)
+
 p.get_compiler().insert_pass_before(
     'mapper',
     'ana.visualize.Mapping',
