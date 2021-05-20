@@ -34,7 +34,7 @@ public:
 private:
 
     /**
-     * The contained value, wrapped in a unique_ptr.
+     * The contained value, wrapped in a shared_ptr.
      */
     std::shared_ptr<T> v{};
 
@@ -251,7 +251,7 @@ public:
  * be copy-constructable and complete for this to work.
  */
 template <class T>
-class ClonablePtr {
+class CloneablePtr {
 public:
     using Data = T;
     using MutData = typename std::remove_const<T>::type;
@@ -261,7 +261,7 @@ public:
 private:
 
     /**
-     * The contained value, wrapped in a unique_ptr.
+     * The contained value, wrapped in a shared_ptr.
      */
     std::shared_ptr<T> v{};
 
@@ -301,7 +301,7 @@ public:
     /**
      * Constructor for an empty container.
      */
-    ClonablePtr() = default;
+    CloneablePtr() = default;
 
     /**
      * Constructor for a filled container.
@@ -314,9 +314,9 @@ public:
         class Arg1, class... Args,
         typename = typename std::enable_if<!std::is_same<
             typename std::remove_reference<Arg1>::type,
-            ClonablePtr<T>
+            CloneablePtr<T>
         >::value>::type>
-    ClonablePtr(Arg1 &&arg1, Args&&... args) {
+    CloneablePtr(Arg1 &&arg1, Args&&... args) {
         emplace(std::forward<Arg1>(arg1), std::forward<Args>(args)...);
     }
 
@@ -324,8 +324,8 @@ public:
      * Builder for Ptr objects.
      */
     template<class... Args>
-    static ClonablePtr make(Args&&... args) {
-        ClonablePtr ret;
+    static CloneablePtr make(Args&&... args) {
+        CloneablePtr ret;
         ret.emplace(std::forward<Args>(args)...);
         return ret;
     }
@@ -334,13 +334,13 @@ public:
      * Copy constructor. Only the pointer is moved, so the two Ptrs will
      * refer to the same object.
      */
-    ClonablePtr(const ClonablePtr &o) : v(o.v), copier(o.copier) {
+    CloneablePtr(const CloneablePtr &o) : v(o.v), copier(o.copier) {
     }
 
     /**
      * Move constructor. Just moves the pointer to the contained object.
      */
-    ClonablePtr(ClonablePtr &&o) noexcept {
+    CloneablePtr(CloneablePtr &&o) noexcept {
         v.swap(o.v);
         copier.swap(o.copier);
     }
@@ -350,7 +350,7 @@ public:
      * move constructor of the contained object type.
      */
     template<typename S = T, typename = typename std::enable_if<std::is_base_of<T, S>::value>::type>
-    ClonablePtr &operator=(S &&rhs) {
+    CloneablePtr &operator=(S &&rhs) {
         emplace<S>(std::forward<S>(rhs));
         return *this;
     }
@@ -360,7 +360,7 @@ public:
      * object.
      */
     template<typename S = T, typename = typename std::enable_if<std::is_base_of<T, S>::value>::type>
-    ClonablePtr &operator=(const ClonablePtr<S> &rhs) {
+    CloneablePtr &operator=(const CloneablePtr<S> &rhs) {
         v = rhs.unwrap();
         auto rhs_copier = rhs.get_copier();
         copier = [rhs_copier](ConstData &src){
@@ -373,7 +373,7 @@ public:
      * Copy assignment. Copies the pointer, so both Ptrs will point to the same
      * object.
      */
-    ClonablePtr &operator=(const ClonablePtr &rhs) {
+    CloneablePtr &operator=(const CloneablePtr &rhs) {
         v = rhs.v;
         copier = rhs.copier;
         return *this;
@@ -382,7 +382,7 @@ public:
     /**
      * Move assignment.
      */
-    ClonablePtr &operator=(ClonablePtr &&rhs) noexcept {
+    CloneablePtr &operator=(CloneablePtr &&rhs) noexcept {
         v.swap(rhs.v);
         copier.swap(rhs.copier);
         return *this;
@@ -393,8 +393,8 @@ public:
      * contained object. If no object is contained, a new empty pointer is
      * returned.
      */
-    ClonablePtr<MutData> clone() const {
-        ClonablePtr<MutData> retval;
+    CloneablePtr<MutData> clone() const {
+        CloneablePtr<MutData> retval;
         if (v) {
             QL_ASSERT(copier);
             retval.v = copier(*v);
@@ -451,13 +451,13 @@ public:
      * cast failed.
      */
     template<typename S>
-    ClonablePtr<S> try_as() const noexcept {
-        ClonablePtr<S> result;
+    CloneablePtr<S> try_as() const noexcept {
+        CloneablePtr<S> result;
         auto c = copier;
         result.set_raw(
             std::dynamic_pointer_cast<S>(v),
-            [c](typename ClonablePtr<S>::ConstData &src) {
-                return std::dynamic_pointer_cast<ClonablePtr<S>::ConstData>(c(src));
+            [c](typename CloneablePtr<S>::ConstData &src) {
+                return std::dynamic_pointer_cast<CloneablePtr<S>::ConstData>(c(src));
             }
         );
         return result;
@@ -482,8 +482,8 @@ public:
     /**
      * Casts to a const ClonablePtr.
      */
-    ClonablePtr<ConstData> as_const() const noexcept {
-        auto result = ClonablePtr<ConstData>();
+    CloneablePtr<ConstData> as_const() const noexcept {
+        auto result = CloneablePtr<ConstData>();
         result.set_raw(
             std::const_pointer_cast<ConstData>(v),
             copier
@@ -514,7 +514,7 @@ public:
     /**
      * Stream overload for pointers.
      */
-    friend std::ostream &operator<<(std::ostream &os, const ClonablePtr &ptr) {
+    friend std::ostream &operator<<(std::ostream &os, const CloneablePtr &ptr) {
         if (ptr.v) {
             os << *ptr.v;
         } else {

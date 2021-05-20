@@ -601,8 +601,8 @@ void Options::dump_help(std::ostream &os, const utils::Str &line_prefix) const {
         os << line_prefix << "no options exist" << std::endl;
         return;
     }
-    for (const auto &it : options) {
-        it.second->dump_help(os, line_prefix);
+    for (const auto &name : option_order) {
+        options.at(name)->dump_help(os, line_prefix);
         os << std::endl;
     }
 }
@@ -613,9 +613,10 @@ void Options::dump_help(std::ostream &os, const utils::Str &line_prefix) const {
  */
 void Options::dump_options(bool only_set, std::ostream &os, const utils::Str &line_prefix) const {
     bool any = false;
-    for (const auto &it : options) {
-        if (it.second->is_set() || !only_set) {
-            os << line_prefix << it.second->get_name() << ": " << it.second->as_str() << std::endl;
+    for (const auto &name : option_order) {
+        const auto &option = options.at(name);
+        if (option->is_set() || !only_set) {
+            os << line_prefix << option->get_name() << ": " << option->as_str() << std::endl;
             any = true;
         }
     }

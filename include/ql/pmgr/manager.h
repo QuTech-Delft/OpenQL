@@ -5,6 +5,7 @@
 #pragma once
 
 #include <functional>
+#include "ql/config.h"
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"

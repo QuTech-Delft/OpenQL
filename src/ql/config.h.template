@@ -14,3 +14,6 @@
 
 // Whether ql::utils::Map should guard against undefined behavior in iterators.
 #cmakedefine QL_CHECKED_MAP
+
+// Whether (experimental) pass group/hierarchy support is enabled in the API.
+#undef QL_HIERARCHICAL_PASS_MANAGEMENT

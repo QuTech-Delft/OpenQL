@@ -168,12 +168,12 @@ public:
 /**
  * A mutable reference to a resource.
  */
-using Ref = utils::ClonablePtr<Base>;
+using Ref = utils::CloneablePtr<Base>;
 
 /**
  * An immutable reference to a resource.
  */
-using CRef = utils::ClonablePtr<const Base>;
+using CRef = utils::CloneablePtr<const Base>;
 
 } // namespace resource_types
 

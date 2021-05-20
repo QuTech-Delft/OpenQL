@@ -99,6 +99,7 @@ str
 """
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Pass::print_strategy
 """
 Prints the entire compilation strategy including configured options of
@@ -112,8 +113,10 @@ Returns
 -------
 None
 """
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Pass::dump_strategy
 """
 Returns the string printed by print_strategy().
@@ -127,8 +130,10 @@ Returns
 str
     The current compilation strategy as a multiline string.
 """
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Pass::set_option
 """
 Sets an option. Periods may be used as hierarchy separators to set
@@ -159,8 +164,26 @@ Returns
 int
     The number of pass options affected.
 """
+#else
+%feature("docstring") ql::api::Pass::set_option
+"""
+Sets an option.
+
+Parameters
+----------
+option : str
+    The option name.
+value : str
+    The value to set the option to.
+
+Returns
+-------
+None
+"""
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Pass::set_option_recursively
 """
 Sets an option for all sub-passes recursively. The return value is the
@@ -184,8 +207,10 @@ Returns
 int
     The number of pass options affected.
 """
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Pass::get_option
 """
 Returns the current value of an option. Periods may be used as hierarchy
@@ -202,8 +227,26 @@ str
     The value of the option. If the option has not been set, the default value
     is returned.
 """
+#else
+%feature("docstring") ql::api::Pass::get_option
+"""
+Returns the current value of an option.
+
+Parameters
+----------
+path : str
+    The path to the option.
+
+Returns
+-------
+str
+    The value of the option. If the option has not been set, the default value
+    is returned.
+"""
+#endif
 
 
+#ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
 %feature("docstring") ql::api::Pass::construct
 """
 Constructs this pass. During construction, the pass implementation may
@@ -600,6 +643,7 @@ Returns
 -------
 None
 """
+#endif
 
 
 %include "ql/api/pass.h"

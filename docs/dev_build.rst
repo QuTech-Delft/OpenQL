@@ -29,13 +29,21 @@ The following packages are required to compile OpenQL from sources:
    - [Optional] ``pytest`` (for testing)
    - [Optional] ``numpy`` (for testing)
    - [Optional] ``libqasm`` (for testing)
-   - [Optional] ``sphinx`` (for documentation generation)
+   - [Optional] ``sphinx==3.5.4`` (for documentation generation)
    - [Optional] ``sphinx-rtd-theme`` (for documentation generation)
    - [Optional] ``m2r2`` (for documentation generation)
+- [Optional] Doxygen (for documentation generation)
 - [Optional] Graphviz Dot utility (to convert graphs from dot to pdf, png etc)
 - [Optional] XDot (to visualize generated graphs in dot format)
 - [Optional] GLPK (if you want initial placement support)
 - [Optional] make (required for documentation generation; other CMake backends can be used for everything else)
+- [Optional, MacOS only] XQuartz (only if you want to use the visualizer)
+
+.. note::
+   The connection between Sphinx' and SWIG's autodoc functionalities is very iffy, but aside from tracking everything
+   manually or forking SWIG there is not much that can be done about it. Because of this, not all Sphinx versions will
+   build correctly, hence why the Sphinx version is pinned. Sphinx 4.x for example crashes on getting the function
+   signature of property getters/setters.
 
 Windows-specific instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -72,7 +80,7 @@ first.
 
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
 
-- Install [PowerShell Community Extensions] (https://www.google.com "PowerShell Community Extensions")
+- Install PowerShell Community Extensions:
 
 ::
 
@@ -126,8 +134,8 @@ All dependencies can be installed using `Homebrew <https://brew.sh>`_ and pip:
 ::
 
     brew update
-    brew install llvm flex bison cmake swig python3 doxygen graphviz glpk
-    pip3 install wheel plumbum pytest numpy sphinx sphinx-rtd-theme m2r2
+    brew install llvm flex bison cmake swig python3 doxygen graphviz glpk xquartz
+    pip3 install wheel plumbum pytest numpy sphinx==3.5.4 sphinx-rtd-theme m2r2
 
 Make sure the above mentioned binaries are added to the system path in front of ``/usr/bin``, otherwise CMake finds the default versions.
 
@@ -171,7 +179,7 @@ Running the following command in a terminal/Power Shell from the root of the Ope
 
 ::
 
-    pip install -v
+    pip install -v .
 
 Or in editable mode by the command:
 
@@ -206,6 +214,12 @@ to remember to uninstall if you ever end up moving it.
 
    In bash-like terminals, you can just put them in front of the pip command like so: ``NPROCS=10 pip ...``. In
    Powershell, you can use ``$env:NPROCS = '10'`` in a command preceding the ``pip`` command.
+
+.. note::
+   You may find that CMake notes that some packages it's looking for are missing. This is fine: some things are only
+   needed for optional components (which will automatically disable themselves when dependencies are missing) and
+   some things are only quality-of-life things, for example for generating backtraces for the exception messages.
+   As long as the tests pass, the core OpenQL components should all work.
 
 Once installed, and assuming you have the requisite optional dependencies installed, you can run the test suite (still
 from the root of the OpenQL repository) using

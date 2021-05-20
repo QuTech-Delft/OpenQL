@@ -14,6 +14,11 @@ namespace ql {
 namespace ir {
 
 /**
+ * Cycle numbers in OpenQL, for some historic reason, start at 1.
+ */
+static const utils::UInt FIRST_CYCLE = 1;
+
+/**
  * A bundle of gates that start in the same cycle.
  */
 struct Bundle {

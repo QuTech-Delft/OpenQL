@@ -373,6 +373,11 @@ private:
      */
     utils::Map<utils::Str, utils::Ptr<Option>> options;
 
+    /**
+     * Order in which the options were added. Used for documentation output.
+     */
+    utils::List<utils::Str> option_order;
+
 public:
 
     /**
@@ -383,6 +388,7 @@ public:
         auto option = utils::Ptr<Option>();
         option.emplace<T>(std::forward<Args>(args)...);
         options.set(option->get_name()) = option;
+        option_order.push_back(option->get_name());
         return *option;
     }
 

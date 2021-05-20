@@ -24,7 +24,7 @@ While the instruction-level code is platform-specific, the quantum assembly code
    :caption: Getting started
 
    gs_overview
-   gs_installation
+   gen/gs_installation
    gs_start
 
 .. toctree::
