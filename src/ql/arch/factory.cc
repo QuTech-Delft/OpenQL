@@ -7,6 +7,7 @@
 #include "ql/arch/cc/info.h"
 #include "ql/arch/cc_light/info.h"
 #include "ql/arch/none/info.h"
+#include "ql/arch/diamond/info.h"
 
 namespace ql {
 namespace arch {
@@ -18,6 +19,7 @@ Factory::Factory() {
     register_architecture<cc::Info>();
     register_architecture<cc_light::Info>();
     register_architecture<none::Info>();
+    register_architecture<diamond::Info>();
 }
 
 /**
