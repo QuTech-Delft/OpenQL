@@ -83,47 +83,100 @@ utils::Int GenerateMicrocodePass::run(
 
     // Add pass code here
     OutFile outfile{file_name};
+    int labelcount = 0;
 
     for (const ir::KernelRef &kernel : program->kernels) {
         for (const ir::GateRef &gate : kernel->gates) {
-            if (gate->name == "i") {
-                outfile << "qgate I " << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "h") {
-                outfile << "qgate H " << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "s") {
-                outfile << "qgate S " << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "t") {
-                outfile << "qgate T " << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "x") {
-                outfile << "qgate X " << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "y") {
-                outfile << "qgate Y " << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "z") {
-                outfile << "qgate Z " << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "measure") {
-                Str qubit_number = to_string(gate->operands[0]).erase(0,1);
+                const auto &data = program->platform->find_instruction(gate->name);
 
-                outfile << detail::switchOn(gate->operands[0]);
-                outfile << detail::loadimm("0", "photonReg", qubit_number);
-                //outfile << excite_mw(1, 100, 200, 0, gate->operands[0]);
-                //outfile << detail::mov();
-                outfile << detail::switchOff(gate->operands[0]);
-                //Str comp_flag = "R" + op1.to_string() + "<R33";
-                //outfile << branch(comp_flag, gate->operands[1]);
-
-            } else if (gate->name == "prep_z") {
-                outfile << "initialize " << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "cnot") {
-                outfile << "qgate2 CNOT " << gate->name << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "cz") {
-                outfile << "qgate 2 CZ " << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "wait") {
-                outfile << "Z " << gate->operands.to_string("", ", ", "");
-            } else if (gate->name == "swap") {
-                outfile << "Z " << gate->operands.to_string("", ", ", "");
-            } else {
-                outfile << "The name of the gate was not recognized";
+            // Determine gate type.
+            utils::Str type = "unknown";
+            auto iterator = data.find("diamond_type");
+            if (iterator != data.end() && iterator->is_string()) {
+                type = iterator->get<utils::Str>();
             }
+
+            // Determine the microcode output for the given gate-type
+            if (type == "qgate") {
+                outfile << detail::qgate(gate->name, gate->operands);
+            } else if (type == "qgate2") {
+                outfile << detail::qgate2(gate->name, gate->operands);
+            } else {
+                if (gate->name == "measure") {
+                    Str qubit_number = to_string(gate->operands[0]).erase(0, 1);
+                    const Str threshold = "33";
+
+                    outfile << detail::switchOn(gate->operands[0]) << "\n";
+                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands) << "\n";
+                    outfile << detail::mov("photonReg", qubit_number, "R",qubit_number) << "\n";
+                    outfile << detail::switchOff(gate->operands[0]) << "\n";
+                    outfile << detail::branch("R", qubit_number, "<", "R",
+                                              threshold, "ResultReg",
+                                              qubit_number);
+
+                }
+//                else if (gate->name == "initialize") {
+//                    Str qubit_number = to_string(gate->operands[0]).erase(0, 1);
+//                    const Str threshold = "0";
+//                    Str count = to_string(labelcount);
+//
+//
+//                    outfile << detail::label(count) << "\n";
+//                    outfile << detail::switchOn(gate->operands[0]) << "\n";
+//                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
+//                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands) << "\n";
+//                    outfile << detail::mov("photonReg", qubit_number, "R",
+//                                           qubit_number) << "\n";
+//                    outfile << detail::switchOff(gate->operands[0]) << "\n";
+//                    outfile << detail::branch("R", qubit_number, "<", "", threshold,
+//                                          "LAB", count);
+//
+//                    labelcount++;
+//                } else if (gate->name == "wait") {
+//                    outfile << "wait " << gate->operands.to_string("", ", ", "");
+//                } else if (gate->name == "memswap") {
+//                    outfile << detail::qgate2("+-y90", gate->operands) << "/n";
+//                    outfile << detail::qgate("x90", gate->operands) << "/n";
+//                    outfile << detail::qgate2("+-x90", gate->operands) << "/n";
+//                    outfile << detail::qgate("-y90", gate->operands);
+//                } else if (gate->name == "qentangle") {
+//                    outfile << detail::qgate("-x90", gate->operands) << "/n";
+//                    outfile << detail::qgate2("+-x90", gate->operands) << "/n";
+//                    outfile << detail::qgate("x90", gate->operands);
+//                } else if (gate->name == "sweep_bias") {
+//                    Str qubit_number = to_string(gate->operands[0]).erase(0, 1);
+//                    Str dac_number = to_string(gate->operands[2]).erase(0,6);
+//                    Str count = to_string(labelcount);
+//
+//                    outfile << detail::loadimm(to_string(gate->operands[1]), "dacReg", dac_number);
+//                    outfile << detail::loadimm(to_string(gate->operands[3]), "sweepStartReg", qubit_number);
+//                    outfile << detail::loadimm(to_string(gate->operands[4]), "sweepStepReg", qubit_number);
+//                    outfile << detail::loadimm(to_string(gate->operands[5]), "sweepStopReg", qubit_number);
+//                    outfile << detail::loadimm(to_string(gate->operands[6]), "memAddr", qubit_number);
+//                    outfile << detail::label(count);
+//                    outfile << detail::switchOn(gate->operands[0]);
+//                    outfile << detail::excite_mw("1", "100", "sweepStartReg"+qubit_number, "0", gate->operands);
+//                    outfile << detail::switchOff(gate->operands[0]);
+//                    outfile << detail::mov("photonReg", qubit_number, "R", qubit_number);
+//                    outfile << detail::store("R", qubit_number, "memAddr", qubit_number,
+//                                             "0");
+//                    outfile << detail::add("sweepStartReg", qubit_number, "sweepStartReg", qubit_number, "sweepStepReg", qubit_number);
+//                    outfile << detail::store("sweepStartReg", qubit_number, "memAddr", qubit_number, "0");
+//                    outfile << detail::addimm("4", "memAddr", qubit_number);
+//                    outfile << detail::branch("sweepStartReg", qubit_number, ">", "sweepStopReg", qubit_number, "LAB", count);
+//                    labelcount++;
+//                }
+//
+//
+//
+//
+
+                else {
+                    outfile << "The name of the gate was not recognized";
+                }
+            }
+
             outfile << "\n";
         }
     }

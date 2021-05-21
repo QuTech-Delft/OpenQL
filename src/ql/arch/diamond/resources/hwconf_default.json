@@ -21,39 +21,49 @@
     },
 
     "i": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
-
     "h": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
-
     "x": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
-
     "y": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
 
     "z": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "initialize": {
+      "duration": 40,
     },
 
     "x90": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
 
     "y90": {
-      "duration": 20
+      "duration": 20,
+      "diamond_type": "qgate"
     },
 
     "x180": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
 
     "y180": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
 
     "mx90": {
@@ -77,7 +87,8 @@
     },
 
     "s": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
 
     "sdag": {
@@ -85,7 +96,8 @@
     },
 
     "t": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
 
     "tdag": {
@@ -93,7 +105,8 @@
     },
 
     "cnot": {
-      "duration": 80
+      "duration": 80,
+      "diamond_type": "qgate2"
     },
 
     "toffoli": {
@@ -101,7 +114,8 @@
     },
 
     "cz": {
-      "duration": 80
+      "duration": 80,
+      "diamond_type": "qgate"
     },
 
     "swap": {
@@ -132,6 +146,19 @@
     "display_binary": {
       "duration": 20,
       "qubits": []
+    },
+
+    "memswap": {
+      "duration": 80,
+    },
+
+    "qentangle": {
+      "duration": 60,
+    },
+
+    "sweep_bias": {
+      "duration": 300,
     }
+
   }
 }
