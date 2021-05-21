@@ -228,30 +228,30 @@ jobs:
 #        asset_path: ${{ steps.wheel.outputs.path }}
 #        asset_name: ${{ steps.wheel.outputs.wheel }}
 #        asset_content_type: application/x-bzip2
-#
-#  publish:
-#    name: Publish
-#    if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
-#    needs:
-#    - macos
-#    - manylinux
-#    - windows
-#    - conda
-#    runs-on: ubuntu-latest
-#    steps:
-#    - name: Download artifacts
-#      uses: actions/download-artifact@v2
-#      id: download
-#    - name: Publish to Anaconda cloud
-#      run: |
-#        conda install -c anaconda anaconda-client -y
-#        conda run anaconda login --username ${{ secrets.ANACONDA_USER }} --password ${{ secrets.ANACONDA_PASSWORD }}
-#        conda run anaconda upload ${{ steps.download.outputs.download-path }}/conda-*/*.bz2
-#        conda run anaconda logout
-#    - name: Publish to PyPI
-#      uses: pypa/gh-action-pypi-publish@v1.3.1
-#      with:
-#        user: __token__
-#        password: ${{ secrets.PYPI_TOKEN }}
-#        packages_dir: ${{ steps.download.outputs.download-path }}/pypi-*
+
+  publish:
+    name: Publish
+    if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+    needs:
+    - macos
+    - manylinux
+    - windows
+    #- conda
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      id: download
+    #- name: Publish to Anaconda cloud
+    #  run: |
+    #    conda install -c anaconda anaconda-client -y
+    #    conda run anaconda login --username ${{ secrets.ANACONDA_USER }} --password ${{ secrets.ANACONDA_PASSWORD }}
+    #    conda run anaconda upload ${{ steps.download.outputs.download-path }}/conda-*/*.bz2
+    #    conda run anaconda logout
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@v1.3.1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_TOKEN }}
+        packages_dir: ${{ steps.download.outputs.download-path }}/pypi-*
 
