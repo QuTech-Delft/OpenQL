@@ -332,7 +332,6 @@ public:
 class Custom : public Gate {
 public:
     explicit Custom(const utils::Str &name);
-    Custom(const Custom &g);
     void load(const utils::Json &instr, utils::UInt num_qubits, utils::UInt cycle_time);
     void print_info() const;
     Instruction qasm() const override;
