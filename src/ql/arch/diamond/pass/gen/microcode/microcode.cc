@@ -5,6 +5,7 @@
 
 #include "ql/arch/diamond/pass/gen/microcode/microcode.h"
 #include "ql/arch/diamond/pass/gen/microcode/detail/functions.h"
+#include "ql/arch/diamond/annotations.h"
 
 #include "ql/pmgr/pass_types/base.h"
 
@@ -55,7 +56,7 @@ utils::Int GenerateMicrocodePass::run(
     // cQASM provides. Then, decide for each option what to write to the output file.
 
     // Specify output file name
-    Str file_name(program->unique_name + ".txt");
+    Str file_name(context.output_prefix + ".dqasm");
 
     // Print action
     //QL_DOUT("Compiling " << program->kernels.size() << " kernels to generate Diamond microcode program" << file_name;
@@ -101,14 +102,22 @@ utils::Int GenerateMicrocodePass::run(
                 outfile << detail::qgate(gate->name, gate->operands);
             } else if (type == "qgate2") {
                 outfile << detail::qgate2(gate->name, gate->operands);
-            } else {
+            } else if (type == "classical") {
+                 if (gate->name == "calculate_current"){
+                     outfile << "calculate_current()" << "\n";
+                 }
+                 else if (gate->name == "calculate_voltage") {
+                     outfile << "calculate_voltage()" << "\n";
+                 }
+            }
+            else {
                 if (gate->name == "measure") {
-                    Str qubit_number = to_string(gate->operands[0]).erase(0, 1);
+                    Str qubit_number = to_string(gate->operands[0]);
                     const Str threshold = "33";
 
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
                     outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
                     outfile << detail::mov("photonReg", qubit_number, "R",qubit_number) << "\n";
                     outfile << detail::switchOff(gate->operands[0]) << "\n";
                     outfile << detail::branch("R", qubit_number, "<", "R",
@@ -116,68 +125,87 @@ utils::Int GenerateMicrocodePass::run(
                                               qubit_number);
 
                 }
-//                else if (gate->name == "initialize") {
-//                    Str qubit_number = to_string(gate->operands[0]).erase(0, 1);
-//                    const Str threshold = "0";
-//                    Str count = to_string(labelcount);
-//
-//
-//                    outfile << detail::label(count) << "\n";
-//                    outfile << detail::switchOn(gate->operands[0]) << "\n";
-//                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
-//                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands) << "\n";
-//                    outfile << detail::mov("photonReg", qubit_number, "R",
-//                                           qubit_number) << "\n";
-//                    outfile << detail::switchOff(gate->operands[0]) << "\n";
-//                    outfile << detail::branch("R", qubit_number, "<", "", threshold,
-//                                          "LAB", count);
-//
-//                    labelcount++;
-//                } else if (gate->name == "wait") {
-//                    outfile << "wait " << gate->operands.to_string("", ", ", "");
-//                } else if (gate->name == "memswap") {
-//                    outfile << detail::qgate2("+-y90", gate->operands) << "/n";
-//                    outfile << detail::qgate("x90", gate->operands) << "/n";
-//                    outfile << detail::qgate2("+-x90", gate->operands) << "/n";
-//                    outfile << detail::qgate("-y90", gate->operands);
-//                } else if (gate->name == "qentangle") {
-//                    outfile << detail::qgate("-x90", gate->operands) << "/n";
-//                    outfile << detail::qgate2("+-x90", gate->operands) << "/n";
-//                    outfile << detail::qgate("x90", gate->operands);
-//                } else if (gate->name == "sweep_bias") {
-//                    Str qubit_number = to_string(gate->operands[0]).erase(0, 1);
-//                    Str dac_number = to_string(gate->operands[2]).erase(0,6);
-//                    Str count = to_string(labelcount);
-//
-//                    outfile << detail::loadimm(to_string(gate->operands[1]), "dacReg", dac_number);
-//                    outfile << detail::loadimm(to_string(gate->operands[3]), "sweepStartReg", qubit_number);
-//                    outfile << detail::loadimm(to_string(gate->operands[4]), "sweepStepReg", qubit_number);
-//                    outfile << detail::loadimm(to_string(gate->operands[5]), "sweepStopReg", qubit_number);
-//                    outfile << detail::loadimm(to_string(gate->operands[6]), "memAddr", qubit_number);
-//                    outfile << detail::label(count);
-//                    outfile << detail::switchOn(gate->operands[0]);
-//                    outfile << detail::excite_mw("1", "100", "sweepStartReg"+qubit_number, "0", gate->operands);
-//                    outfile << detail::switchOff(gate->operands[0]);
-//                    outfile << detail::mov("photonReg", qubit_number, "R", qubit_number);
-//                    outfile << detail::store("R", qubit_number, "memAddr", qubit_number,
-//                                             "0");
-//                    outfile << detail::add("sweepStartReg", qubit_number, "sweepStartReg", qubit_number, "sweepStepReg", qubit_number);
-//                    outfile << detail::store("sweepStartReg", qubit_number, "memAddr", qubit_number, "0");
-//                    outfile << detail::addimm("4", "memAddr", qubit_number);
-//                    outfile << detail::branch("sweepStartReg", qubit_number, ">", "sweepStopReg", qubit_number, "LAB", count);
-//                    labelcount++;
-//                }
-//
-//
-//
-//
+                else if (gate->name == "initialize") {
+                    Str qubit_number = to_string(gate->operands[0]);
+                    const Str threshold = "0";
+                    Str count = to_string(labelcount);
+
+
+                    outfile << detail::label(count) << "\n";
+                    outfile << detail::switchOn(gate->operands[0]) << "\n";
+                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
+                    outfile << detail::mov("photonReg", qubit_number, "R",
+                                           qubit_number) << "\n";
+                    outfile << detail::switchOff(gate->operands[0]) << "\n";
+                    outfile << detail::branch("R", qubit_number, "<", "", threshold,
+                                          "LAB", count);
+
+                    labelcount++;
+                } else if (gate->name == "wait") {
+                    outfile << "wait " << gate->operands.to_string("", ", ", "");
+                } else if (gate->name == "sweep_bias") {
+                    Str qubit_number = to_string(gate->operands[0]);
+                    Str dac_number = to_string(gate->operands[2]).erase(0,6);
+                    Str count = to_string(labelcount);
+
+                    outfile << detail::loadimm(to_string(gate->operands[1]), "dacReg", dac_number);
+                    outfile << detail::loadimm(to_string(gate->operands[3]), "sweepStartReg", qubit_number);
+                    outfile << detail::loadimm(to_string(gate->operands[4]), "sweepStepReg", qubit_number);
+                    outfile << detail::loadimm(to_string(gate->operands[5]), "sweepStopReg", qubit_number);
+                    outfile << detail::loadimm(to_string(gate->operands[6]), "memAddr", qubit_number);
+                    outfile << detail::label(count);
+                    outfile << detail::switchOn(gate->operands[0]);
+                    outfile << detail::excite_mw("1", "100", "sweepStartReg"+qubit_number, "0", gate->operands[0]);
+                    outfile << detail::switchOff(gate->operands[0]);
+                    outfile << detail::mov("photonReg", qubit_number, "R", qubit_number);
+                    outfile << detail::store("R", qubit_number, "memAddr", qubit_number,
+                                             "0");
+                    outfile << detail::add("sweepStartReg", qubit_number, "sweepStartReg", qubit_number, "sweepStepReg", qubit_number);
+                    outfile << detail::store("sweepStartReg", qubit_number, "memAddr", qubit_number, "0");
+                    outfile << detail::addimm("4", "memAddr", qubit_number);
+                    outfile << detail::branch("sweepStartReg", qubit_number, ">", "sweepStopReg", qubit_number, "LAB", count);
+                    labelcount++;
+                } else if (gate->name == "crc") {
+                    Str qubit_number = to_string(gate->operands[0]);
+                    Str count = to_string(labelcount);
+                    Str count2 = to_string(labelcount+1);
+
+
+                    outfile << detail::loadimm(to_string(gate->operands[1]), "treshReg", qubit_number);
+                    outfile << detail::loadimm(to_string(gate->operands[2]), "dacReg", qubit_number);
+
+                    outfile << detail::label(count);
+                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
+                    outfile << detail::switchOn(gate->operands[0]) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
+                    outfile << detail::mov("photonReg", qubit_number, "R",qubit_number) << "\n";
+                    outfile << detail::switchOff(gate->operands[0]) << "\n";
+                    outfile << detail::branch("R", qubit_number, ">", "treshReg",
+                                              qubit_number, "LAB",
+                                              count2);
+                    outfile << "calculateVoltage dacReg" << qubit_number << ", dacReg" << qubit_number << "\n";
+                    outfile << detail::jump(count);
+                    outfile << detail::label(count2);
+                } else if (gate->name == "excite_mw") {
+                    const auto &params = gate->get_annotation<annotations::ExciteMicrowaveParameters>();
+
+                    outfile << detail::excite_mw(to_string(params.envelope), to_string(params.duration), to_string(params.frequency), to_string(params.phase), gate->operands[0]);
+
+                }
+
+
+
+
+
+
 
                 else {
                     outfile << "The name of the gate was not recognized";
                 }
             }
 
-            outfile << "\n";
+            outfile << "\n" << "\n";
         }
     }
     return 0;

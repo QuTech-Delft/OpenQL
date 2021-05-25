@@ -403,6 +403,11 @@ public:
     void display();
 
     /**
+     * Appends the diamond excite_MW instruction.
+     */
+    void diamond_excite_mw(size_t envelope, size_t duration, size_t frequency, size_t phase, size_t qubit);
+
+    /**
      * Appends a controlled kernel. The number of control and ancilla qubits
      * must be equal.
      *

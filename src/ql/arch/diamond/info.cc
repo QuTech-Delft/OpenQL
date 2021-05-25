@@ -48,7 +48,7 @@ utils::Str Info::get_namespace_name() const {
  * set must include at least the name of the namespace.
  */
 utils::List<utils::Str> Info::get_eqasm_compiler_names() const {
-    return {"none", "qx", ""};
+    return {"diamond"};
 }
 
 /**

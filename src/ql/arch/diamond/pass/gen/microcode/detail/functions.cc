@@ -16,18 +16,18 @@ namespace detail {
 using namespace utils;
 
 // Defines the instruction for setting the optical switches to the correct qubit.
-Str switchOn(unsigned long arg) {
-    Str body = "switchOn " + to_string(arg);
+Str switchOn(UInt arg) {
+    Str body = "switchOn q" + to_string(arg);
     return body;
 }
 
-Str switchOff(unsigned long arg) {
-    Str body = "switchOff " + to_string(arg);
+Str switchOff(UInt arg) {
+    Str body = "switchOff q" + to_string(arg);
     return body;
 }
 
 Str loadimm(Str value, Str reg_name, Str reg_value) {
-    Str body = "LDi " + value + ", " + reg_name + reg_value;
+    Str body = "LDi " + value + ", " + reg_name + to_string(reg_value);
     return body;
 }
 
@@ -36,9 +36,9 @@ Str mov(Str reg1_name, Str reg1_value, Str reg2_name, Str reg2_value) {
     return body;
 }
 
-Str excite_mw(Str envelope, Str duration, Str frequency, Str phase, utils::Vec<utils::UInt> qubit){
+Str excite_mw(Str envelope, Str duration, Str frequency, Str phase, UInt qubit){
     Str body_1 = "excite_MW " + to_string(envelope) + ", " +  to_string(duration) + ", ";
-    Str body_2 = to_string(frequency) + ", " + to_string(phase) + to_string(qubit[0]);
+    Str body_2 = to_string(frequency) + ", " + to_string(phase) + ", q" + to_string(qubit);
     Str body = body_1 + body_2;
     return body;
 }
@@ -55,15 +55,15 @@ Str label(Str labelcount){
 }
 
 Str qgate(Str gatename, utils::Vec<utils::UInt> operand) {
-    Str body_1 = "qgate " + to_upper(gatename) + " ";
-    Str body_2 = to_string(operand[0]);
+    Str body_1 = "qgate " + to_upper(gatename) + ", ";
+    Str body_2 = "q" + to_string(operand[0]);
     Str body = body_1 + body_2;
     return body;
 }
 
 Str qgate2(Str gatename, utils::Vec<utils::UInt> operand) {
-    Str body_1 = "qgate2 " + to_upper(gatename) + " ";
-    Str body_2 = operand.to_string("", ", ", "");
+    Str body_1 = "qgate2 " + to_upper(gatename) + ", ";
+    Str body_2 = operand.to_string("q", ", q", "");
     Str body = body_1 + body_2;
     return body;
 }
@@ -90,6 +90,10 @@ Str addimm(Str value, Str regname, Str regvalue) {
     return body;
 }
 
+Str jump(Str labelcount) {
+    Str body = "JUMP " + labelcount;
+    return body;
+}
 
 
 } // namespace detail

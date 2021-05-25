@@ -1,23 +1,26 @@
 {
-  "eqasm_compiler": "none",
+  "eqasm_compiler": "diamond",
 
   "hardware_settings": {
     "qubit_number": 10,
     "cycle_time": 20
   },
 
+  "gate_decomposition": {
+    "qentangle %0, %1": ["mx90 %0", "pmx90 %0, %1", "x90 %0"],
+    "memswap %0, %1": ["pmy90 %0, %1", "x90 %0", "pmx90 %0, %1", "my90 %0"]
+  },
+
   "instructions": {
 
-    "prep_x": {
-      "duration": 40
+    "calculate_current": {
+      "duration": 1,
+      "diamond_type": "classical"
     },
 
-    "prep_y": {
-      "duration": 40
-    },
-
-    "prep_z": {
-      "duration": 40
+    "calculate_voltage": {
+      "duration": 1,
+      "diamond_type": "classical"
     },
 
     "i": {
@@ -43,7 +46,7 @@
     },
 
     "initialize": {
-      "duration": 40,
+      "duration": 40
     },
 
     "x90": {
@@ -67,23 +70,28 @@
     },
 
     "mx90": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
 
     "my90": {
-      "duration": 20
+      "duration": 20,
+      "diamond_type": "qgate"
     },
 
     "rx": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "microwave"
     },
 
     "ry": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "microwave"
     },
 
     "rz": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "microwave"
     },
 
     "s": {
@@ -109,8 +117,24 @@
       "diamond_type": "qgate2"
     },
 
-    "toffoli": {
-      "duration": 80
+    "pmx90": {
+      "duration": 80,
+      "diamond_type": "qgate2"
+    },
+
+    "pmy90": {
+      "duration": 80,
+      "diamond_type": "qgate2"
+    },
+
+    "pmx180": {
+      "duration": 80,
+      "diamond_type": "qgate2"
+    },
+
+    "pmy180": {
+      "duration": 80,
+      "diamond_type": "qgate2"
     },
 
     "cz": {
@@ -118,23 +142,7 @@
       "diamond_type": "qgate"
     },
 
-    "swap": {
-      "duration": 80
-    },
-
     "measure": {
-      "duration": 300
-    },
-
-    "measure_x": {
-      "duration": 300
-    },
-
-    "measure_y": {
-      "duration": 300
-    },
-
-    "measure_z": {
       "duration": 300
     },
 
@@ -149,15 +157,15 @@
     },
 
     "memswap": {
-      "duration": 80,
-    },
-
-    "qentangle": {
-      "duration": 60,
+      "duration": 80
     },
 
     "sweep_bias": {
-      "duration": 300,
+      "duration": 300
+    },
+
+    "excite_mw": {
+      "duration": 20
     }
 
   }

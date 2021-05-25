@@ -7,6 +7,7 @@
 #include "ql/api/creg.h"
 #include "ql/api/operation.h"
 #include "ql/api/unitary.h"
+#include "ql/arch/diamond/annotations.h"
 
 //============================================================================//
 //                               W A R N I N G                                //
@@ -432,6 +433,14 @@ void Kernel::barrier(const std::vector<size_t> &qubits) {
  */
 void Kernel::display() {
     kernel->display();
+}
+
+/**
+ * Appends the diamond excite_mw instruction.
+ */
+void Kernel::diamond_excite_mw(size_t envelope, size_t duration, size_t frequency, size_t phase, size_t qubit) {
+    kernel->gate("excite_mw", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::ExciteMicrowaveParameters>({envelope, duration, frequency, phase});
 }
 
 /**

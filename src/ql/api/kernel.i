@@ -797,6 +797,34 @@ None
 """
 
 
+%feature("docstring") ql::api::Kernel::diamond_excite_mw
+"""
+Appends the diamond \"excite_mw\" instruction.
+
+Parameters
+----------
+envelope : int
+    The envelope of the microwave.
+
+duration : int
+    The duration of the microwave in nanoseconds.
+
+frequency : int
+    The frequency of the microwave in kilohertz.
+
+phase: int
+    The phase of the microwave.
+
+qubit: int
+    The target qubit index.
+
+
+Returns
+-------
+None
+"""
+
+
 %feature("docstring") ql::api::Kernel::controlled
 """
 Appends a controlled kernel. The number of control and ancilla qubits
