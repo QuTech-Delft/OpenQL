@@ -216,6 +216,7 @@ endfunction()
 add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/num.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/str.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/rangemap.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/exception.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/logger.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/filesystem.cc"
@@ -485,7 +486,7 @@ set_property(TARGET ql APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${BACKWARD_LIBRA
 if(OPENQL_BUILD_TESTS)
     enable_testing()
 
-    # Convenience function to add a test.
+    # Convenience function to add an integration test.
     function(add_openql_test name source workdir)
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
         target_link_libraries("${name}" ql)
@@ -496,9 +497,34 @@ if(OPENQL_BUILD_TESTS)
         )
     endfunction()
 
-    # Include the directories containing tests.
+    # Include the directories containing integration tests.
     add_subdirectory(tests)
     add_subdirectory(examples)
+
+    # Convenience function to add a unit test.
+    function(add_openql_unit_test source)
+        string(REPLACE "/" "_" name ${source})
+        string(REPLACE "_tests_" "_" name ${name})
+        string(REPLACE ".cc" "" name ${name})
+        set(name test_${name})
+        add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
+        target_link_libraries("${name}" ql)
+        add_test(
+            NAME "${name}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests"
+            COMMAND "${name}"
+        )
+    endfunction()
+
+    # Register unit tests.
+    file(
+        GLOB_RECURSE unit_tests
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/tests/*.cc
+    )
+    foreach(unit_test ${unit_tests})
+        add_openql_unit_test(${unit_test})
+    endforeach()
 
 endif()
 
