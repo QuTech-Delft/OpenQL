@@ -261,6 +261,7 @@ static ir::GateRef load_instruction(
  */
 void Platform::load(
     utils::Json &platform_config,
+    const utils::Str &platform_config_fname,
     const utils::Str &compiler_config
 ) {
     arch::Factory arch_factory = {};
@@ -294,7 +295,10 @@ void Platform::load(
             // String is unrecognized, but it could be a filename to a JSON
             // configuration file (try relative to the platform JSON file or
             // fall back to relative to the working directory).
-            auto fname = utils::path_relative_to(utils::dir_name(platform_config), s);
+            auto fname = s;
+            if (!platform_config_fname.empty()) {
+                fname = utils::path_relative_to(utils::dir_name(platform_config_fname), s);
+            }
             if (utils::path_exists(fname)) {
                 compiler_settings = utils::load_json(fname);
             } else if (utils::path_exists(s)) {
@@ -322,12 +326,13 @@ void Platform::load(
     if (!architecture.has_value()) {
         auto it = compiler_settings.find("architecture");
         if (it == compiler_settings.end() || it->type() != utils::Json::value_t::string) {
-               architecture = arch_factory.build_from_namespace("none");
-        }
-        auto s = it->get<utils::Str>();
-        architecture = arch_factory.build_from_namespace(s);
-        if (!architecture.has_value()) {
-            throw utils::Exception("unknown architecture name " + s);
+            architecture = arch_factory.build_from_namespace("none");
+        } else {
+            auto s = it->get<utils::Str>();
+            architecture = arch_factory.build_from_namespace(s);
+            if (!architecture.has_value()) {
+                throw utils::Exception("unknown architecture name " + s);
+            }
         }
     }
 
@@ -520,10 +525,12 @@ Platform::Platform(
     // query the default configuration for that architecture. Otherwise
     // interpret it as a filename, which it's historically always been.
     utils::Json config;
+    utils::Str platform_config_fname;
     architecture = arch_factory.build_from_namespace(platform_config);
     if (architecture.has_value()) {
         std::istringstream is{architecture->get_default_platform()};
         config = utils::parse_json(is);
+        platform_config_fname = "";
     } else {
         try {
             config = utils::load_json(platform_config);
@@ -532,9 +539,10 @@ Platform::Platform(
                 "failed to load the hardware config file : malformed json file: \n\t"
                     << utils::Str(e.what()));
         }
+        platform_config_fname = platform_config;
     }
 
-    load(config, compiler_config);
+    load(config, platform_config_fname, compiler_config);
 }
 
 /**

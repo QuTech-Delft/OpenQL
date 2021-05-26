@@ -252,6 +252,12 @@ protected:
         const Context &context
     ) const = 0;
 
+    /**
+     * Returns `pass "<name>"` for normal passes and `root` for the root pass.
+     * Used for error messages.
+     */
+    utils::Str describe() const;
+
 public:
 
     /**

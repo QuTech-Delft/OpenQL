@@ -319,7 +319,11 @@ void Compiler::flatten_subgroup(
  */
 #endif
 Pass Compiler::get_pass(const std::string &target) const {
-    return Pass(pass_manager->get_pass(target), false);
+    auto pass = pass_manager->get_pass(target);
+    if (!pass.has_value()) {
+        throw ql::utils::Exception("no pass with name \"" + target + "\" exists");
+    }
+    return Pass(pass, false);
 }
 
 #ifdef QL_HIERARCHICAL_PASS_MANAGEMENT
