@@ -315,6 +315,7 @@ create_resource("src/ql/arch/none/resources/hwconf_default.json")
 set(QL_CHECKED_VEC ${OPENQL_CHECKED_VEC})
 set(QL_CHECKED_LIST ${OPENQL_CHECKED_LIST})
 set(QL_CHECKED_MAP ${OPENQL_CHECKED_MAP})
+set(QL_SHARED_LIB ${BUILD_SHARED_LIBS})
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/config.h.template"
     "${CMAKE_CURRENT_BINARY_DIR}/include/ql/config.h"
