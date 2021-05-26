@@ -818,6 +818,73 @@ phase: int
 qubit: int
     The target qubit index.
 
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") ql::api::Kernel::diamond_memswap
+"""
+Appends the diamond \"memswap\" instruction.
+
+Parameters
+----------
+qubit : int
+    The index of the qubit.
+
+nuclear_qubit : int
+    The index of the nuclear spin qubit of the color center.
+
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") ql::api::Kernel::diamond_qentangle
+"""
+Appends the diamond \"qentangle\" instruction.
+
+Parameters
+----------
+qubit : int
+    The index of the qubit.
+
+nuclear_qubit : int
+    The index of the nuclear spin qubit of the color center.
+
+Returns
+-------
+None
+"""
+
+%feature("docstring") ql::api::Kernel::diamond_sweep_bias
+"""
+Appends the diamond \"sweep_bias\" instruction.
+
+Parameters
+----------
+qubit : int
+    The index of the qubit.
+
+value : int
+    The value that has to be send to the dac for biasing.
+
+dacreg: int
+    The index or address of the register of the dac.
+
+start: int
+    The start frequency value of the sweep.
+
+step: int
+    The step frequency value of the sweep.
+
+max: int
+    The maximum frequency value of the sweep.
+
+memaddress: int
+    The memory address to write the results to.
 
 Returns
 -------

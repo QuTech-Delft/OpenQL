@@ -444,6 +444,34 @@ void Kernel::diamond_excite_mw(size_t envelope, size_t duration, size_t frequenc
 }
 
 /**
+ * Appends the diamond memswap instruction, that swaps the state from a qubit
+ * to a nuclear spin qubit within the color center.
+ */
+void Kernel::diamond_memswap(size_t qubit, size_t nuclear_qubit) {
+    kernel->gate("memswap", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::MemSwapParameters>({nuclear_qubit});
+}
+
+/**
+ * Appends the diamond qentangle instruction, that entangles a qubit with a
+ * nuclear spin qubit within the color center.
+ */
+void Kernel::diamond_qentangle(size_t qubit, size_t nuclear_qubit){
+    kernel->gate("qentangle", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::QEntangleParameters>({nuclear_qubit});
+}
+
+/**
+   * Appends the diamond sweep_bias instruction, that sweeps the frequency over
+   * a color center to help determine the magnetic biasing.
+   */
+void Kernel::diamond_sweep_bias(size_t qubit, size_t value, size_t dacreg, size_t start, size_t step, size_t max, size_t memaddress)
+{
+    kernel->gate("sweep_bias", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::SweepBiasParameters>({value, dacreg, start, step, max, memaddress});
+}
+
+/**
  * Appends a controlled kernel. The number of control and ancilla qubits
  * must be equal.
  *

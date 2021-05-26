@@ -18,6 +18,23 @@ struct ExciteMicrowaveParameters {
     utils::UInt phase;
 };
 
+struct MemSwapParameters {
+    utils::UInt nuclear;
+};
+
+struct QEntangleParameters {
+    utils::UInt nuclear;
+};
+
+struct SweepBiasParameters {
+    utils::UInt value;
+    utils::UInt dacreg;
+    utils::UInt start;
+    utils::UInt step;
+    utils::UInt max;
+    utils::UInt memaddress;
+};
+
 
 
 } // namespace annotations

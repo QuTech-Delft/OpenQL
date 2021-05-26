@@ -6,12 +6,11 @@
     "cycle_time": 20
   },
 
-  "gate_decomposition": {
-    "qentangle %0, %1": ["mx90 %0", "pmx90 %0, %1", "x90 %0"],
-    "memswap %0, %1": ["pmy90 %0, %1", "x90 %0", "pmx90 %0, %1", "my90 %0"]
-  },
-
   "instructions": {
+
+    "qnop": {
+      "duration": 1
+    },
 
     "calculate_current": {
       "duration": 1,
@@ -139,7 +138,7 @@
 
     "cz": {
       "duration": 80,
-      "diamond_type": "qgate"
+      "diamond_type": "qgate2"
     },
 
     "measure": {
@@ -158,6 +157,10 @@
 
     "memswap": {
       "duration": 80
+    },
+
+    "qentangle": {
+      "duration": 60
     },
 
     "sweep_bias": {

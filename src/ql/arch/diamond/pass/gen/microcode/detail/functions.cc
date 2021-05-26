@@ -61,23 +61,23 @@ Str qgate(Str gatename, utils::Vec<utils::UInt> operand) {
     return body;
 }
 
-Str qgate2(Str gatename, utils::Vec<utils::UInt> operand) {
+Str qgate2(Str gatename, Str operand_1, Str operand_2) {
     Str body_1 = "qgate2 " + to_upper(gatename) + ", ";
-    Str body_2 = operand.to_string("q", ", q", "");
+    Str body_2 = operand_1 + ", " + operand_2;
     Str body = body_1 + body_2;
     return body;
 }
 
 Str store(Str reg_name1, Str reg_value1, Str reg_name2, Str reg_value2, Str memaddr){
-    Str body_1 = "ST " + reg_name1 + reg_value1 + ", " + reg_name2 + reg_name2;
+    Str body_1 = "ST " + reg_name1 + reg_value1 + ", " + reg_name2 + reg_value2 + "($" + memaddr + ")";
 
-    Str body_2;
-    if (!memaddr.empty()) {
-        Str body_2 = "(" + memaddr + ")";
-    } else {
-    }
-    Str body = body_1 + body_2;
-    return body;
+//    Str body_2;
+//    if (!memaddr.empty()) {
+//        Str body_2 = "(" + memaddr + ")";
+//    } else {
+//    }
+//    Str body = body_1 + body_2;
+    return body_1;
 }
 
 Str add(Str name_1, Str value_1, Str name_2, Str value_2, Str name_3, Str value_3) {

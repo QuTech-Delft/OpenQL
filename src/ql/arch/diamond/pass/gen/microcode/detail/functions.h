@@ -26,7 +26,7 @@ Str label(Str labelcount);
 
 Str qgate(Str gatename, utils::Vec<utils::UInt> operand);
 
-Str qgate2(Str gatename, utils::Vec<utils::UInt> operand);
+Str qgate2(Str gatename, Str operand_1, Str operand_2);
 
 Str store(Str reg_name1, Str reg_value1, Str reg_name2, Str reg_value2, Str memaddr);
 
