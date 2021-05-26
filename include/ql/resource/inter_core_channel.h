@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "ql/com/reservations.h"
+#include "ql/utils/rangemap.h"
 #include "ql/rmgr/resource_types/base.h"
 
 namespace ql {
@@ -15,7 +15,7 @@ namespace inter_core_channel {
 /**
  * State per qubit.
  */
-using State = com::reservations::Tracker<>;
+using State = utils::RangeSet<utils::UInt>;
 
 /**
  * Forward-declaration for the configuration structure, defined in the CC file.

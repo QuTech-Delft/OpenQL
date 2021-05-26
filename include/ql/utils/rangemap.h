@@ -511,7 +511,7 @@ public:
      * compare(value, existing_value), the ranges will be merged. Returns an
      * iterator to the inserted range.
      */
-    Iter set(Range range, Value &&value, const ValueCompare &compare) {
+    Iter set(Range range, const Value &value, const ValueCompare &compare) {
         if (!range_valid(range)) {
             throw utils::Exception(
                 "Invalid range presented to set(): " + utils::try_to_string(range)
@@ -590,7 +590,7 @@ public:
         }
 
         // Add the new range.
-        return map.insert({range, std::forward<Value>(value)}).first;
+        return map.insert({range, value}).first;
 
     }
 
@@ -600,8 +600,8 @@ public:
      * to the value comparator specified at construction (if any), the ranges
      * will be merged. Returns an iterator to the inserted range.
      */
-    Iter set(const Range &range, Value &&value = {}) {
-        return set(range, std::forward<Value>(value), value_compare);
+    Iter set(const Range &range, const Value &value = {}) {
+        return set(range, value, value_compare);
     }
 
     /**
@@ -788,6 +788,31 @@ public:
      */
     void clear() {
         map.clear();
+    }
+
+    /**
+     * Dumps the state as a multiline string. When Value is not Nothing, the
+     * optional printer callback may be used to change the way the value is
+     * printed.
+     */
+    void dump_state(
+        std::ostream &os = std::cout,
+        const utils::Str &line_prefix = "",
+        std::function<void(std::ostream&, const V&)> printer
+            = [](std::ostream &os, const V &val){ os << utils::try_to_string(val); }
+    ) const {
+        if (map.empty()) {
+            os << line_prefix << "empty" << std::endl;
+            return;
+        }
+        for (const auto &it : map) {
+            os << line_prefix << "[" << it.first.first << ".." << it.first.second << ")";
+            if (!std::is_same<Value, Nothing>::value) {
+                os << " => ";
+                printer(os, it.second);
+            }
+            os << std::endl;
+        }
     }
 
     /**

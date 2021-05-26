@@ -28,6 +28,26 @@ public:
      */
     using Stl = std::list<T, Allocator>;
 
+    /**
+     * Forward iterator with mutable access to the values.
+     */
+    using Iter = typename Stl::iterator;
+
+    /**
+     * Forward iterator with const access to the values.
+     */
+    using ConstIter = typename Stl::const_iterator;
+
+    /**
+     * Backward iterator with mutable access to the values.
+     */
+    using ReverseIter = typename Stl::reverse_iterator;
+
+    /**
+     * Backward iterator with const access to the values.
+     */
+    using ConstReverseIter = typename Stl::const_reverse_iterator;
+
     // Member types expected by the standard library.
     using value_type = T;
     using allocator_type = Allocator;

@@ -569,7 +569,7 @@ utils::Bool InstrumentResource::on_gate(
     }
 
     // Compute cycle range for this gate.
-    com::reservations::CycleRange range = {
+    State::Range range = {
         cycle,
         cycle + utils::div_ceil(gate->duration, config->cycle_time)
     };
@@ -580,7 +580,7 @@ utils::Bool InstrumentResource::on_gate(
     Function function = 0;
     if (config->mutually_exclusive) {
         for (auto index : affected) {
-            if (state[index].find(range) != com::reservations::Result::NONE) {
+            if (state[index].find(range).type != utils::RangeMatchType::NONE) {
                 QL_DOUT(" -> not available because of instrument " << config->instrument_names[index]);
                 return false;
             }
@@ -621,22 +621,22 @@ utils::Bool InstrumentResource::on_gate(
             QL_IF_LOG_DEBUG {
                 state[index].dump_state(std::cout, "      ");
             }
-            typename State::ReservationMap::iterator reservation;
-            switch (state[index].find(range, &reservation)) {
-                case com::reservations::Result::NONE:
+            auto result = state[index].find(range);
+            switch (result.type) {
+                case utils::RangeMatchType::NONE:
 
                     // No overlap, cleared to place gate here for this
                     // instrument.
                     break;
 
-                case com::reservations::Result::EXACT:
+                case utils::RangeMatchType::EXACT:
 
                     // Exact overlap; instrument is already in use, but the
                     // cycle range for its function overlaps exactly. If the
                     // current function is the same as the function required by
                     // the incoming gate, everything is fine. Otherwise, the
                     // gate can't go here.
-                    if (reservation->second != function) {
+                    if (result.begin->second != function) {
                         QL_DOUT(
                             " -> not available because of instrument "
                             << config->instrument_names[index]
@@ -671,7 +671,10 @@ utils::Bool InstrumentResource::on_gate(
             << affected.size() << " instruments"
         );
         for (auto index : affected) {
-            state[index].reserve(range, function, config->optimize);
+            if (config->optimize) {
+                state[index].clear();
+            }
+            state[index].set(range, function);
         }
     } else {
         QL_DOUT(
