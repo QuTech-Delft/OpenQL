@@ -26,7 +26,8 @@
  *    dllexport prefix is needed;
  *  - if OpenQL is linked dynamically (*.dll) and something depending on it is
  *    being built, the dllimport prefix is needed; and
- *  - if OpenQL is linked statically (*.lib), there must be no in either case.
+ *  - if OpenQL is linked statically (*.lib), there must be no prefix in either
+ *    case.
  *
  * All of these are contextual in a way that cannot normally be detected from
  * within the C preprocessor; we need to know if and how OpenQL is/was built

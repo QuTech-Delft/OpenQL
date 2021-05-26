@@ -86,6 +86,12 @@ struct Config {
     utils::Bool mutually_exclusive;
 
     /**
+     * When set, gates that require the same instrument and use the same
+     * function do not necessarily have to start and end simultaneously.
+     */
+    utils::Bool allow_overlap;
+
+    /**
      * Map from the qubit for single-qubit gates to instrument index.
      */
     utils::Map<Qubit, Instruments> single_qubit_instruments;
@@ -108,10 +114,14 @@ struct Config {
     utils::Map<Qubit, Instruments> multi_qubit_instrument[3];
 
     /**
-     * When set, there is a defined scheduling direction, which means it's
-     * sufficient to only track the latest reservation for each qubit.
+     * Defines the scheduling direction, if there is one. This controls whether
+     * old reservations will be removed when a new reservation is added. For
+     * forward scheduling, any reservations before the first cycle of the
+     * incoming instruction removed; for backward scheduling, all reservations
+     * after the last cycle of the incoming instruction are removed. This is
+     * just a space-saving measure.
      */
-    utils::Bool optimize;
+    rmgr::Direction direction;
 
     /**
      * Cycle time of the platform.
@@ -137,7 +147,7 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
     cfg.emplace();
 
     // Set the easy stuff.
-    cfg->optimize = direction != rmgr::Direction::UNDEFINED;
+    cfg->direction = direction;
     cfg->cycle_time = context->platform->cycle_time;
 
     // Parse the JSON configuration.
@@ -243,6 +253,7 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
             "predicate_1q": { "type": "mw" },
             "predicate_2q": { "type": "flux" },
             "function": [ "type" ],
+            "allow_overlap": true,
             "instruments": []
         }
         )"_json;
@@ -253,6 +264,7 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
         } else if (!it->is_object()) {
             ERROR("edge connection_map key must be an object");
         }
+        utils::Map<utils::UInt, utils::Set<utils::UInt>> qubit_to_detuning_edges;
         for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
             if (!it2->is_array()) {
                 ERROR("edge connection_map values must be arrays of qubits");
@@ -268,19 +280,30 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
                     "(edge " + utils::to_string(edge_id) + " not found)"
                 );
             }
+            for (auto it3 = it2->begin(); it3 != it2->end(); ++it3) {
+                if (!it3->is_number_unsigned()) {
+                    ERROR("edge connection_map values must be arrays of qubits");
+                }
+                auto qubit = it3->get<utils::UInt>();
+                qubit_to_detuning_edges.set(qubit).insert(edge_id);
+            }
+        }
+        for (auto it2 : qubit_to_detuning_edges) {
+            auto qubit = it2.first;
+            const auto &edges = it2.second;
             cfg->json["instruments"].push_back(
                 {
-                    {"name", "edge-" + utils::to_string(edge.first) + "_" + utils::to_string(edge.second)},
-                    {"1q_qubit", *it2},
-                    {"edge", {edge_id}}
+                    {"name", "qubit-" + utils::to_string(qubit)},
+                    {"1q_qubit", {qubit}},
+                    {"edge", edges}
                 }
             );
         }
-
     }
 
     // Now actually parse our native structure.
     cfg->mutually_exclusive = false;
+    cfg->allow_overlap = false;
     utils::RawPtr<utils::Json> instruments = nullptr;
     for (auto it = cfg->json.begin(); it != cfg->json.end(); ++it) {
         if (
@@ -331,6 +354,12 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
                 cfg->mutually_exclusive = true;
             } else {
                 ERROR("function must be an array of strings or the string \"exclusive\"");
+            }
+        } else if (it.key() == "allow_overlap") {
+            if (it->is_boolean()) {
+                cfg->allow_overlap = it->get<utils::Bool>();
+            } else {
+                ERROR("allow_overlap must be boolean if specified");
             }
         } else if (it.key() == "instruments") {
             if (it->is_array()) {
@@ -458,6 +487,7 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
         std::cout << "preds[nq]: " << config->predicates[2] << std::endl;
         std::cout << "function: " << config->function_keys << std::endl;
         std::cout << "mutex: " << config->mutually_exclusive << std::endl;
+        std::cout << "allow overlap: " << config->allow_overlap << std::endl;
         std::cout << "1q_instr: " << config->single_qubit_instruments << std::endl;
         std::cout << "2q_instr_q0: " << config->two_qubit_instrument[0] << std::endl;
         std::cout << "2q_instr_q1: " << config->two_qubit_instrument[1] << std::endl;
@@ -649,14 +679,30 @@ utils::Bool InstrumentResource::on_gate(
                 default:
 
                     // Partial overlap; gate doesn't start synchronized with
-                    // an existing gate for this instrument, so we can't place
-                    // it here.
-                    QL_DOUT(
-                        " -> not available because of instrument "
-                        << config->instrument_names[index]
-                        << ", overlapping wrong"
-                    );
-                    return false;
+                    // an existing gate for this instrument. If allow_overlap is
+                    // not set, we already know we can't place it here.
+                    if (!config->allow_overlap) {
+                        QL_DOUT(
+                            " -> not available because of instrument "
+                            << config->instrument_names[index]
+                            << ", overlapping wrong"
+                        );
+                        return false;
+                    }
+
+                    // If overlap is allowed, we have to check whether the
+                    // function of all overlapping ranges matches.
+                    for (auto it2 = result.begin; it2 != result.end; ++it2) {
+                        if (it2->second != function) {
+                            QL_DOUT(
+                                " -> not available because of instrument "
+                                << config->instrument_names[index]
+                                << ", function mismatch in overlapping range"
+                            );
+                            return false;
+                        }
+                    }
+                    break;
 
             }
         }
@@ -671,8 +717,10 @@ utils::Bool InstrumentResource::on_gate(
             << affected.size() << " instruments"
         );
         for (auto index : affected) {
-            if (config->optimize) {
-                state[index].clear();
+            if (config->direction == rmgr::Direction::FORWARD) {
+                state[index].erase({ir::FIRST_CYCLE, range.first});
+            } else if (config->direction == rmgr::Direction::BACKWARD) {
+                state[index].erase({range.second, ir::MAX_CYCLE});
             }
             state[index].set(range, function);
         }
@@ -735,27 +783,24 @@ void InstrumentResource::on_dump_docs(
     apply a certain kind of quantum gate, with the constraint that the
     instrument is shared between a number of qubits/edges, and can only perform
     one function at a time. That is, two gates that share an instrument can be
-    parallelized if and only if:
-
-     - they use the same instrument function;
-     - they have the same duration; and
-     - they start simultaneously.
+    parallelized if and only if they use the same instrument function. By
+    default, parallel gates requiring the same instrument also need to start at
+    the same time and have the same duration, but this can be disabled.
 
     The instrument function is configurable for each particular gate based on
     one or more custom keys in the instruction set definition of the platform
     configuration file. It's also possible to specify that there is only a
-    single function (effectively, this removes the first condition in the list
-    above), or to specify that all functions are mutually exclusive (in which
-    case gates using the same instruments can never be parallelized).
+    single function (i.e., all gates requiring access to the instrument can be
+    parallelized, but only if they start at the same time and have the same
+    duration), or to specify that all functions are mutually exclusive (in which
+    case gates using the same instrument can never be parallelized).
 
-    The kind of quantum gate that this resource is applied to is similarly
-    configurable. Gates are only considered when zero or more configured custom
-    gate keys are set to a particular value.
-
-    The instrument(s) used for a particular gate that matches the above gate
-    predicate is determined based on its qubit operands. The instrument can be
-    selected based on the specified number of qubit operands, and qubit operand
-    index.
+    The instrument(s) affected by the gate, if any, are selected based on the
+    qubit operands of the gate and upon whether the gate matches a set of
+    predicates. Like the instrument function selection, the predicates are based
+    on custom keys in the instruction definition in the platform configuration
+    file. A different set of predicates can be provided based on the number of
+    qubit operands of the gate.
 )" /* in case anyone's wondering, MSVC has a string literal length limit */ R"(
     * Configuration structure *
 
@@ -775,6 +820,7 @@ void InstrumentResource::on_dump_docs(
               "<gate-key>",
               ...
           ],
+          "allow_overlap": [true, false],
           "instruments": [
               {
                   "name": "<optional instrument name>",
@@ -794,50 +840,165 @@ void InstrumentResource::on_dump_docs(
       All sections except ``"instruments"`` are optional. Unrecognized sections
       throw an error.
 )" R"(
-      The predicate section must be a map of string-string or
-      string-list(string) key-value pairs, representing (custom) keys and values
-      in the instruction set definition section for the incoming gate that must
-      be matched. An incoming gate matches the predicate if and only if:
+      * Predicates *
 
-       - its instruction set definition object has values for all keys
-         specified;
-       - these keys all map to strings; and
-       - the string values match (one of) the specified value(s) for each key.
+        The predicate section must be a map of string-string or
+        string-list(string) key-value pairs, representing (custom) keys and
+        values in the instruction set definition section for the incoming gate
+        that must be matched. An incoming gate matches the predicate if and only
+        if:
 
-      Different predicates can be specified for single-, two-, and
-      more-than-two-qubit gates. Both the common predicate and the size-specific
-      predicate must match.
+         - its instruction set definition object has values for all keys
+           specified;
+         - these keys all map to strings; and
+         - the string values match (one of) the specified value(s) for each key.
 
-      The function section can be one of three things:
+        For example, if an instruction definition looks like this:
 
-       - a list of gate keys as specified in the structure above, in which case
-         the selected function is the combination of the (string) values of
-         these keys in the gate definition;
-       - an empty list or unspecified, in which case function matching is
-         disabled, always allowing two gates to execute in parallel; or
-       - the string ``"exclusive"``, in which case exclusive access is modelled,
-         i.e. matching gates can never execute in parallel.
+        ```
+        "x": {
+            "duration": 40,
+            "type": "mw",
+            "instr": "x"
+        }
+        ```
 
-      The instruments section consists of a list of objects. Each object
-      represents an independent instrument, of which the connectivity is
-      specified by the contents of the object.
+        the following predicate configuration will match it:
 
-       - For single-qubit gates, the instrument is used if and only if the
-         single qubit operand is in the ``"1q_qubit"`` or ``"qubit"`` list.
-       - For two-qubit gates, the instrument is used if any of the following
-         is true:
-          - either qubit is in the ``"qubit"`` list;
-          - the first qubit operand is in the ``"2q_qubit0"`` list;
-          - the second qubit operand is in the ``"2q_qubit1"`` list; or
-          - the edge index (from the topology section of the platform)
-            corresponding to the qubit operand pair is in the ``"edge"``
-            list.
-       - For three-or-more-qubit gates, the instrument is used if any of the
-         following is true:
-          - any of the qubit operands is in the ``"qubit"`` list;
-          - the first qubit operand is in the ``"nq_qubit0"`` list;
-          - the second qubit operand is in the ``"nq_qubit1"`` list; or
-          - any of the remaining qubit operands are in the ``"nq_qubitn"`` list.
+        ```
+        "predicate": {
+            "type": "mw"
+        }
+        ```
+
+        but will reject a gate defined like this:
+
+        ```
+        "cnot": {
+            "duration": 80,
+            "type": "flux",
+            "instr": "cnot"
+        }
+        ```
+
+        because its `"type"` is `"flux"`.
+
+        NOTE: It will also silently reject gates which don't have the `"type"`
+        key, so beware of typos!
+
+        Should you want to match both types, but not any other type, you could
+        do
+
+        ```
+        "predicate": {
+            "type": ["mw", "flux"]
+        }
+        ```
+
+        Different predicates can be specified for single-, two-, and
+        more-than-two-qubit gates. Both the common predicate and the
+        size-specific predicate must match.
+)" R"(
+      * Instrument function selection *
+
+        The function section can be one of three things:
+
+         - a list of gate keys as specified in the structure above, in which
+           case the selected function is the combination of the (string) values
+           of these keys in the gate definition;
+         - an empty list or unspecified, in which case function matching is
+           disabled, always allowing two gates to execute in parallel (but still
+           requiring them to start and end simultaneously); or
+         - the string ``"exclusive"``, in which case exclusive access is
+           modelled, i.e. matching gates can never execute in parallel.
+
+        For example, say that an `x` gate requires a different instrument
+        function than an `y` gate, i.e. they cannot be done in parallel, but
+        multiple `x` gates on different qubits can be parallelized (idem for
+        `y`), you might use:
+
+        ```
+        "function": [
+            "instr"
+        ]
+        ```
+
+        for gates defined as follows:
+
+        ```
+        "x": {
+            "duration": 40,
+            "type": "mw",
+            "instr": "x"
+        },
+        "y": {
+            "duration": 40,
+            "type": "mw",
+            "instr": "y"
+        }
+        ```
+
+        In some cases, it is not necessary for parallel operations requiring the
+        same instrument function to actually start at the same time. For
+        example, an instrument resource modelling qubit detuning would have two
+        states, one indicating that the qubit is detuned, and one indicating
+        that it is not, but as long as it is in one of these states, it doesn't
+        matter when gates requiring it start and end. This behavior can be
+        specified with the `"allow_overlap"` option. If specified, it must be a
+        boolean, defaulting to `false`.
+
+        NOTE: it makes little sense to combine `"allow_overlap"` with an empty
+        `"function"` section, because this would disable all constraints on
+        parallelism.
+)" R"(
+      * Instrument definition *
+
+        A single instrument resource can define multiple independent instruments
+        with the same behavior, distinguished by which qubits or edges they're
+        connected to. This is done using the instruments section. It consists of
+        a list of objects, where each object represents an instrument. The
+        contents of the object define its connectivity, by way of predicates on
+        the qubit operand list of the incoming gates.
+
+         - For single-qubit gates, the instrument is used if and only if the
+           single qubit operand is in the ``"1q_qubit"`` or ``"qubit"`` list.
+         - For two-qubit gates, the instrument is used if any of the following
+           is true:
+            - either qubit is in the ``"qubit"`` list;
+            - the first qubit operand is in the ``"2q_qubit0"`` list;
+            - the second qubit operand is in the ``"2q_qubit1"`` list; or
+            - the edge index (from the topology section of the platform)
+              corresponding to the qubit operand pair is in the ``"edge"``
+              list.
+         - For three-or-more-qubit gates, the instrument is used if any of the
+           following is true:
+            - any of the qubit operands is in the ``"qubit"`` list;
+            - the first qubit operand is in the ``"nq_qubit0"`` list;
+            - the second qubit operand is in the ``"nq_qubit1"`` list; or
+            - any of the remaining qubit operands are in the ``"nq_qubitn"``
+              list.
+
+        For example, an instrument defined as follows:
+
+        ```
+        "instruments": [
+            {
+                "name": "qubit-2",
+                "1q_qubit": [2],
+                "edge": [1, 9]
+            }
+        ]
+        ```
+
+        will be used by single-qubit gates acting on qubit 2, and by two-qubit
+        gates acting on edge 1 or 9 (as defined in the topology section of the
+        platform configuration file). Of course the gate also has to match the
+        gate predicates defined for this resource for it to be considered. When
+        a gate matches all of the above, the instrument function as defined in
+        the function section will (need to) be reserved for this instrument for
+        the duration of that gate, and thus the gate will be postponed if a
+        conflicting reservation already exists.
+
 )" R"(
     * QWG example *
 
@@ -943,7 +1104,7 @@ void InstrumentResource::on_dump_docs(
       parked). This moves the qubit out of the way frequency-wise to prevent it
       from being affected by the flux gate as well. However, doing so prevents
       single-qubit microwave quantum gates (``"type": "mw"``) from
-      using the detuned qubit. Specifically:
+      using the detuned qubit (and vice versa). Specifically:
 
        - a two-qubit gate operating on qubits 0 and 2 detunes qubit 3;
        - a two-qubit gate operating on qubits 0 and 3 detunes qubit 2;
@@ -959,36 +1120,32 @@ void InstrumentResource::on_dump_docs(
           "predicate_1q": { "type": "mw" },
           "predicate_2q": { "type": "flux" },
           "function": [ "type" ],
+          "allow_overlap": true,
           "instruments": [
               {
-                  "name": "edge-0-2",
-                  "1q_qubit": [3],
-                  "edge": [0, 8]
-              },
-              {
-                  "name": "edge-0-3",
+                  "name": "qubit-2",
                   "1q_qubit": [2],
                   "edge": [1, 9]
               },
               {
-                  "name": "edge-1-3",
+                  "name": "qubit-3",
+                  "1q_qubit": [3],
+                  "edge": [0, 3, 8, 11]
+              },
+              {
+                  "name": "qubit-4",
                   "1q_qubit": [4],
                   "edge": [2, 10]
               },
               {
-                  "name": "edge-1-4",
-                  "1q_qubit": [3],
-                  "edge": [3, 11]
-              },
-              {
-                  "name": "edge-3-5",
-                  "1q_qubit": [6],
-                  "edge": [5, 13]
-              },
-              {
-                  "name": "edge-3-6",
+                  "name": "qubit-5",
                   "1q_qubit": [5],
                   "edge": [6, 14]
+              },
+              {
+                  "name": "qubit-6",
+                  "1q_qubit": [6],
+                  "edge": [5, 13]
               }
           ]
       }
