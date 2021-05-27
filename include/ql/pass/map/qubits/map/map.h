@@ -21,7 +21,7 @@ struct Options;
 /**
  * Qubit mapper pass.
  */
-class MapQubitsPass : public pmgr::pass_types::KernelTransformation {
+class MapQubitsPass : public pmgr::pass_types::ProgramTransformation {
 private:
 
     /**
@@ -69,7 +69,6 @@ public:
      */
     utils::Int run(
         const ir::ProgramRef &program,
-        const ir::KernelRef &kernel,
         const pmgr::pass_types::Context &context
     ) const override;
 

@@ -140,7 +140,7 @@ MapQubitsPass::MapQubitsPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : pmgr::pass_types::KernelTransformation(pass_factory, instance_name, type_name) {
+) : pmgr::pass_types::ProgramTransformation(pass_factory, instance_name, type_name) {
 
     //========================================================================//
     // Options for the initial virtual to real qubit map                      //
@@ -483,7 +483,6 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
  */
 utils::Int MapQubitsPass::run(
     const ir::ProgramRef &program,
-    const ir::KernelRef &kernel,
     const pmgr::pass_types::Context &context
 ) const {
 
