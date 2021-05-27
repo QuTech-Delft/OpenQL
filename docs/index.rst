@@ -1,16 +1,6 @@
 Welcome to OpenQL's documentation!
 ==================================
 
-.. warning::
-   A major refactoring/revision of the documentation is currently underway, to
-   synchronize with all the changes made as part of the modularization and
-   refactoring effort. Especially the user manual portion of the documentation
-   is largely incomplete; these pages are currently organized in the "Old
-   pages" section, and are marked with a warning at the top. For up-to-date
-   reference information about OpenQL, refer to the reference and developer
-   documentation sections: these sections are largely generated from code, and
-   are thus naturally in sync.
-
 OpenQL is a framework for high-level quantum programming in C++/Python.
 The framework provides a compiler for compiling and optimizing quantum code.
 Compared to competing frameworks, such as Qiskit, OpenQL's focus lies more on
@@ -59,6 +49,8 @@ to Doxygen-recognized docstrings yet.
    gen/manual_installation
    manual/first_program
    manual/qx
+   manual/dqcsim
+   manual/where_to_go_from_here
 
 .. toctree::
    :maxdepth: 2
@@ -101,7 +93,6 @@ to Doxygen-recognized docstrings yet.
    old/platform
    old/compiler
    old/compiler_passes
-   old/dqcsim
 
 Indices and tables
 ------------------
