@@ -6,3 +6,4 @@ openql.egg-info
 lab
 env
 docs
+cmake-build-*

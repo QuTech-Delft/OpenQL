@@ -1,0 +1,285 @@
+{
+    "eqasm_compiler": "cc_light",
+
+    "hardware_settings": {
+        "qubit_number": 7,
+        "cycle_time": 20
+    },
+
+    "topology": {
+        "form": "xy",
+        "qubits": [
+            { "id": 0, "x": 1, "y": 2 },
+            { "id": 1, "x": 3, "y": 2 },
+            { "id": 2, "x": 0, "y": 1 },
+            { "id": 3, "x": 2, "y": 1 },
+            { "id": 4, "x": 4, "y": 1 },
+            { "id": 5, "x": 1, "y": 0 },
+            { "id": 6, "x": 3, "y": 0 }
+        ],
+        "edges": [
+            { "id": 0, "src": 2, "dst": 0 },
+            { "id": 1, "src": 0, "dst": 3 },
+            { "id": 2, "src": 3, "dst": 1 },
+            { "id": 3, "src": 1, "dst": 4 },
+            { "id": 4, "src": 2, "dst": 5 },
+            { "id": 5, "src": 5, "dst": 3 },
+            { "id": 6, "src": 3, "dst": 6 },
+            { "id": 7, "src": 6, "dst": 4 },
+            { "id": 8, "src": 0, "dst": 2 },
+            { "id": 9, "src": 3, "dst": 0 },
+            { "id": 10, "src": 1, "dst": 3 },
+            { "id": 11, "src": 4, "dst": 1 },
+            { "id": 12, "src": 5, "dst": 2 },
+            { "id": 13, "src": 3, "dst": 5 },
+            { "id": 14, "src": 6, "dst": 3 },
+            { "id": 15, "src": 4, "dst": 6 }
+        ]
+    },
+
+    "resources": {
+        "qubits": {},
+        "qwgs": {
+            "connection_map": {
+                "0": [0, 1],
+                "1": [2, 3, 4],
+                "2": [5, 6]
+            }
+        },
+        "meas_units": {
+            "connection_map": {
+                "0": [0, 2, 3, 5, 6],
+                "1": [1, 4]
+            }
+        },
+        "edges": {
+            "connection_map": {
+                "0": [2, 10],
+                "1": [3, 11],
+                "2": [0, 8],
+                "3": [1, 9],
+                "4": [6, 14],
+                "5": [7, 15],
+                "6": [4, 12],
+                "7": [5, 13],
+                "8": [2, 10],
+                "9": [3, 11],
+                "10": [0, 8],
+                "11": [1, 9],
+                "12": [6, 14],
+                "13": [7, 15],
+                "14": [4, 12],
+                "15": [5, 13]
+            }
+        },
+        "detuned_qubits": {
+            "connection_map": {
+                "0": [3],
+                "1": [2],
+                "2": [4],
+                "3": [3],
+                "4": [],
+                "5": [6],
+                "6": [5],
+                "7": [],
+                "8": [3],
+                "9": [2],
+                "10": [4],
+                "11": [3],
+                "12": [],
+                "13": [6],
+                "14": [5],
+                "15": []
+            }
+        }
+    },
+
+    "instructions": {
+        "prepx": {
+            "duration": 640,
+            "type": "mw",
+            "cc_light_instr": "prepx"
+        },
+        "prepz": {
+            "duration": 620,
+            "type": "mw",
+            "cc_light_instr": "prepz"
+        },
+        "measx_keep": {
+            "duration": 340,
+            "type": "readout",
+            "cc_light_instr": "measx"
+        },
+        "measz_keep": {
+            "duration": 300,
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measure": {
+            "duration": 300,
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "i": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "i"
+        },
+        "x": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "x"
+        },
+        "y": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "y"
+        },
+        "z": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "z"
+        },
+        "rx": {
+            "duration": 60,
+            "type": "mw",
+            "cc_light_instr": "rx"
+        },
+        "ry": {
+            "duration": 60,
+            "type": "mw",
+            "cc_light_instr": "ry"
+        },
+        "rz": {
+            "duration": 60,
+            "type": "mw",
+            "cc_light_instr": "rz"
+        },
+        "h": {
+            "duration": 40,
+            "type": "mw",
+            "cc_light_instr": "h"
+        },
+        "s": {
+            "duration": 60,
+            "type": "mw",
+            "cc_light_instr": "s"
+        },
+        "sdag": {
+            "duration": 60,
+            "type": "mw",
+            "cc_light_instr": "sdag"
+        },
+        "x90": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "x90"
+        },
+        "xm90": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "xm90"
+        },
+        "y90": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "y90"
+        },
+        "ym90": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "ym90"
+        },
+        "t": {
+            "duration": 60,
+            "type": "mw",
+            "cc_light_instr": "t"
+        },
+        "tdag": {
+            "duration": 60,
+            "type": "mw",
+            "cc_light_instr": "tdag"
+        },
+        "x45": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "x45"
+        },
+        "xm45": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "xm45"
+        },
+        "y45": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "y45"
+        },
+        "ym45": {
+            "duration": 20,
+            "type": "mw",
+            "cc_light_instr": "ym45"
+        },
+        "cz": {
+            "duration": 40,
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cnot": {
+            "duration": 80,
+            "type": "flux",
+            "cc_light_instr": "cnot"
+        },
+        "toffoli" : {
+            "duration": 80,
+            "type": "multi",
+            "cc_light_instr": "toffoli"
+        },
+        "swap": {
+            "duration": 200,
+            "type": "flux",
+            "cc_light_instr": "swap"
+        },
+        "move": {
+            "duration": 140,
+            "type": "flux",
+            "cc_light_instr": "move"
+        }
+    },
+
+    "gate_decomposition": {
+        "toffoli_decomp %0,%1,%2" : ["y90 %0", "xm45 %0", "y %0", "y90 %1", "xm45 %1", "ym90 %1", "x %2", "ym90 %2", "cz %2,%0", "y %0", "x45 %0", "y %0", "ym90 %2","cz %1,%2","y %2","cz %1,%0","y %0", "x45 %2", "y %2", "xm45 %0", "y %0","cz %1,%2","y90 %2","cz %2,%0","y %0", "x45 %0", "y %0", "y90 %2", "xm45 %2", "ym90 %2", "cz %1,%0","y90 %0", "x %2", "ym90 %2"],
+
+        "rx180 %0" : ["x %0"],
+        "ry180 %0" : ["y %0"],
+        "rx90 %0" : ["x90 %0"],
+        "ry90 %0" : ["y90 %0"],
+        "mrx90 %0" : ["xm90 %0"],
+        "mry90 %0" : ["ym90 %0"],
+        "rx45 %0" : ["x45 %0"],
+        "ry45 %0" : ["y45 %0"],
+        "mrx45 %0" : ["xm45 %0"],
+        "mry45 %0" : ["ym45 %0"],
+        "measx %0" : ["h %0", "measure %0"],
+        "measz %0" : ["measure %0"],
+
+        "swap_real %0,%1": ["cnot %0,%1", "cnot %1,%0", "cnot %0,%1"], 
+        "move_real %0,%1": ["cnot %1,%0", "cnot %0,%1"], 
+        "z_real %0" : ["x %0","y %0"],
+        "h_real %0" : ["x %0", "ym90 %0"],
+        "t_real %0" : ["y90 %0", "x45 %0", "ym90 %0"],
+        "tdag_real %0" : ["y90 %0", "xm45 %0", "ym90 %0"],
+        "s_real %0" : ["y90 %0", "x90 %0", "ym90 %0"],
+        "sdag_real %0" : ["y90 %0", "xm90 %0", "ym90 %0"],
+
+        "cnot_prim %0,%1": ["ym90 %1","cz %0,%1","y90 %1"],
+        "swap_prim %0,%1": ["ym90 %1","cz %0,%1","y90 %1", "ym90 %0","cz %1,%0","y90 %0", "ym90 %1","cz %0,%1","y90 %1"],
+        "move_prim %0,%1": ["ym90 %0","cz %1,%0","y90 %0", "ym90 %1","cz %0,%1","y90 %1"],
+        "z_prim %0" : ["x %0","y %0"],
+        "h_prim %0" : ["x %0", "ym90 %0"],
+        "t_prim %0" : ["y90 %0", "x45 %0", "ym90 %0"],
+        "tdag_prim %0" : ["y90 %0", "xm45 %0", "ym90 %0"],
+        "s_prim %0" : ["y90 %0", "x90 %0", "ym90 %0"],
+        "sdag_prim %0" : ["y90 %0", "xm90 %0", "ym90 %0"]
+    }
+}

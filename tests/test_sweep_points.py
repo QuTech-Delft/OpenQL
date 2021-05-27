@@ -4,8 +4,7 @@ import json
 from openql import openql as ql
 
 curdir = os.path.dirname(os.path.realpath(__file__))
-config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-platf = ql.Platform("starmon", config_fn)
+platf = ql.Platform("starmon", "cc_light")
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_sweep_points(unittest.TestCase):

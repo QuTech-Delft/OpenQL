@@ -176,7 +176,34 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Windows weirdness: need a .lib file to link against a DLL at compile-time
 # (I think), but only the .dll is generated when there are no exported symbols.
 # This sort of fixes that (https://stackoverflow.com/questions/1941443)
-SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+
+#=============================================================================#
+# Compile code generators                                                     #
+#=============================================================================#
+
+# Simple program that generates resource include files, to include the contents
+# of a file as a constant inside the OpenQL library.
+add_executable(resource src/resource/main.cpp)
+function(create_resource fname)
+    set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${fname}")
+    get_filename_component(outdir "${CMAKE_CURRENT_BINARY_DIR}/${fname}" DIRECTORY)
+    get_filename_component(outname "${CMAKE_CURRENT_BINARY_DIR}/${fname}" NAME_WE)
+    set(outfile "${outdir}/${outname}.inc")
+    add_custom_command(
+        OUTPUT "${outfile}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${outdir}"
+        COMMAND resource "${infile}" "${outdir}" "${outname}"
+        DEPENDS "${infile}" resource
+    )
+    string(REGEX REPLACE "[\\./\\]" "_" target_name "${fname}")
+    add_custom_target(
+        ${target_name}
+        DEPENDS "${outfile}"
+    )
+    add_dependencies(ql ${target_name})
+endfunction()
 
 
 #=============================================================================#
@@ -187,66 +214,111 @@ SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 # or as a static library based on BUILD_SHARED_LIBS; add_library switches
 # automatically.
 add_library(ql
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/platform.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/program.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/compiler.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/decompose_toffoli.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/buffer_insertion.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/latency_compensation.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/write_sweep_points.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/optimizer.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/clifford.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/passes/passmanager.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/passes/passes.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_cimg.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_common.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_circuit.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_interaction.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer_mapping.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/exception.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/logger.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/str.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/num.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/filesystem.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/json.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/backend_cc.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/codegen_cc.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/datapath_cc.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/settings_cc.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/vcd_cc.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/vcd.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/cqasm/cqasm_reader.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/unitary.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/mapper.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/circuit.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/classical.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/eqasm_compiler.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/gate.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/hardware_configuration.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/interactionMatrix.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ir.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernel.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/metrics.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/options.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm_compiler.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/qsoverlay.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/resource_manager.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/scheduler.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/commute_variation.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_resource_manager.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/num.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/str.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/rangemap.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/exception.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/logger.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/filesystem.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/json.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/vcd.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/options.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/options.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/unitary.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/qubit_mapping.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/metrics.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/interaction_matrix.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/platform.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/topology.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/gate.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/classical.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/bundle.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/kernel.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/program.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/resource_types/base.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/types.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/factory.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/state.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/manager.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/resource/qubit.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/resource/instrument.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/resource/inter_core_channel.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/pass_types/base.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/pass_types/specializations.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/condition.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/group.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/factory.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pmgr/manager.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/statistics/annotations.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/statistics/report.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/statistics/clean.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/detail/types.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/detail/common.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/detail/image.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/detail/circuit.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/detail/interaction.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/detail/mapping.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/circuit.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/interaction.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/mapping.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/detail/cqasm_reader.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/read.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/report.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/sweep_points/write.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/clifford/detail/clifford.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/clifford/optimize.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/detail/scheduler.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/schedule.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/place_mip/detail/algorithm.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/place_mip/place_mip.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/detail/options.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/detail/free_cycle.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/detail/past.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/detail/alter.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/detail/future.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/detail/mapper.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/map.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/info_base.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/architecture.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/factory.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/info.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/datapath.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/settings.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/detail/vcd.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/vq1asm.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc_light/info.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/none/info.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/misc.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/pass.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/compiler.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/platform.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/creg.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/operation.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/unitary.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/kernel.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/program.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
 )
+
+# Specify resources.
+create_resource("src/ql/arch/cc/resources/hwconf_default.json")
+create_resource("src/ql/arch/cc_light/resources/hwconf_default.json")
+create_resource("src/ql/arch/cc_light/resources/hwconf_s5.json")
+create_resource("src/ql/arch/cc_light/resources/hwconf_s7.json")
+create_resource("src/ql/arch/cc_light/resources/hwconf_s17.json")
+create_resource("src/ql/arch/none/resources/hwconf_default.json")
 
 # Generate a header file with configuration options that cannot be compiled
 # (entirely) into the shared/static library due to use of templates.
 set(QL_CHECKED_VEC ${OPENQL_CHECKED_VEC})
 set(QL_CHECKED_LIST ${OPENQL_CHECKED_LIST})
 set(QL_CHECKED_MAP ${OPENQL_CHECKED_MAP})
+set(QL_SHARED_LIB ${BUILD_SHARED_LIBS})
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql_config.h.template"
-    "${CMAKE_CURRENT_BINARY_DIR}/include/ql_config.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/config.h.template"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/ql/config.h"
 )
 
 # This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
@@ -261,7 +333,9 @@ target_compile_definitions(ql PUBLIC OPT_DECOMPOSE_WAIT_BARRIER)
 # and they'r all in the source directory. Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
 )
 
@@ -369,19 +443,28 @@ add_subdirectory(deps/libqasm)
 target_link_libraries(ql PUBLIC cqasm)
 
 
-# X11 -------------------------------------------------------------------------
+# X11/CImg ---------------------------------------------------------------------
 
 # Only enable the visualizer if building on Windows or the X11 library is found when building on Linux or Mac.
 if(WIN32)
-    target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+    set(QL_VISUALIZER yes)
 else()
     find_package(X11)
     if(X11_FOUND)
-        target_link_libraries(ql PUBLIC X11)
-        target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+        set(QL_VISUALIZER yes)
+        message("X11 libraries: ${X11_LIBRARIES}")
+        target_link_libraries(ql PUBLIC ${X11_LIBRARIES})
+        message("X11 include path: ${X11_INCLUDE_DIR}")
+        target_include_directories(ql PRIVATE "${X11_INCLUDE_DIR}")
+    else()
+        set(QL_VISUALIZER no)
     endif()
 endif()
 
+if(QL_VISUALIZER)
+    target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+    target_include_directories(ql PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/deps/cimg/include/")
+endif()
 
 # backward-cpp ----------------------------------------------------------------
 
@@ -403,7 +486,7 @@ set_property(TARGET ql APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${BACKWARD_LIBRA
 if(OPENQL_BUILD_TESTS)
     enable_testing()
 
-    # Convenience function to add a test.
+    # Convenience function to add an integration test.
     function(add_openql_test name source workdir)
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
         target_link_libraries("${name}" ql)
@@ -414,9 +497,34 @@ if(OPENQL_BUILD_TESTS)
         )
     endfunction()
 
-    # Include the directories containing tests.
+    # Include the directories containing integration tests.
     add_subdirectory(tests)
     add_subdirectory(examples)
+
+    # Convenience function to add a unit test.
+    function(add_openql_unit_test source)
+        string(REPLACE "/" "_" name ${source})
+        string(REPLACE "_tests_" "_" name ${name})
+        string(REPLACE ".cc" "" name ${name})
+        set(name test_${name})
+        add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
+        target_link_libraries("${name}" ql)
+        add_test(
+            NAME "${name}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests"
+            COMMAND "${name}"
+        )
+    endfunction()
+
+    # Register unit tests.
+    file(
+        GLOB_RECURSE unit_tests
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/tests/*.cc
+    )
+    foreach(unit_test ${unit_tests})
+        add_openql_unit_test(${unit_test})
+    endforeach()
 
 endif()
 

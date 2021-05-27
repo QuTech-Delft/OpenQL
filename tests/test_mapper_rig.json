@@ -67,213 +67,129 @@
         "move_init": {
             "duration": 1,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "mw",
-            "cc_light_instr_type": "single_qubit_gate",
-            "cc_light_instr": "prepz",
-            "cc_light_opcode": 1
+            "cc_light_instr": "prepz"
         },
         "x": {
             "duration": 1,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "mw",
-            "cc_light_instr_type": "single_qubit_gate",
-            "cc_light_instr": "x",
-            "cc_light_opcode": 1
+            "cc_light_instr": "x"
         },
         "cz": {
             "duration": 3,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "cz",
-            "cc_light_opcode": 1
+            "cc_light_instr": "cz"
         },
         "move": {
             "duration": 2,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "cz",
-            "cc_light_opcode": 1
+            "cc_light_instr": "cz"
         },
         "swap": {
             "duration": 2,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "cz",
-            "cc_light_opcode": 1
+            "cc_light_instr": "cz"
         },
 
         "blue q0,q1": {
             "duration": 3,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "blue",
-            "cc_light_opcode": 1
+            "cc_light_instr": "blue"
         },
         "blue q1,q0": {
             "duration": 3,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "blue",
-            "cc_light_opcode": 1
+            "cc_light_instr": "blue"
         },
         "red q1,q2": {
             "duration": 4,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "red",
-            "cc_light_opcode": 1
+            "cc_light_instr": "red"
         },
         "red q2,q1": {
             "duration": 4,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "red",
-            "cc_light_opcode": 1
+            "cc_light_instr": "red"
         },
         "blue q0,q3": {
             "duration": 3,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "blue",
-            "cc_light_opcode": 1
+            "cc_light_instr": "blue"
         },
         "blue q3,q0": {
             "duration": 3,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "blue",
-            "cc_light_opcode": 1
+            "cc_light_instr": "blue"
         },
         "red q2,q4": {
             "duration": 4,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "red",
-            "cc_light_opcode": 1
+            "cc_light_instr": "red"
         },
         "red q4,q2": {
             "duration": 4,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "red",
-            "cc_light_opcode": 1
+            "cc_light_instr": "red"
         },
         "red q3,q5": {
             "duration": 4,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "red",
-            "cc_light_opcode": 1
+            "cc_light_instr": "red"
         },
         "red q5,q3": {
             "duration": 4,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "red",
-            "cc_light_opcode": 1
+            "cc_light_instr": "red"
         },
         "blue q4,q7": {
             "duration": 3,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "blue",
-            "cc_light_opcode": 1
+            "cc_light_instr": "blue"
         },
         "blue q7,q4": {
             "duration": 3,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "blue",
-            "cc_light_opcode": 1
+            "cc_light_instr": "blue"
         },
         "red q5,q6": {
             "duration": 4,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "red",
-            "cc_light_opcode": 1
+            "cc_light_instr": "red"
         },
         "red q6,q5": {
             "duration": 4,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "red",
-            "cc_light_opcode": 1
+            "cc_light_instr": "red"
         },
         "blue q6,q7": {
             "duration": 3,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "blue",
-            "cc_light_opcode": 1
+            "cc_light_instr": "blue"
         },
         "blue q7,q6": {
             "duration": 3,
             "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
             "type": "flux",
-            "cc_light_instr_type": "two_qubit_gate",
-            "cc_light_instr": "blue",
-            "cc_light_opcode": 1
+            "cc_light_instr": "blue"
         }
     },
 

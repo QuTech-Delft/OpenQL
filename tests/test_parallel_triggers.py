@@ -17,7 +17,7 @@ class Test_parallel_trigger(unittest.TestCase):
         # ql.set_option('write_qasm_files', 'yes')
 
 
-    def parallel_trigger(self):
+    def test_parallel_trigger(self):
 
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'spin_demo_2811.json')

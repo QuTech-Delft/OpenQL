@@ -109,7 +109,7 @@ class Test_mapper(unittest.TestCase):
         # just check whether mapper works for trivial case
         # parameters
         v = 'oneNN'
-        config = os.path.join(curdir, "test_mapper_s7.json")
+        config = "cc_light.s7"
         num_qubits = 7
 
         # create and set platform
@@ -138,7 +138,7 @@ class Test_mapper(unittest.TestCase):
         # also tests commutation of cnots in mapper and postscheduler
         # parameters
         v = 'allNN'
-        config = os.path.join(curdir, "test_mapper_s7.json")
+        config = "cc_light.s7"
         num_qubits = 7
 
         # create and set platform
@@ -185,7 +185,7 @@ class Test_mapper(unittest.TestCase):
         # this introduces 1 swap/move and so uses an ancilla
         # parameters
         v = 'oneD2'
-        config = os.path.join(curdir, "test_mapper_s7.json")
+        config = "cc_light.s7"
         num_qubits = 7
 
         # create and set platform
@@ -218,7 +218,7 @@ class Test_mapper(unittest.TestCase):
         # this introduces 3 swaps/moves
         # parameters
         v = 'oneD4'
-        config = os.path.join(curdir, "test_mapper_s7.json")
+        config = "cc_light.s7"
         num_qubits = 7
 
         # create and set platform
@@ -248,7 +248,7 @@ class Test_mapper(unittest.TestCase):
         # so the heuristics must act and insert swaps/moves
         # parameters
         v = 'allD'
-        config = os.path.join(curdir, "test_mapper_s7.json")
+        config = "cc_light.s7"
         num_qubits = 7
 
         # create and set platform
@@ -287,7 +287,7 @@ class Test_mapper(unittest.TestCase):
         # so the heuristics must act and insert swaps/moves
         # parameters
         v = 'allDopt'
-        config = os.path.join(curdir, "test_mapper_s7.json")
+        config = "cc_light.s7"
         num_qubits = 7
 
         # create and set platform
@@ -361,7 +361,7 @@ class Test_mapper(unittest.TestCase):
         # the heuristics must act and insert swaps/moves
         # parameters
         v = 'allIP'
-        config = os.path.join(curdir, "test_mapper_s7.json")
+        config = "cc_light.s7"
         num_qubits = 7
 
         # create and set platform
@@ -395,7 +395,7 @@ class Test_mapper(unittest.TestCase):
         # parameters
         # 'realistic' circuit
         v = 'lingling5'
-        config = os.path.join(curdir, "test_mapper_s17.json")
+        config = "cc_light.s17"
         num_qubits = 7
 
         # create and set platform
@@ -549,7 +549,7 @@ class Test_mapper(unittest.TestCase):
     def test_mapper_lingling7(self):
         # parameters
         v = 'lingling7'
-        config = os.path.join(curdir, "test_mapper_s17.json")
+        config = "cc_light.s17"
         num_qubits = 9
 
         # create and set platform

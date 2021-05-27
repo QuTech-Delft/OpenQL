@@ -10,7 +10,7 @@ output_dir = os.path.join(curdir, 'test_output')
 
 class Test_Alap_Rc_Schedule(unittest.TestCase):
     _SCHEDULER = 'ALAP'
-    config = os.path.join(curdir, "hardware_config_cc_light.json")
+    config = 'cc_light'
 
     def setUp(self):
         ql.initialize()
@@ -37,10 +37,10 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
     def test_qwg2(self):
         # parameters
@@ -71,10 +71,10 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
     def test_issue179(self):
         # parameters
@@ -107,10 +107,10 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
     def test_edge(self):
         # parameters
@@ -134,10 +134,10 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
     def test_detuned(self):
         # parameters
@@ -166,10 +166,10 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
     def test_detuned2(self):
         # parameters
@@ -198,10 +198,10 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
     def test_adriaan(self):
         # parameters
@@ -230,10 +230,10 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
     def test_1(self):
         # parameters
@@ -274,10 +274,10 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
     def test_7(self):
         # parameters
@@ -326,10 +326,10 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
-        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '_last.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_last.qasm')
 
-        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
 
 if __name__ == '__main__':

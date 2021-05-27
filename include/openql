@@ -1,0 +1,7 @@
+/** \file
+ * Main OpenQL header, C++ style.
+ */
+
+#pragma once
+
+#include "openql.h"

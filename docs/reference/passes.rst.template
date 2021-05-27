@@ -1,0 +1,9 @@
+.. _ref_passes:
+
+Supported passes
+================
+
+This section lists all the compiler pass types currently available within
+OpenQL.
+
+{passes}

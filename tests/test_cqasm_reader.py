@@ -17,8 +17,7 @@ class TestcQasmReader(unittest.TestCase):
         # ql.set_option("write_qasm_files", "yes")
 
     def test_invalid_qasm(self):
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', 'cc_light')
         number_qubits = platform.get_qubit_number()
         program = ql.Program('test_invalid_qasm', platform, number_qubits)
         qasm_str = "version 1.0\n"  \
@@ -30,8 +29,7 @@ class TestcQasmReader(unittest.TestCase):
             qasm_rdr.string2circuit(qasm_str)
 
     def test_single_bit_kernel_operations(self):
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', 'cc_light')
         number_qubits = platform.get_qubit_number()
         name = 'test_single_bit_kernel_operations'
         program = ql.Program(name, platform, number_qubits)
@@ -60,8 +58,7 @@ class TestcQasmReader(unittest.TestCase):
         self.assertTrue(file_compare(os.path.join(output_dir, name + '.qasm'), os.path.join(curdir, 'golden', name + '.qasm')))
 
     def test_cqasm_real_numbers(self):
-        config_fn = os.path.join(curdir, 'hardware_config_qx.json')
-        platform = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', 'none')
         number_qubits = platform.get_qubit_number()
         name = 'test_cqasm_real_numbers'
         program = ql.Program(name, platform, number_qubits)
@@ -75,8 +72,7 @@ class TestcQasmReader(unittest.TestCase):
         self.assertTrue(file_compare(os.path.join(output_dir, name + '.qasm'), os.path.join(curdir, 'golden', name + '.qasm')))
 
     def test_sub_circuit_programs(self):
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', 'cc_light')
         number_qubits = platform.get_qubit_number()
         name = 'test_sub_circuit_programs'
         program = ql.Program(name, platform, number_qubits)
@@ -96,8 +92,7 @@ class TestcQasmReader(unittest.TestCase):
         self.assertTrue(file_compare(os.path.join(output_dir, name + '.qasm'), os.path.join(curdir, 'golden', name + '.qasm')))
 
     def test_parallel_programs(self):
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', 'cc_light')
         number_qubits = platform.get_qubit_number()
         name = 'test_parallel_programs'
         program = ql.Program(name, platform, number_qubits)
@@ -115,8 +110,7 @@ class TestcQasmReader(unittest.TestCase):
         self.assertTrue(file_compare(os.path.join(output_dir, name + '.qasm'), os.path.join(curdir, 'golden', name + '.qasm')))
 
     def test_multiple_programs(self):
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', 'cc_light')
         number_qubits = platform.get_qubit_number()
         name = 'test_multiple_programs'
         program = ql.Program(name, platform, number_qubits)
@@ -140,9 +134,8 @@ class TestcQasmReader(unittest.TestCase):
         self.assertTrue(file_compare(os.path.join(output_dir, name + '.qasm'), os.path.join(curdir, 'golden', name + '.qasm')))
 
     def test_conditions(self):
-        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         cqasm_config_fn = os.path.join(curdir, 'cqasm_config_cc_light.json')
-        platform = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', 'cc_light')
         number_qubits = platform.get_qubit_number()
         name = 'test_cqasm_conditions'
         program = ql.Program(name, platform, number_qubits)

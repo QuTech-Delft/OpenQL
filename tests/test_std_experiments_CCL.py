@@ -5,8 +5,7 @@ from openql import Kernel, Program
 from openql import openql as ql
 
 curdir = os.path.dirname(os.path.realpath(__file__))
-config_fn = os.path.join(curdir, 'hardware_config_cc_light.json') 
-platf = ql.Platform('seven_qubits_chip', config_fn)
+platf = ql.Platform('seven_qubits_chip', 'cc_light')
 
 output_dir = os.path.join(curdir, 'test_output')
 

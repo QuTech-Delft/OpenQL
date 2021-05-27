@@ -15,7 +15,7 @@ qubits 7
     { x q[3] | ym90 q[5] }
     cz q[3],q[5]
     { y90 q[4] | y90 q[2] }
-    { ym90 q[6] | x q[4] | ym90 q[1] | x q[2] | ym90 q[0] }
+    { ym90 q[6] | x q[4] | x q[2] | ym90 q[1] | ym90 q[0] }
     { cz q[3],q[6] | cz q[4],q[1] | cz q[2],q[0] }
     wait 1
     cz q[3],q[1]
