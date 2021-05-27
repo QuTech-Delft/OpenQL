@@ -58,6 +58,7 @@ to Doxygen-recognized docstrings yet.
    manual/concepts
    gen/manual_installation
    manual/first_program
+   manual/qx
 
 .. toctree::
    :maxdepth: 2
@@ -100,7 +101,6 @@ to Doxygen-recognized docstrings yet.
    old/platform
    old/compiler
    old/compiler_passes
-   old/qx
    old/dqcsim
 
 Indices and tables
