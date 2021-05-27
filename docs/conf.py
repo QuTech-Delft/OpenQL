@@ -19,8 +19,8 @@ import subprocess
 import os
 import sys
 original_workdir = os.getcwd()
+docs_dir = os.path.dirname(__file__)
 try:
-    docs_dir = os.path.dirname(__file__)
     os.chdir(docs_dir)
     if not os.path.exists('doxygen/doxy'):
         subprocess.check_call(['doxygen'])
@@ -185,6 +185,19 @@ docs = docs.replace('{platform}', docs_to_rst_magic(ql.dump_platform_docs(), 3))
 docs = docs.replace('{compiler}', docs_to_rst_magic(ql.dump_compiler_docs(), 3))
 with open('gen/reference_configuration.rst', 'w') as f:
     f.write(docs)
+
+# Output of simple.py.
+import shutil
+original_workdir = os.getcwd()
+examples_dir = os.path.join(os.path.dirname(__file__), '..', 'examples')
+try:
+    os.chdir(examples_dir)
+    subprocess.check_call([sys.executable, os.path.join(examples_dir, 'simple.py')])
+finally:
+    os.chdir(original_workdir)
+shutil.copyfile(os.path.join(examples_dir, 'output', 'my_program.qasm'), 'gen/my_program.qasm')
+shutil.copyfile(os.path.join(examples_dir, 'output', 'my_program_scheduled.qasm'), 'gen/my_program_scheduled.qasm')
+
 
 # -- Project information -----------------------------------------------------
 

@@ -57,6 +57,7 @@ to Doxygen-recognized docstrings yet.
 
    manual/concepts
    gen/manual_installation
+   manual/first_program
 
 .. toctree::
    :maxdepth: 2
@@ -92,7 +93,6 @@ to Doxygen-recognized docstrings yet.
    :maxdepth: 2
    :caption: Old pages
 
-   old/start
    old/program
    old/kernel
    old/quantum_gate
