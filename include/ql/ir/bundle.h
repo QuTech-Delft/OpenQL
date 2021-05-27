@@ -14,7 +14,8 @@ namespace ql {
 namespace ir {
 
 /**
- * Cycle numbers in OpenQL, for some historic reason, start at 1 (see discussion in PR #398).
+ * Cycle numbers in OpenQL, for some historic reason, start at 1 (see discussion
+ * in PR #398).
  */
 static const utils::UInt FIRST_CYCLE = 1;
 
