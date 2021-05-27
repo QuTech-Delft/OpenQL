@@ -144,46 +144,46 @@ if not os.path.exists('gen'):
     os.makedirs('gen')
 
 # Version in installation instructions.
-with open('gs_installation.rst.template', 'r') as f:
+with open('manual/installation.rst.template', 'r') as f:
     docs = f.read()
 docs = docs.replace('{version}', get_version())
-with open('gen/gs_installation.rst', 'w') as f:
+with open('gen/manual_installation.rst', 'w') as f:
     f.write(docs)
 
 # Architecture list.
-with open('ref_architectures.rst.template', 'r') as f:
+with open('reference/architectures.rst.template', 'r') as f:
     docs = f.read()
 docs = docs.replace('{architectures}', docs_to_rst_magic(ql.dump_architectures(), 2))
-with open('gen/ref_architectures.rst', 'w') as f:
+with open('gen/reference_architectures.rst', 'w') as f:
     f.write(docs)
 
 # Global option list.
-with open('ref_options.rst.template', 'r') as f:
+with open('reference/options.rst.template', 'r') as f:
     docs = f.read()
 docs = docs.replace('{options}', docs_to_rst_magic(ql.dump_options(), 2))
-with open('gen/ref_options.rst', 'w') as f:
+with open('gen/reference_options.rst', 'w') as f:
     f.write(docs)
 
 # Pass list.
-with open('ref_passes.rst.template', 'r') as f:
+with open('reference/passes.rst.template', 'r') as f:
     docs = f.read()
 docs = docs.replace('{passes}', docs_to_rst_magic(ql.dump_passes(), 2))
-with open('gen/ref_passes.rst', 'w') as f:
+with open('gen/reference_passes.rst', 'w') as f:
     f.write(docs)
 
 # Resource list.
-with open('ref_resources.rst.template', 'r') as f:
+with open('reference/resources.rst.template', 'r') as f:
     docs = f.read()
 docs = docs.replace('{resources}', docs_to_rst_magic(ql.dump_resources(), 2))
-with open('gen/ref_resources.rst', 'w') as f:
+with open('gen/reference_resources.rst', 'w') as f:
     f.write(docs)
 
 # Configuration file reference.
-with open('ref_configuration.rst.template', 'r') as f:
+with open('reference/configuration.rst.template', 'r') as f:
     docs = f.read()
 docs = docs.replace('{platform}', docs_to_rst_magic(ql.dump_platform_docs(), 3))
 docs = docs.replace('{compiler}', docs_to_rst_magic(ql.dump_compiler_docs(), 3))
-with open('gen/ref_configuration.rst', 'w') as f:
+with open('gen/reference_configuration.rst', 'w') as f:
     f.write(docs)
 
 # -- Project information -----------------------------------------------------
@@ -244,7 +244,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 
 [extensions]
@@ -252,3 +252,5 @@ todo_include_todos=True
 
 # to enable figure numbering
 numfig = True
+
+autodoc_member_order = 'bysource'

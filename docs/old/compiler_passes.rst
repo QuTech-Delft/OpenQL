@@ -206,7 +206,7 @@ by its parameterization by the platform configuration file.
 
 	See :ref:`platform`.
 
-.. include:: decomposition.rst
-.. include:: optimization.rst
-.. include:: scheduling.rst
-.. include:: mapping.rst
+.. include:: passes/decomposition.rst
+.. include:: passes/optimization.rst
+.. include:: passes/scheduling.rst
+.. include:: passes/mapping.rst

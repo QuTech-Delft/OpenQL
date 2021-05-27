@@ -7,7 +7,7 @@ QX Simulation
 
 This tutorial explains how to compile an OpenQL program and execute it on QX. We will use the example of rolling an 8-faced dice. Rolling this dice results in 1 out of 8 outcomes. The complete code for this example is available in ``examples/dice.py``. You can also copy the snippits over to your own script as we walk through it.
 
-.. figure:: figures/dice.png
+.. figure:: ../figures/dice.png
     :width: 400px
     :align: center
     :alt: 8-faced Dices
@@ -145,7 +145,7 @@ Next we can also roll the dice 100000 times and plot the frequency of occurance 
 
 This will produce the histogram similar to the one shown below:
 
-.. figure:: figures/dice_hist.png
+.. figure:: ../figures/dice_hist.png
     :width: 600px
     :align: center
     :alt: Histogram
