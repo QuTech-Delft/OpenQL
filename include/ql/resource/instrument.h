@@ -39,6 +39,13 @@ private:
      */
     utils::Ptr<Config> config;
 
+private:
+
+    /**
+     * Desugar the JSON structure for Central Controller
+     */
+     void desugar_central_controller(utils::Ptr<Config> cfg);
+
 protected:
 
     /**

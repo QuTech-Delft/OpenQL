@@ -34,6 +34,10 @@ Factory::Factory() {
     register_resource<resource::instrument::Resource>("arch.cc_light.detuned_qubits");
     register_resource<resource::inter_core_channel::Resource>("arch.cc_light.channels");
 
+    // Register CC resources.
+    resource_types.set("arch.cc.qubits") = resource_types.at("Qubit");
+    register_resource<resource::instrument::Resource>("arch.cc.auto");
+
 }
 
 /**
@@ -138,7 +142,7 @@ ResourceRef Factory::build_resource(
 ) const {
     auto it = resource_types.find(type_name);
     if (it == resource_types.end()) {
-        throw utils::Exception("unknown resource type \"" + type_name + "\"");
+        throw utils::Exception("unknown resource type \"" + type_name + "\"");  // FIXME: this is a JSON error, provide context to user
     }
     return (*it->second)(instance_name, platform, configuration);
 }
@@ -170,7 +174,7 @@ void Factory::dump_resource_types(
         resource_types.set(full_type_name) = {resource, type_aliases};
     }
 
-    // Dump docs for the discovered resourcees.
+    // Dump docs for the discovered resources.
     for (const auto &pair : resource_types) {
         const auto &resource = pair.second.first;
         const auto &type_aliases = pair.second.second;

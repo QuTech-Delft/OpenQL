@@ -161,7 +161,7 @@ Manager Manager::from_json(
     // Infer (default) architecture from the rest of the platform.
     utils::Str architecture = platform->architecture->family->get_namespace_name();
 
-    // If a "resources" key exists, this is a new-style resource configuration
+    // If a "resources" key exists (i.e. "resources/resources") , this is a new-style resource configuration
     // structure. Otherwise it's an old-style structure.
     if (json.find("resources") == json.end()) {
 
@@ -171,7 +171,7 @@ Manager Manager::from_json(
         // Add resources to it using the old JSON syntax.
         for (auto it = platform->resources.begin(); it != platform->resources.end(); ++it) {
             if (it.value().type() != JsonType::object) {
-                throw utils::Exception("resource configuration must be an object");
+                throw utils::Exception("resource configuration must be an object");     // FIXME: provide clue about offending key
             }
             manager.add_resource(it.key(), "", it.value());
         }

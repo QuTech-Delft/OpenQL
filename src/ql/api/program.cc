@@ -204,7 +204,6 @@ void Program::set_compiler(const Compiler &compiler) {
  */
 void Program::compile() {
     QL_IOUT("compiling " << name << " ...");
-    QL_WOUT("compiling " << name << " ...");
     if (program->kernels.empty()) {
         QL_FATAL("compiling a program with no kernels !");
     }

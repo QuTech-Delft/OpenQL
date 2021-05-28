@@ -1332,13 +1332,13 @@
     // NB: the "topology" keyword must be present, but the contents are only interpreted by
     // the CC-light 'resource constraint' scheduler
     "topology": {
-    },
+    }
 
     // NB: the "resources" keyword must be present, but the contents are only interpreted by
     // the CC-light 'resource constraint' scheduler
     "resources": {
+        "auto": { "auto": "yes" }
     }
-//}
 
 //--- end of include file 'config/common_keys.json.in' ---
 

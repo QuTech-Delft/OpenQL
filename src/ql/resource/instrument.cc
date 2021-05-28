@@ -51,7 +51,7 @@ using Predicates = utils::Vec<Predicate>;
 
 /**
  * Configuration structure. This does not need to be copied every time the
- * resource state is cloned; instead we keep a shared_ptr to it instead.
+ * resource state is cloned; we keep a shared_ptr to it instead.
  */
 struct Config {
 
@@ -136,12 +136,51 @@ struct Config {
 
 };
 
+
+/**
+ * Helper to desugar the JSON structure for Central Controller
+ */
+#define ERROR(s) throw utils::Exception(utils::Str("instrument resource configuration error: ") + (s))
+
+void InstrumentResource::desugar_central_controller(utils::Ptr<Config> cfg) {
+    if (context->type_name == "arch.cc.auto") {
+        QL_IOUT("desugaring CC instrument");
+
+        // Create instruments  from CC instrument definitions.
+        cfg->json = R"(
+        {
+            "predicate": { "type": "mw" },
+            "function": [ "cc_light_instr" ],
+            "instruments": []
+        }
+        )"_json;
+
+#if 0
+        auto it = context->configuration.find("connection_map");
+        if (it == context->configuration.end()) {
+            ERROR("missing connection_map key while desugaring QWG resource");
+        } else if (!it->is_object()) {
+            ERROR("QWG connection_map key must be an object");
+        }
+        for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
+            if (!it2->is_array()) {
+                ERROR("QWG connection_map values must be arrays of qubit indices");
+            }
+            cfg->json["instruments"].push_back(
+                {
+                    {"name", "QWG" + it2.key()},
+                    {"qubit", *it2}
+                }
+            );
+        }
+#endif
+    }
+}
+
 /**
  * Initializes this resource.
  */
 void InstrumentResource::on_initialize(rmgr::Direction direction) {
-#define ERROR(s) throw utils::Exception(utils::Str("instrument resource configuration error: ") + (s))
-
     // Create a new configuration structure.
     utils::Ptr<Config> cfg;
     cfg.emplace();
@@ -300,6 +339,9 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
             );
         }
     }
+
+    // Desugar the JSON structure for the CC
+    desugar_central_controller(cfg);
 
     // Now actually parse our native structure.
     cfg->mutually_exclusive = false;
@@ -497,9 +539,10 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
         std::cout << "nq_instr_qn: " << config->multi_qubit_instrument[2] << std::endl;
         std::cout << "====================================" << std::endl;
     }
-#undef ERROR
 
 }
+
+#undef ERROR
 
 /**
  * Checks availability of and/or reserves a gate.
