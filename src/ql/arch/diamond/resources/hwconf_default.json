@@ -169,7 +169,16 @@
 
     "excite_mw": {
       "duration": 20
-    }
+    },
 
+    "crc": {
+      "duration": 20,
+      "diamond_type": "initial_checks"
+    },
+
+    "mag_bias": {
+      "duration": 300,
+      "diamond_type": "initial_checks"
+    }
   }
 }

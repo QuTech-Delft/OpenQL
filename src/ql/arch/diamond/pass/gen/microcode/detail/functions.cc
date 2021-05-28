@@ -91,7 +91,7 @@ Str addimm(Str value, Str regname, Str regvalue) {
 }
 
 Str jump(Str labelcount) {
-    Str body = "JUMP " + labelcount;
+    Str body = "JUMP LAB" + labelcount;
     return body;
 }
 

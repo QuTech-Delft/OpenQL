@@ -58,32 +58,67 @@ utils::Int GenerateMicrocodePass::run(
     // Specify output file name
     Str file_name(context.output_prefix + ".dqasm");
 
-    // Print action
-    //QL_DOUT("Compiling " << program->kernels.size() << " kernels to generate Diamond microcode program" << file_name;
-
-    // Pseudo-code example ////////////////////////////////////////
-    //    switch (operation) {
-    //        case x-gate
-    //            print x-gate
-    //        case y-gate
-    //            print y-gate
-    //        case measurement
-    //            print switchOn q0
-    //            print LDi 0, photonReg0
-    //            print excite_MW 1, 100, 200, 0, q0
-    //            mov photonReg0, R0
-    //            print switchOff q0
-    //            BR R0>R33, ResultReg0
-    //    }
-    // ///////////////////////////////////////////////////////////
-    // Note, each print statement (for example, print switchOn) can be a function
-    // with the parameters. So, there would be a .h and a .cc file where the
-    // function switchOn(arg1, arg2, arg3) is declared. This way, if the function
-    // changes it only needs to be changed once instead for every usage.
-
-
-    // Add pass code here
+    // Specify the outfile name
     OutFile outfile{file_name};
+
+    // Copy the kernel into a new kernel, add the necessary gates before and in between the existing gates.
+    for (const auto &kernel : program->kernels) {
+        ir::Kernel temp_kernel(
+            "dummy",
+            program->platform,
+            kernel->qubit_count,
+            kernel->creg_count,
+            kernel->breg_count
+        );
+
+        // For every qubit, insert a magnetic bias check
+        for (UInt q = 0; q < kernel->qubit_count; q++) {
+
+            temp_kernel.gate("sweep_bias", q);
+            temp_kernel.gates.back()->set_annotation<ql::arch::diamond::annotations::SweepBiasParameters>(
+                {10, q, 0, 10, 100, 0});
+            temp_kernel.gate("calculate_current", q);
+        }
+
+        // For every qubit, inset a rabi check
+        for (UInt q = 0; q < kernel->qubit_count; q++) {
+            // rabi check
+
+        }
+
+        // For every qubit, insert a CRC
+        for (UInt q = 0; q < kernel->qubit_count; q++) {
+
+            temp_kernel.gate("crc", q);
+            temp_kernel.gates.back()->set_annotation<ql::arch::diamond::annotations::CRCParameters>({5, q});
+        }
+
+        // For every qubit, initialize
+        for (UInt q = 0; q < kernel->qubit_count; q++) {
+
+            temp_kernel.gate("initialize", q);
+        }
+
+        UInt number_gates = 0;
+        for (const auto &gate : kernel->gates) {
+            if (number_gates > 9) {
+                for (UInt q = 0; q < kernel->qubit_count; q++) {
+
+                    temp_kernel.gate("crc", q);
+                    temp_kernel.gates.back()->set_annotation<ql::arch::diamond::annotations::CRCParameters>({5, q});
+                }
+                number_gates = 0;
+            }
+
+            temp_kernel.gates.add(gate);
+            number_gates++;
+        }
+
+        kernel->gates = std::move(temp_kernel.gates);
+        kernel->cycles_valid = false;
+    }
+
+    // Make global variables for keeping track of registers, labels etc.
     int labelcount = 0;
 
     for (const ir::KernelRef &kernel : program->kernels) {
@@ -111,8 +146,41 @@ utils::Int GenerateMicrocodePass::run(
                  else if (gate->name == "calculate_voltage") {
                      outfile << "calculate_voltage()" << "\n";
                  }
-            }
-            else {
+            } else if (type == "initial_checks") {
+                if (gate->name == "mag_bias") {
+                    // Code for magnetic biasing
+                    // Not added because it is decomposed into sweep_bias and calculate_current()
+                    // at lines 76-79 of microcode.cc
+                } else if (gate->name == "rabi_check") {
+                    // Code for rabi check
+                } else if (gate->name == "crc") {
+                    const auto &params = gate->get_annotation<annotations::CRCParameters>();
+
+                    Str qubit_number = to_string(gate->operands[0]);
+                    Str count = to_string(labelcount);
+                    Str count2 = to_string(labelcount+1);
+
+                    outfile << detail::loadimm(to_string(params.threshold), "treshReg", qubit_number) << "\n";
+                    outfile << detail::loadimm(to_string(params.value), "dacReg", qubit_number) << "\n";
+
+                    outfile << detail::label(count) << "\n";
+                    outfile << detail::loadimm("0", "photon Reg", qubit_number) << "\n";
+                    outfile << detail::switchOn(gate->operands[0]) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
+                    outfile << detail::mov("photonReg", qubit_number, "R",qubit_number) << "\n";
+                    outfile << detail::switchOff(gate->operands[0]) << "\n";
+                    outfile << detail::branch("R", qubit_number, ">", "treshReg",
+                                              qubit_number, "LAB",
+                                              count2) << "\n";
+                    outfile << "calculateVoltage()" << "\n";
+                    outfile << detail::jump(count) << "\n";
+                    outfile << detail::label(count2);
+
+                    // Add 2 to labelcount because label was used twice.
+                    labelcount++;
+                    labelcount++;
+                }
+            } else {
                 if (gate->name == "measure") {
                     Str qubit_number = to_string(gate->operands[0]);
                     const Str threshold = "33";
@@ -125,9 +193,7 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::branch("R", qubit_number, "<", "R",
                                               threshold, "ResultReg",
                                               qubit_number);
-
-                }
-                else if (gate->name == "initialize") {
+                } else if (gate->name == "initialize") {
                     Str qubit_number = to_string(gate->operands[0]);
                     const Str threshold = "0";
                     Str count = to_string(labelcount);
@@ -173,27 +239,6 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::addimm("4", "memAddr", qubit_number) << "\n";
                     outfile << detail::branch("sweepStartReg", qubit_number, ">", "sweepStopReg", qubit_number, "LAB", count);
                     labelcount++;
-                } else if (gate->name == "crc") {
-                    Str qubit_number = to_string(gate->operands[0]);
-                    Str count = to_string(labelcount);
-                    Str count2 = to_string(labelcount+1);
-
-
-                    outfile << detail::loadimm(to_string(gate->operands[1]), "treshReg", qubit_number);
-                    outfile << detail::loadimm(to_string(gate->operands[2]), "dacReg", qubit_number);
-
-                    outfile << detail::label(count);
-                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
-                    outfile << detail::switchOn(gate->operands[0]) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
-                    outfile << detail::mov("photonReg", qubit_number, "R",qubit_number) << "\n";
-                    outfile << detail::switchOff(gate->operands[0]) << "\n";
-                    outfile << detail::branch("R", qubit_number, ">", "treshReg",
-                                              qubit_number, "LAB",
-                                              count2);
-                    outfile << "calculateVoltage dacReg" << qubit_number << ", dacReg" << qubit_number << "\n";
-                    outfile << detail::jump(count);
-                    outfile << detail::label(count2);
                 } else if (gate->name == "excite_mw") {
                     const auto &params = gate->get_annotation<annotations::ExciteMicrowaveParameters>();
 
@@ -219,7 +264,6 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << "The name of the gate was not recognized";
                 }
             }
-
             outfile << "\n" << "\n";
         }
     }

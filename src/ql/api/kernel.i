@@ -892,6 +892,27 @@ None
 """
 
 
+%feature("docstring") ql::api::Kernel::diamond_crc
+"""
+Appends the diamond \"crc\" instruction.
+
+Parameters
+----------
+qubit : int
+    The index of the qubit.
+
+treshold : int
+    The threshold value that has to be matched.
+
+value: int
+    The value of the voltage sent to the dac.
+
+Returns
+-------
+None
+"""
+
+
 %feature("docstring") ql::api::Kernel::controlled
 """
 Appends a controlled kernel. The number of control and ancilla qubits

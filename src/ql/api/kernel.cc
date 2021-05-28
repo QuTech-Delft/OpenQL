@@ -462,13 +462,22 @@ void Kernel::diamond_qentangle(size_t qubit, size_t nuclear_qubit){
 }
 
 /**
-   * Appends the diamond sweep_bias instruction, that sweeps the frequency over
-   * a color center to help determine the magnetic biasing.
-   */
+ * Appends the diamond sweep_bias instruction, that sweeps the frequency over
+ * a color center to help determine the magnetic biasing.
+ */
 void Kernel::diamond_sweep_bias(size_t qubit, size_t value, size_t dacreg, size_t start, size_t step, size_t max, size_t memaddress)
 {
     kernel->gate("sweep_bias", qubit);
     kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::SweepBiasParameters>({value, dacreg, start, step, max, memaddress});
+}
+
+/**
+ * Appends the diamond crc instruction, that checks whether the color center is
+ * still in the correct charge state.
+ */
+void Kernel::diamond_crc(size_t qubit, size_t threshold, size_t value) {
+    kernel->gate("crc", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::CRCParameters>({threshold, value});
 }
 
 /**

@@ -35,6 +35,11 @@ struct SweepBiasParameters {
     utils::UInt memaddress;
 };
 
+struct CRCParameters {
+    utils::UInt threshold;
+    utils::UInt value;
+};
+
 
 
 } // namespace annotations

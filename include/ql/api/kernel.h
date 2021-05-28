@@ -426,6 +426,12 @@ public:
     void diamond_sweep_bias(size_t qubit, size_t value, size_t dacreg, size_t start, size_t step, size_t max, size_t memaddress);
 
     /**
+     * Appends the diamond crc instruction, that checks whether the color center is
+     * still in the correct charge state.
+     */
+    void diamond_crc(size_t qubit, size_t threshold, size_t value);
+
+    /**
      * Appends a controlled kernel. The number of control and ancilla qubits
      * must be equal.
      *
