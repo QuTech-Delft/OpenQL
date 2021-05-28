@@ -829,42 +829,7 @@
         }
     },
     "topology": {
-        "edges": [
-            { "id":  0, "src":  2, "dst":  0 },
-            { "id":  1, "src":  2, "dst":  1 },
-            { "id":  2, "src":  2, "dst":  3 },
-            { "id":  3, "src":  2, "dst":  4 }
-        ]
     },
     "resources": {
-        "qubits": {
-            "count": 5
-        },
-        "qwgs" : {
-            "count": 5,
-            "connection_map": {
-                "0": [0],
-                "1": [1],
-                "2": [2],
-                "3": [3],
-                "4": [4]
-            }
-        },
-        "meas_units" : {
-            "count": 2,
-            "connection_map": {
-                "0": [0, 2, 3, 4],
-                "1": [1]
-            }
-        },
-        "edges": {
-            "count": 4,
-            "connection_map": {
-                "0": [0, 2],
-                "1": [1, 2],
-                "2": [3, 2],
-                "3": [4, 2]
-            }
-        }
     }
 }

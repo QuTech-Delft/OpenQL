@@ -25,7 +25,6 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
-        ql.set_option('scheduler_uniform', 'yes')
         ql.set_option('log_level', 'LOG_WARNING')
 
     def test_classical(self):
