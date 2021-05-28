@@ -3,10 +3,6 @@
 Scheduling
 ----------
 
-.. warning::
-   This page has not been revised yet since modularization and refactoring,
-   and may thus be out of date.
-
 Of each kernel's circuit the gates are scheduled at a particular cycle starting from 0
 (by filling in the gate's ``cycle`` attribute) that matches the gates' dependences, their duration,
 the constraints imposed by their resource use, the buffer values defined for the platform, and
