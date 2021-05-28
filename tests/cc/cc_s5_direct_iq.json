@@ -11,7 +11,7 @@
 	//"file_version": "0.3",
 	//"min_version_openql": "0.7.1",
 
-	"eqasm_compiler" : "eqasm_backend_cc",
+	"eqasm_compiler" : "cc",
 
 	"hardware_settings": {
 		"qubit_number": 5,
