@@ -56,7 +56,7 @@ class Test_multi_core(unittest.TestCase):
     def test_mc_wide(self):
         v = 'wide'
         config = os.path.join(curdir, "test_multi_core_8x1024_full.json")
-        num_qubits = 4096
+        num_qubits = 2048
 
         # create and set platform
         prog_name = "test_mc_" + v
@@ -65,9 +65,9 @@ class Test_multi_core(unittest.TestCase):
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
 
-        for i in range(4096):
+        for i in range(2048):
             k.gate("xm45", [i])
-        for i in range(4096):
+        for i in range(2048):
             k.gate("measure", [i])
 
         prog.add_kernel(k)
