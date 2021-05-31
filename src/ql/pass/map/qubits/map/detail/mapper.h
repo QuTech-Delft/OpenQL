@@ -67,7 +67,14 @@ enum class PathStrategy {
      * Consider the shortest paths along both the left and right side of the
      * rectangle of the source and target qubit.
      */
-    LEFT_RIGHT
+    LEFT_RIGHT,
+
+    /**
+     * Consider all path alternatives, but randomize the order of the generated
+     * paths. This is useful when the amount of generated alternative paths
+     * needs to be limited for scalability.
+     */
+    RANDOM
 
 };
 

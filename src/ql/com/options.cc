@@ -291,9 +291,12 @@ Options make_ql_options() {
         "to destination qubit while routing, or to favor routing along the "
         "borders of the search space. The latter is only supported when the "
         "qubits are given planar coordinates in the topology section of the "
-        "platform configuration file.",
+        "platform configuration file. Both `all` and `random` consider all "
+        "paths, but for the latter the order in which the paths are generated "
+        "is shuffled, which is useful to reduce bias when "
+        "`max_alternative_routes` is used.",
         "all",
-        {"all", "borders"}
+        {"all", "borders", "random"}
     );
 
     options.add_enum(

@@ -25,6 +25,7 @@ std::ostream &operator<<(std::ostream &os, PathStrategy p) {
         case PathStrategy::LEFT:       os << "left";       break;
         case PathStrategy::RIGHT:      os << "right";      break;
         case PathStrategy::LEFT_RIGHT: os << "left-right"; break;
+        case PathStrategy::RANDOM:     os << "random";     break;
     }
     return os;
 }
@@ -114,18 +115,35 @@ void Mapper::gen_shortest_paths(
         }
     }
 
-    // Rotate neighbor list nbl such that largest difference between angles of
-    // adjacent elements is beyond back(). This only makes sense when there is
-    // an underlying xy grid; when not, only the ALL strategy is supported.
-    QL_ASSERT(platform->topology->has_coordinates() || strategy == PathStrategy::ALL);
-    platform->topology->sort_neighbors_by_angle(src, neighbors);
-    // subset to those neighbors that continue in direction(s) we want
-    if (strategy == PathStrategy::LEFT) {
-        neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.front(); } );
-    } else if (strategy == PathStrategy::RIGHT) {
-        neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.back(); } );
-    } else if (strategy == PathStrategy::LEFT_RIGHT) {
-        neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.front() && n != neighbors.back(); } );
+    // Update the neighbor list according to the path strategy.
+    if (strategy == PathStrategy::RANDOM) {
+
+        // Shuffle the neighbor list. We have to go through a vector to do that,
+        // otherwise std::shuffle doesn't work.
+        utils::Vec<utils::UInt> neighbors_vec{neighbors.begin(), neighbors.end()};
+        std::shuffle(neighbors_vec.begin(), neighbors_vec.end(), rng);
+        neighbors.clear();
+        neighbors.insert(neighbors.begin(), neighbors_vec.begin(), neighbors_vec.end());
+
+    } else {
+
+        // Rotate neighbor list nbl such that largest difference between angles
+        // of adjacent elements is beyond back(). This only makes sense when
+        // there is an underlying xy grid; when not, only the ALL strategy is
+        // supported.
+        QL_ASSERT(platform->topology->has_coordinates() || strategy == PathStrategy::ALL);
+        platform->topology->sort_neighbors_by_angle(src, neighbors);
+
+        // Select the subset of those neighbors that continue in direction(s) we
+        // want.
+        if (strategy == PathStrategy::LEFT) {
+            neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.front(); } );
+        } else if (strategy == PathStrategy::RIGHT) {
+            neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.back(); } );
+        } else if (strategy == PathStrategy::LEFT_RIGHT) {
+            neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.front() && n != neighbors.back(); } );
+        }
+
     }
 
     QL_IF_LOG_DEBUG {
@@ -207,6 +225,8 @@ void Mapper::gen_shortest_paths(const ir::GateRef &gate, UInt src, UInt tgt, Lis
         gen_shortest_paths(gate, nullptr, src, tgt, budget, alters, options->max_alters, PathStrategy::ALL);
     } else if (options->path_selection_mode == PathSelectionMode::BORDERS) {
         gen_shortest_paths(gate, nullptr, src, tgt, budget, alters, options->max_alters, PathStrategy::LEFT_RIGHT);
+    } else if (options->path_selection_mode == PathSelectionMode::RANDOM) {
+        gen_shortest_paths(gate, nullptr, src, tgt, budget, alters, options->max_alters, PathStrategy::RANDOM);
     } else {
         QL_FATAL("Unknown value of path selection mode option " << options->path_selection_mode);
     }

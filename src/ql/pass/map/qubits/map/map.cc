@@ -265,9 +265,11 @@ MapQubitsPass::MapQubitsPass(
         "qubit while routing, or to favor routing along the route search space. "
         "The latter is only supported and sensible when the qubits are given "
         "planar coordinates in the topology section of the platform "
-        "configuration file.",
+        "configuration file. Both `all` and `random` consider all paths, but "
+        "for the latter the order in which the paths are generated is shuffled, "
+        "which is useful to reduce bias when `max_alternative_routes` is used.",
         "all",
-        {"all", "borders"}
+        {"all", "borders", "random"}
     );
 
     options.add_enum(
@@ -452,6 +454,8 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
         parsed_options->path_selection_mode = detail::PathSelectionMode::ALL;
     } else if (path_selection_mode == "borders") {
         parsed_options->path_selection_mode = detail::PathSelectionMode::BORDERS;
+    } else if (path_selection_mode == "random") {
+        parsed_options->path_selection_mode = detail::PathSelectionMode::RANDOM;
     } else {
         QL_ASSERT(false);
     }

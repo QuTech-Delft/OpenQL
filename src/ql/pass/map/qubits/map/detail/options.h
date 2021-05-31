@@ -89,11 +89,18 @@ enum class PathSelectionMode {
     ALL,
 
     /**
-     * Favor routing along the borders of the chip. Only supported when the
-     * qubits are given coordinates in the topology section of the platform
-     * configuration file.
+     * Favor routing along the borders of the rectangle defined by the source
+     * and target qubit. Only supported when the qubits are given coordinates in
+     * the topology section of the platform configuration file.
      */
-    BORDERS
+    BORDERS,
+
+    /**
+     * Consider all possible paths, but randomize the order in which paths are
+     * generated. This is useful when the amount of generated alternative paths
+     * needs to be limited for scalability.
+     */
+    RANDOM
 
 };
 
