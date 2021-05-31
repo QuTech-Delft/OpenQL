@@ -238,7 +238,7 @@ Manager Manager::from_json(
                     throw utils::Exception("resource type must be a string");
                 }
             } else if (it2.key() == "config") {
-                if (it2.value().type() == JsonType::array) {
+                if (it2.value().type() == JsonType::object) {
                     config = &it2.value();
                 } else {
                     throw utils::Exception("resource configuration must be an object if specified");
