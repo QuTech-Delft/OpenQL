@@ -556,45 +556,36 @@ utils::Str Info::get_default_platform(const utils::Str &variant) const {
  * of mistakes made).
  */
 void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) const {
+}
 
-    // TODO Wouter: any CC-specific platform configuration file preprocessing
-    //  you might want to do for the resources can go here!
+/*
+ * FIXME
+ */
+static utils::Map<utils::UInt,utils::UInt> qubit2instrument(const utils::Json &instrument, utils::UInt unit) {
+    utils::Map<utils::UInt,utils::UInt> ret;
+
+    auto qubits = utils::json_get<const utils::Json &>(instrument, "qubits");
+    utils::UInt qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
+    for (utils::UInt group=0; group<qubitGroupCnt; group++) {
+        const utils::Json qubitsOfGroup = qubits[group];
+        if (qubitsOfGroup.size() == 1) {    // FIXME: specific for measurements
+            utils::Int qubit = qubitsOfGroup[0].get<utils::Int>();
+            QL_IOUT("instrument " << unit << "/" << instrument["name"] << ": adding qubit " << qubit);
+            ret.set(qubit) = unit;
+        }
+    }
+    return ret;
 }
 
 /**
- * Post-processing logic for the Platform data structure. This may for
- * instance add annotations with architecture-specific configuration data.
+ *
  */
-void Info::post_process_platform(
-    const plat::PlatformRef &platform,
-    const utils::Str &variant
-) const {
-
-    // TODO Wouter: something with vq1asm::detail::Settings, I guess. Note: to
-    //  keep track of the structure alongside the platform, you can add it as
-    //  an annotation like so:
-    //  platform->set_annotation(pass::gen::vq1asm::detail::Settings());
-    //  platform->get_annotation<pass::gen::vq1asm::detail::Settings>().loadBackendSettings(platform);
-
-    QL_IOUT("CC Info::post_process_platform, variant='" << variant << "'");
-
-    // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
-    QL_IOUT("desugaring CC instrument");
-
-    // NB: we get the Qubit resource for free independent of JSON contents, see ql/rmgr/factory.cc and QubitResource::on_initialize
-#if 0
-    // add qubit resource
-//    utils::UInt qubit_number = utils::json_get<utils::UInt>(data["hardware_settings"], "qubit_number", "hardware_settings/qubit_number");  // NB: existence of key "hardware_settings" tested in ql/plat/platform.cc
-//    resource_ptrs.push_back(new ResourceQubit(platform, dir, qubit_number));
-#endif
-
-#if 1   // FIXME: WIP
-    // load CC settings
-    pass::gen::vq1asm::detail::Settings settings;
-//    settings.loadBackendSettings(  platform);
-#endif
-
-    // Create instruments from CC instrument definitions.
+static void addInstrument(
+    const utils::Str &name,
+    utils::UInt num_instr,
+    const utils::Map<utils::UInt,utils::UInt> &_qubit2meas
+//    tUsesResource _usesResourceFunc
+) {
     utils::Json ext_resources;      // extended resource definitions, see https://openql.readthedocs.io/en/latest/gen/reference_resources.html
 
     utils::Json instrConfig = R"(
@@ -617,11 +608,88 @@ void Info::post_process_platform(
     ext_resources["name"]["type"] = "Instrument";
     ext_resources["name"]["config"] = instrConfig;
 
-    platform->resources["resources"] = ext_resources;   // FIXME: check emptyness beforehand
+//    platform->resources["resources"] = ext_resources;   // FIXME: check emptyness beforehand
 #if 0
     resources["architecture"] = "";
     resources["dnu"] = "";
 #endif
+
+}
+
+/**
+ * Post-processing logic for the Platform data structure. This may for
+ * instance add annotations with architecture-specific configuration data.
+ */
+void Info::post_process_platform(
+    const plat::PlatformRef &platform,
+    const utils::Str &variant
+) const {
+
+    // TODO Wouter: something with vq1asm::detail::Settings, I guess. Note: to
+    //  keep track of the structure alongside the platform, you can add it as
+    //  an annotation like so:
+    //  platform->set_annotation(pass::gen::vq1asm::detail::Settings());
+    //  platform->get_annotation<pass::gen::vq1asm::detail::Settings>().loadBackendSettings(platform);
+
+    QL_IOUT("CC Info::post_process_platform, variant='" << variant << "'");
+
+    // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
+    QL_IOUT("desugaring CC instrument");
+    // NB: we get the Qubit resource for free independent of JSON contents, see ql/rmgr/factory.cc and QubitResource::on_initialize
+
+#if 1   // FIXME: WIP
+    // load CC settings
+    pass::gen::vq1asm::detail::Settings settings;
+    settings.loadBackendSettings(platform);
+
+
+    // parse instrument definitions for resource information
+    utils::Map<utils::UInt,utils::UInt> qubit2meas;
+    utils::UInt meas_unit = 0;
+    utils::Map<utils::UInt,utils::UInt> qubit2flux;
+    for (utils::UInt i=0; i<settings.getInstrumentsSize(); i++) {
+        const utils::Json &instrument = settings.getInstrumentAtIdx(i);
+        utils::Str signal_type = utils::json_get<utils::Str>(instrument, "signal_type");
+        // FIXME: this adds semantics to "signal_type", whereas the names are otherwise fully up to the user
+        if ("measure" == signal_type) {
+            utils::Map<utils::UInt,utils::UInt> map = qubit2instrument(instrument, meas_unit);
+#if 0   // FIXME: breaks CI, in utils/map.h. Works on CLion/Mac
+            qubit2meas.insert(map.begin(), map.end());
+#else
+            for (auto &el : map) {
+                qubit2meas.insert(el);
+            }
+#endif
+            meas_unit++;
+        } else if ("flux" == signal_type) {
+            /*  we map all fluxing on a single 'unit': the actual resource we'd like to manage is a *signal* that connects
+                to a flux line of a qubit. On a single instrument (e.g. ZI HDAWG) these signals cannot be triggered
+                during playback of other signals.
+                Note however, that a single "flux" gate may trigger signals on different instruments. During scheduling,
+                we don't know about these signals yet though, and we also don't particularly care about keeping the
+                instruments independent where possible.
+                Also note that all of this breaks down if/when we want to support stuff like "flux assisted measurement",
+                where the flux line is manipulated during a measurement, and we can no longer tie types like "flux" and
+                "measurement" to a gate, but must really work with th signals.
+            */
+            utils::Map<utils::UInt,utils::UInt> map = qubit2instrument(instrument, 0);
+#if 0   // FIXME: breaks CI, in utils/map.h. Works on CLion/Mac
+            qubit2flux.insert(map.begin(), map.end());
+#else
+            for (auto &el : map) {
+                qubit2flux.insert(el);
+            }
+#endif
+        }
+    }
+
+    // add resources based on instrument definitions
+    utils::UInt num_meas_unit = meas_unit;
+    addInstrument("meas", num_meas_unit, qubit2meas/*, Settings::isReadout*/);
+    addInstrument("flux", 1, qubit2flux/*, Settings::isFlux)*/);
+#endif
+
+    // Create instruments from CC instrument definitions.
 
     QL_DOUT("CC: created resources:\n" << std::setw(4) << platform->resources);
 }
