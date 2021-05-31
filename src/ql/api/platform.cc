@@ -34,7 +34,11 @@ Platform::Platform(
 {
     (void)dummy;
     ensure_initialized();
-    platform.emplace(name, utils::parse_json(platform_config_json), compiler_config);
+    platform = ql::plat::Platform::build(
+        name,
+        utils::parse_json(platform_config_json),
+        compiler_config
+    );
 }
 
 /**
@@ -54,7 +58,11 @@ Platform::Platform(
     config_file(platform_config)
 {
     ensure_initialized();
-    platform.emplace(name, platform_config, compiler_config);
+    platform = ql::plat::Platform::build(
+        name,
+        platform_config,
+        compiler_config
+    );
 }
 
 /**
@@ -69,7 +77,7 @@ Platform::Platform(
     config_file(name)
 {
     ensure_initialized();
-    platform.emplace(name, name);
+    platform = ql::plat::Platform::build(name, name);
 }
 
 /**

@@ -559,6 +559,34 @@ Platform::Platform(
 }
 
 /**
+ * Constructs a platform from the given configuration filename.
+ */
+PlatformRef Platform::build(
+    const utils::Str &name,
+    const utils::Str &platform_config,
+    const utils::Str &compiler_config
+) {
+    PlatformRef ref;
+    ref.set(std::shared_ptr<Platform>(new Platform(name, platform_config, compiler_config)));
+    ref->architecture->post_process_platform(ref);
+    return ref;
+}
+
+/**
+ * Constructs a platform from the given configuration *data*.
+ */
+PlatformRef Platform::build(
+    const utils::Str &name,
+    const utils::Json &platform_config,
+    const utils::Str &compiler_config
+) {
+    PlatformRef ref;
+    ref.set(std::shared_ptr<Platform>(new Platform(name, platform_config, compiler_config)));
+    ref->architecture->post_process_platform(ref);
+    return ref;
+}
+
+/**
  * Dumps some basic info about the platform to the given stream.
  */
 void Platform::dump_info(std::ostream &os, utils::Str line_prefix) const {

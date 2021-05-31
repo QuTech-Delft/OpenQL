@@ -43,6 +43,15 @@ void Architecture::preprocess_platform(utils::Json &data) const {
 }
 
 /**
+ * Post-processes the platform object for this architecture variant. This
+ * may for instance add annotations with architecture-specific configuration
+ * data.
+ */
+void Architecture::post_process_platform(const plat::PlatformRef &platform) const {
+    family->post_process_platform(platform, variant);
+}
+
+/**
  * Adds the default "backend passes" for this platform. Called by
  * pmgr::Manager::from_defaults() when no compiler configuration file is
  * specified. This typically includes at least the architecture-specific
