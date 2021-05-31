@@ -9,6 +9,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"
 #include "ql/utils/json.h"
+#include "ql/plat/platform.h"
 #include "ql/arch/declarations.h"
 #include "ql/arch/info_base.h"
 #include "ql/pmgr/declarations.h"
@@ -56,6 +57,13 @@ public:
      * architecture variant.
      */
     void preprocess_platform(utils::Json &data) const;
+
+    /**
+     * Post-processes the platform object for this architecture variant. This
+     * may for instance add annotations with architecture-specific configuration
+     * data.
+     */
+    void post_process_platform(const plat::PlatformRef &platform) const;
 
     /**
      * Adds the default "backend passes" for this platform. Called by

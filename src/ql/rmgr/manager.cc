@@ -161,7 +161,7 @@ Manager Manager::from_json(
     // Infer (default) architecture from the rest of the platform.
     utils::Str architecture = platform->architecture->family->get_namespace_name();
 
-    // If a "resources" key exists (i.e. "resources/resources") , this is a new-style resource configuration
+    // If a "resources" key exists, this is a new-style resource configuration
     // structure. Otherwise it's an old-style structure.
     if (json.find("resources") == json.end()) {
 
@@ -171,7 +171,7 @@ Manager Manager::from_json(
         // Add resources to it using the old JSON syntax.
         for (auto it = platform->resources.begin(); it != platform->resources.end(); ++it) {
             if (it.value().type() != JsonType::object) {
-                throw utils::Exception("resource configuration must be an object");     // FIXME: provide clue about offending key
+                throw utils::Exception("resource configuration must be an object");
             }
             manager.add_resource(it.key(), "", it.value());
         }
@@ -238,15 +238,11 @@ Manager Manager::from_json(
                     throw utils::Exception("resource type must be a string");
                 }
             } else if (it2.key() == "config") {
-#if 0   // FIXME
-                if (it2.value().type() == JsonType::array) {
+                if (it2.value().type() == JsonType::object) {
                     config = &it2.value();
                 } else {
-                    throw utils::Exception(QL_SS2S("resource configuration must be an object if specified, found '" << it2.value() << "'"));
+                    throw utils::Exception("resource configuration must be an object if specified");
                 }
-#else
-                config = &it2.value();
-#endif
             } else {
                 throw utils::Exception("unknown key in resource description: " + it2.key());
             }

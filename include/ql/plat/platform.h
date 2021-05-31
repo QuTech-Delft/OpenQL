@@ -20,6 +20,13 @@ using CustomGateRef = utils::One<ir::gate_types::Custom>;
 
 using InstructionMap = utils::Map<utils::Str, CustomGateRef>;
 
+class Platform;
+
+/**
+ * Smart pointer reference to a platform.
+ */
+using PlatformRef = utils::One<Platform>;
+
 /**
  * Platform configuration structure. Represents everything we know about the
  * target qubit chip, simulator, control architecture, etc.
@@ -29,24 +36,7 @@ using InstructionMap = utils::Map<utils::Str, CustomGateRef>;
  *  types.
  */
 class Platform : public utils::Node {
-public:
-
-    /**
-     * Dumps the documentation for the platform configuration file structure.
-     */
-    static void dump_docs(std::ostream &os = std::cout, const utils::Str &line_prefix = "");
-
 private:
-
-    /**
-     * Loads the platform members from the given JSON data and optional
-     * auxiliary compiler configuration file.
-     */
-    void load(
-        utils::Json &platform_config,
-        const utils::Str &platform_config_fname = "",
-        const utils::Str &compiler_config = ""
-    );
 
     /**
      * Raw instruction setting data for use by the eqasm backend, corresponding
@@ -152,10 +142,49 @@ public:
      */
     utils::Opt<Topology> topology;
 
+public:
+
+    /**
+     * Dumps the documentation for the platform configuration file structure.
+     */
+    static void dump_docs(std::ostream &os = std::cout, const utils::Str &line_prefix = "");
+
+private:
+
+    /**
+     * Loads the platform members from the given JSON data and optional
+     * auxiliary compiler configuration file.
+     */
+    void load(
+        utils::Json &platform_config,
+        const utils::Str &platform_config_fname = "",
+        const utils::Str &compiler_config = ""
+    );
+
     /**
      * Constructs a platform from the given configuration filename.
      */
     Platform(
+        const utils::Str &name,
+        const utils::Str &platform_config,
+        const utils::Str &compiler_config
+    );
+
+    /**
+     * Constructs a platform from the given configuration *data*.
+     */
+    Platform(
+        const utils::Str &name,
+        const utils::Json &platform_config,
+        const utils::Str &compiler_config
+    );
+
+public:
+
+    /**
+     * Constructs a platform from the given configuration filename.
+     */
+    static PlatformRef build(
         const utils::Str &name,
         const utils::Str &platform_config,
         const utils::Str &compiler_config = ""
@@ -164,7 +193,7 @@ public:
     /**
      * Constructs a platform from the given configuration *data*.
      */
-    Platform(
+    static PlatformRef build(
         const utils::Str &name,
         const utils::Json &platform_config,
         const utils::Str &compiler_config = ""
@@ -198,11 +227,6 @@ public:
     utils::UInt time_to_cycles(utils::Real time_ns) const;
 
 };
-
-/**
- * Smart pointer reference to a platform.
- */
-using PlatformRef = utils::One<Platform>;
 
 } // namespace plat
 } // namespace ql

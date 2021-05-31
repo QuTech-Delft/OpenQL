@@ -555,14 +555,28 @@ utils::Str Info::get_default_platform(const utils::Str &variant) const {
  * platform, to save typing in the configuration file (and reduce the amount
  * of mistakes made).
  */
-// NB:
-// - 'data' contains full JSON configuration
-// - called before any pass runs
 void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) const {
 
     // TODO Wouter: any CC-specific platform configuration file preprocessing
     //  you might want to do for the resources can go here!
-    QL_IOUT("CC Info::preprocess_platform, variant='" << variant << "'");
+}
+
+/**
+ * Post-processing logic for the Platform data structure. This may for
+ * instance add annotations with architecture-specific configuration data.
+ */
+void Info::post_process_platform(
+    const plat::PlatformRef &platform,
+    const utils::Str &variant
+) const {
+
+    // TODO Wouter: something with vq1asm::detail::Settings, I guess. Note: to
+    //  keep track of the structure alongside the platform, you can add it as
+    //  an annotation like so:
+    //  platform->set_annotation(pass::gen::vq1asm::detail::Settings());
+    //  platform->get_annotation<pass::gen::vq1asm::detail::Settings>().loadBackendSettings(platform);
+
+    QL_IOUT("CC Info::post_process_platform, variant='" << variant << "'");
 
     // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
     QL_IOUT("desugaring CC instrument");
@@ -581,7 +595,6 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
 #endif
 
     // Create instruments from CC instrument definitions.
-    utils::Json &resources = data["resources"];         // FIXME: check
     utils::Json ext_resources;      // extended resource definitions, see https://openql.readthedocs.io/en/latest/gen/reference_resources.html
 
     utils::Json instrConfig = R"(
@@ -604,13 +617,13 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
     ext_resources["name"]["type"] = "Instrument";
     ext_resources["name"]["config"] = instrConfig;
 
-    resources["resources"] = ext_resources;
+    platform->resources["resources"] = ext_resources;   // FIXME: check emptyness beforehand
 #if 0
     resources["architecture"] = "";
     resources["dnu"] = "";
 #endif
 
-    QL_DOUT("CC: created resources:\n" << std::setw(4) << resources);
+    QL_DOUT("CC: created resources:\n" << std::setw(4) << platform->resources);
 }
 
 /**

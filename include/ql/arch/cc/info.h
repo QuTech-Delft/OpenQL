@@ -64,6 +64,12 @@ public:
     void preprocess_platform(utils::Json &data, const utils::Str &variant) const override;
 
     /**
+     * Post-processing logic for the Platform data structure. This may for
+     * instance add annotations with architecture-specific configuration data.
+     */
+    void post_process_platform(const plat::PlatformRef &platform, const utils::Str &variant) const override;
+
+    /**
      * Adds the default "backend passes" for this platform. Called by
      * pmgr::Manager::from_defaults() when no compiler configuration file is
      * specified. This typically includes at least the architecture-specific
