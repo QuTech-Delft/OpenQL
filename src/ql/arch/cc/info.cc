@@ -562,6 +562,23 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
 }
 
 /**
+ * Post-processing logic for the Platform data structure. This may for
+ * instance add annotations with architecture-specific configuration data.
+ */
+void Info::post_process_platform(
+    const plat::PlatformRef &platform,
+    const utils::Str &variant
+) const {
+
+    // TODO Wouter: something with vq1asm::detail::Settings, I guess. Note: to
+    //  keep track of the structure alongside the platform, you can add it as
+    //  an annotation like so:
+    //  platform->set_annotation(pass::gen::vq1asm::detail::Settings());
+    //  platform->get_annotation<pass::gen::vq1asm::detail::Settings>().loadBackendSettings(platform);
+
+}
+
+/**
  * Adds the default "backend passes" for this platform. Called by
  * pmgr::Manager::from_defaults() when no compiler configuration file is
  * specified. This typically includes at least the architecture-specific

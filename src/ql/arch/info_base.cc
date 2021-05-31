@@ -51,7 +51,20 @@ void InfoBase::dump_variant_docs(
  * platform, to save typing in the configuration file (and reduce the amount
  * of mistakes made).
  */
-void InfoBase::preprocess_platform(utils::Json &data, const utils::Str &variant) const {
+void InfoBase::preprocess_platform(
+    utils::Json &data,
+    const utils::Str &variant
+) const {
+}
+
+/**
+ * Post-processing logic for the Platform data structure. This may for
+ * instance add annotations with architecture-specific configuration data.
+ */
+void InfoBase::post_process_platform(
+    const plat::PlatformRef &platform,
+    const utils::Str &variant
+) const {
 }
 
 /**
