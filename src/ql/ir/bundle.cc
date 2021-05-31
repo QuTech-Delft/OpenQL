@@ -41,7 +41,7 @@ ir::GateRefs circuiter(const ir::Bundles &bundles) {
  */
 Str qasm(const ir::Bundles &bundles) {
     StrStrm ssqasm;
-    UInt curr_cycle=1;        // FIXME HvS prefer to start at 0; also see depgraph creation
+    UInt curr_cycle = ir::FIRST_CYCLE;        // FIXME HvS prefer to start at 0; also see depgraph creation
     Str skipgate = "wait";
     if (com::options::get("issue_skip_319") == "yes") {
         skipgate = "skip";

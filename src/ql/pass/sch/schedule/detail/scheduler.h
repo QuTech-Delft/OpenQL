@@ -96,16 +96,16 @@ private:
     // for each OperandType there is a separate type of state machine
     // for each particular operand there is a separate state machine
     // all vectors are indexed by the operand
-    utils::Vec<enum EventType> last_q_event;      // Qubit: Default, Xrotate, Zrotate
+    utils::Vec<EventType> last_q_event;           // Qubit: Default, Xrotate, Zrotate
     utils::Vec<utils::Int> last_default;          // state machine: Default { Default | Xrotate+ | Zrotate+ }* Default
     utils::Vec<ReadersListType> last_x_rotates;
     utils::Vec<ReadersListType> last_z_rotates;
 
-    utils::Vec<enum EventType> last_c_event;      // Creg: Write, Read
+    utils::Vec<EventType> last_c_event;           // Creg: Write, Read
     utils::Vec<utils::Int> last_c_writer;         // state machine: Write { Write | Read+ }* Write,
     utils::Vec<ReadersListType> last_c_readers;
 
-    utils::Vec<enum EventType> last_b_event;      // Breg: Write, Read
+    utils::Vec<EventType> last_b_event;           // Breg: Write, Read
     utils::Vec<utils::Int> last_b_writer;         // state machine: Write { Write | Read+ }* Write,
     utils::Vec<ReadersListType> last_b_readers;
 
@@ -125,9 +125,9 @@ public:
     // can add dependences for this new current gate on those previous ones
     void new_event(
         int curr_id,
-        enum OperandType operand_type,
+        OperandType operand_type,
         utils::UInt operand,
-        enum EventType curr_event,
+        EventType curr_event,
         bool commutes
     );
 
@@ -136,8 +136,8 @@ public:
     void add_dep(
         utils::Int from_id,
         utils::Int to_id,
-        enum DepType dt,
-        enum OperandType ot,
+        DepType dt,
+        OperandType ot,
         utils::UInt operand
     );
 

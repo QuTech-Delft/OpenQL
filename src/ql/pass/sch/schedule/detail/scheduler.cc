@@ -163,8 +163,8 @@ void Scheduler::strip_name(Str &name) {
 void Scheduler::add_dep(
     Int from_id,
     Int to_id,
-    enum DepType dt,
-    enum OperandType ot,
+    DepType dt,
+    OperandType ot,
     UInt operand
 ) {
     QL_DOUT(".. adddep ... from fromID " << from_id << " to toID " << to_id << "   opnd=" << ot << "[" << operand << "], dep=" << dt);
@@ -191,7 +191,7 @@ void Scheduler::add_dep(
 // The state machines have as state vectors for the lastevent, and various last states; these are vectors indexed by the operand.
 void Scheduler::new_event(
     int curr_id,
-    enum OperandType operand_type,
+    OperandType operand_type,
     UInt operand,
     EventType curr_event,
     bool commutes

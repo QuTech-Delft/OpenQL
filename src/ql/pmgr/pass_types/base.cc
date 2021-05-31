@@ -185,6 +185,18 @@ Base::Base(
 }
 
 /**
+ * Returns `pass "<name>"` for normal passes and `root` for the root pass.
+ * Used for error messages.
+ */
+utils::Str Base::describe() const {
+    if (is_root()) {
+        return "root";
+    } else {
+        return "pass \"" + instance_name + "\"";
+    }
+}
+
+/**
  * Returns the full, desugared type name that this pass was constructed
  * with.
  */
@@ -306,7 +318,7 @@ utils::UInt Base::set_option(
             // Pass not constructed; set option on this pass.
             if (must_exist && !options.has_option(option_name)) {
                 throw utils::Exception(
-                    "option " + option_name + " does not exist for pass " + instance_name
+                    "option " + option_name + " does not exist for " + describe()
                 );
             }
             if (!is_constructed() && options.has_option(option_name)) {
@@ -321,7 +333,7 @@ utils::UInt Base::set_option(
             // Pass constructed but isn't a group, can't do anything.
             if (must_exist) {
                 throw utils::Exception(
-                    "cannot set option " + option_name + " on pass " + instance_name
+                    "cannot set option " + option_name + " on " + describe()
                     + " anymore, because the pass has already been constructed"
                 );
             }
@@ -337,7 +349,7 @@ utils::UInt Base::set_option(
             if (must_exist && !passes_affected) {
                 throw utils::Exception(
                     "option " + option_name + " could not be set on any sub-pass of "
-                    + instance_name
+                    + describe()
                 );
             }
             return passes_affected;
@@ -355,7 +367,7 @@ utils::UInt Base::set_option(
         }
         if (must_exist && !options.has_option(option)) {
             throw utils::Exception(
-                "option " + option + " does not exist for pass " + instance_name
+                "option " + option + " does not exist for " + describe()
             );
         }
         if (!is_constructed() && options.has_option(option)) {
@@ -370,12 +382,12 @@ utils::UInt Base::set_option(
     if (!is_constructed()) {
         throw utils::Exception(
             "cannot set sub-pass options before parent pass ("
-            + instance_name + ") is constructed"
+            + describe() + ") is constructed"
         );
     }
     if (!is_group()) {
         throw utils::Exception(
-            "cannot set sub-pass options for non-group pass " + instance_name
+            "cannot set sub-pass options for non-group " + describe()
         );
     }
     utils::Str sub_pass_pattern = option.substr(0, period);
@@ -394,12 +406,12 @@ utils::UInt Base::set_option(
         if (!any_sub_passes_matched) {
             throw utils::Exception(
                 "pattern " + sub_pass_pattern + " did not match any sub-passes of "
-                + instance_name
+                + describe()
             );
         } else if (!passes_affected) {
             throw utils::Exception(
                 "option " + sub_option + " could not be set on any matching sub-pass of "
-                + instance_name
+                + describe()
             );
         }
     }
@@ -422,7 +434,6 @@ utils::UInt Base::set_option_recursively(
     return set_option("**." + option, value, must_exist);
 }
 
-
 /**
  * Returns the current value of an option. Periods may be used as hierarchy
  * separators to get options from sub-passes (if any).
@@ -440,9 +451,7 @@ const utils::Option &Base::get_option(const utils::Str &option) const {
     utils::Str sub_option = option.substr(period + 1);
     auto sub_pass_it = sub_pass_names.find(sub_pass);
     if (sub_pass_it == sub_pass_names.end()) {
-        throw utils::Exception(
-            "no sub-pass with name \"" + sub_pass + "\" in pass " + instance_name
-        );
+        throw utils::Exception("no sub-pass with name \"" + sub_pass + "\" in " + describe());
     }
     return sub_pass_it->second->get_option(sub_option);
 

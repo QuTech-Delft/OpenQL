@@ -284,7 +284,7 @@ utils::Bool InterCoreChannelResource::on_gate(
     }
 
     // Compute cycle range for this gate.
-    com::reservations::CycleRange range = {
+    State::Range range = {
         cycle,
         cycle + utils::div_ceil(gate->duration, config->cycle_time)
     };
@@ -293,7 +293,7 @@ utils::Bool InterCoreChannelResource::on_gate(
     for (auto core : affected) {
         utils::Bool core_available = false;
         for (auto &s : state[core]) {
-            if (s.find(range) == com::reservations::Result::NONE) {
+            if (s.find(range).type == utils::RangeMatchType::NONE) {
                 core_available = true;
                 break;
             }
@@ -314,8 +314,11 @@ utils::Bool InterCoreChannelResource::on_gate(
         for (auto core : affected) {
             utils::Bool core_found = false;
             for (auto &s : state[core]) {
-                if (s.find(range) == com::reservations::Result::NONE) {
-                    s.reserve(range, {}, config->optimize);
+                if (s.find(range).type == utils::RangeMatchType::NONE) {
+                    if (config->optimize) {
+                        s.clear();
+                    }
+                    s.set(range);
                     core_found = true;
                     break;
                 }

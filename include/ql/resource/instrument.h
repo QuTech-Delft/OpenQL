@@ -6,7 +6,7 @@
 #pragma once
 
 #include "ql/utils/set.h"
-#include "ql/com/reservations.h"
+#include "ql/utils/rangemap.h"
 #include "ql/rmgr/resource_types/base.h"
 
 namespace ql {
@@ -16,7 +16,7 @@ namespace instrument {
 /**
  * State per instrument.
  */
-using State = com::reservations::Tracker<utils::UInt>;
+using State = utils::RangeMap<utils::UInt, utils::UInt>;
 
 /**
  * Forward-declaration for the configuration structure, defined in the CC file.

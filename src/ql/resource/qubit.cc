@@ -28,14 +28,14 @@ utils::Bool QubitResource::on_gate(
 ) {
 
     // Compute cycle range for this gate.
-    com::reservations::CycleRange range = {
+    State::Range range = {
         cycle,
         cycle + utils::div_ceil(gate->duration, cycle_time)
     };
 
     // Check qubit availability for all operands.
     for (auto qubit : gate->operands) {
-        if (state[qubit].find(range) != com::reservations::Result::NONE) {
+        if (state[qubit].find(range).type != utils::RangeMatchType::NONE) {
             return false;
         }
     }
@@ -43,7 +43,10 @@ utils::Bool QubitResource::on_gate(
     // If we're committing, reserve for all operands.
     if (commit) {
         for (auto qubit : gate->operands) {
-            state[qubit].reserve(range, {}, optimize);
+            if (optimize) {
+                state[qubit].clear();
+            }
+            state[qubit].set(range);
         }
     }
 

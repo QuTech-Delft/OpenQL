@@ -44,6 +44,7 @@ private:
      */
     void load(
         utils::Json &platform_config,
+        const utils::Str &platform_config_fname = "",
         const utils::Str &compiler_config = ""
     );
 

@@ -29,7 +29,7 @@ public:
     void compile(const ir::ProgramRef &program, const OptionsRef &options);
 
 private:
-    static Str kernelLabel(const ir::KernelRef &k);
+    static Str loopLabel(const ir::KernelRef &k);
     void codegenClassicalInstruction(const ir::GateRef &classical_ins);
     void codegenKernelPrologue(const ir::KernelRef &k);
     void codegenKernelEpilogue(const ir::KernelRef &k);

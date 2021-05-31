@@ -216,6 +216,7 @@ endfunction()
 add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/num.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/str.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/rangemap.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/exception.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/logger.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/filesystem.cc"
@@ -228,7 +229,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/qubit_mapping.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/metrics.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/interaction_matrix.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/reservations.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/platform.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/topology.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/gate.cc"
@@ -316,6 +316,7 @@ create_resource("src/ql/arch/none/resources/hwconf_default.json")
 set(QL_CHECKED_VEC ${OPENQL_CHECKED_VEC})
 set(QL_CHECKED_LIST ${OPENQL_CHECKED_LIST})
 set(QL_CHECKED_MAP ${OPENQL_CHECKED_MAP})
+set(QL_SHARED_LIB ${BUILD_SHARED_LIBS})
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/config.h.template"
     "${CMAKE_CURRENT_BINARY_DIR}/include/ql/config.h"
@@ -486,7 +487,7 @@ set_property(TARGET ql APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${BACKWARD_LIBRA
 if(OPENQL_BUILD_TESTS)
     enable_testing()
 
-    # Convenience function to add a test.
+    # Convenience function to add an integration test.
     function(add_openql_test name source workdir)
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
         target_link_libraries("${name}" ql)
@@ -497,9 +498,34 @@ if(OPENQL_BUILD_TESTS)
         )
     endfunction()
 
-    # Include the directories containing tests.
+    # Include the directories containing integration tests.
     add_subdirectory(tests)
     add_subdirectory(examples)
+
+    # Convenience function to add a unit test.
+    function(add_openql_unit_test source)
+        string(REPLACE "/" "_" name ${source})
+        string(REPLACE "_tests_" "_" name ${name})
+        string(REPLACE ".cc" "" name ${name})
+        set(name test_${name})
+        add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
+        target_link_libraries("${name}" ql)
+        add_test(
+            NAME "${name}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests"
+            COMMAND "${name}"
+        )
+    endfunction()
+
+    # Register unit tests.
+    file(
+        GLOB_RECURSE unit_tests
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/tests/*.cc
+    )
+    foreach(unit_test ${unit_tests})
+        add_openql_unit_test(${unit_test})
+    endforeach()
 
 endif()
 
