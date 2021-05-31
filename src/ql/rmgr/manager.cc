@@ -238,11 +238,15 @@ Manager Manager::from_json(
                     throw utils::Exception("resource type must be a string");
                 }
             } else if (it2.key() == "config") {
+#if 0   // FIXME
                 if (it2.value().type() == JsonType::array) {
                     config = &it2.value();
                 } else {
-                    throw utils::Exception("resource configuration must be an object if specified");
+                    throw utils::Exception(QL_SS2S("resource configuration must be an object if specified, found '" << it2.value() << "'"));
                 }
+#else
+                config = &it2.value();
+#endif
             } else {
                 throw utils::Exception("unknown key in resource description: " + it2.key());
             }

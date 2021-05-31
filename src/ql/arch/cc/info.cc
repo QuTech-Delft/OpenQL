@@ -3,6 +3,7 @@
  */
 
 #include "ql/arch/cc/info.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/settings.h"
 
 #include "ql/com/options.h"
 #include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
@@ -554,11 +555,62 @@ utils::Str Info::get_default_platform(const utils::Str &variant) const {
  * platform, to save typing in the configuration file (and reduce the amount
  * of mistakes made).
  */
+// NB:
+// - 'data' contains full JSON configuration
+// - called before any pass runs
 void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) const {
 
     // TODO Wouter: any CC-specific platform configuration file preprocessing
     //  you might want to do for the resources can go here!
+    QL_IOUT("CC Info::preprocess_platform, variant='" << variant << "'");
 
+    // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
+    QL_IOUT("desugaring CC instrument");
+
+    // NB: we get the Qubit resource for free independent of JSON contents, see ql/rmgr/factory.cc and QubitResource::on_initialize
+#if 0
+    // add qubit resource
+//    utils::UInt qubit_number = utils::json_get<utils::UInt>(data["hardware_settings"], "qubit_number", "hardware_settings/qubit_number");  // NB: existence of key "hardware_settings" tested in ql/plat/platform.cc
+//    resource_ptrs.push_back(new ResourceQubit(platform, dir, qubit_number));
+#endif
+
+#if 1   // FIXME: WIP
+    // load CC settings
+    pass::gen::vq1asm::detail::Settings settings;
+//    settings.loadBackendSettings(  platform);
+#endif
+
+    // Create instruments from CC instrument definitions.
+    utils::Json &resources = data["resources"];         // FIXME: check
+    utils::Json ext_resources;      // extended resource definitions, see https://openql.readthedocs.io/en/latest/gen/reference_resources.html
+
+    utils::Json instrConfig = R"(
+    {
+        "predicate": { "type": "mw" },
+        "function": [ "cc_light_instr" ],
+        "instruments": []
+    }
+    )"_json;
+
+    std::vector<utils::UInt> qubits = {1};
+    instrConfig["instruments"].push_back(
+        {
+            {"name", "QWG" },
+            {"qubit", qubits }
+        }
+    );
+
+//    ext_resources["name"] = "someName";
+    ext_resources["name"]["type"] = "Instrument";
+    ext_resources["name"]["config"] = instrConfig;
+
+    resources["resources"] = ext_resources;
+#if 0
+    resources["architecture"] = "";
+    resources["dnu"] = "";
+#endif
+
+    QL_DOUT("CC: created resources:\n" << std::setw(4) << resources);
 }
 
 /**

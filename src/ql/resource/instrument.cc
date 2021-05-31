@@ -434,14 +434,14 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
                 continue;
             }
             if (!it->is_array()) {
-                ERROR("all instrument keys except name must be arrays of integers");
+                ERROR("all instrument keys except name must be arrays of integers (offending key: '" + it.key() + "') contains '" + it->get<utils::Str>());
             }
             utils::Set<utils::UInt> elements;
             for (const auto &it2 : *it) {
                 if (it2.is_number_unsigned()) {
                     elements.insert(it2.get<utils::UInt>());
                 } else {
-                    ERROR("all instrument keys except name must be arrays of integers");
+                    ERROR("all instrument keys except name must be arrays of integers (offending key: '" + it.key() + "') has type " + it2.type_name());
                 }
             }
             utils::Bool recognized_as_qubits = false;
