@@ -924,11 +924,10 @@ Bool Scheduler::criticality_lessthan(
     ListDigraph::Node n2,
     rmgr::Direction dir
 ) {
-    if (!enable_criticality) return false;
-
     if (n1 == n2) return false;             // because not <
 
     if (remaining.at(n1) < remaining.at(n2)) return true;
+    if (!enable_criticality) return false;
     if (remaining.at(n1) > remaining.at(n2)) return false;
     // so: remaining[n1] == remaining[n2]
 
