@@ -73,7 +73,6 @@ utils::Int GenerateMicrocodePass::run(
 
         // For every qubit, insert a magnetic bias check
         for (UInt q = 0; q < kernel->qubit_count; q++) {
-
             temp_kernel.gate("sweep_bias", q);
             temp_kernel.gates.back()->set_annotation<ql::arch::diamond::annotations::SweepBiasParameters>(
                 {10, q, 0, 10, 100, 0});
@@ -83,7 +82,8 @@ utils::Int GenerateMicrocodePass::run(
         // For every qubit, inset a rabi check
         for (UInt q = 0; q < kernel->qubit_count; q++) {
             // rabi check
-
+            temp_kernel.gate("rabi_check", q);
+            temp_kernel.gates.back()->set_annotation<ql::arch::diamond::annotations::RabiParameters>({100, 2, 3});
         }
 
         // For every qubit, insert a CRC
@@ -99,6 +99,8 @@ utils::Int GenerateMicrocodePass::run(
             temp_kernel.gate("initialize", q);
         }
 
+        // Add the gates from the original kernel. Every 10 gates, add a CRC check
+        // for all qubits.
         UInt number_gates = 0;
         for (const auto &gate : kernel->gates) {
             if (number_gates > 9) {
@@ -139,13 +141,47 @@ utils::Int GenerateMicrocodePass::run(
                 Str op_1 = "q" + to_string(gate->operands[0]);
                 Str op_2 = "q" + to_string(gate->operands[1]);
                 outfile << detail::qgate2(gate->name, op_1, op_2);
+            } else if (type == "rotation") {
+                UInt a = 1000/3.14159265359;
+                Str duration = to_string(a*gate->angle);
+                if (gate->name == "rx") {
+                    Str phase = to_string(1.57);
+                    outfile << detail::excite_mw("0", duration, "200", phase, gate->operands[0]);
+                } else if (gate->name == "ry") {
+                    Str phase = to_string(3.14);
+                    outfile << detail::excite_mw("0", duration, "200", phase, gate->operands[0]);
+                } else if (gate->name == "rz") {
+                    Str phase = to_string(0);
+                    outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                }
+
+                // Alternate representation of x90, mx90, y90 and my90. Now works with using qgate.
+                // Can be changes to excite_MW by setting diamond_type in hw config file to
+                // "rotation" instead of "qgate".
+                else if (gate->name == "x90") {
+                    Str phase = to_string(1.57);
+                    duration = "1.57";
+                    outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                } else if (gate->name == "mx90") {
+                    Str phase = to_string(1.57);
+                    duration = "4.71";
+                    outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                } else if (gate->name == "y90") {
+                    Str phase = to_string(3.14);
+                    duration = "1.57";
+                    outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                } else if (gate->name == "my90") {
+                    Str phase = to_string(3.14);
+                    duration = "4.71";
+                    outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                }
             } else if (type == "classical") {
-                 if (gate->name == "calculate_current"){
-                     outfile << "calculate_current()" << "\n";
-                 }
-                 else if (gate->name == "calculate_voltage") {
-                     outfile << "calculate_voltage()" << "\n";
-                 }
+                    if (gate->name == "calculate_current"){
+                        outfile << "calculate_current()" << "\n";
+                    }
+                    else if (gate->name == "calculate_voltage") {
+                        outfile << "calculate_voltage()" << "\n";
+                    }
             } else if (type == "initial_checks") {
                 if (gate->name == "mag_bias") {
                     // Code for magnetic biasing
@@ -161,7 +197,6 @@ utils::Int GenerateMicrocodePass::run(
                     Str count = to_string(labelcount);
                     Str count_1 = to_string(labelcount+1);
                     Str count_2 = to_string(labelcount+2);
-
 
                     outfile << detail::loadimm(to_string(params.measurements), "R", "1") << "\n";
                     outfile << detail::loadimm(to_string(params.duration), "R", "2") << "\n";
@@ -318,7 +353,7 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::qgate2("pmx90", qubit, nuq) << "\n";
                     outfile << detail::qgate("x90", gate->operands);
                 } else {
-                    outfile << "The name of the gate was not recognized";
+                    outfile << "ERROR: Gate " + gate->name + " is not supported by the Diamond Architecture." << "\n";
                 }
             }
             outfile << "\n" << "\n";

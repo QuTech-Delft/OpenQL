@@ -80,17 +80,17 @@
 
     "rx": {
       "duration": 40,
-      "diamond_type": "microwave"
+      "diamond_type": "rotation"
     },
 
     "ry": {
       "duration": 40,
-      "diamond_type": "microwave"
+      "diamond_type": "rotation"
     },
 
     "rz": {
       "duration": 40,
-      "diamond_type": "microwave"
+      "diamond_type": "rotation"
     },
 
     "s": {
@@ -99,7 +99,8 @@
     },
 
     "sdag": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
 
     "t": {
@@ -108,7 +109,8 @@
     },
 
     "tdag": {
-      "duration": 40
+      "duration": 40,
+      "diamond_type": "qgate"
     },
 
     "cnot": {
@@ -153,6 +155,11 @@
     "display_binary": {
       "duration": 20,
       "qubits": []
+    },
+
+    "swap": {
+      "duration": 80,
+      "diamond_type": "qgate2"
     },
 
     "memswap": {
