@@ -241,10 +241,10 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::addimm("10", "R", "2") << "\n";
                     outfile << detail::branch("R", "2", "<", "R", "3", "LAB", count) << "\n";
 
-
+                    // Add 3 to labelcount because label was used thrice.
                     labelcount++;
-
-
+                    labelcount++;
+                    labelcount++;
                 } else if (gate->name == "crc") {
                     const auto &params = gate->get_annotation<annotations::CRCParameters>();
 
@@ -285,23 +285,29 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::branch("R", qubit_number, "<", "R",
                                               threshold, "ResultReg",
                                               qubit_number);
-                } else if (gate->name == "initialize") {
-                    Str qubit_number = to_string(gate->operands[0]);
-                    const Str threshold = "0";
-                    Str count = to_string(labelcount);
+                } else if (gate->name == "measure_all") {
+                    // For every qubit, measure
+                    for (UInt q = 0; q < kernel->qubit_count; q++) {
 
+                        kernel->gate("initialize", q);
+                    }
+                }
+                else if (gate->name == "initialize") {
+                        Str qubit_number = to_string(gate->operands[0]);
+                        const Str threshold = "0";
+                        Str count = to_string(labelcount);
 
-                    outfile << detail::label(count) << "\n";
-                    outfile << detail::switchOn(gate->operands[0]) << "\n";
-                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
-                    outfile << detail::mov("photonReg", qubit_number, "R",
-                                           qubit_number) << "\n";
-                    outfile << detail::switchOff(gate->operands[0]) << "\n";
-                    outfile << detail::branch("R", qubit_number, ">", "", threshold,
-                                          "LAB", count);
+                        outfile << detail::label(count) << "\n";
+                        outfile << detail::switchOn(gate->operands[0]) << "\n";
+                        outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
+                        outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
+                        outfile << detail::mov("photonReg", qubit_number, "R",
+                                               qubit_number) << "\n";
+                        outfile << detail::switchOff(gate->operands[0]) << "\n";
+                        outfile << detail::branch("R", qubit_number, ">", "", threshold,
+                                                  "LAB", count);
 
-                    labelcount++;
+                        labelcount++;
                 } else if (gate->name == "wait") {
                     outfile << "wait " << gate->operands.to_string("", ", ", "");
                 } else if (gate->name == "qnop") {
@@ -329,7 +335,7 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::store("sweepStartReg", qubit_number, "memAddr", qubit_number, "0") << "\n";
                     outfile << detail::add("sweepStartReg", qubit_number, "sweepStartReg", qubit_number, "sweepStepReg", qubit_number) << "\n";
                     outfile << detail::addimm("4", "memAddr", qubit_number) << "\n";
-                    outfile << detail::branch("sweepStartReg", qubit_number, ">", "sweepStopReg", qubit_number, "LAB", count);
+                    outfile << detail::branch("sweepStartReg", qubit_number, "<", "sweepStopReg", qubit_number, "LAB", count);
                     labelcount++;
                 } else if (gate->name == "excite_mw") {
                     const auto &params = gate->get_annotation<annotations::ExciteMicrowaveParameters>();
@@ -356,7 +362,7 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << "ERROR: Gate " + gate->name + " is not supported by the Diamond Architecture." << "\n";
                 }
             }
-            outfile << "\n" << "\n";
+            outfile << "\n";
         }
     }
     return 0;
