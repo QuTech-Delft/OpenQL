@@ -40,6 +40,12 @@ struct CRCParameters {
     utils::UInt value;
 };
 
+struct RabiParameters {
+    utils::UInt measurements;
+    utils::UInt duration;
+    utils::UInt t_max;
+};
+
 
 
 } // namespace annotations

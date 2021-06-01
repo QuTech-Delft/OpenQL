@@ -432,6 +432,13 @@ public:
     void diamond_crc(size_t qubit, size_t threshold, size_t value);
 
     /**
+     * Appends the diamond rabi_check instruction, that measures the result of
+     * an operation on a qubit to determine how long the color centers needs to
+     * be excited for to have it flip.
+     */
+    void diamond_rabi_check(size_t qubit, size_t measurements, size_t duration, size_t t_max);
+
+    /**
      * Appends a controlled kernel. The number of control and ancilla qubits
      * must be equal.
      *

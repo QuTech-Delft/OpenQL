@@ -481,6 +481,16 @@ void Kernel::diamond_crc(size_t qubit, size_t threshold, size_t value) {
 }
 
 /**
+ * Appends the diamond rabi_check instruction, that measures the result of
+ * an operation on a qubit to determine how long the color centers needs to
+ * be excited for to have it flip.
+ */
+void Kernel::diamond_rabi_check(size_t qubit, size_t measurements, size_t duration, size_t t_max){
+    kernel->gate("rabi_check", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::RabiParameters>({measurements, duration, t_max});
+}
+
+/**
  * Appends a controlled kernel. The number of control and ancilla qubits
  * must be equal.
  *

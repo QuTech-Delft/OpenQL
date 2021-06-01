@@ -912,6 +912,29 @@ Returns
 None
 """
 
+%feature("docstring") ql::api::Kernel::diamond_rabi_check
+"""
+Appends the diamond \"rabi_check\" instruction.
+
+Parameters
+----------
+qubit : int
+    The index of the qubit.
+
+measurements : int
+    How manu measurements have to be recorded.
+
+duration: int
+    The starting value of the duration of the microwave.
+
+t_max: int
+    The value of the voltage sent to the dac.
+
+Returns
+-------
+None
+"""
+
 
 %feature("docstring") ql::api::Kernel::controlled
 """

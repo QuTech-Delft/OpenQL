@@ -153,6 +153,63 @@ utils::Int GenerateMicrocodePass::run(
                     // at lines 76-79 of microcode.cc
                 } else if (gate->name == "rabi_check") {
                     // Code for rabi check
+                    Str qubit_number = to_string(gate->operands[0]);
+
+                    const auto &params = gate->get_annotation<annotations::RabiParameters>();
+                    const Str threshold = "0";
+                    const Str threshold_measure = "33";
+                    Str count = to_string(labelcount);
+                    Str count_1 = to_string(labelcount+1);
+                    Str count_2 = to_string(labelcount+2);
+
+
+                    outfile << detail::loadimm(to_string(params.measurements), "R", "1") << "\n";
+                    outfile << detail::loadimm(to_string(params.duration), "R", "2") << "\n";
+                    outfile << detail::loadimm(to_string(params.t_max), "R", "3") << "\n";
+
+                    outfile << detail::loadimm("0", "R", "32") << "\n"; // number measurements
+                    outfile << detail::label(count) << "\n";
+                    outfile << detail::label(count_1) << "\n";
+                    //Init qubit
+                    outfile << detail::label(count_2) << "\n";
+                    outfile << detail::switchOn(gate->operands[0]) << "\n";
+                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
+                    outfile << detail::mov("photonReg", qubit_number, "R",
+                                           qubit_number) << "\n";
+                    outfile << detail::switchOff(gate->operands[0]) << "\n";
+                    outfile << detail::branch("R", qubit_number, ">", "", threshold,
+                                              "LAB", count_2) << "\n";
+
+                    //Excite with Time Duration T
+                    outfile << detail::excite_mw("1", "R2", "200", "0", gate->operands[0]) << "\n";
+
+                    //Readout
+                    outfile << detail::switchOn(gate->operands[0]) << "\n";
+                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
+                    outfile << detail::mov("photonReg", qubit_number, "R",qubit_number) << "\n";
+                    outfile << detail::switchOff(gate->operands[0]) << "\n";
+                    outfile << detail::branch("R", qubit_number, "<", "R",
+                                              threshold_measure, "ResultReg",
+                                              qubit_number) << "\n";
+
+                    // Store result and adjust memory address for next value
+                    outfile << detail::store("ResultReg", qubit_number, "memAddress", qubit_number, "0") << "\n";
+                    outfile << detail::addimm("4", "memAddr", qubit_number) << "\n";
+                    outfile << detail::addimm("1", "R", "32") << "\n";
+
+                    // if #measurements < threshold, measure again
+                    outfile << detail::branch("R", "32", "<", "R", "1", "LAB", count_1) << "\n";
+                    outfile << detail::store("R", "2", "memAddr", qubit_number, "0") << "\n";
+                    outfile << detail::addimm("4", "memAddr", qubit_number) << "\n";
+                    outfile << detail::addimm("10", "R", "2") << "\n";
+                    outfile << detail::branch("R", "2", "<", "R", "3", "LAB", count) << "\n";
+
+
+                    labelcount++;
+
+
                 } else if (gate->name == "crc") {
                     const auto &params = gate->get_annotation<annotations::CRCParameters>();
 
@@ -206,7 +263,7 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::mov("photonReg", qubit_number, "R",
                                            qubit_number) << "\n";
                     outfile << detail::switchOff(gate->operands[0]) << "\n";
-                    outfile << detail::branch("R", qubit_number, "<", "", threshold,
+                    outfile << detail::branch("R", qubit_number, ">", "", threshold,
                                           "LAB", count);
 
                     labelcount++;
