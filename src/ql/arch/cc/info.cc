@@ -9,6 +9,8 @@
 #include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
 #include "ql/arch/cc/resources/hwconf_default.inc"
 
+#include <iomanip>
+
 namespace ql {
 namespace arch {
 namespace cc {

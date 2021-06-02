@@ -449,7 +449,7 @@ cc_resource_manager::cc_resource_manager(
                 instruments independent where possible.
                 Also note that all of this breaks down if/when we want to support stuff like "flux assisted measurement",
                 where the flux line is manipulated during a measurement, and we can no longer tie types like "flux" and
-                "measurement" to a gate, but must really work with th signals.
+                "measurement" to a gate, but must really work with the signals.
             */
             Map<UInt,UInt> map = qubit2instrument(instrument, 0);
 #if 0   // FIXME: breaks CI, in utils/map.h. Works on CLion/Mac
