@@ -97,6 +97,16 @@
       "diamond_type": "rotation"
     },
 
+    "cr": {
+      "duration": 40,
+      "diamond_type": "rotation"
+    },
+
+    "crk": {
+      "duration": 40,
+      "diamond_type": "rotation"
+    },
+
     "s": {
       "duration": 40,
       "diamond_type": "qgate"
@@ -172,6 +182,10 @@
 
     "qentangle": {
       "duration": 60
+    },
+
+    "nventangle": {
+      "duration": 100
     },
 
     "sweep_bias": {

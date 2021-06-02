@@ -136,7 +136,7 @@ utils::Int GenerateMicrocodePass::run(
 
             // Determine the microcode output for the given gate-type
             if (type == "qgate") {
-                outfile << detail::qgate(gate->name, gate->operands);
+                outfile << detail::qgate(gate->name, gate->operands[0]);
             } else if (type == "qgate2") {
                 Str op_1 = "q" + to_string(gate->operands[0]);
                 Str op_2 = "q" + to_string(gate->operands[1]);
@@ -153,10 +153,19 @@ utils::Int GenerateMicrocodePass::run(
                 } else if (gate->name == "rz") {
                     Str phase = to_string(0);
                     outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                } else if (gate->name == "cr") {
+                    Str phase = to_string(0);
+                    outfile << detail::qgate2(gate->name, "q"+to_string(gate->operands[0]), "q"+to_string(gate->operands[1]));
+                    outfile << ", " << duration << "\n";
+                } else if (gate->name == "crk") {
+                    Str phase = to_string(0);
+                    UInt angle = 1000/(3.14/ pow(2,gate->angle));
+                    outfile << detail::qgate2(gate->name, "q"+to_string(gate->operands[0]), "q"+to_string(gate->operands[1]));
+                    outfile << ", " << to_string(angle) << "\n";
                 }
 
                 // Alternate representation of x90, mx90, y90 and my90. Now works with using qgate.
-                // Can be changes to excite_MW by setting diamond_type in hw config file to
+                // Can be changed to excite_MW by setting diamond_type in hw config file to
                 // "rotation" instead of "qgate".
                 else if (gate->name == "x90") {
                     Str phase = to_string(1.57);
@@ -347,20 +356,48 @@ utils::Int GenerateMicrocodePass::run(
                     Str nuq = "nuq" + to_string(params.nuclear);
                     Str qubit = "q" + to_string(gate->operands[0]);
                     outfile << detail::qgate2("pmy90",qubit, nuq) << "\n";
-                    outfile << detail::qgate("x90", gate->operands) << "\n";
+                    outfile << detail::qgate("x90", gate->operands[0]) << "\n";
                     outfile << detail::qgate2("pmx90", qubit, nuq) << "\n";
-                    outfile << detail::qgate("my90", gate->operands);
+                    outfile << detail::qgate("my90", gate->operands[0]);
                 } else if (gate->name == "qentangle") {
                     const auto &params = gate->get_annotation<annotations::QEntangleParameters>();
 
                     Str nuq = "nuq" + to_string(params.nuclear);
                     Str qubit = "q" + to_string(gate->operands[0]);
-                    outfile << detail::qgate("mx90", gate->operands) << "\n";
+                    outfile << detail::qgate("mx90", gate->operands[0]) << "\n";
                     outfile << detail::qgate2("pmx90", qubit, nuq) << "\n";
-                    outfile << detail::qgate("x90", gate->operands);
+                    outfile << detail::qgate("x90", gate->operands[0]);
+                } else if (gate->name == "nventangle") {
+                    // Implements electron-electron entanglement following the
+                    // Barrett and Kok scheme.
+                    Str count = to_string(labelcount);
+                    Str count_1 = to_string(labelcount+1);
+
+                    outfile << detail::loadimm("0","R", "2") << "\n";
+                    outfile << detail::label(count) << "\n";
+                    outfile << detail::switchOn(gate->operands[0]) << "\n";
+                    outfile << detail::switchOn(gate->operands[1]) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[1]) << "\n";
+                    outfile << "wait 100" << "\n";
+                    outfile << detail::mov("R", "0", "photonReg", "01") << "\n";
+                    outfile << detail::switchOff(gate->operands[0]) << "\n";
+                    outfile << detail::switchOff(gate->operands[1]) << "\n";
+                    outfile << detail::addimm("1", "R", "2") << "\n";
+                    outfile << "wait 50" << "\n";
+                    outfile << detail::branch("R", "1", ">", "", "1", "LAB", count_1) << "\n";
+                    outfile << detail::qgate("x", gate->operands[0]) << "\n";
+                    outfile << detail::qgate("x", gate->operands[1]) << "\n";
+                    outfile << detail::mov("R","0","R","1") << "\n";
+                    outfile << detail::jump(count) << "\n";
+                    outfile << detail::label(count_1) << "\n";
+
+                    labelcount++;
+                    labelcount++;
                 } else {
-                    outfile << "ERROR: Gate " + gate->name + " is not supported by the Diamond Architecture." << "\n";
-                }
+                        outfile << "ERROR: Gate " + gate->name + " is not supported by the Diamond Architecture." << "\n";
+                    }
+
             }
             outfile << "\n";
         }

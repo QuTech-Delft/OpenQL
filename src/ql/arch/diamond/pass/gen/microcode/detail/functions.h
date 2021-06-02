@@ -24,7 +24,7 @@ Str branch(Str name_1, Str value_1, Str comparison, Str name_2, Str value_2, Str
 
 Str label(Str labelcount);
 
-Str qgate(Str gatename, utils::Vec<utils::UInt> operand);
+Str qgate(Str gatename, UInt operand);
 
 Str qgate2(Str gatename, Str operand_1, Str operand_2);
 

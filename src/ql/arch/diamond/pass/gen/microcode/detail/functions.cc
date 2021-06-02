@@ -54,9 +54,9 @@ Str label(Str labelcount){
    return body;
 }
 
-Str qgate(Str gatename, utils::Vec<utils::UInt> operand) {
+Str qgate(Str gatename, UInt operand) {
     Str body_1 = "qgate " + to_upper(gatename) + ", ";
-    Str body_2 = "q" + to_string(operand[0]);
+    Str body_2 = "q" + to_string(operand);
     Str body = body_1 + body_2;
     return body;
 }
