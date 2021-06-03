@@ -93,7 +93,7 @@ utils::Int GenerateMicrocodePass::run(
             temp_kernel.gates.back()->set_annotation<ql::arch::diamond::annotations::CRCParameters>({5, q});
         }
 
-        // For every qubit, initialize
+        // For every qubit, initialize to |0>
         for (UInt q = 0; q < kernel->qubit_count; q++) {
 
             temp_kernel.gate("initialize", q);
@@ -116,16 +116,18 @@ utils::Int GenerateMicrocodePass::run(
             number_gates++;
         }
 
+        // Copy the gates to the original kernel and set the cycles_valid flag to false
+        // because the cycle count is not accurate anymore.
         kernel->gates = std::move(temp_kernel.gates);
         kernel->cycles_valid = false;
     }
 
-    // Make global variables for keeping track of registers, labels etc.
+    // Make global variables for keeping track label numbers.
     int labelcount = 0;
 
     for (const ir::KernelRef &kernel : program->kernels) {
         for (const ir::GateRef &gate : kernel->gates) {
-                const auto &data = program->platform->find_instruction(gate->name);
+            const auto &data = program->platform->find_instruction(gate->name);
 
             // Determine gate type.
             utils::Str type = "unknown";
@@ -135,6 +137,11 @@ utils::Int GenerateMicrocodePass::run(
             }
 
             // Determine the microcode output for the given gate-type
+            // If the gate-type is known, check the gate name.
+            // If the gate-type is not known, check the gate name
+            // If the gate-name is not known, print that the gate `name` is not known.
+            // Last option likely will not occur as OpenQL will throw an error
+            // when running the algorithm.
             if (type == "qgate") {
                 outfile << detail::qgate(gate->name, gate->operands[0]);
             } else if (type == "qgate2") {
@@ -142,25 +149,30 @@ utils::Int GenerateMicrocodePass::run(
                 Str op_2 = "q" + to_string(gate->operands[1]);
                 outfile << detail::qgate2(gate->name, op_1, op_2);
             } else if (type == "rotation") {
-                UInt a = 1000/3.14159265359;
-                Str duration = to_string(a*gate->angle);
+                UInt a = 1000 / 3.14159265359;
+                Str duration = to_string(a * gate->angle);
                 if (gate->name == "rx") {
                     Str phase = to_string(1.57);
-                    outfile << detail::excite_mw("0", duration, "200", phase, gate->operands[0]);
+                    outfile << detail::excite_mw("0", duration, "200", phase,
+                                                 gate->operands[0]);
                 } else if (gate->name == "ry") {
                     Str phase = to_string(3.14);
-                    outfile << detail::excite_mw("0", duration, "200", phase, gate->operands[0]);
+                    outfile << detail::excite_mw("0", duration, "200", phase,
+                                                 gate->operands[0]);
                 } else if (gate->name == "rz") {
                     Str phase = to_string(0);
-                    outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                    outfile << detail::excite_mw("0", duration, "200", phase,
+                                                 gate->operands[0]);
                 } else if (gate->name == "cr") {
                     Str phase = to_string(0);
-                    outfile << detail::qgate2(gate->name, "q"+to_string(gate->operands[0]), "q"+to_string(gate->operands[1]));
+                    outfile << detail::qgate2(gate->name, "q" + to_string(
+                        gate->operands[0]), "q" + to_string(gate->operands[1]));
                     outfile << ", " << duration << "\n";
                 } else if (gate->name == "crk") {
                     Str phase = to_string(0);
-                    UInt angle = 1000/(3.14/ pow(2,gate->angle));
-                    outfile << detail::qgate2(gate->name, "q"+to_string(gate->operands[0]), "q"+to_string(gate->operands[1]));
+                    UInt angle = 1000 / (3.14 / pow(2, gate->angle));
+                    outfile << detail::qgate2(gate->name, "q" + to_string(
+                        gate->operands[0]), "q" + to_string(gate->operands[1]));
                     outfile << ", " << to_string(angle) << "\n";
                 }
 
@@ -169,113 +181,172 @@ utils::Int GenerateMicrocodePass::run(
                 // "rotation" instead of "qgate".
                 else if (gate->name == "x90") {
                     Str phase = to_string(1.57);
-                    duration = "1.57";
-                    outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                    duration = to_string((1000 / 3.14) * 1.57);
+                    outfile << detail::excite_mw("0", duration, "200", phase,
+                                                 gate->operands[0]);
                 } else if (gate->name == "mx90") {
                     Str phase = to_string(1.57);
-                    duration = "4.71";
-                    outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                    duration = to_string((1000 / 3.14) * 4.71);
+                    outfile << detail::excite_mw("0", duration, "200", phase,
+                                                 gate->operands[0]);
                 } else if (gate->name == "y90") {
                     Str phase = to_string(3.14);
-                    duration = "1.57";
-                    outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                    duration = to_string((1000 / 3.14) * 1.57);
+                    outfile << detail::excite_mw("0", duration, "200", phase,
+                                                 gate->operands[0]);
                 } else if (gate->name == "my90") {
                     Str phase = to_string(3.14);
-                    duration = "4.71";
-                    outfile << detail::excite_mw("0", duration, "200", phase,gate->operands[0]);
+                    duration = to_string((1000 / 3.14) * 4.71);
+                    outfile << detail::excite_mw("0", duration, "200", phase,
+                                                 gate->operands[0]);
+                }
+            } else if (type == "prepare") {
+                if (gate->name == "prep_z") {
+                    // nothing, already in z-basis
+                } else if (gate->name == "prep_x") {
+                    // Rotate 1/2-pi around y-axis
+                    outfile
+                        << detail::excite_mw("0", to_string(500), "200", "3.14",
+                                             gate->operands[0]);
+                } else if (gate->name == "prep_y") {
+                    // Rotate 1/2-pi around x-axis
+                    outfile
+                        << detail::excite_mw("0", to_string(500), "200", "1.57",
+                                             gate->operands[0]);
+                } else if (gate->name == "mprep_x") {
+                    // Rotate -1/2-pi around y-axis
+                    outfile << detail::excite_mw("0", to_string(1500), "200", "3.14",gate->operands[0]);
+                } else if (gate->name == "mprep_y") {
+                    // Rotate -1/2-pi around x-axis
+                    outfile << detail::excite_mw("0", to_string(1500), "200", "1.57",gate->operands[0]);
                 }
             } else if (type == "classical") {
-                    if (gate->name == "calculate_current"){
-                        outfile << "calculate_current()" << "\n";
-                    }
-                    else if (gate->name == "calculate_voltage") {
-                        outfile << "calculate_voltage()" << "\n";
-                    }
+                // These instructions calculate a new value for either current or
+                // voltage using purely classical instructions.
+                if (gate->name == "calculate_current") {
+                    outfile << "calculate_current()" << "\n";
+                } else if (gate->name == "calculate_voltage") {
+                    outfile << "calculate_voltage()" << "\n";
+                }
             } else if (type == "initial_checks") {
                 if (gate->name == "mag_bias") {
                     // Code for magnetic biasing
                     // Not added because it is decomposed into sweep_bias and calculate_current()
                     // at lines 76-79 of microcode.cc
                 } else if (gate->name == "rabi_check") {
-                    // Code for rabi check
+                    // Implements the rabi check.
                     Str qubit_number = to_string(gate->operands[0]);
 
-                    const auto &params = gate->get_annotation<annotations::RabiParameters>();
+                    const auto &params =
+                        gate->get_annotation<annotations::RabiParameters>();
                     const Str threshold = "0";
                     const Str threshold_measure = "33";
                     Str count = to_string(labelcount);
-                    Str count_1 = to_string(labelcount+1);
-                    Str count_2 = to_string(labelcount+2);
+                    Str count_1 = to_string(labelcount + 1);
+                    Str count_2 = to_string(labelcount + 2);
 
-                    outfile << detail::loadimm(to_string(params.measurements), "R", "1") << "\n";
-                    outfile << detail::loadimm(to_string(params.duration), "R", "2") << "\n";
-                    outfile << detail::loadimm(to_string(params.t_max), "R", "3") << "\n";
+                    outfile
+                        << detail::loadimm(to_string(params.measurements), "R",
+                                           "1") << "\n";
+                    outfile
+                        << detail::loadimm(to_string(params.duration), "R", "2")
+                        << "\n";
+                    outfile
+                        << detail::loadimm(to_string(params.t_max), "R", "3")
+                        << "\n";
 
-                    outfile << detail::loadimm("0", "R", "32") << "\n"; // number measurements
+                    outfile << detail::loadimm("0", "R", "32")
+                            << "\n"; // number measurements
                     outfile << detail::label(count) << "\n";
                     outfile << detail::label(count_1) << "\n";
                     //Init qubit
                     outfile << detail::label(count_2) << "\n";
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
-                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
+                    outfile << detail::loadimm("0", "photonReg", qubit_number)
+                            << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0",
+                                                 gate->operands[0]) << "\n";
                     outfile << detail::mov("photonReg", qubit_number, "R",
                                            qubit_number) << "\n";
                     outfile << detail::switchOff(gate->operands[0]) << "\n";
-                    outfile << detail::branch("R", qubit_number, ">", "", threshold,
-                                              "LAB", count_2) << "\n";
+                    outfile
+                        << detail::branch("R", qubit_number, ">", "", threshold,
+                                          "LAB", count_2) << "\n";
 
                     //Excite with Time Duration T
-                    outfile << detail::excite_mw("1", "R2", "200", "0", gate->operands[0]) << "\n";
+                    outfile << detail::excite_mw("1", "R2", "200", "0",
+                                                 gate->operands[0]) << "\n";
 
                     //Readout
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
-                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
-                    outfile << detail::mov("photonReg", qubit_number, "R",qubit_number) << "\n";
+                    outfile << detail::loadimm("0", "photonReg", qubit_number)
+                            << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0",
+                                                 gate->operands[0]) << "\n";
+                    outfile << detail::mov("photonReg", qubit_number, "R",
+                                           qubit_number) << "\n";
                     outfile << detail::switchOff(gate->operands[0]) << "\n";
                     outfile << detail::branch("R", qubit_number, "<", "R",
                                               threshold_measure, "ResultReg",
                                               qubit_number) << "\n";
 
                     // Store result and adjust memory address for next value
-                    outfile << detail::store("ResultReg", qubit_number, "memAddress", qubit_number, "0") << "\n";
-                    outfile << detail::addimm("4", "memAddr", qubit_number) << "\n";
+                    outfile << detail::store("ResultReg", qubit_number,
+                                             "memAddress", qubit_number, "0")
+                            << "\n";
+                    outfile << detail::addimm("4", "memAddr", qubit_number)
+                            << "\n";
                     outfile << detail::addimm("1", "R", "32") << "\n";
 
                     // if #measurements < threshold, measure again
-                    outfile << detail::branch("R", "32", "<", "R", "1", "LAB", count_1) << "\n";
-                    outfile << detail::store("R", "2", "memAddr", qubit_number, "0") << "\n";
-                    outfile << detail::addimm("4", "memAddr", qubit_number) << "\n";
+                    outfile << detail::branch("R", "32", "<", "R", "1", "LAB",
+                                              count_1) << "\n";
+                    outfile
+                        << detail::store("R", "2", "memAddr", qubit_number, "0")
+                        << "\n";
+                    outfile << detail::addimm("4", "memAddr", qubit_number)
+                            << "\n";
                     outfile << detail::addimm("10", "R", "2") << "\n";
-                    outfile << detail::branch("R", "2", "<", "R", "3", "LAB", count) << "\n";
+                    outfile
+                        << detail::branch("R", "2", "<", "R", "3", "LAB", count)
+                        << "\n";
 
                     // Add 3 to labelcount because label was used thrice.
                     labelcount++;
                     labelcount++;
                     labelcount++;
                 } else if (gate->name == "crc") {
-                    const auto &params = gate->get_annotation<annotations::CRCParameters>();
+                    // Implements the Charge Resonance Check.
+                    const auto &params =
+                        gate->get_annotation<annotations::CRCParameters>();
 
                     Str qubit_number = to_string(gate->operands[0]);
                     Str count = to_string(labelcount);
-                    Str count2 = to_string(labelcount+1);
+                    Str count2 = to_string(labelcount + 1);
 
-                    outfile << detail::loadimm(to_string(params.threshold), "treshReg", qubit_number) << "\n";
-                    outfile << detail::loadimm(to_string(params.value), "dacReg", qubit_number) << "\n";
+                    outfile << detail::loadimm(to_string(params.threshold),
+                                               "treshReg", qubit_number)
+                            << "\n";
+                    outfile
+                        << detail::loadimm(to_string(params.value), "dacReg",
+                                           qubit_number) << "\n";
 
                     outfile << detail::label(count) << "\n";
-                    outfile << detail::loadimm("0", "photon Reg", qubit_number) << "\n";
+                    outfile << detail::loadimm("0", "photon Reg", qubit_number)
+                            << "\n";
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
-                    outfile << detail::mov("photonReg", qubit_number, "R",qubit_number) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0",
+                                                 gate->operands[0]) << "\n";
+                    outfile << detail::mov("photonReg", qubit_number, "R",
+                                           qubit_number) << "\n";
                     outfile << detail::switchOff(gate->operands[0]) << "\n";
-                    outfile << detail::branch("R", qubit_number, ">", "treshReg",
-                                              qubit_number, "LAB",
-                                              count2) << "\n";
+                    outfile
+                        << detail::branch("R", qubit_number, ">", "treshReg",
+                                          qubit_number, "LAB",
+                                          count2) << "\n";
                     outfile << "calculateVoltage()" << "\n";
                     outfile << detail::jump(count) << "\n";
-                    outfile << detail::label(count2);
+                    outfile << detail::label(count2) << "\n";
 
                     // Add 2 to labelcount because label was used twice.
                     labelcount++;
@@ -283,121 +354,186 @@ utils::Int GenerateMicrocodePass::run(
                 }
             } else {
                 if (gate->name == "measure") {
+                    // Measures a qubit and stores the result in ResultRegQ,
+                    // where Q is the qubit number. Also stores the result in
+                    // breg[Q], as per OpenQL standard.
                     Str qubit_number = to_string(gate->operands[0]);
                     const Str threshold = "33";
 
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
-                    outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
-                    outfile << detail::mov("photonReg", qubit_number, "R",qubit_number) << "\n";
+                    outfile << detail::loadimm("0", "photonReg", qubit_number)
+                            << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0",
+                                                 gate->operands[0]) << "\n";
+                    outfile
+                        << detail::mov("photonReg", qubit_number, "R",
+                                       qubit_number)
+                        << "\n";
                     outfile << detail::switchOff(gate->operands[0]) << "\n";
                     outfile << detail::branch("R", qubit_number, "<", "R",
                                               threshold, "ResultReg",
-                                              qubit_number);
+                                              qubit_number) << "\n";
                 } else if (gate->name == "measure_all") {
                     // For every qubit, measure
                     for (UInt q = 0; q < kernel->qubit_count; q++) {
 
                         kernel->gate("initialize", q);
                     }
-                }
-                else if (gate->name == "initialize") {
-                        Str qubit_number = to_string(gate->operands[0]);
-                        const Str threshold = "0";
-                        Str count = to_string(labelcount);
+                } else if (gate->name == "initialize") {
+                    // Initializes a qubit to |0>.
+                    Str qubit_number = to_string(gate->operands[0]);
+                    const Str threshold = "0";
+                    Str count = to_string(labelcount);
 
-                        outfile << detail::label(count) << "\n";
-                        outfile << detail::switchOn(gate->operands[0]) << "\n";
-                        outfile << detail::loadimm("0", "photonReg", qubit_number) << "\n";
-                        outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
-                        outfile << detail::mov("photonReg", qubit_number, "R",
-                                               qubit_number) << "\n";
-                        outfile << detail::switchOff(gate->operands[0]) << "\n";
-                        outfile << detail::branch("R", qubit_number, ">", "", threshold,
-                                                  "LAB", count);
+                    outfile << detail::label(count) << "\n";
+                    outfile << detail::switchOn(gate->operands[0]) << "\n";
+                    outfile << detail::loadimm("0", "photonReg", qubit_number)
+                            << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0",
+                                                 gate->operands[0]) << "\n";
+                    outfile << detail::mov("photonReg", qubit_number, "R",
+                                           qubit_number) << "\n";
+                    outfile << detail::switchOff(gate->operands[0]) << "\n";
+                    outfile
+                        << detail::branch("R", qubit_number, ">", "", threshold,
+                                          "LAB", count) << "\n";
 
-                        labelcount++;
+                    labelcount++;
                 } else if (gate->name == "wait") {
-                    outfile << "wait " << gate->operands.to_string("", ", ", "");
+                    // Implements the wait x-cycles instruction.
+                    outfile << "wait "
+                            << gate->operands.to_string("", ", ", "");
                 } else if (gate->name == "qnop") {
+                    // Quantum nop instruction
                     outfile << "wait 1" << "\n";
                 } else if (gate->name == "sweep_bias") {
-
-                    const auto &params = gate->get_annotation<annotations::SweepBiasParameters>();
+                    // Implements the instruction sweep_bias, that sweeps the frequency
+                    // of the laser of a qubit to help determine the magnetic biasing value
+                    // for correct biasing.
+                    const auto &params =
+                        gate->get_annotation<annotations::SweepBiasParameters>();
 
                     Str qubit_number = to_string(gate->operands[0]);
                     Str count = to_string(labelcount);
 
-                    outfile << detail::loadimm(to_string(params.value), "dacReg",
-                                               to_string(params.dacreg)) << "\n";
-                    outfile << detail::loadimm(to_string(params.start), "sweepStartReg", qubit_number)<< "\n";
-                    outfile << detail::loadimm(to_string(params.step), "sweepStepReg", qubit_number) << "\n";
-                    outfile << detail::loadimm(to_string(params.max), "sweepStopReg", qubit_number) << "\n";
-                    outfile << detail::loadimm(to_string(params.memaddress), "memAddr", qubit_number) << "\n";
+                    outfile
+                        << detail::loadimm(to_string(params.value), "dacReg",
+                                           to_string(params.dacreg)) << "\n";
+                    outfile
+                        << detail::loadimm(to_string(params.start),
+                                           "sweepStartReg",
+                                           qubit_number) << "\n";
+                    outfile
+                        << detail::loadimm(to_string(params.step),
+                                           "sweepStepReg",
+                                           qubit_number) << "\n";
+                    outfile
+                        << detail::loadimm(to_string(params.max),
+                                           "sweepStopReg",
+                                           qubit_number) << "\n";
+                    outfile
+                        << detail::loadimm(to_string(params.memaddress),
+                                           "memAddr",
+                                           qubit_number) << "\n";
                     outfile << detail::label(count) << "\n";
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
-                    outfile << detail::excite_mw("1", "100", "sweepStartReg"+qubit_number, "0", gate->operands[0]) << "\n";
+                    outfile << detail::excite_mw("1", "100",
+                                                 "sweepStartReg" + qubit_number,
+                                                 "0", gate->operands[0])
+                            << "\n";
                     outfile << detail::switchOff(gate->operands[0]) << "\n";
-                    outfile << detail::mov("photonReg", qubit_number, "R", qubit_number) << "\n";
-                    outfile << detail::store("R", qubit_number, "memAddr", qubit_number,
-                                             "0") << "\n";
-                    outfile << detail::store("sweepStartReg", qubit_number, "memAddr", qubit_number, "0") << "\n";
-                    outfile << detail::add("sweepStartReg", qubit_number, "sweepStartReg", qubit_number, "sweepStepReg", qubit_number) << "\n";
-                    outfile << detail::addimm("4", "memAddr", qubit_number) << "\n";
-                    outfile << detail::branch("sweepStartReg", qubit_number, "<", "sweepStopReg", qubit_number, "LAB", count);
+                    outfile
+                        << detail::mov("photonReg", qubit_number, "R",
+                                       qubit_number)
+                        << "\n";
+                    outfile
+                        << detail::store("R", qubit_number, "memAddr",
+                                         qubit_number,
+                                         "0") << "\n";
+                    outfile
+                        << detail::store("sweepStartReg", qubit_number,
+                                         "memAddr",
+                                         qubit_number, "0") << "\n";
+                    outfile << detail::add("sweepStartReg", qubit_number,
+                                           "sweepStartReg", qubit_number,
+                                           "sweepStepReg", qubit_number)
+                            << "\n";
+                    outfile << detail::addimm("4", "memAddr", qubit_number)
+                            << "\n";
+                    outfile
+                        << detail::branch("sweepStartReg", qubit_number, "<",
+                                          "sweepStopReg", qubit_number, "LAB",
+                                          count) << "\n";
                     labelcount++;
                 } else if (gate->name == "excite_mw") {
-                    const auto &params = gate->get_annotation<annotations::ExciteMicrowaveParameters>();
+                    // Implements the custom instruction on how the user wants
+                    // to use the laser.
+                    const auto &params =
+                        gate->get_annotation<annotations::ExciteMicrowaveParameters>();
 
-                    outfile << detail::excite_mw(to_string(params.envelope), to_string(params.duration), to_string(params.frequency), to_string(params.phase), gate->operands[0]);
+                    outfile << detail::excite_mw(to_string(params.envelope),
+                                                 to_string(params.duration),
+                                                 to_string(params.frequency),
+                                                 to_string(params.phase),
+                                                 gate->operands[0]) << "\n";
                 } else if (gate->name == "memswap") {
-                    const auto &params = gate->get_annotation<annotations::MemSwapParameters>();
+                    // Implements the swap from electron qubit to nuclear spin qubit.
+                    const auto &params =
+                        gate->get_annotation<annotations::MemSwapParameters>();
 
                     Str nuq = "nuq" + to_string(params.nuclear);
                     Str qubit = "q" + to_string(gate->operands[0]);
-                    outfile << detail::qgate2("pmy90",qubit, nuq) << "\n";
+                    outfile << detail::qgate2("pmy90", qubit, nuq) << "\n";
                     outfile << detail::qgate("x90", gate->operands[0]) << "\n";
                     outfile << detail::qgate2("pmx90", qubit, nuq) << "\n";
-                    outfile << detail::qgate("my90", gate->operands[0]);
+                    outfile << detail::qgate("my90", gate->operands[0]) << "\n";
                 } else if (gate->name == "qentangle") {
-                    const auto &params = gate->get_annotation<annotations::QEntangleParameters>();
+                    // Implements electron-nuclear spin entanglement.
+                    const auto &params =
+                        gate->get_annotation<annotations::QEntangleParameters>();
 
                     Str nuq = "nuq" + to_string(params.nuclear);
                     Str qubit = "q" + to_string(gate->operands[0]);
                     outfile << detail::qgate("mx90", gate->operands[0]) << "\n";
                     outfile << detail::qgate2("pmx90", qubit, nuq) << "\n";
-                    outfile << detail::qgate("x90", gate->operands[0]);
+                    outfile << detail::qgate("x90", gate->operands[0]) << "\n";
                 } else if (gate->name == "nventangle") {
                     // Implements electron-electron entanglement following the
                     // Barrett and Kok scheme.
                     Str count = to_string(labelcount);
-                    Str count_1 = to_string(labelcount+1);
+                    Str count_1 = to_string(labelcount + 1);
 
-                    outfile << detail::loadimm("0","R", "2") << "\n";
+                    outfile << detail::loadimm("0", "R", "2") << "\n";
                     outfile << detail::label(count) << "\n";
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
                     outfile << detail::switchOn(gate->operands[1]) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[0]) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0", gate->operands[1]) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0",
+                                                 gate->operands[0]) << "\n";
+                    outfile << detail::excite_mw("1", "100", "200", "0",
+                                                 gate->operands[1]) << "\n";
                     outfile << "wait 100" << "\n";
                     outfile << detail::mov("R", "0", "photonReg", "01") << "\n";
                     outfile << detail::switchOff(gate->operands[0]) << "\n";
                     outfile << detail::switchOff(gate->operands[1]) << "\n";
                     outfile << detail::addimm("1", "R", "2") << "\n";
                     outfile << "wait 50" << "\n";
-                    outfile << detail::branch("R", "1", ">", "", "1", "LAB", count_1) << "\n";
+                    outfile
+                        << detail::branch("R", "1", ">", "", "1", "LAB",
+                                          count_1)
+                        << "\n";
                     outfile << detail::qgate("x", gate->operands[0]) << "\n";
                     outfile << detail::qgate("x", gate->operands[1]) << "\n";
-                    outfile << detail::mov("R","0","R","1") << "\n";
+                    outfile << detail::mov("R", "0", "R", "1") << "\n";
                     outfile << detail::jump(count) << "\n";
                     outfile << detail::label(count_1) << "\n";
 
                     labelcount++;
                     labelcount++;
                 } else {
-                        outfile << "ERROR: Gate " + gate->name + " is not supported by the Diamond Architecture." << "\n";
-                    }
-
+                    outfile << "ERROR: Gate " + gate->name +
+                               " is not supported by the Diamond Architecture."
+                            << "\n";
+                }
             }
             outfile << "\n";
         }
