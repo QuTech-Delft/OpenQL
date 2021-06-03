@@ -674,10 +674,6 @@ void Info::post_process_platform(
     // Create Instrument resources from gathered information
     platform->resources["resources"]["meas"] = buildInstrumentResource("meas", measQubits/*, Settings::isReadout*/);
     platform->resources["resources"]["flux"] = buildInstrumentResource("flux", fluxQubits/*, Settings::isFlux)*/);
-#if 0   // unused keys
-    platform->resources["architecture"] = "";
-    platform->resources["dnu"] = "";
-#endif
 
     // NB: we get the Qubit resource for free, independent of JSON contents (see ql/rmgr/factory.cc and QubitResource::on_initialize)
 

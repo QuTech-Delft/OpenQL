@@ -61,7 +61,6 @@ public: // functions
     Bool isReadout(const Str &iname);
     Bool isPragma(const Str &iname);
     RawPtr<const Json> getPragma(const Str &iname);
-    UInt getReadoutWait();
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
     InstrumentInfo getInstrumentInfo(UInt instrIdx) const;
     InstrumentControl getInstrumentControl(UInt instrIdx) const;

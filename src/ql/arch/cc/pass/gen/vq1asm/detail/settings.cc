@@ -112,12 +112,6 @@ RawPtr<const Json> Settings::getPragma(const Str &iname) {
 }
 
 
-// return wait for instrument latency + SM data distribution
-UInt Settings::getReadoutWait() {
-    return 20+3;    // FIXME: make configurable
-}
-
-
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
 Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, const Str &iname) const {
     SignalDef ret;
