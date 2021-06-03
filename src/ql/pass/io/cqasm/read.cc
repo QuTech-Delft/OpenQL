@@ -191,7 +191,8 @@ ReadCQasmPass::ReadCQasmPass(
     );
     options.add_str(
         "gateset_file",
-        "JSON gateset configuration file path. Mandatory."
+        "Optional JSON gateset configuration file path, if the default behavior "
+        "is insufficient."
     );
 }
 
