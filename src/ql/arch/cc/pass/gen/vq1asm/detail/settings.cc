@@ -74,14 +74,14 @@ Str Settings::getReadoutMode(const Str &iname) {
     return json_get<Str>(instruction["cc"], "readout_mode", instructionPath);
 }
 
-// determine whether this is a readout instruction
+// determine whether this is a 'readout instruction'
 Bool Settings::isReadout(const Json &instruction, const Str &iname) {
     Str instructionPath = "instructions/" + iname;
     QL_JSON_ASSERT(instruction, "cc", instructionPath);
     return QL_JSON_EXISTS(instruction["cc"], "readout_mode");
 }
 
-// determine whether this is a readout instruction
+// determine whether this is a 'readout instruction'
 Bool Settings::isReadout(const Str &iname) {
 #if 1    // new semantics
     const Json &instruction = platform->find_instruction(iname);
@@ -100,7 +100,7 @@ Bool Settings::isReadout(const Str &iname) {
 }
 
 
-// determine whether this is a flux instruction
+// determine whether this is a 'flux instruction'
 Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
     Str instructionPath = "instructions/" + iname;
     QL_JSON_ASSERT(instruction, "cc", instructionPath);

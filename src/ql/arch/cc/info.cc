@@ -15,6 +15,12 @@ namespace ql {
 namespace arch {
 namespace cc {
 
+// local constants
+const utils::Str predicateKeyInstructionType = "cc-desugar-instruction-type";
+const utils::Str predicateValueMeas = "cc-desugar-meas";
+const utils::Str predicateValueFlux = "cc-desugar-flux";
+
+
 /**
  * Writes the documentation for this architecture to the given output
  * stream.
@@ -575,17 +581,17 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
 
     for (auto &it : instructions.items()) {
         if (pass::gen::vq1asm::detail::Settings::isReadout(it.value(), it.key())) {
-            QL_IOUT("desugaring readout instruction: key=" << it.key() << ", value=" << it.value());
-            instructions[it.key()]["type"] = "measure";     // FIXME
+            QL_IOUT("desugaring readout instruction: '" << it.key() << "'");
+            instructions[it.key()][predicateKeyInstructionType] = predicateValueMeas;
         } else if (pass::gen::vq1asm::detail::Settings::isFlux(it.value(), signals, it.key())) {
-            QL_IOUT("desugaring flux instruction: key=" << it.key() << ", value=" << it.value());
-            instructions[it.key()]["type"] = "flux";        // FIXME
+            QL_IOUT("desugaring flux instruction: '" << it.key() << "'");
+            instructions[it.key()][predicateKeyInstructionType] = predicateValueFlux;
         }
     }
 }
 
 
-
+// local type shorthands
 using Qubits = utils::Vec<utils::UInt>;         // array of qubits
 using InstrVsQubits = utils::Vec<Qubits>;       // instrument versus qubits
 
@@ -594,18 +600,18 @@ using InstrVsQubits = utils::Vec<Qubits>;       // instrument versus qubits
  */
 static utils::Json buildInstrumentResource(
     const utils::Str &name,
-    const InstrVsQubits &instrVsQubits
-//    tUsesResource _usesResourceFunc
+    const InstrVsQubits &instrVsQubits,
+    const utils::Str &predicateValue
 ) {
     utils::Json ext_resource;      // extended resource definition, see https://openql.readthedocs.io/en/latest/gen/reference_resources.html
 
     utils::Json instrConfig = R"(
     {
-        "predicate": { "type": "mw" },
-        "function": [ "cc_light_instr" ],
         "instruments": []
     }
     )"_json;
+
+    instrConfig["predicate"] = {{ predicateKeyInstructionType, predicateValue }};
 
     for(utils::UInt i=0; i<instrVsQubits.size(); i++) {
         auto &qubits = instrVsQubits[i];
@@ -674,12 +680,12 @@ void Info::post_process_platform(
     InstrVsQubits fluxQubits{Qubits{}};     // one empty vector
     for (utils::UInt i=0; i<settings.getInstrumentsSize(); i++) {
         const utils::Json &instrument = settings.getInstrumentAtIdx(i);
-        utils::Str signal_type = utils::json_get<utils::Str>(instrument, "signal_type");
+        utils::Str signal_type = utils::json_get<utils::Str>(instrument, "signal_type");    // FIXME: nodePath
         // FIXME: this adds semantics to "signal_type", whereas the names are otherwise fully up to the user
-        if ("measure" == signal_type) {
+        if ("measure" == signal_type) { // FIXME: define constant use throughout
             Qubits qubits = ccInstrument2qubits(instrument);
             measQubits.push_back(qubits);
-        } else if ("flux" == signal_type) {
+        } else if ("flux" == signal_type) { // FIXME: define constant use throughout
             /*  we map all fluxing on a single instrument resource: the actual resource we'd like to manage is a *signal* that connects
                 to a flux line of a qubit. On a single instrument (e.g. ZI HDAWG) these signals cannot be triggered
                 during playback of other signals.
@@ -698,8 +704,8 @@ void Info::post_process_platform(
     }
 
     // Create Instrument resources from gathered information
-    platform->resources["resources"]["meas"] = buildInstrumentResource("meas", measQubits/*, Settings::isReadout*/);
-    platform->resources["resources"]["flux"] = buildInstrumentResource("flux", fluxQubits/*, Settings::isFlux)*/);
+    platform->resources["resources"]["meas"] = buildInstrumentResource("meas", measQubits, predicateValueMeas);
+    platform->resources["resources"]["flux"] = buildInstrumentResource("flux", fluxQubits, predicateValueFlux);
     QL_IOUT("CC: created resources:\n" << std::setw(4) << platform->resources);
 
     // NB: we get the Qubit resource for free, independent of JSON contents (see ql/rmgr/factory.cc and QubitResource::on_initialize)
