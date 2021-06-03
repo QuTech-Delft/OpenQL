@@ -59,6 +59,7 @@ public: // functions
     void loadBackendSettings(const plat::PlatformRef &platform);
     Str getReadoutMode(const Str &iname);
     Bool isReadout(const Str &iname);
+    Bool isFlux(const Str &iname);
     Bool isPragma(const Str &iname);
     RawPtr<const Json> getPragma(const Str &iname);
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;

@@ -95,6 +95,28 @@ Bool Settings::isReadout(const Str &iname) {
 }
 
 
+Bool Settings::isFlux(const Str &iname) {
+#if 1   //new semantics
+    const Json &instruction = platform->find_instruction(iname);
+    SignalDef sd = findSignalDefinition(instruction, iname);
+    if (!QL_JSON_EXISTS(sd.signal[0], "type")) {   // FIXME: looks at first signal only
+        QL_DOUT("no type detected for '" << iname << "', signal=" << sd.signal);
+        return false;
+    } else {
+        QL_DOUT("type detected for '" << iname << "': " << sd.signal[0]["type"]);
+        return sd.signal[0]["type"] == "flux";
+    }
+#else
+    const Json &instruction = platform->find_instruction(iname);
+    if (!QL_JSON_EXISTS(instruction, "type")) {
+        return false;
+    } else {
+        return instruction["type"] == "flux";
+    }
+#endif
+}
+
+
 Bool Settings::isPragma(const Str &iname) {
     return getPragma(iname).has_value();
 }
