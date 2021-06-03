@@ -560,35 +560,18 @@ utils::Str Info::get_default_platform(const utils::Str &variant) const {
 void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) const {
 }
 
-/*
- * FIXME
- */
-static utils::Map<utils::UInt,utils::UInt> qubit2instrument(const utils::Json &instrument, utils::UInt unit) {
-    utils::Map<utils::UInt,utils::UInt> ret;
-
-    auto qubits = utils::json_get<const utils::Json &>(instrument, "qubits");
-    utils::UInt qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
-    for (utils::UInt group=0; group<qubitGroupCnt; group++) {
-        const utils::Json qubitsOfGroup = qubits[group];
-        if (qubitsOfGroup.size() == 1) {    // FIXME: specific for measurements
-            utils::Int qubit = qubitsOfGroup[0].get<utils::Int>();
-            QL_IOUT("instrument " << unit << "/" << instrument["name"] << ": adding qubit " << qubit);
-            ret.set(qubit) = unit;
-        }
-    }
-    return ret;
-}
+using Qubits = utils::Vec<utils::UInt>;         // array of qubits
+using InstrVsQubits = utils::Vec<Qubits>;       // instrument versus qubits
 
 /**
  *
  */
-static void addInstrument(
+static utils::Json buildInstrumentResource(
     const utils::Str &name,
-    utils::UInt num_instr,
-    const utils::Map<utils::UInt,utils::UInt> &_qubit2meas
+    const InstrVsQubits &instrVsQubits
 //    tUsesResource _usesResourceFunc
 ) {
-    utils::Json ext_resources;      // extended resource definitions, see https://openql.readthedocs.io/en/latest/gen/reference_resources.html
+    utils::Json ext_resource;      // extended resource definition, see https://openql.readthedocs.io/en/latest/gen/reference_resources.html
 
     utils::Json instrConfig = R"(
     {
@@ -598,24 +581,43 @@ static void addInstrument(
     }
     )"_json;
 
-    std::vector<utils::UInt> qubits = {1};
-    instrConfig["instruments"].push_back(
-        {
-            {"name", "QWG" },
-            {"qubit", qubits }
+    for(utils::UInt i=0; i<instrVsQubits.size(); i++) {
+        auto &qubits = instrVsQubits[i];
+        instrConfig["instruments"].push_back(
+            {
+                {"name", QL_SS2S(name<<i) },
+                {"qubit", qubits }
+            }
+        );
+    }
+
+    ext_resource["type"] = "Instrument";
+    ext_resource["config"] = instrConfig;
+    return ext_resource;
+}
+
+/*
+ * FIXME
+ */
+static Qubits ccInstrument2qubits(const utils::Json &instrument) {
+    Qubits ret;
+
+    auto qubits = utils::json_get<const utils::Json &>(instrument, "qubits");
+    utils::UInt qubitGroupCnt = qubits.size();  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
+    for (utils::UInt group=0; group<qubitGroupCnt; group++) {
+        const utils::Json &qubitsOfGroup = qubits[group];
+#if 0   // FIXME: old
+        if (qubitsOfGroup.size() == 1) {    // FIXME: specific for measurements
+            utils::Int qubit = qubitsOfGroup[0].get<utils::Int>();
+            QL_IOUT("instrument " << unit << "/" << instrument["name"] << ": adding qubit " << qubit);
+            ret.set(qubit) = unit;
         }
-    );
-
-//    ext_resources["name"] = "someName";
-    ext_resources["name"]["type"] = "Instrument";
-    ext_resources["name"]["config"] = instrConfig;
-
-//    platform->resources["resources"] = ext_resources;   // FIXME: check emptyness beforehand
-#if 0
-    resources["architecture"] = "";
-    resources["dnu"] = "";
 #endif
-
+        for (int i=0; i<qubitsOfGroup.size(); i++) {
+            ret.push_back(qubitsOfGroup[0].get<utils::UInt>());
+        }
+    }
+    return ret;
 }
 
 /**
@@ -637,34 +639,22 @@ void Info::post_process_platform(
 
     // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
     QL_IOUT("desugaring CC instrument");
-    // NB: we get the Qubit resource for free independent of JSON contents, see ql/rmgr/factory.cc and QubitResource::on_initialize
-
-#if 1   // FIXME: WIP
     // load CC settings
     pass::gen::vq1asm::detail::Settings settings;
     settings.loadBackendSettings(platform);
 
-
-    // parse instrument definitions for resource information
-    utils::Map<utils::UInt,utils::UInt> qubit2meas;
-    utils::UInt meas_unit = 0;
-    utils::Map<utils::UInt,utils::UInt> qubit2flux;
+    // Gather qubit information from CC instrument definitions.
+    InstrVsQubits measQubits;
+    InstrVsQubits fluxQubits{Qubits{}};     // one empty vector
     for (utils::UInt i=0; i<settings.getInstrumentsSize(); i++) {
         const utils::Json &instrument = settings.getInstrumentAtIdx(i);
         utils::Str signal_type = utils::json_get<utils::Str>(instrument, "signal_type");
         // FIXME: this adds semantics to "signal_type", whereas the names are otherwise fully up to the user
         if ("measure" == signal_type) {
-            utils::Map<utils::UInt,utils::UInt> map = qubit2instrument(instrument, meas_unit);
-#if 0   // FIXME: breaks CI, in utils/map.h. Works on CLion/Mac
-            qubit2meas.insert(map.begin(), map.end());
-#else
-            for (auto &el : map) {
-                qubit2meas.insert(el);
-            }
-#endif
-            meas_unit++;
+            Qubits qubits = ccInstrument2qubits(instrument);
+            measQubits.push_back(qubits);
         } else if ("flux" == signal_type) {
-            /*  we map all fluxing on a single 'unit': the actual resource we'd like to manage is a *signal* that connects
+            /*  we map all fluxing on a single instrument resource: the actual resource we'd like to manage is a *signal* that connects
                 to a flux line of a qubit. On a single instrument (e.g. ZI HDAWG) these signals cannot be triggered
                 during playback of other signals.
                 Note however, that a single "flux" gate may trigger signals on different instruments. During scheduling,
@@ -672,28 +662,26 @@ void Info::post_process_platform(
                 instruments independent where possible.
                 Also note that all of this breaks down if/when we want to support stuff like "flux assisted measurement",
                 where the flux line is manipulated during a measurement, and we can no longer tie types like "flux" and
-                "measurement" to a gate, but must really work with th signals.
+                "measurement" to a gate, but must really work with the signals.
             */
-            utils::Map<utils::UInt,utils::UInt> map = qubit2instrument(instrument, 0);
-#if 0   // FIXME: breaks CI, in utils/map.h. Works on CLion/Mac
-            qubit2flux.insert(map.begin(), map.end());
-#else
-            for (auto &el : map) {
-                qubit2flux.insert(el);
+            Qubits qubits = ccInstrument2qubits(instrument);
+            for(auto q : qubits) {
+                fluxQubits[0].push_back(q);
             }
-#endif
         }
     }
 
-    // add resources based on instrument definitions
-    utils::UInt num_meas_unit = meas_unit;
-    addInstrument("meas", num_meas_unit, qubit2meas/*, Settings::isReadout*/);
-    addInstrument("flux", 1, qubit2flux/*, Settings::isFlux)*/);
+    // Create Instrument resources from gathered information
+    platform->resources["resources"]["meas"] = buildInstrumentResource("meas", measQubits/*, Settings::isReadout*/);
+    platform->resources["resources"]["flux"] = buildInstrumentResource("flux", fluxQubits/*, Settings::isFlux)*/);
+#if 0   // unused keys
+    platform->resources["architecture"] = "";
+    platform->resources["dnu"] = "";
 #endif
 
-    // Create instruments from CC instrument definitions.
+    // NB: we get the Qubit resource for free, independent of JSON contents (see ql/rmgr/factory.cc and QubitResource::on_initialize)
 
-    QL_DOUT("CC: created resources:\n" << std::setw(4) << platform->resources);
+    QL_IOUT("CC: created resources:\n" << std::setw(4) << platform->resources);
 }
 
 /**
