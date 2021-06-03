@@ -558,7 +558,33 @@ utils::Str Info::get_default_platform(const utils::Str &variant) const {
  * of mistakes made).
  */
 void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) const {
+
+    QL_IOUT("desugaring CC instructions");
+
+    // get some data sections, since we don't have Platform yet at this stage
+    QL_JSON_ASSERT(data, "instructions", "/");
+    utils::Json &instructions = data["instructions"];
+
+    // FIXME: similar to Settings::loadBackendSettings()
+    QL_JSON_ASSERT(data, "hardware_settings", "/");
+    const utils::Json &hardware_settings = data["hardware_settings"];
+    QL_JSON_ASSERT(hardware_settings, "eqasm_backend_cc", "hardware_settings");
+    const utils::Json &jsonBackendSettings = hardware_settings["eqasm_backend_cc"];
+    QL_JSON_ASSERT(jsonBackendSettings, "signals", "eqasm_backend_cc");
+    utils::RawPtr<const utils::Json> signals = &jsonBackendSettings["signals"];
+
+    for (auto &it : instructions.items()) {
+        if (pass::gen::vq1asm::detail::Settings::isReadout(it.value(), it.key())) {
+            QL_IOUT("desugaring readout instruction: key=" << it.key() << ", value=" << it.value());
+            instructions[it.key()]["type"] = "measure";     // FIXME
+        } else if (pass::gen::vq1asm::detail::Settings::isFlux(it.value(), signals, it.key())) {
+            QL_IOUT("desugaring flux instruction: key=" << it.key() << ", value=" << it.value());
+            instructions[it.key()]["type"] = "flux";        // FIXME
+        }
+    }
 }
+
+
 
 using Qubits = utils::Vec<utils::UInt>;         // array of qubits
 using InstrVsQubits = utils::Vec<Qubits>;       // instrument versus qubits
@@ -638,7 +664,7 @@ void Info::post_process_platform(
     QL_IOUT("CC Info::post_process_platform, variant='" << variant << "'");
 
     // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
-    QL_IOUT("desugaring CC instrument");
+    QL_IOUT("desugaring CC instrument resource");
     // load CC settings
     pass::gen::vq1asm::detail::Settings settings;
     settings.loadBackendSettings(platform);
@@ -674,10 +700,9 @@ void Info::post_process_platform(
     // Create Instrument resources from gathered information
     platform->resources["resources"]["meas"] = buildInstrumentResource("meas", measQubits/*, Settings::isReadout*/);
     platform->resources["resources"]["flux"] = buildInstrumentResource("flux", fluxQubits/*, Settings::isFlux)*/);
+    QL_IOUT("CC: created resources:\n" << std::setw(4) << platform->resources);
 
     // NB: we get the Qubit resource for free, independent of JSON contents (see ql/rmgr/factory.cc and QubitResource::on_initialize)
-
-    QL_IOUT("CC: created resources:\n" << std::setw(4) << platform->resources);
 }
 
 /**
