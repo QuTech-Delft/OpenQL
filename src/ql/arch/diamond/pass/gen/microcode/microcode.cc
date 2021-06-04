@@ -132,6 +132,8 @@ utils::Int GenerateMicrocodePass::run(
         for (const ir::GateRef &gate : kernel->gates) {
             const auto &data = program->platform->find_instruction(gate->name);
 
+            outfile << "# " << gate->qasm() << "\n";
+
             // Determine gate type.
             utils::Str type = "unknown";
             auto iterator = data.find("diamond_type");
@@ -385,12 +387,6 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::branch("R", qubit_number, "<", "R",
                                               threshold, "ResultReg",
                                               qubit_number) << "\n";
-                } else if (gate->name == "measure_all") {
-                    // For every qubit, measure
-                    for (UInt q = 0; q < kernel->qubit_count; q++) {
-
-                        kernel->gate("initialize", q);
-                    }
                 } else if (gate->name == "initialize") {
                     // Initializes a qubit to |0>.
                     Str qubit_number = to_string(gate->operands[0]);
