@@ -34,12 +34,6 @@ Factory::Factory() {
     register_resource<resource::instrument::Resource>("arch.cc_light.detuned_qubits");
     register_resource<resource::inter_core_channel::Resource>("arch.cc_light.channels");
 
-    // Register CC resources.
-#if 0   // FIXME
-    resource_types.set("arch.cc.qubits") = resource_types.at("Qubit");
-    register_resource<resource::instrument::Resource>("arch.cc.auto");
-#endif
-
 }
 
 /**
