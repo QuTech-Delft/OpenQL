@@ -720,7 +720,11 @@ void Info::post_process_platform(
  */
 void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
 
-    // Mimic original CC backend.
+    // Remove passes we don't need/want.
+    manager.remove_pass("prescheduler");        // enabled by default, but pointless since we add our own scheduling
+    manager.remove_pass("scheduledqasmwriter"); // confusing, since it doesn't use our scheduling
+
+    // Add our passes.
     manager.append_pass(
         "sch.Schedule",
         "scheduler",
@@ -730,6 +734,14 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
 #else
             {"resource_constraints", "no"}
 #endif
+        }
+    );
+    manager.append_pass(
+        "io.cqasm.Report",
+        "scheduledqasmwriter",
+        {
+            {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"},
+            {"output_suffix", "_scheduled.qasm"}
         }
     );
     manager.append_pass(
