@@ -237,6 +237,10 @@
     "rabi_check": {
       "duration": 300,
       "diamond_type": "initial_checks"
+    },
+
+    "measure_all": {
+      "duration": 300
     }
   }
 }

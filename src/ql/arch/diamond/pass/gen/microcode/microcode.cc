@@ -71,6 +71,8 @@ utils::Int GenerateMicrocodePass::run(
             kernel->breg_count
         );
 
+        // Only for the first kernel
+
         // For every qubit, insert a magnetic bias check
         for (UInt q = 0; q < kernel->qubit_count; q++) {
             temp_kernel.gate("sweep_bias", q);
@@ -98,6 +100,7 @@ utils::Int GenerateMicrocodePass::run(
 
             temp_kernel.gate("initialize", q);
         }
+
 
         // Add the gates from the original kernel. Every 10 gates, add a CRC check
         // for all qubits.
@@ -136,6 +139,15 @@ utils::Int GenerateMicrocodePass::run(
                 type = iterator->get<utils::Str>();
             }
 
+            // Check for condition
+            Str end_label;
+            if (gate->condition == ir::ConditionType::UNARY) {
+                end_label = to_string(labelcount++);
+                outfile << detail::branch("ResultReg", to_string(gate->cond_operands[0]), ">", "", "0", "LAB", end_label) << "\n";
+            } else if (gate->condition != ir::ConditionType::ALWAYS) {
+                throw utils::Exception("gate with " + to_string(gate->condition) + " is not supported");
+            }
+
             // Determine the microcode output for the given gate-type
             // If the gate-type is known, check the gate name.
             // If the gate-type is not known, check the gate name
@@ -143,11 +155,11 @@ utils::Int GenerateMicrocodePass::run(
             // Last option likely will not occur as OpenQL will throw an error
             // when running the algorithm.
             if (type == "qgate") {
-                outfile << detail::qgate(gate->name, gate->operands[0]);
+                outfile << detail::qgate(gate->name, gate->operands[0]) << "\n";
             } else if (type == "qgate2") {
                 Str op_1 = "q" + to_string(gate->operands[0]);
                 Str op_2 = "q" + to_string(gate->operands[1]);
-                outfile << detail::qgate2(gate->name, op_1, op_2);
+                outfile << detail::qgate2(gate->name, op_1, op_2) << "\n";
             } else if (type == "rotation") {
                 UInt a = 1000 / 3.14159265359;
                 Str duration = to_string(a * gate->angle);
@@ -535,6 +547,11 @@ utils::Int GenerateMicrocodePass::run(
                             << "\n";
                 }
             }
+
+            if (!end_label.empty()) {
+                outfile << detail::label(end_label) << "\n";
+            }
+
             outfile << "\n";
         }
     }
