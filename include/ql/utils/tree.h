@@ -5,7 +5,9 @@
 
 #pragma once
 
-#include "tree-base.hpp"
+// Include the snippets from tree-gen.
+#include "ql/utils/tree-config.inc"
+#include "tree-all.hpp.inc"
 
 namespace ql {
 namespace utils {
