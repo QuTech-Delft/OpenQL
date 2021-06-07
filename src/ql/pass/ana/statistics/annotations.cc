@@ -13,7 +13,7 @@ namespace statistics {
  * Attaches a statistic to the given node.
  */
 static void push_node(
-    tree::annotatable::Annotatable &node,
+    utils::tree::annotatable::Annotatable &node,
     const utils::Str &line
 ) {
     if (!node.has_annotation<AdditionalStats>()) {
@@ -39,7 +39,7 @@ void AdditionalStats::push(const ir::ProgramRef &program, const utils::Str &line
 /**
  * Pops all statistics annotations from the given node.
  */
-static utils::List<utils::Str> pop_node(tree::annotatable::Annotatable &node) {
+static utils::List<utils::Str> pop_node(utils::tree::annotatable::Annotatable &node) {
     if (auto s = node.get_annotation_ptr<AdditionalStats>()) {
         auto stats = std::move(s->stats);
         node.erase_annotation<AdditionalStats>();
