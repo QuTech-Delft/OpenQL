@@ -68,7 +68,7 @@ public:
     }
 
     /**
-     * Builds an architecture from an "eqasm_compiler" name. Returns a reference
+     * Builds an architecture from its namespace name. Returns a reference
      * to the architecture variant object if one was found. Otherwise, an empty
      * reference is returned.
      */

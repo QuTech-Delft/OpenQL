@@ -248,7 +248,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/bundle.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/program.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/prim/prim.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/prim.cc"
     "${CMAKE_CURRENT_BINARY_DIR}/src/ql/ir/ir.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/resource_types/base.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/types.cc"

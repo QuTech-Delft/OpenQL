@@ -169,7 +169,7 @@ Manager Manager::from_json(
         Manager manager{platform, architecture, {}, factory};
 
         // Add resources to it using the old JSON syntax.
-        for (auto it = platform->resources.begin(); it != platform->resources.end(); ++it) {
+        for (auto it = json.begin(); it != json.end(); ++it) {
             if (it.value().type() != JsonType::object) {
                 throw utils::Exception("resource configuration must be an object");
             }

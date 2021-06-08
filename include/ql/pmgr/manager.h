@@ -16,9 +16,9 @@
 #include "ql/utils/options.h"
 #include "ql/utils/compat.h"
 #include "ql/ir/compat/compat.h"
+#include "ql/pmgr/declarations.h"
 #include "ql/pmgr/pass_types/base.h"
 #include "ql/pmgr/factory.h"
-#include "ql/pmgr/declarations.h"
 
 namespace ql {
 namespace pmgr {

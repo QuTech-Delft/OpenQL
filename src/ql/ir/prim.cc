@@ -2,7 +2,11 @@
  * Defines basic primitive types used within the IR.
  */
 
-#include "ql/ir/prim/prim.h"
+#include "ql/ir/prim.h"
+
+#include "ql/arch/architecture.h"
+#include "ql/arch/factory.h"
+#include "ql/rmgr/manager.h"
 
 namespace ql {
 namespace ir {
@@ -19,6 +23,19 @@ void serialize(const Str &obj, utils::tree::cbor::MapWriter &map) {
 template <>
 Str deserialize(const utils::tree::cbor::MapReader &map) {
     return map.at("x").as_binary();
+}
+
+template <>
+Json initialize<Json>() { return "{}"_json; }
+
+template <>
+void serialize(const Json &obj, utils::tree::cbor::MapWriter &map) {
+    map.append_binary("x", obj.dump());
+}
+
+template <>
+Json deserialize(const utils::tree::cbor::MapReader &map) {
+    return utils::parse_json(map.at("x").as_binary());
 }
 
 template <>
@@ -86,7 +103,7 @@ template <>
 RMatrix deserialize(const utils::tree::cbor::MapReader &map) {
     size_t num_cols = map.at("c").as_int();
     auto ar = map.at("d").as_array();
-    std::vector<Real> data;
+    utils::Vec<Real> data;
     data.reserve(ar.size());
     for (size_t i = 0; i < ar.size(); i++) {
         data[i] = ar.at(i).as_float();
@@ -109,12 +126,81 @@ template <>
 CMatrix deserialize(const utils::tree::cbor::MapReader &map) {
     size_t num_cols = map.at("c").as_int();
     auto ar = map.at("d").as_array();
-    std::vector<Complex> data;
+    utils::Vec<Complex> data;
     data.reserve(ar.size() / 2);
     for (size_t i = 0; i < ar.size() / 2; i++) {
         data[i] = {ar.at(i*2).as_float(), ar.at(i*2+1).as_float()};
     }
     return {data, num_cols};
+}
+
+template <>
+void serialize(const Topology &obj, utils::tree::cbor::MapWriter &map) {
+    map.append_int("n", obj->get_num_qubits());
+    map.append_binary("j", obj->get_json().dump());
+}
+
+template <>
+Topology deserialize(const utils::tree::cbor::MapReader &map) {
+    com::CTopologyRef top;
+    top.emplace(
+        map.at("n").as_int(),
+        utils::parse_json(map.at("j").as_binary())
+    );
+    Topology wrap;
+    wrap.populate(top);
+    return wrap;
+}
+
+std::ostream &operator<<(std::ostream &os, const Topology &top) {
+    if (top.is_populated()) {
+        top->dump(os);
+    } else {
+        os << "<EMPTY>";
+    }
+    return os;
+}
+
+template <>
+void serialize(const Architecture &obj, utils::tree::cbor::MapWriter &map) {
+    map.append_string("n", obj->family->get_namespace_name());
+    map.append_string("v", obj->variant);
+}
+
+template <>
+Architecture deserialize(const utils::tree::cbor::MapReader &map) {
+    Architecture wrap;
+    wrap.populate(arch::Factory().build_from_namespace(
+        map.at("n").as_string() + "." + map.at("v").as_string())
+    );
+    return wrap;
+}
+
+std::ostream &operator<<(std::ostream &os, const Architecture &arch) {
+    if (arch.is_populated()) {
+        os << arch->get_friendly_name();
+    } else {
+        os << "<EMPTY>";
+    }
+    return os;
+}
+
+template <>
+void serialize(const ResourceManager &obj, utils::tree::cbor::MapWriter &map) {
+}
+
+template <>
+ResourceManager deserialize(const utils::tree::cbor::MapReader &map) {
+    return ResourceManager();
+}
+
+std::ostream &operator<<(std::ostream &os, const ResourceManager &rm) {
+    if (rm.is_populated()) {
+        rm->dump_config(os);
+    } else {
+        os << "<EMPTY>";
+    }
+    return os;
 }
 
 } // namespace prim

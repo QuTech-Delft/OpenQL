@@ -7,8 +7,12 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
+#include "ql/utils/json.h"
 #include "ql/utils/exception.h"
 #include "ql/utils/tree.h"
+#include "ql/com/topology.h"
+#include "ql/arch/declarations.h"
+#include "ql/rmgr/declarations.h"
 
 namespace ql {
 namespace ir {
@@ -37,7 +41,7 @@ template <typename T>
 T deserialize(const utils::tree::cbor::MapReader &map);
 
 /**
- * String primitive used within the trees.
+ * String primitive used within the trees. Defaults to ""
  */
 using Str = utils::Str;
 template <>
@@ -46,6 +50,17 @@ template <>
 void serialize(const Str &obj, utils::tree::cbor::MapWriter &map);
 template <>
 Str deserialize(const utils::tree::cbor::MapReader &map);
+
+/**
+ * JSON primitive used within the trees. Defaults to {}
+ */
+using Json = utils::Json;
+template <>
+Json initialize<Json>();
+template <>
+void serialize(const Json &obj, utils::tree::cbor::MapWriter &map);
+template <>
+Json deserialize(const utils::tree::cbor::MapReader &map);
 
 /**
  * Boolean primitive used within the trees. Defaults to false.
@@ -248,6 +263,92 @@ std::ostream &operator<<(std::ostream &os, const Matrix<T> &mat) {
     os << "]";
     return os;
 }
+
+/**
+ * Wrapper class for primitives.
+ */
+template <class Ref, class Obj>
+class Wrapper {
+private:
+
+    /**
+     * The wrapped topology node.
+     */
+    Ref ref;
+
+public:
+
+    /**
+     * Populates the topology node.
+     */
+    void populate(const Ref &new_ref) {
+        if (ref.has_value()) {
+            throw utils::Exception("attempt to populate non-empty primitive wrapper node");
+        }
+        ref = new_ref;
+    }
+
+    /**
+     * Returns whether the node is populated.
+     */
+    utils::Bool is_populated() const {
+        return ref.has_value();
+    }
+
+    /**
+     * Dereference operator.
+     */
+    const Obj &operator*() const  {
+        if (!ref.has_value()) {
+            throw utils::Exception("attempt to dereference empty primitive wrapper node");
+        }
+        return *ref;
+    }
+
+    /**
+     * Dereference operator.
+     */
+    const Obj *operator->() const {
+        if (!ref.has_value()) {
+            throw utils::Exception("attempt to dereference empty primitive wrapper node");
+        }
+        return &*ref;
+    }
+
+};
+
+/**
+ * Wrapper for a reference to a topology.
+ */
+using Topology = Wrapper<com::CTopologyRef, com::Topology>;
+template <>
+void serialize(const Topology &obj, utils::tree::cbor::MapWriter &map);
+template <>
+Topology deserialize(const utils::tree::cbor::MapReader &map);
+std::ostream &operator<<(std::ostream &os, const Topology &top);
+
+/**
+ * Wrapper for a reference to an architecture.
+ */
+using Architecture = Wrapper<arch::CArchitectureRef, arch::Architecture>;
+template <>
+void serialize(const Architecture &obj, utils::tree::cbor::MapWriter &map);
+template <>
+Architecture deserialize(const utils::tree::cbor::MapReader &map);
+std::ostream &operator<<(std::ostream &os, const Architecture &top);
+
+/**
+ * Wrapper for a reference to a resource manager.
+ *
+ * TODO: serdes is inoperative! If the tree is transferred to Python and back,
+ *  the resource manager must be copied from the original tree.
+ */
+using ResourceManager = Wrapper<rmgr::CRef, rmgr::Manager>;
+template <>
+void serialize(const ResourceManager &obj, utils::tree::cbor::MapWriter &map);
+template <>
+ResourceManager deserialize(const utils::tree::cbor::MapReader &map);
+std::ostream &operator<<(std::ostream &os, const ResourceManager &top);
 
 } // namespace prim
 } // namespace ir

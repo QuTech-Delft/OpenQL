@@ -8,6 +8,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/vec.h"
 #include "ql/ir/compat/compat.h"
+#include "ql/rmgr/declarations.h"
 #include "ql/rmgr/resource_types/base.h"
 #include "ql/rmgr/factory.h"
 

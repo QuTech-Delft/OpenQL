@@ -8,6 +8,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/list.h"
 #include "ql/utils/map.h"
+#include "ql/rmgr/declarations.h"
 #include "ql/rmgr/resource_types/base.h"
 #include "ql/rmgr/factory.h"
 #include "ql/rmgr/state.h"

@@ -10,6 +10,7 @@
 #include "ql/utils/map.h"
 #include "ql/utils/json.h"
 #include "ql/ir/compat/platform.h"
+#include "ql/rmgr/declarations.h"
 #include "ql/rmgr/resource_types/base.h"
 
 namespace ql {

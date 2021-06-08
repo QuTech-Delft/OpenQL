@@ -150,8 +150,9 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
     // Shorthand.
     using JsonType = utils::Json::value_t;
 
-    // Save number of qubits.
+    // Save number of qubits and original JSON.
     this->num_qubits = num_qubits;
+    this->json = topology;
 
     // Handle grid form key.
     auto it = topology.find("form");
@@ -493,6 +494,21 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
         dump();
     }
 
+}
+
+/**
+ * Returns the number of qubits for this topology.
+ */
+utils::UInt Topology::get_num_qubits() const {
+    return num_qubits;
+}
+
+/**
+ * Returns the JSON that was used to construct this topology. This is used
+ * for serialization/deserialization of the IR.
+ */
+const utils::Json &Topology::get_json() const {
+    return json;
 }
 
 /**

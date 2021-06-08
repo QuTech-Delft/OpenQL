@@ -120,6 +120,12 @@ private:
     utils::UInt num_qubits;
 
     /**
+     * The JSON originally used to construct this topology. Used for
+     * serialization/deserialization of the IR tree.
+     */
+    utils::Json json;
+
+    /**
      * The number of quantum cores. If greater than 1, each core is assumed to
      * have the same number of qubits, being num_qubits/num_cores.
      */
@@ -187,6 +193,17 @@ public:
      * object. Refer to dump_docs() for details.
      */
     Topology(utils::UInt num_qubits, const utils::Json &topology);
+
+    /**
+     * Returns the number of qubits for this topology.
+     */
+    utils::UInt get_num_qubits() const;
+
+    /**
+     * Returns the JSON that was used to construct this topology. This is used
+     * for serialization/deserialization of the IR.
+     */
+    const utils::Json &get_json() const;
 
     /**
      * Returns the size of the qubit grid, if coordinates have been specified.
@@ -296,6 +313,16 @@ public:
     void dump(std::ostream &os=std::cout, const utils::Str &line_prefix="") const;
 
 };
+
+/**
+ * Shared pointer reference to a topology structure.
+ */
+using TopologyRef = utils::Ptr<Topology>;
+
+/**
+ * Immutable shared pointer reference to a topology structure.
+ */
+using CTopologyRef = utils::Ptr<const Topology>;
 
 } // namespace com
 } // namespace ql

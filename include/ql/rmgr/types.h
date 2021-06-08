@@ -7,6 +7,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/ir/compat/compat.h"
+#include "ql/rmgr/declarations.h"
 
 namespace ql {
 namespace rmgr {

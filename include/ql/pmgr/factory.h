@@ -10,6 +10,7 @@
 #include "ql/utils/ptr.h"
 #include "ql/utils/map.h"
 #include "ql/ir/compat/compat.h"
+#include "ql/pmgr/declarations.h"
 #include "ql/pmgr/pass_types/base.h"
 
 namespace ql {

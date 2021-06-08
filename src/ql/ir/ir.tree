@@ -13,7 +13,7 @@ tree_namespace utils::tree::base
 support_namespace utils::tree
 
 // Include primitive types.
-include "ql/ir/prim/prim.h"
+include "ql/ir/prim.h"
 
 // Initialization function to use to construct default values for the tree base
 // classes and primitives.
