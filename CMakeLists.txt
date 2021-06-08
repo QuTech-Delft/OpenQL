@@ -205,10 +205,22 @@ function(create_resource fname)
     add_dependencies(ql ${target_name})
 endfunction()
 
+# Add tree-gen. We need to do this *only* to get access to the generate_tree
+# CMake function; everything else is handled implicitly because tree-gen is a
+# transitive dependency of libqasm.
+add_subdirectory(deps/libqasm/src/cqasm/tree-gen deps/tree-gen)
+
 
 #=============================================================================#
 # OpenQL library target                                                       #
 #=============================================================================#
+
+# Build the IR tree using tree-gen.
+generate_tree(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/ir.tree"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/ql/ir/ir.hpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/ql/ir/ir.cc"
+)
 
 # Create the OpenQL library. This will be built either as a shared object/DLL
 # or as a static library based on BUILD_SHARED_LIBS; add_library switches
@@ -236,6 +248,8 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/bundle.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/program.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/prim/prim.cc"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/ql/ir/ir.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/resource_types/base.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/types.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/factory.cc"
