@@ -74,6 +74,17 @@ template <>
 Bool deserialize(const utils::tree::cbor::MapReader &map);
 
 /**
+ * Character primitive used within the trees. Defaults to NUL.
+ */
+using Char = utils::Char;
+template <>
+Char initialize<Char>();
+template <>
+void serialize(const Char &obj, utils::tree::cbor::MapWriter &map);
+template <>
+Char deserialize(const utils::tree::cbor::MapReader &map);
+
+/**
  * Integer primitive used within the trees. Defaults to 0.
  */
 using Int = utils::Int;
@@ -83,6 +94,26 @@ template <>
 void serialize(const Int &obj, utils::tree::cbor::MapWriter &map);
 template <>
 Int deserialize(const utils::tree::cbor::MapReader &map);
+
+/**
+ * Unsigned integer primitive used within the trees. Defaults to 0.
+ */
+using UInt = utils::UInt;
+template <>
+UInt initialize<UInt>();
+template <>
+void serialize(const UInt &obj, utils::tree::cbor::MapWriter &map);
+template <>
+UInt deserialize(const utils::tree::cbor::MapReader &map);
+
+/**
+ * A vector of unsigned integers used within the trees. Defaults to [].
+ */
+using UIntVec = utils::Vec<utils::UInt>;
+template <>
+void serialize(const UIntVec &obj, utils::tree::cbor::MapWriter &map);
+template <>
+UIntVec deserialize(const utils::tree::cbor::MapReader &map);
 
 /**
  * Real number primitive used within the trees. Defaults to 0.0.
@@ -313,6 +344,48 @@ public:
             throw utils::Exception("attempt to dereference empty primitive wrapper node");
         }
         return &*ref;
+    }
+
+    /**
+     * Pointer-based equality operator.
+     */
+    utils::Bool operator==(const Wrapper &rhs) const {
+        return ref == rhs.ref;
+    }
+
+    /**
+     * Pointer-based inequality operator.
+     */
+    utils::Bool operator!=(const Wrapper &rhs) const {
+        return ref != rhs.ref;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator<(const Wrapper &rhs) const {
+        return ref < rhs.ref;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator<=(const Wrapper &rhs) const {
+        return ref <= rhs.ref;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator>(const Wrapper &rhs) const {
+        return ref > rhs.ref;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator>=(const Wrapper &rhs) const {
+        return ref >= rhs.ref;
     }
 
 };

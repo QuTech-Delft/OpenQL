@@ -52,8 +52,20 @@ Bool deserialize(const utils::tree::cbor::MapReader &map) {
 }
 
 template <>
-Int initialize<Int>() { return 0; }
+Char initialize<Char>() { return 0; }
 
+template <>
+void serialize(const Char &obj, utils::tree::cbor::MapWriter &map) {
+    map.append_int("x", obj);
+}
+
+template <>
+Char deserialize(const utils::tree::cbor::MapReader &map) {
+    return (Char)map.at("x").as_int();
+}
+
+template <>
+Int initialize<Int>() { return 0; }
 
 template <>
 void serialize(const Int &obj, utils::tree::cbor::MapWriter &map) {
@@ -63,6 +75,39 @@ void serialize(const Int &obj, utils::tree::cbor::MapWriter &map) {
 template <>
 Int deserialize(const utils::tree::cbor::MapReader &map) {
     return map.at("x").as_int();
+}
+
+template <>
+UInt initialize<UInt>() { return 0; }
+
+template <>
+void serialize(const UInt &obj, utils::tree::cbor::MapWriter &map) {
+    map.append_int("x", (Int)obj);
+}
+
+template <>
+UInt deserialize(const utils::tree::cbor::MapReader &map) {
+    return (UInt)map.at("x").as_int();
+}
+
+template <>
+void serialize(const UIntVec &obj, utils::tree::cbor::MapWriter &map) {
+    auto aw = map.append_array("v");
+    for (const auto &value : obj) {
+        aw.append_int((utils::Int)value);
+    }
+    aw.close();
+}
+
+template <>
+UIntVec deserialize(const utils::tree::cbor::MapReader &map) {
+    auto ar = map.at("v").as_array();
+    utils::Vec<utils::UInt> data;
+    data.reserve(ar.size());
+    for (size_t i = 0; i < ar.size(); i++) {
+        data[i] = (utils::UInt)ar.at(i).as_int();
+    }
+    return data;
 }
 
 template <>

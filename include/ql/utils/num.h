@@ -28,6 +28,11 @@ using Bool = bool;
 using Byte = uint8_t;
 
 /**
+ * Typedef for a character.
+ */
+using Char = char;
+
+/**
  * Shorthand for unsigned integers. This is based on uint64_t.
  */
 using UInt = uint64_t;

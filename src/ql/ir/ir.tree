@@ -28,6 +28,286 @@ serdes_functions prim::serialize prim::deserialize
 namespace ql
 namespace ir
 
-# TODO
-Root {
+# Root node for the IR.
+root {
+
+    # Root node for the description of the target.
+    platform: One<platform>;
+
+    //# Root node for the description of the algorithm.
+    //program: One<program>;
+
+}
+
+# Root node for the description of the target.
+platform {
+
+    # User-given name for the platform.
+    name: prim::Str;
+
+    # Vector of data types, ordered by name so lookup can be done with log(N)
+    # complexity. This represents a list of all data types usable by the
+    # algorithm, such as qubits, integers, etc.
+    data_types: Many<data_type>;
+
+    # Vector of instruction types, ordered by name so lookup can be done with
+    # log(N) complexity. This represents the instruction set as usable by the
+    # algorithm at any time during the compilation process (i.e., it also
+    # includes non-primitive instructions that may need to be decomposed at
+    # some point!).
+    instructions: Many<instruction_type>;
+
+    # Vector of (builtin) function types, ordered by name so lookup can be done
+    # with log(N) complexity. Functions are the active elements of expression
+    # trees. They may at some point be mapped to instructions.
+    functions: Any<function_type>;
+
+    # Vector of all physical objects (a.k.a. registers) available in the
+    # platform, ordered by name so lookup can be done with log(N) complexity.
+    objects: Many<physical_object>;
+
+    # The main qubit register that the generic mapper will map everything to
+    # and that topology applies to. The data type must be a vector of qubits.
+    qubits: Link<physical_object>;
+
+    # Topology/connectivity information for the main qubit register.
+    topology: prim::Topology;
+
+    # Control architecture information structure.
+    architecture: prim::Architecture;
+
+    # Resource manager for scheduling.
+    resources: prim::ResourceManager;
+
+    # Raw platform configuration JSON data for anything not specified in this
+    # record.
+    data: prim::Json;
+
+}
+
+# Representation of a data type usable by the algorithm represented by the IR.
+# Semantical information may be added using annotations.
+data_type {
+
+    # Unique identifier for the data type. Must match `[a-zA-Z_][a-zA-Z0-9_]*`.
+    name: prim::Str;
+
+    # Identifier for the corresponding type in cQASM. This needs not be unique
+    # in OpenQL, so a platform can define different types for different classes
+    # of registers, that would be modelled using a single type in cQASM. Must
+    # match `[a-zA-Z_][a-zA-Z0-9_]*`.
+    cqasm_name: prim::Str;
+
+}
+
+# Representation of an instruction type usable by the algorithm represented by
+# the IR. Semantical information may be added using annotations.
+instruction_type {
+
+    # Identifier for the instruction. This only needs to be unique in
+    # combination with the operand types. Must match `[a-zA-Z_][a-zA-Z0-9_]*`.
+    name: prim::Str;
+
+    # Identifier for the instruction as used in cQASM. Normally this is the same
+    # as name; the override exists because historically different conventions
+    # have been used for cQASM and OpenQL. Must match `[a-zA-Z_][a-zA-Z0-9_]*`.
+    cqasm_name: prim::Str;
+
+    # The types of all the non-template operands that the instance of this
+    # instruction must have.
+    operand_types: Any<operand_type>;
+
+    # Specializations for this instruction. Specializations allow different
+    # semantics (such as different durations) to be attached to instructions,
+    # based on one or more of its operands. Each specialization in this list
+    # must have:
+    #  - the same name and cqasm_name;
+    #  - the first element of operand_types removed;
+    #  - an additional element at the end of template_operands;
+    #  - the type of said element must match the removed operand_type element;
+    #  - generalization must link back to this node.
+    # The remaining fields may be specialized.
+    specializations: Any<instruction_type>;
+
+    # Link to the generalization of this instruction, if any; this must be set
+    # iff template_operands is nonempty. The generalization must have a link to
+    # this node in its specialization list.
+    generalization: OptLink<instruction_type>;
+
+    //# The values of any template operands for this specialization of this
+    //# instruction.
+    //template_operands: Any<literal>;
+
+    # Decomposition rules for this instruction type. Multiple of these may be
+    # defined with different keys. It is up to the decomposition pass to choose
+    # the decomposition used (if any) based on this key or on some heuristic.
+    decompositions: Any<instruction_decomposition>;
+
+    # The duration of this instruction in quantum cycles.
+    duration: prim::UInt;
+
+    # Raw platform configuration JSON data for anything not specified in this
+    # record.
+    data: prim::Json;
+
+}
+
+# A decomposition rule for an instruction.
+instruction_decomposition {
+
+    # Key for this decomposition rule. Must match `[a-zA-Z_][a-zA-Z0-9_]*` and
+    # be unique within the scope of the associated instruction.
+    key: prim::Str;
+
+    # Any temporary variables as needed within the decomposition rule.
+    objects: Any<temporary_object>;
+
+    //# The block of instructions that the decomposition rule expands to.
+    //expansion: One<block>;
+
+}
+
+# Representation of a (builtin) function type usable by the algorithm
+# represented by the IR within expressions. Semantical information may be added
+# using annotations.
+function_type {
+
+    # Identifier for the function. This only needs to be unique in combination
+    # with the operand types. Must match `[a-zA-Z_][a-zA-Z0-9_]*` or be a
+    # recognized operator name (such as `operator+`, so just like C++).
+    name: prim::Str;
+
+    # The types of all the non-template operands that the instance of this
+    # instruction must have.
+    operand_types: Any<operand_type>;
+
+    # The type returned by the function.
+    return_type: Link<data_type>;
+
+    # The decomposition rule used for converting this function to instructions.
+    # If not set, the function either needs to be primitive for the target, or
+    # the decomposition must be done by a target-specific pass. During
+    # decomposition, a temporary object will always be generated for storing
+    # the return value.
+    decomposition: Maybe<function_decomposition>;
+
+    # Raw platform configuration JSON data for anything not specified in this
+    # record.
+    data: prim::Json;
+
+}
+
+# A decomposition rule for a function.
+function_decomposition {
+
+    # The type of instruction that this function decomposes to. The prototype of
+    # this instruction must exactly match the prototype of the function, after
+    # inclusion of the return operand (if dedicated).
+    instruction: Link<instruction_type>;
+
+    # The manner in which the return value of the function is mapped to the
+    # instruction operand list.
+    return_location: One<return_location>;
+
+}
+
+# The manner in which the return value of the function is mapped to the
+# instruction operand list.
+return_location {
+
+    # Indicates that the return value of the associated function is not stored
+    # in an operand, but rather in a special physical register. The
+    # decomposition will have the following form:
+    #  - barrier <object>
+    #  - <insn> [template-operands] <operands>
+    #  - barrier <object>
+    #  - set <retval> = <object>
+    return_in_fixed_object {
+
+        # The physical object/register in which the return value will be stored.
+        object: Link<physical_object>;
+
+    }
+
+    # Indicates that the return value of the associated function will be stored
+    # in a register indicated by a dedicated output operand. The
+    # decomposition will have the following form:
+    #  - <retval> [template-operands] <operands-0..idx-1> <temp> <operands-idx..end>
+    return_in_dedicated_operand {
+
+        # The index of the return operand in the instruction non-template
+        # operand list.
+        index: prim::UInt;
+
+    }
+
+    # Indicates that the return value of the associated function will be stored
+    # in a register indicated by a shared (read-write) operand. The
+    # decomposition will have the following form:
+    #  - set <temp> = <operand-idx>
+    #  - <retval> [template-operands] <operands-0..idx-1> <temp> <operands-idx+1..end>
+    return_in_shared_operand {
+
+        # The index of the return operand in the instruction non-template
+        # operand list.
+        index: prim::UInt;
+
+    }
+
+}
+
+# A data storage location.
+object {
+
+    # Identifier for the object. Must match `[a-zA-Z_][a-zA-Z0-9_]*` or be left
+    # unspecified (empty). If specified, it must be unique. Names must always
+    # be specified for physical objects; only virtual objects may be anonymous.
+    name: prim::Str;
+
+    # The elemental data type of this object.
+    data_type: Link<data_type>;
+
+    # The shape of this object. Empty means scalar, a single element means
+    # vector of the given size, two elements means a matrix, and so on.
+    shape: prim::UIntVec;
+
+    # A virtual object, i.e. an object that still needs to be mapped to a
+    # physical object. These are declared in the program part of the tree.
+    virtual_object {
+
+        # A variable declared by the user.
+        variable_object {}
+
+        # A temporary object, for example needed as part of a decomposition.
+        # These are typically anonymous (i.e. have no specified name).
+        temporary_object {}
+
+    }
+
+    # A physical object, i.e. a storage location or qubit that actually exists
+    # in the target. These are declared in the platform part of the tree.
+    physical_object {}
+
+}
+
+# The type of a function or instruction operand, including access mode for
+# commutative data dependency graph construction.
+operand_type {
+
+    # Access mode for the operand. The actual significance of these characters
+    # is up to the scheduler, but currently they are:
+    #  - `R`: read-only, allowing commutation with other instructions using the
+    #    object with mode `R`.
+    #  - `W`: value is written; prevents any commutation.
+    #  - `X`: (qubit) value behaves like an X rotation, allowing commutation
+    #    with other instructions using the object with mode `X`.
+    #  - `Y`: (qubit) value behaves like an Y rotation, allowing commutation
+    #    with other instructions using the object with mode `Y`.
+    #  - `Z`: (qubit) value behaves like a Z rotation, allowing commutation
+    #    with other instructions using the object with mode `Z`.
+    mode: prim::Char;
+
+    # The data type of the operand.
+    data_type: Link<data_type>;
+
 }

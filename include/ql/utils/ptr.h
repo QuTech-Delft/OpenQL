@@ -244,6 +244,48 @@ public:
         return os;
     }
 
+    /**
+     * Pointer-based equality operator.
+     */
+    utils::Bool operator==(const Ptr &rhs) const {
+        return v == rhs.v;
+    }
+
+    /**
+     * Pointer-based inequality operator.
+     */
+    utils::Bool operator!=(const Ptr &rhs) const {
+        return v != rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator<(const Ptr &rhs) const {
+        return v < rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator<=(const Ptr &rhs) const {
+        return v <= rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator>(const Ptr &rhs) const {
+        return v > rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator>=(const Ptr &rhs) const {
+        return v >= rhs.v;
+    }
+
 };
 
 /**
@@ -523,6 +565,48 @@ public:
         return os;
     }
 
+    /**
+     * Pointer-based equality operator.
+     */
+    utils::Bool operator==(const CloneablePtr &rhs) const {
+        return v == rhs.v;
+    }
+
+    /**
+     * Pointer-based inequality operator.
+     */
+    utils::Bool operator!=(const CloneablePtr &rhs) const {
+        return v != rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator<(const CloneablePtr &rhs) const {
+        return v < rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator<=(const CloneablePtr &rhs) const {
+        return v <= rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator>(const CloneablePtr &rhs) const {
+        return v > rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator>=(const CloneablePtr &rhs) const {
+        return v >= rhs.v;
+    }
+
 };
 
 /**
@@ -715,6 +799,48 @@ public:
             os << "<NULL>";
         }
         return os;
+    }
+
+    /**
+     * Pointer-based equality operator.
+     */
+    utils::Bool operator==(const RawPtr &rhs) const {
+        return v == rhs.v;
+    }
+
+    /**
+     * Pointer-based inequality operator.
+     */
+    utils::Bool operator!=(const RawPtr &rhs) const {
+        return v != rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator<(const RawPtr &rhs) const {
+        return v < rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator<=(const RawPtr &rhs) const {
+        return v <= rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator>(const RawPtr &rhs) const {
+        return v > rhs.v;
+    }
+
+    /**
+     * Pointer-based comparison operator.
+     */
+    utils::Bool operator>=(const RawPtr &rhs) const {
+        return v >= rhs.v;
     }
 
 };
