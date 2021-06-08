@@ -43,7 +43,7 @@ State &State::operator=(const State &src) {
  */
 utils::Bool State::available(
     utils::UInt cycle,
-    const ir::GateRef &gate
+    const ir::compat::GateRef &gate
 ) const {
     if (is_broken) {
         throw utils::Exception("usage of resource state that was left in an undefined state");
@@ -63,7 +63,7 @@ utils::Bool State::available(
  */
 void State::reserve(
     utils::UInt cycle,
-    const ir::GateRef &gate
+    const ir::compat::GateRef &gate
 ) {
     if (is_broken) {
         throw utils::Exception("usage of resource state that was left in an undefined state");

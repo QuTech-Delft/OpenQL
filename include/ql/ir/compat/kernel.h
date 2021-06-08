@@ -8,9 +8,9 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/opt.h"
-#include "ql/plat/platform.h"
-#include "ql/ir/gate.h"
-#include "ql/ir/classical.h"
+#include "ql/ir/compat/platform.h"
+#include "ql/ir/compat/gate.h"
+#include "ql/ir/compat/classical.h"
 
 namespace ql {
 
@@ -22,6 +22,7 @@ class Unitary;
 } // namespace com
 
 namespace ir {
+namespace compat {
 
 /**
  * Generates cQASM for a given circuit.
@@ -62,7 +63,7 @@ public: // FIXME: should be private
      *  same way that kernels are created using the platform and then added to
      *  a program.
      */
-    plat::PlatformRef platform;
+    PlatformRef platform;
 
     /**
      * Number of (virtual) qubits used by this kernel. Must be less than or
@@ -142,7 +143,7 @@ public:
 
     Kernel(
         const utils::Str &name,
-        const plat::PlatformRef &platform,
+        const PlatformRef &platform,
         utils::UInt qubit_count,
         utils::UInt creg_count=0,
         utils::UInt breg_count=0
@@ -400,5 +401,6 @@ using KernelRef = utils::One<Kernel>;
  */
 using KernelRefs = utils::Any<Kernel>;
 
+} // namespace compat
 } // namespace ir
 } // namespace ql

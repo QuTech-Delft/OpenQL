@@ -12,8 +12,8 @@ namespace metrics {
 /**
  * Classical operation counting metric.
  */
-void ClassicalOperationCount::process_gate(const ir::GateRef &gate) {
-    if (gate->type() == ir::GateType::CLASSICAL) {
+void ClassicalOperationCount::process_gate(const ir::compat::GateRef &gate) {
+    if (gate->type() == ir::compat::GateType::CLASSICAL) {
         value++;
     }
 }
@@ -21,10 +21,10 @@ void ClassicalOperationCount::process_gate(const ir::GateRef &gate) {
 /**
  * Quantum gate counting metric.
  */
-void QuantumGateCount::process_gate(const ir::GateRef &gate) {
+void QuantumGateCount::process_gate(const ir::compat::GateRef &gate) {
     switch (gate->type()) {
-        case ir::GateType::CLASSICAL:
-        case ir::GateType::WAIT:
+        case ir::compat::GateType::CLASSICAL:
+        case ir::compat::GateType::WAIT:
             break;
         default:
             value++;
@@ -35,10 +35,10 @@ void QuantumGateCount::process_gate(const ir::GateRef &gate) {
 /**
  * Multi-qubit gate counting metric.
  */
-void MultiQubitGateCount::process_gate(const ir::GateRef &gate) {
+void MultiQubitGateCount::process_gate(const ir::compat::GateRef &gate) {
     switch (gate->type()) {
-        case ir::GateType::CLASSICAL:
-        case ir::GateType::WAIT:
+        case ir::compat::GateType::CLASSICAL:
+        case ir::compat::GateType::WAIT:
             break;
         default:
             if (gate->operands.size() > 1) {
@@ -51,10 +51,10 @@ void MultiQubitGateCount::process_gate(const ir::GateRef &gate) {
 /**
  * Qubit usage counting metric.
  */
-void QubitUsageCount::process_gate(const ir::GateRef &gate) {
+void QubitUsageCount::process_gate(const ir::compat::GateRef &gate) {
     switch (gate->type()) {
-        case ir::GateType::CLASSICAL:
-        case ir::GateType::WAIT:
+        case ir::compat::GateType::CLASSICAL:
+        case ir::compat::GateType::WAIT:
             break;
         default:
             for (auto v : gate->operands) {
@@ -67,11 +67,11 @@ void QubitUsageCount::process_gate(const ir::GateRef &gate) {
 /**
  * Qubit cycle usage counting metric.
  */
-void QubitUsedCycleCount::process_kernel(const ir::KernelRef &kernel) {
+void QubitUsedCycleCount::process_kernel(const ir::compat::KernelRef &kernel) {
     for (auto &gp : kernel->gates) {
         switch (gp->type()) {
-            case ir::GateType::CLASSICAL:
-            case ir::GateType::WAIT:
+            case ir::compat::GateType::CLASSICAL:
+            case ir::compat::GateType::WAIT:
                 break;
             default:
                 for (auto v : gp->operands) {
@@ -88,8 +88,8 @@ void QubitUsedCycleCount::process_kernel(const ir::KernelRef &kernel) {
 /**
  * Kernel duration metric.
  */
-void Latency::process_kernel(const ir::KernelRef &kernel) {
-    if (!kernel->gates.empty() && kernel->gates.back()->cycle != ir::MAX_CYCLE) {
+void Latency::process_kernel(const ir::compat::KernelRef &kernel) {
+    if (!kernel->gates.empty() && kernel->gates.back()->cycle != ir::compat::MAX_CYCLE) {
         // NOTE JvS: this used to just check the last gate in the circuit, but
         // that isn't sufficient. Worst case the first gate could be setting the
         // kernel duration, even if issued in the first cycle, due to it just

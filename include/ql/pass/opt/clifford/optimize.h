@@ -17,8 +17,8 @@ namespace optimize {
  * FIXME JvS: remove; only used by old pass manager
  */
 void clifford_optimize(
-    const ir::ProgramRef &programp,
-    const plat::PlatformRef &platform,
+    const ir::compat::ProgramRef &programp,
+    const ir::compat::PlatformRef &platform,
     const utils::Str &passname
 );
 
@@ -56,8 +56,8 @@ public:
      * Runs the Clifford optimizer.
      */
     utils::Int run(
-        const ir::ProgramRef &program,
-        const ir::KernelRef &kernel,
+        const ir::compat::ProgramRef &program,
+        const ir::compat::KernelRef &kernel,
         const pmgr::pass_types::Context &context
     ) const override;
 

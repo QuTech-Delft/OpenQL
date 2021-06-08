@@ -10,8 +10,7 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/list.h"
 #include "ql/utils/map.h"
-#include "ql/plat/platform.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/com/qubit_mapping.h"
 #include "options.h"
 #include "free_cycle.h"
@@ -209,14 +208,14 @@ private:
     /**
      * Current platform: topology and gate definitions.
      */
-    plat::PlatformRef platform;
+    ir::compat::PlatformRef platform;
 
     /**
      * (copy of) current kernel (class) with free private circuit and methods.
      * Primarily used to create gates in Past; Past is part of Mapper and of
      * each Alter.
      */
-    ir::KernelRef kernel;
+    ir::compat::KernelRef kernel;
 
     /**
      * Parsed mapper pass options structure.
@@ -286,7 +285,7 @@ private:
      * alternatives to the alters list as it goes.
      */
     void gen_shortest_paths(
-        const ir::GateRef &gate,
+        const ir::compat::GateRef &gate,
         utils::UInt src,
         utils::UInt tgt,
         utils::UInt budget,
@@ -317,7 +316,7 @@ private:
      * evaluated for any routing metric.
      */
     void gen_shortest_paths(
-        const ir::GateRef &gate,
+        const ir::compat::GateRef &gate,
         utils::UInt src,
         utils::UInt tgt,
         utils::List<Alter> &alters
@@ -330,7 +329,7 @@ private:
      * Alters.
      */
     void gen_alters_gate(
-        const ir::GateRef &gate,
+        const ir::compat::GateRef &gate,
         utils::List<Alter> &alters,
         Past &past
     );
@@ -343,7 +342,7 @@ private:
      * critical) gate, or take all gates.
      */
     void gen_alters(
-        const utils::List<ir::GateRef> &gates,
+        const utils::List<ir::compat::GateRef> &gates,
         utils::List<Alter> &alters,
         Past &past
     );
@@ -363,7 +362,7 @@ private:
      * Map the gate/operands of a gate that has been routed or doesn't require
      * routing.
      */
-    void map_routed_gate(const ir::GateRef &gate, Past &past);
+    void map_routed_gate(const ir::compat::GateRef &gate, Past &past);
 
     /**
      * Commit the given Alter, generating swaps in the past and taking it out
@@ -404,7 +403,7 @@ private:
     utils::Bool map_mappable_gates(
         Future &future,
         Past &past,
-        utils::List<ir::GateRef> &gates,
+        utils::List<ir::compat::GateRef> &gates,
         utils::Bool also_nn_two_qubit_gates
     );
 
@@ -442,25 +441,25 @@ private:
     /**
      * Performs (initial) placement of the qubits.
      */
-    void place(const ir::KernelRef &k, com::QubitMapping &v2r);
+    void place(const ir::compat::KernelRef &k, com::QubitMapping &v2r);
 
     /**
      * Map the kernel's circuit's gates in the provided context (v2r maps),
      * updating circuit and v2r maps.
      */
-    void route(const ir::KernelRef &k, com::QubitMapping &v2r);
+    void route(const ir::compat::KernelRef &k, com::QubitMapping &v2r);
 
     /**
      * Decomposes all gates in the circuit that have a definition with _prim
      * appended to its name. The mapper does this after routing.
      */
-    void decompose_to_primitives(const ir::KernelRef &k);
+    void decompose_to_primitives(const ir::compat::KernelRef &k);
 
     /**
      * Initialize the data structures in this class that don't change from
      * kernel to kernel.
      */
-    void initialize(const plat::PlatformRef &p, const OptionsRef &opt);
+    void initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt);
 
     /**
      * Runs initial placement, routing, and decomposition to primitives for
@@ -479,7 +478,7 @@ private:
      *     gates as the mapper does, so it (ab)uses those and is thus linked to
      *     the mapper code.
      */
-    void map_kernel(const ir::KernelRef &k);
+    void map_kernel(const ir::compat::KernelRef &k);
 
 public:
 
@@ -490,7 +489,7 @@ public:
      *  individually. That means that the resulting program is garbage if any
      *  quantum state was originally maintained from kernel to kernel!
      */
-    void map(const ir::ProgramRef &prog, const OptionsRef &opt);
+    void map(const ir::compat::ProgramRef &prog, const OptionsRef &opt);
 
 };
 

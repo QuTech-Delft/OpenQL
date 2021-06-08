@@ -20,8 +20,8 @@ namespace read {
  * configuration file.
  */
 Reader::Reader(
-    const plat::PlatformRef &platform,
-    const ir::ProgramRef &program
+    const ir::compat::PlatformRef &platform,
+    const ir::compat::ProgramRef &program
 ) : impl(platform, program) {}
 
 /**
@@ -32,8 +32,8 @@ Reader::Reader(
  * GateConverter::from_json().
  */
 Reader::Reader(
-    const plat::PlatformRef &platform,
-    const ir::ProgramRef &program,
+    const ir::compat::PlatformRef &platform,
+    const ir::compat::ProgramRef &program,
     const utils::Json &gateset
 ) : impl(platform, program) {
     impl->load_gateset(gateset);
@@ -47,8 +47,8 @@ Reader::Reader(
  * GateConverter::from_json().
  */
 Reader::Reader(
-    const plat::PlatformRef &platform,
-    const ir::ProgramRef &program,
+    const ir::compat::PlatformRef &platform,
+    const ir::compat::ProgramRef &program,
     const utils::Str &gateset_fname
 ) : impl(platform, program) {
     impl->load_gateset(utils::load_json(gateset_fname));
@@ -81,7 +81,7 @@ void Reader::file2circuit(const utils::Str &cqasm_fname) {
  * before it became configurable.
  */
 void from_file(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const utils::Str &cqasm_fname,
     const utils::Json &gateset
 ) {
@@ -98,7 +98,7 @@ void from_file(
  * \see file()
  */
 void from_string(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const utils::Str &cqasm_body,
     const utils::Json &gateset
 ) {
@@ -244,7 +244,7 @@ ReadCQasmPass::ReadCQasmPass(
  * Runs the cQASM reader.
  */
 utils::Int ReadCQasmPass::run(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const pmgr::pass_types::Context &context
 ) const {
 

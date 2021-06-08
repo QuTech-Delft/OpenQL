@@ -9,14 +9,15 @@
 #include "ql/utils/opt.h"
 #include "ql/utils/json.h"
 #include "ql/utils/tree.h"
-#include "ql/ir/gate.h"
-#include "ql/plat/topology.h"
+#include "ql/ir/compat/gate.h"
+#include "ql/com/topology.h"
 #include "ql/arch/declarations.h"
 
 namespace ql {
-namespace plat {
+namespace ir {
+namespace compat {
 
-using CustomGateRef = utils::One<ir::gate_types::Custom>;
+using CustomGateRef = utils::One<gate_types::Custom>;
 
 using InstructionMap = utils::Map<utils::Str, CustomGateRef>;
 
@@ -140,7 +141,7 @@ public:
     /**
      * Parsed topology/qubit grid information.
      */
-    utils::Opt<Topology> topology;
+    utils::Opt<com::Topology> topology;
 
 public:
 
@@ -228,5 +229,6 @@ public:
 
 };
 
-} // namespace plat
+} // namespace compat
+} // namespace ir
 } // namespace ql

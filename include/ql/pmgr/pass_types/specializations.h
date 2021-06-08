@@ -8,7 +8,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/pmgr/condition.h"
 #include "ql/pmgr/pass_types/base.h"
 
@@ -50,7 +50,7 @@ protected:
      * exception.
      */
     utils::Int run_internal(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const Context &context
     ) const final;
 
@@ -120,7 +120,7 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const Context &context
     ) const final;
 
@@ -128,7 +128,7 @@ protected:
      * The virtual implementation for this pass.
      */
     virtual utils::Int run(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const Context &context
     ) const = 0;
 
@@ -159,7 +159,7 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const Context &context
     ) const final;
 
@@ -177,8 +177,8 @@ protected:
      * The virtual implementation for this pass.
      */
     virtual utils::Int run(
-        const ir::ProgramRef &program,
-        const ir::KernelRef &kernel,
+        const ir::compat::ProgramRef &program,
+        const ir::compat::KernelRef &kernel,
         const Context &context
     ) const = 0;
 
@@ -208,7 +208,7 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const Context &context
     ) const final;
 
@@ -217,7 +217,7 @@ protected:
      * program must not be modified.
      */
     virtual utils::Int run(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const Context &context
     ) const = 0;
 
@@ -247,7 +247,7 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const Context &context
     ) const final;
 
@@ -266,8 +266,8 @@ protected:
      * kernel must not be modified.
      */
     virtual utils::Int run(
-        const ir::ProgramRef &program,
-        const ir::KernelRef &kernel,
+        const ir::compat::ProgramRef &program,
+        const ir::compat::KernelRef &kernel,
         const Context &context
     ) const = 0;
 

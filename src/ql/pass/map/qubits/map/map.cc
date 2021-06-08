@@ -482,7 +482,7 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
  * Runs the qubit mapper.
  */
 utils::Int MapQubitsPass::run(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const pmgr::pass_types::Context &context
 ) const {
 

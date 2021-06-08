@@ -45,7 +45,7 @@ CleanStatisticsPass::CleanStatisticsPass(
  * Runs the statistics cleaner.
  */
 utils::Int CleanStatisticsPass::run(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const pmgr::pass_types::Context &context
 ) const {
     for (const auto &kernel : program->kernels) {

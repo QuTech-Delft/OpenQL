@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/pmgr/manager.h"
 #include "ql/api/declarations.h"
 #include "ql/api/platform.h"
@@ -31,7 +31,7 @@ private:
     /**
      * The wrapped program.
      */
-    ql::ir::ProgramRef program;
+    ql::ir::compat::ProgramRef program;
 
     /**
      * The pass manager that was associated with the platform when this program

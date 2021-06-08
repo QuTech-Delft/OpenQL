@@ -10,7 +10,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/map.h"
 #include "ql/utils/exception.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 
 namespace ql {
 namespace com {
@@ -32,7 +32,7 @@ public:
      * Updates the metric using the given kernel. Default implementation throws
      * an unimplemented exception.
      */
-    virtual void process_gate(const ir::GateRef &gate) {
+    virtual void process_gate(const ir::compat::GateRef &gate) {
         throw utils::Exception("metric is not implemented for gates");
     }
 
@@ -40,7 +40,7 @@ public:
      * Updates the metric using the given kernel. Default implementation just
      * calls process_gate for each contained gate.
      */
-    virtual void process_kernel(const ir::KernelRef &kernel) {
+    virtual void process_kernel(const ir::compat::KernelRef &kernel) {
         for (const auto &gate : kernel->gates) {
             process_gate(gate);
         }
@@ -50,7 +50,7 @@ public:
      * Updates the metric using the given program. Default implementation just
      * calls process_kernel for each contained kernel.
      */
-    virtual void process_program(const ir::ProgramRef &program) {
+    virtual void process_program(const ir::compat::ProgramRef &program) {
         for (const auto &kernel : program->kernels) {
             process_kernel(kernel);
         }
@@ -72,7 +72,7 @@ public:
  * Computes the given metric for the given gate.
  */
 template <class M>
-typename M::ReturnType compute(const ir::GateRef &gate) {
+typename M::ReturnType compute(const ir::compat::GateRef &gate) {
     M metric;
     metric.process_gate(gate);
     return metric.get_result();
@@ -82,7 +82,7 @@ typename M::ReturnType compute(const ir::GateRef &gate) {
  * Computes the given metric for the given kernel.
  */
 template <class M>
-typename M::ReturnType compute(const ir::KernelRef &kernel) {
+typename M::ReturnType compute(const ir::compat::KernelRef &kernel) {
     M metric;
     metric.process_kernel(kernel);
     return metric.get_result();
@@ -92,7 +92,7 @@ typename M::ReturnType compute(const ir::KernelRef &kernel) {
  * Computes the given metric for the given program.
  */
 template <class M>
-typename M::ReturnType compute(const ir::ProgramRef &program) {
+typename M::ReturnType compute(const ir::compat::ProgramRef &program) {
     M metric;
     metric.process_program(program);
     return metric.get_result();
@@ -151,7 +151,7 @@ public:
  */
 class ClassicalOperationCount : public SimpleValueMetric<utils::UInt, 0> {
 public:
-    void process_gate(const ir::GateRef &gate) override;
+    void process_gate(const ir::compat::GateRef &gate) override;
 };
 
 /**
@@ -159,7 +159,7 @@ public:
  */
 class QuantumGateCount : public SimpleValueMetric<utils::UInt, 0> {
 public:
-    void process_gate(const ir::GateRef &gate) override;
+    void process_gate(const ir::compat::GateRef &gate) override;
 };
 
 /**
@@ -167,7 +167,7 @@ public:
  */
 class MultiQubitGateCount : public SimpleValueMetric<utils::UInt, 0> {
 public:
-    void process_gate(const ir::GateRef &gate) override;
+    void process_gate(const ir::compat::GateRef &gate) override;
 };
 
 /**
@@ -175,7 +175,7 @@ public:
  */
 class QubitUsageCount : public SimpleClassMetric<utils::SparseMap<utils::UInt, utils::UInt, 0>> {
 public:
-    void process_gate(const ir::GateRef &gate) override;
+    void process_gate(const ir::compat::GateRef &gate) override;
 };
 
 /**
@@ -183,7 +183,7 @@ public:
  */
 class QubitUsedCycleCount : public SimpleClassMetric<utils::SparseMap<utils::UInt, utils::UInt, 0>> {
 public:
-    void process_kernel(const ir::KernelRef &kernel) override;
+    void process_kernel(const ir::compat::KernelRef &kernel) override;
 };
 
 /**
@@ -191,7 +191,7 @@ public:
  */
 class Latency : public SimpleValueMetric<utils::UInt, 0> {
 public:
-    void process_kernel(const ir::KernelRef &kernel) override;
+    void process_kernel(const ir::compat::KernelRef &kernel) override;
 };
 
 } // namespace metrics

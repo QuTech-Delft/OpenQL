@@ -2,7 +2,7 @@
  * Platform header for target-specific compilation.
  */
 
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/platform.h"
 
 #include <regex>
 #include "ql/utils/filesystem.h"
@@ -10,7 +10,8 @@
 #include "ql/arch/factory.h"
 
 namespace ql {
-namespace plat {
+namespace ir {
+namespace compat {
 
 /**
  * Dumps the documentation for the platform configuration file structure.
@@ -108,7 +109,7 @@ void Platform::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
     * `"topology"` section *
 
     )");
-    Topology::dump_docs(os, line_prefix + "  ");
+    com::Topology::dump_docs(os, line_prefix + "  ");
     os << line_prefix << std::endl;
     utils::dump_str(os, line_prefix, R"(
     * `"resources"` section *
@@ -230,13 +231,13 @@ static utils::Str sanitize_instruction_name(utils::Str name) {
     return name;
 }
 
-static ir::GateRef load_instruction(
+static GateRef load_instruction(
     const utils::Str &name,
     utils::Json &instr,
     utils::UInt num_qubits,
     utils::UInt cycle_time
 ) {
-    auto g = ir::GateRef::make<ir::gate_types::Custom>(name);
+    auto g = GateRef::make<gate_types::Custom>(name);
     // skip alias fo now
     if (instr.count("alias") > 0) {
         // todo : look for the target aliased gate
@@ -245,7 +246,7 @@ static ir::GateRef load_instruction(
         return g;
     }
     try {
-        g.as<ir::gate_types::Custom>()->load(instr, num_qubits, cycle_time);
+        g.as<gate_types::Custom>()->load(instr, num_qubits, cycle_time);
     } catch (utils::Exception &e) {
         QL_EOUT("error while loading instruction '" << name << "' : " << e.what());
         throw;
@@ -470,7 +471,7 @@ void Platform::load(
                 );
             }
 
-            ir::GateRefs gs;
+            GateRefs gs;
             for (utils::UInt i = 0; i < sub_instructions.size(); i++) {
                 // standardize name of sub instruction
                 utils::Str sub_ins = sub_instructions[i];
@@ -488,14 +489,14 @@ void Platform::load(
                            utils::Str::npos) {              // parameterized composite gate? FIXME: no syntax check
                     // adding new sub ins if not already available, e.g. "x %0"
                     QL_DOUT("adding new sub instr : " << sub_ins);
-                    instruction_map.set(sub_ins).emplace<ir::gate_types::Custom>(sub_ins);
+                    instruction_map.set(sub_ins).emplace<gate_types::Custom>(sub_ins);
                     gs.add(instruction_map.at(sub_ins));
                 } else {
 #if OPT_DECOMPOSE_WAIT_BARRIER   // allow wait/barrier, e.g. "barrier q2,q3,q4"
                     // FIXME: just save whatever we find as a *custom* gate (there is no better alternative)
                     // FIXME: also see additions (hacks) to kernel.h
                     QL_DOUT("adding new sub instr : " << sub_ins);
-                    instruction_map.set(sub_ins).emplace<ir::gate_types::Custom>(sub_ins);
+                    instruction_map.set(sub_ins).emplace<gate_types::Custom>(sub_ins);
                     gs.add(instruction_map.at(sub_ins));
 #else
                     // for specialized custom instructions, raise error if instruction
@@ -504,7 +505,7 @@ void Platform::load(
 #endif
                 }
             }
-            instruction_map.set(comp_ins).emplace<ir::gate_types::Composite>(comp_ins, gs);
+            instruction_map.set(comp_ins).emplace<gate_types::Composite>(comp_ins, gs);
         }
     }
 
@@ -630,5 +631,6 @@ utils::UInt Platform::time_to_cycles(utils::Real time_ns) const {
     return ceil(time_ns / cycle_time);
 }
 
-} // namespace plat
+} // namespace compat
+} // namespace ir
 } // namespace ql

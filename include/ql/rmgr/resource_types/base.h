@@ -6,7 +6,7 @@
 
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/rmgr/types.h"
 
 namespace ql {
@@ -66,7 +66,7 @@ protected:
      */
     virtual utils::Bool on_gate(
         utils::UInt cycle,
-        const ir::GateRef &gate,
+        const ir::compat::GateRef &gate,
         utils::Bool commit
     ) = 0;
 
@@ -151,7 +151,7 @@ public:
      */
     utils::Bool gate(
         utils::UInt cycle,
-        const ir::GateRef &gate,
+        const ir::compat::GateRef &gate,
         utils::Bool commit
     );
 

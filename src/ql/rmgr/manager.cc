@@ -130,7 +130,7 @@ utils::Str Manager::generate_valid_resource_name(const utils::Str &type_name) co
  * Constructs a new, empty resource manager.
  */
 Manager::Manager(
-    const plat::PlatformRef &platform,
+    const ir::compat::PlatformRef &platform,
     const utils::Str &architecture,
     const utils::Set<utils::Str> &dnu,
     const Factory &factory
@@ -146,7 +146,7 @@ Manager::Manager(
  * Refer to dump_docs() for more information.
  */
 Manager Manager::from_json(
-    const plat::PlatformRef &platform,
+    const ir::compat::PlatformRef &platform,
     const utils::Json &json,
     const Factory &factory
 ) {
@@ -268,7 +268,7 @@ Manager Manager::from_json(
  * taken from platform.resources.
  */
 Manager Manager::from_defaults(
-    const plat::PlatformRef &platform,
+    const ir::compat::PlatformRef &platform,
     const Factory &factory
 ) {
     return from_json(platform, platform->resources, factory);

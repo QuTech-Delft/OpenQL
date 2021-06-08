@@ -51,7 +51,7 @@ protected:
      */
     utils::Bool on_gate(
         utils::UInt cycle,
-        const ir::GateRef &gate,
+        const ir::compat::GateRef &gate,
         utils::Bool commit
     ) override;
 

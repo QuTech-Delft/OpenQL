@@ -975,7 +975,7 @@ condition::Ref Base::get_condition() {
  * after_pass is false when run before, and true when run after.
  */
 void Base::handle_debugging(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const Context &context,
     utils::Bool after_pass
 ) {
@@ -1007,7 +1007,7 @@ void Base::handle_debugging(
  * care of logging, profiling, etc.
  */
 utils::Int Base::run_main_pass(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const Context &context
 ) const {
     QL_IOUT("starting pass \"" << context.full_pass_name << "\" of type \"" << type_name << "\"...");
@@ -1021,7 +1021,7 @@ utils::Int Base::run_main_pass(
  * profiling, etc.
  */
 void Base::run_sub_passes(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
         const Context &context
 ) const {
     utils::Str sub_prefix = context.full_pass_name.empty() ? "" : (context.full_pass_name + ".");
@@ -1034,7 +1034,7 @@ void Base::run_sub_passes(
  * Executes this pass or pass group on the given platform and program.
  */
 void Base::compile(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const utils::Str &pass_name_prefix
 ) {
 

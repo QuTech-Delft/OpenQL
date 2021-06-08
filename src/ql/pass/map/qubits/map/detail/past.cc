@@ -17,7 +17,7 @@ namespace detail {
 /**
  * Past initializer.
  */
-void Past::initialize(const ir::KernelRef &k, const OptionsRef &opt) {
+void Past::initialize(const ir::compat::KernelRef &k, const OptionsRef &opt) {
     QL_DOUT("Past::initialize");
     platform = k->platform;
     kernel = k;
@@ -98,8 +98,8 @@ void Past::schedule() {
     // QL_DOUT("Schedule ...");
 
     while (!waiting_gates.empty()) {
-        utils::UInt start_cycle = ir::MAX_CYCLE;
-        utils::List<ir::GateRef>::iterator gate_it;
+        utils::UInt start_cycle = ir::compat::MAX_CYCLE;
+        utils::List<ir::compat::GateRef>::iterator gate_it;
 
         // Find the gate with the minimum start cycle.
         //
@@ -177,8 +177,8 @@ void Past::schedule() {
  * init_circuit before the inevitable circuit.
  */
 utils::Int Past::get_insertion_cost(
-    const ir::GateRefs &init_circuit,
-    const ir::GateRefs &circuit
+    const ir::compat::GateRefs &init_circuit,
+    const ir::compat::GateRefs &circuit
 ) const {
 
     // First fake-schedule init_circuit followed by circuit in a private
@@ -212,7 +212,7 @@ utils::Int Past::get_insertion_cost(
  * Adds the given mapped gate to the current past. This means adding it to
  * the current past's waiting list, waiting for it to be scheduled later.
  */
-void Past::add(const ir::GateRef &gate) {
+void Past::add(const ir::compat::GateRef &gate) {
     waiting_gates.push_back(gate);
 }
 
@@ -231,14 +231,14 @@ void Past::add(const ir::GateRef &gate) {
  * written to kernel.c only at the very end.
  */
 utils::Bool Past::new_gate(
-    ir::GateRefs &circ,
+    ir::compat::GateRefs &circ,
     const utils::Str &gname,
     const utils::Vec<utils::UInt> &qubits,
     const utils::Vec<utils::UInt> &cregs,
     utils::UInt duration,
     utils::Real angle,
     const utils::Vec<utils::UInt> &bregs,
-    ir::ConditionType gcond,
+    ir::compat::ConditionType gcond,
     const utils::Vec<utils::UInt> &gcondregs
 ) const {
     utils::Bool added;
@@ -296,7 +296,7 @@ utils::Bool Past::is_first_swap_earliest(
  * seen from whether circ was extended. Please note that the reversal of
  * operands may have been done also when generate_move() was not successful.
  */
-void Past::generate_move(ir::GateRefs &circuit, utils::UInt &r0, utils::UInt &r1) {
+void Past::generate_move(ir::compat::GateRefs &circuit, utils::UInt &r0, utils::UInt &r1) {
     if (v2r.get_state(r0) != com::QubitState::LIVE) {
         QL_ASSERT(
             v2r.get_state(r0) == com::QubitState::NONE ||
@@ -341,7 +341,7 @@ void Past::generate_move(ir::GateRefs &circuit, utils::UInt &r0, utils::UInt &r1
     if (v2r.get_state(r1) == com::QubitState::NONE) {
         // r1 is not in inited state, generate in initcirc the circuit to do so
         // QL_DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
-        ir::GateRefs init_circuit;
+        ir::compat::GateRefs init_circuit;
 
         created = new_gate(init_circuit, "move_init", {r1});
         if (!created) {
@@ -424,7 +424,7 @@ void Past::add_swap(utils::UInt r0, utils::UInt r1) {
     utils::UInt v0 = v2r.get_virtual(r0);
     utils::UInt v1 = v2r.get_virtual(r1);
 
-    ir::GateRefs circuit;   // current kernel copy, clear circuit
+    ir::compat::GateRefs circuit;   // current kernel copy, clear circuit
     if (options->use_move_gates && (v2r.get_state(r0) != com::QubitState::LIVE ||
         v2r.get_state(r1) != com::QubitState::LIVE)) {
         generate_move(circuit, r0, r1);
@@ -488,7 +488,7 @@ void Past::add_swap(utils::UInt r0, utils::UInt r1) {
         add(gp);
         // each gate in circ is part of a swap or move, so add the parameters
         //TODO: uint to int conversion
-        const ir::SwapParamaters swap_params {true, (utils::Int) r0, (utils::Int) r1, (utils::Int) v1, (utils::Int) v0};
+        const ir::compat::SwapParamaters swap_params {true, (utils::Int) r0, (utils::Int) r1, (utils::Int) v1, (utils::Int) v0};
         gp->swap_params = swap_params;
     }
 
@@ -501,7 +501,7 @@ void Past::add_swap(utils::UInt r0, utils::UInt r1) {
  * Adds the mapped gate (with real qubit indices as operands) to the past
  * by adding it to the waiting list and scheduling it into the past.
  */
-void Past::add_and_schedule(const ir::GateRef &gate) {
+void Past::add_and_schedule(const ir::compat::GateRef &gate) {
     add(gate);
     schedule();
 }
@@ -536,7 +536,7 @@ static void strip_name(utils::Str &name) {
  *
  * See header file for more information.
  */
-void Past::make_real(const ir::GateRef &gate, ir::GateRefs &circuit) {
+void Past::make_real(const ir::compat::GateRef &gate, ir::compat::GateRefs &circuit) {
     QL_DOUT("make_real: " << gate->qasm());
 
     utils::Str gname = gate->name;
@@ -591,7 +591,7 @@ void Past::make_real(const ir::GateRef &gate, ir::GateRefs &circuit) {
 
     if (gate->swap_params.part_of_swap) {
         QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");
-        for (ir::GateRef &gate : circuit) {
+        for (ir::compat::GateRef &gate : circuit) {
             gate->swap_params = gate->swap_params;
         }
     }
@@ -602,7 +602,7 @@ void Past::make_real(const ir::GateRef &gate, ir::GateRefs &circuit) {
  * a config file entry with _prim appended to their name, decomposing it
  * according to the config file gate decomposition.
  */
-void Past::make_primitive(const ir::GateRef &gate, ir::GateRefs &circuit) const {
+void Past::make_primitive(const ir::compat::GateRef &gate, ir::compat::GateRefs &circuit) const {
     utils::Str gname = gate->name;
     strip_name(gname);
     utils::Str prim_gname = gname;
@@ -638,7 +638,7 @@ void Past::make_primitive(const ir::GateRef &gate, ir::GateRefs &circuit) const 
 
     if (gate->swap_params.part_of_swap) {
         QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");
-        for (const ir::GateRef &it : circuit) {
+        for (const ir::compat::GateRef &it : circuit) {
             it->swap_params = gate->swap_params;
         }
     }
@@ -680,7 +680,7 @@ void Past::flush_all() {
 /**
  * Add the given non-qubit gate directly to the output list.
  */
-void Past::bypass(const ir::GateRef &gate) {
+void Past::bypass(const ir::compat::GateRef &gate) {
     if (!gates.empty()) {
         flush_all();
     }
@@ -690,7 +690,7 @@ void Past::bypass(const ir::GateRef &gate) {
 /**
  * Flushes the output gate list to the given circuit.
  */
-void Past::flush_to_circuit(ir::GateRefs &output_circuit) {
+void Past::flush_to_circuit(ir::compat::GateRefs &output_circuit) {
     for (const auto &gate : output_gates) {
         output_circuit.add(gate);
     }

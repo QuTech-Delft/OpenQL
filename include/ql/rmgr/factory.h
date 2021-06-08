@@ -9,7 +9,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/map.h"
 #include "ql/utils/json.h"
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/platform.h"
 #include "ql/rmgr/resource_types/base.h"
 
 namespace ql {
@@ -29,7 +29,7 @@ private:
         std::function<
             ResourceRef(
                 const utils::Str &instance_name,
-                const plat::PlatformRef &platform,
+                const ir::compat::PlatformRef &platform,
                 const utils::Json &configuration
             )
         >
@@ -56,7 +56,7 @@ public:
         ConstructorFn fn;
         fn.emplace([type_name](
             const utils::Str &instance_name,
-            const plat::PlatformRef &platform,
+            const ir::compat::PlatformRef &platform,
             const utils::Json &configuration
         ) {
             ResourceRef resource;
@@ -94,7 +94,7 @@ public:
     ResourceRef build_resource(
         const utils::Str &type_name,
         const utils::Str &instance_name,
-        const plat::PlatformRef &platform,
+        const ir::compat::PlatformRef &platform,
         const utils::Json &configuration
     ) const;
 

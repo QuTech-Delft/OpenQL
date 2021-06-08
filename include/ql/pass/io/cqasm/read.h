@@ -28,9 +28,9 @@ class Reader {
 private:
     utils::Opt<detail::ReaderImpl> impl;
 public:
-    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program);
-    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program, const utils::Json &gateset);
-    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program, const utils::Str &gateset_fname);
+    Reader(const ir::compat::PlatformRef &platform, const ir::compat::ProgramRef &program);
+    Reader(const ir::compat::PlatformRef &platform, const ir::compat::ProgramRef &program, const utils::Json &gateset);
+    Reader(const ir::compat::PlatformRef &platform, const ir::compat::ProgramRef &program, const utils::Str &gateset_fname);
     void string2circuit(const utils::Str &cqasm_str);
     void file2circuit(const utils::Str &cqasm_fname);
 };
@@ -44,7 +44,7 @@ public:
  * before it became configurable.
  */
 void from_file(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const utils::Str &cqasm_fname,
     const utils::Json &gateset={}
 );
@@ -55,7 +55,7 @@ void from_file(
  * \see file()
  */
 void from_string(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const utils::Str &cqasm_body,
     const utils::Json &gateset={}
 );
@@ -94,7 +94,7 @@ public:
      * Runs the cQASM reader.
      */
     utils::Int run(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const pmgr::pass_types::Context &context
     ) const override;
 

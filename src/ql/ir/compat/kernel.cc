@@ -2,7 +2,7 @@
  * Quantum kernel abstraction implementation.
  */
 
-#include "ql/ir/kernel.h"
+#include "ql/ir/compat/kernel.h"
 
 #include <sstream>
 #include <algorithm>
@@ -11,15 +11,16 @@
 #include "ql/utils/json.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
-#include "ql/plat/platform.h"
-#include "ql/ir/gate.h"
-#include "ql/ir/classical.h"
-#include "ql/ir/bundle.h"
+#include "ql/ir/compat/platform.h"
+#include "ql/ir/compat/gate.h"
+#include "ql/ir/compat/classical.h"
+#include "ql/ir/compat/bundle.h"
 #include "ql/com/options.h"
 #include "ql/com/unitary.h"
 
 namespace ql {
 namespace ir {
+namespace compat {
 
 using namespace utils;
 
@@ -36,7 +37,7 @@ Str qasm(const GateRefs &c) {
 
 Kernel::Kernel(
     const Str &name,
-    const plat::PlatformRef &platform,
+    const ir::compat::PlatformRef &platform,
     UInt qubit_count,
     UInt creg_count,
     UInt breg_count
@@ -1585,5 +1586,6 @@ void Kernel::conjugate(const Kernel &k) {
     QL_COUT("Generating conjugate kernel [Done]");
 }
 
+} // namespace compat
 } // namespace ir
 } // namespace ql

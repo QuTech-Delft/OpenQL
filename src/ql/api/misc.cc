@@ -151,7 +151,7 @@ std::string dump_resources() {
  * Prints the documentation for platform configuration files.
  */
 void print_platform_docs() {
-    ql::plat::Platform::dump_docs();
+    ql::ir::compat::Platform::dump_docs();
 }
 
 /**
@@ -159,7 +159,7 @@ void print_platform_docs() {
  */
 std::string dump_platform_docs() {
     std::ostringstream ss;
-    ql::plat::Platform::dump_docs(ss);
+    ql::ir::compat::Platform::dump_docs(ss);
     return ss.str();
 }
 

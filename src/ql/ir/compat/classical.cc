@@ -2,12 +2,13 @@
  * Classical operation implementation.
  */
 
-#include "ql/ir/classical.h"
+#include "ql/ir/compat/classical.h"
 
 #include "ql/utils/exception.h"
 
 namespace ql {
 namespace ir {
+namespace compat {
 
 using namespace utils;
 
@@ -214,5 +215,6 @@ GateType Classical::type() const {
 }
 
 } // namespace gates
+} // namespace compat
 } // namespace ir
 } // namespace ql

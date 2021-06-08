@@ -19,7 +19,7 @@
 #include "ql/utils/map.h"
 #include "ql/utils/ptr.h"
 #include "ql/rmgr/manager.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/com/options.h"
 
 namespace ql {
@@ -63,8 +63,8 @@ private:
     lemon::ListDigraph graph;
 
     // conversion between gate* (pointer to the gate in the circuit) and node (of the dependence graph)
-    lemon::ListDigraph::NodeMap<ir::GateRef> instruction;// instruction[n] == gate*
-    utils::Map<ir::GateRef, lemon::ListDigraph::Node>  node;// node[gate*] == n
+    lemon::ListDigraph::NodeMap<ir::compat::GateRef> instruction;// instruction[n] == gate*
+    utils::Map<ir::compat::GateRef, lemon::ListDigraph::Node>  node;// node[gate*] == n
 
     // attributes
     lemon::ListDigraph::NodeMap<utils::Str> name;     // name[n] == qasm string
@@ -77,11 +77,11 @@ private:
     lemon::ListDigraph::Node s, t;                     // instruction[s]==SOURCE, instruction[t]==SINK
 
     // parameters of dependence graph construction
-    utils::UInt cycle_time;     // to convert durations to cycles as weight of dependence
-    utils::UInt qubit_count;    // number of qubits, to check/represent qubit as cause of dependence
-    utils::UInt creg_count;     // number of cregs, to check/represent creg as cause of dependence
-    utils::UInt breg_count;     // number of bregs, to check/represent breg as cause of dependence
-    ir::KernelRef kernel;       // current and result circuit, passed from Init to each scheduler
+    utils::UInt cycle_time;             // to convert durations to cycles as weight of dependence
+    utils::UInt qubit_count;            // number of qubits, to check/represent qubit as cause of dependence
+    utils::UInt creg_count;             // number of cregs, to check/represent creg as cause of dependence
+    utils::UInt breg_count;             // number of bregs, to check/represent breg as cause of dependence
+    ir::compat::KernelRef kernel;       // current and result circuit, passed from Init to each scheduler
 
     // pass option information
     utils::Str output_prefix;           // replaces output directory global option
@@ -142,7 +142,7 @@ public:
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(
-        const ir::KernelRef &kernel,
+        const ir::compat::KernelRef &kernel,
         const utils::Str &output_prefix,
         utils::Bool commute_multi_qubit,
         utils::Bool commute_single_qubit
@@ -188,17 +188,17 @@ private:
 public:
     // use MAX_CYCLE for absolute upperbound on cycle value
     // use ALAP_SINK_CYCLE for initial cycle given to SINK in ALAP;
-    static const utils::UInt ALAP_SINK_CYCLE = ir::MAX_CYCLE / 2;
+    static const utils::UInt ALAP_SINK_CYCLE = ir::compat::MAX_CYCLE / 2;
 
     // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
-    // without RC, this is all there is to schedule, apart from forming the bundles in ir::bundler()
+    // without RC, this is all there is to schedule, apart from forming the bundles in ir::compat::bundler()
     // set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
     // please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
-    void set_cycle_gate(const ir::GateRef &gp, rmgr::Direction dir);
+    void set_cycle_gate(const ir::compat::GateRef &gp, rmgr::Direction dir);
     void set_cycle(rmgr::Direction dir);
 
     // sort circuit by the gates' cycle attribute in non-decreasing order
-    static void sort_by_cycle(ir::GateRefs &cp);
+    static void sort_by_cycle(ir::compat::GateRefs &cp);
 
     // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
     void schedule_asap();
@@ -231,9 +231,9 @@ public:
     // which is easier in the core of the scheduler.
 
     // Note that set_remaining_gate expects a caller like set_remaining that iterates gp backward over the circuit
-    void set_remaining_gate(const ir::GateRef &gp, rmgr::Direction dir);
+    void set_remaining_gate(const ir::compat::GateRef &gp, rmgr::Direction dir);
     void set_remaining(rmgr::Direction dir);
-    ir::GateRef find_mostcritical(const utils::List<ir::GateRef> &lg);
+    ir::compat::GateRef find_mostcritical(const utils::List<ir::compat::GateRef> &lg);
 
     // ASAP/ALAP list scheduling support code with RC
     // Uses an "available list" (avlist) as interface between dependence graph and scheduler
@@ -314,7 +314,7 @@ public:
     void take_available(
         lemon::ListDigraph::Node n,
         utils::List<lemon::ListDigraph::Node> &avlist,
-        utils::Map<ir::GateRef, utils::Bool> &scheduled,
+        utils::Map<ir::compat::GateRef, utils::Bool> &scheduled,
         rmgr::Direction dir
     );
 

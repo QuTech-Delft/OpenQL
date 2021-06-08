@@ -36,7 +36,7 @@ private:
     /**
      * The platform that this resource manager is built for.
      */
-    const plat::PlatformRef &platform;
+    const ir::compat::PlatformRef &platform;
 
     /**
      * The list of resources.
@@ -59,7 +59,7 @@ public:
      * Constructs a new, empty resource manager.
      */
     explicit Manager(
-        const plat::PlatformRef &platform,
+        const ir::compat::PlatformRef &platform,
         const utils::Str &architecture = "",
         const utils::Set<utils::Str> &dnu = {},
         const Factory &factory = {}
@@ -70,7 +70,7 @@ public:
      * Refer to dump_docs() for more information.
      */
     static Manager from_json(
-        const plat::PlatformRef &platform,
+        const ir::compat::PlatformRef &platform,
         const utils::Json &json,
         const Factory &factory = {}
     );
@@ -80,7 +80,7 @@ public:
      * taken from platform.resources.
      */
     static Manager from_defaults(
-        const plat::PlatformRef &platform,
+        const ir::compat::PlatformRef &platform,
         const Factory &factory = {}
     );
 

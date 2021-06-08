@@ -9,10 +9,11 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/tree.h"
 
-#include "ql/ir/gate.h"
+#include "ql/ir/compat/gate.h"
 
 namespace ql {
 namespace ir {
+namespace compat {
 
 enum class ClassicalOperationType {
     ARITHMETIC, RELATIONAL, BITWISE
@@ -85,5 +86,6 @@ public:
 };
 
 } // namespace gates
+} // namespace compat
 } // namespace ir
 } // namespace ql

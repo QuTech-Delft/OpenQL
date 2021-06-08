@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/api/declarations.h"
 
 //============================================================================//
@@ -28,7 +28,7 @@ private:
     /**
      * The wrapped control register object.
      */
-    ql::utils::Ptr<ql::ir::ClassicalRegister> creg;
+    ql::utils::Ptr<ql::ir::compat::ClassicalRegister> creg;
 
 public:
 

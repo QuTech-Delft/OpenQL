@@ -8,7 +8,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/pmgr/pass_types/specializations.h"
 
 namespace ql {

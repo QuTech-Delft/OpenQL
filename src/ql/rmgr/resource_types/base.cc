@@ -95,7 +95,7 @@ void Base::initialize(Direction direction) {
  */
 utils::Bool Base::gate(
     utils::UInt cycle,
-    const ir::GateRef &gate,
+    const ir::compat::GateRef &gate,
     utils::Bool commit
 ) {
     if (!initialized) {

@@ -12,7 +12,7 @@
 #include <iosfwd>
 #include "ql/version.h"
 #include "ql/com/options.h"
-#include "ql/ir/bundle.h"
+#include "ql/ir/compat/bundle.h"
 
 namespace ql {
 namespace arch {
@@ -28,7 +28,7 @@ using namespace utils;
 | Generic
 \************************************************************************/
 
-void Codegen::init(const plat::PlatformRef &platform, const OptionsRef &options) {
+void Codegen::init(const ir::compat::PlatformRef &platform, const OptionsRef &options) {
     // NB: a new eqasm_backend_cc is instantiated per call to compile, and
     // as a result also a codegen_cc, so we don't need to cleanup
     this->platform = platform;
@@ -98,7 +98,7 @@ void Codegen::programFinish(const Str &progName) {
 \************************************************************************/
 
 void Codegen::kernelStart() {
-    for (UInt i=0; i<ELEM_CNT(lastEndCycle); i++) lastEndCycle[i] = ir::FIRST_CYCLE;
+    for (UInt i=0; i<ELEM_CNT(lastEndCycle); i++) lastEndCycle[i] = ir::compat::FIRST_CYCLE;
 }
 
 void Codegen::kernelFinish(const Str &kernelName, UInt durationInCycles) {
@@ -315,7 +315,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 // conditional gates
                 // store condition and groupDigOut in condMap, if all groups are unconditional we use old scheme, otherwise
                 // datapath is configured to generate proper digital output
-                if (bi.condition == ir::ConditionType::ALWAYS || ic.ii.forceCondGatesOn) {
+                if (bi.condition == ir::compat::ConditionType::ALWAYS || ic.ii.forceCondGatesOn) {
                     // nothing to do, just use digOut
                 } else {    // other conditions, including cond_never
                     // remind mapping for setting PL
@@ -491,7 +491,7 @@ void Codegen::bundleFinish(
 // helper
 static Str qasm(const Str &iname, const Vec<UInt> &operands, const Vec<UInt> &breg_operands) {
     // FIXME: hack
-    ir::gate_types::Custom g(iname);
+    ir::compat::gate_types::Custom g(iname);
     g.operands = operands;
     g.breg_operands = breg_operands;
     return g.qasm();
@@ -505,7 +505,7 @@ void Codegen::customGate(
     const Vec<UInt> &operands,
     const Vec<UInt> &creg_operands,
     const Vec<UInt> &breg_operands,
-    ir::ConditionType condition,
+    ir::compat::ConditionType condition,
     const Vec<UInt> &cond_operands,
     Real angle,
     UInt startCycle, UInt durationInCycles

@@ -683,7 +683,7 @@ void ReaderImpl::handle_parse_result(lqa::AnalysisResult &&ar) {
         // cQASM. Also, multiple cQASM files can be added to a single
         // program, so even if that would be a requirement, it wouldn't be
         // unique enough. So we add a number to them for uniquification.
-        auto kernel = ir::KernelRef::make(
+        auto kernel = ir::compat::KernelRef::make(
             sc->name + "_" + to_string(subcircuit_count++),
             platform,
             num_qubits,
@@ -726,13 +726,13 @@ void ReaderImpl::handle_parse_result(lqa::AnalysisResult &&ar) {
                 const auto &gcr = insn->instruction->get_annotation<GateConversionRule::Ptr>();
 
                 // Handle gate conditions.
-                ir::ConditionType cond = ir::ConditionType::ALWAYS;
+                ir::compat::ConditionType cond = ir::compat::ConditionType::ALWAYS;
                 Vec<UInt> cond_bregs;
                 if (auto ccb = insn->condition->as_const_bool()) {
                     if (ccb->value) {
-                        cond = ir::ConditionType::ALWAYS;
+                        cond = ir::compat::ConditionType::ALWAYS;
                     } else {
-                        cond = ir::ConditionType::NEVER;
+                        cond = ir::compat::ConditionType::NEVER;
                     }
                 } else if (auto fun = insn->condition->as_function()) {
                     Bool invert = false;
@@ -744,9 +744,9 @@ void ReaderImpl::handle_parse_result(lqa::AnalysisResult &&ar) {
                         }
                         cond_bregs.push_back(expect_condition_reg(fun->operands[0]));
                         if (invert) {
-                            cond = ir::ConditionType::NOT;
+                            cond = ir::compat::ConditionType::NOT;
                         } else {
-                            cond = ir::ConditionType::UNARY;
+                            cond = ir::compat::ConditionType::UNARY;
                         }
                         fun = nullptr;
                         break;
@@ -754,33 +754,33 @@ void ReaderImpl::handle_parse_result(lqa::AnalysisResult &&ar) {
                     if (fun) {
                         if (fun->name == "operator&&") {
                             if (invert) {
-                                cond = ir::ConditionType::NAND;
+                                cond = ir::compat::ConditionType::NAND;
                             } else {
-                                cond = ir::ConditionType::AND;
+                                cond = ir::compat::ConditionType::AND;
                             }
                         } else if (fun->name == "operator||") {
                             if (invert) {
-                                cond = ir::ConditionType::NOR;
+                                cond = ir::compat::ConditionType::NOR;
                             } else {
-                                cond = ir::ConditionType::OR;
+                                cond = ir::compat::ConditionType::OR;
                             }
                         } else if (fun->name == "operator^^") {
                             if (invert) {
-                                cond = ir::ConditionType::NXOR;
+                                cond = ir::compat::ConditionType::NXOR;
                             } else {
-                                cond = ir::ConditionType::XOR;
+                                cond = ir::compat::ConditionType::XOR;
                             }
                         } else if (fun->name == "operator==") {
                             if (invert) {
-                                cond = ir::ConditionType::XOR;
+                                cond = ir::compat::ConditionType::XOR;
                             } else {
-                                cond = ir::ConditionType::NXOR;
+                                cond = ir::compat::ConditionType::NXOR;
                             }
                         } else if (fun->name == "operator!=") {
                             if (invert) {
-                                cond = ir::ConditionType::NXOR;
+                                cond = ir::compat::ConditionType::NXOR;
                             } else {
-                                cond = ir::ConditionType::XOR;
+                                cond = ir::compat::ConditionType::XOR;
                             }
                         }
                         cond_bregs.push_back(expect_condition_reg(fun->operands[0]));
@@ -788,7 +788,7 @@ void ReaderImpl::handle_parse_result(lqa::AnalysisResult &&ar) {
                     }
                 } else {
                     cond_bregs.push_back(expect_condition_reg(insn->condition));
-                    cond = ir::ConditionType::UNARY;
+                    cond = ir::compat::ConditionType::UNARY;
                 }
 
                 // Figure out if this instruction uses
@@ -921,8 +921,8 @@ void ReaderImpl::handle_parse_result(lqa::AnalysisResult &&ar) {
  * Constructs a reader.
  */
 ReaderImpl::ReaderImpl(
-    const plat::PlatformRef &platform,
-    const ir::ProgramRef &program
+    const ir::compat::PlatformRef &platform,
+    const ir::compat::ProgramRef &program
 ) :
     platform(platform),
     program(program),

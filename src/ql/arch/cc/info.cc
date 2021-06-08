@@ -566,7 +566,7 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
  * instance add annotations with architecture-specific configuration data.
  */
 void Info::post_process_platform(
-    const plat::PlatformRef &platform,
+    const ir::compat::PlatformRef &platform,
     const utils::Str &variant
 ) const {
 

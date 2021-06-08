@@ -7,7 +7,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 
 namespace ql {
 namespace com {
@@ -73,7 +73,7 @@ public:
     /**
      * Returns the decomposed circuit.
      */
-    ir::GateRefs get_decomposition(const utils::Vec<utils::UInt> &qubits);
+    ir::compat::GateRefs get_decomposition(const utils::Vec<utils::UInt> &qubits);
 
 };
 

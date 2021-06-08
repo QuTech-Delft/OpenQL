@@ -53,8 +53,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"
 #include "ql/utils/vec.h"
-#include "ql/plat/platform.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/com/qubit_mapping.h"
 
 namespace ql {
@@ -143,12 +142,12 @@ private:
     /**
      * Reference to the kernel we're operating on.
      */
-    ir::KernelRef kernel;
+    ir::compat::KernelRef kernel;
 
     /**
      * Shorthand reference for the platform corresponding to the kernel.
      */
-    plat::PlatformRef platform;
+    ir::compat::PlatformRef platform;
 
     /**
      * Number of locations, real qubits; index variables k and l.
@@ -204,7 +203,7 @@ public:
      * PlaceBody/PlaceWrapper when it has found a mapping.
      */
     Result run(
-        const ir::KernelRef &k,
+        const ir::compat::KernelRef &k,
         const Options &opt,
         com::QubitMapping &v2r
     );

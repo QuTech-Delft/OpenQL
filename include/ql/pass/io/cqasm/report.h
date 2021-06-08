@@ -21,10 +21,10 @@ namespace report {
  * appropriate line prefix for correctly-indented comments.
  */
 void dump(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     std::ostream &os = std::cout,
-    std::function<void(const ir::KernelRef&, std::ostream&, const utils::Str&)> after_kernel
-        = [](const ir::KernelRef&, std::ostream&, const utils::Str&){}
+    std::function<void(const ir::compat::KernelRef&, std::ostream&, const utils::Str&)> after_kernel
+        = [](const ir::compat::KernelRef&, std::ostream&, const utils::Str&){}
 );
 
 /**
@@ -32,7 +32,7 @@ void dump(
  * comments.
  */
 void dump_with_statistics(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     std::ostream &os = std::cout
 );
 
@@ -70,7 +70,7 @@ public:
      * Runs the cQASM writer.
      */
     utils::Int run(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const pmgr::pass_types::Context &context
     ) const override;
 

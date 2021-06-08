@@ -220,7 +220,7 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
  */
 utils::Bool InterCoreChannelResource::on_gate(
     utils::UInt cycle,
-    const ir::GateRef &gate,
+    const ir::compat::GateRef &gate,
     utils::Bool commit
 ) {
     QL_DOUT(

@@ -14,7 +14,7 @@ namespace detail {
 /**
  * Initializes this FreeCycle object.
  */
-void FreeCycle::initialize(const plat::PlatformRef &p, const OptionsRef &opt) {
+void FreeCycle::initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt) {
     QL_DOUT("FreeCycle::initialize()");
     auto rm = rmgr::Manager::from_defaults(p);   // allocated here and copied below to rm because of platform parameter
                                                            // JvS: I have no idea what ^ means
@@ -46,7 +46,7 @@ utils::UInt FreeCycle::get_depth() const {
  * entries.
  */
 utils::UInt FreeCycle::get_min() const {
-    utils::UInt min_free_cycle = ir::MAX_CYCLE;
+    utils::UInt min_free_cycle = ir::compat::MAX_CYCLE;
     for (const auto &v : fcv) {
         if (v < min_free_cycle) {
             min_free_cycle = v;
@@ -141,7 +141,7 @@ utils::Bool FreeCycle::is_first_swap_earliest(
  * gate, ignoring resource constraints. gate operands are real qubit indices
  * and breg indices. Purely functional, doesn't affect state.
  */
-utils::UInt FreeCycle::get_start_cycle_no_rc(const ir::GateRef &g) const {
+utils::UInt FreeCycle::get_start_cycle_no_rc(const ir::compat::GateRef &g) const {
     utils::UInt start_cycle = 1;
     for (auto qreg : g->operands) {
         start_cycle = utils::max(start_cycle, fcv[qreg]);
@@ -154,7 +154,7 @@ utils::UInt FreeCycle::get_start_cycle_no_rc(const ir::GateRef &g) const {
             start_cycle = utils::max(start_cycle, fcv[nq + breg]);
         }
     }
-    QL_ASSERT (start_cycle < ir::MAX_CYCLE);
+    QL_ASSERT (start_cycle < ir::compat::MAX_CYCLE);
 
     return start_cycle;
 }
@@ -164,13 +164,13 @@ utils::UInt FreeCycle::get_start_cycle_no_rc(const ir::GateRef &g) const {
  * gate. gate operands are real qubit indices and breg indices. Purely
  * functional, doesn't affect state.
  */
-utils::UInt FreeCycle::get_start_cycle(const ir::GateRef &g) const {
+utils::UInt FreeCycle::get_start_cycle(const ir::compat::GateRef &g) const {
     utils::UInt start_cycle = get_start_cycle_no_rc(g);
 
     if (options->heuristic == Heuristic::BASE_RC || options->heuristic == Heuristic::MIN_EXTEND_RC) {
         utils::UInt base_start_cycle = start_cycle;
 
-        while (start_cycle < ir::MAX_CYCLE) {
+        while (start_cycle < ir::compat::MAX_CYCLE) {
             // QL_DOUT("Startcycle for " << g->qasm() << ": available? at startCycle=" << startCycle);
             if (rs->available(start_cycle, g)) {
                 // QL_DOUT(" ... [" << startCycle << "] resources available for " << g->qasm());
@@ -184,7 +184,7 @@ utils::UInt FreeCycle::get_start_cycle(const ir::GateRef &g) const {
             // QL_DOUT(" ... from [" << baseStartCycle << "] to [" << startCycle-1 << "] busy resource(s) for " << g->qasm());
         }
     }
-    QL_ASSERT (start_cycle < ir::MAX_CYCLE);
+    QL_ASSERT (start_cycle < ir::compat::MAX_CYCLE);
 
     return start_cycle;
 }
@@ -195,7 +195,7 @@ utils::UInt FreeCycle::get_start_cycle(const ir::GateRef &g) const {
  * resource map. This is done because add_no_rc is used to represent just gate
  * dependencies, avoiding a build of a dep graph.
  */
-void FreeCycle::add_no_rc(const ir::GateRef &g, utils::UInt startCycle) {
+void FreeCycle::add_no_rc(const ir::compat::GateRef &g, utils::UInt startCycle) {
     utils::UInt duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
     utils::UInt freeCycle = startCycle + duration;
     for (auto qreg : g->operands) {
@@ -212,7 +212,7 @@ void FreeCycle::add_no_rc(const ir::GateRef &g, utils::UInt startCycle) {
  * and the resource map are updated. startcycle must be the result of an
  * earlier StartCycle call (with rc!)
  */
-void FreeCycle::add(const ir::GateRef &g, utils::UInt start_cycle) {
+void FreeCycle::add(const ir::compat::GateRef &g, utils::UInt start_cycle) {
     add_no_rc(g, start_cycle);
 
     if (options->heuristic == Heuristic::BASE_RC || options->heuristic == Heuristic::MIN_EXTEND_RC) {

@@ -156,8 +156,8 @@ struct ImageOutput {
     const Structure structure;
 };
 
-void visualizeCircuit(const ir::ProgramRef &program, const VisualizerConfiguration &configuration);
-ImageOutput generateImage(const ir::ProgramRef &program, const VisualizerConfiguration &configuration, const utils::Vec<utils::Int> &minCycleWidths, utils::Int extendedImageHeight);
+void visualizeCircuit(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration);
+ImageOutput generateImage(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration, const utils::Vec<utils::Int> &minCycleWidths, utils::Int extendedImageHeight);
 
 CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const utils::Json &platformInstructions);
 void validateCircuitLayout(CircuitLayout &layout, const utils::Str &visualizationType);

@@ -7,11 +7,12 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/list.h"
-#include "ql/ir/gate.h"
-#include "ql/ir/kernel.h"
+#include "ql/ir/compat/gate.h"
+#include "ql/ir/compat/kernel.h"
 
 namespace ql {
 namespace ir {
+namespace compat {
 
 /**
  * Cycle numbers in OpenQL, for some historic reason, start at 1 (see discussion
@@ -37,7 +38,7 @@ struct Bundle {
     /**
      * The list of parallel gates in this bundle.
      */
-    utils::List<ir::GateRef> gates = {};
+    utils::List<GateRef> gates = {};
 
 };
 
@@ -70,5 +71,6 @@ Bundles bundler(const KernelRef &kernel);
  */
 void debug_bundles(const utils::Str &at, const Bundles &bundles);
 
+} // namespace compat
 } // namespace ir
 } // namespace ql

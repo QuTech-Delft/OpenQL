@@ -14,7 +14,7 @@
 #include "ql/utils/json.h"
 
 namespace ql {
-namespace plat {
+namespace com {
 
 /**
  * Qubit grid form/shape.
@@ -297,5 +297,5 @@ public:
 
 };
 
-} // namespace plat
+} // namespace com
 } // namespace ql

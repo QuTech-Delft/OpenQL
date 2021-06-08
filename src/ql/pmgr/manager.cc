@@ -541,7 +541,7 @@ Manager Manager::from_json(
  * in the configuration file and from the global options (similar to the
  * "compatibility-mode" key in the JSON strategy definition format).
  */
-Manager Manager::from_defaults(const plat::PlatformRef &platform) {
+Manager Manager::from_defaults(const ir::compat::PlatformRef &platform) {
 
     // If the platform includes a compiler configuration JSON object, load from
     // that.
@@ -871,7 +871,7 @@ void Manager::construct() {
 /**
  * Executes this pass or pass group on the given platform and program.
  */
-void Manager::compile(const ir::ProgramRef &program) {
+void Manager::compile(const ir::compat::ProgramRef &program) {
 
     // Ensure that all passes are constructed.
     construct();

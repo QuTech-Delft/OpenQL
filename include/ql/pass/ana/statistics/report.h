@@ -17,7 +17,7 @@ namespace report {
  * Dumps basic statistics for the given kernel to the given output stream.
  */
 void dump(
-    const ir::KernelRef &kernel,
+    const ir::compat::KernelRef &kernel,
     std::ostream &os = std::cout,
     const utils::Str &line_prefix = ""
 );
@@ -28,7 +28,7 @@ void dump(
  * kernel.
  */
 void dump(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     std::ostream &os = std::cout,
     const utils::Str &line_prefix = ""
 );
@@ -38,7 +38,7 @@ void dump(
  * stream.
  */
 void dump_all(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     std::ostream &os = std::cout,
     const utils::Str &line_prefix = ""
 );
@@ -77,7 +77,7 @@ public:
      * Runs the statistics reporter.
      */
     utils::Int run(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const pmgr::pass_types::Context &context
     ) const override;
 

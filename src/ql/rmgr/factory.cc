@@ -133,7 +133,7 @@ Factory Factory::configure(
 ResourceRef Factory::build_resource(
     const utils::Str &type_name,
     const utils::Str &instance_name,
-    const plat::PlatformRef &platform,
+    const ir::compat::PlatformRef &platform,
     const utils::Json &configuration
 ) const {
     auto it = resource_types.find(type_name);

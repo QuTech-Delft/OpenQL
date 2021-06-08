@@ -43,7 +43,7 @@ using namespace com;
  * alternatives to the alters list as it goes.
  */
 void Mapper::gen_shortest_paths(
-    const ir::GateRef &gate,
+    const ir::compat::GateRef &gate,
     UInt src,
     UInt tgt,
     UInt budget,
@@ -169,7 +169,7 @@ void Mapper::gen_shortest_paths(
  * The end result is a list of alternatives (in alters) suitable for being
  * evaluated for any routing metric.
  */
-void Mapper::gen_shortest_paths(const ir::GateRef &gate, UInt src, UInt tgt, List<Alter> &alters) {
+void Mapper::gen_shortest_paths(const ir::compat::GateRef &gate, UInt src, UInt tgt, List<Alter> &alters) {
 
     // List that will hold all not-yet-split Alters directly from src to tgt.
     List<Alter> direct_paths;
@@ -199,7 +199,7 @@ void Mapper::gen_shortest_paths(const ir::GateRef &gate, UInt src, UInt tgt, Lis
  * return the found variations by appending them to the given list of
  * Alters.
  */
-void Mapper::gen_alters_gate(const ir::GateRef &gate, List<Alter> &alters, Past &past) {
+void Mapper::gen_alters_gate(const ir::compat::GateRef &gate, List<Alter> &alters, Past &past) {
 
     // Interpret virtual operands in past's current map.
     auto &q = gate->operands;
@@ -225,7 +225,7 @@ void Mapper::gen_alters_gate(const ir::GateRef &gate, List<Alter> &alters, Past 
  * critical) gate, or take all gates.
  */
 void Mapper::gen_alters(
-    const utils::List<ir::GateRef> &gates,
+    const utils::List<ir::compat::GateRef> &gates,
     List<Alter> &alters,
     Past &past
 ) {
@@ -246,7 +246,7 @@ void Mapper::gen_alters(
 
         // Only take the first gate in in the list, the most critical one, and
         // generate alternatives for it.
-        ir::GateRef gate = gates.front();
+        ir::compat::GateRef gate = gates.front();
 
         // Generate all possible variations to make gate nearest-neighbor, in
         // current v2r mapping ("past").
@@ -280,11 +280,11 @@ Alter Mapper::tie_break_alter(List<Alter> &alters, Future &future) {
 
     switch (options->tie_break_method) {
         case TieBreakMethod::CRITICAL: {
-            List<ir::GateRef> lag;
+            List<ir::compat::GateRef> lag;
             for (auto &a : alters) {
                 lag.push_back(a.target_gate);
             }
-            ir::GateRef gate = future.get_most_critical(lag);
+            ir::compat::GateRef gate = future.get_most_critical(lag);
             QL_ASSERT(!gate.empty());
             for (auto &a : alters) {
                 if (a.target_gate.get_ptr() == gate.get_ptr()) {
@@ -325,7 +325,7 @@ Alter Mapper::tie_break_alter(List<Alter> &alters, Future &future) {
  * Map the gate/operands of a gate that has been routed or doesn't require
  * routing.
  */
-void Mapper::map_routed_gate(const ir::GateRef &gate, Past &past) {
+void Mapper::map_routed_gate(const ir::compat::GateRef &gate, Past &past) {
     QL_DOUT("map_routed_gate on virtual: " << gate->qasm());
 
     // make_real() maps the qubit operands of the gate and optionally updates
@@ -333,7 +333,7 @@ void Mapper::map_routed_gate(const ir::GateRef &gate, Past &past) {
     // is created; when that new gate is a composite gate, it is immediately
     // decomposed (by gate creation). The resulting gate/expansion (anyhow a
     // sequence of gates) is collected in circuit.
-    ir::GateRefs gates;
+    ir::compat::GateRefs gates;
     past.make_real(gate, gates);
     for (const auto &new_gate : gates) {
         QL_DOUT(" ... new mapped real gate, about to be added to past: " << new_gate->qasm());
@@ -352,7 +352,7 @@ void Mapper::map_routed_gate(const ir::GateRef &gate, Past &past) {
 void Mapper::commit_alter(Alter &alter, Future &future, Past &past) {
 
     // The target two-qubit-gate, now not yet nearest-neighbor.
-    ir::GateRef target = alter.target_gate;
+    ir::compat::GateRef target = alter.target_gate;
     alter.debug_print("... commit_alter, alternative to commit, will add swaps and then map target 2q gate");
 
     // Add swaps to the past to make the target gate nearest-neighbor.
@@ -404,15 +404,15 @@ void Mapper::commit_alter(Alter &alter, Future &future, Past &past) {
 Bool Mapper::map_mappable_gates(
     Future &future,
     Past &past,
-    List<ir::GateRef> &gates,
+    List<ir::compat::GateRef> &gates,
     Bool also_nn_two_qubit_gates
 ) {
 
     // List of non-quantum gates in avlist.
-    List<ir::GateRef> av_non_quantum_gates;
+    List<ir::compat::GateRef> av_non_quantum_gates;
 
     // List of (remaining) gates in avlist.
-    List<ir::GateRef> av_gates;
+    List<ir::compat::GateRef> av_gates;
 
     QL_DOUT("map_mappable_gates entry");
     while (true) {
@@ -428,7 +428,7 @@ Bool Mapper::map_mappable_gates(
 
                 // here add code to map qubit use of any non-quantum instruction????
                 // dummy gates are nonq gates internal to OpenQL such as SOURCE/SINK; don't output them
-                if (gate->type() != ir::GateType::DUMMY) {
+                if (gate->type() != ir::compat::GateType::DUMMY) {
                     // past only can contain quantum gates, so non-quantum gates must by-pass Past
                     past.bypass(gate);    // this flushes past.lg first to outlg
                 }
@@ -457,7 +457,7 @@ Bool Mapper::map_mappable_gates(
         // wait gates).
         Bool found = false;
         for (const auto &gate : av_gates) {
-            if (gate->type() == ir::GateType::WAIT || gate->operands.size() == 1) {
+            if (gate->type() == ir::compat::GateType::WAIT || gate->operands.size() == 1) {
 
                 // A quantum gate that never requires routing was found.
                 map_routed_gate(gate, past);
@@ -665,7 +665,7 @@ void Mapper::select_alter(
 
         // List of non-nearest-neighbor two-qubit gates taken from the available
         // gate list, as returned from map_mappable_gates.
-        List<ir::GateRef> gates;
+        List<ir::compat::GateRef> gates;
 
         // In recursion, look at recurse_on_nn_two_qubit option:
         // - map_mappable_gates with recurse_on_nn_two_qubit==true is greedy and
@@ -759,7 +759,7 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
 
     // List of non-mappable gates taken from avlist, as returned by
     // map_mappable_gates.
-    List<ir::GateRef> gates;
+    List<ir::compat::GateRef> gates;
 
     Bool also_nn_two_qubit_gates = (
         options->lookahead_mode == LookaheadMode::NO_ROUTING_FIRST
@@ -793,7 +793,7 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
 /**
  * Performs (initial) placement of the qubits.
  */
-void Mapper::place(const ir::KernelRef &k, com::QubitMapping &v2r) {
+void Mapper::place(const ir::compat::KernelRef &k, com::QubitMapping &v2r) {
 
     if (options->enable_mip_placer) {
 #ifdef INITIALPLACE
@@ -823,7 +823,7 @@ void Mapper::place(const ir::KernelRef &k, com::QubitMapping &v2r) {
  * Map the kernel's circuit's gates in the provided context (v2r maps),
  * updating circuit and v2r maps.
  */
-void Mapper::route(const ir::KernelRef &k, QubitMapping &v2r) {
+void Mapper::route(const ir::compat::KernelRef &k, QubitMapping &v2r) {
 
     // Future window, presents input in available list.
     Future future;
@@ -877,11 +877,11 @@ void Mapper::route(const ir::KernelRef &k, QubitMapping &v2r) {
  * Decomposes all gates in the circuit that have a definition with _prim
  * appended to its name. The mapper does this after routing.
  */
-void Mapper::decompose_to_primitives(const ir::KernelRef &k) {
+void Mapper::decompose_to_primitives(const ir::compat::KernelRef &k) {
     QL_DOUT("decompose_to_primitives circuit ...");
 
     // Copy to allow kernel.c use by Past.new_gate.
-    ir::GateRefs circuit = k->gates;
+    ir::compat::GateRefs circuit = k->gates;
     k->gates.reset();
 
     // Output window in which gates are scheduled.
@@ -892,7 +892,7 @@ void Mapper::decompose_to_primitives(const ir::KernelRef &k) {
 
         // Decompose gate into prim_circuit. On failure, this copies the
         // original gate directly into it.
-        ir::GateRefs prim_gates;
+        ir::compat::GateRefs prim_gates;
         past.make_primitive(gate, prim_gates);
 
         // Schedule the potentially decomposed gates.
@@ -914,7 +914,7 @@ void Mapper::decompose_to_primitives(const ir::KernelRef &k) {
  * Initialize the data structures in this class that don't change from
  * kernel to kernel.
  */
-void Mapper::initialize(const plat::PlatformRef &p, const OptionsRef &opt) {
+void Mapper::initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt) {
     // QL_DOUT("Mapping initialization ...");
     // QL_DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
     platform = p;
@@ -946,7 +946,7 @@ void Mapper::initialize(const plat::PlatformRef &p, const OptionsRef &opt) {
  *     as the mapper does, so it (ab)uses those and is thus linked to the mapper
  *     code.
  */
-void Mapper::map_kernel(const ir::KernelRef &k) {
+void Mapper::map_kernel(const ir::compat::KernelRef &k) {
     QL_DOUT("Mapping kernel " << k->name << " [START]");
     QL_DOUT("... kernel original virtual number of qubits=" << k->qubit_count);
     kernel.reset();            // no new_gates until kernel.c has been copied
@@ -1005,7 +1005,7 @@ void Mapper::map_kernel(const ir::KernelRef &k) {
  *  individually. That means that the resulting program is garbage if any
  *  quantum state was originally maintained from kernel to kernel!
  */
-void Mapper::map(const ir::ProgramRef &prog, const OptionsRef &opt) {
+void Mapper::map(const ir::compat::ProgramRef &prog, const OptionsRef &opt) {
 
     // Shorthand.
     using pass::ana::statistics::AdditionalStats;

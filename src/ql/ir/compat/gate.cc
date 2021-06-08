@@ -2,7 +2,7 @@
  * Quantum gate abstraction implementation.
  */
 
-#include "ql/ir/gate.h"
+#include "ql/ir/compat/gate.h"
 
 #include <cctype>
 #include "ql/utils/num.h"
@@ -10,6 +10,7 @@
 
 namespace ql {
 namespace ir {
+namespace compat {
 
 using namespace utils;
 
@@ -718,5 +719,6 @@ GateType Composite::type() const {
 }
 
 } // namespace gates
+} // namespace compat
 } // namespace ir
 } // namespace ql

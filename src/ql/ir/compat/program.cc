@@ -3,7 +3,7 @@
  */
 
 #include <ql/pmgr/manager.h>
-#include "ql/ir/program.h"
+#include "ql/ir/compat/program.h"
 
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
@@ -12,6 +12,7 @@ static unsigned long phi_node_count = 0;    // FIXME: number across quantum_prog
 
 namespace ql {
 namespace ir {
+namespace compat {
 
 using namespace utils;
 
@@ -20,7 +21,7 @@ using namespace utils;
  */
 Program::Program(
     const Str &name,
-    const plat::PlatformRef &platform,
+    const PlatformRef &platform,
     UInt qubit_count,
     UInt creg_count,
     UInt breg_count
@@ -350,5 +351,6 @@ void Program::add_for(const ProgramRef &p, UInt iterations) {
     phi_node_count++;
 }
 
+} // namespace compat
 } // namespace ir
 } // namespace ql

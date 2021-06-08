@@ -323,7 +323,7 @@ void Scheduler::new_event(
 
 // construct the dependency graph ('graph') with nodes from the circuit and adding arcs for their dependencies
 void Scheduler::init(
-    const ir::KernelRef &kernel,
+    const ir::compat::KernelRef &kernel,
     const utils::Str &output_prefix,
     utils::Bool commute_multi_qubit,
     utils::Bool commute_single_qubit
@@ -351,7 +351,7 @@ void Scheduler::init(
     {
         // add dummy source node
         auto srcNode = graph.addNode();
-        instruction[srcNode].emplace<ir::gate_types::Source>();    // so SOURCE is defined as instruction[s], not unique in itself
+        instruction[srcNode].emplace<ir::compat::gate_types::Source>();    // so SOURCE is defined as instruction[s], not unique in itself
         node.set(instruction[srcNode]) = srcNode;
         name[srcNode] = instruction[srcNode]->qasm();
         s = srcNode;
@@ -483,7 +483,7 @@ void Scheduler::init(
             for (auto boperand : bregs) {
                 new_event(curr_id, OperandType::BREG, boperand, EventType::BWRITE, false);
             }
-        } else if (ins->type() == ir::GateType::CLASSICAL) {
+        } else if (ins->type() == ir::compat::GateType::CLASSICAL) {
             QL_DOUT(". considering " << name[currNode] << " as classical gate");
             // Cwrite each classical operand
             for (auto coperand : ins->creg_operands) {
@@ -558,7 +558,7 @@ void Scheduler::init(
         // add dummy target node
         ListDigraph::Node curr_node = graph.addNode();
         int curr_id = graph.id(curr_node);
-        instruction[curr_node].emplace<ir::gate_types::Sink>();    // so SINK is defined as instruction[t], not unique in itself
+        instruction[curr_node].emplace<ir::compat::gate_types::Sink>();    // so SINK is defined as instruction[t], not unique in itself
         node.set(instruction[curr_node]) = curr_node;
         name[curr_node] = instruction[curr_node]->qasm();
         t = curr_node;
@@ -674,14 +674,14 @@ void Scheduler::write_dependence_matrix() const {
 // the latter never happens when the depgraph was constructed directly from the circuit
 // but when in between the depgraph was updated (as done in commute_variation),
 // dependences may have been inserted in the opposite circuit direction and then the recursion kicks in
-void Scheduler::set_cycle_gate(const ir::GateRef &gp, rmgr::Direction dir) {
+void Scheduler::set_cycle_gate(const ir::compat::GateRef &gp, rmgr::Direction dir) {
     ListDigraph::Node curr_node = node.at(gp);
     UInt  curr_cycle;
     if (dir == rmgr::Direction::FORWARD) {
         curr_cycle = 0;
         for (ListDigraph::InArcIt arc(graph, curr_node); arc != lemon::INVALID; ++arc) {
             auto nextgp = instruction[graph.source(arc)];
-            if (nextgp->cycle == ir::MAX_CYCLE) {
+            if (nextgp->cycle == ir::compat::MAX_CYCLE) {
                 set_cycle_gate(nextgp, dir);
             }
             curr_cycle = max<UInt>(curr_cycle, nextgp->cycle + weight[arc]);
@@ -690,7 +690,7 @@ void Scheduler::set_cycle_gate(const ir::GateRef &gp, rmgr::Direction dir) {
         curr_cycle = ALAP_SINK_CYCLE;
         for (ListDigraph::OutArcIt arc(graph, curr_node); arc != lemon::INVALID; ++arc) {
             auto nextgp = instruction[graph.target(arc)];
-            if (nextgp->cycle == ir::MAX_CYCLE) {
+            if (nextgp->cycle == ir::compat::MAX_CYCLE) {
                 set_cycle_gate(nextgp, dir);
             }
             curr_cycle = min<UInt>(curr_cycle, nextgp->cycle - weight[arc]);
@@ -703,12 +703,12 @@ void Scheduler::set_cycle_gate(const ir::GateRef &gp, rmgr::Direction dir) {
 void Scheduler::set_cycle(rmgr::Direction dir) {
     // note when iterating that graph contains SOURCE and SINK whereas the circuit doesn't
     for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
-        instruction[n]->cycle = ir::MAX_CYCLE;       // not yet visited successfully by set_cycle_gate
+        instruction[n]->cycle = ir::compat::MAX_CYCLE;       // not yet visited successfully by set_cycle_gate
     }
     if (dir == rmgr::Direction::FORWARD) {
         set_cycle_gate(instruction[s], dir);
         for (auto gpit = kernel->gates.begin(); gpit != kernel->gates.end(); gpit++) {
-            if ((*gpit)->cycle == ir::MAX_CYCLE) {
+            if ((*gpit)->cycle == ir::compat::MAX_CYCLE) {
                 set_cycle_gate(*gpit, dir);
             }
         }
@@ -716,7 +716,7 @@ void Scheduler::set_cycle(rmgr::Direction dir) {
     } else {
         set_cycle_gate(instruction[t], dir);
         for (auto gpit = kernel->gates.rbegin(); gpit != kernel->gates.rend(); gpit++) {
-            if ((*gpit)->cycle == ir::MAX_CYCLE) {
+            if ((*gpit)->cycle == ir::compat::MAX_CYCLE) {
                 set_cycle_gate(*gpit, dir);
             }
         }
@@ -734,12 +734,12 @@ void Scheduler::set_cycle(rmgr::Direction dir) {
     }
 }
 
-static Bool cycle_lessthan(const ir::GateRef &gp1, const ir::GateRef &gp2) {
+static Bool cycle_lessthan(const ir::compat::GateRef &gp1, const ir::compat::GateRef &gp2) {
     return gp1->cycle < gp2->cycle;
 }
 
 // sort circuit by the gates' cycle attribute in non-decreasing order
-void Scheduler::sort_by_cycle(ir::GateRefs &cp) {
+void Scheduler::sort_by_cycle(ir::compat::GateRefs &cp) {
     QL_DOUT("... before sorting on cycle value");
     // for ( circuit::iterator gpit = cp->begin(); gpit != cp->end(); gpit++)
     // {
@@ -780,7 +780,7 @@ void Scheduler::schedule_alap() {
 // it is without RC and depends on direction: forward:ASAP so cycles until SINK, backward:ALAP so cycles until SOURCE;
 // remaining[node] is complementary to node's cycle value,
 // so the implementation below is also a systematically modified copy of that of set_cycle_gate and set_cycle
-void Scheduler::set_remaining_gate(const ir::GateRef &gp, rmgr::Direction dir) {
+void Scheduler::set_remaining_gate(const ir::compat::GateRef &gp, rmgr::Direction dir) {
     ListDigraph::Node curr_node = node.at(gp);
     UInt curr_remain = 0;
     QL_DOUT("... set_remaining of node " << graph.id(curr_node) << ": " << gp->qasm() << " ...");
@@ -788,7 +788,7 @@ void Scheduler::set_remaining_gate(const ir::GateRef &gp, rmgr::Direction dir) {
         for (ListDigraph::OutArcIt arc(graph, curr_node); arc != lemon::INVALID; ++arc) {
             auto nextNode = graph.target(arc);
             QL_DOUT("...... target of arc " << graph.id(arc) << " to node " << graph.id(nextNode));
-            if (remaining.at(nextNode) == ir::MAX_CYCLE) {
+            if (remaining.at(nextNode) == ir::compat::MAX_CYCLE) {
                 set_remaining_gate(instruction[nextNode], dir);
             }
             curr_remain = max<UInt>(curr_remain, remaining.at(nextNode) + weight[arc]);
@@ -797,7 +797,7 @@ void Scheduler::set_remaining_gate(const ir::GateRef &gp, rmgr::Direction dir) {
         for (ListDigraph::InArcIt arc(graph, curr_node); arc != lemon::INVALID; ++arc) {
             auto nextNode = graph.source(arc);
             QL_DOUT("...... source of arc " << graph.id(arc) << " from node " << graph.id(nextNode));
-            if (remaining.at(nextNode) == ir::MAX_CYCLE) {
+            if (remaining.at(nextNode) == ir::compat::MAX_CYCLE) {
                 set_remaining_gate(instruction[nextNode], dir);
             }
             curr_remain = max<UInt>(curr_remain, remaining.at(nextNode) + weight[arc]);
@@ -812,13 +812,13 @@ void Scheduler::set_remaining(rmgr::Direction dir) {
     // regretfully, the order of visiting the nodes while iterating over the graph, is undefined
     // and in set_remaining (and set_cycle) the order matters (i.e. in circuit order or reversed circuit order)
     for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
-        remaining.set(n) = ir::MAX_CYCLE;               // not yet visited successfully by set_remaining_gate
+        remaining.set(n) = ir::compat::MAX_CYCLE;               // not yet visited successfully by set_remaining_gate
     }
     if (dir == rmgr::Direction::FORWARD) {
         // remaining until SINK (i.e. the SINK.cycle-ALAP value)
         set_remaining_gate(instruction[t], dir);
         for (auto gpit = kernel->gates.rbegin(); gpit != kernel->gates.rend(); gpit++) {
-            if (remaining.at(node.at(*gpit)) == ir::MAX_CYCLE) {
+            if (remaining.at(node.at(*gpit)) == ir::compat::MAX_CYCLE) {
                 set_remaining_gate(*gpit, dir);
             }
         }
@@ -827,7 +827,7 @@ void Scheduler::set_remaining(rmgr::Direction dir) {
         // remaining until SOURCE (i.e. the ASAP value)
         set_remaining_gate(instruction[s], dir);
         for (auto gpit = kernel->gates.begin(); gpit != kernel->gates.end(); gpit++) {
-            if (remaining.at(node.at(*gpit)) == ir::MAX_CYCLE) {
+            if (remaining.at(node.at(*gpit)) == ir::compat::MAX_CYCLE) {
                 set_remaining_gate(*gpit, dir);
             }
         }
@@ -835,9 +835,9 @@ void Scheduler::set_remaining(rmgr::Direction dir) {
     }
 }
 
-ir::GateRef Scheduler::find_mostcritical(const List<ir::GateRef> &lg) {
+ir::compat::GateRef Scheduler::find_mostcritical(const List<ir::compat::GateRef> &lg) {
     UInt max_remain = 0;
-    ir::GateRef most_critical_gate = {};
+    ir::compat::GateRef most_critical_gate = {};
     for (const auto &gp : lg) {
         UInt gr = remaining.at(node.at(gp));
         if (gr > max_remain) {
@@ -1031,7 +1031,7 @@ void Scheduler::make_available(
 void Scheduler::take_available(
     ListDigraph::Node n,
     utils::List<lemon::ListDigraph::Node> &avlist,
-    utils::Map<ir::GateRef, utils::Bool> &scheduled,
+    utils::Map<ir::compat::GateRef, utils::Bool> &scheduled,
     rmgr::Direction dir
 ) {
     scheduled.set(instruction[n]) = true;
@@ -1094,7 +1094,7 @@ Bool Scheduler::immediately_schedulable(
     rmgr::State &rs,
     Bool &isres
 ) {
-    ir::GateRef gp = instruction[n];
+    ir::compat::GateRef gp = instruction[n];
     isres = true;
     // have dependent gates completed at curr_cycle?
     if (
@@ -1104,9 +1104,9 @@ Bool Scheduler::immediately_schedulable(
         // are resources available?
         if (
             n == s || n == t
-            || gp->type() == ir::GateType::DUMMY
-            || gp->type() == ir::GateType::CLASSICAL
-            || gp->type() == ir::GateType::WAIT
+            || gp->type() == ir::compat::GateType::DUMMY
+            || gp->type() == ir::compat::GateType::CLASSICAL
+            || gp->type() == ir::compat::GateType::WAIT
             ) {
             return true;
         }
@@ -1181,7 +1181,7 @@ void Scheduler::schedule(
     auto rs = rm.build(dir);
 
     // scheduled[gp] :=: whether gate *gp has been scheduled, init all false
-    Map<ir::GateRef, Bool> scheduled;
+    Map<ir::compat::GateRef, Bool> scheduled;
     // avlist :=: list of schedulable nodes, initially (see below) just s or t
     List<ListDigraph::Node> avlist;
 
@@ -1209,15 +1209,15 @@ void Scheduler::schedule(
         }
 
         // commit selected_node to the schedule
-        ir::GateRef gp = instruction[selected_node];
+        ir::compat::GateRef gp = instruction[selected_node];
         QL_DOUT("... selected " << gp->qasm() << " in cycle " << curr_cycle);
         gp->cycle = curr_cycle;                     // scheduler result, including s and t
         if (
             selected_node != s
             && selected_node != t
-            && gp->type() != ir::GateType::DUMMY
-            && gp->type() != ir::GateType::CLASSICAL
-            && gp->type() != ir::GateType::WAIT
+            && gp->type() != ir::compat::GateType::DUMMY
+            && gp->type() != ir::compat::GateType::CLASSICAL
+            && gp->type() != ir::compat::GateType::WAIT
             ) {
             rs.reserve(curr_cycle, gp);
         }
@@ -1304,7 +1304,7 @@ void Scheduler::schedule_alap_uniform() {
     // DOUT("Creating gates_per_cycle");
     // create gates_per_cycle[cycle] = for each cycle the list of gates at cycle cycle
     // this is the basic map to be operated upon by the uniforming scheduler below;
-    Map<UInt, List<ir::GateRef>> gates_per_cycle;
+    Map<UInt, List<ir::compat::GateRef>> gates_per_cycle;
     for (const auto &gp : kernel->gates) {
         gates_per_cycle.set(gp->cycle).push_back(gp);
     }
@@ -1369,9 +1369,9 @@ void Scheduler::schedule_alap_uniform() {
         while (Real(gates_per_cycle.get(curr_cycle).size()) < avg_gates_per_non_empty_cycle && pred_cycle >= 1) {
             QL_DOUT("pred_cycle=" << pred_cycle);
             QL_DOUT("gates_per_cycle[curr_cycle].size()=" << gates_per_cycle.get(curr_cycle).size());
-            UInt min_remaining_cycle = ir::MAX_CYCLE;
-            List<ir::GateRef>::const_iterator best_predgp_it;
-            ir::GateRef best_predgp = {};
+            UInt min_remaining_cycle = ir::compat::MAX_CYCLE;
+            List<ir::compat::GateRef>::const_iterator best_predgp_it;
+            ir::compat::GateRef best_predgp = {};
             Bool best_predgp_found = false;
 
             // scan bundle at pred_cycle to find suitable candidate to move forward to curr_cycle
@@ -1390,7 +1390,7 @@ void Scheduler::schedule_alap_uniform() {
                     QL_DOUT("... ... rejected (after circuit): " << predgp->qasm() << " would complete @" << predgp_completion_cycle << " SINK @" << cycle_count + 1);
                 } else {
                     for (ListDigraph::OutArcIt arc(graph,pred_node); arc != lemon::INVALID; ++arc) {
-                        ir::GateRef target_gp = instruction[graph.target(arc)];
+                        ir::compat::GateRef target_gp = instruction[graph.target(arc)];
                         UInt target_cycle = target_gp->cycle;
                         if (predgp_completion_cycle > target_cycle) {
                             forward_predgp = false;

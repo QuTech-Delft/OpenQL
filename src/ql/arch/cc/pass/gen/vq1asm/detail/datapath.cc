@@ -127,9 +127,9 @@ UInt Datapath::getSizeTag(UInt numReadouts) {
 }
 
 
-static Str cond_qasm(ir::ConditionType condition, const Vec<UInt> &cond_operands) {
+static Str cond_qasm(ir::compat::ConditionType condition, const Vec<UInt> &cond_operands) {
     // FIXME: hack
-    ir::gate_types::Custom g("foo");
+    ir::compat::gate_types::Custom g("foo");
     g.condition = condition;
     g.cond_operands = cond_operands;
     return g.cond_qasm();
@@ -218,40 +218,40 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
         StrStrm rhs;
         switch (cgi.condition) {
             // 0 operands:
-            case ir::ConditionType::ALWAYS:
+            case ir::compat::ConditionType::ALWAYS:
                 rhs << "1";
                 break;
-            case ir::ConditionType::NEVER:
+            case ir::compat::ConditionType::NEVER:
                 rhs << "0";
                 break;
 
             // 1 operand:
-            case ir::ConditionType::NOT:
+            case ir::compat::ConditionType::NOT:
                 inv = "/";
                 // fall through
-            case ir::ConditionType::UNARY:
+            case ir::compat::ConditionType::UNARY:
                 rhs << "SM[" << winBit(0) << "]";
                 break;
 
             // 2 operands
-            case ir::ConditionType::NAND:
+            case ir::compat::ConditionType::NAND:
                 inv = "/";
                 // fall through
-            case ir::ConditionType::AND:
+            case ir::compat::ConditionType::AND:
                 rhs << "SM[" << winBit(0) << "] & SM[" << winBit(1) << "]";
                 break;
 
-            case ir::ConditionType::NOR:
+            case ir::compat::ConditionType::NOR:
                 inv = "/";
                 // fall through
-            case ir::ConditionType::OR:
+            case ir::compat::ConditionType::OR:
                 rhs << "SM[" << winBit(0) << "] | SM[" << winBit(1) << "]";
                 break;
 
-            case ir::ConditionType::NXOR:
+            case ir::compat::ConditionType::NXOR:
                 inv = "/";
                 // fall through
-            case ir::ConditionType::XOR:
+            case ir::compat::ConditionType::XOR:
                 rhs << "SM[" << winBit(0) << "] ^ SM[" << winBit(1) << "]";
                 break;
         }

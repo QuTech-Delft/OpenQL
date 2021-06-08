@@ -18,7 +18,7 @@ namespace detail {
 
 using namespace utils;
 
-void visualizeMappingGraph(const ir::ProgramRef &program, const VisualizerConfiguration &configuration) {
+void visualizeMappingGraph(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration) {
     QL_IOUT("Visualizing mapping graph...");
 
     // Parse the layout and gate vector.
@@ -63,7 +63,7 @@ void visualizeMappingGraph(const ir::ProgramRef &program, const VisualizerConfig
         QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");
     }
     // Visualize the circuit sequentially if one or more gates were not scheduled yet.
-    if (amountOfCycles == ir::MAX_CYCLE) {
+    if (amountOfCycles == ir::compat::MAX_CYCLE) {
         // Add a sequential cycle to each gate.
         amountOfCycles = 0;
         for (GateProperties &gate : gates) {
@@ -275,7 +275,7 @@ void computeMappingPerCycle(const MappingGraphLayout &layout,
     }
 }
 
-Bool parseTopology(const plat::PlatformRef &platform, Topology &topology) {
+Bool parseTopology(const ir::compat::PlatformRef &platform, Topology &topology) {
     auto size = platform->topology->get_grid_size();
     if (size.x == 0 || size.y == 0) {
         QL_IOUT("Falling back on basic visualization; missing qubit coordinates in topology section");

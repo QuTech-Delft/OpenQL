@@ -9,8 +9,7 @@
 #include "ql/utils/list.h"
 #include "ql/utils/map.h"
 #include "ql/utils/vec.h"
-#include "ql/plat/platform.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/com/qubit_mapping.h"
 #include "options.h"
 #include "free_cycle.h"
@@ -86,12 +85,12 @@ private:
     /**
      * Platform describing resources for scheduling.
      */
-    plat::PlatformRef platform;
+    ir::compat::PlatformRef platform;
 
     /**
      * Current kernel for creating gates.
      */
-    ir::KernelRef kernel;
+    ir::compat::KernelRef kernel;
 
     /**
      * Parsed options record for the whole mapper pass.
@@ -114,7 +113,7 @@ private:
      * call. When evaluating alternatives, it is empty when Past is cloned; so
      * no state.
      */
-    utils::List<ir::GateRef> waiting_gates;
+    utils::List<ir::compat::GateRef> waiting_gates;
 
 public:
 
@@ -123,7 +122,7 @@ public:
      * values. So this is the result list of this Past, to compare with other
      * Alters.
      */
-    utils::List<ir::GateRef> gates;
+    utils::List<ir::compat::GateRef> gates;
 
 private:
 
@@ -131,7 +130,7 @@ private:
      * List of gates flushed out of this Past, not yet put in outCirc when
      * evaluating alternatives. output_gates stays constant; so no state.
      */
-    utils::List<ir::GateRef> output_gates;
+    utils::List<ir::compat::GateRef> output_gates;
 
     /**
      * State: gate to cycle map, startCycle value of each past gatecycle[gp].
@@ -139,7 +138,7 @@ private:
      * used by map_gates, although updated by set_cycle called from
      * MakeAvailable/TakeAvailable.
      */
-    utils::Map<ir::GateRef, utils::UInt> cycle;
+    utils::Map<ir::compat::GateRef, utils::UInt> cycle;
 
     /**
      * Number of swaps (including moves) added to this past.
@@ -156,7 +155,7 @@ public:
     /**
      * Past initializer.
      */
-    void initialize(const ir::KernelRef &k, const OptionsRef &opt);
+    void initialize(const ir::compat::KernelRef &k, const OptionsRef &opt);
 
     /**
      * Copies the given qubit mapping into our mapping.
@@ -198,15 +197,15 @@ public:
      * init_circuit before the inevitable circuit.
      */
     utils::Int get_insertion_cost(
-        const ir::GateRefs &init_circuit,
-        const ir::GateRefs &circuit
+        const ir::compat::GateRefs &init_circuit,
+        const ir::compat::GateRefs &circuit
     ) const;
 
     /**
      * Adds the given mapped gate to the current past. This means adding it to
      * the current past's waiting list, waiting for it to be scheduled later.
      */
-    void add(const ir::GateRef &gate);
+    void add(const ir::compat::GateRef &gate);
 
     /**
      * Creates a new gate with given name and qubits, returning whether this was
@@ -223,14 +222,14 @@ public:
      * written to kernel.c only at the very end.
      */
     utils::Bool new_gate(
-        ir::GateRefs &circ,
+        ir::compat::GateRefs &circ,
         const utils::Str &gname,
         const utils::Vec<utils::UInt> &qubits,
         const utils::Vec<utils::UInt> &cregs = {},
         utils::UInt duration = 0,
         utils::Real angle = 0.0,
         const utils::Vec<utils::UInt> &bregs = {},
-        ir::ConditionType gcond = ir::ConditionType::ALWAYS,
+        ir::compat::ConditionType gcond = ir::compat::ConditionType::ALWAYS,
         const utils::Vec<utils::UInt> &gcondregs = {}
     ) const;
 
@@ -262,7 +261,7 @@ public:
      * seen from whether circ was extended. Please note that the reversal of
      * operands may have been done also when generate_move() was not successful.
      */
-    void generate_move(ir::GateRefs &circuit, utils::UInt &r0, utils::UInt &r1);
+    void generate_move(ir::compat::GateRefs &circuit, utils::UInt &r0, utils::UInt &r1);
 
     /**
      * Generates a single swap/move with real operands and adds it to the
@@ -285,7 +284,7 @@ public:
      * Adds the mapped gate (with real qubit indices as operands) to the past
      * by adding it to the waiting list and scheduling it into the past.
      */
-    void add_and_schedule(const ir::GateRef &gate);
+    void add_and_schedule(const ir::compat::GateRef &gate);
 
     /**
      * Returns the real qubit index implementing virtual qubit index. If the
@@ -336,14 +335,14 @@ public:
      *   4. Final schedule: the resulting gates are subject to final scheduling
      *      (the original resource-constrained scheduler).
      */
-    void make_real(const ir::GateRef &gate, ir::GateRefs &circuit);
+    void make_real(const ir::compat::GateRef &gate, ir::compat::GateRefs &circuit);
 
     /**
      * Mapper after-burner. Used to make primitives of all gates that also have
      * a config file entry with _prim appended to their name, decomposing it
      * according to the config file gate decomposition.
      */
-    void make_primitive(const ir::GateRef &gate, ir::GateRefs &circuit) const;
+    void make_primitive(const ir::compat::GateRef &gate, ir::compat::GateRefs &circuit) const;
 
     /**
      * Returns the first completely free cycle.
@@ -369,12 +368,12 @@ public:
     /**
      * Add the given non-qubit gate directly to the output list.
      */
-    void bypass(const ir::GateRef &gate);
+    void bypass(const ir::compat::GateRef &gate);
 
     /**
      * Flushes the output gate list to the given circuit.
      */
-    void flush_to_circuit(ir::GateRefs &output_circuit);
+    void flush_to_circuit(ir::compat::GateRefs &output_circuit);
 
 };
 

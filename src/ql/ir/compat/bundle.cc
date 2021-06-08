@@ -2,12 +2,13 @@
  * Common IR implementation.
  */
 
-#include "ql/ir/bundle.h"
+#include "ql/ir/compat/bundle.h"
 
 #include "ql/com/options.h"
 
 namespace ql {
 namespace ir {
+namespace compat {
 
 using namespace utils;
 
@@ -15,8 +16,8 @@ using namespace utils;
  * Create a circuit with valid cycle values from the bundled internal
  * representation. The bundles are assumed to be ordered by cycle number.
  */
-ir::GateRefs circuiter(const ir::Bundles &bundles) {
-    ir::GateRefs gates;
+GateRefs circuiter(const Bundles &bundles) {
+    GateRefs gates;
 
     UInt cycle = 0;
     for (const Bundle &bundle : bundles) {
@@ -39,9 +40,9 @@ ir::GateRefs circuiter(const ir::Bundles &bundles) {
  * Create a bundled-qasm external representation from the bundled internal
  * representation.
  */
-Str qasm(const ir::Bundles &bundles) {
+Str qasm(const Bundles &bundles) {
     StrStrm ssqasm;
-    UInt curr_cycle = ir::FIRST_CYCLE;        // FIXME HvS prefer to start at 0; also see depgraph creation
+    UInt curr_cycle = FIRST_CYCLE;        // FIXME HvS prefer to start at 0; also see depgraph creation
     Str skipgate = "wait";
     if (com::options::get("issue_skip_319") == "yes") {
         skipgate = "skip";
@@ -86,15 +87,15 @@ Str qasm(const ir::Bundles &bundles) {
  * Create a bundled internal representation from the given kernel with valid
  * cycle information.
  */
-ir::Bundles bundler(const KernelRef &kernel) {
+Bundles bundler(const KernelRef &kernel) {
     QL_ASSERT(kernel->cycles_valid);
 
     auto cycle_time = kernel->platform->cycle_time;
 
-    ir::Bundles bundles;        // result bundles
+    Bundles bundles;        // result bundles
 
-    ir::Bundle  currBundle;     // current bundle at currCycle that is being filled
-    UInt        currCycle = 0;  // cycle at which bundle is to be scheduled
+    Bundle  currBundle;     // current bundle at currCycle that is being filled
+    UInt    currCycle = 0;  // cycle at which bundle is to be scheduled
 
     currBundle.start_cycle = currCycle; // starts off as empty bundle starting at currCycle
     currBundle.duration_in_cycles = 0;
@@ -178,7 +179,7 @@ ir::Bundles bundler(const KernelRef &kernel) {
  * Print the bundles with an indication (taken from 'at') from where this
  * function was called.
  */
-void debug_bundles(const Str &at, const ir::Bundles &bundles) {
+void debug_bundles(const Str &at, const Bundles &bundles) {
     QL_DOUT("debug_bundles at: " << at << " showing " << bundles.size() << " bundles");
     for (const auto &bundle : bundles) {
         QL_DOUT("... bundle with ngates: " << bundle.gates.size());
@@ -189,5 +190,6 @@ void debug_bundles(const Str &at, const ir::Bundles &bundles) {
     }
 }
 
+} // namespace compat
 } // namespace ir
-} //namespace ql
+} // namespace ql

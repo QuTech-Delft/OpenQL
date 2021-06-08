@@ -12,6 +12,7 @@
 
 namespace ql {
 namespace ir {
+namespace compat {
 
 typedef utils::Str Instruction;
 
@@ -348,5 +349,6 @@ public:
 };
 
 } // namespace gates
+} // namespace compat
 } // namespace ir
 } // namespace ql

@@ -14,7 +14,7 @@ namespace com {
 using namespace utils;
 
 InteractionMatrix::InteractionMatrix(
-    const ir::KernelRef &kernel
+    const ir::compat::KernelRef &kernel
 ) : size(kernel->qubit_count) {
     matrix.resize(size, Vec<UInt>(size, 0));
     for (auto ins : kernel->gates) {
@@ -76,7 +76,7 @@ Str InteractionMatrix::get_string() const {
  * reports the results to the given output stream.
  */
 void InteractionMatrix::dump_for_program(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     std::ostream &os
 ) {
     for (const auto &k : program->kernels) {
@@ -93,7 +93,7 @@ void InteractionMatrix::dump_for_program(
  */
 void InteractionMatrix::write_for_program(
     const utils::Str &output_prefix,
-    const ir::ProgramRef &program
+    const ir::compat::ProgramRef &program
 ) {
     for (const auto &k : program->kernels) {
         ql::com::InteractionMatrix imat(k);

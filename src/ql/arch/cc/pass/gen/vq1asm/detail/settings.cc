@@ -18,7 +18,7 @@ namespace detail {
 
 using namespace utils;
 
-void Settings::loadBackendSettings(const plat::PlatformRef &platform) {
+void Settings::loadBackendSettings(const ir::compat::PlatformRef &platform) {
     this->platform = platform;
 
     // remind some main JSON areas

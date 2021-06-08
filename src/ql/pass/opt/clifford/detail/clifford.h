@@ -6,8 +6,7 @@
 
 #include "ql/utils/num.h"
 #include "ql/utils/vec.h"
-#include "ql/plat/platform.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 
 namespace ql {
 namespace pass {
@@ -51,13 +50,13 @@ private:
      * Create gate sequences for all accumulated cliffords, output them and
      * reset state.
      */
-    void sync_all(const ir::KernelRef &k);
+    void sync_all(const ir::compat::KernelRef &k);
 
     /**
      * Create gate sequence for accumulated cliffords of qubit q, output it and
      * reset state.
      */
-    void sync(const ir::KernelRef &k, utils::UInt q);
+    void sync(const ir::compat::KernelRef &k, utils::UInt q);
 
     /**
      * Clifford state transition table.
@@ -98,7 +97,7 @@ private:
      * TODO: this currently infers the Clifford index by gate name; instead
      *  semantics like this should be in the config file somehow.
      */
-    static utils::Int gate2cs(const ir::GateRef &gate);
+    static utils::Int gate2cs(const ir::compat::GateRef &gate);
 
     /**
      * Find the duration of the gate sequence corresponding to given clifford
@@ -120,7 +119,7 @@ public:
     /**
      * Optimizes the given kernel, returning how many cycles were saved.
      */
-    utils::UInt optimize_kernel(const ir::KernelRef &kernel);
+    utils::UInt optimize_kernel(const ir::compat::KernelRef &kernel);
 
 };
 

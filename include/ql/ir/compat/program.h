@@ -8,11 +8,12 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/tree.h"
-#include "ql/ir/kernel.h"
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/kernel.h"
+#include "ql/ir/compat/platform.h"
 
 namespace ql {
 namespace ir {
+namespace compat {
 
 class Program;
 
@@ -43,7 +44,7 @@ public:
     /**
      * The platform that this program is intended for.
      */
-    plat::PlatformRef platform;
+    PlatformRef platform;
 
     /**
      * Number of (virtual) qubits used by this program. Must be less than or
@@ -85,7 +86,7 @@ public:
      */
     Program(
         const utils::Str &name,
-        const plat::PlatformRef &platform,
+        const PlatformRef &platform,
         utils::UInt qubit_count,
         utils::UInt creg_count = 0,
         utils::UInt breg_count = 0
@@ -149,5 +150,6 @@ public:
 
 };
 
+} // namespace compat
 } // namespace ir
 } // namespace ql

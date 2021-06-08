@@ -20,7 +20,7 @@ using namespace utils;
  * Create gate sequences for all accumulated cliffords, output them and
  * reset state.
  */
-void Clifford::sync_all(const ir::KernelRef &k) {
+void Clifford::sync_all(const ir::compat::KernelRef &k) {
     QL_DOUT("... sync_all");
     for (UInt q = 0; q < nq; q++) {
         sync(k, q);
@@ -32,7 +32,7 @@ void Clifford::sync_all(const ir::KernelRef &k) {
  * Create gate sequence for accumulated cliffords of qubit q, output it and
  * reset state.
  */
-void Clifford::sync(const ir::KernelRef &k, UInt q) {
+void Clifford::sync(const ir::compat::KernelRef &k, UInt q) {
     Int csq = cliffstate[q];
     if (csq != 0) {
         QL_DOUT("... sync q[" << q << "]: generating clifford " << cs2string(csq));
@@ -55,7 +55,7 @@ void Clifford::sync(const ir::KernelRef &k, UInt q) {
  * TODO: this currently infers the Clifford index by gate name; instead
  *  semantics like this should be in the config file somehow.
  */
-Int Clifford::gate2cs(const ir::GateRef &gate) {
+Int Clifford::gate2cs(const ir::compat::GateRef &gate) {
     auto gname = gate->name;
     if (gname == "identity")         return 0;
     else if (gname == "i")           return 0;
@@ -158,7 +158,7 @@ Str Clifford::cs2string(Int cs) {
 /**
  * Optimizes the given kernel, returning how many cycles were saved.
  */
-utils::UInt Clifford::optimize_kernel(const ir::KernelRef &kernel) {
+utils::UInt Clifford::optimize_kernel(const ir::compat::KernelRef &kernel) {
     QL_DOUT("clifford_optimize_kernel()");
 
     nq = kernel->qubit_count;
@@ -212,7 +212,7 @@ utils::UInt Clifford::optimize_kernel(const ir::KernelRef &kernel) {
         QL_DOUT("... gate: " << gate->qasm());
 
         if (
-            gate->type() == ir::GateType::CLASSICAL               // classical gates (really being pessimistic here about these)
+            gate->type() == ir::compat::GateType::CLASSICAL       // classical gates (really being pessimistic here about these)
             || gate->operands.empty()                             // gates without operands which may affect ALL qubits
         ) {
             // sync all qubits: create gate sequences corresponding to what was accumulated in cliffstate, for all qubits

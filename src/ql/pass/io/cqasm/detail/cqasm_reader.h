@@ -8,8 +8,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"
 #include "ql/utils/tree.h"
-#include "ql/plat/platform.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "cqasm.hpp"
 
 namespace ql {
@@ -332,12 +331,12 @@ private:
     /**
      * OpenQL platform reference to compile for.
      */
-    const plat::PlatformRef &platform;
+    const ir::compat::PlatformRef &platform;
 
     /**
      * OpenQL program to add loaded circuits to.
      */
-    const ir::ProgramRef &program;
+    const ir::compat::ProgramRef &program;
 
     /**
      * Represents the supported set of gates. This differs from the platform
@@ -369,7 +368,7 @@ public:
     /**
      * Constructs a reader.
      */
-    ReaderImpl(const plat::PlatformRef &platform, const ir::ProgramRef &program);
+    ReaderImpl(const ir::compat::PlatformRef &platform, const ir::compat::ProgramRef &program);
 
     /**
      * Load libqasm gateset and conversion rules to OpenQL gates from a JSON

@@ -7,7 +7,7 @@
 
 #include "ql/utils/num.h"
 #include "ql/utils/vec.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/rmgr/resource_types/base.h"
 #include "ql/rmgr/factory.h"
 
@@ -69,7 +69,7 @@ public:
      */
     utils::Bool available(
         utils::UInt cycle,
-        const ir::GateRef &gate
+        const ir::compat::GateRef &gate
     ) const;
 
     /**
@@ -79,7 +79,7 @@ public:
      */
     void reserve(
         utils::UInt cycle,
-        const ir::GateRef &gate
+        const ir::compat::GateRef &gate
     );
 
     /**

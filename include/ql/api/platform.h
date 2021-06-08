@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/platform.h"
 #include "ql/pmgr/manager.h"
 #include "ql/api/declarations.h"
 #include "ql/api/compiler.h"
@@ -55,7 +55,7 @@ private:
     /**
      * The wrapped platform.
      */
-    ql::plat::PlatformRef platform;
+    ql::ir::compat::PlatformRef platform;
 
     /**
      * Wrapped pass manager. If this is non-null, it will be used for

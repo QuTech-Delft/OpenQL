@@ -10,7 +10,7 @@
 
 #include <iomanip>
 #include "ql/utils/logger.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "types.h"
 #include "bundle_info.h"
 
@@ -32,7 +32,7 @@ struct FeedbackInfo {                                       // information for f
 using FeedbackMap = Map<Int, FeedbackInfo>;                 // NB: key is instrument group
 
 struct CondGateInfo { // information for conditional gate on single instrument group
-    ir::ConditionType condition;
+    ir::compat::ConditionType condition;
     Vec<UInt> cond_operands;
     Digital groupDigOut;
 };

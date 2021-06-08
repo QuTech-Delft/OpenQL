@@ -484,7 +484,7 @@ Bool Algorithm::wrapper(com::QubitMapping &v2r) {
 // details of how this is accomplished, can be found above;
 // v2r is updated by PlaceBody/PlaceWrapper when it has found a mapping
 Result Algorithm::run(
-    const ir::KernelRef &k,
+    const ir::compat::KernelRef &k,
     const Options &opt,
     com::QubitMapping &v2r
 ) {

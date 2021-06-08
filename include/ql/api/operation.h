@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/api/declarations.h"
 #include "ql/api/creg.h"
 
@@ -29,7 +29,7 @@ private:
     /**
      * The wrapped classical operation object.
      */
-    ql::utils::Ptr<ql::ir::ClassicalOperation> operation;
+    ql::utils::Ptr<ql::ir::compat::ClassicalOperation> operation;
 
 public:
 

@@ -6,8 +6,7 @@
 
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
-#include "ql/plat/platform.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 
 namespace ql {
 namespace rmgr {
@@ -65,7 +64,7 @@ struct Context {
     /**
      * The platform being compiled for.
      */
-    plat::PlatformRef platform;
+    ir::compat::PlatformRef platform;
 
     /**
      * Unparsed JSON configuration data for the resource.

@@ -3,12 +3,12 @@
  * qubits.
  */
 
-#include "ql/plat/topology.h"
+#include "ql/com/topology.h"
 
 #include "ql/utils/logger.h"
 
 namespace ql {
-namespace plat {
+namespace com {
 
 /**
  * Returns the clockwise angle of b around a with respect to the positive Y
@@ -745,5 +745,5 @@ void Topology::dump(std::ostream &os, const utils::Str &line_prefix) const {
     }
 }
 
-} // namespace plat
+} // namespace com
 } // namespace ql

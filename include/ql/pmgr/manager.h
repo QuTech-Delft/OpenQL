@@ -15,7 +15,7 @@
 #include "ql/utils/pair.h"
 #include "ql/utils/options.h"
 #include "ql/utils/compat.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/pmgr/pass_types/base.h"
 #include "ql/pmgr/factory.h"
 #include "ql/pmgr/declarations.h"
@@ -100,7 +100,7 @@ public:
      * in the configuration file and from the global options (similar to the
      * "compatibility-mode" key in the JSON strategy definition format).
      */
-    static Manager from_defaults(const plat::PlatformRef &platform);
+    static Manager from_defaults(const ir::compat::PlatformRef &platform);
 
     /**
      * Returns a reference to the root pass group.
@@ -309,7 +309,7 @@ public:
      * Ensures that all passes have been constructed, and then runs the passes
      * on the given program.
      */
-    void compile(const ir::ProgramRef &program);
+    void compile(const ir::compat::ProgramRef &program);
 
 };
 

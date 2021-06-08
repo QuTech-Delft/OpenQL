@@ -39,7 +39,7 @@ NodeType Group::on_construct(
  * exception.
  */
 utils::Int Group::run_internal(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const Context &context
 ) const {
     QL_ASSERT(false);
@@ -84,7 +84,7 @@ ProgramTransformation::ProgramTransformation(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int ProgramTransformation::run_internal(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const Context &context
 ) const {
     return run(program, context);
@@ -122,7 +122,7 @@ utils::Int KernelTransformation::retval_accumulate(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int KernelTransformation::run_internal(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const Context &context
 ) const {
     utils::Int accumulator = retval_initialize();
@@ -147,7 +147,7 @@ ProgramAnalysis::ProgramAnalysis(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int ProgramAnalysis::run_internal(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const Context &context
 ) const {
     return run(program, context);
@@ -185,8 +185,8 @@ utils::Int KernelAnalysis::retval_accumulate(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int KernelAnalysis::run_internal(
-    const ir::ProgramRef &program,
-        const Context &context
+    const ir::compat::ProgramRef &program,
+    const Context &context
 ) const {
     utils::Int accumulator = retval_initialize();
     for (const auto &kernel : program->kernels) {

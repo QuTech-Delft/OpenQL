@@ -7,7 +7,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 
 namespace ql {
 namespace com {
@@ -44,7 +44,7 @@ public:
     /**
      * Computes the interaction matrix for the given kernel.
      */
-    InteractionMatrix(const ir::KernelRef &kernel);
+    InteractionMatrix(const ir::compat::KernelRef &kernel);
 
     /**
      * Returns the embedded matrix.
@@ -60,14 +60,14 @@ public:
      * Constructs interaction matrices for each kernel in the program, and
      * reports the results to the given output stream.
      */
-    static void dump_for_program(const ir::ProgramRef &program, std::ostream &os=std::cout);
+    static void dump_for_program(const ir::compat::ProgramRef &program, std::ostream &os=std::cout);
 
     /**
      * Same as dump_for_program(), but writes the result to files in the
      * current globally-configured output directory, using the names
      * "<prefix><kernel>InteractionMatrix.dat".
      */
-    static void write_for_program(const utils::Str &output_prefix, const ir::ProgramRef &program);
+    static void write_for_program(const utils::Str &output_prefix, const ir::compat::ProgramRef &program);
 
 };
 

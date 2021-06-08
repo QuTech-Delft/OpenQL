@@ -506,7 +506,7 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
  */
 utils::Bool InstrumentResource::on_gate(
     utils::UInt cycle,
-    const ir::GateRef &gate,
+    const ir::compat::GateRef &gate,
     utils::Bool commit
 ) {
     QL_DOUT(
@@ -718,9 +718,9 @@ utils::Bool InstrumentResource::on_gate(
         );
         for (auto index : affected) {
             if (config->direction == rmgr::Direction::FORWARD) {
-                state[index].erase({ir::FIRST_CYCLE, range.first});
+                state[index].erase({ir::compat::FIRST_CYCLE, range.first});
             } else if (config->direction == rmgr::Direction::BACKWARD) {
-                state[index].erase({range.second, ir::MAX_CYCLE});
+                state[index].erase({range.second, ir::compat::MAX_CYCLE});
             }
             state[index].set(range, function);
         }
