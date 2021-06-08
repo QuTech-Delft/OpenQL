@@ -34,8 +34,8 @@ root {
     # Root node for the description of the target.
     platform: One<platform>;
 
-    //# Root node for the description of the algorithm.
-    //program: One<program>;
+    # Root node for the description of the algorithm.
+    program: Maybe<program>;
 
 }
 
@@ -134,9 +134,9 @@ instruction_type {
     # this node in its specialization list.
     generalization: OptLink<instruction_type>;
 
-    //# The values of any template operands for this specialization of this
-    //# instruction.
-    //template_operands: Any<literal>;
+    # The values of any template operands for this specialization of this
+    # instruction.
+    template_operands: Any<literal>;
 
     # Decomposition rules for this instruction type. Multiple of these may be
     # defined with different keys. It is up to the decomposition pass to choose
@@ -162,8 +162,8 @@ instruction_decomposition {
     # Any temporary variables as needed within the decomposition rule.
     objects: Any<temporary_object>;
 
-    //# The block of instructions that the decomposition rule expands to.
-    //expansion: One<block>;
+    # The block of instructions that the decomposition rule expands to.
+    expansion: Any<statement>;
 
 }
 
@@ -309,5 +309,355 @@ operand_type {
 
     # The data type of the operand.
     data_type: Link<data_type>;
+
+}
+
+# Root node for the algorithm itself.
+program {
+
+    # User-given name for the program.
+    name: prim::Str;
+
+    # Possibly-uniquified program name in the context of multiple compilations
+    # of the same program within some context.
+    # TODO: this shouldn't be here.
+    unique_name: prim::Str;
+
+    # List of virtual objects (variables and temporary storage locations) in use
+    # by the program.
+    objects: Any<virtual_object>;
+
+    # The list of blocks that constitute the program.
+    blocks: Many<block>;
+
+    # The block that serves as the entry point to the program. Must point into
+    # an entry of blocks.
+    entry_point: Link<block>;
+
+}
+
+# A block of statements within the program. Depending on the stage of
+# compilation, this may represent a *basic* block. A basic block has the
+# following rules attached:
+#  - all statements must be instructions; and
+#  - no non-goto instructions may follow any goto instruction.
+# Before this stage, there are no requirements.
+block {
+
+    # Optional name of this block. Must match `[a-zA-Z_][a-zA-Z0-9_]*` and be
+    # unique if specified (non-empty).
+    name: prim::Str;
+
+    # The list of statements that constitute the body of the block. The cycle
+    # numbers of any contained instructions must be non-decreasing.
+    statements: Any<statement>;
+
+    # Link to the block that will be processed after this block. If empty, the
+    # algorithm terminates at the end.
+    next: OptLink<block>;
+
+}
+
+# A statement. This can take the form of an instruction or a special structured
+# control-flow statement.
+statement {
+
+    # A schedulable instruction instance. May be quantum, classical, or mixed in
+    # nature.
+    instruction {
+
+        # The quantum cycle in which this instruction is scheduled, with respect
+        # to the start of the block it is contained in. Note that the order of
+        # instructions scheduled within the same quantum cycle is still
+        # considered to be relevant: all side effects of a particular
+        # instruction always run before the side effects of the next instruction
+        # even start, regardless of cycle number and duration. This means that
+        # even if `set a = b` and `set b = a` are scheduled in the same cycle,
+        # this does NOT swap the values of `a` and `b`. This also means that a
+        # program with all instructions scheduled in cycle 0 is semantically
+        # valid (though not likely to be executable as such, of course), so a
+        # program that has not yet been scheduled can be represented with any
+        # non-decreasing cycle assignment.
+        cycle: prim::UInt;
+
+        # A conditional instruction instance.
+        conditional_instruction {
+
+            # The condition expression. This will usually be literal true, to
+            # indicate that the instruction is actually unconditional. The
+            # actual data type depends on the target, but should behave like a
+            # boolean.
+            condition: One<expression>;
+
+            # A custom instruction defined within the target platform by means
+            # of an instruction type.
+            custom_instruction {
+
+                # The instruction type that this is an instance of.
+                instruction_type: Link<instruction_type>;
+
+                # The operands for this instruction instance. The types of the
+                # expressions must match the operand types listed in the
+                # instruction type.
+                operands: Any<expression>;
+
+            }
+
+            # A classical assignment instruction. This simply assigns a value
+            # to a target object.
+            set_instruction {
+
+                # A reference to the object being assigned.
+                lhs: One<reference>;
+
+                # The value that the object is being assigned to. The type of
+                # the expression must match the type of the left-hand side
+                # exactly (i.e., typecasts of any kind must be made explicit
+                # by means of a typecast function).
+                rhs: One<expression>;
+
+            }
+
+            # A goto instruction. Jumps to the start of the target block when
+            # executed and the condition evaluates to true.
+            goto_instruction {
+
+                # Link to the target block.
+                target: Link<block>;
+
+            }
+
+        }
+
+        # A (quantum) wait instruction. Also known as a (quantum) barrier when
+        # the duration is zero.
+        wait_instruction {
+
+            # The objects that are to be waited on. If empty, the wait
+            # instruction must wait for *all* objects in the program
+            # (or, equivalently, it must wait for all preceding instructions to
+            # complete).
+            objects: Any<reference>;
+
+            # The amount of quantum cycles that must be waited in addition after
+            # all objects are ready.
+            duration: prim::UInt;
+
+        }
+
+        # Dummy instructions that don't generate any code.
+        dummy_instruction {
+
+            # Source node for use within the data flow graph.
+            source_instruction {}
+
+            # Sink node for use within the data flow graph.
+            sink_instruction {}
+
+        }
+
+    }
+
+    # Structured control-flow statements.
+    structured {
+
+        # An if-else chain.
+        if_else {
+
+            # The if-else branches.
+            branches: Many<if_else_branch>;
+
+            # The final else block, if any.
+            otherwise: Maybe<sub_block>;
+
+        }
+
+        # A loop with a statically-known range of integers being iterated over.
+        static_loop {
+
+            # Reference to the variable used for looping.
+            lhs: One<reference>;
+
+            # The first value.
+            from: One<int_literal>;
+
+            # The last value.
+            to: One<int_literal>;
+
+            # The loop body.
+            body: One<sub_block>;
+
+        }
+
+        # A C-style for loop.
+        for_loop {
+
+            # The optional initializing assignment, run before the loop starts.
+            initialize: Maybe<set_instruction>;
+
+            # The condition for starting another iteration.
+            condition: One<expression>;
+
+            # The updating assignment, done at the end of the loop body and upon
+            # continue.
+            update: Maybe<set_instruction>;
+
+            # The loop body.
+            body: One<sub_block>;
+
+        }
+
+        # A while loop.
+        while_loop {
+
+            # The condition for starting another iteration.
+            condition: One<expression>;
+
+            # The loop body.
+            body: One<sub_block>;
+
+        }
+
+        # A repeat-until loop.
+        repeat_until_loop {
+
+            # The loop body.
+            body: One<sub_block>;
+
+            # The condition for stopping iteration.
+            condition: One<expression>;
+
+        }
+
+        # A break statement.
+        break_statement {}
+
+        # A continue statement.
+        continue_statement {}
+
+    }
+
+}
+
+# A single condition + block for use in an if-else chain.
+if_else_branch {
+
+    # The condition.
+    condition: One<expression>;
+
+    # The body.
+    body: One<sub_block>;
+
+}
+
+# A sub-block of statements, used within structured control-flow statements.
+sub_block {
+
+    # The list of statements that constitute the body of the block. The cycle
+    # numbers of any contained instructions must be non-decreasing.
+    statements: Any<statement>;
+
+}
+
+# An expression. Expressions are used wherever operands are needed, and can be
+# either a literal (i.e. the value is known at compile-time), a reference (i.e.
+# the value is not known, but the storage location is), or a call to a builtin
+# function. The latter has itself zero or more operands, so arbitrarily-deep
+# expression trees can be described.
+expression {
+
+    # A literal expression, i.e. one of which the value is known at
+    # compile-time.
+    literal {
+
+        # A bit/boolean literal. Either 1/true or 0/false.
+        bit_literal {
+
+            # The value of the literal.
+            value: prim::Bool;
+
+        }
+
+        # An integer literal.
+        int_literal {
+
+            # The value of the literal.
+            value: prim::Int;
+
+        }
+
+        # A real floating-point literal.
+        real_literal {
+
+            # The value of the literal.
+            value: prim::Real;
+
+        }
+
+        # A complex floating-point literal.
+        complex_literal {
+
+            # The value of the literal.
+            value: prim::Complex;
+
+        }
+
+        # A real-valued matrix.
+        real_matrix_literal {
+
+            # The value of the literal.
+            value: prim::RMatrix;
+
+        }
+
+        # A complex-valued matrix.
+        complex_matrix_literal {
+
+            # The value of the literal.
+            value: prim::CMatrix;
+
+        }
+
+        # A string literal.
+        string_literal {
+
+            # The value of the literal.
+            value: prim::Str;
+
+        }
+
+        # A JSON literal.
+        json_literal {
+
+            # The value of the literal.
+            value: prim::Json;
+
+        }
+
+    }
+
+    # A reference to an object.
+    reference {
+
+        # Link to the target object.
+        target: Link<object>;
+
+        # The indices by which the object is indexed. The indices must be
+        # integer-like. Depending on context, they may need to be literals.
+        indices: Any<expression>;
+
+    }
+
+    # A call to a custom function defined by the target.
+    function_call {
+
+        # Link to the function type as defined in the platform.
+        function_type: Link<function_type>;
+
+        # The operands for the function. The types of these expressions must
+        # match the operand types in the associated function type.
+        operands: Any<expression>;
+
+    }
 
 }
