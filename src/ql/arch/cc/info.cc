@@ -721,9 +721,19 @@ void Info::post_process_platform(
 void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
 
     // Remove passes we don't need/want.
-    // FIXME: bit of a hack, and invalidates https://openql.readthedocs.io/en/latest/gen/reference_architectures.html#default-pass-list 
-    manager.remove_pass("prescheduler");        // enabled by default, but pointless since we add our own scheduling
-    manager.remove_pass("scheduledqasmwriter"); // confusing, since it doesn't use our scheduling
+    // FIXME: bit of a hack, and invalidates https://openql.readthedocs.io/en/latest/gen/reference_architectures.html#default-pass-list
+    const auto &prescheduler = com::options::global["prescheduler"];
+    if (prescheduler.as_bool() && prescheduler.get_default() == prescheduler.as_str()) {    // prescheduler enabled implicitly
+        const utils::Str passes[] = {
+            "prescheduler",         // enabled by default, but pointless since we add our own scheduling
+            "scheduledqasmwriter"   // confusing, since it doesn't use our scheduling
+        };
+        for (const auto &pass : passes) {
+            if (manager.does_pass_exist(pass)) {
+                manager.remove_pass(pass);
+            }
+        }
+    }
 
     // Add our passes.
     manager.append_pass(
