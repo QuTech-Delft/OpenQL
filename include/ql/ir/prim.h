@@ -74,17 +74,6 @@ template <>
 Bool deserialize(const utils::tree::cbor::MapReader &map);
 
 /**
- * Character primitive used within the trees. Defaults to NUL.
- */
-using Char = utils::Char;
-template <>
-Char initialize<Char>();
-template <>
-void serialize(const Char &obj, utils::tree::cbor::MapWriter &map);
-template <>
-Char deserialize(const utils::tree::cbor::MapReader &map);
-
-/**
  * Integer primitive used within the trees. Defaults to 0.
  */
 using Int = utils::Int;
@@ -294,6 +283,59 @@ std::ostream &operator<<(std::ostream &os, const Matrix<T> &mat) {
     os << "]";
     return os;
 }
+
+/**
+ * Value access mode for an operand.
+ */
+enum class AccessMode {
+
+    /**
+     * Used for classical write or non-commuting qubit access. The corresponding
+     * operand must be a reference.
+     */
+    WRITE,
+
+    /**
+     * Used for classical read-only access. Other instructions accessing the
+     * same operand with mode READ may commute.
+     */
+    READ,
+
+    /**
+     * Used for classical operands of which the value must be known at
+     * compile-time. Only accepts literal values.
+     */
+    LITERAL,
+
+    /**
+     * Used for qubit usage that commutes along the X axis; i.e., other
+     * instructions involving the corresponding qubit in mode COMMUTE_X may
+     * commute.
+     */
+    COMMUTE_X,
+
+    /**
+     * Used for qubit usage that commutes along the Y axis; i.e., other
+     * instructions involving the corresponding qubit in mode COMMUTE_Y may
+     * commute.
+     */
+    COMMUTE_Y,
+
+    /**
+     * Used for qubit usage that commutes along the Z axis; i.e., other
+     * instructions involving the corresponding qubit in mode COMMUTE_Z may
+     * commute.
+     */
+    COMMUTE_Z
+
+};
+template <>
+AccessMode initialize<AccessMode>();
+template <>
+void serialize(const AccessMode &obj, utils::tree::cbor::MapWriter &map);
+template <>
+AccessMode deserialize(const utils::tree::cbor::MapReader &map);
+std::ostream &operator<<(std::ostream &os, const AccessMode &am);
 
 /**
  * Wrapper class for primitives.

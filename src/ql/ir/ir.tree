@@ -2,7 +2,7 @@
 source
 
 # Header file for the IR tree node classes.
-header
+header "ql/ir/ir.gen.h"
 
 // Include tree base classes.
 include "ql/utils/tree.h"
@@ -42,7 +42,8 @@ root {
 # Root node for the description of the target.
 platform {
 
-    # User-given name for the platform.
+    # User-given name for the platform. No constraints on syntax. May also be
+    # empty.
     name: prim::Str;
 
     # Vector of data types, ordered by name so lookup can be done with log(N)
@@ -92,11 +93,61 @@ data_type {
     # Unique identifier for the data type. Must match `[a-zA-Z_][a-zA-Z0-9_]*`.
     name: prim::Str;
 
-    # Identifier for the corresponding type in cQASM. This needs not be unique
-    # in OpenQL, so a platform can define different types for different classes
-    # of registers, that would be modelled using a single type in cQASM. Must
-    # match `[a-zA-Z_][a-zA-Z0-9_]*`.
-    cqasm_name: prim::Str;
+    # A data type that behaves like a qubit.
+    qubit_type {}
+
+    # A data type that represents classical information.
+    classical_type {
+
+        # A data type that behaves like a boolean/bit.
+        bit_type {}
+
+        # A data type that behaves like a two's-complement integer.
+        int_type {
+
+            # Whether the data type is signed.
+            is_signed: prim::Bool;
+
+            # Number of bits used to represent the type. Must be at most 64 for
+            # signed or at most 63 for unsigned, otherwise literals cannot be
+            # properly represented in cQASM.
+            bits: prim::UInt;
+
+        }
+
+        # Type of a real number (IEEE double).
+        real_type {}
+
+        # Type of a complex number (2x IEEE double).
+        complex_type {}
+
+        # Type of a matrix. Matrices are currently special-cased to keep the
+        # type system no more complex than cQASM 1.x's and be able to represent
+        # gate matrices, but these should ultimately be replaced by dedicated
+        # array types if/when these would be added.
+        matrix_type {
+
+            # Number of rows. Must be nonzero.
+            num_rows: prim::UInt;
+
+            # Number of columns. Must be nonzero.
+            num_cols: prim::UInt;
+
+            # A real-valued matrix.
+            real_matrix_type {}
+
+            # A complex-valued matrix.
+            complex_matrix_type {}
+
+        }
+
+        # Type of an arbitrary string.
+        string_type {}
+
+        # Type of a JSON string.
+        json_type {}
+
+    }
 
 }
 
@@ -139,11 +190,14 @@ instruction_type {
     template_operands: Any<literal>;
 
     # Decomposition rules for this instruction type. Multiple of these may be
-    # defined with different keys. It is up to the decomposition pass to choose
-    # the decomposition used (if any) based on this key or on some heuristic.
+    # defined with different keys. The decompositions must be ordered by key
+    # for O(log(N)) lookup. It is up to the decomposition pass to choose the
+    # decomposition used (if any) based on this key or on some other heuristic.
     decompositions: Any<instruction_decomposition>;
 
-    # The duration of this instruction in quantum cycles.
+    # The duration of this instruction in quantum cycles. Note that this may be
+    # zero, as classical instructions don't usually pass any time in the quantum
+    # time domain.
     duration: prim::UInt;
 
     # Raw platform configuration JSON data for anything not specified in this
@@ -202,8 +256,10 @@ function_decomposition {
 
     # The type of instruction that this function decomposes to. The prototype of
     # this instruction must exactly match the prototype of the function, after
-    # inclusion of the return operand (if dedicated).
-    instruction: Link<instruction_type>;
+    # inclusion of the return operand (if dedicated). Also, any operand with
+    # mode 'W' in the function must have mode 'W' in the instruction. The return
+    # value location must also be mode 'W' if it maps to an operand.
+    instruction_type: Link<instruction_type>;
 
     # The manner in which the return value of the function is mapped to the
     # instruction operand list.
@@ -294,18 +350,8 @@ object {
 # commutative data dependency graph construction.
 operand_type {
 
-    # Access mode for the operand. The actual significance of these characters
-    # is up to the scheduler, but currently they are:
-    #  - `R`: read-only, allowing commutation with other instructions using the
-    #    object with mode `R`.
-    #  - `W`: value is written; prevents any commutation.
-    #  - `X`: (qubit) value behaves like an X rotation, allowing commutation
-    #    with other instructions using the object with mode `X`.
-    #  - `Y`: (qubit) value behaves like an Y rotation, allowing commutation
-    #    with other instructions using the object with mode `Y`.
-    #  - `Z`: (qubit) value behaves like a Z rotation, allowing commutation
-    #    with other instructions using the object with mode `Z`.
-    mode: prim::Char;
+    # Access mode for the operand.
+    mode: prim::AccessMode;
 
     # The data type of the operand.
     data_type: Link<data_type>;
@@ -315,7 +361,8 @@ operand_type {
 # Root node for the algorithm itself.
 program {
 
-    # User-given name for the program.
+    # User-given name for the program. No constraints on syntax. May also be
+    # empty.
     name: prim::Str;
 
     # Possibly-uniquified program name in the context of multiple compilations
@@ -336,25 +383,31 @@ program {
 
 }
 
-# A block of statements within the program. Depending on the stage of
-# compilation, this may represent a *basic* block. A basic block has the
-# following rules attached:
-#  - all statements must be instructions; and
-#  - no non-goto instructions may follow any goto instruction.
-# Before this stage, there are no requirements.
-block {
-
-    # Optional name of this block. Must match `[a-zA-Z_][a-zA-Z0-9_]*` and be
-    # unique if specified (non-empty).
-    name: prim::Str;
+# A sub-block of statements, used within structured control-flow statements.
+# A specialization of this, Block, is used for the top-level, named blocks.
+sub_block {
 
     # The list of statements that constitute the body of the block. The cycle
     # numbers of any contained instructions must be non-decreasing.
     statements: Any<statement>;
 
-    # Link to the block that will be processed after this block. If empty, the
-    # algorithm terminates at the end.
-    next: OptLink<block>;
+    # A block of statements within the program. Depending on the stage of
+    # compilation, this may represent a *basic* block. A basic block has the
+    # following rules attached:
+    #  - all statements must be instructions; and
+    #  - no non-goto instructions may follow any goto instruction.
+    # Before this stage, there are no requirements.
+    block {
+
+        # Optional name of this block. Must match `[a-zA-Z_][a-zA-Z0-9_]*` and be
+        # unique if specified (non-empty).
+        name: prim::Str;
+
+        # Link to the block that will be processed after this block. If empty, the
+        # algorithm terminates at the end.
+        next: OptLink<block>;
+
+    }
 
 }
 
@@ -413,7 +466,7 @@ statement {
                 # The value that the object is being assigned to. The type of
                 # the expression must match the type of the left-hand side
                 # exactly (i.e., typecasts of any kind must be made explicit
-                # by means of a typecast function).
+                # by means of a typecast expression).
                 rhs: One<expression>;
 
             }
@@ -472,68 +525,70 @@ statement {
 
         }
 
-        # A loop with a statically-known range of integers being iterated over.
-        static_loop {
-
-            # Reference to the variable used for looping.
-            lhs: One<reference>;
-
-            # The first value.
-            from: One<int_literal>;
-
-            # The last value.
-            to: One<int_literal>;
+        # A loop.
+        loop {
 
             # The loop body.
             body: One<sub_block>;
 
+            # A loop with a statically-known range of integers being iterated
+            # over. Note that while the iteration count has an upper limit,
+            # namely abs(from - to + 1), break and continue statements are
+            # allowed.
+            static_loop {
+
+                # Reference to the variable used for looping.
+                lhs: One<reference>;
+
+                # The first value.
+                from: One<int_literal>;
+
+                # The last value.
+                to: One<int_literal>;
+
+            }
+
+            # A dynamic loop, of which the iteration count depends on a
+            # condition.
+            dynamic_loop {
+
+                # The condition for starting another iteration.
+                condition: One<expression>;
+
+                # A C-style for loop. Note that a while loop is a special case
+                # of this, specifically one with no initialize/update
+                # expression. The condition is evaluated before each iteration,
+                # and iteration stops when it yields false.
+                for_loop {
+
+                    # The optional initializing assignment, run before the loop
+                    # starts.
+                    initialize: Maybe<set_instruction>;
+
+                    # The updating assignment, done at the end of the loop body
+                    # and upon continue.
+                    update: Maybe<set_instruction>;
+
+                }
+
+                # A repeat-until loop. The condition is evaluated at the end of
+                # each iteration, and iteration stops when it yields true.
+                repeat_until_loop {}
+
+            }
+
         }
 
-        # A C-style for loop.
-        for_loop {
+        # A loop control statement, i.e. break or continue.
+        loop_control_statement {
 
-            # The optional initializing assignment, run before the loop starts.
-            initialize: Maybe<set_instruction>;
+            # A break statement.
+            break_statement {}
 
-            # The condition for starting another iteration.
-            condition: One<expression>;
-
-            # The updating assignment, done at the end of the loop body and upon
-            # continue.
-            update: Maybe<set_instruction>;
-
-            # The loop body.
-            body: One<sub_block>;
+            # A continue statement.
+            continue_statement {}
 
         }
-
-        # A while loop.
-        while_loop {
-
-            # The condition for starting another iteration.
-            condition: One<expression>;
-
-            # The loop body.
-            body: One<sub_block>;
-
-        }
-
-        # A repeat-until loop.
-        repeat_until_loop {
-
-            # The loop body.
-            body: One<sub_block>;
-
-            # The condition for stopping iteration.
-            condition: One<expression>;
-
-        }
-
-        # A break statement.
-        break_statement {}
-
-        # A continue statement.
-        continue_statement {}
 
     }
 
@@ -550,15 +605,6 @@ if_else_branch {
 
 }
 
-# A sub-block of statements, used within structured control-flow statements.
-sub_block {
-
-    # The list of statements that constitute the body of the block. The cycle
-    # numbers of any contained instructions must be non-decreasing.
-    statements: Any<statement>;
-
-}
-
 # An expression. Expressions are used wherever operands are needed, and can be
 # either a literal (i.e. the value is known at compile-time), a reference (i.e.
 # the value is not known, but the storage location is), or a call to a builtin
@@ -569,6 +615,9 @@ expression {
     # A literal expression, i.e. one of which the value is known at
     # compile-time.
     literal {
+
+        # Link to the data type represented by this literal.
+        data_type: Link<data_type>;
 
         # A bit/boolean literal. Either 1/true or 0/false.
         bit_literal {
@@ -644,7 +693,23 @@ expression {
 
         # The indices by which the object is indexed. The indices must be
         # integer-like. Depending on context, they may need to be literals.
+        # The amount of indices must exactly match the dimensionality of the
+        # target object; partial indexation is not supported because the type
+        # system doesn't support it.
         indices: Any<expression>;
+
+    }
+
+    # A typecast. Differs from a function call in that typecasts may be written
+    # to if the subexpression is a reference (or a recursive typecast to a
+    # reference).
+    typecast {
+
+        # The type that is being cast to.
+        data_type: Link<data_type>;
+
+        # The subexpression being cast.
+        expression: One<expression>;
 
     }
 

@@ -12,6 +12,10 @@ namespace ql {
 namespace ir {
 namespace prim {
 
+//==============================================================================
+// Str
+//==============================================================================
+
 template <>
 Str initialize<Str>() { return ""; }
 
@@ -24,6 +28,10 @@ template <>
 Str deserialize(const utils::tree::cbor::MapReader &map) {
     return map.at("x").as_binary();
 }
+
+//==============================================================================
+// Json
+//==============================================================================
 
 template <>
 Json initialize<Json>() { return "{}"_json; }
@@ -38,6 +46,10 @@ Json deserialize(const utils::tree::cbor::MapReader &map) {
     return utils::parse_json(map.at("x").as_binary());
 }
 
+//==============================================================================
+// Bool
+//==============================================================================
+
 template <>
 Bool initialize<Bool>() { return false; }
 
@@ -51,18 +63,9 @@ Bool deserialize(const utils::tree::cbor::MapReader &map) {
     return map.at("x").as_bool();
 }
 
-template <>
-Char initialize<Char>() { return 0; }
-
-template <>
-void serialize(const Char &obj, utils::tree::cbor::MapWriter &map) {
-    map.append_int("x", obj);
-}
-
-template <>
-Char deserialize(const utils::tree::cbor::MapReader &map) {
-    return (Char)map.at("x").as_int();
-}
+//==============================================================================
+// Int
+//==============================================================================
 
 template <>
 Int initialize<Int>() { return 0; }
@@ -77,6 +80,10 @@ Int deserialize(const utils::tree::cbor::MapReader &map) {
     return map.at("x").as_int();
 }
 
+//==============================================================================
+// UInt
+//==============================================================================
+
 template <>
 UInt initialize<UInt>() { return 0; }
 
@@ -89,6 +96,10 @@ template <>
 UInt deserialize(const utils::tree::cbor::MapReader &map) {
     return (UInt)map.at("x").as_int();
 }
+
+//==============================================================================
+// UIntVec
+//==============================================================================
 
 template <>
 void serialize(const UIntVec &obj, utils::tree::cbor::MapWriter &map) {
@@ -110,6 +121,10 @@ UIntVec deserialize(const utils::tree::cbor::MapReader &map) {
     return data;
 }
 
+//==============================================================================
+// Real
+//==============================================================================
+
 template <>
 Real initialize<Real>() { return 0.0; }
 
@@ -123,6 +138,10 @@ Real deserialize(const utils::tree::cbor::MapReader &map) {
     return map.at("x").as_float();
 }
 
+//==============================================================================
+// Complex
+//==============================================================================
+
 template <>
 void serialize(const Complex &obj, utils::tree::cbor::MapWriter &map) {
     map.append_float("r", obj.real());
@@ -133,6 +152,10 @@ template <>
 Complex deserialize(const utils::tree::cbor::MapReader &map) {
     return {map.at("r").as_float(), map.at("i").as_float()};
 }
+
+//==============================================================================
+// RMatrix
+//==============================================================================
 
 template <>
 void serialize(const RMatrix &obj, utils::tree::cbor::MapWriter &map) {
@@ -156,6 +179,10 @@ RMatrix deserialize(const utils::tree::cbor::MapReader &map) {
     return {data, num_cols};
 }
 
+//==============================================================================
+// CMatrix
+//==============================================================================
+
 template <>
 void serialize(const CMatrix &obj, utils::tree::cbor::MapWriter &map) {
     map.append_int("c", obj.size_cols());
@@ -178,6 +205,39 @@ CMatrix deserialize(const utils::tree::cbor::MapReader &map) {
     }
     return {data, num_cols};
 }
+
+//==============================================================================
+// AccessMode
+//==============================================================================
+
+template <>
+AccessMode initialize<AccessMode>() { return AccessMode::WRITE; }
+
+template <>
+void serialize(const AccessMode &obj, utils::tree::cbor::MapWriter &map) {
+    map.append_int("x", (utils::Int)obj);
+}
+
+template <>
+AccessMode deserialize(const utils::tree::cbor::MapReader &map) {
+    return (AccessMode)map.at("x").as_int();
+}
+
+std::ostream &operator<<(std::ostream &os, const AccessMode &am) {
+    switch (am) {
+        case AccessMode::WRITE:     return os << "write";
+        case AccessMode::READ:      return os << "read";
+        case AccessMode::LITERAL:   return os << "literal";
+        case AccessMode::COMMUTE_X: return os << "commute-X";
+        case AccessMode::COMMUTE_Y: return os << "commute-Y";
+        case AccessMode::COMMUTE_Z: return os << "commute-Z";
+    }
+    return os << "unknown";
+}
+
+//==============================================================================
+// Topology
+//==============================================================================
 
 template <>
 void serialize(const Topology &obj, utils::tree::cbor::MapWriter &map) {
@@ -206,6 +266,10 @@ std::ostream &operator<<(std::ostream &os, const Topology &top) {
     return os;
 }
 
+//==============================================================================
+// Architecture
+//==============================================================================
+
 template <>
 void serialize(const Architecture &obj, utils::tree::cbor::MapWriter &map) {
     map.append_string("n", obj->family->get_namespace_name());
@@ -229,6 +293,10 @@ std::ostream &operator<<(std::ostream &os, const Architecture &arch) {
     }
     return os;
 }
+
+//==============================================================================
+// ResourceManager
+//==============================================================================
 
 template <>
 void serialize(const ResourceManager &obj, utils::tree::cbor::MapWriter &map) {
