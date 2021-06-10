@@ -113,6 +113,7 @@ data_type {
             # properly represented in cQASM.
             bits: prim::UInt;
 
+            reorder(name, is_signed, bits);
         }
 
         # Type of a real number (IEEE double).
@@ -134,10 +135,14 @@ data_type {
             num_cols: prim::UInt;
 
             # A real-valued matrix.
-            real_matrix_type {}
+            real_matrix_type {
+                reorder(name, num_rows, num_cols);
+            }
 
             # A complex-valued matrix.
-            complex_matrix_type {}
+            complex_matrix_type {
+                reorder(name, num_rows, num_cols);
+            }
 
         }
 
@@ -187,7 +192,7 @@ instruction_type {
 
     # The values of any template operands for this specialization of this
     # instruction.
-    template_operands: Any<literal>;
+    template_operands: Any<expression>;
 
     # Decomposition rules for this instruction type. Multiple of these may be
     # defined: it is up to the decomposition pass to choose the decomposition
@@ -211,6 +216,9 @@ instruction_decomposition {
     # Name for this decomposition rule. May be used by decomposition logic to
     # determine which decomposition rule to apply. No constraints on syntax.
     name: prim::Str;
+
+    # Objects used to represent the instruction parameters.
+    parameters: Any<temporary_object>;
 
     # Any temporary variables as needed within the decomposition rule.
     objects: Any<temporary_object>;
@@ -314,9 +322,11 @@ return_location {
 # A data storage location.
 object {
 
-    # Identifier for the object. Must match `[a-zA-Z_][a-zA-Z0-9_]*` or be left
-    # unspecified (empty). If specified, it must be unique. Names must always
-    # be specified for physical objects; only virtual objects may be anonymous.
+    # Identifier for the object. Must match `[a-zA-Z_][a-zA-Z0-9_]*` or be
+    # left unspecified (empty). Names for toplevel physical objects must be
+    # specified and unique; only virtual objects and the implicit bit
+    # register object may be anonymous. The names of virtual objects need
+    # not be unique.
     name: prim::Str;
 
     # The elemental data type of this object.

@@ -252,6 +252,7 @@ add_library(ql
     "${CMAKE_CURRENT_BINARY_DIR}/src/ql/ir/ir.gen.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/ops.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/consistency.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/old_to_new.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/resource_types/base.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/types.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/factory.cc"

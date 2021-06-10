@@ -7,6 +7,7 @@
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
 #include "ql/arch/architecture.h"
+#include "ql/ir/old_to_new.h"
 
 namespace ql {
 namespace pmgr {
@@ -875,6 +876,9 @@ void Manager::compile(const ir::compat::ProgramRef &program) {
 
     // Ensure that all passes are constructed.
     construct();
+
+    // TODO
+    ir::convert_old_to_new(program);
 
     // Compile the program.
     root->compile(program, "");

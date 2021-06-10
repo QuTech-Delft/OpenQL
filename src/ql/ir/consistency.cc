@@ -19,11 +19,6 @@ class ConsistencyChecker : public RecursiveVisitor {
 private:
 
     /**
-     * The set of all object names encountered.
-     */
-    utils::Set<utils::Str> object_names;
-
-    /**
      * The set of all block names encountered.
      */
     utils::Set<utils::Str> block_names;
@@ -37,8 +32,7 @@ private:
      * Checks that the given string is a valid identifier.
      */
     static void check_identifier(const utils::Str &what, const utils::Str &s) {
-        static const std::regex IDENT{"[a-zA-Z_][a-zA-Z0-9_]*"};
-        if (!std::regex_match(s, IDENT)) {
+        if (!std::regex_match(s, IDENTIFIER_RE)) {
             utils::StrStrm ss;
             ss << what << " \"" << s << "\" is not a valid identifier";
             throw utils::Exception(ss.str());
@@ -129,7 +123,7 @@ public:
             node.data_types.get_vec().end(),
             [](const utils::One<DataType> &lhs, const utils::One<DataType> &rhs) {
                 if (lhs->name == rhs->name) {
-                    throw utils::Exception("duplicate data type name " + lhs->name + " in IR");
+                    throw utils::Exception("duplicate data type name " + lhs->name);
                 } else {
                     return lhs->name < rhs->name;
                 }
@@ -170,12 +164,16 @@ public:
             throw utils::Exception("function types are not ordered by name");
         }
 
-        // Check ordering of the physical object names.
+        // Check uniqueness and ordering of the physical object names.
         if (!std::is_sorted(
             node.objects.get_vec().begin(),
             node.objects.get_vec().end(),
             [](const utils::One<PhysicalObject> &lhs, const utils::One<PhysicalObject> &rhs) {
-                return lhs->name < rhs->name;
+                if (lhs->name == rhs->name) {
+                    throw utils::Exception("duplicate physical object name " + lhs->name);
+                } else {
+                    return lhs->name < rhs->name;
+                }
             }
         )) {
             throw utils::Exception("physical objects are not ordered by name");
@@ -290,7 +288,7 @@ public:
             }
 
             // ... the first element of operand_types removed;
-            if (spec->operand_types.size() == node.operand_types.size() - 1) {
+            if (spec->operand_types.size() != node.operand_types.size() - 1) {
                 throw utils::Exception(
                     "invalid specialization for \"" + spec->name + "\": "
                     "mismatched operand count"
@@ -306,7 +304,7 @@ public:
             }
 
             // ... an additional element at the end of template_operands;
-            if (spec->template_operands.size() == node.template_operands.size() + 1) {
+            if (spec->template_operands.size() != node.template_operands.size() + 1) {
                 throw utils::Exception(
                     "invalid specialization for \"" + spec->name + "\": "
                     "mismatched template operand count"
@@ -331,13 +329,31 @@ public:
             }
 
             // ... generalization must link back to this node.
-            if (&*spec->generalization == &node) {
+            if (&*spec->generalization != &node) {
                 throw utils::Exception(
                     "invalid specialization for \"" + spec->name + "\": "
                     "generalization does not link back correctly"
                 );
             }
 
+        }
+
+        // Check the decompositions.
+        for (const auto &dec : node.decompositions) {
+            if (dec->parameters.size() != node.operand_types.size()) {
+                throw utils::Exception(
+                    "invalid decomposition for \"" + node.name + "\": "
+                    "parameter object count mismatch"
+                );
+            }
+            for (utils::UInt i = 0; i < dec->parameters.size(); i++) {
+                if (dec->parameters[i]->data_type != node.operand_types[i]->data_type) {
+                    throw utils::Exception(
+                        "invalid decomposition for \"" + node.name + "\": "
+                        "parameter object " + utils::to_string(i) + " type mismatch"
+                    );
+                }
+            }
         }
 
     }
@@ -446,7 +462,7 @@ public:
     }
 
     /**
-     * Checks an object node type.
+     * Checks a regular object node.
      */
     void visit_object(Object &node) override {
         RecursiveVisitor::visit_object(node);
@@ -454,9 +470,6 @@ public:
         // Check name.
         if (!node.name.empty()) {
             check_identifier("object name", node.name);
-            if (!object_names.insert(node.name).second) {
-                throw utils::Exception("duplicate object name " + node.name);
-            }
         } else if (node.as_physical_object()) {
             throw utils::Exception("physical object is missing name " + node.name);
         }
@@ -471,6 +484,9 @@ public:
 
         // Check type/access-mode consistency.
         switch (node.mode) {
+            case prim::AccessMode::WRITE:
+                // Used for both qubits and classical data.
+                break;
             case prim::AccessMode::READ:
             case prim::AccessMode::LITERAL:
                 if (!node.data_type->as_classical_type()) {
@@ -480,7 +496,10 @@ public:
                     );
                 }
                 break;
-            default:
+            case prim::AccessMode::COMMUTE_X:
+            case prim::AccessMode::COMMUTE_Y:
+            case prim::AccessMode::COMMUTE_Z:
+            case prim::AccessMode::MEASURE:
                 if (!node.data_type->as_qubit_type()) {
                     throw utils::Exception(
                         "encountered function/instruction parameter marked "

@@ -41,7 +41,7 @@ template <typename T>
 T deserialize(const utils::tree::cbor::MapReader &map);
 
 /**
- * String primitive used within the trees. Defaults to ""
+ * String primitive used within the trees. Defaults to "".
  */
 using Str = utils::Str;
 template <>
@@ -52,15 +52,62 @@ template <>
 Str deserialize(const utils::tree::cbor::MapReader &map);
 
 /**
- * JSON primitive used within the trees. Defaults to {}
+ * JSON primitive used within the trees. Defaults to {}. The normal Json class
+ * from nlohmann is wrapped so we can use a nicer-formatted string
+ * representation for debug dumps.
  */
-using Json = utils::Json;
+class Json {
+public:
+
+    /**
+     * The wrapped JSON data. You can use this or the dereference operator to
+     * access it.
+     */
+    utils::Json data;
+
+    /**
+     * Builds a JSON data structure.
+     */
+    Json(const utils::Json &data);
+
+    /**
+     * Dereference operator.
+     */
+    const utils::Json &operator*() const;
+
+    /**
+     * Dereference operator.
+     */
+    utils::Json &operator*();
+
+    /**
+     * Dereference operator.
+     */
+    const utils::Json *operator->() const;
+
+    /**
+     * Dereference operator.
+     */
+    utils::Json *operator->();
+
+    /**
+     * Equality operator.
+     */
+    utils::Bool operator==(const Json &rhs) const;
+
+    /**
+     * Inequality operator.
+     */
+    utils::Bool operator!=(const Json &rhs) const;
+
+};
 template <>
 Json initialize<Json>();
 template <>
 void serialize(const Json &obj, utils::tree::cbor::MapWriter &map);
 template <>
 Json deserialize(const utils::tree::cbor::MapReader &map);
+std::ostream &operator<<(std::ostream &os, const Json &json);
 
 /**
  * Boolean primitive used within the trees. Defaults to false.
@@ -232,14 +279,14 @@ public:
     /**
      * Equality operator for matrices.
      */
-    bool operator==(const Matrix<T> &rhs) const {
+    utils::Bool operator==(const Matrix<T> &rhs) const {
         return data == rhs.data && nrows == rhs.nrows && ncols == rhs.ncols;
     }
 
     /**
      * Inequality operator for matrices.
      */
-    bool operator!=(const Matrix<T> &rhs) const {
+    utils::Bool operator!=(const Matrix<T> &rhs) const {
         return !(*this == rhs);
     }
 
@@ -326,7 +373,13 @@ enum class AccessMode {
      * instructions involving the corresponding qubit in mode COMMUTE_Z may
      * commute.
      */
-    COMMUTE_Z
+    COMMUTE_Z,
+
+    /**
+     * Used when a qubit is measured and the result is stored in the implicit
+     * bit register associated with the qubit.
+     */
+    MEASURE
 
 };
 template <>

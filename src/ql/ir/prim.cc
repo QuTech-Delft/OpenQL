@@ -33,17 +33,69 @@ Str deserialize(const utils::tree::cbor::MapReader &map) {
 // Json
 //==============================================================================
 
+/**
+ * Builds a JSON data structure.
+ */
+Json::Json(const utils::Json &data) : data(data) {
+}
+
+/**
+ * Dereference operator.
+ */
+const utils::Json &Json::operator*() const {
+    return data;
+}
+
+/**
+ * Dereference operator.
+ */
+utils::Json &Json::operator*() {
+    return data;
+}
+
+/**
+ * Dereference operator.
+ */
+const utils::Json *Json::operator->() const {
+    return &data;
+}
+
+/**
+ * Dereference operator.
+ */
+utils::Json *Json::operator->() {
+    return &data;
+}
+
+/**
+ * Equality operator.
+ */
+utils::Bool Json::operator==(const Json &rhs) const {
+    return data == rhs.data;
+}
+
+/**
+ * Inequality operator.
+ */
+utils::Bool Json::operator!=(const Json &rhs) const {
+    return data != rhs.data;
+}
+
 template <>
 Json initialize<Json>() { return "{}"_json; }
 
 template <>
 void serialize(const Json &obj, utils::tree::cbor::MapWriter &map) {
-    map.append_binary("x", obj.dump());
+    map.append_binary("x", obj->dump());
 }
 
 template <>
 Json deserialize(const utils::tree::cbor::MapReader &map) {
     return utils::parse_json(map.at("x").as_binary());
+}
+
+std::ostream &operator<<(std::ostream &os, const Json &json) {
+    return os << json->dump(2);
 }
 
 //==============================================================================
@@ -231,6 +283,7 @@ std::ostream &operator<<(std::ostream &os, const AccessMode &am) {
         case AccessMode::COMMUTE_X: return os << "commute-X";
         case AccessMode::COMMUTE_Y: return os << "commute-Y";
         case AccessMode::COMMUTE_Z: return os << "commute-Z";
+        case AccessMode::MEASURE:   return os << "measure";
     }
     return os << "unknown";
 }

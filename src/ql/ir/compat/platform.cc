@@ -261,10 +261,11 @@ static GateRef load_instruction(
  * auxiliary compiler configuration file.
  */
 void Platform::load(
-    utils::Json &platform_config,
+    utils::Json &platform_cfg,
     const utils::Str &platform_config_fname,
     const utils::Str &compiler_config
 ) {
+    platform_config = platform_cfg;
     arch::Factory arch_factory = {};
 
     // Load compiler configuration.

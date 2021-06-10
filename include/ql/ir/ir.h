@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <regex>
 #include "ql/utils/tree.h"
 #include "ql/ir/ir.gen.h"
 
@@ -47,6 +48,11 @@ using StatementRef = utils::One<Statement>;
 using InstructionRef = utils::One<Instruction>;
 
 /**
+ * Link to a (custom) instruction type.
+ */
+using InstructionTypeLink = utils::Link<InstructionType>;
+
+/**
  * Reference to an expression.
  */
 using ExpressionRef = utils::One<Expression>;
@@ -60,6 +66,11 @@ using DataTypeLink = utils::Link<DataType>;
  * Reference to an object.
  */
 using ObjectLink = utils::Link<Object>;
+
+/**
+ * Regular expression for valid identifiers.
+ */
+static const std::regex IDENTIFIER_RE{"[a-zA-Z_][a-zA-Z0-9_]*"};
 
 } // namespace ir
 } // namespace ql

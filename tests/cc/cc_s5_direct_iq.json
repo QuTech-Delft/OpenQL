@@ -1004,10 +1004,8 @@
     // NB: the "resources" keyword must be present, but the contents are only interpreted by
     // the 'resource constraint' scheduler
     "resources": {      // see: https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L724
-        "qubits": {
-            "count": 5     // FIXME: duplicates 'hardware_settings/qubit_number'
-        },
-        "qwgs" : {
+        "Qubit": {},
+        "arch.cc_light.qwgs" : {
             "count": 5,
             "connection_map": { // FIXME: must match "instruments"
                 "0": [0],
@@ -1017,14 +1015,14 @@
                 "4": [4]
             }
         },
-        "meas_units" : {
+        "arch.cc_light.meas_units" : {
             "count": 2,
             "connection_map": { // FIXME: must match "instruments"
                 "0": [0, 2, 3, 4],
                 "1": [1]
             }
         },
-        "edges": {
+        "arch.cc_light.edges": {
             "count": 4,        // FIXME: must be present and at least match size of 'topology/edges', see edge_resource_t
             // connection_map:
             // "0": [2, 10] means that edge 0 'connects' to edges 2 and 10, where edges

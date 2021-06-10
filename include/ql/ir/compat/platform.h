@@ -143,6 +143,11 @@ public:
      */
     utils::Opt<com::Topology> topology;
 
+    /**
+     * The *complete* platform configuration JSON.
+     */
+    utils::Json platform_config;
+
 public:
 
     /**
@@ -157,7 +162,7 @@ private:
      * auxiliary compiler configuration file.
      */
     void load(
-        utils::Json &platform_config,
+        utils::Json &platform_cfg,
         const utils::Str &platform_config_fname = "",
         const utils::Str &compiler_config = ""
     );
