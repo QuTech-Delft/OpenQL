@@ -772,7 +772,7 @@ public:
      * No iterators or references are invalidated.
      */
     iterator insert(const_iterator hint, const value_type &value) {
-        return iterator(get_data().get_mut_element_only().insert(hint, value), data_ptr);
+        return iterator(get_data().get_mut_element_only().insert(hint.iter, value), data_ptr);
     }
 
     /**
@@ -790,7 +790,7 @@ public:
         >::type
     >
     iterator insert(const_iterator hint, P &&value) {
-        return iterator(get_data().get_mut_element_only().insert(hint, value), data_ptr);
+        return iterator(get_data().get_mut_element_only().insert(hint.iter, value), data_ptr);
     }
 
     /**

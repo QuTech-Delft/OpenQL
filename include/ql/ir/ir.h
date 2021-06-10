@@ -54,7 +54,12 @@ using ExpressionRef = utils::One<Expression>;
 /**
  * Reference to a data type.
  */
-using DataTypeRef = utils::Link<DataType>;
+using DataTypeLink = utils::Link<DataType>;
+
+/**
+ * Reference to an object.
+ */
+using ObjectLink = utils::Link<Object>;
 
 } // namespace ir
 } // namespace ql

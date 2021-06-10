@@ -340,29 +340,6 @@ public:
 
         }
 
-        // Check uniqueness and ordering of the decomposition keys.
-        if (!std::is_sorted(
-            node.decompositions.get_vec().begin(),
-            node.decompositions.get_vec().end(),
-            [node](
-                const utils::One<InstructionDecomposition> &lhs,
-                const utils::One<InstructionDecomposition> &rhs
-            ) {
-                if (lhs->key == rhs->key) {
-                    throw utils::Exception(
-                        "duplicate decomposition key name " + lhs->key +
-                        " for instruction " + node.name
-                    );
-                } else {
-                    return lhs->key < rhs->key;
-                }
-            }
-        )) {
-            throw utils::Exception(
-                "decompositions are not ordered by key for instruction " + node.name
-            );
-        }
-
     }
 
     /**
@@ -370,9 +347,6 @@ public:
      */
     void visit_instruction_decomposition(InstructionDecomposition &node) override {
         RecursiveVisitor::visit_instruction_decomposition(node);
-
-        // Check key.
-        check_identifier("instruction decomposition key", node.key);
 
         // Check cycle order in expansion.
         check_cycles_non_decreasing("instruction decomposition", node.expansion);
@@ -393,6 +367,16 @@ public:
         // should be added).
         if (!utils::starts_with(node.name, "operator")) {
             check_identifier("function type name", node.name);
+        }
+
+        // Check the access mode of the operands. Functions must be free of side
+        // effects, so the mode can only be read or literal.
+        for (const auto &optyp : node.operand_types) {
+            if (optyp->mode != prim::AccessMode::READ && optyp->mode != prim::AccessMode::LITERAL) {
+                throw utils::Exception(
+                    "function " + node.name + " writes to one of its operands"
+                );
+            }
         }
 
         // Match the operand types of the instruction decomposition if there is
@@ -885,7 +869,10 @@ public:
 };
 
 /**
- * Performs a consistency check
+ * Performs a consistency check of the IR. An exception is thrown if a problem
+ * is found. The constraints checked by this must be met on any interface that
+ * passes an IR reference, although actually checking it on every interface
+ * might be detrimental for performance.
  */
 void check_consistency(const Ref &ir) {
 
@@ -899,6 +886,35 @@ void check_consistency(const Ref &ir) {
     ConsistencyChecker consistency_checker;
     ir->visit(consistency_checker);
 
+}
+
+/**
+ * Determines whether the IR is in basic-block form. This returns true only if:
+ *  - all statements in the program's blocks are instructions (i.e., no
+ *    structured control-flow remains); and
+ *  - no non-control-flow instruction follows a control-flow instruction in any
+ *    block.
+ *
+ * The result is only valid if the incoming IR is consistent.
+ */
+utils::Bool is_basic_block_form(const Ref &ir) {
+    for (const auto &blk : ir->program->blocks) {
+        auto dataflow = true;
+        for (const auto &stmt : blk->statements) {
+            auto insn = stmt->as_instruction();
+            if (!insn) {
+                // Non-instruction statement encountered.
+                return false;
+            }
+            if (insn->as_goto_instruction()) {
+                dataflow = false;
+            } else if (!dataflow) {
+                // Non-control-flow instruction following control-flow.
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 } // namespace ir
