@@ -403,7 +403,7 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
     // Populate platform JSON data.
     ir->platform->data = old->platform->platform_config;
 
-    ir->dump();
+    //ir->dump_seq();
     check_consistency(ir);
     return ir;
 }

@@ -56,7 +56,7 @@ platform {
     # algorithm at any time during the compilation process (i.e., it also
     # includes non-primitive instructions that may need to be decomposed at
     # some point!).
-    instructions: Many<instruction_type>;
+    instructions: Any<instruction_type>;
 
     # Vector of (builtin) function types, ordered by name so lookup can be done
     # with log(N) complexity. Functions are the active elements of expression

@@ -19,7 +19,7 @@ DataTypeLink find_type(const Ref &ir, const utils::Str &name) {
         utils::make<QubitType>(name),
         compare_by_name<DataType>
     );
-    if (pos == end) {
+    if (pos == end || (*pos)->name != name) {
         return {};
     } else {
         return *pos;
@@ -99,7 +99,7 @@ ObjectLink find_physical_object(const Ref &ir, const utils::Str &name) {
         utils::make<PhysicalObject>(name),
         compare_by_name<PhysicalObject>
     );
-    if (pos == end) {
+    if (pos == end || (*pos)->name != name) {
         return {};
     } else {
         return *pos;
@@ -166,7 +166,9 @@ InstructionTypeLink add_instruction_type(
 
     // If the instruction doesn't already exist, add it.
     if (!already_exists) {
-        pos = ir->platform->instructions.get_vec().insert(pos, instruction_type);
+        auto clone = instruction_type.clone();
+        clone->copy_annotations(*instruction_type);
+        pos = ir->platform->instructions.get_vec().insert(pos, clone);
     }
 
     // Now create and add specializations as appropriate.
@@ -194,10 +196,10 @@ InstructionTypeLink add_instruction_type(
 
         // Move from operand types into template operands.
         for (utils::UInt j = 0; j <= i; j++) {
-            QL_ASSERT(spec->operand_types[0]->data_type == get_type_of(template_operands[i]));
+            QL_ASSERT(spec->operand_types[0]->data_type == get_type_of(template_operands[j]));
             spec->operand_types.remove(0);
-            auto op_clone = template_operands[i].clone();
-            op_clone->copy_annotations(*template_operands[i]);
+            auto op_clone = template_operands[j].clone();
+            op_clone->copy_annotations(*template_operands[j]);
             spec->template_operands.add(op_clone);
         }
 

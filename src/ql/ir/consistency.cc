@@ -295,7 +295,7 @@ public:
                 );
             }
             for (utils::UInt i = 0; i < spec->operand_types.size(); i++) {
-                if (spec->operand_types[i] != node.operand_types[i + 1]) {
+                if (!spec->operand_types[i].equals(node.operand_types[i + 1])) {
                     throw utils::Exception(
                         "invalid specialization for \"" + spec->name + "\": "
                         "mismatched operand types"
@@ -311,7 +311,7 @@ public:
                 );
             }
             for (utils::UInt i = 0; i < spec->template_operands.size() - 1; i++) {
-                if (spec->template_operands[i] != node.template_operands[i]) {
+                if (!spec->template_operands[i].equals(node.template_operands[i])) {
                     throw utils::Exception(
                         "invalid specialization for \"" + spec->name + "\": "
                         "mismatched template operands"

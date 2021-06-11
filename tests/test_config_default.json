@@ -190,14 +190,6 @@
          "latency": 50,
          "qubits": ["q0", "q1"], 
          "type" : "readout"
-      },
-
-      "measure q0 q1" : {
-         "alias" : "measure q0"
-      },
-
-      "measure all" : {
-         "alias" : "measure q0"
       }
    },
 
