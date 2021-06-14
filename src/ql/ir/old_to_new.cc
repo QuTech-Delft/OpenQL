@@ -548,6 +548,12 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 insn->duration = 0;
 
                 // Parse and add the sub-instructions.
+                // FIXME: we can't actually do this here yet! The order of the
+                //  decomposition rules is undefined, decomposition rules
+                //  may refer to one another, and parsing decomposition rules
+                //  may add instruction types to the instruction set. So we need
+                //  to postpone this parsing until after all the decompositions
+                //  have been added.
                 for (const auto &sub_insn : sub_insns) {
 
                     // Parse the sub-instruction.
@@ -670,6 +676,249 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 }
 
 /**
+ * Converts a classical operand to an expression.
+ */
+static ExpressionRef convert_operand(
+    const Ref &ir,
+    const compat::ClassicalOperand &op
+) {
+    switch (op.type()) {
+        case compat::ClassicalOperandType::VALUE:
+            return make_default_int_lit(
+                ir,
+                op.as_value().value
+            );
+
+        case compat::ClassicalOperandType::REGISTER:
+            return make_reference(
+                ir,
+                find_physical_object(ir, "c"),
+                {op.as_register().id}
+            );
+
+        default:
+            throw utils::Exception("unknown operand type");
+
+    }
+}
+
+/**
+ * Converts a classical operation to an expression.
+ */
+static ExpressionRef convert_operation(
+    const Ref &ir,
+    const compat::ClassicalOperation &op,
+    utils::Bool is_condition = false,
+    utils::Bool invert = false
+) {
+
+    // Figure out the operation name.
+    auto name = op.operation_name;
+    if (is_condition) {
+        if (op.operation_type != compat::ClassicalOperationType::RELATIONAL) {
+            throw utils::Exception(
+                "attempt to use non-relational operation as condition"
+            );
+        }
+        if (invert) {
+            name = op.inv_operation_name;
+        }
+    }
+
+    // Construct the expression.
+    ExpressionRef expr;
+    if (name == "ldi" || name == "mov") {
+
+        // Handle moves.
+        if (op.operands.size() != 1) {
+            throw utils::Exception(
+                "incorrect number of arguments for ldi/mov instruction"
+            );
+        }
+        expr = convert_operand(ir, *op.operands[0]);
+
+    } else {
+
+        // Convert function name.
+        static const utils::Map<utils::Str, utils::Str> OP_TO_FN{
+            {"add", "operator+"},
+            {"sub", "operator-"},
+            {"and", "operator&&"},
+            {"or", "operator||"},
+            {"xor", "operator^"},
+            {"eq", "operator=="},
+            {"ne", "operator!="},
+            {"lt", "operator<"},
+            {"gt", "operator>"},
+            {"le", "operator<="},
+            {"ge", "operator>="},
+            {"not", "operator~"}
+        };
+        auto it = OP_TO_FN.find(name);
+        if (it == OP_TO_FN.end()) {
+            throw utils::Exception("unknown operation type '" + name + "'");
+        }
+        name = it->second;
+
+        // Convert operands.
+        utils::Any<Expression> operands;
+        for (const auto &operand : op.operands) {
+            operands.add(convert_operand(ir, *operand));
+        }
+
+        // Build the function call.
+        expr = build_function_call(ir, name, operands);
+
+    }
+
+    // Check and if necessary convert the return type.
+    if (is_condition) {
+        QL_ASSERT(get_type_of(expr) == ir->platform->default_bit_type);
+    } else {
+        if (get_type_of(expr)->as_bit_type()) {
+            expr = build_function_call(ir, "int", {expr});
+        }
+        QL_ASSERT(get_type_of(expr) == ir->platform->default_int_type);
+    }
+
+    return expr;
+}
+
+/**
+ * Converts a block of old-IR kernels to a single new-IR subblock, starting the
+ * scanning process from idx onward. idx is incremented to the index of the
+ * next kernel.
+ */
+static utils::Str convert_kernels(
+    const Ref &ir,
+    const compat::ProgramRef &old,
+    utils::UInt &idx,
+    const utils::One<BlockBase> block
+) {
+    utils::Str name;
+    switch (old->kernels[idx]->type) {
+        case compat::KernelType::STATIC:
+            // TODO convert instructions!
+            name = old->kernels[idx]->name;
+            idx++;
+            break;
+
+        case compat::KernelType::FOR_START: {
+
+            // Load the iteration count.
+            auto iteration_count = old->kernels[idx]->iteration_count;
+
+            // Seek past the start marker.
+            idx++;
+
+            // Handle the body by calling ourselves until we reach a FOR_END.
+            auto sub_block = utils::make<SubBlock>();
+            do {
+                if (name.empty()) name = old->kernels[idx]->name;
+                convert_kernels(ir, old, idx, sub_block);
+            } while (old->kernels[idx]->type != compat::KernelType::FOR_END);
+
+            // Skip past the FOR_END.
+            idx++;
+
+            // Create a static for loop and add it to the block.
+            block->statements.emplace<StaticLoop>(
+                make_reference(ir, make_temporary(ir, ir->platform->default_int_type)),
+                make_default_int_lit(ir, iteration_count - 1),
+                make_default_int_lit(ir, (utils::UInt)0),
+                sub_block
+            );
+
+            break;
+        }
+        case compat::KernelType::DO_WHILE_START: {
+
+            // Load the condition.
+            const auto &condition = *old->kernels[idx]->br_condition;
+
+            // Seek past the start marker.
+            idx++;
+
+            // Handle the body by calling ourselves until we reach a DO_WHILE_END.
+            auto sub_block = utils::make<SubBlock>();
+            do {
+                if (name.empty()) name = old->kernels[idx]->name;
+                convert_kernels(ir, old, idx, sub_block);
+            } while (old->kernels[idx]->type != compat::KernelType::DO_WHILE_END);
+
+            // Skip past the DO_WHILE_END.
+            idx++;
+
+            // Create a repeat-until loop and add it to the block. Since the
+            // original is a do-while rather than a repeat-until, the condition
+            // is inverted using `operator!(bit) -> bit`.
+            block->statements.emplace<RepeatUntilLoop>(
+                convert_operation(ir, condition, true, true),
+                sub_block
+            );
+
+            break;
+        }
+        case compat::KernelType::IF_START: {
+
+            // Load the condition.
+            const auto &condition = *old->kernels[idx]->br_condition;
+
+            // Seek past the start marker.
+            idx++;
+
+            // Handle the body by calling ourselves until we reach an IF_END.
+            auto if_block = utils::make<SubBlock>();
+            do {
+                if (name.empty()) name = old->kernels[idx]->name;
+                convert_kernels(ir, old, idx, if_block);
+            } while (old->kernels[idx]->type != compat::KernelType::IF_END);
+
+            // Skip past the IF_END.
+            idx++;
+
+            // Handle the else block, if any.
+            utils::One<SubBlock> else_block;
+            if (idx < old->kernels.size() && old->kernels[idx]->type == compat::KernelType::ELSE_START) {
+
+                // Seek past the start marker.
+                idx++;
+
+                // Handle the body by calling ourselves until we reach an
+                // ELSE_END.
+                else_block.emplace();
+                do {
+                    if (name.empty()) name = old->kernels[idx]->name;
+                    convert_kernels(ir, old, idx, else_block);
+                } while (old->kernels[idx]->type != compat::KernelType::ELSE_END);
+
+                // Skip past the ELSE_END.
+                idx++;
+
+            }
+
+            // Create an if-else statement and add it to the block.
+            block->statements.emplace<IfElse>(
+                utils::Many<IfElseBranch>({utils::make<IfElseBranch>(
+                    convert_operation(ir, condition, true),
+                    if_block
+                )}),
+                else_block
+            );
+
+            break;
+        }
+        default:
+            throw utils::Exception(
+                "unexpected kernel type for kernel with index " +
+                utils::to_string(idx)
+            );
+
+    }
+    return name;
+}
+
+/**
  * Converts the old IR (program and platform) to the new one.
  *
  * Refer to the header file for details.
@@ -679,11 +928,50 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
     // Build the platform.
     auto ir = convert_old_to_new(old->platform);
 
+    // If there are no kernels in the old program, don't create a program node
+    // at all.
+    if (old->kernels.empty()) {
+        return ir;
+    }
+
     // Build a program node and copy the metadata.
     ir->program.emplace();
     ir->program->name = old->name;
     ir->program->unique_name = old->unique_name;
 
+    // Convert the kernels.
+    utils::Set<utils::Str> names;
+    for (utils::UInt idx = 0; idx < old->kernels.size(); ) {
+
+        // Convert the next block of kernels.
+        auto block = utils::make<Block>();
+        auto name = convert_kernels(ir, old, idx, block);
+
+        // Sanitize and uniquify the kernel name.
+        name = std::regex_replace(name, std::regex("[^a-zA-Z0-9_]"), "_");
+        if (!std::regex_match(name, IDENTIFIER_RE)) name = "_" + name;
+        auto unique_name = name;
+        utils::UInt unique_idx = 1;
+        while (!names.insert(unique_name).second) {
+            unique_name = name + "_" + utils::to_string(unique_idx++);
+        }
+        QL_ASSERT(std::regex_match(unique_name, IDENTIFIER_RE));
+        block->name = unique_name;
+
+        // Link the previous block to this one.
+        if (ir->program->blocks.empty()) {
+            ir->program->entry_point = block;
+        } else {
+            ir->program->blocks.back()->next = block;
+        }
+
+        // Add the block.
+        ir->program->blocks.add(block);
+
+    }
+
+    ir->dump_seq();
+    check_consistency(ir);
     return ir;
 }
 

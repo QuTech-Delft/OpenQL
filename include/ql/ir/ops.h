@@ -231,6 +231,11 @@ utils::One<Reference> make_reference(
 );
 
 /**
+ * Makes a temporary object with the given type.
+ */
+ObjectLink make_temporary(const Ref &ir, const DataTypeLink &data_type);
+
+/**
  * Returns the duration of an instruction in quantum cycles. Note that this will
  * be zero for non-quantum instructions.
  */

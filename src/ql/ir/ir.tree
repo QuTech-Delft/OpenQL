@@ -404,13 +404,15 @@ program {
 
 }
 
-# A sub-block of statements, used within structured control-flow statements.
-# A specialization of this, Block, is used for the top-level, named blocks.
-sub_block {
+# Base type for sub-blocks and toplevel (named) blocks.
+block_base {
 
     # The list of statements that constitute the body of the block. The cycle
     # numbers of any contained instructions must be non-decreasing.
     statements: Any<statement>;
+
+    # A sub-block of statements, used within structured control-flow statements.
+    sub_block {}
 
     # A block of statements within the program. Depending on the stage of
     # compilation, this may represent a *basic* block. A basic block has the
