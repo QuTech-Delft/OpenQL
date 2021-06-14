@@ -16,6 +16,7 @@ struct ExciteMicrowaveParameters {
     utils::UInt duration;
     utils::UInt frequency;
     utils::UInt phase;
+    utils::UInt amplitude;
 };
 
 struct MemSwapParameters {

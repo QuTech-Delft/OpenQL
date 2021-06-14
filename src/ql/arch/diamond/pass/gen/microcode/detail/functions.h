@@ -18,7 +18,7 @@ Str loadimm(Str value, Str reg_name, Str reg_value);
 
 Str mov(Str reg1_name, Str reg1_value, Str reg2_name, Str reg2_value);
 
-Str excite_mw(Str envelope, Str duration, Str frequency, Str phase, UInt qubit);
+Str excite_mw(Str envelope, Str duration, Str frequency, Str phase, Str amp, UInt qubit);
 
 Str branch(Str name_1, Str value_1, Str comparison, Str name_2, Str value_2, Str target_name, Str target_value);
 

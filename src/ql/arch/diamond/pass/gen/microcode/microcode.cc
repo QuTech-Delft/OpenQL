@@ -101,7 +101,6 @@ utils::Int GenerateMicrocodePass::run(
             temp_kernel.gate("initialize", q);
         }
 
-
         // Add the gates from the original kernel. Every 10 gates, add a CRC check
         // for all qubits.
         UInt number_gates = 0;
@@ -145,7 +144,7 @@ utils::Int GenerateMicrocodePass::run(
             Str end_label;
             if (gate->condition == ir::ConditionType::UNARY) {
                 end_label = to_string(labelcount++);
-                outfile << detail::branch("ResultReg", to_string(gate->cond_operands[0]), ">", "", "0", "LAB", end_label) << "\n";
+                outfile << detail::branch("ResultReg", to_string(gate->cond_operands[0]), "<", "", "1", "LAB", end_label) << "\n";
             } else if (gate->condition != ir::ConditionType::ALWAYS) {
                 throw utils::Exception("gate with " + to_string(gate->condition) + " is not supported");
             }
@@ -167,15 +166,15 @@ utils::Int GenerateMicrocodePass::run(
                 Str duration = to_string(a * gate->angle);
                 if (gate->name == "rx") {
                     Str phase = to_string(1.57);
-                    outfile << detail::excite_mw("0", duration, "200", phase,
+                    outfile << detail::excite_mw("0", duration, "200", phase, "60",
                                                  gate->operands[0]);
                 } else if (gate->name == "ry") {
                     Str phase = to_string(3.14);
-                    outfile << detail::excite_mw("0", duration, "200", phase,
+                    outfile << detail::excite_mw("0", duration, "200", phase, "60",
                                                  gate->operands[0]);
                 } else if (gate->name == "rz") {
                     Str phase = to_string(0);
-                    outfile << detail::excite_mw("0", duration, "200", phase,
+                    outfile << detail::excite_mw("0", duration, "200", phase, "60",
                                                  gate->operands[0]);
                 } else if (gate->name == "cr") {
                     Str phase = to_string(0);
@@ -196,22 +195,22 @@ utils::Int GenerateMicrocodePass::run(
                 else if (gate->name == "x90") {
                     Str phase = to_string(1.57);
                     duration = to_string((1000 / 3.14) * 1.57);
-                    outfile << detail::excite_mw("0", duration, "200", phase,
+                    outfile << detail::excite_mw("0", duration, "200", phase, "60",
                                                  gate->operands[0]);
                 } else if (gate->name == "mx90") {
                     Str phase = to_string(1.57);
                     duration = to_string((1000 / 3.14) * 4.71);
-                    outfile << detail::excite_mw("0", duration, "200", phase,
+                    outfile << detail::excite_mw("0", duration, "200", phase, "60",
                                                  gate->operands[0]);
                 } else if (gate->name == "y90") {
                     Str phase = to_string(3.14);
                     duration = to_string((1000 / 3.14) * 1.57);
-                    outfile << detail::excite_mw("0", duration, "200", phase,
+                    outfile << detail::excite_mw("0", duration, "200", phase, "60",
                                                  gate->operands[0]);
                 } else if (gate->name == "my90") {
                     Str phase = to_string(3.14);
                     duration = to_string((1000 / 3.14) * 4.71);
-                    outfile << detail::excite_mw("0", duration, "200", phase,
+                    outfile << detail::excite_mw("0", duration, "200", phase, "60",
                                                  gate->operands[0]);
                 }
             } else if (type == "prepare") {
@@ -220,19 +219,19 @@ utils::Int GenerateMicrocodePass::run(
                 } else if (gate->name == "prep_x") {
                     // Rotate 1/2-pi around y-axis
                     outfile
-                        << detail::excite_mw("0", to_string(500), "200", "3.14",
+                        << detail::excite_mw("0", to_string(500), "200", "3.14", "60",
                                              gate->operands[0]);
                 } else if (gate->name == "prep_y") {
                     // Rotate 1/2-pi around x-axis
                     outfile
-                        << detail::excite_mw("0", to_string(500), "200", "1.57",
+                        << detail::excite_mw("0", to_string(500), "200", "1.57", "60",
                                              gate->operands[0]);
                 } else if (gate->name == "mprep_x") {
                     // Rotate -1/2-pi around y-axis
-                    outfile << detail::excite_mw("0", to_string(1500), "200", "3.14",gate->operands[0]);
+                    outfile << detail::excite_mw("0", to_string(1500), "200", "3.14", "60", gate->operands[0]);
                 } else if (gate->name == "mprep_y") {
                     // Rotate -1/2-pi around x-axis
-                    outfile << detail::excite_mw("0", to_string(1500), "200", "1.57",gate->operands[0]);
+                    outfile << detail::excite_mw("0", to_string(1500), "200", "1.57", "60", gate->operands[0]);
                 }
             } else if (type == "classical") {
                 // These instructions calculate a new value for either current or
@@ -278,7 +277,7 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
                     outfile << detail::loadimm("0", "photonReg", qubit_number)
                             << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0",
+                    outfile << detail::excite_mw("1", "100", "200", "0", "60",
                                                  gate->operands[0]) << "\n";
                     outfile << detail::mov("photonReg", qubit_number, "R",
                                            qubit_number) << "\n";
@@ -288,14 +287,14 @@ utils::Int GenerateMicrocodePass::run(
                                           "LAB", count_2) << "\n";
 
                     //Excite with Time Duration T
-                    outfile << detail::excite_mw("1", "R2", "200", "0",
+                    outfile << detail::excite_mw("1", "R2", "200", "0", "60",
                                                  gate->operands[0]) << "\n";
 
                     //Readout
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
                     outfile << detail::loadimm("0", "photonReg", qubit_number)
                             << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0",
+                    outfile << detail::excite_mw("1", "100", "200", "0", "60",
                                                  gate->operands[0]) << "\n";
                     outfile << detail::mov("photonReg", qubit_number, "R",
                                            qubit_number) << "\n";
@@ -349,7 +348,7 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::loadimm("0", "photon Reg", qubit_number)
                             << "\n";
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0",
+                    outfile << detail::excite_mw("1", "100", "200", "0", "60",
                                                  gate->operands[0]) << "\n";
                     outfile << detail::mov("photonReg", qubit_number, "R",
                                            qubit_number) << "\n";
@@ -377,7 +376,7 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
                     outfile << detail::loadimm("0", "photonReg", qubit_number)
                             << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0",
+                    outfile << detail::excite_mw("1", "100", "200", "0", "60",
                                                  gate->operands[0]) << "\n";
                     outfile
                         << detail::mov("photonReg", qubit_number, "R",
@@ -397,7 +396,7 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
                     outfile << detail::loadimm("0", "photonReg", qubit_number)
                             << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0",
+                    outfile << detail::excite_mw("1", "100", "200", "0", "60",
                                                  gate->operands[0]) << "\n";
                     outfile << detail::mov("photonReg", qubit_number, "R",
                                            qubit_number) << "\n";
@@ -447,7 +446,7 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
                     outfile << detail::excite_mw("1", "100",
                                                  "sweepStartReg" + qubit_number,
-                                                 "0", gate->operands[0])
+                                                 "0", "60", gate->operands[0])
                             << "\n";
                     outfile << detail::switchOff(gate->operands[0]) << "\n";
                     outfile
@@ -483,6 +482,7 @@ utils::Int GenerateMicrocodePass::run(
                                                  to_string(params.duration),
                                                  to_string(params.frequency),
                                                  to_string(params.phase),
+                                                 to_string(params.amplitude),
                                                  gate->operands[0]) << "\n";
                 } else if (gate->name == "memswap") {
                     // Implements the swap from electron qubit to nuclear spin qubit.
@@ -515,9 +515,9 @@ utils::Int GenerateMicrocodePass::run(
                     outfile << detail::label(count) << "\n";
                     outfile << detail::switchOn(gate->operands[0]) << "\n";
                     outfile << detail::switchOn(gate->operands[1]) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0",
+                    outfile << detail::excite_mw("1", "100", "200", "0", "60",
                                                  gate->operands[0]) << "\n";
-                    outfile << detail::excite_mw("1", "100", "200", "0",
+                    outfile << detail::excite_mw("1", "100", "200", "0", "60",
                                                  gate->operands[1]) << "\n";
                     outfile << "wait 100" << "\n";
                     outfile << detail::mov("R", "0", "photonReg", "01") << "\n";

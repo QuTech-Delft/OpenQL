@@ -438,9 +438,9 @@ void Kernel::display() {
 /**
  * Appends the diamond excite_mw instruction.
  */
-void Kernel::diamond_excite_mw(size_t envelope, size_t duration, size_t frequency, size_t phase, size_t qubit) {
+void Kernel::diamond_excite_mw(size_t envelope, size_t duration, size_t frequency, size_t phase, size_t amplitude, size_t qubit) {
     kernel->gate("excite_mw", qubit);
-    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::ExciteMicrowaveParameters>({envelope, duration, frequency, phase});
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::ExciteMicrowaveParameters>({envelope, duration, frequency, phase, amplitude});
 }
 
 /**

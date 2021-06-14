@@ -36,9 +36,10 @@ Str mov(Str reg1_name, Str reg1_value, Str reg2_name, Str reg2_value) {
     return body;
 }
 
-Str excite_mw(Str envelope, Str duration, Str frequency, Str phase, UInt qubit){
+Str excite_mw(Str envelope, Str duration, Str frequency, Str phase, Str amp, UInt qubit){
     Str body_1 = "excite_MW " + to_string(envelope) + ", " +  to_string(duration) + ", ";
-    Str body_2 = to_string(frequency) + ", " + to_string(phase) + ", q" + to_string(qubit);
+    Str body_2 = to_string(frequency) + ", " + to_string(phase) + ", " +
+        to_string(amp)+ ", q" + to_string(qubit);
     Str body = body_1 + body_2;
     return body;
 }

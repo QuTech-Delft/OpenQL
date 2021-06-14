@@ -815,6 +815,9 @@ frequency : int
 phase: int
     The phase of the microwave.
 
+amplitude: int
+    The amplitude of the microwave.
+
 qubit: int
     The target qubit index.
 

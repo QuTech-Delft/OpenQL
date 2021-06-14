@@ -405,7 +405,7 @@ public:
     /**
      * Appends the diamond excite_MW instruction.
      */
-    void diamond_excite_mw(size_t envelope, size_t duration, size_t frequency, size_t phase, size_t qubit);
+    void diamond_excite_mw(size_t envelope, size_t duration, size_t frequency, size_t phase, size_t amplitude, size_t qubit);
 
     /**
      * Appends the diamond memswap instruction, that swaps the state from a qubit
