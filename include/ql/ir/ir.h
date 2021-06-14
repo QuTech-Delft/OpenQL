@@ -53,6 +53,11 @@ using InstructionRef = utils::One<Instruction>;
 using InstructionTypeLink = utils::Link<InstructionType>;
 
 /**
+ * Link to a function type.
+ */
+using FunctionTypeLink = utils::Link<FunctionType>;
+
+/**
  * Reference to an expression.
  */
 using ExpressionRef = utils::One<Expression>;

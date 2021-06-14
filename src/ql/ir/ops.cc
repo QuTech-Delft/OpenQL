@@ -118,12 +118,6 @@ static utils::Pair<InstructionTypeLink, utils::Bool> add_or_find_instruction_typ
     const utils::One<InstructionType> &instruction_type,
     const utils::Any<Expression> &template_operands = {}
 ) {
-    std::cout << "add_or_find_instruction_type" << std::endl;
-    instruction_type->dump();
-    for (const auto &oper : template_operands) {
-        oper->dump();
-    }
-    std::cout << std::endl;
     QL_ASSERT(instruction_type->specializations.empty());
     QL_ASSERT(instruction_type->template_operands.empty());
     QL_ASSERT(instruction_type->generalization.empty());
@@ -263,32 +257,6 @@ InstructionTypeLink add_instruction_type(
         throw utils::Exception(
             "duplicate instruction type: \"" + instruction_type->name + "\""
         );
-    }
-
-    return result.first;
-}
-
-/**
- * Adds a decomposition rule. An instruction is generated for the decomposition
- * rule based on instruction_type and template_operands if one didn't already
- * exist. If one did already exist, only the decompositions field of
- * instruction_type is used to extend the decomposition rule list of the
- * existing instruction type.
- */
-InstructionTypeLink add_decomposition_rule(
-    const Ref &ir,
-    const utils::One<InstructionType> &instruction_type,
-    const utils::Any<Expression> &template_operands
-) {
-
-    // Defer to add_or_find_instruction_type().
-    auto result = add_or_find_instruction_type(ir, instruction_type, template_operands);
-
-    // If we didn't add anything because a matching specialization of a matching
-    // instruction already existed, just add the incoming decomposition rules to
-    // it.
-    if (!result.second) {
-        result.first->decompositions.extend(instruction_type->decompositions);
     }
 
     return result.first;
@@ -538,6 +506,154 @@ InstructionRef build_instruction(
 
     // Return the constructed condition.
     return insn;
+}
+
+/**
+ * Adds a decomposition rule. An instruction is generated for the decomposition
+ * rule based on instruction_type and template_operands if one didn't already
+ * exist. If one did already exist, only the decompositions field of
+ * instruction_type is used to extend the decomposition rule list of the
+ * existing instruction type.
+ */
+InstructionTypeLink add_decomposition_rule(
+    const Ref &ir,
+    const utils::One<InstructionType> &instruction_type,
+    const utils::Any<Expression> &template_operands
+) {
+
+    // Defer to add_or_find_instruction_type().
+    auto result = add_or_find_instruction_type(ir, instruction_type, template_operands);
+
+    // If we didn't add anything because a matching specialization of a matching
+    // instruction already existed, just add the incoming decomposition rules to
+    // it.
+    if (!result.second) {
+        result.first->decompositions.extend(instruction_type->decompositions);
+    }
+
+    return result.first;
+}
+
+/**
+ * Adds a function type to the platform.
+ */
+FunctionTypeLink add_function_type(
+    const Ref &ir,
+    const utils::One<FunctionType> &function_type
+) {
+
+    // Check its name.
+    if (
+        !std::regex_match(function_type->name, IDENTIFIER_RE) &&
+        !utils::starts_with(function_type->name, "operator")
+    ) {
+        throw utils::Exception(
+            "invalid name for new function type: \"" +
+            function_type->name + "\" is not a valid identifier or operator"
+        );
+    }
+
+    // Search for an existing matching function.
+    auto begin = ir->platform->functions.get_vec().begin();
+    auto end = ir->platform->functions.get_vec().end();
+    auto pos = std::lower_bound(begin, end, function_type, compare_by_name<FunctionType>);
+    for (; pos != end && (*pos)->name == function_type->name; ++pos) {
+        if ((*pos)->operand_types.size() != function_type->operand_types.size()) {
+            continue;
+        }
+        auto match = true;
+        for (utils::UInt i = 0; i < (*pos)->operand_types.size(); i++) {
+            if ((*pos)->operand_types[i]->data_type != function_type->operand_types[i]->data_type) {
+                match = false;
+                break;
+            }
+        }
+        if (match) {
+            // TODO: this exception should include the whole prototype, not just
+            //  the name.
+            throw utils::Exception(
+                "duplicate function type: \"" + function_type->name + "\""
+            );
+        }
+    }
+
+    // Add the function type in the right place.
+    ir->platform->functions.get_vec().insert(pos, function_type);
+
+    return function_type;
+}
+
+/**
+ * Finds a function type based on its name and operand types. If no matching
+ * function type is found, an empty link is returned.
+ */
+FunctionTypeLink find_function_type(
+    const Ref &ir,
+    const utils::Str &name,
+    const utils::Vec<DataTypeLink> &types
+) {
+    auto begin = ir->platform->functions.get_vec().begin();
+    auto end = ir->platform->functions.get_vec().end();
+    auto pos = std::lower_bound(
+        begin,
+        end,
+        utils::make<FunctionType>(name),
+        compare_by_name<FunctionType>
+    );
+    for (; pos != end && (*pos)->name == name; ++pos) {
+        if ((*pos)->operand_types.size() != types.size()) {
+            continue;
+        }
+        auto match = true;
+        for (utils::UInt i = 0; i < (*pos)->operand_types.size(); i++) {
+            if ((*pos)->operand_types[i]->data_type != types[i]) {
+                match = false;
+                break;
+            }
+        }
+        if (match) {
+            return *pos;
+        }
+    }
+    return {};
+}
+
+/**
+ * Builds a new function call node based on the given name and operand list.
+ */
+utils::One<FunctionCall> build_function_call(
+    const Ref &ir,
+    const utils::Str &name,
+    const utils::Any<Expression> &operands
+) {
+
+    // Build a function call node.
+    auto function_call = utils::make<FunctionCall>();
+    function_call->operands = operands;
+
+    // Find the type for the custom function.
+    utils::Vec<DataTypeLink> types;
+    for (const auto &operand : operands) {
+        types.push_back(get_type_of(operand));
+    }
+    function_call->function_type = find_function_type(ir, name, types);
+    if (function_call->function_type.empty()) {
+        utils::StrStrm ss;
+        ss << "unknown function: " << name << "(";
+        auto first = true;
+        for (const auto &type : types) {
+            if (first) {
+                first = false;
+            } else {
+                ss << " ,";
+            }
+            ss << type->name;
+        }
+        ss << ")";
+        throw utils::Exception(ss.str());
+    }
+
+    return function_call;
 }
 
 /**

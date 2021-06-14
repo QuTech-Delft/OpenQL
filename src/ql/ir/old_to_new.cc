@@ -47,14 +47,27 @@ static ExpressionRef parse_instruction_parameter(
     const utils::Str &param
 ) {
     if (std::regex_match(param, std::regex("[qbc][0-9]+"))) {
-        auto obj = find_physical_object(ir, param.substr(0, 1));
+        auto name = param.substr(0, 1);
+        auto index = utils::parse_uint(param.substr(1));
+
+        // Map the first num_qubits bregs to the implicit qubit measurement
+        // registers.
+        auto implicit_breg = false;
+        if (name == "b") {
+            if (index < ir->platform->qubits->shape[0]) {
+                implicit_breg = true;
+                name = "q";
+            } else {
+                index -= ir->platform->qubits->shape[0];
+            }
+        }
+        auto obj = find_physical_object(ir, name);
         if (obj.empty()) {
             throw utils::Exception(
                 "invalid specialization parameter \"" + param + "\": "
                 "no register exists with that name"
             );
         }
-        auto index = utils::parse_uint(param.substr(1));
         if (obj->shape.size() != 1) {
             throw utils::Exception(
                 "invalid specialization parameter \"" + param + "\": "
@@ -67,7 +80,11 @@ static ExpressionRef parse_instruction_parameter(
                 "register index out of range"
             );
         }
-        return make_reference(ir, obj, {index});
+        auto ref = make_reference(ir, obj, {index});
+        if (implicit_breg) {
+            ref->data_type = ir->platform->implicit_bit_type;
+        }
+        return ref;
     } else {
         auto obj = find_physical_object(ir, param.substr(0, 1));
         if (obj.empty()) {
@@ -81,39 +98,40 @@ static ExpressionRef parse_instruction_parameter(
 }
 
 /**
- * Converts the old IR (program and platform) to the new one.
+ * Converts the old platform to the new IR structure.
+ *
+ * See convert_old_to_new(const compat::ProgramRef&) for details.
  */
-Ref convert_old_to_new(const compat::ProgramRef &old) {
+Ref convert_old_to_new(const compat::PlatformRef &old) {
     Ref ir;
     ir.emplace();
 
     // Build the platform.
     ir->platform.emplace();
-    ir->platform->name = old->platform->name;
+    ir->platform->name = old->name;
 
     // Add qubit type and main qubit register.
     auto qubit_type = add_type<QubitType>(ir, "qubit");
     ir->platform->qubits = add_physical_object(ir, utils::make<PhysicalObject>(
-        "q", qubit_type, prim::UIntVec({old->platform->qubit_count})
+        "q", qubit_type, prim::UIntVec({old->qubit_count})
     ));
 
     // Add type for bregs and conditions.
     auto bit_type = add_type<BitType>(ir, "bit");
     ObjectLink bregs;
-    if (old->platform->breg_count) {
+    if (old->breg_count > old->qubit_count) {
         bregs = add_physical_object(ir, utils::make<PhysicalObject>(
-            "b", bit_type, prim::UIntVec({old->platform->breg_count})
+            "b", bit_type, prim::UIntVec({old->breg_count - old->qubit_count})
         ));
     }
     ir->platform->implicit_bit_type = bit_type;
     ir->platform->default_bit_type = bit_type;
 
-    // Add type for cregs.
+    // Add type and registers for cregs.
     auto int_type = add_type<IntType>(ir, "int", true, 32);
-    ObjectLink cregs;
-    if (old->platform->creg_count) {
-        cregs = add_physical_object(ir, utils::make<PhysicalObject>(
-            "c", int_type, prim::UIntVec({old->platform->creg_count})
+    if (old->creg_count) {
+        add_physical_object(ir, utils::make<PhysicalObject>(
+            "c", int_type, prim::UIntVec({old->creg_count})
         ));
     }
     ir->platform->default_int_type = int_type;
@@ -125,8 +143,8 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
     // trying to use instruction_map, because the latter has some pretty ****ed
     // up stuff going on in it to make the legacy decompositions work.
     for (
-        auto it = old->platform->get_instructions().begin();
-        it != old->platform->get_instructions().end();
+        auto it = old->get_instructions().begin();
+        it != old->get_instructions().end();
         ++it
     ) {
         try {
@@ -253,7 +271,7 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
                     } else {
                         throw utils::Exception(
                             "invalid parameter mode " + mode_s + ": "
-                            "must be W, R, L, X, Y, or Z"
+                            "must be W, R, L, X, Y, Z, or M"
                         );
                     }
                     insn->operand_types.emplace(mode, type);
@@ -402,7 +420,7 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
             it2 = insn->data->find("duration_cycles");
             if (it2 == insn->data->end()) {
                 it2 = insn->data->find("duration");
-                duration_divider = old->platform->cycle_time;
+                duration_divider = old->cycle_time;
             } else if (insn->data->find("duration_cycles") != insn->data->end()) {
                 throw utils::Exception(
                     "both duration and duration_cycles are specified; "
@@ -453,8 +471,8 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
 
     // Add legacy decompositions to the new system, for gates added by passes
     // (notably swap and relatives for the mapper).
-    auto it = old->platform->platform_config.find("gate_decomposition");
-    if (it != old->platform->platform_config.end()) {
+    auto it = old->platform_config.find("gate_decomposition");
+    if (it != old->platform_config.end()) {
         for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
             try {
 
@@ -600,25 +618,72 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
         }
     }
 
+    // Populate the default function types.
+    auto fn = add_function_type(ir, utils::make<FunctionType>("operator!"));
+    fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
+    fn->return_type = bit_type;
+    for (const auto &op : utils::Vec<utils::Str>({"&&", "||", "^"})) {
+        fn = add_function_type(ir, utils::make<FunctionType>("operator" + op));
+        fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
+        fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
+        fn->return_type = bit_type;
+    }
+    fn = add_function_type(ir, utils::make<FunctionType>("operator~"));
+    fn->operand_types.emplace(prim::AccessMode::READ, int_type);
+    fn->return_type = int_type;
+    for (const auto &op : utils::Vec<utils::Str>({"+", "-", "&", "|", "^"})) {
+        fn = add_function_type(ir, utils::make<FunctionType>("operator" + op));
+        fn->operand_types.emplace(prim::AccessMode::READ, int_type);
+        fn->operand_types.emplace(prim::AccessMode::READ, int_type);
+        fn->return_type = int_type;
+    }
+    for (const auto &op : utils::Vec<utils::Str>({"==", "!=", "<", ">", "<=", ">="})) {
+        fn = add_function_type(ir, utils::make<FunctionType>("operator" + op));
+        fn->operand_types.emplace(prim::AccessMode::READ, int_type);
+        fn->operand_types.emplace(prim::AccessMode::READ, int_type);
+        fn->return_type = bit_type;
+    }
+    fn = add_function_type(ir, utils::make<FunctionType>("int"));
+    fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
+    fn->return_type = int_type;
+
     // Populate topology. This is a bit annoying because the old platform has
     // it contained in an Opt rather than a Ptr.
     utils::Ptr<com::Topology> top;
-    top.unwrap() = old->platform->topology.unwrap();
+    top.unwrap() = old->topology.unwrap();
     ir->platform->topology.populate(top.as_const());
 
     // Populate architecture.
-    ir->platform->architecture.populate(old->platform->architecture);
+    ir->platform->architecture.populate(old->architecture);
 
     // Populate resources.
     rmgr::CRef resources;
-    resources.emplace(rmgr::Manager::from_defaults(old->platform));
+    resources.emplace(rmgr::Manager::from_defaults(old));
     ir->platform->resources.populate(resources);
 
     // Populate platform JSON data.
-    ir->platform->data = old->platform->platform_config;
+    ir->platform->data = old->platform_config;
 
     //ir->dump_seq();
     check_consistency(ir);
+    return ir;
+}
+
+/**
+ * Converts the old IR (program and platform) to the new one.
+ *
+ * Refer to the header file for details.
+ */
+Ref convert_old_to_new(const compat::ProgramRef &old) {
+
+    // Build the platform.
+    auto ir = convert_old_to_new(old->platform);
+
+    // Build a program node and copy the metadata.
+    ir->program.emplace();
+    ir->program->name = old->name;
+    ir->program->unique_name = old->unique_name;
+
     return ir;
 }
 

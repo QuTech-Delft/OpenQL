@@ -100,19 +100,6 @@ InstructionTypeLink add_instruction_type(
 );
 
 /**
- * Adds a decomposition rule. An instruction is generated for the decomposition
- * rule based on instruction_type and template_operands if one didn't already
- * exist. If one did already exist, only the decompositions field of
- * instruction_type is used to extend the decomposition rule list of the
- * existing instruction type.
- */
-InstructionTypeLink add_decomposition_rule(
-    const Ref &ir,
-    const utils::One<InstructionType> &instruction_type,
-    const utils::Any<Expression> &template_operands
-);
-
-/**
  * Finds an instruction type based on its name and operand types. If
  * generate_overload_if_needed is set, and no instruction with the given name
  * and operand type set exists, then an overload is generated for the first
@@ -159,6 +146,46 @@ InstructionRef build_instruction(
     const utils::Any<Expression> &operands,
     const ExpressionRef &condition = {},
     utils::Bool generate_overload_if_needed = false
+);
+
+/**
+ * Adds a decomposition rule. An instruction is generated for the decomposition
+ * rule based on instruction_type and template_operands if one didn't already
+ * exist. If one did already exist, only the decompositions field of
+ * instruction_type is used to extend the decomposition rule list of the
+ * existing instruction type.
+ */
+InstructionTypeLink add_decomposition_rule(
+    const Ref &ir,
+    const utils::One<InstructionType> &instruction_type,
+    const utils::Any<Expression> &template_operands
+);
+
+/**
+ * Adds a function type to the platform.
+ */
+FunctionTypeLink add_function_type(
+    const Ref &ir,
+    const utils::One<FunctionType> &function_type
+);
+
+/**
+ * Finds a function type based on its name and operand types. If no matching
+ * function type is found, an empty link is returned.
+ */
+FunctionTypeLink find_function_type(
+    const Ref &ir,
+    const utils::Str &name,
+    const utils::Vec<DataTypeLink> &types
+);
+
+/**
+ * Builds a new function call node based on the given name and operand list.
+ */
+utils::One<FunctionCall> build_function_call(
+    const Ref &ir,
+    const utils::Str &name,
+    const utils::Any<Expression> &operands
 );
 
 /**
