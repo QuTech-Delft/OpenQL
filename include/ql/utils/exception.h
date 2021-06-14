@@ -5,7 +5,7 @@
 #pragma once
 
 #include <stdexcept>
-#include "ql/utils/str.h"
+#include <list>
 
 namespace ql {
 namespace utils {
@@ -19,11 +19,38 @@ namespace utils {
  * the idea is to provide context when an uncaught exception reaches user code.
  */
 class Exception : public std::runtime_error {
+private:
+    
+    /**
+     * Buffer for what() result.
+     */
+    mutable std::string buf;
+    
 public:
+    
+    /**
+     * List of messages. These are printed with ": " separator by what().
+     */
+    std::list<std::string> messages;
+    
+    /**
+     * Stack trace information.
+     */
+    std::string trace;
+    
+    /**
+     * Constructs an exception.
+     */
     explicit Exception(
-        const Str &msg,
+        const std::string &msg,
         bool system = false
     ) noexcept;
+    
+    /**
+     * Returns the complete exception message.
+     */
+    const char *what() const noexcept override;
+    
 };
 
 /**
@@ -48,10 +75,7 @@ public:
  */
 class UserError : public std::runtime_error {
 public:
-    explicit UserError(
-        const Str &msg,
-        bool system = false
-    ) noexcept;
+    explicit UserError(const std::string &msg) noexcept;
 };
 
 } // namespace utils

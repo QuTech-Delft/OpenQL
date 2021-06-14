@@ -434,7 +434,6 @@ void Platform::load(
     // Examples:
     // - Parametrized gate-decomposition: "cl_2 %0": ["rxm90 %0", "rym90 %0"]
     // - Specialized gate-decomposition:  "rx180 q0" : ["x q0"]
-
     if (platform_config.count("gate_decomposition") > 0) {
         const utils::Json &gate_decomposition = platform_config["gate_decomposition"];
         for (auto it = gate_decomposition.begin();

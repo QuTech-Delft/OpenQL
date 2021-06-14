@@ -29,6 +29,11 @@ private:
     utils::Bool in_loop = false;
 
     /**
+     * Copy of the implicit bit type from the platform, for checking references.
+     */
+    utils::OptLink<DataType> implicit_bit_type;
+
+    /**
      * Checks that the given string is a valid identifier.
      */
     static void check_identifier(const utils::Str &what, const utils::Str &s) {
@@ -183,6 +188,14 @@ public:
         if (!node.qubits->data_type->as_qubit_type()) {
             throw utils::Exception("main qubit register is not of a qubit-like data type");
         }
+
+        // Check the implicit bit type.
+        if (!node.implicit_bit_type.empty()) {
+            if (!node.implicit_bit_type->as_bit_type()) {
+                throw utils::Exception("implicit bit type must be a bit-like type");
+            }
+        }
+        implicit_bit_type = node.implicit_bit_type;
 
         // Check existence of the topology, architecture, and resources objects.
         if (!node.topology.is_populated()) {
@@ -843,6 +856,17 @@ public:
      */
     void visit_reference(Reference &node) override {
         RecursiveVisitor::visit_reference(node);
+
+        // Check data type.
+        if (
+            (node.data_type != node.target->data_type) &&
+            (node.data_type != implicit_bit_type || !node.target->data_type->as_qubit_type())
+        ) {
+            throw utils::Exception(
+                "encountered reference to object \"" + node.target->name +
+                "\" using mismatched data type " + node.data_type->name
+            );
+        }
 
         // Check indices.
         if (node.indices.size() != node.target->shape.size()) {

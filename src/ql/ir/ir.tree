@@ -69,7 +69,19 @@ platform {
 
     # The main qubit register that the generic mapper will map everything to
     # and that topology applies to. The data type must be a vector of qubits.
+    # This also indirectly defines the main qubit type.
     qubits: Link<physical_object>;
+
+    # If qubits have an implicit bit associated with them, this must be set to
+    # the corresponding bit type. If it doesn't, this should be empty.
+    implicit_bit_type: OptLink<data_type>;
+
+    # The bit-like data type used for default-generated instruction and loop
+    # conditions.
+    default_bit_type: Link<data_type>;
+
+    # The int-like data type used for default-generated indices.
+    default_int_type: Link<data_type>;
 
     # Topology/connectivity information for the main qubit register.
     topology: prim::Topology;
@@ -496,9 +508,10 @@ statement {
         wait_instruction {
 
             # The objects that are to be waited on. If empty, the wait
-            # instruction must wait for *all* objects in the program
+            # instruction must effectively wait for *all* objects in the program
             # (or, equivalently, it must wait for all preceding instructions to
-            # complete).
+            # complete, and all subsequent instructions must start after it).
+            # Also known as a "full barrier" for lack of a better term.
             objects: Any<reference>;
 
             # The amount of quantum cycles that must be waited in addition after
@@ -695,10 +708,25 @@ expression {
     }
 
     # A reference to an object.
+    #
+    # Besides appearing in the IR, these references are also used to represent
+    # data dependencies. In that context, it is also legal to make a reference
+    # that does not refer to any object. This is referred to as a null
+    # reference. These null references are implicitly "read" by all normal
+    # statements, and implicitly "written" by statements of which the order
+    # must be preserved, being full barriers (wait/barrier instructions with an
+    # empty object list) and control-flow instructions.
     reference {
 
         # Link to the target object.
         target: Link<object>;
+
+        # The data type that the object is accessed as. In almost all cases,
+        # this must be equal to target->data_type. The only exception currently
+        # allowed is accessing a qubit type as a bit. This yields the implicit
+        # classical bit associated with the qubit in targets which use this
+        # paradigm.
+        data_type: Link<data_type>;
 
         # The indices by which the object is indexed. The indices must be
         # integer-like. Depending on context, they may need to be literals.
@@ -706,21 +734,6 @@ expression {
         # target object; partial indexation is not supported because the type
         # system doesn't support it.
         indices: Any<expression>;
-
-    }
-
-    # A typecast. Differs from a function call in that typecasts may be written
-    # to if the subexpression is a reference (or a recursive typecast to a
-    # reference). Casting a qubit to a bit is a special case: it requests access
-    # to the bit register that implicitly receives the result of a measurement
-    # on that qubit on some architectures.
-    typecast {
-
-        # The type that is being cast to.
-        data_type: Link<data_type>;
-
-        # The subexpression being cast.
-        expression: One<expression>;
 
     }
 

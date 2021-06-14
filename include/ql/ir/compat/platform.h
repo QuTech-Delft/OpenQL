@@ -40,7 +40,7 @@ class Platform : public utils::Node {
 private:
 
     /**
-     * Raw instruction setting data for use by the eqasm backend, corresponding
+     * Raw instruction setting data for use by the eQASM backend, corresponding
      * to the `"instructions"` key in the root JSON object.
      */
     utils::Json instruction_settings;

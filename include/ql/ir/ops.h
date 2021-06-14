@@ -100,12 +100,25 @@ InstructionTypeLink add_instruction_type(
 );
 
 /**
- * Finds an instruction type based on its name and operand types. This returns
- * the most specialized instruction available. If generate_overload_if_needed is
- * set, and no instruction with the given name and operand type set exists, then
- * an overload is generated for the first instruction type for which only the
- * name matches, and that overload is returned. If no matching instruction type
- * is found or was created, an empty link is returned.
+ * Adds a decomposition rule. An instruction is generated for the decomposition
+ * rule based on instruction_type and template_operands if one didn't already
+ * exist. If one did already exist, only the decompositions field of
+ * instruction_type is used to extend the decomposition rule list of the
+ * existing instruction type.
+ */
+InstructionTypeLink add_decomposition_rule(
+    const Ref &ir,
+    const utils::One<InstructionType> &instruction_type,
+    const utils::Any<Expression> &template_operands
+);
+
+/**
+ * Finds an instruction type based on its name and operand types. If
+ * generate_overload_if_needed is set, and no instruction with the given name
+ * and operand type set exists, then an overload is generated for the first
+ * instruction type for which only the name matches, and that overload is
+ * returned. If no matching instruction type is found or was created, an empty
+ * link is returned.
  */
 InstructionTypeLink find_instruction_type(
     const Ref &ir,
@@ -115,11 +128,80 @@ InstructionTypeLink find_instruction_type(
 );
 
 /**
+ * Builds a new instruction node based on the given name and operand list. Its
+ * behavior depends on name.
+ *
+ *  - If "set", a set instruction is created. Exactly two operands must be
+ *    specified, of which the first is the LHS and the second is the RHS. The
+ *    LHS must be a reference, and have a classical data type. The RHS must have
+ *    exactly the same data type as the LHS.
+ *  - If "wait", a wait instruction is created. The first operand must be a
+ *    non-negative integer literal, representing the duration. The remainder of
+ *    the operands are what's waited on, and must be references. If there is
+ *    only one operand, the instruction is a full barrier (i.e. it effectively
+ *    waits on all objects).
+ *  - If "barrier", a zero-duration wait instruction is created. The operands
+ *    are what's waited on, and must be references. If there are no operands,
+ *    the instruction is a full barrier (i.e. it effectively waits on all
+ *    objects).
+ *  - Any other name is treated as a custom instruction, resolved via
+ *    find_instruction_type(). The most specialized instruction type is used.
+ *
+ * If no condition is specified, the instruction will be unconditional (a
+ * literal true node is generated for it). For wait instructions, the specified
+ * condition *must* be null, as wait instructions are always unconditional.
+ *
+ * Note that goto and dummy instructions cannot be created via this interface.
+ */
+InstructionRef build_instruction(
+    const Ref &ir,
+    const utils::Str &name,
+    const utils::Any<Expression> &operands,
+    const ExpressionRef &condition = {},
+    utils::Bool generate_overload_if_needed = false
+);
+
+/**
  * Returns whether the given expression can be assigned or is a qubit (i.e.,
  * whether it can appear on the left-hand side of an assignment, or can be used
  * as an operand in classical write or qubit access mode).
  */
 utils::Bool is_assignable_or_qubit(const ExpressionRef &expr);
+
+/**
+ * Makes an integer literal using the default integer type.
+ */
+utils::One<IntLiteral> make_default_int_lit(const Ref &ir, utils::Int i);
+
+/**
+ * Makes an integer literal using the default integer type.
+ */
+utils::One<IntLiteral> make_default_int_lit(const Ref &ir, utils::UInt i);
+
+/**
+ * Makes an bit literal using the default bit type.
+ */
+utils::One<BitLiteral> make_default_bit_lit(const Ref &ir, utils::Bool b);
+
+/**
+ * Makes a qubit reference to the main qubit register.
+ */
+utils::One<Reference> make_default_qubit_ref(const Ref &ir, utils::UInt idx);
+
+/**
+ * Makes a reference to the implicit measurement bit associated with a qubit in
+ * the main qubit register.
+ */
+utils::One<Reference> make_default_bit_ref(const Ref &ir, utils::UInt idx);
+
+/**
+ * Makes a reference to the specified object using literal indices.
+ */
+utils::One<Reference> make_reference(
+    const Ref &ir,
+    const ObjectLink &obj,
+    utils::Vec<utils::UInt> indices = {}
+);
 
 /**
  * Returns the duration of an instruction in quantum cycles. Note that this will
@@ -141,40 +223,69 @@ class ObjectAccesses {
 public:
 
     /**
-     * A reference to an object, including index.
+     * A reference to an object (including index) or a null reference, for the
+     * purpose of representing a data dependency. The null reference is used for
+     * barriers without operands (i.e. barriers that must have a data dependency
+     * with all other objects) and goto instructions: these instructions "write"
+     * to the "null object", while all other instructions read from it. This just
+     * wraps ir::Reference, in such a way that it can be used as the key for ordered
+     * maps and sets, and such that equality is value-based.
      */
-    class Reference {
+    class ReferenceWrapper {
     public:
 
         /**
-         * The object being used.
+         * The wrapped reference.
          */
-        ObjectLink target;
+        Reference reference;
 
         /**
-         * Whether the object itself or its implicit bit register is used (this
-         * can only be true for qubit registers).
+         * Clones this wrapper (and its underlying reference object).
          */
-        utils::Bool implicit_bit = false;
+        ReferenceWrapper clone() const;
 
         /**
-         * The indices being accessed, for as far as they are statically known.
+         * Dereference operator (shorthand).
          */
-        utils::Vec<utils::UInt> indices;
+        const Reference &operator*() const;
 
         /**
-         * Less-than operator to allow this to be used as a key to a map.
+         * Dereference operator (shorthand).
          */
-        utils::Bool operator<(const Reference &rhs) const;
+        Reference &operator*();
+
+        /**
+         * Dereference operator (shorthand).
+         */
+        const Reference *operator->() const;
+
+        /**
+         * Dereference operator (shorthand).
+         */
+        Reference *operator->();
+
+        /**
+         * Value-based less-than operator to allow this to be used as a key to
+         * a map.
+         */
+        utils::Bool operator<(const ReferenceWrapper &rhs) const;
+
+        /**
+         * Value-based equality operator.
+         */
+        utils::Bool operator==(const ReferenceWrapper &rhs) const;
 
     };
 
-    using Access = utils::Pair<Reference, prim::AccessMode>;
+    /**
+     * An object access, as used for representing data dependencies.
+     */
+    using Access = utils::Pair<ReferenceWrapper, prim::AccessMode>;
 
     /**
      * Shorthand for the data dependency list container.
      */
-    using Accesses = utils::Map<Reference, prim::AccessMode>;
+    using Accesses = utils::Map<ReferenceWrapper, prim::AccessMode>;
 
 private:
 
@@ -215,21 +326,26 @@ public:
      * already an access for the object, the access mode is combined: if they
      * match the mode is maintained, otherwise the mode is changed to write.
      */
-    void add_access(prim::AccessMode mode, const Reference &reference);
+    void add_access(
+        const Ref &ir,
+        prim::AccessMode mode,
+        const ReferenceWrapper &reference
+    );
 
     /**
      * Adds dependencies on whatever is used by a complete expression.
      */
     void add_expression(
+        const Ref &ir,
         prim::AccessMode mode,
-        const ExpressionRef &expr,
-        utils::Bool implicit_bit = false
+        const ExpressionRef &expr
     );
 
     /**
      * Adds dependencies on the operands of a function or instruction.
      */
     void add_operands(
+        const Ref &ir,
         const utils::Any<OperandType> &prototype,
         const utils::Any<Expression> &operands
     );
@@ -237,12 +353,12 @@ public:
     /**
      * Adds dependencies for a complete statement.
      */
-    void add_statement(const StatementRef &stmt);
+    void add_statement(const Ref &ir, const StatementRef &stmt);
 
     /**
      * Adds dependencies for a whole (sub)block of statements.
      */
-    void add_block(const SubBlockRef &block);
+    void add_block(const Ref &ir, const SubBlockRef &block);
 
     /**
      * Clears the dependency list, allowing the object to be reused.
