@@ -6,6 +6,7 @@
 
 #include <stdexcept>
 #include <list>
+#include <string>
 
 namespace ql {
 namespace utils {
