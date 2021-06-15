@@ -472,6 +472,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Add legacy decompositions to the new system, for gates added by passes
     // (notably swap and relatives for the mapper).
+    utils::List<std::function<void()>> todo;
     auto it = old->platform_config.find("gate_decomposition");
     if (it != old->platform_config.end()) {
         for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
@@ -541,80 +542,90 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                     throw utils::Exception("decomposition must be an array");
                 }
 
-                // Make a trivial guess for the duration by just summing the
-                // durations of the sub-instructions, which we'll do while
-                // resolving them in the loop below. This is not a very
-                // realistic mode, of course, since sub-instructions may end up
-                // being executed in parallel.
-                insn->duration = 0;
+                // Set the duration to a placeholder for now.
+                insn->duration = utils::UMAX;
 
-                // Parse and add the sub-instructions.
-                // FIXME: we can't actually do this here yet! The order of the
-                //  decomposition rules is undefined, decomposition rules
-                //  may refer to one another, and parsing decomposition rules
-                //  may add instruction types to the instruction set. So we need
-                //  to postpone this parsing until after all the decompositions
-                //  have been added.
-                for (const auto &sub_insn : sub_insns) {
+                // Now actually add the decomposition rule, even though we
+                // haven't computed the expansion yet.
+                auto insn_ref = add_decomposition_rule(ir, insn, template_operands);
 
-                    // Parse the sub-instruction.
-                    if (!sub_insn.is_string()) {
-                        throw utils::Exception("sub-instructions must be strings");
-                    }
-                    auto sub_insn_params = parse_instruction_name(sub_insn.get<utils::Str>());
-                    auto sub_insn_name = sub_insn_params.front();
-                    sub_insn_params.pop_front();
+                // We can only compute the expansion when all instruction types
+                // have been created, and decompositions can create new
+                // instruction types. Thus, we have to postpone this process.
+                todo.push_back([ir, sub_insns, decomp, insn_ref]() {
 
-                    // Build the operand list.
-                    utils::Any<Expression> sub_insn_operands;
-                    for (const auto &sub_insn_param : sub_insn_params) {
-                        ObjectLink target;
-                        utils::Vec<utils::UInt> indices;
-                        if (utils::starts_with(sub_insn_param, "%")) {
-                            auto idx = utils::parse_uint(sub_insn_param.substr(1));
-                            if (idx >= decomp->parameters.size()) {
-                                throw utils::Exception(
-                                    "gate decomposition parameter " +
-                                    sub_insn_param + " is out of range"
-                                );
-                            }
-                            target = decomp->parameters[idx];
-                        } else if (utils::starts_with(sub_insn_param, "q")) {
-                            auto idx = utils::parse_uint(sub_insn_param.substr(1));
-                            if (idx >= get_num_qubits(ir)) {
-                                throw utils::Exception(
-                                    "gate decomposition parameter " +
-                                    sub_insn_param + " is out of range"
-                                );
-                            }
-                            target = ir->platform->qubits;
-                            indices.push_back(idx);
-                        } else {
-                            throw utils::Exception(
-                                "unknown kind of gate decomposition parameter " +
-                                sub_insn_param + "; must be q<idx> or %<idx>"
-                            );
+                    // Make a trivial guess for the duration by just summing the
+                    // durations of the sub-instructions, which we'll do while
+                    // resolving them in the loop below. This is not a very
+                    // realistic mode, of course, since sub-instructions may end up
+                    // being executed in parallel.
+                    utils::UInt duration = 0;
+
+                    // Parse and add the sub-instructions.
+                    for (const auto &sub_insn : sub_insns) {
+
+                        // Parse the sub-instruction.
+                        if (!sub_insn.is_string()) {
+                            throw utils::Exception("sub-instructions must be strings");
                         }
-                        sub_insn_operands.add(make_reference(ir, target, indices));
+                        auto sub_insn_params = parse_instruction_name(sub_insn.get<utils::Str>());
+                        auto sub_insn_name = sub_insn_params.front();
+                        sub_insn_params.pop_front();
+
+                        // Build the operand list.
+                        utils::Any<Expression> sub_insn_operands;
+                        for (const auto &sub_insn_param : sub_insn_params) {
+                            ObjectLink target;
+                            utils::Vec<utils::UInt> indices;
+                            if (utils::starts_with(sub_insn_param, "%")) {
+                                auto idx = utils::parse_uint(sub_insn_param.substr(1));
+                                if (idx >= decomp->parameters.size()) {
+                                    throw utils::Exception(
+                                        "gate decomposition parameter " +
+                                        sub_insn_param + " is out of range"
+                                    );
+                                }
+                                target = decomp->parameters[idx];
+                            } else if (utils::starts_with(sub_insn_param, "q")) {
+                                auto idx = utils::parse_uint(sub_insn_param.substr(1));
+                                if (idx >= get_num_qubits(ir)) {
+                                    throw utils::Exception(
+                                        "gate decomposition parameter " +
+                                        sub_insn_param + " is out of range"
+                                    );
+                                }
+                                target = ir->platform->qubits;
+                                indices.push_back(idx);
+                            } else {
+                                throw utils::Exception(
+                                    "unknown kind of gate decomposition parameter " +
+                                    sub_insn_param + "; must be q<idx> or %<idx>"
+                                );
+                            }
+                            sub_insn_operands.add(make_reference(ir, target, indices));
+                        }
+
+                        // Build the instruction.
+                        auto sub_insn_node = make_instruction(
+                            ir,
+                            sub_insn_name,
+                            sub_insn_operands,
+                            {},
+                            true
+                        );
+                        decomp->expansion.add(sub_insn_node);
+
+                        // Accumulate duration.
+                        duration += get_duration_of_instruction(sub_insn_node);
+
                     }
 
-                    // Build the instruction.
-                    auto sub_insn_node = make_instruction(
-                        ir,
-                        sub_insn_name,
-                        sub_insn_operands,
-                        {},
-                        true
-                    );
-                    decomp->expansion.add(sub_insn_node);
+                    // Set the duration if it still has its placeholder value.
+                    if (insn_ref->duration == utils::UMAX) {
+                        insn_ref->duration = duration;
+                    }
 
-                    // Accumulate duration.
-                    insn->duration += get_duration_of_instruction(sub_insn_node);
-
-                }
-
-                // Now actually add the decomposition rule.
-                add_decomposition_rule(ir, insn, template_operands);
+                });
 
             } catch (utils::Exception &e) {
                 e.messages.push_front(
@@ -623,6 +634,12 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 throw;
             }
         }
+    }
+
+    // Now that we have all the instruction types, compute the decomposition
+    // expansions that we postponed.
+    for (const auto &fn : todo) {
+        fn();
     }
 
     // Populate the default function types.
@@ -671,8 +688,11 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     // Populate platform JSON data.
     ir->platform->data = old->platform_config;
 
-    //ir->dump_seq();
+    // Check the result.
+    QL_DOUT("Result of old->new IR platform conversion:");
+    QL_IF_LOG_DEBUG(ir->dump_seq());
     check_consistency(ir);
+
     return ir;
 }
 
@@ -1351,8 +1371,11 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
 
     }
 
-    ir->dump_seq();
+    // Check the result.
+    QL_DOUT("Result of old->new IR program conversion:");
+    QL_IF_LOG_DEBUG(ir->dump_seq());
     check_consistency(ir);
+
     return ir;
 }
 

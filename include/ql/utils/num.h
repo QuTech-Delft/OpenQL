@@ -55,7 +55,7 @@ using Complex = std::complex<double>;
 /**
  * Maximum value for a UInt.
  */
-const Int UMAX = std::numeric_limits<UInt>::max();
+const UInt UMAX = std::numeric_limits<UInt>::max();
 
 /**
  * Maximum value for an Int.
