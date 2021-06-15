@@ -1202,8 +1202,8 @@ static utils::Str convert_kernels(
                 // Handle the body by calling ourselves until we reach a FOR_END.
                 auto sub_block = utils::make<SubBlock>();
                 do {
-                    if (name.empty()) name = old->kernels[idx]->name;
-                    convert_kernels(ir, old, idx, sub_block);
+                    auto new_name = convert_kernels(ir, old, idx, sub_block);
+                    if (name.empty()) name = new_name;
                 } while (old->kernels[idx]->type != compat::KernelType::FOR_END);
 
                 // Skip past the FOR_END.
@@ -1230,8 +1230,8 @@ static utils::Str convert_kernels(
                 // Handle the body by calling ourselves until we reach a DO_WHILE_END.
                 auto sub_block = utils::make<SubBlock>();
                 do {
-                    if (name.empty()) name = old->kernels[idx]->name;
-                    convert_kernels(ir, old, idx, sub_block);
+                    auto new_name = convert_kernels(ir, old, idx, sub_block);
+                    if (name.empty()) name = new_name;
                 } while (old->kernels[idx]->type != compat::KernelType::DO_WHILE_END);
 
                 // Skip past the DO_WHILE_END.
@@ -1258,8 +1258,8 @@ static utils::Str convert_kernels(
                 // Handle the body by calling ourselves until we reach an IF_END.
                 auto if_block = utils::make<SubBlock>();
                 do {
-                    if (name.empty()) name = old->kernels[idx]->name;
-                    convert_kernels(ir, old, idx, if_block);
+                    auto new_name = convert_kernels(ir, old, idx, if_block);
+                    if (name.empty()) name = new_name;
                 } while (old->kernels[idx]->type != compat::KernelType::IF_END);
 
                 // Skip past the IF_END.
@@ -1276,8 +1276,8 @@ static utils::Str convert_kernels(
                     // ELSE_END.
                     else_block.emplace();
                     do {
-                        if (name.empty()) name = old->kernels[idx]->name;
-                        convert_kernels(ir, old, idx, else_block);
+                        auto new_name = convert_kernels(ir, old, idx, else_block);
+                    if (name.empty()) name = new_name;
                     } while (old->kernels[idx]->type != compat::KernelType::ELSE_END);
 
                     // Skip past the ELSE_END.

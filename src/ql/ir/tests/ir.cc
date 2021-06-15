@@ -4,8 +4,46 @@ using namespace ql;
 
 int main() {
     auto plat = ir::compat::Platform::build("test_plat", utils::Str("cc_light"));
-    ir::compat::ProgramRef program;
-    program.emplace("test_prog", plat, 7);
-    ir::convert_old_to_new(program);
+    auto program = utils::make<ir::compat::Program>("test_prog", plat, 7, 32, 10);
+
+    auto kernel = utils::make<ir::compat::Kernel>("static_kernel", plat, 7, 32, 10);
+    kernel->x(0);
+    kernel->classical(ir::compat::ClassicalRegister(1), 0);
+    kernel->classical(ir::compat::ClassicalRegister(2), 10);
+    program->add(kernel);
+
+    auto sub_program = utils::make<ir::compat::Program>("x", plat, 7, 32, 10);
+    kernel = utils::make<ir::compat::Kernel>("inner_loop_kernel", plat, 7, 32, 10);
+    kernel->y(0);
+    sub_program->add_for(kernel, 10);
+
+    kernel = utils::make<ir::compat::Kernel>("outer_loop_kernel", plat, 7, 32, 10);
+    kernel->z(0);
+    kernel->classical(ir::compat::ClassicalRegister(3), 1);
+    kernel->classical(ir::compat::ClassicalRegister(1), ir::compat::ClassicalOperation(
+        ir::compat::ClassicalRegister(1), "+", ir::compat::ClassicalRegister(3)
+    ));
+    sub_program->add(kernel);
+
+    program->add_do_while(sub_program, ir::compat::ClassicalOperation(
+        ir::compat::ClassicalRegister(1), "<", ir::compat::ClassicalRegister(2)
+    ));
+
+    kernel = utils::make<ir::compat::Kernel>("if_a", plat, 7, 32, 10);
+    kernel->x(1);
+    auto kernel2 = utils::make<ir::compat::Kernel>("else", plat, 7, 32, 10);
+    kernel2->y(1);
+    program->add_if_else(kernel, kernel2, ir::compat::ClassicalOperation(
+        ir::compat::ClassicalRegister(1), "==", ir::compat::ClassicalRegister(2)
+    ));
+
+    kernel = utils::make<ir::compat::Kernel>("if_b", plat, 7, 32, 10);
+    kernel->z(1);
+    program->add_if(kernel, ir::compat::ClassicalOperation(
+        ir::compat::ClassicalRegister(1), ">", ir::compat::ClassicalRegister(2)
+    ));
+
+    auto ir = ir::convert_old_to_new(program);
+    ir->dump_seq();
     return 0;
 }
