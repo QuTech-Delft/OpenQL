@@ -355,13 +355,20 @@ InstructionTypeLink find_instruction_type(
  * condition *must* be null, as wait instructions are always unconditional.
  *
  * Note that goto and dummy instructions cannot be created via this interface.
+ *
+ * The generate_overload_if_needed and return_empty_on_failure flags are hacks
+ * for the conversion process from the old to new IR. See
+ * find_instruction_type() for the former. The latter flag disables the
+ * exception that would otherwise be thrown if no matching instruction type is
+ * found, instead returning {}.
  */
-InstructionRef build_instruction(
+InstructionRef make_instruction(
     const Ref &ir,
     const utils::Str &name,
     const utils::Any<Expression> &operands,
     const ExpressionRef &condition,
-    utils::Bool generate_overload_if_needed
+    utils::Bool generate_overload_if_needed,
+    utils::Bool return_empty_on_failure
 ) {
     InstructionRef insn;
     if (name == "set") {
@@ -459,6 +466,9 @@ InstructionRef build_instruction(
             generate_overload_if_needed
         );
         if (custom_insn->instruction_type.empty()) {
+            if (return_empty_on_failure) {
+                return {};
+            }
             utils::StrStrm ss;
             ss << "unknown instruction: " << name;
             auto first = true;
@@ -506,6 +516,18 @@ InstructionRef build_instruction(
 
     // Return the constructed condition.
     return insn;
+}
+
+/**
+ * Shorthand for making a set instruction.
+ */
+InstructionRef make_set_instruction(
+    const Ref &ir,
+    const ExpressionRef &lhs,
+    const ExpressionRef &rhs,
+    const ExpressionRef &condition
+) {
+    return make_instruction(ir, "set", {lhs, rhs}, condition);
 }
 
 /**
@@ -621,7 +643,7 @@ FunctionTypeLink find_function_type(
 /**
  * Builds a new function call node based on the given name and operand list.
  */
-utils::One<FunctionCall> build_function_call(
+utils::One<FunctionCall> make_function_call(
     const Ref &ir,
     const utils::Str &name,
     const utils::Any<Expression> &operands
@@ -654,6 +676,14 @@ utils::One<FunctionCall> build_function_call(
     }
 
     return function_call;
+}
+
+/**
+ * Returns the number of qubits in the main qubit register.
+ */
+utils::UInt get_num_qubits(const Ref &ir) {
+    QL_ASSERT(ir->platform->qubits->shape.size() == 1);
+    return ir->platform->qubits->shape[0];
 }
 
 /**
@@ -771,7 +801,7 @@ ObjectLink make_temporary(const Ref &ir, const DataTypeLink &data_type) {
  * Returns the duration of an instruction in quantum cycles. Note that this will
  * be zero for non-quantum instructions.
  */
-utils::UInt get_duration_of(const InstructionRef &insn) {
+utils::UInt get_duration_of_instruction(const InstructionRef &insn) {
     if (auto custom = insn->as_custom_instruction()) {
         return custom->instruction_type->duration;
     } else if (auto wait = insn->as_wait_instruction()) {
@@ -779,6 +809,29 @@ utils::UInt get_duration_of(const InstructionRef &insn) {
     } else {
         return 0;
     }
+}
+
+/**
+ * Returns the duration of a block in quantum cycles. If the block contains
+ * structured control-flow sub-blocks, these are counted as zero cycles.
+ */
+utils::UInt get_duration_of_block(const BlockBaseRef &block) {
+
+    // It is always necessary to iterate over the entire block, because the
+    // first instruction might have a duration longer than the entire rest of
+    // the block.
+    utils::UInt duration = 0;
+    for (const auto &stmt : block->statements) {
+        auto insn = stmt.as<Instruction>();
+        if (!insn.empty()) {
+            duration = utils::max(
+                duration,
+                insn->cycle + get_duration_of_instruction(insn)
+            );
+        }
+    }
+
+    return duration;
 }
 
 /**

@@ -139,13 +139,30 @@ InstructionTypeLink find_instruction_type(
  * condition *must* be null, as wait instructions are always unconditional.
  *
  * Note that goto and dummy instructions cannot be created via this interface.
+ *
+ * The generate_overload_if_needed and return_empty_on_failure flags are hacks
+ * for the conversion process from the old to new IR. See
+ * find_instruction_type() for the former. The latter flag disables the
+ * exception that would otherwise be thrown if no matching instruction type is
+ * found, instead returning {}.
  */
-InstructionRef build_instruction(
+InstructionRef make_instruction(
     const Ref &ir,
     const utils::Str &name,
     const utils::Any<Expression> &operands,
     const ExpressionRef &condition = {},
-    utils::Bool generate_overload_if_needed = false
+    utils::Bool generate_overload_if_needed = false,
+    utils::Bool return_empty_on_failure = false
+);
+
+/**
+ * Shorthand for making a set instruction.
+ */
+InstructionRef make_set_instruction(
+    const Ref &ir,
+    const ExpressionRef &lhs,
+    const ExpressionRef &rhs,
+    const ExpressionRef &condition = {}
 );
 
 /**
@@ -182,11 +199,16 @@ FunctionTypeLink find_function_type(
 /**
  * Builds a new function call node based on the given name and operand list.
  */
-utils::One<FunctionCall> build_function_call(
+utils::One<FunctionCall> make_function_call(
     const Ref &ir,
     const utils::Str &name,
     const utils::Any<Expression> &operands
 );
+
+/**
+ * Returns the number of qubits in the main qubit register.
+ */
+utils::UInt get_num_qubits(const Ref &ir);
 
 /**
  * Returns whether the given expression can be assigned or is a qubit (i.e.,
@@ -239,7 +261,13 @@ ObjectLink make_temporary(const Ref &ir, const DataTypeLink &data_type);
  * Returns the duration of an instruction in quantum cycles. Note that this will
  * be zero for non-quantum instructions.
  */
-utils::UInt get_duration_of(const InstructionRef &insn);
+utils::UInt get_duration_of_instruction(const InstructionRef &insn);
+
+/**
+ * Returns the duration of a block in quantum cycles. If the block contains
+ * structured control-flow sub-blocks, these are counted as zero cycles.
+ */
+utils::UInt get_duration_of_block(const BlockBaseRef &block);
 
 /**
  * Returns whether an instruction is a quantum gate, by returning the number of

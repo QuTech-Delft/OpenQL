@@ -39,8 +39,8 @@ Ref convert_old_to_new(const compat::PlatformRef &old);
  *  - Bit references from the old IR are mapped as follows:
  *     - the first num_qubits bits are mapped to the implicit bit registers of
  *       the main qubit register; and
- *     - any additional bits are mapped to a bit vector register, named `b`.
- *  - Cregs are mapped to an int32 vector register, named `c`.
+ *     - any additional bits are mapped to a bit vector register, named `breg`.
+ *  - Cregs are mapped to an int32 vector register, named `creg`.
  *
  * The old IR does not support instruction prototypes; any instruction could
  * have any set of parameter types, and heuristics/special cases were applied

@@ -38,6 +38,11 @@ using BlockRef = utils::One<Block>;
 using SubBlockRef = utils::One<SubBlock>;
 
 /**
+ * Reference to either a block or a sub-block.
+ */
+using BlockBaseRef = utils::One<BlockBase>;
+
+/**
  * Reference to a statement.
  */
 using StatementRef = utils::One<Statement>;

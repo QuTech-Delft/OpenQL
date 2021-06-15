@@ -53,12 +53,13 @@ static ExpressionRef parse_instruction_parameter(
         // Map the first num_qubits bregs to the implicit qubit measurement
         // registers.
         auto implicit_breg = false;
-        if (name == "b") {
-            if (index < ir->platform->qubits->shape[0]) {
+        if (name == "breg") {
+            auto num_qubits = get_num_qubits(ir);
+            if (index < num_qubits) {
                 implicit_breg = true;
                 name = "q";
             } else {
-                index -= ir->platform->qubits->shape[0];
+                index -= num_qubits;
             }
         }
         auto obj = find_physical_object(ir, name);
@@ -121,7 +122,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     ObjectLink bregs;
     if (old->breg_count > old->qubit_count) {
         bregs = add_physical_object(ir, utils::make<PhysicalObject>(
-            "b", bit_type, prim::UIntVec({old->breg_count - old->qubit_count})
+            "breg", bit_type, prim::UIntVec({old->breg_count - old->qubit_count})
         ));
     }
     ir->platform->implicit_bit_type = bit_type;
@@ -131,7 +132,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     auto int_type = add_type<IntType>(ir, "int", true, 32);
     if (old->creg_count) {
         add_physical_object(ir, utils::make<PhysicalObject>(
-            "c", int_type, prim::UIntVec({old->creg_count})
+            "creg", int_type, prim::UIntVec({old->creg_count})
         ));
     }
     ir->platform->default_int_type = int_type;
@@ -580,7 +581,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                             target = decomp->parameters[idx];
                         } else if (utils::starts_with(sub_insn_param, "q")) {
                             auto idx = utils::parse_uint(sub_insn_param.substr(1));
-                            if (idx >= ir->platform->qubits->shape[0]) {
+                            if (idx >= get_num_qubits(ir)) {
                                 throw utils::Exception(
                                     "gate decomposition parameter " +
                                     sub_insn_param + " is out of range"
@@ -598,7 +599,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                     }
 
                     // Build the instruction.
-                    auto sub_insn_node = build_instruction(
+                    auto sub_insn_node = make_instruction(
                         ir,
                         sub_insn_name,
                         sub_insn_operands,
@@ -608,7 +609,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                     decomp->expansion.add(sub_insn_node);
 
                     // Accumulate duration.
-                    insn->duration += get_duration_of(sub_insn_node);
+                    insn->duration += get_duration_of_instruction(sub_insn_node);
 
                 }
 
@@ -692,7 +693,7 @@ static ExpressionRef convert_operand(
         case compat::ClassicalOperandType::REGISTER:
             return make_reference(
                 ir,
-                find_physical_object(ir, "c"),
+                find_physical_object(ir, "creg"),
                 {op.as_register().id}
             );
 
@@ -700,6 +701,68 @@ static ExpressionRef convert_operand(
             throw utils::Exception("unknown operand type");
 
     }
+}
+
+/**
+ * Converts the RHS of a classical gate to an expression.
+ */
+static ExpressionRef convert_classical(
+    const Ref &ir,
+    const utils::Str &name,
+    const utils::Any<Expression> &operands,
+    utils::Bool is_condition = false
+) {
+    // Construct the expression.
+    ExpressionRef expr;
+    if (name == "ldi" || name == "mov") {
+
+        // Handle moves.
+        if (operands.size() != 1) {
+            throw utils::Exception(
+                "incorrect number of arguments for ldi/mov instruction"
+            );
+        }
+        expr = operands[0];
+
+    } else {
+
+        // Convert function name.
+        static const utils::Map<utils::Str, utils::Str> OP_TO_FN{
+            {"add", "operator+"},
+            {"sub", "operator-"},
+            {"and", "operator&&"},
+            {"or", "operator||"},
+            {"xor", "operator^"},
+            {"eq", "operator=="},
+            {"ne", "operator!="},
+            {"lt", "operator<"},
+            {"gt", "operator>"},
+            {"le", "operator<="},
+            {"ge", "operator>="},
+            {"not", "operator~"}
+        };
+        auto it = OP_TO_FN.find(name);
+        if (it == OP_TO_FN.end()) {
+            throw utils::Exception("unknown operation type '" + name + "'");
+        }
+        const auto &function_name = it->second;
+
+        // Build the function call.
+        expr = make_function_call(ir, function_name, operands);
+
+    }
+
+    // Check and if necessary convert the return type.
+    if (is_condition) {
+        QL_ASSERT(get_type_of(expr) == ir->platform->default_bit_type);
+    } else {
+        if (get_type_of(expr)->as_bit_type()) {
+            expr = make_function_call(ir, "int", {expr});
+        }
+        QL_ASSERT(get_type_of(expr) == ir->platform->default_int_type);
+    }
+
+    return expr;
 }
 
 /**
@@ -725,63 +788,338 @@ static ExpressionRef convert_operation(
         }
     }
 
-    // Construct the expression.
-    ExpressionRef expr;
-    if (name == "ldi" || name == "mov") {
+    // Convert operands.
+    utils::Any<Expression> expressions;
+    for (const auto &operand : op.operands) {
+        expressions.add(convert_operand(ir, *operand));
+    }
 
-        // Handle moves.
-        if (op.operands.size() != 1) {
-            throw utils::Exception(
-                "incorrect number of arguments for ldi/mov instruction"
+    // Construct the expression.
+    return convert_classical(ir, name, expressions, is_condition);
+
+}
+
+/**
+ * Converts an old-IR gate to a new-IR instruction.
+ */
+static InstructionRef convert_gate(
+    const Ref &ir,
+    const compat::ProgramRef &old,
+    const compat::GateRef &gate
+) {
+    auto name = parse_instruction_name(gate->name).front();
+    try {
+        
+        // Convert the gate's qubit operands.
+        utils::Any<Expression> qubit_operands;
+        for (auto idx : gate->operands) {
+            qubit_operands.add(make_default_qubit_ref(ir, idx));
+        }
+        
+        // Convert the gate's creg operands.
+        utils::Any<Expression> creg_operands;
+        if (!gate->creg_operands.empty()) {
+            auto creg_object = find_physical_object(ir, "creg");
+            QL_ASSERT(!creg_object.empty());
+            for (auto idx : gate->creg_operands) {
+                creg_operands.add(make_reference(ir, creg_object, {idx}));
+            }
+        }
+        
+        // Convert the gate's breg operands and condition. The first num_qubits
+        // bits are mapped to the implicit bits associated with the qubits; only
+        // beyond that is the b register used.
+        utils::Any<Expression> breg_operands;
+        ExpressionRef condition;
+        if (!gate->breg_operands.empty() || !gate->cond_operands.empty()) {
+            auto breg_object = find_physical_object(ir, "breg");
+            auto num_qubits = get_num_qubits(ir);
+            
+            // Convert breg operands.
+            for (auto idx : gate->breg_operands) {
+                if (idx < num_qubits) {
+                    breg_operands.add(make_default_bit_ref(ir, idx));
+                } else {
+                    QL_ASSERT(!breg_object.empty());
+                    breg_operands.add(make_reference(ir, breg_object, {idx - num_qubits}));
+                }
+            }
+            
+            // Convert condition.
+            utils::Any<Expression> cond_operands;
+            for (auto idx : gate->cond_operands) {
+                if (idx < num_qubits) {
+                    cond_operands.add(make_default_bit_ref(ir, idx));
+                } else {
+                    QL_ASSERT(!breg_object.empty());
+                    cond_operands.add(make_reference(ir, breg_object, {idx - num_qubits}));
+                }
+            }
+            switch (gate->condition) {
+                case compat::ConditionType::ALWAYS:
+                    // Leave empty; condition will be inferred by
+                    // make_instruction(). Conversely, filling it out here would
+                    // throw an exception for instruction types that cannot be
+                    // made conditional.
+                    break;
+                case compat::ConditionType::NEVER:
+                    condition = make_default_bit_lit(ir, false);
+                    break;
+                case compat::ConditionType::UNARY:
+                    condition = cond_operands[0];
+                    break;
+                case compat::ConditionType::NOT:
+                    condition = make_function_call(
+                        ir, "operator!",
+                        {cond_operands[0]}
+                    );
+                    break;
+                case compat::ConditionType::AND:
+                    condition = make_function_call(
+                        ir, "operator&&",
+                        {cond_operands[0], cond_operands[1]}
+                    );
+                    break;
+                case compat::ConditionType::NAND:
+                    condition = make_function_call(
+                        ir, "operator!",
+                        {make_function_call(
+                            ir, "operator&&",
+                            {cond_operands[0], cond_operands[1]}
+                        )}
+                    );
+                    break;
+                case compat::ConditionType::OR:
+                    condition = make_function_call(
+                        ir, "operator||",
+                        {cond_operands[0], cond_operands[1]}
+                    );
+                    break;
+                case compat::ConditionType::NOR:
+                    condition = make_function_call(
+                        ir, "operator!",
+                        {make_function_call(
+                            ir, "operator||",
+                            {cond_operands[0], cond_operands[1]}
+                        )}
+                    );
+                    break;
+                case compat::ConditionType::XOR:
+                    condition = make_function_call(
+                        ir, "operator^",
+                        {cond_operands[0], cond_operands[1]}
+                    );
+                    break;
+                case compat::ConditionType::NXOR:
+                    condition = make_function_call(
+                        ir, "operator!",
+                        {make_function_call(
+                            ir, "operator^",
+                            {cond_operands[0], cond_operands[1]}
+                        )}
+                    );
+                    break;
+            }
+        }
+        
+        // Use a somewhat arbitrary set of rules to convert from the old gate
+        // types to the new ones, considering that the semantics of gate->type()
+        // and name were rather arbitrary to begin with. Start with special
+        // instructions.
+        if (name == "wait" || name == "barrier" || gate->type() == compat::GateType::WAIT) {
+            auto duration = utils::div_ceil(gate->duration, old->platform->cycle_time);
+            utils::Any<Expression> operands;
+            operands.add(make_default_int_lit(ir, duration));
+            operands.extend(qubit_operands);
+            operands.extend(creg_operands);
+            operands.extend(breg_operands);
+            return make_instruction(ir, "wait", operands, condition);
+        }
+        if (name == "SOURCE") {
+            return utils::make<SourceInstruction>();
+        }
+        if (name == "SINK") {
+            return utils::make<SinkInstruction>();
+        }
+
+        // Handle the classical gates from the remnants of CC-light.
+        if (gate->type() == compat::GateType::CLASSICAL && (
+            name == "mov" || name == "not" ||
+            name == "and" || name == "or"  || name == "xor" ||
+            name == "add" || name == "sub" ||
+            name == "eq"  || name == "ne"  ||
+            name == "lt"  || name == "gt"  ||
+            name == "le"  || name == "ge"
+        )) {
+            auto lhs = creg_operands.front();
+            creg_operands.remove(0);
+            return make_set_instruction(
+                ir,
+                lhs,
+                convert_classical(ir, name, creg_operands),
+                condition
             );
         }
-        expr = convert_operand(ir, *op.operands[0]);
-
-    } else {
-
-        // Convert function name.
-        static const utils::Map<utils::Str, utils::Str> OP_TO_FN{
-            {"add", "operator+"},
-            {"sub", "operator-"},
-            {"and", "operator&&"},
-            {"or", "operator||"},
-            {"xor", "operator^"},
-            {"eq", "operator=="},
-            {"ne", "operator!="},
-            {"lt", "operator<"},
-            {"gt", "operator>"},
-            {"le", "operator<="},
-            {"ge", "operator>="},
-            {"not", "operator~"}
-        };
-        auto it = OP_TO_FN.find(name);
-        if (it == OP_TO_FN.end()) {
-            throw utils::Exception("unknown operation type '" + name + "'");
+        if (gate->type() == compat::GateType::CLASSICAL && name == "ldi") {
+            return make_set_instruction(
+                ir,
+                creg_operands[0],
+                make_default_int_lit(ir, gate->int_operand),
+                condition
+            );
         }
-        name = it->second;
 
-        // Convert operands.
+        // See if we can find a custom instruction that matches closely enough.
         utils::Any<Expression> operands;
-        for (const auto &operand : op.operands) {
-            operands.add(convert_operand(ir, *operand));
+        operands.extend(qubit_operands);
+        operands.extend(creg_operands);
+        operands.extend(breg_operands);
+        auto real_type = find_type(ir, "real");
+        if (
+            name == "rx" || name == "ry" || name == "rz" ||
+            name == "crz" || name == "cr"
+        ) {
+            QL_ASSERT(!real_type.empty());
+            operands.emplace<RealLiteral>(gate->angle, real_type);
+        } else if (name == "crk") {
+            operands.add(make_default_int_lit(ir, gate->int_operand));
+        }
+        auto insn = make_instruction(ir, name, operands, condition, true, true);
+        if (!insn.empty()) {
+            return insn;
         }
 
-        // Build the function call.
-        expr = build_function_call(ir, name, operands);
+        // No instruction type exists yet... probably a default gate. So try to
+        // infer an instruction type for it.
+        operands.reset();
+        auto ityp = utils::make<InstructionType>(name, name);
+        ityp->duration = utils::div_ceil(gate->duration, old->platform->cycle_time);
+        auto qubit_type = ir->platform->qubits->data_type;
+        switch (gate->type()) {
+            case compat::GateType::IDENTITY:
+            case compat::GateType::PREP_Z:
+                for (const auto &qubit : qubit_operands) {
+                    ityp->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                    operands.add(qubit);
+                }
+                break;
 
-    }
+            case compat::GateType::HADAMARD:
+                ityp->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                operands.add(qubit_operands[0]);
+                break;
 
-    // Check and if necessary convert the return type.
-    if (is_condition) {
-        QL_ASSERT(get_type_of(expr) == ir->platform->default_bit_type);
-    } else {
-        if (get_type_of(expr)->as_bit_type()) {
-            expr = build_function_call(ir, "int", {expr});
+            case compat::GateType::PAULI_X:
+            case compat::GateType::RX90:
+            case compat::GateType::MRX90:
+            case compat::GateType::RX180:
+                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                operands.add(qubit_operands[0]);
+                break;
+
+            case compat::GateType::PAULI_Y:
+            case compat::GateType::RY90:
+            case compat::GateType::MRY90:
+            case compat::GateType::RY180:
+                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Y, qubit_type);
+                operands.add(qubit_operands[0]);
+                break;
+
+            case compat::GateType::PAULI_Z:
+            case compat::GateType::PHASE:
+            case compat::GateType::PHASE_DAG:
+            case compat::GateType::T:
+            case compat::GateType::T_DAG:
+                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                operands.add(qubit_operands[0]);
+                break;
+
+            case compat::GateType::RX:
+            case compat::GateType::RY:
+            case compat::GateType::RZ:
+                QL_ASSERT(!real_type.empty());
+                if (gate->type() == compat::GateType::RX) {
+                    ityp->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                } else if (gate->type() == compat::GateType::RY) {
+                    ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Y, qubit_type);
+                } else {
+                    ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                }
+                operands.add(qubit_operands[0]);
+                ityp->operand_types.emplace(prim::AccessMode::LITERAL, real_type);
+                operands.emplace<RealLiteral>(gate->angle, real_type);
+                break;
+
+            case compat::GateType::CNOT:
+                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                operands.add(qubit_operands[0]);
+                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                operands.add(qubit_operands[1]);
+                break;
+
+            case compat::GateType::CPHASE:
+                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                operands.add(qubit_operands[0]);
+                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                operands.add(qubit_operands[1]);
+                break;
+
+            case compat::GateType::SWAP:
+                ityp->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                operands.add(qubit_operands[0]);
+                ityp->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                operands.add(qubit_operands[1]);
+                break;
+
+            case compat::GateType::TOFFOLI:
+                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                operands.add(qubit_operands[0]);
+                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                operands.add(qubit_operands[1]);
+                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                operands.add(qubit_operands[2]);
+                break;
+
+            case compat::GateType::MEASURE:
+            case compat::GateType::DISPLAY:
+            case compat::GateType::DISPLAY_BINARY:
+                for (const auto &qubit : qubit_operands) {
+                    ityp->operand_types.emplace(prim::AccessMode::MEASURE, qubit_type);
+                    operands.add(qubit);
+                }
+                break;
+
+            case compat::GateType::NOP:
+            case compat::GateType::CUSTOM:
+            case compat::GateType::CLASSICAL:
+                if (name != "nop") {
+                    throw utils::Exception(
+                        "unknown gate '" + name + "' with type " +
+                        utils::to_string(gate->type())
+                    );
+                }
+                break;
+
+            case compat::GateType::COMPOSITE:
+            case compat::GateType::DUMMY:
+            case compat::GateType::WAIT:
+                throw utils::Exception("unexpected gate type: " + utils::to_string(gate->type()));
         }
-        QL_ASSERT(get_type_of(expr) == ir->platform->default_int_type);
-    }
 
-    return expr;
+        // Add the inferred instruction type.
+        add_instruction_type(ir, ityp);
+
+        // Make an instruction with it. Note that this could be done more
+        // efficiently: the instruction type doesn't really need to be resolved
+        // since the function above already returns it. However, code reuse is
+        // also worth something, and execution only gets here for the first gate
+        // of a particular type.
+        return make_instruction(ir, name, operands, condition);
+
+    } catch (utils::Exception &e) {
+        e.messages.push_front("while converting gate " + name);
+        throw;
+    }
 }
 
 /**
@@ -796,124 +1134,167 @@ static utils::Str convert_kernels(
     const utils::One<BlockBase> block
 ) {
     utils::Str name;
-    switch (old->kernels[idx]->type) {
-        case compat::KernelType::STATIC:
-            // TODO convert instructions!
-            name = old->kernels[idx]->name;
-            idx++;
-            break;
+    try {
+        switch (old->kernels[idx]->type) {
+            case compat::KernelType::STATIC: {
 
-        case compat::KernelType::FOR_START: {
+                // Figure out where we're at in terms of cycles in this block, and
+                // how this compares to the cycle numbers in the old-IR kernel.
+                utils::UInt cycle_offset = get_duration_of_block(block);
+                utils::UInt cycle = cycle_offset;
 
-            // Load the iteration count.
-            auto iteration_count = old->kernels[idx]->iteration_count;
+                // Convert gates to instructions.
+                for (const auto &gate : old->kernels[idx]->gates) {
 
-            // Seek past the start marker.
-            idx++;
+                    // Convert the gate.
+                    auto instruction = convert_gate(ir, old, gate);
 
-            // Handle the body by calling ourselves until we reach a FOR_END.
-            auto sub_block = utils::make<SubBlock>();
-            do {
-                if (name.empty()) name = old->kernels[idx]->name;
-                convert_kernels(ir, old, idx, sub_block);
-            } while (old->kernels[idx]->type != compat::KernelType::FOR_END);
+                    // Figure out its cycle number.
+                    if (gate->cycle != compat::MAX_CYCLE) {
+                        auto gate_cycle = gate->cycle;
+                        if (gate_cycle >= compat::FIRST_CYCLE) {
+                            gate_cycle -= compat::FIRST_CYCLE;
+                        } else {
+                            gate_cycle = 0;
+                        }
+                        cycle = utils::max(cycle, gate_cycle - cycle_offset);
+                    }
+                    instruction->cycle = cycle;
 
-            // Skip past the FOR_END.
-            idx++;
+                    // Add to block.
+                    block->statements.add(instruction);
 
-            // Create a static for loop and add it to the block.
-            block->statements.emplace<StaticLoop>(
-                make_reference(ir, make_temporary(ir, ir->platform->default_int_type)),
-                make_default_int_lit(ir, iteration_count - 1),
-                make_default_int_lit(ir, (utils::UInt)0),
-                sub_block
-            );
+                }
 
-            break;
-        }
-        case compat::KernelType::DO_WHILE_START: {
+                // Save kernel name and advance to the next kernel.
+                name = old->kernels[idx]->name;
+                idx++;
+                break;
+            }
+            case compat::KernelType::FOR_START: {
 
-            // Load the condition.
-            const auto &condition = *old->kernels[idx]->br_condition;
-
-            // Seek past the start marker.
-            idx++;
-
-            // Handle the body by calling ourselves until we reach a DO_WHILE_END.
-            auto sub_block = utils::make<SubBlock>();
-            do {
-                if (name.empty()) name = old->kernels[idx]->name;
-                convert_kernels(ir, old, idx, sub_block);
-            } while (old->kernels[idx]->type != compat::KernelType::DO_WHILE_END);
-
-            // Skip past the DO_WHILE_END.
-            idx++;
-
-            // Create a repeat-until loop and add it to the block. Since the
-            // original is a do-while rather than a repeat-until, the condition
-            // is inverted using `operator!(bit) -> bit`.
-            block->statements.emplace<RepeatUntilLoop>(
-                convert_operation(ir, condition, true, true),
-                sub_block
-            );
-
-            break;
-        }
-        case compat::KernelType::IF_START: {
-
-            // Load the condition.
-            const auto &condition = *old->kernels[idx]->br_condition;
-
-            // Seek past the start marker.
-            idx++;
-
-            // Handle the body by calling ourselves until we reach an IF_END.
-            auto if_block = utils::make<SubBlock>();
-            do {
-                if (name.empty()) name = old->kernels[idx]->name;
-                convert_kernels(ir, old, idx, if_block);
-            } while (old->kernels[idx]->type != compat::KernelType::IF_END);
-
-            // Skip past the IF_END.
-            idx++;
-
-            // Handle the else block, if any.
-            utils::One<SubBlock> else_block;
-            if (idx < old->kernels.size() && old->kernels[idx]->type == compat::KernelType::ELSE_START) {
+                // Load the iteration count.
+                auto iteration_count = old->kernels[idx]->iteration_count;
 
                 // Seek past the start marker.
                 idx++;
 
-                // Handle the body by calling ourselves until we reach an
-                // ELSE_END.
-                else_block.emplace();
+                // Handle the body by calling ourselves until we reach a FOR_END.
+                auto sub_block = utils::make<SubBlock>();
                 do {
                     if (name.empty()) name = old->kernels[idx]->name;
-                    convert_kernels(ir, old, idx, else_block);
-                } while (old->kernels[idx]->type != compat::KernelType::ELSE_END);
+                    convert_kernels(ir, old, idx, sub_block);
+                } while (old->kernels[idx]->type != compat::KernelType::FOR_END);
 
-                // Skip past the ELSE_END.
+                // Skip past the FOR_END.
                 idx++;
 
+                // Create a static for loop and add it to the block.
+                block->statements.emplace<StaticLoop>(
+                    make_reference(ir, make_temporary(ir, ir->platform->default_int_type)),
+                    make_default_int_lit(ir, iteration_count - 1),
+                    make_default_int_lit(ir, (utils::UInt)0),
+                    sub_block
+                );
+
+                break;
             }
+            case compat::KernelType::DO_WHILE_START: {
 
-            // Create an if-else statement and add it to the block.
-            block->statements.emplace<IfElse>(
-                utils::Many<IfElseBranch>({utils::make<IfElseBranch>(
-                    convert_operation(ir, condition, true),
-                    if_block
-                )}),
-                else_block
-            );
+                // Load the condition.
+                const auto &condition = *old->kernels[idx]->br_condition;
 
-            break;
+                // Seek past the start marker.
+                idx++;
+
+                // Handle the body by calling ourselves until we reach a DO_WHILE_END.
+                auto sub_block = utils::make<SubBlock>();
+                do {
+                    if (name.empty()) name = old->kernels[idx]->name;
+                    convert_kernels(ir, old, idx, sub_block);
+                } while (old->kernels[idx]->type != compat::KernelType::DO_WHILE_END);
+
+                // Skip past the DO_WHILE_END.
+                idx++;
+
+                // Create a repeat-until loop and add it to the block. Since the
+                // original is a do-while rather than a repeat-until, the condition
+                // is inverted using `operator!(bit) -> bit`.
+                block->statements.emplace<RepeatUntilLoop>(
+                    convert_operation(ir, condition, true, true),
+                    sub_block
+                );
+
+                break;
+            }
+            case compat::KernelType::IF_START: {
+
+                // Load the condition.
+                const auto &condition = *old->kernels[idx]->br_condition;
+
+                // Seek past the start marker.
+                idx++;
+
+                // Handle the body by calling ourselves until we reach an IF_END.
+                auto if_block = utils::make<SubBlock>();
+                do {
+                    if (name.empty()) name = old->kernels[idx]->name;
+                    convert_kernels(ir, old, idx, if_block);
+                } while (old->kernels[idx]->type != compat::KernelType::IF_END);
+
+                // Skip past the IF_END.
+                idx++;
+
+                // Handle the else block, if any.
+                utils::One<SubBlock> else_block;
+                if (idx < old->kernels.size() && old->kernels[idx]->type == compat::KernelType::ELSE_START) {
+
+                    // Seek past the start marker.
+                    idx++;
+
+                    // Handle the body by calling ourselves until we reach an
+                    // ELSE_END.
+                    else_block.emplace();
+                    do {
+                        if (name.empty()) name = old->kernels[idx]->name;
+                        convert_kernels(ir, old, idx, else_block);
+                    } while (old->kernels[idx]->type != compat::KernelType::ELSE_END);
+
+                    // Skip past the ELSE_END.
+                    idx++;
+
+                }
+
+                // Create an if-else statement and add it to the block.
+                block->statements.emplace<IfElse>(
+                    utils::Many<IfElseBranch>({utils::make<IfElseBranch>(
+                        convert_operation(ir, condition, true),
+                        if_block
+                    )}),
+                    else_block
+                );
+
+                break;
+            }
+            default:
+                throw utils::Exception(
+                    "unexpected kernel type for kernel with index " +
+                    utils::to_string(idx)
+                );
+
         }
-        default:
-            throw utils::Exception(
-                "unexpected kernel type for kernel with index " +
-                utils::to_string(idx)
+    } catch (utils::Exception &e) {
+        if (idx < old->kernels.size()) {
+            e.messages.push_front(
+                "while converting kernel " + utils::to_string(idx) +
+                " ('" + old->kernels[idx]->name + "')"
             );
-
+        } else {
+            e.messages.push_front(
+                "after converting last kernel (corrupt control-flow structure?)"
+            );
+        }
+        throw;
     }
     return name;
 }
