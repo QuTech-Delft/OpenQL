@@ -1170,16 +1170,20 @@ static utils::Str convert_kernels(
                     auto instruction = convert_gate(ir, old, gate);
 
                     // Figure out its cycle number.
-                    if (gate->cycle != compat::MAX_CYCLE) {
-                        auto gate_cycle = gate->cycle;
-                        if (gate_cycle >= compat::FIRST_CYCLE) {
-                            gate_cycle -= compat::FIRST_CYCLE;
-                        } else {
-                            gate_cycle = 0;
+                    if (old->kernels[idx]->cycles_valid) {
+                        if (gate->cycle != compat::MAX_CYCLE) {
+                            auto gate_cycle = gate->cycle;
+                            if (gate_cycle >= compat::FIRST_CYCLE) {
+                                gate_cycle -= compat::FIRST_CYCLE;
+                            } else {
+                                gate_cycle = 0;
+                            }
+                            cycle = utils::max(cycle, gate_cycle - cycle_offset);
                         }
-                        cycle = utils::max(cycle, gate_cycle - cycle_offset);
+                        instruction->cycle = cycle;
+                    } else {
+                        instruction->cycle = cycle++;
                     }
-                    instruction->cycle = cycle;
 
                     // Add to block.
                     block->statements.add(instruction);

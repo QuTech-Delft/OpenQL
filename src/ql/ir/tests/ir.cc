@@ -1,4 +1,5 @@
 #include "ql/ir/old_to_new.h"
+#include "ql/ir/cqasm/write.h"
 
 using namespace ql;
 
@@ -45,5 +46,8 @@ int main() {
 
     auto ir = ir::convert_old_to_new(program);
     ir->dump_seq();
+
+    ir::cqasm::write(ir);
+
     return 0;
 }
