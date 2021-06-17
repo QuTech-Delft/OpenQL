@@ -565,7 +565,7 @@ statement {
                 lhs: One<reference>;
 
                 # The first value.
-                from: One<int_literal>;
+                frm: One<int_literal>;
 
                 # The last value.
                 to: One<int_literal>;

@@ -666,7 +666,7 @@ public:
 
         // Check that the types are consistent.
         if (
-            (node.lhs->target->data_type != node.from->data_type) ||
+            (node.lhs->target->data_type != node.frm->data_type) ||
             (node.lhs->target->data_type != node.to->data_type)
         ) {
             throw utils::Exception(

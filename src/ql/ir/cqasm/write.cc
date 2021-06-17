@@ -521,7 +521,7 @@ public:
         os << sl() << "foreach (";
         node.lhs->visit(*this);
         os << " = ";
-        node.from->visit(*this);
+        node.frm->visit(*this);
         os << "..";
         node.to->visit(*this);
         os << ") {" << el(0, 1);
