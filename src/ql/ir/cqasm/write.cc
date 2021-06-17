@@ -168,6 +168,9 @@ public:
         os << " for program " << node.program->name << el();
         os << sl() << "version 1.2" << el(1);
 
+        // Add a pragma with the program name.
+        os << sl() << "pragma @ql.name(\"" << node.program->name << "\")" << el(1);
+
         node.platform->visit(*this);
         node.program->visit(*this);
     }
@@ -202,7 +205,7 @@ public:
         QL_ASSERT(utils::starts_with(s, "{"));
         QL_ASSERT(utils::ends_with(s, "}"));
         s = std::regex_replace(s.substr(1, s.size() - 2), std::regex("\n"), "\n" + line_prefix);
-        os << sl() << "pragma ql.platform({|" << s.substr() << "|})" << el(1);
+        os << sl() << "pragma @ql.platform({|" << s.substr() << "|})" << el(1);
 
     }
 
@@ -481,14 +484,14 @@ public:
      * Visitor function for `SourceInstruction` nodes.
      */
     void visit_source_instruction(SourceInstruction &node) override {
-        os << sl() << "pragma ql.source()" << el();
+        os << sl() << "pragma @ql.source()" << el();
     }
 
     /**
      * Visitor function for `SourceInstruction` nodes.
      */
     void visit_sink_instruction(SinkInstruction &node) override {
-        os << sl() << "pragma ql.sink()" << el();
+        os << sl() << "pragma @ql.sink()" << el();
     }
 
     /**
@@ -731,13 +734,41 @@ public:
             os << node.data_type->name << "(";
         }
         os << name;
-        if (!node.indices.empty()) {
-            if (node.indices.size() > 1) {
-                throw utils::Exception("multidimensional indices not supported");
+        if (node.target == platform->qubits) {
+
+            // For the main qubit register (and implicit bit register), index
+            // using [].
+            if (node.indices.size() != 1) {
+                throw utils::Exception("main qubit register must be one-dimensional");
             }
-            if (node.target == platform->qubits) os << "[";
+            os << "[";
             node.indices[0]->visit(*this);
-            if (node.target == platform->qubits) os << "]";
+            os << "]";
+
+        } else if (node.target->as_physical_object()) {
+
+            // cQASM doesn't natively support indexing for things other than the
+            // main qubit register. But we can model the index operation as a
+            // "runtime" function call, that can be evaluated into a reference
+            // during the reading process.
+            if (!node.indices.empty()) {
+                os << "(";
+                auto first = true;
+                for (const auto &index : node.indices) {
+                    if (!first) {
+                        os << ", ";
+                    }
+                    index->visit(*this);
+                    first = false;
+                }
+                os << ")";
+            }
+
+        } else if (!node.indices.empty()) {
+
+            // For user-defined variables, there's no way to do indexing.
+            throw utils::Exception("non-scalar variables not supported");
+
         }
         if (typecast) {
             os << ")";

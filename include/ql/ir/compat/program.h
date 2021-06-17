@@ -15,6 +15,12 @@ namespace ql {
 namespace ir {
 namespace compat {
 
+/**
+ * Generates a unique filename if requested via the unique_output option.
+ * Otherwise just returns the incoming name.
+ */
+utils::Str make_unique_name(const utils::Str &name);
+
 class Program;
 
 /**

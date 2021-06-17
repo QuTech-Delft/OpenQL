@@ -17,6 +17,41 @@ namespace compat {
 using namespace utils;
 
 /**
+ * Generates a unique filename if requested via the unique_output option.
+ * Otherwise just returns the incoming name.
+ */
+utils::Str make_unique_name(const utils::Str &name) {
+
+    // Don't uniquify if the unique_output option is not set.
+    if (!com::options::global["unique_output"].as_bool()) {
+        return name;
+    }
+
+    // Filename for the name uniquification number.
+    Str version_file = QL_SS2S(com::options::get("output_dir") << "/" << name << ".unique");
+
+    // Retrieve old version number, if one exists.
+    UInt vers = 0;
+    if (is_file(version_file)) {
+        InFile(version_file) >> vers;
+    }
+
+    // Increment to get new one.
+    vers++;
+
+    // Store version for a later run.
+    OutFile(version_file) << vers;
+
+    auto unique_name = name;
+    if (vers > 1) {
+        unique_name = name + to_string(vers);
+        QL_DOUT("Unique program name is " << unique_name << ", based on version " << vers);
+    }
+
+    return unique_name;
+}
+
+/**
  * Constructs a new program.
  */
 Program::Program(
@@ -64,28 +99,7 @@ Program::Program(
     }
 
     // Generate unique filename if requested via the unique_output option.
-    if (com::options::global["unique_output"].as_bool()) {
-
-        // Filename for the name uniquification number.
-        Str version_file = QL_SS2S(com::options::get("output_dir") << "/" << name << ".unique");
-
-        // Retrieve old version number, if one exists.
-        UInt vers = 0;
-        if (is_file(version_file)) {
-            InFile(version_file) >> vers;
-        }
-
-        // Increment to get new one.
-        vers++;
-
-        // Store version for a later run.
-        OutFile(version_file) << vers;
-
-        if (vers > 1) {
-            unique_name = name + to_string(vers);
-            QL_DOUT("Unique program name is " << unique_name << ", based on version " << vers);
-        }
-    }
+    unique_name = make_unique_name(name);
 
 }
 

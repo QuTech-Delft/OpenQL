@@ -1,5 +1,9 @@
 #include "ql/ir/old_to_new.h"
+#include "ql/ir/ops.h"
 #include "ql/ir/cqasm/write.h"
+#include "ql/ir/cqasm/read.h"
+
+#include <unistd.h>
 
 using namespace ql;
 
@@ -45,9 +49,15 @@ int main() {
     ));
 
     auto ir = ir::convert_old_to_new(program);
-    ir->dump_seq();
+    //ir->dump_seq();
 
-    ir::cqasm::write(ir);
+    ir->program->objects.emplace<ir::TemporaryObject>("", ir->platform->default_bit_type);
+    ir->program->objects.emplace<ir::VariableObject>("hello", ir::add_type<ir::IntType>(ir, "int64", true, 64));
+
+    utils::StrStrm ss;
+    ir::cqasm::write(ir, ss);
+    std::cout << ss.str() << std::endl;
+    ir::cqasm::read(ir, ss.str());
 
     return 0;
 }
