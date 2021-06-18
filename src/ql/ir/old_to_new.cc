@@ -465,7 +465,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             }
 
         } catch (utils::Exception &e) {
-            e.messages.push_front("in gate description for '" + it.key() + "'");
+            e.add_context("in gate description for '" + it.key() + "'");
             throw;
         }
     }
@@ -628,7 +628,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 });
 
             } catch (utils::Exception &e) {
-                e.messages.push_front(
+                e.add_context(
                     "in legacy decomposition of '" + it2.key() + "'"
                 );
                 throw;
@@ -705,7 +705,7 @@ static ExpressionRef convert_operand(
 ) {
     switch (op.type()) {
         case compat::ClassicalOperandType::VALUE:
-            return make_default_int_lit(
+            return make_int_lit(
                 ir,
                 op.as_value().value
             );
@@ -833,7 +833,7 @@ static InstructionRef convert_gate(
         // Convert the gate's qubit operands.
         utils::Any<Expression> qubit_operands;
         for (auto idx : gate->operands) {
-            qubit_operands.add(make_default_qubit_ref(ir, idx));
+            qubit_operands.add(make_qubit_ref(ir, idx));
         }
         
         // Convert the gate's creg operands.
@@ -858,7 +858,7 @@ static InstructionRef convert_gate(
             // Convert breg operands.
             for (auto idx : gate->breg_operands) {
                 if (idx < num_qubits) {
-                    breg_operands.add(make_default_bit_ref(ir, idx));
+                    breg_operands.add(make_bit_ref(ir, idx));
                 } else {
                     QL_ASSERT(!breg_object.empty());
                     breg_operands.add(make_reference(ir, breg_object, {idx - num_qubits}));
@@ -869,7 +869,7 @@ static InstructionRef convert_gate(
             utils::Any<Expression> cond_operands;
             for (auto idx : gate->cond_operands) {
                 if (idx < num_qubits) {
-                    cond_operands.add(make_default_bit_ref(ir, idx));
+                    cond_operands.add(make_bit_ref(ir, idx));
                 } else {
                     QL_ASSERT(!breg_object.empty());
                     cond_operands.add(make_reference(ir, breg_object, {idx - num_qubits}));
@@ -883,7 +883,7 @@ static InstructionRef convert_gate(
                     // made conditional.
                     break;
                 case compat::ConditionType::NEVER:
-                    condition = make_default_bit_lit(ir, false);
+                    condition = make_bit_lit(ir, false);
                     break;
                 case compat::ConditionType::UNARY:
                     condition = cond_operands[0];
@@ -949,7 +949,7 @@ static InstructionRef convert_gate(
         if (name == "wait" || name == "barrier" || gate->type() == compat::GateType::WAIT) {
             auto duration = utils::div_ceil(gate->duration, old->platform->cycle_time);
             utils::Any<Expression> operands;
-            operands.add(make_default_int_lit(ir, duration));
+            operands.add(make_uint_lit(ir, duration));
             operands.extend(qubit_operands);
             operands.extend(creg_operands);
             operands.extend(breg_operands);
@@ -984,7 +984,7 @@ static InstructionRef convert_gate(
             return make_set_instruction(
                 ir,
                 creg_operands[0],
-                make_default_int_lit(ir, gate->int_operand),
+                make_int_lit(ir, gate->int_operand),
                 condition
             );
         }
@@ -1002,7 +1002,7 @@ static InstructionRef convert_gate(
             QL_ASSERT(!real_type.empty());
             operands.emplace<RealLiteral>(gate->angle, real_type);
         } else if (name == "crk") {
-            operands.add(make_default_int_lit(ir, gate->int_operand));
+            operands.add(make_int_lit(ir, gate->int_operand));
         }
         auto insn = make_instruction(ir, name, operands, condition, true, true);
         if (!insn.empty()) {
@@ -1137,7 +1137,7 @@ static InstructionRef convert_gate(
         return make_instruction(ir, name, operands, condition);
 
     } catch (utils::Exception &e) {
-        e.messages.push_front("while converting gate " + name);
+        e.add_context("while converting gate " + name);
         throw;
     }
 }
@@ -1155,7 +1155,8 @@ static utils::Str convert_kernels(
 ) {
     utils::Str name;
     try {
-        switch (old->kernels[idx]->type) {
+        auto type = old->kernels[idx]->type;
+        switch (type) {
             case compat::KernelType::STATIC: {
 
                 // Figure out where we're at in terms of cycles in this block, and
@@ -1216,8 +1217,8 @@ static utils::Str convert_kernels(
                 // Create a static for loop and add it to the block.
                 block->statements.emplace<StaticLoop>(
                     make_reference(ir, make_temporary(ir, ir->platform->default_int_type)),
-                    make_default_int_lit(ir, iteration_count - 1),
-                    make_default_int_lit(ir, (utils::UInt)0),
+                    make_uint_lit(ir, iteration_count - 1),
+                    make_uint_lit(ir, (utils::UInt) 0),
                     sub_block
                 );
 
@@ -1309,12 +1310,12 @@ static utils::Str convert_kernels(
         }
     } catch (utils::Exception &e) {
         if (idx < old->kernels.size()) {
-            e.messages.push_front(
+            e.add_context(
                 "while converting kernel " + utils::to_string(idx) +
                 " ('" + old->kernels[idx]->name + "')"
             );
         } else {
-            e.messages.push_front(
+            e.add_context(
                 "after converting last kernel (corrupt control-flow structure?)"
             );
         }

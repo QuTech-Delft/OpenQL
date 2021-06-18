@@ -209,10 +209,10 @@ private:
      */
     Data &check() const {
         if (!this->data_ptr) {
-            throw ContainerException("iterator does not belong to any container");
+            QL_CONTAINER_ERROR("iterator does not belong to any container");
         }
         if (version != this->data_ptr->get_version()) {
-            throw ContainerException("using outdated iterator");
+            QL_CONTAINER_ERROR("using outdated iterator");
         }
         return *data_ptr;
     }
@@ -223,7 +223,7 @@ private:
      */
     Data &check(const std::shared_ptr<Data> &data) const {
         if (data != this->data_ptr) {
-            throw ContainerException("iterator belongs to different container");
+            QL_CONTAINER_ERROR("iterator belongs to different container");
         }
         return check();
     }
@@ -236,7 +236,7 @@ private:
         auto &res = check();
         other.check();
         if (other.data_ptr != this->data_ptr) {
-            throw ContainerException("using unrelated iterators in a single context");
+            QL_CONTAINER_ERROR("using unrelated iterators in a single context");
         }
         return res;
     }
@@ -260,7 +260,7 @@ private:
         data_ptr(data)
     {
         if (!data) {
-            throw ContainerException("container is used after move");
+            QL_CONTAINER_ERROR("container is used after move");
         }
         update();
     }
@@ -335,7 +335,7 @@ public:
     WrappedIterator &operator++() {
         auto &d = check();
         if (iter == EndpointAdapter::end(d)) {
-            throw ContainerException("moving iterator past end of container");
+            QL_CONTAINER_ERROR("moving iterator past end of container");
         }
         ++iter;
         return *this;
@@ -357,7 +357,7 @@ public:
     WrappedIterator &operator--() {
         auto &d = check();
         if (iter == EndpointAdapter::begin(d)) {
-            throw ContainerException("moving iterator past beginning of container");
+            QL_CONTAINER_ERROR("moving iterator past beginning of container");
         }
         --iter;
         return *this;
@@ -379,10 +379,10 @@ public:
     WrappedIterator &operator+=(difference_type rhs) {
         auto &d = check();
         if (rhs > EndpointAdapter::end(d) - iter) {
-            throw ContainerException("moving iterator past end of container");
+            QL_CONTAINER_ERROR("moving iterator past end of container");
         }
         if (rhs < EndpointAdapter::begin(d) - iter) {
-            throw ContainerException("moving iterator past begin of container");
+            QL_CONTAINER_ERROR("moving iterator past begin of container");
         }
         iter += rhs;
         return *this;
@@ -442,7 +442,7 @@ public:
     reference operator*() const {
         auto &d = check();
         if (iter == EndpointAdapter::end(d)) {
-            throw ContainerException("dereferencing past-the-end iterator");
+            QL_CONTAINER_ERROR("dereferencing past-the-end iterator");
         }
         return *iter;
     }
@@ -453,7 +453,7 @@ public:
     pointer operator->() const {
         auto &d = check();
         if (iter == EndpointAdapter::end(d)) {
-            throw ContainerException("dereferencing past-the-end iterator");
+            QL_CONTAINER_ERROR("dereferencing past-the-end iterator");
         }
         return &(*iter);
     }
@@ -464,10 +464,10 @@ public:
     reference operator[](difference_type offset) const {
         auto &d = check();
         if (offset >= EndpointAdapter::end(d) - iter) {
-            throw ContainerException("iterator indexing after end of container");
+            QL_CONTAINER_ERROR("iterator indexing after end of container");
         }
         if (offset < EndpointAdapter::begin(d) - iter) {
-            throw ContainerException("iterator indexing before begin of container");
+            QL_CONTAINER_ERROR("iterator indexing before begin of container");
         }
         return iter[offset];
     }

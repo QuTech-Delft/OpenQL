@@ -62,14 +62,14 @@ output_suffix: .cq
 with_statistics: no
 """.strip())
         self.assertEqual(p.dump_options(True).strip(), 'no options to dump')
-        with self.assertRaisesRegex(RuntimeError, '^unknown option: does not exist'):
+        with self.assertRaisesRegex(RuntimeError, 'unknown option: does not exist'):
             p.get_option('does not exist')
         self.assertEqual(c.get_option('io_cqasm_report.debug'), 'no')
-        with self.assertRaisesRegex(RuntimeError, '^unknown option: does not exist'):
+        with self.assertRaisesRegex(RuntimeError, 'unknown option: does not exist'):
             c.get_option('io_cqasm_report.does not exist')
-        with self.assertRaisesRegex(RuntimeError, '^unknown option: does not exist'):
+        with self.assertRaisesRegex(RuntimeError, 'unknown option: does not exist'):
             c.get_option('does not exist')
-        with self.assertRaisesRegex(RuntimeError, '^no sub-pass with name "does not exist" in root'):
+        with self.assertRaisesRegex(RuntimeError, 'no sub-pass with name "does not exist" in root'):
             c.get_option('does not exist.debug')
         p = c.prefix_pass('io.cqasm.Report')
         self.assertEqual(p.get_name(), 'io_cqasm_report_1')
@@ -77,7 +77,7 @@ with_statistics: no
         self.assertEqual(p.get_name(), 'io_cqasm_report_2')
         p = c.insert_pass_before('io_cqasm_report_2', 'io.cqasm.Read', 'bla', {'debug': 'yes'})
         self.assertEqual(p.get_name(), 'bla')
-        with self.assertRaisesRegex(RuntimeError, '^duplicate pass name "bla"'):
+        with self.assertRaisesRegex(RuntimeError, 'duplicate pass name "bla"'):
             c.append_pass('io.cqasm.Report', 'bla')
         self.assertEqual(p.dump_options(True).strip(), 'debug: yes')
         self.assertTrue(c.does_pass_exist('bla'))
@@ -85,7 +85,7 @@ with_statistics: no
         self.assertEqual(p.get_name(), 'bla')
         self.assertEqual(p.get_option('debug'), 'yes')
         self.assertFalse(c.does_pass_exist('fgsfds'))
-        with self.assertRaisesRegex(RuntimeError, '^no pass with name "fgsfds" exists'):
+        with self.assertRaisesRegex(RuntimeError, 'no pass with name "fgsfds" exists'):
             c.get_pass('fgsfds')
         self.assertEqual(
             list(map(ql.Pass.get_name, c.get_passes())),
@@ -109,7 +109,7 @@ with_statistics: no
    |- no options to dump
 """.strip())
         self.assertEqual(c.set_option('io_cqasm_report_*.debug', 'no'), 2)
-        with self.assertRaisesRegex(RuntimeError, '^pattern fgdsfds did not match any sub-passes of root'):
+        with self.assertRaisesRegex(RuntimeError, 'pattern fgdsfds did not match any sub-passes of root'):
             c.set_option('fgdsfds.debug', 'no')
         self.assertEqual(c.set_option('fgdsfds.debug', 'no', False), 0)
         self.assertEqual(c.set_option('fgdsfds.does-not-exist', 'no', False), 0)
@@ -129,7 +129,7 @@ with_statistics: no
         self.assertEqual(c.get_num_passes(), 4)
         c.remove_pass('bla')
         self.assertEqual(c.get_num_passes(), 3)
-        with self.assertRaisesRegex(RuntimeError, '^pass with name "bla" not found'):
+        with self.assertRaisesRegex(RuntimeError, 'pass with name "bla" not found'):
             c.remove_pass('bla')
         c.clear_passes()
         self.assertEqual(c.get_num_passes(), 0)

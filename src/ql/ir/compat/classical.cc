@@ -121,8 +121,7 @@ ClassicalOperation::ClassicalOperation(
         inv_operation_name = "lt";
         operation_type = ClassicalOperationType::RELATIONAL;
     } else {
-        QL_EOUT("Unknown binary operation '" << op);
-        throw Exception("Unknown binary operation '" + op + "' !", false);
+        QL_USER_ERROR("unknown binary operation '" << op << "'");
     }
 }
 
@@ -153,8 +152,7 @@ ClassicalOperation::ClassicalOperation(const Str &op, const ClassicalRegister &r
         operation_type = ClassicalOperationType::BITWISE;
         operands.emplace<ClassicalRegister>(r);
     } else {
-        QL_EOUT("Unknown unary operation '" << op);
-        throw Exception("Unknown unary operation '" + op + "' !", false);
+        QL_USER_ERROR("Unknown unary operation '" << op << "'");
     }
 }
 
@@ -185,10 +183,7 @@ Classical::Classical(const Str &operation) {
         duration = 20;
         QL_DOUT("Adding 0 operand operation: " << name);
     } else {
-        QL_EOUT("Unknown classical operation '" << name << "' with '0' operands!");
-        throw Exception(
-            "Unknown classical operation'" + name + "' with'0' operands!",
-            false);
+        QL_USER_ERROR("unknown classical operation'" << name << "' with 0 operands");
     }
 }
 

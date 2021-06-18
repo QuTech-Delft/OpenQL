@@ -55,46 +55,16 @@
     do {                                                                                                    \
         ::ql::utils::StrStrm fatal_ss{};                                                                    \
         fatal_ss << content;                                                                                \
-        ::ql::utils::Str fatal_s = fatal_ss.str();                                                             \
+        ::ql::utils::Str fatal_s = fatal_ss.str();                                                          \
         QL_EOUT(fatal_s);                                                                                   \
-        throw ::ql::utils::Exception("Error : " + fatal_s);                                                 \
+        QL_ICE(fatal_s);                                                                                    \
     } while (false)
 
-#define QL_ASSERT(condition)                                                                                \
-    do {                                                                                                    \
-        if (!(condition)) {                                                                                 \
-            QL_FATAL("assert " #condition " failed in file " __FILE__ " at line " << __LINE__);             \
-        }                                                                                                   \
-    } while (false)
-
-#define QL_ASSERT_EQ(a, b)                                                                                  \
-    do {                                                                                                    \
-        auto _a = (a);                                                                                      \
-        auto _b = (b);                                                                                      \
-        if (_a != _b) {                                                                                     \
-            QL_FATAL(                                                                                       \
-                "assert \"" << try_to_string(_a) << "\" (" #a ") == "                                       \
-                "\"" << try_to_string(_b) << "\" (" #b ") "                                                 \
-                "failed in file " __FILE__ " at line " << __LINE__                                          \
-            );                                                                                              \
-        }                                                                                                   \
-    } while (false)
-
-#define QL_ASSERT_RAISES(code)                                                                              \
-    do {                                                                                                    \
-        auto ok = false;                                                                                    \
-        try {                                                                                               \
-            code;                                                                                           \
-        } catch (const std::exception &e) {                                                                 \
-            ok = true;                                                                                      \
-        }                                                                                                   \
-        if (!ok) {                                                                                          \
-            QL_FATAL("no exception thrown in file " __FILE__ " at line " << __LINE__);                      \
-        }                                                                                                   \
-    } while (false)
+#define QL_IS_LOG_DEBUG \
+    (::ql::utils::logger::log_level >= ::ql::utils::logger::LogLevel::LOG_DEBUG)
 
 #define QL_IF_LOG_DEBUG \
-    if (::ql::utils::logger::log_level >= ::ql::utils::logger::LogLevel::LOG_DEBUG)
+    if QL_IS_LOG_DEBUG
 
 namespace ql {
 namespace utils {

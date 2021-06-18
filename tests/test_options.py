@@ -47,13 +47,13 @@ class Test_options(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             ql.set_option('optimize', 'nope')
 
-        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'invalid value for yes/no option optimize: nope')
+        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Usage error: invalid value for yes/no option optimize: nope')
 
 
         with self.assertRaises(Exception) as cm:
             ql.set_option('scheduler', 'best')
 
-        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'invalid value for option scheduler: possible values are ASAP or ALAP, but best was given')
+        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Usage error: invalid value for option scheduler: possible values are ASAP or ALAP, but best was given')
 
 
     def test_get_values(self):

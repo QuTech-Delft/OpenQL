@@ -53,20 +53,20 @@ Kernel::Kernel(
     condition(ConditionType::ALWAYS)
 {
     if (qubit_count > platform->qubit_count) {
-        throw Exception(
-            "cannot create kernel (" + name + ") "
-            + "that uses more qubits (" + to_string(qubit_count) + ") "
-            + "than the platform has (" + to_string(platform->qubit_count) + ")"
+        QL_USER_ERROR(
+            "cannot create kernel (" << name << ") " <<
+            "that uses more qubits (" << qubit_count << ") " <<
+            "than the platform has (" << platform->qubit_count << ")"
         );
     }
     if (creg_count > platform->creg_count) {
         if (platform->compat_implicit_creg_count) {
             platform->creg_count = creg_count;
         } else {
-            throw Exception(
-                "cannot create kernel (" + name + ") "
-                + "that uses more cregs (" + to_string(creg_count) + ") "
-                + "than the platform has (" + to_string(platform->creg_count) + ")"
+            QL_USER_ERROR(
+                "cannot create kernel (" << name << ") " <<
+                "that uses more cregs (" << creg_count << ") " <<
+                "than the platform has (" << platform->creg_count << ")"
             );
         }
     }
@@ -74,10 +74,10 @@ Kernel::Kernel(
         if (platform->compat_implicit_breg_count) {
             platform->breg_count = breg_count;
         } else {
-            throw Exception(
-                "cannot create kernel (" + name + ") "
-                + "that uses more bregs (" + to_string(breg_count) + ") "
-                + "than the platform has (" + to_string(platform->breg_count) + ")"
+            QL_USER_ERROR(
+                "cannot create kernel (" << name << ") " <<
+                "that uses more bregs (" << breg_count << ") "
+                "than the platform has (" << platform->breg_count << ")"
             );
         }
     }
@@ -85,13 +85,14 @@ Kernel::Kernel(
 
 void Kernel::set_condition(const ClassicalOperation &oper) {
     if ((oper.operands[0])->as_register().id >= creg_count || (oper.operands[1]->as_register().id >= creg_count)) {
-        QL_EOUT("Out of range operand(s) for '" << oper.operation_name);
-        throw Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
+        QL_USER_ERROR("operand(s) out of range for '" << oper.operation_name << "'");
     }
 
     if (oper.operation_type != ClassicalOperationType::RELATIONAL) {
-        QL_EOUT("Relational operator not used for conditional '" << oper.operation_name);
-        throw Exception("Relational operator not used for conditional '" + oper.operation_name + "' !", false);
+        QL_USER_ERROR(
+            "condition requires relational operator, '" <<
+            oper.operation_name << "' is not supported"
+        );
     }
 
     br_condition = oper;
@@ -602,7 +603,7 @@ void Kernel::get_decomposed_ins(
         if (it != platform->instruction_map.end()) {
             sub_instructions.push_back(sub_ins);
         } else {
-            throw Exception("[x] error : kernel::gate() : gate decomposition not available for '" + sub_ins + "'' in the target platform !", false);
+            QL_ICE("gate decomposition not available for '" << sub_ins << "' in the target platform");
         }
     }
 }
@@ -690,12 +691,10 @@ Bool Kernel::add_spec_decomposed_gate_if_available(
                     if (default_available) {
                         QL_DOUT("added default gate '" << sub_ins_name << "' with qubits " << this_gate_qubits); // // NB: changed WOUT to DOUT, since this is common for 'barrier', spamming log
                     } else {
-                        QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
-                        throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
+                        QL_USER_ERROR("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
                     }
                 } else {
-                    QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
-                    throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
+                    QL_USER_ERROR("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
                 }
             }
         }
@@ -792,12 +791,10 @@ Bool Kernel::add_param_decomposed_gate_if_available(
                     if (default_available) {
                         QL_WOUT("added default gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
                     } else {
-                        QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
-                        throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
+                        QL_USER_ERROR("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
                     }
                 } else {
-                    QL_EOUT("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
-                    throw Exception("[x] error : kernel::gate() : the gate '" + sub_ins_name + "' with qubits " + to_string(this_gate_qubits) + " is not supported by the target platform !", false);
+                    QL_USER_ERROR("unknown gate '" << sub_ins_name << "' with qubits " << this_gate_qubits);
                 }
             }
         }
@@ -1115,16 +1112,14 @@ Str Kernel::qasm() const {
 void Kernel::classical(const ClassicalRegister &destination, const ClassicalOperation &oper) {
     // check sanity of destination
     if (destination.id >= creg_count) {
-        QL_EOUT("Out of range operand(s) for '" << oper.operation_name);
-        throw Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
+        QL_USER_ERROR("operand(s) out of range for '" << oper.operation_name << "'");
     }
 
     // check sanity of other operands
     for (auto &op : oper.operands) {
         if (op->type() == ClassicalOperandType::REGISTER) {
             if (op->as_register().id >= creg_count) {
-                QL_EOUT("Out of range operand(s) for '" << oper.operation_name);
-                throw Exception("Out of range operand(s) for '" + oper.operation_name + "' !", false);
+                QL_USER_ERROR("operand(s) out of range for '" << oper.operation_name << "'");
             }
         }
     }
@@ -1477,8 +1472,7 @@ void Kernel::controlled_single(
             controlled_ry(tq, cq, M_PI);
             // controlled_y(tq, cq);
         } else {
-            QL_EOUT("Controlled version of gate '" << gname << "' not defined !");
-            throw Exception("[x] error : kernel::controlled : Controlled version of gate '" + gname + "' not defined ! ", false);
+            QL_USER_ERROR("circuit too complex; controlled version of gate '" << gname << "' is unknown");
         }
     }
 }
@@ -1493,8 +1487,7 @@ void Kernel::controlled(
     Int naq = ancilla_qubits.size();
 
     if (ncq == 0) {
-        QL_EOUT("At least one control_qubits should be specified !");
-        throw Exception("[x] error : kernel::controlled : At least one control_qubits should be specified !", false);
+        QL_USER_ERROR("at least one control_qubits must be specified");
     } else if (ncq == 1) {
         //                      control               ancilla
         controlled_single(k, control_qubits[0], ancilla_qubits[0]);
@@ -1518,8 +1511,7 @@ void Kernel::controlled(
 
             toffoli(control_qubits[0], control_qubits[1], ancilla_qubits[0]);
         } else {
-            QL_EOUT("No. of control qubits should be equal to No. of ancilla qubits!");
-            throw Exception("[x] error : kernel::controlled : No. of control qubits should be equal to No. of ancilla qubits!", false);
+            QL_USER_ERROR("number of control qubits must equal number of ancilla qubits");
         }
     }
 
@@ -1579,8 +1571,7 @@ void Kernel::conjugate(const Kernel &k) {
         } else if (gtype == GateType::TOFFOLI) {
             gate("toffoli", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else {
-            QL_EOUT("Conjugate version of gate '" << gname << "' not defined !");
-            throw Exception("[x] error : kernel::conjugate : Conjugate version of gate '" + gname + "' not defined ! ", false);
+            QL_USER_ERROR("circuit too complex; conjugate version of gate '" << gname << "' is not defined");
         }
     }
     QL_COUT("Generating conjugate kernel [Done]");

@@ -6,7 +6,9 @@
 
 #include <cstring>
 #include <cerrno>
+#include <iostream>
 #include "backward.hpp"
+#include "ql/utils/logger.h"
 
 namespace ql {
 namespace utils {
@@ -14,47 +16,59 @@ namespace utils {
 /**
  * Builds the message for Exception.
  */
-static std::string stack_trace() noexcept {
+static std::shared_ptr<backward::StackTrace> stack_trace() noexcept {
 
     // Try to capture a stack to add that to the message.
     try {
 
         // Capture a stack trace.
-        backward::StackTrace trace;
-        trace.load_here(32);
+        auto trace = std::make_shared<backward::StackTrace>();
+        trace->load_here(32);
 
         // Try to remove the part of the stack trace due to this file and
         // backward itself. But it's not particularly important, so ignore
         // exceptions that might occur and move on.
         try {
-            backward::TraceResolver tr;
-            tr.load_stacktrace(trace);
-            for (size_t i = 0; i < trace.size(); i++) {
-                auto fn = tr.resolve(trace[i]);
-                if (
-                    (fn.source.filename.find("exception.cc") == std::string::npos)
-                    && (fn.source.filename.find("backward.hpp") == std::string::npos)
-                ) {
-                    trace.skip_n_firsts(i);
-                    break;
+            static size_t skip = 0;
+            if (!skip) {
+                backward::TraceResolver tr;
+                tr.load_stacktrace(trace);
+                for (size_t i = 0; i < trace->size(); i++) {
+                    auto fn = tr.resolve((*trace)[i]);
+                    if (
+                        (fn.source.filename.find("exception.cc") == std::string::npos)
+                        && (fn.source.filename.find("backward.hpp") == std::string::npos)
+                    ) {
+                        skip = i;
+                        break;
+                    }
                 }
             }
+            trace->skip_n_firsts(skip);
         } catch (std::exception &e) {
             (void)e;
         }
 
-        // Append the stack trace to the message.
-        backward::Printer p{};
-        p.trace_context_size = 0;
-        std::ostringstream ss{};
-        p.print(trace, ss);
-        return ss.str();
-
+        return trace;
     } catch (std::exception &e) {
         (void)e;
     }
 
-    return "";
+    return {};
+}
+
+/**
+ * String conversion for exception types.
+ */
+std::ostream &operator<<(std::ostream &os, ExceptionType etyp) {
+    switch (etyp) {
+        case ExceptionType::ICE:        return os << "Internal compiler error";
+        case ExceptionType::ASSERT:     return os << "Assertion failure";
+        case ExceptionType::CONTAINER:  return os << "Container error";
+        case ExceptionType::SYSTEM:     return os << "OS error";
+        case ExceptionType::USER:       return os << "Usage error";
+        default:                        return os << "Unknown error";
+    }
 }
 
 /**
@@ -65,10 +79,23 @@ static std::string stack_trace() noexcept {
  */
 Exception::Exception(
     const std::string &msg,
-    bool system
-) noexcept : std::runtime_error(msg), messages({msg}), trace(stack_trace()) {
-    if (system) {
-        messages.push_back(std::strerror(errno));
+    ExceptionType type
+) noexcept : std::runtime_error(msg), messages({msg}), trace(stack_trace()), type(type) {
+    if (type == ExceptionType::SYSTEM) {
+        messages.emplace_back(std::strerror(errno));
+    }
+}
+
+/**
+ * Adds context to a message. The exception can also be promoted from a user
+ * error to an ICE by setting ice to true, for when a function that might
+ * also be used directly by a user is actually used by the compiler in a way
+ * that should not fail.
+ */
+void Exception::add_context(const std::string &msg, bool ice) {
+    messages.push_front(msg);
+    if (ice && type == ExceptionType::USER) {
+        type = ExceptionType::ICE;
     }
 }
 
@@ -76,28 +103,27 @@ Exception::Exception(
  * Returns the complete exception message.
  */
 const char *Exception::what() const noexcept {
-    buf.clear();
-    bool first = true;
-    for (const auto &msg : messages) {
-        if (first) {
-            first = false;
-        } else {
-            buf += ": ";
-        }
-        buf += msg;
-    }
-    if (!trace.empty()) {
-        buf += "\n" + trace;
-    }
-    return buf.c_str();
-}
 
-/**
- * Base exception class for errors indicating incorrect usage of OpenQL.
- *
- * These differ from Exception in that they never include a stack trace.
- */
-UserError::UserError(const std::string &msg) noexcept : std::runtime_error(msg) {
+    // Start with the exception type.
+    utils::StrStrm ss;
+    ss << type;
+
+    // Append messages.
+    for (const auto &msg : messages) {
+        ss << ": " << msg;
+    }
+
+    // Append the stack trace to the message only if debug.
+    if (type != ExceptionType::USER || QL_IS_LOG_DEBUG) {
+        ss << "\n";
+        backward::Printer p{};
+        p.trace_context_size = 0;
+        p.print(*trace, ss);
+
+    }
+
+    buf = ss.str();
+    return buf.c_str();
 }
 
 } // namespace utils

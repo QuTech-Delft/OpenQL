@@ -8,6 +8,8 @@
 #include "ql/com/options.h"
 #include "ql/arch/architecture.h"
 #include "ql/ir/old_to_new.h"
+#include "ql/ir/cqasm/write.h"
+#include "ql/ir/cqasm/read.h"
 
 namespace ql {
 namespace pmgr {
@@ -878,7 +880,10 @@ void Manager::compile(const ir::compat::ProgramRef &program) {
     construct();
 
     // TODO
-    ir::convert_old_to_new(program);
+    auto ir = ir::convert_old_to_new(program);
+    utils::StrStrm ss;
+    ir::cqasm::write(ir, ss);
+    ir::cqasm::read(ir, ss.str());
 
     // Compile the program.
     root->compile(program, "");

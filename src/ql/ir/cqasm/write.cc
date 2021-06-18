@@ -268,7 +268,7 @@ public:
 
                 } catch (utils::Exception &e) {
                     if (!obj->name.empty()) {
-                        e.messages.push_front("while writing variable " + obj->name);
+                        e.add_context("while writing variable " + obj->name);
                     }
                     throw;
                 }
@@ -614,7 +614,7 @@ public:
         // library is dedicated to it. So why not abuse it for printing
         // literals?
         utils::Json j{r};
-        os << j;
+        os << j[0];
 
     }
 

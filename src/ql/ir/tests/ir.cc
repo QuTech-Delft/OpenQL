@@ -3,8 +3,6 @@
 #include "ql/ir/cqasm/write.h"
 #include "ql/ir/cqasm/read.h"
 
-#include <unistd.h>
-
 using namespace ql;
 
 int main() {
@@ -56,8 +54,12 @@ int main() {
 
     utils::StrStrm ss;
     ir::cqasm::write(ir, ss);
-    std::cout << ss.str() << std::endl;
+    ir->program.reset();
     ir::cqasm::read(ir, ss.str());
+    ss << "\n*** after read/write ***\n\n";
+    ir::cqasm::write(ir, ss);
+
+    std::cout << ss.str() << std::endl;
 
     return 0;
 }

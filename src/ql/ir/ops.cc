@@ -37,7 +37,7 @@ DataTypeLink get_type_of(const ExpressionRef &expr) {
     } else if (auto fnc = expr->as_function_call()) {
         return fnc->function_type->return_type;
     } else {
-        throw utils::Exception("unknown expression node type encountered");
+        QL_ICE("unknown expression node type encountered");
     }
 }
 
@@ -65,8 +65,9 @@ ObjectLink add_physical_object(const Ref &ir, const utils::One<PhysicalObject> &
 
     // Check its name.
     if (!std::regex_match(obj->name, IDENTIFIER_RE)) {
-        throw utils::Exception(
-            "invalid name for new register: \"" + obj->name + "\" is not a valid identifier"
+        QL_USER_ERROR(
+            "invalid name for new register: \"" <<
+            obj->name << "\" is not a valid identifier"
         );
     }
 
@@ -76,8 +77,9 @@ ObjectLink add_physical_object(const Ref &ir, const utils::One<PhysicalObject> &
     auto end = ir->platform->objects.get_vec().end();
     auto pos = std::lower_bound(begin, end, obj, compare_by_name<PhysicalObject>);
     if (pos != end && (*pos)->name == obj->name) {
-        throw utils::Exception(
-            "invalid name for new register: \"" + obj->name + "\" is already in use"
+        QL_USER_ERROR(
+            "invalid name for new register: \"" <<
+            obj->name << "\" is already in use"
         );
     }
     ir->platform->objects.get_vec().insert(pos, obj);
@@ -124,9 +126,9 @@ static utils::Pair<InstructionTypeLink, utils::Bool> add_or_find_instruction_typ
 
     // Check its name.
     if (!std::regex_match(instruction_type->name, IDENTIFIER_RE)) {
-        throw utils::Exception(
-            "invalid name for new instruction type: \"" +
-            instruction_type->name + "\" is not a valid identifier"
+        QL_USER_ERROR(
+            "invalid name for new instruction type: \"" <<
+            instruction_type->name << "\" is not a valid identifier"
         );
     }
 
@@ -254,8 +256,8 @@ InstructionTypeLink add_instruction_type(
     if (!result.second) {
         // TODO: this exception should include the whole prototype, not just
         //  the name.
-        throw utils::Exception(
-            "duplicate instruction type: \"" + instruction_type->name + "\""
+        QL_USER_ERROR(
+            "duplicate instruction type: \"" << instruction_type->name << "\""
         );
     }
 
@@ -375,23 +377,23 @@ InstructionRef make_instruction(
 
         // Build a set instruction.
         if (operands.size() != 2) {
-            throw utils::Exception(
+            QL_USER_ERROR(
                 "set instructions must have exactly two operands"
             );
         }
         if (!operands[0]->as_reference()) {
-            throw utils::Exception(
+            QL_USER_ERROR(
                 "the left-hand side of a set instructions must be a reference"
             );
         }
         auto type = get_type_of(operands[0]);
         if (!type->as_classical_type()) {
-            throw utils::Exception(
+            QL_USER_ERROR(
                 "set instructions only support classical data types"
             );
         }
         if (type != get_type_of(operands[1])) {
-            throw utils::Exception(
+            QL_USER_ERROR(
                 "the left-hand side and right-hand side of a set "
                 "instruction must have the same type"
             );
@@ -403,27 +405,27 @@ InstructionRef make_instruction(
         // Build a wait instruction.
         auto wait_insn = utils::make<WaitInstruction>();
         if (operands.empty()) {
-            throw utils::Exception(
+            QL_USER_ERROR(
                 "wait instructions must have at least one "
                 "operand (the duration)"
             );
         }
         if (auto ilit = operands[0]->as_int_literal()) {
             if (ilit->value < 0) {
-                throw utils::Exception(
+                QL_USER_ERROR(
                     "the duration of a wait instruction cannot be negative"
                 );
             }
             wait_insn->duration = (utils::UInt)ilit->value;
         } else {
-            throw utils::Exception(
+            QL_USER_ERROR(
                 "the duration of a wait instruction must be an integer literal"
             );
         }
         for (utils::UInt i = 1; i < operands.size(); i++) {
             auto ref = operands[i].as<Reference>();
             if (ref.empty()) {
-                throw utils::Exception(
+                QL_USER_ERROR(
                     "the operands of a wait instruction after the first "
                     "must be references"
                 );
@@ -439,7 +441,7 @@ InstructionRef make_instruction(
         for (const auto &operand : operands) {
             auto ref = operand.as<Reference>();
             if (ref.empty()) {
-                throw utils::Exception(
+                QL_USER_ERROR(
                     "the operands of a wait instruction after the first "
                     "must be references"
                 );
@@ -480,7 +482,7 @@ InstructionRef make_instruction(
                 }
                 ss << " " << type->name;
             }
-            throw utils::Exception(ss.str());
+            QL_USER_ERROR(ss.str());
         }
 
         // Specialize the instruction type and operands as much as possible.
@@ -503,12 +505,12 @@ InstructionRef make_instruction(
     // Set the condition, if applicable.
     if (auto cond_insn = insn->as_conditional_instruction()) {
         if (condition.empty()) {
-            cond_insn->condition = make_default_bit_lit(ir, true);
+            cond_insn->condition = make_bit_lit(ir, true);
         } else {
             cond_insn->condition = condition;
         }
     } else if (!condition.empty()) {
-        throw utils::Exception(
+        QL_USER_ERROR(
             "condition specified for instruction that "
             "cannot be made conditional"
         );
@@ -569,9 +571,9 @@ FunctionTypeLink add_function_type(
         !std::regex_match(function_type->name, IDENTIFIER_RE) &&
         !utils::starts_with(function_type->name, "operator")
     ) {
-        throw utils::Exception(
-            "invalid name for new function type: \"" +
-            function_type->name + "\" is not a valid identifier or operator"
+        QL_USER_ERROR(
+            "invalid name for new function type: \"" <<
+            function_type->name << "\" is not a valid identifier or operator"
         );
     }
 
@@ -593,8 +595,8 @@ FunctionTypeLink add_function_type(
         if (match) {
             // TODO: this exception should include the whole prototype, not just
             //  the name.
-            throw utils::Exception(
-                "duplicate function type: \"" + function_type->name + "\""
+            QL_USER_ERROR(
+                "duplicate function type: \"" << function_type->name << "\""
             );
         }
     }
@@ -672,7 +674,7 @@ utils::One<FunctionCall> make_function_call(
             ss << type->name;
         }
         ss << ")";
-        throw utils::Exception(ss.str());
+        QL_USER_ERROR(ss.str());
     }
 
     return function_call;
@@ -699,47 +701,87 @@ utils::Bool is_assignable_or_qubit(const ExpressionRef &expr) {
     } else if (expr->as_function_call()) {
         return false;
     } else {
-        throw utils::Exception("unknown expression node type encountered");
+        QL_ICE("unknown expression node type encountered");
     }
 }
 
 /**
- * Makes an integer literal using the default integer type.
+ * Makes an integer literal using the given or default integer type.
  */
-utils::One<IntLiteral> make_default_int_lit(const Ref &ir, utils::Int i) {
-    auto typ = ir->platform->default_int_type.as<IntType>();
-    if (i > get_max_int_for(*typ) || i < get_min_int_for(*typ)) {
-        throw utils::Exception(
+utils::One<IntLiteral> make_int_lit(
+    const Ref &ir,
+    utils::Int i,
+    const DataTypeLink &type
+) {
+    auto typ = type;
+    if (typ.empty()) {
+        typ = ir->platform->default_int_type;
+    }
+    auto int_type = typ.as<IntType>();
+    if (int_type.empty()) {
+        QL_USER_ERROR(
+            "type " + typ->name + " is not integer-like"
+        );
+    }
+    if (i > get_max_int_for(*int_type) || i < get_min_int_for(*int_type)) {
+        QL_USER_ERROR(
             "integer literal value out of range for default integer type"
         );
     }
-    return utils::make<IntLiteral>(i, ir->platform->default_int_type);
+    return utils::make<IntLiteral>(i, typ);
 }
 
 /**
- * Makes an integer literal using the default integer type.
+ * Makes an integer literal using the given or default integer type.
  */
-utils::One<IntLiteral> make_default_int_lit(const Ref &ir, utils::UInt i) {
-    auto typ = ir->platform->default_int_type.as<IntType>();
-    if (i > (utils::UInt)get_max_int_for(*typ)) {
-        throw utils::Exception(
+utils::One<IntLiteral> make_uint_lit(
+    const Ref &ir,
+    utils::UInt i,
+    const DataTypeLink &type
+) {
+    auto typ = type;
+    if (typ.empty()) {
+        typ = ir->platform->default_int_type;
+    }
+    auto int_type = typ.as<IntType>();
+    if (int_type.empty()) {
+        QL_USER_ERROR(
+            "type " << typ->name << " is not integer-like"
+        );
+    }
+    if (i > (utils::UInt)get_max_int_for(*int_type)) {
+        QL_USER_ERROR(
             "integer literal value out of range for default integer type"
         );
     }
-    return utils::make<IntLiteral>((utils::UInt)i, ir->platform->default_int_type);
+    return utils::make<IntLiteral>((utils::UInt)i, typ);
 }
 
 /**
- * Makes an bit literal using the default bit type.
+ * Makes an bit literal using the given or default bit type.
  */
-utils::One<BitLiteral> make_default_bit_lit(const Ref &ir, utils::Bool b) {
-    return utils::make<BitLiteral>(b, ir->platform->default_bit_type);
+utils::One<BitLiteral> make_bit_lit(
+    const Ref &ir,
+    utils::Bool b,
+    const DataTypeLink &type
+) {
+    auto typ = type;
+    if (typ.empty()) {
+        typ = ir->platform->default_bit_type;
+    }
+    auto bit_type = typ.as<BitType>();
+    if (bit_type.empty()) {
+        QL_USER_ERROR(
+            "type " + typ->name + " is not bit-like"
+        );
+    }
+    return utils::make<BitLiteral>(b, typ);
 }
 
 /**
  * Makes a qubit reference to the main qubit register.
  */
-utils::One<Reference> make_default_qubit_ref(const Ref &ir, utils::UInt idx) {
+utils::One<Reference> make_qubit_ref(const Ref &ir, utils::UInt idx) {
     return make_reference(ir, ir->platform->qubits, {idx});
 }
 
@@ -747,13 +789,13 @@ utils::One<Reference> make_default_qubit_ref(const Ref &ir, utils::UInt idx) {
  * Makes a reference to the implicit measurement bit associated with a qubit in
  * the main qubit register.
  */
-utils::One<Reference> make_default_bit_ref(const Ref &ir, utils::UInt idx) {
+utils::One<Reference> make_bit_ref(const Ref &ir, utils::UInt idx) {
     if (ir->platform->implicit_bit_type.empty()) {
-        throw utils::Exception(
+        QL_USER_ERROR(
             "platform does not support implicit measurement bits for qubits"
         );
     }
-    auto ref = make_default_qubit_ref(ir, idx);
+    auto ref = make_qubit_ref(ir, idx);
     ref->data_type = ir->platform->implicit_bit_type;
     return ref;
 }
@@ -767,11 +809,11 @@ utils::One<Reference> make_reference(
     utils::Vec<utils::UInt> indices
 ) {
     if (indices.size() > obj->shape.size()) {
-        throw utils::Exception(
+        QL_USER_ERROR(
             "too many indices specified to make reference to '" + obj->name + "'"
         );
     } else if (indices.size() < obj->shape.size()) {
-        throw utils::Exception(
+        QL_USER_ERROR(
             "not enough indices specified to make reference to '" + obj->name + "' "
             "(only individual elements can be referenced at this time)"
         );
@@ -779,11 +821,11 @@ utils::One<Reference> make_reference(
     auto ref = utils::make<Reference>(obj, obj->data_type);
     for (utils::UInt i = 0; i < indices.size(); i++) {
         if (indices[i] >= obj->shape[i]) {
-            throw utils::Exception(
+            QL_USER_ERROR(
                 "index out of range making reference to '" + obj->name + "'"
             );
         }
-        ref->indices.add(make_default_int_lit(ir, indices[i]));
+        ref->indices.add(make_uint_lit(ir, indices[i]));
     }
     return ref;
 }

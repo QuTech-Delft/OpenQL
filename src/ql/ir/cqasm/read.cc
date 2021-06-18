@@ -179,7 +179,7 @@ static void check_all_annotations_used(const cqt::One<cqs::Node> &node) {
         void visit_annotation_data(cqs::AnnotationData &node) override {
             if (node.interface == "ql") {
                 if (!node.has_annotation<Used>()) {
-                    throw utils::UserError(
+                    QL_USER_ERROR(
                         "annotation @ql." + node.operation +
                         " is not supported or was unused"
                     );
@@ -200,20 +200,20 @@ utils::Str parse_name_annotation(
     utils::Bool identifier = true
 ) {
     if (annot->operands.size() != 1) {
-        throw utils::UserError(
+        QL_USER_ERROR(
             "@ql.name must have a single string argument"
         );
     }
     if (auto str = annot->operands[0]->as_const_string()) {
         if (identifier && !std::regex_match(str->value, IDENTIFIER_RE)) {
-            throw utils::UserError(
+            QL_USER_ERROR(
                 "name specified via @ql.name must be an identifier"
             );
         }
         annot->set_annotation<Used>({});
         return str->value;
     } else {
-        throw utils::UserError(
+        QL_USER_ERROR(
             "@ql.name must have a single string argument"
         );
     }
@@ -227,21 +227,21 @@ DataTypeLink parse_type_annotation(
     const cqt::One<cqs::AnnotationData> &annot
 ) {
     if (annot->operands.size() != 1) {
-        throw utils::UserError(
+        QL_USER_ERROR(
             "@ql.type must have a single string argument"
         );
     }
     if (auto str = annot->operands[0]->as_const_string()) {
         auto typ = find_type(ir, str->value);
         if (typ.empty()) {
-            throw utils::UserError(
+            QL_USER_ERROR(
                 "type specified via @ql.type does not exist in platform"
             );
         }
         annot->set_annotation<Used>({});
         return typ;
     } else {
-        throw utils::UserError(
+        QL_USER_ERROR(
             "@ql.type must have a single string argument"
         );
     }
@@ -298,8 +298,8 @@ DataTypeLink infer_ql_type(const Ref &ir, const cqty::Type &cq_type) {
             }
         }
     }
-    throw utils::UserError(
-        "failed to infer OpenQL type for " + utils::to_string(cq_type) + "; "
+    QL_USER_ERROR(
+        "failed to infer OpenQL type for " << cq_type << "; "
         "please use @ql.type(name) annotation and/or ensure that an applicable "
         "type exists in the platform"
     );
@@ -357,6 +357,215 @@ find_last_goto_instruction(const cqt::One<cqs::Subcircuit> &subcircuit) {
 }
 
 /**
+ * Converts a qubit/bit index to a static unsigned integer.
+ */
+static utils::UInt convert_index(
+    const cqv::Value &cq_expr
+) {
+    if (auto ci = cq_expr->as_const_int()) {
+        if (ci->value < 0) {
+            QL_USER_ERROR("indices must be non-negative");
+        }
+        return (utils::UInt)ci->value;
+    } else {
+        QL_USER_ERROR("dynamic indices are not supported");
+    }
+}
+
+/**
+ * Converts a cQASM expression node to an OpenQL expression node.
+ *
+ * If sgmq_size is set to 0, BitRefs with more than one index are reduced to
+ * a single expression using operator&&, and qubit reference indices must be
+ * singular. If it is nonzero, qubit- and bit references must have exactly the
+ * specified number of indices, and the sgmq_index'd index is used.
+ */
+static ExpressionRef convert_expression(
+    const Ref &ir,
+    const cqv::Value &cq_expr,
+    utils::UInt sgmq_size = 1,
+    utils::UInt sgmq_index = 0
+) {
+
+    // The typecast functions attach a DataTypeLink annotation to the values.
+    // Look for that to determine which type to use. When as_type is empty, a
+    // suitable type is inferred.
+    DataTypeLink as_type;
+    if (cq_expr->has_annotation<DataTypeLink>()) {
+        as_type = cq_expr->get_annotation<DataTypeLink>();
+    }
+
+    if (auto cb = cq_expr->as_const_bool()) {
+        return make_bit_lit(ir, cb->value, as_type);
+    } else if (cq_expr->as_const_axis()) {
+        QL_USER_ERROR("OpenQL does not support cQASM's axis data type");
+    } else if (auto ci = cq_expr->as_const_int()) {
+        return make_int_lit(ir, ci->value, as_type);
+    } else if (auto cr = cq_expr->as_const_real()) {
+        if (as_type.empty()) {
+            as_type = infer_ql_type(ir, cqv::type_of(cq_expr));
+        }
+        if (!as_type->as_real_type()) {
+            QL_USER_ERROR("cannot cast real number to type " << as_type->name);
+        }
+        return utils::make<RealLiteral>(cr->value, as_type);
+    } else if (auto cc = cq_expr->as_const_complex()) {
+        if (as_type.empty()) {
+            as_type = infer_ql_type(ir, cqv::type_of(cq_expr));
+        }
+        if (!as_type->as_complex_type()) {
+            QL_USER_ERROR("cannot cast complex number to type " << as_type->name);
+        }
+        return utils::make<ComplexLiteral>(cc->value, as_type);
+    } else if (auto crm = cq_expr->as_const_real_matrix()) {
+        if (as_type.empty()) {
+            as_type = infer_ql_type(ir, cqv::type_of(cq_expr));
+        }
+        if (auto rmt = as_type->as_real_matrix_type()) {
+            if (rmt->num_rows != crm->value.size_rows() || rmt->num_cols != crm->value.size_cols()) {
+                QL_USER_ERROR("real matrix has incorrect size for type " << as_type->name);
+            }
+        } else {
+            QL_USER_ERROR("cannot cast real matrix to type " << as_type->name);
+        }
+        return utils::make<RealMatrixLiteral>(
+            prim::RMatrix(crm->value.get_data(), crm->value.size_cols()),
+            as_type
+        );
+    } else if (auto ccm = cq_expr->as_const_complex_matrix()) {
+        if (as_type.empty()) {
+            as_type = infer_ql_type(ir, cqv::type_of(cq_expr));
+        }
+        if (auto cmt = as_type->as_complex_matrix_type()) {
+            if (cmt->num_rows != ccm->value.size_rows() || cmt->num_cols != ccm->value.size_cols()) {
+                QL_USER_ERROR("complex matrix has incorrect size for type " << as_type->name);
+            }
+        } else {
+            QL_USER_ERROR("cannot cast complex matrix to type " << as_type->name);
+        }
+        return utils::make<ComplexMatrixLiteral>(
+            prim::CMatrix(ccm->value.get_data(), ccm->value.size_cols()),
+            as_type
+        );
+    } else if (auto cs = cq_expr->as_const_string()) {
+        if (as_type.empty()) {
+            as_type = infer_ql_type(ir, cqv::type_of(cq_expr));
+        }
+        if (!as_type->as_string_type()) {
+            QL_USER_ERROR("cannot cast string to type " << as_type->name);
+        }
+        return utils::make<StringLiteral>(cs->value, as_type);
+    } else if (auto cj = cq_expr->as_const_json()) {
+        if (as_type.empty()) {
+            as_type = infer_ql_type(ir, cqv::type_of(cq_expr));
+        }
+        if (!as_type->as_string_type()) {
+            QL_USER_ERROR("cannot cast JSON to type " << as_type->name);
+        }
+        return utils::make<JsonLiteral>(utils::parse_json(cj->value), as_type);
+    } else if (auto qr = cq_expr->as_qubit_refs()) {
+        if (qr->index.size() != utils::max<utils::UInt>(1, sgmq_size)) {
+            QL_USER_ERROR(
+                "unexpected number of single-gate-multiple-qubit "
+                "qubit indices specified; found " << qr->index.size() <<
+                ", expected " << utils::max<utils::UInt>(1, sgmq_size)
+            );
+        }
+        if (as_type.empty() || as_type == ir->platform->qubits->data_type) {
+            return make_qubit_ref(ir, convert_index(qr->index[sgmq_index]));
+        } else if (as_type == ir->platform->default_bit_type) {
+            return make_bit_ref(ir, convert_index(qr->index[sgmq_index]));
+        } else {
+            QL_USER_ERROR("cannot cast qubit reference to type " << as_type->name);
+        }
+    } else if (auto br = cq_expr->as_bit_refs()) {
+        if (!as_type.empty() && as_type != ir->platform->default_bit_type) {
+            QL_USER_ERROR("cannot cast bit reference to type " << as_type->name);
+        }
+        if (sgmq_size) {
+            if (br->index.size() != sgmq_size) {
+                QL_USER_ERROR(
+                    "unexpected number of single-gate-multiple-qubit "
+                    "bit indices specified; found " << br->index.size() <<
+                    ", expected " << utils::max<utils::UInt>(1, sgmq_size)
+                );
+            }
+            return make_bit_ref(ir, convert_index(br->index[sgmq_index]));
+        } else {
+            ExpressionRef expr = make_bit_ref(ir, convert_index(br->index[0]));
+            for (utils::UInt idx = 1; idx < br->index.size(); idx++) {
+                expr = make_function_call(ir, "operator&&", utils::Any<Expression>({
+                   expr, make_bit_ref(ir, convert_index(br->index[idx]))
+                }));
+            }
+            return expr;
+        }
+    } else if (auto vr = cq_expr->as_variable_ref()) {
+        auto ql_object = vr->variable->get_annotation<ObjectLink>();
+        if (!as_type.empty() && as_type != ql_object->data_type) {
+            QL_USER_ERROR(
+                "cannot cast variable '" << ql_object->name <<
+                "' to type " << as_type->name
+            );
+        }
+        return make_reference(ir, ql_object, {});
+    } else if (auto fn = cq_expr->as_function()) {
+        if (fn->has_annotation<ObjectLink>()) {
+
+            // Handle index functions for non-scalar register references.
+            auto ql_object = fn->get_annotation<ObjectLink>();
+            prim::UIntVec ql_indices;
+            for (const auto &cq_operand : fn->operands) {
+                ql_indices.push_back(convert_index(cq_operand));
+            }
+            return make_reference(ir, ql_object, ql_indices);
+
+        } else {
+
+            // Handle normal functions.
+            utils::Any<Expression> ql_operands;
+            for (const auto &cq_operand : fn->operands) {
+                ql_operands.add(convert_expression(ir, cq_operand, sgmq_size, sgmq_index));
+            }
+            return make_function_call(ir, fn->name, ql_operands);
+
+        }
+    } else {
+        QL_ICE("received unknown value node type from libqasm");
+    }
+}
+
+/**
+ * Converts a cQASM set instruction node to an OpenQL set instruction node.
+ */
+static utils::One<SetInstruction> convert_set_instruction(
+    const Ref &ir,
+    const cqs::SetInstruction &cq_set_insn
+) {
+    auto ql_lhs = convert_expression(ir, cq_set_insn.lhs).as<Reference>();
+    if (ql_lhs.empty()) {
+        QL_USER_ERROR(
+            "left-hand side of assignment is not assignable"
+        );
+    }
+    auto ql_lhs_type = get_type_of(ql_lhs);
+    if (ql_lhs_type->as_qubit_type()) {
+        QL_USER_ERROR(
+            "qubits cannot be assigned"
+        );
+    }
+    auto ql_rhs = convert_expression(ir, cq_set_insn.rhs);
+    auto ql_rhs_type = get_type_of(ql_rhs);
+    if (ql_lhs_type != ql_rhs_type) {
+        QL_USER_ERROR(
+            "type of left-hand side of assignment (" << ql_lhs_type->name << ") "
+            "does not match type of right-hand side (" << ql_rhs_type->name << ")"
+        );
+    }
+    return utils::make<SetInstruction>(ql_lhs, ql_rhs);
+}
+
+/**
  * Converts the contents of a cQASM block to an OpenQL block.
  */
 static void convert_block(
@@ -365,6 +574,283 @@ static void convert_block(
     const utils::One<BlockBase> &ql_block
 ) {
 
+    // We need to convert bundle + skip instruction representation of the
+    // schedule to cycle numbers for schedulable instructions. So track the
+    // cycle number, incrementing it on skip and the end of a bundle.
+    utils::UInt cycle = 0;
+
+    for (const auto &cq_stmt : cq_block->statements) {
+        if (auto cq_bun = cq_stmt->as_bundle_ext()) {
+            for (const auto &cq_insn_base : cq_bun->items) {
+
+                // Parse the condition.
+                auto conditional = true;
+                if (auto cb = cq_insn_base->condition->as_const_bool()) {
+                    if (cb->value) {
+                        conditional = false;
+                    }
+                }
+                ExpressionRef ql_condition;
+                if (conditional) {
+                    ql_condition = convert_expression(ir, cq_insn_base->condition, 0);
+                    auto ql_type = get_type_of(ql_condition);
+                    if (!ql_type->as_bit_type()) {
+                        QL_USER_ERROR(
+                            "type of condition (" << ql_type->name << ") is not bit-like"
+                        );
+                    }
+                }
+
+                // Build an instruction out of it, based on the type.
+                utils::List<InstructionRef> ql_insns;
+                if (auto cq_insn = cq_insn_base->as_instruction()) {
+                    if (cq_insn->name == "skip") {
+
+                        // Special skip instruction to encode advancing the
+                        // cycle counter. Must have a single static non-negative
+                        // integer operand.
+                        if (conditional) {
+                            QL_USER_ERROR(
+                                "condition not supported for this instruction"
+                            );
+                        }
+                        if (cq_insn->operands.size() != 1) {
+                            QL_USER_ERROR(
+                                "skip instructions must have a single "
+                                "constant integer operand"
+                            );
+                        }
+                        if (auto ci = cq_insn->operands[0]->as_const_int()) {
+                            if (ci->value < 0) {
+                                QL_USER_ERROR(
+                                    "skip instructions cannot have a negative "
+                                    "skip count"
+                                );
+                            }
+                            cycle += (utils::UInt)ci->value;
+                        } else {
+                            QL_USER_ERROR(
+                                "skip instructions must have a single "
+                                "constant integer operand"
+                            );
+                        }
+
+                    } else if (cq_insn->name == "pragma") {
+
+                        // Special pragma instruction to attach annotations to.
+                        // Currently entirely ignored by OpenQL outside of the
+                        // header (i.e. the default subcircuit, which is parsed
+                        // separately) So this is no-op.
+
+                    } else {
+
+                        // Handle normal instructions.
+                        utils::UInt sgmq_size = 1;
+                        for (const auto &cq_operand : cq_insn->operands) {
+                            if (auto qr = cq_operand->as_qubit_refs()) {
+                                sgmq_size = qr->index.size();
+                                break;
+                            } else if (auto br = cq_operand->as_bit_refs()) {
+                                sgmq_size = br->index.size();
+                                break;
+                            }
+                        }
+                        for (utils::UInt sgmq_index = 0; sgmq_index < sgmq_size; sgmq_index++) {
+                            utils::Any<Expression> ql_operands;
+                            for (const auto &cq_operand : cq_insn->operands) {
+                                ql_operands.add(convert_expression(ir, cq_operand, sgmq_size, sgmq_index));
+                            }
+                            ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
+                        }
+
+                    }
+                } else if (auto cq_set_insn = cq_insn_base->as_set_instruction()) {
+
+                    // Handle set instructions.
+                    ql_insns.push_back(convert_set_instruction(ir, *cq_set_insn));
+
+                } else if (auto cq_goto_insn = cq_insn_base->as_goto_instruction()) {
+
+                    // Handle goto instructions.
+                    ql_insns.push_back(utils::make<GotoInstruction>(
+                        cq_goto_insn->target->get_annotation<utils::One<Block>>()
+                    ));
+
+                } else {
+                    QL_ICE("received unknown instruction node type from libqasm");
+                }
+
+                // If this cQASM instruction produced an OpenQL instruction,
+                // complete it, and then add it to the end of the block.
+                for (const auto &ql_insn : ql_insns) {
+                    ql_insn->cycle = cycle;
+                    if (auto ql_cond_insn = ql_insn->as_conditional_instruction()) {
+                        if (ql_cond_insn->condition.empty()) {
+                            if (!ql_condition.empty()) {
+                                ql_cond_insn->condition = ql_condition.clone();
+                            } else {
+                                ql_cond_insn->condition = make_bit_lit(ir, true);
+                            }
+                        }
+                    } else if (!ql_condition.empty()) {
+                        QL_USER_ERROR(
+                            "condition not supported for this instruction"
+                        );
+                    }
+                    ql_block->statements.add(ql_insn);
+                }
+
+            }
+
+            // The cycle counter increments at the end of each bundle.
+            cycle++;
+
+        } else if (auto cq_if_else = cq_stmt->as_if_else()) {
+
+            // Handle if-else chain.
+            auto ql_if_else = utils::make<IfElse>();
+
+            // Handle all the if-else branches.
+            for (const auto &cq_branch : cq_if_else->branches) {
+                auto ql_branch = utils::make<IfElseBranch>();
+
+                // Convert condition.
+                ql_branch->condition = convert_expression(ir, cq_branch->condition);
+                auto ql_type = get_type_of(ql_branch->condition);
+                if (!ql_type->as_bit_type()) {
+                    QL_USER_ERROR(
+                        "type of if condition (" + ql_type->name + ") is not bit-like"
+                    );
+                }
+
+                // Convert body.
+                ql_branch->body.emplace();
+                convert_block(ir, cq_branch->body, ql_branch->body);
+
+                ql_if_else->branches.add(ql_branch);
+            }
+
+            // Convert final else block.
+            if (!cq_if_else->otherwise.empty()) {
+                ql_if_else->otherwise.emplace();
+                convert_block(ir, cq_if_else->otherwise, ql_if_else->otherwise);
+            }
+
+            // Add to block.
+            ql_block->statements.add(ql_if_else);
+
+        } else if (auto cq_for_loop = cq_stmt->as_for_loop()) {
+
+            // Handle for loop.
+            auto ql_for_loop = utils::make<ForLoop>();
+
+            // Convert initialize assignment.
+            if (!cq_for_loop->initialize.empty()) {
+                ql_for_loop->initialize = convert_set_instruction(ir, *cq_for_loop->initialize);
+            }
+
+            // Convert loop condition.
+            ql_for_loop->condition = convert_expression(ir, cq_for_loop->condition);
+            auto ql_type = get_type_of(ql_for_loop->condition);
+            if (!ql_type->as_bit_type()) {
+                QL_USER_ERROR(
+                    "type of for loop condition (" + ql_type->name + ") is not bit-like"
+                );
+            }
+
+            // Convert update assignment.
+            if (!cq_for_loop->update.empty()) {
+                ql_for_loop->update = convert_set_instruction(ir, *cq_for_loop->update);
+            }
+
+            // Convert body.
+            ql_for_loop->body.emplace();
+            convert_block(ir, cq_for_loop->body, ql_for_loop->body);
+
+            // Add to block.
+            ql_block->statements.add(ql_for_loop);
+
+        } else if (auto cq_foreach_loop = cq_stmt->as_foreach_loop()) {
+
+            // Convert foreach loop.
+            auto ql_static_loop = utils::make<StaticLoop>();
+
+            // Convert the loop variable reference.
+            ql_static_loop->lhs = convert_expression(ir, cq_foreach_loop->lhs).as<Reference>();
+            if (ql_static_loop->lhs.empty()) {
+                QL_USER_ERROR(
+                    "loop variable is not assignable"
+                );
+            }
+
+            // Convert the integer literals.
+            auto ql_type = get_type_of(ql_static_loop->lhs);
+            ql_static_loop->frm = make_int_lit(ir, cq_foreach_loop->frm, ql_type);
+            ql_static_loop->to = make_int_lit(ir, cq_foreach_loop->to, ql_type);
+
+            // Convert body.
+            ql_static_loop->body.emplace();
+            convert_block(ir, cq_foreach_loop->body, ql_static_loop->body);
+
+            // Add to block.
+            ql_block->statements.add(ql_static_loop);
+
+        } else if (auto cq_while_loop = cq_stmt->as_while_loop()) {
+
+            // Handle while loop.
+            auto ql_for_loop = utils::make<ForLoop>();
+
+            // Convert loop condition.
+            ql_for_loop->condition = convert_expression(ir, cq_while_loop->condition);
+            auto ql_type = get_type_of(ql_for_loop->condition);
+            if (!ql_type->as_bit_type()) {
+                QL_USER_ERROR(
+                    "type of while loop condition (" + ql_type->name + ") is not bit-like"
+                );
+            }
+
+            // Convert body.
+            ql_for_loop->body.emplace();
+            convert_block(ir, cq_while_loop->body, ql_for_loop->body);
+
+            // Add to block.
+            ql_block->statements.add(ql_for_loop);
+
+        } else if (auto cq_repeat_until = cq_stmt->as_repeat_until_loop()) {
+
+            // Handle while loop.
+            auto ql_for_loop = utils::make<RepeatUntilLoop>();
+
+            // Convert body.
+            ql_for_loop->body.emplace();
+            convert_block(ir, cq_repeat_until->body, ql_for_loop->body);
+
+            // Convert loop condition.
+            ql_for_loop->condition = convert_expression(ir, cq_repeat_until->condition);
+            auto ql_type = get_type_of(ql_for_loop->condition);
+            if (!ql_type->as_bit_type()) {
+                QL_USER_ERROR(
+                    "type of repeat-until loop condition (" + ql_type->name + ") is not bit-like"
+                );
+            }
+
+            // Add to block.
+            ql_block->statements.add(ql_for_loop);
+
+        } else if (cq_stmt->as_break_statement()) {
+
+            // Handle break statement.
+            ql_block->statements.emplace<BreakStatement>();
+
+        } else if (cq_stmt->as_continue_statement()) {
+
+            // Handle continue statement.
+            ql_block->statements.emplace<ContinueStatement>();
+
+        } else {
+            QL_ICE("received unknown statement node type from libqasm");
+        }
+    }
 }
 
 /**
@@ -409,7 +895,7 @@ void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
             // file includes a qubits statement, but that's fine. We'll just
             // throw an error if the user uses an out-of-range qubit or bit.
             if (obj->shape.size() != 1) {
-                throw utils::Exception("main qubit register must be one-dimensional");
+                QL_ICE("main qubit register must be one-dimensional");
             }
             auto q = cqt::make<cqv::QubitRefs>();
             auto b = cqt::make<cqv::BitRefs>();
@@ -443,7 +929,7 @@ void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
         }
     }
 
-    // Add builtin functions.
+    // Add regular builtin functions.
     // NOTE: any builtin function that shares a prototype with a default
     // constant-propagation function from libqasm is overridden. That means that
     // any constant propagation from that point onwards will need to be handled
@@ -480,7 +966,7 @@ void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
             QL_EOUT(error);
             errors << "\n  " << error;
         }
-        throw utils::UserError(errors.str());
+        QL_USER_ERROR(errors.str());
     }
     auto cq_program = res.root;
 
@@ -542,7 +1028,7 @@ void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
                 ql_type = parse_type_annotation(ir, annot);
             } else if (annot->operation == "temp") {
                 if (!annot->operands.empty()) {
-                    throw utils::UserError("@ql.temp does not take any arguments");
+                    QL_USER_ERROR("@ql.temp does not take any arguments");
                 }
                 is_temp = true;
             }
@@ -616,14 +1102,14 @@ void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
             annot->set_annotation<Used>({});
             auto x = find_last_goto_instruction(cq_program->subcircuits[0]);
             if (!x.first || !x.second) {
-                throw utils::UserError(
+                QL_USER_ERROR(
                     "subcircuit marked @ql.entry must consist of exactly "
                     "one unconditional goto instruction"
                 );
             }
             cq_entry = x.first->target;
             if (cq_entry.links_to(cq_program->subcircuits[0])) {
-                throw utils::UserError(
+                QL_USER_ERROR(
                     "subcircuit marked @ql.entry cannot jump to itself"
                 );
             }
@@ -639,7 +1125,7 @@ void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
         if (auto annot = find_annotation(cq_program->subcircuits.back()->annotations, "exit")) {
             annot->set_annotation<Used>({});
             if (!cq_program->subcircuits.back()->body->statements.empty()) {
-                throw utils::UserError(
+                QL_USER_ERROR(
                     "subcircuit marked @ql.exit must be empty"
                 );
             }
@@ -682,7 +1168,7 @@ void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
                     // The goto instruction is necessarily the last instruction
                     // in the last statement, which must be BundleExt for it to
                     // be there. Remove it because we've used it now.
-                    cq_subc->body->statements[0].as<cqs::BundleExt>()->items.remove(-1);
+                    cq_subc->body->statements.back().as<cqs::BundleExt>()->items.remove(-1);
 
                 }
 
@@ -700,7 +1186,6 @@ void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
 
     // Looks like conversion was successful.
     ir->program = ql_program;
-    ir->dump_seq();
     check_consistency(ir);
 
 }

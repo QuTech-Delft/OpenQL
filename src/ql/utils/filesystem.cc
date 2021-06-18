@@ -119,7 +119,7 @@ void make_dirs(const Str &path) {
 
     // Try to make the given directory.
     if (mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) {
-        throw Exception("failed to make directory \"" + path + "\"", true);
+        QL_SYSTEM_ERROR("failed to make directory \"" << path << "\"");
     }
 
 }
@@ -167,7 +167,7 @@ void OutFile::close() {
  */
 void OutFile::check() {
     if (ofs.fail()) {
-        throw Exception("failed to write file \"" + path + "\"", true);
+        QL_SYSTEM_ERROR("failed to write file \"" << path << "\"");
     }
 }
 
@@ -210,7 +210,7 @@ void InFile::close() {
  */
 void InFile::check() {
     if (ifs.fail()) {
-        throw Exception("failed to write file \"" + path + "\"", true);
+        QL_SYSTEM_ERROR("failed to write file \"" << path << "\"");
     }
 }
 

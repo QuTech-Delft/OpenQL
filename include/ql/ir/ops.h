@@ -218,30 +218,30 @@ utils::UInt get_num_qubits(const Ref &ir);
 utils::Bool is_assignable_or_qubit(const ExpressionRef &expr);
 
 /**
- * Makes an integer literal using the default integer type.
+ * Makes an integer literal using the given or default integer type.
  */
-utils::One<IntLiteral> make_default_int_lit(const Ref &ir, utils::Int i);
+utils::One<IntLiteral> make_int_lit(const Ref &ir, utils::Int i, const DataTypeLink &type = {});
 
 /**
- * Makes an integer literal using the default integer type.
+ * Makes an integer literal using the given or default integer type.
  */
-utils::One<IntLiteral> make_default_int_lit(const Ref &ir, utils::UInt i);
+utils::One<IntLiteral> make_uint_lit(const Ref &ir, utils::UInt i, const DataTypeLink &type = {});
 
 /**
- * Makes an bit literal using the default bit type.
+ * Makes an bit literal using the given or default bit type.
  */
-utils::One<BitLiteral> make_default_bit_lit(const Ref &ir, utils::Bool b);
+utils::One<BitLiteral> make_bit_lit(const Ref &ir, utils::Bool b, const DataTypeLink &type = {});
 
 /**
  * Makes a qubit reference to the main qubit register.
  */
-utils::One<Reference> make_default_qubit_ref(const Ref &ir, utils::UInt idx);
+utils::One<Reference> make_qubit_ref(const Ref &ir, utils::UInt idx);
 
 /**
  * Makes a reference to the implicit measurement bit associated with a qubit in
  * the main qubit register.
  */
-utils::One<Reference> make_default_bit_ref(const Ref &ir, utils::UInt idx);
+utils::One<Reference> make_bit_ref(const Ref &ir, utils::UInt idx);
 
 /**
  * Makes a reference to the specified object using literal indices.
