@@ -85,7 +85,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             k.gate(u, [1,2])
 
-        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 2 and not 1')
+        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unknown error: Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 2 and not 1')
 
 #    def test_unitary_wrongnumberofqubits_toofew(self):
 #        num_qubits = 3
@@ -101,7 +101,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 #        with self.assertRaises(Exception) as cm:
 #            k.gate(u, [0])
 #
-#        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 1 and not 2')
+#        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unknown error: Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 1 and not 2')
 
     @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_I(self):
@@ -271,7 +271,7 @@ class Test_conjugated_kernel(unittest.TestCase):
             add_kernel(k)
             p.compile()
 
-        self.assertEqual(str(cm.exception).split('\n\n', maxsplit=1)[0], "Error: Unitary 'WRONG' is not a unitary matrix. Cannot be decomposed!(0,0) (0,0)\n(0,0) (0,0)")
+        self.assertEqual(str(cm.exception).split('\n\n', maxsplit=1)[0], "Unknown error: Error: Unitary 'WRONG' is not a unitary matrix. Cannot be decomposed!(0,0) (0,0)\n(0,0) (0,0)")
   
   # input for the unitary decomposition needs to be an array
     def test_unitary_decompose_matrixinsteadofarray(self):
