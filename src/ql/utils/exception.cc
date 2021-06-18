@@ -32,7 +32,7 @@ static std::shared_ptr<backward::StackTrace> stack_trace() noexcept {
             static size_t skip = 0;
             if (!skip) {
                 backward::TraceResolver tr;
-                tr.load_stacktrace(trace);
+                tr.load_stacktrace(*trace);
                 for (size_t i = 0; i < trace->size(); i++) {
                     auto fn = tr.resolve((*trace)[i]);
                     if (
