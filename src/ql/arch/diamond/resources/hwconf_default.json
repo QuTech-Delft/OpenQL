@@ -236,6 +236,10 @@
     "rabi_check": {
       "duration": 300,
       "diamond_type": "initial_checks"
+    },
+
+    "wait": {
+      "duration": 1
     }
   }
 }

@@ -409,7 +409,7 @@ utils::Int GenerateMicrocodePass::run(
                 } else if (gate->name == "wait") {
                     // Implements the wait x-cycles instruction.
                     outfile << "wait "
-                            << gate->operands.to_string("", ", ", "");
+                            << to_string(gate->duration) << "\n";
                 } else if (gate->name == "qnop") {
                     // Quantum nop instruction
                     outfile << "wait 1" << "\n";
