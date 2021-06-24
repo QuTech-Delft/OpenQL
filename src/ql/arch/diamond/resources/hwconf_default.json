@@ -240,6 +240,26 @@
 
     "wait": {
       "duration": 1
+    },
+
+    "decouple": {
+      "duration": 300,
+      "diamond_type": "calibration"
+    },
+
+    "cal_measure": {
+      "duration": 300,
+      "diamond_type": "calibration"
+    },
+
+    "cal_pi": {
+      "duration": 300,
+      "diamond_type": "calibration"
+    },
+
+    "cal_halfpi": {
+      "duration": 300,
+      "diamond_type": "calibration"
     }
   }
 }
