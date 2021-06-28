@@ -454,10 +454,110 @@ utils::Int GenerateMicrocodePass::run(
 
                    outfile << "calculate_readouttime(R0, R1, R2, R3)" << "\n"; //function still needs to be implemented/designed
 
+                   labelcount = labelcount+4;
+
                } else if (gate->name == "cal_pi") {
                    // code for pi-rotation calibration
+                   Str qubit_number = to_string(gate->operands[0]);
+                   const Str threshold = "0";
+                   Str count = to_string(labelcount);
+                   Str lab1 = to_string(labelcount+1);
+                   Str lab2 = to_string(labelcount+2);
+
+                   // init qubit to 0
+                   outfile << detail::label(count) << "\n";
+                   outfile << detail::switchOn(gate->operands[0]) << "\n";
+                   outfile << detail::loadimm("0", "photonReg", qubit_number)
+                           << "\n";
+                   outfile << detail::excite_mw("1", "100", "200", "0", "60",
+                                                gate->operands[0]) << "\n";
+                   outfile << detail::mov("photonReg", qubit_number, "R",
+                                          qubit_number) << "\n";
+                   outfile << detail::switchOff(gate->operands[0]) << "\n";
+                   outfile
+                       << detail::branch("R", qubit_number, ">", "", threshold,
+                                         "LAB", count) << "\n";
+
+
+                   outfile << detail::loadimm("0", "R", to_string(gate->operands[0])) << "\n";
+                   outfile << detail::loadimm("0", "R", to_string(gate->operands[0]+1)) << "\n";
+                   outfile << detail::loadimm("0", "R", to_string(gate->operands[0]+2)) << "\n";
+                   outfile << detail::label(lab1) << "\n";
+                   outfile << detail::label(lab2) << "\n";
+                   outfile << detail::switchOn(gate->operands[0]) << "\n";
+                   outfile << detail::excite_mw("0", "1000", "200", "0", "R"+to_string(gate->operands[0]), gate->operands[0]) << "\n";
+                   outfile << detail::switchOff(gate->operands[0]) << "\n";
+                   outfile << detail::addimm("1", "R", to_string(gate->operands[0]+1)) << "\n";
+                   outfile << detail::branch("R", to_string(gate->operands[0]+1), "<", "", "12", "LAB", lab1) << "\n";
+                   outfile << "measure_fidelity(R0) \n";
+                   outfile << detail::addimm("0.1", "R", to_string(gate->operands[0])) << "\n";
+                   outfile << detail::addimm("1", "R", to_string(gate->operands[0]+2)) << "\n";
+                   outfile << detail::branch("R", to_string(gate->operands[0]+2), ">", "", "10", "LAB", lab2) << "\n";
+                   outfile << "calculate_minimum_fidelity() \n";
+
+                   labelcount = labelcount+2;
                } else if (gate->name == "cal_halfpi") {
                    // code for pi/2-rotation calibration
+                   Str qubit_number = to_string(gate->operands[0]);
+                   const Str threshold = "0";
+                   Str count = to_string(labelcount);
+                   Str lab1 = to_string(labelcount+1);
+                   Str lab2 = to_string(labelcount+2);
+
+                   // init qubit to 0
+                   outfile << detail::label(count) << "\n";
+                   outfile << detail::switchOn(gate->operands[0]) << "\n";
+                   outfile << detail::loadimm("0", "photonReg", qubit_number)
+                           << "\n";
+                   outfile << detail::excite_mw("1", "100", "200", "0", "60",
+                                                gate->operands[0]) << "\n";
+                   outfile << detail::mov("photonReg", qubit_number, "R",
+                                          qubit_number) << "\n";
+                   outfile << detail::switchOff(gate->operands[0]) << "\n";
+                   outfile
+                       << detail::branch("R", qubit_number, ">", "", threshold,
+                                         "LAB", count) << "\n";
+
+                   outfile << detail::loadimm("0", "R", to_string(gate->operands[0])) << "\n";
+                   outfile << detail::loadimm("0", "R", to_string(gate->operands[0]+1)) << "\n";
+                   outfile << detail::loadimm("0", "R", to_string(gate->operands[0]+2)) << "\n";
+                   outfile << detail::label(lab1) << "\n";
+                   outfile << detail::switchOn(gate->operands[0]) << "\n";
+                   outfile << detail::excite_mw("0", "500", "200", "0", "R"+to_string(gate->operands[0]), gate->operands[0]) << "\n";
+                   outfile << detail::switchOff(gate->operands[0]) << "\n";
+
+                   outfile << detail::addimm("1", "R", to_string(gate->operands[0]+1)) << "\n";
+                   outfile << detail::branch("R", to_string(gate->operands[0]+1), "<", "", "7", "LAB", lab1) << "\n";
+                   outfile << "measure_fidelity(R0) \n";
+
+                   // init qubit to 0
+                   outfile << detail::label(count) << "\n";
+                   outfile << detail::switchOn(gate->operands[0]) << "\n";
+                   outfile << detail::loadimm("0", "photonReg", qubit_number)
+                           << "\n";
+                   outfile << detail::excite_mw("1", "100", "200", "0", "60",
+                                                gate->operands[0]) << "\n";
+                   outfile << detail::mov("photonReg", qubit_number, "R",
+                                          qubit_number) << "\n";
+                   outfile << detail::switchOff(gate->operands[0]) << "\n";
+                   outfile
+                       << detail::branch("R", qubit_number, ">", "", threshold,
+                                         "LAB", count) << "\n";
+
+                   outfile << detail::loadimm("0", "R", to_string(gate->operands[0])) << "\n";
+                   outfile << detail::loadimm("0", "R", to_string(gate->operands[0]+1)) << "\n";
+                   outfile << detail::loadimm("0", "R", to_string(gate->operands[0]+2)) << "\n";
+                   outfile << detail::label(lab2) << "\n";
+                   outfile << detail::switchOn(gate->operands[0]) << "\n";
+                   outfile << detail::excite_mw("0", "500", "200", "0", "R"+to_string(gate->operands[0]), gate->operands[0]) << "\n";
+                   outfile << detail::excite_mw("0", "1000", "200", "0", "60", gate->operands[0]) << "\n";
+                   outfile << detail::switchOff(gate->operands[0]) << "\n";
+
+                   outfile << detail::addimm("1", "R", to_string(gate->operands[0]+1)) << "\n";
+                   outfile << detail::branch("R", to_string(gate->operands[0]+1), "<", "", "7", "LAB", lab2) << "\n";
+                   outfile << "measure_fidelity(R0) \n";
+
+                   labelcount = labelcount + 3;
                }
             } else {
                 if (gate->name == "measure") {
