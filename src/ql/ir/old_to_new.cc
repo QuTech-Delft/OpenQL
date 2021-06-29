@@ -646,7 +646,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     auto fn = add_function_type(ir, utils::make<FunctionType>("operator!"));
     fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
     fn->return_type = bit_type;
-    for (const auto &op : utils::Vec<utils::Str>({"&&", "||", "^"})) {
+    for (const auto &op : utils::Vec<utils::Str>({"&&", "||", "==", "!="})) {
         fn = add_function_type(ir, utils::make<FunctionType>("operator" + op));
         fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
         fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
@@ -687,6 +687,10 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Populate platform JSON data.
     ir->platform->data = old->platform_config;
+
+    // Attach the old platform structure as an annotation. This is used when
+    // converting back to the old IR structure.
+    ir->platform->set_annotation<compat::PlatformRef>(old);
 
     // Check the result.
     QL_DOUT("Result of old->new IR platform conversion:");
@@ -750,8 +754,8 @@ static ExpressionRef convert_classical(
         static const utils::Map<utils::Str, utils::Str> OP_TO_FN{
             {"add", "operator+"},
             {"sub", "operator-"},
-            {"and", "operator&&"},
-            {"or", "operator||"},
+            {"and", "operator&"},
+            {"or", "operator|"},
             {"xor", "operator^"},
             {"eq", "operator=="},
             {"ne", "operator!="},
@@ -851,97 +855,92 @@ static InstructionRef convert_gate(
         // beyond that is the b register used.
         utils::Any<Expression> breg_operands;
         ExpressionRef condition;
-        if (!gate->breg_operands.empty() || !gate->cond_operands.empty()) {
-            auto breg_object = find_physical_object(ir, "breg");
-            auto num_qubits = get_num_qubits(ir);
-            
-            // Convert breg operands.
-            for (auto idx : gate->breg_operands) {
-                if (idx < num_qubits) {
-                    breg_operands.add(make_bit_ref(ir, idx));
-                } else {
-                    QL_ASSERT(!breg_object.empty());
-                    breg_operands.add(make_reference(ir, breg_object, {idx - num_qubits}));
-                }
-            }
-            
-            // Convert condition.
-            utils::Any<Expression> cond_operands;
-            for (auto idx : gate->cond_operands) {
-                if (idx < num_qubits) {
-                    cond_operands.add(make_bit_ref(ir, idx));
-                } else {
-                    QL_ASSERT(!breg_object.empty());
-                    cond_operands.add(make_reference(ir, breg_object, {idx - num_qubits}));
-                }
-            }
-            switch (gate->condition) {
-                case compat::ConditionType::ALWAYS:
-                    // Leave empty; condition will be inferred by
-                    // make_instruction(). Conversely, filling it out here would
-                    // throw an exception for instruction types that cannot be
-                    // made conditional.
-                    break;
-                case compat::ConditionType::NEVER:
-                    condition = make_bit_lit(ir, false);
-                    break;
-                case compat::ConditionType::UNARY:
-                    condition = cond_operands[0];
-                    break;
-                case compat::ConditionType::NOT:
-                    condition = make_function_call(
-                        ir, "operator!",
-                        {cond_operands[0]}
-                    );
-                    break;
-                case compat::ConditionType::AND:
-                    condition = make_function_call(
-                        ir, "operator&&",
-                        {cond_operands[0], cond_operands[1]}
-                    );
-                    break;
-                case compat::ConditionType::NAND:
-                    condition = make_function_call(
-                        ir, "operator!",
-                        {make_function_call(
-                            ir, "operator&&",
-                            {cond_operands[0], cond_operands[1]}
-                        )}
-                    );
-                    break;
-                case compat::ConditionType::OR:
-                    condition = make_function_call(
-                        ir, "operator||",
-                        {cond_operands[0], cond_operands[1]}
-                    );
-                    break;
-                case compat::ConditionType::NOR:
-                    condition = make_function_call(
-                        ir, "operator!",
-                        {make_function_call(
-                            ir, "operator||",
-                            {cond_operands[0], cond_operands[1]}
-                        )}
-                    );
-                    break;
-                case compat::ConditionType::XOR:
-                    condition = make_function_call(
-                        ir, "operator^",
-                        {cond_operands[0], cond_operands[1]}
-                    );
-                    break;
-                case compat::ConditionType::NXOR:
-                    condition = make_function_call(
-                        ir, "operator!",
-                        {make_function_call(
-                            ir, "operator^",
-                            {cond_operands[0], cond_operands[1]}
-                        )}
-                    );
-                    break;
+        auto breg_object = find_physical_object(ir, "breg");
+        auto num_qubits = get_num_qubits(ir);
+
+        // Convert breg operands.
+        for (auto idx : gate->breg_operands) {
+            if (idx < num_qubits) {
+                breg_operands.add(make_bit_ref(ir, idx));
+            } else {
+                QL_ASSERT(!breg_object.empty());
+                breg_operands.add(make_reference(ir, breg_object, {idx - num_qubits}));
             }
         }
-        
+
+        // Convert condition.
+        utils::Any<Expression> cond_operands;
+        for (auto idx : gate->cond_operands) {
+            if (idx < num_qubits) {
+                cond_operands.add(make_bit_ref(ir, idx));
+            } else {
+                QL_ASSERT(!breg_object.empty());
+                cond_operands.add(make_reference(ir, breg_object, {idx - num_qubits}));
+            }
+        }
+        switch (gate->condition) {
+            case compat::ConditionType::ALWAYS:
+                // Leave empty; condition will be inferred by
+                // make_instruction(). Conversely, filling it out here would
+                // throw an exception for instruction types that cannot be
+                // made conditional.
+                break;
+            case compat::ConditionType::NEVER:
+                condition = make_bit_lit(ir, false);
+                break;
+            case compat::ConditionType::UNARY:
+                condition = cond_operands[0];
+                break;
+            case compat::ConditionType::NOT:
+                condition = make_function_call(
+                    ir, "operator!",
+                    {cond_operands[0]}
+                );
+                break;
+            case compat::ConditionType::AND:
+                condition = make_function_call(
+                    ir, "operator&&",
+                    {cond_operands[0], cond_operands[1]}
+                );
+                break;
+            case compat::ConditionType::NAND:
+                condition = make_function_call(
+                    ir, "operator!",
+                    {make_function_call(
+                        ir, "operator&&",
+                        {cond_operands[0], cond_operands[1]}
+                    )}
+                );
+                break;
+            case compat::ConditionType::OR:
+                condition = make_function_call(
+                    ir, "operator||",
+                    {cond_operands[0], cond_operands[1]}
+                );
+                break;
+            case compat::ConditionType::NOR:
+                condition = make_function_call(
+                    ir, "operator!",
+                    {make_function_call(
+                        ir, "operator||",
+                        {cond_operands[0], cond_operands[1]}
+                    )}
+                );
+                break;
+            case compat::ConditionType::XOR:
+                condition = make_function_call(
+                    ir, "operator!=",
+                    {cond_operands[0], cond_operands[1]}
+                );
+                break;
+            case compat::ConditionType::NXOR:
+                condition = make_function_call(
+                    ir, "operator==",
+                    {cond_operands[0], cond_operands[1]}
+                );
+                break;
+        }
+
         // Use a somewhat arbitrary set of rules to convert from the old gate
         // types to the new ones, considering that the semantics of gate->type()
         // and name were rather arbitrary to begin with. Start with special
@@ -1191,8 +1190,23 @@ static utils::Str convert_kernels(
 
                 }
 
-                // Save kernel name and advance to the next kernel.
+                // Save kernel name.
                 name = old->kernels[idx]->name;
+                if (!block->has_annotation<KernelName>()) {
+                    block->set_annotation<KernelName>({name});
+                }
+
+                // Save cycle validity.
+                if (!block->has_annotation<KernelCyclesValid>()) {
+                    block->set_annotation<KernelCyclesValid>({
+                        old->kernels[idx]->cycles_valid
+                    });
+                } else {
+                    block->get_annotation<KernelCyclesValid>().valid &=
+                        old->kernels[idx]->cycles_valid;
+                }
+
+                // Advance to the next kernel.
                 idx++;
                 break;
             }
@@ -1282,7 +1296,7 @@ static utils::Str convert_kernels(
                     else_block.emplace();
                     do {
                         auto new_name = convert_kernels(ir, old, idx, else_block);
-                    if (name.empty()) name = new_name;
+                        if (name.empty()) name = new_name;
                     } while (old->kernels[idx]->type != compat::KernelType::ELSE_END);
 
                     // Skip past the ELSE_END.
@@ -1344,6 +1358,11 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
     ir->program.emplace();
     ir->program->name = old->name;
     ir->program->unique_name = old->unique_name;
+    ir->program->set_annotation<ObjectUsage>({
+        old->qubit_count,
+        old->creg_count,
+        old->breg_count
+    });
 
     // Convert the kernels.
     utils::Set<utils::Str> names;

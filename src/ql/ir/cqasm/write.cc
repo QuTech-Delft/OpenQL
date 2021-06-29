@@ -31,6 +31,11 @@ class Writer : public Visitor<void> {
     utils::Int indent = 0;
 
     /**
+     * Whether to include a pragma with the platform JSON data.
+     */
+    utils::Bool include_platform;
+
+    /**
      * Starts a Line, after updating the indentation level by adding
      * `indent_delta` to it.
      */
@@ -123,11 +128,13 @@ public:
      * Constructs a writer for the given stream.
      */
     Writer(
+        utils::Bool include_platform = false,
         std::ostream &os = std::cout,
         const utils::Str &line_prefix = ""
     ) :
         os(os),
         line_prefix(line_prefix),
+        include_platform(include_platform),
         names({
 
             // cQASM 1.2 keywords:
@@ -201,11 +208,13 @@ public:
         }
 
         // Add a pragma with the platform JSON data.
-        auto s = node.data->dump(2);
-        QL_ASSERT(utils::starts_with(s, "{"));
-        QL_ASSERT(utils::ends_with(s, "}"));
-        s = std::regex_replace(s.substr(1, s.size() - 2), std::regex("\n"), "\n" + line_prefix);
-        os << sl() << "pragma @ql.platform({|" << s.substr() << "|})" << el(1);
+        if (include_platform) {
+            auto s = node.data->dump(2);
+            QL_ASSERT(utils::starts_with(s, "{"));
+            QL_ASSERT(utils::ends_with(s, "}"));
+            s = std::regex_replace(s.substr(1, s.size() - 2), std::regex("\n"), "\n" + line_prefix);
+            os << sl() << "pragma @ql.platform({|" << s.substr() << "|})" << el(1);
+        }
 
     }
 
@@ -821,8 +830,13 @@ public:
  * Writes a cQASM 1.2 representation of the IR to the given stream with the
  * given line prefix.
  */
-void write(const Ref &ir, std::ostream &os, const utils::Str &line_prefix) {
-    Writer w{os, line_prefix};
+void write(
+    const Ref &ir,
+    utils::Bool include_platform,
+    std::ostream &os,
+    const utils::Str &line_prefix
+) {
+    Writer w{include_platform, os, line_prefix};
     ir->visit(w);
 }
 

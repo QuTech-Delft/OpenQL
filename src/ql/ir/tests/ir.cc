@@ -1,7 +1,9 @@
 #include "ql/ir/old_to_new.h"
+#include "ql/ir/new_to_old.h"
 #include "ql/ir/ops.h"
 #include "ql/ir/cqasm/write.h"
 #include "ql/ir/cqasm/read.h"
+#include "ql/pass/io/cqasm/report.h"
 
 using namespace ql;
 
@@ -53,11 +55,13 @@ int main() {
     ir->program->objects.emplace<ir::VariableObject>("hello", ir::add_type<ir::IntType>(ir, "int64", true, 64));
 
     utils::StrStrm ss;
-    ir::cqasm::write(ir, ss);
-    ir->program.reset();
-    ir::cqasm::read(ir, ss.str());
-    ss << "\n*** after read/write ***\n\n";
-    ir::cqasm::write(ir, ss);
+    ir::cqasm::write(ir, false, ss);
+    //ir->program.reset();
+    //ir::cqasm::read(ir, ss.str());
+    //ss << "\n*** after read/write ***\n\n";
+    //ir::cqasm::write(ir, false, ss);
+    ss << "\n*** after conversion to old and back to new ***\n\n";
+    ir::cqasm::write(ir::convert_old_to_new(ir::convert_new_to_old(ir)), false, ss);
 
     std::cout << ss.str() << std::endl;
 

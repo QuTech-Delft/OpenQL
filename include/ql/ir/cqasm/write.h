@@ -16,6 +16,7 @@ namespace cqasm {
  */
 void write(
     const Ref &ir,
+    utils::Bool include_platform = false,
     std::ostream &os = std::cout,
     const utils::Str &line_prefix = ""
 );

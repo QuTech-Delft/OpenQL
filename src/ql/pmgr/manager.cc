@@ -8,8 +8,10 @@
 #include "ql/com/options.h"
 #include "ql/arch/architecture.h"
 #include "ql/ir/old_to_new.h"
+#include "ql/ir/new_to_old.h"
 #include "ql/ir/cqasm/write.h"
 #include "ql/ir/cqasm/read.h"
+#include "ql/pass/io/cqasm/report.h"
 
 namespace ql {
 namespace pmgr {
@@ -879,14 +881,24 @@ void Manager::compile(const ir::compat::ProgramRef &program) {
     // Ensure that all passes are constructed.
     construct();
 
-    // TODO
-    auto ir = ir::convert_old_to_new(program);
+    // TODO: just testing conversions right now.
     utils::StrStrm ss;
-    ir::cqasm::write(ir, ss);
-    ir::cqasm::read(ir, ss.str());
+    pass::io::cqasm::report::dump(program, ss);
+    std::cerr << "input program in old IR:\n" << ss.str() << std::endl;
+    auto ir = ir::convert_old_to_new(program);
+
+    ss.str("");
+    ir::cqasm::write(ir, false, ss);
+    std::cerr << "input program in new IR:\n" << ss.str() << std::endl;
+    //ir::cqasm::read(ir, ss.str());
+
+    auto program2 = ir::convert_new_to_old(ir);
+    ss.str("");
+    pass::io::cqasm::report::dump(program2, ss);
+    std::cerr << "input program converted back to old IR:\n" << ss.str() << std::endl;
 
     // Compile the program.
-    root->compile(program, "");
+    root->compile(program2, "");
 
 }
 

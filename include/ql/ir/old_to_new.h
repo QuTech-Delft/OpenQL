@@ -12,6 +12,58 @@ namespace ql {
 namespace ir {
 
 /**
+ * Annotation placed on the Program node to indicate how many qubits, cregs, and
+ * bregs were used in the original program. This information would otherwise be
+ * lost.
+ */
+struct ObjectUsage {
+
+    /**
+     * The number of qubits used by the program.
+     */
+    utils::UInt num_qubits;
+
+    /**
+     * The number of cregs used by the program.
+     */
+    utils::UInt num_cregs;
+
+    /**
+     * The number of bregs used by the program.
+     */
+    utils::UInt num_bregs;
+
+};
+
+/**
+ * Annotation placed on SubBlock nodes with the original name of the kernel.
+ */
+struct KernelName {
+
+    /**
+     * The original name of the kernel.
+     */
+    utils::Str name;
+
+};
+
+/**
+ * Annotation placed on BlockBase nodes to indicate cycle validity of the
+ * original kernel.
+ */
+struct KernelCyclesValid {
+
+    /**
+     * Whether the cycle numbers were valid when the kernel was converted to a
+     * block. Note that cycle numbers in the new IR must always be valid; this
+     * is only used by the conversion back to the old IR to invalidate them
+     * again for compatibility purposes.
+     */
+    utils::Bool valid;
+
+};
+
+/**
  * Converts the old platform to the new IR structure.
  *
  * See convert_old_to_new(const compat::ProgramRef&) for details.
@@ -237,23 +289,24 @@ Ref convert_old_to_new(const compat::PlatformRef &old);
  * needed in the new IR to represent all functionality. The following functions
  * are always added:
  *
- *  - `operator!(bit) -> bit` for the NOT, NAND, NOR, and NXOR conditions;
- *  - `operator&&(bit, bit) -> bit` for the AND and NAND conditions;
- *  - `operator||(bit, bit) -> bit` for the OR and NOR conditions;
- *  - `operator^(bit, bit) -> bit` for the XOR and NXOR conditions;
- *  - `operator+(int, int) -> int` for the `add` instruction;
- *  - `operator-(int, int) -> int` for the `sub` instruction;
- *  - `operator&(int, int) -> int` for the `and` instruction;
- *  - `operator|(int, int) -> int` for the `or` instruction;
- *  - `operator^(int, int) -> int` for the `xor` instruction;
- *  - `operator==(int, int) -> bool` for the `eq` instruction;
- *  - `operator!=(int, int) -> bool` for the `ne` instruction;
- *  - `operator<(int, int) -> bool` for the `lt` instruction;
- *  - `operator>(int, int) -> bool` for the `gt` instruction;
- *  - `operator<=(int, int) -> bool` for the `le` instruction;
- *  - `operator>=(int, int) -> bool` for the `ge` instruction;
- *  - `operator~(int) -> int` for the `not` instruction;
- *  - `int(bit) -> int` for the comparison instructions.
+ *  - `operator!(bit) -> bit` for NOT, NAND, and NOR, conditions;
+ *  - `operator&&(bit, bit) -> bit` for AND and NAND conditions;
+ *  - `operator||(bit, bit) -> bit` for OR and NOR conditions;
+ *  - `operator==(bit, bit) -> bit` for NXOR conditions;
+ *  - `operator!=(bit, bit) -> bit` for XOR conditions;
+ *  - `operator+(int, int) -> int` for `add` instructions;
+ *  - `operator-(int, int) -> int` for `sub` instructions;
+ *  - `operator&(int, int) -> int` for `and` instructions;
+ *  - `operator|(int, int) -> int` for `or` instructions;
+ *  - `operator^(int, int) -> int` for `xor` instructions;
+ *  - `operator==(int, int) -> bool` for `eq` instructions;
+ *  - `operator!=(int, int) -> bool` for `ne` instructions;
+ *  - `operator<(int, int) -> bool` for `lt` instructions;
+ *  - `operator>(int, int) -> bool` for `gt` instructions;
+ *  - `operator<=(int, int) -> bool` for `le` instructions;
+ *  - `operator>=(int, int) -> bool` for `ge` instructions;
+ *  - `operator~(int) -> int` for `not` instructions;
+ *  - `int(bit) -> int` for comparison instructions with creg target.
  *
  * The structured control-flow constructs of the old IR are mapped to the new
  * one trivially. Recursive structure is supported.

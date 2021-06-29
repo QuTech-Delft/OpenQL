@@ -253,6 +253,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/ops.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/consistency.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/old_to_new.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/new_to_old.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/cqasm/read.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/cqasm/write.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/resource_types/base.cc"
