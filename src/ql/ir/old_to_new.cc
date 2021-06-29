@@ -8,6 +8,7 @@
 #include "ql/ir/ops.h"
 #include "ql/ir/consistency.h"
 #include "ql/rmgr/manager.h"
+#include "ql/pass/io/sweep_points/annotation.h"
 
 namespace ql {
 namespace ir {
@@ -831,7 +832,32 @@ static InstructionRef convert_gate(
     const compat::ProgramRef &old,
     const compat::GateRef &gate
 ) {
+
+    // Gate names are a lie for RX90, MRX90, RX180, and Y variants of those
+    // default gates, in that the name reported by the class differs from the
+    // name with which the gate can be constructed. We have to convert that
+    // here, or "information" is lost in the conversion process, meaning we
+    // can't convert back to old one-to-one. For example, if the user adds
+    // "ry90" and that gate doesn't exist in the platform, they'll get an RY90
+    // class gate, which reports the name "y90". If we would just use that name
+    // here and then convert back, they would instead get the "y90" from the
+    // platform, because you can't even add a default gate by that name. Yes,
+    // this actually happened in a test case. To handle the case correctly,
+    // we'll use the name of the gate that the user would have to add (ry90) for
+    // the real name, and use gate->name (y90) for the cQASM name, assuming
+    // we'll need to add a new gate definition.
     auto name = parse_instruction_name(gate->name).front();
+    auto cqasm_name = name;
+    switch (gate->type()) {
+        case compat::GateType::RX90:  name = "rx90";  break;
+        case compat::GateType::MRX90: name = "mrx90"; break;
+        case compat::GateType::RX180: name = "rx180"; break;
+        case compat::GateType::RY90:  name = "ry90";  break;
+        case compat::GateType::MRY90: name = "mry90"; break;
+        case compat::GateType::RY180: name = "ry180"; break;
+        default: void();
+    }
+
     try {
         
         // Convert the gate's qubit operands.
@@ -1011,7 +1037,7 @@ static InstructionRef convert_gate(
         // No instruction type exists yet... probably a default gate. So try to
         // infer an instruction type for it.
         operands.reset();
-        auto ityp = utils::make<InstructionType>(name, name);
+        auto ityp = utils::make<InstructionType>(name, cqasm_name);
         ityp->duration = utils::div_ceil(gate->duration, old->platform->cycle_time);
         auto qubit_type = ir->platform->qubits->data_type;
         switch (gate->type()) {
@@ -1363,6 +1389,9 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
         old->creg_count,
         old->breg_count
     });
+
+    // Copy annotations that need to be retained.
+    ir->program->copy_annotation<pass::io::sweep_points::Annotation>(*old);
 
     // Convert the kernels.
     utils::Set<utils::Str> names;

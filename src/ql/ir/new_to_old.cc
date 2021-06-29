@@ -7,6 +7,7 @@
 
 #include "ql/ir/old_to_new.h"
 #include "ql/ir/ops.h"
+#include "ql/pass/io/sweep_points/annotation.h"
 
 namespace ql {
 namespace ir {
@@ -753,6 +754,9 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
     );
     old->unique_name = ir->program->unique_name;
 
+    // Copy annotations that need to be retained.
+    old->copy_annotation<pass::io::sweep_points::Annotation>(*ir->program);
+
     // Check that the blocks that constitute the program are ordered
     // linearly, with no control-flow in between; any goto-based control is
     // not supported by the old IR. After this, the only additional
@@ -806,7 +810,7 @@ void Operands::append(const NewToOldConverter &conv, const ExpressionRef &expr) 
     if (auto real_lit = expr->as_real_literal()) {
         CHECK_COMPAT(!has_angle, "encountered gate with multiple angle (real) operands");
         has_angle = true;
-        angle= real_lit->value;
+        angle = real_lit->value;
     } else if (auto ref = expr->as_reference()) {
         if (ref->indices.size() != 1 || !ref->indices[0]->as_int_literal()) {
             QL_ICE(

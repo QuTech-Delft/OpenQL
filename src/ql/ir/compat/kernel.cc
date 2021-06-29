@@ -369,8 +369,6 @@ Bool Kernel::add_default_gate_if_available(
                              || (gname == "rx") || (gname == "ry") || (gname == "rz")
                              || (gname == "rx90") || (gname == "mrx90") || (gname == "rx180")
                              || (gname == "ry90") || (gname == "mry90") || (gname == "ry180")
-                             || (gname == "x90") || (gname == "mx90") || (gname == "x180")
-                             || (gname == "y90") || (gname == "my90") || (gname == "y180")
                              || (gname == "measure") || (gname == "prepz");
 
     Bool is_two_qubit_gate = (gname == "cnot")
@@ -432,22 +430,22 @@ Bool Kernel::add_default_gate_if_available(
     } else if( gname == "rz") {
         gates.emplace<gate_types::RZ>(qubits[0], angle);
         result = true;
-    } else if (gname == "rx90" || gname == "x90") {
+    } else if (gname == "rx90") {
         gates.emplace<gate_types::RX90>(qubits[0]);
         result = true;
-    } else if (gname == "mrx90" || gname == "mx90") {
+    } else if (gname == "mrx90") {
         gates.emplace<gate_types::MRX90>(qubits[0]);
         result = true;
-    } else if (gname == "rx180" || gname == "x180") {
+    } else if (gname == "rx180") {
         gates.emplace<gate_types::RX180>(qubits[0]);
         result = true;
-    } else if (gname == "ry90" || gname == "y90") {
+    } else if (gname == "ry90") {
         gates.emplace<gate_types::RY90>(qubits[0]);
         result = true;
-    } else if (gname == "mry90" || gname == "my90") {
+    } else if (gname == "mry90") {
         gates.emplace<gate_types::MRY90>(qubits[0]);
         result = true;
-    } else if (gname == "ry180" || gname == "y180") {
+    } else if (gname == "ry180") {
         gates.emplace<gate_types::RY180>(qubits[0]);
         result = true;
     } else if (gname == "measure") {
