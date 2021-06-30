@@ -356,15 +356,17 @@ public:
      * Prints a bundle of simultaneously-issued (w.r.t. the quantum time domain)
      * instructions.
      */
-    void flush_bundle(utils::Any<Instruction> &bundle, utils::UInt cycle) {
+    void flush_bundle(utils::Any<Instruction> &bundle, utils::UInt &cycle) {
         if (bundle.size() == 1) {
             bundle[0]->visit(*this);
+            cycle++;
         } else if (!bundle.empty()) {
             os << sl() << "{ # start at cycle " << cycle << el(0, 1);
             for (const auto &pending_stmt : bundle) {
                 pending_stmt->visit(*this);
             }
             os << sl(-1) << "}" << el();
+            cycle++;
         }
         bundle.reset();
     }
@@ -391,8 +393,8 @@ public:
                 if (!insn.empty()) {
 
                     // Add a skip before the next bundle if necessary.
-                    if (insn->cycle > cycle + 1) {
-                        os << sl() << "skip " << (insn->cycle - cycle - 1) << el();
+                    if (insn->cycle > cycle) {
+                        os << sl() << "skip " << (insn->cycle - cycle) << el();
                     }
 
                     cycle = insn->cycle;
@@ -412,6 +414,16 @@ public:
 
         // Print any remaining bundles.
         flush_bundle(bundle, cycle);
+
+        // cQASM readers have no awareness of the duration of instructions, but
+        // semantically a block can only start when all instructions in the
+        // previous block have completed. Therefore, we have to add a skip at
+        // the end, to skip to the first cycle when all instructions have
+        // completed.
+        auto last = get_duration_of_block(node.copy());
+        if (last > cycle) {
+            os << sl() << "skip " << (last - cycle) << el();
+        }
 
     }
 

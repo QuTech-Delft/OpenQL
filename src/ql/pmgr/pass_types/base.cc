@@ -7,6 +7,9 @@
 #include <cctype>
 #include <regex>
 #include "ql/utils/filesystem.h"
+#include "ql/ir/new_to_old.h"
+#include "ql/ir/cqasm/write.h"
+#include "ql/ir/consistency.h"
 #include "ql/pmgr/manager.h"
 #include "ql/pass/io/cqasm/report.h"
 #include "ql/pass/ana/statistics/report.h"
@@ -975,10 +978,18 @@ condition::Ref Base::get_condition() {
  * after_pass is false when run before, and true when run after.
  */
 void Base::handle_debugging(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context,
     utils::Bool after_pass
 ) {
+    if (!after_pass) {
+        std::cout << "IR before " << context.full_pass_name << ":" << std::endl;
+        ir::cqasm::write(ir);
+        std::cout << "~~~" << std::endl;
+        ir::check_consistency(ir);
+    }
+
+    auto program = ir::convert_new_to_old(ir); // FIXME
     utils::Str in_or_out = after_pass ? "out" : "in";
     auto debug_opt = options["debug"].as_str();
     if (debug_opt == "yes") {
@@ -1007,11 +1018,11 @@ void Base::handle_debugging(
  * care of logging, profiling, etc.
  */
 utils::Int Base::run_main_pass(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
     QL_IOUT("starting pass \"" << context.full_pass_name << "\" of type \"" << type_name << "\"...");
-    auto retval = run_internal(program, context);
+    auto retval = run_internal(ir, context);
     QL_IOUT("completed pass \"" << context.full_pass_name << "\"; return value is " << retval);
     return retval;
 }
@@ -1021,12 +1032,12 @@ utils::Int Base::run_main_pass(
  * profiling, etc.
  */
 void Base::run_sub_passes(
-    const ir::compat::ProgramRef &program,
-        const Context &context
+    const ir::Ref &ir,
+    const Context &context
 ) const {
     utils::Str sub_prefix = context.full_pass_name.empty() ? "" : (context.full_pass_name + ".");
     for (const auto &pass : sub_pass_order) {
-        pass->compile(program, sub_prefix);
+        pass->compile(ir, sub_prefix);
     }
 }
 
@@ -1034,7 +1045,7 @@ void Base::run_sub_passes(
  * Executes this pass or pass group on the given platform and program.
  */
 void Base::compile(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const utils::Str &pass_name_prefix
 ) {
 
@@ -1057,10 +1068,14 @@ void Base::compile(
                     context.output_prefix += '%';
                     break;
                 case 'n':
-                    context.output_prefix += program->name;
+                    if (!ir->program.empty()) {
+                        context.output_prefix += ir->program->name;
+                    }
                     break;
                 case 'N':
-                    context.output_prefix += program->unique_name;
+                    if (!ir->program.empty()) {
+                        context.output_prefix += ir->program->unique_name;
+                    }
                     break;
                 case 'p':
                     context.output_prefix += instance_name;
@@ -1095,25 +1110,25 @@ void Base::compile(
     }
 
     // Handle configured debugging actions before running the pass.
-    handle_debugging(program, context, false);
+    handle_debugging(ir, context, false);
 
     // Traverse our level of the pass tree based on our node type.
     switch (node_type) {
         case NodeType::NORMAL: {
-            run_main_pass(program, context);
+            run_main_pass(ir, context);
             break;
         }
 
         case NodeType::GROUP: {
-            run_sub_passes(program, context);
+            run_sub_passes(ir, context);
             break;
         }
 
         case NodeType::GROUP_IF: {
-            auto retval = run_main_pass(program, context);
+            auto retval = run_main_pass(ir, context);
             if (condition->evaluate(retval)) {
                 QL_IOUT("pass condition returned true, running sub-passes...");
-                run_sub_passes(program, context);
+                run_sub_passes(ir, context);
             } else {
                 QL_IOUT("pass condition returned false, skipping " << sub_pass_order.size() << " sub-pass(es)");
             }
@@ -1123,14 +1138,14 @@ void Base::compile(
         case NodeType::GROUP_WHILE: {
             QL_IOUT("entering loop pass loop...");
             while (true) {
-                auto retval = run_main_pass(program, context);
+                auto retval = run_main_pass(ir, context);
                 if (!condition->evaluate(retval)) {
                     QL_IOUT("pass condition returned false, exiting loop");
                     break;
                 } else {
                     QL_IOUT("pass condition returned true, continuing loop...");
                 }
-                run_sub_passes(program, context);
+                run_sub_passes(ir, context);
             }
             break;
         }
@@ -1138,8 +1153,8 @@ void Base::compile(
         case NodeType::GROUP_REPEAT_UNTIL_NOT: {
             QL_IOUT("entering loop pass loop...");
             while (true) {
-                run_sub_passes(program, context);
-                auto retval = run_main_pass(program, context);
+                run_sub_passes(ir, context);
+                auto retval = run_main_pass(ir, context);
                 if (!condition->evaluate(retval)) {
                     QL_IOUT("pass condition returned false, exiting loop");
                     break;
@@ -1154,7 +1169,7 @@ void Base::compile(
     }
 
     // Handle configured debugging actions after running the pass.
-    handle_debugging(program, context, true);
+    handle_debugging(ir, context, true);
 
 }
 

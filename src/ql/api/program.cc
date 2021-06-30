@@ -6,6 +6,7 @@
 
 #include "ql/com/interaction_matrix.h"
 #include "ql/pass/io/sweep_points/annotation.h"
+#include "ql/ir/old_to_new.h"
 #include "ql/api/kernel.h"
 #include "ql/api/operation.h"
 #include "ql/api/misc.h"
@@ -204,10 +205,11 @@ void Program::set_compiler(const Compiler &compiler) {
  */
 void Program::compile() {
     QL_IOUT("compiling " << name << " ...");
+    auto ir = ir::convert_old_to_new(program);
     if (pass_manager.has_value()) {
-        pass_manager->compile(program);
+        pass_manager->compile(ir);
     } else {
-        ql::pmgr::Manager::from_defaults(program->platform).compile(program);
+        ql::pmgr::Manager::from_defaults(program->platform).compile(ir);
     }
 }
 

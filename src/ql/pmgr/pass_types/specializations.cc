@@ -5,6 +5,9 @@
 
 #include "ql/pmgr/pass_types/specializations.h"
 
+#include "ql/ir/new_to_old.h"
+#include "ql/ir/old_to_new.h"
+
 namespace ql {
 namespace pmgr {
 namespace pass_types {
@@ -39,7 +42,7 @@ NodeType Group::on_construct(
  * exception.
  */
 utils::Int Group::run_internal(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
     QL_ASSERT(false);
@@ -84,10 +87,16 @@ ProgramTransformation::ProgramTransformation(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int ProgramTransformation::run_internal(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
-    return run(program, context);
+    auto program = ir::convert_new_to_old(ir);
+    auto retval = run(program, context);
+    auto new_ir = ir::convert_old_to_new(program);
+    ir->program = new_ir->program;
+    ir->platform = new_ir->platform;
+    ir->copy_annotations(*new_ir);
+    return retval;
 }
 
 /**
@@ -122,13 +131,18 @@ utils::Int KernelTransformation::retval_accumulate(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int KernelTransformation::run_internal(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
+    auto program = ir::convert_new_to_old(ir);
     utils::Int accumulator = retval_initialize();
     for (const auto &kernel : program->kernels) {
         accumulator = retval_accumulate(accumulator, run(program, kernel, context));
     }
+    auto new_ir = ir::convert_old_to_new(program);
+    ir->program = new_ir->program;
+    ir->platform = new_ir->platform;
+    ir->copy_annotations(*new_ir);
     return accumulator;
 }
 
@@ -147,9 +161,10 @@ ProgramAnalysis::ProgramAnalysis(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int ProgramAnalysis::run_internal(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
+    auto program = ir::convert_new_to_old(ir);
     return run(program, context);
 }
 
@@ -185,9 +200,10 @@ utils::Int KernelAnalysis::retval_accumulate(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int KernelAnalysis::run_internal(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
+    auto program = ir::convert_new_to_old(ir);
     utils::Int accumulator = retval_initialize();
     for (const auto &kernel : program->kernels) {
         accumulator = retval_accumulate(accumulator, run(program, kernel, context));

@@ -7,7 +7,7 @@ qubits 7
     prepz q[1]
     wait 1
 
-.do_somework_1_for3_start
+.do_somework_1_for24_start
     ldi r29, 3
     ldi r30, 1
     ldi r31, 0
@@ -19,7 +19,7 @@ qubits 7
     h q[1]
     wait 1
 
-.do_somework_1_for3_end
+.do_somework_1_for24_end
     add r31, r31, r30
     blt r31, r29, do
 

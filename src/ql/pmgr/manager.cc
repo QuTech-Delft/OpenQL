@@ -876,29 +876,13 @@ void Manager::construct() {
 /**
  * Executes this pass or pass group on the given platform and program.
  */
-void Manager::compile(const ir::compat::ProgramRef &program) {
+void Manager::compile(const ir::Ref &ir) {
 
     // Ensure that all passes are constructed.
     construct();
 
-    // TODO: just testing conversions right now.
-    utils::StrStrm ss;
-    pass::io::cqasm::report::dump(program, ss);
-    std::cerr << "input program in old IR:\n" << ss.str() << std::endl;
-    auto ir = ir::convert_old_to_new(program);
-
-    ss.str("");
-    ir::cqasm::write(ir, false, ss);
-    std::cerr << "input program in new IR:\n" << ss.str() << std::endl;
-    //ir::cqasm::read(ir, ss.str());
-
-    auto program2 = ir::convert_new_to_old(ir);
-    ss.str("");
-    pass::io::cqasm::report::dump(program2, ss);
-    std::cerr << "input program converted back to old IR:\n" << ss.str() << std::endl;
-
     // Compile the program.
-    root->compile(program2, "");
+    root->compile(ir, "");
 
 }
 

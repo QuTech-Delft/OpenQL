@@ -11,7 +11,7 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/set.h"
 #include "ql/utils/options.h"
-#include "ql/ir/compat/compat.h"
+#include "ql/ir/ir.h"
 #include "ql/pmgr/declarations.h"
 #include "ql/pmgr/condition.h"
 
@@ -248,7 +248,7 @@ protected:
      * Overridable implementation for calling the implementation of the pass.
      */
     virtual utils::Int run_internal(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const = 0;
 
@@ -573,7 +573,7 @@ private:
      * after_pass is false when run before, and true when run after.
      */
     void handle_debugging(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context,
         utils::Bool after_pass
     );
@@ -583,7 +583,7 @@ private:
      * care of logging, profiling, etc.
      */
     utils::Int run_main_pass(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const;
 
@@ -592,7 +592,7 @@ private:
      * profiling, etc.
      */
     void run_sub_passes(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const;
 
@@ -602,7 +602,7 @@ public:
      * Executes this pass or pass group on the given program.
      */
     void compile(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const utils::Str &pass_name_prefix = ""
     );
 

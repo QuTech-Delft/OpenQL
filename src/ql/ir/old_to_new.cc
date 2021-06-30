@@ -1204,7 +1204,7 @@ static utils::Str convert_kernels(
                             } else {
                                 gate_cycle = 0;
                             }
-                            cycle = utils::max(cycle, gate_cycle - cycle_offset);
+                            cycle = utils::max(cycle, gate_cycle + cycle_offset);
                         }
                         instruction->cycle = cycle;
                     } else {

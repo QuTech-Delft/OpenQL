@@ -9,6 +9,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"
 #include "ql/ir/compat/compat.h"
+#include "ql/ir/ir.h"
 #include "ql/pmgr/condition.h"
 #include "ql/pmgr/pass_types/base.h"
 
@@ -50,7 +51,7 @@ protected:
      * exception.
      */
     utils::Int run_internal(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const final;
 
@@ -97,11 +98,8 @@ protected:
 };
 
 /**
- * A pass type for passes that apply a program-wide transformation. The platform
- * may not be modified.
- *
- * TODO: the tree structures currently do not have an immutable variant that
- *  protects against accidental modification.
+ * A pass type for passes that apply a program-wide transformation using the
+ * old IR.
  */
 class ProgramTransformation : public Normal {
 protected:
@@ -120,7 +118,7 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const final;
 
@@ -135,12 +133,8 @@ protected:
 };
 
 /**
- * A pass type for passes that apply a transformation per kernel/basic block.
- * The platform may not be modified. The return value for such a pass is always
- * 0.
- *
- * TODO: the tree structures currently do not have an immutable variant that
- *  protects against accidental modification.
+ * A pass type for passes that apply a transformation per kernel/basic block
+ * using the old IR.
  */
 class KernelTransformation : public Normal {
 protected:
@@ -159,7 +153,7 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const final;
 
@@ -185,11 +179,8 @@ protected:
 };
 
 /**
- * A pass type for passes that analyze the complete program without modifying
- * it.
- *
- * TODO: the tree structures currently do not have an immutable variant that
- *  protects against accidental modification.
+ * A pass type for passes that analyze the complete program using the old IR
+ * without modifying it.
  */
 class ProgramAnalysis : public Normal {
 protected:
@@ -208,7 +199,7 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const final;
 
@@ -224,11 +215,7 @@ protected:
 };
 
 /**
- * A pass type for passes that analyze individual kernels. The return value for
- * such a pass is always 0.
- *
- * TODO: the tree structures currently do not have an immutable variant that
- *  protects against accidental modification.
+ * A pass type for passes that analyze individual kernels using the old IR.
  */
 class KernelAnalysis : public Normal {
 protected:
@@ -247,7 +234,7 @@ protected:
      * Implementation for on_compile() that calls run() appropriately.
      */
     utils::Int run_internal(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const final;
 

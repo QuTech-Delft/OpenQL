@@ -15,7 +15,7 @@
 #include "ql/utils/pair.h"
 #include "ql/utils/options.h"
 #include "ql/utils/compat.h"
-#include "ql/ir/compat/compat.h"
+#include "ql/ir/ir.h"
 #include "ql/pmgr/declarations.h"
 #include "ql/pmgr/pass_types/base.h"
 #include "ql/pmgr/factory.h"
@@ -309,7 +309,7 @@ public:
      * Ensures that all passes have been constructed, and then runs the passes
      * on the given program.
      */
-    void compile(const ir::compat::ProgramRef &program);
+    void compile(const ir::Ref &ir);
 
 };
 

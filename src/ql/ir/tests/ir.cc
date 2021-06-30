@@ -65,6 +65,6 @@ int main() {
     ir::cqasm::write(ir, false, ss);
 
     std::cout << ss.str() << std::endl;
-    
+
     return 0;
 }
