@@ -61,9 +61,10 @@ int main() {
     //ss << "\n*** after read/write ***\n\n";
     //ir::cqasm::write(ir, false, ss);
     ss << "\n*** after conversion to old and back to new ***\n\n";
-    ir::cqasm::write(ir::convert_old_to_new(ir::convert_new_to_old(ir)), false, ss);
+    ir = ir::convert_old_to_new(ir::convert_new_to_old(ir));
+    ir::cqasm::write(ir, false, ss);
 
     std::cout << ss.str() << std::endl;
-
+    
     return 0;
 }

@@ -4,6 +4,7 @@
 
 #include "ql/ir/cqasm/write.h"
 
+#include "ql/ir/ops.h"
 #include "ql/version.h"
 
 namespace ql {
@@ -14,6 +15,7 @@ namespace cqasm {
  * cQASM 1.2 writer implemented (more or less) using the visitor pattern.
  */
 class Writer : public Visitor<void> {
+protected:
 
     /**
      * The stream that we're writing to.
@@ -34,6 +36,18 @@ class Writer : public Visitor<void> {
      * Whether to include a pragma with the platform JSON data.
      */
     utils::Bool include_platform;
+
+    /**
+     * Precedence level of the current surrounding expression. All visit
+     * functions should leave this variable the way they found it (exceptions
+     * aside, things are assumed to irreparably break on exception anyway), but
+     * they may modify it mid-function before recursively calling other visitor
+     * functions. Only the visit_function_call() node does this and uses this,
+     * though. The logic is that parentheses must be printed if the current
+     * precedence level is greater than the precedence of the operator to be
+     * printed.
+     */
+    utils::UInt precedence = 0;
 
     /**
      * Starts a Line, after updating the indentation level by adding
@@ -789,38 +803,80 @@ public:
      * Visitor function for `FunctionCall` nodes.
      */
     void visit_function_call(FunctionCall &node) override {
-        if (!utils::starts_with(node.function_type->name, "operator")) {
+        auto prev_precedence = precedence;
+        auto op_inf = OPERATOR_INFO.find({
+            node.function_type->name,
+            node.operands.size()
+        });
+        if (op_inf == OPERATOR_INFO.end()) {
+
+            // Reset precedence for the function operands.
+            precedence = 0;
             os << node.function_type->name << "(";
             auto first = true;
-            for (const auto &op : node.operands) {
-                if (!first) {
-                    os << ", ";
-                }
-                op->visit(*this);
+            for (auto &operand : node.operands) {
+                if (!first) os << ", ";
                 first = false;
+                operand.visit(*this);
             }
             os << ")";
-        } else if (node.operands.size() == 3 && node.function_type->name == "operator?:") {
-            os << "(";
-            node.operands[0]->visit(*this);
-            os << " ? ";
-            node.operands[1]->visit(*this);
-            os << " : ";
-            node.operands[2]->visit(*this);
-            os << ")";
-        } else if (node.operands.size() == 2) {
-            os << "(";
-            node.operands[0]->visit(*this);
-            os << " " << node.function_type->name.substr(8) << " ";
-            node.operands[1]->visit(*this);
-            os << ")";
-        } else if (node.operands.size() == 1) {
-            os << node.function_type->name.substr(8);
-            node.operands[0]->visit(*this);
+
         } else {
-            throw utils::Exception(
-                "unknown operator type " + node.function_type->name
-            );
+            if (precedence > op_inf->second.precedence) {
+                os << "(";
+            }
+
+            os << op_inf->second.prefix;
+            if (node.operands.size() == 1) {
+
+                // Print the only operand with this precedence level.
+                // Associativity doesn't matter for unary operators because we
+                // don't have postfix operators.
+                precedence = op_inf->second.precedence;
+                node.operands.front().visit(*this);
+
+            } else if (node.operands.size() > 1) {
+
+                // Print the first operand with this precedence level if
+                // left-associative, or with one level higher precedence if
+                // right-associative to force parentheses for equal precedence
+                // in that case.
+                precedence = op_inf->second.precedence;
+                if (op_inf->second.associativity == OperatorAssociativity::RIGHT) {
+                    precedence++;
+                }
+                node.operands.front().visit(*this);
+                os << op_inf->second.infix;
+
+                // If this is a ternary operator, print the middle operand.
+                // Always place parentheses around it in case it's another
+                // operator with the same precedence; I don't think this is
+                // actually necessary, but more readable in my opinion.
+                if (node.operands.size() > 2) {
+                    QL_ASSERT(node.operands.size() <= 3);
+                    precedence = op_inf->second.precedence + 1;
+                    node.operands[1].visit(*this);
+                    os << op_inf->second.infix2;
+                }
+
+                // Print the second operand with this precedence level if
+                // right-associative, or with one level higher precedence if
+                // left-associative to force parentheses for equal precedence
+                // in that case.
+                precedence = op_inf->second.precedence;
+                if (op_inf->second.associativity == OperatorAssociativity::LEFT) {
+                    precedence++;
+                }
+                node.operands.back().visit(*this);
+
+            } else {
+                QL_ASSERT(false);
+            }
+        }
+
+        precedence = prev_precedence;
+        if (precedence > op_inf->second.precedence) {
+            os << ")";
         }
     }
 
