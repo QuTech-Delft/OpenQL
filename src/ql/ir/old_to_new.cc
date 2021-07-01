@@ -8,7 +8,6 @@
 #include "ql/ir/ops.h"
 #include "ql/ir/consistency.h"
 #include "ql/rmgr/manager.h"
-#include "ql/pass/io/sweep_points/annotation.h"
 
 namespace ql {
 namespace ir {
@@ -612,6 +611,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                             sub_insn_name,
                             sub_insn_operands,
                             {},
+                            false,
                             true
                         );
                         decomp->expansion.add(sub_insn_node);
@@ -1216,6 +1216,12 @@ static utils::Str convert_kernels(
 
                 }
 
+                // Copy annotations from the kernel to the block, but make sure
+                // that we don't override our own annotations!
+                old->kernels[idx]->erase_annotation<KernelName>();
+                old->kernels[idx]->erase_annotation<KernelCyclesValid>();
+                block->copy_annotations(*old->kernels[idx]);
+
                 // Save kernel name.
                 name = old->kernels[idx]->name;
                 if (!block->has_annotation<KernelName>()) {
@@ -1384,14 +1390,12 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
     ir->program.emplace();
     ir->program->name = old->name;
     ir->program->unique_name = old->unique_name;
+    ir->program->copy_annotations(*old);
     ir->program->set_annotation<ObjectUsage>({
         old->qubit_count,
         old->creg_count,
         old->breg_count
     });
-
-    // Copy annotations that need to be retained.
-    ir->program->copy_annotation<pass::io::sweep_points::Annotation>(*old);
 
     // Convert the kernels.
     utils::Set<utils::Str> names;

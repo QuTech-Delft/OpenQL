@@ -25,7 +25,7 @@ using PlatformRef = utils::One<Platform>;
 /**
  * Reference to the program subtree.
  */
-using ProgramRef = utils::One<Program>;
+using ProgramRef = utils::Maybe<Program>;
 
 /**
  * Reference to a block.

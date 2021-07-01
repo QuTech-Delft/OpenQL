@@ -76,6 +76,27 @@ NodeType Normal::on_construct(
  * Constructs the pass. No error checking here; this is up to the parent
  * pass group.
  */
+Transformation::Transformation(
+    const utils::Ptr<const Factory> &pass_factory,
+    const utils::Str &instance_name,
+    const utils::Str &type_name
+) : Normal(pass_factory, instance_name, type_name) {
+}
+
+/**
+ * Implementation for on_compile() that calls run() appropriately.
+ */
+utils::Int Transformation::run_internal(
+    const ir::Ref &ir,
+    const Context &context
+) const {
+    return run(ir, context);
+}
+
+/**
+ * Constructs the pass. No error checking here; this is up to the parent
+ * pass group.
+ */
 ProgramTransformation::ProgramTransformation(
     const utils::Ptr<const Factory> &pass_factory,
     const utils::Str &instance_name,
@@ -144,6 +165,27 @@ utils::Int KernelTransformation::run_internal(
     ir->platform = new_ir->platform;
     ir->copy_annotations(*new_ir);
     return accumulator;
+}
+
+/**
+ * Constructs the pass. No error checking here; this is up to the parent
+ * pass group.
+ */
+Analysis::Analysis(
+    const utils::Ptr<const Factory> &pass_factory,
+    const utils::Str &instance_name,
+    const utils::Str &type_name
+) : Normal(pass_factory, instance_name, type_name) {
+}
+
+/**
+ * Implementation for on_compile() that calls run() appropriately.
+ */
+utils::Int Analysis::run_internal(
+    const ir::Ref &ir,
+    const Context &context
+) const {
+    return run(ir, context);
 }
 
 /**

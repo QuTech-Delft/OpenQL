@@ -98,6 +98,40 @@ protected:
 };
 
 /**
+ * A pass type for passes that transform the IR.
+ */
+class Transformation : public Normal {
+protected:
+
+    /**
+     * Constructs the pass. No error checking here; this is up to the parent
+     * pass group.
+     */
+    Transformation(
+        const utils::Ptr<const Factory> &pass_factory,
+        const utils::Str &instance_name,
+        const utils::Str &type_name
+    );
+
+    /**
+     * Implementation for on_compile() that calls run() appropriately.
+     */
+    utils::Int run_internal(
+        const ir::Ref &ir,
+        const Context &context
+    ) const final;
+
+    /**
+     * The virtual implementation for this pass.
+     */
+    virtual utils::Int run(
+        const ir::Ref &ir,
+        const Context &context
+    ) const = 0;
+
+};
+
+/**
  * A pass type for passes that apply a program-wide transformation using the
  * old IR.
  */
@@ -173,6 +207,40 @@ protected:
     virtual utils::Int run(
         const ir::compat::ProgramRef &program,
         const ir::compat::KernelRef &kernel,
+        const Context &context
+    ) const = 0;
+
+};
+
+/**
+ * A pass type for passes that analyze the IR without modifying it.
+ */
+class Analysis : public Normal {
+protected:
+
+    /**
+     * Constructs the pass. No error checking here; this is up to the parent
+     * pass group.
+     */
+    Analysis(
+        const utils::Ptr<const Factory> &pass_factory,
+        const utils::Str &instance_name,
+        const utils::Str &type_name
+    );
+
+    /**
+     * Implementation for on_compile() that calls run() appropriately.
+     */
+    utils::Int run_internal(
+        const ir::Ref &ir,
+        const Context &context
+    ) const final;
+
+    /**
+     * The virtual implementation for this pass.
+     */
+    virtual utils::Int run(
+        const ir::Ref &ir,
         const Context &context
     ) const = 0;
 

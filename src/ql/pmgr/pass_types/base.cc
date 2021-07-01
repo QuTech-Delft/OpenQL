@@ -982,13 +982,6 @@ void Base::handle_debugging(
     const Context &context,
     utils::Bool after_pass
 ) {
-    if (!after_pass) {
-        std::cout << "IR before " << context.full_pass_name << ":" << std::endl;
-        ir::cqasm::write(ir);
-        std::cout << "~~~" << std::endl;
-        ir::check_consistency(ir);
-    }
-
     auto program = ir::convert_new_to_old(ir); // FIXME
     utils::Str in_or_out = after_pass ? "out" : "in";
     auto debug_opt = options["debug"].as_str();
@@ -1000,7 +993,7 @@ void Base::handle_debugging(
     }
     if (debug_opt == "stats" || debug_opt == "both") {
         pass::ana::statistics::report::dump_all(
-            program,
+            ir,
             utils::OutFile(context.output_prefix + "_" + in_or_out + ".report").unwrap(),
             "# " // for some reason; compatibility
         );

@@ -10,7 +10,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/map.h"
 #include "ql/utils/exception.h"
-#include "ql/ir/compat/compat.h"
+#include "ql/ir/ir.h"
 
 namespace ql {
 namespace com {
@@ -29,30 +29,76 @@ public:
     using ReturnType = T;
 
     /**
-     * Updates the metric using the given kernel. Default implementation throws
-     * an unimplemented exception.
+     * Updates the metric using the given instruction. Default implementation
+     * throws an unimplemented exception.
      */
-    virtual void process_gate(const ir::compat::GateRef &gate) {
-        throw utils::Exception("metric is not implemented for gates");
+    virtual void process_instruction(
+        const ir::Ref &ir,
+        const ir::InstructionRef &instruction
+    ) {
+        throw utils::Exception("metric is not implemented for instructions");
     }
 
     /**
-     * Updates the metric using the given kernel. Default implementation just
-     * calls process_gate for each contained gate.
+     * Updates the metric using the given statement. Default implementation
+     * recurses into sub-blocks and calls process_instruction for all
+     * instructions encountered.
      */
-    virtual void process_kernel(const ir::compat::KernelRef &kernel) {
-        for (const auto &gate : kernel->gates) {
-            process_gate(gate);
+    virtual void process_statement(
+        const ir::Ref &ir,
+        const ir::StatementRef &statement
+    ) {
+        if (statement->as_instruction()) {
+            process_instruction(ir, statement.as<ir::Instruction>());
+        } else if (auto if_else = statement->as_if_else()) {
+            for (const auto &branch : if_else->branches) {
+                process_block(ir, branch->body);
+            }
+            if (!if_else->otherwise.empty()) {
+                process_block(ir, if_else->otherwise);
+            }
+        } else if (auto static_loop = statement->as_static_loop()) {
+            process_block(ir, static_loop->body);
+        } else if (auto for_loop = statement->as_for_loop()) {
+            if (!for_loop->initialize.empty()) {
+                process_instruction(ir, for_loop->initialize);
+            }
+            if (!for_loop->update.empty()) {
+                process_instruction(ir, for_loop->update);
+            }
+            process_block(ir, for_loop->body);
+        } else if (auto repeat_until = statement->as_repeat_until_loop()) {
+            process_block(ir, repeat_until->body);
+        } else if (statement->as_loop_control_statement()) {
+            // no-op.
+        } else {
+            QL_ASSERT(false);
+        }
+    }
+
+    /**
+     * Updates the metric using the given block. Default implementation just
+     * calls process_statement() for each contained statement.
+     */
+    virtual void process_block(
+        const ir::Ref &ir,
+        const ir::BlockBaseRef &block
+    ) {
+        for (const auto &statement : block->statements) {
+            process_statement(ir, statement);
         }
     }
 
     /**
      * Updates the metric using the given program. Default implementation just
-     * calls process_kernel for each contained kernel.
+     * calls process_block() for each contained block.
      */
-    virtual void process_program(const ir::compat::ProgramRef &program) {
-        for (const auto &kernel : program->kernels) {
-            process_kernel(kernel);
+    virtual void process_program(
+        const ir::Ref &ir,
+        const ir::ProgramRef &program
+    ) {
+        for (const auto &block : program->blocks) {
+            process_block(ir, block);
         }
     }
 
@@ -72,19 +118,25 @@ public:
  * Computes the given metric for the given gate.
  */
 template <class M>
-typename M::ReturnType compute(const ir::compat::GateRef &gate) {
+typename M::ReturnType compute_statement(
+    const ir::Ref &ir,
+    const ir::StatementRef &statement
+) {
     M metric;
-    metric.process_gate(gate);
+    metric.process_statement(ir, statement);
     return metric.get_result();
 }
 
 /**
- * Computes the given metric for the given kernel.
+ * Computes the given metric for the given block.
  */
 template <class M>
-typename M::ReturnType compute(const ir::compat::KernelRef &kernel) {
+typename M::ReturnType compute_block(
+    const ir::Ref &ir,
+    const ir::BlockBaseRef &block
+) {
     M metric;
-    metric.process_kernel(kernel);
+    metric.process_block(ir, block);
     return metric.get_result();
 }
 
@@ -92,9 +144,11 @@ typename M::ReturnType compute(const ir::compat::KernelRef &kernel) {
  * Computes the given metric for the given program.
  */
 template <class M>
-typename M::ReturnType compute(const ir::compat::ProgramRef &program) {
+typename M::ReturnType compute_program(const ir::Ref &ir) {
     M metric;
-    metric.process_program(program);
+    if (!ir->program.empty()) {
+        metric.process_program(ir, ir->program);
+    }
     return metric.get_result();
 }
 
@@ -151,7 +205,10 @@ public:
  */
 class ClassicalOperationCount : public SimpleValueMetric<utils::UInt, 0> {
 public:
-    void process_gate(const ir::compat::GateRef &gate) override;
+    void process_instruction(
+        const ir::Ref &ir,
+        const ir::InstructionRef &instruction
+    ) override;
 };
 
 /**
@@ -159,7 +216,10 @@ public:
  */
 class QuantumGateCount : public SimpleValueMetric<utils::UInt, 0> {
 public:
-    void process_gate(const ir::compat::GateRef &gate) override;
+    void process_instruction(
+        const ir::Ref &ir,
+        const ir::InstructionRef &instruction
+    ) override;
 };
 
 /**
@@ -167,7 +227,10 @@ public:
  */
 class MultiQubitGateCount : public SimpleValueMetric<utils::UInt, 0> {
 public:
-    void process_gate(const ir::compat::GateRef &gate) override;
+    void process_instruction(
+        const ir::Ref &ir,
+        const ir::InstructionRef &instruction
+    ) override;
 };
 
 /**
@@ -175,7 +238,10 @@ public:
  */
 class QubitUsageCount : public SimpleClassMetric<utils::SparseMap<utils::UInt, utils::UInt, 0>> {
 public:
-    void process_gate(const ir::compat::GateRef &gate) override;
+    void process_instruction(
+        const ir::Ref &ir,
+        const ir::InstructionRef &instruction
+    ) override;
 };
 
 /**
@@ -183,15 +249,21 @@ public:
  */
 class QubitUsedCycleCount : public SimpleClassMetric<utils::SparseMap<utils::UInt, utils::UInt, 0>> {
 public:
-    void process_kernel(const ir::compat::KernelRef &kernel) override;
+    void process_instruction(
+        const ir::Ref &ir,
+        const ir::InstructionRef &instruction
+    ) override;
 };
 
 /**
- * A metric that returns the duration of a scheduled kernel in cycles.
+ * A metric that returns the duration of a scheduled block in cycles.
  */
 class Latency : public SimpleValueMetric<utils::UInt, 0> {
 public:
-    void process_kernel(const ir::compat::KernelRef &kernel) override;
+    void process_block(
+        const ir::Ref &ir,
+        const ir::BlockBaseRef &block
+    ) override;
 };
 
 } // namespace metrics

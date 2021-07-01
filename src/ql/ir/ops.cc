@@ -356,19 +356,19 @@ InstructionTypeLink find_instruction_type(
  *
  * Note that goto and dummy instructions cannot be created via this interface.
  *
- * The generate_overload_if_needed and return_empty_on_failure flags are hacks
- * for the conversion process from the old to new IR. See
- * find_instruction_type() for the former. The latter flag disables the
- * exception that would otherwise be thrown if no matching instruction type is
- * found, instead returning {}.
+ * return_empty_on_failure disables the exception that would otherwise be thrown
+ * if no matching instruction type is found, instead returning {}.
+ *
+ * The generate_overload_if_needed flag is a hack for the conversion process
+ * from the old to new IR. See find_instruction_type().
  */
 InstructionRef make_instruction(
     const Ref &ir,
     const utils::Str &name,
     const utils::Any<Expression> &operands,
     const ExpressionRef &condition,
-    utils::Bool generate_overload_if_needed,
-    utils::Bool return_empty_on_failure
+    utils::Bool return_empty_on_failure,
+    utils::Bool generate_overload_if_needed
 ) {
     InstructionRef insn;
     if (name == "set") {
@@ -484,18 +484,7 @@ InstructionRef make_instruction(
         }
 
         // Specialize the instruction type and operands as much as possible.
-        utils::Bool specialization_found;
-        do {
-            specialization_found = false;
-            for (const auto &spec : custom_insn->instruction_type->specializations) {
-                if (spec->template_operands.back().equals(custom_insn->operands.front())) {
-                    custom_insn->operands.remove(0);
-                    custom_insn->instruction_type = spec;
-                    specialization_found = true;
-                    break;
-                }
-            }
-        } while (specialization_found);
+        specialize_instruction(custom_insn);
 
         insn = custom_insn;
     }
@@ -528,6 +517,83 @@ InstructionRef make_set_instruction(
     const ExpressionRef &condition
 ) {
     return make_instruction(ir, "set", {lhs, rhs}, condition);
+}
+
+/**
+ * Updates the given instruction node to use the most specialized instruction
+ * type available. If the instruction is not a custom instruction or the
+ * instruction is already fully specialized, this is no-op.
+ */
+void specialize_instruction(
+    const InstructionRef &instruction
+) {
+    if (auto custom_insn = instruction->as_custom_instruction()) {
+        utils::Bool specialization_found;
+        do {
+            specialization_found = false;
+            for (const auto &spec : custom_insn->instruction_type->specializations) {
+                if (spec->template_operands.back().equals(custom_insn->operands.front())) {
+                    custom_insn->operands.remove(0);
+                    custom_insn->instruction_type = spec;
+                    specialization_found = true;
+                    break;
+                }
+            }
+        } while (specialization_found);
+    }
+}
+
+/**
+ * Updates the given instruction node to use the most generalized instruction
+ * type available. If the instruction is not a custom instruction or the
+ * instruction is already fully generalized, this is no-op.
+ *
+ * This is useful in particular for changing instruction operands when mapping:
+ * first generalize to get all the operands in the instruction node, then modify
+ * the operands, and finally specialize the instruction again according to the
+ * changed operands using specialize_instruction().
+ */
+void generalize_instruction(
+    const InstructionRef &instruction
+) {
+    if (auto custom_insn = instruction->as_custom_instruction()) {
+        while (!custom_insn->instruction_type->generalization.empty()) {
+            custom_insn->operands.add(
+                custom_insn->instruction_type->template_operands.back().clone(),
+                0
+            );
+            custom_insn->instruction_type = custom_insn->instruction_type->generalization;
+        }
+    }
+}
+
+/**
+ * Returns the most generalized variant of the given instruction type.
+ */
+InstructionTypeLink get_generalization(const InstructionTypeLink &spec) {
+    InstructionTypeLink gen = spec;
+    while (!gen->generalization.empty()) {
+        gen = gen->generalization;
+    }
+    return gen;
+}
+
+/**
+ * Returns the complete list of operands of an instruction. For custom
+ * instructions this includes the template operands, and for set instructions
+ * this returns the LHS and RHS as two operands. Other instruction types return
+ * no operands. The condition (if any) is also not returned.
+ */
+Any<Expression> get_operands(const InstructionRef &instruction) {
+    Any<Expression> operands;
+    if (auto custom = instruction->as_custom_instruction()) {
+        operands.extend(custom->instruction_type->template_operands);
+        operands.extend(custom->operands);
+    } else if (auto set = instruction->as_set_instruction()) {
+        operands.add(set->lhs);
+        operands.add(set->rhs);
+    }
+    return operands;
 }
 
 /**
@@ -876,10 +942,10 @@ utils::UInt get_duration_of_block(const BlockBaseRef &block) {
  * Returns whether an instruction is a quantum gate, by returning the number of
  * qubits in its operand list.
  */
-utils::UInt is_quantum_gate(const InstructionRef &insn) {
+utils::UInt get_number_of_qubits_involved(const InstructionRef &insn) {
     utils::UInt num_qubits = 0;
     if (auto custom = insn->as_custom_instruction()) {
-        for (auto &otyp : custom->instruction_type->operand_types) {
+        for (auto &otyp : get_generalization(custom->instruction_type)->operand_types) {
             if (otyp->data_type->as_qubit_type()) {
                 num_qubits++;
             }

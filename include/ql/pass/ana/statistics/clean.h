@@ -16,7 +16,7 @@ namespace clean {
 /**
  * Statistics cleaning pass.
  */
-class CleanStatisticsPass : public pmgr::pass_types::ProgramAnalysis {
+class CleanStatisticsPass : public pmgr::pass_types::Analysis {
 protected:
 
     /**
@@ -47,7 +47,7 @@ public:
      * Runs the statistics cleaner.
      */
     utils::Int run(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const pmgr::pass_types::Context &context
     ) const override;
 

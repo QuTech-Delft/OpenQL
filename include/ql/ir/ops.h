@@ -140,19 +140,19 @@ InstructionTypeLink find_instruction_type(
  *
  * Note that goto and dummy instructions cannot be created via this interface.
  *
- * The generate_overload_if_needed and return_empty_on_failure flags are hacks
- * for the conversion process from the old to new IR. See
- * find_instruction_type() for the former. The latter flag disables the
- * exception that would otherwise be thrown if no matching instruction type is
- * found, instead returning {}.
+ * return_empty_on_failure disables the exception that would otherwise be thrown
+ * if no matching instruction type is found, instead returning {}.
+ *
+ * The generate_overload_if_needed flag is a hack for the conversion process
+ * from the old to new IR. See find_instruction_type().
  */
 InstructionRef make_instruction(
     const Ref &ir,
     const utils::Str &name,
     const utils::Any<Expression> &operands,
     const ExpressionRef &condition = {},
-    utils::Bool generate_overload_if_needed = false,
-    utils::Bool return_empty_on_failure = false
+    utils::Bool return_empty_on_failure = false,
+    utils::Bool generate_overload_if_needed = false
 );
 
 /**
@@ -164,6 +164,42 @@ InstructionRef make_set_instruction(
     const ExpressionRef &rhs,
     const ExpressionRef &condition = {}
 );
+
+/**
+ * Updates the given instruction node to use the most specialized instruction
+ * type available. If the instruction is not a custom instruction or the
+ * instruction is already fully specialized, this is no-op.
+ */
+void specialize_instruction(
+    const InstructionRef &instruction
+);
+
+/**
+ * Updates the given instruction node to use the most generalized instruction
+ * type available. If the instruction is not a custom instruction or the
+ * instruction is already fully generalized, this is no-op.
+ *
+ * This is useful in particular for changing instruction operands when mapping:
+ * first generalize to get all the operands in the instruction node, then modify
+ * the operands, and finally specialize the instruction again according to the
+ * changed operands using specialize_instruction().
+ */
+void generalize_instruction(
+    const InstructionRef &instruction
+);
+
+/**
+ * Returns the most generalized variant of the given instruction type.
+ */
+InstructionTypeLink get_generalization(const InstructionTypeLink &spec);
+
+/**
+ * Returns the complete list of operands of an instruction. For custom
+ * instructions this includes the template operands, and for set instructions
+ * this returns the LHS and RHS as two operands. Other instruction types return
+ * no operands. The condition (if any) is also not returned.
+ */
+Any<Expression> get_operands(const InstructionRef &instruction);
 
 /**
  * Adds a decomposition rule. An instruction is generated for the decomposition
@@ -273,7 +309,7 @@ utils::UInt get_duration_of_block(const BlockBaseRef &block);
  * Returns whether an instruction is a quantum gate, by returning the number of
  * qubits in its operand list.
  */
-utils::UInt is_quantum_gate(const InstructionRef &insn);
+utils::UInt get_number_of_qubits_involved(const InstructionRef &insn);
 
 /**
  * The associativity of an operator.

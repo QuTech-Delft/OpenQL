@@ -7,7 +7,6 @@
 
 #include "ql/ir/old_to_new.h"
 #include "ql/ir/ops.h"
-#include "ql/pass/io/sweep_points/annotation.h"
 
 namespace ql {
 namespace ir {
@@ -258,6 +257,11 @@ void NewToOldConverter::convert_block(
     // lazily-constructed kernel, to be flushed to program when a structured
     // control-flow statement appears, or at the end.
     compat::KernelRef kernel;
+
+    // Whether this is the first lazily-constructed kernel. Only if this is true
+    // when flushing at the end are statistics annotations copied; otherwise
+    // they would be invalid anyway.
+    utils::Bool first_kernel = true;
 
     // Cycle offset for converting from new-IR cycles to old-IR cycles. In
     // the new IR, cycles start at zero; in the old one they start at
@@ -539,6 +543,7 @@ void NewToOldConverter::convert_block(
 
             // Flush any pending kernel not affected by control-flow.
             if (!kernel.empty()) {
+                first_kernel = false;
                 kernel->cycles_valid = cycles_valid;
                 program->add(kernel);
                 kernel.reset();
@@ -670,6 +675,12 @@ void NewToOldConverter::convert_block(
 
     // Flush any pending kernel.
     if (!kernel.empty()) {
+
+        // If this block produced only one kernel, copy kernel-wide annotations.
+        if (first_kernel) {
+            kernel->copy_annotations(*block);
+        }
+
         kernel->cycles_valid = cycles_valid;
         program->add(kernel);
         kernel.reset();
@@ -754,8 +765,8 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
     );
     old->unique_name = ir->program->unique_name;
 
-    // Copy annotations that need to be retained.
-    old->copy_annotation<pass::io::sweep_points::Annotation>(*ir->program);
+    // Copy program-wide annotations.
+    old->copy_annotations(*ir->program);
 
     // Check that the blocks that constitute the program are ordered
     // linearly, with no control-flow in between; any goto-based control is

@@ -38,20 +38,22 @@ CleanStatisticsPass::CleanStatisticsPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : pmgr::pass_types::ProgramAnalysis(pass_factory, instance_name, type_name) {
+) : pmgr::pass_types::Analysis(pass_factory, instance_name, type_name) {
 }
 
 /**
  * Runs the statistics cleaner.
  */
 utils::Int CleanStatisticsPass::run(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
-    for (const auto &kernel : program->kernels) {
-        AdditionalStats::pop(kernel);
+    if (!ir->program.empty()) {
+        for (const auto &kernel : ir->program->blocks) {
+            AdditionalStats::pop(kernel);
+        }
+        AdditionalStats::pop(ir->program);
     }
-    AdditionalStats::pop(program);
 
     return 0;
 }

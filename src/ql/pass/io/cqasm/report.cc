@@ -58,10 +58,10 @@ void dump_with_statistics(
         program, os, [](
             const ir::compat::KernelRef &k, std::ostream &os, const utils::Str &lp
         ) {
-            ana::statistics::report::dump(k, os, lp);
+            //ana::statistics::report::dump(k, os, lp); TODO
         }
     );
-    ana::statistics::report::dump(program, os, "# ");
+    //ana::statistics::report::dump(program, os, "# "); TODO
 }
 
 /**

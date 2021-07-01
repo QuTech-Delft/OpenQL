@@ -14,10 +14,11 @@ namespace statistics {
 namespace report {
 
 /**
- * Dumps basic statistics for the given kernel to the given output stream.
+ * Dumps basic statistics for the given block to the given output stream.
  */
 void dump(
-    const ir::compat::KernelRef &kernel,
+    const ir::Ref &ir,
+    const ir::BlockRef &block,
     std::ostream &os = std::cout,
     const utils::Str &line_prefix = ""
 );
@@ -28,17 +29,18 @@ void dump(
  * kernel.
  */
 void dump(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
+    const ir::ProgramRef &program,
     std::ostream &os = std::cout,
     const utils::Str &line_prefix = ""
 );
 
 /**
- * Dumps statistics for the given program and its kernels to the given output
- * stream.
+ * Dumps statistics for the given program and its top-level blocks to the given
+ * output stream.
  */
 void dump_all(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     std::ostream &os = std::cout,
     const utils::Str &line_prefix = ""
 );
@@ -46,7 +48,7 @@ void dump_all(
 /**
  * Statistics reporting pass.
  */
-class ReportStatisticsPass : public pmgr::pass_types::ProgramAnalysis {
+class ReportStatisticsPass : public pmgr::pass_types::Analysis {
 protected:
 
     /**
@@ -77,7 +79,7 @@ public:
      * Runs the statistics reporter.
      */
     utils::Int run(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const pmgr::pass_types::Context &context
     ) const override;
 

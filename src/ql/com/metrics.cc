@@ -5,6 +5,8 @@
 
 #include "ql/com/metrics.h"
 
+#include "ql/ir/ops.h"
+
 namespace ql {
 namespace com {
 namespace metrics {
@@ -12,8 +14,11 @@ namespace metrics {
 /**
  * Classical operation counting metric.
  */
-void ClassicalOperationCount::process_gate(const ir::compat::GateRef &gate) {
-    if (gate->type() == ir::compat::GateType::CLASSICAL) {
+void ClassicalOperationCount::process_instruction(
+    const ir::Ref &ir,
+    const ir::InstructionRef &instruction
+) {
+    if (instruction->as_set_instruction() || instruction->as_goto_instruction()) {
         value++;
     }
 }
@@ -21,89 +26,77 @@ void ClassicalOperationCount::process_gate(const ir::compat::GateRef &gate) {
 /**
  * Quantum gate counting metric.
  */
-void QuantumGateCount::process_gate(const ir::compat::GateRef &gate) {
-    switch (gate->type()) {
-        case ir::compat::GateType::CLASSICAL:
-        case ir::compat::GateType::WAIT:
-            break;
-        default:
-            value++;
-            break;
+void QuantumGateCount::process_instruction(
+    const ir::Ref &ir,
+    const ir::InstructionRef &instruction
+) {
+    if (ir::get_number_of_qubits_involved(instruction)) {
+        value++;
     }
 }
 
 /**
  * Multi-qubit gate counting metric.
  */
-void MultiQubitGateCount::process_gate(const ir::compat::GateRef &gate) {
-    switch (gate->type()) {
-        case ir::compat::GateType::CLASSICAL:
-        case ir::compat::GateType::WAIT:
-            break;
-        default:
-            if (gate->operands.size() > 1) {
-                value++;
-            }
-            break;
+void MultiQubitGateCount::process_instruction(
+    const ir::Ref &ir,
+    const ir::InstructionRef &instruction
+) {
+    if (ir::get_number_of_qubits_involved(instruction) > 1) {
+        value++;
     }
 }
 
 /**
  * Qubit usage counting metric.
  */
-void QubitUsageCount::process_gate(const ir::compat::GateRef &gate) {
-    switch (gate->type()) {
-        case ir::compat::GateType::CLASSICAL:
-        case ir::compat::GateType::WAIT:
-            break;
-        default:
-            for (auto v : gate->operands) {
-                value[v]++;
+void QubitUsageCount::process_instruction(
+    const ir::Ref &ir,
+    const ir::InstructionRef &instruction
+) {
+    for (auto &op : ir::get_operands(instruction)) {
+        if (auto ref = op->as_reference()) {
+            if (
+                ref->target == ir->platform->qubits &&
+                ref->data_type == ir->platform->qubits->data_type &&
+                ref->indices.size() == 1 &&
+                ref->indices[0]->as_int_literal()
+            ) {
+                QL_ASSERT(ref->indices.size() == 1);
+                value[ref->indices[0]->as_int_literal()->value]++;
             }
-            break;
+        }
     }
 }
 
 /**
  * Qubit cycle usage counting metric.
  */
-void QubitUsedCycleCount::process_kernel(const ir::compat::KernelRef &kernel) {
-    for (auto &gp : kernel->gates) {
-        switch (gp->type()) {
-            case ir::compat::GateType::CLASSICAL:
-            case ir::compat::GateType::WAIT:
-                break;
-            default:
-                for (auto v : gp->operands) {
-                    value[v] += utils::div_ceil(
-                        gp->duration,
-                        kernel->platform->cycle_time
-                    );
-                }
-                break;
+void QubitUsedCycleCount::process_instruction(
+    const ir::Ref &ir,
+    const ir::InstructionRef &instruction
+) {
+    for (auto &op : ir::get_operands(instruction)) {
+        if (auto ref = op->as_reference()) {
+            if (
+                ref->target == ir->platform->qubits &&
+                ref->data_type == ir->platform->qubits->data_type &&
+                ref->indices.size() == 1 &&
+                ref->indices[0]->as_int_literal()
+            ) {
+                QL_ASSERT(ref->indices.size() == 1);
+                value[ref->indices[0]->as_int_literal()->value] +=
+                    get_duration_of_instruction(instruction);
+            }
         }
     }
 }
 
 /**
- * Kernel duration metric.
+ * Returns the duration of a scheduled block in cycles.
  */
-void Latency::process_kernel(const ir::compat::KernelRef &kernel) {
-    if (!kernel->gates.empty() && kernel->gates.back()->cycle != ir::compat::MAX_CYCLE) {
-        // NOTE JvS: this used to just check the last gate in the circuit, but
-        // that isn't sufficient. Worst case the first gate could be setting the
-        // kernel duration, even if issued in the first cycle, due to it just
-        // having a very long duration itself.
-        for (const auto &gate : kernel->gates) {
-            value = utils::max(
-                value,
-                gate->cycle + utils::div_ceil(
-                    gate->duration,
-                    kernel->platform->cycle_time
-                )
-            );
-        }
-    }
+void Latency::process_block(const ir::Ref &ir, const ir::BlockBaseRef &block) {
+    value = ir::get_duration_of_block(block);
 }
 
 } // namespace metrics
