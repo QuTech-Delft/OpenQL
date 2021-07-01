@@ -40,13 +40,14 @@ This pass writes the current program out as a cQASM file.
     Must be one of `no`, `yes`, `stats`, `qasm`, or `both`, default `no`. May be
     used to implicitly surround this pass with cQASM/report file output printers, to
     aid in debugging. Set to `no` to disable this functionality or to `yes` to write
-    a cQASM file before and after that includes statistics as comments. The filename
-    is built using the output_prefix option, using suffix `_debug_[in|out].cq`. The
-    option values `stats`, `cqasm`, and `both` are used for backward compatibility
-    with the `write_qasm_files` and `write_report_files` global options; for `stats`
-    and `both` a statistics report file is written with suffix `_[in|out].report`,
-    and for `qasm` and `both` a cQASM file is written (without stats in the
-    comments) with suffix `_[in|out].qasm`.
+    a tree dump and a cQASM file before and after, the latter of which includes
+    statistics as comments. The filename is built using the output_prefix option,
+    using suffix `_debug_[in|out].ir` for the IR dump, and `_debug_[in|out].cq` for
+    the cQASM file. The option values `stats`, `cqasm`, and `both` are used for
+    backward compatibility with the `write_qasm_files` and `write_report_files`
+    global options; for `stats` and `both` a statistics report file is written with
+    suffix `_[in|out].report`, and for `qasm` and `both` a cQASM file is written
+    (without stats in the comments) with suffix `_[in|out].qasm`.
 
   * `output_suffix` *
     Must be any string, default `.cq`. Suffix to use for the output filename.

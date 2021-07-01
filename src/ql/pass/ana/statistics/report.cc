@@ -24,13 +24,12 @@ void dump(
 ) {
     using namespace com::metrics;
 
-    os << line_prefix << "kernel: " << block->name << "\n";
-    os << line_prefix << "----- circuit_latency: " << compute_block<Latency>(ir, block) << "\n";
-    os << line_prefix << "----- quantum gates: " << compute_block<QuantumGateCount>(ir, block) << "\n";
-    os << line_prefix << "----- non single qubit gates: " << compute_block<MultiQubitGateCount>(ir, block) << "\n";
-    os << line_prefix << "----- classical operations: " << compute_block<ClassicalOperationCount>(ir, block) << "\n";
-    os << line_prefix << "----- qubits used: " << compute_block<QubitUsageCount>(ir, block).sparse_size() << "\n";
-    os << line_prefix << "----- qubit cycles use:" << compute_block<QubitUsedCycleCount>(ir, block) << "\n";
+    os << line_prefix << "Duration (assuming no control-flow): " << compute_block<Latency>(ir, block) << "\n";
+    os << line_prefix << "Number of quantum gates: " << compute_block<QuantumGateCount>(ir, block) << "\n";
+    os << line_prefix << "Number of multi-qubit gates: " << compute_block<MultiQubitGateCount>(ir, block) << "\n";
+    os << line_prefix << "Number of classical operations: " << compute_block<ClassicalOperationCount>(ir, block) << "\n";
+    os << line_prefix << "Number of qubits used: " << compute_block<QubitUsageCount>(ir, block).sparse_size() << "\n";
+    os << line_prefix << "Qubit cycles use (assuming no control-flow): " << compute_block<QubitUsedCycleCount>(ir, block) << "\n";
     for (const auto &line : AdditionalStats::pop(block)) {
         os << line_prefix << "----- " << line << "\n";
     }
@@ -44,21 +43,20 @@ void dump(
  */
 void dump(
     const ir::Ref &ir,
+    const ir::ProgramRef &program,
     std::ostream &os,
     const utils::Str &line_prefix
 ) {
     using namespace com::metrics;
 
-    os << line_prefix << "Total circuit_latency: " << compute_program<Latency>(ir) << "\n";
-    os << line_prefix << "Total no. of quantum gates: " << compute_program<QuantumGateCount>(ir) << "\n";
-    os << line_prefix << "Total no. of non single qubit gates: " << compute_program<MultiQubitGateCount>(ir) << "\n";
-    os << line_prefix << "Total no. of classical operations: " << compute_program<ClassicalOperationCount>(ir) << "\n";
-    os << line_prefix << "Qubits used: " << compute_program<QubitUsageCount>(ir).sparse_size() << "\n";
-    os << line_prefix << "No. kernels: " << compute_program<QubitUsedCycleCount>(ir) << "\n";
-    if (!ir->program.empty()) {
-        for (const auto &line : AdditionalStats::pop(ir->program)) {
-            os << line_prefix << line << "\n";
-        }
+    os << line_prefix << "Total duration (assuming no control-flow): " << compute_program<Latency>(ir) << "\n";
+    os << line_prefix << "Total number of quantum gates: " << compute_program<QuantumGateCount>(ir) << "\n";
+    os << line_prefix << "Total number of multi-qubit gates: " << compute_program<MultiQubitGateCount>(ir) << "\n";
+    os << line_prefix << "Total number of classical operations: " << compute_program<ClassicalOperationCount>(ir) << "\n";
+    os << line_prefix << "Number of qubits used: " << compute_program<QubitUsageCount>(ir).sparse_size() << "\n";
+    os << line_prefix << "Qubit cycles use (assuming no control-flow): " << compute_program<QubitUsedCycleCount>(ir) << "\n";
+    for (const auto &line : AdditionalStats::pop(program)) {
+        os << line_prefix << line << "\n";
     }
     os.flush();
 }
@@ -76,9 +74,12 @@ void dump_all(
         os << line_prefix << "no program node to dump statistics for" << std::endl;
     } else {
         for (const auto &block : ir->program->blocks) {
-            dump(ir, block, os, line_prefix);
+            os << line_prefix << "For block with name \"" << block->name << "\":\n";
+            dump(ir, block, os, line_prefix + "    ");
+            os << "\n";
         }
-        dump(ir, os, line_prefix);
+        os << line_prefix << "Global statistics:\n";
+        dump(ir, ir->program, os, line_prefix);
     }
 }
 

@@ -11,7 +11,6 @@
 #include "ql/ir/cqasm/write.h"
 #include "ql/ir/consistency.h"
 #include "ql/pmgr/manager.h"
-#include "ql/pass/io/cqasm/report.h"
 #include "ql/pass/ana/statistics/report.h"
 
 namespace ql {
@@ -152,7 +151,6 @@ Base::Base(
     type_name(type_name),
     instance_name(instance_name)
 {
-    // TODO common pass options
     options.add_str(
         "output_prefix",
         "Format string for the prefix used for all output products. "
@@ -173,11 +171,12 @@ Base::Base(
         "debug",
         "May be used to implicitly surround this pass with cQASM/report file "
         "output printers, to aid in debugging. Set to `no` to disable this "
-        "functionality or to `yes` to write a cQASM file before and after "
-        "that includes statistics as comments. The filename is built using "
-        "the output_prefix option, using suffix `_debug_[in|out].cq`. "
-        "The option values `stats`, `cqasm`, and `both` are used for "
-        "backward compatibility with the `write_qasm_files` and "
+        "functionality or to `yes` to write a tree dump and a cQASM file before "
+        "and after, the latter of which includes statistics as comments. The "
+        "filename is built using the output_prefix option, using suffix "
+        "`_debug_[in|out].ir` for the IR dump, and `_debug_[in|out].cq` for "
+        "the cQASM file. The option values `stats`, `cqasm`, and `both` are "
+        "used for backward compatibility with the `write_qasm_files` and "
         "`write_report_files` global options; for `stats` and `both` a "
         "statistics report file is written with suffix `_[in|out].report`, "
         "and for `qasm` and `both` a cQASM file is written (without stats "
@@ -982,25 +981,28 @@ void Base::handle_debugging(
     const Context &context,
     utils::Bool after_pass
 ) {
-    auto program = ir::convert_new_to_old(ir); // FIXME
     utils::Str in_or_out = after_pass ? "out" : "in";
     auto debug_opt = options["debug"].as_str();
     if (debug_opt == "yes") {
-        pass::io::cqasm::report::dump_with_statistics(
-            program,
+        ir->dump_seq(
+            utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".ir").unwrap()
+        );
+        ir::cqasm::WriteOptions write_options;
+        write_options.include_statistics = true;
+        ir::cqasm::write(
+            ir, write_options,
             utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".cq").unwrap()
         );
     }
     if (debug_opt == "stats" || debug_opt == "both") {
         pass::ana::statistics::report::dump_all(
             ir,
-            utils::OutFile(context.output_prefix + "_" + in_or_out + ".report").unwrap(),
-            "# " // for some reason; compatibility
+            utils::OutFile(context.output_prefix + "_" + in_or_out + ".report").unwrap()
         );
     }
     if (debug_opt == "qasm" || debug_opt == "both") {
-        pass::io::cqasm::report::dump(
-            program,
+        ir::cqasm::write(
+            ir, {},
             utils::OutFile(context.output_prefix + "_" + in_or_out + ".qasm").unwrap()
         );
     }

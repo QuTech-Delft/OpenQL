@@ -7,11 +7,7 @@
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
 #include "ql/arch/architecture.h"
-#include "ql/ir/old_to_new.h"
-#include "ql/ir/new_to_old.h"
 #include "ql/ir/cqasm/write.h"
-#include "ql/ir/cqasm/read.h"
-#include "ql/pass/io/cqasm/report.h"
 
 namespace ql {
 namespace pmgr {
