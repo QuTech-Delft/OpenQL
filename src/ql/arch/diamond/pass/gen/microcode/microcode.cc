@@ -124,7 +124,7 @@ utils::Int GenerateMicrocodePass::run(
         kernel->cycles_valid = false;
     }
 
-    // Make global variables for keeping track label numbers.
+    // Make global variable for keeping track label numbers.
     int labelcount = 0;
 
     for (const ir::KernelRef &kernel : program->kernels) {
@@ -156,12 +156,16 @@ utils::Int GenerateMicrocodePass::run(
             // Last option likely will not occur as OpenQL will throw an error
             // when running the algorithm.
             if (type == "qgate") {
+                // Single qubit gate
                 outfile << detail::qgate(gate->name, gate->operands[0]) << "\n";
             } else if (type == "qgate2") {
+                // Two qubit gate. Not that in the diamond structure, 2 qubit gates are only possible between
+                // a qubit and a nuclear spin qubit.
                 Str op_1 = "q" + to_string(gate->operands[0]);
-                Str op_2 = "q" + to_string(gate->operands[1]);
+                Str op_2 = "nuq" + to_string(gate->operands[1]);
                 outfile << detail::qgate2(gate->name, op_1, op_2) << "\n";
             } else if (type == "rotation") {
+                // custom rotations around an axis
                 UInt a = 1000 / 3.14159265359;
                 Str duration = to_string(a * gate->angle);
                 if (gate->name == "rx") {
@@ -179,13 +183,13 @@ utils::Int GenerateMicrocodePass::run(
                 } else if (gate->name == "cr") {
                     Str phase = to_string(0);
                     outfile << detail::qgate2(gate->name, "q" + to_string(
-                        gate->operands[0]), "q" + to_string(gate->operands[1]));
+                        gate->operands[0]), "nuq" + to_string(gate->operands[1]));
                     outfile << ", " << duration << "\n";
                 } else if (gate->name == "crk") {
                     Str phase = to_string(0);
                     UInt angle = 1000 / (3.14 / pow(2, gate->angle));
                     outfile << detail::qgate2(gate->name, "q" + to_string(
-                        gate->operands[0]), "q" + to_string(gate->operands[1]));
+                        gate->operands[0]), "nuq" + to_string(gate->operands[1]));
                     outfile << ", " << to_string(angle) << "\n";
                 }
 
@@ -235,7 +239,8 @@ utils::Int GenerateMicrocodePass::run(
                 }
             } else if (type == "classical") {
                 // These instructions calculate a new value for either current or
-                // voltage using purely classical instructions.
+                // voltage using purely classical instructions. They have to be
+                // elaborated using the classical instructions from the micro ISA.
                 if (gate->name == "calculate_current") {
                     outfile << "calculate_current()" << "\n";
                 } else if (gate->name == "calculate_voltage") {
@@ -367,9 +372,9 @@ utils::Int GenerateMicrocodePass::run(
                 }
             } else if (type == "calibration") {
                if (gate->name == "decouple") {
+                   // Code for XY-8 dynamical decoupling
                    Str t = to_string(50);
                    Str t2 = to_string(100);
-                   // Code for XY-8 dynamical decoupling
                    outfile << detail::excite_mw("0", "500", "200", "1.57", "60", gate->operands[0])<< "\n"; // pi/2 x
                    outfile << "wait "<< t << "\n";
                    outfile << detail::excite_mw("0", "1000", "200", "1.57", "60", gate->operands[0]) << "\n"; // pi x

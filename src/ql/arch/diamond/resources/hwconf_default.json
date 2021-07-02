@@ -8,6 +8,7 @@
 
   "gate_decomposition": {
     "toffoli %0, %1, %2" : ["h %2", "cnot %1 %2", "tdag %2", "cnot %0 %2", "t %2","cnot %1 %2", "tdag %2", "cnot %0 %2", "t %1", "t %2", "cnot %0 %1", "h %2", "t %0", "tdag %1", "cnot %0 %1"],
+    "measure_z %0": ["measure %0"],
     "measure_y %0": ["mprep_y %0", "measure %0"],
     "measure_x %0": ["mprep_x %0", "measure %0"]
   },
