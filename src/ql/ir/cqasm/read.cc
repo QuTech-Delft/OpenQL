@@ -4,6 +4,7 @@
 
 #include "ql/ir/cqasm/read.h"
 
+#include "ql/utils/filesystem.h"
 #include "ql/ir/compat/program.h"
 #include "ql/ir/ops.h"
 #include "ql/ir/consistency.h"
@@ -571,7 +572,8 @@ static utils::One<SetInstruction> convert_set_instruction(
 static void convert_block(
     const Ref &ir,
     const cqt::One<cqs::Block> &cq_block,
-    const utils::One<BlockBase> &ql_block
+    const utils::One<BlockBase> &ql_block,
+    const ReadOptions &options
 ) {
 
     // We need to convert bundle + skip instruction representation of the
@@ -581,6 +583,10 @@ static void convert_block(
 
     for (const auto &cq_stmt : cq_block->statements) {
         if (auto cq_bun = cq_stmt->as_bundle_ext()) {
+
+            // Build a list of all the instructions in this bundle.
+            utils::List<InstructionRef> ql_bundle;
+
             for (const auto &cq_insn_base : cq_bun->items) {
 
                 // Parse the condition.
@@ -627,7 +633,13 @@ static void convert_block(
                                     "skip count"
                                 );
                             }
-                            cycle += (utils::UInt)ci->value;
+
+                            // Only actually listen to the skip instruction if
+                            // the schedule is to be retained.
+                            if (options.schedule_mode == ScheduleMode::KEEP) {
+                                cycle += (utils::UInt)ci->value;
+                            }
+
                         } else {
                             QL_USER_ERROR(
                                 "skip instructions must have a single "
@@ -642,9 +654,43 @@ static void convert_block(
                         // header (i.e. the default subcircuit, which is parsed
                         // separately) So this is no-op.
 
+                    } else if (
+                        (
+                            cq_insn->name == "wait" &&
+                            !cq_insn->operands.empty() &&
+                            cq_insn->operands[0]->as_const_int()
+                        ) ||
+                        cq_insn->name == "barrier"
+                    ) {
+
+                        // Handle wait and barrier instructions. These differ
+                        // from normal instructions in that single-gate-
+                        // multiple-qubit notation does not result in multiple
+                        // parallel instructions, but rather just adds all
+                        // referred qubits/bits to the object "sensitivity
+                        // list". This is hacky, but was the easiest way to
+                        // backport the barrier instruction to older software,
+                        // since varargs are not currently supported by libqasm.
+                        utils::Any<Expression> ql_operands;
+                        for (const auto &cq_operand : cq_insn->operands) {
+                            utils::UInt sgmq_size = 1;
+                            if (auto qr = cq_operand->as_qubit_refs()) {
+                                sgmq_size = qr->index.size();
+                                break;
+                            } else if (auto br = cq_operand->as_bit_refs()) {
+                                sgmq_size = br->index.size();
+                                break;
+                            }
+                            for (utils::UInt sgmq_index = 0; sgmq_index < sgmq_size; sgmq_index++) {
+                                ql_operands.add(convert_expression(ir, cq_operand, sgmq_size, sgmq_index));
+                            }
+                        }
+                        ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
+
                     } else {
 
-                        // Handle normal instructions.
+                        // Handle instructions with normal single-gate-multiple-
+                        // qubit semantics.
                         utils::UInt sgmq_size = 1;
                         for (const auto &cq_operand : cq_insn->operands) {
                             if (auto qr = cq_operand->as_qubit_refs()) {
@@ -660,6 +706,23 @@ static void convert_block(
                             for (const auto &cq_operand : cq_insn->operands) {
                                 ql_operands.add(convert_expression(ir, cq_operand, sgmq_size, sgmq_index));
                             }
+
+                            // `wait q[0], int` is unfortunately a special case,
+                            // because of the agreements made for
+                            // multiple-measurement support in Starmon-5; the
+                            // operands are swapped in OpenQL.
+                            if (
+                                cq_insn->name == "wait" &&
+                                ql_operands.size() == 2 &&
+                                ql_operands[0]->as_reference() &&
+                                ql_operands[0]->as_reference()->data_type == ir->platform->qubits->data_type &&
+                                ql_operands[1]->as_int_literal()
+                            ) {
+                                auto x = ql_operands[0];
+                                ql_operands[0] = ql_operands[1];
+                                ql_operands[1] = x;
+                            }
+
                             ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
                         }
 
@@ -681,7 +744,8 @@ static void convert_block(
                 }
 
                 // If this cQASM instruction produced an OpenQL instruction,
-                // complete it, and then add it to the end of the block.
+                // complete it, and then add it to the end of the current
+                // bundle.
                 for (const auto &ql_insn : ql_insns) {
                     ql_insn->cycle = cycle;
                     if (auto ql_cond_insn = ql_insn->as_conditional_instruction()) {
@@ -697,13 +761,71 @@ static void convert_block(
                             "condition not supported for this instruction"
                         );
                     }
-                    ql_block->statements.add(ql_insn);
+                    ql_bundle.push_back(ql_insn);
+
+                    // If scheduling information is discarded, increment the
+                    // cycle number at the end of each instruction.
+                    if (options.schedule_mode != ScheduleMode::KEEP) {
+                        cycle++;
+                    }
+
                 }
 
             }
 
-            // The cycle counter increments at the end of each bundle.
-            cycle++;
+            // Add implicit barriers before and after bundles if bundles are
+            // used as a shorthand notation for this rather than for scheduling
+            // information.
+            if (
+                !ql_bundle.empty() &&
+                options.schedule_mode == ScheduleMode::BUNDLES_AS_BARRIERS
+            ) {
+
+                // Figure out which objects are being used by this bundle.
+                ObjectAccesses oa{ir};
+                for (const auto &ql_insn : ql_bundle) {
+                    oa.add_statement(ql_insn);
+                }
+                utils::Any<Expression> ql_operands;
+                for (const auto &access : oa.get()) {
+                    if (!access.first.reference.target.empty()) {
+
+                        // Object is accessed, barrier needs to be made
+                        // sensitive to it.
+                        ql_operands.add(access.first.reference.clone());
+
+                    } else if (access.second == prim::AccessMode::WRITE) {
+
+                        // Null reference (unknown state) is mutated, so the
+                        // barrier needs to be sensitive to everything.
+                        ql_operands.reset();
+                        break;
+
+                    }
+                }
+
+                // Construct barriers sensitive to all used objects and add them
+                // to the front and back of the "bundle".
+                auto ql_barrier_begin = make_instruction(ir, "barrier", ql_operands);
+                auto ql_barrier_end = ql_barrier_begin.clone();
+                ql_barrier_begin->cycle = ql_bundle.front()->cycle;
+                ql_barrier_end->cycle = ql_bundle.back()->cycle;
+                ql_bundle.push_front(ql_barrier_begin);
+                ql_bundle.push_back(ql_barrier_end);
+
+            }
+
+            // Add the completed bundle to the block.
+            for (const auto &ql_insn : ql_bundle) {
+                ql_block->statements.add(ql_insn);
+            }
+
+            // The cycle counter increments at the end of each bundle if
+            // scheduling information is retained. Otherwise it is incremented
+            // at the end of each instruction.
+            if (options.schedule_mode == ScheduleMode::KEEP) {
+                cycle++;
+            }
 
         } else if (auto cq_if_else = cq_stmt->as_if_else()) {
 
@@ -725,7 +847,7 @@ static void convert_block(
 
                 // Convert body.
                 ql_branch->body.emplace();
-                convert_block(ir, cq_branch->body, ql_branch->body);
+                convert_block(ir, cq_branch->body, ql_branch->body, options);
 
                 ql_if_else->branches.add(ql_branch);
             }
@@ -733,7 +855,7 @@ static void convert_block(
             // Convert final else block.
             if (!cq_if_else->otherwise.empty()) {
                 ql_if_else->otherwise.emplace();
-                convert_block(ir, cq_if_else->otherwise, ql_if_else->otherwise);
+                convert_block(ir, cq_if_else->otherwise, ql_if_else->otherwise, options);
             }
 
             // Add to block.
@@ -765,7 +887,7 @@ static void convert_block(
 
             // Convert body.
             ql_for_loop->body.emplace();
-            convert_block(ir, cq_for_loop->body, ql_for_loop->body);
+            convert_block(ir, cq_for_loop->body, ql_for_loop->body, options);
 
             // Add to block.
             ql_block->statements.add(ql_for_loop);
@@ -790,7 +912,7 @@ static void convert_block(
 
             // Convert body.
             ql_static_loop->body.emplace();
-            convert_block(ir, cq_foreach_loop->body, ql_static_loop->body);
+            convert_block(ir, cq_foreach_loop->body, ql_static_loop->body, options);
 
             // Add to block.
             ql_block->statements.add(ql_static_loop);
@@ -811,7 +933,7 @@ static void convert_block(
 
             // Convert body.
             ql_for_loop->body.emplace();
-            convert_block(ir, cq_while_loop->body, ql_for_loop->body);
+            convert_block(ir, cq_while_loop->body, ql_for_loop->body, options);
 
             // Add to block.
             ql_block->statements.add(ql_for_loop);
@@ -823,7 +945,7 @@ static void convert_block(
 
             // Convert body.
             ql_for_loop->body.emplace();
-            convert_block(ir, cq_repeat_until->body, ql_for_loop->body);
+            convert_block(ir, cq_repeat_until->body, ql_for_loop->body, options);
 
             // Convert loop condition.
             ql_for_loop->condition = convert_expression(ir, cq_repeat_until->condition);
@@ -859,7 +981,12 @@ static void convert_block(
  * the filename if one exists for the purpose of generating better error
  * messages.
  */
-void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
+void read(
+    const Ref &ir,
+    const utils::Str &data,
+    const utils::Str &fname,
+    const ReadOptions &options
+) {
 
     // Create an analyzer for files with a version up to cQASM 1.2.
     cq::analyzer::Analyzer a{"1.2"};
@@ -1173,7 +1300,7 @@ void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
                 }
 
                 // Convert the rest of the block.
-                convert_block(ir, cq_subc->body, ql_block);
+                convert_block(ir, cq_subc->body, ql_block, options);
 
                 // Make sure no unused @ql.* annotations remain.
                 check_all_annotations_used(cq_program->subcircuits.back());
@@ -1188,6 +1315,17 @@ void read(const Ref &ir, const utils::Str &data, const utils::Str &fname) {
     ir->program = ql_program;
     check_consistency(ir);
 
+}
+
+/**
+ * Same as read(), but given a file to load, rather than loading from a string.
+ */
+void read_file(
+    const Ref &ir,
+    const utils::Str &fname,
+    const ReadOptions &options
+) {
+    read(ir, utils::InFile(fname).read(), fname, options);
 }
 
 } // namespace cqasm

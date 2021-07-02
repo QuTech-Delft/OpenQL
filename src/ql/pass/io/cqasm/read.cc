@@ -4,110 +4,14 @@
 
 #include "ql/pass/io/cqasm/read.h"
 
-#include "ql/utils/json.h"
-#include "detail/cqasm_reader.h"
+#include "ql/utils/filesystem.h"
+#include "ql/ir/cqasm/read.h"
 
 namespace ql {
 namespace pass {
 namespace io {
 namespace cqasm {
 namespace read {
-
-/**
- * Constructs a cQASM reader with the default cQASM gateset and conversion
- * rules. This is here for backward compatibility; new code should use a JSON
- * file for the gateset and conversion rules, or take the JSON from the platform
- * configuration file.
- */
-Reader::Reader(
-    const ir::compat::PlatformRef &platform,
-    const ir::compat::ProgramRef &program
-) : impl(platform, program) {}
-
-/**
- * Constructs a cQASM reader with a custom gateset from a JSON structure. The
- * JSON structure should be an array of objects, where every object represents
- * a cQASM gate (overload) and the rules for converting it to OpenQL gate(s).
- * The expected structure of these objects is described in
- * GateConverter::from_json().
- */
-Reader::Reader(
-    const ir::compat::PlatformRef &platform,
-    const ir::compat::ProgramRef &program,
-    const utils::Json &gateset
-) : impl(platform, program) {
-    impl->load_gateset(gateset);
-}
-
-/**
- * Constructs a cQASM reader with a custom gateset from a JSON file. The
- * structure of the JSON file should be an array of objects, where every object
- * represents a cQASM gate (overload) and the rules for converting it to OpenQL
- * gate(s). The expected structure of these objects is described in
- * GateConverter::from_json().
- */
-Reader::Reader(
-    const ir::compat::PlatformRef &platform,
-    const ir::compat::ProgramRef &program,
-    const utils::Str &gateset_fname
-) : impl(platform, program) {
-    impl->load_gateset(utils::load_json(gateset_fname));
-}
-
-/**
- * Parses a cQASM string using the gateset selected when the Reader is
- * constructed, converts the cQASM kernels to OpenQL kernels, and adds those
- * kernels to the selected OpenQL program.
- */
-void Reader::string2circuit(const utils::Str &cqasm_str) {
-    impl->string2circuit(cqasm_str);
-}
-
-/**
- * Parses a cQASM file using the gateset selected when the Reader is
- * constructed, converts the cQASM kernels to OpenQL kernels, and adds those
- * kernels to the selected OpenQL program.
- */
-void Reader::file2circuit(const utils::Str &cqasm_fname) {
-    impl->file2circuit(cqasm_fname);
-}
-
-/**
- * Reads a cQASM file. Its content are added to program. The number of qubits,
- * cregs, and/or bregs allocated in the program are increased as needed (if
- * possible for the current platform). The gateset parameter should be loaded
- * from a gateset configuration file or be alternatively initialized. If empty
- * or unspecified, a default set is used, that mimics the behavior of the reader
- * before it became configurable.
- */
-void from_file(
-    const ir::compat::ProgramRef &program,
-    const utils::Str &cqasm_fname,
-    const utils::Json &gateset
-) {
-    if (gateset.empty()) {
-        Reader(program->platform, program).file2circuit(cqasm_fname);
-    } else {
-        Reader(program->platform, program, gateset).file2circuit(cqasm_fname);
-    }
-}
-
-/**
- * Same as file(), be reads from a string instead.
- *
- * \see file()
- */
-void from_string(
-    const ir::compat::ProgramRef &program,
-    const utils::Str &cqasm_body,
-    const utils::Json &gateset
-) {
-    if (gateset.empty()) {
-        Reader(program->platform, program).string2circuit(cqasm_body);
-    } else {
-        Reader(program->platform, program, gateset).string2circuit(cqasm_body);
-    }
-}
 
 /**
  * Dumps docs for the cQASM reader.
@@ -120,97 +24,111 @@ void ReadCQasmPass::dump_docs(
     This pass completely discards the incoming program and replaces it with the
     program described by the given cQASM file.
 
-    Because libqasm (the library used by this pass to parse cQASM files;
-    see http://libqasm.readthedocs.io/) needs information about gate prototypes
-    that does not currently exist in the platform configuration file, an
-    additional configuration file is needed for this, specified using the
-    `gateset_file` option. If specified, this must be a JSON file consisting of
-    an array of objects, where each object has the following form.
+    The reader supports up to cQASM 1.2. However, rather than supporting the
+    default cQASM instruction and function set, the instructions defined in the
+    platform JSON description are used. In addition, the following special
+    instructions are supported.
 
-        {
-            "name": "<name>",               # mandatory
-            "params": "<typespec>",         # mandatory, refer to cqasm::types::from_spec()
-            "allow_conditional": <bool>,    # whether conditional gates of this type are accepted,
-                                            #   defaults to true
-            "allow_parallel": <bool>,       # whether parallel gates of this type are accepted,
-                                            #   defaults to true
-            "allow_reused_qubits": <bool>,  # whether reused qubit args for this type are accepted,
-                                            #   defaults to false
-            "ql_name": "<name>",            # defaults to "name"
-            "ql_qubits": [                  # list or "all", defaults to the "Q" args
-                0,                          # hardcoded qubit index
-                "%0"                        # reference to argument 0, which can be a qubitref, bitref,
-                                            #   or int
-            ],
-            "ql_cregs": [                   # list or "all", defaults to the "I" args
-                0,                          # hardcoded creg index
-                "%0"                        # reference to argument 0, which can be an int variable
-                                            #   reference, or int for creg index
-            ],
-            "ql_bregs": [                   # list or "all", defaults to the "B" args
-                0,                          # hardcoded breg index
-                "%0"                        # reference to argument 0, which can be an int variable
-                                            #   reference, or int for creg index
-            ],
-            "ql_duration": 0,               # duration; int to hardcode or "%i" to take from param i
-                                            #   (must be of type int), defaults to 0
-            "ql_angle": 0.0,                # angle; float to hardcode or "%i" to take from param i
-                                            #   (must be of type int or real), defaults to first arg
-                                            #   of type real or 0.0
-            "ql_angle_type": "<type>",      # interpretation of angle arg; one of "rad" (radians),
-                                            #   "deg" (degrees), or "pow2" (2pi/2^k radians), defaults
-                                            #   to "rad"
-            "implicit_sgmq": <bool>,        # if multiple qubit args are present, a single-qubit gate
-                                            #   of this type should be replicated for these qubits
-                                            #   (instead of a single gate with many qubits)
-            "implicit_breg": <bool>         # the breg operand(s) that implicitly belongs to the qubit
-                                            #   operand(s) in the gate should be added to the OpenQL
-                                            #   operand list
-        }
+     - `skip <int>`: used in conjunction with bundle notation to represent a
+       scheduled program. The instruction behaves like `<int>` consecutive empty
+       bundles.
+
+     - `wait <int>`: used as an input to the scheduler, forcing all instructions
+       defined after the `wait` instruction to start at least `<int>` cycles
+       after all instructions defined before the `wait` instruction have
+       completed.
+
+     - `wait q[...], <int>`: as above, but only affects instructions that
+       operate on the specified qubit. Effectively, this means that the
+       instruction enforces that the qubit is idled for at least `<int>` cycles.
+       If single-gate-multiple-qubit notation is used, for example
+       `wait q[0,2], 3`, the *independent* wait blocks are created as per the
+       regular single-gate-multiple-qubit rules.
+
+     - `wait <int>, ...`: generalization of the above, supporting any kind of
+       object, and any number of them. That is, all preceding instructions
+       operating on any object specified in place of the ellipsis must complete
+       before the `wait` can be scheduled, and any following instructions
+       operating on any object specified in place of the ellipsis must start
+       after the `wait` completes. Unlike the above, if single-gate-multiple-
+       qubit notation is used for qubit/bit objects, the result is a *single*
+       wait instruction that waits for all indexed elements, rather than
+       multiple parallel wait instructions (this is semantically different!).
+
+     - `barrier ...`: shorthand for `wait 0, ...`. A `barrier` without arguments
+       is also valid.
+
+     - `pragma`: supported as a means to place annotations inside statement
+       lists. The reader uses this for some annotations of its own, but
+       otherwise ignores it.
+
+    Registers as defined by the platform are implicitly defined by the reader,
+    and must thus not be redefined as variables. The only exception is the main
+    qubit register (`qubits <int>`), which may optionally be defined at the top
+    of the file, as this statement is mandatory in the cQASM 1.0 language.
+    Non-scalar registers, such as integer control registers (cregs) and bit
+    registers beyond the bits associated with the main qubit register (bregs),
+    must be referred to using a function call of the same name as the register
+    with the index/indices as arguments (for example `creg(2)`), as cQASM
+    doesn't natively support non-scalar objects aside from the main qubit
+    register and associated bits.
 )" R"(
-    If not specified, the reader defaults to the logic that was hardcoded before
-    it was made configurable. This corresponds to the following JSON:
+    Various annotations may be used to fine-tune the behavior of the reader.
+    Most of these are particularly important for accurate reproduction of
+    OpenQL's internal representation of the program after conversion to and from
+    cQASM.
 
-        [
-            {"name": "measure",     "params": "Q",      "ql_name": "measz"},
-            {"name": "measure",     "params": "QB",     "ql_name": "measz"},
-            {"name": "measure_x",   "params": "Q",      "ql_name": "measx"},
-            {"name": "measure_x",   "params": "QB",     "ql_name": "measx"},
-            {"name": "measure_y",   "params": "Q",      "ql_name": "measy"},
-            {"name": "measure_y",   "params": "QB",     "ql_name": "measy"},
-            {"name": "measure_z",   "params": "Q",      "ql_name": "measz"},
-            {"name": "measure_z",   "params": "QB",     "ql_name": "measz"},
-            {"name": "prep",        "params": "Q",      "ql_name": "prepz"},
-            {"name": "prep_x",      "params": "Q",      "ql_name": "prepx"},
-            {"name": "prep_y",      "params": "Q",      "ql_name": "prepy"},
-            {"name": "prep_z",      "params": "Q",      "ql_name": "prepz"},
-            {"name": "i",           "params": "Q"},
-            {"name": "h",           "params": "Q"},
-            {"name": "x",           "params": "Q"},
-            {"name": "y",           "params": "Q"},
-            {"name": "z",           "params": "Q"},
-            {"name": "s",           "params": "Q"},
-            {"name": "sdag",        "params": "Q"},
-            {"name": "t",           "params": "Q"},
-            {"name": "tdag",        "params": "Q"},
-            {"name": "x90",         "params": "Q",      "ql_name": "rx90"},
-            {"name": "mx90",        "params": "Q",      "ql_name": "xm90"},
-            {"name": "y90",         "params": "Q",      "ql_name": "ry90"},
-            {"name": "my90",        "params": "Q",      "ql_name": "ym90"},
-            {"name": "rx",          "params": "Qr"},
-            {"name": "ry",          "params": "Qr"},
-            {"name": "rz",          "params": "Qr"},
-            {"name": "cnot",        "params": "QQ"},
-            {"name": "cz",          "params": "QQ"},
-            {"name": "swap",        "params": "QQ"},
-            {"name": "cr",          "params": "QQr"},
-            {"name": "crk",         "params": "QQi",    "ql_angle": "%2", "ql_angle_type": "pow2"},
-            {"name": "toffoli",     "params": "QQQ"},
-            {"name": "measure_all", "params": "",       "ql_qubits": "all", "implicit_sgmq": true},
-            {"name": "display",     "params": ""},
-            {"name": "wait",        "params": ""},
-            {"name": "wait",        "params": "i"}
-        ]
+     - `pragma @ql.platform(<json>)` may be placed at the top of the program,
+       but is currently ignored.
+
+     - `pragma @ql.name("<name>")` may be placed at the top of the program to
+       set the name of the program, in case no program exists in the IR yet.
+       Otherwise it will simply default to `"program"`.
+
+     - Variables may be annotated with `@ql.type("<name>")` to specify the exact
+       OpenQL type that should be used. If not specified, the first type defined
+       in the platform that matches the primitive cQASM type will be used. You
+       should only need this when you're using a platform that, for instance,
+       supports multiple types/sizes of integers.
+
+     - Variables may be annotated with `@ql.temp` to specify that they are
+       temporary objects that were automatically inferred. This is normally only
+       used by generated cQASM code.
+
+     - The first subcircuit may be annotated with `@ql.entry` if it consists of
+       only a single, unconditional goto instruction. In that case, the
+       subcircuit will be discarded, and the target of the `goto` instruction
+       will be marked as the entry point of the program within OpenQL, rather
+       than the first subcircuit.
+
+     - The last subcircuit may be annotated with `@ql.exit` if it contains no
+       instructions. In that case, the subcircuit will be discarded, but any
+       subcircuits that end in an unconditional goto instruction to this
+       subcircuit will be marked as ending the program within OpenQL.
+
+    The `schedule` option controls how scheduling information is interpreted.
+
+     - If set to `keep`, `skip` instructions and bundles are used to determine
+       the cycle numbers of the instructions within each block, using the
+       following rules:
+        - single-gate-multiple-qubit notation (for example `x q[0,1]`) is
+          expanded to a bundle of instructions that start simultaneously;
+        - the first instruction or bundle of instructions is assigned to start
+          in cycle 0;
+        - each subsequent single instruction or bundle of instructions starts
+          one cycle after the previous instruction/bundle started; and
+        - `skip <int>` behaves like `<int>` empty bundles.
+
+     - If set to `discard`, `skip` instructions and bundles are ignored, and
+       single-gate-multiple-qubit is ignored in terms of its timing implication;
+       instead, instructions will be assigned consecutive cycle numbers in the
+       order in which they appear in the file.
+
+     - If set to `bundles-as-barriers`, timing information is ignored as for
+       `discard`, but barriers are implicitly inserted before and after each
+       bundle, sensitive to exactly those objects used as operands by the
+       instructions that appear in the bundle. Single-gate-multiple-qubit
+       notation expands to a bundle as well.
     )");
 }
 
@@ -228,15 +146,17 @@ ReadCQasmPass::ReadCQasmPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : pmgr::pass_types::ProgramTransformation(pass_factory, instance_name, type_name) {
+) : pmgr::pass_types::Transformation(pass_factory, instance_name, type_name) {
     options.add_str(
         "cqasm_file",
         "cQASM file to read. Mandatory."
     );
-    options.add_str(
-        "gateset_file",
-        "Optional JSON gateset configuration file path, if the default behavior "
-        "is insufficient."
+    options.add_enum(
+        "schedule",
+        "Controls how scheduling/timing information (via bundles and skip "
+        "instructions) is interpreted. See pass description for more info.",
+        "keep",
+        {"keep", "discard", "bundles-as-barriers"}
     );
 }
 
@@ -244,26 +164,26 @@ ReadCQasmPass::ReadCQasmPass(
  * Runs the cQASM reader.
  */
 utils::Int ReadCQasmPass::run(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
 
-    // Empty the program completely.
-    // TODO: there should be a common function to do this.
-    program->kernels.reset();
-    program->qubit_count = 0;
-    program->creg_count = 0;
-    program->breg_count = 0;
+    ir::cqasm::ReadOptions read_options;
 
-    // Read cQASM file.
-    utils::Json gateset;
-    if (options["gateset_file"].is_set()) {
-        gateset = utils::load_json(options["gateset_file"].as_str());
+    if (options["schedule"].as_str() == "keep") {
+        read_options.schedule_mode = ir::cqasm::ScheduleMode::KEEP;
+    } else if (options["schedule"].as_str() == "discard") {
+        read_options.schedule_mode = ir::cqasm::ScheduleMode::DISCARD;
+    } else if (options["schedule"].as_str() == "bundles-as-barriers") {
+        read_options.schedule_mode = ir::cqasm::ScheduleMode::BUNDLES_AS_BARRIERS;
+    } else {
+        QL_ASSERT(false);
     }
-    from_file(
-        program,
+
+    ir::cqasm::read_file(
+        ir,
         options["cqasm_file"].as_str(),
-        gateset
+        read_options
     );
 
     return 0;

@@ -1428,42 +1428,42 @@ utils::Str describe(const utils::One<Node> &node) {
 /**
  * Clones this wrapper (and its underlying reference object).
  */
-ObjectAccesses::ReferenceWrapper ObjectAccesses::ReferenceWrapper::clone() const {
+UniqueReference UniqueReference::clone() const {
     return {*reference.clone().as<Reference>()};
 }
 
 /**
  * Dereference operator (shorthand).
  */
-const Reference &ObjectAccesses::ReferenceWrapper::operator*() const {
+const Reference &UniqueReference::operator*() const {
     return reference;
 }
 
 /**
  * Dereference operator (shorthand).
  */
-Reference &ObjectAccesses::ReferenceWrapper::operator*() {
+Reference &UniqueReference::operator*() {
     return reference;
 }
 
 /**
  * Dereference operator (shorthand).
  */
-const Reference *ObjectAccesses::ReferenceWrapper::operator->() const {
+const Reference *UniqueReference::operator->() const {
     return &reference;
 }
 
 /**
  * Dereference operator (shorthand).
  */
-Reference *ObjectAccesses::ReferenceWrapper::operator->() {
+Reference *UniqueReference::operator->() {
     return &reference;
 }
 
 /**
  * Less-than operator to allow this to be used as a key to a map.
  */
-utils::Bool ObjectAccesses::ReferenceWrapper::operator<(const ReferenceWrapper &rhs) const {
+utils::Bool UniqueReference::operator<(const UniqueReference &rhs) const {
     if (reference.target > rhs->target) return false;
     if (reference.target < rhs->target) return true;
     if (reference.data_type > rhs->data_type) return false;
@@ -1481,9 +1481,14 @@ utils::Bool ObjectAccesses::ReferenceWrapper::operator<(const ReferenceWrapper &
 /**
  * Value-based equality operator.
  */
-utils::Bool ObjectAccesses::ReferenceWrapper::operator==(const ReferenceWrapper &rhs) const {
+utils::Bool UniqueReference::operator==(const UniqueReference &rhs) const {
     return reference.equals(*rhs);
 }
+
+/**
+ * Constructs an object reference gatherer.
+ */
+ObjectAccesses::ObjectAccesses(const Ref &ir) : ir(ir) {}
 
 /**
  * Returns the contained dependency list.
@@ -1502,16 +1507,15 @@ const ObjectAccesses::Accesses &ObjectAccesses::get() const {
  * match the mode is maintained, otherwise the mode is changed to write.
  */
 void ObjectAccesses::add_access(
-    const Ref &ir,
     prim::AccessMode mode,
-    const ReferenceWrapper &reference
+    const UniqueReference &reference
 ) {
     if (mode == prim::AccessMode::LITERAL) {
         mode = prim::AccessMode::READ;
     } else if (mode == prim::AccessMode::MEASURE) {
-        ReferenceWrapper copy = reference.clone();
+        UniqueReference copy = reference.clone();
         copy->data_type = ir->platform->implicit_bit_type;
-        add_access(ir, prim::AccessMode::WRITE, copy);
+        add_access(prim::AccessMode::WRITE, copy);
         mode = prim::AccessMode::WRITE;
     }
     auto it = accesses.find(reference);
@@ -1526,14 +1530,13 @@ void ObjectAccesses::add_access(
  * Adds dependencies on whatever is used by a complete expression.
  */
 void ObjectAccesses::add_expression(
-    const Ref &ir,
     prim::AccessMode mode,
     const ExpressionRef &expr
 ) {
     if (auto ref = expr->as_reference()) {
-        add_access(ir, mode, {*ref});
+        add_access(mode, {*ref});
     } else if (auto call = expr->as_function_call()) {
-        add_operands(ir, call->function_type->operand_types, call->operands);
+        add_operands(call->function_type->operand_types, call->operands);
     }
 }
 
@@ -1541,7 +1544,6 @@ void ObjectAccesses::add_expression(
  * Adds dependencies on the operands of a function or instruction.
  */
 void ObjectAccesses::add_operands(
-    const Ref &ir,
     const utils::Any<OperandType> &prototype,
     const utils::Any<Expression> &operands
 ) {
@@ -1567,33 +1569,32 @@ void ObjectAccesses::add_operands(
                     break;
             }
         }
-        add_expression(ir, mode, operands[i]);
+        add_expression(mode, operands[i]);
     }
 }
 
 /**
  * Adds dependencies for a complete statement.
  */
-void ObjectAccesses::add_statement(const Ref &ir, const StatementRef &stmt) {
+void ObjectAccesses::add_statement(const StatementRef &stmt) {
     auto barrier = false;
     if (auto cond = stmt->as_conditional_instruction()) {
-        add_expression(ir, prim::AccessMode::READ, cond->condition);
+        add_expression(prim::AccessMode::READ, cond->condition);
         if (auto custom = stmt->as_custom_instruction()) {
-            add_operands(ir, custom->instruction_type->operand_types, custom->operands);
+            add_operands(custom->instruction_type->operand_types, custom->operands);
             if (!custom->instruction_type->template_operands.empty()) {
                 auto gen = custom->instruction_type;
                 while (!gen->generalization.empty()) gen = gen->generalization;
                 for (utils::UInt i = 0; i < custom->instruction_type->template_operands.size(); i++) {
                     add_expression(
-                        ir,
                         gen->operand_types[i]->mode,
                         custom->instruction_type->template_operands[i]
                     );
                 }
             }
         } else if (auto set = stmt->as_set_instruction()) {
-            add_expression(ir, prim::AccessMode::WRITE, set->lhs);
-            add_expression(ir, prim::AccessMode::READ, set->rhs);
+            add_expression(prim::AccessMode::WRITE, set->lhs);
+            add_expression(prim::AccessMode::READ, set->rhs);
         } else if (stmt->as_goto_instruction()) {
             barrier = true;
         } else {
@@ -1604,28 +1605,28 @@ void ObjectAccesses::add_statement(const Ref &ir, const StatementRef &stmt) {
             barrier = true;
         } else {
             for (const auto &ref : wait->objects) {
-                add_expression(ir, prim::AccessMode::WRITE, ref);
+                add_expression(prim::AccessMode::WRITE, ref);
             }
         }
     } else if (stmt->as_dummy_instruction()) {
         barrier = true;
     } else if (auto if_else = stmt->as_if_else()) {
         for (const auto &branch : if_else->branches) {
-            add_expression(ir, prim::AccessMode::READ, branch->condition);
-            add_block(ir, branch->body);
+            add_expression(prim::AccessMode::READ, branch->condition);
+            add_block(branch->body);
         }
         if (!if_else->otherwise.empty()) {
-            add_block(ir, if_else->otherwise);
+            add_block(if_else->otherwise);
         }
     } else if (auto loop = stmt->as_loop()) {
-        add_block(ir, loop->body);
+        add_block(loop->body);
         if (auto stat = stmt->as_static_loop()) {
-            add_expression(ir, prim::AccessMode::WRITE, stat->lhs);
+            add_expression(prim::AccessMode::WRITE, stat->lhs);
         } else if (auto dyn = stmt->as_dynamic_loop()) {
-            add_expression(ir, prim::AccessMode::READ, dyn->condition);
+            add_expression(prim::AccessMode::READ, dyn->condition);
             if (auto forl = stmt->as_for_loop()) {
-                add_statement(ir, forl->initialize);
-                add_statement(ir, forl->update);
+                add_statement(forl->initialize);
+                add_statement(forl->update);
             } else if (stmt->as_repeat_until_loop()) {
                 // no further dependencies
             } else {
@@ -1643,16 +1644,16 @@ void ObjectAccesses::add_statement(const Ref &ir, const StatementRef &stmt) {
     // Generate data dependencies for barrier-like instructions. Instructions
     // can shift around between barriers (as read accesses commute), but they
     // cannot cross a barrier, and barriers themselves cannot commute.
-    add_access(ir, barrier ? prim::AccessMode::WRITE : prim::AccessMode::READ, {});
+    add_access(barrier ? prim::AccessMode::WRITE : prim::AccessMode::READ, {});
 
 }
 
 /**
  * Adds dependencies for a whole (sub)block of statements.
  */
-void ObjectAccesses::add_block(const Ref &ir, const SubBlockRef &block) {
+void ObjectAccesses::add_block(const SubBlockRef &block) {
     for (const auto &stmt : block->statements) {
-        add_statement(ir, stmt);
+        add_statement(stmt);
     }
 }
 

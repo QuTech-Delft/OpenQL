@@ -5,10 +5,9 @@
 #include "cqasm_reader.h"
 
 namespace ql {
-namespace pass {
-namespace io {
-namespace cqasm {
-namespace read {
+namespace ir {
+namespace compat {
+namespace cqasm_reader {
 namespace detail {
 
 /**
@@ -968,8 +967,7 @@ void ReaderImpl::file2circuit(const utils::Str &cqasm_fname) {
 }
 
 } // namespace detail
-} // namespace read
-} // namespace cqasm
-} // namespace io
-} // namespace pass
+} // namespace cqasm_read
+} // namespace compat
+} // namespace ir
 } // namespace ql

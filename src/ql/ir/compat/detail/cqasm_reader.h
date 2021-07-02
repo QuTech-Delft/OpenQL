@@ -12,10 +12,9 @@
 #include "cqasm.hpp"
 
 namespace ql {
-namespace pass {
-namespace io {
-namespace cqasm {
-namespace read {
+namespace ir {
+namespace compat {
+namespace cqasm_reader {
 namespace detail {
 
 // Shorthands for namespaces.
@@ -398,8 +397,7 @@ public:
 };
 
 } // namespace detail
-} // namespace read
-} // namespace cqasm
-} // namespace io
-} // namespace pass
+} // namespace cqasm_reader
+} // namespace compat
+} // namespace ir
 } // namespace ql

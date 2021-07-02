@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ql/pass/io/cqasm/read.h"
+#include "ql/ir/compat/cqasm_reader.h"
 #include "ql/api/declarations.h"
 #include "ql/api/platform.h"
 #include "ql/api/program.h"
@@ -28,7 +28,7 @@ private:
     /**
      * The wrapped cQASM reader.
      */
-    ql::utils::Ptr<ql::pass::io::cqasm::read::Reader> cqasm_reader;
+    ql::utils::Ptr<ql::ir::compat::cqasm_reader::Reader> cqasm_reader;
 
 public:
 

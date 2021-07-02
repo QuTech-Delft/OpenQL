@@ -392,6 +392,61 @@ utils::Str describe(const Node &node);
 utils::Str describe(const utils::One<Node> &node);
 
 /**
+ * A reference to an object (including index) or a null reference, for the
+ * purpose of representing a data dependency. The null reference is used for
+ * barriers without operands (i.e. barriers that must have a data dependency
+ * with all other objects) and goto instructions: these instructions "write"
+ * to the "null object", while all other instructions read from it. This just
+ * wraps ir::Reference, in such a way that it can be used as the key for ordered
+ * maps and sets, and such that equality is value-based.
+ */
+class UniqueReference {
+public:
+
+    /**
+     * The wrapped reference.
+     */
+    Reference reference;
+
+    /**
+     * Clones this wrapper (and its underlying reference object).
+     */
+    UniqueReference clone() const;
+
+    /**
+     * Dereference operator (shorthand).
+     */
+    const Reference &operator*() const;
+
+    /**
+     * Dereference operator (shorthand).
+     */
+    Reference &operator*();
+
+    /**
+     * Dereference operator (shorthand).
+     */
+    const Reference *operator->() const;
+
+    /**
+     * Dereference operator (shorthand).
+     */
+    Reference *operator->();
+
+    /**
+     * Value-based less-than operator to allow this to be used as a key to
+     * a map.
+     */
+    utils::Bool operator<(const UniqueReference &rhs) const;
+
+    /**
+     * Value-based equality operator.
+     */
+    utils::Bool operator==(const UniqueReference &rhs) const;
+
+};
+
+/**
  * Container for gathering and representing the list of object accesses for
  * instructions and expressions.
  */
@@ -399,71 +454,21 @@ class ObjectAccesses {
 public:
 
     /**
-     * A reference to an object (including index) or a null reference, for the
-     * purpose of representing a data dependency. The null reference is used for
-     * barriers without operands (i.e. barriers that must have a data dependency
-     * with all other objects) and goto instructions: these instructions "write"
-     * to the "null object", while all other instructions read from it. This just
-     * wraps ir::Reference, in such a way that it can be used as the key for ordered
-     * maps and sets, and such that equality is value-based.
-     */
-    class ReferenceWrapper {
-    public:
-
-        /**
-         * The wrapped reference.
-         */
-        Reference reference;
-
-        /**
-         * Clones this wrapper (and its underlying reference object).
-         */
-        ReferenceWrapper clone() const;
-
-        /**
-         * Dereference operator (shorthand).
-         */
-        const Reference &operator*() const;
-
-        /**
-         * Dereference operator (shorthand).
-         */
-        Reference &operator*();
-
-        /**
-         * Dereference operator (shorthand).
-         */
-        const Reference *operator->() const;
-
-        /**
-         * Dereference operator (shorthand).
-         */
-        Reference *operator->();
-
-        /**
-         * Value-based less-than operator to allow this to be used as a key to
-         * a map.
-         */
-        utils::Bool operator<(const ReferenceWrapper &rhs) const;
-
-        /**
-         * Value-based equality operator.
-         */
-        utils::Bool operator==(const ReferenceWrapper &rhs) const;
-
-    };
-
-    /**
      * An object access, as used for representing data dependencies.
      */
-    using Access = utils::Pair<ReferenceWrapper, prim::AccessMode>;
+    using Access = utils::Pair<UniqueReference, prim::AccessMode>;
 
     /**
      * Shorthand for the data dependency list container.
      */
-    using Accesses = utils::Map<ReferenceWrapper, prim::AccessMode>;
+    using Accesses = utils::Map<UniqueReference, prim::AccessMode>;
 
 private:
+
+    /**
+     * Reference to the root of the IR.
+     */
+    Ref ir;
 
     /**
      * The actual dependency list.
@@ -489,6 +494,11 @@ public:
     utils::Bool disable_multi_qubit_commutation = false;
 
     /**
+     * Constructs an object reference gatherer.
+     */
+    ObjectAccesses(const Ref &ir);
+
+    /**
      * Returns the contained list of object accesses.
      */
     const Accesses &get() const;
@@ -503,16 +513,14 @@ public:
      * match the mode is maintained, otherwise the mode is changed to write.
      */
     void add_access(
-        const Ref &ir,
         prim::AccessMode mode,
-        const ReferenceWrapper &reference
+        const UniqueReference &reference
     );
 
     /**
      * Adds dependencies on whatever is used by a complete expression.
      */
     void add_expression(
-        const Ref &ir,
         prim::AccessMode mode,
         const ExpressionRef &expr
     );
@@ -521,7 +529,6 @@ public:
      * Adds dependencies on the operands of a function or instruction.
      */
     void add_operands(
-        const Ref &ir,
         const utils::Any<OperandType> &prototype,
         const utils::Any<Expression> &operands
     );
@@ -529,12 +536,12 @@ public:
     /**
      * Adds dependencies for a complete statement.
      */
-    void add_statement(const Ref &ir, const StatementRef &stmt);
+    void add_statement(const StatementRef &stmt);
 
     /**
      * Adds dependencies for a whole (sub)block of statements.
      */
-    void add_block(const Ref &ir, const SubBlockRef &block);
+    void add_block(const SubBlockRef &block);
 
     /**
      * Clears the dependency list, allowing the object to be reused.
