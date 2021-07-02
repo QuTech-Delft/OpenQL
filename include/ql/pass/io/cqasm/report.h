@@ -15,31 +15,9 @@ namespace cqasm {
 namespace report {
 
 /**
- * Dumps cQASM code for the given program to the given output stream.
- * Optionally, the after_kernel callback function may be used to dump additional
- * information at the end of each kernel. The third argument specifies the
- * appropriate line prefix for correctly-indented comments.
- */
-void dump(
-    const ir::compat::ProgramRef &program,
-    std::ostream &os = std::cout,
-    std::function<void(const ir::compat::KernelRef&, std::ostream&, const utils::Str&)> after_kernel
-        = [](const ir::compat::KernelRef&, std::ostream&, const utils::Str&){}
-);
-
-/**
- * Specialization of dump() that includes statistics per kernel and program in
- * comments.
- */
-void dump_with_statistics(
-    const ir::compat::ProgramRef &program,
-    std::ostream &os = std::cout
-);
-
-/**
  * cQASM writer pass.
  */
-class ReportCQasmPass : public pmgr::pass_types::ProgramAnalysis {
+class ReportCQasmPass : public pmgr::pass_types::Analysis {
 protected:
 
     /**
@@ -70,7 +48,7 @@ public:
      * Runs the cQASM writer.
      */
     utils::Int run(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const pmgr::pass_types::Context &context
     ) const override;
 

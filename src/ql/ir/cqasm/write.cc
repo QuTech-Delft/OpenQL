@@ -495,13 +495,16 @@ public:
 
             // If stmt/insn cannot be added to the current bundle because it's
             // scheduled in a different cycle or isn't a schedulable
-            // instruction, flush it.
-            if (insn.empty() || insn->cycle != cycle) {
+            // instruction, flush it. Also, always flush when the include_timing
+            // option is disabled, to prevent multiple instructions from being
+            // bundled together.
+            if (!options.include_timing || insn.empty() || insn->cycle != cycle) {
                 flush_bundle(bundle, cycle);
                 if (!insn.empty()) {
 
-                    // Add a skip before the next bundle if necessary.
-                    if (insn->cycle > cycle) {
+                    // Add a skip before the next bundle if necessary and if
+                    // include_timing is enabled.
+                    if (options.include_timing && insn->cycle > cycle) {
                         os << sl() << "skip " << (insn->cycle - cycle) << el();
                     }
 
@@ -528,9 +531,11 @@ public:
         // previous block have completed. Therefore, we have to add a skip at
         // the end, to skip to the first cycle when all instructions have
         // completed.
-        auto last = get_duration_of_block(node.copy());
-        if (last > cycle) {
-            os << sl() << "skip " << (last - cycle) << el();
+        if (options.include_timing) {
+            auto last = get_duration_of_block(node.copy());
+            if (last > cycle) {
+                os << sl() << "skip " << (last - cycle) << el();
+            }
         }
 
     }
@@ -607,74 +612,83 @@ public:
      * Visitor function for `WaitInstruction` nodes.
      */
     void visit_wait_instruction(WaitInstruction &node) override {
-        if (!options.include_barriers) {
-            return;
-        }
-        os << sl();
-        if (version_at_least({1, 1})) {
-            auto first = true;
-            if (node.duration == 0) {
-                os << "barrier";
-            } else {
-                os << "wait " << node.duration;
-                first = false;
+        switch (options.include_wait_instructions) {
+            case WaitStyle::DISABLED: {
+                // Ignore.
+                break;
             }
-            for (const auto &op : node.objects) {
-                if (!first) {
-                    os << ",";
-                }
-                os << " ";
-                op->visit(*this);
-                first = false;
-            }
-        } else {
-            if (node.objects.empty()) {
-                os << "wait " << node.duration;
-            } else if (node.duration == 0) {
-                utils::Set<utils::UInt> qubits;
-                for (const auto &op : node.objects) {
-                    if (
-                        op->target == ir->platform->qubits &&
-                        op->data_type == ir->platform->qubits->data_type &&
-                        op->indices.size() == 1 &&
-                        op->indices[0]->as_int_literal()
-                    ) {
-                        qubits.insert(op->indices[0]->as_int_literal()->value);
-                    } else {
-                        QL_USER_ERROR(
-                            describe(op) << " cannot be represented as "
-                            "target for a barrier in cQASM 1.0"
-                        );
+            case WaitStyle::SIMPLE: {
+                os << sl();
+                if (node.objects.empty()) {
+                    os << "wait " << node.duration;
+                } else if (node.duration == 0) {
+                    utils::Set<utils::UInt> qubits;
+                    for (const auto &op : node.objects) {
+                        if (
+                            op->target == ir->platform->qubits &&
+                            op->data_type == ir->platform->qubits->data_type &&
+                            op->indices.size() == 1 &&
+                            op->indices[0]->as_int_literal()
+                        ) {
+                            qubits.insert(op->indices[0]->as_int_literal()->value);
+                        } else {
+                            QL_USER_ERROR(
+                                describe(op) << " cannot be represented as "
+                                "target for a barrier using simple wait style"
+                            );
+                        }
                     }
-                }
-                os << "barrier q[";
-                auto it = qubits.begin();
-                QL_ASSERT(it != qubits.end());
-                os << *it;
-                ++it;
-                auto postponed = false;
-                while (it != qubits.end()) {
-                    if (*it == *std::prev(it) + 1) {
-                        postponed = true;
-                        continue;
-                    } else if (postponed) {
-                        os << ":" << *std::prev(it);
-                        postponed = false;
-                    }
-                    os << ", " << *it;
+                    os << "barrier q[";
+                    auto it = qubits.begin();
+                    QL_ASSERT(it != qubits.end());
+                    os << *it;
                     ++it;
+                    auto postponed = false;
+                    while (it != qubits.end()) {
+                        if (*it == *std::prev(it) + 1) {
+                            postponed = true;
+                            continue;
+                        } else if (postponed) {
+                            os << ":" << *std::prev(it);
+                            postponed = false;
+                        }
+                        os << ", " << *it;
+                        ++it;
+                    }
+                    if (postponed) {
+                        os << ":" << *std::prev(it);
+                    }
+                    os << "]";
+                } else {
+                    QL_USER_ERROR(
+                        "simple wait style lacks a barrier with nonzero duration"
+                    );
                 }
-                if (postponed) {
-                    os << ":" << *std::prev(it);
+                os << el();
+                break;
+            }
+            case WaitStyle::EXTENDED: {
+                os << sl();
+                auto first = true;
+                if (node.duration == 0) {
+                    os << "barrier";
+                } else {
+                    os << "wait " << node.duration;
+                    first = false;
                 }
-                os << "]";
-            } else {
-                QL_USER_ERROR(
-                    "cQASM 1.0 lacks a barrier with nonzero duration"
-                );
+                for (const auto &op : node.objects) {
+                    if (!first) {
+                        os << ",";
+                    }
+                    os << " ";
+                    op->visit(*this);
+                    first = false;
+                }
+                os << el();
+                break;
             }
         }
-        os << el();
+
     }
 
     /**

@@ -116,6 +116,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u, [0])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
 
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
@@ -137,6 +139,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u, [0])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
@@ -158,6 +162,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u, [0])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
@@ -181,6 +187,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate("hadamard", [0])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
@@ -212,6 +220,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u, [0])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
@@ -246,6 +256,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u2, [0])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
@@ -298,6 +310,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         u.decompose()
         k.gate(u, [0, 1])
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
 
 
@@ -324,6 +338,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.x(1)
         k.gate(u, [0, 1])
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
 
 
@@ -352,6 +368,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0,1])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
@@ -381,6 +399,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         u1.decompose()
         k.gate(u1, [0,1])
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
 
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
@@ -415,6 +435,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0,1])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
 
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
@@ -452,6 +474,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0,1])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
 
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
@@ -489,6 +513,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0,1])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -524,6 +550,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0,1])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -561,6 +589,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0,1])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -622,6 +652,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0,1, 2])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -691,6 +723,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0, 1, 2, 3])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -758,6 +792,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0, 1, 2, 3, 4])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -845,6 +881,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0, 1, 2, 3, 4])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -1086,6 +1124,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0, 1, 2, 3])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -1149,6 +1189,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0, 1, 2, 3])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -1188,6 +1230,8 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -1217,6 +1261,8 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -1242,6 +1288,8 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -1268,6 +1316,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0, 1])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -1304,6 +1354,8 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -1341,6 +1393,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u1, [0, 1, 2])
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -1380,6 +1434,8 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
@@ -1427,6 +1483,8 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
         p.add_kernel(k)
+        p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
+        p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()

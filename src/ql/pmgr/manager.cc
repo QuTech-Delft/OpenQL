@@ -560,7 +560,8 @@ Manager Manager::from_defaults(const ir::compat::PlatformRef &platform) {
         "initialqasmwriter",
         {
             {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"},
-            {"output_suffix", ".qasm"}
+            {"output_suffix", ".qasm"},
+            {"with_timing", "no"}
         }
     );
     if (com::options::global["clifford_prescheduler"].as_bool()) {

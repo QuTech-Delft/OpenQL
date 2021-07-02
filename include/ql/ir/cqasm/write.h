@@ -11,6 +11,43 @@ namespace ir {
 namespace cqasm {
 
 /**
+ * The manner in which wait instructions are printed.
+ */
+enum class WaitStyle {
+
+    /**
+     * Wait instructions are not printed at all.
+     */
+    DISABLED,
+
+    /**
+     * Print wait instructions using the following syntax.
+     *
+     *  - `wait N`: wait for all previous instructions to complete, then wait
+     *    N cycles (including 0 cycles, for a barrier on everything).
+     *  - `barrier q[...]`: wait for all instructions operating on the qubits
+     *    in the SGMQ list to complete.
+     *
+     * This is compliant with the default gateset of libqasm 0.3.1 onward, but
+     * doesn't support everything that OpenQL supports.
+     */
+    SIMPLE,
+
+    /**
+     * Print wait instructions using the following syntax.
+     *
+     *  - `barrier`: wait for all previous instructions to complete.
+     *  - `wait N`: wait for all previous instructions to complete, then wait
+     *    N cycles.
+     *  - `barrier [...]`: wait for all previous instructions operating on the
+     *    given objects to complete.
+     *  - `wait N, [...]`: wait for all previous instructions operating on the
+     *    given objects to complete, when wait N cycles.
+     */
+    EXTENDED
+};
+
+/**
  * Options for writing cQASM files.
  */
 struct WriteOptions {
@@ -54,27 +91,15 @@ struct WriteOptions {
 
     /**
      * Whether to include wait and barrier instructions. These are only needed
-     * when the program will be fed to another compiler later on. For cQASM
-     * 1.1+, the syntax is:
-     *
-     *  - `barrier`: wait for all previous instructions to complete.
-     *  - `wait N`: wait for all previous instructions to complete, then wait
-     *    N cycles.
-     *  - `barrier [...]`: wait for all previous instructions operating on the
-     *    given objects to complete.
-     *  - `wait N, [...]`: wait for all previous instructions operating on the
-     *    given objects to complete, when wait N cycles.
-     *
-     * For cQASM 1.0, the syntax is simpler, but more restricted:
-     *
-     *  - `wait N`: wait for all previous instructions to complete, then wait
-     *    N cycles (including 0 cycles, for a barrier on everything).
-     *  - `barrier q[...]`: wait for all instructions operating on the qubits
-     *    in the SGMQ list to complete.
-     *
-     * Note that cQASM 1.0 lacks a barrier instruction that includes a delay.
+     * when the program will be fed to another compiler later on.
      */
-    utils::Bool include_barriers = true;
+    WaitStyle include_wait_instructions = WaitStyle::EXTENDED;
+
+    /**
+     * Include timing/schedule information via bundle notation and skip
+     * instructions.
+     */
+    utils::Bool include_timing = true;
 
 };
 
