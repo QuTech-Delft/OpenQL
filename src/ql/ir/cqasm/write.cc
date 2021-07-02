@@ -60,7 +60,7 @@ protected:
      * `indent_delta` to it.
      */
     std::string sl(utils::Int indent_delta = 0) {
-        std::stringstream ss;
+        utils::StrStrm ss;
         indent += indent_delta;
         auto indent_remain = indent;
         while (indent_remain-- > 0) {
@@ -74,7 +74,7 @@ protected:
      * level by adding `indent_delta` to it.
      */
     std::string el(utils::UInt blank = 0, utils::Int indent_delta = 0) {
-        std::stringstream ss;
+        utils::StrStrm ss;
         indent += indent_delta;
         do {
             ss << "\n" << line_prefix;
