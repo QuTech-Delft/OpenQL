@@ -1,0 +1,266 @@
+{
+  "eqasm_compiler": "diamond",
+
+  "hardware_settings": {
+    "qubit_number": 10,
+    "cycle_time": 20
+  },
+
+  "gate_decomposition": {
+    "toffoli %0, %1, %2" : ["h %2", "cnot %1 %2", "tdag %2", "cnot %0 %2", "t %2","cnot %1 %2", "tdag %2", "cnot %0 %2", "t %1", "t %2", "cnot %0 %1", "h %2", "t %0", "tdag %1", "cnot %0 %1"],
+    "measure_z %0": ["measure %0"],
+    "measure_y %0": ["mprep_y %0", "measure %0"],
+    "measure_x %0": ["mprep_x %0", "measure %0"]
+  },
+
+  "instructions": {
+
+    "prep_x": {
+      "duration": 40,
+      "diamond_type": "prepare"
+    },
+
+    "prep_y": {
+      "duration": 40,
+      "diamond_type": "prepare"
+    },
+
+    "prep_z": {
+      "duration": 40,
+      "diamond_type": "prepare"
+    },
+
+    "mprep_x": {
+      "duration": 40,
+      "diamond_type": "prepare"
+    },
+
+    "mprep_y": {
+      "duration": 40,
+      "diamond_type": "prepare"
+    },
+
+    "qnop": {
+      "duration": 1
+    },
+
+    "calculate_current": {
+      "duration": 1,
+      "diamond_type": "classical"
+    },
+
+    "calculate_voltage": {
+      "duration": 1,
+      "diamond_type": "classical"
+    },
+
+    "i": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+    "h": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+    "x": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+    "y": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "z": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "initialize": {
+      "duration": 40
+    },
+
+    "x90": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "y90": {
+      "duration": 20,
+      "diamond_type": "qgate"
+    },
+
+    "x180": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "y180": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "mx90": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "my90": {
+      "duration": 20,
+      "diamond_type": "qgate"
+    },
+
+    "rx": {
+      "duration": 40,
+      "diamond_type": "rotation"
+    },
+
+    "ry": {
+      "duration": 40,
+      "diamond_type": "rotation"
+    },
+
+    "rz": {
+      "duration": 40,
+      "diamond_type": "rotation"
+    },
+
+    "cr": {
+      "duration": 40,
+      "diamond_type": "rotation"
+    },
+
+    "crk": {
+      "duration": 40,
+      "diamond_type": "rotation"
+    },
+
+    "s": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "sdag": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "t": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "tdag": {
+      "duration": 40,
+      "diamond_type": "qgate"
+    },
+
+    "cnot": {
+      "duration": 80,
+      "diamond_type": "qgate2"
+    },
+
+    "pmx90": {
+      "duration": 80,
+      "diamond_type": "qgate2"
+    },
+
+    "pmy90": {
+      "duration": 80,
+      "diamond_type": "qgate2"
+    },
+
+    "pmx180": {
+      "duration": 80,
+      "diamond_type": "qgate2"
+    },
+
+    "pmy180": {
+      "duration": 80,
+      "diamond_type": "qgate2"
+    },
+
+    "cz": {
+      "duration": 80,
+      "diamond_type": "qgate2"
+    },
+
+    "measure": {
+      "duration": 300
+    },
+
+    "display": {
+      "duration": 20,
+      "qubits": []
+    },
+
+    "display_binary": {
+      "duration": 20,
+      "qubits": []
+    },
+
+    "swap": {
+      "duration": 80,
+      "diamond_type": "qgate2"
+    },
+
+    "memswap": {
+      "duration": 80
+    },
+
+    "qentangle": {
+      "duration": 60
+    },
+
+    "nventangle": {
+      "duration": 100
+    },
+
+    "sweep_bias": {
+      "duration": 300
+    },
+
+    "excite_mw": {
+      "duration": 20
+    },
+
+    "crc": {
+      "duration": 20,
+      "diamond_type": "initial_checks"
+    },
+
+    "mag_bias": {
+      "duration": 300,
+      "diamond_type": "initial_checks"
+    },
+
+    "rabi_check": {
+      "duration": 300,
+      "diamond_type": "initial_checks"
+    },
+
+    "wait": {
+      "duration": 1
+    },
+
+    "decouple": {
+      "duration": 300,
+      "diamond_type": "calibration"
+    },
+
+    "cal_measure": {
+      "duration": 300,
+      "diamond_type": "calibration"
+    },
+
+    "cal_pi": {
+      "duration": 300,
+      "diamond_type": "calibration"
+    },
+
+    "cal_halfpi": {
+      "duration": 300,
+      "diamond_type": "calibration"
+    }
+  }
+}

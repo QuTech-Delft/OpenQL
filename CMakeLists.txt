@@ -290,6 +290,9 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc/pass/gen/vq1asm/vq1asm.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/cc_light/info.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/none/info.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/diamond/info.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/diamond/pass/gen/microcode/microcode.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/arch/diamond/pass/gen/microcode/detail/functions.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/misc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/pass.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/compiler.cc"
@@ -300,7 +303,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/program.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
-)
+    )
 
 # Specify resources.
 create_resource("src/ql/arch/cc/resources/hwconf_default.json")
@@ -309,6 +312,8 @@ create_resource("src/ql/arch/cc_light/resources/hwconf_s5.json")
 create_resource("src/ql/arch/cc_light/resources/hwconf_s7.json")
 create_resource("src/ql/arch/cc_light/resources/hwconf_s17.json")
 create_resource("src/ql/arch/none/resources/hwconf_default.json")
+create_resource("src/ql/arch/diamond/resources/hwconf_default.json")
+
 
 # Generate a header file with configuration options that cannot be compiled
 # (entirely) into the shared/static library due to use of templates.

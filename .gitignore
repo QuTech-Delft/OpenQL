@@ -28,6 +28,9 @@ test_output*
 .ipynb_checkpoints
 tests/visualizer/visualizer_example_output/
 
+# Diamond Example Files
+examples/diamond/test_output
+
 docs/_build
 docs/_static
 docs/_templates

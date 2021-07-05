@@ -797,6 +797,148 @@ None
 """
 
 
+%feature("docstring") ql::api::Kernel::diamond_excite_mw
+"""
+Appends the diamond \"excite_mw\" instruction.
+
+Parameters
+----------
+envelope : int
+    The envelope of the microwave.
+
+duration : int
+    The duration of the microwave in nanoseconds.
+
+frequency : int
+    The frequency of the microwave in kilohertz.
+
+phase: int
+    The phase of the microwave.
+
+amplitude: int
+    The amplitude of the microwave.
+
+qubit: int
+    The target qubit index.
+
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") ql::api::Kernel::diamond_memswap
+"""
+Appends the diamond \"memswap\" instruction.
+
+Parameters
+----------
+qubit : int
+    The index of the qubit.
+
+nuclear_qubit : int
+    The index of the nuclear spin qubit of the color center.
+
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") ql::api::Kernel::diamond_qentangle
+"""
+Appends the diamond \"qentangle\" instruction.
+
+Parameters
+----------
+qubit : int
+    The index of the qubit.
+
+nuclear_qubit : int
+    The index of the nuclear spin qubit of the color center.
+
+Returns
+-------
+None
+"""
+
+%feature("docstring") ql::api::Kernel::diamond_sweep_bias
+"""
+Appends the diamond \"sweep_bias\" instruction.
+
+Parameters
+----------
+qubit : int
+    The index of the qubit.
+
+value : int
+    The value that has to be send to the dac for biasing.
+
+dacreg: int
+    The index or address of the register of the dac.
+
+start: int
+    The start frequency value of the sweep.
+
+step: int
+    The step frequency value of the sweep.
+
+max: int
+    The maximum frequency value of the sweep.
+
+memaddress: int
+    The memory address to write the results to.
+
+Returns
+-------
+None
+"""
+
+
+%feature("docstring") ql::api::Kernel::diamond_crc
+"""
+Appends the diamond \"crc\" instruction.
+
+Parameters
+----------
+qubit : int
+    The index of the qubit.
+
+treshold : int
+    The threshold value that has to be matched.
+
+value: int
+    The value of the voltage sent to the dac.
+
+Returns
+-------
+None
+"""
+
+%feature("docstring") ql::api::Kernel::diamond_rabi_check
+"""
+Appends the diamond \"rabi_check\" instruction.
+
+Parameters
+----------
+qubit : int
+    The index of the qubit.
+
+measurements : int
+    How manu measurements have to be recorded.
+
+duration: int
+    The starting value of the duration of the microwave.
+
+t_max: int
+    The value of the voltage sent to the dac.
+
+Returns
+-------
+None
+"""
+
+
 %feature("docstring") ql::api::Kernel::controlled
 """
 Appends a controlled kernel. The number of control and ancilla qubits
