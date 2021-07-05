@@ -63,6 +63,14 @@ SchedulePass::SchedulePass(
         {"asap", "alap", "uniform"}
     );
 
+    options.add_enum(
+        "scheduler_heuristic",
+        "This controls what scheduling heuristic should be used for ordering "
+        "the list of available gates by criticality.",
+        "path_length",
+        {"path_length", "random"}
+    );
+
     options.add_bool(
         "commute_multi_qubit",
         "Whether to consider commutation rules for the CZ and CNOT quantum "
@@ -101,7 +109,8 @@ utils::Int SchedulePass::run(
         kernel,
         context.output_prefix,
         options["commute_multi_qubit"].as_bool(),
-        options["commute_single_qubit"].as_bool()
+        options["commute_single_qubit"].as_bool(),
+        options["scheduler_heuristic"].as_str() == "path_length"
     );
 
     // Run the appropriate scheduling algorithm.

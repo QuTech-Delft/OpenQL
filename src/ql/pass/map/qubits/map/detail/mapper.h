@@ -10,6 +10,7 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/list.h"
 #include "ql/utils/map.h"
+#include "ql/utils/progress.h"
 #include "ql/plat/platform.h"
 #include "ql/ir/ir.h"
 #include "ql/com/qubit_mapping.h"
@@ -66,7 +67,14 @@ enum class PathStrategy {
      * Consider the shortest paths along both the left and right side of the
      * rectangle of the source and target qubit.
      */
-    LEFT_RIGHT
+    LEFT_RIGHT,
+
+    /**
+     * Consider all path alternatives, but randomize the order of the generated
+     * paths. This is useful when the amount of generated alternative paths
+     * needs to be limited for scalability.
+     */
+    RANDOM
 
 };
 
@@ -250,6 +258,11 @@ private:
     std::mt19937 rng;
 
     /**
+     * Routing progress tracker.
+     */
+    utils::Progress routing_progress;
+
+    /**
      * Number of swaps added (including moves) to the most recently mapped
      * kernel, set by map_kernel().
      */
@@ -276,21 +289,35 @@ private:
      */
     com::QubitMapping v2r_out;
 
+    struct Path {
+        utils::UInt qubit;
+        utils::RawPtr<Path> prev;
+    };
+
     /**
      * Find shortest paths between src and tgt in the grid, bounded by a
-     * particular strategy. budget is the maximum number of hops allowed in the
-     * path from src and is at least distance to tgt, but can be higher when not
-     * all hops qualify for doing a two-qubit gate or to find more than just the
-     * shortest paths. This recursively calls itself with src replaced with its
-     * neighbors (and additional bookkeeping) until src equals tgt, adding all
-     * alternatives to the alters list as it goes.
+     * particular strategy. path is a linked-list node representing the complete
+     * path from the initial src qubit to src in reverse order, not including src;
+     * it will be null for the initial call. budget is the maximum number of hops
+     * allowed in the path from src and is at least distance to tgt, but can be
+     * higher when not all hops qualify for doing a two-qubit gate or to find
+     * more than just the shortest paths. This recursively calls itself with src
+     * replaced with its neighbors (and additional bookkeeping) until src equals
+     * tgt, adding all alternatives to the alters list as it goes. For each path,
+     * the alters are further split into all feasible alternatives for the
+     * location of the non-nearest-neighbor two-qubit gate that started the
+     * routing request. If max_alters is nonzero, recursion will stop once the
+     * total number of entries in alters reaches or surpasses the limit (it may
+     * surpass due to the checks only happening before splitting).
      */
     void gen_shortest_paths(
         const ir::GateRef &gate,
+        utils::RawPtr<Path> path,
         utils::UInt src,
         utils::UInt tgt,
         utils::UInt budget,
         utils::List<Alter> &alters,
+        utils::UInt max_alters,
         PathStrategy strategy
     );
 

@@ -89,11 +89,18 @@ enum class PathSelectionMode {
     ALL,
 
     /**
-     * Favor routing along the borders of the chip. Only supported when the
-     * qubits are given coordinates in the topology section of the platform
-     * configuration file.
+     * Favor routing along the borders of the rectangle defined by the source
+     * and target qubit. Only supported when the qubits are given coordinates in
+     * the topology section of the platform configuration file.
      */
-    BORDERS
+    BORDERS,
+
+    /**
+     * Consider all possible paths, but randomize the order in which paths are
+     * generated. This is useful when the amount of generated alternative paths
+     * needs to be limited for scalability.
+     */
+    RANDOM
 
 };
 
@@ -219,6 +226,12 @@ struct Options {
     Heuristic heuristic = Heuristic::BASE;
 
     /**
+     * Maximum number of alternative routing solutions to generate before
+     * picking one via the heuristic and tie-breaking method. 0 means no limit.
+     */
+    utils::UInt max_alters = 0;
+
+    /**
      * Controls how to tie-break equally-scoring alternative mapping solutions.
      */
     TieBreakMethod tie_break_method = TieBreakMethod::RANDOM;
@@ -289,6 +302,12 @@ struct Options {
      * Z rotations.
      */
     utils::Bool commute_single_qubit = false;
+
+    /**
+     * Whether the critical path selection logic of the embedded scheduler is
+     * enabled.
+     */
+    utils::Bool enable_criticality = true;
 
     /**
      * Whether to print dot graphs of the schedules created using the embedded

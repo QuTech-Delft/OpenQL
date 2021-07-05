@@ -25,6 +25,7 @@ std::ostream &operator<<(std::ostream &os, PathStrategy p) {
         case PathStrategy::LEFT:       os << "left";       break;
         case PathStrategy::RIGHT:      os << "right";      break;
         case PathStrategy::LEFT_RIGHT: os << "left-right"; break;
+        case PathStrategy::RANDOM:     os << "random";     break;
     }
     return os;
 }
@@ -35,19 +36,28 @@ using namespace com;
 
 /**
  * Find shortest paths between src and tgt in the grid, bounded by a
- * particular strategy. budget is the maximum number of hops allowed in the
- * path from src and is at least distance to tgt, but can be higher when not
- * all hops qualify for doing a two-qubit gate or to find more than just the
- * shortest paths. This recursively calls itself with src replaced with its
- * neighbors (and additional bookkeeping) until src equals tgt, adding all
- * alternatives to the alters list as it goes.
+ * particular strategy. path is a linked-list node representing the complete
+ * path from the initial src qubit to src in reverse order, not including src;
+ * it will be null for the initial call. budget is the maximum number of hops
+ * allowed in the path from src and is at least distance to tgt, but can be
+ * higher when not all hops qualify for doing a two-qubit gate or to find
+ * more than just the shortest paths. This recursively calls itself with src
+ * replaced with its neighbors (and additional bookkeeping) until src equals
+ * tgt, adding all alternatives to the alters list as it goes. For each path,
+ * the alters are further split into all feasible alternatives for the
+ * location of the non-nearest-neighbor two-qubit gate that started the
+ * routing request. If max_alters is nonzero, recursion will stop once the
+ * total number of entries in alters reaches or surpasses the limit (it may
+ * surpass due to the checks only happening before splitting).
  */
 void Mapper::gen_shortest_paths(
     const ir::GateRef &gate,
+    RawPtr<Path> path,
     UInt src,
     UInt tgt,
     UInt budget,
     List<Alter> &alters,
+    UInt max_alters,
     PathStrategy strategy
 ) {
 
@@ -67,12 +77,19 @@ void Mapper::gen_shortest_paths(
         a.initialize(kernel, options);
         a.target_gate = gate;
         a.add_to_front(src);
-        alters.push_back(a);
+        while (path) {
+            a.add_to_front(path->qubit);
+            path = path->prev;
+        }
+        a.split(alters);
         a.debug_print("... empty path after adding to result list");
         Alter::debug_print("... result list after adding empty path", alters);
         QL_DOUT("... will return now");
         return;
     }
+
+    Path sub_path_node = {src, path};
+    RawPtr<Path> sub_path = &sub_path_node;
 
     // Start looking around at neighbors for serious paths.
     UInt d = platform->topology->get_distance(src, tgt);
@@ -84,6 +101,12 @@ void Mapper::gen_shortest_paths(
     // src->n is one hop, budget from n is one less so distance(n,tgt) <= budget-1 (i.e. distance < budget)
     // when budget==d, this defaults to distance(n,tgt) <= d-1
     auto neighbors = platform->topology->get_neighbors(src);
+    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
+        QL_DOUT("gen_shortest_paths: ... neighbors: ");
+        for (auto dn : neighbors) {
+            QL_DOUT("..." << dn << " ");
+        }
+    }
     neighbors.remove_if([this,budget,tgt](const UInt& n) { return platform->topology->get_distance(n, tgt) >= budget; });
     if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
         QL_DOUT("gen_shortest_paths: ... after reducing to steps within budget, nbl: ");
@@ -92,18 +115,35 @@ void Mapper::gen_shortest_paths(
         }
     }
 
-    // Rotate neighbor list nbl such that largest difference between angles of
-    // adjacent elements is beyond back(). This only makes sense when there is
-    // an underlying xy grid; when not, only the ALL strategy is supported.
-    QL_ASSERT(platform->topology->has_coordinates() || strategy == PathStrategy::ALL);
-    platform->topology->sort_neighbors_by_angle(src, neighbors);
-    // subset to those neighbors that continue in direction(s) we want
-    if (strategy == PathStrategy::LEFT) {
-        neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.front(); } );
-    } else if (strategy == PathStrategy::RIGHT) {
-        neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.back(); } );
-    } else if (strategy == PathStrategy::LEFT_RIGHT) {
-        neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.front() && n != neighbors.back(); } );
+    // Update the neighbor list according to the path strategy.
+    if (strategy == PathStrategy::RANDOM) {
+
+        // Shuffle the neighbor list. We have to go through a vector to do that,
+        // otherwise std::shuffle doesn't work.
+        utils::Vec<utils::UInt> neighbors_vec{neighbors.begin(), neighbors.end()};
+        std::shuffle(neighbors_vec.begin(), neighbors_vec.end(), rng);
+        neighbors.clear();
+        neighbors.insert(neighbors.begin(), neighbors_vec.begin(), neighbors_vec.end());
+
+    } else {
+
+        // Rotate neighbor list nbl such that largest difference between angles
+        // of adjacent elements is beyond back(). This only makes sense when
+        // there is an underlying xy grid; when not, only the ALL strategy is
+        // supported.
+        QL_ASSERT(platform->topology->has_coordinates() || strategy == PathStrategy::ALL);
+        platform->topology->sort_neighbors_by_angle(src, neighbors);
+
+        // Select the subset of those neighbors that continue in direction(s) we
+        // want.
+        if (strategy == PathStrategy::LEFT) {
+            neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.front(); } );
+        } else if (strategy == PathStrategy::RIGHT) {
+            neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.back(); } );
+        } else if (strategy == PathStrategy::LEFT_RIGHT) {
+            neighbors.remove_if([neighbors](const UInt &n) { return n != neighbors.front() && n != neighbors.back(); } );
+        }
+
     }
 
     QL_IF_LOG_DEBUG {
@@ -129,21 +169,27 @@ void Mapper::gen_shortest_paths(
             }
         }
 
+        // Select maximum number of sub-alternatives to build. If our incoming
+        // max_alters is 0 there is no limit.
+        UInt max_sub_alters = 0;
+        if (max_alters > 0) {
+            QL_ASSERT(max_alters > alters.size());
+            max_sub_alters = max_alters - alters.size();
+        }
+
         // Get list of possible paths in budget-1 from n to tgt in sub_alters.
-        gen_shortest_paths(gate, n, tgt, budget - 1, sub_alters, new_strategy);
+        gen_shortest_paths(gate, sub_path, n, tgt, budget - 1, sub_alters, max_sub_alters, new_strategy);
 
         // Move all of sub_alters to alters, and make sub_alters empty.
         alters.splice(alters.end(), sub_alters);
 
+        // Check whether we've found enough alternatives already.
+        if (max_alters && alters.size() >= max_alters) {
+            break;
+        }
+
     }
 
-    // alters now contains all paths starting from a neighbor of src to tgt
-    // (within budget). Add src to front of all to-be-returned paths from src's
-    // neighbors to tgt.
-    for (auto &a : alters) {
-        QL_DOUT("... gen_shortest_paths, about to add src=" << src << " in front of path");
-        a.add_to_front(src);
-    }
     QL_DOUT("... gen_shortest_paths: returning from call of: " << "src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << strategy);
 }
 
@@ -171,25 +217,22 @@ void Mapper::gen_shortest_paths(
  */
 void Mapper::gen_shortest_paths(const ir::GateRef &gate, UInt src, UInt tgt, List<Alter> &alters) {
 
-    // List that will hold all not-yet-split Alters directly from src to tgt.
-    List<Alter> direct_paths;
-
     // Compute budget.
     UInt budget = platform->topology->get_min_hops(src, tgt);
 
     // Generate paths using the configured path selection strategy.
     if (options->path_selection_mode == PathSelectionMode::ALL) {
-        gen_shortest_paths(gate, src, tgt, budget, direct_paths, PathStrategy::ALL);
+        gen_shortest_paths(gate, nullptr, src, tgt, budget, alters, options->max_alters, PathStrategy::ALL);
     } else if (options->path_selection_mode == PathSelectionMode::BORDERS) {
-        gen_shortest_paths(gate, src, tgt, budget, direct_paths, PathStrategy::LEFT_RIGHT);
+        gen_shortest_paths(gate, nullptr, src, tgt, budget, alters, options->max_alters, PathStrategy::LEFT_RIGHT);
+    } else if (options->path_selection_mode == PathSelectionMode::RANDOM) {
+        gen_shortest_paths(gate, nullptr, src, tgt, budget, alters, options->max_alters, PathStrategy::RANDOM);
     } else {
         QL_FATAL("Unknown value of path selection mode option " << options->path_selection_mode);
     }
 
-    // Split the paths, outputting to the alters list.
-    for (auto &a : direct_paths) {
-        a.split(alters);
-    }
+    // Note: path split used to be here. Now it's done greedily by
+    // gen_shortest_paths().
 
 }
 
@@ -416,6 +459,13 @@ Bool Mapper::map_mappable_gates(
 
     QL_DOUT("map_mappable_gates entry");
     while (true) {
+
+        // Print progress every once in a while if we're taking long.
+        Real progress = 1.0;
+        if (future.approx_gates_total) {
+            progress -= ((Real)future.approx_gates_remaining / (Real)future.approx_gates_total);
+        }
+        routing_progress.feed(progress);
 
         // Handle non-quantum gates that need to be done first.
         if (future.get_non_quantum_gates(av_non_quantum_gates)) {
@@ -766,6 +816,8 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
         || options->lookahead_mode == LookaheadMode::ALL
     );
 
+    routing_progress = Progress("router", 1000);
+
     // Handle all the gates one by one. map_mappable_gates returns false when no
     // gates remain.
     while (map_mappable_gates(future, past, gates, also_nn_two_qubit_gates)) {
@@ -787,7 +839,16 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
         // (depending on configuration) to THIS past, and schedules them/it in.
         commit_alter(alter, future, past);
 
+        // Print progress every once in a while if we're taking long.
+        Real progress = 1.0;
+        if (future.approx_gates_total) {
+            progress -= ((Real)future.approx_gates_remaining / (Real)future.approx_gates_total);
+        }
+        routing_progress.feed(progress);
+
     }
+
+    routing_progress.complete();
 }
 
 /**

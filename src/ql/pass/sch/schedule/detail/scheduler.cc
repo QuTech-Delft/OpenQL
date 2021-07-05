@@ -326,7 +326,8 @@ void Scheduler::init(
     const ir::KernelRef &kernel,
     const utils::Str &output_prefix,
     utils::Bool commute_multi_qubit,
-    utils::Bool commute_single_qubit
+    utils::Bool commute_single_qubit,
+    utils::Bool enable_criticality
 ) {
     QL_DOUT("dependency graph creation ... #qubits = " << kernel->platform->qubit_count);
     qubit_count = kernel->platform->qubit_count;
@@ -340,6 +341,7 @@ void Scheduler::init(
     this->output_prefix = output_prefix;
     this->commute_multi_qubit = commute_multi_qubit;
     this->commute_single_qubit = commute_single_qubit;
+    this->enable_criticality = enable_criticality;
 
     // dependencies are created with a current gate as target
     // and with those previous gates as source that have an operand match with the current gate:
@@ -925,6 +927,7 @@ Bool Scheduler::criticality_lessthan(
     if (n1 == n2) return false;             // because not <
 
     if (remaining.at(n1) < remaining.at(n2)) return true;
+    if (!enable_criticality) return false;
     if (remaining.at(n1) > remaining.at(n2)) return false;
     // so: remaining[n1] == remaining[n2]
 
