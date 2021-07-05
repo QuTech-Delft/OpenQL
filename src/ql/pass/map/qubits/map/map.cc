@@ -140,7 +140,7 @@ MapQubitsPass::MapQubitsPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : pmgr::pass_types::KernelTransformation(pass_factory, instance_name, type_name) {
+) : pmgr::pass_types::ProgramTransformation(pass_factory, instance_name, type_name) {
 
     //========================================================================//
     // Options for the initial virtual to real qubit map                      //
@@ -209,6 +209,15 @@ MapQubitsPass::MapQubitsPass(
         {"base", "baserc", "minextend", "minextendrc", "maxfidelity"}
     );
 
+    options.add_int(
+        "max_alternative_routes",
+        "Controls the maximum number of alternative routing solutions to "
+        "generate before applying the heuristic and/or tie-breaking method to "
+        "choose one. Leave unspecified or set to 0 to disable this limit.",
+        "0",
+        0, utils::MAX
+    );
+
     options.add_enum(
         "tie_break_method",
         "Controls how to tie-break equally-scoring alternative mapping "
@@ -256,9 +265,11 @@ MapQubitsPass::MapQubitsPass(
         "qubit while routing, or to favor routing along the route search space. "
         "The latter is only supported and sensible when the qubits are given "
         "planar coordinates in the topology section of the platform "
-        "configuration file.",
+        "configuration file. Both `all` and `random` consider all paths, but "
+        "for the latter the order in which the paths are generated is shuffled, "
+        "which is useful to reduce bias when `max_alternative_routes` is used.",
         "all",
-        {"all", "borders"}
+        {"all", "borders", "random"}
     );
 
     options.add_enum(
@@ -357,6 +368,14 @@ MapQubitsPass::MapQubitsPass(
         false
     );
 
+    options.add_enum(
+        "scheduler_heuristic",
+        "This controls what scheduling heuristic should be used for ordering "
+        "the list of available gates by criticality.",
+        "path_length",
+        {"path_length", "random"}
+    );
+
     options.add_bool(
         "write_dot_graphs",
         "Whether to print dot graphs of the schedules created using the "
@@ -402,6 +421,8 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
         QL_ASSERT(false);
     }
 
+    parsed_options->max_alters = options["max_alternative_routes"].as_uint();
+
     auto tie_break_method = options["tie_break_method"].as_str();
     if (tie_break_method == "first") {
         parsed_options->tie_break_method = detail::TieBreakMethod::FIRST;
@@ -433,6 +454,8 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
         parsed_options->path_selection_mode = detail::PathSelectionMode::ALL;
     } else if (path_selection_mode == "borders") {
         parsed_options->path_selection_mode = detail::PathSelectionMode::BORDERS;
+    } else if (path_selection_mode == "random") {
+        parsed_options->path_selection_mode = detail::PathSelectionMode::RANDOM;
     } else {
         QL_ASSERT(false);
     }
@@ -473,6 +496,7 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     parsed_options->reverse_swap_if_better = options["reverse_swap_if_better"].as_bool();
     parsed_options->commute_multi_qubit = options["commute_multi_qubit"].as_bool();
     parsed_options->commute_single_qubit = options["commute_single_qubit"].as_bool();
+    parsed_options->enable_criticality = options["scheduler_heuristic"].as_str() == "path_length";
     parsed_options->write_dot_graphs = options["write_dot_graphs"].as_bool();
 
     return pmgr::pass_types::NodeType::NORMAL;
@@ -483,7 +507,6 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
  */
 utils::Int MapQubitsPass::run(
     const ir::ProgramRef &program,
-    const ir::KernelRef &kernel,
     const pmgr::pass_types::Context &context
 ) const {
 

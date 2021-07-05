@@ -54,7 +54,7 @@ void initialize() {
  */
 void ensure_initialized() {
     if (!initialized) {
-        QL_WOUT("Calling initialize() implicitly! In the future, please call initialize() before anything else.");
+        QL_WOUT("Calling initialize() implicitly: all options  are reset! In the future, please call initialize() before anything else.");
         initialize();
     }
 }

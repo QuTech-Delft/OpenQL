@@ -3,10 +3,6 @@
 Decomposition
 -------------
 
-.. warning::
-   This page has not been revised yet since modularization and refactoring,
-   and may thus be out of date.
-
 Decomposition of gates [TBD]
 
 Control decomposition

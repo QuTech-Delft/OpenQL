@@ -25,10 +25,10 @@ namespace utils {
  *    is equivalent to what `map[key]` normally does. There is no `const`
  *    version of this method.
  *  - If you want to access an existing key, use `map.at(key)` in place of
- *    `map[key]`. This will throw a Exception with context information if
- *    the key does not exist yet. This is equivalent to what `map[at]` normally
- *    does. There is both a `const` and non-`const` version, the latter giving
- *    you a mutable reference to the value, the former being immutable.
+ *    `map[key]`. This will throw an Exception with context information if
+ *    the key does not exist yet. This is equivalent to what `map.at(key)`
+ *    normally does. There is both a `const` and non-`const` version, the latter
+ *    giving you a mutable reference to the value, the former being immutable.
  *  - If you want to read a key if it exists but get some default value instead
  *    if it doesn't, for instance when your value type is another container and
  *    empty containers may or may not actually be in the map, use `map.get(key)`
@@ -48,6 +48,26 @@ public:
      * Typedef for the wrapped STL container.
      */
     using Stl = std::map<Key, T, Compare, Allocator>;
+
+    /**
+     * Forward iterator with mutable access to the values.
+     */
+    using Iter = typename Stl::iterator;
+
+    /**
+     * Forward iterator with const access to the values.
+     */
+    using ConstIter = typename Stl::const_iterator;
+
+    /**
+     * Backward iterator with mutable access to the values.
+     */
+    using ReverseIter = typename Stl::reverse_iterator;
+
+    /**
+     * Backward iterator with const access to the values.
+     */
+    using ConstReverseIter = typename Stl::const_reverse_iterator;
 
     /**
      * Default constructor. Constructs an empty container with a

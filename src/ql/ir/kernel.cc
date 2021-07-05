@@ -560,12 +560,15 @@ Bool Kernel::add_custom_gate_if_available(
     }
 
     auto g = GateRef::make<gate_types::Custom>(*(it->second));
+    g->operands.clear();
     for (auto qubit : qubits) {
         g->operands.push_back(qubit);
     }
+    g->creg_operands.clear();
     for (auto &cop : cregs) {
         g->creg_operands.push_back(cop);
     }
+    g->breg_operands.clear();
     for (auto &bop : bregs) {
         g->breg_operands.push_back(bop);
     }
@@ -1067,6 +1070,7 @@ Str Kernel::get_prologue() const  {
     return ss.str();
 }
 
+// FIXME: generates duplicate labels for names that match up to the first "_", see Backend::loopLabel()
 Str Kernel::get_epilogue() const {
     StrStrm ss;
 

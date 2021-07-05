@@ -124,8 +124,8 @@ void ReadCQasmPass::dump_docs(
     see http://libqasm.readthedocs.io/) needs information about gate prototypes
     that does not currently exist in the platform configuration file, an
     additional configuration file is needed for this, specified using the
-    `gateset_file` option. This must be a JSON file consisting of an array of
-    objects, where each object has the following form.
+    `gateset_file` option. If specified, this must be a JSON file consisting of
+    an array of objects, where each object has the following form.
 
         {
             "name": "<name>",               # mandatory
@@ -167,6 +167,50 @@ void ReadCQasmPass::dump_docs(
                                             #   operand(s) in the gate should be added to the OpenQL
                                             #   operand list
         }
+)" R"(
+    If not specified, the reader defaults to the logic that was hardcoded before
+    it was made configurable. This corresponds to the following JSON:
+
+        [
+            {"name": "measure",     "params": "Q",      "ql_name": "measz"},
+            {"name": "measure",     "params": "QB",     "ql_name": "measz"},
+            {"name": "measure_x",   "params": "Q",      "ql_name": "measx"},
+            {"name": "measure_x",   "params": "QB",     "ql_name": "measx"},
+            {"name": "measure_y",   "params": "Q",      "ql_name": "measy"},
+            {"name": "measure_y",   "params": "QB",     "ql_name": "measy"},
+            {"name": "measure_z",   "params": "Q",      "ql_name": "measz"},
+            {"name": "measure_z",   "params": "QB",     "ql_name": "measz"},
+            {"name": "prep",        "params": "Q",      "ql_name": "prepz"},
+            {"name": "prep_x",      "params": "Q",      "ql_name": "prepx"},
+            {"name": "prep_y",      "params": "Q",      "ql_name": "prepy"},
+            {"name": "prep_z",      "params": "Q",      "ql_name": "prepz"},
+            {"name": "i",           "params": "Q"},
+            {"name": "h",           "params": "Q"},
+            {"name": "x",           "params": "Q"},
+            {"name": "y",           "params": "Q"},
+            {"name": "z",           "params": "Q"},
+            {"name": "s",           "params": "Q"},
+            {"name": "sdag",        "params": "Q"},
+            {"name": "t",           "params": "Q"},
+            {"name": "tdag",        "params": "Q"},
+            {"name": "x90",         "params": "Q",      "ql_name": "rx90"},
+            {"name": "mx90",        "params": "Q",      "ql_name": "xm90"},
+            {"name": "y90",         "params": "Q",      "ql_name": "ry90"},
+            {"name": "my90",        "params": "Q",      "ql_name": "ym90"},
+            {"name": "rx",          "params": "Qr"},
+            {"name": "ry",          "params": "Qr"},
+            {"name": "rz",          "params": "Qr"},
+            {"name": "cnot",        "params": "QQ"},
+            {"name": "cz",          "params": "QQ"},
+            {"name": "swap",        "params": "QQ"},
+            {"name": "cr",          "params": "QQr"},
+            {"name": "crk",         "params": "QQi",    "ql_angle": "%2", "ql_angle_type": "pow2"},
+            {"name": "toffoli",     "params": "QQQ"},
+            {"name": "measure_all", "params": "",       "ql_qubits": "all", "implicit_sgmq": true},
+            {"name": "display",     "params": ""},
+            {"name": "wait",        "params": ""},
+            {"name": "wait",        "params": "i"}
+        ]
     )");
 }
 
@@ -191,7 +235,8 @@ ReadCQasmPass::ReadCQasmPass(
     );
     options.add_str(
         "gateset_file",
-        "JSON gateset configuration file path. Mandatory."
+        "Optional JSON gateset configuration file path, if the default behavior "
+        "is insufficient."
     );
 }
 

@@ -33,6 +33,13 @@ consists of multiple files, the entire namespace path is represented as
 directories, and the contained files should be named after the (main) class
 (in lower_case) or functionality that they provide.
 
+Subdirectories in `src/ql` may include a `tests` directory. Any `*.cc` file in
+such a directory is automatically interpreted as a unit test file by the build
+system. Note however that when you add or remove a test, you must manually
+regenerate the CMake project. A unit test simply consists of a C++ program with
+a `main()`, that must return zero on success or nonzero on failure. Unit tests
+are run using the *toplevel* `tests` directory as the working directory.
+
 ## Naming conventions
 
 To be consistent with especially Python (since we share an API between it and

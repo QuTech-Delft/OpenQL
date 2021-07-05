@@ -562,19 +562,6 @@ Custom::Custom(const Str &name) {
     // FIXME: no syntax check is performed
 }
 
-Custom::Custom(const Custom &g) {
-    // FIXME JvS: This copy constructor does NOT copy everything, and apparently
-    // the scheduler relies on it not doing so!
-    QL_DOUT("Custom gate copy constructor for " << g.name);
-    name = g.name;
-    // operands = g.operands; FIXME
-    creg_operands = g.creg_operands;
-    // int_operand = g.int_operand; FIXME
-    duration = g.duration;
-    // angle = g.angle; FIXME
-    // cycle = g.cycle; FIXME
-}
-
 /**
  * Converts the given JSON to a qubit index, checking for errors along the way.
  */

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "ql/com/reservations.h"
+#include "ql/utils/rangemap.h"
 #include "ql/rmgr/resource_types/base.h"
 
 namespace ql {
@@ -15,7 +15,7 @@ namespace qubit {
 /**
  * State per qubit.
  */
-using State = com::reservations::Tracker<>;
+using State = utils::RangeSet<utils::UInt>;
 
 /**
  * Qubit resource. This resource prevents a qubit from being used more than once

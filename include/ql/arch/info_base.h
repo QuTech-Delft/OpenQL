@@ -10,6 +10,7 @@
 #include "ql/utils/list.h"
 #include "ql/utils/ptr.h"
 #include "ql/utils/json.h"
+#include "ql/plat/platform.h"
 #include "ql/pmgr/declarations.h"
 #include "ql/arch/declarations.h"
 
@@ -82,7 +83,19 @@ public:
      * platform, to save typing in the configuration file (and reduce the amount
      * of mistakes made).
      */
-    virtual void preprocess_platform(utils::Json &data, const utils::Str &variant) const;
+    virtual void preprocess_platform(
+        utils::Json &data,
+        const utils::Str &variant
+    ) const;
+
+    /**
+     * Post-processing logic for the Platform data structure. This may for
+     * instance add annotations with architecture-specific configuration data.
+     */
+    virtual void post_process_platform(
+        const plat::PlatformRef &platform,
+        const utils::Str &variant
+    ) const;
 
     /**
      * Adds the default "backend passes" for this platform. Called by

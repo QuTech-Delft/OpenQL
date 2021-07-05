@@ -54,6 +54,11 @@ void VisualizeCircuitPass::dump_docs(
       visualization pass types. The configuration file format is designed to be
       cross-compatible.
 
+      NOTE: when the to-be-visualized circuit is very large, the interactive
+      window may have trouble rendering the circuit even when zoomed in.
+      Therefore, it is recommended to use non-interactive mode and view the
+      generated bitmap with a more capable external viewer.
+
       The `"circuit"` section has several child sections.
 
        - `"cycles"`: contains parameters that govern cycle labels, edges, cycle
@@ -318,7 +323,7 @@ void VisualizeCircuitPass::dump_docs(
       the graph. The time between samples is determined by the sample rate (the
       sample rate can be different for each of the three lines).
 
-      TODO: the structure of the wabeform mapping configuration file should
+      TODO: the structure of the waveform mapping configuration file should
       still be documented. For now, use the examples in `tests/visualizer` as
       a baseline.
 

@@ -4,22 +4,15 @@ from functools import reduce
 import os
 import matplotlib.pyplot as plt
 
-
-curdir = os.path.dirname(__file__)
-output_dir = os.path.join(curdir, 'test_output')
-
-ql.set_option('output_dir', output_dir)
-ql.set_option('write_qasm_files', 'yes')
-ql.set_option('scheduler', 'ASAP')
+ql.set_option('output_dir', 'output')
 ql.set_option('log_level', 'LOG_INFO')
 
 nqubits = 3
 
 def dice_compile():
     print('compiling 8-face dice program by openql')
-    config = os.path.join(curdir, '../tests/hardware_config_qx.json')
 
-    platform = ql.Platform("myPlatform", config)
+    platform = ql.Platform('myPlatform', 'none')
     p = ql.Program('dice', platform, nqubits)
     k = ql.Kernel('aKernel', platform, nqubits)
 
@@ -47,7 +40,7 @@ def plot_histogram(dice_faces):
 def dice_execute_singleshot():
     print('executing 8-face dice program on qxelarator')
     qx = qxelarator.QX()
-    qx.set('test_output/dice.qasm')
+    qx.set('output/dice.qasm')
     qx.execute()
     res = [int(qx.get_measurement_outcome(q)) for q in range(nqubits)]
     dice_face = reduce(lambda x, y: 2*x+y, res, 0) + 1
@@ -56,7 +49,7 @@ def dice_execute_singleshot():
 def dice_execute_multishot():
     print('executing 8-face dice program on qxelarator')
     qx = qxelarator.QX()
-    qx.set('test_output/dice.qasm')
+    qx.set('output/dice.qasm')
     dice_faces = []
     ntests = 100
     for i in range(ntests):
@@ -70,4 +63,4 @@ def dice_execute_multishot():
 if __name__ == '__main__':
     dice_compile()
     dice_execute_singleshot()
-    # dice_execute_multishot()
+    dice_execute_multishot()

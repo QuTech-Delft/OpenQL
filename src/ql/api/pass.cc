@@ -65,7 +65,7 @@ void Pass::print_options(bool only_set) const {
  */
 std::string Pass::dump_options(bool only_set) const {
     std::ostringstream ss;
-    pass->dump_help(ss);
+    pass->dump_options(only_set, ss);
     return ss.str();
 }
 

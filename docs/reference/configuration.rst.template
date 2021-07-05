@@ -15,12 +15,14 @@ The two most important configuration file types are the *platform* and *compiler
 
 The structure of these files is documented below.
 
+.. _ref_platform_configuration:
 
 Platform configuration
 ----------------------
 
 {platform}
 
+.. _ref_compiler_configuration:
 
 Compiler configuration
 ----------------------

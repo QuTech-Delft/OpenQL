@@ -103,6 +103,16 @@ public:
     ir::GateRefs::iterator input_gatepp;
 
     /**
+     * Approximate total number of gates to begin with.
+     */
+    utils::UInt approx_gates_total;
+
+    /**
+     * Approximate total number of gates remaining.
+     */
+    utils::UInt approx_gates_remaining;
+
+    /**
      * Program-wide initialization function.
      */
     void initialize(const plat::PlatformRef &p, const OptionsRef &opt);
