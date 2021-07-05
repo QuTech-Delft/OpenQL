@@ -438,23 +438,23 @@ block_base {
 # control-flow statement.
 statement {
 
-    # A schedulable instruction instance. May be quantum, classical, or mixed in
+    # The quantum cycle in which this instruction is scheduled, with respect
+    # to the start of the block it is contained in. Note that the order of
+    # statements scheduled within the same quantum cycle is still
+    # considered to be relevant: all side effects of a particular
+    # statement always run before the side effects of the next statement
+    # even start, regardless of cycle number and duration. This means that
+    # even if `set a = b` and `set b = a` are scheduled in the same cycle,
+    # this does NOT swap the values of `a` and `b`. This also means that a
+    # program with all statements scheduled in cycle 0 is semantically
+    # valid (though not likely to be executable as such, of course), so a
+    # program that has not yet been scheduled can be represented with any
+    # non-decreasing cycle assignment.
+    cycle: prim::Int;
+
+    # A regular instruction instance. May be quantum, classical, or mixed in
     # nature.
     instruction {
-
-        # The quantum cycle in which this instruction is scheduled, with respect
-        # to the start of the block it is contained in. Note that the order of
-        # instructions scheduled within the same quantum cycle is still
-        # considered to be relevant: all side effects of a particular
-        # instruction always run before the side effects of the next instruction
-        # even start, regardless of cycle number and duration. This means that
-        # even if `set a = b` and `set b = a` are scheduled in the same cycle,
-        # this does NOT swap the values of `a` and `b`. This also means that a
-        # program with all instructions scheduled in cycle 0 is semantically
-        # valid (though not likely to be executable as such, of course), so a
-        # program that has not yet been scheduled can be represented with any
-        # non-decreasing cycle assignment.
-        cycle: prim::UInt;
 
         # A conditional instruction instance.
         conditional_instruction {
@@ -519,17 +519,6 @@ statement {
             # The amount of quantum cycles that must be waited in addition after
             # all objects are ready.
             duration: prim::UInt;
-
-        }
-
-        # Dummy instructions that don't generate any code.
-        dummy_instruction {
-
-            # Source node for use within the data flow graph.
-            source_instruction {}
-
-            # Sink node for use within the data flow graph.
-            sink_instruction {}
 
         }
 
@@ -615,6 +604,10 @@ statement {
         }
 
     }
+
+    # A dummy statement that doesn't produce any code. Used within the data
+    # dependency graph for the source and sink nodes.
+    sentinel_statement {}
 
 }
 

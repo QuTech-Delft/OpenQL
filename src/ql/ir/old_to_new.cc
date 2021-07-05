@@ -980,12 +980,6 @@ static InstructionRef convert_gate(
             operands.extend(breg_operands);
             return make_instruction(ir, "wait", operands, condition);
         }
-        if (name == "SOURCE") {
-            return utils::make<SourceInstruction>();
-        }
-        if (name == "SINK") {
-            return utils::make<SinkInstruction>();
-        }
 
         // Handle the classical gates from the remnants of CC-light.
         if (gate->type() == compat::GateType::CLASSICAL && (
@@ -1180,14 +1174,15 @@ static utils::Str convert_kernels(
 ) {
     utils::Str name;
     try {
+
+        // Figure out where we're at in terms of cycles in this block, and
+        // how this compares to the cycle numbers in the old-IR kernel.
+        utils::UInt cycle_offset = get_duration_of_block(block);
+        utils::UInt cycle = cycle_offset;
+
         auto type = old->kernels[idx]->type;
         switch (type) {
             case compat::KernelType::STATIC: {
-
-                // Figure out where we're at in terms of cycles in this block, and
-                // how this compares to the cycle numbers in the old-IR kernel.
-                utils::UInt cycle_offset = get_duration_of_block(block);
-                utils::UInt cycle = cycle_offset;
 
                 // Convert gates to instructions.
                 for (const auto &gate : old->kernels[idx]->gates) {
@@ -1265,7 +1260,8 @@ static utils::Str convert_kernels(
                     make_reference(ir, make_temporary(ir, ir->platform->default_int_type)),
                     make_uint_lit(ir, iteration_count - 1),
                     make_uint_lit(ir, (utils::UInt) 0),
-                    sub_block
+                    sub_block,
+                    cycle
                 );
 
                 break;
@@ -1293,7 +1289,8 @@ static utils::Str convert_kernels(
                 // is inverted using `operator!(bit) -> bit`.
                 block->statements.emplace<RepeatUntilLoop>(
                     convert_operation(ir, condition, true, true),
-                    sub_block
+                    sub_block,
+                    cycle
                 );
 
                 break;
@@ -1342,7 +1339,8 @@ static utils::Str convert_kernels(
                         convert_operation(ir, condition, true),
                         if_block
                     )}),
-                    else_block
+                    else_block,
+                    cycle
                 );
 
                 break;

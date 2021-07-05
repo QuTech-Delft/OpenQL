@@ -479,7 +479,7 @@ public:
      * Prints a bundle of simultaneously-issued (w.r.t. the quantum time domain)
      * instructions.
      */
-    void flush_bundle(utils::Any<Instruction> &bundle, utils::UInt &cycle) {
+    void flush_bundle(utils::Any<Instruction> &bundle, utils::Int &cycle) {
         if (bundle.size() == 1) {
             bundle[0]->visit(*this);
             cycle++;
@@ -503,7 +503,7 @@ public:
 
         // Gather bundles before printing them, so we can format them a bit more
         // nicely.
-        utils::UInt cycle = 0;
+        utils::Int cycle = 0;
         utils::Any<Instruction> bundle;
 
         // Loop over all the statements.
@@ -549,8 +549,9 @@ public:
         // the end, to skip to the first cycle when all instructions have
         // completed.
         if (options.include_timing) {
-            auto last = get_duration_of_block(node.copy());
-            if (last > cycle) {
+            utils::UInt last = get_duration_of_block(node.copy());
+            QL_ASSERT(cycle >= 0);
+            if (last > (utils::UInt)cycle) {
                 os << sl() << "skip " << (last - cycle) << el();
             }
         }
@@ -706,24 +707,6 @@ public:
             }
         }
 
-    }
-
-    /**
-     * Visitor function for `SourceInstruction` nodes.
-     */
-    void visit_source_instruction(SourceInstruction &node) override {
-        if (options.include_metadata) {
-            os << sl() << "pragma @ql.source()" << el();
-        }
-    }
-
-    /**
-     * Visitor function for `SourceInstruction` nodes.
-     */
-    void visit_sink_instruction(SinkInstruction &node) override {
-        if (options.include_metadata) {
-            os << sl() << "pragma @ql.sink()" << el();
-        }
     }
 
     /**

@@ -1220,14 +1220,6 @@ public:
         }
     }
 
-    void visit_source_instruction(SourceInstruction &source_instruction) override {
-        ss << "SOURCE";
-    }
-
-    void visit_sink_instruction(SinkInstruction &sink_instruction) override {
-        ss << "SINK";
-    }
-
     void visit_if_else(IfElse &if_else) override {
         ss << "if (";
         if_else.branches[0]->condition.visit(*this);
@@ -1244,6 +1236,10 @@ public:
 
     void visit_continue_statement(ContinueStatement &continue_statementn) override {
         ss << "continue";
+    }
+
+    void visit_sentinel_statement(SentinelStatement &source_instruction) override {
+        ss << "SENTINEL";
     }
 
     void visit_bit_literal(BitLiteral &bit_literal) override {
@@ -1608,8 +1604,6 @@ void ObjectAccesses::add_statement(const StatementRef &stmt) {
                 add_expression(prim::AccessMode::WRITE, ref);
             }
         }
-    } else if (stmt->as_dummy_instruction()) {
-        barrier = true;
     } else if (auto if_else = stmt->as_if_else()) {
         for (const auto &branch : if_else->branches) {
             add_expression(prim::AccessMode::READ, branch->condition);
@@ -1636,6 +1630,8 @@ void ObjectAccesses::add_statement(const StatementRef &stmt) {
             QL_ASSERT(false);
         }
     } else if (stmt->as_loop_control_statement()) {
+        barrier = true;
+    } else if (stmt->as_sentinel_statement()) {
         barrier = true;
     } else {
         QL_ASSERT(false);

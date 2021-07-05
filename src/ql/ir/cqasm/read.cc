@@ -264,9 +264,9 @@ DataTypeLink infer_ql_type(const Ref &ir, const cqty::Type &cq_type) {
                 return ql_type;
             }
         }
-    } else if (cq_type->as_real()) {
+    } else if (cq_type->as_complex()) {
         for (const auto &ql_type : ir->platform->data_types) {
-            if (ql_type->as_real_type()) {
+            if (ql_type->as_complex_type()) {
                 return ql_type;
             }
         }
@@ -831,6 +831,7 @@ static void convert_block(
 
             // Handle if-else chain.
             auto ql_if_else = utils::make<IfElse>();
+            ql_if_else->cycle = cycle;
 
             // Handle all the if-else branches.
             for (const auto &cq_branch : cq_if_else->branches) {
@@ -865,6 +866,7 @@ static void convert_block(
 
             // Handle for loop.
             auto ql_for_loop = utils::make<ForLoop>();
+            ql_for_loop->cycle = cycle;
 
             // Convert initialize assignment.
             if (!cq_for_loop->initialize.empty()) {
@@ -896,6 +898,7 @@ static void convert_block(
 
             // Convert foreach loop.
             auto ql_static_loop = utils::make<StaticLoop>();
+            ql_static_loop->cycle = cycle;
 
             // Convert the loop variable reference.
             ql_static_loop->lhs = convert_expression(ir, cq_foreach_loop->lhs).as<Reference>();
@@ -921,6 +924,7 @@ static void convert_block(
 
             // Handle while loop.
             auto ql_for_loop = utils::make<ForLoop>();
+            ql_for_loop->cycle = cycle;
 
             // Convert loop condition.
             ql_for_loop->condition = convert_expression(ir, cq_while_loop->condition);
@@ -942,6 +946,7 @@ static void convert_block(
 
             // Handle while loop.
             auto ql_for_loop = utils::make<RepeatUntilLoop>();
+            ql_for_loop->cycle = cycle;
 
             // Convert body.
             ql_for_loop->body.emplace();
@@ -962,12 +967,12 @@ static void convert_block(
         } else if (cq_stmt->as_break_statement()) {
 
             // Handle break statement.
-            ql_block->statements.emplace<BreakStatement>();
+            ql_block->statements.emplace<BreakStatement>(cycle);
 
         } else if (cq_stmt->as_continue_statement()) {
 
             // Handle continue statement.
-            ql_block->statements.emplace<ContinueStatement>();
+            ql_block->statements.emplace<ContinueStatement>(cycle);
 
         } else {
             QL_ICE("received unknown statement node type from libqasm");

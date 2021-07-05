@@ -46,20 +46,18 @@ private:
 
     /**
      * Checks that the cycle numbers of the instructions in the given
-     * statement list are non-decreasing.
+     * statement list are non-decreasing and greater or equal to zero.
      */
     static void check_cycles_non_decreasing(const utils::Str &what, const utils::Any<Statement> &stmts) {
-        utils::UInt current = 0;
+        utils::Int current = 0;
         for (const auto &stmt : stmts) {
-            if (auto insn = stmt->as_instruction()) {
-                if (insn->cycle < current) {
-                    utils::StrStrm ss;
-                    ss << "cycle numbers in " << what << " are non-decreasing: ";
-                    ss << "cycle " << insn->cycle << " used after cycle " << current;
-                    throw utils::Exception(ss.str());
-                }
-                current = insn->cycle;
+            if (stmt->cycle < current) {
+                utils::StrStrm ss;
+                ss << "cycle numbers in " << what << " are not non-decreasing: ";
+                ss << "cycle " << stmt->cycle << " used after cycle " << current;
+                throw utils::Exception(ss.str());
             }
+            current = stmt->cycle;
         }
     }
 
@@ -704,6 +702,13 @@ public:
             );
         }
 
+    }
+
+    /**
+     * Ensures that no sentinels have popped up in the IR.
+     */
+    void visit_sentinel_statement(SentinelStatement &node) override {
+        QL_ASSERT(false);
     }
 
     /**
