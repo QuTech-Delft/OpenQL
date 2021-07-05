@@ -827,9 +827,5 @@
                 "static_codeword_override": [6]
             }
         }
-    },
-    "topology": {
-    },
-    "resources": {
     }
 }
