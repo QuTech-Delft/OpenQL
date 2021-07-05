@@ -63,7 +63,7 @@ void Platform::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
 )" R"(
     * `"eqasm_compiler"` section *
 
-      The `"eqasm_compiler"` key can take assume of the following types of
+      The `"eqasm_compiler"` key can take any of the following types of
       values.
 
        - No value/unspecified: the defaults for the "none" architecture will

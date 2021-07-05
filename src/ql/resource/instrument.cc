@@ -51,7 +51,7 @@ using Predicates = utils::Vec<Predicate>;
 
 /**
  * Configuration structure. This does not need to be copied every time the
- * resource state is cloned; instead we keep a shared_ptr to it instead.
+ * resource state is cloned; we keep a shared_ptr to it instead.
  */
 struct Config {
 
