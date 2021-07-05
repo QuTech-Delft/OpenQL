@@ -11,7 +11,7 @@
 	//"file_version": "0.3",
 	//"min_version_openql": "0.7.1",
 
-	"eqasm_compiler" : "eqasm_backend_cc",
+	"eqasm_compiler" : "cc",
 
 	"hardware_settings": {
 		"qubit_number": 5,
@@ -966,91 +966,5 @@
                 "static_codeword_override": [6]
             }
         }
-	},	// end of "instructions"
-
-
-
-    // NB: the "topology" keyword must be present, but the contents are only interpreted by
-    // the 'resource constraint' scheduler
-    "topology": {
-        // FIXME: apparently unused:
-        // "x_size": 5,
-        // "y_size": 3,
-        // "qubits": [
-        //  { "id": 0,  "x": 1, "y": 2 },
-        //  { "id": 1,  "x": 3, "y": 2 },
-        //  { "id": 2,  "x": 0, "y": 1 },
-        //  { "id": 3,  "x": 2, "y": 1 },
-        //  { "id": 4,  "x": 4, "y": 1 },
-        //  { "id": 5,  "x": 1, "y": 0 },
-        //  { "id": 6,  "x": 3, "y": 0 }
-        // ],
-
-        // Directed edges between qubits (from "src" to "dst") define allowable
-        // two qubit operations.
-        // see:
-        // - https://github.com/DiCarloLab-Delft/ElecPrj_CCLight/wiki/Qubit-number-and-directed-edge-number
-        // - https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L352
-        // NB: the actual edge numbering is irrelevant to the CC, which has no knowledge about edges
-        "edges": [
-            { "id":  0, "src":  2, "dst":  0 },
-            { "id":  1, "src":  2, "dst":  1 },
-            { "id":  2, "src":  2, "dst":  3 },
-            { "id":  3, "src":  2, "dst":  4 }
-        ]
-    },
-
-
-    // NB: the "resources" keyword must be present, but the contents are only interpreted by
-    // the 'resource constraint' scheduler
-    "resources": {      // see: https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L724
-        "Qubit": {},
-        "arch.cc_light.qwgs" : {
-            "count": 5,
-            "connection_map": { // FIXME: must match "instruments"
-                "0": [0],
-                "1": [1],
-                "2": [2],
-                "3": [3],
-                "4": [4]
-            }
-        },
-        "arch.cc_light.meas_units" : {
-            "count": 2,
-            "connection_map": { // FIXME: must match "instruments"
-                "0": [0, 2, 3, 4],
-                "1": [1]
-            }
-        },
-        "arch.cc_light.edges": {
-            "count": 4,        // FIXME: must be present and at least match size of 'topology/edges', see edge_resource_t
-            // connection_map:
-            // "0": [2, 10] means that edge 0 'connects' to edges 2 and 10, where edges
-            // refer to the "id" in 'topology/edges'
-            // The term 'connect' in this context means that an operation on edge 0
-            // blocks operations on edges 2 and 10
-            // see: https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L371
-            "connection_map": {
-                "0": [0, 2],
-                "1": [1, 2],
-                "2": [3, 2],
-                "3": [4, 2]
-                // "4": [],
-                // "5": [],
-                // "6": [],
-                // "7": [],
-                // "8": [],
-                // "9": [],
-                // "10": [],
-                // "11": [],
-                // "12": [],
-                // "13": [],
-                // "14": [],
-                // "15": [],
-            }
-        }
-
-        //"detuned_qubits"  optional?
-    }
+    }   // end of "instructions"
 }
-

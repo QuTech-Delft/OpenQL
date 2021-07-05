@@ -74,13 +74,18 @@ Str Settings::getReadoutMode(const Str &iname) {
     return json_get<Str>(instruction["cc"], "readout_mode", instructionPath);
 }
 
-// determine whether this is a readout instruction
-Bool Settings::isReadout(const Str &iname) {
-#if 1    // new semantics
-    const Json &instruction = platform->find_instruction(iname);
+// determine whether this is a 'readout instruction'
+Bool Settings::isReadout(const Json &instruction, const Str &iname) {
     Str instructionPath = "instructions/" + iname;
     QL_JSON_ASSERT(instruction, "cc", instructionPath);
     return QL_JSON_EXISTS(instruction["cc"], "readout_mode");
+}
+
+// determine whether this is a 'readout instruction'
+Bool Settings::isReadout(const Str &iname) {
+#if 1    // new semantics
+    const Json &instruction = platform->find_instruction(iname);
+    return isReadout(instruction, iname);
 #else
     /*
         NB: we only use the instruction_type "readout" and don't care about the rest
@@ -91,6 +96,35 @@ Bool Settings::isReadout(const Str &iname) {
     // FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
     // FIXME: gate semantics should be handled at the OpenQL core
     return platform->find_instruction_type(iname) == "readout";
+#endif
+}
+
+
+// determine whether this is a 'flux instruction'
+Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
+    Str instructionPath = "instructions/" + iname;
+    QL_JSON_ASSERT(instruction, "cc", instructionPath);
+    SignalDef sd = findSignalDefinition(instruction, signals, iname);
+    if (!QL_JSON_EXISTS(sd.signal[0], "type")) {   // FIXME: looks at first signal only
+        QL_DOUT("no type detected for '" << iname << "', signal=" << sd.signal);
+        return false;
+    } else {
+        QL_DOUT("type detected for '" << iname << "': " << sd.signal[0]["type"]);
+        return sd.signal[0]["type"] == "flux";
+    }
+}
+
+Bool Settings::isFlux(const Str &iname) {
+#if 1   //new semantics
+    const Json &instruction = platform->find_instruction(iname);
+    return isFlux(instruction, jsonSignals, iname);
+#else
+    const Json &instruction = platform->find_instruction(iname);
+    if (!QL_JSON_EXISTS(instruction, "type")) {
+        return false;
+    } else {
+        return instruction["type"] == "flux";
+    }
 #endif
 }
 
@@ -112,14 +146,37 @@ RawPtr<const Json> Settings::getPragma(const Str &iname) {
 }
 
 
-// return wait for instrument latency + SM data distribution
-UInt Settings::getReadoutWait() {
-    return 20+3;    // FIXME: make configurable
+// find JSON signal definition for instruction, either inline or via 'ref_signal'
+Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
+    SignalDef ret;
+
+    Str instructionPath = "instructions/" + iname;
+    QL_JSON_ASSERT(instruction, "cc", instructionPath);
+    if (QL_JSON_EXISTS(instruction["cc"], "ref_signal")) {                      // optional syntax: "ref_signal"
+        Str refSignal = instruction["cc"]["ref_signal"].get<Str>();
+        ret.signal = (*signals)[refSignal];                                     // poor man's JSON pointer
+        if(ret.signal.empty()) {
+            QL_JSON_FATAL(
+                "instruction '" << iname
+                << "': ref_signal '" << refSignal
+                << "' does not resolve"
+            );
+        }
+        ret.path = "signals/" + refSignal;
+    } else {                                                                    // alternative syntax: "signal"
+        ret.signal = json_get<Json>(instruction["cc"], "signal", instructionPath + "/cc");
+        QL_DOUT("signal for '" << instruction << "': " << ret.signal);
+        ret.path = instructionPath + "/cc/signal";
+    }
+    return ret;
 }
 
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
 Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, const Str &iname) const {
+#if 1
+    return findSignalDefinition(instruction, jsonSignals, iname);
+#else
     SignalDef ret;
 
     Str instructionPath = "instructions/" + iname;
@@ -141,6 +198,7 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, cons
         ret.path = instructionPath + "/cc/signal";
     }
     return ret;
+#endif
 }
 
 

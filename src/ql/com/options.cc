@@ -165,6 +165,15 @@ Options make_ql_options() {
         "post-mapping schedulers are affected."
     );
 
+    options.add_enum(
+        "scheduler_heuristic",
+        "When no compiler configuration file is specified, this controls "
+        "what scheduling heuristic should be used for ordering the list of "
+        "available gates by criticality.",
+        "path_length",
+        {"path_length", "random"}
+    );
+
     options.add_bool(
         "scheduler_commute",
         "When no compiler configuration file is specified, this controls "
@@ -228,6 +237,16 @@ Options make_ql_options() {
         {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"}
     );
 
+    options.add_int(
+        "mapmaxalters",
+        "When no compiler configuration file is specified, this controls "
+        "whether the heuristic mapper will be run, and if so, how many "
+        "alternative routing solutions it should generate before picking one "
+        "via the heuristic or tie-breaking method. 0 means unlimited.",
+        "0",
+        0, utils::MAX
+    );
+
     options.add_bool(
         "mapinitone2one",
         "When no compiler configuration file is specified, and the mapper is "
@@ -272,9 +291,12 @@ Options make_ql_options() {
         "to destination qubit while routing, or to favor routing along the "
         "borders of the search space. The latter is only supported when the "
         "qubits are given planar coordinates in the topology section of the "
-        "platform configuration file.",
+        "platform configuration file. Both `all` and `random` consider all "
+        "paths, but for the latter the order in which the paths are generated "
+        "is shuffled, which is useful to reduce bias when "
+        "`max_alternative_routes` is used.",
         "all",
-        {"all", "borders"}
+        {"all", "borders", "random"}
     );
 
     options.add_enum(

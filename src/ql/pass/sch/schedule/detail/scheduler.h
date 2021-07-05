@@ -87,6 +87,7 @@ private:
     utils::Str output_prefix;           // replaces output directory global option
     utils::Bool commute_multi_qubit;    // whether to commute CZ and CNOT gates
     utils::Bool commute_single_qubit;   // whether to commute X and Z rotations
+    utils::Bool enable_criticality;     // whether to enable criticality selection logic
 
     // scheduler support
     utils::Map<lemon::ListDigraph::Node, utils::UInt>  remaining;  // remaining[node] == cycles until end; critical path representation
@@ -145,7 +146,8 @@ public:
         const ir::compat::KernelRef &kernel,
         const utils::Str &output_prefix,
         utils::Bool commute_multi_qubit,
-        utils::Bool commute_single_qubit
+        utils::Bool commute_single_qubit,
+        utils::Bool enable_criticality
     );
 
     void dprint_depgraph(const utils::Str &s) const;

@@ -45,6 +45,7 @@ std::ostream &operator<<(std::ostream &os, PathSelectionMode psm) {
     switch (psm) {
         case PathSelectionMode::ALL:     os << "all";     break;
         case PathSelectionMode::BORDERS: os << "borders"; break;
+        case PathSelectionMode::RANDOM:  os << "random";  break;
     }
     return os;
 }
