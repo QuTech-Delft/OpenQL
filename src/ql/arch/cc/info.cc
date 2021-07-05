@@ -720,22 +720,17 @@ void Info::post_process_platform(
  */
 void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
 
-    // Remove passes we don't need/want.
+    // Remove prescheduler if enabled implicitly (pointless since we add our own scheduling).
     // FIXME: bit of a hack, and invalidates https://openql.readthedocs.io/en/latest/gen/reference_architectures.html#default-pass-list
-    const auto &prescheduler = com::options::global["prescheduler"];
-    if (prescheduler.as_bool() && prescheduler.get_default() == prescheduler.as_str()) {    // prescheduler enabled implicitly
-        const utils::Str passes[] = {
-            "prescheduler",         // enabled by default, but pointless since we add our own scheduling
-            "scheduledqasmwriter"   // confusing, since it doesn't use our scheduling
-        };
-        for (const auto &pass : passes) {
-            if (manager.does_pass_exist(pass)) {
-                manager.remove_pass(pass);
-            }
+    utils::Str ps_name = "prescheduler";
+    const auto &prescheduler = com::options::global[ps_name];
+    if (!prescheduler.is_set()) {               // prescheduler enabled implicitly
+        if (manager.does_pass_exist(ps_name)) {
+            manager.remove_pass(ps_name);
         }
     }
 
-    // Add our passes.
+    // Add our passes, and amend scheduledqasmwriter to show our scheduling, not that of prescheduler.
     manager.append_pass(
         "sch.Schedule",
         "scheduler",
@@ -747,14 +742,11 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
 #endif
         }
     );
-    manager.append_pass(
-        "io.cqasm.Report",
-        "scheduledqasmwriter",
-        {
-            {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"},
-            {"output_suffix", "_scheduled.qasm"}
-        }
-    );
+    if (manager.does_pass_exist("scheduledqasmwriter")) {
+        auto options = manager.get_pass("scheduledqasmwriter")->get_options();
+        manager.remove_pass("scheduledqasmwriter");     // confusing, since it doesn't use our scheduling
+        manager.append_pass("io.cqasm.Report", "scheduledqasmwriter")->get_options().update_from(options);
+    }
     manager.append_pass(
         "arch.cc.gen.VQ1Asm",
         "codegen",
