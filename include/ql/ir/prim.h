@@ -334,7 +334,7 @@ std::ostream &operator<<(std::ostream &os, const Matrix<T> &mat) {
 /**
  * Value access mode for an operand.
  */
-enum class AccessMode {
+enum class OperandMode {
 
     /**
      * Used for classical write or non-commuting qubit access. The corresponding
@@ -379,16 +379,22 @@ enum class AccessMode {
      * Used when a qubit is measured and the result is stored in the implicit
      * bit register associated with the qubit.
      */
-    MEASURE
+    MEASURE,
+
+    /**
+     * Used for operands which should be ignored by data dependency graph
+     * construction, such as the third qubit operand of cz_park.
+     */
+    IGNORE
 
 };
 template <>
-AccessMode initialize<AccessMode>();
+OperandMode initialize<OperandMode>();
 template <>
-void serialize(const AccessMode &obj, utils::tree::cbor::MapWriter &map);
+void serialize(const OperandMode &obj, utils::tree::cbor::MapWriter &map);
 template <>
-AccessMode deserialize(const utils::tree::cbor::MapReader &map);
-std::ostream &operator<<(std::ostream &os, const AccessMode &am);
+OperandMode deserialize(const utils::tree::cbor::MapReader &map);
+std::ostream &operator<<(std::ostream &os, const OperandMode &am);
 
 /**
  * Wrapper class for primitives.

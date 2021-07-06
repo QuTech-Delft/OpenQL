@@ -263,27 +263,28 @@ CMatrix deserialize(const utils::tree::cbor::MapReader &map) {
 //==============================================================================
 
 template <>
-AccessMode initialize<AccessMode>() { return AccessMode::WRITE; }
+OperandMode initialize<OperandMode>() { return OperandMode::WRITE; }
 
 template <>
-void serialize(const AccessMode &obj, utils::tree::cbor::MapWriter &map) {
+void serialize(const OperandMode &obj, utils::tree::cbor::MapWriter &map) {
     map.append_int("x", (utils::Int)obj);
 }
 
 template <>
-AccessMode deserialize(const utils::tree::cbor::MapReader &map) {
-    return (AccessMode)map.at("x").as_int();
+OperandMode deserialize(const utils::tree::cbor::MapReader &map) {
+    return (OperandMode)map.at("x").as_int();
 }
 
-std::ostream &operator<<(std::ostream &os, const AccessMode &am) {
+std::ostream &operator<<(std::ostream &os, const OperandMode &am) {
     switch (am) {
-        case AccessMode::WRITE:     return os << "write";
-        case AccessMode::READ:      return os << "read";
-        case AccessMode::LITERAL:   return os << "literal";
-        case AccessMode::COMMUTE_X: return os << "commute-X";
-        case AccessMode::COMMUTE_Y: return os << "commute-Y";
-        case AccessMode::COMMUTE_Z: return os << "commute-Z";
-        case AccessMode::MEASURE:   return os << "measure";
+        case OperandMode::WRITE:     return os << "write";
+        case OperandMode::READ:      return os << "read";
+        case OperandMode::LITERAL:   return os << "literal";
+        case OperandMode::COMMUTE_X: return os << "commute-X";
+        case OperandMode::COMMUTE_Y: return os << "commute-Y";
+        case OperandMode::COMMUTE_Z: return os << "commute-Z";
+        case OperandMode::MEASURE:   return os << "measure";
+        case OperandMode::IGNORE:    return os << "ignore";
     }
     return os << "unknown";
 }

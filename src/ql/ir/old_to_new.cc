@@ -224,46 +224,46 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                     if (pos != utils::Str::npos) {
                         mode_s = param.substr(pos);
                     }
-                    prim::AccessMode mode;
+                    prim::OperandMode mode;
                     if (mode_s == "W") {
-                        mode = prim::AccessMode::WRITE;
+                        mode = prim::OperandMode::WRITE;
                     } else if (mode_s == "R") {
-                        mode = prim::AccessMode::READ;
+                        mode = prim::OperandMode::READ;
                         if (type->as_qubit_type()) {
                             throw utils::Exception(
                                 "invalid parameter mode R for qubit type"
                             );
                         }
                     } else if (mode_s == "L") {
-                        mode = prim::AccessMode::LITERAL;
+                        mode = prim::OperandMode::LITERAL;
                         if (type->as_qubit_type()) {
                             throw utils::Exception(
                                 "invalid parameter mode L for qubit type"
                             );
                         }
                     } else if (mode_s == "X") {
-                        mode = prim::AccessMode::COMMUTE_X;
+                        mode = prim::OperandMode::COMMUTE_X;
                         if (type->as_classical_type()) {
                             throw utils::Exception(
                                 "invalid parameter mode X for classical type"
                             );
                         }
                     } else if (mode_s == "Y") {
-                        mode = prim::AccessMode::COMMUTE_Y;
+                        mode = prim::OperandMode::COMMUTE_Y;
                         if (type->as_classical_type()) {
                             throw utils::Exception(
                                 "invalid parameter mode Y for classical type"
                             );
                         }
                     } else if (mode_s == "Z") {
-                        mode = prim::AccessMode::COMMUTE_Z;
+                        mode = prim::OperandMode::COMMUTE_Z;
                         if (type->as_classical_type()) {
                             throw utils::Exception(
                                 "invalid parameter mode Z for classical type"
                             );
                         }
                     } else if (mode_s == "M") {
-                        mode = prim::AccessMode::MEASURE;
+                        mode = prim::OperandMode::MEASURE;
                         if (type->as_classical_type()) {
                             throw utils::Exception(
                                 "invalid parameter mode M for classical type"
@@ -301,92 +301,92 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
                     // Single-qubit gate that doesn't commute in any way we can
                     // represent.
-                    insn->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
 
                 } else if (insn->name == "rx") {
 
                     // Single-qubit X rotation gate.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::LITERAL, real_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_X, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::LITERAL, real_type);
 
                 } else if (std::regex_match(insn->name, std::regex("(m|mr|r)?xm?[0-9]*"))) {
 
                     // Single-qubit gate that commutes on the X axis.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_X, qubit_type);
 
                 } else if (insn->name == "ry") {
 
                     // Single-qubit Y rotation gate.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Y, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::LITERAL, real_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Y, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::LITERAL, real_type);
 
                 } else if (std::regex_match(insn->name, std::regex("(m|mr|r)?ym?[0-9]*"))) {
 
                     // Single-qubit gate that commutes on the Y axis.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Y, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Y, qubit_type);
 
                 } else if (insn->name == "rz") {
 
                     // Single-qubit Z rotation gate.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::LITERAL, real_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::LITERAL, real_type);
 
                 } else if (insn->name == "crz" || insn->name == "cr") {
 
                     // Controlled Z rotation gate.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::LITERAL, real_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::LITERAL, real_type);
 
                 } else if (insn->name == "crk") {
 
                     // Controlled Z rotation gate.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::LITERAL, int_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::LITERAL, int_type);
 
                 } else if (std::regex_match(insn->name, std::regex("[st](dag)?|(m|mr|r)?zm?[0-9]*"))) {
 
                     // Single-qubit gate that commutes on the Z axis.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
 
                 } else if (std::regex_match(insn->name, std::regex("meas(ure)?(_?[xyz])?(_keep)?"))) {
 
                     // Measurements.
                     duplicate_with_breg_arg = true;
-                    insn->operand_types.emplace(prim::AccessMode::MEASURE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::MEASURE, qubit_type);
 
                 } else if (std::regex_match(insn->name, std::regex("(teleport)?(move|swap)"))) {
 
                     // Swaps.
-                    insn->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
 
                 } else if (insn->name == "cnot" || insn->name == "cx") {
 
                     // Controlled X.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_X, qubit_type);
 
                 } else if (insn->name == "cz" || insn->name == "cphase") {
 
                     // Controlled phase.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
 
                 } else if (insn->name == "cz_park") {
 
                     // Parking cz (assume only one parked qubit at the end).
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::IGNORE, qubit_type);
 
                 } else if (insn->name == "toffoli") {
 
                     // Toffoli gate.
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::COMMUTE_X, qubit_type);
 
                 }
 
@@ -408,7 +408,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                     insn->operand_types.reset();
                     for (utils::UInt i = 0; i < template_operands.size(); i++) {
                         insn->operand_types.emplace(
-                            prim::AccessMode::WRITE,
+                            prim::OperandMode::WRITE,
                             get_type_of(template_operands[i])
                         );
                     }
@@ -459,8 +459,8 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             // with an explicit breg.
             if (duplicate_with_breg_arg) {
                 insn = insn.clone();
-                insn->operand_types[0]->mode = prim::AccessMode::WRITE;
-                insn->operand_types.emplace(prim::AccessMode::WRITE, bit_type);
+                insn->operand_types[0]->mode = prim::OperandMode::WRITE;
+                insn->operand_types.emplace(prim::OperandMode::WRITE, bit_type);
                 add_instruction_type(ir, insn, template_operands);
             }
 
@@ -522,7 +522,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 // Add operands for the template operand types.
                 for (const auto &template_operand : template_operands) {
                     insn->operand_types.emplace(
-                        prim::AccessMode::WRITE,
+                        prim::OperandMode::WRITE,
                         get_type_of(template_operand)
                     );
                 }
@@ -531,7 +531,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 // know exactly how many. So this is way easier than it was for
                 // normal instructions.
                 for (utils::UInt i = 0; i < parameter_count; i++) {
-                    insn->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
                     decomp->parameters.emplace("", qubit_type, prim::UIntVec());
                 }
 
@@ -645,31 +645,31 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Populate the default function types.
     auto fn = add_function_type(ir, utils::make<FunctionType>("operator!"));
-    fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
+    fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
     fn->return_type = bit_type;
     for (const auto &op : utils::Vec<utils::Str>({"&&", "||", "==", "!="})) {
         fn = add_function_type(ir, utils::make<FunctionType>("operator" + op));
-        fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
-        fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
+        fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
+        fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
         fn->return_type = bit_type;
     }
     fn = add_function_type(ir, utils::make<FunctionType>("operator~"));
-    fn->operand_types.emplace(prim::AccessMode::READ, int_type);
+    fn->operand_types.emplace(prim::OperandMode::READ, int_type);
     fn->return_type = int_type;
     for (const auto &op : utils::Vec<utils::Str>({"+", "-", "&", "|", "^"})) {
         fn = add_function_type(ir, utils::make<FunctionType>("operator" + op));
-        fn->operand_types.emplace(prim::AccessMode::READ, int_type);
-        fn->operand_types.emplace(prim::AccessMode::READ, int_type);
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);
         fn->return_type = int_type;
     }
     for (const auto &op : utils::Vec<utils::Str>({"==", "!=", "<", ">", "<=", ">="})) {
         fn = add_function_type(ir, utils::make<FunctionType>("operator" + op));
-        fn->operand_types.emplace(prim::AccessMode::READ, int_type);
-        fn->operand_types.emplace(prim::AccessMode::READ, int_type);
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);
         fn->return_type = bit_type;
     }
     fn = add_function_type(ir, utils::make<FunctionType>("int"));
-    fn->operand_types.emplace(prim::AccessMode::READ, bit_type);
+    fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
     fn->return_type = int_type;
 
     // Populate topology. This is a bit annoying because the old platform has
@@ -1038,13 +1038,13 @@ static InstructionRef convert_gate(
             case compat::GateType::IDENTITY:
             case compat::GateType::PREP_Z:
                 for (const auto &qubit : qubit_operands) {
-                    ityp->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                    ityp->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
                     operands.add(qubit);
                 }
                 break;
 
             case compat::GateType::HADAMARD:
-                ityp->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
                 operands.add(qubit_operands[0]);
                 break;
 
@@ -1052,7 +1052,7 @@ static InstructionRef convert_gate(
             case compat::GateType::RX90:
             case compat::GateType::MRX90:
             case compat::GateType::RX180:
-                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::COMMUTE_X, qubit_type);
                 operands.add(qubit_operands[0]);
                 break;
 
@@ -1060,7 +1060,7 @@ static InstructionRef convert_gate(
             case compat::GateType::RY90:
             case compat::GateType::MRY90:
             case compat::GateType::RY180:
-                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Y, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::COMMUTE_Y, qubit_type);
                 operands.add(qubit_operands[0]);
                 break;
 
@@ -1069,7 +1069,7 @@ static InstructionRef convert_gate(
             case compat::GateType::PHASE_DAG:
             case compat::GateType::T:
             case compat::GateType::T_DAG:
-                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
                 operands.add(qubit_operands[0]);
                 break;
 
@@ -1078,44 +1078,44 @@ static InstructionRef convert_gate(
             case compat::GateType::RZ:
                 QL_ASSERT(!real_type.empty());
                 if (gate->type() == compat::GateType::RX) {
-                    ityp->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                    ityp->operand_types.emplace(prim::OperandMode::COMMUTE_X, qubit_type);
                 } else if (gate->type() == compat::GateType::RY) {
-                    ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Y, qubit_type);
+                    ityp->operand_types.emplace(prim::OperandMode::COMMUTE_Y, qubit_type);
                 } else {
-                    ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                    ityp->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
                 }
                 operands.add(qubit_operands[0]);
-                ityp->operand_types.emplace(prim::AccessMode::LITERAL, real_type);
+                ityp->operand_types.emplace(prim::OperandMode::LITERAL, real_type);
                 operands.emplace<RealLiteral>(gate->angle, real_type);
                 break;
 
             case compat::GateType::CNOT:
-                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
                 operands.add(qubit_operands[0]);
-                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::COMMUTE_X, qubit_type);
                 operands.add(qubit_operands[1]);
                 break;
 
             case compat::GateType::CPHASE:
-                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
                 operands.add(qubit_operands[0]);
-                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
                 operands.add(qubit_operands[1]);
                 break;
 
             case compat::GateType::SWAP:
-                ityp->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
                 operands.add(qubit_operands[0]);
-                ityp->operand_types.emplace(prim::AccessMode::WRITE, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
                 operands.add(qubit_operands[1]);
                 break;
 
             case compat::GateType::TOFFOLI:
-                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
                 operands.add(qubit_operands[0]);
-                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_Z, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
                 operands.add(qubit_operands[1]);
-                ityp->operand_types.emplace(prim::AccessMode::COMMUTE_X, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::COMMUTE_X, qubit_type);
                 operands.add(qubit_operands[2]);
                 break;
 
@@ -1123,7 +1123,7 @@ static InstructionRef convert_gate(
             case compat::GateType::DISPLAY:
             case compat::GateType::DISPLAY_BINARY:
                 for (const auto &qubit : qubit_operands) {
-                    ityp->operand_types.emplace(prim::AccessMode::MEASURE, qubit_type);
+                    ityp->operand_types.emplace(prim::OperandMode::MEASURE, qubit_type);
                     operands.add(qubit);
                 }
                 break;

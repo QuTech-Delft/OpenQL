@@ -8,6 +8,7 @@
 #include "ql/ir/compat/program.h"
 #include "ql/ir/ops.h"
 #include "ql/ir/consistency.h"
+#include "ql/com/ddg/build.h"
 #include "cqasm.hpp"
 
 namespace ql {
@@ -69,8 +70,8 @@ static cqty::Type make_cq_type(
  */
 static cqty::Type make_cq_op_type(const utils::One<OperandType> &ql_op_type) {
     switch (ql_op_type->mode) {
-        case prim::AccessMode::READ:
-        case prim::AccessMode::LITERAL:
+        case prim::OperandMode::READ:
+        case prim::OperandMode::LITERAL:
             return make_cq_type(ql_op_type->data_type, false);
         default:
             return make_cq_type(ql_op_type->data_type, true);
@@ -782,19 +783,19 @@ static void convert_block(
             ) {
 
                 // Figure out which objects are being used by this bundle.
-                ObjectAccesses oa{ir};
+                com::ddg::EventGatherer eg{ir};
                 for (const auto &ql_insn : ql_bundle) {
-                    oa.add_statement(ql_insn);
+                    eg.add_statement(ql_insn);
                 }
                 utils::Any<Expression> ql_operands;
-                for (const auto &access : oa.get()) {
-                    if (!access.first.reference.target.empty()) {
+                for (const auto &event : eg.get()) {
+                    if (!event.first.target.empty()) {
 
                         // Object is accessed, barrier needs to be made
                         // sensitive to it.
-                        ql_operands.add(access.first.reference.clone());
+                        ql_operands.add(event.first.make_reference(ir));
 
-                    } else if (access.second == prim::AccessMode::WRITE) {
+                    } else if (event.second == com::ddg::AccessMode::WRITE) {
 
                         // Null reference (unknown state) is mutated, so the
                         // barrier needs to be sensitive to everything.

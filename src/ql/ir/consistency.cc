@@ -38,9 +38,7 @@ private:
      */
     static void check_identifier(const utils::Str &what, const utils::Str &s) {
         if (!std::regex_match(s, IDENTIFIER_RE)) {
-            utils::StrStrm ss;
-            ss << what << " \"" << s << "\" is not a valid identifier";
-            throw utils::Exception(ss.str());
+            QL_ICE(what << " \"" << s << "\" is not a valid identifier");
         }
     }
 
@@ -52,10 +50,10 @@ private:
         utils::Int current = 0;
         for (const auto &stmt : stmts) {
             if (stmt->cycle < current) {
-                utils::StrStrm ss;
-                ss << "cycle numbers in " << what << " are not non-decreasing: ";
-                ss << "cycle " << stmt->cycle << " used after cycle " << current;
-                throw utils::Exception(ss.str());
+                QL_ICE(
+                    "cycle numbers in " << what << " are not non-decreasing: "
+                    "cycle " << stmt->cycle << " used after cycle " << current
+                );
             }
             current = stmt->cycle;
         }
@@ -71,36 +69,63 @@ private:
         const utils::Any<OperandType> &expected
     ) {
         if (actual.size() != expected.size()) {
-            throw utils::Exception(
-                "actual vs expected operand count mismatch for " + what
-            );
+            QL_ICE("actual vs expected operand count mismatch for " << what);
         }
         for (utils::UInt i = 0; i < actual.size(); i++) {
             if (get_type_of(actual[i]) != expected[i]->data_type) {
-                throw utils::Exception(
-                    "actual vs expected data type mismatch for operand " +
-                    utils::to_string(i) + " of " + what
+                QL_ICE(
+                    "actual vs expected data type mismatch for operand " <<
+                    i << " of " << what
                 );
             }
             switch (expected[i]->mode) {
-                case prim::AccessMode::LITERAL:
+                case prim::OperandMode::WRITE:
+                    if (!actual[i]->as_reference()) {
+                        QL_ICE(
+                            "operand " << i << " of " << what <<
+                            "must be a reference, but isn't"
+                        );
+                    }
+                    break;
+
+                case prim::OperandMode::READ:
+                    break;
+
+                case prim::OperandMode::LITERAL:
                     if (!actual[i]->as_literal()) {
-                        throw utils::Exception(
-                            "operand " + utils::to_string(i) + " of " + what +
+                        QL_ICE(
+                            "operand " << i << " of " << what <<
                             "must be a literal, but isn't"
                         );
                     }
                     break;
-                case prim::AccessMode::READ:
-                    break;
-                default:
-                    if (!is_assignable_or_qubit(actual[i])) {
-                        throw utils::Exception(
-                            "operand " + utils::to_string(i) + " of " + what +
-                            "must be a assignable, but isn't"
+
+                case prim::OperandMode::COMMUTE_X:
+                case prim::OperandMode::COMMUTE_Y:
+                case prim::OperandMode::COMMUTE_Z:
+                case prim::OperandMode::MEASURE:
+                    if (
+                        !actual[i]->as_reference() ||
+                        !actual[i]->as_reference()->data_type->as_qubit_type()
+                    ) {
+                        QL_ICE(
+                            "operand " << i << " of " << what <<
+                            "must be a qubit reference, but isn't"
                         );
                     }
                     break;
+
+                case prim::OperandMode::IGNORE:
+                    break;
+
+            }
+            if (auto ref = actual[i]->as_reference()) {
+                if (ref->indices.size() != ref->target->shape.size()) {
+                    QL_ICE(
+                        "operand " << i << " of " << what <<
+                        "does not have the correct amount of indices"
+                    );
+                }
             }
         }
     }
@@ -126,13 +151,13 @@ public:
             node.data_types.get_vec().end(),
             [](const utils::One<DataType> &lhs, const utils::One<DataType> &rhs) {
                 if (lhs->name == rhs->name) {
-                    throw utils::Exception("duplicate data type name " + lhs->name);
+                    QL_ICE("duplicate data type name " << lhs->name);
                 } else {
                     return lhs->name < rhs->name;
                 }
             }
         )) {
-            throw utils::Exception("data types are not ordered by name");
+            QL_ICE("data types are not ordered by name");
         }
 
         // Check ordering of the instruction names.
@@ -143,14 +168,14 @@ public:
                 return lhs->name < rhs->name;
             }
         )) {
-            throw utils::Exception("instruction types are not ordered by name");
+            QL_ICE("instruction types are not ordered by name");
         }
 
         // Check that all toplevel instruction types are fully generalized.
         for (const auto &insn_type : node.instructions) {
             if (!insn_type->generalization.empty() || !insn_type->template_operands.empty()) {
-                throw utils::Exception(
-                    "toplevel entry for instruction type \"" + insn_type->name +
+                QL_ICE(
+                    "toplevel entry for instruction type \"" << insn_type->name <<
                     "\" is not fully generic"
                 );
             }
@@ -164,7 +189,7 @@ public:
                 return lhs->name < rhs->name;
             }
         )) {
-            throw utils::Exception("function types are not ordered by name");
+            QL_ICE("function types are not ordered by name");
         }
 
         // Check uniqueness and ordering of the physical object names.
@@ -173,37 +198,37 @@ public:
             node.objects.get_vec().end(),
             [](const utils::One<PhysicalObject> &lhs, const utils::One<PhysicalObject> &rhs) {
                 if (lhs->name == rhs->name) {
-                    throw utils::Exception("duplicate physical object name " + lhs->name);
+                    QL_ICE("duplicate physical object name " << lhs->name);
                 } else {
                     return lhs->name < rhs->name;
                 }
             }
         )) {
-            throw utils::Exception("physical objects are not ordered by name");
+            QL_ICE("physical objects are not ordered by name");
         }
 
         // Check data type of main qubit type.
         if (!node.qubits->data_type->as_qubit_type()) {
-            throw utils::Exception("main qubit register is not of a qubit-like data type");
+            QL_ICE("main qubit register is not of a qubit-like data type");
         }
 
         // Check the implicit bit type.
         if (!node.implicit_bit_type.empty()) {
             if (!node.implicit_bit_type->as_bit_type()) {
-                throw utils::Exception("implicit bit type must be a bit-like type");
+                QL_ICE("implicit bit type must be a bit-like type");
             }
         }
         implicit_bit_type = node.implicit_bit_type;
 
         // Check existence of the topology, architecture, and resources objects.
         if (!node.topology.is_populated()) {
-            throw utils::Exception("IR is missing topology information");
+            QL_ICE("IR is missing topology information");
         }
         if (!node.architecture.is_populated()) {
-            throw utils::Exception("IR is missing architecture information");
+            QL_ICE("IR is missing architecture information");
         }
         if (!node.resources.is_populated()) {
-            throw utils::Exception("IR is missing resource information");
+            QL_ICE("IR is missing resource information");
         }
 
     }
@@ -227,21 +252,15 @@ public:
 
         // Check size limits.
         if (node.bits == 0) {
-            throw utils::Exception(
-                "encountered integer data type that is 0 bits in size"
-            );
+            QL_ICE("encountered integer data type that is 0 bits in size");
         }
         if (node.is_signed) {
             if (node.bits > 64) {
-                throw utils::Exception(
-                    "encountered signed integer data type more than 64 bits in size"
-                );
+                QL_ICE("encountered signed integer data type more than 64 bits in size");
             }
         } else {
             if (node.bits > 63) {
-                throw utils::Exception(
-                    "encountered unsigned integer data type more than 63 bits in size"
-                );
+                QL_ICE("encountered unsigned integer data type more than 63 bits in size");
             }
         }
 
@@ -255,15 +274,15 @@ public:
 
         // Check size.
         if (node.num_rows < 1) {
-            throw utils::Exception(
+            QL_ICE(
                 "encountered matrix type with illegal number of rows "
-                "(" + utils::to_string(node.num_rows) + ")"
+                "(" << node.num_rows << ")"
             );
         }
         if (node.num_cols < 1) {
-            throw utils::Exception(
+            QL_ICE(
                 "encountered matrix type with illegal number of columns "
-                "(" + utils::to_string(node.num_cols) + ")"
+                "(" << node.num_cols << ")"
             );
         }
 
@@ -286,29 +305,29 @@ public:
 
             // ... the same name and cqasm_name;
             if (spec->name != node.name) {
-                throw utils::Exception(
-                    "invalid specialization for \"" + spec->name + "\": "
+                QL_ICE(
+                    "invalid specialization for \"" << spec->name << "\": "
                     "has different name"
                 );
             }
             if (spec->cqasm_name != node.cqasm_name) {
-                throw utils::Exception(
-                    "invalid specialization for \"" + spec->name + "\": "
+                QL_ICE(
+                    "invalid specialization for \"" << spec->name << "\": "
                     "has different cQASM name"
                 );
             }
 
             // ... the first element of operand_types removed;
             if (spec->operand_types.size() != node.operand_types.size() - 1) {
-                throw utils::Exception(
-                    "invalid specialization for \"" + spec->name + "\": "
+                QL_ICE(
+                    "invalid specialization for \"" << spec->name << "\": "
                     "mismatched operand count"
                 );
             }
             for (utils::UInt i = 0; i < spec->operand_types.size(); i++) {
                 if (!spec->operand_types[i].equals(node.operand_types[i + 1])) {
-                    throw utils::Exception(
-                        "invalid specialization for \"" + spec->name + "\": "
+                    QL_ICE(
+                        "invalid specialization for \"" << spec->name << "\": "
                         "mismatched operand types"
                     );
                 }
@@ -316,15 +335,15 @@ public:
 
             // ... an additional element at the end of template_operands;
             if (spec->template_operands.size() != node.template_operands.size() + 1) {
-                throw utils::Exception(
-                    "invalid specialization for \"" + spec->name + "\": "
+                QL_ICE(
+                    "invalid specialization for \"" << spec->name << "\": "
                     "mismatched template operand count"
                 );
             }
             for (utils::UInt i = 0; i < spec->template_operands.size() - 1; i++) {
                 if (!spec->template_operands[i].equals(node.template_operands[i])) {
-                    throw utils::Exception(
-                        "invalid specialization for \"" + spec->name + "\": "
+                    QL_ICE(
+                        "invalid specialization for \"" << spec->name << "\": "
                         "mismatched template operands"
                     );
                 }
@@ -333,16 +352,16 @@ public:
             // ... the type of said element must match the removed operand_type
             // element; and...
             if (get_type_of(spec->template_operands.back()) != node.operand_types.front()->data_type) {
-                throw utils::Exception(
-                    "invalid specialization for \"" + spec->name + "\": "
+                QL_ICE(
+                    "invalid specialization for \"" << spec->name << "\": "
                     "type mismatch for additional template operand"
                 );
             }
 
             // ... generalization must link back to this node.
             if (&*spec->generalization != &node) {
-                throw utils::Exception(
-                    "invalid specialization for \"" + spec->name + "\": "
+                QL_ICE(
+                    "invalid specialization for \"" << spec->name << "\": "
                     "generalization does not link back correctly"
                 );
             }
@@ -352,16 +371,16 @@ public:
         // Check the decompositions.
         for (const auto &dec : node.decompositions) {
             if (dec->parameters.size() != node.operand_types.size()) {
-                throw utils::Exception(
-                    "invalid decomposition for \"" + node.name + "\": "
+                QL_ICE(
+                    "invalid decomposition for \"" << node.name << "\": "
                     "parameter object count mismatch"
                 );
             }
             for (utils::UInt i = 0; i < dec->parameters.size(); i++) {
                 if (dec->parameters[i]->data_type != node.operand_types[i]->data_type) {
-                    throw utils::Exception(
-                        "invalid decomposition for \"" + node.name + "\": "
-                        "parameter object " + utils::to_string(i) + " type mismatch"
+                    QL_ICE(
+                        "invalid decomposition for \"" << node.name << "\": "
+                        "parameter object " << i << " type mismatch"
                     );
                 }
             }
@@ -399,9 +418,9 @@ public:
         // Check the access mode of the operands. Functions must be free of side
         // effects, so the mode can only be read or literal.
         for (const auto &optyp : node.operand_types) {
-            if (optyp->mode != prim::AccessMode::READ && optyp->mode != prim::AccessMode::LITERAL) {
-                throw utils::Exception(
-                    "function " + node.name + " writes to one of its operands"
+            if (optyp->mode != prim::OperandMode::READ && optyp->mode != prim::OperandMode::LITERAL) {
+                QL_ICE(
+                    "function " << node.name << " writes to one of its operands"
                 );
             }
         }
@@ -412,59 +431,59 @@ public:
             auto expected = node.operand_types;
             if (auto fix = node.decomposition->return_location->as_return_in_fixed_object()) {
                 if (fix->object->data_type != node.return_type) {
-                    throw utils::Exception(
-                        "return location type mismatch in decomposition of function " + node.name
+                    QL_ICE(
+                        "return location type mismatch in decomposition of function " << node.name
                     );
                 }
             } else if (auto ded = node.decomposition->return_location->as_return_in_dedicated_operand()) {
                 if (ded->index > expected.size()) {
-                    throw utils::Exception(
-                        "invalid return location index in decomposition of function " + node.name
+                    QL_ICE(
+                        "invalid return location index in decomposition of function " << node.name
                     );
                 }
                 expected.add(utils::make<OperandType>(
-                    prim::AccessMode::WRITE,
+                    prim::OperandMode::WRITE,
                     node.return_type
                 ), ded->index);
             } else if (auto sha = node.decomposition->return_location->as_return_in_shared_operand()) {
                 if (sha->index >= expected.size()) {
-                    throw utils::Exception(
-                        "invalid return location index in decomposition of function " + node.name
+                    QL_ICE(
+                        "invalid return location index in decomposition of function " << node.name
                     );
                 }
                 if (expected[sha->index]->data_type != node.return_type) {
-                    throw utils::Exception(
-                        "return location type mismatch in decomposition of function " + node.name
+                    QL_ICE(
+                        "return location type mismatch in decomposition of function " << node.name
                     );
                 }
-                expected[sha->index]->mode = prim::AccessMode::WRITE;
+                expected[sha->index]->mode = prim::OperandMode::WRITE;
             } else {
-                throw utils::Exception("unknown return location type encountered");
+                QL_ICE("unknown return location type encountered");
             }
             const auto &actual = node.decomposition->instruction_type->operand_types;
             if (expected.size() != actual.size()) {
-                throw utils::Exception(
-                    "prototype mismatch in decomposition of function " + node.name
+                QL_ICE(
+                    "prototype mismatch in decomposition of function " << node.name
                 );
             }
             for (utils::UInt i = 0; i < expected.size(); i++) {
                 if (expected[i]->data_type != actual[i]->data_type) {
-                    throw utils::Exception(
-                        "prototype mismatch in decomposition of function " + node.name +
-                        ": type mismatch for instruction operand index " + utils::to_string(
+                    QL_ICE(
+                        "prototype mismatch in decomposition of function " << node.name <<
+                        ": type mismatch for instruction operand index " << (
                             i + node.decomposition->instruction_type->template_operands.size()
                         )
                     );
                 }
                 if (
-                    expected[i]->mode == prim::AccessMode::WRITE &&
-                    actual[i]->mode != prim::AccessMode::WRITE
+                    expected[i]->mode == prim::OperandMode::WRITE &&
+                    actual[i]->mode != prim::OperandMode::WRITE
                 ) {
-                    throw utils::Exception(
-                        "prototype mismatch in decomposition of function " + node.name +
-                        ": instruction operand index " + utils::to_string(
+                    QL_ICE(
+                        "prototype mismatch in decomposition of function " << node.name <<
+                        ": instruction operand index " << (
                             i + node.decomposition->instruction_type->template_operands.size()
-                        ) + " is not marked as writable as demanded by function"
+                        ) << " is not marked as writable as demanded by function"
                     );
                 }
             }
@@ -482,7 +501,7 @@ public:
         if (!node.name.empty()) {
             check_identifier("object name", node.name);
         } else if (node.as_physical_object()) {
-            throw utils::Exception("physical object is missing name " + node.name);
+            QL_ICE("physical object is missing name " << node.name);
         }
 
     }
@@ -495,29 +514,34 @@ public:
 
         // Check type/access-mode consistency.
         switch (node.mode) {
-            case prim::AccessMode::WRITE:
+            case prim::OperandMode::WRITE:
                 // Used for both qubits and classical data.
                 break;
-            case prim::AccessMode::READ:
-            case prim::AccessMode::LITERAL:
+
+            case prim::OperandMode::READ:
+            case prim::OperandMode::LITERAL:
                 if (!node.data_type->as_classical_type()) {
-                    throw utils::Exception(
+                    QL_ICE(
                         "encountered function/instruction parameter that "
                         "reads a non-classical type"
                     );
                 }
                 break;
-            case prim::AccessMode::COMMUTE_X:
-            case prim::AccessMode::COMMUTE_Y:
-            case prim::AccessMode::COMMUTE_Z:
-            case prim::AccessMode::MEASURE:
+
+            case prim::OperandMode::COMMUTE_X:
+            case prim::OperandMode::COMMUTE_Y:
+            case prim::OperandMode::COMMUTE_Z:
+            case prim::OperandMode::MEASURE:
                 if (!node.data_type->as_qubit_type()) {
-                    throw utils::Exception(
+                    QL_ICE(
                         "encountered function/instruction parameter marked "
                         "with a qubit commutation rule combined with a "
                         "non-qubit type"
                     );
                 }
+                break;
+
+            case prim::OperandMode::IGNORE:
                 break;
         }
 
@@ -538,7 +562,7 @@ public:
             }
         }
         if (!ok) {
-            throw utils::Exception(
+            QL_ICE(
                 "program entry point does not link to block in program root"
             );
         }
@@ -566,7 +590,7 @@ public:
         if (!node.name.empty()) {
             check_identifier("object name", node.name);
             if (!block_names.insert(node.name).second) {
-                throw utils::Exception("duplicate block name " + node.name);
+                QL_ICE("duplicate block name " << node.name);
             }
         }
 
@@ -580,7 +604,7 @@ public:
 
         // Check the return type of the expression.
         if (!get_type_of(node.condition)->as_bit_type()) {
-            throw utils::Exception(
+            QL_ICE(
                 "encountered conditional instruction with non-boolean condition"
             );
         }
@@ -609,22 +633,22 @@ public:
         RecursiveVisitor::visit_set_instruction(node);
 
         // Check assignability.
-        if (!is_assignable_or_qubit(node.lhs)) {
-            throw utils::Exception(
+        if (!node.lhs->as_reference()) {
+            QL_ICE(
                 "encountered set instruction with non-assignable left-hand side"
             );
         }
 
         // Match the types of the LHS and RHS.
         if (get_type_of(node.lhs) != get_type_of(node.rhs)) {
-            throw utils::Exception(
+            QL_ICE(
                 "encountered set instruction with mismatched LHS/RHS types"
             );
         }
 
         // Qubits cannot be assigned.
         if (get_type_of(node.lhs)->as_qubit_type()) {
-            throw utils::Exception(
+            QL_ICE(
                 "encountered set instruction operating on qubits"
             );
         }
@@ -639,7 +663,7 @@ public:
 
         // Check the return type of the condition expression.
         if (!get_type_of(node.condition)->as_bit_type()) {
-            throw utils::Exception(
+            QL_ICE(
                 "encountered if conditional of non-boolean type"
             );
         }
@@ -667,7 +691,7 @@ public:
             (node.lhs->target->data_type != node.frm->data_type) ||
             (node.lhs->target->data_type != node.to->data_type)
         ) {
-            throw utils::Exception(
+            QL_ICE(
                 "data type mismatch in static loop"
             );
         }
@@ -682,7 +706,7 @@ public:
 
         // Check the return type of the condition expression.
         if (!get_type_of(node.condition)->as_bit_type()) {
-            throw utils::Exception(
+            QL_ICE(
                 "encountered if conditional of non-boolean type"
             );
         }
@@ -697,7 +721,7 @@ public:
 
         // Loop control statements are only allowed within a loop.
         if (!in_loop) {
-            throw utils::Exception(
+            QL_ICE(
                 "encountered break or continue statement outside of a loop"
             );
         }
@@ -719,7 +743,7 @@ public:
 
         // Check type.
         if (!node.data_type->as_bit_type()) {
-            throw utils::Exception(
+            QL_ICE(
                 "encountered bit literal with non-bit associated type"
             );
         }
@@ -735,15 +759,13 @@ public:
         // Check type.
         if (auto ityp = node.data_type->as_int_type()) {
             if (node.value < get_min_int_for(*ityp) || node.value > get_max_int_for(*ityp)) {
-                throw utils::Exception(
-                    "encountered integer literal out of range for type " +
-                    node.data_type->name + ": " + utils::to_string(node.value)
+                QL_ICE(
+                    "encountered integer literal out of range for type " <<
+                    node.data_type->name << ": " << node.value
                 );
             }
         } else {
-            throw utils::Exception(
-                "encountered int literal with non-int associated type"
-            );
+            QL_ICE("encountered int literal with non-int associated type");
         }
 
     }
@@ -756,9 +778,7 @@ public:
 
         // Check type.
         if (!node.data_type->as_real_type()) {
-            throw utils::Exception(
-                "encountered real number literal with non-real associated type"
-            );
+            QL_ICE("encountered real number literal with non-real associated type");
         }
 
     }
@@ -771,9 +791,7 @@ public:
 
         // Check type.
         if (!node.data_type->as_complex_type()) {
-            throw utils::Exception(
-                "encountered complex number literal with non-complex associated type"
-            );
+            QL_ICE("encountered complex number literal with non-complex associated type");
         }
 
     }
@@ -790,14 +808,10 @@ public:
                 (mtyp->num_rows != node.value.size_rows()) ||
                 (mtyp->num_cols != node.value.size_cols())
             ) {
-                throw utils::Exception(
-                    "encountered matrix literal with incorrect size"
-                );
+                QL_ICE("encountered matrix literal with incorrect size");
             }
         } else {
-            throw utils::Exception(
-                "encountered real-valued matrix literal with non-matrix associated type"
-            );
+            QL_ICE("encountered real-valued matrix literal with non-matrix associated type");
         }
 
     }
@@ -814,14 +828,10 @@ public:
                 (mtyp->num_rows != node.value.size_rows()) ||
                 (mtyp->num_cols != node.value.size_cols())
             ) {
-                throw utils::Exception(
-                    "encountered matrix literal with incorrect size"
-                );
+                QL_ICE("encountered matrix literal with incorrect size");
             }
         } else {
-            throw utils::Exception(
-                "encountered complex-valued matrix literal with non-matrix associated type"
-            );
+            QL_ICE("encountered complex-valued matrix literal with non-matrix associated type");
         }
 
     }
@@ -834,9 +844,7 @@ public:
 
         // Check type.
         if (!node.data_type->as_string_type()) {
-            throw utils::Exception(
-                "encountered string literal with non-string associated type"
-            );
+            QL_ICE("encountered string literal with non-string associated type");
         }
 
     }
@@ -849,9 +857,7 @@ public:
 
         // Check type.
         if (!node.data_type->as_json_type()) {
-            throw utils::Exception(
-                "encountered JSON literal with non-JSON associated type"
-            );
+            QL_ICE("encountered JSON literal with non-JSON associated type");
         }
 
     }
@@ -867,30 +873,30 @@ public:
             (node.data_type != node.target->data_type) &&
             (node.data_type != implicit_bit_type || !node.target->data_type->as_qubit_type())
         ) {
-            throw utils::Exception(
-                "encountered reference to object \"" + node.target->name +
-                "\" using mismatched data type " + node.data_type->name
+            QL_ICE(
+                "encountered reference to object \"" << node.target->name <<
+                "\" using mismatched data type " << node.data_type->name
             );
         }
 
         // Check indices.
-        if (node.indices.size() != node.target->shape.size()) {
-            throw utils::Exception(
-                "encountered reference to object \"" + node.target->name +
+        if (node.indices.size() > node.target->shape.size()) {
+            QL_ICE(
+                "encountered reference to object \"" << node.target->name <<
                 "\" with mismatched shape"
             );
         }
         for (utils::UInt i = 0; i < node.indices.size(); i++) {
             if (!get_type_of(node.indices[i])->as_int_type()) {
-                throw utils::Exception(
-                    "encountered reference to object \"" + node.target->name +
+                QL_ICE(
+                    "encountered reference to object \"" << node.target->name <<
                     "\" with non-integer index"
                 );
             }
             if (auto ilit = node.indices[i]->as_int_literal()) {
                 if (ilit->value < 0 || ilit->value >= (utils::Int)node.target->shape[i]) {
-                    throw utils::Exception(
-                        "encountered reference to object \"" + node.target->name +
+                    QL_ICE(
+                        "encountered reference to object \"" << node.target->name <<
                         "\" with static index out of range"
                     );
                 }

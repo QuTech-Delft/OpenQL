@@ -372,7 +372,7 @@ object {
 operand_type {
 
     # Access mode for the operand.
-    mode: prim::AccessMode;
+    mode: prim::OperandMode;
 
     # The data type of the operand.
     data_type: Link<data_type>;
@@ -725,9 +725,11 @@ expression {
 
         # The indices by which the object is indexed. The indices must be
         # integer-like. Depending on context, they may need to be literals.
-        # The amount of indices must exactly match the dimensionality of the
-        # target object; partial indexation is not supported because the type
-        # system doesn't support it.
+        # Except within wait instructions, the amount of indices must exactly
+        # match the dimensionality of the target object; partial indexation is
+        # not supported because the type system doesn't support it. References
+        # within wait instructions may have less indices than the dimensionality
+        # of the target object.
         indices: Any<expression>;
 
     }

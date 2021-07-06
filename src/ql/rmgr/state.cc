@@ -6,6 +6,7 @@
 #include "ql/rmgr/state.h"
 
 #include "ql/ir/ops.h"
+#include "ql/ir/describe.h"
 
 namespace ql {
 namespace rmgr {
