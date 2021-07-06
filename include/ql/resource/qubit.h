@@ -15,7 +15,7 @@ namespace qubit {
 /**
  * State per qubit.
  */
-using State = utils::RangeSet<utils::UInt>;
+using State = utils::RangeSet<utils::Int>;
 
 /**
  * Qubit resource. This resource prevents a qubit from being used more than once
@@ -35,11 +35,6 @@ private:
      */
     utils::Bool optimize;
 
-    /**
-     * Cycle time of the platform.
-     */
-    utils::UInt cycle_time;
-
 protected:
 
     /**
@@ -51,8 +46,8 @@ protected:
      * Checks availability of and/or reserves a gate.
      */
     utils::Bool on_gate(
-        utils::UInt cycle,
-        const ir::compat::GateRef &gate,
+        utils::Int cycle,
+        const rmgr::resource_types::GateData &gate,
         utils::Bool commit
     ) override;
 

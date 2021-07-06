@@ -35,9 +35,18 @@ private:
     const Factory factory;
 
     /**
-     * The platform that this resource manager is built for.
+     * The old-IR platform that this resource manager is built for. This is
+     * currently always valid, regardless of whether the new or old IR is used.
+     * However, when the old IR is phased out, it should be removed. The
+     * relevant information can then be taken from ir.
      */
     const ir::compat::PlatformRef &platform;
+
+    /**
+     * The root of the new IR tree that's being compiled. This is empty when the
+     * old IR is used.
+     */
+    ir::Ref ir;
 
     /**
      * The list of resources.
@@ -63,7 +72,8 @@ public:
         const ir::compat::PlatformRef &platform,
         const utils::Str &architecture = "",
         const utils::Set<utils::Str> &dnu = {},
-        const Factory &factory = {}
+        const Factory &factory = {},
+        const ir::Ref &ir = {}
     );
 
     /**
@@ -73,7 +83,8 @@ public:
     static Manager from_json(
         const ir::compat::PlatformRef &platform,
         const utils::Json &json,
-        const Factory &factory = {}
+        const Factory &factory = {},
+        const ir::Ref &ir = {}
     );
 
     /**
@@ -82,7 +93,8 @@ public:
      */
     static Manager from_defaults(
         const ir::compat::PlatformRef &platform,
-        const Factory &factory = {}
+        const Factory &factory = {},
+        const ir::Ref &ir = {}
     );
 
     /**

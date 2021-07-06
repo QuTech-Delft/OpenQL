@@ -7,11 +7,54 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/ir/compat/compat.h"
+#include "ql/ir/ir.h"
 #include "ql/rmgr/types.h"
 
 namespace ql {
 namespace rmgr {
 namespace resource_types {
+
+/**
+ * Record containing information about a gate/statement being fed to the
+ * resource. This is supposed to be a temporary construct, needed because the
+ * resource manager currently has to work with two kinds of IRs. This simply
+ * acts as the least common denominator between them. When the old IR is phased
+ * out, this structure can be removed, and gate()/on_gate() can be updated to
+ * accept an ir::StatementRef directly.
+ */
+struct GateData {
+
+    /**
+     * The complete gate reference when operating on the old IR. This is empty
+     * when operating on the new IR.
+     */
+    ir::compat::GateRef gate;
+
+    /**
+     * The complete statement reference when operating on the new IR. This is
+     * empty when operating on the old IR.
+     */
+    ir::StatementRef statement;
+
+    /**
+     * Reference to the name of the gate, valid for either IR type.
+     */
+    utils::Str name;
+
+    /**
+     * Reference to the duration of the gate in cycles, valid for either IR
+     * type.
+     */
+    utils::UInt duration_cycles;
+
+    /**
+     * If the old IR is used or the new IR statement is a quantum gate operating
+     * on the main qubit register, this is populated with the qubit indices.
+     * Otherwise, it will be empty.
+     */
+    utils::Vec<utils::UInt> qubits;
+
+};
 
 /**
  * Base class for scheduling resources. Scheduling resources are used to
@@ -43,7 +86,7 @@ private:
     /**
      * Used to verify that gates are added in the order specified by direction.
      */
-    utils::UInt prev_cycle;
+    utils::Int prev_cycle;
 
 protected:
 
@@ -65,8 +108,8 @@ protected:
      * Abstract implementation for gate().
      */
     virtual utils::Bool on_gate(
-        utils::UInt cycle,
-        const ir::compat::GateRef &gate,
+        utils::Int cycle,
+        const GateData &gate,
         utils::Bool commit
     ) = 0;
 
@@ -146,12 +189,36 @@ public:
 
     /**
      * Checks and optionally updates the resource manager state for the given
-     * gate and (start) cycle number. The state is only updated if the gate is
-     * schedulable for the given cycle and commit is set.
+     * gate data structure and (start) cycle number. Note that the cycle number
+     * may be negative. The state is only updated if the gate is schedulable for
+     * the given cycle and commit is set.
+     */
+    utils::Bool gate(
+        utils::Int cycle,
+        const GateData &data,
+        utils::Bool commit
+    );
+
+    /**
+     * Checks and optionally updates the resource manager state for the given
+     * old-IR gate and (start) cycle number. The state is only updated if the
+     * gate is schedulable for the given cycle and commit is set.
      */
     utils::Bool gate(
         utils::UInt cycle,
         const ir::compat::GateRef &gate,
+        utils::Bool commit
+    );
+
+    /**
+     * Checks and optionally updates the resource manager state for the given
+     * new-IR statement and (start) cycle number. Note that cycles may be
+     * negative in the new IR during scheduling. The state is only updated if
+     * the gate is schedulable for the given cycle and commit is set.
+     */
+    utils::Bool gate(
+        utils::Int cycle,
+        const ir::StatementRef &statement,
         utils::Bool commit
     );
 

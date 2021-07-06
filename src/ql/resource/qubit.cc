@@ -15,26 +15,25 @@ namespace qubit {
 void QubitResource::on_initialize(rmgr::Direction direction) {
     state = utils::Vec<State>(context->platform->qubit_count);
     optimize = direction != rmgr::Direction::UNDEFINED;
-    cycle_time = context->platform->cycle_time;
 }
 
 /**
  * Checks availability of and/or reserves a gate.
  */
 utils::Bool QubitResource::on_gate(
-    utils::UInt cycle,
-    const ir::compat::GateRef &gate,
+    utils::Int cycle,
+    const rmgr::resource_types::GateData &gate,
     utils::Bool commit
 ) {
 
     // Compute cycle range for this gate.
     State::Range range = {
         cycle,
-        cycle + utils::div_ceil(gate->duration, cycle_time)
+        cycle + gate.duration_cycles
     };
 
     // Check qubit availability for all operands.
-    for (auto qubit : gate->operands) {
+    for (auto qubit : gate.qubits) {
         if (state[qubit].find(range).type != utils::RangeMatchType::NONE) {
             return false;
         }
@@ -42,7 +41,7 @@ utils::Bool QubitResource::on_gate(
 
     // If we're committing, reserve for all operands.
     if (commit) {
-        for (auto qubit : gate->operands) {
+        for (auto qubit : gate.qubits) {
             if (optimize) {
                 state[qubit].clear();
             }

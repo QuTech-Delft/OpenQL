@@ -683,7 +683,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Populate resources.
     rmgr::CRef resources;
-    resources.emplace(rmgr::Manager::from_defaults(old));
+    resources.emplace(rmgr::Manager::from_defaults(old, {}, ir));
     ir->platform->resources.populate(resources);
 
     // Populate platform JSON data.

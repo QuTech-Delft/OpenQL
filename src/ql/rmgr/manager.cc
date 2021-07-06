@@ -133,10 +133,12 @@ Manager::Manager(
     const ir::compat::PlatformRef &platform,
     const utils::Str &architecture,
     const utils::Set<utils::Str> &dnu,
-    const Factory &factory
+    const Factory &factory,
+    const ir::Ref &ir
 ) :
     factory(factory.configure(architecture, dnu)),
     platform(platform),
+    ir(ir),
     resources()
 {
 }
@@ -148,7 +150,8 @@ Manager::Manager(
 Manager Manager::from_json(
     const ir::compat::PlatformRef &platform,
     const utils::Json &json,
-    const Factory &factory
+    const Factory &factory,
+    const ir::Ref &ir
 ) {
     // Shorthand.
     using JsonType = utils::Json::value_t;
@@ -219,7 +222,7 @@ Manager Manager::from_json(
     }
 
     // Create the manager.
-    Manager manager{platform, architecture, dnu, factory};
+    Manager manager{platform, architecture, dnu, factory, ir};
 
     // Add resources to it.
     for (auto it = resources->begin(); it != resources->end(); ++it) {
@@ -269,9 +272,10 @@ Manager Manager::from_json(
  */
 Manager Manager::from_defaults(
     const ir::compat::PlatformRef &platform,
-    const Factory &factory
+    const Factory &factory,
+    const ir::Ref &ir
 ) {
-    return from_json(platform, platform->resources, factory);
+    return from_json(platform, platform->resources, factory, ir);
 }
 
 /**
@@ -320,7 +324,7 @@ void Manager::add_resource(
     check_resource_name(name);
 
     // Build the resource.
-    auto resource = factory.build_resource(type_name, name, platform, configuration);
+    auto resource = factory.build_resource(type_name, name, platform, ir, configuration);
 
     // Add it to our map. This is intentionally on a separate line; otherwise
     // an exception raised while building the resource would leave an empty

@@ -7,6 +7,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/ir/compat/compat.h"
+#include "ql/ir/ir.h"
 #include "ql/rmgr/declarations.h"
 
 namespace ql {
@@ -63,9 +64,18 @@ struct Context {
     utils::Str instance_name;
 
     /**
-     * The platform being compiled for.
+     * The old-IR platform being compiled for. This is currently always valid,
+     * regardless of whether the new or old IR is used. However, when the old IR
+     * is phased out, it should be removed. The relevant information can then be
+     * taken from ir.
      */
     ir::compat::PlatformRef platform;
+
+    /**
+     * The root of the new IR tree that's being compiled. This is empty when the
+     * old IR is used.
+     */
+    ir::Ref ir;
 
     /**
      * Unparsed JSON configuration data for the resource.

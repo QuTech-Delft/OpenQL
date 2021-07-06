@@ -645,7 +645,7 @@ static Qubits ccInstrument2qubits(const utils::Json &instrument) {
             ret.set(qubit) = unit;
         }
 #endif
-        for (int i=0; i<qubitsOfGroup.size(); i++) {
+        for (utils::UInt i=0; i<qubitsOfGroup.size(); i++) {
             ret.push_back(qubitsOfGroup[0].get<utils::UInt>());
         }
     }

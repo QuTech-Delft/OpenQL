@@ -65,8 +65,8 @@ public:
     State &operator=(State &&src) = default;
 
     /**
-     * Checks whether the given gate can be scheduled at the given (start)
-     * cycle.
+     * Checks whether the given old-IR gate can be scheduled at the given
+     * (start) cycle.
      */
     utils::Bool available(
         utils::UInt cycle,
@@ -74,13 +74,33 @@ public:
     ) const;
 
     /**
-     * Schedules the given gate at the given (start) cycle. Throws an exception
-     * if this is not possible. When an exception is thrown, the resulting state
-     * of the resources is undefined.
+     * Checks whether the given new-IR statement can be scheduled at the given
+     * (start) cycle. Note that the cycle number may be negative.
+     */
+    utils::Bool available(
+        utils::Int cycle,
+        const ir::StatementRef &statement
+    ) const;
+
+    /**
+     * Schedules the given old-IR gate at the given (start) cycle. Throws an
+     * exception if this is not possible. When an exception is thrown, the
+     * resulting state of the resources is undefined.
      */
     void reserve(
         utils::UInt cycle,
         const ir::compat::GateRef &gate
+    );
+
+    /**
+     * Schedules the given new-IR statement at the given (start) cycle. Throws
+     * an exception if this is not possible. When an exception is thrown, the
+     * resulting state of the resources is undefined. Note that the cycle number
+     * may be negative.
+     */
+    void reserve(
+        utils::Int cycle,
+        const ir::StatementRef &statement
     );
 
     /**

@@ -134,13 +134,14 @@ ResourceRef Factory::build_resource(
     const utils::Str &type_name,
     const utils::Str &instance_name,
     const ir::compat::PlatformRef &platform,
+    const ir::Ref &ir,
     const utils::Json &configuration
 ) const {
     auto it = resource_types.find(type_name);
     if (it == resource_types.end()) {
         throw utils::Exception("unknown resource type \"" + type_name + "\"");  // FIXME: this is a JSON error, provide context to user
     }
-    return (*it->second)(instance_name, platform, configuration);
+    return (*it->second)(instance_name, platform, ir, configuration);
 }
 
 /**
@@ -164,7 +165,7 @@ void Factory::dump_resource_types(
     for (const auto &pair : aliases) {
         const auto *constructor_fn_ptr = pair.first;
         const auto &type_aliases = pair.second;
-        auto resource = (*constructor_fn_ptr)("", {}, {});
+        auto resource = (*constructor_fn_ptr)("", {}, {}, {});
         const auto &full_type_name = resource->get_type();
         QL_ASSERT(resource_types.find(full_type_name) == resource_types.end());
         resource_types.set(full_type_name) = {resource, type_aliases};

@@ -10,6 +10,7 @@
 #include "ql/utils/map.h"
 #include "ql/utils/json.h"
 #include "ql/ir/compat/platform.h"
+#include "ql/ir/ir.h"
 #include "ql/rmgr/declarations.h"
 #include "ql/rmgr/resource_types/base.h"
 
@@ -31,6 +32,7 @@ private:
             ResourceRef(
                 const utils::Str &instance_name,
                 const ir::compat::PlatformRef &platform,
+                const ir::Ref &ir,
                 const utils::Json &configuration
             )
         >
@@ -58,6 +60,7 @@ public:
         fn.emplace([type_name](
             const utils::Str &instance_name,
             const ir::compat::PlatformRef &platform,
+            const ir::Ref &ir,
             const utils::Json &configuration
         ) {
             ResourceRef resource;
@@ -65,6 +68,7 @@ public:
                 type_name,
                 instance_name,
                 platform,
+                ir,
                 configuration
             }));
             return resource;
@@ -96,6 +100,7 @@ public:
         const utils::Str &type_name,
         const utils::Str &instance_name,
         const ir::compat::PlatformRef &platform,
+        const ir::Ref &ir,
         const utils::Json &configuration
     ) const;
 
