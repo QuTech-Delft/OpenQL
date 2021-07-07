@@ -26,7 +26,7 @@ utils::One<ir::SentinelStatement> get_source(const ir::BlockBaseRef &block);
 NodeCRef get_source_node(const ir::BlockBaseRef &block);
 
 /**
- * Returns the source statement associated with the given block, if any.
+ * Returns the sink statement associated with the given block, if any.
  */
 utils::One<ir::SentinelStatement> get_sink(const ir::BlockBaseRef &block);
 

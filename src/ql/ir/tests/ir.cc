@@ -1,4 +1,6 @@
+#include "ql/utils/filesystem.h"
 #include "ql/ir/ir.h"
+#include "ql/ir/describe.h"
 #include "ql/ir/old_to_new.h"
 #include "ql/ir/new_to_old.h"
 #include "ql/ir/ops.h"
@@ -7,6 +9,7 @@
 #include "ql/com/ddg/types.h"
 #include "ql/com/ddg/ops.h"
 #include "ql/com/ddg/build.h"
+#include "ql/com/ddg/dot.h"
 #include "ql/pass/io/cqasm/report.h"
 #include "ql/rmgr/manager.h"
 
@@ -89,12 +92,14 @@ namespace detail {
 /**
  * Dummy scheduling heuristic that assigns equal criticality to all statements.
  */
-static utils::Bool trivial_heuristic(
-    const ir::StatementRef &lhs,
-    const ir::StatementRef &rhs
-) {
-    return false;
-}
+struct TrivialHeuristic {
+    utils::Bool operator()(
+        const ir::StatementRef &lhs,
+        const ir::StatementRef &rhs
+    ) {
+        return false;
+    }
+};
 
 /**
  * Scheduling heuristic that assigns higher criticality to statements with a
@@ -108,51 +113,456 @@ static utils::Bool trivial_heuristic(
  * available, i.e. haven't yet been scheduled, while the cycle value is only
  * adjusted by the scheduler when a statement is scheduled.
  */
-static utils::Bool critical_path_heuristic(
-    const ir::StatementRef &lhs,
-    const ir::StatementRef &rhs
-) {
-    return utils::abs(lhs->cycle) < utils::abs(rhs->cycle);
-}
+struct CriticalPathHeuristic {
+    utils::Bool operator()(
+        const ir::StatementRef &lhs,
+        const ir::StatementRef &rhs
+    ) {
+        return utils::abs(lhs->cycle) < utils::abs(rhs->cycle);
+    }
+};
 
 /**
- * Schedules the given block using the DDG that must already have been created
- * for the block in the direction of the DDG; if the DDG is not reversed that
- * amounts to ASAP, if it is reversed it amounts to ALAP.
+ * Scheduler interface. This implements a potentially resource-constrained
+ * as-soon-as-possible/as-late-as-possible list scheduler, with criticality
+ * determined by the HeuristicComparator comparator object (a less-than
+ * comparator class, just like what's used for Set, Map, etc). The default
+ * values for the criticality heuristic and resources effectively reduces the
+ * algorithm to true ASAP/ALAP, with guaranteed stability of the statement order
+ * for statements that become available simultaneously.
  *
- * Scheduling is done in accordance with the given resource constraints and
- * criticality function. The heuristic function acts like a less-than
- * comparison for the criticality of the two instructions. Using the default
- * values, there are no resource constraints, and all statements are considered
- * to be equally critical. Note that, in the case of equal criticality,
- * instructions are ordered by their original place in the block, such that
- * the ordering is stable in this case.
+ * The normal usage pattern is as follows:
  *
- * Cycles are not adjusted to be non-negative afterward. Rather, the source node
- * of the DDG will always be assigned cycle zero, so the assigned cycle numbers
- * are non-negative for ASAP, and non-positive for ALAP (due to the negated DDG
- * edge weights). The statements are also not ordered by cycle. These
- * post-processing operations are to be handled by the schedule() wrapper.
+ *  - construct a data dependency graph for the block in question;
+ *  - construct a Scheduler;
+ *  - call Scheduler::run(); and
+ *  - call Scheduler::convert_cycles().
+ *
+ * However, more control can be exerted over the way statements are scheduled
+ * as well. For example, instead of run(), one can use get_available(),
+ * try_schedule(), advance(), and is_done() to override the criticality metric.
+ * The Scheduler object can also be cloned, to implement backtracking
+ * algorithms.
  */
-static void schedule_internal(
-    const ir::BlockBaseRef &block,
-    std::function<utils::Bool(const ir::StatementRef&, const ir::StatementRef&)> heuristic = trivial_heuristic,
-    const rmgr::CRef &resources = {}
-) {
-    // TODO
-}
+template <typename HeuristicComparator = TrivialHeuristic>
+class Scheduler {
+
+    /**
+     * Criticality comparator for the availability list/set. The most critical
+     * statement will end up in the front, so set iteration starts with the most
+     * critical instruction. This uses the heuristic provided as template
+     * argument to the surrounding function, and falls back on the original
+     * statement order as recorded when the DDG was constructed for stability.
+     */
+    struct AvailableListComparator {
+        utils::Bool operator()(
+            const ir::StatementRef &lhs,
+            const ir::StatementRef &rhs
+        ) {
+
+            // The heuristic implements "criticality less than," which would
+            // result in reverse order, so we swap the value here.
+            HeuristicComparator heuristic;
+            if (heuristic(rhs, lhs)) return true;
+            if (heuristic(lhs, rhs)) return false;
+
+            // If the heuristic says both RHS and LHS are equal, fall back to
+            // the original statement order.
+            return com::ddg::get_node(lhs)->order < com::ddg::get_node(rhs)->order;
+
+        }
+    };
+
+    /**
+     * Returns whether the absolute value of a is less than the absolute value
+     * of b.
+     */
+    static utils::Int abs_lt(utils::Int a, utils::Int b) {
+        return utils::abs(a) < utils::abs(b);
+    }
+
+    /**
+     * Returns the integer that has the highest absolute value.
+     */
+    static utils::Int abs_max(utils::Int a, utils::Int b) {
+        return abs_lt(a, b) ? b : a;
+    }
+
+    /**
+     * Comparator based on the abs_lt() function.
+     */
+    struct AbsoluteComparator {
+        utils::Bool operator()(
+            const utils::Int &lhs,
+            const utils::Int &rhs
+        ) {
+            return abs_lt(lhs, rhs);
+        }
+    };
+
+    /**
+     * The block that we're scheduling for.
+     */
+    ir::BlockBaseRef block;
+
+    /**
+     * The cycle we're currently scheduling for. This always starts at 0 for the
+     * source node, and either increments (for ASAP/forward DDG order) or
+     * decrements (for ALAP/reversed DDG) from there.
+     */
+    utils::Int cycle;
+
+    /**
+     * Representation of the scheduling direction, 1 for forward/ASAP, -1 for
+     * reverse/ALAP.
+     */
+    utils::Int direction;
+
+    /**
+     * State of the resources for resource-constrained scheduling.
+     */
+    utils::Opt<rmgr::State> resource_state;
+
+    /**
+     * Set of statements that have been scheduled.
+     */
+    utils::Set<ir::StatementRef> scheduled;
+
+    /**
+     * List of available statements, i.e. statements we can immediately schedule
+     * as far as the data dependency graph is concerned (but not necessarily as
+     * far as the resource constraints are concerned). Per the comparator,
+     * forward iteration over the set yields statements starting from the most
+     * critical one per the HeuristicComparator template argument.
+     */
+    utils::Set<ir::StatementRef, AvailableListComparator> available;
+
+    /**
+     * The statements for which all predecessors have been scheduled, but which
+     * aren't available yet because of edge weights/preceding statement
+     * duration. The key is the cycle in which the accompanied list of
+     * statements becomes valid. The comparator ensures that the first cycle
+     * we'll encounter when scheduling will appear at the front, because we
+     * always schedule away from cycle 0 regardless of the scheduling direction.
+     */
+    utils::Map<utils::Int, utils::List<ir::StatementRef>, AbsoluteComparator> available_in;
+
+    /**
+     * Set of statements that are still blocked, because their data
+     * dependencies have not yet been scheduled.
+     */
+    utils::Set<ir::StatementRef> waiting;
+
+    /**
+     * Schedules the given statement in the current cycle, updating all state
+     * accordingly.
+     */
+    void schedule(const ir::StatementRef &statement) {
+
+        // Update the resource state.
+        resource_state->reserve(cycle, statement);
+
+        // Set the cycle number of the statement to the current cycle.
+        statement->cycle = cycle;
+
+        // Move the statement from available to scheduled.
+        QL_ASSERT(available.erase(statement));
+        QL_ASSERT(scheduled.insert(statement).second);
+
+        // The DDG successors of the statement should all still be in the
+        // waiting list, but some may be unblocked now. Check for that, and
+        // move the unblocked statements to available_in or available
+        // accordingly.
+        for (const auto &successor_ep : com::ddg::get_node(statement)->successors) {
+            const auto &successor_stmt = successor_ep.first;
+            auto successor_node = com::ddg::get_node(successor_stmt);
+
+            // Check if this successor of the statement we just scheduled is
+            // now available.
+            utils::Bool is_now_available = true;
+            utils::Int available_from_cycle = 0;
+            for (const auto &predecessor_ep : successor_node->predecessors) {
+                const auto &predecessor_stmt = predecessor_ep.first;
+                const auto &edge = predecessor_ep.second;
+
+                // Ensure that all predecessors have been scheduled.
+                if (!scheduled.count(predecessor_stmt)) {
+                    is_now_available = false;
+                    break;
+                }
+
+                // Compute the minimum cycle for which this statement will
+                // become available.
+                available_from_cycle = abs_max(
+                    available_from_cycle,
+                    predecessor_stmt->cycle + edge->weight
+                );
+
+            }
+
+            // If the statement is now available, actually make it available by
+            // moving it to the appropriate list.
+            if (is_now_available) {
+                if (available_from_cycle == cycle) {
+
+                    // The statement is immediately available.
+                    QL_ASSERT(available.insert(successor_stmt).second);
+
+                } else {
+
+                    // The statement is not immediately available, so we have
+                    // to move it to available_in.
+                    auto it = available_in.insert({available_from_cycle, {}});
+                    it.first->second.push_back(successor_stmt);
+
+                }
+            }
+
+        }
+
+        // If no more instructions are available in this cycle, advance to the
+        // next cycle in which instructions will become available.
+        if (available.empty()) {
+            auto it = available_in.begin();
+            if (it != available_in.end()) {
+                cycle = it->first;
+                for (const auto &available_statement : it->second) {
+                    QL_ASSERT(available.insert(available_statement).second);
+                }
+                available_in.erase(it);
+            }
+        }
+
+    }
+
+public:
+
+    /**
+     * Creates a scheduler for the given block and initializes it.
+     */
+    Scheduler(
+        const ir::BlockBaseRef &block,
+        const rmgr::CRef &resources = {}
+    ) : block(block) {
+
+        // Always start scheduling at cycle 0.
+        cycle = 0;
+
+        // Cache the scheduling direction.
+        direction = com::ddg::get_direction(block);
+        if (direction == 1) {
+            QL_DOUT("scheduling in forward direction (ASAP)");
+        } else if (direction == -1) {
+            QL_DOUT("scheduling in reverse direction (ALAP)");
+        } else {
+            QL_ICE("no data dependency graph is present");
+        }
+
+        // Construct the resource state. When scheduling without resource
+        // constraints, the state will simply be empty and always say a
+        // statement is available for scheduling.
+        if (direction > 0) {
+            resource_state = resources->build(rmgr::Direction::FORWARD);
+        } else {
+            resource_state = resources->build(rmgr::Direction::BACKWARD);
+        }
+
+        // Initialize by putting the source statement in the available list and
+        // all other statements in the waiting list.
+        QL_ASSERT(available.insert(com::ddg::get_source(block)).second);
+        for (const auto &statement : block->statements) {
+            QL_ASSERT(waiting.insert(statement).second);
+        }
+        QL_ASSERT(waiting.insert(com::ddg::get_sink(block)).second);
+
+        // Start by scheduling the source node.
+        schedule(com::ddg::get_source(block));
+
+    }
+
+    /**
+     * Returns the current cycle number.
+     */
+    utils::Int get_cycle() const {
+        return cycle;
+    }
+
+    /**
+     * Returns the direction in which the cycle number will be advanced by the
+     * advance() function. This will be 1 for forward/ASAP scheduling, or -1 for
+     * backward/ALAP scheduling.
+     */
+    utils::Int get_direction() const {
+        return direction;
+    }
+
+    /**
+     * Advances to the next cycle, or advances by the given number of cycles.
+     */
+    void advance(utils::UInt by = 1) {
+
+        // Advance to the next cycle.
+        cycle += direction * (utils::Int)by;
+
+        // Advancing the cycle number may mean more statements will become
+        // available due to data dependencies. If this is the case, move them
+        // from available_in to available.
+        auto it = available_in.begin();
+        if (it != available_in.end() && it->first == cycle) {
+            for (const auto &available_statement : it->second) {
+                QL_ASSERT(available.insert(available_statement).second);
+            }
+            available_in.erase(it);
+        }
+
+    }
+
+    /**
+     * Returns the list of statements that are currently available, ordered by
+     * decreasing criticality.
+     */
+    utils::List<ir::StatementRef> get_available() const {
+        utils::List<ir::StatementRef> result;
+        for (const auto &statement : available) {
+            if (resource_state->available(cycle, statement)) {
+                result.push_back(statement);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Tries to schedule either the given statement or (if no statement is
+     * specified) the most critical available statement in the current cycle.
+     * Returns whether scheduling was successful; if not, the specified
+     * statement is not available in this cycle (or no statements are available
+     * in this cycle if no statement was specified). If a statement was
+     * scheduled and no more statements are available w.r.t. data dependencies
+     * after that, the current cycle is automatically advanced to the next cycle
+     * in which statements are available again.
+     */
+    utils::Bool try_schedule(const ir::StatementRef &statement = {}) {
+        if (statement.empty()) {
+
+            // Try to schedule statements that are available w.r.t. data
+            // dependencies. Note that the iteration order here is implicitly by
+            // decreasing criticality, because available is a set that uses the
+            // criticality heuristic for its comparator.
+            for (const auto &statement : available) {
+                if (resource_state->available(cycle, statement)) {
+                    schedule(statement);
+                    return true;
+                }
+            }
+            return false;
+
+        } else {
+
+            // Schedule the given statement, if it's available.
+            if (available.find(statement) == available.end()) return false;
+            if (!resource_state->available(cycle, statement)) return false;
+            schedule(statement);
+            return true;
+
+        }
+    }
+
+    /**
+     * Returns whether the scheduler is done, i.e. all statements have been
+     * scheduled.
+     */
+    utils::Bool is_done() const {
+        if (!available.empty()) return false;
+        if (!available_in.empty()) return false;
+        if (!waiting.empty()) return false;
+        QL_ASSERT(scheduled.size() == block->statements.size() + 2);
+        return true;
+    }
+
+    /**
+     * Runs the scheduler, scheduling all instructions in the block using
+     * potentially resource-constrained ASAP (or ALAP if the DDG was
+     * reversed) list scheduling w.r.t. the criticality heuristic specified via
+     * HeuristicComparator. When resource constraints are used,
+     * max_resource_block_cycles specifies how many cycles we'll spend waiting
+     * for resources to become available when there is nothing else to do; this
+     * is used to detect resource deadlocks and should simply be set to a high
+     * enough number to prevent false deadlock detection. It may also be set to
+     * 0 to disable the check.
+     *
+     * This function does *not* make all cycle numbers positive (cycle numbers
+     * are referenced such that the source node has cycle 0) or sort statements
+     * by the cycle numbers once done. This must be done manually using
+     * convert_cycles() before the block is passed to anything that requires the
+     * IR-mandated invariants on cycle numbers to be valid.
+     */
+    void run(utils::UInt max_resource_block_cycles = 0) {
+
+        // Now schedule statements until all statements have been scheduled.
+        while (!is_done()) {
+            utils::UInt advanced = 0;
+            while (!try_schedule()) {
+                advance();
+                advanced++;
+                if (max_resource_block_cycles && advanced > max_resource_block_cycles) {
+                    utils::StrStrm ss;
+                    ss << "scheduling resources seem to be deadlocked! ";
+                    ss << "The current cycle is " << cycle << ", ";
+                    ss << "and the available statements are:\n";
+                    for (const auto &available_statement : available) {
+                        ss << "  " << ir::describe(available_statement) << "\n";
+                    }
+                    ss << "The state of the resources is:\n";
+                    resource_state->dump(ss, "  ");
+                    QL_USER_ERROR(ss.str());
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Adjusts the cycle numbers generated by the scheduler such that they
+     * comply with the rules for the IR, i.e. statements must be ordered by
+     * cycle, and the block starts at cycle zero.
+     */
+    void convert_cycles() {
+
+        // Adjust the cycles such that the lowest cycle number is cycle 0.
+        utils::Int min_cycle = utils::min(
+            com::ddg::get_source(block)->cycle,
+            com::ddg::get_sink(block)->cycle
+        );
+        for (const auto &statement : block->statements) {
+            statement->cycle -= min_cycle;
+        }
+
+        // Sort the statements by cycle.
+        std::stable_sort(
+            block->statements.begin(),
+            block->statements.end(),
+            [](const ir::StatementRef &lhs, const ir::StatementRef &rhs) {
+                return lhs->cycle < rhs->cycle;
+            }
+        );
+
+    }
+
+};
 
 /**
  * Criticality annotation for statements/DDG nodes for use in list scheduling.
- * When constructed via compute_deep_criticality(), criticality is assigned by ALAP
- * scheduling without resource constraints; the difference between the cycle
- * number of the sink node and the cycle number of the statement then becomes
+ * When constructed via compute(), criticality is assigned by means of the
+ * current cycle numbers; the difference between the cycle number of the
+ * sink node and the cycle number of the statement then becomes
  * the (shallow) criticality. List scheduling may then use this information
- * to schedule more critical statements first. When two statements are equally
- * critical by this metric, the criticality of the most critical dependent
- * statement is recursively compared as a tie-breaking strategy.
+ * to schedule the most deep-critical statements first. That is, when two
+ * statements are equally critical by the usual shallow criticality metric, the
+ * criticality of the most critical dependent statement is recursively compared
+ * as a tie-breaking strategy.
  */
-struct DeepCriticality {
+class DeepCriticality {
+private:
 
     /**
      * Length of the critical path to the end of the schedule in cycles.
@@ -201,113 +611,118 @@ struct DeepCriticality {
     }
 
     /**
-     * Compares the criticality of two statements by means of their Criticality
-     * annotation.
+     * Ensures that a valid criticality annotation exists for the given
+     * statement. This will recursively ensure that dependent statements are
+     * annotated, because this is needed to compute which of the dependent
+     * statements is the most critical for deep criticality. The set tracks
+     * which statements have valid annotations (there may be stray annotations
+     * from previous scheduling operations that we must be sure to override).
      */
-    static utils::Bool lt(
-        const ir::StatementRef &lhs,
-        const ir::StatementRef &rhs
+    static void ensure_annotation(
+        const ir::StatementRef &statement,
+        utils::Set<ir::StatementRef> &annotated
     ) {
-        return get(lhs) < get(rhs);
-    }
 
-};
+        // If insertion into the set succeeds, we haven't annotated this
+        // statement yet.
+        if (annotated.insert(statement).second) {
+            DeepCriticality criticality;
 
-/**
- * Ensures that a valid criticality annotation exists for the given statement.
- * This will recursively ensure that dependent statements are annotated,
- * because this is needed to compute which of the dependent statements is the
- * most critical for deep criticality. The set tracks which statements have
- * valid annotations (there may be stray annotations from previous scheduling
- * operations that we must be sure to override).
- */
-static void ensure_deep_criticality_annotation(
-    const ir::StatementRef &statement,
-    utils::Set<ir::StatementRef> &annotated
-) {
+            // Determine the critical path length for shallow criticality.
+            // Because the schedule used to determine criticality is constructed
+            // in reverse order from the list scheduler it is intended for,
+            // instructions that could be scheduled quickly have lower
+            // criticality. So, the criticality of an instruction is simply its
+            // distance from the source node of the reversed DDG, which is 0 by
+            // definition before the cycles adjusted, so this is just the
+            // absolute value.
+            criticality.critical_path_length = utils::abs(statement->cycle);
 
-    // If insertion into the set succeeds, we haven't annotated this statement
-    // yet.
-    if (annotated.insert(statement).second) {
-        DeepCriticality criticality;
+            // Find the most critical dependent statement for the given
+            // scheduling direction.
+            for (const auto &dependent : com::ddg::get_node(statement)->successors) {
+                const auto &dependent_stmt = dependent.first;
 
-        // Determine the critical path length for shallow criticality. Because
-        // the schedule used to determine criticality is constructed in reverse
-        // order from the list scheduler it is intended for, instructions that
-        // could be scheduled quickly have lower criticality. So, the
-        // criticality of an instruction is simply its distance from the source
-        // node of the reversed DDG, which is 0 by definition before the cycles
-        // adjusted, so this is just the absolute value.
-        criticality.critical_path_length = utils::abs(statement->cycle);
+                // Make sure the dependent statement has a criticality
+                // annotation already.
+                ensure_annotation(dependent_stmt, annotated);
 
-        // Find the most critical dependent statement for the given
-        // scheduling direction.
-        for (const auto &dependent : com::ddg::get_node(statement)->successors) {
-            const auto &dependent_stmt = dependent.first;
+                // If the dependent statement is more critical than the most
+                // critical dependent found thus far, replace it.
+                if (
+                    criticality.most_critical_dependent.empty() ||
+                    DeepCriticality::Heuristic()(criticality.most_critical_dependent, dependent_stmt)
+                ) {
+                    criticality.most_critical_dependent = dependent_stmt;
+                }
 
-            // Make sure the dependent statement has a criticality annotation
-            // already.
-            ensure_deep_criticality_annotation(dependent_stmt, annotated);
-
-            // If the dependent statement is more critical than the most critical
-            // dependent found thus far, replace it.
-            if (
-                criticality.most_critical_dependent.empty() ||
-                    DeepCriticality::lt(criticality.most_critical_dependent, dependent_stmt)
-            ) {
-                criticality.most_critical_dependent = dependent_stmt;
             }
+
+            // Attach the annotation.
+            statement->set_annotation<DeepCriticality>(criticality);
 
         }
 
-        // Attach the annotation.
-        statement->set_annotation<DeepCriticality>(criticality);
+        // There must now be a criticality annotation.
+        QL_ASSERT(statement->has_annotation<DeepCriticality>());
 
     }
 
-    // There must now be a criticality annotation.
-    QL_ASSERT(statement->has_annotation<DeepCriticality>());
+public:
 
-}
+    /**
+     * Annotates the instructions in block with DeepCriticality structures, such
+     * that DeepCriticality::Heuristic() can be used as scheduling heuristic.
+     * This requires that a data dependency graph has already been constructed
+     * for the block, and that the block has already been scheduled in the
+     * reverse direction of the desired list scheduling direction, with cycle
+     * numbers still referenced such that the source node is at cycle 0.
+     */
+    static void compute(const ir::SubBlockRef &block) {
 
-/**
- * Annotates the instructions in block with DeepCriticality structures, such
- * that DeepCriticality::lt() can be used on them, usable as scheduling
- * heuristic. This requires that a data dependency graph has already been
- * constructed for the block, and that the block has already been scheduled in
- * the reverse direction of the desired list scheduling direction, with cycle
- * numbers still referenced such that the source node is at cycle 0.
- */
-void compute_deep_criticality(const ir::SubBlockRef &block) {
+        // Tracks which statements have already been annotated by *this call*
+        // (we can't just check whether the annotation already exists, because
+        // it could be an out-of-date annotation added by an earlier call).
+        utils::Set<ir::StatementRef> annotated;
 
-    // Tracks which statements have already been annotated by *this call* (we
-    // can't just check whether the annotation already exists, because it could
-    // be an out-of-date annotation added by an earlier call).
-    utils::Set<ir::StatementRef> annotated;
+        // Annotate all the statements in the block. The order doesn't matter:
+        // when a dependent statement doesn't yet have the criticality
+        // annotation needed to determine deep criticality, it will be computed
+        // automatically using recursion, and if criticality has already been
+        // computed the function becomes no-op.
+        for (const auto &statement : block->statements) {
+            ensure_annotation(statement, annotated);
+        }
 
-    // Annotate all the statements in the block. The order doesn't matter: when
-    // a dependent statement doesn't yet have the criticality annotation needed
-    // to determine deep criticality, it will be computed automatically using
-    // recursion, and if criticality has already been computed the function
-    // becomes no-op.
-    for (const auto &statement : block->statements) {
-        ensure_deep_criticality_annotation(statement, annotated);
     }
 
-}
+    /**
+     * Compares the criticality of two statements by means of their Criticality
+     * annotation.
+     */
+    struct Heuristic {
+        utils::Bool operator()(
+            const ir::StatementRef &lhs,
+            const ir::StatementRef &rhs
+        ) {
+            return get(lhs) < get(rhs);
+        }
+    };
 
-/**
- * Clears the deep criticality annotations from the given block.
- */
-void clear_deep_criticality(const ir::SubBlockRef &block) {
-    auto source = com::ddg::get_source(block);
-    if (!source.empty()) source->erase_annotation<DeepCriticality>();
-    auto sink = com::ddg::get_source(block);
-    if (!sink.empty()) sink->erase_annotation<DeepCriticality>();
-    for (const auto &statement : block->statements) {
-        statement->erase_annotation<DeepCriticality>();
+    /**
+     * Clears the deep criticality annotations from the given block.
+     */
+    static void clear(const ir::SubBlockRef &block) {
+        auto source = com::ddg::get_source(block);
+        if (!source.empty()) source->erase_annotation<DeepCriticality>();
+        auto sink = com::ddg::get_source(block);
+        if (!sink.empty()) sink->erase_annotation<DeepCriticality>();
+        for (const auto &statement : block->statements) {
+            statement->erase_annotation<DeepCriticality>();
+        }
     }
-}
+
+};
 
 /**
  * Scheduling heuristic, determining the order in which available statements are
@@ -348,6 +763,9 @@ enum class Heuristic {
 
 };
 
+/**
+ * Options for the scheduler.
+ */
 struct Options {
 
     /**
@@ -377,6 +795,21 @@ struct Options {
      * Whether to consider commutation rules for single-qubit gates.
      */
     utils::Bool commute_single_qubit;
+
+    /**
+     * The maximum number of cycles to wait for the resource constraints to
+     * unblock a statement when there is nothing else to do. This is used for
+     * deadlock detection. It should just be set to a high number, or can be
+     * set to 0 to disable deadlock detection (but then the scheduler might end
+     * up in an infinite loop).
+     */
+    utils::UInt max_resource_block_cycles;
+
+    /**
+     * Filename of a dot file to write, representing the data dependency graph
+     * that was used and the cycle numbers assigned.
+     */
+    utils::Str dot_file;
 
 };
 
@@ -415,7 +848,7 @@ void schedule(
         com::ddg::reverse(block);
 
         // Perform prescheduling.
-        schedule_internal(block);
+        Scheduler<>(block).run();
 
         // Reverse the DDG again so we don't clobber its direction.
         com::ddg::reverse(block);
@@ -428,37 +861,41 @@ void schedule(
         manager = *ir->platform->resources;
     }
     switch (options.heuristic) {
-        case Heuristic::TRIVIAL:
-            schedule_internal(block, trivial_heuristic, manager);
+        case Heuristic::TRIVIAL: {
+            Scheduler<TrivialHeuristic> scheduler(block, manager);
+            scheduler.run(options.max_resource_block_cycles);
+            scheduler.convert_cycles();
             break;
-        case Heuristic::SHALLOW_CRITICAL_PATH:
-            schedule_internal(block, critical_path_heuristic, manager);
-            break;
-        case Heuristic::DEEP_CRITICAL_PATH:
-            compute_deep_criticality(block);
-            schedule_internal(block, DeepCriticality::lt, manager);
-            clear_deep_criticality(block);
-            break;
-    }
-
-    // Adjust the cycles such that the lowest cycle number is cycle 0, to comply
-    // with IR conventions.
-    utils::Int min_cycle = utils::min(
-        com::ddg::get_source(block)->cycle,
-        com::ddg::get_sink(block)->cycle
-    );
-    for (const auto &statement : block->statements) {
-        statement->cycle -= min_cycle;
-    }
-
-    // Sort the statements by cycle.
-    std::stable_sort(
-        block->statements.begin(),
-        block->statements.end(),
-        [](const ir::StatementRef &lhs, const ir::StatementRef &rhs) {
-            return lhs->cycle < rhs->cycle;
         }
-    );
+        case Heuristic::SHALLOW_CRITICAL_PATH: {
+            Scheduler<CriticalPathHeuristic> scheduler(block, manager);
+            scheduler.run(options.max_resource_block_cycles);
+            scheduler.convert_cycles();
+            break;
+        }
+        case Heuristic::DEEP_CRITICAL_PATH: {
+            DeepCriticality::compute(block);
+            Scheduler<DeepCriticality::Heuristic> scheduler(block, manager);
+            scheduler.run(options.max_resource_block_cycles);
+            scheduler.convert_cycles();
+            DeepCriticality::clear(block);
+            break;
+        }
+    }
+
+    // Write the schedule as a dot file if requested.
+    if (!options.dot_file.empty()) {
+
+        // Reverse the DDG back to forward direction if needed, since that makes
+        // it much more readable.
+        if (options.reverse_direction) {
+            com::ddg::reverse(block);
+        }
+
+        // Write the file.
+        com::ddg::dump_dot(block, utils::OutFile(options.dot_file).unwrap());
+
+    }
 
     // Clean up the DDG.
     com::ddg::clear(block);

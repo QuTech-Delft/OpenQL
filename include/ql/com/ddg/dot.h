@@ -14,10 +14,10 @@ namespace ddg {
 /**
  * Dumps a dot file and accompanying key.
  */
-void write_dot(
+void dump_dot(
     const ir::BlockBaseRef &block,
-    std::ostream &dot,
-    std::ostream &key
+    std::ostream &os = std::cout,
+    const utils::Str &line_prefix = ""
 );
 
 } // namespace ddg

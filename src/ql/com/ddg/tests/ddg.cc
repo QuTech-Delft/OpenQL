@@ -30,10 +30,10 @@ int main() {
 
     com::ddg::build(ir, ir->program->blocks[0]);
     com::ddg::check_consistency(ir->program->blocks[0]);
-    com::ddg::write_dot(ir->program->blocks[0], std::cout, std::cout);
+    com::ddg::dump_dot(ir->program->blocks[0]);
     com::ddg::reverse(ir->program->blocks[0]);
     com::ddg::check_consistency(ir->program->blocks[0]);
-    com::ddg::write_dot(ir->program->blocks[0], std::cout, std::cout);
+    com::ddg::dump_dot(ir->program->blocks[0]);
 
     return 0;
 }

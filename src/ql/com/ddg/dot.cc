@@ -2,7 +2,7 @@
  * Defines a consistency check for a DDG, useful when debugging.
  */
 
-#include "ql/com/ddg/ops.h"
+#include "ql/com/ddg/dot.h"
 
 #include "ql/ir/describe.h"
 
@@ -30,12 +30,13 @@ static void add_node(
 }
 
 /**
- * Dumps a dot file and accompanying key.
+ * Dumps a dot representation of the data dependency graph for the given block,
+ * including the current cycle numbers.
  */
-void write_dot(
+void dump_dot(
     const ir::BlockBaseRef &block,
-    std::ostream &dot,
-    std::ostream &key
+    std::ostream &os,
+    const utils::Str &line_prefix
 ) {
 
     // Construct maps of unique numbers to nodes and edges.
@@ -50,35 +51,49 @@ void write_dot(
     add_node(get_sink(block), order_offset, statements, statement_indices, edges);
 
     // Write the dot graph.
-    dot << "digraph ddg {\n\n";
+    os << line_prefix << "digraph ddg {\n";
+    os << line_prefix << "\n";
     for (const auto &it : statements) {
-        dot << "  n" << it.first;
-        dot << " [ label=\"n" << it.first << ": ";
-        dot << utils::replace_all(ir::describe(it.second), "\"", "'");
-        dot << "\" shape=box ]\n";
+        os << line_prefix << "  n" << it.first;
+        os << " [ label=<n" << it.first << "<br/>";
+        auto desc = ir::describe(it.second);
+        desc = utils::replace_all(desc, "<", "&lt;");
+        desc = utils::replace_all(desc, ">", "&gt;");
+        os << desc << "<br/>";
+        os << "cycle " << it.second->cycle;
+        os << "> shape=box ]\n";
     }
-    dot << "\n";
+    os << line_prefix << "\n";
     for (const auto &it : edges) {
-        dot << "  n" << statement_indices.at(it.second->predecessor);
-        dot << " -> n" << statement_indices.at(it.second->successor);
-        dot << " [ label=\"e" << it.first << " (" << it.second->weight << ")\" ]\n";
-    }
-    dot << "\n}\n";
-    dot.flush();
-
-    // Write the key.
-    for (const auto &it : edges) {
-        key << "e" << it.first << ":\n";
-        key << "  from " << ir::describe(it.second->predecessor) << "\n";
-        key << "  to " << ir::describe(it.second->successor) << "\n";
-        key << "  weight " << it.second->weight << "\n";
-        key << "  because:\n";
-        for (const auto &cause : it.second->causes) {
-            key << "    " << cause << "\n";
+        os << line_prefix << "  n" << statement_indices.at(it.second->predecessor);
+        os << " -> n" << statement_indices.at(it.second->successor);
+        os << " [ label=\"e" << it.first << " (" << it.second->weight << "): ";
+        auto cause = utils::to_string(*it.second->causes.begin());
+        cause = utils::replace_all(cause, "<", "&lt;");
+        cause = utils::replace_all(cause, ">", "&gt;");
+        os << cause;
+        if (it.second->causes.size() > 1) {
+            os << ", ...";
         }
-        key << "\n";
+        os << "\" ]\n";
     }
-    key.flush();
+    os << line_prefix << "\n";
+    os << line_prefix << "  label=<";
+    for (const auto &it : edges) {
+        if (it.second->causes.size() > 2) {
+            os << "e" << it.first << ":<br/>";
+            for (const auto &cause : it.second->causes) {
+                auto cause_text = utils::to_string(cause);
+                cause_text = utils::replace_all(cause_text, "<", "&lt;");
+                cause_text = utils::replace_all(cause_text, ">", "&gt;");
+                os << "&nbsp;&nbsp;" << cause_text << "<br>";
+            }
+            os << "<br>";
+        }
+    }
+    os << ">\n";
+    os << line_prefix << "  labelloc=t\n";
+    os << line_prefix << "}" << std::endl;
 
 }
 

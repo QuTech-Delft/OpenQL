@@ -41,7 +41,7 @@ NodeCRef get_source_node(const ir::BlockBaseRef &block) {
 }
 
 /**
- * Returns the source statement associated with the given block, if any.
+ * Returns the sink statement associated with the given block, if any.
  */
 utils::One<ir::SentinelStatement> get_sink(const ir::BlockBaseRef &block) {
     if (auto data = block->get_annotation_ptr<Graph>()) {
