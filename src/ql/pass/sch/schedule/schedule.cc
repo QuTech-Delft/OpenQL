@@ -1,5 +1,5 @@
 /** \file
- * Defines the scheduler pass.
+ * Defines the legacy (old-IR) list scheduler pass.
  */
 
 #include "ql/pass/sch/schedule/schedule.h"
@@ -21,7 +21,11 @@ void SchedulePass::dump_docs(
     const utils::Str &line_prefix
 ) const {
     utils::dump_str(os, line_prefix, R"(
-    This pass analyzes the data dependencies between gates and applies cycle
+    Legacy list scheduler that operates on the old IR. This pass is deprecated
+    in favor of `sch.ListSchedule`, and may be replaced with a wrapper around
+    that in future version.
+
+    The pass analyzes the data dependencies between gates and applies cycle
     numbers to them based on some scheduling heuristic. Depending on options,
     the scheduler will either be resource-constrained or will ignore resources.
     )");

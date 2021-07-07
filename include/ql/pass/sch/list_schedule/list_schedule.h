@@ -1,21 +1,20 @@
 /** \file
- * Defines the legacy (old-IR) list scheduler pass.
+ * Defines the list scheduler pass.
  */
 
 #pragma once
 
-#include "ql/com/options.h"
 #include "ql/pmgr/pass_types/specializations.h"
 
 namespace ql {
 namespace pass {
 namespace sch {
-namespace schedule {
+namespace list_schedule {
 
 /**
  * Scheduler pass.
  */
-class SchedulePass : public pmgr::pass_types::KernelTransformation {
+class ListSchedulePass : public pmgr::pass_types::Transformation {
 protected:
 
     /**
@@ -36,18 +35,32 @@ public:
     /**
      * Constructs a scheduler.
      */
-    SchedulePass(
+    ListSchedulePass(
         const utils::Ptr<const pmgr::Factory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
     );
 
+private:
+
+    /**
+     * Runs the scheduler on the given block.
+     */
+    static void run_on_block(
+        const ir::Ref &ir,
+        const ir::BlockBaseRef &block,
+        const utils::Str &name_path,
+        utils::Set<utils::Str> &used_names,
+        const pmgr::pass_types::Context &context
+    );
+
+public:
+
     /**
      * Runs the scheduler.
      */
     utils::Int run(
-        const ir::compat::ProgramRef &program,
-        const ir::compat::KernelRef &kernel,
+        const ir::Ref &ir,
         const pmgr::pass_types::Context &context
     ) const override;
 
@@ -56,9 +69,9 @@ public:
 /**
  * Shorthand for referring to the pass using namespace notation.
  */
-using Pass = SchedulePass;
+using Pass = ListSchedulePass;
 
-} // namespace schedule
+} // namespace list_schedule
 } // namespace sch
 } // namespace pass
 } // namespace ql

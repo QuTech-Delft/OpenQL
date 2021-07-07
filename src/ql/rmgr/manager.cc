@@ -169,7 +169,7 @@ Manager Manager::from_json(
     if (json.find("resources") == json.end()) {
 
         // Old-style structure. Create the manager using defaults.
-        Manager manager{platform, architecture, {}, factory};
+        Manager manager{platform, architecture, {}, factory, ir};
 
         // Add resources to it using the old JSON syntax.
         for (auto it = json.begin(); it != json.end(); ++it) {

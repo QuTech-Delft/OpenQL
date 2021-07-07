@@ -86,13 +86,13 @@ void dump_dot(
                 auto cause_text = utils::to_string(cause);
                 cause_text = utils::replace_all(cause_text, "<", "&lt;");
                 cause_text = utils::replace_all(cause_text, ">", "&gt;");
-                os << "&nbsp;&nbsp;" << cause_text << "<br>";
+                os << cause_text << "<br/>";
             }
-            os << "<br>";
+            os << "<br/>";
         }
     }
     os << ">\n";
-    os << line_prefix << "  labelloc=t\n";
+    os << line_prefix << "  labelloc=b\n";
     os << line_prefix << "}" << std::endl;
 
 }

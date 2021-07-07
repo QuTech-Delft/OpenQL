@@ -12,6 +12,7 @@ namespace rmgr {
 // Forward declaration for the resource factory and pass manager.
 class Factory;
 class Manager;
+class State;
 
 /**
  * Shared pointer reference to a resource manager.
