@@ -16,7 +16,7 @@ namespace sch {
 utils::Bool TrivialHeuristic::operator()(
     const ir::StatementRef &lhs,
     const ir::StatementRef &rhs
-) {
+) const {
     return false;
 }
 
@@ -26,7 +26,7 @@ utils::Bool TrivialHeuristic::operator()(
 utils::Bool CriticalPathHeuristic::operator()(
     const ir::StatementRef &lhs,
     const ir::StatementRef &rhs
-) {
+) const {
     return utils::abs(lhs->cycle) < utils::abs(rhs->cycle);
 }
 
@@ -154,7 +154,7 @@ void DeepCriticality::compute(const ir::SubBlockRef &block) {
 utils::Bool DeepCriticality::Heuristic::operator()(
     const ir::StatementRef &lhs,
     const ir::StatementRef &rhs
-) {
+) const {
     return get(lhs) < get(rhs);
 }
 

@@ -16,7 +16,7 @@ namespace sch {
  * Dummy scheduling heuristic that assigns equal criticality to all statements.
  */
 struct TrivialHeuristic {
-    utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs);
+    utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs) const;
 };
 
 /**
@@ -32,7 +32,7 @@ struct TrivialHeuristic {
  * adjusted by the scheduler when a statement is scheduled.
  */
 struct CriticalPathHeuristic {
-    utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs);
+    utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs) const;
 };
 
 /**
@@ -106,7 +106,7 @@ public:
      * annotation.
      */
     struct Heuristic {
-        utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs);
+        utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs) const;
     };
 
     /**
