@@ -251,7 +251,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/operator_info.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/describe.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/consistency.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/consistency.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/old_to_new.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/new_to_old.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/cqasm/read.cc"
@@ -265,6 +264,8 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ddg/types.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ddg/build.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ddg/ops.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ddg/consistency.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ddg/dot.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/resource_types/base.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/types.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/factory.cc"
@@ -550,6 +551,32 @@ if(OPENQL_BUILD_TESTS)
         GLOB_RECURSE unit_tests
         RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/tests/*.cc
+    )
+    foreach(unit_test ${unit_tests})
+        add_openql_unit_test(${unit_test})
+    endforeach()
+
+    # I hate CMake.
+    file(
+        GLOB_RECURSE unit_tests
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/tests/*.cc
+    )
+    foreach(unit_test ${unit_tests})
+        add_openql_unit_test(${unit_test})
+    endforeach()
+    file(
+        GLOB_RECURSE unit_tests
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/*/tests/*.cc
+    )
+    foreach(unit_test ${unit_tests})
+        add_openql_unit_test(${unit_test})
+    endforeach()
+    file(
+        GLOB_RECURSE unit_tests
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/*/*/tests/*.cc
     )
     foreach(unit_test ${unit_tests})
         add_openql_unit_test(${unit_test})

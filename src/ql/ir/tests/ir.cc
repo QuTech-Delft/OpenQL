@@ -391,6 +391,7 @@ void schedule(
 
     // Build a data dependency graph for the block.
     com::ddg::build(
+        ir,
         block,
         options.commute_multi_qubit,
         options.commute_single_qubit

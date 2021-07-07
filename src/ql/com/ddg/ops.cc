@@ -45,7 +45,7 @@ NodeCRef get_source_node(const ir::BlockBaseRef &block) {
  */
 utils::One<ir::SentinelStatement> get_sink(const ir::BlockBaseRef &block) {
     if (auto data = block->get_annotation_ptr<Graph>()) {
-        return data->source;
+        return data->sink;
     } else {
         return {};
     }
@@ -95,6 +95,21 @@ void clear(const ir::BlockBaseRef &block) {
 }
 
 /**
+ * Helper function for reverse() that reverses the node and successor edges of
+ * the given statement.
+ */
+static void reverse_statement(const ir::StatementRef &statement) {
+    auto node = statement->get_annotation<NodeRef>();
+    std::swap(node->successors, node->predecessors);
+    node->order = -node->order;
+    for (const auto &it : node->successors) {
+        const auto &edge = it.second;
+        std::swap(edge->successor, edge->predecessor);
+        edge->weight = -edge->weight;
+    }
+}
+
+/**
  * Reverses the direction of the data dependency graph associated with the given
  * block. This does the following things:
  *
@@ -112,16 +127,11 @@ void reverse(const ir::BlockBaseRef &block) {
     auto &graph = block->get_annotation<Graph>();
     std::swap(graph.source, graph.sink);
     graph.direction = -graph.direction;
+    reverse_statement(graph.source);
     for (const auto &statement : block->statements) {
-        auto node = statement->get_annotation<NodeRef>();
-        std::swap(node->successors, node->predecessors);
-        node->order = -node->order;
-        for (const auto &it : node->successors) {
-            const auto &edge = it.second;
-            std::swap(edge->successor, edge->predecessor);
-            edge->weight = -edge->weight;
-        }
+        reverse_statement(statement);
     }
+    reverse_statement(graph.sink);
 }
 
 } // namespace ddg

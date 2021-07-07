@@ -795,7 +795,7 @@ static void convert_block(
                         // sensitive to it.
                         ql_operands.add(event.first.make_reference(ir));
 
-                    } else if (event.second == com::ddg::AccessMode::WRITE) {
+                    } else if (event.second == com::ddg::AccessMode::write()) {
 
                         // Null reference (unknown state) is mutated, so the
                         // barrier needs to be sensitive to everything.

@@ -7,9 +7,7 @@
 #include <cctype>
 #include <regex>
 #include "ql/utils/filesystem.h"
-#include "ql/ir/new_to_old.h"
 #include "ql/ir/cqasm/write.h"
-#include "ql/ir/consistency.h"
 #include "ql/pmgr/manager.h"
 #include "ql/pass/ana/statistics/report.h"
 

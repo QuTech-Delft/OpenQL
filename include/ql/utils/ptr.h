@@ -217,7 +217,7 @@ public:
      */
     T &operator*() const {
         if (!v) {
-            throw Exception("attempt to dereference empty Ptr");
+            QL_ICE("attempt to dereference empty Ptr of type " << typeid(T).name());
         }
         return *v;
     }
@@ -227,7 +227,7 @@ public:
      */
     T *operator->() const {
         if (!v) {
-            throw Exception("attempt to dereference empty Ptr");
+            QL_ICE("attempt to dereference empty Ptr of type " << typeid(T).name());
         }
         return v.get();
     }

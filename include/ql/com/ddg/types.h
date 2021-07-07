@@ -59,6 +59,11 @@ public:
     utils::One<ir::Reference> make_reference(const ir::Ref &ir) const;
 
     /**
+     * String conversion for Reference.
+     */
+    friend std::ostream &operator<<(std::ostream &os, const Reference &reference);
+
+    /**
      * Value-based less-than operator to allow this to be used as a key to
      * a map.
      */
@@ -75,89 +80,144 @@ public:
      */
     utils::Bool is_global_state() const;
 
+    /**
+     * Returns whether the given reference refers to a statically provable
+     * distinct object.
+     */
+    utils::Bool is_provably_distinct_from(const Reference &reference) const;
+
+    /**
+     * Returns whether the given reference refers to a superset of the
+     * objects/elements that this reference refers to.
+     */
+    utils::Bool is_shadowed_by(const Reference &reference) const;
+
+    /**
+     * Combines two references into the most specific reference that encompasses
+     * both a and b.
+     */
+    Reference union_with(const Reference &reference) const;
+
+    /**
+     * Combines two references into the most specific reference that encompasses
+     * the intersection between a and b.
+     */
+    Reference intersect_with(const Reference &reference) const;
+
 };
-
-/**
- * String conversion for Reference.
- */
-std::ostream &operator<<(std::ostream &os, const Reference &reference);
-
-/**
- * Returns whether two references refer to statically provable distinct objects.
- */
-utils::Bool is_provably_distinct(const Reference &a, const Reference &b);
-
-/**
- * Combines two references into the most specific reference that encompasses
- * both a and b.
- */
-Reference combine_references(const Reference &a, const Reference &b);
 
 /**
  * Object access mode.
  */
-enum class AccessMode {
+class AccessMode {
+private:
 
     /**
-     * Used for classical write or non-commuting qubit access. The corresponding
-     * operand must be a reference.
+     * Enumeration of the modes currently defined. This is intentionally
+     * private: all semantics are to be derived from the public methods of the
+     * AccessMode class, allowing access modes (and their commutativity
+     * relations) to be made configurable in the future.
      */
-    WRITE,
+    enum class Enum {
+
+        /**
+         * Used for classical write or non-commuting qubit access. The corresponding
+         * operand must be a reference.
+         */
+        WRITE,
+
+        /**
+         * Used for classical read-only access. Other instructions accessing the
+         * same operand with mode READ may commute.
+         */
+        READ,
+
+        /**
+         * Used for qubit usage that commutes along the X axis; i.e., other
+         * instructions involving the corresponding qubit in mode COMMUTE_X may
+         * commute.
+         */
+        COMMUTE_X,
+
+        /**
+         * Used for qubit usage that commutes along the Y axis; i.e., other
+         * instructions involving the corresponding qubit in mode COMMUTE_Y may
+         * commute.
+         */
+        COMMUTE_Y,
+
+        /**
+         * Used for qubit usage that commutes along the Z axis; i.e., other
+         * instructions involving the corresponding qubit in mode COMMUTE_Z may
+         * commute.
+         */
+        COMMUTE_Z
+
+    };
 
     /**
-     * Used for classical read-only access. Other instructions accessing the
-     * same operand with mode READ may commute.
+     * The access type.
      */
-    READ,
+    Enum value;
+
+public:
 
     /**
-     * Used for qubit usage that commutes along the X axis; i.e., other
-     * instructions involving the corresponding qubit in mode COMMUTE_X may
-     * commute.
+     * Returns the classical write access mode, that doesn't commute with
+     * anything else.
      */
-    COMMUTE_X,
+    AccessMode();
 
     /**
-     * Used for qubit usage that commutes along the Y axis; i.e., other
-     * instructions involving the corresponding qubit in mode COMMUTE_Y may
-     * commute.
+     * Constructs an access mode from a (currently hardcoded) operand mode.
      */
-    COMMUTE_Y,
+    explicit AccessMode(ir::prim::OperandMode operand_mode);
 
     /**
-     * Used for qubit usage that commutes along the Z axis; i.e., other
-     * instructions involving the corresponding qubit in mode COMMUTE_Z may
-     * commute.
+     * Returns the classical write access mode, that doesn't commute with
+     * anything else.
      */
-    COMMUTE_Z
+    static AccessMode write();
+
+    /**
+     * Returns the classical read access mode, that commutes with itself but
+     * not with write.
+     */
+    static AccessMode read();
+
+    /**
+     * String conversion for AccessMode. Returns its word form.
+     */
+    friend std::ostream &operator<<(std::ostream &os, const AccessMode &access_mode);
+
+    /**
+     * Value-based equality operator.
+     */
+    utils::Bool operator==(const AccessMode &access_mode) const;
+
+    /**
+     * Represents the given access mode as a single character, used to represent
+     * the dependency relation between two non-commuting modes (RAW, WAW, WAR,
+     * etc.).
+     */
+    utils::Char as_letter() const;
+
+    /**
+     * Returns whether the given two access modes commute. Must be symmetric.
+     */
+    utils::Bool commutes_with(const AccessMode &access_mode) const;
+
+    /**
+     * Combines two modes into one, for example used when a single object is
+     * accessed in multiple ways but has to be represented with a single access
+     * mode. The requirement on combine_modes(a, b) -> c is that any mode d that
+     * does not commute with a OR does not commute with mode b also does not commute
+     * with mode c, but the more modes the result commutes with, the less
+     * pessimistic the DDG will be.
+     */
+    AccessMode combine_with(const AccessMode &access_mode) const;
 
 };
-
-/**
- * String conversion for AccessMode. Returns its word form.
- */
-std::ostream &operator<<(std::ostream &os, AccessMode mode);
-
-/**
- * Represents the given access mode as a single character.
- */
-utils::Char get_access_mode_letter(AccessMode mode);
-
-/**
- * Returns whether the given two access modes commute.
- *
- * This and this alone defines commutativity of two access modes. The only
- * requirement is that the operation is symmetric, i.e.
- * do_modes_commute(a, b) === do_modes_commute(b, a).
- */
-utils::Bool do_modes_commute(AccessMode a, AccessMode b);
-
-/**
- * Combines two modes into one, for use when a single object is accessed in
- * multiple ways. If the modes commute, either a or b is returned. If they
- * don't, WRITE is returned.
- */
-AccessMode combine_modes(AccessMode a, AccessMode b);
 
 /**
  * An object access, a.k.a. event.
@@ -172,21 +232,33 @@ struct Event {
     /**
      * The mode by which it is being accessed.
      */
-    AccessMode mode = AccessMode::READ;
+    AccessMode mode = AccessMode::read();
+
+    /**
+     * Creates an Event object from a pair as stored in the Events map.
+     */
+    Event(const utils::Pair<const Reference, AccessMode> &pair);
+
+    /**
+     * String conversion for Event.
+     */
+    friend std::ostream &operator<<(std::ostream &os, const Event &event);
+
+    /**
+     * Returns whether the given event commutes with this event. This is true if
+     * the references belonging to the events are statically known to refer to
+     * different objects, or if the access modes commute.
+     */
+    utils::Bool commutes_with(const Event &event) const;
+
+    /**
+     * Returns whether the given event completely shadows this event. That is,
+     * the access modes don't commute, and the specified reference refers to a
+     * superset of the objects referred to by this reference.
+     */
+    utils::Bool is_shadowed_by(const Event &event) const;
 
 };
-
-/**
- * String conversion for Event.
- */
-std::ostream &operator<<(std::ostream &os, const Event &event);
-
-/**
- * Returns whether the given two events commute. This is true if the references
- * belonging to the events are statically known to refer to different objects,
- * or if the access modes don't commute.
- */
-utils::Bool do_events_commute(const Event &a, const Event &b);
 
 /**
  * A number of distinct events.
@@ -209,12 +281,34 @@ struct DependencyType {
      */
     AccessMode second_mode;
 
+    /**
+     * String conversion for DependencyType.
+     */
+    friend std::ostream &operator<<(std::ostream &os, const DependencyType &dependency_type);
+
 };
 
 /**
- * String conversion for DependencyType.
+ * Cause for a dependency to exist.
  */
-std::ostream &operator<<(std::ostream &os, const DependencyType &dependency_type);
+struct Cause {
+
+    /**
+     * Reference to the object that caused the dependency.
+     */
+    Reference reference;
+
+    /**
+     * The type of dependency.
+     */
+    DependencyType dependency_type;
+
+    /**
+     * String conversion for Cause.
+     */
+    friend std::ostream &operator<<(std::ostream &os, const Cause &cause);
+
+};
 
 /**
  * Represents an edge in the data dependency graph.
@@ -225,25 +319,25 @@ struct Edge {
      * Reference to the instruction (and DDG node via the Node annotation) that
      * the edge originates from.
      */
-    ir::StatementRef predecessor;
+    ir::StatementRef predecessor = {};
 
     /**
      * Reference to the instruction (and DDG node via the Node annotation) that
      * the edge targets.
      */
-    ir::StatementRef successor;
+    ir::StatementRef successor = {};
 
     /**
      * The minimum number of cycles that must be between the predecessor and
      * successor in the final schedule. If the DDG is reversed, these values
      * will be zero or negative, otherwise they will be zero or positive.
      */
-    utils::Int weight;
+    utils::Int weight = 0;
 
     /**
      * The reason(s) for this edge to exist.
      */
-    utils::Map<Reference, DependencyType> causes;
+    utils::List<Cause> causes = {};
 
 };
 
@@ -325,7 +419,7 @@ struct Graph {
      * because the direction of a scheduling algorithm operating on the DDG is
      * effectively reversed by this as well, turning ASAP into ALAP.
      */
-    utils::Int direction = 1;
+    utils::Int direction;
 
 };
 

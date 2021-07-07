@@ -38,6 +38,40 @@ utils::One<ir::Reference> Reference::make_reference(const ir::Ref &ir) const {
     return ref;
 }
 
+
+/**
+ * String conversion for Reference.
+ */
+std::ostream &operator<<(std::ostream &os, const Reference &reference) {
+    if (reference.is_global_state()) {
+        return os << "<global>";
+    }
+    if (reference.data_type != reference.target->data_type) {
+        os << reference.data_type->name << "(";
+    }
+    if (reference.target->name.empty()) {
+        os << "<anonymous>";
+    } else {
+        os << reference.target->name;
+    }
+    if (!reference.target->shape.empty()) {
+        os << "[";
+        for (utils::UInt dim = 0; dim < reference.target->shape.size(); dim++) {
+            if (dim) os << ", ";
+            if (dim < reference.indices.size()) {
+                os << reference.indices[dim];
+            } else {
+                os << "*";
+            }
+        }
+        os << "]";
+    }
+    if (reference.data_type != reference.target->data_type) {
+        os << ")";
+    }
+    return os;
+}
+
 /**
  * Less-than operator to allow this to be used as a key to a map.
  */
@@ -76,53 +110,26 @@ utils::Bool Reference::is_global_state() const {
 }
 
 /**
- * String conversion for Reference.
- */
-std::ostream &operator<<(std::ostream &os, const Reference &reference) {
-    if (reference.is_global_state()) {
-        return os << "<global>";
-    }
-    if (reference.data_type != reference.target->data_type) {
-        os << reference.data_type->name << "(" << reference.target->name << ")";
-    } else {
-        os << reference.target->name;
-    }
-    if (!reference.target->shape.empty()) {
-        os << "[";
-        for (utils::UInt dim = 0; dim < reference.target->shape.size(); dim++) {
-            if (dim) os << ", ";
-            if (dim < reference.indices.size()) {
-                os << reference.indices[dim];
-            } else {
-                os << "*";
-            }
-        }
-        os << "]";
-    }
-    return os;
-}
-
-/**
  * Returns whether two references refer to statically provable distinct objects.
  */
-utils::Bool is_provably_distinct(const Reference &a, const Reference &b) {
+utils::Bool Reference::is_provably_distinct_from(const Reference &reference) const {
 
     // If either reference is null, an all-encompassing global state is implied.
     // This is never provably distinct with anything else.
-    if (a.is_global_state() || b.is_global_state()) {
+    if (is_global_state() || reference.is_global_state()) {
         return false;
     }
 
     // If the target objects are non-null and distinct, the referred objects are
     // obviously distinct.
-    if (a.target != b.target) {
+    if (target != reference.target) {
         return true;
     }
 
     // Same for the data type, which is currently only used to refer to the
     // implicit measurement bit of a qubit, which is thus distinct. If this
     // ends up being used for typecasts, this will become more complicated.
-    if (a.data_type != b.data_type) {
+    if (data_type != reference.data_type) {
         return true;
     }
 
@@ -131,9 +138,9 @@ utils::Bool is_provably_distinct(const Reference &a, const Reference &b) {
     // that object. You can do all sorts of fancy aliasing stuff here, but for
     // now we'll only worry about static indices for as far as they are known.
     // If they differ, the targets are distinct.
-    utils::UInt known_dims = utils::max(a.indices.size(), b.indices.size());
+    utils::UInt known_dims = utils::max(indices.size(), reference.indices.size());
     for (utils::UInt dim = 0; dim < known_dims; dim++) {
-        if (a.indices[dim] != b.indices[dim]) {
+        if (indices[dim] != reference.indices[dim]) {
             return true;
         }
     }
@@ -143,115 +150,258 @@ utils::Bool is_provably_distinct(const Reference &a, const Reference &b) {
 }
 
 /**
+ * Returns whether the given reference refers to a superset of the
+ * objects/elements that this reference refers to.
+ */
+utils::Bool Reference::is_shadowed_by(const Reference &reference) const {
+    if (reference.is_global_state()) return true;
+    if (is_global_state()) return false;
+    if (target != reference.target) return false;
+    if (data_type != reference.data_type) return false;
+    if (reference.indices.size() > indices.size()) return false;
+    for (utils::UInt dim = 0; dim < reference.indices.size(); dim++) {
+        if (indices[dim] != reference.indices[dim]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * Combines two references into the most specific reference that encompasses
  * both a and b.
  */
-Reference combine_references(const Reference &a, const Reference &b) {
+Reference Reference::union_with(const Reference &reference) const {
 
     // If we're dealing with two different objects, or either reference is
     // already generalized to the global state, the global state is the most
     // specific thing we can represent with a single reference.
     if (
-        a.is_global_state() ||
-        b.is_global_state() ||
-        a.target != b.target ||
-        a.data_type != b.data_type
+        is_global_state() ||
+        reference.is_global_state() ||
+        target != reference.target ||
+        data_type != reference.data_type
     ) {
         return {};
     }
 
     // The objects referred to are the same, so look at the indices instead.
+    // Starting from the major dimension, all dimensions for which the indices
+    // match for both references are included. As soon as there's a difference,
+    // we stop.
     Reference result;
-    result.target = a.target;
-    result.data_type = a.data_type;
-    utils::UInt known_dims = utils::max(a.indices.size(), b.indices.size());
+    result.target = target;
+    result.data_type = data_type;
+    utils::UInt known_dims = utils::min(indices.size(), reference.indices.size());
     for (utils::UInt dim = 0; dim < known_dims; dim++) {
-        if (a.indices[dim] != b.indices[dim]) break;
-        result.indices.push_back(a.indices[dim]);
+        if (indices[dim] != reference.indices[dim]) break;
+        result.indices.push_back(indices[dim]);
     }
     return result;
 
 }
 
 /**
+ * Combines two references into the most specific reference that encompasses
+ * the intersection between a and b.
+ */
+Reference Reference::intersect_with(const Reference &reference) const {
+
+    // If either is the global state, return the other.
+    if (is_global_state()) return reference;
+    if (reference.is_global_state()) return *this;
+
+    // If we're dealing with two different objects, the global state is the most
+    // specific thing we can represent with a single reference.
+    if (
+        target != reference.target ||
+        data_type != reference.data_type
+    ) {
+        return {};
+    }
+
+    // The objects referred to are the same, so look at the indices instead.
+    // Starting from the major dimension, all dimensions for which the indices
+    // match for both references are included. If that includes all statically
+    // known indices for one of the two references, one is a subset of the
+    // other, so we can return the more specific one.
+    Reference result;
+    result.target = target;
+    result.data_type = data_type;
+    utils::UInt known_dims = utils::min(indices.size(), reference.indices.size());
+    for (utils::UInt dim = 0; dim < known_dims; dim++) {
+        if (indices[dim] != reference.indices[dim]) return result;
+        result.indices.push_back(indices[dim]);
+    }
+    if (indices.size() > reference.indices.size()) {
+        return *this;
+    } else {
+        return reference;
+    }
+
+}
+
+/**
+ * Returns the classical write access mode, that doesn't commute with
+ * anything else.
+ */
+AccessMode::AccessMode() : value(Enum::WRITE) {
+}
+
+/**
+ * Constructs an access mode from a (currently hardcoded) operand mode.
+ */
+AccessMode::AccessMode(ir::prim::OperandMode operand_mode) {
+    switch (operand_mode) {
+        case ir::prim::OperandMode::WRITE:     value = Enum::WRITE;     break;
+        case ir::prim::OperandMode::READ:      value = Enum::READ;      break;
+        case ir::prim::OperandMode::COMMUTE_X: value = Enum::COMMUTE_X; break;
+        case ir::prim::OperandMode::COMMUTE_Y: value = Enum::COMMUTE_Y; break;
+        case ir::prim::OperandMode::COMMUTE_Z: value = Enum::COMMUTE_Z; break;
+        default: QL_ICE("cannot use operand mode " << operand_mode << " in DDG");
+    }
+}
+
+/**
+ * Returns the classical write access mode, that doesn't commute with
+ * anything else.
+ */
+AccessMode AccessMode::write() {
+    return {};
+}
+
+/**
+ * Returns the classical read access mode, that commutes with itself but
+ * not with write.
+ */
+AccessMode AccessMode::read() {
+    AccessMode result;
+    result.value = Enum::READ;
+    return result;
+}
+
+/**
  * String conversion for AccessMode. Returns its word form.
  */
-std::ostream &operator<<(std::ostream &os, AccessMode mode) {
-    switch (mode) {
-        case AccessMode::WRITE: return os << "write";
-        case AccessMode::READ: return os << "read";
-        case AccessMode::COMMUTE_X: return os << "commute-x";
-        case AccessMode::COMMUTE_Y: return os << "commute-y";
-        case AccessMode::COMMUTE_Z: return os << "commute-z";
+std::ostream &operator<<(std::ostream &os, const AccessMode &access_mode) {
+    switch (access_mode.value) {
+        case AccessMode::Enum::WRITE: return os << "write";
+        case AccessMode::Enum::READ: return os << "read";
+        case AccessMode::Enum::COMMUTE_X: return os << "commute-x";
+        case AccessMode::Enum::COMMUTE_Y: return os << "commute-y";
+        case AccessMode::Enum::COMMUTE_Z: return os << "commute-z";
     }
     return os << "<UNKNOWN>";
 }
 
 /**
- * Represents the given access mode as a single character.
+ * Value-based equality operator.
  */
-utils::Char get_access_mode_letter(AccessMode mode) {
-    switch (mode) {
-        case AccessMode::WRITE: return 'W';
-        case AccessMode::READ: return 'R';
-        case AccessMode::COMMUTE_X: return 'X';
-        case AccessMode::COMMUTE_Y: return 'Y';
-        case AccessMode::COMMUTE_Z: return 'Z';
+utils::Bool AccessMode::operator==(const AccessMode &access_mode) const {
+    return value == access_mode.value;
+}
+
+/**
+ * Represents the given access mode as a single character, used to represent
+ * the dependency relation between two non-commuting modes (RAW, WAW, WAR,
+ * etc.).
+ */
+utils::Char AccessMode::as_letter() const {
+    switch (value) {
+        case AccessMode::Enum::WRITE: return 'W';
+        case AccessMode::Enum::READ: return 'R';
+        case AccessMode::Enum::COMMUTE_X: return 'X';
+        case AccessMode::Enum::COMMUTE_Y: return 'Y';
+        case AccessMode::Enum::COMMUTE_Z: return 'Z';
     }
     return '?';
 }
 
 /**
- * Returns whether the given two access modes commute.
+ * Returns whether the given two access modes commute. Must be symmetric.
  */
-utils::Bool do_modes_commute(AccessMode a, AccessMode b) {
-    if (a == AccessMode::WRITE) return false;
-    if (b == AccessMode::WRITE) return false;
-    if (a != b) return false;
-    return true;
+utils::Bool AccessMode::commutes_with(const AccessMode &access_mode) const {
+
+    // All modes except write commute with themselves.
+    if (value == access_mode.value && value != AccessMode::Enum::WRITE) return true;
+
+    // None of the remaining modes commute.
+    return false;
+
 }
 
 /**
- * Combines two modes into one, for use when a single object is accessed in
- * multiple ways. If the modes commute, either a or b is returned. If they
- * don't, WRITE is returned.
+ * Combines two modes into one, for example used when a single object is
+ * accessed in multiple ways but has to be represented with a single access
+ * mode. The requirement on combine_modes(a, b) -> c is that any mode d that
+ * does not commute with a OR does not commute with mode b also does not commute
+ * with mode c, but the more modes the result commutes with, the less
+ * pessimistic the DDG will be.
  */
-AccessMode combine_modes(AccessMode a, AccessMode b) {
-    if (do_modes_commute(a, b)) {
-        return utils::min(a, b);
+AccessMode AccessMode::combine_with(const AccessMode &b) const {
+    if (commutes_with(b)) {
+        return *this;
     } else {
-        return AccessMode::WRITE;
+        return AccessMode(ir::prim::OperandMode::WRITE);
     }
 }
+
+/**
+ * Creates an Event object from a pair as stored in the Events map.
+ */
+Event::Event(
+    const utils::Pair<const Reference, AccessMode> &pair
+) :
+    reference(pair.first),
+    mode(pair.second)
+{}
+
 
 /**
  * String conversion for Event.
  */
 std::ostream &operator<<(std::ostream &os, const Event &event) {
-    return os << get_access_mode_letter(event.mode) << ":" << event.reference;
+    return os << event.mode.as_letter() << ":" << event.reference;
 }
 
 /**
- * Returns whether the given two events commute. This is true if the references
- * belonging to the events are statically known to refer to different objects,
- * or if the access modes don't commute.
+ * Returns whether the given event commutes with this event. This is true if
+ * the references belonging to the events are statically known to refer to
+ * different objects, or if the access modes commute.
  */
-utils::Bool do_events_commute(const Event &a, const Event &b) {
-    if (do_modes_commute(a.mode, b.mode)) return true;
-    if (is_provably_distinct(a.reference, b.reference)) return true;
+utils::Bool Event::commutes_with(const Event &event) const {
+    if (mode.commutes_with(event.mode)) return true;
+    if (reference.is_provably_distinct_from(event.reference)) return true;
     return false;
+}
+
+/**
+ * Returns whether the given event completely shadows this event. That is,
+ * the access modes don't commute, and the specified reference refers to a
+ * superset of the objects referred to by this reference.
+ */
+utils::Bool Event::is_shadowed_by(const Event &event) const {
+    if (mode.commutes_with(event.mode)) return false;
+    if (!reference.is_shadowed_by(event.reference)) return false;
+    return true;
 }
 
 /**
  * String conversion for DependencyType.
  */
 std::ostream &operator<<(std::ostream &os, const DependencyType &dependency_type) {
-    os << get_access_mode_letter(dependency_type.second_mode);
+    os << dependency_type.second_mode.as_letter();
     os << "A";
-    os << get_access_mode_letter(dependency_type.first_mode);
+    os << dependency_type.first_mode.as_letter();
     return os;
 }
 
+/**
+ * String conversion for Cause.
+ */
+std::ostream &operator<<(std::ostream &os, const Cause &cause) {
+    return os << cause.dependency_type << ":" << cause.reference;
+}
 
 } // namespace ddg
 } // namespace com

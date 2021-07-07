@@ -901,6 +901,20 @@ utils::UInt get_duration_of_instruction(const InstructionRef &insn) {
 }
 
 /**
+ * Returns the duration of a statement in quantum cycles. Note that this will
+ * be zero for non-quantum instructions. It will also be zero for structured
+ * control-flow sub-blocks.
+ */
+utils::UInt get_duration_of_statement(const StatementRef &stmt) {
+    auto insn = stmt.as<Instruction>();
+    if (!insn.empty()) {
+        return get_duration_of_instruction(insn);
+    } else {
+        return 0;
+    }
+}
+
+/**
  * Returns the duration of a block in quantum cycles. If the block contains
  * structured control-flow sub-blocks, these are counted as zero cycles.
  */
@@ -911,13 +925,10 @@ utils::UInt get_duration_of_block(const BlockBaseRef &block) {
     // the block.
     utils::UInt duration = 0;
     for (const auto &stmt : block->statements) {
-        auto insn = stmt.as<Instruction>();
-        if (!insn.empty()) {
-            duration = utils::max(
-                duration,
-                insn->cycle + get_duration_of_instruction(insn)
-            );
-        }
+        duration = utils::max(
+            duration,
+            stmt->cycle + get_duration_of_statement(stmt)
+        );
     }
 
     return duration;

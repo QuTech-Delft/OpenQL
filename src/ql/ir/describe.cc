@@ -91,9 +91,9 @@ protected:
             for (utils::UInt i = 0; i < instruction_type.template_operands.size(); i++) {
                 if (!first) ss << ",";
                 first = false;
-                ss << " ";
+                ss << " <";
                 generalization->operand_types[i].visit(*this);
-                ss << "=";
+                ss << "> ";
                 instruction_type.template_operands[i].visit(*this);
             }
         }
@@ -106,8 +106,9 @@ public:
         for (auto &opt : instruction_type.operand_types) {
             if (!first) ss << ",";
             first = false;
-            ss << " ";
+            ss << " <";
             opt.visit(*this);
+            ss << ">";
         }
     }
 
@@ -145,20 +146,16 @@ public:
 
     void visit_operand_type(OperandType &operand_type) override {
         switch (operand_type.mode) {
-            case prim::OperandMode::WRITE: {
-                if (!operand_type.data_type->as_qubit_type()) {
-                    ss << "write ";
-                }
-                break;
-            }
-            case prim::OperandMode::READ:      ss << "read ";      break;
-            case prim::OperandMode::LITERAL:   ss << "literal ";   break;
-            case prim::OperandMode::COMMUTE_X: ss << "X-commute "; break;
-            case prim::OperandMode::COMMUTE_Y: ss << "Y-commute "; break;
-            case prim::OperandMode::COMMUTE_Z: ss << "Z-commute "; break;
-            case prim::OperandMode::MEASURE:   ss << "measure ";   break;
+            case prim::OperandMode::WRITE:     ss << "W"; break;
+            case prim::OperandMode::READ:      ss << "W"; break;
+            case prim::OperandMode::LITERAL:   ss << "L"; break;
+            case prim::OperandMode::COMMUTE_X: ss << "X"; break;
+            case prim::OperandMode::COMMUTE_Y: ss << "Y"; break;
+            case prim::OperandMode::COMMUTE_Z: ss << "Z"; break;
+            case prim::OperandMode::MEASURE:   ss << "M"; break;
             default: break;
         }
+        ss << ":";
         operand_type.data_type.visit(*this);
     }
 
@@ -195,9 +192,9 @@ public:
         for (utils::UInt i = 0; i < custom_instruction.operands.size(); i++) {
             if (!first) ss << ",";
             first = false;
-            ss << " ";
+            ss << " <";
             custom_instruction.instruction_type->operand_types[i].visit(*this);
-            ss << "=";
+            ss << "> ";
             custom_instruction.operands[i].visit(*this);
         }
     }
@@ -225,10 +222,10 @@ public:
                 ss << " cycles";
             }
             if (!wait_instruction.objects.empty()) {
-                ss << " after ";
+                ss << " after";
             }
         } else if (!wait_instruction.objects.empty()) {
-            ss << " on ";
+            ss << " on";
         }
         auto first = true;
         for (auto &ref : wait_instruction.objects) {

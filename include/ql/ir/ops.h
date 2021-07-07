@@ -293,6 +293,13 @@ ObjectLink make_temporary(const Ref &ir, const DataTypeLink &data_type);
 utils::UInt get_duration_of_instruction(const InstructionRef &insn);
 
 /**
+ * Returns the duration of a statement in quantum cycles. Note that this will
+ * be zero for non-quantum instructions. It will also be zero for structured
+ * control-flow sub-blocks.
+ */
+utils::UInt get_duration_of_statement(const StatementRef &stmt);
+
+/**
  * Returns the duration of a block in quantum cycles. If the block contains
  * structured control-flow sub-blocks, these are counted as zero cycles.
  */

@@ -116,6 +116,7 @@ public:
  * node in the final schedule, and such that the sign indicates the direction
  */
 void build(
+    const ir::Ref &ir,
     const ir::BlockBaseRef &block,
     utils::Bool commute_multi_qubit = true,
     utils::Bool commute_single_qubit = true
