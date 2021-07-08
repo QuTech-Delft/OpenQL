@@ -156,7 +156,9 @@ GateConversionRule::GateConversionRule(
     }
 
     // Default duration and angle to 0.
-    ql_duration.emplace<FixedValue<UInt>>(0);
+    if (ql_duration.empty()) {
+        ql_duration.emplace<FixedValue<UInt>>(0);
+    }
     if (ql_angle.empty()) {
         ql_angle.emplace<FixedValue<Real>>(0.0);
     }

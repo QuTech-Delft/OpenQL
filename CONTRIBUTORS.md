@@ -90,3 +90,6 @@ Note: please fill your contributions in this file
     -   doxygen documentation
     -   improved pass management
     -   extensive cleanup; basically a rewrite of everything at this point
+  
+- [Quinten van Wingerden](https://github.com/qvanwingerden)
+    -   added support for diamond architecture

@@ -22,6 +22,7 @@
 //#include "ql/pass/map/qubits/place_mip/place_mip.h" // Broken: need half-decent IR for gates and virtual vs real qubit operands first.
 #include "ql/pass/map/qubits/map/map.h"
 #include "ql/arch/cc/pass/gen/vq1asm/vq1asm.h"
+#include "ql/arch/diamond/pass/gen/microcode/microcode.h"
 
 namespace ql {
 namespace pmgr {
@@ -46,6 +47,8 @@ Factory::Factory() {
     //register_pass<::ql::pass::map::qubits::place_mip::Pass>("map.qubits.PlaceMIP"); // Broken: need half-decent IR for gates and virtual vs real qubit operands first.
     register_pass<::ql::pass::map::qubits::map::Pass>("map.qubits.Map");
     register_pass<::ql::arch::cc::pass::gen::vq1asm::Pass>("arch.cc.gen.VQ1Asm");
+    register_pass<::ql::arch::diamond::pass::gen::microcode::Pass>("arch.diamond.gen.Microcode");
+
 
 }
 
