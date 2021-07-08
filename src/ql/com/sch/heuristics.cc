@@ -21,6 +21,15 @@ utils::Bool TrivialHeuristic::operator()(
 }
 
 /**
+ * String representation for TrivialHeuristic.
+ */
+utils::Str TrivialHeuristic::operator()(
+    const ir::StatementRef &val
+) const {
+    return "-";
+}
+
+/**
  * Comparator implementation for CriticalPathHeuristic.
  */
 utils::Bool CriticalPathHeuristic::operator()(
@@ -28,6 +37,15 @@ utils::Bool CriticalPathHeuristic::operator()(
     const ir::StatementRef &rhs
 ) const {
     return utils::abs(lhs->cycle) < utils::abs(rhs->cycle);
+}
+
+/**
+ * String representation for CriticalPathHeuristic.
+ */
+utils::Str CriticalPathHeuristic::operator()(
+    const ir::StatementRef &val
+) const {
+    return utils::to_string(utils::abs(val->cycle));
 }
 
 /**
@@ -167,6 +185,15 @@ utils::Bool DeepCriticality::Heuristic::operator()(
     const ir::StatementRef &rhs
 ) const {
     return get(lhs) < get(rhs);
+}
+
+/**
+ * String representation for DeepCriticality::Heuristic.
+ */
+utils::Str DeepCriticality::Heuristic::operator()(
+    const ir::StatementRef &val
+) const {
+    return utils::to_string(get(val));
 }
 
 /**

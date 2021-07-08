@@ -1,5 +1,18 @@
 /** \file
  * Defines basic criticality heuristics for the list scheduler.
+ *
+ * Heuristic classes must consist of two operator() overloads:
+ *
+ *  - `Bool operator()(const StatementRef &lhs, const StatementRef &rhs) const`
+ *    and
+ *  - `Str operator()(const StatementRef &val) const`
+ *
+ * The former implements a standard less-than comparator for the criticality of
+ * the two given statements. This is what's used to actually order the list of
+ * available instructions.
+ *
+ * The latter is just used for debugging. It should return a string
+ * representation of the criticality of the given statement.
  */
 
 #pragma once
@@ -17,6 +30,7 @@ namespace sch {
  */
 struct TrivialHeuristic {
     utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs) const;
+    utils::Str operator()(const ir::StatementRef &val) const;
 };
 
 /**
@@ -33,6 +47,7 @@ struct TrivialHeuristic {
  */
 struct CriticalPathHeuristic {
     utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs) const;
+    utils::Str operator()(const ir::StatementRef &val) const;
 };
 
 /**
@@ -114,6 +129,7 @@ public:
      */
     struct Heuristic {
         utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs) const;
+        utils::Str operator()(const ir::StatementRef &val) const;
     };
 
     /**

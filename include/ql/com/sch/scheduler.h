@@ -347,8 +347,7 @@ public:
             // decreasing criticality, because available is a set that uses the
             // criticality heuristic for its comparator.
             for (const auto &statement : available) {
-                if (resource_state->available(cycle, statement)) {
-                    schedule(statement);
+                if (try_schedule(statement)) {
                     return true;
                 }
             }
@@ -357,8 +356,17 @@ public:
         } else {
 
             // Schedule the given statement, if it's available.
-            if (available.find(statement) == available.end()) return false;
-            if (!resource_state->available(cycle, statement)) return false;
+            QL_DOUT("trying n" << utils::abs(ddg::get_node(statement)->order) << " = " << ir::describe(statement));
+            QL_DOUT(" |-> with criticality " << HeuristicComparator()(statement));
+            if (available.find(statement) == available.end()) {
+                QL_DOUT(" '-> not available due to data dependencies");
+                return false;
+            }
+            if (!resource_state->available(cycle, statement)) {
+                QL_DOUT(" '-> not available due to resources");
+                return false;
+            }
+            QL_DOUT(" '-> ok, scheduling in cycle " << cycle);
             schedule(statement);
             return true;
 
@@ -402,7 +410,7 @@ public:
             QL_DOUT(
                 "cycle " << cycle << ", " <<
                 scheduled.size() << " scheduled, " <<
-                available.size() << " available, " <<
+                available.size() << " available w.r.t. data dependencies, " <<
                 available_in.size() << " batches available later, " <<
                 waiting.size() << " waiting"
             );
@@ -411,6 +419,7 @@ public:
             while (!try_schedule()) {
                 advance();
                 advanced++;
+                QL_DOUT("nothing is available, advancing to cycle " << cycle);
                 if (max_resource_block_cycles && advanced > max_resource_block_cycles) {
                     utils::StrStrm ss;
                     ss << "scheduling resources seem to be deadlocked! ";
