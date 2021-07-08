@@ -68,6 +68,7 @@ private:
 
     // attributes
     lemon::ListDigraph::NodeMap<utils::Str> name;     // name[n] == qasm string
+    lemon::ListDigraph::NodeMap<utils::Int> order;    // order[n] == original index of gates in kernel
     lemon::ListDigraph::ArcMap<utils::Int> weight;    // number of cycles of dependence
     lemon::ListDigraph::ArcMap<OperandType> op_type;  // qubit, creg or breg
     lemon::ListDigraph::ArcMap<utils::Int> cause;     // operand index

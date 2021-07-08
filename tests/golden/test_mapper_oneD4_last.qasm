@@ -5,10 +5,10 @@ pragma @ql.name("test_mapper_oneD4")
 
 
 .kernel_oneD4
-    y q[4]
+    x q[2]
     { # start at cycle 1
-        x q[2]
         ym90 q[0]
+        y q[4]
         ym90 q[1]
     }
     { # start at cycle 2
@@ -51,12 +51,12 @@ pragma @ql.name("test_mapper_oneD4")
     cz q[3], q[1]
     skip 1
     { # start at cycle 16
+        y90 q[1]
         ym90 q[3]
-        y90 q[0]
     }
-    cz q[0], q[3]
-    y90 q[1]
     cz q[1], q[3]
+    y90 q[0]
+    cz q[0], q[3]
     skip 1
     { # start at cycle 21
         x q[0]

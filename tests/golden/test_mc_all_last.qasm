@@ -11,30 +11,30 @@ pragma @ql.name("test_mc_all")
     x q[1]
     swap q[0], q[1]
     skip 11
-    x q[8]
+    x q[12]
     { # start at cycle 20
-        cnot q[8], q[9]
+        cnot q[12], q[13]
         preswap q[0]
     }
     skip 3
     x q[4]
     { # start at cycle 25
         cnot q[4], q[5]
-        teleportswap q[0], q[8]
+        teleportswap q[0], q[12]
     }
     skip 3
-    x q[12]
+    x q[8]
     { # start at cycle 30
-        cnot q[12], q[13]
+        cnot q[8], q[9]
         premove q[4]
     }
     skip 4
     { # start at cycle 35
-        premove q[12]
+        premove q[8]
         teleportmove q[4], q[2]
     }
     skip 4
-    teleportmove q[12], q[3]
+    teleportmove q[8], q[3]
     skip 24
     postmove q[2]
     skip 4
@@ -55,26 +55,26 @@ pragma @ql.name("test_mc_all")
     skip 4
     { # start at cycle 85
         cnot q[2], q[1]
-        cnot q[0], q[3]
+        cnot q[3], q[0]
     }
     skip 4
     { # start at cycle 90
-        cnot q[0], q[2]
-        cnot q[3], q[1]
+        cnot q[3], q[2]
+        cnot q[0], q[1]
     }
     skip 4
     { # start at cycle 95
-        cnot q[0], q[1]
-        cnot q[3], q[2]
+        cnot q[3], q[1]
+        cnot q[0], q[2]
     }
     skip 4
     { # start at cycle 100
-        postswap q[8]
-        cnot q[3], q[0]
+        postswap q[12]
+        cnot q[0], q[3]
     }
     skip 3
     { # start at cycle 104
-        x q[13]
-        x q[9]
         x q[5]
+        x q[9]
+        x q[13]
     }

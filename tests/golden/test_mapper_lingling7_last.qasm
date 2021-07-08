@@ -40,78 +40,58 @@ pragma @ql.name("test_mapper_lingling7")
     cz q[5], q[8]
     skip 1
     cz q[5], q[8]
-    { # start at cycle 49
-        ym90 q[3]
-        y q[6]
-    }
-    { # start at cycle 50
-        ym90 q[8]
-        cz q[3], q[6]
-    }
+    skip 1
+    ym90 q[8]
     cz q[5], q[8]
-    { # start at cycle 52
-        y90 q[6]
-        ym90 q[3]
-    }
+    skip 1
     { # start at cycle 53
         y90 q[8]
         ym90 q[5]
-        cz q[6], q[3]
     }
     cz q[8], q[5]
-    ym90 q[6]
-    { # start at cycle 56
-        y90 q[5]
-        ym90 q[8]
-        y90 q[3]
-    }
-    { # start at cycle 57
-        cz q[5], q[8]
-        cz q[3], q[6]
-    }
     skip 1
-    { # start at cycle 59
-        y90 q[8]
-        y90 q[6]
-    }
-    cz q[8], q[6]
+    y90 q[5]
+    cz q[2], q[5]
+    ym90 q[8]
+    cz q[5], q[8]
     skip 1
-    ym90 q[6]
-    cz q[8], q[6]
-    skip 1
-    { # start at cycle 65
-        y90 q[6]
-        ym90 q[8]
-    }
-    cz q[6], q[8]
-    skip 1
-    { # start at cycle 68
+    { # start at cycle 61
         y90 q[8]
         ym90 q[6]
     }
     cz q[8], q[6]
     skip 1
-    y90 q[6]
-    cz q[6], q[3]
+    { # start at cycle 64
+        y90 q[6]
+        ym90 q[8]
+    }
+    cz q[6], q[8]
     skip 1
-    y90 q[6]
-    x q[6]
-    measure q[6]
-    skip 14
-    prepz q[6]
-    skip 30
-    cz q[2], q[5]
+    { # start at cycle 67
+        y90 q[8]
+        ym90 q[6]
+    }
+    cz q[8], q[6]
     skip 1
-    ym90 q[2]
+    { # start at cycle 70
+        y90 q[6]
+        ym90 q[8]
+    }
+    { # start at cycle 71
+        cz q[6], q[8]
+        ym90 q[2]
+    }
     cz q[5], q[2]
+    y90 q[8]
+    cz q[8], q[5]
     skip 1
-    { # start at cycle 127
+    { # start at cycle 76
         y90 q[2]
         ym90 q[5]
     }
     cz q[2], q[5]
     skip 1
-    { # start at cycle 130
+    { # start at cycle 79
         y90 q[5]
         ym90 q[2]
     }
@@ -123,235 +103,101 @@ pragma @ql.name("test_mapper_lingling7")
     ym90 q[5]
     cz q[2], q[5]
     skip 1
-    { # start at cycle 139
-        cz q[7], q[4]
+    { # start at cycle 88
         y90 q[5]
         ym90 q[2]
     }
     cz q[5], q[2]
-    y90 q[4]
-    { # start at cycle 142
-        ym90 q[7]
+    cz q[7], q[4]
+    { # start at cycle 91
         y90 q[2]
         ym90 q[5]
     }
-    { # start at cycle 143
-        cz q[4], q[7]
+    { # start at cycle 92
+        y90 q[4]
+        ym90 q[7]
         cz q[2], q[5]
     }
-    skip 1
-    { # start at cycle 145
+    { # start at cycle 93
+        ym90 q[3]
+        cz q[4], q[7]
+    }
+    cz q[6], q[3]
+    { # start at cycle 95
         y90 q[7]
         y90 q[5]
     }
-    cz q[7], q[5]
-    skip 1
-    { # start at cycle 148
+    { # start at cycle 96
         y90 q[6]
-        cz q[5], q[8]
+        cz q[7], q[5]
     }
     x q[6]
-    cz q[6], q[8]
-    skip 1
-    { # start at cycle 152
-        cz q[6], q[3]
-        y90 q[8]
-        ym90 q[5]
+    y90 q[5]
+    { # start at cycle 99
+        measure q[6]
+        measure q[5]
     }
-    cz q[8], q[5]
-    ym90 q[6]
-    { # start at cycle 155
-        y90 q[3]
-        y90 q[5]
+    skip 14
+    { # start at cycle 114
+        prepz q[6]
+        prepz q[5]
+    }
+    skip 30
+    y90 q[6]
+    { # start at cycle 146
+        x q[6]
         ym90 q[8]
     }
-    { # start at cycle 156
-        cz q[3], q[6]
-        cz q[5], q[8]
-    }
-    skip 1
-    { # start at cycle 158
-        y90 q[6]
-        y90 q[8]
-    }
     cz q[6], q[8]
     skip 1
-    y90 q[8]
-    measure q[8]
-    skip 14
-    prepz q[8]
-    skip 1
-    ym90 q[3]
     cz q[6], q[3]
     skip 1
-    { # start at cycle 182
-        y90 q[3]
-        ym90 q[0]
-    }
-    cz q[3], q[0]
-    skip 1
     ym90 q[6]
-    cz q[3], q[6]
+    cz q[2], q[6]
     skip 1
-    { # start at cycle 188
-        y90 q[0]
-        ym90 q[3]
-    }
-    cz q[0], q[3]
-    skip 1
-    ym90 q[0]
-    cz q[2], q[0]
-    y90 q[3]
-    cz q[3], q[0]
-    skip 1
-    { # start at cycle 196
-        y90 q[0]
-        ym90 q[2]
-    }
-    cz q[0], q[2]
-    skip 1
-    { # start at cycle 199
-        y90 q[2]
-        ym90 q[0]
-    }
-    cz q[2], q[0]
-    skip 1
-    ym90 q[2]
-    cz q[5], q[2]
-    skip 1
-    { # start at cycle 205
-        y90 q[2]
-        ym90 q[5]
-    }
+    ym90 q[5]
     cz q[2], q[5]
     skip 1
-    { # start at cycle 208
+    { # start at cycle 157
         y90 q[6]
-        ym90 q[8]
-    }
-    cz q[6], q[8]
-    y90 q[5]
-    { # start at cycle 211
-        cz q[5], q[8]
-        y90 q[0]
-        ym90 q[3]
-    }
-    cz q[0], q[3]
-    cz q[5], q[8]
-    { # start at cycle 214
-        y90 q[3]
-        ym90 q[0]
-        ym90 q[6]
-    }
-    { # start at cycle 215
-        cz q[3], q[0]
-        cz q[8], q[6]
-    }
-    skip 1
-    { # start at cycle 217
-        y90 q[0]
-        ym90 q[3]
-        y90 q[6]
-        ym90 q[8]
-    }
-    { # start at cycle 218
-        cz q[0], q[3]
-        cz q[6], q[8]
-    }
-    skip 1
-    { # start at cycle 220
         ym90 q[2]
-        y90 q[8]
-        ym90 q[6]
     }
-    { # start at cycle 221
-        cz q[5], q[2]
-        cz q[8], q[6]
-    }
-    skip 1
-    y90 q[6]
-    cz q[6], q[2]
-    { # start at cycle 225
+    { # start at cycle 158
         ym90 q[4]
-        y90 q[3]
+        cz q[6], q[2]
     }
-    { # start at cycle 226
-        cz q[7], q[4]
-        cz q[3], q[6]
-    }
-    skip 1
-    { # start at cycle 228
-        ym90 q[7]
+    cz q[7], q[4]
+    { # start at cycle 160
+        y90 q[8]
         y90 q[2]
         ym90 q[6]
     }
-    { # start at cycle 229
-        cz q[7], q[4]
+    { # start at cycle 161
+        cz q[8], q[5]
         cz q[2], q[6]
     }
     skip 1
-    { # start at cycle 231
-        y90 q[4]
+    { # start at cycle 163
+        cz q[1], q[5]
         ym90 q[7]
+    }
+    { # start at cycle 164
         ym90 q[2]
-    }
-    { # start at cycle 232
-        cz q[4], q[7]
-        cz q[5], q[2]
-    }
-    skip 1
-    { # start at cycle 234
-        y90 q[7]
-        y90 q[6]
-    }
-    { # start at cycle 235
-        cz q[5], q[7]
-        cz q[6], q[2]
-    }
-    skip 1
-    { # start at cycle 237
-        y90 q[2]
-        ym90 q[5]
-    }
-    cz q[2], q[5]
-    ym90 q[4]
-    { # start at cycle 240
         cz q[7], q[4]
-        y90 q[5]
     }
-    cz q[1], q[5]
-    y90 q[7]
-    cz q[7], q[5]
-    ym90 q[2]
     cz q[5], q[2]
-    skip 1
-    y90 q[5]
-    measure q[5]
-    skip 14
-    prepz q[5]
-    skip 30
-    { # start at cycle 294
-        ym90 q[5]
-        ym90 q[7]
-    }
-    { # start at cycle 295
-        cz q[5], q[2]
-        cz q[7], q[4]
-    }
-    skip 1
-    cz q[8], q[5]
     y90 q[4]
-    { # start at cycle 299
+    { # start at cycle 167
         y90 q[2]
         ym90 q[5]
         ym90 q[7]
     }
-    { # start at cycle 300
+    { # start at cycle 168
         cz q[2], q[5]
         cz q[4], q[7]
     }
     skip 1
-    { # start at cycle 302
+    { # start at cycle 170
         y90 q[5]
         y90 q[7]
     }
@@ -359,107 +205,152 @@ pragma @ql.name("test_mapper_lingling7")
     ym90 q[2]
     cz q[5], q[2]
     skip 1
-    y90 q[5]
-    x q[5]
-    measure q[5]
-    skip 14
-    prepz q[5]
-    skip 30
-    y90 q[5]
-    x q[5]
     cz q[5], q[7]
-    skip 1
-    ym90 q[8]
-    cz q[5], q[8]
-    ym90 q[1]
-    cz q[5], q[1]
     y90 q[2]
     cz q[5], q[2]
     ym90 q[4]
-    { # start at cycle 366
+    { # start at cycle 179
         cz q[7], q[4]
         cz q[5], q[2]
     }
     skip 1
-    { # start at cycle 368
+    { # start at cycle 181
         y90 q[7]
         ym90 q[5]
     }
     cz q[7], q[5]
     skip 1
-    { # start at cycle 371
+    { # start at cycle 184
         y90 q[5]
         ym90 q[7]
     }
     cz q[5], q[7]
     skip 1
-    { # start at cycle 374
+    { # start at cycle 187
         y90 q[7]
         y90 q[4]
     }
     cz q[7], q[4]
-    cz q[5], q[2]
-    ym90 q[7]
-    cz q[5], q[7]
     skip 1
-    { # start at cycle 380
-        y90 q[7]
+    y90 q[7]
+    x q[7]
+    measure q[7]
+    skip 6
+    cz q[5], q[2]
+    skip 1
+    y90 q[2]
+    measure q[2]
+    skip 4
+    prepz q[7]
+    skip 9
+    prepz q[2]
+    skip 20
+    y90 q[7]
+    { # start at cycle 239
+        x q[7]
         ym90 q[5]
     }
     cz q[7], q[5]
     skip 1
-    y90 q[5]
-    { # start at cycle 384
-        ym90 q[3]
-        cz q[5], q[8]
-    }
-    cz q[6], q[3]
-    ym90 q[7]
-    { # start at cycle 387
-        y90 q[3]
-        ym90 q[6]
-        cz q[5], q[7]
-    }
-    cz q[3], q[6]
-    { # start at cycle 389
-        y90 q[8]
-        ym90 q[5]
-    }
-    { # start at cycle 390
-        y90 q[6]
-        ym90 q[3]
-        cz q[8], q[5]
-    }
-    cz q[6], q[3]
-    { # start at cycle 392
+    { # start at cycle 242
         y90 q[5]
         ym90 q[8]
     }
-    { # start at cycle 393
+    cz q[5], q[8]
+    skip 1
+    { # start at cycle 245
+        y90 q[8]
+        ym90 q[5]
+    }
+    cz q[8], q[5]
+    skip 1
+    { # start at cycle 248
+        ym90 q[2]
+        y90 q[5]
+    }
+    cz q[5], q[2]
+    ym90 q[8]
+    cz q[5], q[8]
+    skip 1
+    ym90 q[5]
+    cz q[7], q[5]
+    skip 1
+    { # start at cycle 256
+        y90 q[6]
+        y90 q[5]
+        ym90 q[7]
+    }
+    { # start at cycle 257
         cz q[6], q[2]
-        cz q[5], q[8]
+        cz q[5], q[7]
     }
     skip 1
-    { # start at cycle 395
-        y90 q[8]
-        ym90 q[6]
+    { # start at cycle 259
+        y90 q[7]
+        ym90 q[5]
     }
-    cz q[8], q[6]
-    cz q[0], q[2]
-    y90 q[8]
-    { # start at cycle 399
-        y90 q[2]
-        x q[8]
+    { # start at cycle 260
+        cz q[0], q[2]
+        cz q[7], q[5]
     }
-    { # start at cycle 400
-        measure q[2]
-        measure q[8]
-    }
-    skip 13
-    { # start at cycle 414
+    skip 1
+    y90 q[5]
+    cz q[5], q[2]
+    skip 1
+    cz q[5], q[2]
+    ym90 q[1]
+    cz q[5], q[1]
+    ym90 q[2]
+    cz q[5], q[2]
+    { # start at cycle 270
+        ym90 q[7]
         y90 q[1]
+    }
+    { # start at cycle 271
+        cz q[5], q[7]
+        cz q[1], q[4]
+    }
+    skip 1
+    { # start at cycle 273
+        y90 q[2]
+        ym90 q[5]
+    }
+    cz q[2], q[5]
+    skip 1
+    { # start at cycle 276
+        y90 q[5]
+        ym90 q[2]
+    }
+    cz q[5], q[2]
+    { # start at cycle 278
+        y90 q[4]
+        ym90 q[1]
+    }
+    { # start at cycle 279
+        y90 q[2]
+        ym90 q[6]
+        cz q[4], q[1]
+    }
+    cz q[2], q[6]
+    y90 q[1]
+    cz q[1], q[5]
+    y90 q[2]
+    { # start at cycle 284
+        x q[2]
+        y90 q[5]
+    }
+    { # start at cycle 285
+        measure q[2]
+        measure q[5]
+    }
+    skip 10
+    ym90 q[4]
+    cz q[1], q[4]
+    skip 1
+    { # start at cycle 299
         y90 q[3]
         y90 q[4]
         y90 q[6]
         y90 q[7]
+        y90 q[8]
     }

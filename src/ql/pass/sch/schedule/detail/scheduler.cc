@@ -143,6 +143,7 @@ std::ostream &operator<<(std::ostream &os, OperandType ot) {
 Scheduler::Scheduler() :
     instruction(graph),
     name(graph),
+    order(graph),
     weight(graph),
     op_type(graph),
     cause(graph),
@@ -375,6 +376,7 @@ void Scheduler::init(
     last_b_readers.resize(breg_count);                      // start off as empty list, no Breader seen yet
 
     // for each gate pointer ins in the circuit, add a node and add dependencies on previous gates to it
+    utils::Int index = 0;
     for (const auto &ins : kernel->gates) {
         QL_DOUT("Current instruction's name: `" << ins->name << "'");
         QL_DOUT(".. Qasm(): " << ins->qasm());
@@ -400,6 +402,7 @@ void Scheduler::init(
         instruction[currNode] = ins;
         node.set(ins) = currNode;
         name[currNode] = ins->qasm();   // and this includes any condition!
+        order[currNode] = index++;
 
         // Add edges (arcs)
         // In quantum computing there are no real Reads and Writes on qubits because they cannot be cloned.
@@ -939,7 +942,7 @@ Bool Scheduler::criticality_lessthan(
     if (ln2.empty()) return false;          // strictly < only when ln1.empty and ln2.not_empty
     if (ln1.empty()) return true;           // so when both empty, it is equal, so not strictly <, so false
     // so: ln1.non_empty && ln2.non_empty
-
+/*
     ln1.sort([this](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
     ln2.sort([this](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
 
@@ -957,10 +960,14 @@ Bool Scheduler::criticality_lessthan(
     if (ln1.size() < ln2.size()) return true;
     if (ln1.size() > ln2.size()) return false;
     // so: ln1.size() == ln2.size() >= 1
-
+*/
     ln1.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
     ln2.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
-    return criticality_lessthan(ln1.back(), ln2.back(), dir);
+    if (criticality_lessthan(ln1.back(), ln2.back(), dir)) return true;
+    if (criticality_lessthan(ln2.back(), ln1.back(), dir)) return false;
+
+    // fall back to original gate order for stability
+    return order[n1] > order[n2];
 }
 
 // Make node n available
@@ -1179,6 +1186,21 @@ void Scheduler::schedule(
     const rmgr::Manager &rm
 ) {
     QL_DOUT("Scheduling " << (dir == rmgr::Direction::FORWARD ? "ASAP" : "ALAP") << " with RC ...");
+
+    // set gate order such that gates appearing earlier in the original
+    // schedule/order are scheduled earlier when they are otherwise equivalent
+    // in terms of dependencies, resources, and criticality
+    if (dir == rmgr::Direction::FORWARD) {
+        utils::Int index = 0;
+        for (const auto &ins : kernel->gates) {
+            order[node.at(ins)] = index++;
+        }
+    } else {
+        utils::Int index = 0;
+        for (const auto &ins : kernel->gates) {
+            order[node.at(ins)] = index--;
+        }
+    }
 
     // build a new resource state
     auto rs = rm.build(dir);

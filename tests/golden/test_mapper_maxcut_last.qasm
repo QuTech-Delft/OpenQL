@@ -6,61 +6,63 @@ pragma @ql.name("test_mapper_maxcut")
 
 .kernel_maxcut
     { # start at cycle 0
-        x q[5]
-        x q[6]
-    }
-    { # start at cycle 1
         x q[4]
         x q[7]
-        red q[5], q[6]
     }
-    blue q[4], q[7]
-    skip 2
-    blue q[6], q[7]
-    skip 2
-    { # start at cycle 8
-        x q[3]
-        x q[6]
-    }
-    { # start at cycle 9
-        swap q[5], q[3]
-        swap q[6], q[7]
-    }
-    skip 1
-    red q[5], q[6]
-    skip 3
-    x q[6]
-    { # start at cycle 16
-        swap q[6], q[5]
-        swap q[7], q[4]
-    }
-    skip 1
-    { # start at cycle 18
-        blue q[6], q[7]
-        move_init q[0]
+    { # start at cycle 1
+        blue q[4], q[7]
+        move_init q[2]
         x q[1]
     }
-    move q[1], q[0]
-    skip 1
-    { # start at cycle 21
-        swap q[3], q[0]
-        swap q[6], q[5]
-    }
-    skip 1
-    red q[3], q[5]
-    skip 3
-    blue q[3], q[0]
-    skip 1
-    x q[5]
-    { # start at cycle 30
-        swap q[3], q[5]
-        swap q[6], q[7]
-    }
-    skip 1
-    red q[5], q[6]
-    skip 3
-    { # start at cycle 36
-        x q[0]
+    move q[1], q[2]
+    { # start at cycle 3
         x q[5]
+        x q[6]
+        move_init q[0]
+        x q[3]
+    }
+    { # start at cycle 4
+        red q[5], q[6]
+        red q[2], q[4]
+        move q[3], q[0]
+    }
+    skip 1
+    move q[0], q[1]
+    skip 1
+    { # start at cycle 8
+        red q[2], q[1]
+        move q[5], q[3]
+    }
+    skip 1
+    move q[3], q[0]
+    skip 1
+    swap q[1], q[0]
+    skip 1
+    red q[2], q[1]
+    skip 3
+    { # start at cycle 18
+        x q[1]
+        x q[2]
+    }
+    { # start at cycle 19
+        swap q[1], q[0]
+        swap q[2], q[4]
+    }
+    skip 1
+    red q[1], q[2]
+    skip 1
+    blue q[6], q[7]
+    skip 1
+    x q[2]
+    { # start at cycle 26
+        swap q[2], q[1]
+        swap q[4], q[7]
+    }
+    skip 1
+    red q[2], q[4]
+    skip 3
+    { # start at cycle 32
+        x q[2]
+        x q[4]
         x q[6]
     }

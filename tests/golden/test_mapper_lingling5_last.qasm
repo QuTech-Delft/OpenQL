@@ -23,21 +23,24 @@ pragma @ql.name("test_mapper_lingling5")
     cz q[5], q[2]
     skip 1
     { # start at cycle 38
-        y90 q[2]
         ym90 q[0]
+        y q[3]
     }
+    cz q[0], q[3]
+    y90 q[2]
     cz q[2], q[0]
-    y q[3]
-    { # start at cycle 41
-        x q[2]
-        cz q[0], q[3]
-    }
-    y q[2]
-    cz q[5], q[2]
     skip 1
-    y90 q[6]
-    x q[6]
+    { # start at cycle 43
+        y90 q[6]
+        x q[2]
+    }
+    { # start at cycle 44
+        x q[6]
+        y q[2]
+    }
     cz q[6], q[2]
+    skip 1
+    cz q[5], q[2]
     skip 1
     cz q[6], q[2]
     skip 1
