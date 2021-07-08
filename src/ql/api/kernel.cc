@@ -7,6 +7,7 @@
 #include "ql/api/creg.h"
 #include "ql/api/operation.h"
 #include "ql/api/unitary.h"
+#include "ql/arch/diamond/annotations.h"
 
 //============================================================================//
 //                               W A R N I N G                                //
@@ -432,6 +433,61 @@ void Kernel::barrier(const std::vector<size_t> &qubits) {
  */
 void Kernel::display() {
     kernel->display();
+}
+
+/**
+ * Appends the diamond excite_mw instruction.
+ */
+void Kernel::diamond_excite_mw(size_t envelope, size_t duration, size_t frequency, size_t phase, size_t amplitude, size_t qubit) {
+    kernel->gate("excite_mw", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::ExciteMicrowaveParameters>({envelope, duration, frequency, phase, amplitude});
+}
+
+/**
+ * Appends the diamond memswap instruction, that swaps the state from a qubit
+ * to a nuclear spin qubit within the color center.
+ */
+void Kernel::diamond_memswap(size_t qubit, size_t nuclear_qubit) {
+    kernel->gate("memswap", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::MemSwapParameters>({nuclear_qubit});
+}
+
+/**
+ * Appends the diamond qentangle instruction, that entangles a qubit with a
+ * nuclear spin qubit within the color center.
+ */
+void Kernel::diamond_qentangle(size_t qubit, size_t nuclear_qubit){
+    kernel->gate("qentangle", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::QEntangleParameters>({nuclear_qubit});
+}
+
+/**
+ * Appends the diamond sweep_bias instruction, that sweeps the frequency over
+ * a color center to help determine the magnetic biasing.
+ */
+void Kernel::diamond_sweep_bias(size_t qubit, size_t value, size_t dacreg, size_t start, size_t step, size_t max, size_t memaddress)
+{
+    kernel->gate("sweep_bias", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::SweepBiasParameters>({value, dacreg, start, step, max, memaddress});
+}
+
+/**
+ * Appends the diamond crc instruction, that checks whether the color center is
+ * still in the correct charge state.
+ */
+void Kernel::diamond_crc(size_t qubit, size_t threshold, size_t value) {
+    kernel->gate("crc", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::CRCParameters>({threshold, value});
+}
+
+/**
+ * Appends the diamond rabi_check instruction, that measures the result of
+ * an operation on a qubit to determine how long the color centers needs to
+ * be excited for to have it flip.
+ */
+void Kernel::diamond_rabi_check(size_t qubit, size_t measurements, size_t duration, size_t t_max){
+    kernel->gate("rabi_check", qubit);
+    kernel->gates.back()->set_annotation<ql::arch::diamond::annotations::RabiParameters>({measurements, duration, t_max});
 }
 
 /**
