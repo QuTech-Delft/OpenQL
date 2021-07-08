@@ -579,14 +579,24 @@ Manager Manager::from_defaults(const ir::compat::PlatformRef &platform) {
         );
     }
     if (com::options::global["prescheduler"].as_bool()) {
-        manager.append_pass(
-            "sch.ListSchedule",
-            "prescheduler",
-            {
-                {"resource_constraints", "no"},
-                {"scheduler_heuristic", "none"}
-            }
-        );
+        if (com::options::global["scheduler_uniform"].as_bool()) {
+            manager.append_pass(
+                "sch.Schedule",
+                "prescheduler",
+                {
+                    {"resource_constraints", "no"}
+                }
+            );
+        } else {
+            manager.append_pass(
+                "sch.ListSchedule",
+                "prescheduler",
+                {
+                    {"resource_constraints", "no"},
+                    {"scheduler_heuristic", "none"}
+                }
+            );
+        }
     }
     if (com::options::global["clifford_postscheduler"].as_bool()) {
         manager.append_pass(
