@@ -732,7 +732,7 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
 
     // Add our passes, and amend scheduledqasmwriter to show our scheduling, not that of prescheduler.
     manager.append_pass(
-        "sch.Schedule",
+        "sch.ListSchedule",
         "scheduler",
         {
 #if OPT_CC_SCHEDULE_RC

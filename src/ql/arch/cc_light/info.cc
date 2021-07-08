@@ -171,7 +171,7 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
 
     // Scheduling.
     manager.append_pass(
-        "sch.Schedule",
+        "sch.ListSchedule",
         "rcscheduler",
         {
             {"resource_constraints", "yes"}
