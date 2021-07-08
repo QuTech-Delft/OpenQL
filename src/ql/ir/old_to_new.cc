@@ -150,7 +150,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
         utils::Str name;
         utils::List<utils::Str> name_parts;
         utils::Json data;
-        utils::Bool operator<(const UnparsedGateType &other) {
+        utils::Bool operator<(const UnparsedGateType &other) const {
             if (name_parts.size() < other.name_parts.size()) return true;
             if (name_parts.size() > other.name_parts.size()) return false;
             return name < other.name;
