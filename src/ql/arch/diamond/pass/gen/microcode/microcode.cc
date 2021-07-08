@@ -11,7 +11,7 @@
 
 #include "ql/utils/str.h"
 #include "ql/utils/filesystem.h"
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/platform.h"
 #include "ql/com/options.h"
 
 namespace ql {
@@ -49,7 +49,7 @@ GenerateMicrocodePass::GenerateMicrocodePass(
 }
 
 utils::Int GenerateMicrocodePass::run(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const pmgr::pass_types::Context &context
 ) const {
     // General Idea: Make a big case statement with all the different options that
@@ -63,7 +63,7 @@ utils::Int GenerateMicrocodePass::run(
 
     // Copy the kernel into a new kernel, add the necessary gates before and in between the existing gates.
     for (const auto &kernel : program->kernels) {
-        ir::Kernel temp_kernel(
+        ir::compat::Kernel temp_kernel(
             "dummy",
             program->platform,
             kernel->qubit_count,
@@ -127,8 +127,8 @@ utils::Int GenerateMicrocodePass::run(
     // Make global variable for keeping track label numbers.
     int labelcount = 0;
 
-    for (const ir::KernelRef &kernel : program->kernels) {
-        for (const ir::GateRef &gate : kernel->gates) {
+    for (const ir::compat::KernelRef &kernel : program->kernels) {
+        for (const ir::compat::GateRef &gate : kernel->gates) {
             const auto &data = program->platform->find_instruction(gate->name);
 
             outfile << "# " << gate->qasm() << "\n";
@@ -142,10 +142,10 @@ utils::Int GenerateMicrocodePass::run(
 
             // Check for condition
             Str end_label;
-            if (gate->condition == ir::ConditionType::UNARY) {
+            if (gate->condition == ir::compat::ConditionType::UNARY) {
                 end_label = to_string(labelcount++);
                 outfile << detail::branch("ResultReg", to_string(gate->cond_operands[0]), "<", "", "1", "LAB", end_label) << "\n";
-            } else if (gate->condition != ir::ConditionType::ALWAYS) {
+            } else if (gate->condition != ir::compat::ConditionType::ALWAYS) {
                 throw utils::Exception("gate with " + to_string(gate->condition) + " is not supported");
             }
 

@@ -7,6 +7,7 @@
 
 #include "ql/ir/old_to_new.h"
 #include "ql/ir/ops.h"
+#include "ql/ir/describe.h"
 
 namespace ql {
 namespace ir {
@@ -140,6 +141,16 @@ public:
      * Angle operand value.
      */
     utils::Real angle = 0.0;
+
+    /**
+     * Integer operand existence.
+     */
+    utils::Bool has_integer = false;
+
+    /**
+     * Integer operand value.
+     */
+    utils::Int integer = 0;
 
     /**
      * Appends an operand.
@@ -407,6 +418,13 @@ void NewToOldConverter::convert_block(
                         custom->instruction_type->name, ops.qubits, ops.cregs,
                         0, ops.angle, ops.bregs
                     );
+                    if (ops.has_integer) {
+                        CHECK_COMPAT(
+                            kernel->gates.size() == first_gate_index + 1,
+                            "gate with integer operand cannot be ad-hoc decomposed"
+                        );
+                        kernel->gates.back()->int_operand = ops.integer;
+                    }
 
                 } else if (auto set = cinsn->as_set_instruction()) {
 
@@ -694,6 +712,30 @@ void NewToOldConverter::convert_block(
  */
 NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
 
+    // Build the platform. If there is a compat::PlatformRef annotation, as
+    // there would be when convert_old_to_new() was used, use that structure
+    // directly. Otherwise, build a new compat::Platform based on the raw
+    // JSON data associated with the new platform. This is not foolproof
+    // however, as architectures may preprocess the structure during
+    // construction of the compat::Platform node, and this preprocessing
+    // would already have happened to the raw JSON data associated with
+    // ir->platform.
+    compat::PlatformRef old_platform;
+    if (ir->platform->has_annotation<compat::PlatformRef>()) {
+        old_platform = ir->platform->get_annotation<compat::PlatformRef>();
+    } else {
+        old_platform = compat::Platform::build(
+            ir->platform->name,
+            ir->platform->data.data
+        );
+    }
+
+    // If the program node is empty, build an empty dummy program.
+    if (ir->program.empty()) {
+        old.emplace("empty", old_platform, num_qubits);
+        return;
+    }
+
     // Determine number of qubits.
     CHECK_COMPAT(
         ir->platform->qubits->shape.size() == 1,
@@ -738,24 +780,6 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
             "creg register is not of the default integer type"
         );
         num_cregs += creg_ob->shape[0];
-    }
-
-    // Build the platform. If there is a compat::PlatformRef annotation, as
-    // there would be when convert_old_to_new() was used, use that structure
-    // directly. Otherwise, build a new compat::Platform based on the raw
-    // JSON data associated with the new platform. This is not foolproof
-    // however, as architectures may preprocess the structure during
-    // construction of the compat::Platform node, and this preprocessing
-    // would already have happened to the raw JSON data associated with
-    // ir->platform.
-    compat::PlatformRef old_platform;
-    if (ir->platform->has_annotation<compat::PlatformRef>()) {
-        old_platform = ir->platform->get_annotation<compat::PlatformRef>();
-    } else {
-        old_platform = compat::Platform::build(
-            ir->platform->name,
-            ir->platform->data.data
-        );
     }
 
     // Build the program/root node for the old IR.
@@ -822,6 +846,10 @@ void Operands::append(const NewToOldConverter &conv, const ExpressionRef &expr) 
         CHECK_COMPAT(!has_angle, "encountered gate with multiple angle (real) operands");
         has_angle = true;
         angle = real_lit->value;
+    } else if (auto int_lit = expr->as_int_literal()) {
+        CHECK_COMPAT(!has_integer, "encountered gate with multiple integer operands");
+        has_integer = true;
+        integer = int_lit->value;
     } else if (auto ref = expr->as_reference()) {
         if (ref->indices.size() != 1 || !ref->indices[0]->as_int_literal()) {
             QL_ICE(
@@ -857,7 +885,7 @@ void Operands::append(const NewToOldConverter &conv, const ExpressionRef &expr) 
     } else if (expr->as_function_call()) {
         QL_ICE("encountered unsupported function call in gate operand list");
     } else {
-        QL_ASSERT(false);
+        QL_ICE("cannot convert operand expression to old IR: " << describe(expr));
     }
 }
 
