@@ -50,10 +50,13 @@ pragma @ql.name("test_mapper_lingling7")
     }
     cz q[8], q[5]
     skip 1
-    y90 q[5]
-    cz q[2], q[5]
-    ym90 q[8]
+    { # start at cycle 56
+        y90 q[5]
+        ym90 q[8]
+    }
     cz q[5], q[8]
+    skip 1
+    cz q[2], q[5]
     skip 1
     { # start at cycle 61
         y90 q[8]
@@ -162,11 +165,8 @@ pragma @ql.name("test_mapper_lingling7")
         y90 q[6]
         ym90 q[2]
     }
-    { # start at cycle 158
-        ym90 q[4]
-        cz q[6], q[2]
-    }
-    cz q[7], q[4]
+    cz q[6], q[2]
+    skip 1
     { # start at cycle 160
         y90 q[8]
         y90 q[2]
@@ -176,34 +176,32 @@ pragma @ql.name("test_mapper_lingling7")
         cz q[8], q[5]
         cz q[2], q[6]
     }
-    skip 1
-    { # start at cycle 163
-        cz q[1], q[5]
-        ym90 q[7]
-    }
+    ym90 q[4]
+    cz q[1], q[5]
     { # start at cycle 164
-        ym90 q[2]
         cz q[7], q[4]
+        ym90 q[2]
     }
     cz q[5], q[2]
-    y90 q[4]
+    ym90 q[7]
     { # start at cycle 167
         y90 q[2]
         ym90 q[5]
+        cz q[7], q[4]
+    }
+    cz q[2], q[5]
+    { # start at cycle 169
+        y90 q[4]
         ym90 q[7]
     }
-    { # start at cycle 168
-        cz q[2], q[5]
-        cz q[4], q[7]
-    }
-    skip 1
     { # start at cycle 170
         y90 q[5]
-        y90 q[7]
+        ym90 q[2]
+        cz q[4], q[7]
     }
-    cz q[5], q[7]
-    ym90 q[2]
     cz q[5], q[2]
+    y90 q[7]
+    cz q[5], q[7]
     skip 1
     cz q[5], q[7]
     y90 q[2]
@@ -235,16 +233,16 @@ pragma @ql.name("test_mapper_lingling7")
     y90 q[7]
     x q[7]
     measure q[7]
-    skip 6
+    skip 8
     cz q[5], q[2]
     skip 1
     y90 q[2]
     measure q[2]
-    skip 4
+    skip 2
     prepz q[7]
-    skip 9
+    skip 11
     prepz q[2]
-    skip 20
+    skip 18
     y90 q[7]
     { # start at cycle 239
         x q[7]
@@ -265,12 +263,12 @@ pragma @ql.name("test_mapper_lingling7")
     cz q[8], q[5]
     skip 1
     { # start at cycle 248
-        ym90 q[2]
         y90 q[5]
+        ym90 q[8]
     }
-    cz q[5], q[2]
-    ym90 q[8]
     cz q[5], q[8]
+    ym90 q[2]
+    cz q[5], q[2]
     skip 1
     ym90 q[5]
     cz q[7], q[5]

@@ -5,168 +5,174 @@ pragma @ql.name("test_mapper_allDopt")
 
 
 .kernel_allDopt
-    { # start at cycle 0
+    y90 q[3]
+    { # start at cycle 1
         x q[0]
-        ym90 q[3]
+        x q[3]
     }
     cz q[0], q[3]
     skip 1
-    y90 q[3]
     { # start at cycle 4
-        x q[3]
-        ym90 q[1]
+        y90 q[3]
+        ym90 q[0]
     }
+    { # start at cycle 5
+        cz q[3], q[0]
+        y90 q[1]
+    }
+    x q[1]
     cz q[3], q[1]
-    ym90 q[0]
-    cz q[3], q[0]
-    y90 q[1]
+    skip 1
     { # start at cycle 9
-        ym90 q[4]
-        x q[5]
-        ym90 q[2]
-        x q[1]
-        ym90 q[3]
+        y90 q[4]
+        y90 q[2]
     }
     { # start at cycle 10
+        x q[4]
+        x q[2]
+    }
+    { # start at cycle 11
+        x q[5]
+        y90 q[1]
+        ym90 q[3]
+    }
+    { # start at cycle 12
         x q[6]
         cz q[5], q[2]
         cz q[1], q[3]
     }
     cz q[6], q[4]
-    { # start at cycle 12
+    { # start at cycle 14
         ym90 q[5]
         y90 q[3]
     }
-    { # start at cycle 13
+    cz q[3], q[5]
+    y90 q[2]
+    { # start at cycle 17
         y90 q[4]
-        y90 q[2]
-        cz q[3], q[5]
-    }
-    x q[2]
-    { # start at cycle 15
-        x q[4]
         ym90 q[6]
         cz q[2], q[5]
     }
     cz q[4], q[6]
-    { # start at cycle 17
+    { # start at cycle 19
         y90 q[5]
         ym90 q[3]
     }
-    { # start at cycle 18
+    { # start at cycle 20
         cz q[2], q[0]
         cz q[5], q[3]
     }
     skip 1
-    { # start at cycle 20
+    { # start at cycle 22
         ym90 q[4]
         y90 q[6]
         y90 q[0]
         ym90 q[2]
     }
-    { # start at cycle 21
+    { # start at cycle 23
         cz q[1], q[4]
         cz q[6], q[3]
         cz q[0], q[2]
     }
     skip 1
-    { # start at cycle 23
-        y90 q[3]
-        ym90 q[0]
-    }
-    cz q[3], q[0]
     { # start at cycle 25
         y90 q[4]
         ym90 q[1]
+        y90 q[3]
         ym90 q[6]
     }
     { # start at cycle 26
         cz q[4], q[1]
         cz q[3], q[6]
     }
+    ym90 q[0]
+    cz q[3], q[0]
     skip 1
-    { # start at cycle 28
+    { # start at cycle 30
         y90 q[0]
         ym90 q[3]
     }
     cz q[0], q[3]
     skip 1
-    y90 q[3]
-    cz q[3], q[1]
-    ym90 q[0]
+    { # start at cycle 33
+        y90 q[3]
+        ym90 q[0]
+    }
     cz q[3], q[0]
     skip 1
-    { # start at cycle 36
+    cz q[3], q[1]
+    skip 1
+    { # start at cycle 38
         y90 q[1]
         ym90 q[3]
     }
     cz q[1], q[3]
     skip 1
-    { # start at cycle 39
+    { # start at cycle 41
         y90 q[3]
         ym90 q[5]
     }
     cz q[3], q[5]
     skip 1
-    { # start at cycle 42
+    { # start at cycle 44
         y90 q[6]
         ym90 q[4]
     }
     cz q[6], q[4]
-    { # start at cycle 44
+    { # start at cycle 46
         y90 q[5]
         ym90 q[3]
     }
     cz q[5], q[3]
     skip 1
-    { # start at cycle 47
+    { # start at cycle 49
         y90 q[4]
         ym90 q[6]
     }
     cz q[4], q[6]
-    { # start at cycle 49
+    { # start at cycle 51
         y90 q[3]
         ym90 q[5]
     }
     cz q[3], q[5]
     skip 1
-    { # start at cycle 52
+    { # start at cycle 54
         y90 q[6]
         ym90 q[4]
     }
     cz q[6], q[4]
     ym90 q[3]
-    { # start at cycle 55
+    { # start at cycle 57
         cz q[1], q[4]
         cz q[6], q[3]
     }
     skip 1
-    { # start at cycle 57
+    { # start at cycle 59
         y90 q[3]
         ym90 q[6]
     }
     cz q[3], q[6]
     y90 q[4]
-    { # start at cycle 60
+    { # start at cycle 62
         ym90 q[1]
         y90 q[6]
         ym90 q[3]
     }
-    { # start at cycle 61
+    { # start at cycle 63
         cz q[4], q[1]
         cz q[6], q[3]
     }
     y90 q[0]
-    { # start at cycle 63
+    { # start at cycle 65
         ym90 q[6]
         cz q[0], q[3]
     }
     cz q[4], q[6]
-    { # start at cycle 65
+    { # start at cycle 67
         y90 q[3]
         ym90 q[0]
     }
-    { # start at cycle 66
+    { # start at cycle 68
         y90 q[6]
         ym90 q[4]
         cz q[3], q[0]
@@ -175,13 +181,13 @@ pragma @ql.name("test_mapper_allDopt")
     ym90 q[3]
     cz q[6], q[3]
     skip 1
-    { # start at cycle 71
+    { # start at cycle 73
         y90 q[3]
         ym90 q[6]
     }
     cz q[3], q[6]
     skip 1
-    { # start at cycle 74
+    { # start at cycle 76
         y90 q[6]
         ym90 q[3]
     }
@@ -190,7 +196,7 @@ pragma @ql.name("test_mapper_allDopt")
     y90 q[3]
     cz q[3], q[5]
     skip 1
-    { # start at cycle 80
+    { # start at cycle 82
         y90 q[5]
         ym90 q[3]
     }
@@ -198,109 +204,104 @@ pragma @ql.name("test_mapper_allDopt")
     y90 q[1]
     cz q[1], q[3]
     skip 1
-    { # start at cycle 85
+    { # start at cycle 87
         y90 q[3]
         ym90 q[1]
     }
     cz q[3], q[1]
     skip 1
-    { # start at cycle 88
+    { # start at cycle 90
         ym90 q[5]
         y90 q[1]
     }
-    { # start at cycle 89
+    { # start at cycle 91
         cz q[3], q[5]
         cz q[1], q[4]
     }
     skip 1
     ym90 q[3]
-    { # start at cycle 92
+    { # start at cycle 94
         y90 q[5]
         y90 q[4]
         ym90 q[1]
     }
-    { # start at cycle 93
+    { # start at cycle 95
         cz q[5], q[3]
         cz q[4], q[1]
     }
     skip 1
     y90 q[3]
-    { # start at cycle 96
+    { # start at cycle 98
         y90 q[1]
         ym90 q[4]
     }
-    { # start at cycle 97
+    { # start at cycle 99
         y90 q[0]
         ym90 q[5]
         cz q[1], q[4]
     }
-    { # start at cycle 98
+    { # start at cycle 100
         cz q[0], q[2]
         cz q[3], q[5]
     }
     ym90 q[1]
     cz q[3], q[1]
     skip 1
-    { # start at cycle 102
+    { # start at cycle 104
         y90 q[1]
         ym90 q[3]
     }
     cz q[1], q[3]
     skip 1
-    { # start at cycle 105
+    { # start at cycle 107
         y90 q[2]
         ym90 q[0]
         y90 q[3]
         ym90 q[6]
     }
-    { # start at cycle 106
+    { # start at cycle 108
         cz q[2], q[0]
         cz q[3], q[6]
     }
     skip 1
-    { # start at cycle 108
-        y90 q[5]
-        ym90 q[2]
-    }
-    cz q[5], q[2]
     { # start at cycle 110
         y90 q[6]
         ym90 q[3]
     }
     cz q[6], q[3]
-    skip 1
+    ym90 q[2]
     { # start at cycle 113
         y90 q[3]
-        y90 q[2]
+        y90 q[5]
     }
     { # start at cycle 114
         x q[3]
         ym90 q[1]
+        cz q[5], q[2]
+    }
+    cz q[3], q[1]
+    { # start at cycle 116
+        y90 q[2]
         ym90 q[5]
     }
-    { # start at cycle 115
-        cz q[3], q[1]
-        cz q[2], q[5]
-    }
-    skip 1
     { # start at cycle 117
         y90 q[1]
         ym90 q[3]
+        cz q[2], q[5]
+    }
+    cz q[1], q[3]
+    { # start at cycle 119
         y90 q[5]
         ym90 q[2]
     }
-    { # start at cycle 118
-        cz q[1], q[3]
-        cz q[5], q[2]
-    }
-    skip 1
     { # start at cycle 120
         y90 q[3]
-        ym90 q[5]
+        ym90 q[1]
+        cz q[5], q[2]
     }
-    cz q[3], q[5]
-    ym90 q[1]
     cz q[3], q[1]
+    ym90 q[5]
+    cz q[3], q[5]
     skip 1
     { # start at cycle 125
         y90 q[5]
@@ -339,11 +340,11 @@ pragma @ql.name("test_mapper_allDopt")
     skip 1
     { # start at cycle 135
         y90 q[3]
-        ym90 q[1]
+        ym90 q[5]
     }
-    cz q[3], q[1]
-    ym90 q[5]
     cz q[3], q[5]
+    ym90 q[1]
+    cz q[3], q[1]
     skip 1
     { # start at cycle 140
         y90 q[1]

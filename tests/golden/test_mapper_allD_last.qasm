@@ -5,410 +5,412 @@ pragma @ql.name("test_mapper_allD")
 
 
 .kernel_allD
-    { # start at cycle 0
+    y90 q[2]
+    { # start at cycle 1
         x q[0]
-        ym90 q[2]
+        x q[2]
     }
     cz q[0], q[2]
     skip 1
-    ym90 q[3]
+    y90 q[3]
+    x q[3]
     cz q[0], q[3]
     skip 1
     cz q[0], q[3]
     skip 1
-    { # start at cycle 8
+    { # start at cycle 10
         y90 q[3]
         ym90 q[0]
     }
     cz q[3], q[0]
     skip 1
-    { # start at cycle 11
+    { # start at cycle 13
         y90 q[0]
         ym90 q[3]
     }
     cz q[0], q[3]
-    skip 1
-    { # start at cycle 14
-        y90 q[3]
-        ym90 q[1]
-    }
-    cz q[3], q[1]
-    ym90 q[5]
-    cz q[3], q[5]
     y90 q[1]
-    { # start at cycle 19
-        ym90 q[6]
+    { # start at cycle 16
+        y90 q[3]
         x q[1]
-        ym90 q[4]
     }
-    { # start at cycle 20
-        cz q[3], q[6]
-        cz q[1], q[4]
-    }
-    skip 1
-    { # start at cycle 22
-        ym90 q[3]
-        y90 q[5]
-    }
-    { # start at cycle 23
-        cz q[1], q[3]
-        cz q[5], q[2]
-    }
-    skip 1
-    { # start at cycle 25
-        y90 q[3]
-        ym90 q[1]
-        y90 q[2]
-        ym90 q[5]
-    }
-    { # start at cycle 26
+    { # start at cycle 17
         cz q[3], q[1]
-        cz q[2], q[5]
-    }
-    skip 1
-    { # start at cycle 28
-        y90 q[1]
-        ym90 q[3]
         y90 q[5]
-        ym90 q[2]
     }
-    { # start at cycle 29
-        cz q[1], q[3]
-        cz q[5], q[2]
-    }
-    skip 1
-    { # start at cycle 31
-        y90 q[3]
-        ym90 q[5]
-    }
+    x q[5]
     cz q[3], q[5]
-    ym90 q[0]
-    cz q[3], q[0]
-    skip 1
-    { # start at cycle 36
-        cz q[1], q[4]
-        cz q[3], q[6]
+    y90 q[4]
+    { # start at cycle 21
+        y90 q[6]
+        y90 q[1]
+        x q[4]
     }
-    skip 1
-    cz q[3], q[0]
+    { # start at cycle 22
+        x q[6]
+        cz q[1], q[4]
+    }
+    cz q[3], q[6]
     ym90 q[1]
     cz q[3], q[1]
     skip 1
+    { # start at cycle 27
+        y90 q[1]
+        ym90 q[3]
+    }
+    cz q[1], q[3]
+    skip 1
+    { # start at cycle 30
+        y90 q[3]
+        ym90 q[0]
+    }
+    cz q[3], q[0]
+    skip 1
+    y90 q[0]
+    cz q[0], q[2]
+    skip 1
+    { # start at cycle 36
+        y90 q[2]
+        ym90 q[0]
+    }
+    cz q[2], q[0]
+    ym90 q[1]
+    cz q[3], q[1]
+    { # start at cycle 40
+        y90 q[0]
+        ym90 q[2]
+    }
+    { # start at cycle 41
+        y90 q[1]
+        cz q[0], q[2]
+    }
     { # start at cycle 42
+        cz q[1], q[4]
+        cz q[3], q[5]
+    }
+    ym90 q[0]
+    cz q[3], q[0]
+    ym90 q[1]
+    cz q[3], q[1]
+    y90 q[0]
+    { # start at cycle 48
+        cz q[3], q[6]
+        cz q[0], q[2]
+    }
+    skip 1
+    ym90 q[3]
+    cz q[0], q[3]
+    skip 1
+    cz q[0], q[3]
+    skip 1
+    { # start at cycle 55
+        y90 q[3]
+        ym90 q[0]
+    }
+    cz q[3], q[0]
+    skip 1
+    { # start at cycle 58
         y90 q[0]
         ym90 q[3]
     }
     cz q[0], q[3]
     skip 1
-    { # start at cycle 45
-        y90 q[3]
-        ym90 q[0]
-    }
-    cz q[3], q[0]
-    y90 q[5]
-    { # start at cycle 48
-        x q[5]
-        ym90 q[3]
-    }
-    cz q[5], q[3]
-    skip 1
-    y90 q[3]
-    { # start at cycle 52
-        y90 q[0]
-        x q[3]
-    }
-    { # start at cycle 53
-        cz q[0], q[2]
-        cz q[3], q[6]
-    }
-    skip 1
-    cz q[3], q[1]
-    { # start at cycle 56
-        cz q[5], q[2]
-        ym90 q[0]
-    }
-    cz q[3], q[0]
-    ym90 q[5]
-    cz q[3], q[5]
-    skip 1
-    { # start at cycle 61
-        y90 q[5]
-        ym90 q[3]
-    }
-    cz q[5], q[3]
-    skip 1
     y90 q[3]
     cz q[3], q[1]
     skip 1
-    cz q[3], q[0]
+    y90 q[1]
+    cz q[1], q[4]
     skip 1
-    cz q[3], q[6]
-    skip 1
-    cz q[3], q[1]
-    ym90 q[5]
-    cz q[3], q[5]
-    skip 1
-    { # start at cycle 75
-        y90 q[1]
-        ym90 q[3]
-    }
-    cz q[1], q[3]
-    skip 1
-    { # start at cycle 78
-        y90 q[5]
-        y90 q[3]
-        ym90 q[1]
-    }
-    { # start at cycle 79
-        cz q[5], q[2]
-        cz q[3], q[1]
-    }
-    skip 1
-    { # start at cycle 81
-        y90 q[1]
-        ym90 q[5]
-    }
-    { # start at cycle 82
-        cz q[1], q[4]
-        cz q[3], q[5]
-    }
-    skip 1
-    ym90 q[3]
-    { # start at cycle 85
-        y90 q[5]
+    { # start at cycle 67
         y90 q[4]
         ym90 q[1]
     }
-    { # start at cycle 86
-        cz q[5], q[3]
-        cz q[4], q[1]
-    }
+    cz q[4], q[1]
     skip 1
-    y90 q[3]
-    { # start at cycle 89
-        y90 q[1]
-        ym90 q[4]
-    }
-    { # start at cycle 90
-        cz q[1], q[4]
-        cz q[3], q[6]
-    }
-    skip 1
-    { # start at cycle 92
-        ym90 q[5]
-        y90 q[4]
-        ym90 q[1]
-    }
-    { # start at cycle 93
+    { # start at cycle 70
         cz q[3], q[5]
-        cz q[4], q[1]
-    }
-    skip 1
-    cz q[3], q[1]
-    skip 1
-    { # start at cycle 97
-        y90 q[6]
-        ym90 q[3]
-    }
-    cz q[6], q[3]
-    { # start at cycle 99
         y90 q[1]
         ym90 q[4]
     }
-    { # start at cycle 100
-        x q[1]
-        y90 q[3]
-        ym90 q[6]
-    }
-    { # start at cycle 101
-        cz q[1], q[4]
-        cz q[3], q[6]
-    }
-    skip 1
-    ym90 q[3]
-    cz q[1], q[3]
-    y90 q[5]
-    { # start at cycle 106
-        cz q[1], q[3]
-        cz q[5], q[2]
-    }
-    skip 1
-    { # start at cycle 108
-        y90 q[3]
-        ym90 q[1]
+    { # start at cycle 71
         y90 q[2]
-        ym90 q[5]
+        ym90 q[0]
+        cz q[1], q[4]
     }
-    { # start at cycle 109
-        cz q[3], q[1]
+    { # start at cycle 72
+        cz q[3], q[6]
+        cz q[2], q[0]
+    }
+    ym90 q[1]
+    { # start at cycle 74
         cz q[2], q[5]
+        cz q[3], q[1]
     }
     skip 1
-    { # start at cycle 111
+    { # start at cycle 76
+        cz q[2], q[5]
         y90 q[1]
         ym90 q[3]
+    }
+    cz q[1], q[3]
+    { # start at cycle 78
         y90 q[5]
         ym90 q[2]
     }
-    { # start at cycle 112
-        cz q[1], q[3]
+    { # start at cycle 79
         cz q[5], q[2]
-    }
-    skip 1
-    { # start at cycle 114
         y90 q[3]
+        ym90 q[1]
+    }
+    cz q[3], q[1]
+    { # start at cycle 81
+        y90 q[2]
         ym90 q[5]
     }
-    cz q[3], q[5]
-    skip 1
-    y90 q[6]
-    cz q[6], q[4]
-    cz q[3], q[0]
-    ym90 q[6]
-    cz q[3], q[6]
-    skip 1
-    cz q[3], q[0]
-    skip 1
-    { # start at cycle 125
-        y90 q[0]
+    { # start at cycle 82
+        cz q[2], q[5]
+        y90 q[1]
         ym90 q[3]
     }
-    cz q[0], q[3]
+    cz q[1], q[3]
+    y90 q[5]
+    cz q[5], q[3]
     skip 1
-    { # start at cycle 128
-        y90 q[5]
+    { # start at cycle 87
         y90 q[3]
-        ym90 q[0]
+        ym90 q[1]
     }
-    { # start at cycle 129
-        x q[5]
-        cz q[3], q[0]
+    cz q[3], q[1]
+    skip 1
+    y90 q[1]
+    { # start at cycle 91
+        cz q[3], q[6]
+        cz q[1], q[4]
+    }
+    skip 1
+    cz q[3], q[0]
+    { # start at cycle 94
+        ym90 q[5]
+        y90 q[4]
+        ym90 q[1]
+    }
+    { # start at cycle 95
+        cz q[3], q[5]
+        cz q[4], q[1]
+    }
+    skip 1
+    { # start at cycle 97
+        y90 q[5]
+        ym90 q[3]
+        y90 q[1]
+        ym90 q[4]
+    }
+    { # start at cycle 98
+        cz q[5], q[3]
+        cz q[1], q[4]
+    }
+    skip 1
+    { # start at cycle 100
+        y90 q[3]
+        ym90 q[1]
+    }
+    cz q[3], q[1]
+    skip 1
+    y90 q[1]
+    cz q[1], q[4]
+    skip 1
+    { # start at cycle 106
+        y90 q[4]
+        ym90 q[1]
+    }
+    cz q[4], q[1]
+    ym90 q[5]
+    { # start at cycle 109
+        cz q[3], q[5]
+        y90 q[1]
+        ym90 q[4]
+    }
+    cz q[1], q[4]
+    cz q[3], q[6]
+    ym90 q[1]
+    { # start at cycle 113
+        y90 q[5]
+        ym90 q[2]
+        cz q[3], q[1]
     }
     cz q[5], q[2]
     ym90 q[3]
     cz q[5], q[3]
+    y90 q[1]
+    { # start at cycle 118
+        cz q[5], q[3]
+        cz q[1], q[4]
+    }
     skip 1
-    cz q[5], q[3]
-    skip 1
-    { # start at cycle 136
+    { # start at cycle 120
         y90 q[3]
         ym90 q[5]
-    }
-    cz q[3], q[5]
-    skip 1
-    { # start at cycle 139
-        y90 q[5]
-        ym90 q[3]
-    }
-    cz q[5], q[3]
-    skip 1
-    { # start at cycle 142
-        y90 q[3]
+        y90 q[4]
         ym90 q[1]
     }
+    { # start at cycle 121
+        cz q[3], q[5]
+        cz q[4], q[1]
+    }
+    y90 q[2]
+    { # start at cycle 123
+        y90 q[5]
+        ym90 q[3]
+        y90 q[1]
+        ym90 q[4]
+    }
+    { # start at cycle 124
+        cz q[2], q[0]
+        cz q[5], q[3]
+        cz q[1], q[4]
+    }
+    skip 1
+    { # start at cycle 126
+        y90 q[3]
+        ym90 q[1]
+        ym90 q[5]
+    }
+    { # start at cycle 127
+        cz q[3], q[1]
+        cz q[2], q[5]
+    }
+    skip 1
+    { # start at cycle 129
+        cz q[2], q[0]
+        cz q[3], q[6]
+    }
+    skip 1
+    { # start at cycle 131
+        y90 q[0]
+        ym90 q[2]
+        y90 q[6]
+        ym90 q[3]
+    }
+    { # start at cycle 132
+        cz q[0], q[2]
+        cz q[6], q[3]
+    }
+    skip 1
+    { # start at cycle 134
+        y90 q[2]
+        ym90 q[0]
+        y90 q[3]
+        ym90 q[6]
+    }
+    { # start at cycle 135
+        cz q[2], q[0]
+        cz q[3], q[6]
+    }
+    skip 1
+    { # start at cycle 137
+        y90 q[0]
+        ym90 q[3]
+    }
+    cz q[0], q[3]
+    skip 1
+    y90 q[3]
     cz q[3], q[1]
-    y90 q[0]
-    cz q[0], q[2]
+    skip 1
+    cz q[3], q[5]
+    skip 1
     cz q[3], q[6]
     ym90 q[0]
     cz q[3], q[0]
     skip 1
-    cz q[3], q[6]
+    { # start at cycle 149
+        y90 q[0]
+        ym90 q[3]
+    }
+    cz q[0], q[3]
     skip 1
     { # start at cycle 152
-        y90 q[6]
-        ym90 q[3]
-    }
-    cz q[6], q[3]
-    y90 q[1]
-    { # start at cycle 155
-        x q[1]
         y90 q[3]
-        ym90 q[6]
+        ym90 q[0]
     }
-    { # start at cycle 156
-        cz q[1], q[4]
-        cz q[3], q[6]
-    }
+    cz q[3], q[0]
     skip 1
-    ym90 q[3]
-    { # start at cycle 159
-        cz q[1], q[3]
-        cz q[5], q[2]
+    cz q[3], q[1]
+    skip 1
+    { # start at cycle 157
+        cz q[3], q[6]
+        x q[1]
     }
+    y q[1]
+    cz q[3], q[1]
     skip 1
     { # start at cycle 161
-        y90 q[3]
-        y90 q[2]
-    }
-    { # start at cycle 162
-        x q[3]
-        ym90 q[1]
-        ym90 q[5]
-    }
-    { # start at cycle 163
-        cz q[3], q[1]
-        cz q[2], q[5]
-    }
-    skip 1
-    { # start at cycle 165
         y90 q[1]
         ym90 q[3]
-        y90 q[5]
-        ym90 q[2]
     }
-    { # start at cycle 166
-        y90 q[6]
-        cz q[1], q[3]
-        cz q[5], q[2]
-    }
-    cz q[6], q[4]
-    { # start at cycle 168
+    cz q[1], q[3]
+    skip 1
+    { # start at cycle 164
         y90 q[3]
-        ym90 q[5]
-    }
-    cz q[3], q[5]
-    skip 1
-    ym90 q[6]
-    cz q[3], q[6]
-    skip 1
-    y90 q[5]
-    x q[5]
-    cz q[5], q[2]
-    skip 1
-    { # start at cycle 178
-        y90 q[2]
-        ym90 q[5]
-    }
-    { # start at cycle 179
-        cz q[3], q[0]
-        cz q[2], q[5]
-    }
-    skip 1
-    { # start at cycle 181
-        y90 q[5]
-        ym90 q[2]
-    }
-    { # start at cycle 182
         ym90 q[1]
-        cz q[5], q[2]
     }
     cz q[3], q[1]
-    ym90 q[5]
-    cz q[3], q[5]
+    { # start at cycle 166
+        y90 q[0]
+        ym90 q[2]
+    }
+    { # start at cycle 167
+        cz q[0], q[2]
+        y90 q[1]
+    }
+    cz q[1], q[4]
+    ym90 q[0]
+    { # start at cycle 170
+        cz q[3], q[0]
+        x q[6]
+    }
+    { # start at cycle 171
+        y90 q[4]
+        y q[6]
+    }
+    { # start at cycle 172
+        y90 q[0]
+        ym90 q[3]
+        cz q[4], q[6]
+    }
+    cz q[0], q[3]
+    { # start at cycle 174
+        y90 q[6]
+        ym90 q[4]
+    }
+    { # start at cycle 175
+        y90 q[3]
+        ym90 q[0]
+        cz q[6], q[4]
+    }
+    cz q[3], q[0]
+    { # start at cycle 177
+        y90 q[4]
+        ym90 q[6]
+        ym90 q[1]
+    }
+    { # start at cycle 178
+        cz q[4], q[6]
+        cz q[3], q[1]
+    }
     skip 1
-    { # start at cycle 187
+    cz q[3], q[6]
+    skip 1
+    { # start at cycle 182
         y90 q[0]
         y90 q[1]
         y90 q[2]
-        y90 q[4]
         y90 q[5]
         y90 q[6]
     }
-    { # start at cycle 188
-        x q[0]
+    { # start at cycle 183
+        x q[1]
+        x q[2]
         x q[3]
-        x q[4]
         x q[5]
         x q[6]
     }

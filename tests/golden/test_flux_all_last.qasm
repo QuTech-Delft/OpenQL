@@ -10,44 +10,41 @@ pragma @ql.name("test_flux_all")
         x q[3]
     }
     cz q[0], q[3]
-    skip 1
-    cz q[3], q[0]
     x q[5]
     cz q[3], q[5]
-    skip 1
-    cz q[5], q[3]
-    skip 1
-    { # start at cycle 9
+    x q[1]
+    cz q[1], q[3]
+    x q[6]
+    cz q[3], q[6]
+    { # start at cycle 8
         x q[2]
-        x q[1]
         x q[4]
-        x q[6]
     }
-    { # start at cycle 10
-        cz q[0], q[2]
-        cz q[1], q[4]
-        cz q[3], q[6]
-    }
-    skip 1
-    { # start at cycle 12
-        cz q[1], q[3]
+    { # start at cycle 9
         cz q[2], q[5]
+        cz q[3], q[0]
         cz q[4], q[6]
     }
     skip 1
-    { # start at cycle 14
+    { # start at cycle 11
+        cz q[0], q[2]
+        cz q[1], q[4]
+        cz q[5], q[3]
+    }
+    skip 1
+    { # start at cycle 13
         cz q[2], q[0]
         cz q[4], q[1]
         cz q[6], q[3]
     }
     skip 1
-    { # start at cycle 16
+    { # start at cycle 15
         cz q[3], q[1]
         cz q[5], q[2]
         cz q[6], q[4]
     }
     skip 1
-    { # start at cycle 18
+    { # start at cycle 17
         x q[0]
         x q[1]
         x q[2]
