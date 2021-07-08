@@ -142,23 +142,45 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Add the instruction set. We load this from the JSON data rather than
     // trying to use instruction_map, because the latter has some pretty ****ed
-    // up stuff going on in it to make the legacy decompositions work.
+    // up stuff going on in it to make the legacy decompositions work. We need
+    // to order by number of template args first: generalizations must be done
+    // first, otherwise the generalization will be inferred from the
+    // specialization and any extra data for the generalization will be lost.
+    struct UnparsedGateType {
+        utils::Str name;
+        utils::List<utils::Str> name_parts;
+        utils::Json data;
+        utils::Bool operator<(const UnparsedGateType &other) {
+            if (name_parts.size() < other.name_parts.size()) return true;
+            if (name_parts.size() > other.name_parts.size()) return false;
+            return name < other.name;
+        }
+    };
+    utils::List<UnparsedGateType> unparsed_gate_types;
     for (
         auto it = old->get_instructions().begin();
         it != old->get_instructions().end();
         ++it
     ) {
+        unparsed_gate_types.push_back({
+            it.key(),
+            parse_instruction_name(it.key()),
+            *it
+        });
+    }
+    unparsed_gate_types.sort();
+    for (const UnparsedGateType &unparsed_gate_type : unparsed_gate_types) {
         try {
 
             // Create an instruction node for the incoming instruction.
             auto insn = utils::make<InstructionType>();
-            insn->data = *it;
+            insn->data = unparsed_gate_type.data;
 
             // The instruction name is in it.key(). However:
             //  - this may include specialization parameters; and
             //  - someone thought it'd be a good idea to let people write absolute
             //    garbage and then "sanitize" with some regexes. Ugh.
-            auto template_params = parse_instruction_name(it.key());
+            auto template_params = unparsed_gate_type.name_parts;
             auto name = template_params.front();
             template_params.pop_front();
             insn->name = name;
@@ -465,7 +487,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             }
 
         } catch (utils::Exception &e) {
-            e.add_context("in gate description for '" + it.key() + "'");
+            e.add_context("in gate description for '" + unparsed_gate_type.name + "'");
             throw;
         }
     }

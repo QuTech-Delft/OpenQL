@@ -204,9 +204,18 @@ static utils::Pair<InstructionTypeLink, utils::Bool> add_or_find_instruction_typ
             continue;
         }
 
-        // The specialization doesn't exist yet, so we need to create it.
-        auto spec = instruction_type.clone();
-        spec->copy_annotations(*instruction_type);
+        // The specialization doesn't exist yet, so we need to create it. We use
+        // the generalization as a base except for the deepest specialization.
+        utils::One<ir::InstructionType> spec;
+        if (i == template_operands.size() - 1) {
+            spec = instruction_type.clone();
+            spec->copy_annotations(*instruction_type);
+        } else {
+            spec = ityp.clone();
+            spec->copy_annotations(*ityp);
+            spec->specializations.reset();
+            spec->generalization.reset();
+        }
         spec->decompositions.reset();
 
         // Move from operand types into template operands.
