@@ -15,6 +15,8 @@
 // FIXME remove
 #undef QL_DOUT
 #define QL_DOUT QL_COUT
+#undef QL_IS_LOG_DEBUG
+#define QL_IS_LOG_DEBUG true
 
 namespace ql {
 namespace pass {
@@ -112,7 +114,7 @@ ListSchedulePass::ListSchedulePass(
         "dependency graph and schedule of each block. The emitted files will "
         "use suffix `_<block-name>.dot`, where `<block-name>` is a uniquified "
         "name for each block.",
-        true // FIXME make false again
+        false
     );
 
 }
@@ -146,8 +148,8 @@ void ListSchedulePass::run_on_block(
     );
 
     // Reverse the DDG if backward/ALAP scheduling is desired.
-    auto reverse = context.options["scheduler_target"].as_str() == "alap";
-    if (reverse) {
+    auto reversed = context.options["scheduler_target"].as_str() == "alap";
+    if (reversed) {
         com::ddg::reverse(block);
     }
 
@@ -189,7 +191,14 @@ void ListSchedulePass::run_on_block(
         scheduler.run(context.options["max_resource_block_cycles"].as_int());
         scheduler.convert_cycles();
     } else if (heuristic == "deep_criticality") {
+        QL_DOUT("computing deep criticality:");
         com::sch::DeepCriticality::compute(block);
+        for (const auto &statement : block->statements) {
+            QL_DOUT(
+                "  n" << utils::abs(com::ddg::get_node(statement)->order) <<
+                " -> " << com::sch::DeepCriticality::get(statement)
+            );
+        }
         com::sch::Scheduler<com::sch::DeepCriticality::Heuristic> scheduler(block, manager);
         scheduler.run(context.options["max_resource_block_cycles"].as_int());
         scheduler.convert_cycles();
@@ -199,19 +208,24 @@ void ListSchedulePass::run_on_block(
     }
     QL_DOUT("scheduling complete for " << name);
 
+    // Reverse the DDG back to forward direction if needed, since that makes
+    // it much more readable.
+    if (reversed && (QL_IS_LOG_DEBUG || context.options["write_dot_graphs"].as_bool())) {
+        com::ddg::reverse(block);
+        reversed = false;
+    }
+
+    // Always dump dot for the schedule if we're debugging.
+    if (QL_IS_LOG_DEBUG) {
+        QL_COUT("dumping dot file...");
+        com::ddg::dump_dot(block);
+    }
+
     // Write the schedule as a dot file if requested.
     if (context.options["write_dot_graphs"].as_bool()) {
-
-        // Reverse the DDG back to forward direction if needed, since that makes
-        // it much more readable.
-        if (reverse) {
-            com::ddg::reverse(block);
-        }
-
-        // Write the file.
         auto filename = context.output_prefix + "_" + name + ".dot";
+        QL_DOUT("writing dot output to " << filename);
         com::ddg::dump_dot(block, utils::OutFile(filename).unwrap());
-
     }
 
     // Clean up the DDG.

@@ -234,7 +234,7 @@ utils::Bool InterCoreChannelResource::on_gate(
     }
 
     // Fetch the JSON data for this gate.
-    const auto &gate_json = context->platform->find_instruction(gate.name);
+    const auto &gate_json = *gate.data;
 
     // Check predicates. If the gate doesn't match, we don't care about it, so
     // we can return true, such that it can be started in any cycle.

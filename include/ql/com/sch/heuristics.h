@@ -50,7 +50,7 @@ struct CriticalPathHeuristic {
  *  - call DeepCriticality::clear();
  */
 class DeepCriticality {
-private:
+public:
 
     /**
      * Length of the critical path to the end of the schedule in cycles.
@@ -75,6 +75,13 @@ private:
      * Compares the criticality of two Criticality annotations.
      */
     utils::Bool operator<(const DeepCriticality &other) const;
+
+    /**
+     * String conversion for DeepCriticality.
+     */
+    friend std::ostream &operator<<(std::ostream &os, const DeepCriticality &dc);
+
+private:
 
     /**
      * Ensures that a valid criticality annotation exists for the given

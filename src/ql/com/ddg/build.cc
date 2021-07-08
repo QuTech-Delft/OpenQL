@@ -114,17 +114,10 @@ void EventGatherer::add_statement(const ir::StatementRef &stmt) {
     if (auto cond = stmt->as_conditional_instruction()) {
         add_expression(ir::prim::OperandMode::READ, cond->condition);
         if (auto custom = stmt->as_custom_instruction()) {
-            add_operands(custom->instruction_type->operand_types, custom->operands);
-            if (!custom->instruction_type->template_operands.empty()) {
-                auto gen = custom->instruction_type;
-                while (!gen->generalization.empty()) gen = gen->generalization;
-                for (utils::UInt i = 0; i < custom->instruction_type->template_operands.size(); i++) {
-                    add_expression(
-                        gen->operand_types[i]->mode,
-                        custom->instruction_type->template_operands[i]
-                    );
-                }
-            }
+            add_operands(
+                ir::get_generalization(custom->instruction_type)->operand_types,
+                ir::get_operands(stmt.as<ir::CustomInstruction>())
+            );
         } else if (auto set = stmt->as_set_instruction()) {
             add_expression(ir::prim::OperandMode::WRITE, set->lhs);
             add_expression(ir::prim::OperandMode::READ, set->rhs);

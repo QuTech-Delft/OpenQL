@@ -64,6 +64,17 @@ utils::Bool DeepCriticality::operator<(const DeepCriticality &other) const {
 }
 
 /**
+ * String conversion for DeepCriticality.
+ */
+std::ostream &operator<<(std::ostream &os, const DeepCriticality &dc) {
+    os << dc.critical_path_length;
+    if (!dc.most_critical_dependent.empty()) {
+        os << ", " << DeepCriticality::get(dc.most_critical_dependent);
+    }
+    return os;
+}
+
+/**
  * Ensures that a valid criticality annotation exists for the given
  * statement. This will recursively ensure that dependent statements are
  * annotated, because this is needed to compute which of the dependent

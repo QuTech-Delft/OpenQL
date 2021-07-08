@@ -16,14 +16,13 @@ namespace ddg {
  */
 static void add_node(
     const ir::StatementRef &statement,
-    utils::Int order_offset,
     utils::Map<utils::UInt, ir::StatementRef> &statements,
     utils::Map<ir::StatementRef, utils::UInt> &statement_indices,
     utils::Map<utils::UInt, EdgeCRef> &edges
 ) {
     auto node = get_node(statement);
-    QL_ASSERT(statements.insert({node->order + order_offset, statement}).second);
-    QL_ASSERT(statement_indices.insert({statement, node->order + order_offset}).second);
+    QL_ASSERT(statements.insert({utils::abs(node->order), statement}).second);
+    QL_ASSERT(statement_indices.insert({statement, utils::abs(node->order)}).second);
     for (const auto &endpoint : node->successors) {
         QL_ASSERT(edges.insert({edges.size(), endpoint.second.as_const()}).second);
     }
@@ -43,12 +42,11 @@ void dump_dot(
     utils::Map<utils::UInt, ir::StatementRef> statements;
     utils::Map<ir::StatementRef, utils::UInt> statement_indices;
     utils::Map<utils::UInt, EdgeCRef> edges;
-    utils::Int order_offset = -get_source_node(block)->order;
-    add_node(get_source(block), order_offset, statements, statement_indices, edges);
+    add_node(get_source(block), statements, statement_indices, edges);
     for (const auto &statement : block->statements) {
-        add_node(statement, order_offset, statements, statement_indices, edges);
+        add_node(statement, statements, statement_indices, edges);
     }
-    add_node(get_sink(block), order_offset, statements, statement_indices, edges);
+    add_node(get_sink(block), statements, statement_indices, edges);
 
     // Write the dot graph.
     os << line_prefix << "digraph ddg {\n";

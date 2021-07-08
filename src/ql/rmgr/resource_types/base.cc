@@ -150,6 +150,7 @@ utils::Bool Base::gate(
     data.name = gate->name;
     data.duration_cycles = utils::div_ceil(gate->duration, context->platform->cycle_time);
     data.qubits = gate->operands;
+    data.data = &context->platform->find_instruction(gate->name);
 
     return this->gate((utils::Int)cycle, data, commit);
 }
@@ -170,11 +171,38 @@ utils::Bool Base::gate(
     }
 
     // Convert to GateData wrapper.
+    static const utils::Json EMPTY = {};
     GateData data;
     data.statement = statement;
-    if (auto insn = statement->as_custom_instruction()) {
-        data.name = insn->instruction_type->name;
-        data.duration_cycles = insn->instruction_type->duration;
+    data.duration_cycles = ir::get_duration_of_statement(statement);
+
+    // Figure out a name and JSON data record in all cases.
+    if (auto custom = statement->as_custom_instruction()) {
+        data.name = custom->instruction_type->name;
+        data.data = &custom->instruction_type->data.data;
+    } else if (statement->as_set_instruction()) {
+        data.name = "set";
+        data.data = &EMPTY;
+    } else if (statement->as_goto_instruction()) {
+        data.name = "goto";
+        data.data = &EMPTY;
+    } else if (statement->as_wait_instruction()) {
+        data.name = "wait";
+        data.data = &EMPTY;
+    } else if (statement->as_break_statement()) {
+        data.name = "break";
+        data.data = &EMPTY;
+    } else if (statement->as_continue_statement()) {
+        data.name = "continue";
+        data.data = &EMPTY;
+    } else {
+        data.name = "";
+        data.data = &EMPTY;
+    }
+
+    // Figure out main qubit register operands.
+    auto insn = statement.as<ir::Instruction>();
+    if (!insn.empty()) {
         for (const auto &oper : ir::get_operands(statement.as<ir::Instruction>())) {
             if (auto ref = oper->as_reference()) {
                 if (

@@ -54,6 +54,12 @@ struct GateData {
      */
     utils::Vec<utils::UInt> qubits;
 
+    /**
+     * JSON data from the instruction definition in the platform configuration
+     * file.
+     */
+    utils::RawPtr<const utils::Json> data;
+
 };
 
 /**
