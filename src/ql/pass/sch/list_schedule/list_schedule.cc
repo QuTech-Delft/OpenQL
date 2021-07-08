@@ -12,12 +12,6 @@
 #include "ql/com/sch/scheduler.h"
 #include "ql/pmgr/pass_types/base.h"
 
-// FIXME remove
-#undef QL_DOUT
-#define QL_DOUT QL_COUT
-#undef QL_IS_LOG_DEBUG
-#define QL_IS_LOG_DEBUG true
-
 namespace ql {
 namespace pass {
 namespace sch {
