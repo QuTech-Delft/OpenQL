@@ -50,7 +50,7 @@ class Scheduler {
      * statement order as recorded when the DDG was constructed for stability.
      */
     struct AvailableListComparator {
-        utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs) {
+        utils::Bool operator()(const ir::StatementRef &lhs, const ir::StatementRef &rhs) const {
 
             // The heuristic implements "criticality less than," which would
             // result in reverse order, so we swap the value here.
@@ -87,7 +87,7 @@ class Scheduler {
         utils::Bool operator()(
             const utils::Int &lhs,
             const utils::Int &rhs
-        ) {
+        ) const {
             return abs_lt(lhs, rhs);
         }
     };
