@@ -579,7 +579,10 @@ Manager Manager::from_defaults(const ir::compat::PlatformRef &platform) {
         );
     }
     if (com::options::global["prescheduler"].as_bool()) {
-        if (com::options::global["scheduler_uniform"].as_bool()) {
+        if (
+            com::options::global["scheduler_uniform"].as_bool() ||
+            com::options::global["scheduler_heuristic"].is_set()
+        ) {
             manager.append_pass(
                 "sch.Schedule",
                 "prescheduler",

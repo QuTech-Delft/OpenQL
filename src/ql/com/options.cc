@@ -162,14 +162,20 @@ Options make_ql_options() {
         "When no compiler configuration file is specified, this controls "
         "whether uniform scheduling should be done instead of ASAP/ALAP (i.e. "
         "the `scheduler` option will be ignored). Both the pre-mapping and "
-        "post-mapping schedulers are affected."
+        "post-mapping schedulers are affected. Setting this selects the old "
+        "scheduler (`sch.Schedule`), because the new scheduler "
+        "(`sch.ListSchedule`) doesn't support uniform scheduling."
     );
 
     options.add_enum(
         "scheduler_heuristic",
         "When no compiler configuration file is specified, this controls "
         "what scheduling heuristic should be used for ordering the list of "
-        "available gates by criticality.",
+        "available gates by criticality. These are the heuristics for the old "
+        "scheduler (`sch.Schedule`), so setting this option will prevent the "
+        "new scheduler (`sch.ListSchedule`) from being used. To set the "
+        "heuristic for the new scheduler, you must use its pass options "
+        "directly; there is no global option for this.",
         "path_length",
         {"path_length", "random"}
     );

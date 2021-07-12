@@ -170,13 +170,23 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
     }
 
     // Scheduling.
-    manager.append_pass(
-        "sch.ListSchedule",
-        "rcscheduler",
-        {
-            {"resource_constraints", "yes"}
-        }
-    );
+    if (com::options::global["scheduler_heuristic"].is_set()) {
+        manager.append_pass(
+            "sch.Schedule",
+            "rcscheduler",
+            {
+                {"resource_constraints", "yes"}
+            }
+        );
+    } else {
+        manager.append_pass(
+            "sch.ListSchedule",
+            "rcscheduler",
+            {
+                {"resource_constraints", "yes"}
+            }
+        );
+    }
     manager.append_pass(
         "io.cqasm.Report",
         "lastqasmwriter",
