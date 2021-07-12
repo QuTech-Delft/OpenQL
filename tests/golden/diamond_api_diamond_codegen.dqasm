@@ -1,0 +1,803 @@
+# sweep_bias q[0]
+LDi 10, dacReg0
+LDi 0, sweepStartReg0
+LDi 10, sweepStepReg0
+LDi 100, sweepStopReg0
+LDi 0, memAddr0
+LABEL LAB0
+switchOn q0
+excite_MW 1, 100, sweepStartReg0, 0, 60, q0
+switchOff q0
+mov photonReg0, R0
+ST R0, memAddr0($0)
+ST sweepStartReg0, memAddr0($0)
+ADD sweepStartReg0, sweepStartReg0, sweepStepReg0
+ADDi memAddr0, 4
+BR sweepStartReg0<sweepStopReg0, LAB0
+
+# calculate_current q[0]
+calculate_current()
+
+# sweep_bias q[1]
+LDi 10, dacReg1
+LDi 0, sweepStartReg1
+LDi 10, sweepStepReg1
+LDi 100, sweepStopReg1
+LDi 0, memAddr1
+LABEL LAB1
+switchOn q1
+excite_MW 1, 100, sweepStartReg1, 0, 60, q1
+switchOff q1
+mov photonReg1, R1
+ST R1, memAddr1($0)
+ST sweepStartReg1, memAddr1($0)
+ADD sweepStartReg1, sweepStartReg1, sweepStepReg1
+ADDi memAddr1, 4
+BR sweepStartReg1<sweepStopReg1, LAB1
+
+# calculate_current q[1]
+calculate_current()
+
+# sweep_bias q[2]
+LDi 10, dacReg2
+LDi 0, sweepStartReg2
+LDi 10, sweepStepReg2
+LDi 100, sweepStopReg2
+LDi 0, memAddr2
+LABEL LAB2
+switchOn q2
+excite_MW 1, 100, sweepStartReg2, 0, 60, q2
+switchOff q2
+mov photonReg2, R2
+ST R2, memAddr2($0)
+ST sweepStartReg2, memAddr2($0)
+ADD sweepStartReg2, sweepStartReg2, sweepStepReg2
+ADDi memAddr2, 4
+BR sweepStartReg2<sweepStopReg2, LAB2
+
+# calculate_current q[2]
+calculate_current()
+
+# rabi_check q[0]
+LDi 100, R1
+LDi 2, R2
+LDi 3, R3
+LDi 0, R32
+LABEL LAB3
+LABEL LAB4
+LABEL LAB5
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>0, LAB5
+excite_MW 1, R2, 200, 0, 60, q0
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0<R33, ResultReg0
+ST ResultReg0, memAddress0($0)
+ADDi memAddr0, 4
+ADDi R32, 1
+BR R32<R1, LAB4
+ST R2, memAddr0($0)
+ADDi memAddr0, 4
+ADDi R2, 10
+BR R2<R3, LAB3
+
+# rabi_check q[1]
+LDi 100, R1
+LDi 2, R2
+LDi 3, R3
+LDi 0, R32
+LABEL LAB6
+LABEL LAB7
+LABEL LAB8
+switchOn q1
+LDi 0, photonReg1
+excite_MW 1, 100, 200, 0, 60, q1
+mov photonReg1, R1
+switchOff q1
+BR R1>0, LAB8
+excite_MW 1, R2, 200, 0, 60, q1
+switchOn q1
+LDi 0, photonReg1
+excite_MW 1, 100, 200, 0, 60, q1
+mov photonReg1, R1
+switchOff q1
+BR R1<R33, ResultReg1
+ST ResultReg1, memAddress1($0)
+ADDi memAddr1, 4
+ADDi R32, 1
+BR R32<R1, LAB7
+ST R2, memAddr1($0)
+ADDi memAddr1, 4
+ADDi R2, 10
+BR R2<R3, LAB6
+
+# rabi_check q[2]
+LDi 100, R1
+LDi 2, R2
+LDi 3, R3
+LDi 0, R32
+LABEL LAB9
+LABEL LAB10
+LABEL LAB11
+switchOn q2
+LDi 0, photonReg2
+excite_MW 1, 100, 200, 0, 60, q2
+mov photonReg2, R2
+switchOff q2
+BR R2>0, LAB11
+excite_MW 1, R2, 200, 0, 60, q2
+switchOn q2
+LDi 0, photonReg2
+excite_MW 1, 100, 200, 0, 60, q2
+mov photonReg2, R2
+switchOff q2
+BR R2<R33, ResultReg2
+ST ResultReg2, memAddress2($0)
+ADDi memAddr2, 4
+ADDi R32, 1
+BR R32<R1, LAB10
+ST R2, memAddr2($0)
+ADDi memAddr2, 4
+ADDi R2, 10
+BR R2<R3, LAB9
+
+# crc q[0]
+LDi 5, treshReg0
+LDi 0, dacReg0
+LABEL LAB12
+LDi 0, photon Reg0
+switchOn q0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>treshReg0, LAB13
+calculateVoltage()
+JUMP LAB12
+LABEL LAB13
+
+# crc q[1]
+LDi 5, treshReg1
+LDi 1, dacReg1
+LABEL LAB14
+LDi 0, photon Reg1
+switchOn q1
+excite_MW 1, 100, 200, 0, 60, q1
+mov photonReg1, R1
+switchOff q1
+BR R1>treshReg1, LAB15
+calculateVoltage()
+JUMP LAB14
+LABEL LAB15
+
+# crc q[2]
+LDi 5, treshReg2
+LDi 2, dacReg2
+LABEL LAB16
+LDi 0, photon Reg2
+switchOn q2
+excite_MW 1, 100, 200, 0, 60, q2
+mov photonReg2, R2
+switchOff q2
+BR R2>treshReg2, LAB17
+calculateVoltage()
+JUMP LAB16
+LABEL LAB17
+
+# initialize q[0]
+LABEL LAB18
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>0, LAB18
+
+# initialize q[1]
+LABEL LAB19
+switchOn q1
+LDi 0, photonReg1
+excite_MW 1, 100, 200, 0, 60, q1
+mov photonReg1, R1
+switchOff q1
+BR R1>0, LAB19
+
+# initialize q[2]
+LABEL LAB20
+switchOn q2
+LDi 0, photonReg2
+excite_MW 1, 100, 200, 0, 60, q2
+mov photonReg2, R2
+switchOff q2
+BR R2>0, LAB20
+
+# prep_z q[0]
+
+# prep_x q[0]
+excite_MW 0, 500, 200, 3.14, 60, q0
+# prep_y q[0]
+excite_MW 0, 500, 200, 1.57, 60, q0
+# initialize q[0]
+LABEL LAB21
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>0, LAB21
+
+# measure q[0]
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0<R33, ResultReg0
+
+# measure q[0]
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0<R33, ResultReg0
+
+# mprep_x q[0]
+excite_MW 0, 1500, 200, 3.14, 60, q0
+# measure q[0]
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0<R33, ResultReg0
+
+# mprep_y q[0]
+excite_MW 0, 1500, 200, 1.57, 60, q0
+# measure q[0]
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0<R33, ResultReg0
+
+# crc q[0]
+LDi 5, treshReg0
+LDi 0, dacReg0
+LABEL LAB22
+LDi 0, photon Reg0
+switchOn q0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>treshReg0, LAB23
+calculateVoltage()
+JUMP LAB22
+LABEL LAB23
+
+# crc q[1]
+LDi 5, treshReg1
+LDi 1, dacReg1
+LABEL LAB24
+LDi 0, photon Reg1
+switchOn q1
+excite_MW 1, 100, 200, 0, 60, q1
+mov photonReg1, R1
+switchOff q1
+BR R1>treshReg1, LAB25
+calculateVoltage()
+JUMP LAB24
+LABEL LAB25
+
+# crc q[2]
+LDi 5, treshReg2
+LDi 2, dacReg2
+LABEL LAB26
+LDi 0, photon Reg2
+switchOn q2
+excite_MW 1, 100, 200, 0, 60, q2
+mov photonReg2, R2
+switchOff q2
+BR R2>treshReg2, LAB27
+calculateVoltage()
+JUMP LAB26
+LABEL LAB27
+
+# x q[0]
+qgate X, q0
+
+# y q[0]
+qgate Y, q0
+
+# z q[0]
+qgate Z, q0
+
+# s q[0]
+qgate S, q0
+
+# t q[0]
+qgate T, q0
+
+# cnot q[0],q[1]
+qgate2 CNOT, q0, nuq1
+
+# cz q[0],q[1]
+qgate2 CZ, q0, nuq1
+
+# h q[2]
+qgate H, q2
+
+# cnot q[1],q[2]
+qgate2 CNOT, q1, nuq2
+
+# tdag q[2]
+qgate TDAG, q2
+
+# crc q[0]
+LDi 5, treshReg0
+LDi 0, dacReg0
+LABEL LAB28
+LDi 0, photon Reg0
+switchOn q0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>treshReg0, LAB29
+calculateVoltage()
+JUMP LAB28
+LABEL LAB29
+
+# crc q[1]
+LDi 5, treshReg1
+LDi 1, dacReg1
+LABEL LAB30
+LDi 0, photon Reg1
+switchOn q1
+excite_MW 1, 100, 200, 0, 60, q1
+mov photonReg1, R1
+switchOff q1
+BR R1>treshReg1, LAB31
+calculateVoltage()
+JUMP LAB30
+LABEL LAB31
+
+# crc q[2]
+LDi 5, treshReg2
+LDi 2, dacReg2
+LABEL LAB32
+LDi 0, photon Reg2
+switchOn q2
+excite_MW 1, 100, 200, 0, 60, q2
+mov photonReg2, R2
+switchOff q2
+BR R2>treshReg2, LAB33
+calculateVoltage()
+JUMP LAB32
+LABEL LAB33
+
+# cnot q[0],q[2]
+qgate2 CNOT, q0, nuq2
+
+# t q[2]
+qgate T, q2
+
+# cnot q[1],q[2]
+qgate2 CNOT, q1, nuq2
+
+# tdag q[2]
+qgate TDAG, q2
+
+# cnot q[0],q[2]
+qgate2 CNOT, q0, nuq2
+
+# t q[1]
+qgate T, q1
+
+# t q[2]
+qgate T, q2
+
+# cnot q[0],q[1]
+qgate2 CNOT, q0, nuq1
+
+# h q[2]
+qgate H, q2
+
+# t q[0]
+qgate T, q0
+
+# crc q[0]
+LDi 5, treshReg0
+LDi 0, dacReg0
+LABEL LAB34
+LDi 0, photon Reg0
+switchOn q0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>treshReg0, LAB35
+calculateVoltage()
+JUMP LAB34
+LABEL LAB35
+
+# crc q[1]
+LDi 5, treshReg1
+LDi 1, dacReg1
+LABEL LAB36
+LDi 0, photon Reg1
+switchOn q1
+excite_MW 1, 100, 200, 0, 60, q1
+mov photonReg1, R1
+switchOff q1
+BR R1>treshReg1, LAB37
+calculateVoltage()
+JUMP LAB36
+LABEL LAB37
+
+# crc q[2]
+LDi 5, treshReg2
+LDi 2, dacReg2
+LABEL LAB38
+LDi 0, photon Reg2
+switchOn q2
+excite_MW 1, 100, 200, 0, 60, q2
+mov photonReg2, R2
+switchOff q2
+BR R2>treshReg2, LAB39
+calculateVoltage()
+JUMP LAB38
+LABEL LAB39
+
+# tdag q[1]
+qgate TDAG, q1
+
+# cnot q[0],q[1]
+qgate2 CNOT, q0, nuq1
+
+# cal_measure q[0]
+LABEL LAB40
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>0, LAB40
+LDi 0, photonReg0
+LDi 1, R30
+LABEL LAB41
+switchOn q0
+excite_MW 0, 1, 200, 0, 60, q0
+switchOff q0
+ST photonReg0, R1($0)
+ST R30, R1($0)
+ADDi R30, 1
+BR R30<40, LAB41
+LABEL LAB42
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>0, LAB42
+qgate X, q0
+LDi 0, photonReg0
+LDi 1, R30
+LABEL LAB43
+switchOn q0
+excite_MW 0, 1, 200, 0, 60, q0
+switchOff q0
+ST photonReg0, R2($0)
+ST R30, R3($0)
+ADDi R30, 1
+BR R30<40, LAB43
+calculate_readouttime(R0, R1, R2, R3)
+
+# cal_pi q[0]
+LABEL LAB44
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>0, LAB44
+LDi 0, R0
+LDi 0, R1
+LDi 0, R2
+LABEL LAB45
+LABEL LAB46
+switchOn q0
+excite_MW 0, 1000, 200, 0, R0, q0
+switchOff q0
+ADDi R1, 1
+BR R1<12, LAB45
+measure_fidelity(R0) 
+ADDi R0, 0.1
+ADDi R2, 1
+BR R2>10, LAB46
+calculate_minimum_fidelity() 
+
+# cal_halfpi q[0]
+LABEL LAB46
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>0, LAB46
+LDi 0, R0
+LDi 0, R1
+LDi 0, R2
+LABEL LAB47
+switchOn q0
+excite_MW 0, 500, 200, 0, R0, q0
+switchOff q0
+ADDi R1, 1
+BR R1<7, LAB47
+measure_fidelity(R0) 
+LABEL LAB46
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>0, LAB46
+LDi 0, R0
+LDi 0, R1
+LDi 0, R2
+LABEL LAB48
+switchOn q0
+excite_MW 0, 500, 200, 0, R0, q0
+excite_MW 0, 1000, 200, 0, 60, q0
+switchOff q0
+ADDi R1, 1
+BR R1<7, LAB48
+measure_fidelity(R0) 
+
+# decouple q[0]
+excite_MW 0, 500, 200, 1.57, 60, q0
+wait 50
+excite_MW 0, 1000, 200, 1.57, 60, q0
+wait 100
+excite_MW 0, 1000, 200, 3.14, 60, q0
+wait 100
+excite_MW 0, 1000, 200, 1.57, 60, q0
+wait 100
+excite_MW 0, 1000, 200, 3.14, 60, q0
+wait 100
+excite_MW 0, 1000, 200, 3.14, 60, q0
+wait 100
+excite_MW 0, 1000, 200, 1.57, 60, q0
+wait 100
+excite_MW 0, 1000, 200, 3.14, 60, q0
+wait 100
+excite_MW 0, 1000, 200, 1.57, 60, q0
+wait 50
+excite_MW 0, 500, 200, 1.57, 60, q0
+
+# rx q[0], 1.57
+excite_MW 0, 499.26, 200, 1.57, 60, q0
+# ry q[0], 1.57
+excite_MW 0, 499.26, 200, 3.14, 60, q0
+# crk q[0],q[1]
+qgate2 CRK, q0, nuq1, 318
+
+# cr q[0],q[1]
+qgate2 CR, q0, nuq1, 998.52
+
+# crc q[0]
+LDi 5, treshReg0
+LDi 0, dacReg0
+LABEL LAB49
+LDi 0, photon Reg0
+switchOn q0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>treshReg0, LAB50
+calculateVoltage()
+JUMP LAB49
+LABEL LAB50
+
+# crc q[1]
+LDi 5, treshReg1
+LDi 1, dacReg1
+LABEL LAB51
+LDi 0, photon Reg1
+switchOn q1
+excite_MW 1, 100, 200, 0, 60, q1
+mov photonReg1, R1
+switchOff q1
+BR R1>treshReg1, LAB52
+calculateVoltage()
+JUMP LAB51
+LABEL LAB52
+
+# crc q[2]
+LDi 5, treshReg2
+LDi 2, dacReg2
+LABEL LAB53
+LDi 0, photon Reg2
+switchOn q2
+excite_MW 1, 100, 200, 0, 60, q2
+mov photonReg2, R2
+switchOff q2
+BR R2>treshReg2, LAB54
+calculateVoltage()
+JUMP LAB53
+LABEL LAB54
+
+# crc q[0]
+LDi 30, treshReg0
+LDi 5, dacReg0
+LABEL LAB55
+LDi 0, photon Reg0
+switchOn q0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>treshReg0, LAB56
+calculateVoltage()
+JUMP LAB55
+LABEL LAB56
+
+# rabi_check q[0]
+LDi 100, R1
+LDi 2, R2
+LDi 3, R3
+LDi 0, R32
+LABEL LAB57
+LABEL LAB58
+LABEL LAB59
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>0, LAB59
+excite_MW 1, R2, 200, 0, 60, q0
+switchOn q0
+LDi 0, photonReg0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0<R33, ResultReg0
+ST ResultReg0, memAddress0($0)
+ADDi memAddr0, 4
+ADDi R32, 1
+BR R32<R1, LAB58
+ST R2, memAddr0($0)
+ADDi memAddr0, 4
+ADDi R2, 10
+BR R2<R3, LAB57
+
+# excite_mw q[0]
+excite_MW 1, 100, 200, 0, 60, q0
+
+# qentangle q[0]
+qgate MX90, q0
+qgate2 PMX90, q0, nuq15
+qgate X90, q0
+
+# nventangle q[0],q[1]
+LDi 0, R2
+LABEL LAB60
+switchOn q0
+switchOn q1
+excite_MW 1, 100, 200, 0, 60, q0
+excite_MW 1, 100, 200, 0, 60, q1
+wait 100
+mov R0, photonReg01
+switchOff q0
+switchOff q1
+ADDi R2, 1
+wait 50
+BR R1>1, LAB61
+qgate X, q0
+qgate X, q1
+mov R0, R1
+JUMP LAB60
+LABEL LAB61
+
+# memswap q[0]
+qgate2 PMY90, q0, nuq1
+qgate X90, q0
+qgate2 PMX90, q0, nuq1
+qgate MY90, q0
+
+# sweep_bias q[0]
+LDi 10, dacReg0
+LDi 0, sweepStartReg0
+LDi 10, sweepStepReg0
+LDi 100, sweepStopReg0
+LDi 0, memAddr0
+LABEL LAB62
+switchOn q0
+excite_MW 1, 100, sweepStartReg0, 0, 60, q0
+switchOff q0
+mov photonReg0, R0
+ST R0, memAddr0($0)
+ST sweepStartReg0, memAddr0($0)
+ADD sweepStartReg0, sweepStartReg0, sweepStepReg0
+ADDi memAddr0, 4
+BR sweepStartReg0<sweepStopReg0, LAB62
+
+# wait 10
+wait 200
+
+# qnop q[0]
+wait 1
+
+# calculate_current q[0]
+calculate_current()
+
+# crc q[0]
+LDi 5, treshReg0
+LDi 0, dacReg0
+LABEL LAB63
+LDi 0, photon Reg0
+switchOn q0
+excite_MW 1, 100, 200, 0, 60, q0
+mov photonReg0, R0
+switchOff q0
+BR R0>treshReg0, LAB64
+calculateVoltage()
+JUMP LAB63
+LABEL LAB64
+
+# crc q[1]
+LDi 5, treshReg1
+LDi 1, dacReg1
+LABEL LAB65
+LDi 0, photon Reg1
+switchOn q1
+excite_MW 1, 100, 200, 0, 60, q1
+mov photonReg1, R1
+switchOff q1
+BR R1>treshReg1, LAB66
+calculateVoltage()
+JUMP LAB65
+LABEL LAB66
+
+# crc q[2]
+LDi 5, treshReg2
+LDi 2, dacReg2
+LABEL LAB67
+LDi 0, photon Reg2
+switchOn q2
+excite_MW 1, 100, 200, 0, 60, q2
+mov photonReg2, R2
+switchOff q2
+BR R2>treshReg2, LAB68
+calculateVoltage()
+JUMP LAB67
+LABEL LAB68
+
+# calculate_voltage q[0]
+calculate_voltage()
+
+# sweep_bias q[0]
+LDi 10, dacReg0
+LDi 0, sweepStartReg0
+LDi 10, sweepStepReg0
+LDi 100, sweepStopReg0
+LDi 0, memAddr0
+LABEL LAB69
+switchOn q0
+excite_MW 1, 100, sweepStartReg0, 0, 60, q0
+switchOff q0
+mov photonReg0, R0
+ST R0, memAddr0($0)
+ST sweepStartReg0, memAddr0($0)
+ADD sweepStartReg0, sweepStartReg0, sweepStepReg0
+ADDi memAddr0, 4
+BR sweepStartReg0<sweepStopReg0, LAB69
+
+# calculate_voltage q[0]
+calculate_voltage()
+

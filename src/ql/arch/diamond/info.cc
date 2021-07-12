@@ -16,13 +16,11 @@ namespace diamond {
  */
 void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
     utils::dump_str(os, line_prefix, R"(
-    NOTE THAT THIS SECTION IS INCOMPLETE AND THE DOCUMENTATION IS WRONG, EXCEPT
-    FROM THE FOLLOWING DESCRIPTION:
-
     This architecture is aimed towards computing with qubits made in color
-    centers in diamond. It is part of the fujitsu project and work is in
+    centers in diamond. It is part of the Fujitsu project and is a work in
     progress. The backend will, for now as it is in it's early stages, work as a
     translation tool from a high-level algorithm to our own defined microcode.
+    It is mostly a proof of concept at this time.
     )");
 }
 
