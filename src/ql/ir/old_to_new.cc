@@ -1212,6 +1212,9 @@ static utils::Str convert_kernels(
                     // Convert the gate.
                     auto instruction = convert_gate(ir, old, gate);
 
+                    // Copy gate-level annotations.
+                    instruction->copy_annotations(*gate);
+
                     // Figure out its cycle number.
                     if (old->kernels[idx]->cycles_valid) {
                         if (gate->cycle != compat::MAX_CYCLE) {

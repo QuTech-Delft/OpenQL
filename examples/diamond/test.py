@@ -55,13 +55,13 @@ k.gate('crk', [0, 1], 0, 1)
 k.gate('cr', [0, 1], 0, 3.14)
 
 # diamond protocols/sequences
-#k.diamond_crc(0,30,5)
-#k.diamond_rabi_check(0, 100, 2, 3) # qubit, duration, measurement, t_max
-#k.diamond_excite_mw(1, 100, 200, 0, 60, 0) # envelope, duration, frequency, phase, amplitude, qubit
-#k.diamond_qentangle(0,15) # qubit, nuclear qubit
-#k.gate('nventangle', [0, 1])
-#k.diamond_memswap(0,1) # qubit, nuclear qubit
-#k.diamond_sweep_bias(0, 10, 0, 0, 10, 100, 0) #qubit, value, dacreg, start, step, max, memaddress
+k.diamond_crc(0,30,5)
+k.diamond_rabi_check(0, 100, 2, 3) # qubit, duration, measurement, t_max
+k.diamond_excite_mw(1, 100, 200, 0, 60, 0) # envelope, duration, frequency, phase, amplitude, qubit
+k.diamond_qentangle(0,15) # qubit, nuclear qubit
+k.gate('nventangle', [0, 1])
+k.diamond_memswap(0,1) # qubit, nuclear qubit
+k.diamond_sweep_bias(0, 10, 0, 0, 10, 100, 0) #qubit, value, dacreg, start, step, max, memaddress
 
 # timing
 k.gate('wait', [], 200)
@@ -74,7 +74,7 @@ k.gate('calculate_current', [0])
 k.gate('calculate_voltage', [0])
 
 # magnetic bias check
-#k.diamond_sweep_bias(0, 10, 0, 0, 10, 100, 0)
+k.diamond_sweep_bias(0, 10, 0, 0, 10, 100, 0)
 k.gate('calculate_voltage', [0])
 
 p.add_kernel(k)

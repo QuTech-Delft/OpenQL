@@ -552,6 +552,12 @@ void NewToOldConverter::convert_block(
                 QL_ICE("unsupported instruction type encountered");
             }
 
+            // Copy gate annotations if adding the gate resulted in just one
+            // gate.
+            if (kernel->gates.size() == first_gate_index + 1) {
+                kernel->gates[first_gate_index]->copy_annotations(*insn);
+            }
+
             // Assign the cycle numbers for the new gates.
             for (auto i = first_gate_index; i < kernel->gates.size(); i++) {
                 kernel->gates[i]->cycle = (utils::UInt)((utils::Int)insn->cycle + cycle_offset);
