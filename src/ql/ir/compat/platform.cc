@@ -219,13 +219,25 @@ void Platform::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
           - no operands otherwise.
 
          Furthermore, when gates are added via the API or old IR that don't
-         match an existing instruction due to prototype mismatch, a clone is
-         made of the instruction type with the prototype inferred, using the `U`
-         access mode for reference operands and `R` for anything else. When a
-         default gate is encountered in the old IR and needs to be converted to
-         the new IR, the entire instruction type is inferred from the default
-         gate. From now on, however, it is strongly recommended to explicitly
-         specify prototypes and not rely on this inference logic.
+         match an existing instruction due to prototype mismatch, and the
+         prototype was inferred per the above rules, a clone is made of the
+         instruction type with the prototype inferred by means of the actual
+         operands, using the `U` access mode for reference operands and `R` for
+         anything else. When a default gate is encountered in the old IR and
+         needs to be converted to the new IR, the entire instruction type is
+         inferred from the default gate. From now on, however, it is strongly
+         recommended to explicitly specify prototypes and not rely on this
+         inference logic.
+
+         Note that it is possible to define multiple overloads for an
+         instruction with the same name. Passes using the new IR will be able
+         to distinguish between these overloads based on the types and
+         writability of the operands, but be aware that any legacy pass will use
+         one of the gate definitions at random (so differing duration or other
+         attributes won't work right). The JSON syntax for this is rather
+         awkward, since object keys must be unique; the best thing to do is to
+         just append spaces for the key, since these spaces are cleaned up when
+         the instruction type is parsed.
 )" R"(
        - `"cqasm_name"`: specifies an alternative name for the instruction when
          it is printed as cQASM or when read from cQASM. This must be a valid

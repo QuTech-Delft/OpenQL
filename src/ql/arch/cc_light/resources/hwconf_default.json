@@ -96,122 +96,158 @@
 
     "instructions": {
         "prepx": {
+            "prototype": ["W:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "prepx"
         },
         "prepz": {
+            "prototype": ["W:qubit"],
             "duration": 40,
             "type": "none",
             "cc_light_instr": "prepz"
         },
         "cprepz": {
+            "prototype": ["W:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "cprepz"
         },
         "measz": {
+            "prototype": ["M:qubit"],
+            "duration": 40,
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measz ": {
+            "prototype": ["U:qubit", "W:bit"],
             "duration": 40,
             "type": "readout",
             "cc_light_instr": "measz"
         },
         "measure": {
+            "prototype": ["M:qubit"],
+            "duration": 40,
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measure ": {
+            "prototype": ["U:qubit", "W:bit"],
             "duration": 40,
             "type": "readout",
             "cc_light_instr": "measz"
         },
         "i": {
+            "prototype": ["U:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "i"
         },
         "x": {
+            "prototype": ["X:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "x"
         },
         "y": {
+            "prototype": ["Y:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "y"
         },
         "z": {
+            "prototype": ["Z:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "z"
         },
         "h": {
+            "prototype": ["U:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "h"
         },
         "s": {
+            "prototype": ["Z:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "s"
         },
         "sdag": {
+            "prototype": ["Z:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "sdag"
         },
         "rx90": {
+            "prototype": ["X:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "x90"
         },
         "xm90": {
+            "prototype": ["X:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "xm90"
         },
         "ry90": {
+            "prototype": ["Y:qubit"],
             "duration": 40,
             "qubits": ["q0"],
             "type": "mw",
             "cc_light_instr": "y90"
         },
         "ym90": {
+            "prototype": ["Y:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "ym90"
         },
         "t": {
+            "prototype": ["Z:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "t"
         },
         "tdag": {
+            "prototype": ["Z:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "tdag"
         },
         "x45": {
+            "prototype": ["X:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "x45"
         },
         "xm45": {
+            "prototype": ["X:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "xm45"
         },
         "ry180": {
+            "prototype": ["Y:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "ry180"
         },
         "cnot": {
+            "prototype": ["Z:qubit", "X:qubit"],
             "duration": 80,
             "type": "flux",
             "cc_light_instr": "cnot"
         },
         "sqf": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "type": "flux",
             "cc_light_instr": "sqf"
         },
         "cz": {
+            "prototype": ["Z:qubit", "Z:qubit"],
             "duration": 80,
             "type": "flux",
             "cc_light_instr": "cz"

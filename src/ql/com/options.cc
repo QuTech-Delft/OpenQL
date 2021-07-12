@@ -42,8 +42,9 @@ Options make_ql_options() {
 
     options.add_bool(
         "use_default_gates",
-        "Use default gates or not. TODO: document better, and work out what to "
-        "do with default gates to begin with.",
+        "Use default gates or not. When set, a number of builtin gates become "
+        "available as fallback for the gates defined in the platform "
+        "configuration structure, including the special wait and barrier gates.",
         true
     );
 

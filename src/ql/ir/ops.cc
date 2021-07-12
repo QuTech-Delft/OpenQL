@@ -5,6 +5,7 @@
 #include "ql/ir/ops.h"
 
 #include "ql/ir/describe.h"
+#include "ql/ir/old_to_new.h"
 
 namespace ql {
 namespace ir {
@@ -277,9 +278,10 @@ InstructionTypeLink add_instruction_type(
  * Finds an instruction type based on its name, operand types, and writability
  * of each operand. If generate_overload_if_needed is set, and no instruction
  * with the given name and operand type set exists, then an overload is
- * generated for the first instruction type for which only the name matches, and
- * that overload is returned. If no matching instruction type is found or was
- * created, an empty link is returned.
+ * generated for the first instruction type for which only the name matches iff
+ * that instruction type has the PrototypeInferred annotation, and that overload
+ * is returned. If no matching instruction type is found or was created, an
+ * empty link is returned.
  */
 InstructionTypeLink find_instruction_type(
     const Ref &ir,
@@ -340,7 +342,7 @@ InstructionTypeLink find_instruction_type(
     }
 
     // If we shouldn't generate an overload if only the name matches, stop now.
-    if (!generate_overload_if_needed) {
+    if (!generate_overload_if_needed || !(*first)->has_annotation<PrototypeInferred>()) {
         return {};
     }
 

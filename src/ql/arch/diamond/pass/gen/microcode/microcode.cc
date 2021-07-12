@@ -129,7 +129,10 @@ utils::Int GenerateMicrocodePass::run(
 
     for (const ir::compat::KernelRef &kernel : program->kernels) {
         for (const ir::compat::GateRef &gate : kernel->gates) {
-            const auto &data = program->platform->find_instruction(gate->name);
+            utils::Json data;
+            if (gate->name != "wait" && gate->name != "barrier") {
+                data = program->platform->find_instruction(gate->name);
+            }
 
             outfile << "# " << gate->qasm() << "\n";
 
@@ -609,6 +612,8 @@ utils::Int GenerateMicrocodePass::run(
                     // Implements the wait x-cycles instruction.
                     outfile << "wait "
                             << to_string(gate->duration) << "\n";
+                } else if (gate->name == "barrier") {
+                    // Ignore barriers
                 } else if (gate->name == "qnop") {
                     // Quantum nop instruction
                     outfile << "wait 1" << "\n";

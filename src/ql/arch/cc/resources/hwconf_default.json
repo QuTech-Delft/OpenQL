@@ -252,6 +252,7 @@
     },
     "instructions": {
         "i": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [],
@@ -259,6 +260,7 @@
             }
         },
         "rx180": {
+            "prototype": ["X:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -266,6 +268,7 @@
             }
         },
         "ry180": {
+            "prototype": ["Y:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -273,6 +276,7 @@
             }
         },
         "rx90": {
+            "prototype": ["X:qubit", "L:real"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -280,6 +284,7 @@
             }
         },
         "ry90": {
+            "prototype": ["Y:qubit", "L:real"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -287,6 +292,7 @@
             }
         },
         "rxm90": {
+            "prototype": ["X:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -294,6 +300,7 @@
             }
         },
         "rym90": {
+            "prototype": ["Y:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -301,6 +308,7 @@
             }
         },
         "ry45": {
+            "prototype": ["Y:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -308,6 +316,7 @@
             }
         },
         "rym45": {
+            "prototype": ["Y:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -315,6 +324,7 @@
             }
         },
         "rx45": {
+            "prototype": ["X:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -322,6 +332,7 @@
             }
         },
         "rxm45": {
+            "prototype": ["X:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -329,6 +340,7 @@
             }
         },
         "cz": {
+            "prototype": ["Z:qubit", "Z:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "two-qubit-flux",
@@ -336,6 +348,7 @@
             }
         },
         "cz_park": {
+            "prototype": ["Z:qubit", "Z:qubit", "I:qubit"],
             "duration": 80,
             "cc": {
                 "signal": [
@@ -356,6 +369,7 @@
             }
         },
         "park_cz" : {
+            "prototype": ["U:qubit"],
             "duration" : 80,
             "cc": {
                 "signal": [
@@ -368,6 +382,7 @@
             }
         },
         "park_measure" : {
+            "prototype": ["B:qubit"],
             "duration" : 2000,
             "cc": {
                 "signal": [
@@ -380,6 +395,7 @@
             }
         },
         "prepz": {
+            "prototype": ["W:qubit"],
             "duration": 200000,
             "cc": {
                 "signal": [],
@@ -387,6 +403,22 @@
             }
         },
         "measure": {
+            "prototype": ["M:qubit"],
+            "duration": 2000,
+            "cc": {
+                "readout_mode": "",
+                "signal": [
+                    {    "type": "measure",
+                        "operand_idx": 0,
+                        "value": ["dummy"],
+                        "weight": ["dummy"]
+                    }
+                ],
+                "static_codeword_override": [0]
+            }
+        },
+        "measure ": {
+            "prototype": ["U:qubit", "W:bit"],
             "duration": 2000,
             "cc": {
                 "readout_mode": "",
@@ -401,12 +433,14 @@
             }
         },
         "_wait_uhfqa": {
+            // not sure what the prototype should be
             "duration": 220,
             "cc": {
                 "signal": []
             }
         },
         "_dist_dsm": {
+            // not sure what the prototype should be
             "duration": 20,
             "cc": {
                 "readout_mode": "feedback",
@@ -419,12 +453,15 @@
             }
         },
         "_wait_dsm": {
+            // not sure what the prototype should be
             "duration": 80,
             "cc": {
                 "signal": []
             }
         },
         "if_0_break": {
+            "prototype": ["R:bit"],
+            "barrier": true,
             "duration": 60,
             "cc": {
                 "signal": [],
@@ -434,6 +471,8 @@
             }
         },
         "if_1_break": {
+            "prototype": ["R:bit"],
+            "barrier": true,
             "duration": 60,
             "cc": {
                 "signal": [],
@@ -443,6 +482,7 @@
             }
         },
         "square": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -450,6 +490,7 @@
             }
         },
         "spec": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -457,6 +498,7 @@
             }
         },
         "rx12": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -464,6 +506,7 @@
             }
         },
         "cw_00": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -471,6 +514,7 @@
             }
         },
         "cw_01": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -478,6 +522,7 @@
             }
         },
         "cw_02": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -485,6 +530,7 @@
             }
         },
         "cw_03": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -492,6 +538,7 @@
             }
         },
         "cw_04": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -499,6 +546,7 @@
             }
         },
         "cw_05": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -506,6 +554,7 @@
             }
         },
         "cw_06": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -513,6 +562,7 @@
             }
         },
         "cw_07": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -520,6 +570,7 @@
             }
         },
         "cw_08": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -527,6 +578,7 @@
             }
         },
         "cw_09": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -534,6 +586,7 @@
             }
         },
         "cw_10": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -541,6 +594,7 @@
             }
         },
         "cw_11": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -548,6 +602,7 @@
             }
         },
         "cw_12": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -555,6 +610,7 @@
             }
         },
         "cw_13": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -562,6 +618,7 @@
             }
         },
         "cw_14": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -569,6 +626,7 @@
             }
         },
         "cw_15": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -576,6 +634,7 @@
             }
         },
         "cw_16": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -583,6 +642,7 @@
             }
         },
         "cw_17": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -590,6 +650,7 @@
             }
         },
         "cw_18": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -597,6 +658,7 @@
             }
         },
         "cw_19": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -604,6 +666,7 @@
             }
         },
         "cw_20": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -611,6 +674,7 @@
             }
         },
         "cw_21": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -618,6 +682,7 @@
             }
         },
         "cw_22": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -625,6 +690,7 @@
             }
         },
         "cw_23": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -632,6 +698,7 @@
             }
         },
         "cw_24": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -639,6 +706,7 @@
             }
         },
         "cw_25": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -646,6 +714,7 @@
             }
         },
         "cw_26": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -653,6 +722,7 @@
             }
         },
         "cw_27": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -660,6 +730,7 @@
             }
         },
         "cw_28": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -667,6 +738,7 @@
             }
         },
         "cw_29": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -674,6 +746,7 @@
             }
         },
         "cw_30": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -681,6 +754,7 @@
             }
         },
         "cw_31": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
@@ -688,6 +762,7 @@
             }
         },
         "fl_cw_00": {
+            "prototype": ["U:qubit", "U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "two-qubit-flux",
@@ -695,6 +770,7 @@
             }
         },
         "fl_cw_01": {
+            "prototype": ["U:qubit", "U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "two-qubit-flux",
@@ -702,6 +778,7 @@
             }
         },
         "fl_cw_02": {
+            "prototype": ["U:qubit", "U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "two-qubit-flux",
@@ -709,6 +786,7 @@
             }
         },
         "fl_cw_03": {
+            "prototype": ["U:qubit", "U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "two-qubit-flux",
@@ -716,6 +794,7 @@
             }
         },
         "fl_cw_04": {
+            "prototype": ["U:qubit", "U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "two-qubit-flux",
@@ -723,6 +802,7 @@
             }
         },
         "fl_cw_05": {
+            "prototype": ["U:qubit", "U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "two-qubit-flux",
@@ -730,6 +810,7 @@
             }
         },
         "fl_cw_06": {
+            "prototype": ["U:qubit", "U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "two-qubit-flux",
@@ -737,6 +818,7 @@
             }
         },
         "fl_cw_07": {
+            "prototype": ["U:qubit", "U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "two-qubit-flux",
@@ -744,6 +826,7 @@
             }
         },
         "sf_cz_ne q2": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -751,6 +834,7 @@
             }
         },
         "sf_cz_ne q3": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -758,6 +842,7 @@
             }
         },
         "sf_cz_se q0": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -765,6 +850,7 @@
             }
         },
         "sf_cz_se q2": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -772,6 +858,7 @@
             }
         },
         "sf_cz_sw q1": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -779,6 +866,7 @@
             }
         },
         "sf_cz_sw q2": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -786,6 +874,7 @@
             }
         },
         "sf_cz_nw q2": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -793,6 +882,7 @@
             }
         },
         "sf_cz_nw q4": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -800,6 +890,7 @@
             }
         },
         "sf_park q3": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -807,6 +898,7 @@
             }
         },
         "sf_park q4": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -814,6 +906,7 @@
             }
         },
         "sf_sp_park": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",
@@ -821,6 +914,7 @@
             }
         },
         "sf_square": {
+            "prototype": ["U:qubit"],
             "duration": 80,
             "cc": {
                 "ref_signal": "single-qubit-flux",

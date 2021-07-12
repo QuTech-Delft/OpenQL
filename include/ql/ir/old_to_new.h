@@ -64,6 +64,13 @@ struct KernelCyclesValid {
 };
 
 /**
+ * Annotation placed on InstructionType nodes to indicate that the prototype has
+ * been inferred, and thus that we need to be lenient if we encounter gates that
+ * don't match it.
+ */
+struct PrototypeInferred {};
+
+/**
  * Converts the old platform to the new IR structure.
  *
  * See convert_old_to_new(const compat::ProgramRef&) for details.

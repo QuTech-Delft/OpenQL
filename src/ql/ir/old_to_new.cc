@@ -239,15 +239,18 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                         QL_USER_ERROR("prototype entries must be strings");
                     }
                     auto param = it3.get<utils::Str>();
+                    utils::Str mode_s, type_s;
                     auto pos = param.find_first_of(':');
-                    auto type_s = param.substr(0, pos);
+                    if (pos == utils::Str::npos) {
+                        type_s = param;
+                        mode_s = "U";
+                    } else {
+                        type_s = param.substr(pos + 1);
+                        mode_s = param.substr(0, pos);
+                    }
                     auto type = find_type(ir, type_s);
                     if (type.empty()) {
                         QL_USER_ERROR("unknown parameter type " << type_s);
-                    }
-                    utils::Str mode_s = "U";
-                    if (pos != utils::Str::npos) {
-                        mode_s = param.substr(pos);
                     }
                     prim::OperandMode mode;
                     if (mode_s == "B") {
@@ -434,6 +437,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                         );
                     }
                 }
+                insn->set_annotation<PrototypeInferred>({});
 
             }
 
