@@ -207,7 +207,12 @@ utils::Int ProgramAnalysis::run_internal(
     const Context &context
 ) const {
     auto program = ir::convert_new_to_old(ir);
-    return run(program, context);
+    auto retval = run(program, context);
+    auto new_ir = ir::convert_old_to_new(program);
+    ir->program = new_ir->program;
+    ir->platform = new_ir->platform;
+    ir->copy_annotations(*new_ir);
+    return retval;
 }
 
 /**
@@ -250,6 +255,10 @@ utils::Int KernelAnalysis::run_internal(
     for (const auto &kernel : program->kernels) {
         accumulator = retval_accumulate(accumulator, run(program, kernel, context));
     }
+    auto new_ir = ir::convert_old_to_new(program);
+    ir->program = new_ir->program;
+    ir->platform = new_ir->platform;
+    ir->copy_annotations(*new_ir);
     return accumulator;
 }
 

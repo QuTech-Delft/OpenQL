@@ -336,7 +336,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/program.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
-    )
+)
 
 # Specify resources.
 create_resource("src/ql/arch/cc/resources/hwconf_default.json")
@@ -346,7 +346,6 @@ create_resource("src/ql/arch/cc_light/resources/hwconf_s7.json")
 create_resource("src/ql/arch/cc_light/resources/hwconf_s17.json")
 create_resource("src/ql/arch/none/resources/hwconf_default.json")
 create_resource("src/ql/arch/diamond/resources/hwconf_default.json")
-
 
 # Generate a header file with configuration options that cannot be compiled
 # (entirely) into the shared/static library due to use of templates.
@@ -362,10 +361,6 @@ configure_file(
 # This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
 # https://docs.microsoft.com/en-us/cpp/cpp/declspec?view=vs-2019
 target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
-
-# TODO: this was taken from compile_options.h, but I'm not sure what its purpose
-# is.
-target_compile_definitions(ql PUBLIC OPT_DECOMPOSE_WAIT_BARRIER)
 
 # There is no distinction between public and private header files right now,
 # and they'r all in the source directory. Note the / at the end of the path;

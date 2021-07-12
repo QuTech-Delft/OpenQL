@@ -3,13 +3,12 @@
  */
 
 #include "ql/arch/cc/info.h"
-#include "ql/arch/cc/pass/gen/vq1asm/detail/settings.h"
-
-#include "ql/com/options.h"
-#include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
-#include "ql/arch/cc/resources/hwconf_default.inc"
 
 #include <iomanip>
+#include "ql/com/options.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/settings.h"
+#include "ql/arch/cc/resources/hwconf_default.inc"
 
 namespace ql {
 namespace arch {

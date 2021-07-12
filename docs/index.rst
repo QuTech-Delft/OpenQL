@@ -73,6 +73,10 @@ to Doxygen-recognized docstrings yet.
    developer/automation
    developer/release
    developer/conventions
+   developer/ir
+   developer/options
+   developer/passes
+   developer/resources
    developer/doxygen
 
 .. toctree::

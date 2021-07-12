@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iterator>
 
+#include "ql/config.h"
 #include "ql/utils/json.h"
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
@@ -535,7 +536,7 @@ Bool Kernel::add_custom_gate_if_available(
     ConditionType gcond,
     const Vec<UInt> &gcondregs
 ) {
-#if OPT_DECOMPOSE_WAIT_BARRIER  // hack to skip wait/barrier
+#ifdef OPT_DECOMPOSE_WAIT_BARRIER  // hack to skip wait/barrier
     if (gname=="wait" || gname=="barrier") {
         return false;   // return, so a default gate will be attempted
     }

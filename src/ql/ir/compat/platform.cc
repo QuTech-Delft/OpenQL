@@ -5,6 +5,7 @@
 #include "ql/ir/compat/platform.h"
 
 #include <regex>
+#include "ql/config.h"
 #include "ql/utils/filesystem.h"
 #include "ql/rmgr/manager.h"
 #include "ql/arch/factory.h"
@@ -492,7 +493,7 @@ void Platform::load(
                     instruction_map.set(sub_ins).emplace<gate_types::Custom>(sub_ins);
                     gs.add(instruction_map.at(sub_ins));
                 } else {
-#if OPT_DECOMPOSE_WAIT_BARRIER   // allow wait/barrier, e.g. "barrier q2,q3,q4"
+#ifdef OPT_DECOMPOSE_WAIT_BARRIER   // allow wait/barrier, e.g. "barrier q2,q3,q4"
                     // FIXME: just save whatever we find as a *custom* gate (there is no better alternative)
                     // FIXME: also see additions (hacks) to kernel.h
                     QL_DOUT("adding new sub instr : " << sub_ins);
