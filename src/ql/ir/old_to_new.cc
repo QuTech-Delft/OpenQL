@@ -8,6 +8,7 @@
 #include "ql/ir/ops.h"
 #include "ql/ir/consistency.h"
 #include "ql/rmgr/manager.h"
+#include "ql/arch/diamond/annotations.h"
 
 namespace ql {
 namespace ir {
@@ -1045,6 +1046,36 @@ static InstructionRef convert_gate(
         } else if (name == "crk") {
             operands.add(make_int_lit(ir, gate->int_operand));
         }
+
+        // Handle the annotations for additional integer literal arguments used
+        // by Diamond.
+        if (auto emp = gate->get_annotation_ptr<arch::diamond::annotations::ExciteMicrowaveParameters>()) {
+            operands.add(make_int_lit(ir, emp->envelope));
+            operands.add(make_int_lit(ir, emp->duration));
+            operands.add(make_int_lit(ir, emp->frequency));
+            operands.add(make_int_lit(ir, emp->phase));
+            operands.add(make_int_lit(ir, emp->amplitude));
+        } else if (auto msp = gate->get_annotation_ptr<arch::diamond::annotations::MemSwapParameters>()) {
+            operands.add(make_int_lit(ir, msp->nuclear));
+        } else if (auto qep = gate->get_annotation_ptr<arch::diamond::annotations::QEntangleParameters>()) {
+            operands.add(make_int_lit(ir, qep->nuclear));
+        } else if (auto sbp = gate->get_annotation_ptr<arch::diamond::annotations::SweepBiasParameters>()) {
+            operands.add(make_int_lit(ir, sbp->value));
+            operands.add(make_int_lit(ir, sbp->dacreg));
+            operands.add(make_int_lit(ir, sbp->start));
+            operands.add(make_int_lit(ir, sbp->step));
+            operands.add(make_int_lit(ir, sbp->max));
+            operands.add(make_int_lit(ir, sbp->memaddress));
+        } else if (auto cp = gate->get_annotation_ptr<arch::diamond::annotations::CRCParameters>()) {
+            operands.add(make_int_lit(ir, cp->threshold));
+            operands.add(make_int_lit(ir, cp->value));
+        } else if (auto rp = gate->get_annotation_ptr<arch::diamond::annotations::RabiParameters>()) {
+            operands.add(make_int_lit(ir, rp->measurements));
+            operands.add(make_int_lit(ir, rp->duration));
+            operands.add(make_int_lit(ir, rp->t_max));
+        }
+
+        // Try to make an instruction for the name and operand list we found.
         auto insn = make_instruction(ir, name, operands, condition, true, true);
         if (!insn.empty()) {
             return insn;

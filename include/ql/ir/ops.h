@@ -100,17 +100,18 @@ InstructionTypeLink add_instruction_type(
 );
 
 /**
- * Finds an instruction type based on its name and operand types. If
- * generate_overload_if_needed is set, and no instruction with the given name
- * and operand type set exists, then an overload is generated for the first
- * instruction type for which only the name matches, and that overload is
- * returned. If no matching instruction type is found or was created, an empty
- * link is returned.
+ * Finds an instruction type based on its name, operand types, and writability
+ * of each operand. If generate_overload_if_needed is set, and no instruction
+ * with the given name and operand type set exists, then an overload is
+ * generated for the first instruction type for which only the name matches, and
+ * that overload is returned. If no matching instruction type is found or was
+ * created, an empty link is returned.
  */
 InstructionTypeLink find_instruction_type(
     const Ref &ir,
     const utils::Str &name,
     const utils::Vec<DataTypeLink> &types,
+    const utils::Vec<utils::Bool> &writable,
     utils::Bool generate_overload_if_needed = false
 );
 

@@ -274,19 +274,21 @@ InstructionTypeLink add_instruction_type(
 }
 
 /**
- * Finds an instruction type based on its name and operand types. If
- * generate_overload_if_needed is set, and no instruction with the given name
- * and operand type set exists, then an overload is generated for the first
- * instruction type for which only the name matches, and that overload is
- * returned. If no matching instruction type is found or was created, an empty
- * link is returned.
+ * Finds an instruction type based on its name, operand types, and writability
+ * of each operand. If generate_overload_if_needed is set, and no instruction
+ * with the given name and operand type set exists, then an overload is
+ * generated for the first instruction type for which only the name matches, and
+ * that overload is returned. If no matching instruction type is found or was
+ * created, an empty link is returned.
  */
 InstructionTypeLink find_instruction_type(
     const Ref &ir,
     const utils::Str &name,
     const utils::Vec<DataTypeLink> &types,
+    const utils::Vec<utils::Bool> &writable,
     utils::Bool generate_overload_if_needed
 ) {
+    QL_ASSERT(types.size() == writable.size());
 
     // Search for a matching instruction.
     auto begin = ir->platform->instructions.get_vec().begin();
@@ -307,6 +309,22 @@ InstructionTypeLink find_instruction_type(
                 match = false;
                 break;
             }
+            if (!writable[i]) {
+                switch ((*pos)->operand_types[i]->mode) {
+                    case prim::OperandMode::WRITE:
+                    case prim::OperandMode::COMMUTE_X:
+                    case prim::OperandMode::COMMUTE_Y:
+                    case prim::OperandMode::COMMUTE_Z:
+                    case prim::OperandMode::MEASURE:
+                        match = false;
+                        break;
+                    case prim::OperandMode::READ:
+                    case prim::OperandMode::LITERAL:
+                    case prim::OperandMode::IGNORE:
+                        break;
+                }
+                if (!match) break;
+            }
         }
         if (match) {
             return *pos;
@@ -325,13 +343,17 @@ InstructionTypeLink find_instruction_type(
     }
 
     // Generate an overload for this instruction with the given set of
-    // parameters, conservatively assuming write access mode. This is based on
-    // the first instruction we encountered with this name.
+    // parameters, conservatively assuming write access mode for references and
+    // read for everything else. This is based on the first instruction we
+    // encounter with this name.
     auto ityp = first->clone();
     ityp->copy_annotations(**first);
     ityp->operand_types.reset();
-    for (const auto &typ : types) {
-        ityp->operand_types.emplace(prim::OperandMode::WRITE, typ);
+    for (utils::UInt i = 0; i < types.size(); i++) {
+        ityp->operand_types.emplace(
+            writable[i] ? prim::OperandMode::WRITE : prim::OperandMode::READ,
+            types[i]
+        );
     }
 
     // Insert the instruction just after all the other instructions with this
@@ -467,13 +489,16 @@ InstructionRef make_instruction(
 
         // Find the type for the custom instruction.
         utils::Vec<DataTypeLink> types;
+        utils::Vec<utils::Bool> writable;
         for (const auto &operand : operands) {
             types.push_back(get_type_of(operand));
+            writable.push_back(operand->as_reference() != nullptr);
         }
         custom_insn->instruction_type = find_instruction_type(
             ir,
             name,
             types,
+            writable,
             generate_overload_if_needed
         );
         if (custom_insn->instruction_type.empty()) {

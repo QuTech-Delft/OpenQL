@@ -8,6 +8,7 @@
 #include "ql/ir/old_to_new.h"
 #include "ql/ir/ops.h"
 #include "ql/ir/describe.h"
+#include "ql/arch/diamond/annotations.h"
 
 namespace ql {
 namespace ir {
@@ -406,13 +407,86 @@ void NewToOldConverter::convert_block(
                 // Handle the conditional instruction subtypes.
                 if (auto custom = cinsn->as_custom_instruction()) {
 
-                    // Handle regular custom instructions.
+                    // Handle special Diamond architecture gates that use more
+                    // operands than the old IR could handle using annotations.
+                    // The new IR exposes these operands as regular operands, so
+                    // we need to copy them back into the annotations in case a
+                    // pass changed them since the old-to-new conversion. Note
+                    // that we still need the annotations to exist (despite not
+                    // using their contents) to determine which special case to
+                    // use!
+                    utils::UInt diamond_op_count = 0;
+                    if (custom->has_annotation<arch::diamond::annotations::ExciteMicrowaveParameters>()) {
+                        diamond_op_count = 5;
+                    } else if (custom->has_annotation<arch::diamond::annotations::MemSwapParameters>()) {
+                        diamond_op_count = 1;
+                    } else if (custom->has_annotation<arch::diamond::annotations::QEntangleParameters>()) {
+                        diamond_op_count = 1;
+                    } else if (custom->has_annotation<arch::diamond::annotations::SweepBiasParameters>()) {
+                        diamond_op_count = 6;
+                    } else if (custom->has_annotation<arch::diamond::annotations::CRCParameters>()) {
+                        diamond_op_count = 2;
+                    } else if (custom->has_annotation<arch::diamond::annotations::RabiParameters>()) {
+                        diamond_op_count = 3;
+                    }
+                    if (diamond_op_count) {
+                        CHECK_COMPAT(
+                            custom->operands.size() >= diamond_op_count,
+                            "Diamond arch gate " << custom->instruction_type->name <<
+                            " must have at least " << diamond_op_count << " arguments"
+                        );
+                        utils::Vec<utils::UInt> diamond_ops;
+                        diamond_ops.reserve(diamond_op_count);
+                        for (
+                            utils::UInt i = custom->operands.size() - diamond_op_count;
+                            i < custom->operands.size();
+                            i++
+                        ) {
+                            auto ilit = custom->operands[i]->as_int_literal();
+                            CHECK_COMPAT(
+                                ilit && ilit->value >= 0,
+                                "operand " << i << " of Diamond arch gate " <<
+                                custom->instruction_type->name << " must be an "
+                                "unsigned integer literal"
+                            );
+                            diamond_ops.push_back((utils::UInt)ilit->value);
+                        }
+                        utils::UInt i = 0;
+                        if (auto emp = custom->get_annotation_ptr<arch::diamond::annotations::ExciteMicrowaveParameters>()) {
+                            emp->envelope    = diamond_ops[i++];
+                            emp->duration    = diamond_ops[i++];
+                            emp->frequency   = diamond_ops[i++];
+                            emp->phase       = diamond_ops[i++];
+                            emp->amplitude   = diamond_ops[i++];
+                        } else if (auto msp = custom->get_annotation_ptr<arch::diamond::annotations::MemSwapParameters>()) {
+                            msp->nuclear     = diamond_ops[i++];
+                        } else if (auto qep = custom->get_annotation_ptr<arch::diamond::annotations::QEntangleParameters>()) {
+                            qep->nuclear     = diamond_ops[i++];
+                        } else if (auto sbp = custom->get_annotation_ptr<arch::diamond::annotations::SweepBiasParameters>()) {
+                            sbp->value       = diamond_ops[i++];
+                            sbp->dacreg      = diamond_ops[i++];
+                            sbp->start       = diamond_ops[i++];
+                            sbp->step        = diamond_ops[i++];
+                            sbp->max         = diamond_ops[i++];
+                            sbp->memaddress  = diamond_ops[i++];
+                        } else if (auto cp = custom->get_annotation_ptr<arch::diamond::annotations::CRCParameters>()) {
+                            cp->threshold    = diamond_ops[i++];
+                            cp->value        = diamond_ops[i++];
+                        } else if (auto rp = custom->get_annotation_ptr<arch::diamond::annotations::RabiParameters>()) {
+                            rp->measurements = diamond_ops[i++];
+                            rp->duration     = diamond_ops[i++];
+                            rp->t_max        = diamond_ops[i++];
+                        }
+                        QL_ASSERT(i == diamond_op_count);
+                    }
+
+                    // Handle the normal operands for custom instructions.
                     Operands ops;
                     for (const auto &ob : custom->instruction_type->template_operands) {
                         ops.append(*this, ob);
                     }
-                    for (const auto &ob : custom->operands) {
-                        ops.append(*this, ob);
+                    for (utils::UInt i = 0; i < custom->operands.size() - diamond_op_count; i++) {
+                        ops.append(*this, custom->operands[i]);
                     }
                     kernel->gate(
                         custom->instruction_type->name, ops.qubits, ops.cregs,
