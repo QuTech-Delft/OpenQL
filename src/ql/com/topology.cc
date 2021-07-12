@@ -634,7 +634,7 @@ utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
  * Returns the core index for the given qubit in a multi-core environment.
  */
 utils::UInt Topology::get_core_index(Qubit qubit) const {
-    if (num_cores == 1) return 1;
+    if (num_cores == 1) return 0;
     QL_ASSERT(connectivity == GridConnectivity::FULL);
     utils::UInt nqpc = num_qubits / num_cores;
     return qubit / nqpc;
