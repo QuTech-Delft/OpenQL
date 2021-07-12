@@ -405,5 +405,15 @@ void Compiler::compile(const Program &program) {
     pass_manager->compile(ir::convert_old_to_new(program.program));
 }
 
+/**
+ * Ensures that all passes have been constructed, and then runs the passes
+ * without specification of an input program. The first pass should then act
+ * as a language frontend. The cQASM reader satisfies this requirement, for
+ * instance.
+ */
+void Compiler::compile_with_frontend(const Platform &platform) {
+    pass_manager->compile(ir::convert_old_to_new(platform.platform));
+}
+
 } // namespace api
 } // namespace ql
