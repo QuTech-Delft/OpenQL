@@ -210,7 +210,7 @@ void InFile::close() {
  */
 void InFile::check() {
     if (ifs.fail()) {
-        QL_SYSTEM_ERROR("failed to write file \"" << path << "\"");
+        QL_SYSTEM_ERROR("failed to read file \"" << path << "\"");
     }
 }
 
