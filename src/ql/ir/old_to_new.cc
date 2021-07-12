@@ -186,9 +186,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             template_params.pop_front();
             insn->name = name;
             if (!std::regex_match(insn->name, IDENTIFIER_RE)) {
-                throw utils::Exception(
-                    "instruction name is not a valid identifier"
-                );
+                QL_USER_ERROR("instruction name is not a valid identifier");
             }
 
             // Determine the cQASM name.
@@ -198,14 +196,20 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             } else if (it2->is_string()) {
                 insn->cqasm_name = it2->get<utils::Str>();
                 if (!std::regex_match(insn->cqasm_name, IDENTIFIER_RE)) {
-                    throw utils::Exception(
-                        "cQASM name is not a valid identifier"
-                    );
+                    QL_USER_ERROR("cQASM name is not a valid identifier");
                 }
             } else {
-                throw utils::Exception(
-                    "cqasm_name key must be a string if specified"
-                );
+                QL_USER_ERROR("cqasm_name key must be a string if specified");
+            }
+
+            // Determine if this is a barrier instruction.
+            it2 = insn->data->find("barrier");
+            if (it2 != insn->data->end()) {
+                if (!it2->is_boolean()) {
+                    QL_USER_ERROR("barrier key must be a boolean if specified");
+                } else {
+                    insn->barrier = it2->get<utils::Bool>();
+                }
             }
 
             // Parse the template parameters.
@@ -223,79 +227,71 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             // wrong while scanning the instructions in the program, we add
             // overloads as needed.
             utils::Bool duplicate_with_breg_arg = false;
-            it2 = insn->data->find("parameters");
+            it2 = insn->data->find("prototype");
             if (it2 != insn->data->end()) {
 
                 // Read parameters from JSON.
                 if (!it2->is_array()) {
-                    throw utils::Exception(
-                        "parameter list must be a JSON array if specified"
-                    );
+                    QL_USER_ERROR("prototype must be a JSON array if specified");
                 }
                 for (const auto &it3 : *it2) {
                     if (!it3.is_string()) {
-                        throw utils::Exception("parameters must be strings");
+                        QL_USER_ERROR("prototype entries must be strings");
                     }
                     auto param = it3.get<utils::Str>();
                     auto pos = param.find_first_of(':');
                     auto type_s = param.substr(0, pos);
                     auto type = find_type(ir, type_s);
                     if (type.empty()) {
-                        throw utils::Exception("unknown parameter type " + type_s);
+                        QL_USER_ERROR("unknown parameter type " << type_s);
                     }
-                    utils::Str mode_s = "W";
+                    utils::Str mode_s = "U";
                     if (pos != utils::Str::npos) {
                         mode_s = param.substr(pos);
                     }
                     prim::OperandMode mode;
-                    if (mode_s == "W") {
+                    if (mode_s == "B") {
+                        mode = prim::OperandMode::BARRIER;
+                    } else if (mode_s == "W") {
                         mode = prim::OperandMode::WRITE;
+                    } else if (mode_s == "U") {
+                        mode = prim::OperandMode::UPDATE;
                     } else if (mode_s == "R") {
                         mode = prim::OperandMode::READ;
                         if (type->as_qubit_type()) {
-                            throw utils::Exception(
-                                "invalid parameter mode R for qubit type"
-                            );
+                            QL_USER_ERROR("invalid parameter mode R for qubit type");
                         }
                     } else if (mode_s == "L") {
                         mode = prim::OperandMode::LITERAL;
                         if (type->as_qubit_type()) {
-                            throw utils::Exception(
-                                "invalid parameter mode L for qubit type"
-                            );
+                            QL_USER_ERROR("invalid parameter mode L for qubit type");
                         }
                     } else if (mode_s == "X") {
                         mode = prim::OperandMode::COMMUTE_X;
                         if (type->as_classical_type()) {
-                            throw utils::Exception(
-                                "invalid parameter mode X for classical type"
-                            );
+                            QL_USER_ERROR("invalid parameter mode X for classical type");
                         }
                     } else if (mode_s == "Y") {
                         mode = prim::OperandMode::COMMUTE_Y;
                         if (type->as_classical_type()) {
-                            throw utils::Exception(
-                                "invalid parameter mode Y for classical type"
-                            );
+                            QL_USER_ERROR("invalid parameter mode Y for classical type");
                         }
                     } else if (mode_s == "Z") {
                         mode = prim::OperandMode::COMMUTE_Z;
                         if (type->as_classical_type()) {
-                            throw utils::Exception(
-                                "invalid parameter mode Z for classical type"
-                            );
+                            QL_USER_ERROR("invalid parameter mode Z for classical type");
                         }
                     } else if (mode_s == "M") {
                         mode = prim::OperandMode::MEASURE;
                         if (type->as_classical_type()) {
-                            throw utils::Exception(
-                                "invalid parameter mode M for classical type"
-                            );
+                            QL_USER_ERROR("invalid parameter mode M for classical type");
                         }
+                    } else if (mode_s == "I") {
+                        mode = prim::OperandMode::IGNORE;
                     } else {
-                        throw utils::Exception(
-                            "invalid parameter mode " + mode_s + ": "
-                            "must be W, R, L, X, Y, Z, or M"
+                        QL_USER_ERROR(
+                            "invalid parameter mode " << mode_s << ": "
+                            "must be B, W, U, R, L, X, Y, Z, M, or I"
                         );
                     }
                     insn->operand_types.emplace(mode, type);
@@ -304,15 +300,11 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 // Check whether the operand list matches the specializations
                 // specified in the old way.
                 if (insn->template_operands.size() > insn->operand_types.size()) {
-                    throw utils::Exception(
-                        "need at least operands for the specialization parameters"
-                    );
+                    QL_ICE("need at least operands for the specialization parameters");
                 } else {
                     for (utils::UInt i = 0; i < template_params.size(); i++) {
                         if (insn->operand_types[i]->data_type != get_type_of(insn->template_operands[i])) {
-                            throw utils::Exception(
-                                "specialization parameter operand type mismatch"
-                            );
+                            QL_ICE("specialization parameter operand type mismatch");
                         }
                     }
                 }
@@ -320,11 +312,17 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             } else {
 
                 // We have to infer the prototype somehow...
-                if (std::regex_match(insn->name, std::regex("h|i|move_init|prep_?[xyz]"))) {
+                if (std::regex_match(insn->name, std::regex("move_init|prep(_?[xyz])?"))) {
+
+                    // State initialization doesn't commute and kills the qubit
+                    // for liveness analysis.
+                    insn->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
+
+                } else if (std::regex_match(insn->name, std::regex("h|i"))) {
 
                     // Single-qubit gate that doesn't commute in any way we can
                     // represent.
-                    insn->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::UPDATE, qubit_type);
 
                 } else if (insn->name == "rx") {
 
@@ -382,8 +380,8 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 } else if (std::regex_match(insn->name, std::regex("(teleport)?(move|swap)"))) {
 
                     // Swaps.
-                    insn->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
-                    insn->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::UPDATE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::UPDATE, qubit_type);
 
                 } else if (insn->name == "cnot" || insn->name == "cx") {
 
@@ -416,7 +414,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 // If the instruction is specialized, we need at least qubit
                 // args for those template parameters. If our guess didn't give
                 // us that, just assume the template parameters are the only
-                // ones, and don't infer any commutation rules.
+                // ones, and use UPDATE access mode (the most pessimistic one).
                 auto invalid = false;
                 if (template_operands.size() > insn->operand_types.size()) {
                     invalid = true;
@@ -431,7 +429,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                     insn->operand_types.reset();
                     for (utils::UInt i = 0; i < template_operands.size(); i++) {
                         insn->operand_types.emplace(
-                            prim::OperandMode::WRITE,
+                            prim::OperandMode::UPDATE,
                             get_type_of(template_operands[i])
                         );
                     }
@@ -446,7 +444,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 it2 = insn->data->find("duration");
                 duration_divider = old->cycle_time;
             } else if (insn->data->find("duration_cycles") != insn->data->end()) {
-                throw utils::Exception(
+                QL_USER_ERROR(
                     "both duration and duration_cycles are specified; "
                     "please specify one or the other"
                 );
@@ -456,7 +454,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             } else if (it2->is_number_float()) {
                 auto val = it2->get<utils::Real>();
                 if (val < 0) {
-                    throw utils::Exception(
+                    QL_USER_ERROR(
                         "found negative duration (or integer overflow occurred)"
                     );
                 }
@@ -464,13 +462,13 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             } else if (it2->is_number_integer()) {
                 auto val = it2->get<utils::Int>();
                 if (val < 0) {
-                    throw utils::Exception(
+                    QL_USER_ERROR(
                         "found negative duration (or integer overflow occurred)"
                     );
                 }
                 insn->duration = utils::div_ceil((utils::UInt)val, duration_divider);
             } else {
-                throw utils::Exception(
+                QL_USER_ERROR(
                     "duration(_cycles) must be a number when specified"
                 );
             }
@@ -482,7 +480,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             // with an explicit breg.
             if (duplicate_with_breg_arg) {
                 insn = insn.clone();
-                insn->operand_types[0]->mode = prim::OperandMode::WRITE;
+                insn->operand_types[0]->mode = prim::OperandMode::UPDATE;
                 insn->operand_types.emplace(prim::OperandMode::WRITE, bit_type);
                 add_instruction_type(ir, insn, template_operands);
             }
@@ -545,7 +543,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 // Add operands for the template operand types.
                 for (const auto &template_operand : template_operands) {
                     insn->operand_types.emplace(
-                        prim::OperandMode::WRITE,
+                        prim::OperandMode::UPDATE,
                         get_type_of(template_operand)
                     );
                 }
@@ -554,7 +552,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 // know exactly how many. So this is way easier than it was for
                 // normal instructions.
                 for (utils::UInt i = 0; i < parameter_count; i++) {
-                    insn->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::UPDATE, qubit_type);
                     decomp->parameters.emplace("", qubit_type, prim::UIntVec());
                 }
 
@@ -1097,7 +1095,7 @@ static InstructionRef convert_gate(
                 break;
 
             case compat::GateType::HADAMARD:
-                ityp->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::UPDATE, qubit_type);
                 operands.add(qubit_operands[0]);
                 break;
 
@@ -1157,9 +1155,9 @@ static InstructionRef convert_gate(
                 break;
 
             case compat::GateType::SWAP:
-                ityp->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::UPDATE, qubit_type);
                 operands.add(qubit_operands[0]);
-                ityp->operand_types.emplace(prim::OperandMode::WRITE, qubit_type);
+                ityp->operand_types.emplace(prim::OperandMode::UPDATE, qubit_type);
                 operands.add(qubit_operands[1]);
                 break;
 

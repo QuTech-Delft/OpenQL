@@ -337,10 +337,23 @@ std::ostream &operator<<(std::ostream &os, const Matrix<T> &mat) {
 enum class OperandMode {
 
     /**
-     * Used for classical write or non-commuting qubit access. The corresponding
-     * operand must be a reference.
+     * Used for a barrier on the given object. Acts as a write in the context of
+     * data dependency graph construction. Ignored for liveness analysis.
+     */
+    BARRIER,
+
+    /**
+     * Used for classical write-only operations or qubit prep operations. The
+     * corresponding operand must be a reference. This is the only access mode
+     * that kills an object within the context of liveness analysis.
      */
     WRITE,
+
+    /**
+     * Used for classical read-write operations and regular non-commuting qubit
+     * access. The corresponding operand must be a reference.
+     */
+    UPDATE,
 
     /**
      * Used for classical read-only access. Other instructions accessing the
@@ -377,7 +390,8 @@ enum class OperandMode {
 
     /**
      * Used when a qubit is measured and the result is stored in the implicit
-     * bit register associated with the qubit.
+     * bit register associated with the qubit. This expands to an update for the
+     * qubit and a write for the associated bit.
      */
     MEASURE,
 

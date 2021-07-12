@@ -79,7 +79,9 @@ private:
                 );
             }
             switch (expected[i]->mode) {
+                case prim::OperandMode::BARRIER:
                 case prim::OperandMode::WRITE:
+                case prim::OperandMode::UPDATE:
                     if (!actual[i]->as_reference()) {
                         QL_ICE(
                             "operand " << i << " of " << what <<
@@ -456,7 +458,7 @@ public:
                         "return location type mismatch in decomposition of function " << node.name
                     );
                 }
-                expected[sha->index]->mode = prim::OperandMode::WRITE;
+                expected[sha->index]->mode = prim::OperandMode::UPDATE;
             } else {
                 QL_ICE("unknown return location type encountered");
             }
@@ -476,14 +478,17 @@ public:
                     );
                 }
                 if (
-                    expected[i]->mode == prim::OperandMode::WRITE &&
-                    actual[i]->mode != prim::OperandMode::WRITE
+                    (
+                        expected[i]->mode == prim::OperandMode::WRITE ||
+                        expected[i]->mode == prim::OperandMode::UPDATE
+                    ) &&
+                    actual[i]->mode != expected[i]->mode
                 ) {
                     QL_ICE(
                         "prototype mismatch in decomposition of function " << node.name <<
                         ": instruction operand index " << (
                             i + node.decomposition->instruction_type->template_operands.size()
-                        ) << " is not marked as writable as demanded by function"
+                        ) << " is not marked as " << expected[i]->mode << " as demanded by function"
                     );
                 }
             }
@@ -514,7 +519,9 @@ public:
 
         // Check type/access-mode consistency.
         switch (node.mode) {
+            case prim::OperandMode::BARRIER:
             case prim::OperandMode::WRITE:
+            case prim::OperandMode::UPDATE:
                 // Used for both qubits and classical data.
                 break;
 

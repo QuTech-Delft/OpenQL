@@ -311,7 +311,9 @@ InstructionTypeLink find_instruction_type(
             }
             if (!writable[i]) {
                 switch ((*pos)->operand_types[i]->mode) {
+                    case prim::OperandMode::BARRIER:
                     case prim::OperandMode::WRITE:
+                    case prim::OperandMode::UPDATE:
                     case prim::OperandMode::COMMUTE_X:
                     case prim::OperandMode::COMMUTE_Y:
                     case prim::OperandMode::COMMUTE_Z:
@@ -351,7 +353,7 @@ InstructionTypeLink find_instruction_type(
     ityp->operand_types.reset();
     for (utils::UInt i = 0; i < types.size(); i++) {
         ityp->operand_types.emplace(
-            writable[i] ? prim::OperandMode::WRITE : prim::OperandMode::READ,
+            writable[i] ? prim::OperandMode::UPDATE : prim::OperandMode::READ,
             types[i]
         );
     }

@@ -146,16 +146,17 @@ public:
 
     void visit_operand_type(OperandType &operand_type) override {
         switch (operand_type.mode) {
-            case prim::OperandMode::WRITE:     ss << "W"; break;
-            case prim::OperandMode::READ:      ss << "W"; break;
-            case prim::OperandMode::LITERAL:   ss << "L"; break;
-            case prim::OperandMode::COMMUTE_X: ss << "X"; break;
-            case prim::OperandMode::COMMUTE_Y: ss << "Y"; break;
-            case prim::OperandMode::COMMUTE_Z: ss << "Z"; break;
-            case prim::OperandMode::MEASURE:   ss << "M"; break;
-            default: break;
+            case prim::OperandMode::BARRIER:   ss << "B:"; break;
+            case prim::OperandMode::WRITE:     ss << "W:"; break;
+            case prim::OperandMode::UPDATE:    ss << "U:"; break;
+            case prim::OperandMode::READ:      ss << "R:"; break;
+            case prim::OperandMode::LITERAL:   ss << "L:"; break;
+            case prim::OperandMode::COMMUTE_X: ss << "X:"; break;
+            case prim::OperandMode::COMMUTE_Y: ss << "Y:"; break;
+            case prim::OperandMode::COMMUTE_Z: ss << "Z:"; break;
+            case prim::OperandMode::MEASURE:   ss << "M:"; break;
+            case prim::OperandMode::IGNORE:    ss << "I:"; break;
         }
-        ss << ":";
         operand_type.data_type.visit(*this);
     }
 

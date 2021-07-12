@@ -216,6 +216,12 @@ instruction_type {
     # time domain.
     duration: prim::UInt;
 
+    # When set, the instruction acts as a barrier with respect to the data flow
+    # graph, so it cannot commute with anything, regardless of what the operands
+    # are. This is useful to represent operations like "measure all qubits" or
+    # (for simulation) "print the current state of the program".
+    barrier: prim::Bool;
+
     # Raw platform configuration JSON data for anything not specified in this
     # record.
     data: prim::Json;

@@ -38,16 +38,30 @@ void EventGatherer::add_reference(
     ir::prim::OperandMode mode,
     const utils::One<ir::Reference> &reference
 ) {
-    if (mode == ir::prim::OperandMode::IGNORE) {
-        return;
-    } else if (mode == ir::prim::OperandMode::LITERAL) {
-        mode = ir::prim::OperandMode::READ;
-    } else if (mode == ir::prim::OperandMode::MEASURE) {
-        QL_ASSERT(reference->data_type->as_qubit_type());
-        auto copy = reference->copy().as<ir::Reference>();
-        copy->data_type = ir->platform->implicit_bit_type;
-        add_reference(ir::prim::OperandMode::WRITE, copy);
-        mode = ir::prim::OperandMode::WRITE;
+    switch (mode) {
+        case ir::prim::OperandMode::BARRIER:
+        case ir::prim::OperandMode::WRITE:
+        case ir::prim::OperandMode::UPDATE:
+            mode = ir::prim::OperandMode::WRITE;
+            break;
+        case ir::prim::OperandMode::READ:
+        case ir::prim::OperandMode::LITERAL:
+            mode = ir::prim::OperandMode::READ;
+            break;
+        case ir::prim::OperandMode::COMMUTE_X:
+        case ir::prim::OperandMode::COMMUTE_Y:
+        case ir::prim::OperandMode::COMMUTE_Z:
+            break;
+        case ir::prim::OperandMode::MEASURE: {
+            QL_ASSERT(reference->data_type->as_qubit_type());
+            auto copy = reference->copy().as<ir::Reference>();
+            copy->data_type = ir->platform->implicit_bit_type;
+            add_reference(ir::prim::OperandMode::WRITE, copy);
+            mode = ir::prim::OperandMode::WRITE;
+            break;
+        }
+        case ir::prim::OperandMode::IGNORE:
+            return;
     }
     AccessMode amode{mode};
     auto sref = Reference(reference);
@@ -97,7 +111,7 @@ void EventGatherer::add_operands(
                 case ir::prim::OperandMode::COMMUTE_X:
                 case ir::prim::OperandMode::COMMUTE_Y:
                 case ir::prim::OperandMode::COMMUTE_Z:
-                    mode = ir::prim::OperandMode::WRITE;
+                    mode = ir::prim::OperandMode::UPDATE;
                 default:
                     break;
             }
@@ -118,6 +132,7 @@ void EventGatherer::add_statement(const ir::StatementRef &stmt) {
                 ir::get_generalization(custom->instruction_type)->operand_types,
                 ir::get_operands(stmt.as<ir::CustomInstruction>())
             );
+            barrier = custom->instruction_type->barrier;
         } else if (auto set = stmt->as_set_instruction()) {
             add_expression(ir::prim::OperandMode::WRITE, set->lhs);
             add_expression(ir::prim::OperandMode::READ, set->rhs);
@@ -131,7 +146,7 @@ void EventGatherer::add_statement(const ir::StatementRef &stmt) {
             barrier = true;
         } else {
             for (const auto &ref : wait->objects) {
-                add_expression(ir::prim::OperandMode::WRITE, ref);
+                add_expression(ir::prim::OperandMode::BARRIER, ref);
             }
         }
     } else if (auto if_else = stmt->as_if_else()) {
@@ -170,7 +185,7 @@ void EventGatherer::add_statement(const ir::StatementRef &stmt) {
     // Generate data dependencies for barrier-like statements that operate
     // on everything, including stuff we don't know about.
     if (barrier) {
-        add_reference(ir::prim::OperandMode::WRITE, {});
+        add_reference(ir::prim::OperandMode::BARRIER, {});
     }
 
 }

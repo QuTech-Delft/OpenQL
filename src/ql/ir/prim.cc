@@ -263,7 +263,7 @@ CMatrix deserialize(const utils::tree::cbor::MapReader &map) {
 //==============================================================================
 
 template <>
-OperandMode initialize<OperandMode>() { return OperandMode::WRITE; }
+OperandMode initialize<OperandMode>() { return OperandMode::UPDATE; }
 
 template <>
 void serialize(const OperandMode &obj, utils::tree::cbor::MapWriter &map) {
@@ -277,7 +277,9 @@ OperandMode deserialize(const utils::tree::cbor::MapReader &map) {
 
 std::ostream &operator<<(std::ostream &os, const OperandMode &am) {
     switch (am) {
+        case OperandMode::BARRIER:   return os << "barrier";
         case OperandMode::WRITE:     return os << "write";
+        case OperandMode::UPDATE:    return os << "update";
         case OperandMode::READ:      return os << "read";
         case OperandMode::LITERAL:   return os << "literal";
         case OperandMode::COMMUTE_X: return os << "commute-X";
