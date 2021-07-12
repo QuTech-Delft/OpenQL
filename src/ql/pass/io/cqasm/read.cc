@@ -58,6 +58,11 @@ void ReadCQasmPass::dump_docs(
      - `barrier ...`: shorthand for `wait 0, ...`. A `barrier` without arguments
        is also valid.
 
+     - `measure_all`: if the `measure_all_target` option is set, this is
+       automatically expanded to single-qubit measurement instructions of the
+       name defined by the value of the option for each qubit in the main qubit
+       register.
+
      - `pragma`: supported as a means to place annotations inside statement
        lists. The reader uses this for some annotations of its own, but
        otherwise ignores it.
@@ -158,6 +163,18 @@ ReadCQasmPass::ReadCQasmPass(
         "keep",
         {"keep", "discard", "bundles-as-barriers"}
     );
+    options.add_str(
+        "measure_all_target",
+        "Standard cQASM has a measure_all instruction that implicitly measures "
+        "all qubits in a certain way, while OpenQL platforms normally lack this "
+        "instruction. When this option is set, it is treated as the name of a "
+        "single-qubit measurement gate, that will be used to implement "
+        "measure_all; i.e. the measure_all instruction will be expanded to a "
+        "bundle of <measure_all_target> instructions, for each qubit in the "
+        "main qubit register.",
+        ""
+    );
+
 }
 
 /**
@@ -179,6 +196,8 @@ utils::Int ReadCQasmPass::run(
     } else {
         QL_ASSERT(false);
     }
+
+    read_options.measure_all_target = options["measure_all_target"].as_str();
 
     ir::cqasm::read_file(
         ir,

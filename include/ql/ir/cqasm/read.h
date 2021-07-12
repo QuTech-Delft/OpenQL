@@ -49,6 +49,17 @@ struct ReadOptions {
      */
     ScheduleMode schedule_mode;
 
+    /**
+     * Standard cQASM has a measure_all instruction that implicitly measures all
+     * qubits in a certain way, while OpenQL platforms normally lack this
+     * instruction. When this option is set, it is treated as the name of a
+     * single-qubit measurement gate, that will be used to implement
+     * measure_all; i.e. the measure_all instruction will be expanded to a
+     * bundle of <measure_all_target> instructions, for each qubit in the main
+     * qubit register.
+     */
+    utils::Str measure_all_target;
+
 };
 
 /**

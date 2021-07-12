@@ -688,6 +688,23 @@ static void convert_block(
                         }
                         ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
 
+                    } else if (
+                        !options.measure_all_target.empty() &&
+                        cq_insn->name == "measure_all" &&
+                        cq_insn->operands.empty()
+                    ) {
+
+                        // Handle expansion of measure_all.
+                        QL_ASSERT(ir->platform->qubits->shape.size() == 1);
+                        for (utils::UInt q = 0; q < ir->platform->qubits->shape[0]; q++) {
+                            ql_insns.push_back(make_instruction(
+                                ir,
+                                options.measure_all_target,
+                                {make_qubit_ref(ir, q)},
+                                ql_condition.clone()
+                            ));
+                        }
+
                     } else {
 
                         // Handle instructions with normal single-gate-multiple-
