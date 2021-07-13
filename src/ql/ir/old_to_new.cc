@@ -603,7 +603,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             if (it2 == insn->data->end()) {
                 it2 = insn->data->find("duration");
                 duration_divider = old->cycle_time;
-            } else if (insn->data->find("duration_cycles") != insn->data->end()) {
+            } else if (insn->data->find("duration") != insn->data->end()) {
                 QL_USER_ERROR(
                     "both duration and duration_cycles are specified; "
                     "please specify one or the other"

@@ -16,6 +16,7 @@
 #include "ql/pass/io/cqasm/read.h"
 #include "ql/pass/io/cqasm/report.h"
 #include "ql/pass/io/sweep_points/write.h"
+#include "ql/pass/dec/instructions/instructions.h"
 #include "ql/pass/opt/clifford/optimize.h"
 #include "ql/pass/sch/schedule/schedule.h"
 #include "ql/pass/sch/list_schedule/list_schedule.h"
@@ -41,6 +42,7 @@ Factory::Factory() {
     register_pass<::ql::pass::io::cqasm::read::Pass>("io.cqasm.Read");
     register_pass<::ql::pass::io::cqasm::report::Pass>("io.cqasm.Report");
     register_pass<::ql::pass::io::sweep_points::write::Pass>("io.sweep_points.Write");
+    register_pass<::ql::pass::dec::instructions::Pass>("dec.Instructions");
     register_pass<::ql::pass::opt::clifford::optimize::Pass>("opt.clifford.Optimize");
     register_pass<::ql::pass::sch::schedule::Pass>("sch.Schedule");
     register_pass<::ql::pass::sch::list_schedule::Pass>("sch.ListSchedule");

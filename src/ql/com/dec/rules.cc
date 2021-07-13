@@ -111,7 +111,7 @@ utils::UInt apply_decomposition_rules(
     const ir::Ref &ir,
     const ir::BlockBaseRef &block,
     utils::Bool ignore_schedule,
-    const std::function<utils::Bool(const ir::DecompositionRef&)> &predicate
+    const RulePredicate &predicate
 ) {
 
     // Make a list of the statements we haven't processed yet, and clear the
@@ -125,7 +125,8 @@ utils::UInt apply_decomposition_rules(
     // Process the statements.
     utils::UInt number_of_applications = 0;
     while (!remaining.empty()) {
-        const auto &stmt = remaining.front();
+        auto stmt = remaining.front();
+        remaining.pop_front();
         utils::Bool rule_applied = false;
         if (auto insn = stmt->as_custom_instruction()) {
             for (const auto &rule : insn->instruction_type->decompositions) {
@@ -158,10 +159,16 @@ utils::UInt apply_decomposition_rules(
                 }
 
                 // Perform the expansion.
+                auto it = remaining.begin();
                 for (const auto &orig_exp_stmt : rule->expansion) {
                     auto exp_stmt = orig_exp_stmt.clone();
                     mapper.process_statement(exp_stmt);
-                    remaining.push_front(exp_stmt);
+                    if (ignore_schedule) {
+                        exp_stmt->cycle = stmt->cycle;
+                    } else {
+                        exp_stmt->cycle += stmt->cycle;
+                    }
+                    it = remaining.insert(it, exp_stmt);
                 }
 
                 rule_applied = true;
@@ -173,7 +180,6 @@ utils::UInt apply_decomposition_rules(
         } else {
             block->statements.add(stmt);
         }
-        remaining.pop_front();
     }
 
     // Make sure that the statements are ordered by cycle. This is only

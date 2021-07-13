@@ -11,6 +11,11 @@ namespace com {
 namespace dec {
 
 /**
+ * Predicate function prototype.
+ */
+using RulePredicate = std::function<utils::Bool(const ir::DecompositionRef&)>;
+
+/**
  * Recursively applies all available decomposition rules (that match the
  * predicate, if given) to the given block. If ignore_schedule is set, the
  * schedule of the decomposition rules is ignored, and instead the statements
@@ -23,8 +28,7 @@ utils::UInt apply_decomposition_rules(
     const ir::Ref &ir,
     const ir::BlockBaseRef &block,
     utils::Bool ignore_schedule = true,
-    const std::function<utils::Bool(const ir::DecompositionRef&)> &predicate
-        = [](const ir::DecompositionRef&){ return true; }
+    const RulePredicate &predicate = [](const ir::DecompositionRef&){ return true; }
 );
 
 } // namespace dec
