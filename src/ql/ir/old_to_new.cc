@@ -7,6 +7,7 @@
 
 #include "ql/ir/ops.h"
 #include "ql/ir/consistency.h"
+#include "ql/ir/cqasm/read.h"
 #include "ql/rmgr/manager.h"
 #include "ql/arch/diamond/annotations.h"
 
@@ -100,6 +101,148 @@ static ExpressionRef parse_instruction_parameter(
 }
 
 /**
+ * Parses a new-style decomposition rule.
+ */
+static void parse_decomposition_rule(
+    const Ref &ir,
+    const InstructionTypeLink &ityp,
+    const utils::Json &json
+) {
+
+    // Make the decomposition rule node.
+    auto decomp = utils::make<InstructionDecomposition>();
+
+    // If the JSON is an object, parse the metadata for the decomposition.
+    utils::RawPtr<const utils::Json> into;
+    if (json.is_object()) {
+
+        // Set the name, or leave it empty if not specified.
+        auto it = json.find("name");
+        if (it != json.end()) {
+            if (!it->is_string()) {
+                QL_USER_ERROR(
+                    "decomposition rule name must be a string "
+                    "when specified"
+                );
+            }
+            decomp->name = it->get<utils::Str>();
+        }
+
+        // Fetch the rule itself.
+        it = json.find("into");
+        if (it == json.end()) {
+            QL_USER_ERROR(
+                "when decomposition rule is specified as an object, an 'into' "
+                "key must be present to contain the actual rule"
+            );
+        }
+        into = &*it;
+
+        // Save the rest of the JSON data.
+        decomp->data = json;
+
+    } else {
+        into = &json;
+    }
+
+    // We parse the decomposition rule itself as cQASM. We only expect a single
+    // block, but of course the cQASM reader expects a complete file. So we have
+    // to prefix the version statement.
+    utils::StrStrm cqasm;
+    cqasm << "version 1.2\n@@NEXT_LINE=1\n";
+
+    // For the "into" key, or the decomposition rule as a whole, we accept
+    // either a string or a list of strings, the latter being a poor-man's
+    // version of a multiline string in JSON.
+    if (into->is_array()) {
+        for (const auto &line : *into) {
+            if (line.is_string()) {
+                cqasm << line.get<utils::Str>() << "\n";
+            } else {
+                QL_USER_ERROR(
+                    "decomposition rule (or its 'into' key) must be a single "
+                    "string or an array of strings"
+                );
+            }
+        }
+    } else if (into->is_string()) {
+        cqasm << into->get<utils::Str>() << "\n";
+    } else {
+        QL_USER_ERROR(
+            "decomposition rule (or its 'into' key) must be a single string or "
+            "an array of strings"
+        );
+    }
+
+    // Come up with a description of this rule for the cQASM error messages.
+    utils::StrStrm description;
+    if (decomp->name.empty()) {
+        description << "unnamed decomposition";
+    } else {
+        description << "decomposition '" << decomp->name << "'";
+    }
+    description << " for " << ityp->name;
+
+    // Set the cQASM read options, and make parameter placeholder objects for
+    // the decomposition rule.
+    cqasm::ReadOptions read_options;
+    read_options.schedule_mode = cqasm::ScheduleMode::KEEP;
+    for (const auto &operand_type : ityp->operand_types) {
+        utils::Bool assignable;
+        switch (operand_type->mode) {
+            case prim::OperandMode::BARRIER:
+            case prim::OperandMode::WRITE:
+            case prim::OperandMode::UPDATE:
+            case prim::OperandMode::COMMUTE_X:
+            case prim::OperandMode::COMMUTE_Y:
+            case prim::OperandMode::COMMUTE_Z:
+            case prim::OperandMode::MEASURE:
+                assignable = true;
+                break;
+            case prim::OperandMode::READ:
+            case prim::OperandMode::LITERAL:
+            case prim::OperandMode::IGNORE:
+                assignable = false;
+                break;
+        }
+        decomp->parameters.emplace("", operand_type->data_type);
+        read_options.operands.push_back({decomp->parameters.back(), assignable});
+    }
+
+    // The cqasm::read() function will override the program node in the IR tree
+    // for the result. Obviously, we don't want that. So we make our own root
+    // tree with the platform half shared, and nothing in the program node.
+    auto rule_ir = utils::make<Root>(ir->platform);
+    cqasm::read(rule_ir, cqasm.str(), "<" + description.str() + ">", read_options);
+
+    // Copy the temporary variables declared in the cQASM program to the
+    // decomposition rule.
+    decomp->objects = rule_ir->program->objects;
+
+    // Copy the statements to the decomposition rule.
+    if (rule_ir->program->blocks.size() != 1) {
+        QL_USER_ERROR(
+            "in " << description.str() << ": subcircuits are not allowed in "
+            "expansions"
+        );
+    }
+    utils::UInt decomp_duration = get_duration_of_block(rule_ir->program->blocks[0]);
+    if (decomp_duration > ityp->duration) {
+        QL_USER_ERROR(
+            "in " << description.str() << ": the duration of the schedule of " <<
+            "the decomposition (" << decomp_duration << ") cannot be longer " <<
+            "than the duration of the to-be-decomposed instruction (" <<
+            ityp->duration << ")"
+        );
+    }
+    decomp->expansion = rule_ir->program->blocks[0]->statements;
+
+    // Now actually add the decomposition rule.
+    ityp->decompositions.add(decomp);
+
+}
+
+/**
  * Converts the old platform to the new IR structure.
  *
  * See convert_old_to_new(const compat::ProgramRef&) for details.
@@ -143,10 +286,12 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Add the instruction set. We load this from the JSON data rather than
     // trying to use instruction_map, because the latter has some pretty ****ed
-    // up stuff going on in it to make the legacy decompositions work. We need
-    // to order by number of template args first: generalizations must be done
-    // first, otherwise the generalization will be inferred from the
-    // specialization and any extra data for the generalization will be lost.
+    // up stuff going on in it to make the legacy decompositions work.
+    //
+    // We need to order the instruction load process by the number of template
+    // args. Generalizations must be done first, otherwise the generalization
+    // will be inferred from the specialization and any extra data for the
+    // generalization will be lost.
     struct UnparsedGateType {
         utils::Str name;
         utils::List<utils::Str> name_parts;
@@ -170,6 +315,15 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
         });
     }
     unparsed_gate_types.sort();
+
+    // Similarly, we need to postpone the parsing of decomposition rules until
+    // we have all the instructions, because in the new IR, we can't just make
+    // new instructions ad hoc without first having a type for it. We do this
+    // postponing by just pushing lambda functions into the following list; the
+    // functions will then get executed after all instructions are added.
+    utils::List<std::function<void()>> todo;
+
+    // Now load the sorted instruction list.
     for (const UnparsedGateType &unparsed_gate_type : unparsed_gate_types) {
         try {
 
@@ -227,6 +381,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             // wrong while scanning the instructions in the program, we add
             // overloads as needed.
             utils::Bool duplicate_with_breg_arg = false;
+            utils::Bool prototype_inferred = false;
             it2 = insn->data->find("prototype");
             if (it2 != insn->data->end()) {
 
@@ -315,6 +470,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             } else {
 
                 // We have to infer the prototype somehow...
+                prototype_inferred = true;
                 if (std::regex_match(insn->name, std::regex("move_init|prep(_?[xyz])?"))) {
 
                     // State initialization doesn't commute and kills the qubit
@@ -478,7 +634,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
             }
 
             // Now actually add the instruction type.
-            add_instruction_type(ir, insn, template_operands);
+            auto ityp = add_instruction_type(ir, insn, template_operands);
 
             // If this is a legacy measurement instruction, also add a variant
             // with an explicit breg.
@@ -489,6 +645,50 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 add_instruction_type(ir, insn, template_operands);
             }
 
+            // Queue any new-style decomposition rules associated with the
+            // instruction for processing.
+            it2 = insn->data->find("decomposition");
+            if (it2 != insn->data->end()) {
+
+                // New-style decomposition rules are only allowed to be
+                // specified when the prototype is explicitly specified.
+                if (prototype_inferred) {
+                    QL_USER_ERROR(
+                        "cannot specify decomposition rules for instruction "
+                        "for which no prototype was specified"
+                    );
+                }
+
+                // Parse the JSON structure; we'll allow a list of rules or a
+                // single rule without the array around it for brevity.
+                utils::List<std::reference_wrapper<const utils::Json>> rules;
+                if (it2->is_array()) {
+                    utils::Bool only_strings = true;
+                    for (const auto &element : *it2) {
+                        if (!element.is_string()) {
+                            only_strings = false;
+                        }
+                    }
+                    if (only_strings) {
+                        rules.push_back(*it2);
+                    } else {
+                        for (const auto &rule : *it2) {
+                            rules.push_back(rule);
+                        }
+                    }
+                } else {
+                    rules.push_back(*it2);
+                }
+
+                // Now queue parsing the rules.
+                for (const utils::Json &rule : rules) {
+                    todo.push_back([ir, ityp, rule]() {
+                        parse_decomposition_rule(ir, ityp, rule);
+                    });
+                }
+
+            }
+
         } catch (utils::Exception &e) {
             e.add_context("in gate description for '" + unparsed_gate_type.name + "'");
             throw;
@@ -497,7 +697,6 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Add legacy decompositions to the new system, for gates added by passes
     // (notably swap and relatives for the mapper).
-    utils::List<std::function<void()>> todo;
     auto it = old->platform_config.find("gate_decomposition");
     if (it != old->platform_config.end()) {
         for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
@@ -582,8 +781,10 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                     // Make a trivial guess for the duration by just summing the
                     // durations of the sub-instructions, which we'll do while
                     // resolving them in the loop below. This is not a very
-                    // realistic mode, of course, since sub-instructions may end up
-                    // being executed in parallel.
+                    // realistic mode, of course, since sub-instructions may end
+                    // up being executed in parallel. In fact, in the
+                    // decomposition they *are* parallel, so as to not mess up
+                    // instruction order when the decomposition is applied.
                     utils::UInt duration = 0;
 
                     // Parse and add the sub-instructions.

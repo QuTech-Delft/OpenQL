@@ -239,10 +239,14 @@ instruction_decomposition {
     parameters: Any<temporary_object>;
 
     # Any temporary variables as needed within the decomposition rule.
-    objects: Any<temporary_object>;
+    objects: Any<virtual_object>;
 
     # The block of instructions that the decomposition rule expands to.
     expansion: Any<statement>;
+
+    # Raw platform configuration JSON data for anything not specified in this
+    # record.
+    data: prim::Json;
 
 }
 

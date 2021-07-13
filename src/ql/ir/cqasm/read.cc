@@ -20,6 +20,7 @@ namespace cqv = ::cqasm::v1::values;
 namespace cqty = ::cqasm::v1::types;
 namespace cqs = ::cqasm::semantic;
 namespace cqt = ::cqasm::tree;
+namespace cqe = ::cqasm::error;
 
 /**
  * Marker used on cQASM nodes when they have been successfully used by
@@ -84,16 +85,54 @@ static cqty::Type make_cq_op_type(const utils::One<OperandType> &ql_op_type) {
  */
 static cqv::Value make_cq_register_ref(
     const ObjectLink &ql_obj,
-    const cqv::Values &cq_indices
+    const cqv::Values &cq_indices,
+    utils::Bool assignable = true
 ) {
     cqv::Value cq_val = cqt::make<cqv::Function>(
         ql_obj->name,
         cq_indices,
-        make_cq_type(ql_obj->data_type, true)
+        make_cq_type(ql_obj->data_type, assignable)
     );
-    cq_val->set_annotation(ql_obj);
+    cq_val->set_annotation<ObjectLink>(ql_obj);
     cq_val->set_annotation<DataTypeLink>(ql_obj->data_type);
     return cq_val;
+}
+
+/**
+ * Makes a reference to an operand, modelled as a builtin function call with the
+ * operand index as its operand.
+ */
+static cqv::Value make_cq_operand_ref(
+    const utils::Vec<utils::Pair<ObjectLink, utils::Bool>> &ql_operands,
+    const cqv::Value &cq_index
+) {
+
+    // Select the operand based on the index.
+    ObjectLink ql_obj;
+    utils::Bool assignable;
+    try {
+        if (auto idx = cq_index->as_const_int()) {
+            if (idx->value < 0 || (utils::UInt)idx->value >= ql_operands.size()) {
+                throw cqe::AnalysisError(
+                    "index to op() function is out of range 0.." +
+                    utils::to_string(ql_operands.size() - 1)
+                );
+            }
+            const auto &ql_operand = ql_operands[(utils::UInt)idx->value];
+            ql_obj = ql_operand.first;
+            assignable = ql_operand.second;
+        } else {
+            throw cqe::AnalysisError(
+                "index to op() function must be an integer literal"
+            );
+        }
+    } catch (cqe::AnalysisError &e) {
+        e.context(*cq_index);
+        throw;
+    }
+
+    // Return the appropriate reference.
+    return make_cq_register_ref(ql_obj, cqv::Values(), assignable);
 }
 
 /**
@@ -512,15 +551,18 @@ static ExpressionRef convert_expression(
         }
         return make_reference(ir, ql_object, {});
     } else if (auto fn = cq_expr->as_function()) {
-        if (fn->has_annotation<ObjectLink>()) {
+        if (auto ql_object = fn->get_annotation_ptr<ObjectLink>()) {
 
             // Handle index functions for non-scalar register references.
-            auto ql_object = fn->get_annotation<ObjectLink>();
             prim::UIntVec ql_indices;
             for (const auto &cq_operand : fn->operands) {
                 ql_indices.push_back(convert_index(cq_operand));
             }
-            return make_reference(ir, ql_object, ql_indices);
+            auto ref = make_reference(ir, *ql_object, ql_indices);
+            if (auto ql_type = fn->get_annotation_ptr<DataTypeLink>()) {
+                ref->data_type = *ql_type;
+            }
+            return std::move(ref);
 
         } else {
 
@@ -628,17 +670,17 @@ static void convert_block(
                             );
                         }
                         if (auto ci = cq_insn->operands[0]->as_const_int()) {
-                            if (ci->value < 0) {
+                            if (ci->value < 1) {
                                 QL_USER_ERROR(
                                     "skip instructions cannot have a negative "
-                                    "skip count"
+                                    "or zero skip count"
                                 );
                             }
 
                             // Only actually listen to the skip instruction if
                             // the schedule is to be retained.
                             if (options.schedule_mode == ScheduleMode::KEEP) {
-                                cycle += (utils::UInt)ci->value;
+                                cycle += (utils::UInt)ci->value - 1;
                             }
 
                         } else {
@@ -1036,6 +1078,26 @@ void read(
         );
     }
 
+    // Also allow qubits to be "cast" to their implicit measurement bit.
+    a.register_function(
+        ir->platform->default_bit_type->name,
+        {make_cq_type(ir->platform->qubits->data_type)},
+        [ir](const cqv::Values &ops) -> cqv::Value {
+            if (auto qrefs = ops[0]->as_qubit_refs()) {
+                auto brefs = cqt::make<cqv::BitRefs>();
+                brefs->index = qrefs->index;
+                brefs->set_annotation<DataTypeLink>(ir->platform->default_bit_type);
+                return std::move(brefs);
+            } else if (auto fun = ops[0]->as_function()) {
+                fun->return_type = make_cq_type(ir->platform->default_bit_type);
+                ops[0]->set_annotation<DataTypeLink>(ir->platform->default_bit_type);
+                return ops[0];
+            } else {
+                throw cqe::AnalysisError("unexpected argument type");
+            }
+        }
+    );
+
     // Add registers as default mappings and builtin function calls.
     for (const auto &obj : ir->platform->objects) {
         if (ir->platform->qubits.links_to(obj)) {
@@ -1077,6 +1139,15 @@ void read(
             }
 
         }
+    }
+
+    // Create the op(int) -> ... function for the operand list, if specified.
+    if (!options.operands.empty()) {
+        cqty::Types types;
+        types.emplace<cqty::Int>();
+        a.register_function("op", types, [options](const cqv::Values &ops) -> cqv::Value {
+            return make_cq_operand_ref(options.operands, ops[0]);
+        });
     }
 
     // Add regular builtin functions.
@@ -1336,7 +1407,13 @@ void read(
 
     // Looks like conversion was successful.
     ir->program = ql_program;
-    check_consistency(ir);
+
+    // The resulting tree is only going to be consistent if the op() function
+    // was not used, otherwise links will be missing. So we just skip the check
+    // if operands were specified.
+    if (options.operands.empty()) {
+        check_consistency(ir);
+    }
 
 }
 

@@ -111,7 +111,11 @@
             "prototype": ["M:qubit"],
             "duration": 340,
             "type": "readout",
-            "cc_light_instr": "measx"
+            "cc_light_instr": "measx",
+            "decomposition": {
+                "name": "desugar",
+                "into": "measx_keep op(0), bit(op(0))"
+            }
         },
         "measx_keep ": {
             "prototype": ["U:qubit", "W:bit"],
@@ -123,7 +127,11 @@
             "prototype": ["M:qubit"],
             "duration": 300,
             "type": "readout",
-            "cc_light_instr": "measz"
+            "cc_light_instr": "measz",
+            "decomposition": {
+                "name": "desugar",
+                "into": "measz_keep op(0), bit(op(0))"
+            }
         },
         "measz_keep ": {
             "prototype": ["U:qubit", "W:bit"],
@@ -135,7 +143,11 @@
             "prototype": ["M:qubit"],
             "duration": 300,
             "type": "readout",
-            "cc_light_instr": "measz"
+            "cc_light_instr": "measz",
+            "decomposition": {
+                "name": "desugar",
+                "into": "measure op(0), bit(op(0))"
+            }
         },
         "measure ": {
             "prototype": ["U:qubit", "W:bit"],

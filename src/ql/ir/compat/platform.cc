@@ -159,124 +159,226 @@ void Platform::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
       Within the instruction definition object, OpenQL's
       architecture/pass-agnostic logic currently only recognizes the following
       keys.
-)" R"(
-       - `"prototype"`: specifies the amount and type of operands that the
-         instruction expects. If specified, it must be an array of strings. Each
-         of these strings represents an operand, and must be set to the name of
-         its expected type, optionally prefixed with the access mode, separated
-         by a colon. By default, the available types are:
-
-          - `qubit` for qubits;
-          - `bit` for classical bits;
-          - `int` for 32-bit signed integers; and
-          - `real` for floating-point numbers.
-
-         The available access modes are:
-
-          - `B` for barriers (DDG write, liveness ignore);
-          - `W` for write access or qubit state preparation (DDG write, liveness
-            kill);
-          - `U` for read+write/update access or regular non-commuting qubit
-            usage (DDG write, liveness use);
-          - `R` for read-only access (DDG read, liveness use);
-          - `L` for operands that must be literals;
-          - `X` for qubit access that behaves like an X rotation (DDG X,
-            liveness use);
-          - `Y` for qubit access that behaves like an Y rotation (DDG Y,
-            liveness use);
-          - `Z` for qubit access that behaves like an Z rotation (DDG Z,
-            liveness use);
-          - `M` for a measurement of the qubit for which the result is written
-            to its implicitly associated bit register (DDG W for the qubit and
-            its bit, liveness use for the qubit, and liveness kill for the bit);
-            and
-          - `I` for operands that should be ignored (DDG ignore, liveness
-            ignore).
-)" R"(
-         If the access mode is not specified for an operand, `U` is assumed, as
-         it is the most pessimistic mode available. If no prototype is specified
-         at all, it will be inferred based on the instruction name for backward
-         compatibility, using the following rules (first regex-matching rule
-         applies):
-
-          - `move_init|prep(_?[xyz])?` -> `["W:qubit"]`
-          - `h|i` -> `["U:qubit"]`
-          - `rx` -> `["X:qubit", "L:real"]`
-          - `(m|mr|r)?xm?[0-9]*` -> `["X:qubit"]`
-          - `ry` -> `["Y:qubit", "L:real"]`
-          - `(m|mr|r)?ym?[0-9]*` -> `["Y:qubit"]`
-          - `rz` -> `["Z:qubit", "L:real"]`
-          - `crz?` -> `["Z:qubit", "Z:qubit", "L:real"]`
-          - `crk` -> `["Z:qubit", "Z:qubit", "L:int"]`
-          - `[st](dag)?|(m|mr|r)?zm?[0-9]*` -> `["Z:qubit"]`
-          - `meas(ure)?(_?[xyz])?(_keep)?` -> `["M:qubit"]` and
-            `["U:qubit", "W:bit"]`
-          - `(teleport)?(move|swap)` -> `["U:qubit", "U:qubit"]`
-          - `cnot|cx` -> `["Z:qubit", "X:qubit"]`
-          - `cphase|cz` -> `["Z:qubit", "Z:qubit"]`
-          - `cz_park` -> `["Z:qubit", "Z:qubit", "I:qubit"]`
-          - `toffoli` -> `["Z:qubit", "Z:qubit", "X:qubit"]`
-          - no operands otherwise.
-
-         Furthermore, when gates are added via the API or old IR that don't
-         match an existing instruction due to prototype mismatch, and the
-         prototype was inferred per the above rules, a clone is made of the
-         instruction type with the prototype inferred by means of the actual
-         operands, using the `U` access mode for reference operands and `R` for
-         anything else. When a default gate is encountered in the old IR and
-         needs to be converted to the new IR, the entire instruction type is
-         inferred from the default gate. From now on, however, it is strongly
-         recommended to explicitly specify prototypes and not rely on this
-         inference logic.
-
-         Note that it is possible to define multiple overloads for an
-         instruction with the same name. Passes using the new IR will be able
-         to distinguish between these overloads based on the types and
-         writability of the operands, but be aware that any legacy pass will use
-         one of the gate definitions at random (so differing duration or other
-         attributes won't work right). The JSON syntax for this is rather
-         awkward, since object keys must be unique; the best thing to do is to
-         just append spaces for the key, since these spaces are cleaned up when
-         the instruction type is parsed.
-)" R"(
-       - `"cqasm_name"`: specifies an alternative name for the instruction when
-         it is printed as cQASM or when read from cQASM. This must be a valid
-         identifier. If not specified, it defaults to the normal instruction
-         name.
-
-       - `"barrier"`: an optional boolean that specifies that an instruction
-         is to behave as a complete barrier, preventing it from being commuted
-         with any other instruction during scheduling, and preventing
-         optimizations on it. If not specified, the flag defaults to false.
-
-       - `"duration"` or `"duration_cycles"`: specifies the duration of the
-         instruction in nanoseconds or cycles. OpenQL currently only supports
-         durations that are an integer number of nanoseconds, so any fractions
-         will be rounded up to the nearest nanosecond. Furthermore, in almost
-         all contexts, the duration of an instruction will be rounded up to the
-         nearest integer cycle count.
-
-       - `"qubits"`: this *must* map to a single qubit index or a list of qubit
-         indices that corresponds to the qubits in the specialization. For
-         generalized instructions, the list must either be empty or unspecified.
-         This field will be removed in the future as it is redundant, from which
-         point onward it will be ignored. The qubit indices themselves can be
-         specified as either a string of the form `"q<index>"` or an integer
-         with just the index.
 
       NOTE: older versions of OpenQL recognized and required the existence of
       many more keys, such as `"matrix"` and `"latency"`. All passes relying on
       this information have since been cleaned out as they were no longer in
       use, and all requirements on the existence of these keys have likewise
       been lifted.
+
 )" R"(
+      * `"cqasm_name"` key *
+
+        Specifies an alternative name for the instruction when it is printed as
+        cQASM or when read from cQASM. This must be a valid identifier. If not
+        specified, it defaults to the normal instruction name.
+
+      * `"prototype"` key *
+
+        Specifies the amount and type of operands that the instruction expects.
+        If specified, it must be an array of strings. Each of these strings
+        represents an operand, and must be set to the name of its expected type,
+        optionally prefixed with the access mode, separated by a colon. By
+        default, the available types are:
+
+         - `qubit` for qubits;
+         - `bit` for classical bits;
+         - `int` for 32-bit signed integers; and
+         - `real` for floating-point numbers.
+
+        The available access modes are:
+
+         - `B` for barriers (DDG write, liveness ignore);
+         - `W` for write access or qubit state preparation (DDG write, liveness
+           kill);
+         - `U` for read+write/update access or regular non-commuting qubit
+           usage (DDG write, liveness use);
+         - `R` for read-only access (DDG read, liveness use);
+         - `L` for operands that must be literals;
+         - `X` for qubit access that behaves like an X rotation (DDG X,
+           liveness use);
+         - `Y` for qubit access that behaves like an Y rotation (DDG Y,
+           liveness use);
+         - `Z` for qubit access that behaves like an Z rotation (DDG Z,
+           liveness use);
+         - `M` for a measurement of the qubit for which the result is written
+           to its implicitly associated bit register (DDG W for the qubit and
+           its bit, liveness use for the qubit, and liveness kill for the bit);
+           and
+         - `I` for operands that should be ignored (DDG ignore, liveness
+           ignore).
+)" R"(
+        If the access mode is not specified for an operand, `U` is assumed, as
+        it is the most pessimistic mode available. If no prototype is specified
+        at all, it will be inferred based on the instruction name for backward
+        compatibility, using the following rules (first regex-matching rule
+        applies):
+
+         - `move_init|prep(_?[xyz])?` -> `["W:qubit"]`
+         - `h|i` -> `["U:qubit"]`
+         - `rx` -> `["X:qubit", "L:real"]`
+         - `(m|mr|r)?xm?[0-9]*` -> `["X:qubit"]`
+         - `ry` -> `["Y:qubit", "L:real"]`
+         - `(m|mr|r)?ym?[0-9]*` -> `["Y:qubit"]`
+         - `rz` -> `["Z:qubit", "L:real"]`
+         - `crz?` -> `["Z:qubit", "Z:qubit", "L:real"]`
+         - `crk` -> `["Z:qubit", "Z:qubit", "L:int"]`
+        - `[st](dag)?|(m|mr|r)?zm?[0-9]*` -> `["Z:qubit"]`
+         - `meas(ure)?(_?[xyz])?(_keep)?` -> `["M:qubit"]` and
+           `["U:qubit", "W:bit"]`
+         - `(teleport)?(move|swap)` -> `["U:qubit", "U:qubit"]`
+         - `cnot|cx` -> `["Z:qubit", "X:qubit"]`
+         - `cphase|cz` -> `["Z:qubit", "Z:qubit"]`
+         - `cz_park` -> `["Z:qubit", "Z:qubit", "I:qubit"]`
+         - `toffoli` -> `["Z:qubit", "Z:qubit", "X:qubit"]`
+         - no operands otherwise.
+
+        Furthermore, when gates are added via the API or old IR that don't
+        match an existing instruction due to prototype mismatch, and the
+        prototype was inferred per the above rules, a clone is made of the
+        instruction type with the prototype inferred by means of the actual
+        operands, using the `U` access mode for reference operands and `R` for
+        anything else. When a default gate is encountered in the old IR and
+        needs to be converted to the new IR, the entire instruction type is
+        inferred from the default gate. From now on, however, it is strongly
+        recommended to explicitly specify prototypes and not rely on this
+        inference logic.
+
+        NOTE: it is possible to define multiple overloads for an instruction
+        with the same name. Passes using the new IR will be able to distinguish
+        between these overloads based on the types and writability of the
+        operands, but be aware that any legacy pass will use one of the gate
+        definitions at random (so differing duration or other attributes won't
+        work right). The JSON syntax for this is rather awkward, since object
+        keys must be unique; the best thing to do is to just append spaces for
+        the key, since these spaces are cleaned up when the instruction type is
+        parsed.
+)" R"(
+      * `"barrier"` key *
+
+        An optional boolean that specifies that an instruction is to behave as
+        a complete barrier, preventing it from being commuted with any other
+        instruction during scheduling, and preventing optimizations on it. If
+        not specified, the flag defaults to false.
+
+      * `"duration"` or `"duration_cycles"` key *
+
+        These keys specify the duration of the instruction in nanoseconds or
+        cycles. It is illegal to specify both of them for a single instruction.
+        If neither is specified, the duration defaults to a single cycle.
+
+        NOTE: OpenQL currently only supports durations that are an integer
+        number of nanoseconds, so any fractions will be rounded up to the
+        nearest nanosecond. Furthermore, in almost all contexts, the duration of
+        an instruction will be rounded up to the nearest integer cycle count.
+)" R"(
+      * `"decomposition"` key *
+
+        May be used to specify one or more decomposition rules for the
+        instruction type. Unlike the rules in the `"gate_decomposition"`
+        section, these rules are normally only applied by an explicit
+        decomposition pass, of which the predicate matches the name and/or
+        additional JSON data for the rule. The value for the `"decomposition"`
+        key can take a number of shapes:
+
+         - a single string: treated as a single, anonymous decomposition rule
+           of which the decomposition is defined by the string parsed as a
+           single-line cQASM 1.2 block;
+         - an array of strings: as above, but each string represents a new line
+           in the cQASM block;
+         - a single object: treated as a single decomposition specification; or
+         - an array of objects: treated as multiple decomposition
+           specifications.
+
+        A decomposition specification object must have an `"into"` key that
+        specifies the decomposition, which must be a single string or an array
+        of strings as above. In addition, it may be given a name via the
+        `"name"` key, or any number of other keys for passes to use to
+        determine whether to apply a decomposition rule, or which decomposition
+        rule to apply if multiple options are defined.
+)" R"asdf(
+        The cQASM 1.2 block must satisfy the following rules:
+
+         - the version header must not be specified (it is added
+           automatically);
+         - subcircuits and goto statements are not supported;
+         - the operands of the to-be-decomposed gate can be accessed using the
+           `op(int) -> ...` function, where the integer specifies the operand
+           index (which must constant-propagate to an integer literal); and
+         - the duration of the decomposed block may not be longer than the
+           duration of the to-be-decomposed instruction (either make the
+           instruction duration long enough, or define the decomposition as a
+           single bundle and (re)schedule after applying the decomposition).
+
+        Other than that, the cQASM code is interpreted using the default
+        cQASM 1.2 rules. Note that this also means that the cQASM name of an
+        instruction must be used if said instructions has differing OpenQL and
+        cQASM names. Refer to the documentation of the cQASM 1.2 reader pass
+        (`io.cqasm.Read`) for more information.
+
+        As an example, a CNOT gate with its usual decomposition might be
+        specified as follows.
+
+            {
+                "prototype": ["Z:qubit", "X:qubit"],
+                "duration_cycles": 4,
+                "decomposition": {
+                    "name": "to_cz",
+                    "into": [
+                        "ym90 op(1)",
+                        "cz op(0), op(1)",
+                        "skip 1",
+                        "y90 op(1)"
+                    ]
+                }
+            }
+
+        Note that application of this decomposition rule would retain program
+        validity with respect to schedule and data dependencies (if it was valid
+        before application) for platforms where single-qubit rotations are
+        single-cycle and the CZ gate is two-cycle, because the CNOT gate is
+        defined to take four cycles, and the schedule of the decomposition is
+        valid.
+
+        NOTE: the `"decomposition"` key is only supported when the instruction
+        prototype is explicitly specified using the `"prototype"` key.
+        Without a fixed prototype, type checking the `op()` function would be
+        impossible.
+
+      * `"qubits"` key *
+
+        This *must* map to a single qubit index or a list of qubit indices that
+        corresponds to the qubits in the specialization. For generalized
+        instructions, the list must either be empty or unspecified. The qubit
+        indices can be specified as either a string of the form `"q<index>"` or
+        an integer with just the index.
+
+        NOTE: this field is obviously redundant. As such, it may be removed in
+        the future, from which point onward it will be ignored.
+)asdf" R"(
     * `"gate_decomposition"` section *
 
-      This section specifies the decomposition rules for gates/instructions that
-      are applied immediately when a gate is constructed. If specified, it must
-      be an object, where each key represents the name of the gate, along with
-      capture groups for the qubit operands. The keys must map to arrays of
-      strings, wherein each string represents a gate in the decomposition.
+      This section specifies legacy decomposition rules for gates/instructions.
+      They are applied in the following cases:
+
+       - when a gate matching a decomposition rule is added to a kernel using
+         the API;
+       - immediately before a legacy pass (i.e. one that still operates on the
+         old IR) is run; and
+       - when a decomposition pass matching rules named "legacy" is run.
+
+      Rules in this section support only a subset of what the new decomposition
+      system supports. For example, scheduling information cannot be
+      represented, the to-be-decomposed instruction can only have qubit
+      operands, and the to-be-decomposed instruction can't exist in the old IR
+      without being decomposed (preventing operations on it before
+      decomposition). For these reasons, this decomposition system is
+      deprecated, and only still exists for backward compatibility.
+
+      If the section is specified, it must be an object, where each key
+      represents the name of the to-be-decomposed gate, along with capture
+      groups for the qubit operands. The keys must map to arrays of strings,
+      wherein each string represents a gate in the decomposition.
 
       Examples of two decompositions are shown below. `%0` and `%1` refer to the
       first argument and the second argument. This means according to the
@@ -301,7 +403,9 @@ void Platform::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
       been defined in the instruction set.
 
       NOTE: recursive decomposition rules, i.e. decompositions that make use of
-      other decomposed gate definitions, are not supported.
+      other decomposed gate definitions, are not supported. Behavior for this
+      is undefined; the nested rules may or may not end up being expanded, and
+      if they're not, internal compiler errors may result.
 
       NOTE: these decomposition rules are intended to be replaced by a more
       powerful system in the future.

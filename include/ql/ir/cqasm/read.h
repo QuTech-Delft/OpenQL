@@ -47,7 +47,7 @@ struct ReadOptions {
      * The way in which the schedule/timing information in the cQASM file is
      * interpreted.
      */
-    ScheduleMode schedule_mode;
+    ScheduleMode schedule_mode = ScheduleMode::KEEP;
 
     /**
      * Standard cQASM has a measure_all instruction that implicitly measures all
@@ -58,7 +58,15 @@ struct ReadOptions {
      * bundle of <measure_all_target> instructions, for each qubit in the main
      * qubit register.
      */
-    utils::Str measure_all_target;
+    utils::Str measure_all_target = {};
+
+    /**
+     * When specified, the given list of operands will be available in addition
+     * to the registers in the platform via an op(<index>) function. The boolean
+     * specifies whether the accompanying object is to be treated as assignable
+     * or not.
+     */
+    utils::Vec<utils::Pair<ObjectLink, utils::Bool>> operands = {};
 
 };
 

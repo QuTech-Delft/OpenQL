@@ -129,7 +129,11 @@
             "prototype": ["M:qubit"],
             "duration": 40,
             "type": "readout",
-            "cc_light_instr": "measz"
+            "cc_light_instr": "measz",
+            "decomposition": {
+                "name": "desugar",
+                "into": "measure op(0), bit(op(0))"
+            }
         },
         "measure ": {
             "prototype": ["U:qubit", "W:bit"],

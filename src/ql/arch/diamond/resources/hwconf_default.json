@@ -226,7 +226,11 @@
 
     "measure": {
       "prototype": ["M:qubit"],
-      "duration": 300
+      "duration": 300,
+      "decomposition": {
+        "name": "desugar",
+        "into": "measure op(0), bit(op(0))"
+      }
     },
 
     "measure ": {

@@ -145,6 +145,7 @@ public:
      * Checks a platform node.
      */
     void visit_platform(Platform &node) override {
+        implicit_bit_type = node.implicit_bit_type;
         RecursiveVisitor::visit_platform(node);
 
         // Check uniqueness and ordering of the data type names.
@@ -220,7 +221,6 @@ public:
                 QL_ICE("implicit bit type must be a bit-like type");
             }
         }
-        implicit_bit_type = node.implicit_bit_type;
 
         // Check existence of the topology, architecture, and resources objects.
         if (!node.topology.is_populated()) {
@@ -882,6 +882,7 @@ public:
         ) {
             QL_ICE(
                 "encountered reference to object \"" << node.target->name <<
+                "\" with type \"" << node.target->data_type->name <<
                 "\" using mismatched data type " << node.data_type->name
             );
         }
@@ -936,17 +937,29 @@ public:
  * might be detrimental for performance.
  */
 void check_consistency(const Ref &ir) {
+    try {
 
-    // First, check whether the tree itself is well-formed according to
-    // tree-gen.
-    ir.check_well_formed();
+        // First, check whether the tree itself is well-formed according to
+        // tree-gen.
+        ir.check_well_formed();
 
-    // The well-formedness check doesn't check any of the additional constraints
-    // that the IR imposes. The visitor pattern is great for doing checks like
-    // this, because it recursively walks through the entire tree by default.
-    ConsistencyChecker consistency_checker;
-    ir->visit(consistency_checker);
+        // The well-formedness check doesn't check any of the additional constraints
+        // that the IR imposes. The visitor pattern is great for doing checks like
+        // this, because it recursively walks through the entire tree by default.
+        ConsistencyChecker consistency_checker;
+        ir->visit(consistency_checker);
 
+    } catch (utils::Exception &e) {
+
+        // If the check fails, dump the tree.
+        QL_EOUT(
+            "IR consistency check failed, about to throw the exception. "
+            "Here's the IR tree:"
+        );
+        ir->dump_seq(std::cerr);
+        throw;
+
+    }
 }
 
 /**

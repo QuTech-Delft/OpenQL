@@ -415,6 +415,10 @@
                     }
                 ],
                 "static_codeword_override": [0]
+            },
+            "decomposition": {
+                "name": "desugar",
+                "into": "measure op(0), bit(op(0))"
             }
         },
         "measure ": {
