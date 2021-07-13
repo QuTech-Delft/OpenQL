@@ -12,7 +12,7 @@
 #include "ql/utils/map.h"
 #include "ql/utils/progress.h"
 #include "ql/ir/compat/compat.h"
-#include "ql/com/qubit_mapping.h"
+#include "ql/com/map/qubit_mapping.h"
 #include "options.h"
 #include "free_cycle.h"
 #include "past.h"
@@ -276,17 +276,17 @@ private:
     /**
      * Qubit mapping before mapping, set by map_kernel().
      */
-    com::QubitMapping v2r_in;
+    com::map::QubitMapping v2r_in;
 
     /**
      * Qubit mapping after initial placement, set by map_kernel().
      */
-    com::QubitMapping v2r_ip;
+    com::map::QubitMapping v2r_ip;
 
     /**
      * Qubit mapping after mapping, set by map_kernel().
      */
-    com::QubitMapping v2r_out;
+    com::map::QubitMapping v2r_out;
 
     struct Path {
         utils::UInt qubit;
@@ -468,13 +468,13 @@ private:
     /**
      * Performs (initial) placement of the qubits.
      */
-    void place(const ir::compat::KernelRef &k, com::QubitMapping &v2r);
+    void place(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r);
 
     /**
      * Map the kernel's circuit's gates in the provided context (v2r maps),
      * updating circuit and v2r maps.
      */
-    void route(const ir::compat::KernelRef &k, com::QubitMapping &v2r);
+    void route(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r);
 
     /**
      * Decomposes all gates in the circuit that have a definition with _prim

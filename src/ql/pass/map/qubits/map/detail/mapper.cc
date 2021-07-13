@@ -854,7 +854,7 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
 /**
  * Performs (initial) placement of the qubits.
  */
-void Mapper::place(const ir::compat::KernelRef &k, com::QubitMapping &v2r) {
+void Mapper::place(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r) {
 
     if (options->enable_mip_placer) {
 #ifdef INITIALPLACE
@@ -884,7 +884,7 @@ void Mapper::place(const ir::compat::KernelRef &k, com::QubitMapping &v2r) {
  * Map the kernel's circuit's gates in the provided context (v2r maps),
  * updating circuit and v2r maps.
  */
-void Mapper::route(const ir::compat::KernelRef &k, QubitMapping &v2r) {
+void Mapper::route(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r) {
 
     // Future window, presents input in available list.
     Future future;
@@ -1017,10 +1017,10 @@ void Mapper::map_kernel(const ir::compat::KernelRef &k) {
     // TODO: unify all incoming v2rs into v2r to compute kernel input mapping.
     //  Right now there is no inter-kernel mapping yet, so just take the
     //  program's initial mapping for each kernel.
-    QubitMapping v2r{
+    com::map::QubitMapping v2r{
         nq,
         options->initialize_one_to_one,
-        options->assume_initialized ? QubitState::INITIALIZED : QubitState::NONE
+        options->assume_initialized ? com::map::QubitState::INITIALIZED : com::map::QubitState::NONE
     };
     QL_IF_LOG_DEBUG {
         QL_DOUT("After initialization");

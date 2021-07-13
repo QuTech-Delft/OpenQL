@@ -11,6 +11,7 @@
 
 namespace ql {
 namespace com {
+namespace dec {
 
 /**
  * Unitary matrix decomposition class.
@@ -77,5 +78,6 @@ public:
 
 };
 
+} // namespace dec
 } // namespace com
 } // namespace ql

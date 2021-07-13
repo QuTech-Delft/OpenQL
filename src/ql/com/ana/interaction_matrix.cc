@@ -2,7 +2,7 @@
  * Qubit interaction matrix generator.
  */
 
-#include "ql/com/interaction_matrix.h"
+#include "ql/com/ana/interaction_matrix.h"
 
 #include <iomanip>
 #include "ql/utils/filesystem.h"
@@ -10,6 +10,7 @@
 
 namespace ql {
 namespace com {
+namespace ana {
 
 using namespace utils;
 
@@ -96,7 +97,7 @@ void InteractionMatrix::write_for_program(
     const ir::compat::ProgramRef &program
 ) {
     for (const auto &k : program->kernels) {
-        ql::com::InteractionMatrix imat(k);
+        ql::com::ana::InteractionMatrix imat(k);
         utils::Str mstr = imat.get_string();
 
         utils::Str fname = output_prefix + "/" + k->get_name() + "InteractionMatrix.dat";
@@ -105,5 +106,6 @@ void InteractionMatrix::write_for_program(
     }
 }
 
+} // namespace ana
 } // namespace com
 } // namespace ql

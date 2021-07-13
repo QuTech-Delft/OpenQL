@@ -918,10 +918,14 @@ utils::One<Reference> make_reference(
 /**
  * Makes a temporary object with the given type.
  */
-ObjectLink make_temporary(const Ref &ir, const DataTypeLink &data_type) {
-    auto obj = utils::make<TemporaryObject>("", data_type);
+ObjectLink make_temporary(
+    const Ref &ir,
+    const DataTypeLink &data_type,
+    const utils::Vec<utils::UInt> &shape
+) {
+    auto obj = utils::make<TemporaryObject>("", data_type, shape);
     ir->program->objects.add(obj);
-    return obj;
+    return std::move(obj);
 }
 
 /**

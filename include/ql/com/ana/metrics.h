@@ -14,7 +14,7 @@
 
 namespace ql {
 namespace com {
-namespace metrics {
+namespace ana {
 
 /**
  * Base class for a metric. T is the type returned when the metric is computed.
@@ -266,6 +266,6 @@ public:
     ) override;
 };
 
-} // namespace metrics
+} // namespace ana
 } // namespace com
 } // namespace ql

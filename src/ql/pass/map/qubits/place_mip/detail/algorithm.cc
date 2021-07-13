@@ -38,7 +38,7 @@ std::ostream &operator<<(std::ostream &os, Result ipr) {
 // find an initial placement of the virtual qubits for the given circuit
 // the resulting placement is put in the provided virt2real map
 // result indicates one of the result indicators (InitialPlaceResult, see above)
-Result Algorithm::body(com::QubitMapping &v2r) {
+Result Algorithm::body(com::map::QubitMapping &v2r) {
     QL_DOUT("InitialPlace.body ...");
 
     // check validity of circuit
@@ -61,7 +61,7 @@ Result Algorithm::body(com::QubitMapping &v2r) {
     Vec<UInt>  ipusecount;// ipusecount[v] = count of use of virtual qubit v in current circuit
     ipusecount.resize(nvq,0);       // initially all 0
     Vec<UInt> v2i;        // v2i[virtual qubit index v] -> index of facility i
-    v2i.resize(nvq, com::UNDEFINED_QUBIT);// virtual qubit v not used by circuit as gate operand
+    v2i.resize(nvq, com::map::UNDEFINED_QUBIT);// virtual qubit v not used by circuit as gate operand
 
     UInt twoqubitcount = 0;
     for (auto &gp : kernel->gates) {
@@ -103,8 +103,8 @@ Result Algorithm::body(com::QubitMapping &v2r) {
                 refcount[v2i[q[0]]][v2i[q[1]]] += 1;
 
                 if (
-                    v2r[q[0]] == com::UNDEFINED_QUBIT
-                    || v2r[q[1]] == com::UNDEFINED_QUBIT
+                    v2r[q[0]] == com::map::UNDEFINED_QUBIT
+                    || v2r[q[1]] == com::map::UNDEFINED_QUBIT
                     || platform->topology->get_distance(v2r[q[0]], v2r[q[1]]) > 1
                 ) {
                     currmap = false;
@@ -341,7 +341,7 @@ Result Algorithm::body(com::QubitMapping &v2r) {
     QL_DOUT("... interpret result and copy to Virt2Real, nvq=" << nvq);
     for (UInt v = 0; v < nvq; v++) {
         QL_DOUT("... about to set v2r to undefined for v " << v);
-        v2r[v] = com::UNDEFINED_QUBIT;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
+        v2r[v] = com::map::UNDEFINED_QUBIT;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
     }
     for (UInt i = 0; i < nfac; i++) {
         UInt v;   // found virtual qubit index v represented by facility i
@@ -375,7 +375,7 @@ Result Algorithm::body(com::QubitMapping &v2r) {
         // unused mapped virtual qubits still have location UNDEFINED_QUBIT, fill with the remaining locs
         // this should be replaced by actually swapping them to there, when mapping multiple kernels
         for (UInt v = 0; v < nvq; v++) {
-            if (v2r[v] == com::UNDEFINED_QUBIT) {
+            if (v2r[v] == com::map::UNDEFINED_QUBIT) {
                 // v is unused by this kernel; find an unused location k
                 UInt k;   // location k that is checked for having been allocated to some virtual qubit w
                 for (k = 0; k < nlocs; k++) {
@@ -413,7 +413,7 @@ Result Algorithm::body(com::QubitMapping &v2r) {
  *  background, and even continues poking around on the stack of the main
  *  thread!
  */
-Bool Algorithm::wrapper(com::QubitMapping &v2r) {
+Bool Algorithm::wrapper(com::map::QubitMapping &v2r) {
     throw Exception(
         "Initial placement with timeout is disabled, because its current "
         "implementation is completely broken. On timeout, the entire process "
@@ -486,7 +486,7 @@ Bool Algorithm::wrapper(com::QubitMapping &v2r) {
 Result Algorithm::run(
     const ir::compat::KernelRef &k,
     const Options &opt,
-    com::QubitMapping &v2r
+    com::map::QubitMapping &v2r
 ) {
 
     // Initialize ourselves for the given kernel.

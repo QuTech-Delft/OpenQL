@@ -18,7 +18,9 @@ namespace ql {
 //  anything not from ql::ir, ql::plat, or ql::utils; they should be dumb
 //  containers. But decomposition etc. is still part of Kernel.
 namespace com {
+namespace dec {
 class Unitary;
+} // namespace dec
 } // namespace com
 
 namespace ir {
@@ -285,7 +287,7 @@ public:
         const utils::Vec<utils::UInt> &gcondregs
     );
     // to add unitary to kernel
-    void gate(com::Unitary &u, const utils::Vec<utils::UInt> &qubits);
+    void gate(com::dec::Unitary &u, const utils::Vec<utils::UInt> &qubits);
 
     // terminology:
     // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):

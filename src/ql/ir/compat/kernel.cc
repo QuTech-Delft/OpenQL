@@ -17,7 +17,7 @@
 #include "ql/ir/compat/classical.h"
 #include "ql/ir/compat/bundle.h"
 #include "ql/com/options.h"
-#include "ql/com/unitary.h"
+#include "ql/com/dec/unitary.h"
 
 namespace ql {
 namespace ir {
@@ -1031,7 +1031,7 @@ Bool Kernel::gate_nonfatal(
 
 // to add unitary to kernel
 void Kernel::gate(
-    com::Unitary &u,
+    com::dec::Unitary &u,
     const Vec<UInt> &qubits
 ) {
     QL_DOUT("Adding decomposed unitary to kernel ...");

@@ -10,7 +10,7 @@
 #include "ql/utils/map.h"
 #include "ql/utils/vec.h"
 #include "ql/ir/compat/compat.h"
-#include "ql/com/qubit_mapping.h"
+#include "ql/com/map/qubit_mapping.h"
 #include "options.h"
 #include "free_cycle.h"
 
@@ -100,7 +100,7 @@ private:
     /**
      * State: current virtual to real qubit map, imported/exported to kernel.
      */
-    com::QubitMapping v2r;
+    com::map::QubitMapping v2r;
 
     /**
      * State: FreeCycle map (including resource_manager) of this Past.
@@ -160,12 +160,12 @@ public:
     /**
      * Copies the given qubit mapping into our mapping.
      */
-    void import_mapping(const com::QubitMapping &v2r_value);
+    void import_mapping(const com::map::QubitMapping &v2r_value);
 
     /**
      * Copies our qubit mapping into the given mapping.
      */
-    void export_mapping(com::QubitMapping &v2r_destination) const;
+    void export_mapping(com::map::QubitMapping &v2r_destination) const;
 
     /**
      * Prints the state of the embedded FreeCycle object.

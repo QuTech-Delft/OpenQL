@@ -5,7 +5,7 @@
 #include "ql/pass/ana/statistics/report.h"
 
 #include "ql/utils/filesystem.h"
-#include "ql/com/metrics.h"
+#include "ql/com/ana/metrics.h"
 
 namespace ql {
 namespace pass {
@@ -22,7 +22,7 @@ void dump(
     std::ostream &os,
     const utils::Str &line_prefix
 ) {
-    using namespace com::metrics;
+    using namespace com::ana;
 
     os << line_prefix << "Duration (assuming no control-flow): " << compute_block<Latency>(ir, block) << "\n";
     os << line_prefix << "Number of quantum gates: " << compute_block<QuantumGateCount>(ir, block) << "\n";
@@ -47,7 +47,7 @@ void dump(
     std::ostream &os,
     const utils::Str &line_prefix
 ) {
-    using namespace com::metrics;
+    using namespace com::ana;
 
     os << line_prefix << "Total duration (assuming no control-flow): " << compute_program<Latency>(ir) << "\n";
     os << line_prefix << "Total number of quantum gates: " << compute_program<QuantumGateCount>(ir) << "\n";

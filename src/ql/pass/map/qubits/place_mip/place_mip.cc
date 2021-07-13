@@ -117,7 +117,7 @@ utils::Int PlaceQubitsPass::run(
     opts.map_all = true;
 
     // Run the algorithm.
-    com::QubitMapping mapping(kernel->platform->qubit_count, true);
+    com::map::QubitMapping mapping(kernel->platform->qubit_count, true);
     detail::Algorithm algorithm;
     auto result = algorithm.run(kernel, opts, mapping);
 

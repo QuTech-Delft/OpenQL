@@ -2,12 +2,13 @@
  * Virtual to real qubit mapping state tracker.
  */
 
-#include "ql/com/qubit_mapping.h"
+#include "ql/com/map/qubit_mapping.h"
 
 #include "ql/utils/logger.h"
 
 namespace ql {
 namespace com {
+namespace map {
 
 using namespace utils;
 
@@ -256,5 +257,6 @@ void QubitMapping::dump_state(std::ostream &os, const utils::Str &line_prefix) c
     }
 }
 
+} // namespace map
 } // namespace com
 } // namespace ql

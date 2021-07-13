@@ -2,7 +2,7 @@
  * Unitary matrix (decomposition) implementation.
  */
 
-#include "ql/com/unitary.h"
+#include "ql/com/dec/unitary.h"
 
 #include "ql/utils/exception.h"
 #include "ql/utils/logger.h"
@@ -19,6 +19,7 @@
 
 namespace ql {
 namespace com {
+namespace dec {
 
 using namespace utils;
 
@@ -703,6 +704,6 @@ ir::compat::GateRefs Unitary::get_decomposition(const utils::Vec<utils::UInt> &q
     return c;
 }
 
-
+} // namespace dec
 } // namespace com
 } // namespace ql

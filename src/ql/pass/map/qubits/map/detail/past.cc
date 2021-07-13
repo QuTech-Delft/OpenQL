@@ -31,7 +31,7 @@ void Past::initialize(const ir::compat::KernelRef &k, const OptionsRef &opt) {
     v2r.resize(                       // v2r initializtion until v2r is imported from context
         nq,
         options->initialize_one_to_one,
-        options->assume_initialized ? com::QubitState::INITIALIZED : com::QubitState::NONE
+        options->assume_initialized ? com::map::QubitState::INITIALIZED : com::map::QubitState::NONE
     );
     fc.initialize(platform, options); // fc starts off with all qubits free, is updated after schedule of each gate
     waiting_gates.clear();            // no gates pending to be scheduled in; Add of gate to past entered here
@@ -45,14 +45,14 @@ void Past::initialize(const ir::compat::KernelRef &k, const OptionsRef &opt) {
 /**
  * Copies the given qubit mapping into our mapping.
  */
-void Past::import_mapping(const com::QubitMapping &v2r_value) {
+void Past::import_mapping(const com::map::QubitMapping &v2r_value) {
     v2r = v2r_value;
 }
 
 /**
  * Copies our qubit mapping into the given mapping.
  */
-void Past::export_mapping(com::QubitMapping &v2r_destination) const {
+void Past::export_mapping(com::map::QubitMapping &v2r_destination) const {
     v2r_destination = v2r;
 }
 
@@ -297,18 +297,18 @@ utils::Bool Past::is_first_swap_earliest(
  * operands may have been done also when generate_move() was not successful.
  */
 void Past::generate_move(ir::compat::GateRefs &circuit, utils::UInt &r0, utils::UInt &r1) {
-    if (v2r.get_state(r0) != com::QubitState::LIVE) {
+    if (v2r.get_state(r0) != com::map::QubitState::LIVE) {
         QL_ASSERT(
-            v2r.get_state(r0) == com::QubitState::NONE ||
-            v2r.get_state(r0) == com::QubitState::INITIALIZED
+            v2r.get_state(r0) == com::map::QubitState::NONE ||
+            v2r.get_state(r0) == com::map::QubitState::INITIALIZED
         );
         // Interchange r0 and r1, so that r1 (right-hand operand of move) will
         // be the state-less one.
         utils::UInt tmp = r1; r1 = r0; r0 = tmp;
         // QL_DOUT("... reversed operands for move to become move(q" << r0 << ",q" << r1 << ") ...");
     }
-    QL_ASSERT(v2r.get_state(r0) == com::QubitState::LIVE);    // and r0 will be the one with state
-    QL_ASSERT(v2r.get_state(r1) != com::QubitState::LIVE);    // and r1 will be the one without state (QubitState::NONE || com::QubitState::INITIALIZED)
+    QL_ASSERT(v2r.get_state(r0) == com::map::QubitState::LIVE);    // and r0 will be the one with state
+    QL_ASSERT(v2r.get_state(r1) != com::map::QubitState::LIVE);    // and r1 will be the one without state (QubitState::NONE || com::QubitState::INITIALIZED)
 
     // First (optimistically) create the move circuit and add it to circuit.
     utils::Bool created;
@@ -338,7 +338,7 @@ void Past::generate_move(ir::compat::GateRefs &circuit, utils::UInt &r0, utils::
         }
     }
 
-    if (v2r.get_state(r1) == com::QubitState::NONE) {
+    if (v2r.get_state(r1) == com::map::QubitState::NONE) {
         // r1 is not in inited state, generate in initcirc the circuit to do so
         // QL_DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
         ir::compat::GateRefs init_circuit;
@@ -371,7 +371,7 @@ void Past::generate_move(ir::compat::GateRefs &circuit, utils::UInt &r0, utils::
                 init_circuit.add(gp);
             }
             circuit.get_vec().swap(init_circuit.get_vec());
-            v2r.set_state(r1, com::QubitState::INITIALIZED);
+            v2r.set_state(r1, com::map::QubitState::INITIALIZED);
 
         } else {
 
@@ -406,15 +406,15 @@ void Past::add_swap(utils::UInt r0, utils::UInt r1) {
     QL_DOUT("... extending with swap(q" << r0 << ",q" << r1 << ") ...");
     QL_DOUT("... adding swap/move: " << v2r.real_to_string(r0) << ", " << v2r.real_to_string(r1));
 
-    QL_ASSERT(v2r.get_state(r0) == com::QubitState::INITIALIZED ||
-                  v2r.get_state(r0) == com::QubitState::NONE ||
-                  v2r.get_state(r0) == com::QubitState::LIVE);
-    QL_ASSERT(v2r.get_state(r1) == com::QubitState::INITIALIZED ||
-                  v2r.get_state(r1) == com::QubitState::NONE ||
-                  v2r.get_state(r1) == com::QubitState::LIVE);
+    QL_ASSERT(v2r.get_state(r0) == com::map::QubitState::INITIALIZED ||
+                  v2r.get_state(r0) == com::map::QubitState::NONE ||
+                  v2r.get_state(r0) == com::map::QubitState::LIVE);
+    QL_ASSERT(v2r.get_state(r1) == com::map::QubitState::INITIALIZED ||
+                  v2r.get_state(r1) == com::map::QubitState::NONE ||
+                  v2r.get_state(r1) == com::map::QubitState::LIVE);
 
-    if (v2r.get_state(r0) != com::QubitState::LIVE &&
-        v2r.get_state(r1) != com::QubitState::LIVE) {
+    if (v2r.get_state(r0) != com::map::QubitState::LIVE &&
+        v2r.get_state(r1) != com::map::QubitState::LIVE) {
         QL_DOUT("... no state in both operand of intended swap/move; don't add swap/move gates");
         v2r.swap(r0, r1);
         return;
@@ -425,8 +425,8 @@ void Past::add_swap(utils::UInt r0, utils::UInt r1) {
     utils::UInt v1 = v2r.get_virtual(r1);
 
     ir::compat::GateRefs circuit;   // current kernel copy, clear circuit
-    if (options->use_move_gates && (v2r.get_state(r0) != com::QubitState::LIVE ||
-        v2r.get_state(r1) != com::QubitState::LIVE)) {
+    if (options->use_move_gates && (v2r.get_state(r0) != com::map::QubitState::LIVE ||
+        v2r.get_state(r1) != com::map::QubitState::LIVE)) {
         generate_move(circuit, r0, r1);
         created = circuit.size() != 0;
         if (created) {
@@ -513,7 +513,7 @@ void Past::add_and_schedule(const ir::compat::GateRef &gate) {
  */
 utils::UInt Past::map_qubit(utils::UInt virt) {
     utils::UInt r = v2r[virt];
-    if (r == com::UNDEFINED_QUBIT) {
+    if (r == com::map::UNDEFINED_QUBIT) {
         r = v2r.allocate(virt);
     }
     return r;
@@ -546,9 +546,9 @@ void Past::make_real(const ir::compat::GateRef &gate, ir::compat::GateRefs &circ
     for (auto &qi : real_qubits) {
         qi = map_qubit(qi);          // and now they are real
         if (options->assume_prep_only_initializes && (gname == "prepz" || gname == "Prepz")) {
-            v2r.set_state(qi, com::QubitState::INITIALIZED);
+            v2r.set_state(qi, com::map::QubitState::INITIALIZED);
         } else {
-            v2r.set_state(qi, com::QubitState::LIVE);
+            v2r.set_state(qi, com::map::QubitState::LIVE);
         }
     }
 

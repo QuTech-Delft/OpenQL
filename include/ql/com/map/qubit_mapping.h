@@ -11,6 +11,7 @@
 
 namespace ql {
 namespace com {
+namespace map {
 
 /**
  * Value used to specify that a virtual qubit has no real qubit associated with
@@ -166,5 +167,6 @@ public:
 
 };
 
+} // namespace map
 } // namespace com
 } // namespace ql

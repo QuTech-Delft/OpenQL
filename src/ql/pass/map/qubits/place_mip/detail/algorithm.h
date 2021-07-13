@@ -54,7 +54,7 @@
 #include "ql/utils/ptr.h"
 #include "ql/utils/vec.h"
 #include "ql/ir/compat/compat.h"
-#include "ql/com/qubit_mapping.h"
+#include "ql/com/map/qubit_mapping.h"
 
 namespace ql {
 namespace pass {
@@ -183,7 +183,7 @@ private:
      * provided qubit map. time_taken is set to the time taken by the actual
      * algorithm.
      */
-    Result body(com::QubitMapping &v2r);
+    Result body(com::map::QubitMapping &v2r);
 
     /**
      * Wrapper around body() that runs it in a separate thread with a timeout.
@@ -193,7 +193,7 @@ private:
      *  background, and even continues poking around on the stack of the main
      *  thread!
      */
-    utils::Bool wrapper(com::QubitMapping &v2r);
+    utils::Bool wrapper(com::map::QubitMapping &v2r);
 
 public:
 
@@ -205,7 +205,7 @@ public:
     Result run(
         const ir::compat::KernelRef &k,
         const Options &opt,
-        com::QubitMapping &v2r
+        com::map::QubitMapping &v2r
     );
 
     /**

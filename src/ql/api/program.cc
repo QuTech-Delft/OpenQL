@@ -4,7 +4,7 @@
 
 #include "ql/api/program.h"
 
-#include "ql/com/interaction_matrix.h"
+#include "ql/com/ana/interaction_matrix.h"
 #include "ql/pass/io/sweep_points/annotation.h"
 #include "ql/ir/old_to_new.h"
 #include "ql/api/kernel.h"
@@ -219,7 +219,7 @@ void Program::compile() {
 void Program::print_interaction_matrix() const {
     QL_IOUT("printing interaction matrix...");
 
-    ql::com::InteractionMatrix::dump_for_program(program);
+    ql::com::ana::InteractionMatrix::dump_for_program(program);
 }
 
 /**
@@ -228,7 +228,7 @@ void Program::print_interaction_matrix() const {
  * option.
  */
 void Program::write_interaction_matrix() const {
-    ql::com::InteractionMatrix::write_for_program(
+    ql::com::ana::InteractionMatrix::write_for_program(
         get_option("output_dir") + "/",
         program
     );

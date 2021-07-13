@@ -23,6 +23,11 @@ using Ref = utils::One<Root>;
 using PlatformRef = utils::One<Platform>;
 
 /**
+ * Reference to an instruction decomposition.
+ */
+using DecompositionRef = utils::One<InstructionDecomposition>;
+
+/**
  * Reference to the program subtree.
  */
 using ProgramRef = utils::Maybe<Program>;

@@ -3,13 +3,13 @@
  * kernels.
  */
 
-#include "ql/com/metrics.h"
+#include "ql/com/ana/metrics.h"
 
 #include "ql/ir/ops.h"
 
 namespace ql {
 namespace com {
-namespace metrics {
+namespace ana {
 
 /**
  * Classical operation counting metric.
@@ -99,6 +99,6 @@ void Latency::process_block(const ir::Ref &ir, const ir::BlockBaseRef &block) {
     value = ir::get_duration_of_block(block);
 }
 
-} // namespace metrics
+} // namespace ana
 } // namespace com
 } // namespace ql

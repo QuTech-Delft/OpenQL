@@ -11,6 +11,7 @@
 
 namespace ql {
 namespace com {
+namespace ana {
 
 // TODO JvS: this is really just an "advanced" metric, and should be written
 //  as such sometime.
@@ -71,5 +72,6 @@ public:
 
 };
 
+} // namespace ana
 } // namespace com
 } // namespace ql

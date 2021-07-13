@@ -10,7 +10,7 @@
 #include "ql/utils/opt.h"
 #include "ql/ir/compat/compat.h"
 #include "ql/rmgr/manager.h"
-#include "ql/com/qubit_mapping.h"
+#include "ql/com/map/qubit_mapping.h"
 #include "options.h"
 
 namespace ql {
