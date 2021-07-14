@@ -114,6 +114,27 @@ void write(
     const utils::Str &line_prefix = ""
 );
 
+/**
+ * Writes the (partial) cQASM representation of the given node in the IR to the
+ * given stream with the given line prefix.
+ */
+void write(
+    const Ref &ir,
+    const utils::One<ir::Node> &node,
+    const WriteOptions &options = {},
+    std::ostream &os = std::cout,
+    const utils::Str &line_prefix = ""
+);
+
+/**
+ * Shorthand for getting a cQASM string representation of the given node.
+ */
+utils::Str to_string(
+    const Ref &ir,
+    const utils::One<ir::Node> &node,
+    const WriteOptions &options = {}
+);
+
 } // namespace cqasm
 } // namespace ir
 } // namespace ql

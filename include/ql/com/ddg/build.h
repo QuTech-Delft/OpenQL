@@ -110,7 +110,7 @@ public:
  *
  * The nodes of the graph are represented by the statements in the block and
  * two sentinel statements, known as the source and the sink. The edges are
- * formed by dependencies from one instruction to another. Edges are weighted
+ * formed by dependencies from one statements to another. Edges are weighted
  * such that the absolute value of the weight indicates the minimum number of
  * cycles that must be between the start cycle of the source and destination
  * node in the final schedule, and such that the sign indicates the direction

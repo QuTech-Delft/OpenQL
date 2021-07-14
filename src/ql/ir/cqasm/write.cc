@@ -68,6 +68,7 @@ protected:
     std::string sl(utils::Int indent_delta = 0) {
         utils::StrStrm ss;
         indent += indent_delta;
+        if (indent < 0) indent = 0;
         auto indent_remain = indent;
         while (indent_remain-- > 0) {
             ss << "    ";
@@ -86,6 +87,7 @@ protected:
     std::string el(utils::UInt blank = 0, utils::Int indent_delta = 0) {
         utils::StrStrm ss;
         indent += indent_delta;
+        if (indent < 0) indent = 0;
         do {
             ss << "\n" << line_prefix;
         } while (blank--);
@@ -1119,8 +1121,35 @@ void write(
     std::ostream &os,
     const utils::Str &line_prefix
 ) {
+    write(ir, ir, options, os, line_prefix);
+}
+
+/**
+ * Writes the (partial) cQASM representation of the given node in the IR to the
+ * given stream with the given line prefix.
+ */
+void write(
+    const Ref &ir,
+    const utils::One<ir::Node> &node,
+    const WriteOptions &options,
+    std::ostream &os,
+    const utils::Str &line_prefix
+) {
     Writer w{ir, options, os, line_prefix};
-    ir->visit(w);
+    node->visit(w);
+}
+
+/**
+ * Shorthand for getting a cQASM string representation of the given node.
+ */
+utils::Str to_string(
+    const Ref &ir,
+    const utils::One<ir::Node> &node,
+    const WriteOptions &options
+) {
+    utils::StrStrm ss;
+    write(ir, node, options, ss);
+    return ss.str();
 }
 
 } // namespace cqasm

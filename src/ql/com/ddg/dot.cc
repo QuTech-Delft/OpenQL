@@ -1,5 +1,6 @@
 /** \file
- * Defines a consistency check for a DDG, useful when debugging.
+ * Defines ways to visualize the data dependency graph using a graphviz dot
+ * file, useful when debugging.
  */
 
 #include "ql/com/ddg/dot.h"

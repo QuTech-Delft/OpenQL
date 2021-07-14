@@ -1,6 +1,6 @@
 /** \file
- * Defines ways to visualize the dependency graph using dot and console output,
- * useful when debugging.
+ * Defines ways to visualize the data dependency graph using a graphviz dot
+ * file, useful when debugging.
  */
 
 #pragma once
@@ -12,7 +12,8 @@ namespace com {
 namespace ddg {
 
 /**
- * Dumps a dot file and accompanying key.
+ * Dumps a dot representation of the data dependency graph for the given block,
+ * including the current cycle numbers.
  */
 void dump_dot(
     const ir::BlockBaseRef &block,

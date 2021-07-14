@@ -6,7 +6,11 @@ pragma @ql.platform({|
     "eqasm_compiler": {
         "passes": [
             {
-                "type": "dec.Structure"
+                "type": "dec.Structure",
+                "options": {
+                    "output_prefix": "test_output/%N_out",
+                    "write_dot_graph": "yes"
+                }
             },
             {
                 "type": "io.cqasm.Report",
