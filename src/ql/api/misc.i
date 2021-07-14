@@ -264,11 +264,12 @@ str
 %feature("docstring") compile
 """
 Entry point for compiling from a cQASM file directly, rather than using the
-Python API for anything. The platform must be encoded using a
-`pragma @ql.platform(...)` annotation at the front of the file; refer to the
-documentation of the cQASM reader pass for more information. If specified,
-the read_options parameter is passed to the cQASM reader pass that is
-automatically prefixed to the pass list.
+Python API to build the program and platform.
+
+The platform must be encoded using a `pragma @ql.platform(...)` annotation at
+the front of the file; refer to the documentation of the cQASM reader pass for
+more information. If specified, the read_options parameter is passed to the
+cQASM reader pass that is automatically prefixed to the pass list.
 
 Parameters
 ----------
