@@ -1,0 +1,46 @@
+version 1.2
+
+pragma @ql.name("structure_decomposition_foreach")
+
+pragma @ql.platform({|
+    "eqasm_compiler": {
+        "passes": [
+            {
+                "type": "dec.Structure"
+            },
+            {
+                "type": "io.cqasm.Report",
+                "options": {
+                    "output_prefix": "test_output/%N_out"
+                }
+            }
+        ]
+    },
+    "hardware_settings": {
+        "qubit_number": 7,
+        "creg_number": 32,
+        "breg_number": 32
+    },
+    "instructions": {
+        "test": {
+            "prototype": ["W:qubit"],
+            "duration_cycles": 1
+        }
+    }
+|})
+
+.sa
+    test q[0]
+    foreach (creg(0) = 0..9) {
+        test q[1]
+        if (breg(0)) {
+            break
+        }
+        if (breg(1)) {
+            continue
+        }
+        test q[2]
+    }
+    test q[3]
+
+.sb

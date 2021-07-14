@@ -8,6 +8,7 @@
 #include "ql/ir/compat/program.h"
 #include "ql/ir/ops.h"
 #include "ql/ir/consistency.h"
+#include "ql/ir/old_to_new.h"
 #include "ql/com/ddg/build.h"
 #include "cqasm.hpp"
 
@@ -500,10 +501,10 @@ static ExpressionRef convert_expression(
         if (as_type.empty()) {
             as_type = infer_ql_type(ir, cqv::type_of(cq_expr));
         }
-        if (!as_type->as_string_type()) {
+        if (!as_type->as_json_type()) {
             QL_USER_ERROR("cannot cast JSON to type " << as_type->name);
         }
-        return utils::make<JsonLiteral>(utils::parse_json(cj->value), as_type);
+        return utils::make<JsonLiteral>(utils::parse_json("{" + cj->value + "}"), as_type);
     } else if (auto qr = cq_expr->as_qubit_refs()) {
         if (qr->index.size() != utils::max<utils::UInt>(1, sgmq_size)) {
             QL_USER_ERROR(
@@ -606,7 +607,7 @@ static utils::One<SetInstruction> convert_set_instruction(
             "does not match type of right-hand side (" << ql_rhs_type->name << ")"
         );
     }
-    return utils::make<SetInstruction>(ql_lhs, ql_rhs);
+    return utils::make<SetInstruction>(ql_lhs, ql_rhs, ir::make_bit_lit(ir, true));
 }
 
 /**
@@ -629,6 +630,10 @@ static void convert_block(
 
             // Build a list of all the instructions in this bundle.
             utils::List<InstructionRef> ql_bundle;
+
+            // If we find pragma instructions in this bundle and there are no
+            // other instructions, we shouldn't increment the cycle number.
+            auto found_pragma = false;
 
             for (const auto &cq_insn_base : cq_bun->items) {
 
@@ -696,6 +701,7 @@ static void convert_block(
                         // Currently entirely ignored by OpenQL outside of the
                         // header (i.e. the default subcircuit, which is parsed
                         // separately) So this is no-op.
+                        found_pragma = true;
 
                     } else if (
                         (
@@ -884,7 +890,9 @@ static void convert_block(
             // scheduling information is retained. Otherwise it is incremented
             // at the end of each instruction.
             if (options.schedule_mode == ScheduleMode::KEEP) {
-                cycle++;
+                if (!ql_bundle.empty() || !found_pragma) {
+                    cycle++;
+                }
             }
 
         } else if (auto cq_if_else = cq_stmt->as_if_else()) {
@@ -1041,6 +1049,75 @@ static void convert_block(
 }
 
 /**
+ * Loads a platform from the `@ql.platform` annotation in the given parse
+ * result.
+ */
+static ir::compat::PlatformRef load_platform(const cq::parser::ParseResult &pres) {
+
+    // FIXME: if the platform or compiler configuration is specified by means of
+    //  a relative path, they should be loaded relative to the cQASM filename.
+    //  Currently it's relative to the working directory.
+
+    // Look for the annotation.
+    cqt::One<cq::ast::ExpressionList> platform_annot_operands;
+    if (auto prog = pres.root->as_program()) {
+        for (const auto &stmt : prog->statements->items) {
+            auto bun = stmt->as_bundle();
+            if (
+                !bun ||
+                bun->items.size() != 1 ||
+                bun->items[0]->name->name != "pragma" ||
+                !bun->items[0]->condition.empty() ||
+                !bun->items[0]->operands->items.empty()
+            ) {
+                break;
+            }
+            for (const auto &annot : bun->items[0]->annotations) {
+                if (
+                    annot->interface->name == "ql" &&
+                    annot->operation->name == "platform"
+                ) {
+                    platform_annot_operands = annot->operands;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Load the platform accordingly.
+    ir::compat::PlatformRef plat;
+    if (platform_annot_operands.empty() || platform_annot_operands->items.empty()) {
+        plat = ql::ir::compat::Platform::build(utils::Str("none"), utils::Str("none"));
+    } else if (platform_annot_operands->items.size() == 1) {
+        if (auto a0s = platform_annot_operands->items[0]->as_string_literal()) {
+            plat = ql::ir::compat::Platform::build(a0s->value, a0s->value);
+        } else if (auto a0j = platform_annot_operands->items[0]->as_json_literal()) {
+            plat = ql::ir::compat::Platform::build("none", utils::parse_json("{" + a0j->value + "}"));
+        }
+    } else if (platform_annot_operands->items.size() == 2) {
+        if (auto a0s = platform_annot_operands->items[0]->as_string_literal()) {
+            if (auto a1s = platform_annot_operands->items[1]->as_string_literal()) {
+                plat = ql::ir::compat::Platform::build(a0s->value, a1s->value);
+            } else if (auto a1j = platform_annot_operands->items[1]->as_json_literal()) {
+                plat = ql::ir::compat::Platform::build(a0s->value, utils::parse_json("{" + a1j->value + "}"));
+            }
+        }
+    } else if (platform_annot_operands->items.size() == 3) {
+        if (auto a0s = platform_annot_operands->items[0]->as_string_literal()) {
+            if (auto a1s = platform_annot_operands->items[1]->as_string_literal()) {
+                if (auto a2s = platform_annot_operands->items[2]->as_string_literal()) {
+                    plat = ql::ir::compat::Platform::build(a0s->value, a1s->value, a2s->value);
+                }
+            }
+        }
+    }
+    if (plat.empty()) {
+        QL_USER_ERROR("unsupported argument types for @ql.platform() annotation");
+    }
+    return plat;
+}
+
+/**
  * Reads a cQASM 1.2 file into the IR. If reading is successful, ir->program is
  * completely replaced. data represents the cQASM file contents, fname specifies
  * the filename if one exists for the purpose of generating better error
@@ -1052,6 +1129,26 @@ void read(
     const utils::Str &fname,
     const ReadOptions &options
 ) {
+
+    // Start by parsing the file without analysis.
+    auto pres = cq::parser::parse_string(data, fname);
+    if (!pres.errors.empty()) {
+        utils::StrStrm errors;
+        errors << "failed to parse " << fname << " for the following reasons:";
+        for (const auto &error : pres.errors) {
+            QL_EOUT(error);
+            errors << "\n  " << error;
+        }
+        QL_USER_ERROR(errors.str());
+    }
+
+    // If the load_platform option was passed to us, look for the
+    // `pragma @ql.platform(...)` annotation in the AST and build the platform
+    // from it, before even building the analyzer, because we need said platform
+    // to correctly build the analyzer.
+    if (options.load_platform) {
+        ir->platform = ir::convert_old_to_new(load_platform(pres))->platform;
+    }
 
     // Create an analyzer for files with a version up to cQASM 1.2.
     cq::analyzer::Analyzer a{"1.2"};
@@ -1179,10 +1276,10 @@ void read(
     // types, which disables libqasm's resolver. This lets us completely ignore
     // error models, and handle instruction resolution ourselves using our own
     // type system.
-    auto res = a.analyze_string(data, fname);
+    auto res = a.analyze(pres);
     if (!res.errors.empty()) {
         utils::StrStrm errors;
-        errors << "Failed to parse " << fname << " as cQASM 1.2 for the following reasons:";
+        errors << "failed to analyze " << fname << " for the following reasons:";
         for (const auto &error : res.errors) {
             QL_EOUT(error);
             errors << "\n  " << error;
@@ -1227,8 +1324,8 @@ void read(
 
     }
 
-    // Platform information can be attached to the cQASM file, even though we're
-    // not really using that yet. Accept the annotation either way.
+    // Make sure to mark the @ql.platform annotation as used regardless of
+    // whether we used it.
     if (!cq_program->subcircuits.empty()) {
         auto annot = find_pragma(cq_program->subcircuits[0], "platform");
         if (!annot.empty()) annot->set_annotation<Used>({});
@@ -1426,6 +1523,38 @@ void read_file(
     const ReadOptions &options
 ) {
     read(ir, utils::InFile(fname).read(), fname, options);
+}
+
+/**
+ * Constructs a platform from the `@ql.platform` annotation in the given cQASM
+ * file.
+ */
+ir::compat::PlatformRef read_platform(
+    const utils::Str &data,
+    const utils::Str &fname
+) {
+
+    // Read the file without analyzing it.
+    auto pres = cq::parser::parse_string(data, fname);
+    if (!pres.errors.empty()) {
+        utils::StrStrm errors;
+        errors << "failed to parse " << fname << " for the following reasons:";
+        for (const auto &error : pres.errors) {
+            QL_EOUT(error);
+            errors << "\n  " << error;
+        }
+        QL_USER_ERROR(errors.str());
+    }
+
+    return load_platform(pres);
+}
+
+/**
+ * Same as read_platform(), but given a file to load, rather than loading from a
+ * string.
+ */
+ir::compat::PlatformRef read_platform_from_file(const utils::Str &fname) {
+    return read_platform(utils::InFile(fname).read(), fname);
 }
 
 } // namespace cqasm

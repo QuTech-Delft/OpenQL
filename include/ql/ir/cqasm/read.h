@@ -6,6 +6,7 @@
 
 #include "ql/utils/str.h"
 #include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 
 namespace ql {
 namespace ir {
@@ -68,6 +69,12 @@ struct ReadOptions {
      */
     utils::Vec<utils::Pair<ObjectLink, utils::Bool>> operands = {};
 
+    /**
+     * When set, the platform is loaded from the cQASM file by means of a
+     * `pragma @ql.platform(...)` statement at the top of the code.
+     */
+    utils::Bool load_platform = false;
+
 };
 
 /**
@@ -91,6 +98,21 @@ void read_file(
     const utils::Str &fname,
     const ReadOptions &options = {}
 );
+
+/**
+ * Constructs a platform from the `@ql.platform` annotation in the given cQASM
+ * file.
+ */
+ir::compat::PlatformRef read_platform(
+    const utils::Str &data,
+    const utils::Str &fname = "<unknown>"
+);
+
+/**
+ * Same as read_platform(), but given a file to load, rather than loading from a
+ * string.
+ */
+ir::compat::PlatformRef read_platform_from_file(const utils::Str &fname);
 
 } // namespace cqasm
 } // namespace ir

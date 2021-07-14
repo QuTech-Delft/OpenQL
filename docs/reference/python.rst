@@ -72,6 +72,7 @@ Index
 
       initialize
       ensure_initialized
+      compile
       get_version
       set_option
       get_option

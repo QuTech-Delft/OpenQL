@@ -44,7 +44,7 @@ void ReadCQasmPass::dump_docs(
        If single-gate-multiple-qubit notation is used, for example
        `wait q[0,2], 3`, the *independent* wait blocks are created as per the
        regular single-gate-multiple-qubit rules.
-
+)" R"(
      - `wait <int>, ...`: generalization of the above, supporting any kind of
        object, and any number of them. That is, all preceding instructions
        operating on any object specified in place of the ellipsis must complete
@@ -83,8 +83,31 @@ void ReadCQasmPass::dump_docs(
     OpenQL's internal representation of the program after conversion to and from
     cQASM.
 
-     - `pragma @ql.platform(<json>)` may be placed at the top of the program,
-       but is currently ignored.
+     - `pragma @ql.platform(<json>)` may be placed at the top of the program.
+       If the `load_platform` option is not enabled, it is ignored. Otherwise,
+       the following forms are supported (these mirror the constructors of the
+       Platform class in the API for the most part):
+
+        - not specified or `pragma @ql.platform()`: shorthand for
+          `...("none", "none")`.
+        - `pragma @ql.platform(name: string)`: shorthand for `...(name, name)`.
+        - `pragma @ql.platform(name: string, platform_config: string)`: builds a
+          platform with the given name (only used for log messages) and platform
+          configuration, the latter of which can be either a recognized platform
+          name with or without variant suffix (for example `"cc"` or
+          `"cc_light.s7"`), or a path to a JSON configuration filename.
+        - `pragma @ql.platform(name: string, platform_config: string, compiler_config: string)`:
+          as above, but specifies a custom compiler configuration file in
+          addition.
+        - `pragma @ql.platform(name: string, platform_config: json)`: instead of
+          loading the platform JSON data from a file, it is read from the given
+          JSON literal directly.
+        - `pragma @ql.platform(platform_config: json)`: shorthand for the above,
+          using just `"platform"` for the name.
+
+       Note that the loaded compiler configuration is ignored, because we
+       already have one by the time this pass is run! Use the `compile_cqasm()`
+       API function to load everything from the cQASM file.
 
      - `pragma @ql.name("<name>")` may be placed at the top of the program to
        set the name of the program, in case no program exists in the IR yet.
@@ -95,7 +118,7 @@ void ReadCQasmPass::dump_docs(
        in the platform that matches the primitive cQASM type will be used. You
        should only need this when you're using a platform that, for instance,
        supports multiple types/sizes of integers.
-
+)" R"(
      - Variables may be annotated with `@ql.temp` to specify that they are
        temporary objects that were automatically inferred. This is normally only
        used by generated cQASM code.
@@ -174,6 +197,13 @@ ReadCQasmPass::ReadCQasmPass(
         "main qubit register.",
         ""
     );
+    options.add_bool(
+        "load_platform",
+        "When set, the platform is loaded from the cQASM file by means of a "
+        "`pragma @ql.platform(...)` statement at the top of the code. See "
+        "pass description for more information.",
+        false
+    );
 
 }
 
@@ -198,6 +228,7 @@ utils::Int ReadCQasmPass::run(
     }
 
     read_options.measure_all_target = options["measure_all_target"].as_str();
+    read_options.load_platform = options["load_platform"].as_bool();
 
     ir::cqasm::read_file(
         ir,

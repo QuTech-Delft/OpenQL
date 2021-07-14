@@ -17,6 +17,9 @@
 #include "ql/pass/io/cqasm/report.h"
 #include "ql/pass/io/sweep_points/write.h"
 #include "ql/pass/dec/instructions/instructions.h"
+#include "ql/pass/dec/generalize/generalize.h"
+#include "ql/pass/dec/specialize/specialize.h"
+#include "ql/pass/dec/structure/structure.h"
 #include "ql/pass/opt/clifford/optimize.h"
 #include "ql/pass/sch/schedule/schedule.h"
 #include "ql/pass/sch/list_schedule/list_schedule.h"
@@ -43,6 +46,9 @@ Factory::Factory() {
     register_pass<::ql::pass::io::cqasm::report::Pass>("io.cqasm.Report");
     register_pass<::ql::pass::io::sweep_points::write::Pass>("io.sweep_points.Write");
     register_pass<::ql::pass::dec::instructions::Pass>("dec.Instructions");
+    register_pass<::ql::pass::dec::generalize::Pass>("dec.Generalize");
+    register_pass<::ql::pass::dec::specialize::Pass>("dec.Specialize");
+    register_pass<::ql::pass::dec::structure::Pass>("dec.Structure");
     register_pass<::ql::pass::opt::clifford::optimize::Pass>("opt.clifford.Optimize");
     register_pass<::ql::pass::sch::schedule::Pass>("sch.Schedule");
     register_pass<::ql::pass::sch::list_schedule::Pass>("sch.ListSchedule");
@@ -50,7 +56,6 @@ Factory::Factory() {
     register_pass<::ql::pass::map::qubits::map::Pass>("map.qubits.Map");
     register_pass<::ql::arch::cc::pass::gen::vq1asm::Pass>("arch.cc.gen.VQ1Asm");
     register_pass<::ql::arch::diamond::pass::gen::microcode::Pass>("arch.diamond.gen.Microcode");
-
 
 }
 

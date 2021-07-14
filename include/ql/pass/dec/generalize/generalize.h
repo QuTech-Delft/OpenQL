@@ -1,5 +1,5 @@
 /** \file
- * Instruction decomposition pass.
+ * Instruction generalization pass.
  */
 
 #pragma once
@@ -10,16 +10,16 @@
 namespace ql {
 namespace pass {
 namespace dec {
-namespace instructions {
+namespace generalize {
 
 /**
- * Instruction decomposition pass.
+ * Instruction generalization pass.
  */
-class DecomposeInstructionsPass : public pmgr::pass_types::Transformation {
+class GeneralizeInstructionsPass : public pmgr::pass_types::Transformation {
 protected:
 
     /**
-     * Dumps docs for the instruction decomposer.
+     * Dumps docs for the instruction generalizer.
      */
     void dump_docs(
         std::ostream &os,
@@ -34,9 +34,9 @@ public:
     utils::Str get_friendly_type() const override;
 
     /**
-     * Constructs an instruction decomposer.
+     * Constructs an instruction generalizer.
      */
-    DecomposeInstructionsPass(
+    GeneralizeInstructionsPass(
         const utils::Ptr<const pmgr::Factory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
@@ -45,19 +45,17 @@ public:
 private:
 
     /**
-     * Runs the instruction decomposer on the given block.
+     * Runs the instruction generalizer on the given block.
      */
-    static utils::UInt run_on_block(
+    static void run_on_block(
         const ir::Ref &ir,
-        const ir::BlockBaseRef &block,
-        utils::Bool ignore_schedule,
-        const com::dec::RulePredicate &predicate
+        const ir::BlockBaseRef &block
     );
 
 public:
 
     /**
-     * Runs the instruction decomposer.
+     * Runs the instruction generalizer.
      */
     utils::Int run(
         const ir::Ref &ir,
@@ -69,9 +67,9 @@ public:
 /**
  * Shorthand for referring to the pass using namespace notation.
  */
-using Pass = DecomposeInstructionsPass;
+using Pass = GeneralizeInstructionsPass;
 
-} // namespace instructions
+} // namespace generalize
 } // namespace dec
 } // namespace pass
 } // namespace ql

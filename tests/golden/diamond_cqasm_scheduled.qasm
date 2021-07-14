@@ -5,7 +5,6 @@ pragma @ql.name("diamond_cqasm")
 
 
 .__1 @ql.name("")
-    skip 1
     x q[0]
     y q[0]
     z q[0]
@@ -31,7 +30,7 @@ pragma @ql.name("diamond_cqasm")
     measure_z q[0]
     measure_y q[0]
     measure_x q[0]
-    { # start at cycle 26
+    { # start at cycle 25
         measure_z q[0]
         measure_z q[1]
         measure_z q[2]

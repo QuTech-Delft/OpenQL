@@ -1,5 +1,5 @@
 /** \file
- * Defines the list scheduler pass.
+ * Instruction decomposition pass.
  */
 
 #include "ql/pass/dec/instructions/instructions.h"

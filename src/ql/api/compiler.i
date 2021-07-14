@@ -680,6 +680,10 @@ Ensures that all passes have been constructed, and then runs the passes without
 specification of an input program. The first pass should then act as a language
 frontend. The cQASM reader satisfies this requirement, for instance.
 
+If no platform is specified, it will default to the `none` architecture,
+but the intended use case is to have the first pass load the platform. Again,
+the cQASM reader can do this.
+
 Parameters
 ----------
 platform : Platform
