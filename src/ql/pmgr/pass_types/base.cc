@@ -185,6 +185,14 @@ Base::Base(
 }
 
 /**
+ * Returns whether this is a legacy pass, i.e. one that operates on the old
+ * IR. Returns false unless overridden.
+ */
+utils::Bool Base::is_legacy() const {
+    return false;
+}
+
+/**
  * Returns `pass "<name>"` for normal passes and `root` for the root pass.
  * Used for error messages.
  */
@@ -218,6 +226,16 @@ void Base::dump_help(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
+    if (is_legacy()) {
+        utils::dump_str(os, line_prefix, R"(
+        NOTE: this is a legacy pass, operating on the old intermediate
+        representation. If the program is using features that the old IR does
+        not support when this pass is run, an internal compiler error will be
+        thrown. Furthermore, kernel/block names may change regardless of whether
+        the pass does anything with them, due to name uniquification logic.
+        )");
+        os << line_prefix << "\n";
+    }
     dump_docs(os, line_prefix);
     os << line_prefix << "\n";
     os << line_prefix << "* Options *\n";

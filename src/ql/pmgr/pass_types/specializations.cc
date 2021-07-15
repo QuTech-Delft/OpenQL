@@ -121,6 +121,13 @@ utils::Int ProgramTransformation::run_internal(
 }
 
 /**
+ * Returns that this is a legacy pass.
+ */
+utils::Bool ProgramTransformation::is_legacy() const {
+    return true;
+}
+
+/**
  * Constructs the pass. No error checking here; this is up to the parent
  * pass group.
  */
@@ -165,6 +172,13 @@ utils::Int KernelTransformation::run_internal(
     ir->platform = new_ir->platform;
     ir->copy_annotations(*new_ir);
     return accumulator;
+}
+
+/**
+ * Returns that this is a legacy pass.
+ */
+utils::Bool KernelTransformation::is_legacy() const {
+    return true;
 }
 
 /**
@@ -216,6 +230,13 @@ utils::Int ProgramAnalysis::run_internal(
 }
 
 /**
+ * Returns that this is a legacy pass.
+ */
+utils::Bool ProgramAnalysis::is_legacy() const {
+    return true;
+}
+
+/**
  * Constructs the pass. No error checking here; this is up to the parent
  * pass group.
  */
@@ -260,6 +281,13 @@ utils::Int KernelAnalysis::run_internal(
     ir->platform = new_ir->platform;
     ir->copy_annotations(*new_ir);
     return accumulator;
+}
+
+/**
+ * Returns that this is a legacy pass.
+ */
+utils::Bool KernelAnalysis::is_legacy() const {
+    return true;
 }
 
 } // namespace pass_types

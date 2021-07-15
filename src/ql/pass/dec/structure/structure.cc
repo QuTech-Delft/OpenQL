@@ -41,6 +41,19 @@ void DecomposeStructurePass::dump_docs(
 
     Optionally, the control-flow graph of the resulting program can be printed
     as in graphviz dot format.
+
+    * Schedule preservation *
+
+      This pass does its best to preserve the schedule of the original program,
+      so it doesn't need to be rescheduled after the transformation. Note
+      however that this is only valid if classical instructions have (quantum)
+      duration zero and do not use any scheduling resources.
+
+      Unfortunately, there are some situations where the resulting schedule ends
+      up being longer than it should be. This has to do with block duration not
+      currently being explicitly encoded in the IR. The schedule *should* at
+      least be correct, though, if the above assumptions about classical
+      instructions are applicable.
     )");
 }
 

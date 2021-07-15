@@ -164,6 +164,11 @@ protected:
         const Context &context
     ) const = 0;
 
+    /**
+     * Returns that this is a legacy pass.
+     */
+    utils::Bool is_legacy() const override;
+
 };
 
 /**
@@ -209,6 +214,11 @@ protected:
         const ir::compat::KernelRef &kernel,
         const Context &context
     ) const = 0;
+
+    /**
+     * Returns that this is a legacy pass.
+     */
+    utils::Bool is_legacy() const override;
 
 };
 
@@ -280,6 +290,11 @@ protected:
         const Context &context
     ) const = 0;
 
+    /**
+     * Returns that this is a legacy pass.
+     */
+    utils::Bool is_legacy() const override;
+
 };
 
 /**
@@ -325,6 +340,11 @@ protected:
         const ir::compat::KernelRef &kernel,
         const Context &context
     ) const = 0;
+
+    /**
+     * Returns that this is a legacy pass.
+     */
+    utils::Bool is_legacy() const override;
 
 };
 

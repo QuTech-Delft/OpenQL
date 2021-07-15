@@ -253,6 +253,12 @@ protected:
     ) const = 0;
 
     /**
+     * Returns whether this is a legacy pass, i.e. one that operates on the old
+     * IR. Returns false unless overridden.
+     */
+    virtual utils::Bool is_legacy() const;
+
+    /**
      * Returns `pass "<name>"` for normal passes and `root` for the root pass.
      * Used for error messages.
      */
