@@ -7,24 +7,69 @@
 #include <fstream>
 #include "ql/utils/str.h"
 #include "ql/utils/exception.h"
+#include "ql/utils/compat.h"
+#include "ql/utils/list.h"
 
 namespace ql {
 namespace utils {
 
-/**
- * Returns whether the given path exists and is a directory.
- */
-bool is_dir(const Str &path);
+namespace {
 
 /**
- * Returns whether the given path exists and is a regular file.
+ * Stack of working directories. Private; use push_working_directory(),
+ * pop_working_directory(), and get_working_directory() to access.
  */
-bool is_file(const Str &path);
+QL_GLOBAL extern List<Str> working_directory_stack;
+
+} // anonymous namespace
 
 /**
- * Returns whether the given path exists.
+ * Sets OpenQL's working directory to the given directory. If the directory
+ * looks like a relative path, it is appended to the previous working directory.
+ * Otherwise it overrides the working directory.
  */
-bool path_exists(const Str &path);
+void push_working_directory(const Str &dir);
+
+/**
+ * Reverts the change made by the previous push_working_directory() call.
+ */
+void pop_working_directory();
+
+/**
+ * Context management class that pushes the given working directory on
+ * construction and pops it on destruction.
+ */
+struct WithWorkingDirectory {
+    WithWorkingDirectory(const Str &dir) { push_working_directory(dir); }
+    ~WithWorkingDirectory() { pop_working_directory(); }
+};
+
+/**
+ * Returns OpenQL's current working directory. If no working directory has been
+ * set yet, `.` is returned, so the OS working directory is effectively used
+ * instead.
+ */
+Str get_working_directory();
+
+/**
+ * Returns whether the given path exists and is a directory. If path looks like
+ * a relative path, it is interpreted as relative to the current OpenQL working
+ * directory.
+ */
+Bool is_dir(const Str &path);
+
+/**
+ * Returns whether the given path exists and is a regular file. If path looks
+ * like a relative path, it is interpreted as relative to the current OpenQL
+ * working directory.
+ */
+Bool is_file(const Str &path);
+
+/**
+ * Returns whether the given path exists. If path looks like a relative path, it
+ * is interpreted as relative to the current OpenQL working directory.
+ */
+Bool path_exists(const Str &path);
 
 /**
  * If path looks like it's a relative path, make it relative to base instead.
@@ -41,7 +86,9 @@ Str dir_name(const Str &path);
 
 /**
  * (Recursively) creates a new directory if it does not already exist. Throws
- * an Exception if creation of the directory fails.
+ * an Exception if creation of the directory fails. If path looks like a
+ * relative path, it is interpreted as relative to the current OpenQL working
+ * directory.
  */
 void make_dirs(const Str &path);
 
@@ -54,6 +101,8 @@ void make_dirs(const Str &path);
  * Note that close() does not need to be called; if it isn't, the destructor
  * will do it. But this automatic closing may throw an exception; if this
  * happens while another exception is being handled, abort() will be called.
+ * Relative paths are treated as relative to the current OpenQL working
+ * directory.
  */
 class OutFile {
 private:
@@ -80,6 +129,8 @@ public:
  * Note that close() does not need to be called; if it isn't, the destructor
  * will do it. But this automatic closing may throw an exception; if this
  * happens while another exception is being handled, abort() will be called.
+ * Relative paths are treated as relative to the current OpenQL working
+ * directory.
  */
 class InFile {
 private:
@@ -97,6 +148,7 @@ public:
         return *this;
     }
 };
+
 
 } // namespace utils
 } // namespace ql

@@ -25,10 +25,58 @@
 namespace ql {
 namespace utils {
 
+namespace {
+
 /**
- * Returns whether the given path exists and is a directory.
+ * Stack of working directories. Private; use push_working_directory(),
+ * pop_working_directory(), and get_working_directory() to access.
  */
-bool is_dir(const Str &path) {
+List<Str> working_directory_stack;
+
+} // anonymous namespace
+
+/**
+ * Makes a path that looks like a relative path relative to the current OpenQL
+ * working directory.
+ */
+static Str process_path(const Str &path) {
+    return path_relative_to(get_working_directory(), path);
+}
+
+/**
+ * Sets OpenQL's working directory to the given directory. If the directory
+ * looks like a relative path, it is appended to the previous working directory.
+ * Otherwise it overrides the working directory.
+ */
+void push_working_directory(const Str &dir) {
+    working_directory_stack.push_back(process_path(dir));
+}
+
+/**
+ * Reverts the change made by the previous push_working_directory() call.
+ */
+void pop_working_directory() {
+    working_directory_stack.pop_back();
+}
+
+/**
+ * Returns OpenQL's current working directory. If no working directory has been
+ * set yet, `.` is returned, so the OS working directory is effectively used
+ * instead.
+ */
+Str get_working_directory() {
+    if (working_directory_stack.empty()) {
+        return ".";
+    } else {
+        return working_directory_stack.back();
+    }
+}
+
+/**
+ * Returns whether the given path exists and is a directory. Does not apply
+ * process_path() to the path first.
+ */
+static Bool is_dir_raw(const Str &path) {
     struct stat info{};
     if (stat(path.c_str(), &info) != 0) {
         return false;
@@ -37,22 +85,43 @@ bool is_dir(const Str &path) {
 }
 
 /**
- * Returns whether the given path exists and is a regular file.
+ * Returns whether the given path exists and is a directory. If path looks like
+ * a relative path, it is interpreted as relative to the current OpenQL working
+ * directory.
  */
-bool is_file(const Str &path) {
+Bool is_dir(const Str &path) {
+    return is_dir_raw(process_path(path));
+}
+
+/**
+ * Returns whether the given path exists and is a regular file. If path looks
+ * like a relative path, it is interpreted as relative to the current OpenQL
+ * working directory.
+ */
+Bool is_file(const Str &path) {
+    auto processed_path = process_path(path);
     struct stat info{};
-    if (stat(path.c_str(), &info) != 0) {
+    if (stat(processed_path.c_str(), &info) != 0) {
         return false;
     }
     return (info.st_mode & S_IFREG) != 0;
 }
 
 /**
- * Returns whether the given path exists.
+ * Returns whether the given path exists. Does not apply process_path() to the
+ * path first.
  */
-bool path_exists(const Str &path) {
+static Bool path_exists_raw(const Str &path) {
     struct stat info{};
     return !stat(path.c_str(), &info);
+}
+
+/**
+ * Returns whether the given path exists. If path looks like a relative path, it
+ * is interpreted as relative to the current OpenQL working directory.
+ */
+Bool path_exists(const Str &path) {
+    return path_exists_raw(process_path(path));
 }
 
 /**
@@ -100,13 +169,14 @@ Str dir_name(const Str &path) {
 
 /**
  * (Recursively) creates a new directory if it does not already exist. Throws
- * an Exception if creation of the directory fails.
+ * an Exception if creation of the directory fails. Does not apply
+ * process_path() to the path first.
  */
-void make_dirs(const Str &path) {
+void make_dirs_raw(const Str &path) {
 
     // If the given path is already an existing directory, we don't need to do
     // anything.
-    if (is_dir(path)) {
+    if (is_dir_raw(path)) {
         return;
     }
 
@@ -114,7 +184,7 @@ void make_dirs(const Str &path) {
     // a directory first.
     auto parent = dir_name(path);
     if (parent != path && !path_exists(parent)) {
-        make_dirs(parent);
+        make_dirs_raw(parent);
     }
 
     // Try to make the given directory.
@@ -125,21 +195,32 @@ void make_dirs(const Str &path) {
 }
 
 /**
+ * (Recursively) creates a new directory if it does not already exist. Throws
+ * an Exception if creation of the directory fails. If path looks like a
+ * relative path, it is interpreted as relative to the current OpenQL working
+ * directory.
+ */
+void make_dirs(const Str &path) {
+    make_dirs_raw(process_path(path));
+}
+
+/**
  * Tries to create a file (if it doesn't already exist) and opens it for
  * writing. If the directory that path is contained by does not exists, it is
  * first created.
  */
 OutFile::OutFile(const Str &path) : ofs(), path(path) {
+    auto processed_path = process_path(path);
 
     // If the parent path does not exist yet, recursively try to create a
     // directory for it.
-    auto parent = dir_name(path);
-    if (parent != path && !path_exists(parent)) {
-        make_dirs(parent);
+    auto parent = dir_name(processed_path);
+    if (parent != processed_path && !path_exists_raw(parent)) {
+        make_dirs_raw(parent);
     }
 
     // Open the file.
-    ofs.open(path);
+    ofs.open(processed_path);
     check();
 
 }
@@ -182,7 +263,7 @@ std::ofstream &OutFile::unwrap() {
  * Tries to open a file for reading.
  */
 InFile::InFile(const Str &path) : ifs(), path(path) {
-    ifs.open(path);
+    ifs.open(process_path(path));
     check();
 }
 

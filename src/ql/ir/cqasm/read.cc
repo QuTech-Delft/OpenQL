@@ -1054,10 +1054,6 @@ static void convert_block(
  */
 static ir::compat::PlatformRef load_platform(const cq::parser::ParseResult &pres) {
 
-    // FIXME: if the platform or compiler configuration is specified by means of
-    //  a relative path, they should be loaded relative to the cQASM filename.
-    //  Currently it's relative to the working directory.
-
     // Look for the annotation.
     cqt::One<cq::ast::ExpressionList> platform_annot_operands;
     if (auto prog = pres.root->as_program()) {
@@ -1522,7 +1518,9 @@ void read_file(
     const utils::Str &fname,
     const ReadOptions &options
 ) {
-    read(ir, utils::InFile(fname).read(), fname, options);
+    auto data = utils::InFile(fname).read();
+    auto wd = utils::WithWorkingDirectory(utils::dir_name(fname));
+    read(ir, data, fname, options);
 }
 
 /**
@@ -1554,7 +1552,9 @@ ir::compat::PlatformRef read_platform(
  * string.
  */
 ir::compat::PlatformRef read_platform_from_file(const utils::Str &fname) {
-    return read_platform(utils::InFile(fname).read(), fname);
+    auto data = utils::InFile(fname).read();
+    auto wd = utils::WithWorkingDirectory(utils::dir_name(fname));
+    return read_platform(data, fname);
 }
 
 } // namespace cqasm
