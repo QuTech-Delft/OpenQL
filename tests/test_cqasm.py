@@ -1,23 +1,13 @@
 import os
 import filecmp
 import unittest
+from utils import file_compare
 from openql import openql as ql
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 platf = ql.Platform("starmon", "none")
 
 output_dir = os.path.join(curdir, 'test_output')
-
-def file_compare(fn1, fn2):
-    isSame = False
-    with open(fn1, 'r') as f1:
-        with open(fn2, 'r') as f2:
-            a = f1.read()
-            b = f2.read()
-            f1.close()
-            f2.close()
-            isSame = (a==b)
-    return isSame
 
 class Test_cqasm(unittest.TestCase):
 
