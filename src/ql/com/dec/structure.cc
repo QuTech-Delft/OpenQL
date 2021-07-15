@@ -113,7 +113,7 @@ private:
         utils::Int cycle_offset_after_loop;
     public:
         LoopBody(StructureDecomposer &sd, const utils::Str &suffix);
-        void start_loop_condition();
+        void start_loop_update_and_condition();
         ~LoopBody();
     };
 
@@ -224,7 +224,7 @@ StructureDecomposer::LoopBody::LoopBody(
 
 }
 
-void StructureDecomposer::LoopBody::start_loop_condition() {
+void StructureDecomposer::LoopBody::start_loop_update_and_condition() {
 
     // Connect the (last) loop body block to the loop condition block.
     auto loop_condition_block = sd.continue_to.back();
@@ -415,7 +415,7 @@ void StructureDecomposer::process_statement(const ir::StatementRef &stmt) {
         process_block_base(sl->body);
 
         // Continue if the loop var equals the target value.
-        lb.start_loop_condition();
+        lb.start_loop_update_and_condition();
         auto branch_insn = utils::make<ir::GotoInstruction>();
         branch_insn->condition = ir::make_function_call(
             ir,
@@ -436,10 +436,9 @@ void StructureDecomposer::process_statement(const ir::StatementRef &stmt) {
         //   <initialize>
         //   cond (!<condition>) goto .after
         //   goto .body
-        // .update
-        //   <update>
         // .body
         //   <loop body>
+        //   <update>
         //   cond (<condition>) goto .update
         // .after
         //   ...
@@ -469,26 +468,19 @@ void StructureDecomposer::process_statement(const ir::StatementRef &stmt) {
         // loop has been created by LoopBody.
         branch_past_insn->target = break_to.back();
 
-        // Handle the update assignment.
-        if (!fl->update.empty()) {
-            process_new_instruction(fl->update);
-
-            // Loop entry must skip the initial update assignment, so we
-            // need to make a new block.
-            new_block();
-
-        }
-
-        // Link "before" to whatever block is now at the back. If there is
-        // no update assignment this will be the first block of the body,
-        // otherwise it will be the block after that.
+        // Link "before" to the start of the loop body.
         before->next = blocks.back();
 
         // Handle the loop body.
         process_block_base(fl->body);
 
+        // Handle the update assignment.
+        lb.start_loop_update_and_condition();
+        if (!fl->update.empty()) {
+            process_new_instruction(fl->update);
+        }
+
         // Continue if the loop var equals the target value.
-        lb.start_loop_condition();
         auto branch_back_insn = utils::make<ir::GotoInstruction>();
         branch_back_insn->condition = fl->condition;
         branch_back_insn->target = start_of_loop;
@@ -516,7 +508,7 @@ void StructureDecomposer::process_statement(const ir::StatementRef &stmt) {
         process_block_base(ru->body);
 
         // Continue if the condition is false.
-        lb.start_loop_condition();
+        lb.start_loop_update_and_condition();
         auto branch_insn = utils::make<ir::GotoInstruction>();
         branch_insn->condition = ir::make_function_call(
             ir,

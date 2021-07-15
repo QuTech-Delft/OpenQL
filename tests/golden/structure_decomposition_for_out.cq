@@ -10,12 +10,8 @@ pragma @ql.name("structure_decomposition_for")
         set creg(0) = 0
         cond (!(creg(0) < 10)) goto sa_1
     }
-    goto sa_for_2
 
 .sa_for_1
-    set creg(0) = creg(0) + 1
-
-.sa_for_2
     test q[1]
     cond (breg(0)) goto sa_for_if
     goto sa_for_if_2
@@ -39,7 +35,10 @@ pragma @ql.name("structure_decomposition_for")
     test q[2]
 
 .sa_for
-    cond (creg(0) < 10) goto sa_for_1
+    { # start at cycle 0
+        set creg(0) = creg(0) + 1
+        cond (creg(0) < 10) goto sa_for_1
+    }
 
 .sa_1
     test q[3]
