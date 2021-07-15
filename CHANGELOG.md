@@ -17,6 +17,29 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - ...
 
 
+## [ 0.10.0 ] - [ 2021-07-15 ]
+### Added
+- scalability options for coping with large multi-core systems, including a progress bar for the mapping process
+- initial implementation of the Diamond architecture developed for Fujitsu (lead by Stephan Wong)
+- full cQASM 1.2 read and write support, with options for different version levels and various language quirks
+- new internal representation that encompasses the entire cQASM 1.2 language, and has many new generalized platform features
+- lossless conversion functions between the two IR representations until all passes have been converted to the new representation
+- new pass-based decomposition logic that supports arbitrary cQASM 1.2 code for the expansion and doesn't clobber scheduling information
+- new pass for converting structured cQASM 1.2 control flow to basic block form
+- new list scheduler based on the new IR
+
+### Changed
+- all written cQASM files are now in 1.2 format by default
+- the cQASM reader no longer has a JSON configuration file for mapping cQASM gates to OpenQL gates; this translation is now part of OpenQL's platform data
+- the old scheduler is replaced with a new implementation for most option variations, that outputs slightly different schedules
+- statistics report output is also formatted slightly different, though information content is the same
+- CC backend:
+    - scheduling is now done using resource constraints by default
+
+### Fixed
+- excessive memory usage and slow platform construction for large multi-core systems
+
+
 ## [ 0.9.0 ] - [ 2021-05-27 ]
 ### Added
 - architecture system: platform and compilation strategy defaults are now built into OpenQL, preventing the need for users to copypaste configuration files from the tests directory
