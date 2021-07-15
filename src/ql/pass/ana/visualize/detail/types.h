@@ -10,7 +10,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/map.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 
 namespace ql {
 namespace pass {
@@ -114,10 +114,10 @@ struct GateProperties {
     utils::Str name;
     utils::Vec<utils::Int> operands;
     utils::Vec<utils::Int> creg_operands;
-    ir::SwapParamaters swap_params;
+    ir::compat::SwapParamaters swap_params;
     utils::Int duration;
     utils::Int cycle;
-    ir::GateType type;
+    ir::compat::GateType type;
     utils::Vec<utils::Int> codewords; // std::vector<size_t> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
     utils::Str visual_type;
 
@@ -481,93 +481,93 @@ struct CircuitLayout {
 
     utils::Map<utils::Str, GateVisual> customGateVisuals;
 
-    const utils::Map<ir::GateType, GateVisual> defaultGateVisuals {
+    const utils::Map<ir::compat::GateType, GateVisual> defaultGateVisuals {
         // TODO: use the proper symbol for dagger gates
         // TODO: use the proper symbol for measurement gates
 
-        {ir::GateType::IDENTITY, { black, {
+        {ir::compat::GateType::IDENTITY, { black, {
             { GATE, 13, "I", 13, white, lightblue, lightblue }}}},
 
-        {ir::GateType::HADAMARD, { black, {
+        {ir::compat::GateType::HADAMARD, { black, {
             { GATE, 13, "H", 13, white, lightblue, lightblue }}}},
 
-        {ir::GateType::PAULI_X, { black, {
+        {ir::compat::GateType::PAULI_X, { black, {
             { GATE, 13, "X", 13, white, green, green }}}},
 
-        {ir::GateType::PAULI_Y, { black, {
+        {ir::compat::GateType::PAULI_Y, { black, {
             { GATE, 13, "Y", 13, white, green, green }}}},
 
-        {ir::GateType::PAULI_Z, { black, {
+        {ir::compat::GateType::PAULI_Z, { black, {
             { GATE, 13, "Z", 13, white, green, green }}}},
 
-        {ir::GateType::PHASE, { black, {
+        {ir::compat::GateType::PHASE, { black, {
             { GATE, 13, "S", 13, white, yellow, yellow }}}},
 
-        {ir::GateType::PHASE_DAG, { black, {
+        {ir::compat::GateType::PHASE_DAG, { black, {
             { GATE, 13, "S\u2020", 13, white, yellow, yellow }}}},
 
-        {ir::GateType::T, { black, {
+        {ir::compat::GateType::T, { black, {
             { GATE, 13, "T", 13, white, red, red }}}},
 
-        {ir::GateType::T_DAG, { black, {
+        {ir::compat::GateType::T_DAG, { black, {
             { GATE, 13, "T\u2020", 13, white, red, red }}}},
 
-        {ir::GateType::RX90, { black, {
+        {ir::compat::GateType::RX90, { black, {
             {}}}},
-        {ir::GateType::MRX90, {black, {
+        {ir::compat::GateType::MRX90, {black, {
             {}}}},
-        {ir::GateType::RX180, { black, {
+        {ir::compat::GateType::RX180, { black, {
             {}}}},
-        {ir::GateType::RY90, { black, {
+        {ir::compat::GateType::RY90, { black, {
             {}}}},
-        {ir::GateType::MRY90, {black, {
+        {ir::compat::GateType::MRY90, {black, {
             {}}}},
-        {ir::GateType::RY180, { black, {
+        {ir::compat::GateType::RY180, { black, {
             {}}}},
-        {ir::GateType::RX, { black, {
+        {ir::compat::GateType::RX, { black, {
             {}}}},
-        {ir::GateType::RY, { black, {
+        {ir::compat::GateType::RY, { black, {
             {}}}},
-        {ir::GateType::RZ, { black, {
+        {ir::compat::GateType::RZ, { black, {
             {}}}},
-        {ir::GateType::PREP_Z, { black, {
+        {ir::compat::GateType::PREP_Z, { black, {
             {}}}},
 
-        {ir::GateType::CNOT, { black, {
+        {ir::compat::GateType::CNOT, { black, {
             { CONTROL, 3, "", 0, black, black, black },
             { NOT, 8, "", 0, black, black, black }}}},
 
-        {ir::GateType::CPHASE, { lightblue, {
+        {ir::compat::GateType::CPHASE, { lightblue, {
             { CONTROL, 3, "", 0, black, lightblue, lightblue },
             { CONTROL, 3, "", 0, black, lightblue, lightblue }}}},
 
-        {ir::GateType::TOFFOLI, { black, {
+        {ir::compat::GateType::TOFFOLI, { black, {
             {}}}},
-        {ir::GateType::CUSTOM, { black, {
+        {ir::compat::GateType::CUSTOM, { black, {
             {}}}},
-        {ir::GateType::COMPOSITE, { black, {
+        {ir::compat::GateType::COMPOSITE, { black, {
             {}}}},
 
-        {ir::GateType::MEASURE, { gray, {
+        {ir::compat::GateType::MEASURE, { gray, {
             { GATE, 13, "M", 13, white, purple, purple },
             { NONE, 3, "", 0, black, black, black }}}},
 
-        {ir::GateType::DISPLAY, { black, {
+        {ir::compat::GateType::DISPLAY, { black, {
             {}}}},
-        {ir::GateType::DISPLAY_BINARY, { black, {
+        {ir::compat::GateType::DISPLAY_BINARY, { black, {
             {}}}},
-        {ir::GateType::NOP, { black, {
+        {ir::compat::GateType::NOP, { black, {
             {}}}},
-        {ir::GateType::DUMMY, { black, {
+        {ir::compat::GateType::DUMMY, { black, {
             {}}}},
 
-        {ir::GateType::SWAP, { black, {
+        {ir::compat::GateType::SWAP, { black, {
             { CROSS, 6, "", 0, black, black, black },
             { CROSS, 6, "", 0, black, black, black }}}},
 
-        {ir::GateType::WAIT, { black, {
+        {ir::compat::GateType::WAIT, { black, {
             {}}}},
-        {ir::GateType::CLASSICAL, { black, {
+        {ir::compat::GateType::CLASSICAL, { black, {
             {}}}}
     };
 };

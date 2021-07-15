@@ -1,0 +1,20 @@
+version 1.2
+
+pragma @ql.name("structure_decomposition_foreach")
+pragma @ql.platform("test_structure_decomposition_platform.json")
+
+.sa
+    test q[0]
+    foreach (creg(0) = 0..9) {
+        test q[1]
+        if (breg(0)) {
+            break
+        }
+        if (breg(1)) {
+            continue
+        }
+        test q[2]
+    }
+    test q[3]
+
+.sb

@@ -81,7 +81,7 @@ GenerateVQ1AsmPass::GenerateVQ1AsmPass(
  * Runs the code generator.
  */
 utils::Int GenerateVQ1AsmPass::run(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const pmgr::pass_types::Context &context
 ) const {
 

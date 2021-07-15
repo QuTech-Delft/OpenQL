@@ -1,20 +1,27 @@
 
 %feature("docstring") ql::api::cQasmReader
 """
-cQASM reader interface.
+Legacy cQASM reader interface.
 
-To read a cQASM file, build a cQASM reader for the an already-existing program,
-and then call file2circuit or string2circuit to add the kernels from the cQASM
-file/string to the program. Optionally a platform can be specified as well, but
-this is redundant (it must be the same platform as the one that the program was
-constructed with); these overloads only exist for backward compatibility.
+The preferred way to read cQASM files is to use the cQASM reader pass
+(``io.cqasm.read``). The pass supports up to cQASM 1.2, and handles all
+features that OpenQL supports within its intermediate representation properly,
+whereas this interface only supports version 1.0 and requires an additional JSON
+file with gate conversion rules to work.
+
+To read a cQASM file using this interface, build a cQASM reader for the an
+already-existing program, and then call file2circuit or string2circuit to add
+the kernels from the cQASM file/string to the program. Optionally a platform can
+be specified as well, but this is redundant (it must be the same platform as the
+one that the program was constructed with); these overloads only exist for
+backward compatibility.
 
 Because OpenQL supports custom gates and cQASM (historically) does not, and also
 because OpenQL's internal representation of gates is still a bit different from
-what cQASM uses, you may need custom conversion rules for the gates. This can
-be done by specifying a gateset configuration JSON file using gateset_fname.
-This file must consist of a JSON array containing objects with the following
-structure:
+what cQASM uses (at least when constructing the IR using the Python API), you
+may need custom conversion rules for the gates. This can be done by specifying a
+gateset configuration JSON file using gateset_fname. This file must consist of a
+JSON array containing objects with the following structure:
 
 .. code-block::
 
@@ -63,6 +70,53 @@ supported by libqasm:
 
 Note that OpenQL only uses an argument if it is referred to in one of the
 \"ql_*\" keys, either implicitly or explicitly.
+
+If no custom configuration is specified, the reader defaults to the logic that
+was hardcoded before it was made configurable. This corresponds to the following
+JSON:
+
+.. code-block::
+
+    [
+        {\"name\": \"measure\",     \"params\": \"Q\",      \"ql_name\": \"measz\"},
+        {\"name\": \"measure\",     \"params\": \"QB\",     \"ql_name\": \"measz\"},
+        {\"name\": \"measure_x\",   \"params\": \"Q\",      \"ql_name\": \"measx\"},
+        {\"name\": \"measure_x\",   \"params\": \"QB\",     \"ql_name\": \"measx\"},
+        {\"name\": \"measure_y\",   \"params\": \"Q\",      \"ql_name\": \"measy\"},
+        {\"name\": \"measure_y\",   \"params\": \"QB\",     \"ql_name\": \"measy\"},
+        {\"name\": \"measure_z\",   \"params\": \"Q\",      \"ql_name\": \"measz\"},
+        {\"name\": \"measure_z\",   \"params\": \"QB\",     \"ql_name\": \"measz\"},
+        {\"name\": \"prep\",        \"params\": \"Q\",      \"ql_name\": \"prepz\"},
+        {\"name\": \"prep_x\",      \"params\": \"Q\",      \"ql_name\": \"prepx\"},
+        {\"name\": \"prep_y\",      \"params\": \"Q\",      \"ql_name\": \"prepy\"},
+        {\"name\": \"prep_z\",      \"params\": \"Q\",      \"ql_name\": \"prepz\"},
+        {\"name\": \"i\",           \"params\": \"Q\"},
+        {\"name\": \"h\",           \"params\": \"Q\"},
+        {\"name\": \"x\",           \"params\": \"Q\"},
+        {\"name\": \"y\",           \"params\": \"Q\"},
+        {\"name\": \"z\",           \"params\": \"Q\"},
+        {\"name\": \"s\",           \"params\": \"Q\"},
+        {\"name\": \"sdag\",        \"params\": \"Q\"},
+        {\"name\": \"t\",           \"params\": \"Q\"},
+        {\"name\": \"tdag\",        \"params\": \"Q\"},
+        {\"name\": \"x90\",         \"params\": \"Q\",      \"ql_name\": \"rx90\"},
+        {\"name\": \"mx90\",        \"params\": \"Q\",      \"ql_name\": \"xm90\"},
+        {\"name\": \"y90\",         \"params\": \"Q\",      \"ql_name\": \"ry90\"},
+        {\"name\": \"my90\",        \"params\": \"Q\",      \"ql_name\": \"ym90\"},
+        {\"name\": \"rx\",          \"params\": \"Qr\"},
+        {\"name\": \"ry\",          \"params\": \"Qr\"},
+        {\"name\": \"rz\",          \"params\": \"Qr\"},
+        {\"name\": \"cnot\",        \"params\": \"QQ\"},
+        {\"name\": \"cz\",          \"params\": \"QQ\"},
+        {\"name\": \"swap\",        \"params\": \"QQ\"},
+        {\"name\": \"cr\",          \"params\": \"QQr\"},
+        {\"name\": \"crk\",         \"params\": \"QQi\",    \"ql_angle\": \"%2\", \"ql_angle_type\": \"pow2\"},
+        {\"name\": \"toffoli\",     \"params\": \"QQQ\"},
+        {\"name\": \"measure_all\", \"params\": \"\",       \"ql_qubits\": \"all\", \"implicit_sgmq\": true},
+        {\"name\": \"display\",     \"params\": \"\"},
+        {\"name\": \"wait\",        \"params\": \"\"},
+        {\"name\": \"wait\",        \"params\": \"i\"}
+    ]
 """
 
 

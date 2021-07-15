@@ -36,7 +36,7 @@ public:
     template<typename S = T, class... Args>
     void emplace(Args&&... args) {
         if (v) {
-            throw Exception("Opt has already been initialized", false);
+            QL_CONTAINER_ERROR("Opt has already been initialized");
         }
         v = std::shared_ptr<T>(new S(std::forward<Args>(args)...));
     }

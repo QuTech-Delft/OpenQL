@@ -1,0 +1,30 @@
+{
+    "eqasm_compiler": {
+        "passes": [
+            {
+                "type": "dec.Structure",
+                "options": {
+                    "output_prefix": "test_output/%N_out",
+                    "write_dot_graph": "yes"
+                }
+            },
+            {
+                "type": "io.cqasm.Report",
+                "options": {
+                    "output_prefix": "test_output/%N_out"
+                }
+            }
+        ]
+    },
+    "hardware_settings": {
+        "qubit_number": 7,
+        "creg_number": 32,
+        "breg_number": 32
+    },
+    "instructions": {
+        "test": {
+            "prototype": ["W:qubit"],
+            "duration_cycles": 1
+        }
+    }
+}

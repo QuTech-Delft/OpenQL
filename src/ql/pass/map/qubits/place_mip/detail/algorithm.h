@@ -53,9 +53,8 @@
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"
 #include "ql/utils/vec.h"
-#include "ql/plat/platform.h"
-#include "ql/ir/ir.h"
-#include "ql/com/qubit_mapping.h"
+#include "ql/ir/compat/compat.h"
+#include "ql/com/map/qubit_mapping.h"
 
 namespace ql {
 namespace pass {
@@ -143,12 +142,12 @@ private:
     /**
      * Reference to the kernel we're operating on.
      */
-    ir::KernelRef kernel;
+    ir::compat::KernelRef kernel;
 
     /**
      * Shorthand reference for the platform corresponding to the kernel.
      */
-    plat::PlatformRef platform;
+    ir::compat::PlatformRef platform;
 
     /**
      * Number of locations, real qubits; index variables k and l.
@@ -184,7 +183,7 @@ private:
      * provided qubit map. time_taken is set to the time taken by the actual
      * algorithm.
      */
-    Result body(com::QubitMapping &v2r);
+    Result body(com::map::QubitMapping &v2r);
 
     /**
      * Wrapper around body() that runs it in a separate thread with a timeout.
@@ -194,7 +193,7 @@ private:
      *  background, and even continues poking around on the stack of the main
      *  thread!
      */
-    utils::Bool wrapper(com::QubitMapping &v2r);
+    utils::Bool wrapper(com::map::QubitMapping &v2r);
 
 public:
 
@@ -204,9 +203,9 @@ public:
      * PlaceBody/PlaceWrapper when it has found a mapping.
      */
     Result run(
-        const ir::KernelRef &k,
+        const ir::compat::KernelRef &k,
         const Options &opt,
-        com::QubitMapping &v2r
+        com::map::QubitMapping &v2r
     );
 
     /**

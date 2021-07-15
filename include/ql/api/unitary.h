@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ql/com/unitary.h"
+#include "ql/com/dec/unitary.h"
 #include "ql/api/declarations.h"
 
 //============================================================================//
@@ -27,7 +27,7 @@ private:
     /**
      * The wrapped unitary gate.
      */
-    ql::utils::Ptr<ql::com::Unitary> unitary;
+    ql::utils::Ptr<ql::com::dec::Unitary> unitary;
 
 public:
 

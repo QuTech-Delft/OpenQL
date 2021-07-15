@@ -46,7 +46,7 @@ public:
      * Runs the interaction graph visualizer.
      */
     utils::Int run(
-        const ir::ProgramRef &program,
+        const ir::compat::ProgramRef &program,
         const pmgr::pass_types::Context &context
     ) const override;
 

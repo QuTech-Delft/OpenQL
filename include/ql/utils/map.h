@@ -336,7 +336,7 @@ private:
      */
     Data &get_data() {
         if (!data_ptr) {
-            throw ContainerException(
+            QL_CONTAINER_ERROR(
                 "container is used after move or otherwise has invalid data block"
             );
         }
@@ -348,7 +348,7 @@ private:
      */
     const Data &get_data() const {
         if (!data_ptr) {
-            throw ContainerException(
+            QL_CONTAINER_ERROR(
                 "container is used after move or otherwise has invalid data block"
             );
         }
@@ -772,7 +772,7 @@ public:
      * No iterators or references are invalidated.
      */
     iterator insert(const_iterator hint, const value_type &value) {
-        return iterator(get_data().get_mut_element_only().insert(hint, value), data_ptr);
+        return iterator(get_data().get_mut_element_only().insert(hint.iter, value), data_ptr);
     }
 
     /**
@@ -790,7 +790,7 @@ public:
         >::type
     >
     iterator insert(const_iterator hint, P &&value) {
-        return iterator(get_data().get_mut_element_only().insert(hint, value), data_ptr);
+        return iterator(get_data().get_mut_element_only().insert(hint.iter, value), data_ptr);
     }
 
     /**
@@ -822,7 +822,7 @@ public:
      */
     iterator insert(const Iter &first, const Iter &last) {
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same map");
+            QL_CONTAINER_ERROR("inserting from same map");
         }
         return iterator(get_data().get_mut_element_only().insert(first, last), data_ptr);
     }
@@ -837,7 +837,7 @@ public:
      */
     iterator insert(const ConstIter &first, const ConstIter &last) {
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same map");
+            QL_CONTAINER_ERROR("inserting from same map");
         }
         return iterator(get_data().get_mut_element_only().insert(first, last), data_ptr);
     }
@@ -852,7 +852,7 @@ public:
      */
     iterator insert(const ReverseIter &first, const ReverseIter &last) {
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same map");
+            QL_CONTAINER_ERROR("inserting from same map");
         }
         return iterator(get_data().get_mut_element_only().insert(first, last), data_ptr);
     }
@@ -867,7 +867,7 @@ public:
      */
     iterator insert(const ConstReverseIter &first, const ConstReverseIter &last) {
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same map");
+            QL_CONTAINER_ERROR("inserting from same map");
         }
         return iterator(get_data().get_mut_element_only().insert(first, last), data_ptr);
     }

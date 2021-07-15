@@ -10,8 +10,7 @@
 #include "ql/utils/map.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/list.h"
-#include "ql/plat/platform.h"
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/pass/sch/schedule/detail/scheduler.h"
 #include "options.h"
 #include "past.h"
@@ -70,7 +69,7 @@ public:
     /**
      * The platform being mapped to.
      */
-    plat::PlatformRef platform;
+    ir::compat::PlatformRef platform;
 
     /**
      * The parsed option structure for the mapping pass.
@@ -85,12 +84,12 @@ public:
     /**
      * Input circuit when not using scheduler based avlist.
      */
-    ir::GateRefs input_gatepv;
+    ir::compat::GateRefs input_gatepv;
 
     /**
      * State: has gate been scheduled, here: done from future?
      */
-    utils::Map<ir::GateRef,utils::Bool> scheduled;
+    utils::Map<ir::compat::GateRef, utils::Bool> scheduled;
 
     /**
      * State: the nodes/gates which are available for mapping now.
@@ -100,7 +99,7 @@ public:
     /**
      * State: alternative iterator in input_gatepv.
      */
-    ir::GateRefs::iterator input_gatepp;
+    ir::compat::GateRefs::iterator input_gatepp;
 
     /**
      * Approximate total number of gates to begin with.
@@ -115,37 +114,37 @@ public:
     /**
      * Program-wide initialization function.
      */
-    void initialize(const plat::PlatformRef &p, const OptionsRef &opt);
+    void initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt);
 
     /**
      * Set/switch input to the provided kernel.
      */
-    void set_kernel(const ir::KernelRef &kernel, const utils::Ptr<Scheduler> &sched);
+    void set_kernel(const ir::compat::KernelRef &kernel, const utils::Ptr<Scheduler> &sched);
 
     /**
      * Get from avlist all gates that are non-quantum into nonqlg. Non-quantum
      * gates include classical and dummy (SOURCE/SINK). Return whether some
      * non-quantum gate was found.
      */
-    utils::Bool get_non_quantum_gates(utils::List<ir::GateRef> &nonqlg) const;
+    utils::Bool get_non_quantum_gates(utils::List<ir::compat::GateRef> &nonqlg) const;
 
     /**
      * Get all gates from avlist into qlg. Return whether some gate was found.
      */
-    utils::Bool get_gates(utils::List<ir::GateRef> &qlg) const;
+    utils::Bool get_gates(utils::List<ir::compat::GateRef> &qlg) const;
 
     /**
      * Indicates that a gate currently in avlist has been mapped, can be
      * taken out of the avlist, and that its successors can be made available.
      */
-    void completed_gate(const ir::GateRef &gate);
+    void completed_gate(const ir::compat::GateRef &gate);
 
     /**
      * Return the most critical gate in lag (provided lookahead is enabled).
      * This is used in tiebreak, when every other option has failed to make a
      * distinction.
      */
-    ir::GateRef get_most_critical(const utils::List<ir::GateRef> &lag) const;
+    ir::compat::GateRef get_most_critical(const utils::List<ir::compat::GateRef> &lag) const;
 
 };
 

@@ -40,7 +40,7 @@ void Unitary::decompose() {
  * enabled.
  */
 bool Unitary::is_decompose_support_enabled() {
-    return ql::com::Unitary::is_decompose_support_enabled();
+    return ql::com::dec::Unitary::is_decompose_support_enabled();
 }
 
 } // namespace api

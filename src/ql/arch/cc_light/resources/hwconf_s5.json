@@ -51,146 +51,205 @@
 
     "instructions": {
         "prepx": {
+            "prototype": ["W:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "prepx"
         },
         "prepz": {
+            "prototype": ["W:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "prepz"
         },
         "measx_keep": {
+            "prototype": ["M:qubit"],
+            "duration": 340,
+            "type": "readout",
+            "cc_light_instr": "measx",
+            "decomposition": {
+                "name": "desugar",
+                "into": "measx_keep op(0), bit(op(0))"
+            }
+        },
+        "measx_keep ": {
+            "prototype": ["U:qubit", "W:bit"],
             "duration": 340,
             "type": "readout",
             "cc_light_instr": "measx"
         },
         "measz_keep": {
+            "prototype": ["M:qubit"],
+            "duration": 300,
+            "type": "readout",
+            "cc_light_instr": "measz",
+            "decomposition": {
+                "name": "desugar",
+                "into": "measz_keep op(0), bit(op(0))"
+            }
+        },
+        "measz_keep ": {
+            "prototype": ["U:qubit", "W:bit"],
             "duration": 300,
             "type": "readout",
             "cc_light_instr": "measz"
         },
         "measure": {
+            "prototype": ["M:qubit"],
+            "duration": 300,
+            "type": "readout",
+            "cc_light_instr": "measz",
+            "decomposition": {
+                "name": "desugar",
+                "into": "measure op(0), bit(op(0))"
+            }
+        },
+        "measure ": {
+            "prototype": ["U:qubit", "W:bit"],
             "duration": 300,
             "type": "readout",
             "cc_light_instr": "measz"
         },
         "i": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "i"
         },
         "x": {
+            "prototype": ["X:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "x"
         },
         "y": {
+            "prototype": ["Y:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "y"
         },
         "z": {
+            "prototype": ["Z:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "z"
         },
         "rx": {
+            "prototype": ["X:qubit", "L:real"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "rx"
         },
         "ry": {
+            "prototype": ["Y:qubit", "L:real"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "ry"
         },
         "rz": {
+            "prototype": ["Z:qubit", "L:real"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "rz"
         },
         "h": {
+            "prototype": ["U:qubit"],
             "duration": 40,
             "type": "mw",
             "cc_light_instr": "h"
         },
         "s": {
+            "prototype": ["Z:qubit"],
             "duration": 60,
             "type": "mw",
             "cc_light_instr": "s"
         },
         "sdag": {
+            "prototype": ["Z:qubit"],
             "duration": 60,
             "type": "mw",
             "cc_light_instr": "sdag"
         },
         "x90": {
+            "prototype": ["X:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "x90"
         },
         "xm90": {
+            "prototype": ["X:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "xm90"
         },
         "y90": {
+            "prototype": ["Y:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "y90"
         },
         "ym90": {
+            "prototype": ["Y:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "ym90"
         },
         "t": {
+            "prototype": ["Z:qubit"],
             "duration": 60,
             "type": "mw",
             "cc_light_instr": "t"
         },
         "tdag": {
+            "prototype": ["Z:qubit"],
             "duration": 60,
             "type": "mw",
             "cc_light_instr": "tdag"
         },
         "x45": {
+            "prototype": ["X:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "x45"
         },
         "xm45": {
+            "prototype": ["X:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "xm45"
         },
         "y45": {
+            "prototype": ["Y:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "y45"
         },
         "ym45": {
+            "prototype": ["Y:qubit"],
             "duration": 20,
             "type": "mw",
             "cc_light_instr": "ym45"
         },
         "cz": {
+            "prototype": ["Z:qubit", "Z:qubit"],
             "duration": 60,
             "type": "flux",
             "cc_light_instr": "cz"
         },
         "cnot_keep": {
+            "prototype": ["Z:qubit", "X:qubit"],
             "duration": 100,
             "type": "flux",
             "cc_light_instr": "cnot"
         },
         "swap_keep": {
+            "prototype": ["U:qubit", "U:qubit"],
             "duration": 260,
             "type": "flux",
             "cc_light_instr": "swap"
         },
         "move_keep": {
+            "prototype": ["U:qubit", "U:qubit"],
             "duration": 180,
             "type": "flux",
             "cc_light_instr": "move"

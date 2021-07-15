@@ -7,6 +7,7 @@
 #include "ql/utils/filesystem.h"
 #include "ql/com/options.h"
 #include "ql/arch/architecture.h"
+#include "ql/ir/cqasm/write.h"
 
 namespace ql {
 namespace pmgr {
@@ -549,7 +550,7 @@ Manager Manager::from_json(
  * in the configuration file and from the global options (similar to the
  * "compatibility-mode" key in the JSON strategy definition format).
  */
-Manager Manager::from_defaults(const plat::PlatformRef &platform) {
+Manager Manager::from_defaults(const ir::compat::PlatformRef &platform) {
 
     // If the platform includes a compiler configuration JSON object, load from
     // that.
@@ -567,7 +568,8 @@ Manager Manager::from_defaults(const plat::PlatformRef &platform) {
         "initialqasmwriter",
         {
             {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"},
-            {"output_suffix", ".qasm"}
+            {"output_suffix", ".qasm"},
+            {"with_timing", "no"}
         }
     );
     if (com::options::global["clifford_prescheduler"].as_bool()) {
@@ -577,13 +579,27 @@ Manager Manager::from_defaults(const plat::PlatformRef &platform) {
         );
     }
     if (com::options::global["prescheduler"].as_bool()) {
-        manager.append_pass(
-            "sch.Schedule",
-            "prescheduler",
-            {
-                {"resource_constraints", "no"}
-            }
-        );
+        if (
+            com::options::global["scheduler_uniform"].as_bool() ||
+            com::options::global["scheduler_heuristic"].is_set()
+        ) {
+            manager.append_pass(
+                "sch.Schedule",
+                "prescheduler",
+                {
+                    {"resource_constraints", "no"}
+                }
+            );
+        } else {
+            manager.append_pass(
+                "sch.ListSchedule",
+                "prescheduler",
+                {
+                    {"resource_constraints", "no"},
+                    {"scheduler_heuristic", "none"}
+                }
+            );
+        }
     }
     if (com::options::global["clifford_postscheduler"].as_bool()) {
         manager.append_pass(
@@ -879,13 +895,13 @@ void Manager::construct() {
 /**
  * Executes this pass or pass group on the given platform and program.
  */
-void Manager::compile(const ir::ProgramRef &program) {
+void Manager::compile(const ir::Ref &ir) {
 
     // Ensure that all passes are constructed.
     construct();
 
     // Compile the program.
-    root->compile(program, "");
+    root->compile(ir, "");
 
 }
 

@@ -15,55 +15,10 @@ namespace io {
 namespace cqasm {
 namespace read {
 
-// Opaque forward declaration for the actual implementation of the reader, to
-// keep the header file clean.
-namespace detail {
-class ReaderImpl;
-}
-
-/**
- * Class for converting cQASM files to OpenQL circuits.
- */
-class Reader {
-private:
-    utils::Opt<detail::ReaderImpl> impl;
-public:
-    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program);
-    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program, const utils::Json &gateset);
-    Reader(const plat::PlatformRef &platform, const ir::ProgramRef &program, const utils::Str &gateset_fname);
-    void string2circuit(const utils::Str &cqasm_str);
-    void file2circuit(const utils::Str &cqasm_fname);
-};
-
-/**
- * Reads a cQASM file. Its content are added to program. The number of qubits,
- * cregs, and/or bregs allocated in the program are increased as needed (if
- * possible for the current platform). The gateset parameter should be loaded
- * from a gateset configuration file or be alternatively initialized. If empty
- * or unspecified, a default set is used, that mimics the behavior of the reader
- * before it became configurable.
- */
-void from_file(
-    const ir::ProgramRef &program,
-    const utils::Str &cqasm_fname,
-    const utils::Json &gateset={}
-);
-
-/**
- * Same as file(), be reads from a string instead.
- *
- * \see file()
- */
-void from_string(
-    const ir::ProgramRef &program,
-    const utils::Str &cqasm_body,
-    const utils::Json &gateset={}
-);
-
 /**
  * cQASM reader pass.
  */
-class ReadCQasmPass : public pmgr::pass_types::ProgramTransformation {
+class ReadCQasmPass : public pmgr::pass_types::Transformation {
 protected:
 
     /**
@@ -94,7 +49,7 @@ public:
      * Runs the cQASM reader.
      */
     utils::Int run(
-        const ir::ProgramRef &program,
+        const ir::Ref &ir,
         const pmgr::pass_types::Context &context
     ) const override;
 

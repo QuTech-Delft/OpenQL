@@ -25,14 +25,28 @@ static void push_node(
 /**
  * Attaches a statistic to the given kernel node.
  */
-void AdditionalStats::push(const ir::KernelRef &kernel, const utils::Str &line) {
-    push_node(*kernel, line);
+void AdditionalStats::push(const ir::BlockRef &block, const utils::Str &line) {
+    push_node(*block, line);
 }
 
 /**
  * Attaches a statistic to the given program node.
  */
 void AdditionalStats::push(const ir::ProgramRef &program, const utils::Str &line) {
+    push_node(*program, line);
+}
+
+/**
+ * Attaches a statistic to the given kernel node.
+ */
+void AdditionalStats::push(const ir::compat::KernelRef &kernel, const utils::Str &line) {
+    push_node(*kernel, line);
+}
+
+/**
+ * Attaches a statistic to the given program node.
+ */
+void AdditionalStats::push(const ir::compat::ProgramRef &program, const utils::Str &line) {
     push_node(*program, line);
 }
 
@@ -52,7 +66,7 @@ static utils::List<utils::Str> pop_node(utils::tree::annotatable::Annotatable &n
 /**
  * Pops all statistics annotations from the given kernel.
  */
-utils::List<utils::Str> AdditionalStats::pop(const ir::KernelRef &kernel) {
+utils::List<utils::Str> AdditionalStats::pop(const ir::BlockRef &kernel) {
     return pop_node(*kernel);
 }
 

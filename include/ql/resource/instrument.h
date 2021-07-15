@@ -16,7 +16,7 @@ namespace instrument {
 /**
  * State per instrument.
  */
-using State = utils::RangeMap<utils::UInt, utils::UInt>;
+using State = utils::RangeMap<utils::Int, utils::UInt>;
 
 /**
  * Forward-declaration for the configuration structure, defined in the CC file.
@@ -50,8 +50,8 @@ protected:
      * Checks availability of and/or reserves a gate.
      */
     utils::Bool on_gate(
-        utils::UInt cycle,
-        const ir::GateRef &gate,
+        utils::Int cycle,
+        const rmgr::resource_types::GateData &gate,
         utils::Bool commit
     ) override;
 

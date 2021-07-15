@@ -9,7 +9,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"
 #include "ql/utils/json.h"
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/platform.h"
 #include "ql/arch/declarations.h"
 #include "ql/arch/info_base.h"
 #include "ql/pmgr/declarations.h"
@@ -63,7 +63,7 @@ public:
      * may for instance add annotations with architecture-specific configuration
      * data.
      */
-    void post_process_platform(const plat::PlatformRef &platform) const;
+    void post_process_platform(const ir::compat::PlatformRef &platform) const;
 
     /**
      * Adds the default "backend passes" for this platform. Called by

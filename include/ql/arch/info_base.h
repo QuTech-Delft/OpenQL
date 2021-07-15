@@ -10,7 +10,7 @@
 #include "ql/utils/list.h"
 #include "ql/utils/ptr.h"
 #include "ql/utils/json.h"
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/platform.h"
 #include "ql/pmgr/declarations.h"
 #include "ql/arch/declarations.h"
 
@@ -93,7 +93,7 @@ public:
      * instance add annotations with architecture-specific configuration data.
      */
     virtual void post_process_platform(
-        const plat::PlatformRef &platform,
+        const ir::compat::PlatformRef &platform,
         const utils::Str &variant
     ) const;
 

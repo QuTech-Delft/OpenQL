@@ -4,6 +4,8 @@
 
 #include "ql/rmgr/resource_types/base.h"
 
+#include "ql/ir/ops.h"
+
 namespace ql {
 namespace rmgr {
 namespace resource_types {
@@ -80,9 +82,9 @@ void Base::initialize(Direction direction) {
     }
     this->direction = direction;
     if (direction == Direction::FORWARD) {
-        prev_cycle = 0;
+        prev_cycle = utils::MIN;
     } else {
-        prev_cycle = utils::UMAX;
+        prev_cycle = utils::MAX;
     }
     on_initialize(direction);
     initialized = true;
@@ -90,12 +92,13 @@ void Base::initialize(Direction direction) {
 
 /**
  * Checks and optionally updates the resource manager state for the given
- * gate and (start) cycle number. The state is only updated if the gate is
- * schedulable for the given cycle and commit is set.
+ * gate data structure and (start) cycle number. Note that the cycle number
+ * may be negative. The state is only updated if the gate is schedulable for
+ * the given cycle and commit is set.
  */
 utils::Bool Base::gate(
-    utils::UInt cycle,
-    const ir::GateRef &gate,
+    utils::Int cycle,
+    const GateData &data,
     utils::Bool commit
 ) {
     if (!initialized) {
@@ -117,7 +120,7 @@ utils::Bool Base::gate(
     }
 
     // Run the resource implementation.
-    utils::Bool retval = on_gate(cycle, gate, commit);
+    utils::Bool retval = on_gate(cycle, data, commit);
 
     // If the above committed a gate, update prev_cycle.
     if (retval && commit) {
@@ -125,6 +128,96 @@ utils::Bool Base::gate(
     }
 
     return retval;
+}
+
+/**
+ * Checks and optionally updates the resource manager state for the given
+ * old-IR gate and (start) cycle number. The state is only updated if the
+ * gate is schedulable for the given cycle and commit is set.
+ */
+utils::Bool Base::gate(
+    utils::UInt cycle,
+    const ir::compat::GateRef &gate,
+    utils::Bool commit
+) {
+    if (!initialized) {
+        throw utils::Exception("resource gate() called before initialization");
+    }
+
+    // Convert to GateData wrapper.
+    GateData data;
+    data.gate = gate;
+    data.name = gate->name;
+    data.duration_cycles = utils::div_ceil(gate->duration, context->platform->cycle_time);
+    data.qubits = gate->operands;
+    data.data = &context->platform->find_instruction(gate->name);
+
+    return this->gate((utils::Int)cycle, data, commit);
+}
+
+/**
+ * Checks and optionally updates the resource manager state for the given
+ * new-IR statement and (start) cycle number. Note that cycles may be
+ * negative in the new IR during scheduling. The state is only updated if
+ * the gate is schedulable for the given cycle and commit is set.
+ */
+utils::Bool Base::gate(
+    utils::Int cycle,
+    const ir::StatementRef &statement,
+    utils::Bool commit
+) {
+    if (!initialized) {
+        throw utils::Exception("resource gate() called before initialization");
+    }
+
+    // Convert to GateData wrapper.
+    static const utils::Json EMPTY = {};
+    GateData data;
+    data.statement = statement;
+    data.duration_cycles = ir::get_duration_of_statement(statement);
+
+    // Figure out a name and JSON data record in all cases.
+    if (auto custom = statement->as_custom_instruction()) {
+        data.name = custom->instruction_type->name;
+        data.data = &custom->instruction_type->data.data;
+    } else if (statement->as_set_instruction()) {
+        data.name = "set";
+        data.data = &EMPTY;
+    } else if (statement->as_goto_instruction()) {
+        data.name = "goto";
+        data.data = &EMPTY;
+    } else if (statement->as_wait_instruction()) {
+        data.name = "wait";
+        data.data = &EMPTY;
+    } else if (statement->as_break_statement()) {
+        data.name = "break";
+        data.data = &EMPTY;
+    } else if (statement->as_continue_statement()) {
+        data.name = "continue";
+        data.data = &EMPTY;
+    } else {
+        data.name = "";
+        data.data = &EMPTY;
+    }
+
+    // Figure out main qubit register operands.
+    auto insn = statement.as<ir::Instruction>();
+    if (!insn.empty()) {
+        for (const auto &oper : ir::get_operands(statement.as<ir::Instruction>())) {
+            if (auto ref = oper->as_reference()) {
+                if (
+                    ref->target == context->ir->platform->qubits &&
+                    ref->data_type == context->ir->platform->qubits->data_type &&
+                    ref->indices.size() == 1 &&
+                    ref->indices[0]->as_int_literal()
+                ) {
+                    data.qubits.push_back(ref->indices[0]->as_int_literal()->value);
+                }
+            }
+        }
+    }
+
+    return this->gate(cycle, data, commit);
 }
 
 /**

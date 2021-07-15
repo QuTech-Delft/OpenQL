@@ -4,6 +4,7 @@
 
 #include "ql/api/compiler.h"
 
+#include "ql/ir/old_to_new.h"
 #include "ql/api/misc.h"
 #include "ql/api/platform.h"
 #include "ql/api/program.h"
@@ -401,7 +402,21 @@ void Compiler::construct() {
  * program is referencing the same compiler.
  */
 void Compiler::compile(const Program &program) {
-    pass_manager->compile(program.program);
+    pass_manager->compile(ir::convert_old_to_new(program.program));
+}
+
+/**
+ * Ensures that all passes have been constructed, and then runs the passes
+ * without specification of an input program. The first pass should then act
+ * as a language frontend. The cQASM reader satisfies this requirement, for
+ * instance.
+ *
+ * If no platform is specified, it will default to the `"none"` architecture,
+ * but the intended use case is to have the first pass load the platform. Again,
+ * the cQASM reader can do this.
+ */
+void Compiler::compile_with_frontend(const Platform &platform = Platform()) {
+    pass_manager->compile(ir::convert_old_to_new(platform.platform));
 }
 
 } // namespace api

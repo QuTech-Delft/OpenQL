@@ -102,8 +102,8 @@ PlaceQubitsPass::PlaceQubitsPass(
  * Runs initial qubit placement.
  */
 utils::Int PlaceQubitsPass::run(
-    const ir::ProgramRef &program,
-    const ir::KernelRef &kernel,
+    const ir::compat::ProgramRef &program,
+    const ir::compat::KernelRef &kernel,
     const pmgr::pass_types::Context &context
 ) const {
 #ifdef INITIALPLACE
@@ -117,7 +117,7 @@ utils::Int PlaceQubitsPass::run(
     opts.map_all = true;
 
     // Run the algorithm.
-    com::QubitMapping mapping(kernel->platform->qubit_count, true);
+    com::map::QubitMapping mapping(kernel->platform->qubit_count, true);
     detail::Algorithm algorithm;
     auto result = algorithm.run(kernel, opts, mapping);
 

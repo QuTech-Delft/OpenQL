@@ -7,6 +7,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/list.h"
 #include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 
 namespace ql {
 namespace pass {
@@ -27,9 +28,9 @@ struct AdditionalStats {
     utils::List<utils::Str> stats;
 
     /**
-     * Attaches a statistic to the given kernel node.
+     * Attaches a statistic to the given block node.
      */
-    static void push(const ir::KernelRef &kernel, const utils::Str &line);
+    static void push(const ir::BlockRef &block, const utils::Str &line);
 
     /**
      * Attaches a statistic to the given program node.
@@ -37,9 +38,19 @@ struct AdditionalStats {
     static void push(const ir::ProgramRef &program, const utils::Str &line);
 
     /**
+     * Attaches a statistic to the given kernel node.
+     */
+    static void push(const ir::compat::KernelRef &kernel, const utils::Str &line);
+
+    /**
+     * Attaches a statistic to the given program node.
+     */
+    static void push(const ir::compat::ProgramRef &program, const utils::Str &line);
+
+    /**
      * Pops all statistics annotations from the given kernel.
      */
-    static utils::List<utils::Str> pop(const ir::KernelRef &kernel);
+    static utils::List<utils::Str> pop(const ir::BlockRef &block);
 
     /**
      * Pops all statistics annotations from the given program.

@@ -1,6 +1,6 @@
 #include "ql/utils/str.h"
 #include "ql/utils/filesystem.h"
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/platform.h"
 #include "ql/com/options.h"
 #include "functions.h"
 

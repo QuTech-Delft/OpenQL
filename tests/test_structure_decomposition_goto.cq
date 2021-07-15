@@ -1,0 +1,22 @@
+version 1.2
+
+pragma @ql.name("structure_decomposition_goto")
+pragma @ql.platform("test_structure_decomposition_platform.json")
+
+.sa
+    test q[0]
+    cond (breg(0)) goto sb
+    cond (breg(1)) goto sc
+    cond (breg(2)) goto sd
+    test q[1]
+
+.sb
+    test q[2]
+    goto sa
+
+.sc
+    test q[3]
+
+.sd
+    test q[4]
+

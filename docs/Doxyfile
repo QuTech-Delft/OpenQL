@@ -793,6 +793,8 @@ WARN_LOGFILE           =
 
 INPUT                  = ../src \
                          ../include \
+                         ../pybuild/cbuild/src \
+                         ../pybuild/cbuild/include \
                          main-page.dox
 
 # This tag can be used to specify the character encoding of the source files

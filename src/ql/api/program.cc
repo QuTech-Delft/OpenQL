@@ -4,8 +4,9 @@
 
 #include "ql/api/program.h"
 
-#include "ql/com/interaction_matrix.h"
+#include "ql/com/ana/interaction_matrix.h"
 #include "ql/pass/io/sweep_points/annotation.h"
+#include "ql/ir/old_to_new.h"
 #include "ql/api/kernel.h"
 #include "ql/api/operation.h"
 #include "ql/api/misc.h"
@@ -204,13 +205,11 @@ void Program::set_compiler(const Compiler &compiler) {
  */
 void Program::compile() {
     QL_IOUT("compiling " << name << " ...");
-    if (program->kernels.empty()) {
-        QL_FATAL("compiling a program with no kernels !");
-    }
+    auto ir = ir::convert_old_to_new(program);
     if (pass_manager.has_value()) {
-        pass_manager->compile(program);
+        pass_manager->compile(ir);
     } else {
-        ql::pmgr::Manager::from_defaults(program->platform).compile(program);
+        ql::pmgr::Manager::from_defaults(program->platform).compile(ir);
     }
 }
 
@@ -220,7 +219,7 @@ void Program::compile() {
 void Program::print_interaction_matrix() const {
     QL_IOUT("printing interaction matrix...");
 
-    ql::com::InteractionMatrix::dump_for_program(program);
+    ql::com::ana::InteractionMatrix::dump_for_program(program);
 }
 
 /**
@@ -229,7 +228,7 @@ void Program::print_interaction_matrix() const {
  * option.
  */
 void Program::write_interaction_matrix() const {
-    ql::com::InteractionMatrix::write_for_program(
+    ql::com::ana::InteractionMatrix::write_for_program(
         get_option("output_dir") + "/",
         program
     );

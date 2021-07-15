@@ -1,0 +1,20 @@
+version 1.2
+
+pragma @ql.name("structure_decomposition_while")
+pragma @ql.platform("test_structure_decomposition_platform.json")
+
+.sa
+    test q[0]
+    while (breg(0)) {
+        test q[1]
+        if (breg(1)) {
+            break
+        }
+        if (breg(2)) {
+            continue
+        }
+        test q[2]
+    }
+    test q[3]
+
+.sb

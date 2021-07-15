@@ -130,13 +130,15 @@ utils::Str Manager::generate_valid_resource_name(const utils::Str &type_name) co
  * Constructs a new, empty resource manager.
  */
 Manager::Manager(
-    const plat::PlatformRef &platform,
+    const ir::compat::PlatformRef &platform,
     const utils::Str &architecture,
     const utils::Set<utils::Str> &dnu,
-    const Factory &factory
+    const Factory &factory,
+    const ir::Ref &ir
 ) :
     factory(factory.configure(architecture, dnu)),
     platform(platform),
+    ir(ir),
     resources()
 {
 }
@@ -146,9 +148,10 @@ Manager::Manager(
  * Refer to dump_docs() for more information.
  */
 Manager Manager::from_json(
-    const plat::PlatformRef &platform,
+    const ir::compat::PlatformRef &platform,
     const utils::Json &json,
-    const Factory &factory
+    const Factory &factory,
+    const ir::Ref &ir
 ) {
     // Shorthand.
     using JsonType = utils::Json::value_t;
@@ -166,10 +169,10 @@ Manager Manager::from_json(
     if (json.find("resources") == json.end()) {
 
         // Old-style structure. Create the manager using defaults.
-        Manager manager{platform, architecture, {}, factory};
+        Manager manager{platform, architecture, {}, factory, ir};
 
         // Add resources to it using the old JSON syntax.
-        for (auto it = platform->resources.begin(); it != platform->resources.end(); ++it) {
+        for (auto it = json.begin(); it != json.end(); ++it) {
             if (it.value().type() != JsonType::object) {
                 throw utils::Exception("resource configuration must be an object");
             }
@@ -219,7 +222,7 @@ Manager Manager::from_json(
     }
 
     // Create the manager.
-    Manager manager{platform, architecture, dnu, factory};
+    Manager manager{platform, architecture, dnu, factory, ir};
 
     // Add resources to it.
     for (auto it = resources->begin(); it != resources->end(); ++it) {
@@ -268,10 +271,11 @@ Manager Manager::from_json(
  * taken from platform.resources.
  */
 Manager Manager::from_defaults(
-    const plat::PlatformRef &platform,
-    const Factory &factory
+    const ir::compat::PlatformRef &platform,
+    const Factory &factory,
+    const ir::Ref &ir
 ) {
-    return from_json(platform, platform->resources, factory);
+    return from_json(platform, platform->resources, factory, ir);
 }
 
 /**
@@ -320,7 +324,7 @@ void Manager::add_resource(
     check_resource_name(name);
 
     // Build the resource.
-    auto resource = factory.build_resource(type_name, name, platform, configuration);
+    auto resource = factory.build_resource(type_name, name, platform, ir, configuration);
 
     // Add it to our map. This is intentionally on a separate line; otherwise
     // an exception raised while building the resource would leave an empty

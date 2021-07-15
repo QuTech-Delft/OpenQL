@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <map>
 
 //============================================================================//
 //                               W A R N I N G                                //
@@ -111,6 +112,19 @@ void print_compiler_docs();
  * Returns the result of print_compiler_docs() as a string.
  */
 std::string dump_compiler_docs();
+
+/**
+ * Entry point for compiling from a cQASM file directly, rather than using the
+ * Python API for anything. The platform must be encoded using a
+ * `pragma @ql.platform(...)` annotation at the front of the file; refer to the
+ * documentation of the cQASM reader pass for more information. If specified,
+ * the read_options parameter is passed to the cQASM reader pass that is
+ * automatically prefixed to the pass list.
+ */
+void compile(
+    const std::string &fname,
+    std::map<std::string, std::string> read_options = {}
+);
 
 } // namespace api
 } // namespace ql

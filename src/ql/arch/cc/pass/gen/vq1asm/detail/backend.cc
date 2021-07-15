@@ -24,7 +24,7 @@
 
 #include "ql/utils/str.h"
 #include "ql/utils/filesystem.h"
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/platform.h"
 #include "ql/com/options.h"
 
 #include <regex>
@@ -67,7 +67,7 @@ using namespace utils;
 
 // compile for Central Controller
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
-void Backend::compile(const ir::ProgramRef &program, const OptionsRef &options) {
+void Backend::compile(const ir::compat::ProgramRef &program, const OptionsRef &options) {
     QL_DOUT("Compiling " << program->kernels.size() << " kernels to generate Central Controller program ... ");
 
     // init
@@ -84,7 +84,7 @@ void Backend::compile(const ir::ProgramRef &program, const OptionsRef &options) 
         codegenKernelPrologue(kernel);
 
         if (!kernel->gates.empty()) {
-            ir::Bundles bundles = ir::bundler(kernel);
+            ir::compat::Bundles bundles = ir::compat::bundler(kernel);
             codegen.kernelStart();
             codegenBundles(bundles, program->platform);
             codegen.kernelFinish(kernel->name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
@@ -116,7 +116,7 @@ void Backend::compile(const ir::ProgramRef &program, const OptionsRef &options) 
 
 // based on cc_light_eqasm_compiler.h::classical_instruction2qisa/decompose_instructions
 // NB: input instructions defined in classical.h::classical
-void Backend::codegenClassicalInstruction(const ir::GateRef &classical_ins) {
+void Backend::codegenClassicalInstruction(const ir::compat::GateRef &classical_ins) {
     auto &iname =  classical_ins->name;
     auto &iopers = classical_ins->creg_operands;
     UInt iopers_count = iopers.size();
@@ -158,24 +158,24 @@ void Backend::codegenClassicalInstruction(const ir::GateRef &classical_ins) {
 
 // FIXME: originally extracted from Kernel::get_epilogue, should be in a common place
 
-Str Backend::loopLabel(const ir::KernelRef &k) {
+Str Backend::loopLabel(const ir::compat::KernelRef &k) {
     Str label;
     Str expr;
 
     switch (k->type) {
-        case ir::KernelType::FOR_START:
+        case ir::compat::KernelType::FOR_START:
             expr = "(.*)_for[0-9]+_start$";
             break;
 
-        case ir::KernelType::FOR_END:
+        case ir::compat::KernelType::FOR_END:
             expr = "(.*)_for[0-9]+_end$";
             break;
 
-        case ir::KernelType::DO_WHILE_START:
+        case ir::compat::KernelType::DO_WHILE_START:
             expr = "(.*)_do_while[0-9]+_start$";
             break;
 
-        case ir::KernelType::DO_WHILE_END:
+        case ir::compat::KernelType::DO_WHILE_END:
             expr = "(.*)_do_while[0-9]+$";  // NB: there is no "_end" here, see quantum_program::add_do_while()
             break;
 
@@ -199,11 +199,11 @@ Str Backend::loopLabel(const ir::KernelRef &k) {
 
 // handle kernel conditionality at beginning of kernel
 // based on cc_light_eqasm_compiler.h::get_prologue
-void Backend::codegenKernelPrologue(const ir::KernelRef &k) {
+void Backend::codegenKernelPrologue(const ir::compat::KernelRef &k) {
     codegen.comment(QL_SS2S("### Kernel: '" << k->name << "'"));
 
     switch (k->type) {
-        case ir::KernelType::IF_START: {
+        case ir::compat::KernelType::IF_START: {
             auto op0 = k->br_condition->operands[0]->as_register().id;
             auto op1 = k->br_condition->operands[1]->as_register().id;
             auto opName = k->br_condition->operation_name;
@@ -211,7 +211,7 @@ void Backend::codegenKernelPrologue(const ir::KernelRef &k) {
             break;
         }
 
-        case ir::KernelType::ELSE_START: {
+        case ir::compat::KernelType::ELSE_START: {
             auto op0 = k->br_condition->operands[0]->as_register().id;
             auto op1 = k->br_condition->operands[1]->as_register().id;
             auto opName = k->br_condition->operation_name;
@@ -219,21 +219,21 @@ void Backend::codegenKernelPrologue(const ir::KernelRef &k) {
             break;
         }
 
-        case ir::KernelType::FOR_START: {
+        case ir::compat::KernelType::FOR_START: {
             codegen.forStart(loopLabel(k), k->iteration_count);
             break;
         }
 
-        case ir::KernelType::DO_WHILE_START: {
+        case ir::compat::KernelType::DO_WHILE_START: {
             codegen.doWhileStart(loopLabel(k));
             break;
         }
 
-        case ir::KernelType::STATIC:
-        case ir::KernelType::FOR_END:
-        case ir::KernelType::DO_WHILE_END:
-        case ir::KernelType::IF_END:
-        case ir::KernelType::ELSE_END:
+        case ir::compat::KernelType::STATIC:
+        case ir::compat::KernelType::FOR_END:
+        case ir::compat::KernelType::DO_WHILE_END:
+        case ir::compat::KernelType::IF_END:
+        case ir::compat::KernelType::ELSE_END:
             // do nothing
             break;
 
@@ -246,14 +246,14 @@ void Backend::codegenKernelPrologue(const ir::KernelRef &k) {
 
 // handle kernel conditionality at end of kernel
 // based on cc_light_eqasm_compiler.h::get_epilogue
-void Backend::codegenKernelEpilogue(const ir::KernelRef &k) {
+void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
     switch (k->type) {
-        case ir::KernelType::FOR_END: {
+        case ir::compat::KernelType::FOR_END: {
             codegen.forEnd(loopLabel(k));
             break;
         }
 
-        case ir::KernelType::DO_WHILE_END: {
+        case ir::compat::KernelType::DO_WHILE_END: {
             auto op0 = k->br_condition->operands[0]->as_register().id;
             auto op1 = k->br_condition->operands[1]->as_register().id;
             auto opName = k->br_condition->operation_name;
@@ -261,16 +261,16 @@ void Backend::codegenKernelEpilogue(const ir::KernelRef &k) {
             break;
         }
 
-        case ir::KernelType::IF_END:
-        case ir::KernelType::ELSE_END:
+        case ir::compat::KernelType::IF_END:
+        case ir::compat::KernelType::ELSE_END:
             // do nothing
             break;
 
-        case ir::KernelType::STATIC:
-        case ir::KernelType::IF_START:
-        case ir::KernelType::ELSE_START:
-        case ir::KernelType::FOR_START:
-        case ir::KernelType::DO_WHILE_START:
+        case ir::compat::KernelType::STATIC:
+        case ir::compat::KernelType::IF_START:
+        case ir::compat::KernelType::ELSE_START:
+        case ir::compat::KernelType::FOR_START:
+        case ir::compat::KernelType::DO_WHILE_START:
             // do nothing
             break;
 
@@ -282,7 +282,7 @@ void Backend::codegenKernelEpilogue(const ir::KernelRef &k) {
 
 
 // based on cc_light_eqasm_compiler.h::bundles2qisa()
-void Backend::codegenBundles(ir::Bundles &bundles, const plat::PlatformRef &platform) {
+void Backend::codegenBundles(ir::compat::Bundles &bundles, const ir::compat::PlatformRef &platform) {
     QL_IOUT("Generating .vq1asm for bundles");
 
     for (const auto &bundle : bundles) {
@@ -299,24 +299,24 @@ void Backend::codegenBundles(ir::Bundles &bundles, const plat::PlatformRef &plat
         // generate code for this bundle
         for (const auto &instr : bundle.gates) {
             // check whether section defines classical gate
-            if (instr->type() == ir::GateType::CLASSICAL) {
+            if (instr->type() == ir::compat::GateType::CLASSICAL) {
                 QL_DOUT(QL_SS2S("Classical bundle: instr='" << instr->name << "'"));
                 codegenClassicalInstruction(instr);
             } else {
-                ir::GateType itype = instr->type();
+                ir::compat::GateType itype = instr->type();
                 Str iname = instr->name;
                 QL_DOUT(QL_SS2S("Bundle section: instr='" << iname << "'"));
 
                 switch (itype) {
-                    case ir::GateType::NOP:       // a quantum "nop", see gate.h
+                    case ir::compat::GateType::NOP:       // a quantum "nop", see gate.h
                         codegen.nopGate();
                         break;
 
-                    case ir::GateType::CLASSICAL:
+                    case ir::compat::GateType::CLASSICAL:
                         QL_FATAL("Inconsistency detected in bundle contents: classical gate found after first section (which itself was non-classical)");
                         break;
 
-                    case ir::GateType::CUSTOM:
+                    case ir::compat::GateType::CUSTOM:
                         QL_DOUT(QL_SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration) << " ns");
                         codegen.customGate(
                             iname,
@@ -330,11 +330,11 @@ void Backend::codegenBundles(ir::Bundles &bundles, const plat::PlatformRef &plat
                         );
                         break;
 
-                    case ir::GateType::DISPLAY:
+                    case ir::compat::GateType::DISPLAY:
                         QL_FATAL("Gate type __display__ not supported");           // QX specific, according to openql.pdf
                         break;
 
-                    case ir::GateType::MEASURE:
+                    case ir::compat::GateType::MEASURE:
                         QL_FATAL("Gate type __measure_gate__ not supported");      // no use, because there is no way to define CC-specifics
                         break;
 
@@ -356,7 +356,7 @@ void Backend::codegenBundles(ir::Bundles &bundles, const plat::PlatformRef &plat
 
 
 // based on: cc_light_eqasm_compiler.h::loadHwSettings
-void Backend::loadHwSettings(const plat::PlatformRef &platform) {
+void Backend::loadHwSettings(const ir::compat::PlatformRef &platform) {
 #if 0   // FIXME: currently unused, may be of future use
     const struct {
         UInt *var;

@@ -6,6 +6,8 @@
 
 #include "ql/version.h"
 #include "ql/utils/logger.h"
+#include "ql/ir/cqasm/read.h"
+#include "ql/ir/old_to_new.h"
 #include "ql/com/options.h"
 #include "ql/arch/factory.h"
 #include "ql/pmgr/factory.h"
@@ -151,7 +153,7 @@ std::string dump_resources() {
  * Prints the documentation for platform configuration files.
  */
 void print_platform_docs() {
-    ql::plat::Platform::dump_docs();
+    ql::ir::compat::Platform::dump_docs();
 }
 
 /**
@@ -159,7 +161,7 @@ void print_platform_docs() {
  */
 std::string dump_platform_docs() {
     std::ostringstream ss;
-    ql::plat::Platform::dump_docs(ss);
+    ql::ir::compat::Platform::dump_docs(ss);
     return ss.str();
 }
 
@@ -177,6 +179,26 @@ std::string dump_compiler_docs() {
     std::ostringstream ss;
     ql::pmgr::Manager::dump_docs(ss);
     return ss.str();
+}
+
+/**
+ * Entry point for compiling from a cQASM file directly, rather than using the
+ * Python API for anything. The platform must be encoded using a
+ * `pragma @ql.platform(...)` annotation at the front of the file; refer to the
+ * documentation of the cQASM reader pass for more information. If specified,
+ * the read_options parameter is passed to the cQASM reader pass that is
+ * automatically prefixed to the pass list.
+ */
+void compile(
+    const std::string &fname,
+    std::map<std::string, std::string> read_options
+) {
+    ensure_initialized();
+    auto platform = ir::cqasm::read_platform_from_file(fname);
+    auto pass_manager = ql::pmgr::Manager::from_defaults(platform);
+    read_options.insert({"cqasm_file", fname}).first->second = fname;
+    pass_manager.prefix_pass("io.cqasm.Read", "", read_options);
+    pass_manager.compile(ir::convert_old_to_new(platform));
 }
 
 } // namespace api

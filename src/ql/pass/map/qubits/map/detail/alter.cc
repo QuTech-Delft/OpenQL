@@ -15,7 +15,7 @@ namespace detail {
  * This should only be called after a virgin construction and not after
  * cloning a path.
  */
-void Alter::initialize(const ir::KernelRef &k, const OptionsRef &opt) {
+void Alter::initialize(const ir::compat::KernelRef &k, const OptionsRef &opt) {
     QL_DOUT("Alter::initialize(number of qubits=" << k->platform->qubit_count);
     platform = k->platform;
     kernel = k;
@@ -113,7 +113,7 @@ void Alter::add_swaps(Past &past, SwapSelectionMode mode) const {
     // QL_DOUT("Addswaps " << mapselectswapsopt);
     if (mode == SwapSelectionMode::ONE || mode == SwapSelectionMode::ALL) {
         utils::UInt num_added = 0;
-        utils::UInt max_num_to_add = (mode == SwapSelectionMode::ONE ? 1 : ir::MAX_CYCLE);
+        utils::UInt max_num_to_add = (mode == SwapSelectionMode::ONE ? 1 : ir::compat::MAX_CYCLE);
 
         utils::UInt from_source_qubit;
         utils::UInt to_source_qubit;

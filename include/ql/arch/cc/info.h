@@ -67,7 +67,7 @@ public:
      * Post-processing logic for the Platform data structure. This may for
      * instance add annotations with architecture-specific configuration data.
      */
-    void post_process_platform(const plat::PlatformRef &platform, const utils::Str &variant) const override;
+    void post_process_platform(const ir::compat::PlatformRef &platform, const utils::Str &variant) const override;
 
     /**
      * Adds the default "backend passes" for this platform. Called by

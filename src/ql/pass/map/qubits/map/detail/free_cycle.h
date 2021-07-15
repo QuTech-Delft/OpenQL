@@ -8,10 +8,9 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/opt.h"
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/rmgr/manager.h"
-#include "ql/ir/ir.h"
-#include "ql/com/qubit_mapping.h"
+#include "ql/com/map/qubit_mapping.h"
 #include "options.h"
 
 namespace ql {
@@ -49,7 +48,7 @@ private:
     /**
      * Platform description.
      */
-    plat::PlatformRef platform;
+    ir::compat::PlatformRef platform;
 
     /**
      * Parsed mapper pass options.
@@ -88,7 +87,7 @@ public:
     /**
      * Initializes this FreeCycle object.
      */
-    void initialize(const plat::PlatformRef &p, const OptionsRef &opt);
+    void initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt);
 
     /**
      * Returns the depth of the FreeCycle map. Equals the max of all entries
@@ -142,14 +141,14 @@ public:
      * gate, ignoring resource constraints. gate operands are real qubit indices
      * and breg indices. Purely functional, doesn't affect state.
      */
-    utils::UInt get_start_cycle_no_rc(const ir::GateRef &g) const;
+    utils::UInt get_start_cycle_no_rc(const ir::compat::GateRef &g) const;
 
     /**
      * Returns what the start cycle would be when we would schedule the given
      * gate. gate operands are real qubit indices and breg indices. Purely
      * functional, doesn't affect state.
      */
-    utils::UInt get_start_cycle(const ir::GateRef &g) const;
+    utils::UInt get_start_cycle(const ir::compat::GateRef &g) const;
 
     /**
      * Schedules the given gate in the FreeCycle map. The gate operands are real
@@ -157,7 +156,7 @@ public:
      * resource map. This is done because add_no_rc is used to represent just gate
      * dependencies, avoiding a build of a dep graph.
      */
-    void add_no_rc(const ir::GateRef &g, utils::UInt startCycle);
+    void add_no_rc(const ir::compat::GateRef &g, utils::UInt startCycle);
 
     /**
      * Schedules the given gate in the FreeCycle and resource maps. The gate
@@ -165,7 +164,7 @@ public:
      * and the resource map are updated. startcycle must be the result of an
      * earlier StartCycle call (with rc!)
      */
-    void add(const ir::GateRef &g, utils::UInt start_cycle);
+    void add(const ir::compat::GateRef &g, utils::UInt start_cycle);
 
 };
 

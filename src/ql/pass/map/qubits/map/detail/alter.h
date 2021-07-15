@@ -8,9 +8,8 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/list.h"
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/rmgr/manager.h"
-#include "ql/ir/ir.h"
 #include "options.h"
 #include "free_cycle.h"
 #include "past.h"
@@ -73,12 +72,12 @@ public:
     /**
      * Descriptions of resources for scheduling.
      */
-    plat::PlatformRef platform;
+    ir::compat::PlatformRef platform;
 
     /**
      * Kernel pointer to allow calling kernel private methods.
      */
-    ir::KernelRef kernel;
+    ir::compat::KernelRef kernel;
 
     /**
      * Reference to the parsed mapper pass options record.
@@ -98,7 +97,7 @@ public:
     /**
      * The gate that this variation aims to make nearest-neighbor.
      */
-    ir::GateRef target_gate;
+    ir::compat::GateRef target_gate;
 
     /**
      * The full path, including source and target nodes.
@@ -134,7 +133,7 @@ public:
      * This should only be called after a virgin construction and not after
      * cloning a path.
      */
-    void initialize(const ir::KernelRef &k, const OptionsRef &opt);
+    void initialize(const ir::compat::KernelRef &k, const OptionsRef &opt);
 
     /**
      * Prints the state of this Alter, prefixed by s.

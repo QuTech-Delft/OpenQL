@@ -16,249 +16,311 @@
   "instructions": {
 
     "prep_x": {
+      "prototype": ["W:qubit"],
       "duration": 40,
       "diamond_type": "prepare"
     },
 
     "prep_y": {
+      "prototype": ["W:qubit"],
       "duration": 40,
       "diamond_type": "prepare"
     },
 
     "prep_z": {
+      "prototype": ["W:qubit"],
       "duration": 40,
       "diamond_type": "prepare"
     },
 
     "mprep_x": {
+      "prototype": ["U:qubit"],
       "duration": 40,
       "diamond_type": "prepare"
     },
 
     "mprep_y": {
+      "prototype": ["U:qubit"],
       "duration": 40,
       "diamond_type": "prepare"
     },
 
     "qnop": {
+      "prototype": ["B:qubit"],
       "duration": 1
     },
 
     "calculate_current": {
+      "prototype": ["U:qubit"],
       "duration": 1,
       "diamond_type": "classical"
     },
 
     "calculate_voltage": {
+      "prototype": ["U:qubit"],
+      "barrier": true,
       "duration": 1,
       "diamond_type": "classical"
     },
 
     "i": {
+      "prototype": ["U:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
+
     "h": {
+      "prototype": ["U:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
+
     "x": {
+      "prototype": ["X:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
+
     "y": {
+      "prototype": ["Y:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
 
     "z": {
+      "prototype": ["Z:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
 
     "initialize": {
+      "prototype": ["W:qubit"],
       "duration": 40
     },
 
     "x90": {
+      "prototype": ["X:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
 
     "y90": {
+      "prototype": ["Y:qubit"],
       "duration": 20,
       "diamond_type": "qgate"
     },
 
     "x180": {
+      "prototype": ["X:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
 
     "y180": {
+      "prototype": ["Y:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
 
     "mx90": {
+      "prototype": ["X:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
 
     "my90": {
+      "prototype": ["Y:qubit"],
       "duration": 20,
       "diamond_type": "qgate"
     },
 
     "rx": {
+      "prototype": ["X:qubit", "L:real"],
       "duration": 40,
       "diamond_type": "rotation"
     },
 
     "ry": {
+      "prototype": ["Y:qubit", "L:real"],
       "duration": 40,
       "diamond_type": "rotation"
     },
 
     "rz": {
+      "prototype": ["Z:qubit", "L:real"],
       "duration": 40,
       "diamond_type": "rotation"
     },
 
     "cr": {
+      "prototype": ["Z:qubit", "Z:qubit", "L:real"],
       "duration": 40,
       "diamond_type": "rotation"
     },
 
     "crk": {
+      "prototype": ["Z:qubit", "Z:qubit", "L:int"],
       "duration": 40,
       "diamond_type": "rotation"
     },
 
     "s": {
+      "prototype": ["Z:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
 
     "sdag": {
+      "prototype": ["Z:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
 
     "t": {
+      "prototype": ["Z:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
 
     "tdag": {
+      "prototype": ["Z:qubit"],
       "duration": 40,
       "diamond_type": "qgate"
     },
 
     "cnot": {
+      "prototype": ["Z:qubit", "X:qubit"],
       "duration": 80,
       "diamond_type": "qgate2"
     },
 
     "pmx90": {
+      "prototype": ["U:qubit", "U:qubit"],
       "duration": 80,
       "diamond_type": "qgate2"
     },
 
     "pmy90": {
+      "prototype": ["U:qubit", "U:qubit"],
       "duration": 80,
       "diamond_type": "qgate2"
     },
 
     "pmx180": {
+      "prototype": ["U:qubit", "U:qubit"],
       "duration": 80,
       "diamond_type": "qgate2"
     },
 
     "pmy180": {
+      "prototype": ["U:qubit", "U:qubit"],
       "duration": 80,
       "diamond_type": "qgate2"
     },
 
     "cz": {
+      "prototype": ["Z:qubit", "Z:qubit"],
       "duration": 80,
       "diamond_type": "qgate2"
     },
 
     "measure": {
+      "prototype": ["M:qubit"],
+      "duration": 300,
+      "decomposition": {
+        "name": "desugar",
+        "into": "measure op(0), bit(op(0))"
+      }
+    },
+
+    "measure ": {
+      "prototype": ["U:qubit", "W:bit"],
       "duration": 300
     },
 
     "display": {
+      "prototype": [],
+      "barrier": true,
       "duration": 20,
       "qubits": []
     },
 
     "display_binary": {
+      "prototype": [],
+      "barrier": true,
       "duration": 20,
       "qubits": []
     },
 
     "swap": {
+      "prototype": ["U:qubit", "U:qubit"],
       "duration": 80,
       "diamond_type": "qgate2"
     },
 
     "memswap": {
+      "prototype": ["U:qubit", "L:int"],
       "duration": 80
     },
 
     "qentangle": {
+      "prototype": ["U:qubit", "L:int"],
       "duration": 60
     },
 
     "nventangle": {
+      "prototype": ["U:qubit", "U:qubit"],
       "duration": 100
     },
 
     "sweep_bias": {
+      "prototype": ["U:qubit", "L:int", "L:int", "L:int", "L:int", "L:int", "L:int"],
       "duration": 300
     },
 
     "excite_mw": {
+      "prototype": ["U:qubit", "L:int", "L:int", "L:int", "L:int", "L:int"],
       "duration": 20
     },
 
     "crc": {
+      "prototype": ["U:qubit", "L:int", "L:int"],
       "duration": 20,
       "diamond_type": "initial_checks"
     },
 
     "mag_bias": {
+      "prototype": ["U:qubit"],
       "duration": 300,
       "diamond_type": "initial_checks"
     },
 
     "rabi_check": {
+      "prototype": ["U:qubit", "L:int", "L:int", "L:int"],
       "duration": 300,
       "diamond_type": "initial_checks"
     },
 
-    "wait": {
-      "duration": 1
-    },
-
     "decouple": {
+      "prototype": ["U:qubit"],
       "duration": 300,
       "diamond_type": "calibration"
     },
 
     "cal_measure": {
+      "prototype": ["U:qubit"],
       "duration": 300,
       "diamond_type": "calibration"
     },
 
     "cal_pi": {
+      "prototype": ["U:qubit"],
       "duration": 300,
       "diamond_type": "calibration"
     },
 
     "cal_halfpi": {
+      "prototype": ["U:qubit"],
       "duration": 300,
       "diamond_type": "calibration"
     }

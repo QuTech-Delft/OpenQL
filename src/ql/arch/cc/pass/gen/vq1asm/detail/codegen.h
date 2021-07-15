@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/platform.h"
 #include "types.h"
 #include "options.h"
 #include "bundle_info.h"
@@ -31,7 +31,7 @@ public: //  functions
     ~Codegen() = default;
 
     // Generic
-    void init(const plat::PlatformRef &platform, const OptionsRef &options);
+    void init(const ir::compat::PlatformRef &platform, const OptionsRef &options);
     Str getProgram();                           // return the CC source code that was created
     Str getMap();                               // return a map of codeword assignments, useful for configuring AWGs
 
@@ -50,7 +50,7 @@ public: //  functions
         const Vec<UInt> &operands,                  // qubit operands (FKA qops)
         const Vec<UInt> &creg_operands,             // classic operands (FKA cops)
         const Vec<UInt> &breg_operands,             // bit operands e.g. assigned to by measure
-        ir::ConditionType condition,
+        ir::compat::ConditionType condition,
         const Vec<UInt> &cond_operands,             // 0, 1 or 2 bit operands of condition
         Real angle,
         UInt startCycle, UInt durationInCycles
@@ -99,7 +99,7 @@ private:    // vars
     static const Int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
     OptionsRef options;
-    plat::PlatformRef platform;                                 // remind platform
+    ir::compat::PlatformRef platform;                           // remind platform
     Settings settings;                                          // handling of JSON settings
     Datapath dp;                                                // handling of CC datapath
     Vcd vcd;                                                    // handling of VCD file output

@@ -8,6 +8,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/str.h"
 #include "ql/utils/ptr.h"
+#include "ql/pmgr/declarations.h"
 
 namespace ql {
 namespace pmgr {

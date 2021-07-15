@@ -42,8 +42,9 @@ Options make_ql_options() {
 
     options.add_bool(
         "use_default_gates",
-        "Use default gates or not. TODO: document better, and work out what to "
-        "do with default gates to begin with.",
+        "Use default gates or not. When set, a number of builtin gates become "
+        "available as fallback for the gates defined in the platform "
+        "configuration structure, including the special wait and barrier gates.",
         true
     );
 
@@ -162,14 +163,20 @@ Options make_ql_options() {
         "When no compiler configuration file is specified, this controls "
         "whether uniform scheduling should be done instead of ASAP/ALAP (i.e. "
         "the `scheduler` option will be ignored). Both the pre-mapping and "
-        "post-mapping schedulers are affected."
+        "post-mapping schedulers are affected. Setting this selects the old "
+        "scheduler (`sch.Schedule`), because the new scheduler "
+        "(`sch.ListSchedule`) doesn't support uniform scheduling."
     );
 
     options.add_enum(
         "scheduler_heuristic",
         "When no compiler configuration file is specified, this controls "
         "what scheduling heuristic should be used for ordering the list of "
-        "available gates by criticality.",
+        "available gates by criticality. These are the heuristics for the old "
+        "scheduler (`sch.Schedule`), so setting this option will prevent the "
+        "new scheduler (`sch.ListSchedule`) from being used. To set the "
+        "heuristic for the new scheduler, you must use its pass options "
+        "directly; there is no global option for this.",
         "path_length",
         {"path_length", "random"}
     );

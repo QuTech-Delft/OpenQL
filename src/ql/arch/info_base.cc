@@ -62,7 +62,7 @@ void InfoBase::preprocess_platform(
  * instance add annotations with architecture-specific configuration data.
  */
 void InfoBase::post_process_platform(
-    const plat::PlatformRef &platform,
+    const ir::compat::PlatformRef &platform,
     const utils::Str &variant
 ) const {
 }

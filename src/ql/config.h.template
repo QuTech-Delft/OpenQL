@@ -20,3 +20,7 @@
 
 // Whether (experimental) pass group/hierarchy support is enabled in the API.
 #undef QL_HIERARCHICAL_PASS_MANAGEMENT
+
+// Enable hacks to allow wait/barrier gates to appear in decompositions for the
+// old IR.
+#define OPT_DECOMPOSE_WAIT_BARRIER

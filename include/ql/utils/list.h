@@ -247,7 +247,7 @@ private:
      */
     Data &get_data() {
         if (!data_ptr) {
-            throw ContainerException(
+            QL_CONTAINER_ERROR(
                 "container is used after move or otherwise has invalid data block"
             );
         }
@@ -259,7 +259,7 @@ private:
      */
     const Data &get_data() const {
         if (!data_ptr) {
-            throw ContainerException(
+            QL_CONTAINER_ERROR(
                 "container is used after move or otherwise has invalid data block"
             );
         }
@@ -420,7 +420,7 @@ public:
     void assign(WrappedIterator<A, B, C> first, WrappedIterator<A, B, C> last) {
         first.check(last);
         if (first.data_ptr == data_ptr) {
-            throw ContainerException(
+            QL_CONTAINER_ERROR(
                 "cannot assign using iterators from the same container"
             );
         }
@@ -482,7 +482,7 @@ public:
     reference front() {
         auto &v = get_data().get_mut_element_only();
         if (v.empty()) {
-            throw ContainerException("front() called on empty list");
+            QL_CONTAINER_ERROR("front() called on empty list");
         }
         return v.front();
     }
@@ -494,7 +494,7 @@ public:
     const_reference front() const {
         auto &v = get_data().get_const();
         if (v.empty()) {
-            throw ContainerException("front() called on empty list");
+            QL_CONTAINER_ERROR("front() called on empty list");
         }
         return v.front();
     }
@@ -506,7 +506,7 @@ public:
     reference back() {
         auto &v = get_data().get_mut_element_only();
         if (v.empty()) {
-            throw ContainerException("back() called on empty list");
+            QL_CONTAINER_ERROR("back() called on empty list");
         }
         return v.back();
     }
@@ -518,7 +518,7 @@ public:
     const_reference back() const {
         auto &v = get_data().get_const();
         if (v.empty()) {
-            throw ContainerException("back() called on empty list");
+            QL_CONTAINER_ERROR("back() called on empty list");
         }
         return v.back();
     }
@@ -727,7 +727,7 @@ public:
     Iter insert(const ConstIter &pos, const Iter &first, const Iter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same list");
+            QL_CONTAINER_ERROR("inserting from same list");
         }
         return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
     }
@@ -742,7 +742,7 @@ public:
     Iter insert(const ConstIter &pos, const ConstIter &first, const ConstIter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same list");
+            QL_CONTAINER_ERROR("inserting from same list");
         }
         return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
     }
@@ -757,7 +757,7 @@ public:
     Iter insert(const ConstIter &pos, const ReverseIter &first, const ReverseIter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same list");
+            QL_CONTAINER_ERROR("inserting from same list");
         }
         return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
     }
@@ -772,7 +772,7 @@ public:
     Iter insert(const ConstIter &pos, const ConstReverseIter &first, const ConstReverseIter &last) {
         pos.check(data_ptr);
         if (first.data_ptr == data_ptr) {
-            throw ContainerException("inserting from same list");
+            QL_CONTAINER_ERROR("inserting from same list");
         }
         return Iter(get_data().get_mut().insert(pos.iter, first, last), data_ptr);
     }
@@ -886,7 +886,7 @@ public:
     void pop_back() {
         auto &v = get_data().get_mut();
         if (v.empty()) {
-            throw ContainerException("pop_back() called on empty list");
+            QL_CONTAINER_ERROR("pop_back() called on empty list");
         }
         return v.pop_back();
     }
@@ -936,7 +936,7 @@ public:
     void pop_front() {
         auto &v = get_data().get_mut();
         if (v.empty()) {
-            throw ContainerException("pop_back() called on empty list");
+            QL_CONTAINER_ERROR("pop_back() called on empty list");
         }
         return v.pop_front();
     }

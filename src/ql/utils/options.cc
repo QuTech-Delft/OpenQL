@@ -211,7 +211,7 @@ Str BooleanOption::validate(const Str &val) const {
     } else if (lower == "false" || lower == "no" || lower == "n" || lower == "0") {
         return "no";
     } else {
-        throw UserError("invalid value for yes/no option " + get_name() + ": " + val);
+        QL_USER_ERROR("invalid value for yes/no option " << get_name() << ": " << val);
     }
 }
 
@@ -242,11 +242,11 @@ Str EnumerationOption::validate_(const Str &val) const {
             return option;
         }
     }
-    StrStrm s{};
-    s << "invalid value for option " << get_name() << ":";
-    s << " possible values are " << options.to_string("", ", ", "", ", or ", " or ");
-    s << ", but " << val << " was given";
-    throw UserError(s.str());
+    QL_USER_ERROR(
+        "invalid value for option " << get_name() << ":" <<
+        " possible values are " << options.to_string("", ", ", "", ", or ", " or ") <<
+        ", but " << val << " was given"
+    );
 }
 
 /**
@@ -301,11 +301,11 @@ Str IntegerOption::validate_(const Str &val) const {
             return option;
         }
     }
-    StrStrm s{};
-    s << "invalid value for option " << get_name() << ":";
-    s << " value must be " << syntax();
-    s << ", but " << val << " was given";
-    throw UserError(s.str());
+    QL_USER_ERROR(
+        "invalid value for option " << get_name() << ":" <<
+        " value must be " << syntax() <<
+        ", but " << val << " was given"
+    );
 }
 
 /**
@@ -385,11 +385,11 @@ Str RealOption::validate_(const Str &val) const {
             return option;
         }
     }
-    StrStrm s{};
-    s << "invalid value for option " << get_name() << ":";
-    s << " value must be " << syntax();
-    s << ", but " << val << " was given";
-    throw UserError(s.str());
+    QL_USER_ERROR(
+        "invalid value for option " << get_name() << ":" <<
+        " value must be " << syntax() <<
+        ", but " << val << " was given"
+    );
 }
 
 /**
@@ -548,7 +548,7 @@ Option &Options::add_real(
 Option &Options::operator[](const Str &key) {
     auto it = options.find(key);
     if (it == options.end()) {
-        throw UserError("unknown option: " + key);
+        QL_USER_ERROR("unknown option: " << key);
     }
     return *it->second;
 }
@@ -559,7 +559,7 @@ Option &Options::operator[](const Str &key) {
 const Option &Options::operator[](const Str &key) const {
     auto it = options.find(key);
     if (it == options.end()) {
-        throw UserError("unknown option: " + key);
+        QL_USER_ERROR("unknown option: " << key);
     }
     return *it->second;
 }

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "ql/plat/platform.h"
+#include "ql/ir/compat/platform.h"
 #include "types.h"
 #include "options.h"
 
@@ -56,7 +56,7 @@ public: // functions
     Settings() = default;
     ~Settings() = default;
 
-    void loadBackendSettings(const plat::PlatformRef &platform);
+    void loadBackendSettings(const ir::compat::PlatformRef &platform);
     Str getReadoutMode(const Str &iname);
     static Bool isReadout(const Json &instruction, const Str &iname);
     Bool isReadout(const Str &iname);
@@ -80,7 +80,7 @@ public: // functions
     UInt getInstrumentsSize() const { return jsonInstruments->size(); }
 
 private:    // vars
-    plat::PlatformRef platform;
+    ir::compat::PlatformRef platform;
     RawPtr<const Json> jsonInstrumentDefinitions;
     RawPtr<const Json> jsonControlModes;
     RawPtr<const Json> jsonInstruments;

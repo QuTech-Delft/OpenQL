@@ -16,9 +16,6 @@
    },
 
    "instructions": {
-      "measure all" : {
-         "alias" : "measure q0"
-      }
    },
 
    "gate_decomposition": {

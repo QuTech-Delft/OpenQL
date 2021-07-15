@@ -18,7 +18,7 @@ namespace detail {
 
 using namespace utils;
 
-Vec<GateProperties> parseGates(const ir::ProgramRef &program) {
+Vec<GateProperties> parseGates(const ir::compat::ProgramRef &program) {
     Vec<GateProperties> gates;
 
     // Determine whether the program is scheduled or not. If not, the program
@@ -30,7 +30,7 @@ Vec<GateProperties> parseGates(const ir::ProgramRef &program) {
     for (const auto &kernel : program->kernels) {
         cycles_valid &= kernel->cycles_valid;
         for (const auto &gate : kernel->gates) {
-            if (gate->cycle < ir::FIRST_CYCLE || gate->cycle >= ir::MAX_CYCLE) {
+            if (gate->cycle < ir::compat::FIRST_CYCLE || gate->cycle >= ir::compat::MAX_CYCLE) {
                 cycles_valid = false;
                 break;
             }
@@ -59,10 +59,10 @@ Vec<GateProperties> parseGates(const ir::ProgramRef &program) {
             };
             if (cycles_valid) {
                 UInt end = program->platform->time_to_cycles(gate->duration) + gate->cycle;
-                kernel_duration = max(kernel_duration, end) - ir::FIRST_CYCLE;
-                gateProperties.cycle = utoi(gate->cycle + kernel_cycle_offset - ir::FIRST_CYCLE);
+                kernel_duration = max(kernel_duration, end) - ir::compat::FIRST_CYCLE;
+                gateProperties.cycle = utoi(gate->cycle + kernel_cycle_offset - ir::compat::FIRST_CYCLE);
             } else {
-                gateProperties.cycle = ir::MAX_CYCLE;
+                gateProperties.cycle = ir::compat::MAX_CYCLE;
             }
             gates.push_back(gateProperties);
         }
@@ -78,9 +78,9 @@ Int calculateAmountOfCycles(const Vec<GateProperties> &gates, const Int cycleDur
     // Find the highest cycle in the gate vector.
     Int amountOfCycles = 0;
     for (const GateProperties &gate : gates) {
-        if (gate.cycle == ir::MAX_CYCLE) {
+        if (gate.cycle == ir::compat::MAX_CYCLE) {
             QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
-            return ir::MAX_CYCLE;
+            return ir::compat::MAX_CYCLE;
         }
 
         if (gate.cycle > amountOfCycles)

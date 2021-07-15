@@ -5,6 +5,9 @@
 
 #include "ql/pmgr/pass_types/specializations.h"
 
+#include "ql/ir/new_to_old.h"
+#include "ql/ir/old_to_new.h"
+
 namespace ql {
 namespace pmgr {
 namespace pass_types {
@@ -39,7 +42,7 @@ NodeType Group::on_construct(
  * exception.
  */
 utils::Int Group::run_internal(
-    const ir::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
     QL_ASSERT(false);
@@ -73,6 +76,27 @@ NodeType Normal::on_construct(
  * Constructs the pass. No error checking here; this is up to the parent
  * pass group.
  */
+Transformation::Transformation(
+    const utils::Ptr<const Factory> &pass_factory,
+    const utils::Str &instance_name,
+    const utils::Str &type_name
+) : Normal(pass_factory, instance_name, type_name) {
+}
+
+/**
+ * Implementation for on_compile() that calls run() appropriately.
+ */
+utils::Int Transformation::run_internal(
+    const ir::Ref &ir,
+    const Context &context
+) const {
+    return run(ir, context);
+}
+
+/**
+ * Constructs the pass. No error checking here; this is up to the parent
+ * pass group.
+ */
 ProgramTransformation::ProgramTransformation(
     const utils::Ptr<const Factory> &pass_factory,
     const utils::Str &instance_name,
@@ -84,10 +108,23 @@ ProgramTransformation::ProgramTransformation(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int ProgramTransformation::run_internal(
-    const ir::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
-    return run(program, context);
+    auto program = ir::convert_new_to_old(ir);
+    auto retval = run(program, context);
+    auto new_ir = ir::convert_old_to_new(program);
+    ir->program = new_ir->program;
+    ir->platform = new_ir->platform;
+    ir->copy_annotations(*new_ir);
+    return retval;
+}
+
+/**
+ * Returns that this is a legacy pass.
+ */
+utils::Bool ProgramTransformation::is_legacy() const {
+    return true;
 }
 
 /**
@@ -122,14 +159,47 @@ utils::Int KernelTransformation::retval_accumulate(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int KernelTransformation::run_internal(
-    const ir::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
+    auto program = ir::convert_new_to_old(ir);
     utils::Int accumulator = retval_initialize();
     for (const auto &kernel : program->kernels) {
         accumulator = retval_accumulate(accumulator, run(program, kernel, context));
     }
+    auto new_ir = ir::convert_old_to_new(program);
+    ir->program = new_ir->program;
+    ir->platform = new_ir->platform;
+    ir->copy_annotations(*new_ir);
     return accumulator;
+}
+
+/**
+ * Returns that this is a legacy pass.
+ */
+utils::Bool KernelTransformation::is_legacy() const {
+    return true;
+}
+
+/**
+ * Constructs the pass. No error checking here; this is up to the parent
+ * pass group.
+ */
+Analysis::Analysis(
+    const utils::Ptr<const Factory> &pass_factory,
+    const utils::Str &instance_name,
+    const utils::Str &type_name
+) : Normal(pass_factory, instance_name, type_name) {
+}
+
+/**
+ * Implementation for on_compile() that calls run() appropriately.
+ */
+utils::Int Analysis::run_internal(
+    const ir::Ref &ir,
+    const Context &context
+) const {
+    return run(ir, context);
 }
 
 /**
@@ -147,10 +217,23 @@ ProgramAnalysis::ProgramAnalysis(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int ProgramAnalysis::run_internal(
-    const ir::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
-    return run(program, context);
+    auto program = ir::convert_new_to_old(ir);
+    auto retval = run(program, context);
+    auto new_ir = ir::convert_old_to_new(program);
+    ir->program = new_ir->program;
+    ir->platform = new_ir->platform;
+    ir->copy_annotations(*new_ir);
+    return retval;
+}
+
+/**
+ * Returns that this is a legacy pass.
+ */
+utils::Bool ProgramAnalysis::is_legacy() const {
+    return true;
 }
 
 /**
@@ -185,14 +268,26 @@ utils::Int KernelAnalysis::retval_accumulate(
  * Implementation for on_compile() that calls run() appropriately.
  */
 utils::Int KernelAnalysis::run_internal(
-    const ir::ProgramRef &program,
-        const Context &context
+    const ir::Ref &ir,
+    const Context &context
 ) const {
+    auto program = ir::convert_new_to_old(ir);
     utils::Int accumulator = retval_initialize();
     for (const auto &kernel : program->kernels) {
         accumulator = retval_accumulate(accumulator, run(program, kernel, context));
     }
+    auto new_ir = ir::convert_old_to_new(program);
+    ir->program = new_ir->program;
+    ir->platform = new_ir->platform;
+    ir->copy_annotations(*new_ir);
     return accumulator;
+}
+
+/**
+ * Returns that this is a legacy pass.
+ */
+utils::Bool KernelAnalysis::is_legacy() const {
+    return true;
 }
 
 } // namespace pass_types

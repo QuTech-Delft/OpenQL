@@ -56,7 +56,7 @@ WriteSweepPointsPass::WriteSweepPointsPass(
  * Runs the sweep point writer.
  */
 utils::Int WriteSweepPointsPass::run(
-    const ir::ProgramRef &program,
+    const ir::compat::ProgramRef &program,
     const pmgr::pass_types::Context &context
 ) const {
 

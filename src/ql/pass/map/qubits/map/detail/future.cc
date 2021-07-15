@@ -16,7 +16,7 @@ namespace detail {
 /**
  * Program-wide initialization function.
  */
-void Future::initialize(const plat::PlatformRef &p, const OptionsRef &opt) {
+void Future::initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt) {
     // QL_DOUT("Future::Init ...");
     platform = p;
     options = opt;
@@ -26,7 +26,7 @@ void Future::initialize(const plat::PlatformRef &p, const OptionsRef &opt) {
 /**
  * Set/switch input to the provided kernel.
  */
-void Future::set_kernel(const ir::KernelRef &kernel, const utils::Ptr<Scheduler> &sched) {
+void Future::set_kernel(const ir::compat::KernelRef &kernel, const utils::Ptr<Scheduler> &sched) {
     QL_DOUT("Future::set_kernel ...");
     approx_gates_total = kernel->gates.size();
     approx_gates_remaining = approx_gates_total;
@@ -72,24 +72,24 @@ void Future::set_kernel(const ir::KernelRef &kernel, const utils::Ptr<Scheduler>
  * gates include classical and dummy (SOURCE/SINK). Return whether some
  * non-quantum gate was found.
  */
-utils::Bool Future::get_non_quantum_gates(utils::List<ir::GateRef> &nonqlg) const {
+utils::Bool Future::get_non_quantum_gates(utils::List<ir::compat::GateRef> &nonqlg) const {
     nonqlg.clear();
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
-        ir::GateRef gate = *input_gatepp;
-        if (ir::GateRefs::const_iterator(input_gatepp) != input_gatepv.end()) {
+        ir::compat::GateRef gate = *input_gatepp;
+        if (ir::compat::GateRefs::const_iterator(input_gatepp) != input_gatepv.end()) {
             if (
-                gate->type() == ir::GateType::CLASSICAL
-                || gate->type() == ir::GateType::DUMMY
+                gate->type() == ir::compat::GateType::CLASSICAL
+                || gate->type() == ir::compat::GateType::DUMMY
             ) {
                 nonqlg.push_back(gate);
             }
         }
     } else {
         for (auto n : avlist) {
-            ir::GateRef gate = scheduler->instruction[n];
+            ir::compat::GateRef gate = scheduler->instruction[n];
             if (
-                gate->type() == ir::GateType::CLASSICAL
-                || gate->type() == ir::GateType::DUMMY
+                gate->type() == ir::compat::GateType::CLASSICAL
+                || gate->type() == ir::compat::GateType::DUMMY
             ) {
                 nonqlg.push_back(gate);
             }
@@ -101,11 +101,11 @@ utils::Bool Future::get_non_quantum_gates(utils::List<ir::GateRef> &nonqlg) cons
 /**
  * Get all gates from avlist into qlg. Return whether some gate was found.
  */
-utils::Bool Future::get_gates(utils::List<ir::GateRef> &qlg) const {
+utils::Bool Future::get_gates(utils::List<ir::compat::GateRef> &qlg) const {
     qlg.clear();
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
         if (input_gatepp != input_gatepv.end()) {
-            ir::GateRef gp = *input_gatepp;
+            ir::compat::GateRef gp = *input_gatepp;
             if (gp->operands.size() > 2) {
                 QL_FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
             }
@@ -113,7 +113,7 @@ utils::Bool Future::get_gates(utils::List<ir::GateRef> &qlg) const {
         }
     } else {
         for (auto n : avlist) {
-            ir::GateRef gp = scheduler->instruction[n];
+            ir::compat::GateRef gp = scheduler->instruction[n];
             if (gp->operands.size() > 2) {
                 QL_FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
             }
@@ -127,7 +127,7 @@ utils::Bool Future::get_gates(utils::List<ir::GateRef> &qlg) const {
  * Indicates that a gate currently in avlist has been mapped, can be
  * taken out of the avlist, and that its successors can be made available.
  */
-void Future::completed_gate(const ir::GateRef &gate) {
+void Future::completed_gate(const ir::compat::GateRef &gate) {
     if (approx_gates_remaining) {
         approx_gates_remaining--;
     }
@@ -143,7 +143,7 @@ void Future::completed_gate(const ir::GateRef &gate) {
  * This is used in tiebreak, when every other option has failed to make a
  * distinction.
  */
-ir::GateRef Future::get_most_critical(const utils::List<ir::GateRef> &lag) const {
+ir::compat::GateRef Future::get_most_critical(const utils::List<ir::compat::GateRef> &lag) const {
     if (options->lookahead_mode == LookaheadMode::DISABLED) {
         return lag.front();
     } else {

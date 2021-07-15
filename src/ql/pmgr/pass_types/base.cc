@@ -7,8 +7,8 @@
 #include <cctype>
 #include <regex>
 #include "ql/utils/filesystem.h"
+#include "ql/ir/cqasm/write.h"
 #include "ql/pmgr/manager.h"
-#include "ql/pass/io/cqasm/report.h"
 #include "ql/pass/ana/statistics/report.h"
 
 namespace ql {
@@ -149,7 +149,6 @@ Base::Base(
     type_name(type_name),
     instance_name(instance_name)
 {
-    // TODO common pass options
     options.add_str(
         "output_prefix",
         "Format string for the prefix used for all output products. "
@@ -170,11 +169,12 @@ Base::Base(
         "debug",
         "May be used to implicitly surround this pass with cQASM/report file "
         "output printers, to aid in debugging. Set to `no` to disable this "
-        "functionality or to `yes` to write a cQASM file before and after "
-        "that includes statistics as comments. The filename is built using "
-        "the output_prefix option, using suffix `_debug_[in|out].cq`. "
-        "The option values `stats`, `cqasm`, and `both` are used for "
-        "backward compatibility with the `write_qasm_files` and "
+        "functionality or to `yes` to write a tree dump and a cQASM file before "
+        "and after, the latter of which includes statistics as comments. The "
+        "filename is built using the output_prefix option, using suffix "
+        "`_debug_[in|out].ir` for the IR dump, and `_debug_[in|out].cq` for "
+        "the cQASM file. The option values `stats`, `cqasm`, and `both` are "
+        "used for backward compatibility with the `write_qasm_files` and "
         "`write_report_files` global options; for `stats` and `both` a "
         "statistics report file is written with suffix `_[in|out].report`, "
         "and for `qasm` and `both` a cQASM file is written (without stats "
@@ -182,6 +182,14 @@ Base::Base(
         "no",
         {"no", "yes", "stats", "qasm", "both"}
     );
+}
+
+/**
+ * Returns whether this is a legacy pass, i.e. one that operates on the old
+ * IR. Returns false unless overridden.
+ */
+utils::Bool Base::is_legacy() const {
+    return false;
 }
 
 /**
@@ -218,6 +226,16 @@ void Base::dump_help(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
+    if (is_legacy()) {
+        utils::dump_str(os, line_prefix, R"(
+        NOTE: this is a legacy pass, operating on the old intermediate
+        representation. If the program is using features that the old IR does
+        not support when this pass is run, an internal compiler error will be
+        thrown. Furthermore, kernel/block names may change regardless of whether
+        the pass does anything with them, due to name uniquification logic.
+        )");
+        os << line_prefix << "\n";
+    }
     dump_docs(os, line_prefix);
     os << line_prefix << "\n";
     os << line_prefix << "* Options *\n";
@@ -975,28 +993,32 @@ condition::Ref Base::get_condition() {
  * after_pass is false when run before, and true when run after.
  */
 void Base::handle_debugging(
-    const ir::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context,
     utils::Bool after_pass
 ) {
     utils::Str in_or_out = after_pass ? "out" : "in";
     auto debug_opt = options["debug"].as_str();
     if (debug_opt == "yes") {
-        pass::io::cqasm::report::dump_with_statistics(
-            program,
+        ir->dump_seq(
+            utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".ir").unwrap()
+        );
+        ir::cqasm::WriteOptions write_options;
+        write_options.include_statistics = true;
+        ir::cqasm::write(
+            ir, write_options,
             utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".cq").unwrap()
         );
     }
     if (debug_opt == "stats" || debug_opt == "both") {
         pass::ana::statistics::report::dump_all(
-            program,
-            utils::OutFile(context.output_prefix + "_" + in_or_out + ".report").unwrap(),
-            "# " // for some reason; compatibility
+            ir,
+            utils::OutFile(context.output_prefix + "_" + in_or_out + ".report").unwrap()
         );
     }
     if (debug_opt == "qasm" || debug_opt == "both") {
-        pass::io::cqasm::report::dump(
-            program,
+        ir::cqasm::write(
+            ir, {},
             utils::OutFile(context.output_prefix + "_" + in_or_out + ".qasm").unwrap()
         );
     }
@@ -1007,11 +1029,11 @@ void Base::handle_debugging(
  * care of logging, profiling, etc.
  */
 utils::Int Base::run_main_pass(
-    const ir::ProgramRef &program,
+    const ir::Ref &ir,
     const Context &context
 ) const {
     QL_IOUT("starting pass \"" << context.full_pass_name << "\" of type \"" << type_name << "\"...");
-    auto retval = run_internal(program, context);
+    auto retval = run_internal(ir, context);
     QL_IOUT("completed pass \"" << context.full_pass_name << "\"; return value is " << retval);
     return retval;
 }
@@ -1021,12 +1043,12 @@ utils::Int Base::run_main_pass(
  * profiling, etc.
  */
 void Base::run_sub_passes(
-    const ir::ProgramRef &program,
-        const Context &context
+    const ir::Ref &ir,
+    const Context &context
 ) const {
     utils::Str sub_prefix = context.full_pass_name.empty() ? "" : (context.full_pass_name + ".");
     for (const auto &pass : sub_pass_order) {
-        pass->compile(program, sub_prefix);
+        pass->compile(ir, sub_prefix);
     }
 }
 
@@ -1034,7 +1056,7 @@ void Base::run_sub_passes(
  * Executes this pass or pass group on the given platform and program.
  */
 void Base::compile(
-    const ir::ProgramRef &program,
+    const ir::Ref &ir,
     const utils::Str &pass_name_prefix
 ) {
 
@@ -1057,10 +1079,14 @@ void Base::compile(
                     context.output_prefix += '%';
                     break;
                 case 'n':
-                    context.output_prefix += program->name;
+                    if (!ir->program.empty()) {
+                        context.output_prefix += ir->program->name;
+                    }
                     break;
                 case 'N':
-                    context.output_prefix += program->unique_name;
+                    if (!ir->program.empty()) {
+                        context.output_prefix += ir->program->unique_name;
+                    }
                     break;
                 case 'p':
                     context.output_prefix += instance_name;
@@ -1095,25 +1121,25 @@ void Base::compile(
     }
 
     // Handle configured debugging actions before running the pass.
-    handle_debugging(program, context, false);
+    handle_debugging(ir, context, false);
 
     // Traverse our level of the pass tree based on our node type.
     switch (node_type) {
         case NodeType::NORMAL: {
-            run_main_pass(program, context);
+            run_main_pass(ir, context);
             break;
         }
 
         case NodeType::GROUP: {
-            run_sub_passes(program, context);
+            run_sub_passes(ir, context);
             break;
         }
 
         case NodeType::GROUP_IF: {
-            auto retval = run_main_pass(program, context);
+            auto retval = run_main_pass(ir, context);
             if (condition->evaluate(retval)) {
                 QL_IOUT("pass condition returned true, running sub-passes...");
-                run_sub_passes(program, context);
+                run_sub_passes(ir, context);
             } else {
                 QL_IOUT("pass condition returned false, skipping " << sub_pass_order.size() << " sub-pass(es)");
             }
@@ -1123,14 +1149,14 @@ void Base::compile(
         case NodeType::GROUP_WHILE: {
             QL_IOUT("entering loop pass loop...");
             while (true) {
-                auto retval = run_main_pass(program, context);
+                auto retval = run_main_pass(ir, context);
                 if (!condition->evaluate(retval)) {
                     QL_IOUT("pass condition returned false, exiting loop");
                     break;
                 } else {
                     QL_IOUT("pass condition returned true, continuing loop...");
                 }
-                run_sub_passes(program, context);
+                run_sub_passes(ir, context);
             }
             break;
         }
@@ -1138,8 +1164,8 @@ void Base::compile(
         case NodeType::GROUP_REPEAT_UNTIL_NOT: {
             QL_IOUT("entering loop pass loop...");
             while (true) {
-                run_sub_passes(program, context);
-                auto retval = run_main_pass(program, context);
+                run_sub_passes(ir, context);
+                auto retval = run_main_pass(ir, context);
                 if (!condition->evaluate(retval)) {
                     QL_IOUT("pass condition returned false, exiting loop");
                     break;
@@ -1154,7 +1180,7 @@ void Base::compile(
     }
 
     // Handle configured debugging actions after running the pass.
-    handle_debugging(program, context, true);
+    handle_debugging(ir, context, true);
 
 }
 

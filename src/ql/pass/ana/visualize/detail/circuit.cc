@@ -67,7 +67,7 @@ Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates, const Int cyc
     // indices, visualize the circuit sequentially.
     Vec<Cycle> cycles;
     Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
-    if (amountOfCycles == ir::MAX_CYCLE) {
+    if (amountOfCycles == ir::compat::MAX_CYCLE) {
         // Add a sequential cycle to each gate.
         amountOfCycles = 0;
         for (GateProperties &gate : gates) {
@@ -540,7 +540,7 @@ void Structure::printProperties() const {
     }
 }
 
-void visualizeCircuit(const ir::ProgramRef &program, const VisualizerConfiguration &configuration) {
+void visualizeCircuit(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration) {
     const Vec<GateProperties> gates = parseGates(program);
     const Int cycleDuration = utoi(program->platform->cycle_time);
     const Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
@@ -561,7 +561,7 @@ void visualizeCircuit(const ir::ProgramRef &program, const VisualizerConfigurati
     }
 }
 
-ImageOutput generateImage(const ir::ProgramRef &program, const VisualizerConfiguration &configuration, const Vec<Int> &minCycleWidths, const utils::Int extendedImageHeight) {
+ImageOutput generateImage(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration, const Vec<Int> &minCycleWidths, const utils::Int extendedImageHeight) {
     // Get the gate list from the program.
     QL_DOUT("Getting gate list...");
     Vec<GateProperties> gates = parseGates(program);
@@ -1701,7 +1701,7 @@ void drawGate(Image &image,
               const Int chunkOffset) {
     // Get the gate visualization parameters.
     GateVisual gateVisual;
-    if (gate.type == ir::GateType::CUSTOM) {
+    if (gate.type == ir::compat::GateType::CUSTOM) {
         if (layout.customGateVisuals.count(gate.visual_type) == 1) {
             QL_DOUT("Found visual for custom gate: '" << gate.name << "'");
             gateVisual = layout.customGateVisuals.at(gate.visual_type);

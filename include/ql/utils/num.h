@@ -28,6 +28,11 @@ using Bool = bool;
 using Byte = uint8_t;
 
 /**
+ * Typedef for a character.
+ */
+using Char = char;
+
+/**
  * Shorthand for unsigned integers. This is based on uint64_t.
  */
 using UInt = uint64_t;
@@ -50,7 +55,7 @@ using Complex = std::complex<double>;
 /**
  * Maximum value for a UInt.
  */
-const Int UMAX = std::numeric_limits<UInt>::max();
+const UInt UMAX = std::numeric_limits<UInt>::max();
 
 /**
  * Maximum value for an Int.

@@ -53,8 +53,8 @@ CliffordOptimizePass::CliffordOptimizePass(
  * Runs the Clifford optimizer.
  */
 utils::Int CliffordOptimizePass::run(
-    const ir::ProgramRef &program,
-    const ir::KernelRef &kernel,
+    const ir::compat::ProgramRef &program,
+    const ir::compat::KernelRef &kernel,
     const pmgr::pass_types::Context &context
 ) const {
     auto cycles_saved = detail::Clifford().optimize_kernel(kernel);

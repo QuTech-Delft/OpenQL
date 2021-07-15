@@ -47,7 +47,7 @@ void Architecture::preprocess_platform(utils::Json &data) const {
  * may for instance add annotations with architecture-specific configuration
  * data.
  */
-void Architecture::post_process_platform(const plat::PlatformRef &platform) const {
+void Architecture::post_process_platform(const ir::compat::PlatformRef &platform) const {
     family->post_process_platform(platform, variant);
 }
 

@@ -248,9 +248,15 @@ protected:
      * Overridable implementation for calling the implementation of the pass.
      */
     virtual utils::Int run_internal(
-        const ir::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const = 0;
+
+    /**
+     * Returns whether this is a legacy pass, i.e. one that operates on the old
+     * IR. Returns false unless overridden.
+     */
+    virtual utils::Bool is_legacy() const;
 
     /**
      * Returns `pass "<name>"` for normal passes and `root` for the root pass.
@@ -573,7 +579,7 @@ private:
      * after_pass is false when run before, and true when run after.
      */
     void handle_debugging(
-        const ir::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context,
         utils::Bool after_pass
     );
@@ -583,7 +589,7 @@ private:
      * care of logging, profiling, etc.
      */
     utils::Int run_main_pass(
-        const ir::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const;
 
@@ -592,7 +598,7 @@ private:
      * profiling, etc.
      */
     void run_sub_passes(
-        const ir::ProgramRef &program,
+        const ir::Ref &ir,
         const Context &context
     ) const;
 
@@ -602,7 +608,7 @@ public:
      * Executes this pass or pass group on the given program.
      */
     void compile(
-        const ir::ProgramRef &program,
+        const ir::Ref &ir,
         const utils::Str &pass_name_prefix = ""
     );
 

@@ -34,6 +34,7 @@ del PY3
 __all__ = [
     'initialize',
     'ensure_initialized',
+    'compile',
     'get_version',
     'set_option',
     'get_option',

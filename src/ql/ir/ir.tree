@@ -1,0 +1,759 @@
+# Implementation for the IR tree node classes.
+source
+
+# Header file for the IR tree node classes.
+header "ql/ir/ir.gen.h"
+
+// Include tree base classes.
+include "ql/utils/tree.h"
+tree_namespace utils::tree::base
+
+// Use the tree support library customized for OpenQL (using utils types where
+// applicable).
+support_namespace utils::tree
+
+// Include primitive types.
+include "ql/ir/prim.h"
+
+// Initialization function to use to construct default values for the tree base
+// classes and primitives.
+initialize_function prim::initialize
+serdes_functions prim::serialize prim::deserialize
+
+// Include SourceLocation annotation object for the debug dump generator.
+//src_include "cqasm-parse-helper.hpp"
+//location cqasm::parser::SourceLocation
+
+# Namespace for the IR tree node classes.
+namespace ql
+namespace ir
+
+# Root node for the IR.
+root {
+
+    # Root node for the description of the target.
+    platform: One<platform>;
+
+    # Root node for the description of the algorithm.
+    program: Maybe<program>;
+
+}
+
+# Root node for the description of the target.
+platform {
+
+    # User-given name for the platform. No constraints on syntax. May also be
+    # empty.
+    name: prim::Str;
+
+    # Vector of data types, ordered by name so lookup can be done with log(N)
+    # complexity. This represents a list of all data types usable by the
+    # algorithm, such as qubits, integers, etc.
+    data_types: Many<data_type>;
+
+    # Vector of instruction types, ordered by name so lookup can be done with
+    # log(N) complexity. This represents the instruction set as usable by the
+    # algorithm at any time during the compilation process (i.e., it also
+    # includes non-primitive instructions that may need to be decomposed at
+    # some point!).
+    instructions: Any<instruction_type>;
+
+    # Vector of (builtin) function types, ordered by name so lookup can be done
+    # with log(N) complexity. Functions are the active elements of expression
+    # trees. They may at some point be mapped to instructions.
+    functions: Any<function_type>;
+
+    # Vector of all physical objects (a.k.a. registers) available in the
+    # platform, ordered by name so lookup can be done with log(N) complexity.
+    objects: Many<physical_object>;
+
+    # The main qubit register that the generic mapper will map everything to
+    # and that topology applies to. The data type must be a vector of qubits.
+    # This also indirectly defines the main qubit type.
+    qubits: Link<physical_object>;
+
+    # If qubits have an implicit bit associated with them, this must be set to
+    # the corresponding bit type. If it doesn't, this should be empty.
+    implicit_bit_type: OptLink<data_type>;
+
+    # The bit-like data type used for default-generated instruction and loop
+    # conditions.
+    default_bit_type: Link<data_type>;
+
+    # The int-like data type used for default-generated indices.
+    default_int_type: Link<data_type>;
+
+    # Topology/connectivity information for the main qubit register.
+    topology: prim::Topology;
+
+    # Control architecture information structure.
+    architecture: prim::Architecture;
+
+    # Resource manager for scheduling.
+    resources: prim::ResourceManager;
+
+    # Raw platform configuration JSON data for anything not specified in this
+    # record.
+    data: prim::Json;
+
+}
+
+# Representation of a data type usable by the algorithm represented by the IR.
+# Semantical information may be added using annotations.
+data_type {
+
+    # Unique identifier for the data type. Must match `[a-zA-Z_][a-zA-Z0-9_]*`.
+    name: prim::Str;
+
+    # A data type that behaves like a qubit.
+    qubit_type {}
+
+    # A data type that represents classical information.
+    classical_type {
+
+        # A data type that behaves like a boolean/bit.
+        bit_type {}
+
+        # A data type that behaves like a two's-complement integer.
+        int_type {
+
+            # Whether the data type is signed.
+            is_signed: prim::Bool;
+
+            # Number of bits used to represent the type. Must be at most 64 for
+            # signed or at most 63 for unsigned, otherwise literals cannot be
+            # properly represented in cQASM.
+            bits: prim::UInt;
+
+            reorder(name, is_signed, bits);
+        }
+
+        # Type of a real number (IEEE double).
+        real_type {}
+
+        # Type of a complex number (2x IEEE double).
+        complex_type {}
+
+        # Type of a matrix. Matrices are currently special-cased to keep the
+        # type system no more complex than cQASM 1.x's and be able to represent
+        # gate matrices, but these should ultimately be replaced by dedicated
+        # array types if/when these would be added.
+        matrix_type {
+
+            # Number of rows. Must be nonzero.
+            num_rows: prim::UInt;
+
+            # Number of columns. Must be nonzero.
+            num_cols: prim::UInt;
+
+            # A real-valued matrix.
+            real_matrix_type {
+                reorder(name, num_rows, num_cols);
+            }
+
+            # A complex-valued matrix.
+            complex_matrix_type {
+                reorder(name, num_rows, num_cols);
+            }
+
+        }
+
+        # Type of an arbitrary string.
+        string_type {}
+
+        # Type of a JSON string.
+        json_type {}
+
+    }
+
+}
+
+# Representation of an instruction type usable by the algorithm represented by
+# the IR. Semantical information may be added using annotations.
+instruction_type {
+
+    # Identifier for the instruction. This only needs to be unique in
+    # combination with the operand types. Must match `[a-zA-Z_][a-zA-Z0-9_]*`.
+    name: prim::Str;
+
+    # Identifier for the instruction as used in cQASM. Normally this is the same
+    # as name; the override exists because historically different conventions
+    # have been used for cQASM and OpenQL. Must match `[a-zA-Z_][a-zA-Z0-9_]*`.
+    cqasm_name: prim::Str;
+
+    # The types of all the non-template operands that the instance of this
+    # instruction must have.
+    operand_types: Any<operand_type>;
+
+    # Specializations for this instruction. Specializations allow different
+    # semantics (such as different durations) to be attached to instructions,
+    # based on one or more of its operands. Each specialization in this list
+    # must have:
+    #  - the same name and cqasm_name;
+    #  - the first element of operand_types removed;
+    #  - an additional element at the end of template_operands;
+    #  - the type of said element must match the removed operand_type element;
+    #  - generalization must link back to this node.
+    # The remaining fields may be specialized.
+    specializations: Any<instruction_type>;
+
+    # Link to the generalization of this instruction, if any; this must be set
+    # iff template_operands is nonempty. The generalization must have a link to
+    # this node in its specialization list.
+    generalization: OptLink<instruction_type>;
+
+    # The values of any template operands for this specialization of this
+    # instruction.
+    template_operands: Any<expression>;
+
+    # Decomposition rules for this instruction type. Multiple of these may be
+    # defined: it is up to the decomposition pass to choose the decomposition
+    # used (if any) based on the name or on some other heuristic.
+    decompositions: Any<instruction_decomposition>;
+
+    # The duration of this instruction in quantum cycles. Note that this may be
+    # zero, as classical instructions don't usually pass any time in the quantum
+    # time domain.
+    duration: prim::UInt;
+
+    # When set, the instruction acts as a barrier with respect to the data flow
+    # graph, so it cannot commute with anything, regardless of what the operands
+    # are. This is useful to represent operations like "measure all qubits" or
+    # (for simulation) "print the current state of the program".
+    barrier: prim::Bool;
+
+    # Raw platform configuration JSON data for anything not specified in this
+    # record.
+    data: prim::Json;
+
+}
+
+# A decomposition rule for an instruction.
+instruction_decomposition {
+
+    # Name for this decomposition rule. May be used by decomposition logic to
+    # determine which decomposition rule to apply. No constraints on syntax.
+    name: prim::Str;
+
+    # Objects used to represent the instruction parameters.
+    parameters: Any<temporary_object>;
+
+    # Any temporary variables as needed within the decomposition rule.
+    objects: Any<virtual_object>;
+
+    # The block of instructions that the decomposition rule expands to.
+    expansion: Any<statement>;
+
+    # Raw platform configuration JSON data for anything not specified in this
+    # record.
+    data: prim::Json;
+
+}
+
+# Representation of a (builtin) function type usable by the algorithm
+# represented by the IR within expressions. All functions must be free of side
+# effects. Semantical information may be added using annotations.
+function_type {
+
+    # Identifier for the function. This only needs to be unique in combination
+    # with the operand types. Must match `[a-zA-Z_][a-zA-Z0-9_]*` or be a
+    # recognized operator name (such as `operator+`, so just like C++).
+    name: prim::Str;
+
+    # The types of the operands that instances of this function must have. All
+    # operands must have read or literal access mode.
+    operand_types: Any<operand_type>;
+
+    # The type returned by the function.
+    return_type: Link<data_type>;
+
+    # The decomposition rule used for converting this function to instructions.
+    # If not set, the function either needs to be primitive for the target, or
+    # the decomposition must be done by a target-specific pass. During
+    # decomposition, a temporary object will always be generated for storing
+    # the return value.
+    decomposition: Maybe<function_decomposition>;
+
+    # Raw platform configuration JSON data for anything not specified in this
+    # record.
+    data: prim::Json;
+
+}
+
+# A decomposition rule for a function.
+function_decomposition {
+
+    # The type of instruction that this function decomposes to. The prototype of
+    # this instruction must exactly match the prototype of the function, after
+    # inclusion of the return operand (if dedicated). Also, any operand with
+    # mode 'W' in the function must have mode 'W' in the instruction. The return
+    # value location must also be mode 'W' if it maps to an operand.
+    instruction_type: Link<instruction_type>;
+
+    # The manner in which the return value of the function is mapped to the
+    # instruction operand list.
+    return_location: One<return_location>;
+
+}
+
+# The manner in which the return value of the function is mapped to the
+# instruction operand list.
+return_location {
+
+    # Indicates that the return value of the associated function is not stored
+    # in an operand, but rather in a special physical register. The
+    # decomposition will have the following form:
+    #  - barrier <object>
+    #  - <insn> [template-operands] <operands>
+    #  - barrier <object>
+    #  - set <retval> = <object>
+    return_in_fixed_object {
+
+        # The physical object/register in which the return value will be stored.
+        object: Link<physical_object>;
+
+    }
+
+    # Indicates that the return value of the associated function will be stored
+    # in a register indicated by a dedicated output operand. The
+    # decomposition will have the following form:
+    #  - <retval> [template-operands] <operands-0..idx-1> <temp> <operands-idx..end>
+    return_in_dedicated_operand {
+
+        # The index of the return operand in the instruction non-template
+        # operand list.
+        index: prim::UInt;
+
+    }
+
+    # Indicates that the return value of the associated function will be stored
+    # in a register indicated by a shared (read-write) operand. The
+    # decomposition will have the following form:
+    #  - set <temp> = <operand-idx>
+    #  - <retval> [template-operands] <operands-0..idx-1> <temp> <operands-idx+1..end>
+    return_in_shared_operand {
+
+        # The index of the return operand in the instruction non-template
+        # operand list.
+        index: prim::UInt;
+
+    }
+
+}
+
+# A data storage location.
+object {
+
+    # Identifier for the object. Must match `[a-zA-Z_][a-zA-Z0-9_]*` or be
+    # left unspecified (empty). Names for toplevel physical objects must be
+    # specified and unique; only virtual objects and the implicit bit
+    # register object may be anonymous. The names of virtual objects need
+    # not be unique.
+    name: prim::Str;
+
+    # The elemental data type of this object.
+    data_type: Link<data_type>;
+
+    # The shape of this object. Empty means scalar, a single element means
+    # vector of the given size, two elements means a matrix, and so on.
+    shape: prim::UIntVec;
+
+    # A virtual object, i.e. an object that still needs to be mapped to a
+    # physical object. These are declared in the program part of the tree.
+    virtual_object {
+
+        # A variable declared by the user.
+        variable_object {}
+
+        # A temporary object, for example needed as part of a decomposition.
+        # These are typically anonymous (i.e. have no specified name).
+        temporary_object {}
+
+    }
+
+    # A physical object, i.e. a storage location or qubit that actually exists
+    # in the target. These are declared in the platform part of the tree.
+    physical_object {}
+
+}
+
+# The type of a function or instruction operand, including access mode for
+# commutative data dependency graph construction.
+operand_type {
+
+    # Access mode for the operand.
+    mode: prim::OperandMode;
+
+    # The data type of the operand.
+    data_type: Link<data_type>;
+
+}
+
+# Root node for the algorithm itself.
+program {
+
+    # User-given name for the program. No constraints on syntax. May also be
+    # empty.
+    name: prim::Str;
+
+    # Possibly-uniquified program name in the context of multiple compilations
+    # of the same program within some context.
+    # TODO: this shouldn't be here.
+    unique_name: prim::Str;
+
+    # List of virtual objects (variables and temporary storage locations) in use
+    # by the program.
+    objects: Any<virtual_object>;
+
+    # The list of blocks that constitute the program.
+    blocks: Many<block>;
+
+    # The block that serves as the entry point to the program. Must point into
+    # an entry of blocks.
+    entry_point: Link<block>;
+
+}
+
+# Base type for sub-blocks and toplevel (named) blocks.
+block_base {
+
+    # The list of statements that constitute the body of the block. The cycle
+    # numbers of any contained instructions must be non-decreasing.
+    statements: Any<statement>;
+
+    # A sub-block of statements, used within structured control-flow statements.
+    sub_block {}
+
+    # A block of statements within the program. Depending on the stage of
+    # compilation, this may represent a *basic* block. A basic block has the
+    # following rules attached:
+    #  - all statements must be instructions; and
+    #  - no non-goto instructions may follow any goto instruction.
+    # Before this stage, there are no requirements.
+    block {
+
+        # Optional name of this block. Must match `[a-zA-Z_][a-zA-Z0-9_]*` and be
+        # unique if specified (non-empty).
+        name: prim::Str;
+
+        # Link to the block that will be processed after this block. If empty, the
+        # algorithm terminates at the end.
+        next: OptLink<block>;
+
+    }
+
+}
+
+# A statement. This can take the form of an instruction or a special structured
+# control-flow statement.
+statement {
+
+    # The quantum cycle in which this instruction is scheduled, with respect
+    # to the start of the block it is contained in. Note that the order of
+    # statements scheduled within the same quantum cycle is still
+    # considered to be relevant: all side effects of a particular
+    # statement always run before the side effects of the next statement
+    # even start, regardless of cycle number and duration. This means that
+    # even if `set a = b` and `set b = a` are scheduled in the same cycle,
+    # this does NOT swap the values of `a` and `b`. This also means that a
+    # program with all statements scheduled in cycle 0 is semantically
+    # valid (though not likely to be executable as such, of course), so a
+    # program that has not yet been scheduled can be represented with any
+    # non-decreasing cycle assignment.
+    cycle: prim::Int;
+
+    # A regular instruction instance. May be quantum, classical, or mixed in
+    # nature.
+    instruction {
+
+        # A conditional instruction instance.
+        conditional_instruction {
+
+            # The condition expression. This will usually be literal true, to
+            # indicate that the instruction is actually unconditional. The
+            # actual data type depends on the target, but should behave like a
+            # boolean.
+            condition: One<expression>;
+
+            # A custom instruction defined within the target platform by means
+            # of an instruction type.
+            custom_instruction {
+
+                # The instruction type that this is an instance of.
+                instruction_type: Link<instruction_type>;
+
+                # The operands for this instruction instance. The types of the
+                # expressions must match the operand types listed in the
+                # instruction type.
+                operands: Any<expression>;
+
+            }
+
+            # A classical assignment instruction. This simply assigns a value
+            # to a target object.
+            set_instruction {
+
+                # A reference to the object being assigned.
+                lhs: One<reference>;
+
+                # The value that the object is being assigned to. The type of
+                # the expression must match the type of the left-hand side
+                # exactly (i.e., typecasts of any kind must be made explicit
+                # by means of a typecast expression).
+                rhs: One<expression>;
+
+            }
+
+            # A goto instruction. Jumps to the start of the target block when
+            # executed and the condition evaluates to true.
+            goto_instruction {
+
+                # Link to the target block.
+                target: Link<block>;
+
+            }
+
+        }
+
+        # A (quantum) wait instruction. Also known as a (quantum) barrier when
+        # the duration is zero.
+        wait_instruction {
+
+            # The objects that are to be waited on. If empty, the wait
+            # instruction must effectively wait for *all* objects in the program
+            # (or, equivalently, it must wait for all preceding instructions to
+            # complete, and all subsequent instructions must start after it).
+            # Also known as a "full barrier" for lack of a better term.
+            objects: Any<reference>;
+
+            # The amount of quantum cycles that must be waited in addition after
+            # all objects are ready.
+            duration: prim::UInt;
+
+        }
+
+    }
+
+    # Structured control-flow statements.
+    structured {
+
+        # An if-else chain.
+        if_else {
+
+            # The if-else branches.
+            branches: Many<if_else_branch>;
+
+            # The final else block, if any.
+            otherwise: Maybe<sub_block>;
+
+        }
+
+        # A loop.
+        loop {
+
+            # The loop body.
+            body: One<sub_block>;
+
+            # A loop with a statically-known range of integers being iterated
+            # over. Note that while the iteration count has an upper limit,
+            # namely abs(from - to + 1), break and continue statements are
+            # allowed.
+            static_loop {
+
+                # Reference to the variable used for looping.
+                lhs: One<reference>;
+
+                # The first value.
+                frm: One<int_literal>;
+
+                # The last value.
+                to: One<int_literal>;
+
+            }
+
+            # A dynamic loop, of which the iteration count depends on a
+            # condition.
+            dynamic_loop {
+
+                # The condition for starting another iteration.
+                condition: One<expression>;
+
+                # A C-style for loop. Note that a while loop is a special case
+                # of this, specifically one with no initialize/update
+                # expression. The condition is evaluated before each iteration,
+                # and iteration stops when it yields false.
+                for_loop {
+
+                    # The optional initializing assignment, run before the loop
+                    # starts.
+                    initialize: Maybe<set_instruction>;
+
+                    # The updating assignment, done at the end of the loop body
+                    # and upon continue.
+                    update: Maybe<set_instruction>;
+
+                }
+
+                # A repeat-until loop. The condition is evaluated at the end of
+                # each iteration, and iteration stops when it yields true.
+                repeat_until_loop {}
+
+            }
+
+        }
+
+        # A loop control statement, i.e. break or continue.
+        loop_control_statement {
+
+            # A break statement.
+            break_statement {}
+
+            # A continue statement.
+            continue_statement {}
+
+        }
+
+    }
+
+    # A dummy statement that doesn't produce any code. Used within the data
+    # dependency graph for the source and sink nodes.
+    sentinel_statement {}
+
+}
+
+# A single condition + block for use in an if-else chain.
+if_else_branch {
+
+    # The condition.
+    condition: One<expression>;
+
+    # The body.
+    body: One<sub_block>;
+
+}
+
+# An expression. Expressions are used wherever operands are needed, and can be
+# either a literal (i.e. the value is known at compile-time), a reference (i.e.
+# the value is not known, but the storage location is), or a call to a builtin
+# function. The latter has itself zero or more operands, so arbitrarily-deep
+# expression trees can be described.
+expression {
+
+    # A literal expression, i.e. one of which the value is known at
+    # compile-time.
+    literal {
+
+        # Link to the data type represented by this literal.
+        data_type: Link<data_type>;
+
+        # A bit/boolean literal. Either 1/true or 0/false.
+        bit_literal {
+
+            # The value of the literal.
+            value: prim::Bool;
+
+        }
+
+        # An integer literal.
+        int_literal {
+
+            # The value of the literal.
+            value: prim::Int;
+
+        }
+
+        # A real floating-point literal.
+        real_literal {
+
+            # The value of the literal.
+            value: prim::Real;
+
+        }
+
+        # A complex floating-point literal.
+        complex_literal {
+
+            # The value of the literal.
+            value: prim::Complex;
+
+        }
+
+        # A real-valued matrix.
+        real_matrix_literal {
+
+            # The value of the literal.
+            value: prim::RMatrix;
+
+        }
+
+        # A complex-valued matrix.
+        complex_matrix_literal {
+
+            # The value of the literal.
+            value: prim::CMatrix;
+
+        }
+
+        # A string literal.
+        string_literal {
+
+            # The value of the literal.
+            value: prim::Str;
+
+        }
+
+        # A JSON literal.
+        json_literal {
+
+            # The value of the literal.
+            value: prim::Json;
+
+        }
+
+    }
+
+    # A reference to an object.
+    #
+    # Besides appearing in the IR, these references are also used to represent
+    # data dependencies. In that context, it is also legal to make a reference
+    # that does not refer to any object. This is referred to as a null
+    # reference. These null references are implicitly "read" by all normal
+    # statements, and implicitly "written" by statements of which the order
+    # must be preserved, being full barriers (wait/barrier instructions with an
+    # empty object list) and control-flow instructions.
+    reference {
+
+        # Link to the target object.
+        target: Link<object>;
+
+        # The data type that the object is accessed as. In almost all cases,
+        # this must be equal to target->data_type. The only exception currently
+        # allowed is accessing a qubit type as a bit. This yields the implicit
+        # classical bit associated with the qubit in targets which use this
+        # paradigm.
+        data_type: Link<data_type>;
+
+        # The indices by which the object is indexed. The indices must be
+        # integer-like. Depending on context, they may need to be literals.
+        # Except within wait instructions, the amount of indices must exactly
+        # match the dimensionality of the target object; partial indexation is
+        # not supported because the type system doesn't support it. References
+        # within wait instructions may have less indices than the dimensionality
+        # of the target object.
+        indices: Any<expression>;
+
+    }
+
+    # A call to a custom function defined by the target.
+    function_call {
+
+        # Link to the function type as defined in the platform.
+        function_type: Link<function_type>;
+
+        # The operands for the function. The types of these expressions must
+        # match the operand types in the associated function type.
+        operands: Any<expression>;
+
+    }
+
+}

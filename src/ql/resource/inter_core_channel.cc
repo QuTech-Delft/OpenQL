@@ -61,11 +61,6 @@ struct Config {
     utils::Bool optimize;
 
     /**
-     * Cycle time of the platform.
-     */
-    utils::UInt cycle_time;
-
-    /**
      * The (desugared) JSON configuration of this resource. Only retained for
      * dumping the configuration.
      */
@@ -86,7 +81,6 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
     // Set the easy stuff.
     cfg->num_cores = context->platform->topology->get_num_cores();
     cfg->optimize = direction != rmgr::Direction::UNDEFINED;
-    cfg->cycle_time = context->platform->cycle_time;
 
     // Parse the JSON configuration.
     cfg->json = context->configuration;
@@ -219,13 +213,14 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
  * Checks availability of and/or reserves a gate.
  */
 utils::Bool InterCoreChannelResource::on_gate(
-    utils::UInt cycle,
-    const ir::GateRef &gate,
+    utils::Int cycle,
+    const rmgr::resource_types::GateData &gate,
     utils::Bool commit
 ) {
     QL_DOUT(
         "channel resource " << context->instance_name
-        << " got gate " << gate->qasm()
+        << " got gate with name " << gate.name
+        << " and qubit operands " << gate.qubits
         << " for cycle " << cycle
         << " with commit set to " << commit
     );
@@ -233,17 +228,17 @@ utils::Bool InterCoreChannelResource::on_gate(
     const auto &grid = *context->platform->topology;
 
     // We don't do anything with gates that don't have qubit operands.
-    if (gate->operands.size() == 0) {
+    if (gate.qubits.empty()) {
         QL_DOUT(" -> available: gate has no qubit operands");
         return true;
     }
 
     // Fetch the JSON data for this gate.
-    const auto &gate_json = context->platform->find_instruction(gate->name);
+    const auto &gate_json = *gate.data;
 
     // Check predicates. If the gate doesn't match, we don't care about it, so
     // we can return true, such that it can be started in any cycle.
-    auto op_count_pos = utils::min<utils::UInt>(gate->operands.size() - 1, 2);
+    auto op_count_pos = utils::min<utils::UInt>(gate.qubits.size() - 1, 2);
     for (const auto &predicate : config->predicates[op_count_pos]) {
         auto it = gate_json.find(predicate.first);
         if (it == gate_json.end()) {
@@ -270,7 +265,7 @@ utils::Bool InterCoreChannelResource::on_gate(
 
     // Figure out which cores are affected.
     utils::Set<utils::UInt> affected;
-    for (auto qubit : gate->operands) {
+    for (auto qubit : gate.qubits) {
         if (!config->communication_qubit_only || grid.is_comm_qubit(qubit)) {
             affected.insert(grid.get_core_index(qubit));
         }
@@ -286,7 +281,7 @@ utils::Bool InterCoreChannelResource::on_gate(
     // Compute cycle range for this gate.
     State::Range range = {
         cycle,
-        cycle + utils::div_ceil(gate->duration, config->cycle_time)
+        cycle + gate.duration_cycles
     };
 
     // Check availability.

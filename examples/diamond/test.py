@@ -7,9 +7,9 @@ ql.set_option('prescheduler', 'no')
 platform = ql.Platform("diamond_test", "diamond")
 
 # Put a cQASM reader before the diamond pass, so a cQASM file is read instead of the python code
-#platform.get_compiler().prefix_pass('io.cqasm.Read', '', {'cqasm_file': 'cqasm_measure.cq', 'gateset_file': 'gateset.json'})
+#platform.get_compiler().prefix_pass('io.cqasm.Read', '', {'cqasm_file': 'cqasm_test.cq', 'measure_all_target': 'measure_z'})
 
-nqubits = 1	
+nqubits = 3
 p = ql.Program("testProgram", platform, nqubits)
 k = ql.Kernel("testKernel", platform, nqubits)
 

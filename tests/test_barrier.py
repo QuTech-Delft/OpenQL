@@ -80,7 +80,7 @@ class Test_barrier(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('test_barrier_all_1', platform, num_qubits)
+        p = ql.Program('test_barrier_all', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -124,7 +124,7 @@ class Test_barrier(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('test_barrier_all_2', platform, num_qubits)
+        p = ql.Program('test_barrier_all', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -167,7 +167,7 @@ class Test_barrier(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('test_barrier_all_3', platform, num_qubits)
+        p = ql.Program('test_barrier_all', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)

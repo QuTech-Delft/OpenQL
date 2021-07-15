@@ -19,7 +19,7 @@ namespace detail {
 
 using namespace utils;
 
-void visualizeInteractionGraph(const ir::ProgramRef &program, const VisualizerConfiguration &configuration) {
+void visualizeInteractionGraph(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration) {
     QL_IOUT("Visualizing qubit interaction graph...");
 
     // Get the gate list from the program.

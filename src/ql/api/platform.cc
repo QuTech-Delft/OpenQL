@@ -34,7 +34,7 @@ Platform::Platform(
 {
     (void)dummy;
     ensure_initialized();
-    platform = ql::plat::Platform::build(
+    platform = ql::ir::compat::Platform::build(
         name,
         utils::parse_json(platform_config_json),
         compiler_config
@@ -58,7 +58,7 @@ Platform::Platform(
     config_file(platform_config)
 {
     ensure_initialized();
-    platform = ql::plat::Platform::build(
+    platform = ql::ir::compat::Platform::build(
         name,
         platform_config,
         compiler_config
@@ -77,7 +77,7 @@ Platform::Platform(
     config_file(name)
 {
     ensure_initialized();
-    platform = ql::plat::Platform::build(name, name);
+    platform = ql::ir::compat::Platform::build(name, name);
 }
 
 /**

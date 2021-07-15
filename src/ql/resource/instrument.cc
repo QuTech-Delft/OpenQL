@@ -124,11 +124,6 @@ struct Config {
     rmgr::Direction direction;
 
     /**
-     * Cycle time of the platform.
-     */
-    utils::UInt cycle_time;
-
-    /**
      * The (desugared) JSON configuration of this resource. Only retained for
      * dumping the configuration.
      */
@@ -148,7 +143,6 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
 
     // Set the easy stuff.
     cfg->direction = direction;
-    cfg->cycle_time = context->platform->cycle_time;
 
     // Parse the JSON configuration.
     cfg->json = context->configuration;
@@ -505,29 +499,30 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
  * Checks availability of and/or reserves a gate.
  */
 utils::Bool InstrumentResource::on_gate(
-    utils::UInt cycle,
-    const ir::GateRef &gate,
+    utils::Int cycle,
+    const rmgr::resource_types::GateData &gate,
     utils::Bool commit
 ) {
     QL_DOUT(
         "instrument resource " << context->instance_name
-        << " got gate " << gate->qasm()
+        << " got gate with name " << gate.name
+        << " and qubit operands " << gate.qubits
         << " for cycle " << cycle
         << " with commit set to " << commit
     );
 
     // We don't do anything with gates that don't have qubit operands.
-    if (gate->operands.size() == 0) {
+    if (gate.qubits.empty()) {
         QL_DOUT(" -> available: gate has no qubit operands");
         return true;
     }
 
     // Fetch the JSON data for this gate.
-    const auto &gate_json = context->platform->find_instruction(gate->name);
+    const auto &gate_json = *gate.data;
 
     // Check predicates. If the gate doesn't match, we don't care about it, so
     // we can return true, such that it can be started in any cycle.
-    auto op_count_pos = utils::min<utils::UInt>(gate->operands.size() - 1, 2);
+    auto op_count_pos = utils::min<utils::UInt>(gate.qubits.size() - 1, 2);
     for (const auto &predicate : config->predicates[op_count_pos]) {
         auto it = gate_json.find(predicate.first);
         if (it == gate_json.end()) {
@@ -554,10 +549,10 @@ utils::Bool InstrumentResource::on_gate(
 
     // Check operands to see which instruments are affected.
     utils::Set<Instrument> affected;
-    switch (gate->operands.size()) {
+    switch (gate.qubits.size()) {
         case 1: {
             // Single-qubit gate.
-            auto it = config->single_qubit_instruments.find(gate->operands[0]);
+            auto it = config->single_qubit_instruments.find(gate.qubits[0]);
             if (it != config->single_qubit_instruments.end()) {
                 affected.insert(it->second.begin(), it->second.end());
             }
@@ -566,13 +561,13 @@ utils::Bool InstrumentResource::on_gate(
         case 2: {
             // Two-qubit gate.
             for (auto i = 0; i < 2; i++) {
-                auto it = config->two_qubit_instrument[i].find(gate->operands[i]);
+                auto it = config->two_qubit_instrument[i].find(gate.qubits[i]);
                 if (it != config->two_qubit_instrument[i].end()) {
                     affected.insert(it->second.begin(), it->second.end());
                 }
             }
             auto it = config->two_qubit_edge_instrument.find(
-                Edge(gate->operands[0], gate->operands[1])
+                Edge(gate.qubits[0], gate.qubits[1])
             );
             if (it != config->two_qubit_edge_instrument.end()) {
                 affected.insert(it->second.begin(), it->second.end());
@@ -581,9 +576,9 @@ utils::Bool InstrumentResource::on_gate(
         }
         default: {
             // Three-or-more-qubit gate.
-            for (utils::UInt i = 0; i < gate->operands.size(); i++) {
+            for (utils::UInt i = 0; i < gate.qubits.size(); i++) {
                 auto j = utils::min<utils::UInt>(i, 2);
-                auto it = config->two_qubit_instrument[j].find(gate->operands[i]);
+                auto it = config->two_qubit_instrument[j].find(gate.qubits[i]);
                 if (it != config->two_qubit_instrument[j].end()) {
                     affected.insert(it->second.begin(), it->second.end());
                 }
@@ -601,7 +596,7 @@ utils::Bool InstrumentResource::on_gate(
     // Compute cycle range for this gate.
     State::Range range = {
         cycle,
-        cycle + utils::div_ceil(gate->duration, config->cycle_time)
+        cycle + gate.duration_cycles
     };
 
     // If function is set to exclusive, just check/reserve the cycle range for
@@ -718,9 +713,9 @@ utils::Bool InstrumentResource::on_gate(
         );
         for (auto index : affected) {
             if (config->direction == rmgr::Direction::FORWARD) {
-                state[index].erase({ir::FIRST_CYCLE, range.first});
+                state[index].erase({utils::MIN, range.first});
             } else if (config->direction == rmgr::Direction::BACKWARD) {
-                state[index].erase({range.second, ir::MAX_CYCLE});
+                state[index].erase({range.second, utils::MAX});
             }
             state[index].set(range, function);
         }

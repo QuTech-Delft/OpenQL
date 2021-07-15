@@ -205,10 +205,22 @@ function(create_resource fname)
     add_dependencies(ql ${target_name})
 endfunction()
 
+# Add tree-gen. We need to do this *only* to get access to the generate_tree
+# CMake function; everything else is handled implicitly because tree-gen is a
+# transitive dependency of libqasm.
+add_subdirectory(deps/libqasm/src/cqasm/tree-gen deps/tree-gen)
+
 
 #=============================================================================#
 # OpenQL library target                                                       #
 #=============================================================================#
+
+# Build the IR tree using tree-gen.
+generate_tree(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/ir.tree"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/ql/ir/ir.gen.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/ql/ir/ir.gen.cc"
+)
 
 # Create the OpenQL library. This will be built either as a shared object/DLL
 # or as a static library based on BUILD_SHARED_LIBS; add_library switches
@@ -225,18 +237,44 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/vcd.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/options.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/progress.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/platform.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/gate.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/classical.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/bundle.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/kernel.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/program.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/cqasm_reader.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/detail/cqasm_reader.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/prim.cc"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/ql/ir/ir.gen.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/ops.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/operator_info.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/describe.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/consistency.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/old_to_new.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/new_to_old.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/cqasm/read.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/cqasm/write.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/options.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/unitary.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/qubit_mapping.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/metrics.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/interaction_matrix.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/platform.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/plat/topology.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/gate.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/classical.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/bundle.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/kernel.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/program.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/topology.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ana/metrics.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ana/interaction_matrix.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ddg/types.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ddg/build.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ddg/ops.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ddg/consistency.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/ddg/dot.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/cfg/build.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/cfg/ops.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/cfg/consistency.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/cfg/dot.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/sch/heuristics.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/sch/scheduler.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/map/expression_mapper.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/map/qubit_mapping.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/dec/unitary.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/dec/rules.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/dec/structure.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/resource_types/base.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/types.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/rmgr/factory.cc"
@@ -263,14 +301,18 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/circuit.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/interaction.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/mapping.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/detail/cqasm_reader.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/read.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/report.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/sweep_points/write.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/instructions/instructions.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/generalize/generalize.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/specialize/specialize.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/structure/structure.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/clifford/detail/clifford.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/clifford/optimize.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/detail/scheduler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/schedule.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/list_schedule/list_schedule.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/place_mip/detail/algorithm.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/place_mip/place_mip.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/detail/options.cc"
@@ -305,7 +347,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/program.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
-    )
+)
 
 # Specify resources.
 create_resource("src/ql/arch/cc/resources/hwconf_default.json")
@@ -315,7 +357,6 @@ create_resource("src/ql/arch/cc_light/resources/hwconf_s7.json")
 create_resource("src/ql/arch/cc_light/resources/hwconf_s17.json")
 create_resource("src/ql/arch/none/resources/hwconf_default.json")
 create_resource("src/ql/arch/diamond/resources/hwconf_default.json")
-
 
 # Generate a header file with configuration options that cannot be compiled
 # (entirely) into the shared/static library due to use of templates.
@@ -331,10 +372,6 @@ configure_file(
 # This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
 # https://docs.microsoft.com/en-us/cpp/cpp/declspec?view=vs-2019
 target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
-
-# TODO: this was taken from compile_options.h, but I'm not sure what its purpose
-# is.
-target_compile_definitions(ql PUBLIC OPT_DECOMPOSE_WAIT_BARRIER)
 
 # There is no distinction between public and private header files right now,
 # and they'r all in the source directory. Note the / at the end of the path;
@@ -528,6 +565,32 @@ if(OPENQL_BUILD_TESTS)
         GLOB_RECURSE unit_tests
         RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/tests/*.cc
+    )
+    foreach(unit_test ${unit_tests})
+        add_openql_unit_test(${unit_test})
+    endforeach()
+
+    # I hate CMake.
+    file(
+        GLOB_RECURSE unit_tests
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/tests/*.cc
+    )
+    foreach(unit_test ${unit_tests})
+        add_openql_unit_test(${unit_test})
+    endforeach()
+    file(
+        GLOB_RECURSE unit_tests
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/*/tests/*.cc
+    )
+    foreach(unit_test ${unit_tests})
+        add_openql_unit_test(${unit_test})
+    endforeach()
+    file(
+        GLOB_RECURSE unit_tests
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/*/*/tests/*.cc
     )
     foreach(unit_test ${unit_tests})
         add_openql_unit_test(${unit_test})

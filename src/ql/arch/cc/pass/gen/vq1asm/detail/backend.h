@@ -10,7 +10,7 @@
 
 #include "types.h"
 
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "options.h"
 #include "codegen.h"
 
@@ -26,15 +26,15 @@ class Backend {
 public:
     Backend() = default;
 
-    void compile(const ir::ProgramRef &program, const OptionsRef &options);
+    void compile(const ir::compat::ProgramRef &program, const OptionsRef &options);
 
 private:
-    static Str loopLabel(const ir::KernelRef &k);
-    void codegenClassicalInstruction(const ir::GateRef &classical_ins);
-    void codegenKernelPrologue(const ir::KernelRef &k);
-    void codegenKernelEpilogue(const ir::KernelRef &k);
-    void codegenBundles(ir::Bundles &bundles, const plat::PlatformRef &platform);
-    void loadHwSettings(const plat::PlatformRef &platform);
+    static Str loopLabel(const ir::compat::KernelRef &k);
+    void codegenClassicalInstruction(const ir::compat::GateRef &classical_ins);
+    void codegenKernelPrologue(const ir::compat::KernelRef &k);
+    void codegenKernelEpilogue(const ir::compat::KernelRef &k);
+    void codegenBundles(ir::compat::Bundles &bundles, const ir::compat::PlatformRef &platform);
+    void loadHwSettings(const ir::compat::PlatformRef &platform);
 
 private: // vars
     Codegen codegen;

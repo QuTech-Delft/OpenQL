@@ -1,0 +1,21 @@
+version 1.2
+
+pragma @ql.name("structure_decomposition_if_else")
+pragma @ql.platform("test_structure_decomposition_platform.json")
+
+.sa
+    test q[0]
+    if (breg(0)) {
+        test q[1]
+        if (breg(1)) {
+            test q[2]
+            goto sb
+        }
+    } else if (breg(1)) {
+        test q[3]
+    } else {
+        test q[4]
+    }
+    test q[5]
+
+.sb

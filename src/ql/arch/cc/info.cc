@@ -3,13 +3,12 @@
  */
 
 #include "ql/arch/cc/info.h"
-#include "ql/arch/cc/pass/gen/vq1asm/detail/settings.h"
-
-#include "ql/com/options.h"
-#include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
-#include "ql/arch/cc/resources/hwconf_default.inc"
 
 #include <iomanip>
+#include "ql/com/options.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/settings.h"
+#include "ql/arch/cc/resources/hwconf_default.inc"
 
 namespace ql {
 namespace arch {
@@ -645,7 +644,7 @@ static Qubits ccInstrument2qubits(const utils::Json &instrument) {
             ret.set(qubit) = unit;
         }
 #endif
-        for (int i=0; i<qubitsOfGroup.size(); i++) {
+        for (utils::UInt i=0; i<qubitsOfGroup.size(); i++) {
             ret.push_back(qubitsOfGroup[0].get<utils::UInt>());
         }
     }
@@ -657,7 +656,7 @@ static Qubits ccInstrument2qubits(const utils::Json &instrument) {
  * instance add annotations with architecture-specific configuration data.
  */
 void Info::post_process_platform(
-    const plat::PlatformRef &platform,
+    const ir::compat::PlatformRef &platform,
     const utils::Str &variant
 ) const {
 
@@ -732,7 +731,7 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
 
     // Add our passes, and amend scheduledqasmwriter to show our scheduling, not that of prescheduler.
     manager.append_pass(
-        "sch.Schedule",
+        "sch.ListSchedule",
         "scheduler",
         {
 #if OPT_CC_SCHEDULE_RC

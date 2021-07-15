@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ql/ir/ir.h"
+#include "ql/ir/compat/compat.h"
 #include "ql/api/declarations.h"
 #include "ql/api/platform.h"
 
@@ -63,7 +63,7 @@ private:
     /**
      * The wrapped kernel object.
      */
-    ql::ir::KernelRef kernel;
+    ql::ir::compat::KernelRef kernel;
 
 public:
 
