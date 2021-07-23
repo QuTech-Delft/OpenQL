@@ -1,7 +1,7 @@
 import os
 import unittest
 from openql import openql as ql
-from utils import file_compare
+#from utils import file_compare
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')

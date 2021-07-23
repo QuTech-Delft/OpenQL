@@ -44,7 +44,7 @@ Json parse_json(std::istream &is) {
                 if (e.byte >= absPos && e.byte < absPos + line.size()) {
                     unsigned int relPos = e.byte - absPos;
                     line = utils::replace_all(line, "\t", " "); // make a TAB take one position
-                    QL_FATAL(
+                    QL_JSON_FATAL(
                         "in line " << lineNr
                                    << " at position " << relPos << ":" << std::endl
                                    << line << std::endl
@@ -60,7 +60,7 @@ Json parse_json(std::istream &is) {
         }
     }
     catch (Json::exception &e) {
-        QL_FATAL("malformed JSON file : \n\t" << e.what());
+        QL_JSON_FATAL("malformed JSON file : \n\t" << e.what());
     }
     return j;
 }
