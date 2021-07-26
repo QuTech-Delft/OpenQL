@@ -26,13 +26,13 @@ class Test_kernel(unittest.TestCase):
 
     def test_kernel_qubit_count(self):
         name = "kernel1"
-        nqubits=3
+        nqubits = 3
         k = ql.Kernel(name, platf, nqubits)
         self.assertEqual(k.qubit_count, nqubits)
 
     def test_kernel_creg_count(self):
         name = "kernel1"
-        nqubits=2
+        nqubits = 2
         ncreg = 3
         k = ql.Kernel(name, platf, nqubits, ncreg)
         self.assertEqual(k.creg_count, ncreg)

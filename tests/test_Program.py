@@ -21,26 +21,26 @@ class Test_program(unittest.TestCase):
 
     def test_program_name(self):
         name = "program1"
-        nqubits=1
+        nqubits = 1
         p = ql.Program(name, platf, nqubits)
         self.assertEqual(p.name, name)
 
     def test_program_qubit_count(self):
         name = "program1"
-        nqubits=3
+        nqubits = 3
         p = ql.Program(name, platf, nqubits)
         self.assertEqual(p.qubit_count, nqubits)
 
     def test_program_creg_count(self):
         name = "program1"
-        nqubits=2
+        nqubits = 2
         ncreg = 3
         p = ql.Program(name, platf, nqubits, ncreg)
         self.assertEqual(p.creg_count, ncreg)
 
     def test_add_kernel(self):
         # test that this does not raise any error
-        nqubits=5
+        nqubits = 5
         k = ql.Kernel("kernel1", platf, nqubits)
         p = ql.Program('program1', platf, nqubits)
         p.add_kernel(k)
@@ -57,7 +57,7 @@ class Test_program(unittest.TestCase):
 
     def test_program_methods(self):
         # This tests for the existence of the right methods in the wrapping
-        nqubits=5
+        nqubits = 5
         p = ql.Program('program1', platf, nqubits)
         program_methods = [
             'add_kernel',
@@ -93,7 +93,7 @@ class Test_program(unittest.TestCase):
 
 
     def test_5qubit_program(self):
-        nqubits=5
+        nqubits = 5
         p = ql.Program("a_program", platf, nqubits)
         k = ql.Kernel("a_kernel", platf, nqubits)
 

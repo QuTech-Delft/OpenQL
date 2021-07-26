@@ -1059,7 +1059,7 @@
                 "static_codeword_override": [31]
             },
             "decomposition": {
-                "name": "_measure_fb",
+//                "name": "_measure_fb",
                 "into": "measure op(0),op(1); _wait_uhfqa op(0); _dist_dsm op(0); _wait_dsm op(0)"
             }
         },

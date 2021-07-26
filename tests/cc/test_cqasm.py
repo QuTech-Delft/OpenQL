@@ -24,8 +24,24 @@ class Test_cQASM(unittest.TestCase):
             out_fn = 'test_output/' + name + '_out.cq'
             gold_fn = 'golden/' + name + '_out.cq'
 
+            ql.initialize()
             # ql.set_option('log_level', 'LOG_INFO')
-            # ql.set_option('log_level', 'LOG_DEBUG')
+            ql.set_option('log_level', 'LOG_DEBUG')
+
+            if 0:
+                ql.set_option("write_qasm_files", "yes")
+                ql.set_option("write_report_files", "yes")
+            #ql.Pass.set_option()
+            # ql.Pass.set_option("ALL", "debug", "yes")
+            c = ql.Compiler()
+            if 0:
+                p = c.get_pass("sch.ListSchedule")
+                print(p.get_name())
+                p.set_option("debug", "yes")
+            if 0:
+                c.set_option('sch.ListSchedule.debug', 'yes')
+
+            # ql.compile(in_fn, {"debug": "yes"})
             ql.compile(in_fn)
 
 #            self.assertTrue(file_compare(out_fn, gold_fn))
@@ -33,8 +49,8 @@ class Test_cQASM(unittest.TestCase):
         finally:
             os.chdir(old_wd)
 
-    def test_rus_private(self):
-        self.run_test_case('rus_private')
+    def test_rus_elements(self):
+        self.run_test_case('rus_elements')
 
 
 if __name__ == '__main__':
