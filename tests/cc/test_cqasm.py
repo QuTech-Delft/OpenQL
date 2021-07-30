@@ -25,24 +25,20 @@ class Test_cQASM(unittest.TestCase):
             gold_fn = 'golden/' + name + '_out.cq'
 
             ql.initialize()
-            # ql.set_option('log_level', 'LOG_INFO')
-            ql.set_option('log_level', 'LOG_DEBUG')
+            ql.set_option('log_level', 'LOG_INFO')
+            # ql.set_option('log_level', 'LOG_DEBUG')
+            pl = ql.Platform("cc", "config_cc_s17_direct_iq_cqasm1.2.json")
+            c = pl.get_compiler()
 
-            if 0:
-                ql.set_option("write_qasm_files", "yes")
-                ql.set_option("write_report_files", "yes")
-            #ql.Pass.set_option()
-            # ql.Pass.set_option("ALL", "debug", "yes")
-            c = ql.Compiler()
-            if 0:
-                p = c.get_pass("sch.ListSchedule")
-                print(p.get_name())
-                p.set_option("debug", "yes")
-            if 0:
-                c.set_option('sch.ListSchedule.debug', 'yes')
+            # insert cQASM reader
+            c.prefix_pass('io.cqasm.Read', 'reader', {'cqasm_file': in_fn, 'output_prefix': 'test_output/%N.%P'})
 
-            # ql.compile(in_fn, {"debug": "yes"})
-            ql.compile(in_fn)
+            # c.set_option('reader.debug', 'yes')
+            # c.set_option('scheduler.debug', 'yes')
+            c.print_strategy()
+
+            c.compile_with_frontend(pl)
+
 
 #            self.assertTrue(file_compare(out_fn, gold_fn))
 
