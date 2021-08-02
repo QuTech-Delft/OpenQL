@@ -11,7 +11,7 @@ version 1.2
 pragma @ql.name("test_rus_elements")
 pragma @ql.platform("config_cc_s17_direct_iq_cqasm1.2.json")
 
-
+.begin
 var qInput1, qInput2, qAncilla3, qOutput4: qubit
 var mAncilla3: bool
 
@@ -26,10 +26,11 @@ prepz qOutput4
 ################################################
 # repeatuntilsuccess
 ################################################
+.repeatUntilSuccess
 #for (;  ; ) {    # FIXME: cannot have empty condition
 #for (; creg(0)<10; ) {    # FIXME: RuntimeError: Unknown error: dereferencing empty Maybe/One object or type N2ql2ir9StatementE (from EventGatherer::add_statement)
 #for (creg(0)=0; creg(0)<10000; creg(0)=creg(0)+1) { # FIXME: RuntimeError: Assertion failure: assert !nc.get().commutes_with(incoming) failed
-###while(creg(0)<10000) {
+#while(creg(0)<10000) {
     cz qInput2, qAncilla3
     rx180 qOutput4
     i qOutput4
@@ -49,4 +50,4 @@ prepz qOutput4
     barrier
 
     rx180 qAncilla3
-###}
+#}

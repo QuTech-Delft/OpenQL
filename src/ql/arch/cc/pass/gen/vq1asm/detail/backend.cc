@@ -65,6 +65,473 @@ namespace detail {
 
 using namespace utils;
 
+
+// Based on NewToOldConverter::convert_block
+void Backend::compileBlock(
+    const ir::BlockBaseRef &block
+) {
+
+    // Whether this is the first lazily-constructed kernel. Only if this is true
+    // when flushing at the end are statistics annotations copied; otherwise
+    // they would be invalid anyway.
+    utils::Bool first_kernel = true;
+
+    // Cycle offset for converting from new-IR cycles to old-IR cycles. In
+    // the new IR, cycles start at zero; in the old one they start at
+    // compat::FIRST_CYCLE. This is set to utils::MAX as a marker after
+    // structured control-flow; this implies that the next cycle number
+    // encountered should map to compat::FIRST_CYCLE.
+//    utils::Int cycle_offset = compat::FIRST_CYCLE;
+
+    // Whether to set the cycles_valid flag on the old-style kernel. Cycles are
+    // always valid in the new IR, but when the program was previously converted
+    // from the old to the new IR, annotations can be used to clear the flag.
+//    utils::Bool cycles_valid = true;
+//    if (auto kcv = block->get_annotation_ptr<KernelCyclesValid>()) {
+//        cycles_valid = kcv->valid;
+//    }
+
+    // Loop over the statements and handle them individually.
+    for (const auto &stmt : block->statements) {
+        if (auto insn = stmt->as_instruction()) {
+
+            // Ensure that we have a kernel to add the instruction to, and
+            // that cycle_offset is valid.
+//            if (kernel.empty()) {
+//                kernel.emplace(
+//                    make_kernel_name(block), old->platform,
+//                    old->qubit_count, old->creg_count, old->breg_count
+//                );
+//            }
+//            if (cycle_offset == utils::MAX) {
+//                cycle_offset = compat::FIRST_CYCLE - insn->cycle;
+//            }
+
+            // The kernel.gate() calls can add more than one instruction due to
+            // ad-hoc decompositions. Since we need to set the cycle numbers
+            // after the fact, we need to track which gates already existed in
+            // the kernel.
+//            auto first_gate_index = kernel->gates.size();
+
+            // Handle the instruction subtypes.
+            if (auto cinsn = stmt->as_conditional_instruction()) {
+
+                // Handle the condition.
+                try {
+                    utils::Vec<utils::UInt> cond_operands;
+//                    compat::ConditionType cond_type;
+                    if (auto blit = cinsn->condition->as_bit_literal()) {
+                        if (blit->value) {
+//                            cond_type = compat::ConditionType::ALWAYS;
+                        } else {
+//                            cond_type = compat::ConditionType::NEVER;
+                        }
+                    } else if (cinsn->condition->as_reference()) {
+//                        cond_operands.push_back(convert_breg_reference(cinsn->condition));
+//                        cond_type = compat::ConditionType::UNARY;
+                    } else if (auto fn = cinsn->condition->as_function_call()) {
+                        if (
+                            fn->function_type->name == "operator!" ||
+                            fn->function_type->name == "operator~"
+                        ) {
+//                            CHECK_COMPAT(fn->operands.size() == 1, "unsupported condition function");
+                            if (fn->operands[0]->as_reference()) {
+//                                cond_operands.push_back(convert_breg_reference(fn->operands[0]));
+//                                cond_type = compat::ConditionType::NOT;
+                            } else if (auto fn2 = fn->operands[0]->as_function_call()) {
+//                                CHECK_COMPAT(fn2->operands.size() == 2, "unsupported condition function");
+//                                cond_operands.push_back(convert_breg_reference(fn2->operands[0]));
+//                                cond_operands.push_back(convert_breg_reference(fn2->operands[1]));
+                                if (
+                                    fn2->function_type->name == "operator&" ||
+                                    fn2->function_type->name == "operator&&"
+                                ) {
+//                                    cond_type = compat::ConditionType::NAND;
+                                } else if (
+                                    fn2->function_type->name == "operator|" ||
+                                    fn2->function_type->name == "operator||"
+                                ) {
+//                                    cond_type = compat::ConditionType::NOR;
+                                } else if (
+                                    fn2->function_type->name == "operator^" ||
+                                    fn2->function_type->name == "operator^^" ||
+                                    fn2->function_type->name == "operator!="
+                                ) {
+//                                    cond_type = compat::ConditionType::NXOR;
+                                } else if (
+                                    fn2->function_type->name == "operator=="
+                                ) {
+//                                    cond_type = compat::ConditionType::XOR;
+                                } else {
+                                    QL_ICE("unsupported gate condition");
+                                }
+                            } else {
+                                QL_ICE("unsupported gate condition");
+                            }
+                        } else {
+//                            CHECK_COMPAT(fn->operands.size() == 2, "unsupported condition function");
+//                            cond_operands.push_back(convert_breg_reference(fn->operands[0]));
+//                            cond_operands.push_back(convert_breg_reference(fn->operands[1]));
+                            if (
+                                fn->function_type->name == "operator&" ||
+                                fn->function_type->name == "operator&&"
+                            ) {
+//                                cond_type = compat::ConditionType::AND;
+                            } else if (
+                                fn->function_type->name == "operator|" ||
+                                fn->function_type->name == "operator||"
+                            ) {
+//                                cond_type = compat::ConditionType::OR;
+                            } else if (
+                                fn->function_type->name == "operator^" ||
+                                fn->function_type->name == "operator^^" ||
+                                fn->function_type->name == "operator!="
+                            ) {
+//                                cond_type = compat::ConditionType::XOR;
+                            } else if (
+                                fn->function_type->name == "operator=="
+                            ) {
+//                                cond_type = compat::ConditionType::NXOR;
+                            } else {
+                                QL_ICE("unsupported condition function");
+                            }
+                        }
+                    } else {
+                        QL_ICE("unsupported condition expression");
+                    }
+//                    kernel->gate_preset_condition(cond_type, cond_operands);
+                } catch (utils::Exception &e) {
+                    e.add_context("in gate condition", true);
+                    throw;
+                }
+
+                // Handle the conditional instruction subtypes.
+                if (auto custom = cinsn->as_custom_instruction()) {
+
+                    QL_IOUT("Custom instruction: name=" + custom->instruction_type->name);
+                    // Handle the normal operands for custom instructions.
+//                    Operands ops;
+                    for (const auto &ob : custom->instruction_type->template_operands) {
+                        // FIXME: ob: const ir::ExpressionRef expr;
+                        try {
+//                            ops.append(*this, ob);
+                        } catch (utils::Exception &e) {
+//                            e.add_context("name="+custom->instruction_type->name+", qubits="+ops.qubits.to_string());
+                            throw;
+                        }
+                    }
+                    for (utils::UInt i = 0; i < custom->operands.size(); i++) {
+                        try {
+//                            ops.append(*this, custom->operands[i]);
+                        } catch (utils::Exception &e) {
+                            e.add_context(
+                                "name=" + custom->instruction_type->name
+//                                + ", qubits=" + ops.qubits.to_string()
+                                + ", operand=" + std::to_string(i)
+                                );
+                            throw;
+                        }
+                    }
+//                    kernel->gate(
+//                        custom->instruction_type->name, ops.qubits, ops.cregs,
+//                        0, ops.angle, ops.bregs
+//                    );
+//                    if (ops.has_integer) {
+//                        CHECK_COMPAT(
+//                            kernel->gates.size() == first_gate_index + 1,
+//                            "gate with integer operand cannot be ad-hoc decomposed"
+//                        );
+//                        kernel->gates.back()->int_operand = ops.integer;
+//                    }
+
+                } else if (auto set = cinsn->as_set_instruction()) {
+
+                    // Handle classical gates.
+//                    utils::Opt<compat::ClassicalRegister> lhs;
+                    try {
+//                        lhs.emplace(convert_creg_reference(set->lhs));
+                    } catch (utils::Exception &e) {
+                        e.add_context("unsupported LHS for set instruction encountered");
+                        throw;
+                    }
+                    try {
+                        if (auto ilit = set->rhs->as_int_literal()) {
+//                            kernel->classical(
+//                                *lhs,
+//                                compat::ClassicalOperation(
+//                                    ilit->value
+//                                )
+//                            );
+                        } else if (set->rhs->as_reference()) {
+//                            kernel->classical(
+//                                *lhs,
+//                                compat::ClassicalOperation(
+//                                    convert_creg_reference(set->rhs)
+//                                )
+//                            );
+                        } else if (auto fn = set->rhs->as_function_call()) {
+                            utils::Str operation;
+                            utils::UInt operand_count = 2;
+                            if (fn->function_type->name == "int") {
+//                                CHECK_COMPAT(
+//                                    fn->operands.size() == 1 &&
+//                                    fn->operands[0]->as_function_call(),
+//                                    "int() cast target must be a function"
+//                                );
+                                fn = fn->operands[0]->as_function_call();
+                            }
+                            if (fn->function_type->name == "operator~") {
+                                operation = "~";
+                                operand_count = 1;
+                            } else if (fn->function_type->name == "operator+") {
+                                operation = "+";
+                            } else if (fn->function_type->name == "operator-") {
+                                operation = "-";
+                            } else if (fn->function_type->name == "operator&") {
+                                operation = "&";
+                            } else if (fn->function_type->name == "operator|") {
+                                operation = "|";
+                            } else if (fn->function_type->name == "operator^") {
+                                operation = "^";
+                            } else if (fn->function_type->name == "operator==") {
+                                operation = "==";
+                            } else if (fn->function_type->name == "operator!=") {
+                                operation = "!=";
+                            } else if (fn->function_type->name == "operator>") {
+                                operation = ">";
+                            } else if (fn->function_type->name == "operator>=") {
+                                operation = ">=";
+                            } else if (fn->function_type->name == "operator<") {
+                                operation = "<";
+                            } else if (fn->function_type->name == "operator<=") {
+                                operation = "<=";
+                            } else {
+                                QL_ICE(
+                                    "no conversion known for function " << fn->function_type->name
+                                );
+                            }
+//                            CHECK_COMPAT(
+//                                fn->operands.size() == operand_count,
+//                                "function " << fn->function_type->name << " has wrong operand count"
+//                            );
+                            if (operand_count == 1) {
+//                                kernel->classical(
+//                                    *lhs,
+//                                    compat::ClassicalOperation(
+//                                        operation,
+//                                        convert_creg_reference(fn->operands[0])
+//                                    )
+//                                );
+                            } else if (fn->operands.size() == 2) {
+//                                kernel->classical(
+//                                    *lhs,
+//                                    compat::ClassicalOperation(
+//                                        convert_creg_reference(fn->operands[0]),
+//                                        operation,
+//                                        convert_creg_reference(fn->operands[1])
+//                                    )
+//                                );
+                            } else {
+                                QL_ASSERT(false);
+                            }
+                        } else {
+                            QL_ICE(
+                                "must be integer literal, creg reference, or simple "
+                                "function of cregs"
+                            );
+                        }
+
+                    } catch (utils::Exception &e) {
+                        e.add_context("unsupported RHS for set instruction encountered");
+                        throw;
+                    }
+
+                } else {
+                    QL_ICE("unsupported instruction type encountered");
+                }
+
+                // Reset the gate condition.
+//                kernel->gate_clear_condition();
+
+            } else if (auto wait = stmt->as_wait_instruction()) {
+
+                // Handle wait instructions.
+//                Operands ops;
+//                for (const auto &ob : wait->objects) {
+//                    ops.append(*this, ob);
+//                }
+//                kernel->gate(
+//                    "wait", ops.qubits, ops.cregs,
+//                    wait->duration * old->platform->cycle_time,
+//                    ops.angle, ops.bregs
+//                );
+
+            } else {
+                QL_ICE("unsupported instruction type encountered");
+            }
+
+            // Copy gate annotations if adding the gate resulted in just one
+            // gate.
+//            if (kernel->gates.size() == first_gate_index + 1) {
+//                kernel->gates[first_gate_index]->copy_annotations(*insn);
+//            }
+
+            // Assign the cycle numbers for the new gates.
+//            for (auto i = first_gate_index; i < kernel->gates.size(); i++) {
+//                kernel->gates[i]->cycle = (utils::UInt)((utils::Int)insn->cycle + cycle_offset);
+//            }
+
+        } else if (stmt->as_structured()) {
+
+            // Flush any pending kernel not affected by control-flow.
+//            if (!kernel.empty()) {
+//                first_kernel = false;
+//                kernel->cycles_valid = cycles_valid;
+//                program->add(kernel);
+//                kernel.reset();
+//            }
+//            cycle_offset = utils::MAX;
+
+            // Handle the different types of structured statements.
+            if (auto if_else = stmt->as_if_else()) {
+
+                // Handle if-else or if statement.
+//                CHECK_COMPAT(
+//                    if_else->branches.size() == 1,
+//                    "encountered if-else chain with multiple conditions"
+//                );
+//                compat::ProgramRef if_program;
+//                if_program.emplace(
+//                    make_kernel_name(block), old->platform,
+//                    old->qubit_count, old->creg_count, old->breg_count
+//                );
+                try {
+//                    convert_block(if_else->branches[0]->body, if_program);
+                } catch (utils::Exception &e) {
+                    e.add_context("in 'if' block", true);
+                    throw;
+                }
+                if (if_else->otherwise.empty()) {
+                    try {
+//                        program->add_if(
+//                            if_program,
+//                            convert_classical_condition(
+//                                if_else->branches[0]->condition,
+//                                false
+//                            )
+//                        );
+                    } catch (utils::Exception &e) {
+                        e.add_context("in 'if' condition", true);
+                        throw;
+                    }
+                } else {
+//                    compat::ProgramRef else_program;
+//                    else_program.emplace(
+//                        make_kernel_name(block), old->platform,
+//                        old->qubit_count, old->creg_count, old->breg_count
+//                    );
+                    try {
+//                        convert_block(if_else->otherwise, else_program);
+                    } catch (utils::Exception &e) {
+                        e.add_context("in 'else' block", true);
+                        throw;
+                    }
+                    try {
+//                        program->add_if_else(
+//                            if_program,
+//                            else_program,
+//                            convert_classical_condition(
+//                                if_else->branches[0]->condition,
+//                                false
+//                            )
+//                        );
+                    } catch (utils::Exception &e) {
+                        e.add_context("in 'if' condition", true);
+                        throw;
+                    }
+                }
+
+            } else if (auto static_loop = stmt->as_static_loop()) {
+
+                // Handle static loops. Note that the old IR conceptually
+                // doesn't have a loop variable for these, so the loop var can't
+                // be a creg (or anything else that's referenced elsewhere as
+                // well).
+//                CHECK_COMPAT(
+//                    static_loop->lhs->target != creg_ob,
+//                    "static loop variable cannot be a mapped creg"
+//                );
+//                compat::ProgramRef body;
+//                body.emplace(
+//                    make_kernel_name(block), old->platform,
+//                    old->qubit_count, old->creg_count, old->breg_count
+//                );
+                try {
+//                    convert_block(static_loop->body, body);
+                } catch (utils::Exception &e) {
+                    e.add_context("in static loop body", true);
+                    throw;
+                }
+//                program->add_for(
+//                    body,
+//                    utils::abs<utils::Int>(
+//                        static_loop->to->value - static_loop->frm->value
+//                    ) + 1
+//                );
+
+            } else if (auto repeat_until_loop = stmt->as_repeat_until_loop()) {
+
+                // Handle repeat-until/do-while loops.
+//                compat::ProgramRef body;
+//                body.emplace(
+//                    make_kernel_name(block), old->platform,
+//                    old->qubit_count, old->creg_count, old->breg_count
+//                );
+                try {
+//                    convert_block(repeat_until_loop->body, body);
+                } catch (utils::Exception &e) {
+                    e.add_context("in repeat-until/do-while loop body", true);
+                    throw;
+                }
+                try {
+//                    program->add_do_while(
+//                        body,
+//                        convert_classical_condition(
+//                            repeat_until_loop->condition,
+//                            true
+//                        )
+//                    );
+                } catch (utils::Exception &e) {
+                    e.add_context("in repeat-until/do-while condition", true);
+                    throw;
+                }
+
+            } else {
+                QL_ICE("unsupported structured control-flow statement encountered");
+            }
+
+        } else {
+            QL_ICE("unsupported statement type encountered");
+        }
+    }
+
+    // Flush any pending kernel.
+//    if (!kernel.empty()) {
+//
+//        // If this block produced only one kernel, copy kernel-wide annotations.
+//        if (first_kernel) {
+//            kernel->copy_annotations(*block);
+//        }
+//
+//        kernel->cycles_valid = cycles_valid;
+//        program->add(kernel);
+//        kernel.reset();
+//    }
+
+}
+
+
+
 // compile for Central Controller
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
 void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
@@ -75,10 +542,10 @@ void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
     codegen.init(ir->platform, options);
     bundleIdx = 0;
 
-#if 0   // FIXME: WIP
     // generate program header
-    codegen.programStart(program->unique_name);
+    codegen.programStart(ir->program->unique_name);
 
+#if 0   // FIXME: WIP
     // generate code for all kernels
     for (auto &kernel : program->kernels) {
         QL_IOUT("Compiling kernel: " << kernel->name);
@@ -95,8 +562,23 @@ void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
 
         codegenKernelEpilogue(kernel);
     }
+#else   // new
+    // FIXME: Nodes of interest:
+    // ir->program->entry_point.links_to
 
-    codegen.programFinish(program->unique_name);
+    // NB: based on NewToOldConverter::NewToOldConverter
+    for (const auto &block : ir->program->blocks) {
+        try {
+            QL_IOUT("Compiling block '" + block->name + "'");
+            compileBlock(block);
+        } catch (utils::Exception &e) {
+            e.add_context("in block '" + block->name + "'");
+            throw;
+        }
+    }
+#endif
+
+    codegen.programFinish(ir->program->unique_name);
 
     // write program to file
     Str file_name(options->output_prefix + ".vq1asm");
@@ -110,7 +592,6 @@ void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
         QL_IOUT("Writing instrument map to " << file_name_map);
         OutFile(file_name_map).write(codegen.getMap());
     }
-#endif
 
     QL_DOUT("Compiling Central Controller program [Done]");
 }
