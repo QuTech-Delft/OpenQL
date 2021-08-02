@@ -920,8 +920,10 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     ir->platform->set_annotation<compat::PlatformRef>(old);
 
     // Check the result.
+#if 0   // FIXME: too verbose
     QL_DOUT("Result of old->new IR platform conversion:");
     QL_IF_LOG_DEBUG(ir->dump_seq());
+#endif
     check_consistency(ir);
 
     return ir;

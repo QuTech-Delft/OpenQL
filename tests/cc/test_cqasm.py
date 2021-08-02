@@ -25,19 +25,49 @@ class Test_cQASM(unittest.TestCase):
             gold_fn = 'golden/' + name + '_out.cq'
 
             ql.initialize()
-            ql.set_option('log_level', 'LOG_INFO')
-            # ql.set_option('log_level', 'LOG_DEBUG')
-            pl = ql.Platform("cc", "config_cc_s17_direct_iq_cqasm1.2.json")
-            c = pl.get_compiler()
+            # ql.set_option('log_level', 'LOG_INFO')
+            ql.set_option('log_level', 'LOG_DEBUG')
 
-            # insert cQASM reader
-            c.prefix_pass('io.cqasm.Read', 'reader', {'cqasm_file': in_fn, 'output_prefix': 'test_output/%N.%P'})
+            if 0:
+                # use compatibility
+                # fails in new-to-old IR conversion for CC backend
+                ql.set_option('write_qasm_files', 'yes')
+                ql.set_option('write_report_files', 'yes')
+                ql.compile(in_fn)
 
-            # c.set_option('reader.debug', 'yes')
-            # c.set_option('scheduler.debug', 'yes')
-            c.print_strategy()
+            if 0:
+                # use compatibility
+                # fails in outputting debug info
+                ql.compile(
+                    in_fn,
+                    {
+                        # 'cqasm_file': in_fn,
+                        'output_prefix': 'test_output/%N.%P',
+                        'debug': 'yes'
+                    }
+                )
 
-            c.compile_with_frontend(pl)
+            if 1:
+                # fails in in pass reader, phase debugging.before
+                pl = ql.Platform("cc", "config_cc_s17_direct_iq_cqasm1.2.json")
+                c = pl.get_compiler()
+
+                # insert cQASM reader
+                c.prefix_pass(
+                    'io.cqasm.Read',
+                    'reader',
+                    {
+                        'cqasm_file': in_fn,
+                        'output_prefix': 'test_output/%N.%P',
+                        'debug': 'yes'
+                    }
+                )
+                # c.set_option('reader.debug', 'yes')
+
+                # c.set_option('scheduler.debug', 'yes')
+                c.print_strategy()
+
+                c.compile_with_frontend(pl)
 
 
 #            self.assertTrue(file_compare(out_fn, gold_fn))

@@ -748,7 +748,7 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
     }
     manager.append_pass(
         "arch.cc.gen.VQ1Asm",
-        "codegen",
+        "VQ1Asm",
         {
             {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"}
         }
