@@ -673,6 +673,10 @@ void Info::post_process_platform(
     // load CC settings
     pass::gen::vq1asm::detail::Settings settings;
     settings.loadBackendSettings(platform);
+#if 0   // FIXME: untested, counterpart in Codegen::init does not seem to work
+    platform->set_annotation(pass::gen::vq1asm::detail::Settings());
+    platform->get_annotation<pass::gen::vq1asm::detail::Settings>().loadBackendSettings(platform);
+#endif
 
     // Gather qubit information from CC instrument definitions.
     InstrVsQubits measQubits;
@@ -681,10 +685,10 @@ void Info::post_process_platform(
         const utils::Json &instrument = settings.getInstrumentAtIdx(i);
         utils::Str signal_type = utils::json_get<utils::Str>(instrument, "signal_type");    // FIXME: nodePath
         // FIXME: this adds semantics to "signal_type", whereas the names are otherwise fully up to the user
-        if ("measure" == signal_type) { // FIXME: define constant use throughout
+        if ("measure" == signal_type) { // FIXME: define constant used throughout
             Qubits qubits = ccInstrument2qubits(instrument);
             measQubits.push_back(qubits);
-        } else if ("flux" == signal_type) { // FIXME: define constant use throughout
+        } else if ("flux" == signal_type) { // FIXME: define constant used throughout
             /*  we map all fluxing on a single instrument resource: the actual resource we'd like to manage is a *signal* that connects
                 to a flux line of a qubit. On a single instrument (e.g. ZI HDAWG) these signals cannot be triggered
                 during playback of other signals.

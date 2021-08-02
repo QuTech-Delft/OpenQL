@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "ql/ir/ir.h"
 #include "ql/ir/compat/platform.h"
 #include "types.h"
 #include "options.h"
@@ -31,7 +32,7 @@ public: //  functions
     ~Codegen() = default;
 
     // Generic
-    void init(const ir::compat::PlatformRef &platform, const OptionsRef &options);
+    void init(const ir::PlatformRef &platformRef, const OptionsRef &options);
     Str getProgram();                           // return the CC source code that was created
     Str getMap();                               // return a map of codeword assignments, useful for configuring AWGs
 
@@ -99,7 +100,7 @@ private:    // vars
     static const Int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
     OptionsRef options;
-    ir::compat::PlatformRef platform;                           // remind platform
+    ir::PlatformRef platform;                                   // remind platform
     Settings settings;                                          // handling of JSON settings
     Datapath dp;                                                // handling of CC datapath
     Vcd vcd;                                                    // handling of VCD file output

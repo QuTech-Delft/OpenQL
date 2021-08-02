@@ -68,14 +68,14 @@ using namespace utils;
 // compile for Central Controller
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
 void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
-#if 0   // FIXME
-    QL_DOUT("Compiling " << program->kernels.size() << " kernels to generate Central Controller program ... ");
+    QL_DOUT("Compiling Central Controller program ... ");
 
     // init
-    loadHwSettings(program->platform);
-    codegen.init(program->platform, options);
+    loadHwSettings(ir->platform);
+    codegen.init(ir->platform, options);
     bundleIdx = 0;
 
+#if 0   // FIXME: WIP
     // generate program header
     codegen.programStart(program->unique_name);
 
@@ -358,7 +358,7 @@ void Backend::codegenBundles(ir::compat::Bundles &bundles, const ir::compat::Pla
 
 
 // based on: cc_light_eqasm_compiler.h::loadHwSettings
-void Backend::loadHwSettings(const ir::compat::PlatformRef &platform) {
+void Backend::loadHwSettings(const ir::PlatformRef &platform) {
 #if 0   // FIXME: currently unused, may be of future use
     const struct {
         UInt *var;

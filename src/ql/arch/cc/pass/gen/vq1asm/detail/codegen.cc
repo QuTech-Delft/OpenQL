@@ -13,6 +13,7 @@
 #include "ql/version.h"
 #include "ql/com/options.h"
 #include "ql/ir/compat/bundle.h"
+#include "ql/ir/compat/platform.h"
 
 namespace ql {
 namespace arch {
@@ -28,12 +29,22 @@ using namespace utils;
 | Generic
 \************************************************************************/
 
-void Codegen::init(const ir::compat::PlatformRef &platform, const OptionsRef &options) {
+void Codegen::init(const ir::PlatformRef &platform, const OptionsRef &options) {
     // NB: a new eqasm_backend_cc is instantiated per call to compile, and
     // as a result also a codegen_cc, so we don't need to cleanup
     this->platform = platform;
     this->options = options;
-    settings.loadBackendSettings(platform);
+#if 1
+    // based on NewToOldConverter::NewToOldConverter
+    // FIXME: bit expensive to go back to old
+    settings.loadBackendSettings(
+        ir::compat::Platform::build(
+            platform->name,
+            platform->data.data)
+    );
+#else
+    settings = platform->get_annotation<pass::gen::vq1asm::detail::Settings>();  // NB: set in Info::post_process_platform() FIXME: will that retain the platform member var
+#endif
 
     // optionally preload codewordTable
     Str map_input_file = options->map_input_file;
@@ -81,7 +92,18 @@ void Codegen::programStart(const Str &progName) {
 
     dp.programStart();
 
-    vcd.programStart(platform->qubit_count, platform->cycle_time, MAX_GROUPS, settings);
+    // Determine number of qubits.
+    utils::UInt num_qubits;
+    if (platform->qubits->shape.size() == 1) {
+        num_qubits = platform->qubits->shape[0];
+    } else {
+        QL_FATAL("main qubit register has wrong dimensionality");
+    };
+
+    // Get cycle time from old Platform (NB: in new Platform, all durations are in cycles, not ns).
+    utils::UInt cycle_time = platform->data.data["hardware_settings"]["cycle_time"];     // FIXME: check JSON access
+
+    vcd.programStart(num_qubits, cycle_time, MAX_GROUPS, settings);
 }
 
 
@@ -528,6 +550,7 @@ void Codegen::customGate(
         comment(Str(" # gate '") + qasm(iname, operands, breg_operands) + "'");
     }
 
+#if 0   // FIXME: WIP
     // find instruction (gate definition)
     const Json &instruction = platform->find_instruction(iname);
     // find signal vector definition for instruction
@@ -632,6 +655,7 @@ void Codegen::customGate(
             vbi[0].breg_operands = breg_operands;
         }
     }
+#endif
 #endif
 }
 

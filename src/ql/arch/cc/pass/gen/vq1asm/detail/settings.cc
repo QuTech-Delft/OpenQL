@@ -18,6 +18,7 @@ namespace detail {
 
 using namespace utils;
 
+// FIXME: we use compat::Platform here, because we are called from both Info::post_process_platform() and Backend::compile()
 void Settings::loadBackendSettings(const ir::compat::PlatformRef &platform) {
     this->platform = platform;
 

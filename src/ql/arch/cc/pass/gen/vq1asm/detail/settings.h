@@ -57,6 +57,7 @@ public: // functions
     ~Settings() = default;
 
     void loadBackendSettings(const ir::compat::PlatformRef &platform);
+
     Str getReadoutMode(const Str &iname);
     static Bool isReadout(const Json &instruction, const Str &iname);
     Bool isReadout(const Str &iname);
@@ -64,6 +65,7 @@ public: // functions
     Bool isFlux(const Str &iname);
     Bool isPragma(const Str &iname);
     RawPtr<const Json> getPragma(const Str &iname);
+
     static SignalDef findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
     InstrumentInfo getInstrumentInfo(UInt instrIdx) const;

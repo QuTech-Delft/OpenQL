@@ -34,7 +34,7 @@ private:
     void codegenKernelPrologue(const ir::compat::KernelRef &k);
     void codegenKernelEpilogue(const ir::compat::KernelRef &k);
     void codegenBundles(ir::compat::Bundles &bundles, const ir::compat::PlatformRef &platform);
-    void loadHwSettings(const ir::compat::PlatformRef &platform);
+    void loadHwSettings(const ir::PlatformRef &platform);
 
 private: // vars
     Codegen codegen;
