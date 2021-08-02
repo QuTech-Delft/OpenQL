@@ -55,7 +55,7 @@ GenerateVQ1AsmPass::GenerateVQ1AsmPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : pmgr::pass_types::ProgramTransformation(pass_factory, instance_name, type_name) {
+) : pmgr::pass_types::Transformation(pass_factory, instance_name, type_name) {
 
     options.add_str(
         "map_input_file",
@@ -81,10 +81,11 @@ GenerateVQ1AsmPass::GenerateVQ1AsmPass(
  * Runs the code generator.
  */
 utils::Int GenerateVQ1AsmPass::run(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
 
+#if 0   // FIXME
     // Make sure that the incoming code is scheduled, as expected.
     for (const auto &kernel : program->kernels) {
         if (!kernel->cycles_valid) {
@@ -93,6 +94,7 @@ utils::Int GenerateVQ1AsmPass::run(
             );
         }
     }
+#endif
 
     // Parse the options.
     auto parsed_options = utils::Ptr<detail::Options>::make();
@@ -102,7 +104,7 @@ utils::Int GenerateVQ1AsmPass::run(
     parsed_options->verbose = options["verbose"].as_bool();
 
     // Run the backend.
-    detail::Backend().compile(program, parsed_options.as_const());
+    detail::Backend().compile(ir, parsed_options.as_const());
 
     return 0;
 }

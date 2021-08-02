@@ -62,9 +62,7 @@ class Test_cQASM(unittest.TestCase):
                         'debug': 'yes'
                     }
                 )
-                # c.set_option('reader.debug', 'yes')
-
-                # c.set_option('scheduler.debug', 'yes')
+                c.set_option('scheduler.debug', 'yes')
                 c.print_strategy()
 
                 c.compile_with_frontend(pl)

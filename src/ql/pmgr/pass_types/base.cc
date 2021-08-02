@@ -1000,7 +1000,9 @@ void Base::handle_debugging(
     utils::Str in_or_out = after_pass ? "out" : "in";
     auto debug_opt = options["debug"].as_str();
     if (debug_opt == "yes") {
-        if (!after_pass && !ir->program.empty()) {  // don't dump if we haven't got a program yet
+        if (!after_pass && ir->program.empty()) {  // don't dump if we haven't got a program yet
+            QL_IOUT("Skipping debug output for pass " + context.full_pass_name + ", program is empty");
+        } else {
             ir->dump_seq(
                 utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".ir").unwrap()
             );

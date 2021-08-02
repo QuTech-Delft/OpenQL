@@ -67,7 +67,8 @@ using namespace utils;
 
 // compile for Central Controller
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
-void Backend::compile(const ir::compat::ProgramRef &program, const OptionsRef &options) {
+void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
+#if 0   // FIXME
     QL_DOUT("Compiling " << program->kernels.size() << " kernels to generate Central Controller program ... ");
 
     // init
@@ -109,6 +110,7 @@ void Backend::compile(const ir::compat::ProgramRef &program, const OptionsRef &o
         QL_IOUT("Writing instrument map to " << file_name_map);
         OutFile(file_name_map).write(codegen.getMap());
     }
+#endif
 
     QL_DOUT("Compiling Central Controller program [Done]");
 }

@@ -10,7 +10,7 @@
 
 #include "types.h"
 
-#include "ql/ir/compat/compat.h"
+#include "ql/ir/ir.h"
 #include "options.h"
 #include "codegen.h"
 
@@ -26,7 +26,7 @@ class Backend {
 public:
     Backend() = default;
 
-    void compile(const ir::compat::ProgramRef &program, const OptionsRef &options);
+    void compile(const ir::Ref &ir, const OptionsRef &options);
 
 private:
     static Str loopLabel(const ir::compat::KernelRef &k);
