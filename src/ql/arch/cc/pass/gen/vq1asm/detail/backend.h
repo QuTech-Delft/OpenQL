@@ -29,7 +29,7 @@ public:
     void compile(const ir::Ref &ir, const OptionsRef &options);
 
 private:
-    void compileBlock(const ir::BlockBaseRef &block);
+    void codegenBlock(const ir::BlockBaseRef &block);
 
     static Str loopLabel(const ir::compat::KernelRef &k);
     void codegenClassicalInstruction(const ir::compat::GateRef &classical_ins);

@@ -74,11 +74,244 @@ namespace detail {
 using namespace utils;
 
 
-// Based on NewToOldConverter::convert_block
-void Backend::compileBlock(
-    const ir::BlockBaseRef &block
-) {
+// compile for Central Controller
+// NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
+void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
+    QL_DOUT("Compiling Central Controller program ... ");
 
+    // init
+    codegen.init(ir->platform, options);
+    bundleIdx = 0;
+
+    // generate program header
+    codegen.programStart(ir->program->unique_name);
+
+#if 0   // FIXME: WIP
+    // generate code for all kernels
+    for (auto &kernel : program->kernels) {
+        QL_IOUT("Compiling kernel: " << kernel->name);
+        codegenKernelPrologue(kernel);
+
+        if (!kernel->gates.empty()) {
+            ir::compat::Bundles bundles = ir::compat::bundler(kernel);
+            codegen.kernelStart();
+            codegenBundles(bundles, program->platform);
+            codegen.kernelFinish(kernel->name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
+        } else {
+            QL_DOUT("Empty kernel: " << kernel->name);                      // NB: normal situation for kernels with classical control
+        }
+
+        codegenKernelEpilogue(kernel);
+    }
+#else   // new
+    // FIXME: Nodes of interest:
+    // ir->program->entry_point.links_to
+
+    // NB: based on NewToOldConverter::NewToOldConverter
+    for (const auto &block : ir->program->blocks) {
+        try {
+            QL_IOUT("Compiling block '" + block->name + "'");
+            codegen.kernelStart();  // FIXME: difference between block and Bundles, adapt naming
+            codegenBlock(block);
+            codegen.kernelFinish(block->name, 99 /*FIXME bundles.back().start_cycle+bundles.back().duration_in_cycles */);
+        } catch (utils::Exception &e) {
+            e.add_context("in block '" + block->name + "'");
+            throw;
+        }
+    }
+#endif
+
+    codegen.programFinish(ir->program->unique_name);
+
+    // write program to file
+    Str file_name(options->output_prefix + ".vq1asm");
+    QL_IOUT("Writing Central Controller program to " << file_name);
+    OutFile(file_name).write(codegen.getProgram());
+
+    // write instrument map to file (unless we were using input file)
+    Str map_input_file = options->map_input_file;
+    if (!map_input_file.empty()) {
+        Str file_name_map(options->output_prefix + ".map");
+        QL_IOUT("Writing instrument map to " << file_name_map);
+        OutFile(file_name_map).write(codegen.getMap());
+    }
+
+    QL_DOUT("Compiling Central Controller program [Done]");
+}
+
+
+
+#if 0
+// based on cc_light_eqasm_compiler.h::classical_instruction2qisa/decompose_instructions
+// NB: input instructions defined in classical.h::classical
+void Backend::codegenClassicalInstruction(const ir::compat::GateRef &classical_ins) {
+    auto &iname =  classical_ins->name;
+    auto &iopers = classical_ins->creg_operands;
+    UInt iopers_count = iopers.size();
+
+    if (
+        iname == QASM_ADD || iname == QASM_SUB ||
+        iname == QASM_AND || iname == QASM_OR  || iname == QASM_NOT || iname == QASM_XOR ||
+        iname == QASM_LDI || iname == QASM_MOV ||
+        iname == QASM_NOP
+    ) {
+        QL_FATAL("Classical instruction not implemented: " << iname);
+    } else if(
+        iname == QASM_EQ || iname == QASM_NE || iname == QASM_LT ||
+        iname == QASM_GT || iname == QASM_LE || iname == QASM_GE
+    ) {
+        QL_FATAL("Classical instruction not implemented: " << iname);
+    } else {
+        QL_FATAL("Unknown classical operation'" << iname << "' with'" << iopers_count << "' operands!");
+    }
+}
+
+
+/* get loop label from kernel name
+ *
+ * Program::add_for() and Program::add_do_while() generate kernels that wrap a program or kernel inside
+ * a 'start' and 'end' kernel that only contain the looping information. The names of these added kernels are derived
+ * from the name of the wrapped object by adding a suffix. Examples:
+ * -    "program" results e.g. in "program_for3389_start" or "program_for3389_end"
+ * -    "kernel" results e.g. in "kernel_do_while1_start" or "kernel_do_while1" (without "_end")
+ *
+ * This function obtains the stem name without the added suffix (e.g. '_for0_start') to use as a label to share between
+ * the 'start' and 'end' code.
+ *
+ * Notes:
+ * -    Other than the original in Kernel::get_epilogue, we extract the full stem, not only the part up to the first
+ *      "_" to prevent duplicate labels if users choose to use names that are identical before the first "_"
+ * -    numbering is performed using "static unsigned long phi_node_count = 0;" and thus persists over compiler invocations
+ */
+
+// FIXME: originally extracted from Kernel::get_epilogue, should be in a common place
+
+Str Backend::loopLabel(const ir::compat::KernelRef &k) {
+    Str label;
+    Str expr;
+
+    switch (k->type) {
+        case ir::compat::KernelType::FOR_START:
+            expr = "(.*)_for[0-9]+_start$";
+            break;
+
+        case ir::compat::KernelType::FOR_END:
+            expr = "(.*)_for[0-9]+_end$";
+            break;
+
+        case ir::compat::KernelType::DO_WHILE_START:
+            expr = "(.*)_do_while[0-9]+_start$";
+            break;
+
+        case ir::compat::KernelType::DO_WHILE_END:
+            expr = "(.*)_do_while[0-9]+$";  // NB: there is no "_end" here, see quantum_program::add_do_while()
+            break;
+
+        default:
+            QL_FATAL("internal inconsistency: requesting kernel label for kernel type " << (int)k->type);
+    }
+
+    std::regex re(expr, std::regex_constants::egrep);   // FIXME: we are reverse engineering the naming scheme of quantum_program::add_*
+    const int numMatch = 1+1;		// NB: +1 because index 0 contains full input match
+    std::smatch match;
+    if(std::regex_search(k->name, match, re) && match.size() == numMatch) {
+        label = match.str(1);
+    } else {
+        QL_FATAL("internal inconsistency: kernel name '" << k->name << "' does not contain loop suffix");
+    }
+
+    QL_IOUT("kernel '" << k->name << "' gets label '" << label << "'");
+    return label;
+}
+
+
+// handle kernel conditionality at beginning of kernel
+// based on cc_light_eqasm_compiler.h::get_prologue
+void Backend::codegenKernelPrologue(const ir::compat::KernelRef &k) {
+    codegen.comment(QL_SS2S("### Kernel: '" << k->name << "'"));
+
+    switch (k->type) {
+        case ir::compat::KernelType::IF_START: {
+            auto op0 = k->br_condition->operands[0]->as_register().id;
+            auto op1 = k->br_condition->operands[1]->as_register().id;
+            auto opName = k->br_condition->operation_name;
+            codegen.ifStart(op0, opName, op1);
+            break;
+        }
+
+        case ir::compat::KernelType::ELSE_START: {
+            auto op0 = k->br_condition->operands[0]->as_register().id;
+            auto op1 = k->br_condition->operands[1]->as_register().id;
+            auto opName = k->br_condition->operation_name;
+            codegen.elseStart(op0, opName, op1);
+            break;
+        }
+
+        case ir::compat::KernelType::FOR_START: {
+            codegen.forStart(loopLabel(k), k->iteration_count);
+            break;
+        }
+
+        case ir::compat::KernelType::DO_WHILE_START: {
+            codegen.doWhileStart(loopLabel(k));
+            break;
+        }
+
+        case ir::compat::KernelType::STATIC:
+        case ir::compat::KernelType::FOR_END:
+        case ir::compat::KernelType::DO_WHILE_END:
+        case ir::compat::KernelType::IF_END:
+        case ir::compat::KernelType::ELSE_END:
+            // do nothing
+            break;
+
+        default:
+            QL_FATAL("inconsistency detected: unhandled kernel type");
+            break;
+    }
+}
+
+
+// handle kernel conditionality at end of kernel
+// based on cc_light_eqasm_compiler.h::get_epilogue
+void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
+    switch (k->type) {
+        case ir::compat::KernelType::FOR_END: {
+            codegen.forEnd(loopLabel(k));
+            break;
+        }
+
+        case ir::compat::KernelType::DO_WHILE_END: {
+            auto op0 = k->br_condition->operands[0]->as_register().id;
+            auto op1 = k->br_condition->operands[1]->as_register().id;
+            auto opName = k->br_condition->operation_name;
+            codegen.doWhileEnd(loopLabel(k), op0, opName, op1);
+            break;
+        }
+
+        case ir::compat::KernelType::IF_END:
+        case ir::compat::KernelType::ELSE_END:
+            // do nothing
+            break;
+
+        case ir::compat::KernelType::STATIC:
+        case ir::compat::KernelType::IF_START:
+        case ir::compat::KernelType::ELSE_START:
+        case ir::compat::KernelType::FOR_START:
+        case ir::compat::KernelType::DO_WHILE_START:
+            // do nothing
+            break;
+
+        default:
+            QL_FATAL("inconsistency detected: unhandled kernel type");
+            break;
+    }
+}
+#endif
+
+// Based on NewToOldConverter::convert_block
+void Backend::codegenBlock(const ir::BlockBaseRef &block)
+{
     // Whether this is the first lazily-constructed kernel. Only if this is true
     // when flushing at the end are statistics annotations copied; otherwise
     // they would be invalid anyway.
@@ -550,241 +783,7 @@ void Backend::compileBlock(
 }
 
 
-
-// compile for Central Controller
-// NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
-void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
-    QL_DOUT("Compiling Central Controller program ... ");
-
-    // init
-    loadHwSettings(ir->platform);
-    codegen.init(ir->platform, options);
-    bundleIdx = 0;
-
-    // generate program header
-    codegen.programStart(ir->program->unique_name);
-
-#if 0   // FIXME: WIP
-    // generate code for all kernels
-    for (auto &kernel : program->kernels) {
-        QL_IOUT("Compiling kernel: " << kernel->name);
-        codegenKernelPrologue(kernel);
-
-        if (!kernel->gates.empty()) {
-            ir::compat::Bundles bundles = ir::compat::bundler(kernel);
-            codegen.kernelStart();
-            codegenBundles(bundles, program->platform);
-            codegen.kernelFinish(kernel->name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
-        } else {
-            QL_DOUT("Empty kernel: " << kernel->name);                      // NB: normal situation for kernels with classical control
-        }
-
-        codegenKernelEpilogue(kernel);
-    }
-#else   // new
-    // FIXME: Nodes of interest:
-    // ir->program->entry_point.links_to
-
-    // NB: based on NewToOldConverter::NewToOldConverter
-    for (const auto &block : ir->program->blocks) {
-        try {
-            QL_IOUT("Compiling block '" + block->name + "'");
-            codegen.kernelStart();  // FIXME: difference between block and kernel
-            compileBlock(block);
-            codegen.kernelFinish(block->name, 99 /*FIXME bundles.back().start_cycle+bundles.back().duration_in_cycles */);
-        } catch (utils::Exception &e) {
-            e.add_context("in block '" + block->name + "'");
-            throw;
-        }
-    }
-#endif
-
-    codegen.programFinish(ir->program->unique_name);
-
-    // write program to file
-    Str file_name(options->output_prefix + ".vq1asm");
-    QL_IOUT("Writing Central Controller program to " << file_name);
-    OutFile(file_name).write(codegen.getProgram());
-
-    // write instrument map to file (unless we were using input file)
-    Str map_input_file = options->map_input_file;
-    if (!map_input_file.empty()) {
-        Str file_name_map(options->output_prefix + ".map");
-        QL_IOUT("Writing instrument map to " << file_name_map);
-        OutFile(file_name_map).write(codegen.getMap());
-    }
-
-    QL_DOUT("Compiling Central Controller program [Done]");
-}
-
-
-// based on cc_light_eqasm_compiler.h::classical_instruction2qisa/decompose_instructions
-// NB: input instructions defined in classical.h::classical
-void Backend::codegenClassicalInstruction(const ir::compat::GateRef &classical_ins) {
-    auto &iname =  classical_ins->name;
-    auto &iopers = classical_ins->creg_operands;
-    UInt iopers_count = iopers.size();
-
-    if (
-        iname == QASM_ADD || iname == QASM_SUB ||
-        iname == QASM_AND || iname == QASM_OR  || iname == QASM_NOT || iname == QASM_XOR ||
-        iname == QASM_LDI || iname == QASM_MOV ||
-        iname == QASM_NOP
-    ) {
-        QL_FATAL("Classical instruction not implemented: " << iname);
-    } else if(
-        iname == QASM_EQ || iname == QASM_NE || iname == QASM_LT ||
-        iname == QASM_GT || iname == QASM_LE || iname == QASM_GE
-    ) {
-        QL_FATAL("Classical instruction not implemented: " << iname);
-    } else {
-        QL_FATAL("Unknown classical operation'" << iname << "' with'" << iopers_count << "' operands!");
-    }
-}
-
-
-/* get loop label from kernel name
- *
- * Program::add_for() and Program::add_do_while() generate kernels that wrap a program or kernel inside
- * a 'start' and 'end' kernel that only contain the looping information. The names of these added kernels are derived
- * from the name of the wrapped object by adding a suffix. Examples:
- * -    "program" results e.g. in "program_for3389_start" or "program_for3389_end"
- * -    "kernel" results e.g. in "kernel_do_while1_start" or "kernel_do_while1" (without "_end")
- *
- * This function obtains the stem name without the added suffix (e.g. '_for0_start') to use as a label to share between
- * the 'start' and 'end' code.
- *
- * Notes:
- * -    Other than the original in Kernel::get_epilogue, we extract the full stem, not only the part up to the first
- *      "_" to prevent duplicate labels if users choose to use names that are identical before the first "_"
- * -    numbering is performed using "static unsigned long phi_node_count = 0;" and thus persists over compiler invocations
- */
-
-// FIXME: originally extracted from Kernel::get_epilogue, should be in a common place
-
-Str Backend::loopLabel(const ir::compat::KernelRef &k) {
-    Str label;
-    Str expr;
-
-    switch (k->type) {
-        case ir::compat::KernelType::FOR_START:
-            expr = "(.*)_for[0-9]+_start$";
-            break;
-
-        case ir::compat::KernelType::FOR_END:
-            expr = "(.*)_for[0-9]+_end$";
-            break;
-
-        case ir::compat::KernelType::DO_WHILE_START:
-            expr = "(.*)_do_while[0-9]+_start$";
-            break;
-
-        case ir::compat::KernelType::DO_WHILE_END:
-            expr = "(.*)_do_while[0-9]+$";  // NB: there is no "_end" here, see quantum_program::add_do_while()
-            break;
-
-        default:
-            QL_FATAL("internal inconsistency: requesting kernel label for kernel type " << (int)k->type);
-    }
-
-    std::regex re(expr, std::regex_constants::egrep);   // FIXME: we are reverse engineering the naming scheme of quantum_program::add_*
-    const int numMatch = 1+1;		// NB: +1 because index 0 contains full input match
-    std::smatch match;
-    if(std::regex_search(k->name, match, re) && match.size() == numMatch) {
-        label = match.str(1);
-    } else {
-        QL_FATAL("internal inconsistency: kernel name '" << k->name << "' does not contain loop suffix");
-    }
-
-    QL_IOUT("kernel '" << k->name << "' gets label '" << label << "'");
-    return label;
-}
-
-
-// handle kernel conditionality at beginning of kernel
-// based on cc_light_eqasm_compiler.h::get_prologue
-void Backend::codegenKernelPrologue(const ir::compat::KernelRef &k) {
-    codegen.comment(QL_SS2S("### Kernel: '" << k->name << "'"));
-
-    switch (k->type) {
-        case ir::compat::KernelType::IF_START: {
-            auto op0 = k->br_condition->operands[0]->as_register().id;
-            auto op1 = k->br_condition->operands[1]->as_register().id;
-            auto opName = k->br_condition->operation_name;
-            codegen.ifStart(op0, opName, op1);
-            break;
-        }
-
-        case ir::compat::KernelType::ELSE_START: {
-            auto op0 = k->br_condition->operands[0]->as_register().id;
-            auto op1 = k->br_condition->operands[1]->as_register().id;
-            auto opName = k->br_condition->operation_name;
-            codegen.elseStart(op0, opName, op1);
-            break;
-        }
-
-        case ir::compat::KernelType::FOR_START: {
-            codegen.forStart(loopLabel(k), k->iteration_count);
-            break;
-        }
-
-        case ir::compat::KernelType::DO_WHILE_START: {
-            codegen.doWhileStart(loopLabel(k));
-            break;
-        }
-
-        case ir::compat::KernelType::STATIC:
-        case ir::compat::KernelType::FOR_END:
-        case ir::compat::KernelType::DO_WHILE_END:
-        case ir::compat::KernelType::IF_END:
-        case ir::compat::KernelType::ELSE_END:
-            // do nothing
-            break;
-
-        default:
-            QL_FATAL("inconsistency detected: unhandled kernel type");
-            break;
-    }
-}
-
-
-// handle kernel conditionality at end of kernel
-// based on cc_light_eqasm_compiler.h::get_epilogue
-void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
-    switch (k->type) {
-        case ir::compat::KernelType::FOR_END: {
-            codegen.forEnd(loopLabel(k));
-            break;
-        }
-
-        case ir::compat::KernelType::DO_WHILE_END: {
-            auto op0 = k->br_condition->operands[0]->as_register().id;
-            auto op1 = k->br_condition->operands[1]->as_register().id;
-            auto opName = k->br_condition->operation_name;
-            codegen.doWhileEnd(loopLabel(k), op0, opName, op1);
-            break;
-        }
-
-        case ir::compat::KernelType::IF_END:
-        case ir::compat::KernelType::ELSE_END:
-            // do nothing
-            break;
-
-        case ir::compat::KernelType::STATIC:
-        case ir::compat::KernelType::IF_START:
-        case ir::compat::KernelType::ELSE_START:
-        case ir::compat::KernelType::FOR_START:
-        case ir::compat::KernelType::DO_WHILE_START:
-            // do nothing
-            break;
-
-        default:
-            QL_FATAL("inconsistency detected: unhandled kernel type");
-            break;
-    }
-}
-
-
+#if 0
 // based on cc_light_eqasm_compiler.h::bundles2qisa()
 void Backend::codegenBundles(ir::compat::Bundles &bundles, const ir::compat::PlatformRef &platform) {
     QL_IOUT("Generating .vq1asm for bundles");
@@ -857,44 +856,8 @@ void Backend::codegenBundles(ir::compat::Bundles &bundles, const ir::compat::Pla
 
     QL_IOUT("Generating .vq1asm for bundles [Done]");
 }
-
-
-// based on: cc_light_eqasm_compiler.h::loadHwSettings
-void Backend::loadHwSettings(const ir::PlatformRef &platform) {
-#if 0   // FIXME: currently unused, may be of future use
-    const struct {
-        UInt *var;
-        Str name;
-    } hw_settings[] = {
-#if 0   // FIXME: Convert to cycle. // NB: Visual Studio does not like empty array
-        { &mw_mw_buffer,            "mw_mw_buffer" },
-        { &mw_flux_buffer,          "mw_flux_buffer" },
-        { &mw_readout_buffer,       "mw_readout_buffer" },
-        { &flux_mw_buffer,          "flux_mw_buffer" },
-        { &flux_flux_buffer,        "flux_flux_buffer" },
-        { &flux_readout_buffer,     "flux_readout_buffer" },
-        { &readout_mw_buffer,       "readout_mw_buffer" },
-        { &readout_flux_buffer,     "readout_flux_buffer" },
-        { &readout_readout_buffer,  "readout_readout_buffer" }
 #endif
-    };
 
-    QL_DOUT("Loading hardware settings ...");
-    UInt i = 0;
-    try {
-        for (i = 0; i < ELEM_CNT(hw_settings); i++) {
-            UInt val = platform.hardware_settings[hw_settings[i].name].get<UInt>();
-            *hw_settings[i].var = val;
-        }
-    } catch (Json::exception &e) {
-        throw Exception(
-            "[x] error : eqasm_compiler::compile() : error while reading hardware settings : parameter '"
-            + hw_settings[i].name
-            + "'\n\t"
-            + Str(e.what()), false);
-    }
-#endif
-}
 
 } // namespace detail
 } // namespace vq1asm

@@ -30,7 +30,7 @@ prepz qOutput4
 #for (;  ; ) {    # FIXME: cannot have empty condition
 #for (; creg(0)<10; ) {    # FIXME: RuntimeError: Unknown error: dereferencing empty Maybe/One object or type N2ql2ir9StatementE (from EventGatherer::add_statement)
 #for (creg(0)=0; creg(0)<10000; creg(0)=creg(0)+1) { # FIXME: RuntimeError: Assertion failure: assert !nc.get().commutes_with(incoming) failed
-while(creg(0)<10000) {
+#while(creg(0)<10000) {
     cz qInput2, qAncilla3
     rx180 qOutput4
     i qOutput4
@@ -50,4 +50,4 @@ while(creg(0)<10000) {
     barrier
 
     rx180 qAncilla3
-}
+#}
