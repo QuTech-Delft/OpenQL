@@ -164,8 +164,13 @@ void EventGatherer::add_statement(const ir::StatementRef &stmt) {
         } else if (auto dyn = stmt->as_dynamic_loop()) {
             add_expression(ir::prim::OperandMode::READ, dyn->condition);
             if (auto forl = stmt->as_for_loop()) {
+#if 0   // original
                 add_statement(forl->initialize);
                 add_statement(forl->update);
+#else   // FIXME: honour 'Maybe'-ness
+                if(!forl->initialize.empty()) add_statement(forl->initialize);
+                if(!forl->update.empty()) add_statement(forl->update);
+#endif
             } else if (stmt->as_repeat_until_loop()) {
                 // no further dependencies
             } else {
@@ -416,7 +421,16 @@ private:
         }
         if (!any_edge) {
             for (const auto &nc : global_write) {
+#if 0
                 QL_ASSERT(!nc.get().commutes_with(incoming));
+#else   // FIXME
+                if(!nc.get().commutes_with(incoming)) {
+                    QL_ICE(
+                        "DDG build: event '" + ir::describe(incoming.statement)
+                        + "' does not commute with '" + ir::describe(nc.get().statement) + "'"
+                    );
+                }
+#endif
                 add_edge(nc, incoming);
             }
         }
