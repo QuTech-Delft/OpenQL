@@ -120,7 +120,7 @@ void Codegen::programFinish(const Str &progName) {
 \************************************************************************/
 
 void Codegen::kernelStart() {
-    for (UInt i=0; i<ELEM_CNT(lastEndCycle); i++) lastEndCycle[i] = ir::compat::FIRST_CYCLE;
+    zero(lastEndCycle); // new IR starts counting at zero
 }
 
 void Codegen::kernelFinish(const Str &kernelName, UInt durationInCycles) {
