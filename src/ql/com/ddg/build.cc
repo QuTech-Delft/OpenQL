@@ -424,10 +424,10 @@ private:
 #if 0
                 QL_ASSERT(!nc.get().commutes_with(incoming));
 #else   // FIXME
-                if(!nc.get().commutes_with(incoming)) {
+                if(nc.get().commutes_with(incoming)) {
                     QL_ICE(
                         "DDG build: event '" + ir::describe(incoming.statement)
-                        + "' does not commute with '" + ir::describe(nc.get().statement) + "'"
+                        + "' commutes with '" + ir::describe(nc.get().statement) + "'"
                     );
                 }
 #endif

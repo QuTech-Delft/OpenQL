@@ -35,7 +35,7 @@ class Test_cQASM(unittest.TestCase):
                 ql.set_option('write_report_files', 'yes')
                 ql.compile(in_fn)
 
-            if 0:
+            if 1:
                 # use compatibility
                 # fails in outputting debug info
                 ql.compile(
@@ -47,8 +47,8 @@ class Test_cQASM(unittest.TestCase):
                     }
                 )
 
-            if 1:
-                # fails in in pass reader, phase debugging.before
+            if 0:
+                # use pass manager
                 pl = ql.Platform("cc", "config_cc_s17_direct_iq_cqasm1.2.json")
                 c = pl.get_compiler()
 
@@ -62,9 +62,11 @@ class Test_cQASM(unittest.TestCase):
                         'debug': 'yes'
                     }
                 )
-                c.set_option('scheduler.debug', 'yes')
-                c.print_strategy()
 
+                # set scheduler options
+                c.set_option('scheduler.debug', 'yes')
+
+                c.print_strategy()
                 c.compile_with_frontend(pl)
 
 

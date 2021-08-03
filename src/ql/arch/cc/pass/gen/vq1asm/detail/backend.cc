@@ -26,6 +26,7 @@
 #include "ql/utils/filesystem.h"
 #include "ql/ir/compat/platform.h"
 #include "ql/ir/describe.h"
+#include "ql/ir/ops.h"
 #include "ql/com/options.h"
 
 #include <regex>
@@ -102,7 +103,11 @@ void Backend::compileBlock(
     for (const auto &stmt : block->statements) {
         if (auto insn = stmt->as_instruction()) {
 
-            QL_IOUT("instruction: " + ir::describe(stmt) + ", cycle=" + std::to_string(insn->cycle));
+            QL_IOUT(
+                "instruction: " + ir::describe(stmt)
+                + ", cycle=" + std::to_string(insn->cycle)
+                + ", duration=" + std::to_string(ir::get_duration_of_statement(stmt))
+            );
             // Ensure that we have a kernel to add the instruction to, and
             // that cycle_offset is valid.
 //            if (kernel.empty()) {
