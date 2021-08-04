@@ -24,6 +24,8 @@
 
 #include "ql/utils/str.h"
 #include "ql/utils/filesystem.h"
+#include "ql/ir/ir.h"
+//#include "ql/ir/ir.gen.h"
 #include "ql/ir/compat/platform.h"
 #include "ql/ir/describe.h"
 #include "ql/ir/ops.h"
@@ -87,7 +89,7 @@ void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
             QL_IOUT("Compiling block '" + block->name + "'");
             codegen.kernelStart();  // FIXME: difference between block and Bundles, adapt naming
             codegenBlock(block);
-            codegen.kernelFinish(block->name, 99 /*FIXME bundles.back().start_cycle+bundles.back().duration_in_cycles */);
+            codegen.kernelFinish(block->name, ir::get_duration_of_block(block));
         } catch (utils::Exception &e) {
             e.add_context("in block '" + block->name + "'");
             throw;
@@ -259,6 +261,7 @@ void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
 #endif
 
 // Based on NewToOldConverter::convert_block
+// FIXME: we need to collect 'Bundles' (i.e. statements starting in the same cycle)
 void Backend::codegenBlock(const ir::BlockBaseRef &block)
 {
     // Whether this is the first lazily-constructed kernel. Only if this is true
@@ -415,8 +418,16 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
                             throw;
                         }
                     }
+
+                    Vec<UInt> operands;
                     for (utils::UInt i = 0; i < custom->operands.size(); i++) {
-                        QL_IOUT("operand: " + ir::describe(custom->operands[i]));
+#if 1   // FIXME: hack, from new_to_old::Operands::append
+                        auto expr = custom->operands[i];
+                        auto ref = expr->as_reference();
+                        Int idx = ref->indices[0].as<ir::IntLiteral>()->value;
+                        QL_IOUT("operand: " << ir::describe(custom->operands[i]) << ", index=" << idx);
+                        operands.push_back(idx);
+#endif
                         try {
 //                            ops.append(*this, custom->operands[i]);
                         } catch (utils::Exception &e) {
@@ -428,17 +439,31 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
                             throw;
                         }
                     }
-//                    kernel->gate(
-//                        custom->instruction_type->name, ops.qubits, ops.cregs,
-//                        0, ops.angle, ops.bregs
-//                    );
-//                    if (ops.has_integer) {
-//                        CHECK_COMPAT(
-//                            kernel->gates.size() == first_gate_index + 1,
-//                            "gate with integer operand cannot be ad-hoc decomposed"
-//                        );
-//                        kernel->gates.back()->int_operand = ops.integer;
-//                    }
+#if 0   // org
+                    kernel->gate(
+                        custom->instruction_type->name, ops.qubits, ops.cregs,
+                        0, ops.angle, ops.bregs
+                    );
+                    if (ops.has_integer) {
+                        CHECK_COMPAT(
+                            kernel->gates.size() == first_gate_index + 1,
+                            "gate with integer operand cannot be ad-hoc decomposed"
+                        );
+                        kernel->gates.back()->int_operand = ops.integer;
+                    }
+#else   // FIXME: cc
+                    codegen.customGate(
+                        custom->instruction_type->name,
+                        operands,    // operands
+                        Vec<UInt>{},    // creg_operands
+                        Vec<UInt>{},    // breg_operands
+                        ir::compat::ConditionType::ALWAYS,  // condition
+                        Vec<UInt>{},    // cond_operands
+                        0.0,            // angle
+                        insn->cycle,   // startCycle
+                        ir::get_duration_of_statement(stmt)    // durationInCycles
+                    );
+#endif
 
                 } else if (auto set = cinsn->as_set_instruction()) {
 

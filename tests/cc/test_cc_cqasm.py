@@ -35,7 +35,7 @@ class Test_cQASM(unittest.TestCase):
                 ql.set_option('write_report_files', 'yes')
                 ql.compile(in_fn)
 
-            if 1:
+            if 0:
                 # use compatibility
                 # fails in outputting debug info
                 ql.compile(
@@ -47,7 +47,7 @@ class Test_cQASM(unittest.TestCase):
                     }
                 )
 
-            if 0:
+            if 1:
                 # use pass manager
                 pl = ql.Platform("cc", "config_cc_s17_direct_iq_cqasm1.2.json")
                 c = pl.get_compiler()
