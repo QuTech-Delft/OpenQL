@@ -12,7 +12,7 @@ qubits 17
 pragma @ql.name("test_rus_elements")
 pragma @ql.platform("config_cc_s17_direct_iq_cqasm1.2.json")
 
-.begin
+.def
 map qInput1 = q[0]
 map qInput2 = q[1]
 map qAncilla3 = q[2]
@@ -22,18 +22,19 @@ var mAncilla3: bool
 ################################################
 # preparation
 ################################################
+.prepare
 prepz qInput1
 prepz qInput2
 prepz qAncilla3
 prepz qOutput4
 
 ################################################
-# repeatuntilsuccess
+# repeat until success
 ################################################
 .repeatUntilSuccess
 #for (;  ; ) {    # FIXME: cannot have empty condition
 #for (; creg(0)<10; ) {
-#for (creg(0)=0; creg(0)<10000; creg(0)=creg(0)+1) {
+for (creg(0)=0; creg(0)<10000; creg(0)=creg(0)+1) {
 #while(creg(0)<10000) {
 #    cz qInput2, qAncilla3 # FIXME: requires decomposition
     rx180 qOutput4
@@ -54,4 +55,4 @@ prepz qOutput4
     barrier
 
     rx180 qAncilla3
-#}
+}

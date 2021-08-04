@@ -732,6 +732,9 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
                     throw;
                 }
 
+            } else if (auto for_loop = stmt->as_for_loop()) {
+                QL_IOUT("for loop encountered");
+
             } else {
                 QL_ICE("unsupported structured control-flow statement encountered");
             }
