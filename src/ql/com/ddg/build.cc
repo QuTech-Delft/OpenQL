@@ -266,7 +266,14 @@ private:
          * returns true when the events are caused by the same node.
          */
         utils::Bool commutes_with(const EventNodePair &enp) const {
-            if (node == enp.node) return true;
+
+            // Events belonging to the same statement commute with each other!
+            // This is a necessary detail to make the DDG builder state machine
+            // work.
+            if (node == enp.node) {
+                return true;
+            }
+
             return event.commutes_with(enp.event);
         }
 
@@ -390,7 +397,7 @@ private:
         // from the commuting list.
         auto it = commuting.begin();
         while (it != commuting.end()) {
-            if (!it->event.commutes_with(incoming.event)) {
+            if (!it->commutes_with(incoming)) {
                 evict_from_commuting(it);
             } else {
                 ++it;
