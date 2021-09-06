@@ -22,6 +22,8 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
+class OperandContext;
+
 class Backend {
 public:
     Backend() = default;
@@ -29,7 +31,7 @@ public:
     void compile(const ir::Ref &ir, const OptionsRef &options);
 
 private:
-    void codegenBlock(const ir::BlockBaseRef &block);
+    void codegenBlock(const OperandContext &operandContext, const ir::BlockBaseRef &block, const Str &name);
 
 #if 0   // FIXME
     static Str loopLabel(const ir::compat::KernelRef &k);

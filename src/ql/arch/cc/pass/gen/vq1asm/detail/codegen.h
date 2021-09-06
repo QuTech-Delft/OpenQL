@@ -39,7 +39,7 @@ public: //  functions
     // Compile support
     void programStart(const Str &progName);
     void programFinish(const Str &progName);
-    void kernelStart();
+    void kernelStart(const Str &kernelName);
     void kernelFinish(const Str &kernelName, UInt durationInCycles);
     void bundleStart(const Str &cmnt);
     void bundleFinish(UInt startCycle, UInt durationInCycles, Bool isLastBundle);

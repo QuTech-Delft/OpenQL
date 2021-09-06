@@ -119,7 +119,8 @@ void Codegen::programFinish(const Str &progName) {
 | 'Kernel' level functions
 \************************************************************************/
 
-void Codegen::kernelStart() {
+void Codegen::kernelStart(const Str &kernelName) {
+    comment(QL_SS2S("### Kernel: '" << kernelName << "'"));
     zero(lastEndCycle); // new IR starts counting at zero
 }
 

@@ -24,9 +24,9 @@
 
 #include "ql/utils/str.h"
 #include "ql/utils/filesystem.h"
-#include "ql/ir/ir.h"
+//#include "ql/ir/ir.h"
 //#include "ql/ir/ir.gen.h"
-#include "ql/ir/compat/platform.h"
+//#include "ql/ir/compat/platform.h"
 #include "ql/ir/describe.h"
 #include "ql/ir/ops.h"
 #include "ql/com/options.h"
@@ -49,6 +49,218 @@ namespace detail {
 
 using namespace utils;
 
+// FIXME: stuff below extracted from NewToOldConverter, required by class Operands
+class OperandContext {
+public:
+    OperandContext(const ir::Ref &ir);
+    int convert_creg_reference(const ir::ExpressionRef &ref) const;
+
+private:
+    friend class Operands;
+
+    /**
+     * The root of the new IR structure that serves as our input.
+     */
+    ir::Ref ir;
+
+    /**
+     * The number of qubits.
+     */
+    utils::UInt num_qubits;
+
+    /**
+     * The object used by the new IR to refer to bregs from num_qubits onwards.
+     */
+    ir::ObjectLink breg_ob;
+
+    /**
+     * The object used by the new IR to refer to cregs.
+     */
+    ir::ObjectLink creg_ob;
+};
+
+OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
+    // Determine number of qubits.
+    CHECK_COMPAT(
+        ir->platform->qubits->shape.size() == 1,
+        "main qubit register has wrong dimensionality"
+    );
+//    if (ir->program->has_annotation<ObjectUsage>()) {
+//        num_qubits = ir->program->get_annotation<ObjectUsage>().num_qubits;
+//    } else {
+        num_qubits = ir->platform->qubits->shape[0];
+//    }
+
+    // Determine number of bregs. The first num_qubits bregs are the implicit
+    // bits associated with qubits, so there are always num_qubits of these.
+    auto num_bregs = num_qubits;
+    breg_ob = find_physical_object(ir, "breg");
+#if 0
+    if (ir->program->has_annotation<ObjectUsage>()) {
+        num_bregs = ir->program->get_annotation<ObjectUsage>().num_bregs;
+    } else if (!breg_ob.empty()) {
+        CHECK_COMPAT(
+            breg_ob->shape.size() == 1,
+            "breg register has has wrong dimensionality"
+        );
+        CHECK_COMPAT(
+            breg_ob->data_type == ir->platform->default_bit_type,
+            "breg register is not of the default bit type"
+        );
+        num_bregs += breg_ob->shape[0];
+    }
+#endif
+
+    // Determine number of cregs.
+    utils::UInt num_cregs = 0;
+    creg_ob = find_physical_object(ir, "creg");
+#if 0
+    if (ir->program->has_annotation<ObjectUsage>()) {
+        num_cregs = ir->program->get_annotation<ObjectUsage>().num_cregs;
+    } else if (!creg_ob.empty()) {
+        CHECK_COMPAT(
+            creg_ob->shape.size() == 1,
+            "creg register has has wrong dimensionality"
+        );
+        CHECK_COMPAT(
+            creg_ob->data_type == ir->platform->default_int_type,
+            "creg register is not of the default integer type"
+        );
+        num_cregs += creg_ob->shape[0];
+    }
+#endif
+}
+
+
+/**
+ * Converts a creg reference to a compat::ClassicalRegister.
+ */
+int OperandContext::convert_creg_reference(const ir::ExpressionRef &ref) const {
+    auto lhs = ref->as_reference();
+    CHECK_COMPAT(
+        lhs &&
+        lhs->target == creg_ob &&
+        lhs->data_type == creg_ob->data_type &&
+        lhs->indices.size() == 1 &&
+        lhs->indices[0]->as_int_literal(),
+        "expected creg reference, but got something else"
+    );
+    return lhs->indices[0]->as_int_literal()->value;
+}
+
+
+
+
+// FIXME: shameless copy of new_to_old.cc::Operands, edited to suit
+
+/**
+ * Handles gathering the operands for a gate in the legacy format.
+ */
+class Operands {
+public:
+
+    /**
+     * Qubit operand indices.
+     */
+    utils::Vec<utils::UInt> qubits;
+
+    /**
+     * Creg operand indices.
+     */
+    utils::Vec<utils::UInt> cregs;
+
+    /**
+     * Breg operand indices.
+     */
+    utils::Vec<utils::UInt> bregs;
+
+    /**
+     * Angle operand existence.
+     */
+    utils::Bool has_angle = false;
+
+    /**
+     * Angle operand value.
+     */
+    utils::Real angle = 0.0;
+
+    /**
+     * Integer operand existence.
+     */
+    utils::Bool has_integer = false;
+
+    /**
+     * Integer operand value.
+     */
+    utils::Int integer = 0;
+
+    /**
+     * Appends an operand.
+     */
+//    void append(const NewToOldConverter &conv, const ExpressionRef &expr);
+    void append(const OperandContext &operandContext, const ir::ExpressionRef &expr);
+
+};
+
+/**
+ * Appends an operand.
+ */
+// FIXME: see ql::ir::cqasm::convert_expression() for how expressions are built from cQASM, and ql::ir::cqasm::read for register definitions
+// FIXME: see ql::ir::convert_old_to_new(const compat::PlatformRef &old) on how cregs/bregs are created. This is also used by the NEW cQASM reader
+void Operands::append(const OperandContext &operandContext, const ir::ExpressionRef &expr) {
+    if (auto real_lit = expr->as_real_literal()) {
+        CHECK_COMPAT(!has_angle, "encountered gate with multiple angle (real) operands");
+        has_angle = true;
+        angle = real_lit->value;
+    } else if (auto int_lit = expr->as_int_literal()) {
+        CHECK_COMPAT(!has_integer, "encountered gate with multiple integer operands");
+        has_integer = true;
+        integer = int_lit->value;
+    } else if (auto ref = expr->as_reference()) {
+
+        if (ref->indices.size() != 1 || !ref->indices[0]->as_int_literal()) {
+            QL_ICE(
+                "encountered incompatible object reference to "
+                << ref->target->name
+                << " (size=" << ref->indices.size() << ")"
+            );
+        } else if (
+            ref->target == operandContext.ir->platform->qubits &&
+            ref->data_type == operandContext.ir->platform->qubits->data_type
+        ) {
+            qubits.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
+        } else if (
+            ref->target == operandContext.ir->platform->qubits &&
+            ref->data_type == operandContext.ir->platform->default_bit_type
+        ) {
+            bregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
+#if 1   // FIXME
+        } else if (
+            ref->target == operandContext.breg_ob &&
+            ref->data_type == operandContext.breg_ob->data_type
+        ) {
+            bregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value + operandContext.num_qubits);
+        } else if (
+            ref->target == operandContext.creg_ob &&
+            ref->data_type == operandContext.creg_ob->data_type
+        ) {
+            cregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
+#endif
+        } else {
+            QL_ICE(
+                "encountered unknown object reference to "
+                << ref->target->name
+            );
+        }
+    } else if (expr->as_function_call()) {
+        QL_ICE("encountered unsupported function call in gate operand list");
+    } else {
+        QL_ICE("cannot convert operand expression to old IR: " << describe(expr));
+    }
+}
+
+
+
 
 // compile for Central Controller
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
@@ -56,6 +268,7 @@ void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
     QL_DOUT("Compiling Central Controller program ... ");
 
     // init
+    OperandContext oc(ir);
     codegen.init(ir->platform, options);
     bundleIdx = 0;
 
@@ -86,10 +299,7 @@ void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
     // NB: based on NewToOldConverter::NewToOldConverter
     for (const auto &block : ir->program->blocks) {
         try {
-            QL_IOUT("Compiling block '" + block->name + "'");
-            codegen.kernelStart();  // FIXME: difference between block and Bundles, adapt naming
-            codegenBlock(block);
-            codegen.kernelFinish(block->name, ir::get_duration_of_block(block));
+            codegenBlock(oc, block, block->name);
         } catch (utils::Exception &e) {
             e.add_context("in block '" + block->name + "'");
             throw;
@@ -260,14 +470,160 @@ void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
 }
 #endif
 
+
+// helpers
+void handleSetInstruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr="")
+{
+    QL_IOUT(descr << ": '" << ir::describe(set) << "'");
+
+    int lhs;
+    try {
+        lhs = operandContext.convert_creg_reference(set.lhs);
+    } catch (utils::Exception &e) {
+        e.add_context("unsupported LHS for set instruction encountered");
+        throw;
+    }
+
+    try {
+        if (auto ilit = set.rhs->as_int_literal()) {
+            QL_IOUT(
+                "set: "
+                << "creg[" << lhs << "]"
+                << " = "
+                << "#" << ilit->value);
+        } else if (set.rhs->as_reference()) {
+            auto creg = operandContext.convert_creg_reference(set.rhs);
+            QL_IOUT(
+                "set: "
+                << "creg[" << lhs << "]"
+                << " = "
+                "creg[" << creg << "]");
+        } else if (auto fn = set.rhs->as_function_call()) {
+            utils::Str operation;
+            utils::UInt operand_count = 2;
+            if (fn->function_type->name == "int") {
+                CHECK_COMPAT(
+                    fn->operands.size() == 1 &&
+                    fn->operands[0]->as_function_call(),
+                    "int() cast target must be a function"
+                );
+                fn = fn->operands[0]->as_function_call();
+            }
+            if (fn->function_type->name == "operator~") {
+                operation = "~";
+                operand_count = 1;
+            } else if (fn->function_type->name == "operator+") {
+                operation = "+";
+            } else if (fn->function_type->name == "operator-") {
+                operation = "-";
+            } else if (fn->function_type->name == "operator&") {
+                operation = "&";
+            } else if (fn->function_type->name == "operator|") {
+                operation = "|";
+            } else if (fn->function_type->name == "operator^") {
+                operation = "^";
+            } else if (fn->function_type->name == "operator==") {
+                operation = "==";
+            } else if (fn->function_type->name == "operator!=") {
+                operation = "!=";
+            } else if (fn->function_type->name == "operator>") {
+                operation = ">";
+            } else if (fn->function_type->name == "operator>=") {
+                operation = ">=";
+            } else if (fn->function_type->name == "operator<") {
+                operation = "<";
+            } else if (fn->function_type->name == "operator<=") {
+                operation = "<=";
+            } else {
+                QL_ICE(
+                    "no conversion known for function " << fn->function_type->name
+                );
+            }
+            CHECK_COMPAT(
+                fn->operands.size() == operand_count,
+                "function " << fn->function_type->name << " has wrong operand count"
+            );
+            if (operand_count == 1) {
+                auto creg = operandContext.convert_creg_reference(fn->operands[0]);
+                QL_IOUT(
+                    "set: "
+                    << "creg[" << lhs << "]"
+                    << " = "
+                    << operation << " "
+                    << "creg[" << creg << "]"
+                );
+                // FIXME: handle literal
+//                kernel->classical(
+//                    *lhs,
+//                    compat::ClassicalOperation(
+//                        operation,
+//                        convert_creg_reference(fn->operands[0])
+//                    )
+//                );
+            } else if (fn->operands.size() == 2) {
+                auto &op0 = fn->operands[0];
+                auto &op1 = fn->operands[1];
+
+                if(op0->as_reference() && op1->as_reference()) {
+                    auto creg0 = operandContext.convert_creg_reference(op0);
+                    auto creg1 = operandContext.convert_creg_reference(op1);
+                    QL_IOUT(
+                        "set: "
+                        << "creg[" << lhs << "]"
+                        << " = "
+                        << "creg[" << creg0 << "]"
+                        << " " << operation << " "
+                        << "creg[" << creg1 << "]"
+                    );
+                } else if(op0->as_reference() && op1->as_int_literal()) {
+                    auto creg0 = operandContext.convert_creg_reference(op0);
+                    QL_IOUT(
+                        "set: "
+                        << "creg[" << lhs << "]"
+                        << " = "
+                        << "creg[" << creg0 << "]"
+                        << " " << operation << " "
+                        << "#" << op1->as_int_literal()->value
+                    );
+                } // FIXME: etc, also handle "creg(0)=creg(0)+1+1"
+
+
+//                kernel->classical(
+//                    *lhs,
+//                    compat::ClassicalOperation(
+//                        convert_creg_reference(fn->operands[0]),
+//                        operation,
+//                        convert_creg_reference(fn->operands[1])
+//                    )
+//                );
+            } else {
+                QL_ASSERT(false);
+            }
+        }
+    }
+    catch (utils::Exception &e) {
+        e.add_context("in gate condition", true);
+        throw;
+    }
+
+}
+
+void handleExpression(const ir::Expression &expression, const Str &descr="")
+{
+    QL_IOUT(descr << ": '" << ir::describe(expression) << "'");
+}
+
+
 // Based on NewToOldConverter::convert_block
 // FIXME: we need to collect 'Bundles' (i.e. statements starting in the same cycle)
-void Backend::codegenBlock(const ir::BlockBaseRef &block)
+// FIXME: convert block relative cycles to absolute cycles somewhere
+// FIXME: runOnce automatically on cQASM input
+void Backend::codegenBlock(const OperandContext &operandContext, const ir::BlockBaseRef &block, const Str &block_name)
 {
     // Whether this is the first lazily-constructed kernel. Only if this is true
     // when flushing at the end are statistics annotations copied; otherwise
     // they would be invalid anyway.
-    utils::Bool first_kernel = true;
+//    utils::Bool first_kernel = true;
 
     // Cycle offset for converting from new-IR cycles to old-IR cycles. In
     // the new IR, cycles start at zero; in the old one they start at
@@ -284,15 +640,49 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
 //        cycles_valid = kcv->valid;
 //    }
 
+    // FIXME: comments
+    Int current_cycle = -1;
+    Bool first_bundle = true;
+
+    QL_IOUT("Compiling block '" + block_name + "'");
+    codegen.kernelStart(block_name);  // FIXME: difference between block and Bundles, adapt naming
+
     // Loop over the statements and handle them individually.
     for (const auto &stmt : block->statements) {
         if (auto insn = stmt->as_instruction()) {
+            //****************************************************************
+            // Statement: instruction
+            //****************************************************************
+            auto duration = ir::get_duration_of_statement(stmt);
 
             QL_IOUT(
                 "instruction: " + ir::describe(stmt)
                 + ", cycle=" + std::to_string(insn->cycle)
-                + ", duration=" + std::to_string(ir::get_duration_of_statement(stmt))
+                + ", duration=" + std::to_string(duration)
             );
+
+            // generate bundle header and trailer when necessary
+            if (insn->cycle != current_cycle) {
+
+                if (!first_bundle) {
+
+                    // generate bundle trailer, and code for classical gates
+                    Bool isLastBundle = true;  // FIXME &bundle == &bundles.back();
+                    codegen.bundleFinish(insn->cycle, duration, isLastBundle);
+                }
+
+                QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << insn->cycle << ", duration_in_cycles=" << duration));
+                // FIXME: first instruction may be wait with zero duration, more generally: duration of first statement != bundle duration
+                codegen.bundleStart(QL_SS2S(
+                    "## Bundle " << bundleIdx++
+                    << ": start_cycle=" << insn->cycle
+                    << ", duration_in_cycles=" << duration << ":"
+                ));
+
+                first_bundle = false;
+                current_cycle = insn->cycle;
+            }
+
             // Ensure that we have a kernel to add the instruction to, and
             // that cycle_offset is valid.
 //            if (kernel.empty()) {
@@ -314,6 +704,9 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
             // Handle the instruction subtypes.
             if (auto cinsn = stmt->as_conditional_instruction()) {
 
+                //****************************************************************
+                // Instruction: conditional
+                //****************************************************************
                 // Handle the condition.
                 try {
                     utils::Vec<utils::UInt> cond_operands;
@@ -406,9 +799,9 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
                 // Handle the conditional instruction subtypes.
                 if (auto custom = cinsn->as_custom_instruction()) {
 
-                    QL_IOUT("Custom instruction: name=" + custom->instruction_type->name);
+                    QL_IOUT("custom instruction: name=" + custom->instruction_type->name);
                     // Handle the normal operands for custom instructions.
-//                    Operands ops;
+                    Operands ops;
                     for (const auto &ob : custom->instruction_type->template_operands) {
                         QL_IOUT("template operand: " + ir::describe(ob));
                         try {
@@ -427,13 +820,15 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
                         Int idx = ref->indices[0].as<ir::IntLiteral>()->value;
                         QL_IOUT("operand: " << ir::describe(custom->operands[i]) << ", index=" << idx);
                         operands.push_back(idx);
+
+                        QL_IOUT("target: " << ref->target->name << ", data_type: " << ref->data_type->name);;
 #endif
                         try {
-//                            ops.append(*this, custom->operands[i]);
+                            ops.append(operandContext, custom->operands[i]);
                         } catch (utils::Exception &e) {
                             e.add_context(
                                 "name=" + custom->instruction_type->name
-//                                + ", qubits=" + ops.qubits.to_string()
+                                + ", qubits=" + ops.qubits.to_string()
                                 + ", operand=" + std::to_string(i)
                                 );
                             throw;
@@ -454,20 +849,26 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
 #else   // FIXME: cc
                     codegen.customGate(
                         custom->instruction_type->name,
-                        operands,    // operands
+                        operands,       // operands
                         Vec<UInt>{},    // creg_operands
                         Vec<UInt>{},    // breg_operands
                         ir::compat::ConditionType::ALWAYS,  // condition
                         Vec<UInt>{},    // cond_operands
                         0.0,            // angle
-                        insn->cycle,   // startCycle
+                        insn->cycle,    // startCycle
                         ir::get_duration_of_statement(stmt)    // durationInCycles
                     );
 #endif
 
                 } else if (auto set = cinsn->as_set_instruction()) {
 
+                    //****************************************************************
+                    // Instruction: set
+                    //****************************************************************
                     // Handle classical gates.
+
+                    // FIXME: use handleSet, also for structured stuff
+
 //                    utils::Opt<compat::ClassicalRegister> lhs;
                     try {
 //                        lhs.emplace(convert_creg_reference(set->lhs));
@@ -579,17 +980,11 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
 
             } else if (auto wait = stmt->as_wait_instruction()) {
 
-                // Handle wait instructions.
-                QL_IOUT("wait");
-//                Operands ops;
-//                for (const auto &ob : wait->objects) {
-//                    ops.append(*this, ob);
-//                }
-//                kernel->gate(
-//                    "wait", ops.qubits, ops.cregs,
-//                    wait->duration * old->platform->cycle_time,
-//                    ops.angle, ops.bregs
-//                );
+                //****************************************************************
+                // Instruction: wait
+                //****************************************************************
+                // NB: waits are already accounted for during scheduling, so backend can ignore these
+                QL_DOUT("wait (ignored by backend)");
 
             } else {
                 QL_ICE("unsupported instruction type encountered");
@@ -608,7 +1003,10 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
 
         } else if (stmt->as_structured()) {
 
-           QL_IOUT("structured: " + ir::describe(stmt));
+            //****************************************************************
+            // Statement: structured
+            //****************************************************************
+            QL_IOUT("structured: " + ir::describe(stmt));
              // Flush any pending kernel not affected by control-flow.
 //            if (!kernel.empty()) {
 //                first_kernel = false;
@@ -733,7 +1131,27 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
                 }
 
             } else if (auto for_loop = stmt->as_for_loop()) {
-                QL_IOUT("for loop encountered");
+                // FIXME: WIP
+                auto initialize = for_loop->initialize;
+                auto condition = for_loop->condition;
+                auto update = for_loop->update;
+                auto body = for_loop->body;
+
+                if (!initialize.empty()) handleSetInstruction(operandContext, *initialize, "for.initialize");
+                handleExpression(*condition, "for.condition");
+                if (!update.empty()) handleSetInstruction(operandContext, *update, "for.update");
+
+
+                // handle body
+                try {
+                    codegenBlock(operandContext, for_loop->body, "for_loop_FIXME");
+                } catch (utils::Exception &e) {
+                    e.add_context("in for loop body", true);
+                    throw;
+                }
+
+                // handle looping
+                // FIXME
 
             } else {
                 QL_ICE("unsupported structured control-flow statement encountered");
@@ -756,6 +1174,9 @@ void Backend::codegenBlock(const ir::BlockBaseRef &block)
 //        program->add(kernel);
 //        kernel.reset();
 //    }
+
+    QL_IOUT("Finished compiling block '" + block_name + "'");
+    codegen.kernelFinish(block_name, ir::get_duration_of_block(block));
 
 }
 
