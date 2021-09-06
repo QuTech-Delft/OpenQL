@@ -838,17 +838,7 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                         }
                     }
 
-//                    Vec<UInt> operands;
                     for (utils::UInt i = 0; i < custom->operands.size(); i++) {
-#if 0   // FIXME: hack, from new_to_old::Operands::append
-                        auto expr = custom->operands[i];
-                        auto ref = expr->as_reference();
-                        Int idx = ref->indices[0].as<ir::IntLiteral>()->value;
-                        QL_IOUT("operand: " << ir::describe(custom->operands[i]) << ", index=" << idx);
-                        operands.push_back(idx);
-
-                        QL_IOUT("target: " << ref->target->name << ", data_type: " << ref->data_type->name);;
-#endif
                         try {
                             ops.append(operandContext, custom->operands[i]);
                         } catch (utils::Exception &e) {
@@ -898,9 +888,6 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                         << "'" <<ir::describe(stmt) << "'"
                     );
                 }
-
-                // Reset the gate condition.
-//                kernel->gate_clear_condition();
 
             } else if (auto wait = stmt->as_wait_instruction()) {
 

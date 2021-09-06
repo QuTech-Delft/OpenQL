@@ -551,11 +551,11 @@ void Codegen::customGate(
         comment(Str(" # gate '") + qasm(iname, operands, breg_operands) + "'");
     }
 
-    // find instruction (gate definition)
 #if 0   // FIXME: org
+    // find instruction (gate definition)
     const Json &instruction = platform->find_instruction(iname);
 #else
-    // Get instruction from old Platform
+    // find instruction (gate definition) in JSON platform data
     const Json &instruction = platform->data.data["instructions"][iname];     // FIXME: check JSON access
 #endif
     // find signal vector definition for instruction
