@@ -484,6 +484,7 @@ void handleSetInstruction(const OperandContext &operandContext, const ir::SetIns
         throw;
     }
 
+// FIXME: RHS is an expression
     try {
         if (auto ilit = set.rhs->as_int_literal()) {
             QL_IOUT(
@@ -491,6 +492,7 @@ void handleSetInstruction(const OperandContext &operandContext, const ir::SetIns
                 << "creg[" << lhs << "]"
                 << " = "
                 << "#" << ilit->value);
+            // code: "move X,Rd"
         } else if (set.rhs->as_reference()) {
             auto creg = operandContext.convert_creg_reference(set.rhs);
             QL_IOUT(
@@ -498,6 +500,7 @@ void handleSetInstruction(const OperandContext &operandContext, const ir::SetIns
                 << "creg[" << lhs << "]"
                 << " = "
                 "creg[" << creg << "]");
+            // code: "move Rs,Rd"
         } else if (auto fn = set.rhs->as_function_call()) {
             utils::Str operation;
             utils::UInt operand_count = 2;
@@ -512,26 +515,48 @@ void handleSetInstruction(const OperandContext &operandContext, const ir::SetIns
             if (fn->function_type->name == "operator~") {
                 operation = "~";
                 operand_count = 1;
+                // code: "not Rs,Rd"
+
+            // arithmetic, 2 operands
             } else if (fn->function_type->name == "operator+") {
                 operation = "+";
+                // code: "add Ra,Rb,Rd"
+                // code: "add Ra,X,Rd"
             } else if (fn->function_type->name == "operator-") {
                 operation = "-";
+                // code: "sub Ra,Rb,Rd"
+                // code: "sub Ra,X,Rd"  only Ra-X, not X-Ra
             } else if (fn->function_type->name == "operator&") {
                 operation = "&";
+                // code: "and Ra,Rb,Rd"
+                // code: "and Ra,X,Rd"
             } else if (fn->function_type->name == "operator|") {
                 operation = "|";
+                // code: "or Ra,Rb,Rd"
+                // code: "or Ra,X,Rd"
             } else if (fn->function_type->name == "operator^") {
                 operation = "^";
+                // code: "xor Ra,Rb,Rd"
+                // code: "xor Ra,X,Rd"
+
+            // relop
+            // FIXME: should also support bregs
             } else if (fn->function_type->name == "operator==") {
                 operation = "==";
+                // code: "sub Ra,Rb,Rd" + not
+                // code: "sub Ra,X,Rd" + not
             } else if (fn->function_type->name == "operator!=") {
                 operation = "!=";
+                // code: "sub Ra,Rb,Rd"
+                // code: "sub Ra,X,Rd"
             } else if (fn->function_type->name == "operator>") {
                 operation = ">";
             } else if (fn->function_type->name == "operator>=") {
                 operation = ">=";
+                // code "jge Rx,X,@label"
             } else if (fn->function_type->name == "operator<") {
                 operation = "<";
+                // code "jlt Rx,X,@label"
             } else if (fn->function_type->name == "operator<=") {
                 operation = "<=";
             } else {
@@ -618,6 +643,7 @@ void handleExpression(const ir::Expression &expression, const Str &descr="")
 // FIXME: we need to collect 'Bundles' (i.e. statements starting in the same cycle)
 // FIXME: convert block relative cycles to absolute cycles somewhere
 // FIXME: runOnce automatically on cQASM input
+//FIXME: provide context in all QL_ICE
 void Backend::codegenBlock(const OperandContext &operandContext, const ir::BlockBaseRef &block, const Str &block_name)
 {
     // Whether this is the first lazily-constructed kernel. Only if this is true
@@ -860,119 +886,17 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                     );
 #endif
 
-                } else if (auto set = cinsn->as_set_instruction()) {
+                } else if (auto set_instruction = cinsn->as_set_instruction()) {
 
                     //****************************************************************
                     // Instruction: set
                     //****************************************************************
-                    // Handle classical gates.
-
-                    // FIXME: use handleSet, also for structured stuff
-
-//                    utils::Opt<compat::ClassicalRegister> lhs;
-                    try {
-//                        lhs.emplace(convert_creg_reference(set->lhs));
-                    } catch (utils::Exception &e) {
-                        e.add_context("unsupported LHS for set instruction encountered");
-                        throw;
-                    }
-                    try {
-                        if (auto ilit = set->rhs->as_int_literal()) {
-                            QL_IOUT("set(int)");
-//                            kernel->classical(
-//                                *lhs,
-//                                compat::ClassicalOperation(
-//                                    ilit->value
-//                                )
-//                            );
-                        } else if (set->rhs->as_reference()) {
-                            QL_IOUT("set(ref)");
-//                            kernel->classical(
-//                                *lhs,
-//                                compat::ClassicalOperation(
-//                                    convert_creg_reference(set->rhs)
-//                                )
-//                            );
-                        } else if (auto fn = set->rhs->as_function_call()) {
-                            QL_IOUT("set(fnc)");
-                            utils::Str operation;
-                            utils::UInt operand_count = 2;
-                            if (fn->function_type->name == "int") {
-                                CHECK_COMPAT(
-                                    fn->operands.size() == 1 &&
-                                    fn->operands[0]->as_function_call(),
-                                    "int() cast target must be a function"
-                                );
-                                fn = fn->operands[0]->as_function_call();
-                            }
-                            if (fn->function_type->name == "operator~") {
-                                operation = "~";
-                                operand_count = 1;
-                            } else if (fn->function_type->name == "operator+") {
-                                operation = "+";
-                            } else if (fn->function_type->name == "operator-") {
-                                operation = "-";
-                            } else if (fn->function_type->name == "operator&") {
-                                operation = "&";
-                            } else if (fn->function_type->name == "operator|") {
-                                operation = "|";
-                            } else if (fn->function_type->name == "operator^") {
-                                operation = "^";
-                            } else if (fn->function_type->name == "operator==") {
-                                operation = "==";
-                            } else if (fn->function_type->name == "operator!=") {
-                                operation = "!=";
-                            } else if (fn->function_type->name == "operator>") {
-                                operation = ">";
-                            } else if (fn->function_type->name == "operator>=") {
-                                operation = ">=";
-                            } else if (fn->function_type->name == "operator<") {
-                                operation = "<";
-                            } else if (fn->function_type->name == "operator<=") {
-                                operation = "<=";
-                            } else {
-                                QL_ICE(
-                                    "no conversion known for function " << fn->function_type->name
-                                );
-                            }
-                            CHECK_COMPAT(
-                                fn->operands.size() == operand_count,
-                                "function " << fn->function_type->name << " has wrong operand count"
-                            );
-                            if (operand_count == 1) {
-//                                kernel->classical(
-//                                    *lhs,
-//                                    compat::ClassicalOperation(
-//                                        operation,
-//                                        convert_creg_reference(fn->operands[0])
-//                                    )
-//                                );
-                            } else if (fn->operands.size() == 2) {
-//                                kernel->classical(
-//                                    *lhs,
-//                                    compat::ClassicalOperation(
-//                                        convert_creg_reference(fn->operands[0]),
-//                                        operation,
-//                                        convert_creg_reference(fn->operands[1])
-//                                    )
-//                                );
-                            } else {
-                                QL_ASSERT(false);
-                            }
-                        } else {
-                            QL_ICE(
-                                "must be integer literal, creg reference, or simple "
-                                "function of cregs"
-                            );
-                        }
-
-                    } catch (utils::Exception &e) {
-                        e.add_context("unsupported RHS for set instruction encountered");
-                        throw;
-                    }
-
+                    handleSetInstruction(operandContext, *set_instruction, "conditional.set");
                 } else {
-                    QL_ICE("unsupported instruction type encountered");
+                    QL_ICE(
+                        "unsupported instruction type encountered"
+                        << "'" <<ir::describe(stmt) << "'"
+                    );
                 }
 
                 // Reset the gate condition.
@@ -987,7 +911,10 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                 QL_DOUT("wait (ignored by backend)");
 
             } else {
-                QL_ICE("unsupported instruction type encountered");
+                QL_ICE(
+                    "unsupported statement type encountered: "
+                    << "'" <<ir::describe(stmt) << "'"
+                );
             }
 
             // Copy gate annotations if adding the gate resulted in just one
@@ -1031,6 +958,7 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
 //                );
                 try {
 //                    convert_block(if_else->branches[0]->body, if_program);
+                    codegenBlock(operandContext, if_else->branches[0]->body, "if_FIXME");
                 } catch (utils::Exception &e) {
                     e.add_context("in 'if' block", true);
                     throw;
@@ -1132,15 +1060,14 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
 
             } else if (auto for_loop = stmt->as_for_loop()) {
                 // FIXME: WIP
+//                auto body = for_loop->body;
+
+                // body prelude
                 auto initialize = for_loop->initialize;
-                auto condition = for_loop->condition;
-                auto update = for_loop->update;
-                auto body = for_loop->body;
-
                 if (!initialize.empty()) handleSetInstruction(operandContext, *initialize, "for.initialize");
+                //loopLabel
+                auto condition = for_loop->condition;
                 handleExpression(*condition, "for.condition");
-                if (!update.empty()) handleSetInstruction(operandContext, *update, "for.update");
-
 
                 // handle body
                 try {
@@ -1151,14 +1078,31 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                 }
 
                 // handle looping
+                auto update = for_loop->update;
+                if (!update.empty()) handleSetInstruction(operandContext, *update, "for.update");
+                // FIXME: loop
+
+            } else if (auto break_statement = stmt->as_break_statement()) {
+                QL_IOUT("break");
+                // FIXME
+
+            } else if (auto continue_statement = stmt->as_continue_statement()) {
+                QL_IOUT("continue");
                 // FIXME
 
             } else {
-                QL_ICE("unsupported structured control-flow statement encountered");
+                QL_ICE(
+                    "unsupported structured control-flow statement"
+                    << " '" << ir::describe(stmt) << "' "
+                    << "encountered"
+                );
             }
 
         } else {
-            QL_ICE("unsupported statement type encountered");
+            QL_ICE(
+                "unsupported statement type encountered"
+                << "'" <<ir::describe(stmt) << "'"
+            );
         }
     }
 

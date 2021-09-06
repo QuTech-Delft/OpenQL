@@ -1,0 +1,73 @@
+# File:         test_looping.cq
+# Purpose:      test cQasm looping with CC backend
+# Notes:
+
+version 1.2
+qubits 17
+
+pragma @ql.name("test_looping")
+pragma @ql.platform("config_cc_s17_direct_iq_cqasm1.2.json")
+
+.def
+map qInput1 = q[0]
+map qInput2 = q[1]
+map qAncilla3 = q[2]
+map qOutput4 = q[3]
+
+var mAncilla3: bool
+
+map i = creg(0)
+
+.init
+set i = 0;
+
+.forLoop1
+for (i=0; i<10000; i=i+1) {
+    if (!mAncilla3) {
+        break
+    }
+}
+
+
+.forLoop2
+for (; i<10000; )  {
+}
+
+# FIXME: fails: RuntimeError: Assertion failure: in pass scheduler, phase main: assert !available.empty() failed in file /Volumes/Data/shared/GIT/OpenQL/include/ql/com/sch/scheduler.h at line 417
+#.forLoop3
+#for (; true; )  {  # NB: condition cannot be empty, defined as: utils::One<ir::Expression>
+#}
+
+
+.forLoop4
+foreach(i = 0..10) {
+
+}
+
+
+.whileLoop
+while (i<10000) {
+
+}
+
+
+.repeatUntilLoop
+repeat {
+
+} until (i==0);
+
+
+.ifStatement
+if(i==0) {
+
+}
+
+.ifElseStatement
+if(i==0) {
+
+} else {
+
+}
+
+.ifElifElseStatement
+# FIXME

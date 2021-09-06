@@ -18,6 +18,7 @@ map qInput2 = q[1]
 map qAncilla3 = q[2]
 map qOutput4 = q[3]
 var mAncilla3: bool
+map i = creg(0)
 
 ################################################
 # preparation
@@ -32,10 +33,7 @@ prepz qOutput4
 # repeat until success
 ################################################
 .repeatUntilSuccess
-#for (;  ; ) {    # FIXME: cannot have empty condition: utils::One<ir::Expression>
-#for (; creg(0)<10; ) {
-for (creg(0)=0; creg(0)<10000; creg(0)=creg(0)+1) {
-#while(creg(0)<10000) {
+for (i=0; i<10000; i=i+1) {
 #    cz qInput2, qAncilla3 # FIXME: requires decomposition
     rx180 qOutput4
     i qOutput4
@@ -49,9 +47,9 @@ for (creg(0)=0; creg(0)<10000; creg(0)=creg(0)+1) {
         i qOutput4
     barrier
 
-###    if (!mAncilla3) {
-###        break
-###    }
+    if (!mAncilla3) {
+        break
+    }
     barrier
 
     rx180 qAncilla3
