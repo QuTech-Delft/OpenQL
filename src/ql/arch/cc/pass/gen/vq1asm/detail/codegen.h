@@ -10,7 +10,7 @@
 #pragma once
 
 #include "ql/ir/ir.h"
-#include "ql/ir/compat/platform.h"
+//#include "ql/ir/compat/platform.h"
 #include "types.h"
 #include "options.h"
 #include "bundle_info.h"

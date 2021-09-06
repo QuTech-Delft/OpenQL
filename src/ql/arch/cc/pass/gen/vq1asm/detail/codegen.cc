@@ -12,8 +12,8 @@
 #include <iosfwd>
 #include "ql/version.h"
 #include "ql/com/options.h"
-#include "ql/ir/compat/bundle.h"
-#include "ql/ir/compat/platform.h"
+//#include "ql/ir/compat/bundle.h"
+//#include "ql/ir/compat/platform.h"
 
 namespace ql {
 namespace arch {
@@ -551,9 +551,13 @@ void Codegen::customGate(
         comment(Str(" # gate '") + qasm(iname, operands, breg_operands) + "'");
     }
 
-#if 0   // FIXME: WIP
     // find instruction (gate definition)
+#if 0   // FIXME: org
     const Json &instruction = platform->find_instruction(iname);
+#else
+    // Get instruction from old Platform
+    const Json &instruction = platform->data.data["instructions"][iname];     // FIXME: check JSON access
+#endif
     // find signal vector definition for instruction
     Settings::SignalDef sd = settings.findSignalDefinition(instruction, iname);
 
@@ -656,7 +660,6 @@ void Codegen::customGate(
             vbi[0].breg_operands = breg_operands;
         }
     }
-#endif
 #endif
 }
 

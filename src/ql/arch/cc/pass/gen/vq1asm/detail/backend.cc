@@ -691,10 +691,10 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
             if (insn->cycle != current_cycle) {
 
                 if (!first_bundle) {
-
+                    QL_IOUT("FINISHING BUNDLE");
                     // generate bundle trailer, and code for classical gates
-                    Bool isLastBundle = true;  // FIXME &bundle == &bundles.back();
-                    codegen.bundleFinish(insn->cycle, duration, isLastBundle);
+                    Bool isLastBundle = false;  // FIXME &bundle == &bundles.back();
+                    codegen.bundleFinish(current_cycle, insn->cycle-current_cycle+duration, isLastBundle);  // FIXME: take cycle and duration of bundle
                 }
 
                 QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << insn->cycle << ", duration_in_cycles=" << duration));
@@ -838,9 +838,9 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                         }
                     }
 
-                    Vec<UInt> operands;
+//                    Vec<UInt> operands;
                     for (utils::UInt i = 0; i < custom->operands.size(); i++) {
-#if 1   // FIXME: hack, from new_to_old::Operands::append
+#if 0   // FIXME: hack, from new_to_old::Operands::append
                         auto expr = custom->operands[i];
                         auto ref = expr->as_reference();
                         Int idx = ref->indices[0].as<ir::IntLiteral>()->value;
@@ -875,12 +875,12 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
 #else   // FIXME: cc
                     codegen.customGate(
                         custom->instruction_type->name,
-                        operands,       // operands
-                        Vec<UInt>{},    // creg_operands
-                        Vec<UInt>{},    // breg_operands
+                        ops.qubits,     // operands
+                        ops.cregs,      // creg_operands
+                        ops.bregs,      // breg_operands
                         ir::compat::ConditionType::ALWAYS,  // condition
                         Vec<UInt>{},    // cond_operands
-                        0.0,            // angle
+                        ops.angle,      // angle
                         insn->cycle,    // startCycle
                         ir::get_duration_of_statement(stmt)    // durationInCycles
                     );
