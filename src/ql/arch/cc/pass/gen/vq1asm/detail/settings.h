@@ -8,9 +8,10 @@
 
 #pragma once
 
-#include "ql/ir/compat/platform.h"
 #include "types.h"
 #include "options.h"
+
+#include "ql/ir/compat/platform.h"  // FIXME
 
 namespace ql {
 namespace arch {

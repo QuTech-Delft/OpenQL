@@ -9,10 +9,10 @@
 #pragma once
 
 #include "types.h"
-
-#include "ql/ir/ir.h"
 #include "options.h"
 #include "codegen.h"
+
+#include "ql/ir/ir.h"
 
 namespace ql {
 namespace arch {

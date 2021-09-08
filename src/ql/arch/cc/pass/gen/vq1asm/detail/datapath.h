@@ -9,10 +9,12 @@
 #pragma once
 
 #include <iomanip>
-#include "ql/utils/logger.h"
-#include "ql/ir/compat/compat.h"
+
 #include "types.h"
 #include "bundle_info.h"
+
+#include "ql/utils/logger.h"
+#include "ql/ir/compat/compat.h"
 
 namespace ql {
 namespace arch {
@@ -34,7 +36,7 @@ using FeedbackMap = Map<Int, FeedbackInfo>;                 // NB: key is instru
 struct CondGateInfo { // information for conditional gate on single instrument group
     ir::compat::ConditionType condition;
     Vec<UInt> cond_operands;
-    Digital groupDigOut;
+    tDigital groupDigOut;
 };
 
 using CondGateMap = Map<Int, CondGateInfo>;                 // NB: key is instrument group

@@ -2,8 +2,7 @@
  * @file   arch/cc/pass/gen/vq1asm/detail/backend.cc
  * @date   201809xx
  * @author Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
- * @brief  eqasm backend for the Central Controller
- * @remark based on cc_light_eqasm_compiler.h, commit f34c0d9
+ * @brief  backend for the Central Controller
  */
 
 /*
@@ -13,9 +12,7 @@
     - idem "ref_signals_type" to "signal_type"
 
     Todo:
-    - finish support for classical instructions
     - finish support for kernel conditionality
-    - allow runtime selection of scheduler
     - port https://github.com/QE-Lab/OpenQL/pull/238 to CC
 */
 
@@ -24,9 +21,6 @@
 
 #include "ql/utils/str.h"
 #include "ql/utils/filesystem.h"
-//#include "ql/ir/ir.h"
-//#include "ql/ir/ir.gen.h"
-//#include "ql/ir/compat/platform.h"
 #include "ql/ir/describe.h"
 #include "ql/ir/ops.h"
 #include "ql/com/options.h"
@@ -50,10 +44,11 @@ namespace detail {
 using namespace utils;
 
 // FIXME: stuff below extracted from NewToOldConverter, required by class Operands
+// FIXME: move to separate file, could be of use to other backends
 class OperandContext {
 public:
     OperandContext(const ir::Ref &ir);
-    int convert_creg_reference(const ir::ExpressionRef &ref) const;
+    Int convert_creg_reference(const ir::ExpressionRef &ref) const;
 
 private:
     friend class Operands;
@@ -95,7 +90,7 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
     // bits associated with qubits, so there are always num_qubits of these.
     auto num_bregs = num_qubits;
     breg_ob = find_physical_object(ir, "breg");
-#if 0
+#if 0   // FIXME
     if (ir->program->has_annotation<ObjectUsage>()) {
         num_bregs = ir->program->get_annotation<ObjectUsage>().num_bregs;
     } else if (!breg_ob.empty()) {
@@ -114,7 +109,7 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
     // Determine number of cregs.
     utils::UInt num_cregs = 0;
     creg_ob = find_physical_object(ir, "creg");
-#if 0
+#if 0   // FIXME
     if (ir->program->has_annotation<ObjectUsage>()) {
         num_cregs = ir->program->get_annotation<ObjectUsage>().num_cregs;
     } else if (!creg_ob.empty()) {
@@ -133,9 +128,9 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
 
 
 /**
- * Converts a creg reference to a compat::ClassicalRegister.
+ * Converts a creg reference to a register index.
  */
-int OperandContext::convert_creg_reference(const ir::ExpressionRef &ref) const {
+Int OperandContext::convert_creg_reference(const ir::ExpressionRef &ref) const {
     auto lhs = ref->as_reference();
     CHECK_COMPAT(
         lhs &&
@@ -146,6 +141,7 @@ int OperandContext::convert_creg_reference(const ir::ExpressionRef &ref) const {
         "expected creg reference, but got something else"
     );
     return lhs->indices[0]->as_int_literal()->value;
+    // FIXME: check index against number of regs
 }
 
 
@@ -154,7 +150,7 @@ int OperandContext::convert_creg_reference(const ir::ExpressionRef &ref) const {
 // FIXME: shameless copy of new_to_old.cc::Operands, edited to suit
 
 /**
- * Handles gathering the operands for a gate in the legacy format.
+ * Handles gathering the operands for a gate.
  */
 class Operands {
 public:
@@ -197,7 +193,6 @@ public:
     /**
      * Appends an operand.
      */
-//    void append(const NewToOldConverter &conv, const ExpressionRef &expr);
     void append(const OperandContext &operandContext, const ir::ExpressionRef &expr);
 
 };
@@ -234,7 +229,6 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
             ref->data_type == operandContext.ir->platform->default_bit_type
         ) {
             bregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
-#if 1   // FIXME
         } else if (
             ref->target == operandContext.breg_ob &&
             ref->data_type == operandContext.breg_ob->data_type
@@ -245,7 +239,6 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
             ref->data_type == operandContext.creg_ob->data_type
         ) {
             cregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
-#endif
         } else {
             QL_ICE(
                 "encountered unknown object reference to "
@@ -636,6 +629,7 @@ void handleSetInstruction(const OperandContext &operandContext, const ir::SetIns
 void handleExpression(const ir::Expression &expression, const Str &descr="")
 {
     QL_IOUT(descr << ": '" << ir::describe(expression) << "'");
+    // FIXME
 }
 
 
@@ -668,7 +662,7 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
 
     // FIXME: comments
     Int current_cycle = -1;
-    Bool first_bundle = true;
+    Bool is_first_bundle = true;
 
     QL_IOUT("Compiling block '" + block_name + "'");
     codegen.kernelStart(block_name);  // FIXME: difference between block and Bundles, adapt naming
@@ -687,25 +681,31 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                 + ", duration=" + std::to_string(duration)
             );
 
-            // generate bundle header and trailer when necessary
-            if (insn->cycle != current_cycle) {
-
-                if (!first_bundle) {
-                    QL_IOUT("FINISHING BUNDLE");
+            // generate bundle trailer when necessary
+            Bool is_new_bundle = insn->cycle != current_cycle;
+            Bool is_last_statement = stmt == block->statements.back();
+            if (is_new_bundle || is_last_statement) {
+                if (!is_first_bundle) {
+                    Int bundleDuration = insn->cycle-current_cycle+duration;
+                    QL_DOUT(QL_SS2S("Finishing bundle " << bundleIdx << ": start_cycle=" << current_cycle << ", duration=" << bundleDuration));
                     // generate bundle trailer, and code for classical gates
-                    Bool isLastBundle = false;  // FIXME &bundle == &bundles.back();
-                    codegen.bundleFinish(current_cycle, insn->cycle-current_cycle+duration, isLastBundle);  // FIXME: take cycle and duration of bundle
+                    Bool isLastBundle = is_last_statement;
+                    codegen.bundleFinish(current_cycle, bundleDuration, isLastBundle);
                 }
+            }
 
-                QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << insn->cycle << ", duration_in_cycles=" << duration));
+            // generate bundle header when necessary
+            if (is_new_bundle) {
+                QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << insn->cycle));
                 // FIXME: first instruction may be wait with zero duration, more generally: duration of first statement != bundle duration
                 codegen.bundleStart(QL_SS2S(
                     "## Bundle " << bundleIdx++
                     << ": start_cycle=" << insn->cycle
-                    << ", duration_in_cycles=" << duration << ":"
+//                    << ", duration_in_cycles=" << duration
+                    << ":"
                 ));
 
-                first_bundle = false;
+                is_first_bundle = false;
                 current_cycle = insn->cycle;
             }
 
@@ -826,14 +826,15 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                 if (auto custom = cinsn->as_custom_instruction()) {
 
                     QL_IOUT("custom instruction: name=" + custom->instruction_type->name);
+
                     // Handle the normal operands for custom instructions.
                     Operands ops;
                     for (const auto &ob : custom->instruction_type->template_operands) {
                         QL_IOUT("template operand: " + ir::describe(ob));
                         try {
-//                            ops.append(*this, ob);
+                            ops.append(operandContext, ob);
                         } catch (utils::Exception &e) {
-//                            e.add_context("name="+custom->instruction_type->name+", qubits="+ops.qubits.to_string());
+                            e.add_context("name="+custom->instruction_type->name+", qubits="+ops.qubits.to_string());
                             throw;
                         }
                     }

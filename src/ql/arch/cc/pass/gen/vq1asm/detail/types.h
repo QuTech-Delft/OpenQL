@@ -29,8 +29,8 @@ using Real = utils::Real;
 using Str  = utils::Str;
 using Json = utils::Json;
 
-using Digital   = uint32_t;
-using Codeword  = uint32_t;
+using tDigital   = uint32_t;
+using tCodeword  = uint32_t;
 
 using StrStrm   = utils::StrStrm;
 

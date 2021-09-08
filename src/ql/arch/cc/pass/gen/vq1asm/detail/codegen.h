@@ -10,7 +10,7 @@
 #pragma once
 
 #include "ql/ir/ir.h"
-//#include "ql/ir/compat/platform.h"
+
 #include "types.h"
 #include "options.h"
 #include "bundle_info.h"
@@ -71,7 +71,7 @@ public: //  functions
 private:    // types
     struct CodeGenInfo {
         Bool instrHasOutput;
-        Digital digOut;                                         // the digital output value sent over the instrument interface
+        tDigital digOut;                                         // the digital output value sent over the instrument interface
         UInt instrMaxDurationInCycles;                          // maximum duration over groups that are used, one instrument
 #if OPT_FEEDBACK
         FeedbackMap feedbackMap;
@@ -132,7 +132,7 @@ private:    // funcs
     void emitProgramStart(const Str &progName);
     void emitProgramFinish();
     void emitFeedback(const FeedbackMap &feedbackMap, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
-    void emitOutput(const CondGateMap &condGateMap, Digital digOut, UInt instrMaxDurationInCycles, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
+    void emitOutput(const CondGateMap &condGateMap, tDigital digOut, UInt instrMaxDurationInCycles, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
     void emitPragma(const Json &pragma, Int pragmaSmBit, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
     void emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
 

@@ -9,11 +9,10 @@
 
 #include "codegen.h"
 
-#include <iosfwd>
 #include "ql/version.h"
 #include "ql/com/options.h"
-//#include "ql/ir/compat/bundle.h"
-//#include "ql/ir/compat/platform.h"
+
+#include <iosfwd>
 
 namespace ql {
 namespace arch {
@@ -171,16 +170,16 @@ void Codegen::bundleStart(const Str &cmnt) {
 
 // Static helper function for bundleFinish()
 typedef struct {
-    Digital groupDigOut;    // codeword/mask fragment for this group
+    tDigital groupDigOut;    // codeword/mask fragment for this group
     Str comment;            // comment for instruction stream
 } CalcGroupDigOut;
 
 static CalcGroupDigOut calcGroupDigOut(
-    UInt instrIdx,
-    UInt group,
-    UInt nrGroups,
-    const Settings::InstrumentControl &ic,
-    Codeword staticCodewordOverride
+        UInt instrIdx,
+        UInt group,
+        UInt nrGroups,
+        const Settings::InstrumentControl &ic,
+        tCodeword staticCodewordOverride
 ) {
     CalcGroupDigOut ret{0, ""};
 
@@ -229,7 +228,7 @@ static CalcGroupDigOut calcGroupDigOut(
 #endif
 
         // find or assign code word
-        Codeword codeword = 0;
+        tCodeword codeword = 0;
         Bool codewordOverriden = false;
 #if OPT_SUPPORT_STATIC_CODEWORDS
         codeword = staticCodewordOverride;
@@ -556,7 +555,7 @@ void Codegen::customGate(
     const Json &instruction = platform->find_instruction(iname);
 #else
     // find instruction (gate definition) in JSON platform data
-    const Json &instruction = platform->data.data["instructions"][iname];     // FIXME: check JSON access
+    const Json &instruction = platform->data.data["instructions"][iname];     // FIXME: check JSON access. FIXME: how about generalizations/specializations
 #endif
     // find signal vector definition for instruction
     Settings::SignalDef sd = settings.findSignalDefinition(instruction, iname);
@@ -857,13 +856,13 @@ void Codegen::emitFeedback(
 
 
 void Codegen::emitOutput(
-    const CondGateMap &condGateMap,
-    Digital digOut,
-    UInt instrMaxDurationInCycles,
-    UInt instrIdx,
-    UInt startCycle,
-    Int slot,
-    const Str &instrumentName
+        const CondGateMap &condGateMap,
+        tDigital digOut,
+        UInt instrMaxDurationInCycles,
+        UInt instrIdx,
+        UInt startCycle,
+        Int slot,
+        const Str &instrumentName
 ) {
     comment(QL_SS2S(
         "  # slot=" << slot
