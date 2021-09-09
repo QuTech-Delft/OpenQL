@@ -49,6 +49,8 @@ class OperandContext {
 public:
     OperandContext(const ir::Ref &ir);
     Int convert_creg_reference(const ir::ExpressionRef &ref) const;
+    UInt convert_breg_reference(const ir::ExpressionRef &ref) const;    // FIXME:UInt vs Int
+
 
 private:
     friend class Operands;
@@ -146,7 +148,6 @@ Int OperandContext::convert_creg_reference(const ir::ExpressionRef &ref) const {
 
 
 
-
 // FIXME: shameless copy of new_to_old.cc::Operands, edited to suit
 
 /**
@@ -196,6 +197,22 @@ public:
     void append(const OperandContext &operandContext, const ir::ExpressionRef &expr);
 
 };
+
+
+/**
+ * Converts a bit reference to its breg index.
+ */
+// FIXME: change source code position, uses class Operands
+UInt OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
+    Operands ops;
+    ops.append(*this, ref);
+    CHECK_COMPAT(
+        ops.bregs.size() == 1,
+        "expected bit reference (breg), but got something else"
+    );
+    return ops.bregs[0];
+}
+
 
 /**
  * Appends an operand.
@@ -734,18 +751,18 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                 // Instruction: conditional
                 //****************************************************************
                 // Handle the condition.
+                utils::Vec<utils::UInt> cond_operands;
+                ConditionType cond_type;
                 try {
-                    utils::Vec<utils::UInt> cond_operands;
-//                    compat::ConditionType cond_type;
                     if (auto blit = cinsn->condition->as_bit_literal()) {
                         if (blit->value) {
-//                            cond_type = compat::ConditionType::ALWAYS;
+                            cond_type = ConditionType::ALWAYS;
                         } else {
-//                            cond_type = compat::ConditionType::NEVER;
+                            cond_type = ConditionType::NEVER;
                         }
                     } else if (cinsn->condition->as_reference()) {
-//                        cond_operands.push_back(convert_breg_reference(cinsn->condition));
-//                        cond_type = compat::ConditionType::UNARY;
+                        cond_operands.push_back(operandContext.convert_breg_reference(cinsn->condition));
+                        cond_type = ConditionType::UNARY;
                     } else if (auto fn = cinsn->condition->as_function_call()) {
                         if (
                             fn->function_type->name == "operator!" ||
@@ -753,32 +770,32 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                         ) {
                             CHECK_COMPAT(fn->operands.size() == 1, "unsupported condition function");
                             if (fn->operands[0]->as_reference()) {
-//                                cond_operands.push_back(convert_breg_reference(fn->operands[0]));
-//                                cond_type = compat::ConditionType::NOT;
+                                cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
+                                cond_type = ConditionType::NOT;
                             } else if (auto fn2 = fn->operands[0]->as_function_call()) {
                                 CHECK_COMPAT(fn2->operands.size() == 2, "unsupported condition function");
-//                                cond_operands.push_back(convert_breg_reference(fn2->operands[0]));
-//                                cond_operands.push_back(convert_breg_reference(fn2->operands[1]));
+                                cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[0]));
+                                cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[1]));
                                 if (
                                     fn2->function_type->name == "operator&" ||
                                     fn2->function_type->name == "operator&&"
                                 ) {
-//                                    cond_type = compat::ConditionType::NAND;
+                                    cond_type = ConditionType::NAND;
                                 } else if (
                                     fn2->function_type->name == "operator|" ||
                                     fn2->function_type->name == "operator||"
                                 ) {
-//                                    cond_type = compat::ConditionType::NOR;
+                                    cond_type = ConditionType::NOR;
                                 } else if (
                                     fn2->function_type->name == "operator^" ||
                                     fn2->function_type->name == "operator^^" ||
                                     fn2->function_type->name == "operator!="
                                 ) {
-//                                    cond_type = compat::ConditionType::NXOR;
+                                    cond_type = ConditionType::NXOR;
                                 } else if (
                                     fn2->function_type->name == "operator=="
                                 ) {
-//                                    cond_type = compat::ConditionType::XOR;
+                                    cond_type = ConditionType::XOR;
                                 } else {
                                     QL_ICE("unsupported gate condition");
                                 }
@@ -787,28 +804,28 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                             }
                         } else {
                             CHECK_COMPAT(fn->operands.size() == 2, "unsupported condition function");
-//                            cond_operands.push_back(convert_breg_reference(fn->operands[0]));
-//                            cond_operands.push_back(convert_breg_reference(fn->operands[1]));
+                            cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
+                            cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[1]));
                             if (
                                 fn->function_type->name == "operator&" ||
                                 fn->function_type->name == "operator&&"
                             ) {
-//                                cond_type = compat::ConditionType::AND;
+                                cond_type = ConditionType::AND;
                             } else if (
                                 fn->function_type->name == "operator|" ||
                                 fn->function_type->name == "operator||"
                             ) {
-//                                cond_type = compat::ConditionType::OR;
+                                cond_type = ConditionType::OR;
                             } else if (
                                 fn->function_type->name == "operator^" ||
                                 fn->function_type->name == "operator^^" ||
                                 fn->function_type->name == "operator!="
                             ) {
-//                                cond_type = compat::ConditionType::XOR;
+                                cond_type = ConditionType::XOR;
                             } else if (
                                 fn->function_type->name == "operator=="
                             ) {
-//                                cond_type = compat::ConditionType::NXOR;
+                                cond_type = ConditionType::NXOR;
                             } else {
                                 QL_ICE("unsupported condition function");
                             }
@@ -816,7 +833,6 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                     } else {
                         QL_ICE("unsupported condition expression");
                     }
-//                    kernel->gate_preset_condition(cond_type, cond_operands);
                 } catch (utils::Exception &e) {
                     e.add_context("in gate condition", true);
                     throw;
@@ -869,8 +885,8 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                         ops.qubits,     // operands
                         ops.cregs,      // creg_operands
                         ops.bregs,      // breg_operands
-                        ir::compat::ConditionType::ALWAYS,  // condition
-                        Vec<UInt>{},    // cond_operands
+                        cond_type,      // condition
+                        cond_operands,  // cond_operands
                         ops.angle,      // angle
                         insn->cycle,    // startCycle
                         ir::get_duration_of_statement(stmt)    // durationInCycles

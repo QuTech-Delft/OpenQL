@@ -16,6 +16,21 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
+
+/*
+ * additional definitions for describing conditional gates
+ * FIXME: copied from gate.h, reused for now, will change if we want to support more complex expressions for conditional gates
+ */
+enum class ConditionType {
+    // 0 operands:
+    ALWAYS, NEVER,
+    // 1 operand:
+    UNARY, NOT,
+    // 2 operands
+    AND, NAND, OR, NOR, XOR, NXOR
+};
+
+
 class BundleInfo {
 public: // funcs
     BundleInfo() = default;
@@ -35,7 +50,7 @@ public: // vars
     Vec<UInt> breg_operands;
 
     // conditional gates
-    ir::compat::ConditionType condition = ir::compat::ConditionType::ALWAYS;        // FIXME
+    ConditionType condition = ConditionType::ALWAYS;        // FIXME
     Vec<UInt> cond_operands;
 #endif
 #if OPT_PRAGMA

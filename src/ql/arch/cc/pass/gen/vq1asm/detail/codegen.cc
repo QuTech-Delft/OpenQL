@@ -337,7 +337,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 // conditional gates
                 // store condition and groupDigOut in condMap, if all groups are unconditional we use old scheme, otherwise
                 // datapath is configured to generate proper digital output
-                if (bi.condition == ir::compat::ConditionType::ALWAYS || ic.ii.forceCondGatesOn) {
+                if (bi.condition == ConditionType::ALWAYS || ic.ii.forceCondGatesOn) {
                     // nothing to do, just use digOut
                 } else {    // other conditions, including cond_never
                     // remind mapping for setting PL
@@ -527,7 +527,7 @@ void Codegen::customGate(
     const Vec<UInt> &operands,
     const Vec<UInt> &creg_operands,
     const Vec<UInt> &breg_operands,
-    ir::compat::ConditionType condition,
+    ConditionType condition,
     const Vec<UInt> &cond_operands,
     Real angle,
     UInt startCycle, UInt durationInCycles

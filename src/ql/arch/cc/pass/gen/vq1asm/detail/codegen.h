@@ -26,6 +26,7 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
+
 class Codegen {
 public: //  functions
     Codegen() = default;
@@ -51,7 +52,7 @@ public: //  functions
         const Vec<UInt> &operands,                  // qubit operands (FKA qops)
         const Vec<UInt> &creg_operands,             // classic operands (FKA cops)
         const Vec<UInt> &breg_operands,             // bit operands e.g. assigned to by measure
-        ir::compat::ConditionType condition,
+        ConditionType condition,
         const Vec<UInt> &cond_operands,             // 0, 1 or 2 bit operands of condition
         Real angle,
         UInt startCycle, UInt durationInCycles

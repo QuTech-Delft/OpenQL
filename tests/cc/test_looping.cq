@@ -34,9 +34,9 @@ for (; i<10000; )  {
 }
 
 # FIXME: fails: RuntimeError: Assertion failure: in pass scheduler, phase main: assert !available.empty() failed in file /Volumes/Data/shared/GIT/OpenQL/include/ql/com/sch/scheduler.h at line 417
-#.forLoop3
-#for (; true; )  {  # NB: condition cannot be empty, defined as: utils::One<ir::Expression>
-#}
+.forLoop3
+for (; true; )  {  # NB: condition cannot be empty, defined as: utils::One<ir::Expression>
+}
 
 
 .forLoop4
