@@ -51,7 +51,6 @@ public:
     Int convert_creg_reference(const ir::ExpressionRef &ref) const;
     UInt convert_breg_reference(const ir::ExpressionRef &ref) const;    // FIXME:UInt vs Int
 
-
 private:
     friend class Operands;
 
@@ -1078,15 +1077,10 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                 }
 
             } else if (auto for_loop = stmt->as_for_loop()) {
-                // FIXME: WIP
-//                auto body = for_loop->body;
-
                 // body prelude
-                auto initialize = for_loop->initialize;
-                if (!initialize.empty()) handleSetInstruction(operandContext, *initialize, "for.initialize");
-                //loopLabel
-                auto condition = for_loop->condition;
-                handleExpression(*condition, "for.condition");
+                if (!for_loop->initialize.empty()) handleSetInstruction(operandContext, *for_loop->initialize, "for.initialize");
+                // FIXME: loopLabel. Also see codeGen.forStart
+                handleExpression(*for_loop->condition, "for.condition");
 
                 // handle body
                 try {
@@ -1097,9 +1091,9 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                 }
 
                 // handle looping
-                auto update = for_loop->update;
-                if (!update.empty()) handleSetInstruction(operandContext, *update, "for.update");
-                // FIXME: loop
+                if (!for_loop->update.empty()) handleSetInstruction(operandContext, *for_loop->update, "for.update");
+                // FIXME: jmp loopLabel
+                // FIXME: afterLoopLabel for break. Also see codeGen.forEnd
 
             } else if (auto break_statement = stmt->as_break_statement()) {
                 QL_IOUT("break");

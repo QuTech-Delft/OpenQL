@@ -37,7 +37,6 @@ for (; i<10000; )  {
 .condGate
 cond (false) x q[0]
 
-# FIXME: fails: RuntimeError: Assertion failure: in pass scheduler, phase main: assert !available.empty() failed in file /Volumes/Data/shared/GIT/OpenQL/include/ql/com/sch/scheduler.h at line 417
 .forLoop3
 for (; true; )  {  # NB: condition cannot be empty, defined as: utils::One<ir::Expression>
 }
@@ -60,15 +59,15 @@ repeat {
 
 .ifStatement
 if(i==0) {
-
 }
 
 .ifElseStatement
 if(i==0) {
-
 } else {
-
 }
 
 .ifElifElseStatement
-# FIXME
+if(i==0) {
+#} else if(i==1)  {
+} else {
+}
