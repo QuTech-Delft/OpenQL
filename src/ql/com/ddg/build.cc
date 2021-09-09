@@ -167,7 +167,7 @@ void EventGatherer::add_statement(const ir::StatementRef &stmt) {
 #if 0   // original
                 add_statement(forl->initialize);
                 add_statement(forl->update);
-#else   // FIXME: honour 'Maybe'-ness
+#else   // FIXME: honour 'Maybe'-ness, add condition
                 if(!forl->initialize.empty()) add_statement(forl->initialize);
                 if(!forl->update.empty()) add_statement(forl->update);
 #endif

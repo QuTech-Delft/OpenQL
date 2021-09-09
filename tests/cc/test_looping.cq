@@ -33,6 +33,10 @@ for (i=0; i<10000; i=i+1) {
 for (; i<10000; )  {
 }
 
+# FIXME: move to its own file
+.condGate
+cond (false) x q[0]
+
 # FIXME: fails: RuntimeError: Assertion failure: in pass scheduler, phase main: assert !available.empty() failed in file /Volumes/Data/shared/GIT/OpenQL/include/ql/com/sch/scheduler.h at line 417
 .forLoop3
 for (; true; )  {  # NB: condition cannot be empty, defined as: utils::One<ir::Expression>
@@ -41,19 +45,16 @@ for (; true; )  {  # NB: condition cannot be empty, defined as: utils::One<ir::E
 
 .forLoop4
 foreach(i = 0..10) {
-
 }
 
 
 .whileLoop
 while (i<10000) {
-
 }
 
 
 .repeatUntilLoop
 repeat {
-
 } until (i==0);
 
 
