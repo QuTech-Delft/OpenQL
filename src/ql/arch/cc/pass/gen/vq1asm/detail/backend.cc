@@ -485,23 +485,22 @@ void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
 // assign: a+1, a+b, 2+b, !a, a^b
 // test: a<10, a, (int)breg[0],
 // FIXME: recursion?
-void do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr= "") {
+
+void emit(const Str &label, const Str &instr, const Str &ops, const Str &comment="") {
+    QL_IOUT("emit: " + instr + " " + ops);
+}
+
+
+Str do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr= "") {
+    Str code;
+    Int dstReg = 0; // FIXME
+
     try {
         if (auto ilit = expression->as_int_literal()) {
-            QL_IOUT(
-                "set: "
-//                << "creg[" << lhs << "]"
-                << " = "
-                << "#" << ilit->value);
-            // code: "move X,Rd"
+            emit("", "move", QL_SS2S(ilit->value << ",R" << dstReg));
         } else if (expression->as_reference()) {
             auto creg = operandContext.convert_creg_reference(expression);
-            QL_IOUT(
-                "set: "
-//                << "creg[" << lhs << "]"
-                << " = "
-                "creg[" << creg << "]");
-            // code: "move Rs,Rd"
+            emit("", "move", QL_SS2S("R" << creg << ",R" << dstReg));
         } else if (auto fn = expression->as_function_call()) {
             utils::Str operation;
             utils::UInt operand_count = 2;  // default, unless decided otherwise below
@@ -518,29 +517,29 @@ void do_handle_expression(const OperandContext &operandContext, const ir::Expres
 
             // arithmetic, 1 operand
             if (fn->function_type->name == "operator~") {
-                operation = "~";
+                operation = "not";
                 operand_count = 1;
                 // code: "not Rs,Rd"
 
             // arithmetic, 2 operands
             } else if (fn->function_type->name == "operator+") {
-                operation = "+";
+                operation = "add";
                 // code: "add Ra,Rb,Rd"
                 // code: "add Ra,X,Rd"
             } else if (fn->function_type->name == "operator-") {
-                operation = "-";
+                operation = "sub";
                 // code: "sub Ra,Rb,Rd"
                 // code: "sub Ra,X,Rd"  only Ra-X, not X-Ra
             } else if (fn->function_type->name == "operator&") {
-                operation = "&";
+                operation = "and";
                 // code: "and Ra,Rb,Rd"
                 // code: "and Ra,X,Rd"
             } else if (fn->function_type->name == "operator|") {
-                operation = "|";
+                operation = "or";
                 // code: "or Ra,Rb,Rd"
                 // code: "or Ra,X,Rd"
             } else if (fn->function_type->name == "operator^") {
-                operation = "^";
+                operation = "xor";
                 // code: "xor Ra,Rb,Rd"
                 // code: "xor Ra,X,Rd"
 
@@ -577,21 +576,7 @@ void do_handle_expression(const OperandContext &operandContext, const ir::Expres
             if (operand_count == 1) {
                 auto creg = operandContext.convert_creg_reference(fn->operands[0]);
                 // FIXME: also allow "~5", i.e. immediate?
-                QL_IOUT(
-                    "set: "
-//                    << "creg[" << lhs << "]"
-                    << " = "
-                    << operation << " "
-                    << "creg[" << creg << "]"
-                );
-                // FIXME: handle literal
-//                kernel->classical(
-//                    *lhs,
-//                    compat::ClassicalOperation(
-//                        operation,
-//                        convert_creg_reference(fn->operands[0])
-//                    )
-//                );
+                emit("", operation, QL_SS2S("R" << creg << ",R" << dstReg));
             } else if (fn->operands.size() == 2) {
                 auto &op0 = fn->operands[0];
                 auto &op1 = fn->operands[1];
@@ -599,37 +584,16 @@ void do_handle_expression(const OperandContext &operandContext, const ir::Expres
                 if(op0->as_reference() && op1->as_reference()) {
                     auto creg0 = operandContext.convert_creg_reference(op0);
                     auto creg1 = operandContext.convert_creg_reference(op1);
-                    QL_IOUT(
-                        "set: "
-//                        << "creg[" << lhs << "]"
-                        << " = "
-                        << "creg[" << creg0 << "]"
-                        << " " << operation << " "
-                        << "creg[" << creg1 << "]"
-                    );
+                    emit("", operation, QL_SS2S("R" << creg0 << ",R" << creg1 << ",R" << dstReg));
                 } else if(op0->as_reference() && op1->as_int_literal()) {
                     auto creg0 = operandContext.convert_creg_reference(op0);
-                    QL_IOUT(
-                        "set: "
-//                        << "creg[" << lhs << "]"
-                        << " = "
-                        << "creg[" << creg0 << "]"
-                        << " " << operation << " "
-                        << "#" << op1->as_int_literal()->value
-                    );
-                } // FIXME: etc, also handle "creg(0)=creg(0)+1+1"
-
-
-//                kernel->classical(
-//                    *lhs,
-//                    compat::ClassicalOperation(
-//                        convert_creg_reference(fn->operands[0]),
-//                        operation,
-//                        convert_creg_reference(fn->operands[1])
-//                    )
-//                );
+                    emit("", operation, QL_SS2S("R" << creg0 << "," << op1->as_int_literal()->value << ",R" << dstReg));
+                } else {
+                    // FIXME: etc, also handle "creg(0)=creg(0)+1+1"
+                    QL_ICE("cannot handle parameters");
+                }
             } else {
-                QL_ASSERT(false);   // FIXME: give relevant message
+                QL_ICE("internal inconsistency: unexpected number of operands");
             }
         }
     }
@@ -637,6 +601,7 @@ void do_handle_expression(const OperandContext &operandContext, const ir::Expres
         e.add_context("in expression", true);
         throw;
     }
+    return code;
 
 }
 
