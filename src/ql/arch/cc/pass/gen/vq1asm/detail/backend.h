@@ -31,7 +31,7 @@ public:
     void compile(const ir::Ref &ir, const OptionsRef &options);
 
 private:
-    void codegenBlock(const OperandContext &operandContext, const ir::BlockBaseRef &block, const Str &name);
+    void codegen_block(const OperandContext &operandContext, const ir::BlockBaseRef &block, const Str &name);
 
 #if 0   // FIXME
     static Str loopLabel(const ir::compat::KernelRef &k);
@@ -45,6 +45,9 @@ private:
 private: // vars
     Codegen codegen;
     Int bundleIdx;
+    Int block_number;       // sequential block number to keep labels unique
+    Vec<Str> loop_label;    // stack for loop labels (in conjunction with 'break'/'continue' instruction)
+
 }; // class
 
 } // namespace detail

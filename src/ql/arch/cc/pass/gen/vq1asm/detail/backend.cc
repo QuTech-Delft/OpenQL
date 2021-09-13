@@ -308,7 +308,7 @@ void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
     // NB: based on NewToOldConverter::NewToOldConverter
     for (const auto &block : ir->program->blocks) {
         try {
-            codegenBlock(oc, block, block->name);
+            codegen_block(oc, block, block->name);
         } catch (utils::Exception &e) {
             e.add_context("in block '" + block->name + "'");
             throw;
@@ -481,13 +481,14 @@ void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
 
 
 // helpers
-void handleSetInstruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr="")
+void handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr= "")
 {
     QL_IOUT(descr << ": '" << ir::describe(set) << "'");
 
     int lhs;
     try {
         lhs = operandContext.convert_creg_reference(set.lhs);
+        // FIXME: also allow breg?
     } catch (utils::Exception &e) {
         e.add_context("unsupported LHS for set instruction encountered");
         throw;
@@ -642,7 +643,7 @@ void handleSetInstruction(const OperandContext &operandContext, const ir::SetIns
 
 }
 
-void handleExpression(const ir::Expression &expression, const Str &descr="")
+void handle_expression(const ir::Expression &expression, const Str &descr= "")
 {
     QL_IOUT(descr << ": '" << ir::describe(expression) << "'");
     // FIXME
@@ -747,14 +748,32 @@ tInstructionCondition decodeCondition(const OperandContext &operandContext, cons
     return {cond_operands, cond_type};
 }
 
+#if 0
+// FIXME: names must be useable as q1asm labels
+Str block_id(const Str &block_name, Int block_number) {
+    return QL_SS2S(block_name << "_" << block_number);
+}
+Str block_child_name(const Str &block_name, const Str &child_name) {
+    return block_name + "_" + child_name;
+}
+#endif
 
 // Based on NewToOldConverter::convert_block
 // FIXME: we need to collect 'Bundles' (i.e. statements starting in the same cycle)
 // FIXME: convert block relative cycles to absolute cycles somewhere
 // FIXME: runOnce automatically on cQASM input
-//FIXME: provide context in all QL_ICE
-void Backend::codegenBlock(const OperandContext &operandContext, const ir::BlockBaseRef &block, const Str &block_name)
+// FIXME: provide (more) context in all QL_ICE and e.add_context
+void Backend::codegen_block(const OperandContext &operandContext, const ir::BlockBaseRef &block, const Str &name)
 {
+    // helper lambdas
+    // FIXME: names must be useable as q1asm labels
+    auto block_child_name = [name](const Str &child_name) { return name + "_" + child_name; };
+    auto label = [this, name]() { return QL_SS2S(name << "_" << block_number); };   // block_number is to uniquify anonymous blocks like for loops
+    auto to_start = [](const Str &base) { return base + "_start"; };
+    auto to_end = [](const Str &base) { return base + "_end"; };
+    auto label_start = [label]() { return label() + "_start"; };
+    auto label_end = [label]() { return label() + "_end"; };
+
     // Whether this is the first lazily-constructed kernel. Only if this is true
     // when flushing at the end are statistics annotations copied; otherwise
     // they would be invalid anyway.
@@ -779,8 +798,8 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
     Int current_cycle = -1;
     Bool is_first_bundle = true;
 
-    QL_IOUT("Compiling block '" + block_name + "'");
-    codegen.kernelStart(block_name);  // FIXME: difference between block and Bundles, adapt naming
+    QL_IOUT("Compiling block '" + label() + "'");
+    codegen.kernelStart(name);  // FIXME: difference between block and Bundles, adapt naming
 
     // Loop over the statements and handle them individually.
     for (const auto &stmt : block->statements) {
@@ -864,7 +883,7 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                         try {
                             ops.append(operandContext, ob);
                         } catch (utils::Exception &e) {
-                            e.add_context("name="+custom->instruction_type->name+", qubits="+ops.qubits.to_string());
+                            e.add_context("name=" + custom->instruction_type->name + ", qubits=" + ops.qubits.to_string());
                             throw;
                         }
                     }
@@ -912,7 +931,7 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                     //****************************************************************
                     // Instruction: set
                     //****************************************************************
-                    handleSetInstruction(operandContext, *set_instruction, "conditional.set");
+                    handle_set_instruction(operandContext, *set_instruction, "conditional.set");
                 } else {
                     QL_ICE(
                         "unsupported instruction type encountered"
@@ -965,10 +984,12 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
             if (auto if_else = stmt->as_if_else()) {
 
                 // Handle if-else or if statement.
+#if 0   // FIXME: allow
                 CHECK_COMPAT(
                     if_else->branches.size() == 1,
                     "encountered if-else chain with multiple conditions"
                 );
+#endif
 //                compat::ProgramRef if_program;
 //                if_program.emplace(
 //                    make_kernel_name(block), old->platform,
@@ -976,7 +997,7 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
 //                );
                 try {
 //                    convert_block(if_else->branches[0]->body, if_program);
-                    codegenBlock(operandContext, if_else->branches[0]->body, "if_FIXME");
+                    codegen_block(operandContext, if_else->branches[0]->body, block_child_name("if"));
                 } catch (utils::Exception &e) {
                     e.add_context("in 'if' block", true);
                     throw;
@@ -1077,31 +1098,42 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
                 }
 
             } else if (auto for_loop = stmt->as_for_loop()) {
-                // body prelude
-                if (!for_loop->initialize.empty()) handleSetInstruction(operandContext, *for_loop->initialize, "for.initialize");
-                // FIXME: loopLabel. Also see codeGen.forStart
-                handleExpression(*for_loop->condition, "for.condition");
+                // body prelude: initialize
+                if (!for_loop->initialize.empty()) {
+                    handle_set_instruction(operandContext, *for_loop->initialize, "for.initialize");
+                }
+
+                // body prelude: condition
+                // FIXME: emit loopLabelStart. Also see codeGen.forStart
+                QL_IOUT("label=" << label_start());
+                handle_expression(*for_loop->condition, "for.condition");
 
                 // handle body
+                loop_label.push_back(label());          // remind label for break/continue
+                Str end_label = label_end();            // save label before recursing
                 try {
-                    codegenBlock(operandContext, for_loop->body, "for_loop_FIXME");
+                    codegen_block(operandContext, for_loop->body, block_child_name("for"));
                 } catch (utils::Exception &e) {
                     e.add_context("in for loop body", true);
                     throw;
                 }
+                loop_label.pop_back();
 
                 // handle looping
-                if (!for_loop->update.empty()) handleSetInstruction(operandContext, *for_loop->update, "for.update");
-                // FIXME: jmp loopLabel
-                // FIXME: afterLoopLabel for break. Also see codeGen.forEnd
+                if (!for_loop->update.empty()) {
+                    handle_set_instruction(operandContext, *for_loop->update, "for.update");
+                }
+                // FIXME: jmp loopLabelStart
+                // FIXME: emit loopLabelEnd for break. Also see codeGen.forEnd
+                QL_IOUT("label=" << end_label);
 
             } else if (auto break_statement = stmt->as_break_statement()) {
-                QL_IOUT("break");
-                // FIXME
+                QL_IOUT("break to " << to_end(loop_label.back()));
+                // FIXME: jmp loopLabelEnd
 
             } else if (auto continue_statement = stmt->as_continue_statement()) {
-                QL_IOUT("continue");
-                // FIXME
+                QL_IOUT("continue to " << to_start(loop_label.back()));
+                // FIXME: jmp loopLabelStart
 
             } else {
                 QL_ICE(
@@ -1132,8 +1164,9 @@ void Backend::codegenBlock(const OperandContext &operandContext, const ir::Block
 //        kernel.reset();
 //    }
 
-    QL_IOUT("Finished compiling block '" + block_name + "'");
-    codegen.kernelFinish(block_name, ir::get_duration_of_block(block));
+    codegen.kernelFinish(name, ir::get_duration_of_block(block));
+    QL_IOUT("Finished compiling block '" + label() + "'");
+    block_number++;
 
 }
 
