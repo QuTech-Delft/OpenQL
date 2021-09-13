@@ -38,6 +38,11 @@ for (; i<10000; )  {
 for (; true; )  {  # NB: condition cannot be empty, defined as: utils::One<ir::Expression>
 }
 
+.forLoopConstProp
+for (; i<5*5; )  {
+}
+
+
 .forLoopTwice  # must generate unique labels
 for (; true; )  {
 }
@@ -77,7 +82,7 @@ for (; true; )  {
 }
 
 .foreachLoop
-foreach(i = 0..10) {
+foreach (i = 0..10) {
 }
 
 
@@ -92,17 +97,17 @@ repeat {
 
 
 .ifStatement
-if(i==0) {
+if (i==0) {
 }
 
 .ifElseStatement
-if(i==0) {
+if (i==0) {
 } else {
 }
 
 .ifElifElseStatement
-if(i==0) {
-} else if(i==1)  {
+if (i==0) {
+} else if (i==1)  {
 } else {
 }
 

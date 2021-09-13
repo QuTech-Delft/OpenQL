@@ -481,47 +481,42 @@ void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
 
 
 // helpers
-void handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr= "")
-{
-    QL_IOUT(descr << ": '" << ir::describe(set) << "'");
-
-    int lhs;
+// FIXME: pass lhs (if we're part of setInstruction), or stuff we need if we're a expression used as condition: assign or test
+// assign: a+1, a+b, 2+b, !a, a^b
+// test: a<10, a, (int)breg[0],
+// FIXME: recursion?
+void do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr= "") {
     try {
-        lhs = operandContext.convert_creg_reference(set.lhs);
-        // FIXME: also allow breg?
-    } catch (utils::Exception &e) {
-        e.add_context("unsupported LHS for set instruction encountered");
-        throw;
-    }
-
-// FIXME: RHS is an expression
-    try {
-        if (auto ilit = set.rhs->as_int_literal()) {
+        if (auto ilit = expression->as_int_literal()) {
             QL_IOUT(
                 "set: "
-                << "creg[" << lhs << "]"
+//                << "creg[" << lhs << "]"
                 << " = "
                 << "#" << ilit->value);
             // code: "move X,Rd"
-        } else if (set.rhs->as_reference()) {
-            auto creg = operandContext.convert_creg_reference(set.rhs);
+        } else if (expression->as_reference()) {
+            auto creg = operandContext.convert_creg_reference(expression);
             QL_IOUT(
                 "set: "
-                << "creg[" << lhs << "]"
+//                << "creg[" << lhs << "]"
                 << " = "
                 "creg[" << creg << "]");
             // code: "move Rs,Rd"
-        } else if (auto fn = set.rhs->as_function_call()) {
+        } else if (auto fn = expression->as_function_call()) {
             utils::Str operation;
-            utils::UInt operand_count = 2;
+            utils::UInt operand_count = 2;  // default, unless decided otherwise below
+
+            // handle cast
             if (fn->function_type->name == "int") {
                 CHECK_COMPAT(
                     fn->operands.size() == 1 &&
                     fn->operands[0]->as_function_call(),
                     "int() cast target must be a function"
                 );
-                fn = fn->operands[0]->as_function_call();
+                fn = fn->operands[0]->as_function_call();   // FIXME: step into. Shouldn't we recurse to allow e.g. casting a breg??
             }
+
+            // arithmetic, 1 operand
             if (fn->function_type->name == "operator~") {
                 operation = "~";
                 operand_count = 1;
@@ -550,7 +545,7 @@ void handle_set_instruction(const OperandContext &operandContext, const ir::SetI
                 // code: "xor Ra,X,Rd"
 
             // relop
-            // FIXME: should also support bregs
+            // FIXME: should also support bregs, or do we require casting?
             } else if (fn->function_type->name == "operator==") {
                 operation = "==";
                 // code: "sub Ra,Rb,Rd" + not
@@ -574,15 +569,17 @@ void handle_set_instruction(const OperandContext &operandContext, const ir::SetI
                     "no conversion known for function " << fn->function_type->name
                 );
             }
+
             CHECK_COMPAT(
                 fn->operands.size() == operand_count,
                 "function " << fn->function_type->name << " has wrong operand count"
             );
             if (operand_count == 1) {
                 auto creg = operandContext.convert_creg_reference(fn->operands[0]);
+                // FIXME: also allow "~5", i.e. immediate?
                 QL_IOUT(
                     "set: "
-                    << "creg[" << lhs << "]"
+//                    << "creg[" << lhs << "]"
                     << " = "
                     << operation << " "
                     << "creg[" << creg << "]"
@@ -604,7 +601,7 @@ void handle_set_instruction(const OperandContext &operandContext, const ir::SetI
                     auto creg1 = operandContext.convert_creg_reference(op1);
                     QL_IOUT(
                         "set: "
-                        << "creg[" << lhs << "]"
+//                        << "creg[" << lhs << "]"
                         << " = "
                         << "creg[" << creg0 << "]"
                         << " " << operation << " "
@@ -614,7 +611,7 @@ void handle_set_instruction(const OperandContext &operandContext, const ir::SetI
                     auto creg0 = operandContext.convert_creg_reference(op0);
                     QL_IOUT(
                         "set: "
-                        << "creg[" << lhs << "]"
+//                        << "creg[" << lhs << "]"
                         << " = "
                         << "creg[" << creg0 << "]"
                         << " " << operation << " "
@@ -632,21 +629,38 @@ void handle_set_instruction(const OperandContext &operandContext, const ir::SetI
 //                    )
 //                );
             } else {
-                QL_ASSERT(false);
+                QL_ASSERT(false);   // FIXME: give relevant message
             }
         }
     }
     catch (utils::Exception &e) {
-        e.add_context("in gate condition", true);
+        e.add_context("in expression", true);
         throw;
     }
 
 }
 
-void handle_expression(const ir::Expression &expression, const Str &descr= "")
+void handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr= "")
+{
+    QL_IOUT(descr << ": '" << ir::describe(set) << "'");
+
+    int lhs;
+    try {
+        lhs = operandContext.convert_creg_reference(set.lhs);
+        // FIXME: also allow breg?
+    } catch (utils::Exception &e) {
+        e.add_context("unsupported LHS for set instruction encountered");
+        throw;
+    }
+
+    do_handle_expression(operandContext, set.rhs, descr);
+
+}
+
+void handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr= "")
 {
     QL_IOUT(descr << ": '" << ir::describe(expression) << "'");
-    // FIXME
+    do_handle_expression(operandContext, expression, descr);
 }
 
 typedef struct {
@@ -658,7 +672,7 @@ typedef struct {
  * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
  * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
  */
-tInstructionCondition decodeCondition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
+tInstructionCondition decode_condition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
     utils::Vec<utils::UInt> cond_operands;
     ConditionType cond_type;
     try {
@@ -869,7 +883,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 //****************************************************************
 
                 // Handle the condition.
-                tInstructionCondition instrCond = decodeCondition(operandContext, cinsn->condition);
+                tInstructionCondition instrCond = decode_condition(operandContext, cinsn->condition);
 
                 // Handle the conditional instruction subtypes.
                 if (auto custom = cinsn->as_custom_instruction()) {
@@ -1106,7 +1120,8 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 // body prelude: condition
                 // FIXME: emit loopLabelStart. Also see codeGen.forStart
                 QL_IOUT("label=" << label_start());
-                handle_expression(*for_loop->condition, "for.condition");
+                handle_expression(operandContext, for_loop->condition, "for.condition");
+                // FIXME: jmp loop end if false
 
                 // handle body
                 loop_label.push_back(label());          // remind label for break/continue
