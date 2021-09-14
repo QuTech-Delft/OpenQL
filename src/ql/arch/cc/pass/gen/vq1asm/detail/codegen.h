@@ -11,6 +11,7 @@
 
 #include "ql/ir/ir.h"
 
+#include "operands.h"
 #include "types.h"
 #include "options.h"
 #include "bundle_info.h"
@@ -59,6 +60,7 @@ public: //  functions
     );
     void nopGate();
 
+#if 0   // FIXME
     // Classical operations on kernels
     void ifStart(UInt op0, const Str &opName, UInt op1);
     void elseStart(UInt op0, const Str &opName, UInt op1);
@@ -66,8 +68,13 @@ public: //  functions
     void forEnd(const Str &label);
     void doWhileStart(const Str &label);
     void doWhileEnd(const Str &label, UInt op0, const std::string &opName, UInt op1);
+#endif
 
     void comment(const Str &c);
+
+    // new IR expressions
+    void handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr="");
+    void handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr="");
 
 private:    // types
     struct CodeGenInfo {
@@ -143,6 +150,10 @@ private:    // funcs
 #if !OPT_SUPPORT_STATIC_CODEWORDS
     Codeword assignCodeword(const Str &instrumentName, Int instrIdx, Group group);
 #endif
+
+    // expression helpers
+    Str do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr= "");
+
 
 }; // class
 

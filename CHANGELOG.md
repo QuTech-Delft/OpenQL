@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - ...
 
 ### Changed
+- CC backend:
+  - now uses new IR
 - ...
 
 ### Removed

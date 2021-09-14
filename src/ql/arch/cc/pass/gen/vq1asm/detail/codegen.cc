@@ -11,6 +11,7 @@
 
 #include "ql/version.h"
 #include "ql/com/options.h"
+#include "ql/ir/describe.h"
 
 #include <iosfwd>
 
@@ -671,6 +672,8 @@ void Codegen::nopGate() {
 | Classical operations on kernels
 \************************************************************************/
 
+#if 0   // FIXME
+
 void Codegen::ifStart(UInt op0, const Str &opName, UInt op1) {
     comment(QL_SS2S("# IF_START(R" << op0 << " " << opName << " R" << op1 << ")"));
     QL_ICE("FIXME: not implemented");
@@ -718,10 +721,39 @@ void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1
     pragmaLoopLabel.pop_back();
 #endif
 }
+#endif
 
 void Codegen::comment(const Str &c) {
     if (options->verbose) emit(c);
 }
+
+/************************************************************************\
+| new IR expressions
+\************************************************************************/
+
+void Codegen::handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr)
+{
+    QL_IOUT(descr << ": '" << ir::describe(set) << "'");
+
+    int lhs;
+    try {
+        lhs = operandContext.convert_creg_reference(set.lhs);
+        // FIXME: also allow breg?
+    } catch (utils::Exception &e) {
+        e.add_context("unsupported LHS for set instruction encountered");
+        throw;
+    }
+
+    do_handle_expression(operandContext, set.rhs, descr);
+
+}
+
+void Codegen::handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr)
+{
+    QL_IOUT(descr << ": '" << ir::describe(expression) << "'");
+    do_handle_expression(operandContext, expression, descr);
+}
+
 
 /************************************************************************\
 |
@@ -1095,6 +1127,129 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
     return codeword;
 }
 #endif
+
+/************************************************************************\
+| expression helpers
+\************************************************************************/
+
+// FIXME: pass lhs (if we're part of setInstruction), or stuff we need if we're a expression used as condition: assign or test
+// assign: a+1, a+b, 2+b, !a, a^b
+// test: a<10, a, (int)breg[0],
+// FIXME: recursion?
+Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr) {
+    Str code;
+    Int dstReg = 0; // FIXME
+
+    try {
+        if (auto ilit = expression->as_int_literal()) {
+            emit("", "move", QL_SS2S(ilit->value << ",R" << dstReg));
+        } else if (expression->as_reference()) {
+            auto creg = operandContext.convert_creg_reference(expression);
+            emit("", "move", QL_SS2S("R" << creg << ",R" << dstReg));
+        } else if (auto fn = expression->as_function_call()) {
+            utils::Str operation;
+            utils::UInt operand_count = 2;  // default, unless decided otherwise below
+
+            // handle cast
+            if (fn->function_type->name == "int") {
+                CHECK_COMPAT(
+                    fn->operands.size() == 1 &&
+                    fn->operands[0]->as_function_call(),
+                    "int() cast target must be a function"
+                );
+                fn = fn->operands[0]->as_function_call();   // FIXME: step into. Shouldn't we recurse to allow e.g. casting a breg??
+            }
+
+            // arithmetic, 1 operand
+            if (fn->function_type->name == "operator~") {
+                operation = "not";
+                operand_count = 1;
+                // code: "not Rs,Rd"
+
+            // arithmetic, 2 operands
+            } else if (fn->function_type->name == "operator+") {
+                operation = "add";
+                // code: "add Ra,Rb,Rd"
+                // code: "add Ra,X,Rd"
+            } else if (fn->function_type->name == "operator-") {
+                operation = "sub";
+                // code: "sub Ra,Rb,Rd"
+                // code: "sub Ra,X,Rd"  only Ra-X, not X-Ra
+            } else if (fn->function_type->name == "operator&") {
+                operation = "and";
+                // code: "and Ra,Rb,Rd"
+                // code: "and Ra,X,Rd"
+            } else if (fn->function_type->name == "operator|") {
+                operation = "or";
+                // code: "or Ra,Rb,Rd"
+                // code: "or Ra,X,Rd"
+            } else if (fn->function_type->name == "operator^") {
+                operation = "xor";
+                // code: "xor Ra,Rb,Rd"
+                // code: "xor Ra,X,Rd"
+
+            // relop
+            // FIXME: should also support bregs, or do we require casting?
+            } else if (fn->function_type->name == "operator==") {
+                operation = "==";
+                // code: "sub Ra,Rb,Rd" + not
+                // code: "sub Ra,X,Rd" + not
+            } else if (fn->function_type->name == "operator!=") {
+                operation = "!=";
+                // code: "sub Ra,Rb,Rd"
+                // code: "sub Ra,X,Rd"
+            } else if (fn->function_type->name == "operator>") {
+                operation = ">";
+            } else if (fn->function_type->name == "operator>=") {
+                operation = ">=";
+                // code "jge Rx,X,@label"
+            } else if (fn->function_type->name == "operator<") {
+                operation = "<";
+                // code "jlt Rx,X,@label"
+            } else if (fn->function_type->name == "operator<=") {
+                operation = "<=";
+            } else {
+                QL_ICE(
+                    "no conversion known for function " << fn->function_type->name
+                );
+            }
+
+            CHECK_COMPAT(
+                fn->operands.size() == operand_count,
+                "function " << fn->function_type->name << " has wrong operand count"
+            );
+            if (operand_count == 1) {
+                auto creg = operandContext.convert_creg_reference(fn->operands[0]);
+                // FIXME: also allow "~5", i.e. immediate?
+                emit("", operation, QL_SS2S("R" << creg << ",R" << dstReg));
+            } else if (fn->operands.size() == 2) {
+                auto &op0 = fn->operands[0];
+                auto &op1 = fn->operands[1];
+
+                if(op0->as_reference() && op1->as_reference()) {
+                    auto creg0 = operandContext.convert_creg_reference(op0);
+                    auto creg1 = operandContext.convert_creg_reference(op1);
+                    emit("", operation, QL_SS2S("R" << creg0 << ",R" << creg1 << ",R" << dstReg));
+                } else if(op0->as_reference() && op1->as_int_literal()) {
+                    auto creg0 = operandContext.convert_creg_reference(op0);
+                    emit("", operation, QL_SS2S("R" << creg0 << "," << op1->as_int_literal()->value << ",R" << dstReg));
+                } else {
+                    // FIXME: etc, also handle "creg(0)=creg(0)+1+1"
+                    QL_ICE("cannot handle parameter combination");
+                }
+            } else {
+                QL_ICE("internal inconsistency: unexpected number of operands");
+            }
+        }
+    }
+    catch (utils::Exception &e) {
+        e.add_context("in expression", true);
+        throw;
+    }
+    return code;
+
+}
+
 
 } // namespace detail
 } // namespace vq1asm
