@@ -157,7 +157,7 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawP
         Str refSignal = instruction["cc"]["ref_signal"].get<Str>();
         ret.signal = (*signals)[refSignal];                                     // poor man's JSON pointer
         if(ret.signal.empty()) {
-            QL_JSON_FATAL(
+            QL_JSON_ERROR(
                 "instruction '" << iname
                 << "': ref_signal '" << refSignal
                 << "' does not resolve"
@@ -186,7 +186,7 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, cons
         Str refSignal = instruction["cc"]["ref_signal"].get<Str>();
         ret.signal = (*jsonSignals)[refSignal];                                 // poor man's JSON pointer
         if(ret.signal.empty()) {
-            QL_JSON_FATAL(
+            QL_JSON_ERROR(
                 "instruction '" << iname
                 << "': ref_signal '" << refSignal
                 << "' does not resolve"
@@ -209,7 +209,7 @@ Settings::InstrumentInfo Settings::getInstrumentInfo(UInt instrIdx) const {
 
     Str instrumentPath = QL_SS2S("instruments[" << instrIdx << "]");    // for JSON error reporting
     if (instrIdx >= jsonInstruments->size()) {
-        QL_JSON_FATAL("node not defined: " + instrumentPath);                   // probably an internal backend error
+        QL_JSON_ERROR("node not defined: " + instrumentPath);                   // probably an internal backend error
     }
     ret.instrument = &(*jsonInstruments)[instrIdx];
 
@@ -272,14 +272,14 @@ Int Settings::getResultBit(const InstrumentControl &ic, Int group) {
     // FIXME: test similar to settings_cc::getInstrumentControl, move
     // check existence of key 'result_bits'
     if (!QL_JSON_EXISTS(ic.controlMode, "result_bits")) {        // this instrument mode produces results (i.e. it is a measurement device)
-        QL_JSON_FATAL("readout requested on instrument '" << ic.ii.instrumentName << "', but key '" << ic.refControlMode << "/result_bits is not present");
+        QL_JSON_ERROR("readout requested on instrument '" << ic.ii.instrumentName << "', but key '" << ic.refControlMode << "/result_bits is not present");
     }
 
     // check existence of key 'result_bits[group]'
     const Json &groupResultBits = ic.controlMode["result_bits"][group];
     UInt nrGroupResultBits = groupResultBits.size();
     if (nrGroupResultBits != 1) {                             // single bit (NB: per group)
-        QL_JSON_FATAL("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrGroupResultBits);
+        QL_JSON_ERROR("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrGroupResultBits);
     }
     return groupResultBits[0].get<Int>();   // bit on digital interface. NB: we assume the result is active high, which is correct for UHF-QC
 }
@@ -305,7 +305,7 @@ Settings::SignalInfo Settings::findSignalInfoForQubit(const Str &instructionSign
             // verify group size: qubits vs. control mode
             UInt qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
             if (qubitGroupCnt != ic.controlModeGroupCnt) {
-                QL_JSON_FATAL(
+                QL_JSON_ERROR(
                     "instrument " << ic.ii.instrumentName
                     << ": number of qubit groups " << qubitGroupCnt
                     << " does not match number of control_bits groups " << ic.controlModeGroupCnt
@@ -335,10 +335,10 @@ Settings::SignalInfo Settings::findSignalInfoForQubit(const Str &instructionSign
         }
     }
     if (!signalTypeFound) {
-        QL_JSON_FATAL("No instruments found providing signal type '" << instructionSignalType << "'");
+        QL_JSON_ERROR("No instruments found providing signal type '" << instructionSignalType << "'");
     }
     if (!qubitFound) {
-        QL_JSON_FATAL("No instruments found driving qubit " << qubit << " for signal type '" << instructionSignalType << "'");
+        QL_JSON_ERROR("No instruments found driving qubit " << qubit << " for signal type '" << instructionSignalType << "'");
     }
 
     return ret;
@@ -360,12 +360,12 @@ Int Settings::findStaticCodewordOverride(const Json &instruction, UInt operandId
             if (operandIdx < override.size()) {
                 staticCodewordOverride = override[operandIdx];
             } else {
-                QL_JSON_FATAL("Array size of static_codeword_override for instruction '" << iname << "' insufficient");
+                QL_JSON_ERROR("Array size of static_codeword_override for instruction '" << iname << "' insufficient");
             }
         } else if (operandIdx == 0) {     // NB: JSON '"static_codeword_override": [3]' gives **scalar** result
             staticCodewordOverride = override.get<Int>();
         } else {
-            QL_JSON_FATAL("Key static_codeword_override for instruction '" << iname
+            QL_JSON_ERROR("Key static_codeword_override for instruction '" << iname
                           << "' should be an array (found '" << override << "' in '" << instruction << "')");
         }
  #else
@@ -379,7 +379,7 @@ Int Settings::findStaticCodewordOverride(const Json &instruction, UInt operandId
     }
  #if 1 // FIXME: require override
     if (staticCodewordOverride < 0) {
-        QL_JSON_FATAL(
+        QL_JSON_ERROR(
             "No static codeword defined for instruction '" << iname
             << "' (we currently require it because automatic assignment is disabled)"
         );

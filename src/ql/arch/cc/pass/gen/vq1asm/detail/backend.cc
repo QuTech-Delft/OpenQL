@@ -590,7 +590,7 @@ Str do_handle_expression(const OperandContext &operandContext, const ir::Express
                     emit("", operation, QL_SS2S("R" << creg0 << "," << op1->as_int_literal()->value << ",R" << dstReg));
                 } else {
                     // FIXME: etc, also handle "creg(0)=creg(0)+1+1"
-                    QL_ICE("cannot handle parameters");
+                    QL_ICE("cannot handle parameter combination");
                 }
             } else {
                 QL_ICE("internal inconsistency: unexpected number of operands");

@@ -17,7 +17,7 @@
 // check existence of JSON key within node, see PR #194
 #define QL_JSON_EXISTS(node, key)  ((node).count(key) > 0)
 
-#define QL_JSON_FATAL(s) QL_FATAL("Error in JSON definition: " << s)   // NB: FATAL prepends "Error : "
+#define QL_JSON_FATAL(s) QL_FATAL("Error in JSON definition: " << s)   // NB: FATAL prepends "Error : ". FIXME: replace by QL_JSON_ERROR
 
 #define QL_JSON_ASSERT(node, key, nodePath)     \
     do {                                        \
@@ -29,7 +29,7 @@
 namespace ql {
 namespace utils {
 
-#if 0
+#if 0   // FIXME: WIP
 
 using RawJson = nlohmann::json;
 

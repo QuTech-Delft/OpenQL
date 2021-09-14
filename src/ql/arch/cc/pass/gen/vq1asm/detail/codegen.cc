@@ -186,7 +186,7 @@ static CalcGroupDigOut calcGroupDigOut(
     // determine control mode group FIXME: more explanation
     Int controlModeGroup = -1;
     if (ic.controlModeGroupCnt == 0) {
-        QL_JSON_FATAL("'control_bits' not defined or empty in 'control_modes/" << ic.refControlMode <<"'");
+        QL_JSON_ERROR("'control_bits' not defined or empty in 'control_modes/" << ic.refControlMode <<"'");
 #if OPT_VECTOR_MODE
     } else if (ic.controlModeGroupCnt == 1) {                   // vector mode: group addresses channel within vector
         controlModeGroup = 0;
@@ -195,7 +195,7 @@ static CalcGroupDigOut calcGroupDigOut(
         controlModeGroup = group;
     } else {
         // NB: this actually an error in program logic
-        QL_JSON_FATAL(
+        QL_JSON_ERROR(
             "instrument '" << ic.ii.instrumentName
             << "' uses " << nrGroups
             << " groups, but control mode '" << ic.refControlMode
@@ -254,7 +254,7 @@ static CalcGroupDigOut calcGroupDigOut(
             << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << ret.groupDigOut
         );
     } else {    // nrGroupControlBits < 1
-        QL_JSON_FATAL(
+        QL_JSON_ERROR(
             "key 'control_bits' empty for group " << controlModeGroup
             << " on instrument '" << ic.ii.instrumentName << "'"
         );
@@ -276,7 +276,7 @@ static CalcGroupDigOut calcGroupDigOut(
         ret.groupDigOut |= 1ul << ic.controlMode["trigger_bits"][group].get<Int>();
 #endif
     } else {
-        QL_JSON_FATAL(
+        QL_JSON_ERROR(
             "instrument '" << ic.ii.instrumentName
             << "' uses " << nrGroups
             << " groups, but control mode '" << ic.refControlMode
@@ -300,7 +300,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
         // get control info from instrument settings
         const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
         if (ic.ii.slot >= MAX_SLOTS) {
-            QL_JSON_FATAL(
+            QL_JSON_ERROR(
                 "illegal slot " << ic.ii.slot
                 << " on instrument '" << ic.ii.instrumentName
             );
@@ -989,7 +989,7 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
     // get the operand index & qubit to work on
     ret.operandIdx = json_get<UInt>(sd.signal[s], "operand_idx", signalSPath);
     if (ret.operandIdx >= operands.size()) {
-        QL_JSON_FATAL(
+        QL_JSON_ERROR(
             "instruction '" << iname
             << "': JSON file defines operand_idx " << ret.operandIdx
             << ", but only " << operands.size()
@@ -1019,7 +1019,7 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
         // verify signal dimensions
         UInt channelsPergroup = ret.si.ic.controlModeGroupSize;
         if (instructionSignalValue.size() != channelsPergroup) {
-            QL_JSON_FATAL(
+            QL_JSON_ERROR(
                 "signal dimension mismatch on instruction '" << iname
                 << "' : control mode '" << ret.si.ic.refControlMode
                 << "' requires " <<  channelsPergroup

@@ -219,7 +219,7 @@ private:
     /**
      * IR root node.
      */
-    const ir::Ref &ir;
+//    const ir::Ref &ir;
 
     /**
      * The block that we're building for.
@@ -494,7 +494,7 @@ public:
         utils::Bool commute_multi_qubit,
         utils::Bool commute_single_qubit
     ) :
-        ir(ir),
+//        ir(ir),
         block(block),
         gatherer(ir),
         order_accumulator(0)
