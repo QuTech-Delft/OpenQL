@@ -113,7 +113,59 @@ if (i==0) {
 
 
 
+.condLt
+while (i<10000) {
+}
+
+.condGt
+while (i>10000) {
+}
+
+.condEq
+while (i==10000) {
+}
+
+.condNe
+while (i!=10000) {
+}
+
+.condTrue
+while (true) {
+}
+
+.condFalse
+while (false) {
+}
+
+.condBit
+#while (mAncilla3) { # encountered incompatible object reference to mAncilla3 (size=0)
+while (b[0]) {
+}
+
+# loop condition must be a boolean
+#.condLit
+#while (5) {
+#}
+
+#.condLitCast
+#while ((Bool) 5) {
+#}
+
+
+
+
+
+
+
+
+
+
 # FIXME: move to its own file
 .condGate
 cond (false) x q[0]
 
+.more
+#set i = true
+#set i = 4<5
+#set i = int(1+4)
+set i = int(j+4)

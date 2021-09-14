@@ -68,6 +68,12 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
 #endif
 }
 
+// FXIME
+Bool OperandContext::is_creg_reference(const ir::ExpressionRef &ref) const {
+    auto lhs = ref->as_reference();
+    return lhs && lhs->target == creg_ob;
+}
+
 
 /**
  * Converts a creg reference to a register index.
@@ -87,11 +93,9 @@ Int OperandContext::convert_creg_reference(const ir::ExpressionRef &ref) const {
 }
 
 
-
 /**
  * Converts a bit reference to its breg index.
  */
-// FIXME: change source code position, uses class Operands
 UInt OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
     Operands ops;
     ops.append(*this, ref);

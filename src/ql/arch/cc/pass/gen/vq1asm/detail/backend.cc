@@ -499,6 +499,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                     //****************************************************************
                     // Instruction: set
                     //****************************************************************
+                    // FIXME: could have instrCond
                     codegen.handle_set_instruction(operandContext, *set_instruction, "conditional.set");
                 } else {
                     QL_ICE(
@@ -675,10 +676,14 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 }
 
                 // body prelude: condition
+#if 0
                 // FIXME: emit loopLabelStart. Also see codeGen.forStart
                 QL_IOUT("label=" << label_start());
                 codegen.handle_expression(operandContext, for_loop->condition, "for.condition");
                 // FIXME: jmp loop end if false
+#else
+                codegen.for_start(operandContext, for_loop->condition, label_start(), label_end());
+#endif
 
                 // handle body
                 loop_label.push_back(label());          // remind label for break/continue

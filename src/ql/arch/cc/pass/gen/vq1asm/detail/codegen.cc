@@ -673,7 +673,6 @@ void Codegen::nopGate() {
 \************************************************************************/
 
 #if 0   // FIXME
-
 void Codegen::ifStart(UInt op0, const Str &opName, UInt op1) {
     comment(QL_SS2S("# IF_START(R" << op0 << " " << opName << " R" << op1 << ")"));
     QL_ICE("FIXME: not implemented");
@@ -721,6 +720,17 @@ void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1
     pragmaLoopLabel.pop_back();
 #endif
 }
+
+#else
+void Codegen::for_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label_start, const Str &label_end) {
+    comment("# FOR_START");
+    emit(label_start+":");
+    handle_expression(operandContext, condition, "for.condition");
+    // FIXME: handle condition 'true'
+    // FIXME: jmp loop end if false
+}
+
+
 #endif
 
 void Codegen::comment(const Str &c) {
@@ -1132,9 +1142,10 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
 | expression helpers
 \************************************************************************/
 
-// FIXME: pass lhs (if we're part of setInstruction), or stuff we need if we're a expression used as condition: assign or test
-// assign: a+1, a+b, 2+b, !a, a^b
-// test: a<10, a, (int)breg[0],
+// FIXME: pass lhs (if we're part of setInstruction), or stuff we need if we're an expression used as condition
+// assign or test:
+// - setInstruction: assign: a, !a, a+1, a+b, 2+b, a^b
+// - condition: test: a<10, a, (int)breg[0],
 // FIXME: recursion?
 Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr) {
     Str code;
@@ -1142,10 +1153,24 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
 
     try {
         if (auto ilit = expression->as_int_literal()) {
-            emit("", "move", QL_SS2S(ilit->value << ",R" << dstReg));
+            emit(
+                "",
+                "move",
+                QL_SS2S(ilit->value << ",R" << dstReg)
+                , "# " + ir::describe(expression)
+            );
         } else if (expression->as_reference()) {
-            auto creg = operandContext.convert_creg_reference(expression);
-            emit("", "move", QL_SS2S("R" << creg << ",R" << dstReg));
+            if(operandContext.is_creg_reference(expression)) {
+                auto creg = operandContext.convert_creg_reference(expression);
+                emit(
+                    "",
+                    "move",
+                    QL_SS2S("R" << creg << ",R" << dstReg)
+                    , "# " + ir::describe(expression)
+                );
+            } else {
+                auto breg = operandContext.convert_breg_reference(expression);
+            }
         } else if (auto fn = expression->as_function_call()) {
             utils::Str operation;
             utils::UInt operand_count = 2;  // default, unless decided otherwise below
@@ -1155,7 +1180,7 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
                 CHECK_COMPAT(
                     fn->operands.size() == 1 &&
                     fn->operands[0]->as_function_call(),
-                    "int() cast target must be a function"
+                    "'int()' cast target must be a function"
                 );
                 fn = fn->operands[0]->as_function_call();   // FIXME: step into. Shouldn't we recurse to allow e.g. casting a breg??
             }
@@ -1209,8 +1234,9 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
             } else if (fn->function_type->name == "operator<=") {
                 operation = "<=";
             } else {
-                QL_ICE(
-                    "no conversion known for function " << fn->function_type->name
+                // NB: we don't support all functions defined upstream
+                QL_INPUT_ERROR(
+                    "function " << fn->function_type->name << "not supported by CC backend"
                 );
             }
 
@@ -1220,8 +1246,13 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
             );
             if (operand_count == 1) {
                 auto creg = operandContext.convert_creg_reference(fn->operands[0]);
-                // FIXME: also allow "~5", i.e. immediate?
-                emit("", operation, QL_SS2S("R" << creg << ",R" << dstReg));
+                // FIXME: also allow "~5", i.e. immediate operand?
+                emit(
+                    "",
+                    operation,
+                    QL_SS2S("R" << creg << ",R" << dstReg)
+                    , "# " + ir::describe(expression)
+                );
             } else if (fn->operands.size() == 2) {
                 auto &op0 = fn->operands[0];
                 auto &op1 = fn->operands[1];
@@ -1229,10 +1260,20 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
                 if(op0->as_reference() && op1->as_reference()) {
                     auto creg0 = operandContext.convert_creg_reference(op0);
                     auto creg1 = operandContext.convert_creg_reference(op1);
-                    emit("", operation, QL_SS2S("R" << creg0 << ",R" << creg1 << ",R" << dstReg));
+                    emit(
+                        "",
+                        operation,
+                        QL_SS2S("R" << creg0 << ",R" << creg1 << ",R" << dstReg)
+                        , "# " + ir::describe(expression)
+                    );
                 } else if(op0->as_reference() && op1->as_int_literal()) {
                     auto creg0 = operandContext.convert_creg_reference(op0);
-                    emit("", operation, QL_SS2S("R" << creg0 << "," << op1->as_int_literal()->value << ",R" << dstReg));
+                    emit(
+                        "",
+                        operation,
+                        QL_SS2S("R" << creg0 << "," << op1->as_int_literal()->value << ",R" << dstReg)
+                        , "# " + ir::describe(expression)
+                    );
                 } else {
                     // FIXME: etc, also handle "creg(0)=creg(0)+1+1"
                     QL_ICE("cannot handle parameter combination");
