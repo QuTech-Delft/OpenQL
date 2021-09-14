@@ -284,27 +284,10 @@ void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
     // generate program header
     codegen.programStart(ir->program->unique_name);
 
-#if 0   // FIXME: WIP
-    // generate code for all kernels
-    for (auto &kernel : program->kernels) {
-        QL_IOUT("Compiling kernel: " << kernel->name);
-        codegenKernelPrologue(kernel);
-
-        if (!kernel->gates.empty()) {
-            ir::compat::Bundles bundles = ir::compat::bundler(kernel);
-            codegen.kernelStart();
-            codegenBundles(bundles, program->platform);
-            codegen.kernelFinish(kernel->name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
-        } else {
-            QL_DOUT("Empty kernel: " << kernel->name);                      // NB: normal situation for kernels with classical control
-        }
-
-        codegenKernelEpilogue(kernel);
-    }
-#else   // new
     // FIXME: Nodes of interest:
     // ir->program->entry_point.links_to
 
+    // generate code for all blocks
     // NB: based on NewToOldConverter::NewToOldConverter
     for (const auto &block : ir->program->blocks) {
         try {
@@ -314,7 +297,6 @@ void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
             throw;
         }
     }
-#endif
 
     codegen.programFinish(ir->program->unique_name);
 
@@ -727,17 +709,13 @@ tInstructionCondition decode_condition(const OperandContext &operandContext, con
     return {cond_operands, cond_type};
 }
 
-#if 0
-// FIXME: names must be useable as q1asm labels
-Str block_id(const Str &block_name, Int block_number) {
-    return QL_SS2S(block_name << "_" << block_number);
-}
-Str block_child_name(const Str &block_name, const Str &child_name) {
-    return block_name + "_" + child_name;
-}
-#endif
 
-// Based on NewToOldConverter::convert_block
+/*
+ * Generate code for a single block (which sort of matches a th concept of a Kernel in the old API). Recursively calls
+ * itself where necessary.
+ * Based on NewToOldConverter::convert_block
+ */
+//
 // FIXME: we need to collect 'Bundles' (i.e. statements starting in the same cycle)
 // FIXME: convert block relative cycles to absolute cycles somewhere
 // FIXME: runOnce automatically on cQASM input
@@ -753,25 +731,27 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
     auto label_start = [label]() { return label() + "_start"; };
     auto label_end = [label]() { return label() + "_end"; };
 
+#if 0   // FIXME: org
     // Whether this is the first lazily-constructed kernel. Only if this is true
     // when flushing at the end are statistics annotations copied; otherwise
     // they would be invalid anyway.
-//    utils::Bool first_kernel = true;
+    utils::Bool first_kernel = true;
 
     // Cycle offset for converting from new-IR cycles to old-IR cycles. In
     // the new IR, cycles start at zero; in the old one they start at
     // compat::FIRST_CYCLE. This is set to utils::MAX as a marker after
     // structured control-flow; this implies that the next cycle number
     // encountered should map to compat::FIRST_CYCLE.
-//    utils::Int cycle_offset = compat::FIRST_CYCLE;
+    utils::Int cycle_offset = compat::FIRST_CYCLE;
 
     // Whether to set the cycles_valid flag on the old-style kernel. Cycles are
     // always valid in the new IR, but when the program was previously converted
     // from the old to the new IR, annotations can be used to clear the flag.
-//    utils::Bool cycles_valid = true;
-//    if (auto kcv = block->get_annotation_ptr<KernelCyclesValid>()) {
-//        cycles_valid = kcv->valid;
-//    }
+    utils::Bool cycles_valid = true;
+    if (auto kcv = block->get_annotation_ptr<KernelCyclesValid>()) {
+        cycles_valid = kcv->valid;
+    }
+#endif
 
     // FIXME: comments
     Int current_cycle = -1;
@@ -822,23 +802,25 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 current_cycle = insn->cycle;
             }
 
+#if 0   // FIXME: org
             // Ensure that we have a kernel to add the instruction to, and
             // that cycle_offset is valid.
-//            if (kernel.empty()) {
-//                kernel.emplace(
-//                    make_kernel_name(block), old->platform,
-//                    old->qubit_count, old->creg_count, old->breg_count
-//                );
-//            }
-//            if (cycle_offset == utils::MAX) {
-//                cycle_offset = compat::FIRST_CYCLE - insn->cycle;
-//            }
+            if (kernel.empty()) {
+                kernel.emplace(
+                    make_kernel_name(block), old->platform,
+                    old->qubit_count, old->creg_count, old->breg_count
+                );
+            }
+            if (cycle_offset == utils::MAX) {
+                cycle_offset = compat::FIRST_CYCLE - insn->cycle;
+            }
 
             // The kernel.gate() calls can add more than one instruction due to
             // ad-hoc decompositions. Since we need to set the cycle numbers
             // after the fact, we need to track which gates already existed in
             // the kernel.
-//            auto first_gate_index = kernel->gates.size();
+            auto first_gate_index = kernel->gates.size();
+#endif
 
             // Handle the instruction subtypes.
             if (auto cinsn = stmt->as_conditional_instruction()) {
@@ -933,16 +915,18 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 );
             }
 
+#if 0   // FIXME: org
             // Copy gate annotations if adding the gate resulted in just one
             // gate.
-//            if (kernel->gates.size() == first_gate_index + 1) {
-//                kernel->gates[first_gate_index]->copy_annotations(*insn);
-//            }
+            if (kernel->gates.size() == first_gate_index + 1) {
+                kernel->gates[first_gate_index]->copy_annotations(*insn);
+            }
 
             // Assign the cycle numbers for the new gates.
-//            for (auto i = first_gate_index; i < kernel->gates.size(); i++) {
-//                kernel->gates[i]->cycle = (utils::UInt)((utils::Int)insn->cycle + cycle_offset);
-//            }
+            for (auto i = first_gate_index; i < kernel->gates.size(); i++) {
+                kernel->gates[i]->cycle = (utils::UInt)((utils::Int)insn->cycle + cycle_offset);
+            }
+#endif
 
         } else if (stmt->as_structured()) {
 
@@ -950,15 +934,16 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
             // Statement: structured
             //****************************************************************
             QL_IOUT("structured: " + ir::describe(stmt));
+#if 0   // FIXME: org
              // Flush any pending kernel not affected by control-flow.
-//            if (!kernel.empty()) {
-//                first_kernel = false;
-//                kernel->cycles_valid = cycles_valid;
-//                program->add(kernel);
-//                kernel.reset();
-//            }
-//            cycle_offset = utils::MAX;
-
+            if (!kernel.empty()) {
+                first_kernel = false;
+                kernel->cycles_valid = cycles_valid;
+                program->add(kernel);
+                kernel.reset();
+            }
+            cycle_offset = utils::MAX;
+#endif
             // Handle the different types of structured statements.
             if (auto if_else = stmt->as_if_else()) {
 
@@ -1131,6 +1116,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
         }
     }
 
+#if 0   // FIXME: org
     // Flush any pending kernel.
 //    if (!kernel.empty()) {
 //
@@ -1143,6 +1129,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
 //        program->add(kernel);
 //        kernel.reset();
 //    }
+#endif
 
     codegen.kernelFinish(name, ir::get_duration_of_block(block));
     QL_IOUT("Finished compiling block '" + label() + "'");
@@ -1151,7 +1138,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
 }
 
 
-#if 0
+#if 0   // FIXME: old
 // based on cc_light_eqasm_compiler.h::bundles2qisa()
 void Backend::codegenBundles(ir::compat::Bundles &bundles, const ir::compat::PlatformRef &platform) {
     QL_IOUT("Generating .vq1asm for bundles");
