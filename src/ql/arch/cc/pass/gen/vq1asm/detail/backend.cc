@@ -378,7 +378,7 @@ Str Backend::loopLabel(const ir::compat::KernelRef &k) {
             break;
 
         default:
-            QL_FATAL("internal inconsistency: requesting kernel label for kernel type " << (int)k->type);
+            QL_ICE("internal inconsistency: requesting kernel label for kernel type " << (int)k->type);
     }
 
     std::regex re(expr, std::regex_constants::egrep);   // FIXME: we are reverse engineering the naming scheme of quantum_program::add_*
@@ -387,7 +387,7 @@ Str Backend::loopLabel(const ir::compat::KernelRef &k) {
     if(std::regex_search(k->name, match, re) && match.size() == numMatch) {
         label = match.str(1);
     } else {
-        QL_FATAL("internal inconsistency: kernel name '" << k->name << "' does not contain loop suffix");
+        QL_ICE("internal inconsistency: kernel name '" << k->name << "' does not contain loop suffix");
     }
 
     QL_IOUT("kernel '" << k->name << "' gets label '" << label << "'");
@@ -436,7 +436,7 @@ void Backend::codegenKernelPrologue(const ir::compat::KernelRef &k) {
             break;
 
         default:
-            QL_FATAL("inconsistency detected: unhandled kernel type");
+            QL_ICE("inconsistency detected: unhandled kernel type");
             break;
     }
 }
@@ -473,7 +473,7 @@ void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
             break;
 
         default:
-            QL_FATAL("inconsistency detected: unhandled kernel type");
+            QL_ICE("inconsistency detected: unhandled kernel type");
             break;
     }
 }
@@ -1184,7 +1184,7 @@ void Backend::codegenBundles(ir::compat::Bundles &bundles, const ir::compat::Pla
                         break;
 
                     case ir::compat::GateType::CLASSICAL:
-                        QL_FATAL("Inconsistency detected in bundle contents: classical gate found after first section (which itself was non-classical)");
+                        QL_ICE("Inconsistency detected in bundle contents: classical gate found after first section (which itself was non-classical)");
                         break;
 
                     case ir::compat::GateType::CUSTOM:
@@ -1202,15 +1202,15 @@ void Backend::codegenBundles(ir::compat::Bundles &bundles, const ir::compat::Pla
                         break;
 
                     case ir::compat::GateType::DISPLAY:
-                        QL_FATAL("Gate type __display__ not supported");           // QX specific, according to openql.pdf
+                        QL_ICE("Gate type __display__ not supported");           // QX specific, according to openql.pdf
                         break;
 
                     case ir::compat::GateType::MEASURE:
-                        QL_FATAL("Gate type __measure_gate__ not supported");      // no use, because there is no way to define CC-specifics
+                        QL_ICE("Gate type __measure_gate__ not supported");      // no use, because there is no way to define CC-specifics
                         break;
 
                     default:
-                        QL_FATAL(
+                        QL_ICE(
                             "Unsupported builtin gate, type: " << itype
                             << ", instruction: '" << instr->qasm() << "'");
                 }   // switch(itype)

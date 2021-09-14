@@ -96,7 +96,7 @@ void Codegen::programStart(const Str &progName) {
     if (platform->qubits->shape.size() == 1) {
         num_qubits = platform->qubits->shape[0];
     } else {
-        QL_FATAL("main qubit register has wrong dimensionality");
+        QL_USER_ERROR("main qubit register has wrong dimensionality");
     };
 
     // Get cycle time from old Platform (NB: in new Platform, all durations are in cycles, not ns).
@@ -380,15 +380,15 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 const Json qubits = json_get<const Json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const Json&> unavailable
                 UInt qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
                 if (group >= qubitGroupCnt) {    // FIXME: also tested in settings_cc::findSignalInfoForQubit
-                    QL_FATAL("group " << group << " not defined in '" << ic.ii.instrumentName << "/qubits'");
+                    QL_JSON_ERROR("group " << group << " not defined in '" << ic.ii.instrumentName << "/qubits'");
                 }
                 const Json qubitsOfGroup = qubits[group];
                 if (qubitsOfGroup.size() != 1) {    // FIXME: not tested elsewhere
-                    QL_FATAL("group " << group << " of '" << ic.ii.instrumentName << "/qubits' should define 1 qubit, not " << qubitsOfGroup.size());
+                    QL_JSON_ERROR("group " << group << " of '" << ic.ii.instrumentName << "/qubits' should define 1 qubit, not " << qubitsOfGroup.size());
                 }
                 Int qubit = qubitsOfGroup[0].get<Int>();
                 if (bi.readoutQubit != qubit) {              // this instrument group handles requested qubit. FIXME: inherently true
-                    QL_FATAL("inconsistency FIXME");
+                    QL_ICE("inconsistency FIXME");
                 };
 #endif
                 // get classic operand
@@ -577,7 +577,7 @@ void Codegen::customGate(
                 // do nothing
             } else {
                 showCodeSoFar();
-                QL_FATAL(
+                QL_USER_ERROR(
                     "Signal conflict on instrument='" << csv.si.ic.ii.instrumentName
                     << "', group=" << csv.si.group
                     << ", between '" << bi.signalValue
@@ -606,16 +606,16 @@ void Codegen::customGate(
 
             // operand checks
             if (operands.size() != 1) {
-                QL_FATAL(
+                QL_INPUT_ERROR(
                     "Readout instruction '" << qasm(iname, operands, breg_operands)
                     << "' requires exactly 1 quantum operand, not " << operands.size()
                 );
             }
             if (!creg_operands.empty()) {
-                QL_FATAL("Using Creg as measurement target is deprecated, use new breg_operands");
+                QL_INPUT_ERROR("Using Creg as measurement target is deprecated, use new breg_operands");
             }
             if (breg_operands.size() > 1) {
-                QL_FATAL(
+                QL_INPUT_ERROR(
                     "Readout instruction '" << qasm(iname, operands, breg_operands)
                     << "' requires 0 or 1 bit operands, not " << breg_operands.size()
                 );
@@ -649,7 +649,7 @@ void Codegen::customGate(
         for (Vec<BundleInfo> &vbi : bundleInfo) {
             // FIXME: for now we just store the JSON of the pragma statement in bundleInfo[*][0]
             if(vbi[0].pragma) {
-                QL_FATAL("Bundle contains more than one gate with 'pragma' key");    // FIXME: provide context
+                QL_INPUT_ERROR("Bundle contains more than one gate with 'pragma' key");    // FIXME: provide context
             }
             vbi[0].pragma = pragma;
 
@@ -664,7 +664,7 @@ void Codegen::customGate(
 
 void Codegen::nopGate() {
     comment("# NOP gate");
-    QL_FATAL("FIXME: NOP gate not implemented");
+    QL_ICE("FIXME: NOP gate not implemented");
 }
 
 /************************************************************************\
@@ -673,12 +673,12 @@ void Codegen::nopGate() {
 
 void Codegen::ifStart(UInt op0, const Str &opName, UInt op1) {
     comment(QL_SS2S("# IF_START(R" << op0 << " " << opName << " R" << op1 << ")"));
-    QL_FATAL("FIXME: not implemented");
+    QL_ICE("FIXME: not implemented");
 }
 
 void Codegen::elseStart(UInt op0, const Str &opName, UInt op1) {
     comment(QL_SS2S("# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")"));
-    QL_FATAL("FIXME: not implemented");
+    QL_ICE("FIXME: not implemented");
 }
 
 void Codegen::forStart(const Str &label, UInt iterations) {
@@ -949,7 +949,7 @@ void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str
     if (prePadding < 0) {
         QL_EOUT("Inconsistency detected in bundle contents: printing code generated so far");
         showCodeSoFar();
-        QL_FATAL(
+        QL_INPUT_ERROR(
             "Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding
             << ", startCycle=" << startCycle
             << ", lastEndCycle=" << lastEndCycle[instrIdx]
@@ -1072,7 +1072,7 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
                     << "' not found in group " << group
                     << ", which contains " << myCodewordArray);
             if (mapPreloaded) {
-                QL_FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
+                QL_USER_ERROR("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
             } else {
                 QL_DOUT(msg);
                 // NB: codeword already contains last used value + 1
@@ -1082,7 +1082,7 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
         }
     } else {    // new instrument or group
         if (mapPreloaded) {
-            QL_FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements: instrument '"
+            QL_USER_ERROR("mismatch between preloaded 'backend_cc_map_input_file' and program requirements: instrument '"
                   << instrumentName << "', group "
                   << group
                   << " not present in file");
