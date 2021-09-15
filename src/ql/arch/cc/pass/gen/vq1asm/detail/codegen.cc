@@ -1170,6 +1170,7 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
                 );
             } else {
                 auto breg = operandContext.convert_breg_reference(expression);
+                // FIXME
             }
         } else if (auto fn = expression->as_function_call()) {
             utils::Str operation;
@@ -1234,7 +1235,7 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
             } else if (fn->function_type->name == "operator<=") {
                 operation = "<=";
             } else {
-                // NB: we don't support all functions defined upstream
+                // NB: we don't support all functions defined upstream, e.g. "operator?:"
                 QL_INPUT_ERROR(
                     "function " << fn->function_type->name << "not supported by CC backend"
                 );
@@ -1274,9 +1275,13 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
                         QL_SS2S("R" << creg0 << "," << op1->as_int_literal()->value << ",R" << dstReg)
                         , "# " + ir::describe(expression)
                     );
+                } else if(op0->as_function_call()) {
+                    QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(op0) << "'");
+                    // FIXME: etc, also handle "creg(0)=creg(0)+1+1" or "1 < i+3"
+                } else if(op1->as_function_call()) {
+                    QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(op1) << "'");
                 } else {
-                    // FIXME: etc, also handle "creg(0)=creg(0)+1+1"
-                    QL_ICE("cannot handle parameter combination");
+                    QL_INPUT_ERROR("cannot handle parameter combination '" << ir::describe(op0) << "' , '" << ir::describe(op1) << "'");
                 }
             } else {
                 QL_ICE("internal inconsistency: unexpected number of operands");
@@ -1284,7 +1289,7 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
         }
     }
     catch (utils::Exception &e) {
-        e.add_context("in expression", true);
+        e.add_context("in expression '" + ir::describe(expression) + "'", true);
         throw;
     }
     return code;

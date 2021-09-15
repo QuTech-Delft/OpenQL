@@ -138,20 +138,22 @@ while (false) {
 }
 
 .condBit
-#while (mAncilla3) { # encountered incompatible object reference to mAncilla3 (size=0)
+#while (mAncilla3) { # Error: encountered incompatible object reference to mAncilla3 (size=0)
 while (b[0]) {
 }
 
-# loop condition must be a boolean
 #.condLit
-#while (5) {
+#while (5) {    # Error: loop condition must be a boolean
+
 #}
 
 #.condLitCast
-#while ((Bool) 5) {
+#while (bit(5)) { # Error: failed to resolve overload for bit with argument pack (int)
 #}
 
-
+#.condComplexExpr
+#while (1 < i+3) { # Error: Input error: in pass VQ1Asm, phase main: in block 'condComplexExpr': in expression '1 < creg[0] + 3': cannot handle function call within function call 'creg[0] + 3'
+#}
 
 
 
@@ -164,8 +166,18 @@ while (b[0]) {
 .condGate
 cond (false) x q[0]
 
+# from: deps/libqasm/src/cqasm/tests/v1-parsing/semantic/insn-condition-new-ok/input.cq
+# note; differening lengths between condition and parameters are allowed
+# cond (b[0:3]) x q[4:5] # Error: Unknown error: in pass reader, phase main: Duplicate node of type N2ql2ir10ExpressionEat address 0x7f9e8b5d9978 found in tree
+
+
 .more
-#set i = true
-#set i = 4<5
-#set i = int(1+4)
+# set i = true # Error: type of right-hand side (bool/bit) could not be coerced to left-hand side (int reference)
+# set i = 4<5
+# set i = int(1+4) # Error: Input error: in pass VQ1Asm, phase main: in block 'more': in expression '1 + 4': cannot handle parameter combination '1' , '4'. FIXME: why no constant propagation
+# set i = 1+4
 set i = int(j+4)
+#set b[0] = true # Internal compiler error: in pass VQ1Asm, phase main: in block 'more': unsupported LHS for set instruction encountered: expected creg reference, but got something else
+# set b[0] = 1 # Error: type of right-hand side (int) could not be coerced to left-hand side (bool/bit reference)
+# set i = i<0 ? 2 : 3 # Error: dynamic values are not supported here
+# set i = 1<2 ? 2 : 3 # Error: dynamic values are not supported here

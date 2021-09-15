@@ -16,7 +16,8 @@ class Test_sweep_points(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
-            
+
+    @unittest.skip("sweeppoints are now disabled")
     def test_sweep_points(self):
         sweep_points = [0.25, 1, 1.5, 2, 2.25]
         nqubits = 1
