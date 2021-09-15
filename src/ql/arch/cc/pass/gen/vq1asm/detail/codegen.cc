@@ -1151,6 +1151,26 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
     Str code;
     Int dstReg = 0; // FIXME
 
+    // helpers
+    auto op_str_int = [operandContext](const ir::ExpressionRef &op) {
+        if(op->as_reference()) {
+            return QL_SS2S("R" << operandContext.convert_creg_reference(op));
+        } else if(op->as_int_literal()) {
+            return QL_SS2S(op->as_int_literal()->value);
+        } else {
+            // FIXME
+        }
+    };
+    auto op_str_bit = [operandContext](const ir::ExpressionRef &op) {
+        if(op->as_reference()) {
+            return QL_SS2S("R" << operandContext.convert_breg_reference(op));
+        } else if(op->as_int_literal()) {   // FIXME: do literals make sense here
+            return QL_SS2S(op->as_int_literal()->value);
+        } else {
+            // FIXME
+        }
+    };
+
     try {
         if (auto ilit = expression->as_int_literal()) {
             emit(
@@ -1165,7 +1185,7 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
                 emit(
                     "",
                     "move",
-                    QL_SS2S("R" << creg << ",R" << dstReg)
+                    QL_SS2S("R" << creg << ",R" << dstReg)  // FIXME: use op_str_int?
                     , "# " + ir::describe(expression)
                 );
             } else {
@@ -1186,95 +1206,135 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
                 fn = fn->operands[0]->as_function_call();   // FIXME: step into. Shouldn't we recurse to allow e.g. casting a breg??
             }
 
-            // arithmetic, 1 operand
+            // int arithmetic, 1 operand
             if (fn->function_type->name == "operator~") {
                 operation = "not";
-                operand_count = 1;
-                // code: "not Rs,Rd"
-
-            // arithmetic, 2 operands
-            } else if (fn->function_type->name == "operator+") {
-                operation = "add";
-                // code: "add Ra,Rb,Rd"
-                // code: "add Ra,X,Rd"
-            } else if (fn->function_type->name == "operator-") {
-                operation = "sub";
-                // code: "sub Ra,Rb,Rd"
-                // code: "sub Ra,X,Rd"  only Ra-X, not X-Ra
-            } else if (fn->function_type->name == "operator&") {
-                operation = "and";
-                // code: "and Ra,Rb,Rd"
-                // code: "and Ra,X,Rd"
-            } else if (fn->function_type->name == "operator|") {
-                operation = "or";
-                // code: "or Ra,Rb,Rd"
-                // code: "or Ra,X,Rd"
-            } else if (fn->function_type->name == "operator^") {
-                operation = "xor";
-                // code: "xor Ra,Rb,Rd"
-                // code: "xor Ra,X,Rd"
-
-            // relop
-            // FIXME: should also support bregs, or do we require casting?
-            } else if (fn->function_type->name == "operator==") {
-                operation = "==";
-                // code: "sub Ra,Rb,Rd" + not
-                // code: "sub Ra,X,Rd" + not
-            } else if (fn->function_type->name == "operator!=") {
-                operation = "!=";
-                // code: "sub Ra,Rb,Rd"
-                // code: "sub Ra,X,Rd"
-            } else if (fn->function_type->name == "operator>") {
-                operation = ">";
-            } else if (fn->function_type->name == "operator>=") {
-                operation = ">=";
-                // code "jge Rx,X,@label"
-            } else if (fn->function_type->name == "operator<") {
-                operation = "<";
-                // code "jlt Rx,X,@label"
-            } else if (fn->function_type->name == "operator<=") {
-                operation = "<=";
-            } else {
-                // NB: we don't support all functions defined upstream, e.g. "operator?:"
-                QL_INPUT_ERROR(
-                    "function " << fn->function_type->name << "not supported by CC backend"
-                );
-            }
-
-            CHECK_COMPAT(
-                fn->operands.size() == operand_count,
-                "function " << fn->function_type->name << " has wrong operand count"
-            );
-            if (operand_count == 1) {
-                auto creg = operandContext.convert_creg_reference(fn->operands[0]);
-                // FIXME: also allow "~5", i.e. immediate operand?
                 emit(
                     "",
                     operation,
-                    QL_SS2S("R" << creg << ",R" << dstReg)
+                    QL_SS2S(
+                        op_str_int(fn->operands[0])
+                        << ",R" << dstReg
+                    )
                     , "# " + ir::describe(expression)
                 );
-            } else if (fn->operands.size() == 2) {
-                auto &op0 = fn->operands[0];
-                auto &op1 = fn->operands[1];
+            }
 
-                if(op0->as_reference() && op1->as_reference()) {
-                    auto creg0 = operandContext.convert_creg_reference(op0);
-                    auto creg1 = operandContext.convert_creg_reference(op1);
+            // bit arithmetic, 1 operand
+            if (fn->function_type->name == "operator!") {
+                operation = "not";
+                op_str_bit(fn->operands[0]);
+                // FIXME
+            }
+
+            // int arithmetic, 2 operands
+            if (operation.empty()) {    // check group only if nothing found yet
+                if (fn->function_type->name == "operator+") {
+                    operation = "add";
+                    // code: "add Ra,Rb,Rd"
+                    // code: "add Ra,X,Rd"
+                } else if (fn->function_type->name == "operator-") {
+                    operation = "sub";
+                    // code: "sub Ra,Rb,Rd"
+                    // code: "sub Ra,X,Rd"  only Ra-X, not X-Ra
+                } else if (fn->function_type->name == "operator&") {
+                    operation = "and";
+                    // code: "and Ra,Rb,Rd"
+                    // code: "and Ra,X,Rd"
+                } else if (fn->function_type->name == "operator|") {
+                    operation = "or";
+                    // code: "or Ra,Rb,Rd"
+                    // code: "or Ra,X,Rd"
+                } else if (fn->function_type->name == "operator^") {
+                    operation = "xor";
+                    // code: "xor Ra,Rb,Rd"
+                    // code: "xor Ra,X,Rd"
+                }
+                if (!operation.empty()) {
                     emit(
                         "",
                         operation,
-                        QL_SS2S("R" << creg0 << ",R" << creg1 << ",R" << dstReg)
+                        QL_SS2S(
+                            op_str_int(fn->operands[0])
+                            << "," << op_str_int(fn->operands[1])
+                            << ",R" << dstReg
+                        )
                         , "# " + ir::describe(expression)
                     );
-                } else if(op0->as_reference() && op1->as_int_literal()) {
-                    auto creg0 = operandContext.convert_creg_reference(op0);
+                }
+            }
+
+            if(operation.empty()) {
+                // bool/bit arithmetic, 2 operands
+
+                if (fn->function_type->name == "operator&&") {
+                    operation = "FIXME";
+                } else if (fn->function_type->name == "operator||") {
+                    operation = "FIXME";
+                } else if (fn->function_type->name == "operator^^") {
+                    operation = "FIXME";
+                }
+                if (!operation.empty()) {
+                    auto arg0 = op_str_bit(fn->operands[0]);
+                    auto arg1 = op_str_bit(fn->operands[1]);
+                    // FIXME, see Codegen::emitPragma for cast of bit to int
+                }
+            }
+
+            if(operation.empty()) {
+                // relop
+#if 0   // FIXME: only after we detected proper name
+                auto arg0 = op_str_int(fn->operands[0]);
+                auto arg1 = op_str_int(fn->operands[1]);
+#endif
+                Str label = "someLabelFIXME";
+
+                if (fn->function_type->name == "operator==") {
+                    operation = "==";
+                    // code: "sub Ra,Rb,Rd" + not
+                    // code: "sub Ra,X,Rd" + not
+                } else if (fn->function_type->name == "operator!=") {
+                    operation = "!=";
+                    // code: "sub Ra,Rb,Rd"
+                    // code: "sub Ra,X,Rd"
+                } else if (fn->function_type->name == "operator>") {
+                    operation = ">";
+                } else if (fn->function_type->name == "operator>=") {
+                    operation = ">=";
+                    // code "jge Rx,X,@label"
+                } else if (fn->function_type->name == "operator<") {
+                    operation = "<";
+                    // code "jlt Rx,X,@label"
+                } else if (fn->function_type->name == "operator<=") {
+                    operation = "<=";
+                }
+                if(!operation.empty()) {
+                    // FIXME: emit correctly
                     emit(
                         "",
                         operation,
-                        QL_SS2S("R" << creg0 << "," << op1->as_int_literal()->value << ",R" << dstReg)
+                        QL_SS2S(
+                            op_str_int(fn->operands[0])
+                            << "," << op_str_int(fn->operands[1])
+                            << ",R" << dstReg
+                        )
                         , "# " + ir::describe(expression)
                     );
+                }
+            }
+
+            if(operation.empty()) {
+                // NB: we don't support all functions defined upstream, e.g. "operator?:"
+                // FIXME: &&, ||,
+                QL_INPUT_ERROR(
+                    "function '" << fn->function_type->name << "' not supported by CC backend"
+                );
+            }
+
+
+
+
+#if 0
                 } else if(op0->as_function_call()) {
                     QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(op0) << "'");
                     // FIXME: etc, also handle "creg(0)=creg(0)+1+1" or "1 < i+3"
@@ -1283,9 +1343,7 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
                 } else {
                     QL_INPUT_ERROR("cannot handle parameter combination '" << ir::describe(op0) << "' , '" << ir::describe(op1) << "'");
                 }
-            } else {
-                QL_ICE("internal inconsistency: unexpected number of operands");
-            }
+#endif
         }
     }
     catch (utils::Exception &e) {
