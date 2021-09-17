@@ -1151,7 +1151,20 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
  * - an Expression that acts as a condition for loop control, in which case parameter 'label_if_false' must contain
  * the label to jump to if the expression evaluates as false
  * The distinction between the two modes of operation is made based on the type of expression, either 'bit' or 'int',
- * which is possible because of the rather strict separation between these two types
+ * which is possible because of the rather strict separation between these two types.
+ *
+ *
+ * To understand how cQASM functions end up in the IR, please note that functions are handled during analyzing cQASM,
+ * see 'AnalyzerHelper::analyze_function()'.
+ *
+ * A default set of functions that only handle constant arguments is provided by libqasm, see
+ * 'register_into(resolver::FunctionTable &table)'. These functions add a constant node to the IR when called (and fail
+ * if the arguments are not constant)
+ *
+ * Some of these are overridden by OpenQL to allow usage of non-constant arguments. This is a 2 step process, where
+ * 'convert_old_to_new(const compat::PlatformRef &old)' adds functions to the platform using 'add_function_type',
+ * and 'ql::ir::cqasm:read()' then walks 'ir->platform->functions' and adds the functions using 'register_function()'.
+ * These functions add a 'cqv::Function' node to the IR (even if the arguments are constant).
  */
 void Codegen::do_handle_expression(
     const OperandContext &operandContext,
@@ -1408,11 +1421,8 @@ void Codegen::do_handle_expression(
             }
 
             if(operation.empty()) {
-                // NB: we'll only see functions 'registered' through add_function_type() in
-                // 'Ref convert_old_to_new(const compat::PlatformRef &old)', other functions are eliminated by libqasm's
-                // contant propagation if possible, and otherwise raise an error.
-                // If we arrive here, there's an unintended inconsistency between the registered functions and our
-                // decoding
+                // NB: if we arrive here, there's an unintended inconsistency between the functions registered in
+                // 'ql::ir::cqasm:read()' (see comment at beginning of this function) and our decoding here.
                 QL_ICE(
                     "function '" << fn->function_type->name << "' not supported by CC backend, but it should be"
                 );
