@@ -154,7 +154,7 @@ private:    // funcs
 #endif
 
     // expression helpers
-    Str do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const ir::ExpressionRef &lhs, const Str &label_if_false="", const Str &descr="");
+    void do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const ir::ExpressionRef &lhs, const Str &label_if_false="", const Str &descr="");
 
 
 }; // class

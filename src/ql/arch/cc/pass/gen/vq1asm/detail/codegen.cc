@@ -1153,7 +1153,7 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
  * The distinction between the two modes of operation is made based on the type of expression, either 'bit' or 'int',
  * which is possible because of the rather strict separation between these two types
  */
-Str Codegen::do_handle_expression(
+void Codegen::do_handle_expression(
     const OperandContext &operandContext,
     const ir::ExpressionRef &expression,
     const ir::ExpressionRef &lhs,
@@ -1192,7 +1192,7 @@ Str Codegen::do_handle_expression(
                 } else if(op->as_int_literal()) {
                     return QL_SS2S(op->as_int_literal()->value);
                 } else {
-                    // FIXME
+                    QL_ICE("Expected integer operand");
                 }
             };
             auto op_str_bit = [operandContext](const ir::ExpressionRef &op) {
@@ -1201,7 +1201,7 @@ Str Codegen::do_handle_expression(
                 } else if(op->as_int_literal()) {   // FIXME: do literals make sense here
                     return QL_SS2S(op->as_int_literal()->value);
                 } else {
-                    // FIXME
+                    QL_ICE("Expected bit operand");
                 }
             };
             // helpers

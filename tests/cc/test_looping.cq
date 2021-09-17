@@ -165,9 +165,9 @@ while (b[0] && b[1]) {
 #while (1 < i+3) { # Error: Input error: in pass VQ1Asm, phase main: in block 'condComplexExpr': in expression '1 < creg[0] + 3': cannot handle function call within function call 'creg[0] + 3'
 #}
 
-.condConstExpr
-while (4==4) {
-}
+#.condConstExpr
+#while (4==4) {
+#}
 
 
 
@@ -189,7 +189,7 @@ cond (false) x q[0]
 # set i = true # Error: type of right-hand side (bool/bit) could not be coerced to left-hand side (int reference)
 # set i = 4<5
 # set i = int(1+4) # Error: Input error: in pass VQ1Asm, phase main: in block 'more': in expression '1 + 4': cannot handle parameter combination '1' , '4'. FIXME: why no constant propagation
-set i = 1+4
+# set i = 1+4
 set i = int(j+4)
 #set b[0] = true # Internal compiler error: in pass VQ1Asm, phase main: in block 'more': unsupported LHS for set instruction encountered: expected creg reference, but got something else
 # set b[0] = 1 # Error: type of right-hand side (int) could not be coerced to left-hand side (bool/bit reference)
