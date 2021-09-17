@@ -725,7 +725,7 @@ void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1
 void Codegen::for_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label_start, const Str &label_end) {
     comment("# FOR_START");
     emit(label_start+":");
-    handle_expression(operandContext, condition, "for.condition");
+    handle_expression(operandContext, condition, label_end, "for.condition");
     // FIXME: handle condition 'true'
     // FIXME: jmp loop end if false
 }
@@ -754,14 +754,14 @@ void Codegen::handle_set_instruction(const OperandContext &operandContext, const
         throw;
     }
 
-    do_handle_expression(operandContext, set.rhs, descr);
+    do_handle_expression(operandContext, set.rhs, set.lhs, "", descr);
 
 }
 
-void Codegen::handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr)
+void Codegen::handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr)
 {
     QL_IOUT(descr << ": '" << ir::describe(expression) << "'");
-    do_handle_expression(operandContext, expression, descr);
+    do_handle_expression(operandContext, expression, One<ql::ir::Expression>(), label_if_false, descr);
 }
 
 
@@ -1142,41 +1142,33 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
 | expression helpers
 \************************************************************************/
 
-// FIXME: pass lhs (if we're part of setInstruction), or stuff we need if we're an expression used as condition
-// assign or test:
-// - setInstruction: assign: a, !a, a+1, a+b, 2+b, a^b
-// - condition: test: a<10, a, (int)breg[0],
 // FIXME: recursion?
-Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr) {
-    Str code;
-    Int dstReg = 0; // FIXME
+// FIXME: or pass SetInstruction or Expression depending on use
+// FIXME: adopt structure of cQASM's cqasm-v1-functions-gen.cpp register_into used for constant propagation
 
-    // helpers
-    auto op_str_int = [operandContext](const ir::ExpressionRef &op) {
-        if(op->as_reference()) {
-            return QL_SS2S("R" << operandContext.convert_creg_reference(op));
-        } else if(op->as_int_literal()) {
-            return QL_SS2S(op->as_int_literal()->value);
-        } else {
-            // FIXME
-        }
-    };
-    auto op_str_bit = [operandContext](const ir::ExpressionRef &op) {
-        if(op->as_reference()) {
-            return QL_SS2S("R" << operandContext.convert_breg_reference(op));
-        } else if(op->as_int_literal()) {   // FIXME: do literals make sense here
-            return QL_SS2S(op->as_int_literal()->value);
-        } else {
-            // FIXME
-        }
-    };
+/* Actually perform the code generation for an expression. Can be called to handle:
+ * - the RHS of a SetInstruction, in which case parameter 'lhs' must be valid
+ * - an Expression that acts as a condition for loop control, in which case parameter 'label_if_false' must contain
+ * the label to jump to if the expression evaluates as false
+ * The distinction between the two modes of operation is made based on the type of expression, either 'bit' or 'int',
+ * which is possible because of the rather strict separation between these two types
+ */
+Str Codegen::do_handle_expression(
+    const OperandContext &operandContext,
+    const ir::ExpressionRef &expression,
+    const ir::ExpressionRef &lhs,
+    const Str &label_if_false,
+    const Str &descr
+) {
+    // helper
+    auto dest_reg = [operandContext, lhs]() { return operandContext.convert_creg_reference(lhs); };
 
     try {
         if (auto ilit = expression->as_int_literal()) {
             emit(
                 "",
                 "move",
-                QL_SS2S(ilit->value << ",R" << dstReg)
+                QL_SS2S(ilit->value << ",R" << dest_reg())
                 , "# " + ir::describe(expression)
             );
         } else if (expression->as_reference()) {
@@ -1185,16 +1177,76 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
                 emit(
                     "",
                     "move",
-                    QL_SS2S("R" << creg << ",R" << dstReg)  // FIXME: use op_str_int?
+                    QL_SS2S("R" << creg << ",R" << dest_reg())  // FIXME: use op_str_int?
                     , "# " + ir::describe(expression)
                 );
             } else {
                 auto breg = operandContext.convert_breg_reference(expression);
-                // FIXME
+                // FIXME, see Codegen::emitPragma for cast of bit to int
             }
         } else if (auto fn = expression->as_function_call()) {
+            // helpers to convert expression operand to Q1 instruction argument
+            auto op_str_int = [operandContext](const ir::ExpressionRef &op) {
+                if(op->as_reference()) {
+                    return QL_SS2S("R" << operandContext.convert_creg_reference(op));
+                } else if(op->as_int_literal()) {
+                    return QL_SS2S(op->as_int_literal()->value);
+                } else {
+                    // FIXME
+                }
+            };
+            auto op_str_bit = [operandContext](const ir::ExpressionRef &op) {
+                if(op->as_reference()) {
+                    return QL_SS2S("R" << operandContext.convert_breg_reference(op));
+                } else if(op->as_int_literal()) {   // FIXME: do literals make sense here
+                    return QL_SS2S(op->as_int_literal()->value);
+                } else {
+                    // FIXME
+                }
+            };
+            // helpers
+            enum Profile {
+//                X,      // unknown/unsupported
+//                LL,
+                LR,     // int Literal, Reference
+                RL,
+                RR
+            };
+            auto get_profile = [](Any<ir::Expression> operands) {
+//                if(operands[0]->as_int_literal() && operands[1]->as_int_literal()) {
+//                    return LL;
+//                } else
+                if(operands[0]->as_int_literal() && operands[1]->as_reference()) {
+                    return LR;
+                } else if(operands[0]->as_reference() && operands[1]->as_int_literal()) {
+                    return RL;
+                } else if(operands[0]->as_reference() && operands[1]->as_reference()) {
+                    return RR;
+                } else if(operands[0]->as_function_call()) {
+                    QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(operands[0]) << "'");
+                    // FIXME: etc, also handle "creg(0)=creg(0)+1+1" or "1 < i+3"
+                } else if(operands[1]->as_function_call()) {
+                    QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(operands[1]) << "'");
+                } else {
+                    QL_INPUT_ERROR("cannot handle parameter combination '" << ir::describe(operands[0]) << "' , '" << ir::describe(operands[1]) << "'");
+                    // NB: includes both parameters being int_literal, which we may handle in the future by a separate pass
+                }
+            };
+            auto emit_2op = [this, op_str_int, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target="R63") {  // FIXME: default target R63
+                emit(
+                    "",
+                    mnem,
+                    QL_SS2S(
+                        op_str_int(fn->operands[arg0])
+                        << "," << op_str_int(fn->operands[arg1])
+                        << "," << target
+                    )
+                    , "# " + ir::describe(expression)
+                );
+            };
+            // ----------- end of helpers -------------
+
             utils::Str operation;
-            utils::UInt operand_count = 2;  // default, unless decided otherwise below
 
             // handle cast
             if (fn->function_type->name == "int") {
@@ -1214,7 +1266,7 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
                     operation,
                     QL_SS2S(
                         op_str_int(fn->operands[0])
-                        << ",R" << dstReg
+                        << ",R" << dest_reg()
                     )
                     , "# " + ir::describe(expression)
                 );
@@ -1224,49 +1276,36 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
             if (fn->function_type->name == "operator!") {
                 operation = "not";
                 op_str_bit(fn->operands[0]);
-                // FIXME
+                // FIXME, see Codegen::emitPragma for cast of bit to int
             }
 
             // int arithmetic, 2 operands
             if (operation.empty()) {    // check group only if nothing found yet
                 if (fn->function_type->name == "operator+") {
                     operation = "add";
-                    // code: "add Ra,Rb,Rd"
-                    // code: "add Ra,X,Rd"
                 } else if (fn->function_type->name == "operator-") {
                     operation = "sub";
-                    // code: "sub Ra,Rb,Rd"
-                    // code: "sub Ra,X,Rd"  only Ra-X, not X-Ra
                 } else if (fn->function_type->name == "operator&") {
                     operation = "and";
-                    // code: "and Ra,Rb,Rd"
-                    // code: "and Ra,X,Rd"
                 } else if (fn->function_type->name == "operator|") {
                     operation = "or";
-                    // code: "or Ra,Rb,Rd"
-                    // code: "or Ra,X,Rd"
                 } else if (fn->function_type->name == "operator^") {
                     operation = "xor";
-                    // code: "xor Ra,Rb,Rd"
-                    // code: "xor Ra,X,Rd"
                 }
                 if (!operation.empty()) {
-                    emit(
-                        "",
-                        operation,
-                        QL_SS2S(
-                            op_str_int(fn->operands[0])
-                            << "," << op_str_int(fn->operands[1])
-                            << ",R" << dstReg
-                        )
-                        , "# " + ir::describe(expression)
-                    );
+                    switch (get_profile(fn->operands)) {
+                        case RL:    // fall through
+                        case RR:    emit_2op(operation, 0, 1); break;
+                        case LR:    emit_2op(operation, 1, 0); break;   // reverse operands to match Q1 instruction set
+                            if (operation == "sub") {
+                                // FIXME: correct for changed op order
+                            }
+                    }
                 }
             }
 
+            // bool/bit arithmetic, 2 operands
             if(operation.empty()) {
-                // bool/bit arithmetic, 2 operands
-
                 if (fn->function_type->name == "operator&&") {
                     operation = "FIXME";
                 } else if (fn->function_type->name == "operator||") {
@@ -1281,76 +1320,109 @@ Str Codegen::do_handle_expression(const OperandContext &operandContext, const ir
                 }
             }
 
+            // relop, group 1
             if(operation.empty()) {
-                // relop
-#if 0   // FIXME: only after we detected proper name
-                auto arg0 = op_str_int(fn->operands[0]);
-                auto arg1 = op_str_int(fn->operands[1]);
-#endif
-                Str label = "someLabelFIXME";
-
                 if (fn->function_type->name == "operator==") {
-                    operation = "==";
-                    // code: "sub Ra,Rb,Rd" + not
-                    // code: "sub Ra,X,Rd" + not
+                    operation = "jge";
                 } else if (fn->function_type->name == "operator!=") {
-                    operation = "!=";
-                    // code: "sub Ra,Rb,Rd"
-                    // code: "sub Ra,X,Rd"
-                } else if (fn->function_type->name == "operator>") {
-                    operation = ">";
-                } else if (fn->function_type->name == "operator>=") {
-                    operation = ">=";
-                    // code "jge Rx,X,@label"
-                } else if (fn->function_type->name == "operator<") {
-                    operation = "<";
-                    // code "jlt Rx,X,@label"
-                } else if (fn->function_type->name == "operator<=") {
-                    operation = "<=";
+                    operation = "jlt";
                 }
                 if(!operation.empty()) {
-                    // FIXME: emit correctly
-                    emit(
-                        "",
-                        operation,
-                        QL_SS2S(
-                            op_str_int(fn->operands[0])
-                            << "," << op_str_int(fn->operands[1])
-                            << ",R" << dstReg
-                        )
-                        , "# " + ir::describe(expression)
-                    );
+                    switch (get_profile(fn->operands)) {
+                        case RL:    // fall through
+                        case RR:    emit_2op("xor", 0, 1); break;
+                        case LR:    emit_2op("xor", 1, 0); break;   // reverse operands to match Q1 instruction set
+                    }
+                    emit("", "nop", "", "");    // register dependency
+                    emit("", operation, "R63,1,@"+label_if_false, "");   // FIXME: R63
+                }
+            }
+
+            // relop, group 2
+            if(operation.empty()) {
+                if (fn->function_type->name == "operator>=") {
+                    operation = ">=";   // NB: actual contents unused here
+                    switch (get_profile(fn->operands)) {
+                        case RL:    // fall through
+                        case RR:    emit_2op("jge", 0, 1, "@"+label_if_false); break;
+                        case LR:    emit_2op("jlt", 1, 0), "@"+label_if_false; break;   // reverse operands (and instruction) to match Q1 instruction set
+                    }
+                } else if (fn->function_type->name == "operator<") {
+                    operation = "<";
+                    switch (get_profile(fn->operands)) {
+                        case RL:    // fall through
+                        case RR:    emit_2op("jlt", 0, 1, "@"+label_if_false); break;
+                        case LR:    emit_2op("jge", 1, 0), "@"+label_if_false; break;   // reverse operands (and instruction) to match Q1 instruction set
+                    }
+                } else if (fn->function_type->name == "operator>") {
+                    operation = ">";
+                    switch (get_profile(fn->operands)) {
+                        case RL:    emit(
+                                        "",
+                                        "jge",
+                                        QL_SS2S(
+                                            op_str_int(fn->operands[0])
+                                            << fn->operands[1]->as_int_literal()->value + 1    // increment literal since we lack 'jgt'
+                                            << ",@"+label_if_false
+                                        )
+                                    );
+                                    break;
+                        case RR:    emit(
+                                        "",
+                                        "add",
+                                        QL_SS2S(
+                                            "1,"
+                                            << op_str_int(fn->operands[1])
+                                            << ",R63"
+                                        )
+                                    );                      // increment arg1
+                                    emit("", "nop", "");    // register dependency
+                                    emit(
+                                        "",
+                                        "jge",
+                                        QL_SS2S(
+                                            op_str_int(fn->operands[0])
+                                            << ",R63"               // FIXME: R63
+                                            << ",@"+label_if_false
+                                        )
+                                    );
+                                    break;
+                        case LR:    emit(
+                                        "",
+                                        "jlt",                              // reverse instruction
+                                        QL_SS2S(
+                                            op_str_int(fn->operands[1])     // reverse operands
+                                            << fn->operands[0]->as_int_literal()->value - 1    // DECrement literal since we lack 'jle'
+                                            << ",@"+label_if_false
+                                        )
+                                    );
+                                    break;
+                    }
+                } else if (fn->function_type->name == "operator<=") {
+                    operation = "<=";
+                    // FIXME
+                }
+                if(!operation.empty()) {
+                    // NB: all work done above
                 }
             }
 
             if(operation.empty()) {
-                // NB: we don't support all functions defined upstream, e.g. "operator?:"
-                // FIXME: &&, ||,
-                QL_INPUT_ERROR(
-                    "function '" << fn->function_type->name << "' not supported by CC backend"
+                // NB: we'll only see functions 'registered' through add_function_type() in
+                // 'Ref convert_old_to_new(const compat::PlatformRef &old)', other functions are eliminated by libqasm's
+                // contant propagation if possible, and otherwise raise an error.
+                // If we arrive here, there's an unintended inconsistency between the registered functions and our
+                // decoding
+                QL_ICE(
+                    "function '" << fn->function_type->name << "' not supported by CC backend, but it should be"
                 );
             }
-
-
-
-
-#if 0
-                } else if(op0->as_function_call()) {
-                    QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(op0) << "'");
-                    // FIXME: etc, also handle "creg(0)=creg(0)+1+1" or "1 < i+3"
-                } else if(op1->as_function_call()) {
-                    QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(op1) << "'");
-                } else {
-                    QL_INPUT_ERROR("cannot handle parameter combination '" << ir::describe(op0) << "' , '" << ir::describe(op1) << "'");
-                }
-#endif
         }
     }
     catch (utils::Exception &e) {
         e.add_context("in expression '" + ir::describe(expression) + "'", true);
         throw;
     }
-    return code;
 
 }
 

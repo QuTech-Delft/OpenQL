@@ -91,9 +91,9 @@ class Test_bugs(unittest.TestCase):
 
     def test_empty_infinite_loop(self):
         name = 'empty_infinite_loop'
-        in_fn = 'test_' + name + '.cq'
-        out_fn = 'test_output/' + name + '_out.cq'
-        gold_fn = 'golden/' + name + '_out.cq'
+        in_fn = curdir + '/test_' + name + '.cq'
+        out_fn = curdir + '/test_output/' + name + '_out.cq'
+        gold_fn = curdir + '/golden/' + name + '_out.cq'
         ql.initialize()
         #ql.set_option('log_level', 'LOG_DEBUG')
         ql.compile(in_fn)

@@ -1251,6 +1251,8 @@ void read(
     // otherwise be legal in cQASM won't work anymore. For example, if
     // operator+(int, int) is defined here, weird stuff like "qubits 1 + 2"
     // won't work anymore.
+    // Note: these functions are added using calls to 'add_function_type()' in
+    // 'Ref convert_old_to_new(const compat::PlatformRef &old)'
     for (const auto &fun : ir->platform->functions) {
         cqty::Types cq_types;
         for (const auto &ql_op_type : fun->operand_types) {

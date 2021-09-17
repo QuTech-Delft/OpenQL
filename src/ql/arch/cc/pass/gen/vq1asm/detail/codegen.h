@@ -75,8 +75,8 @@ public: //  functions
     void comment(const Str &c);
 
     // new IR expressions
-    void handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr="");
-    void handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr="");
+    void handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr);
+    void handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);
 
 private:    // types
     struct CodeGenInfo {
@@ -154,7 +154,7 @@ private:    // funcs
 #endif
 
     // expression helpers
-    Str do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &descr= "");
+    Str do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const ir::ExpressionRef &lhs, const Str &label_if_false="", const Str &descr="");
 
 
 }; // class
