@@ -92,7 +92,6 @@ class Test_bugs(unittest.TestCase):
 
     def test_empty_infinite_loop(self):
         name = 'empty_infinite_loop'
-        out_name = name + '_out.cq'
         in_fn = 'test_' + name + '.cq'
         out_fn = 'test_output/' + name + '_out.cq' # must match path set inside in_fn
         gold_fn = 'golden/' + name + '_out.cq'
@@ -100,8 +99,6 @@ class Test_bugs(unittest.TestCase):
         #ql.set_option('log_level', 'LOG_DEBUG')
         ql.compile(in_fn)
         self.assertTrue(file_compare(out_fn, gold_fn))
-#        print(output_dir)
-#        self.assertTrue(file_compare(os.path.join(output_dir, out_name), os.path.join(curdir, 'golden', out_name)))
 
 if __name__ == '__main__':
     unittest.main()

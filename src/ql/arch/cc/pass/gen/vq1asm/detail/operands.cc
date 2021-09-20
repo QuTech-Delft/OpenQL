@@ -88,22 +88,22 @@ Int OperandContext::convert_creg_reference(const ir::ExpressionRef &ref) const {
         lhs->indices[0]->as_int_literal(),
         "expected creg reference, but got something else"
     );
-    return lhs->indices[0]->as_int_literal()->value;
-    // FIXME: check index against number of regs
+    return lhs->indices[0]->as_int_literal()->value;    // FIXME: add conversion function from user index ro register index
+    // FIXME: check index against number of available regs
 }
 
 
 /**
  * Converts a bit reference to its breg index.
  */
-UInt OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
+Int OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
     Operands ops;
-    ops.append(*this, ref);
+    ops.append(*this, ref); // FIXME: use same mechanism here and in convert_creg_reference
     CHECK_COMPAT(
         ops.bregs.size() == 1,
         "expected bit reference (breg), but got something else"
     );
-    return ops.bregs[0];
+    return ops.bregs[0];    // FIXME: add conversion function from user index ro register index
 }
 
 

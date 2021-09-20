@@ -556,60 +556,35 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
             if (auto if_else = stmt->as_if_else()) {
 
                 // Handle if-else or if statement.
-#if 0   // FIXME: allow
+#if 1   // FIXME: allow
                 CHECK_COMPAT(
                     if_else->branches.size() == 1,
                     "encountered if-else chain with multiple conditions"
                 );
 #endif
-//                compat::ProgramRef if_program;
-//                if_program.emplace(
-//                    make_kernel_name(block), old->platform,
-//                    old->qubit_count, old->creg_count, old->breg_count
-//                );
+                // if-condition
                 try {
-//                    convert_block(if_else->branches[0]->body, if_program);
+                    codegen.for_start(operandContext, if_else->branches[0]->condition, label_start(), label_end()); // FIXME: misnomer
+                } catch (utils::Exception &e) {
+                    e.add_context("in 'if' condition", true);
+                    throw;
+                }
+                // FIXME make it jump: always add labels around blocks
+
+                // if-block
+                try {
                     codegen_block(operandContext, if_else->branches[0]->body, block_child_name("if"));
                 } catch (utils::Exception &e) {
                     e.add_context("in 'if' block", true);
                     throw;
                 }
-                if (if_else->otherwise.empty()) {
+
+                // else-block
+                if (!if_else->otherwise.empty()) {
                     try {
-//                        program->add_if(
-//                            if_program,
-//                            convert_classical_condition(
-//                                if_else->branches[0]->condition,
-//                                false
-//                            )
-//                        );
-                    } catch (utils::Exception &e) {
-                        e.add_context("in 'if' condition", true);
-                        throw;
-                    }
-                } else {
-//                    compat::ProgramRef else_program;
-//                    else_program.emplace(
-//                        make_kernel_name(block), old->platform,
-//                        old->qubit_count, old->creg_count, old->breg_count
-//                    );
-                    try {
-//                        convert_block(if_else->otherwise, else_program);
+                        codegen_block(operandContext, if_else->otherwise, block_child_name("else"));
                     } catch (utils::Exception &e) {
                         e.add_context("in 'else' block", true);
-                        throw;
-                    }
-                    try {
-//                        program->add_if_else(
-//                            if_program,
-//                            else_program,
-//                            convert_classical_condition(
-//                                if_else->branches[0]->condition,
-//                                false
-//                            )
-//                        );
-                    } catch (utils::Exception &e) {
-                        e.add_context("in 'if' condition", true);
                         throw;
                     }
                 }
@@ -670,20 +645,13 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 }
 
             } else if (auto for_loop = stmt->as_for_loop()) {
-                // body prelude: initialize
+                // for loop: initialize
                 if (!for_loop->initialize.empty()) {
                     codegen.handle_set_instruction(operandContext, *for_loop->initialize, "for.initialize");
                 }
 
-                // body prelude: condition
-#if 0
-                // FIXME: emit loopLabelStart. Also see codeGen.forStart
-                QL_IOUT("label=" << label_start());
-                codegen.handle_expression(operandContext, for_loop->condition, "for.condition");
-                // FIXME: jmp loop end if false
-#else
+                // gor loop: condition
                 codegen.for_start(operandContext, for_loop->condition, label_start(), label_end());
-#endif
 
                 // handle body
                 loop_label.push_back(label());          // remind label for break/continue

@@ -1173,8 +1173,66 @@ void Codegen::do_handle_expression(
     const Str &label_if_false,
     const Str &descr
 ) {
-    // helper
+    // function global helpers
     auto dest_reg = [operandContext, lhs]() { return operandContext.convert_creg_reference(lhs); };
+    // helpers to convert expression operand to Q1 instruction argument
+    auto op_str_int = [operandContext](const ir::ExpressionRef &op) {
+        if(op->as_reference()) {
+            return QL_SS2S("R" << operandContext.convert_creg_reference(op));
+        } else if(op->as_int_literal()) {
+            return QL_SS2S(op->as_int_literal()->value);
+        } else {
+            QL_ICE("Expected integer operand");
+        }
+    };
+    auto op_str_bit = [operandContext](const ir::ExpressionRef &op) {   // FIXME: misnomer op_str_bit
+        if(op->as_reference()) {
+            return operandContext.convert_breg_reference(op);
+        } else if(op->as_int_literal()) {   // FIXME: do literals make sense here
+            return op->as_int_literal()->value;
+        } else {
+            QL_ICE("Expected bit operand");
+        }
+    };
+    auto emit_bin_cast = [this, op_str_bit](Any<ir::Expression> operands) {
+        // FIXME: based on emitPragma, cleanup
+        // FIXME: CHECK_COMPAT
+        auto num_ops = operands.size();
+        UInt smBit = op_str_bit(operands[0]);
+        auto arg0 = op_str_bit(operands[0]);
+        auto arg1 = op_str_bit(operands[1]);
+
+//                Int pragmaBreakVal = json_get<Int>(pragma, "break", "pragma of unknown instruction");        // FIXME: we don't know which instruction we're dealing with, so better move
+        UInt smAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
+        UInt mask = 1ul << (smBit % 32);
+//                std::string label = pragmaLoopLabel.back() + "_end";        // FIXME: must match label set in forEnd(), assumes we are actually inside a for loop
+
+        // emit code for pragma "break". NB: code is identical for all instruments
+        // FIXME: verify that instruction duration matches actual time
+        /*
+            seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
+            seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch
+            move_sm     R0                  ; ... and move to register
+            nop                             ; register dependency R0
+            and         R0,<mask>,R1        ; mask depends on DSM bit location
+            nop                             ; register dependency R1
+            jlt         R1,1,@loop
+        */
+        emit("", "seq_cl_sm", QL_SS2S("S" << smAddr), "");
+        emit("", "seq_wait", "3", "");
+        emit("", "move_sm", "R0", "");
+        emit("", "nop", "", "");
+        emit("", "and", QL_SS2S("R0," << mask << "," << "R1"), "");    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+        emit("", "nop", "", "");
+#if 0
+        if (pragmaBreakVal == 0) {
+            emit("", "jlt", QL_SS2S("R1,1,@" << label), "");
+        } else {
+            emit("", "jge", QL_SS2S("R1,1,@" << label), "");
+        }
+#endif
+    };
+    // ----------- end of global helpers -------------
 
     try {
         if (auto ilit = expression->as_int_literal()) {
@@ -1195,29 +1253,11 @@ void Codegen::do_handle_expression(
                 );
             } else {
                 auto breg = operandContext.convert_breg_reference(expression);
-                // FIXME, see Codegen::emitPragma for cast of bit to int
+//                emit_bin_cast(expression);
+                // FIXME: move to lhs
             }
         } else if (auto fn = expression->as_function_call()) {
-            // helpers to convert expression operand to Q1 instruction argument
-            auto op_str_int = [operandContext](const ir::ExpressionRef &op) {
-                if(op->as_reference()) {
-                    return QL_SS2S("R" << operandContext.convert_creg_reference(op));
-                } else if(op->as_int_literal()) {
-                    return QL_SS2S(op->as_int_literal()->value);
-                } else {
-                    QL_ICE("Expected integer operand");
-                }
-            };
-            auto op_str_bit = [operandContext](const ir::ExpressionRef &op) {
-                if(op->as_reference()) {
-                    return QL_SS2S("R" << operandContext.convert_breg_reference(op));
-                } else if(op->as_int_literal()) {   // FIXME: do literals make sense here
-                    return QL_SS2S(op->as_int_literal()->value);
-                } else {
-                    QL_ICE("Expected bit operand");
-                }
-            };
-            // helpers
+            // function call helpers
             enum Profile {
 //                X,      // unknown/unsupported
 //                LL,
@@ -1226,15 +1266,19 @@ void Codegen::do_handle_expression(
                 RR
             };
             auto get_profile = [](Any<ir::Expression> operands) {
-//                if(operands[0]->as_int_literal() && operands[1]->as_int_literal()) {
-//                    return LL;
-//                } else
+                CHECK_COMPAT(
+                    operands.size() == 2,
+                    "expected 2 operands"
+                );
                 if(operands[0]->as_int_literal() && operands[1]->as_reference()) {
                     return LR;
                 } else if(operands[0]->as_reference() && operands[1]->as_int_literal()) {
                     return RL;
                 } else if(operands[0]->as_reference() && operands[1]->as_reference()) {
                     return RR;
+                } else if(operands[0]->as_int_literal() && operands[1]->as_int_literal()) {
+                    QL_INPUT_ERROR("cannot currently handle functions on two literal paremeters");
+//                    return LL;
                 } else if(operands[0]->as_function_call()) {
                     QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(operands[0]) << "'");
                     // FIXME: etc, also handle "creg(0)=creg(0)+1+1" or "1 < i+3"
@@ -1245,7 +1289,7 @@ void Codegen::do_handle_expression(
                     // NB: includes both parameters being int_literal, which we may handle in the future by a separate pass
                 }
             };
-            auto emit_2op = [this, op_str_int, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target="R63") {  // FIXME: default target R63
+            auto emit_mnem2args = [this, op_str_int, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target="R63") {  // FIXME: default target R63
                 emit(
                     "",
                     mnem,
@@ -1257,7 +1301,7 @@ void Codegen::do_handle_expression(
                     , "# " + ir::describe(expression)
                 );
             };
-            // ----------- end of helpers -------------
+            // ----------- end of function call helpers -------------
 
             utils::Str operation;
 
@@ -1288,8 +1332,9 @@ void Codegen::do_handle_expression(
             // bit arithmetic, 1 operand
             if (fn->function_type->name == "operator!") {
                 operation = "not";
-                op_str_bit(fn->operands[0]);
-                // FIXME, see Codegen::emitPragma for cast of bit to int
+                //CHECK_COMPAT
+                emit_bin_cast(fn->operands);
+                // FIXME: do something
             }
 
             // int arithmetic, 2 operands
@@ -1308,8 +1353,8 @@ void Codegen::do_handle_expression(
                 if (!operation.empty()) {
                     switch (get_profile(fn->operands)) {
                         case RL:    // fall through
-                        case RR:    emit_2op(operation, 0, 1); break;
-                        case LR:    emit_2op(operation, 1, 0); break;   // reverse operands to match Q1 instruction set
+                        case RR:    emit_mnem2args(operation, 0, 1); break;
+                        case LR:    emit_mnem2args(operation, 1, 0); break;   // reverse operands to match Q1 instruction set
                             if (operation == "sub") {
                                 // FIXME: correct for changed op order
                             }
@@ -1327,9 +1372,8 @@ void Codegen::do_handle_expression(
                     operation = "FIXME";
                 }
                 if (!operation.empty()) {
-                    auto arg0 = op_str_bit(fn->operands[0]);
-                    auto arg1 = op_str_bit(fn->operands[1]);
-                    // FIXME, see Codegen::emitPragma for cast of bit to int
+                    emit_bin_cast(fn->operands);
+                    // FIXME: perform operation
                 }
             }
 
@@ -1343,8 +1387,8 @@ void Codegen::do_handle_expression(
                 if(!operation.empty()) {
                     switch (get_profile(fn->operands)) {
                         case RL:    // fall through
-                        case RR:    emit_2op("xor", 0, 1); break;
-                        case LR:    emit_2op("xor", 1, 0); break;   // reverse operands to match Q1 instruction set
+                        case RR:    emit_mnem2args("xor", 0, 1); break;
+                        case LR:    emit_mnem2args("xor", 1, 0); break;   // reverse operands to match Q1 instruction set
                     }
                     emit("", "nop", "", "");    // register dependency
                     emit("", operation, "R63,1,@"+label_if_false, "");   // FIXME: R63
@@ -1357,15 +1401,15 @@ void Codegen::do_handle_expression(
                     operation = ">=";   // NB: actual contents unused here
                     switch (get_profile(fn->operands)) {
                         case RL:    // fall through
-                        case RR:    emit_2op("jge", 0, 1, "@"+label_if_false); break;
-                        case LR:    emit_2op("jlt", 1, 0), "@"+label_if_false; break;   // reverse operands (and instruction) to match Q1 instruction set
+                        case RR:    emit_mnem2args("jge", 0, 1, "@" + label_if_false); break;
+                        case LR:    emit_mnem2args("jlt", 1, 0), "@" + label_if_false; break;   // reverse operands (and instruction) to match Q1 instruction set
                     }
                 } else if (fn->function_type->name == "operator<") {
                     operation = "<";
                     switch (get_profile(fn->operands)) {
                         case RL:    // fall through
-                        case RR:    emit_2op("jlt", 0, 1, "@"+label_if_false); break;
-                        case LR:    emit_2op("jge", 1, 0), "@"+label_if_false; break;   // reverse operands (and instruction) to match Q1 instruction set
+                        case RR:    emit_mnem2args("jlt", 0, 1, "@" + label_if_false); break;
+                        case LR:    emit_mnem2args("jge", 1, 0), "@" + label_if_false; break;   // reverse operands (and instruction) to match Q1 instruction set
                     }
                 } else if (fn->function_type->name == "operator>") {
                     operation = ">";
