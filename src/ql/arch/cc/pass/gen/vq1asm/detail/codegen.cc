@@ -744,16 +744,6 @@ void Codegen::comment(const Str &c) {
 void Codegen::handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr)
 {
     QL_IOUT(descr << ": '" << ir::describe(set) << "'");
-
-    int lhs;
-    try {
-        lhs = operandContext.convert_creg_reference(set.lhs);
-        // FIXME: also allow breg?
-    } catch (utils::Exception &e) {
-        e.add_context("unsupported LHS for set instruction encountered");
-        throw;
-    }
-
     do_handle_expression(operandContext, set.rhs, set.lhs, "", descr);
 
 }
@@ -794,7 +784,7 @@ void Codegen::emit(const Str &labelOrComment, const Str &instr) {
 // @param   labelOrSel      label must include trailing ":"
 // @param   comment         must include leading "#"
 void Codegen::emit(const Str &labelOrSel, const Str &instr, const Str &ops, const Str &comment) {
-    codeSection << std::setw(16) << labelOrSel << std::setw(16) << instr << std::setw(24) << ops << comment << std::endl;
+    codeSection << std::setw(16) << labelOrSel << std::setw(16) << instr << std::setw(36) << ops << comment << std::endl;
 }
 
 void Codegen::emit(Int slot, const Str &instr, const Str &ops, const Str &comment) {
@@ -827,8 +817,10 @@ void Codegen::emitProgramStart(const Str &progName) {
     comment("# synchronous start and latency compensation");
     emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
     emit("",                "seq_out",  "0x00000000,1",     "# allows monitoring actual start time using trace unit");
-    emit("__mainLoop:",     "",         "",                 "# ");    // FIXME: __mainLoop should be a forbidden kernel name
-
+    if (!options->run_once) {
+        comment("# start of main loop that runs indefinitely");
+        emit("__mainLoop:",     "",         "",                 "# ");    // FIXME: __mainLoop should be a forbidden kernel name
+    }
 #if OPT_FEEDBACK
     // initialize state
     emit("",                "seq_state","0",                "# clear Programmable Logic state");
@@ -837,6 +829,7 @@ void Codegen::emitProgramStart(const Str &progName) {
 
 
 void Codegen::emitProgramFinish() {
+    comment("# finish program");
     if (options->run_once) {   // program runs once only
         emit("", "stop");
     } else {   // CC-light emulation: loop indefinitely
@@ -942,6 +935,7 @@ void Codegen::emitOutput(
     lastEndCycle[instrIdx] = startCycle + instrMaxDurationInCycles;
 }
 
+#if 0
 void Codegen::emitPragma(
     const Json &pragma,
     Int pragmaSmBit,
@@ -965,24 +959,25 @@ void Codegen::emitPragma(
 /*
     seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
     seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch
-    move_sm     R0                  ; ... and move to register
-    nop                             ; register dependency R0
-    and         R0,<mask>,R1        ; mask depends on DSM bit location
-    nop                             ; register dependency R1
-    jlt         R1,1,@loop
+    move_sm     Ra                  ; ... and move to register
+    nop                             ; register dependency Ra
+    and         Ra,<mask>,Rb        ; mask depends on DSM bit location
+    nop                             ; register dependency Rb
+    jlt         Rb,1,@loop
 */
     emit(slot, "seq_cl_sm", QL_SS2S("S" << smAddr), QL_SS2S("# 'break if " << pragmaBreakVal << "' on '" << instrumentName << "'"));
     emit(slot, "seq_wait", "3", "");
-    emit(slot, "move_sm", "R0", "");
+    emit(slot, "move_sm", REG_TMP0, "");
     emit(slot, "nop", "", "");
-    emit(slot, "and", QL_SS2S("R0," << mask << "," << "R1"), "");    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+    emit(slot, "and", QL_SS2S(REG_TMP0<< "," << mask << "," << REG_TMP1), "");    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
     emit(slot, "nop", "", "");
     if (pragmaBreakVal == 0) {
-        emit(slot, "jlt", QL_SS2S("R1,1,@" << label), "");
+        emit(slot, "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label), "");
     } else {
-        emit(slot, "jge", QL_SS2S("R1,1,@" << label), "");
+        emit(slot, "jge", QL_SS2S(REG_TMP1 << ",1,@" << label), "");
     }
 }
+#endif
 
 
 void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName) {
@@ -1148,7 +1143,7 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
 
 /* Actually perform the code generation for an expression. Can be called to handle:
  * - the RHS of a SetInstruction, in which case parameter 'lhs' must be valid
- * - an Expression that acts as a condition for loop control, in which case parameter 'label_if_false' must contain
+ * - an Expression that acts as a condition for structured control, in which case parameter 'label_if_false' must contain
  * the label to jump to if the expression evaluates as false
  * The distinction between the two modes of operation is made based on the type of expression, either 'bit' or 'int',
  * which is possible because of the rather strict separation between these two types.
@@ -1161,7 +1156,7 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
  * 'register_into(resolver::FunctionTable &table)'. These functions add a constant node to the IR when called (and fail
  * if the arguments are not constant)
  *
- * Some of these are overridden by OpenQL to allow usage of non-constant arguments. This is a 2 step process, where
+ * Some of these are overridden by OpenQL to allow use of non-constant arguments. This is a 2 step process, where
  * 'convert_old_to_new(const compat::PlatformRef &old)' adds functions to the platform using 'add_function_type',
  * and 'ql::ir::cqasm:read()' then walks 'ir->platform->functions' and adds the functions using 'register_function()'.
  * These functions add a 'cqv::Function' node to the IR (even if the arguments are constant).
@@ -1174,20 +1169,34 @@ void Codegen::do_handle_expression(
     const Str &descr
 ) {
     // function global helpers
-    auto dest_reg = [operandContext, lhs]() { return operandContext.convert_creg_reference(lhs); };
+    auto creg2reg = [operandContext](const ir::ExpressionRef &ref) {
+        auto reg = operandContext.convert_creg_reference(ref);
+        if(reg >= NUM_CREGS) {
+            QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
+        }
+        return reg;
+    };
+    auto breg2reg = [operandContext](const ir::ExpressionRef &ref) {    // FIXME: makes no sense, and needs to go through DSM bit allocator
+        auto reg = operandContext.convert_breg_reference(ref);
+//        if(reg >= NUM_CREGS) {
+//            QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
+//        }
+        return reg;
+    };
+    auto dest_reg = [creg2reg, lhs]() { return creg2reg(lhs); };
     // helpers to convert expression operand to Q1 instruction argument
-    auto op_str_int = [operandContext](const ir::ExpressionRef &op) {
+    auto op_str_int = [creg2reg](const ir::ExpressionRef &op) {
         if(op->as_reference()) {
-            return QL_SS2S("R" << operandContext.convert_creg_reference(op));
+            return QL_SS2S("R" << creg2reg(op));
         } else if(op->as_int_literal()) {
             return QL_SS2S(op->as_int_literal()->value);
         } else {
             QL_ICE("Expected integer operand");
         }
     };
-    auto op_str_bit = [operandContext](const ir::ExpressionRef &op) {   // FIXME: misnomer op_str_bit
+    auto op_str_bit = [breg2reg](const ir::ExpressionRef &op) {   // FIXME: misnomer op_str_bit
         if(op->as_reference()) {
-            return operandContext.convert_breg_reference(op);
+            return breg2reg(op);
         } else if(op->as_int_literal()) {   // FIXME: do literals make sense here
             return op->as_int_literal()->value;
         } else {
@@ -1198,7 +1207,7 @@ void Codegen::do_handle_expression(
         // FIXME: based on emitPragma, cleanup
         // FIXME: CHECK_COMPAT
         auto num_ops = operands.size();
-        UInt smBit = op_str_bit(operands[0]);
+        UInt smBit = op_str_bit(operands[0]);   // FIXME: lookup allocation
         auto arg0 = op_str_bit(operands[0]);
         auto arg1 = op_str_bit(operands[1]);
 
@@ -1212,29 +1221,31 @@ void Codegen::do_handle_expression(
         /*
             seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
             seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch
-            move_sm     R0                  ; ... and move to register
+            move_sm     Ra                  ; ... and move to register
             nop                             ; register dependency R0
-            and         R0,<mask>,R1        ; mask depends on DSM bit location
+            and         Ra,<mask>,Rb        ; mask depends on DSM bit location
             nop                             ; register dependency R1
-            jlt         R1,1,@loop
+            jlt         Rb,1,@loop
         */
         emit("", "seq_cl_sm", QL_SS2S("S" << smAddr), "");
         emit("", "seq_wait", "3", "");
-        emit("", "move_sm", "R0", "");
+        emit("", "move_sm", REG_TMP0, "");
         emit("", "nop", "", "");
-        emit("", "and", QL_SS2S("R0," << mask << "," << "R1"), "");    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+        emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1), "");    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
         emit("", "nop", "", "");
 #if 0
         if (pragmaBreakVal == 0) {
-            emit("", "jlt", QL_SS2S("R1,1,@" << label), "");
+            emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label), "");
         } else {
-            emit("", "jge", QL_SS2S("R1,1,@" << label), "");
+            emit("", "jge", QL_SS2S(REG_TMP1 << ",1,@" << label), "");
         }
 #endif
     };
     // ----------- end of global helpers -------------
 
     try {
+        // FIXME: emit lhs+expression as comment (only here)
+
         if (auto ilit = expression->as_int_literal()) {
             emit(
                 "",
@@ -1242,13 +1253,14 @@ void Codegen::do_handle_expression(
                 QL_SS2S(ilit->value << ",R" << dest_reg())
                 , "# " + ir::describe(expression)
             );
+        // FIXME expression->as_bit_literal()
         } else if (expression->as_reference()) {
             if(operandContext.is_creg_reference(expression)) {
-                auto creg = operandContext.convert_creg_reference(expression);
+                auto reg = creg2reg(expression);
                 emit(
                     "",
                     "move",
-                    QL_SS2S("R" << creg << ",R" << dest_reg())  // FIXME: use op_str_int?
+                    QL_SS2S("R" << reg << ",R" << dest_reg())  // FIXME: use op_str_int?
                     , "# " + ir::describe(expression)
                 );
             } else {
@@ -1259,8 +1271,6 @@ void Codegen::do_handle_expression(
         } else if (auto fn = expression->as_function_call()) {
             // function call helpers
             enum Profile {
-//                X,      // unknown/unsupported
-//                LL,
                 LR,     // int Literal, Reference
                 RL,
                 RR
@@ -1278,7 +1288,6 @@ void Codegen::do_handle_expression(
                     return RR;
                 } else if(operands[0]->as_int_literal() && operands[1]->as_int_literal()) {
                     QL_INPUT_ERROR("cannot currently handle functions on two literal paremeters");
-//                    return LL;
                 } else if(operands[0]->as_function_call()) {
                     QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(operands[0]) << "'");
                     // FIXME: etc, also handle "creg(0)=creg(0)+1+1" or "1 < i+3"
@@ -1289,7 +1298,7 @@ void Codegen::do_handle_expression(
                     // NB: includes both parameters being int_literal, which we may handle in the future by a separate pass
                 }
             };
-            auto emit_mnem2args = [this, op_str_int, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target=REG_TMP[0]) {
+            auto emit_mnem2args = [this, op_str_int, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target=REG_TMP0) {
                 emit(
                     "",
                     mnem,
@@ -1391,7 +1400,7 @@ void Codegen::do_handle_expression(
                         case LR:    emit_mnem2args("xor", 1, 0); break;   // reverse operands to match Q1 instruction set
                     }
                     emit("", "nop", "", "");    // register dependency
-                    emit("", operation, REG_TMP[0]+",1,@"+label_if_false, "");
+                    emit("", operation, Str(REG_TMP0)+",1,@"+label_if_false, "");
                 }
             }
 
@@ -1414,46 +1423,49 @@ void Codegen::do_handle_expression(
                 } else if (fn->function_type->name == "operator>") {
                     operation = ">";
                     switch (get_profile(fn->operands)) {
-                        case RL:    emit(
-                                        "",
-                                        "jge",
-                                        QL_SS2S(
-                                            op_str_int(fn->operands[0])
-                                            << fn->operands[1]->as_int_literal()->value + 1    // increment literal since we lack 'jgt'
-                                            << ",@"+label_if_false
-                                        )
-                                    );
-                                    break;
-                        case RR:    emit(
-                                        "",
-                                        "add",
-                                        QL_SS2S(
-                                            "1,"
-                                            << op_str_int(fn->operands[1])
-                                            << "," << REG_TMP[0]
-                                        )
-                                    );                      // increment arg1
-                                    emit("", "nop", "");    // register dependency
-                                    emit(
-                                        "",
-                                        "jge",
-                                        QL_SS2S(
-                                            op_str_int(fn->operands[0])
-                                            << "," << REG_TMP[0]
-                                            << ",@"+label_if_false
-                                        )
-                                    );
-                                    break;
-                        case LR:    emit(
-                                        "",
-                                        "jlt",                              // reverse instruction
-                                        QL_SS2S(
-                                            op_str_int(fn->operands[1])     // reverse operands
-                                            << fn->operands[0]->as_int_literal()->value - 1    // DECrement literal since we lack 'jle'
-                                            << ",@"+label_if_false
-                                        )
-                                    );
-                                    break;
+                        case RL:
+                            emit(
+                                "",
+                                "jge",
+                                QL_SS2S(
+                                    op_str_int(fn->operands[0])
+                                    << fn->operands[1]->as_int_literal()->value + 1    // increment literal since we lack 'jgt'
+                                    << ",@"+label_if_false
+                                )
+                            );
+                            break;
+                        case RR:
+                            emit(
+                                "",
+                                "add",
+                                QL_SS2S(
+                                    "1,"
+                                    << op_str_int(fn->operands[1])
+                                    << "," << REG_TMP0
+                                )
+                            );                      // increment arg1
+                            emit("", "nop", "");    // register dependency
+                            emit(
+                                "",
+                                "jge",
+                                QL_SS2S(
+                                    op_str_int(fn->operands[0])
+                                    << "," << REG_TMP0
+                                    << ",@"+label_if_false
+                                )
+                            );
+                            break;
+                        case LR:
+                            emit(
+                                "",
+                                "jlt",                              // reverse instruction
+                                QL_SS2S(
+                                    op_str_int(fn->operands[1])     // reverse operands
+                                    << fn->operands[0]->as_int_literal()->value - 1    // DECrement literal since we lack 'jle'
+                                    << ",@"+label_if_false
+                                )
+                            );
+                            break;
                     }
                 } else if (fn->function_type->name == "operator<=") {
                     operation = "<=";
