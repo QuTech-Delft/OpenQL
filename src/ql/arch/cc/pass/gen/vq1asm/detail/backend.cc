@@ -560,7 +560,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
 #endif
                 // if-condition
                 try {
-                    codegen.for_start(operandContext, if_else->branches[0]->condition, label()); // FIXME: misnomer
+                    codegen.if_start(operandContext, if_else->branches[0]->condition, label());
                 } catch (utils::Exception &e) {
                     e.add_context("in 'if' condition", true);
                     throw;
@@ -576,6 +576,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 }
 
                 // else-block
+                // FIXME: elseLabel
                 if (!if_else->otherwise.empty()) {
                     try {
                         codegen_block(operandContext, if_else->otherwise, block_child_name("else"));
@@ -584,6 +585,8 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                         throw;
                     }
                 }
+
+                // FIXME: if_end
 
             } else if (auto static_loop = stmt->as_static_loop()) {
 
@@ -641,13 +644,9 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 }
 
             } else if (auto for_loop = stmt->as_for_loop()) {
-                // for loop: initialize
-                if (!for_loop->initialize.empty()) {
-                    codegen.handle_set_instruction(operandContext, *for_loop->initialize, "for.initialize");
-                }
 
-                // for loop: condition
-                codegen.for_start(operandContext, for_loop->condition, label());
+                // for loop: start
+                codegen.for_start(operandContext, for_loop->initialize, for_loop->condition, label());
 
                 // handle body
                 loop_label.push_back(label());          // remind label for break/continue, and .for_end() below
@@ -659,7 +658,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 }
 
                 // handle looping
-                codegen.for_end(operandContext, for_loop->update, loop_label.back());   // NB: label() has changed because of recursion
+                codegen.for_end(operandContext, for_loop->update, loop_label.back());   // NB: label() has changed because of recursion into codegen_block
                 loop_label.pop_back();
 
             } else if (auto break_statement = stmt->as_break_statement()) {

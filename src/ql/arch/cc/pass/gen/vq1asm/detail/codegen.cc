@@ -728,14 +728,37 @@ void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1
 }
 
 #else
-void Codegen::for_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label) {
-    comment("# FOR_START: condition = '" + ir::describe(condition) + "'");
+void Codegen::if_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label) {
+    comment(
+        "# IF_START: "
+        "condition = '" + ir::describe(condition) + "'"
+    );
+
+//    emit(to_start(label)+":", "", "");    // label for looping or 'continue'
+    handle_expression(operandContext, condition, to_end(label), "if.condition");
+}
+
+void Codegen::for_start(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &initialize, const ir::ExpressionRef &condition, const Str &label) {
+    comment(
+        "# FOR_START: "
+        + (!initialize.empty() ? "initialize = '"+ir::describe(initialize)+"', " : "")
+        + "condition = '" + ir::describe(condition) + "'"
+    );
+
+    // for loop: initialize
+    if (!initialize.empty()) {
+        handle_set_instruction(operandContext, *initialize, "for.initialize");
+    }
+
     emit(to_start(label)+":", "", "");    // label for looping or 'continue'
     handle_expression(operandContext, condition, to_end(label), "for.condition");
 }
 
 void Codegen::for_end(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &update, const Str &label) {
-    comment("# FOR_END:" + (!update.empty() ? " update = '"+ir::describe(update)+"'" : ""));
+    comment(
+        "# FOR_END: "
+        + (!update.empty() ? " update = '"+ir::describe(update)+"'" : "")
+    );
     // FIXME: use 'loop' instruction if possible
     if (!update.empty()) {
         handle_set_instruction(operandContext, *update, "for.update");
