@@ -108,6 +108,7 @@ private:    // types
 private:    // vars
     static const Int MAX_SLOTS = 12;                            // physical maximum of CC
     static const Int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
+    static const Str REG_TMP[] = ["R63", "R62"];                // Q1 registers for temporary use
 
     OptionsRef options;
     ir::PlatformRef platform;                                   // remind platform

@@ -1289,7 +1289,7 @@ void Codegen::do_handle_expression(
                     // NB: includes both parameters being int_literal, which we may handle in the future by a separate pass
                 }
             };
-            auto emit_mnem2args = [this, op_str_int, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target="R63") {  // FIXME: default target R63
+            auto emit_mnem2args = [this, op_str_int, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target=REG_TMP[0]) {
                 emit(
                     "",
                     mnem,
@@ -1391,7 +1391,7 @@ void Codegen::do_handle_expression(
                         case LR:    emit_mnem2args("xor", 1, 0); break;   // reverse operands to match Q1 instruction set
                     }
                     emit("", "nop", "", "");    // register dependency
-                    emit("", operation, "R63,1,@"+label_if_false, "");   // FIXME: R63
+                    emit("", operation, REG_TMP[0]+",1,@"+label_if_false, "");
                 }
             }
 
@@ -1430,7 +1430,7 @@ void Codegen::do_handle_expression(
                                         QL_SS2S(
                                             "1,"
                                             << op_str_int(fn->operands[1])
-                                            << ",R63"
+                                            << "," << REG_TMP[0]
                                         )
                                     );                      // increment arg1
                                     emit("", "nop", "");    // register dependency
@@ -1439,7 +1439,7 @@ void Codegen::do_handle_expression(
                                         "jge",
                                         QL_SS2S(
                                             op_str_int(fn->operands[0])
-                                            << ",R63"               // FIXME: R63
+                                            << "," << REG_TMP[0]
                                             << ",@"+label_if_false
                                         )
                                     );
