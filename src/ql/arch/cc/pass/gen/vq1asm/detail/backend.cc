@@ -333,10 +333,6 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
     // FIXME: names must be useable as q1asm labels
     auto block_child_name = [name](const Str &child_name) { return name + "_" + child_name; };
     auto label = [this, name]() { return QL_SS2S(name << "_" << block_number); };   // block_number is to uniquify anonymous blocks like for loops
-    auto to_start = [](const Str &base) { return base + "_start"; };
-    auto to_end = [](const Str &base) { return base + "_end"; };
-    auto label_start = [label]() { return label() + "_start"; };
-    auto label_end = [label]() { return label() + "_end"; };
 
 #if 0   // FIXME: org
     // Whether this is the first lazily-constructed kernel. Only if this is true
@@ -564,7 +560,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
 #endif
                 // if-condition
                 try {
-                    codegen.for_start(operandContext, if_else->branches[0]->condition, label_start(), label_end()); // FIXME: misnomer
+                    codegen.for_start(operandContext, if_else->branches[0]->condition, label()); // FIXME: misnomer
                 } catch (utils::Exception &e) {
                     e.add_context("in 'if' condition", true);
                     throw;
@@ -650,35 +646,27 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                     codegen.handle_set_instruction(operandContext, *for_loop->initialize, "for.initialize");
                 }
 
-                // gor loop: condition
-                codegen.for_start(operandContext, for_loop->condition, label_start(), label_end());
+                // for loop: condition
+                codegen.for_start(operandContext, for_loop->condition, label());
 
                 // handle body
-                loop_label.push_back(label());          // remind label for break/continue
-                Str end_label = label_end();            // save label before recursing
+                loop_label.push_back(label());          // remind label for break/continue, and .for_end() below
                 try {
                     codegen_block(operandContext, for_loop->body, block_child_name("for"));
                 } catch (utils::Exception &e) {
                     e.add_context("in for loop body", true);
                     throw;
                 }
-                loop_label.pop_back();
 
                 // handle looping
-                if (!for_loop->update.empty()) {
-                    codegen.handle_set_instruction(operandContext, *for_loop->update, "for.update");
-                }
-                // FIXME: jmp loopLabelStart
-                // FIXME: emit loopLabelEnd for break. Also see codeGen.forEnd
-                QL_IOUT("label=" << end_label);
+                codegen.for_end(operandContext, for_loop->update, loop_label.back());   // NB: label() has changed because of recursion
+                loop_label.pop_back();
 
             } else if (auto break_statement = stmt->as_break_statement()) {
-                QL_IOUT("break to " << to_end(loop_label.back()));
-                // FIXME: jmp loopLabelEnd
+                codegen.do_break(loop_label.back());
 
             } else if (auto continue_statement = stmt->as_continue_statement()) {
-                QL_IOUT("continue to " << to_start(loop_label.back()));
-                // FIXME: jmp loopLabelStart
+                codegen.do_continue(loop_label.back());
 
             } else {
                 QL_ICE(

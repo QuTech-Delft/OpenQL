@@ -25,6 +25,12 @@ namespace detail {
 
 using namespace utils;
 
+// helpers for label generation
+Str to_start(const Str &base) { return base + "_start"; };
+Str to_end(const Str &base) { return base + "_end"; };
+//Str label_start(label]() { return label() + "_start"; };
+//Str label_end = [label]() { return label() + "_end"; };
+
 /************************************************************************\
 | Generic
 \************************************************************************/
@@ -722,15 +728,29 @@ void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1
 }
 
 #else
-void Codegen::for_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label_start, const Str &label_end) {
-    comment("# FOR_START");
-    emit(label_start+":");
-    handle_expression(operandContext, condition, label_end, "for.condition");
-    // FIXME: handle condition 'true'
-    // FIXME: jmp loop end if false
+void Codegen::for_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label) {
+    comment("# FOR_START: condition = '" + ir::describe(condition) + "'");
+    emit(to_start(label)+":", "", "");    // label for looping or 'continue'
+    handle_expression(operandContext, condition, to_end(label), "for.condition");
 }
 
+void Codegen::for_end(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &update, const Str &label) {
+    comment("# FOR_END:" + (!update.empty() ? " update = '"+ir::describe(update)+"'" : ""));
+    // FIXME: use 'loop' instruction if possible
+    if (!update.empty()) {
+        handle_set_instruction(operandContext, *update, "for.update");
+    }
+    emit("", "jmp", "@"+to_start(label), "# loop");
+    emit(to_end(label)+":", "", "");    // label for loop end or 'break'
+}
 
+void Codegen::do_break(const Str &label) {
+    emit("", "jmp", "@"+to_end(label), "# break");
+}
+
+void Codegen::do_continue(const Str &label) {
+    emit("", "jmp", "@"+to_start(label), "# continue");
+}
 #endif
 
 void Codegen::comment(const Str &c) {

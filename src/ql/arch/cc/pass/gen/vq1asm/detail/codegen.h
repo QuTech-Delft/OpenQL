@@ -73,7 +73,11 @@ public: //  functions
     void doWhileStart(const Str &label);
     void doWhileEnd(const Str &label, UInt op0, const std::string &opName, UInt op1);
 #else
-    void for_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label_start, const Str &label_end);
+    void for_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label);
+    void for_end(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &update, const Str &label);
+    void do_break(const Str &label);
+    void do_continue(const Str &label);
+
 #endif
 
     void comment(const Str &c);
