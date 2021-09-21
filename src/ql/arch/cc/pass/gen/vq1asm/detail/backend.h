@@ -32,15 +32,6 @@ public:
 private:
     void codegen_block(const ir::BlockBaseRef &block, const Str &name);
 
-#if 0   // FIXME
-    static Str loopLabel(const ir::compat::KernelRef &k);
-    void codegenClassicalInstruction(const ir::compat::GateRef &classical_ins);
-    void codegenKernelPrologue(const ir::compat::KernelRef &k);
-    void codegenKernelEpilogue(const ir::compat::KernelRef &k);
-    void codegenBundles(ir::compat::Bundles &bundles, const ir::compat::PlatformRef &platform);
-    void loadHwSettings(const ir::PlatformRef &platform);
-#endif
-
 private: // vars
     Codegen codegen;
     Int bundleIdx = 0;
