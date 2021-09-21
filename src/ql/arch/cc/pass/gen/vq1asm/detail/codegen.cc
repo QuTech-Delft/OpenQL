@@ -12,6 +12,7 @@
 #include "ql/version.h"
 #include "ql/com/options.h"
 #include "ql/ir/describe.h"
+#include "ql/ir/ops.h"
 
 #include <iosfwd>
 
@@ -526,6 +527,7 @@ static Str qasm(const Str &iname, const Vec<UInt> &operands, const Vec<UInt> &br
     return g.qasm();
 }
 
+
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
 // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
 // Does not deal with the control mode and digital interface of the instrument.
@@ -668,6 +670,163 @@ void Codegen::customGate(
     }
 #endif
 }
+
+
+typedef struct {
+    utils::Vec<utils::UInt> cond_operands;
+    ConditionType cond_type;
+} tInstructionCondition;
+
+/**
+ * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
+ * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
+ */
+tInstructionCondition decode_condition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
+    utils::Vec<utils::UInt> cond_operands;
+    ConditionType cond_type;
+    try {
+        if (auto blit = condition->as_bit_literal()) {
+            if (blit->value) {
+                cond_type = ConditionType::ALWAYS;
+            } else {
+                cond_type = ConditionType::NEVER;
+            }
+        } else if (condition->as_reference()) {
+            cond_operands.push_back(operandContext.convert_breg_reference(condition));
+            cond_type = ConditionType::UNARY;
+        } else if (auto fn = condition->as_function_call()) {
+            if (
+                fn->function_type->name == "operator!" ||
+                fn->function_type->name == "operator~"
+            ) {
+                CHECK_COMPAT(fn->operands.size() == 1, "unsupported condition function");
+                if (fn->operands[0]->as_reference()) {
+                    cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
+                    cond_type = ConditionType::NOT;
+                } else if (auto fn2 = fn->operands[0]->as_function_call()) {
+                    CHECK_COMPAT(fn2->operands.size() == 2, "unsupported condition function");
+                    cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[0]));
+                    cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[1]));
+                    if (
+                        fn2->function_type->name == "operator&" ||
+                        fn2->function_type->name == "operator&&"
+                    ) {
+                        cond_type = ConditionType::NAND;
+                    } else if (
+                        fn2->function_type->name == "operator|" ||
+                        fn2->function_type->name == "operator||"
+                    ) {
+                        cond_type = ConditionType::NOR;
+                    } else if (
+                        fn2->function_type->name == "operator^" ||
+                        fn2->function_type->name == "operator^^" ||
+                        fn2->function_type->name == "operator!="
+                    ) {
+                        cond_type = ConditionType::NXOR;
+                    } else if (
+                        fn2->function_type->name == "operator=="
+                    ) {
+                        cond_type = ConditionType::XOR;
+                    } else {
+                        QL_ICE("unsupported gate condition");
+                    }
+                } else {
+                    QL_ICE("unsupported gate condition");
+                }
+            } else {
+                CHECK_COMPAT(fn->operands.size() == 2, "unsupported condition function");
+                cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
+                cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[1]));
+                if (
+                    fn->function_type->name == "operator&" ||
+                    fn->function_type->name == "operator&&"
+                ) {
+                    cond_type = ConditionType::AND;
+                } else if (
+                    fn->function_type->name == "operator|" ||
+                    fn->function_type->name == "operator||"
+                ) {
+                    cond_type = ConditionType::OR;
+                } else if (
+                    fn->function_type->name == "operator^" ||
+                    fn->function_type->name == "operator^^" ||
+                    fn->function_type->name == "operator!="
+                ) {
+                    cond_type = ConditionType::XOR;
+                } else if (
+                    fn->function_type->name == "operator=="
+                ) {
+                    cond_type = ConditionType::NXOR;
+                } else {
+                    QL_ICE("unsupported condition function");
+                }
+            }
+        } else {
+            QL_ICE("unsupported condition expression");
+        }
+    } catch (utils::Exception &e) {
+        e.add_context("in gate condition", true);
+        throw;
+    }
+    return {cond_operands, cond_type};
+}
+
+void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
+        // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
+        // but we only handle it for custom_instruction
+        tInstructionCondition instrCond = decode_condition(operandContext, custom.condition);
+
+        // Handle the normal operands for custom instructions.
+        Operands ops;
+        for (const auto &ob : custom.instruction_type->template_operands) {
+            QL_IOUT("template operand: " + ir::describe(ob));
+            try {
+                ops.append(operandContext, ob);
+            } catch (utils::Exception &e) {
+                e.add_context("name=" + custom.instruction_type->name + ", qubits=" + ops.qubits.to_string());
+                throw;
+            }
+        }
+
+        for (utils::UInt i = 0; i < custom.operands.size(); i++) {
+            try {
+                ops.append(operandContext, custom.operands[i]);
+            } catch (utils::Exception &e) {
+                e.add_context(
+                    "name=" + custom.instruction_type->name
+                    + ", qubits=" + ops.qubits.to_string()
+                    + ", operand=" + std::to_string(i)
+                    );
+                throw;
+            }
+        }
+#if 0   // org
+        kernel->gate(
+            custom.instruction_type->name, ops.qubits, ops.cregs,
+            0, ops.angle, ops.bregs
+        );
+        if (ops.has_integer) {
+            CHECK_COMPAT(
+                kernel->gates.size() == first_gate_index + 1,
+                "gate with integer operand cannot be ad-hoc decomposed"
+            );
+            kernel->gates.back()->int_operand = ops.integer;
+        }
+#endif
+        customGate(
+            custom.instruction_type->name,
+            ops.qubits,     // operands
+            ops.cregs,      // creg_operands
+            ops.bregs,      // breg_operands
+            instrCond.cond_type,      // condition
+            instrCond.cond_operands,  // cond_operands
+            ops.angle,      // angle
+            custom.cycle,    // startCycle
+            ir::get_duration_of_statement(stmt)    // durationInCycles
+        );
+
+}
+
 
 void Codegen::nopGate() {
     comment("# NOP gate");

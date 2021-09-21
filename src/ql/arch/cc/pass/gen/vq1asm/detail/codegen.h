@@ -62,6 +62,7 @@ public: //  functions
         Real angle,
         UInt startCycle, UInt durationInCycles
     );
+    void custom_instruction(const ir::CustomInstruction &custom);
     void nopGate();
 
     void if_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label);

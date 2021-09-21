@@ -217,6 +217,7 @@ void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
 #endif
 
 
+#if 0   // FIXME:  moved
 typedef struct {
     utils::Vec<utils::UInt> cond_operands;
     ConditionType cond_type;
@@ -316,7 +317,7 @@ tInstructionCondition decode_condition(const OperandContext &operandContext, con
     }
     return {cond_operands, cond_type};
 }
-
+#endif
 
 /*
  * Generate code for a single block (which sort of matches a th concept of a Kernel in the old API). Recursively calls
@@ -436,8 +437,11 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 // Handle the conditional instruction subtypes.
                 if (auto custom = cinsn->as_custom_instruction()) {
 
-                    QL_IOUT("custom instruction: name=" + custom->instruction_type->name);
+                    QL_DOUT("custom instruction: name=" + custom->instruction_type->name);
 
+#if 1
+                    codegen.custom_instruction(*custom);
+#else
                     // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
                     // but we only handle it for custom_instruction
                     tInstructionCondition instrCond = decode_condition(operandContext, cinsn->condition);
@@ -490,6 +494,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                         insn->cycle,    // startCycle
                         ir::get_duration_of_statement(stmt)    // durationInCycles
                     );
+#endif
 
                 } else if (auto set_instruction = cinsn->as_set_instruction()) {
 
