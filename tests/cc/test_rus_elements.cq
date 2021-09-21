@@ -47,9 +47,9 @@ for (i=0; i<10000; i=i+1) {
         i qOutput4
     barrier
 
-    if (!mAncilla3) {
-        break
-    }
+#    if (!mAncilla3) {
+#        break
+#    }
     barrier
 
     rx180 qAncilla3

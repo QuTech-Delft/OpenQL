@@ -104,7 +104,8 @@ utils::Int GenerateVQ1AsmPass::run(
     parsed_options->verbose = options["verbose"].as_bool();
 
     // Run the backend.
-    detail::Backend().compile(ir, parsed_options.as_const());
+    QL_DOUT("Running Central Controller backend ... ");
+    detail::Backend(ir, parsed_options.as_const());
 
     return 0;
 }

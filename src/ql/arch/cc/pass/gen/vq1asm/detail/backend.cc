@@ -27,14 +27,8 @@ namespace detail {
 using namespace utils;
 
 // compile for Central Controller
-// NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
-void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
+Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, options) {
     QL_DOUT("Compiling Central Controller program ... ");
-
-    // init
-    OperandContext oc(ir);
-    codegen.init(ir->platform, options);
-    bundleIdx = 0;
 
     // generate program header
     codegen.programStart(ir->program->unique_name);
@@ -46,7 +40,7 @@ void Backend::compile(const ir::Ref &ir, const OptionsRef &options) {
     // NB: based on NewToOldConverter::NewToOldConverter
     for (const auto &block : ir->program->blocks) {
         try {
-            codegen_block(oc, block, block->name);
+            codegen_block(block, block->name);
         } catch (utils::Exception &e) {
             e.add_context("in block '" + block->name + "'");
             throw;
@@ -329,7 +323,7 @@ tInstructionCondition decode_condition(const OperandContext &operandContext, con
 // FIXME: convert block relative cycles to absolute cycles somewhere
 // FIXME: runOnce automatically on cQASM input
 // FIXME: provide (more) context in all QL_ICE and e.add_context
-void Backend::codegen_block(const OperandContext &operandContext, const ir::BlockBaseRef &block, const Str &name)
+void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
 {
     // helper lambdas
     // FIXME: names must be useable as q1asm labels
@@ -506,7 +500,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                         && set_instruction->condition->as_bit_literal()->value
                         , "conditions other then 'true' are not supported for set instruction"
                     );
-                    codegen.handle_set_instruction(operandContext, *set_instruction, "conditional.set");
+                    codegen.handle_set_instruction(*set_instruction, "conditional.set");
 
                 } else if (cinsn->as_goto_instruction()) {
                     QL_INPUT_ERROR("goto instruction not supported");
@@ -574,7 +568,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
 #endif
                 // if-condition
                 try {
-                    codegen.if_start(operandContext, if_else->branches[0]->condition, label());
+                    codegen.if_start(if_else->branches[0]->condition, label());
                 } catch (utils::Exception &e) {
                     e.add_context("in 'if' condition", true);
                     throw;
@@ -583,7 +577,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
 
                 // if-block
                 try {
-                    codegen_block(operandContext, if_else->branches[0]->body, block_child_name("if"));
+                    codegen_block(if_else->branches[0]->body, block_child_name("if"));
                 } catch (utils::Exception &e) {
                     e.add_context("in 'if' block", true);
                     throw;
@@ -593,7 +587,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 // FIXME: elseLabel
                 if (!if_else->otherwise.empty()) {
                     try {
-                        codegen_block(operandContext, if_else->otherwise, block_child_name("else"));
+                        codegen_block(if_else->otherwise, block_child_name("else"));
                     } catch (utils::Exception &e) {
                         e.add_context("in 'else' block", true);
                         throw;
@@ -611,7 +605,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 codegen.foreach_start(*static_loop->lhs, *static_loop->frm, loop_label.back());
 
                 try {
-                    codegen_block(operandContext, static_loop->body, block_child_name("static_for"));
+                    codegen_block(static_loop->body, block_child_name("static_for"));
                 } catch (utils::Exception &e) {
                     e.add_context("in static loop body", true);
                     throw;
@@ -629,31 +623,31 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 codegen.repeat(loop_label.back());
 
                 try {
-                    codegen_block(operandContext, repeat_until_loop->body, block_child_name("repeat_until"));
+                    codegen_block(repeat_until_loop->body, block_child_name("repeat_until"));
                 } catch (utils::Exception &e) {
                     e.add_context("in repeat-until loop body", true);
                     throw;
                 }
 
-                codegen.until(operandContext, repeat_until_loop->condition, loop_label.back());
+                codegen.until(repeat_until_loop->condition, loop_label.back());
                 loop_label.pop_back();
 
             } else if (auto for_loop = stmt->as_for_loop()) {
 
                 // for loop: start
                 loop_label.push_back(label());          // remind label for break/continue, before recursing
-                codegen.for_start(operandContext, for_loop->initialize, for_loop->condition, loop_label.back());
+                codegen.for_start(for_loop->initialize, for_loop->condition, loop_label.back());
 
                 // handle body
                 try {
-                    codegen_block(operandContext, for_loop->body, block_child_name("for"));
+                    codegen_block(for_loop->body, block_child_name("for"));
                 } catch (utils::Exception &e) {
                     e.add_context("in for loop body", true);
                     throw;
                 }
 
                 // handle looping
-                codegen.for_end(operandContext, for_loop->update, loop_label.back());   // NB: label() has changed because of recursion into codegen_block
+                codegen.for_end(for_loop->update, loop_label.back());   // NB: label() has changed because of recursion into codegen_block
                 loop_label.pop_back();
 
             } else if (auto break_statement = stmt->as_break_statement()) {

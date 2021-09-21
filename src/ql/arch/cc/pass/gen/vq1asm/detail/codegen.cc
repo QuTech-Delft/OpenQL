@@ -29,25 +29,36 @@ using namespace utils;
 // helpers for label generation
 Str to_start(const Str &base) { return base + "_start"; };
 Str to_end(const Str &base) { return base + "_end"; };
-//Str label_start(label]() { return label() + "_start"; };
-//Str label_end = [label]() { return label() + "_end"; };
+
+
+Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
+    : ir(ir)
+    , options(options)
+    , operandContext(ir)
+{
+    init(); // FIXME: inline, or make private
+}
 
 /************************************************************************\
 | Generic
 \************************************************************************/
 
-void Codegen::init(const ir::PlatformRef &platform, const OptionsRef &options) {
+void Codegen::init() {
     // NB: a new eqasm_backend_cc is instantiated per call to compile, and
     // as a result also a codegen_cc, so we don't need to cleanup
+#if 0
     this->platform = platform;
     this->options = options;
+    operandContext
+#endif
+
 #if 1
     // based on NewToOldConverter::NewToOldConverter
     // FIXME: bit expensive to go back to old
     settings.loadBackendSettings(
         ir::compat::Platform::build(
-            platform->name,
-            platform->data.data)
+            ir->platform->name,
+            ir->platform->data.data)
     );
 #else
     settings = platform->get_annotation<pass::gen::vq1asm::detail::Settings>();  // NB: set in Info::post_process_platform() FIXME: will that retain the platform member var
@@ -101,14 +112,14 @@ void Codegen::programStart(const Str &progName) {
 
     // Determine number of qubits.
     utils::UInt num_qubits;
-    if (platform->qubits->shape.size() == 1) {
-        num_qubits = platform->qubits->shape[0];
+    if (ir->platform->qubits->shape.size() == 1) {
+        num_qubits = ir->platform->qubits->shape[0];
     } else {
         QL_USER_ERROR("main qubit register has wrong dimensionality");
     };
 
     // Get cycle time from old Platform (NB: in new Platform, all durations are in cycles, not ns).
-    utils::UInt cycle_time = platform->data.data["hardware_settings"]["cycle_time"];     // FIXME: check JSON access
+    utils::UInt cycle_time = ir->platform->data.data["hardware_settings"]["cycle_time"];     // FIXME: check JSON access
 
     vcd.programStart(num_qubits, cycle_time, MAX_GROUPS, settings);
 }
@@ -564,7 +575,7 @@ void Codegen::customGate(
     const Json &instruction = platform->find_instruction(iname);
 #else
     // find instruction (gate definition) in JSON platform data
-    const Json &instruction = platform->data.data["instructions"][iname];     // FIXME: check JSON access. FIXME: how about generalizations/specializations
+    const Json &instruction = ir->platform->data.data["instructions"][iname];     // FIXME: check JSON access. FIXME: how about generalizations/specializations
 #endif
     // find signal vector definition for instruction
     Settings::SignalDef sd = settings.findSignalDefinition(instruction, iname);
@@ -822,7 +833,8 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             instrCond.cond_operands,  // cond_operands
             ops.angle,      // angle
             custom.cycle,    // startCycle
-            ir::get_duration_of_statement(stmt)    // durationInCycles
+//            ir::get_duration_of_statement(stmt)    // durationInCycles
+            custom.instruction_type->duration    // durationInCycles
         );
 
 }
@@ -887,14 +899,14 @@ void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1
 }
 
 #else
-void Codegen::if_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label) {
+void Codegen::if_start(const ir::ExpressionRef &condition, const Str &label) {
     comment(
         "# IF_START: "
         "condition = '" + ir::describe(condition) + "'"
     );
 
 //    emit(to_start(label)+":", "", "");    // label for looping or 'continue'
-    handle_expression(operandContext, condition, to_end(label), "if.condition");
+    handle_expression(condition, to_end(label), "if.condition");
 }
 
 
@@ -902,7 +914,7 @@ void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm,
     emit(to_start(label)+":", "", "");    // label for looping or 'continue'
 
 #if 0
-    handle_set_instruction(operandContext, *initialize, "for.initialize");
+    handle_set_instruction(*initialize, "for.initialize");
 
     static_loop->lhs->target;
     static_loop->frm->value;
@@ -925,14 +937,14 @@ void Codegen::repeat(const Str &label) {
 }
 
 
-void Codegen::until(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label) {
-    handle_expression(operandContext, condition, to_end(label), "until.condition");
+void Codegen::until(const ir::ExpressionRef &condition, const Str &label) {
+    handle_expression(condition, to_end(label), "until.condition");
     emit("", "jmp", "@"+to_start(label), "# loop");
     emit(to_end(label)+":", "", "");    // label for loop end or 'break'
 }
 
 
-void Codegen::for_start(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &initialize, const ir::ExpressionRef &condition, const Str &label) {
+void Codegen::for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::ExpressionRef &condition, const Str &label) {
     comment(
         "# FOR_START: "
         + (!initialize.empty() ? "initialize = '"+ir::describe(initialize)+"', " : "")
@@ -941,21 +953,21 @@ void Codegen::for_start(const OperandContext &operandContext, utils::Maybe<ir::S
 
     // for loop: initialize
     if (!initialize.empty()) {
-        handle_set_instruction(operandContext, *initialize, "for.initialize");
+        handle_set_instruction(*initialize, "for.initialize");
     }
 
     emit(to_start(label)+":", "", "");    // label for looping or 'continue'
-    handle_expression(operandContext, condition, to_end(label), "for.condition");
+    handle_expression(condition, to_end(label), "for.condition");
 }
 
-void Codegen::for_end(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &update, const Str &label) {
+void Codegen::for_end(utils::Maybe<ir::SetInstruction> &update, const Str &label) {
     comment(
         "# FOR_END: "
         + (!update.empty() ? " update = '"+ir::describe(update)+"'" : "")
     );
     // FIXME: use 'loop' instruction if possible
     if (!update.empty()) {
-        handle_set_instruction(operandContext, *update, "for.update");
+        handle_set_instruction(*update, "for.update");
     }
     emit("", "jmp", "@"+to_start(label), "# loop");
     emit(to_end(label)+":", "", "");    // label for loop end or 'break'
@@ -978,17 +990,17 @@ void Codegen::comment(const Str &c) {
 | new IR expressions
 \************************************************************************/
 
-void Codegen::handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr)
+void Codegen::handle_set_instruction(const ir::SetInstruction &set, const Str &descr)
 {
     QL_DOUT(descr << ": '" << ir::describe(set) << "'");
-    do_handle_expression(operandContext, set.rhs, set.lhs, "", descr);
+    do_handle_expression(set.rhs, set.lhs, "", descr);
 
 }
 
-void Codegen::handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr)
+void Codegen::handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr)
 {
     QL_DOUT(descr << ": '" << ir::describe(expression) << "'");
-    do_handle_expression(operandContext, expression, One<ql::ir::Expression>(), label_if_false, descr);
+    do_handle_expression(expression, One<ql::ir::Expression>(), label_if_false, descr);
 }
 
 
@@ -1399,21 +1411,20 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
  * These functions add a 'cqv::Function' node to the IR (even if the arguments are constant).
  */
 void Codegen::do_handle_expression(
-    const OperandContext &operandContext,
     const ir::ExpressionRef &expression,
     const ir::ExpressionRef &lhs,
     const Str &label_if_false,
     const Str &descr
 ) {
     // function global helpers
-    auto creg2reg = [operandContext](const ir::ExpressionRef &ref) {
+    auto creg2reg = [this](const ir::ExpressionRef &ref) {
         auto reg = operandContext.convert_creg_reference(ref);
         if(reg >= NUM_CREGS) {
             QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
         }
         return reg;
     };
-    auto breg2reg = [operandContext](const ir::ExpressionRef &ref) {    // FIXME: makes no sense, and needs to go through DSM bit allocator
+    auto breg2reg = [this](const ir::ExpressionRef &ref) {    // FIXME: makes no sense, and needs to go through DSM bit allocator
         auto reg = operandContext.convert_breg_reference(ref);
 //        if(reg >= NUM_CREGS) {
 //            QL_INPUT_ERROR("register index " << reg << " exceeds maximum");

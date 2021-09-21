@@ -68,7 +68,7 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
 #endif
 }
 
-// FXIME
+// FIXME
 Bool OperandContext::is_creg_reference(const ir::ExpressionRef &ref) const {
     auto lhs = ref->as_reference();
     return lhs && lhs->target == creg_ob;

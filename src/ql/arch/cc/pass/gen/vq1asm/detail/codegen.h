@@ -34,11 +34,11 @@ namespace detail {
 
 class Codegen {
 public: //  functions
-    Codegen() = default;
+    Codegen(const ir::Ref &ir, const OptionsRef &options);
     ~Codegen() = default;
 
     // Generic
-    void init(const ir::PlatformRef &platformRef, const OptionsRef &options);
+    void init();
     Str getProgram();                           // return the CC source code that was created
     Str getMap();                               // return a map of codeword assignments, useful for configuring AWGs
 
@@ -65,27 +65,27 @@ public: //  functions
     void custom_instruction(const ir::CustomInstruction &custom);
     void nopGate();
 
-    void if_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label);
+    void if_start(const ir::ExpressionRef &condition, const Str &label);
     // else_start
     void foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label);
     void foreach_end(const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label);
     void repeat(const Str &label);
-    void until(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label);
-    void for_start(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &initialize, const ir::ExpressionRef &condition, const Str &label);
-    void for_end(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &update, const Str &label);
+    void until(const ir::ExpressionRef &condition, const Str &label);
+    void for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::ExpressionRef &condition, const Str &label);
+    void for_end(utils::Maybe<ir::SetInstruction> &update, const Str &label);
     void do_break(const Str &label);
     void do_continue(const Str &label);
 
     void comment(const Str &c);
 
     // new IR expressions
-    void handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr);
-    void handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);
+    void handle_set_instruction(const ir::SetInstruction &set, const Str &descr);
+    void handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);
 
 private:    // types
     struct CodeGenInfo {
         Bool instrHasOutput;
-        tDigital digOut;                                         // the digital output value sent over the instrument interface
+        tDigital digOut;                                        // the digital output value sent over the instrument interface
         UInt instrMaxDurationInCycles;                          // maximum duration over groups that are used, one instrument
 #if OPT_FEEDBACK
         FeedbackMap feedbackMap;
@@ -113,8 +113,9 @@ private:    // vars
     static const Int MAX_SLOTS = 12;                            // physical maximum of CC
     static const Int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
-    OptionsRef options;
-    ir::PlatformRef platform;                                   // remind platform
+    ir::Ref ir;                                                 // remind ir (and thus platform too)
+    OptionsRef options;                                         // remind options
+    OperandContext operandContext;                              // context for Operand processing
     Settings settings;                                          // handling of JSON settings
     Datapath dp;                                                // handling of CC datapath
     Vcd vcd;                                                    // handling of VCD file output
@@ -158,7 +159,7 @@ private:    // funcs
 #endif
 
     // expression helpers
-    void do_handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const ir::ExpressionRef &lhs, const Str &label_if_false="", const Str &descr="");
+    void do_handle_expression(const ir::ExpressionRef &expression, const ir::ExpressionRef &lhs, const Str &label_if_false="", const Str &descr="");
 
 
 }; // class

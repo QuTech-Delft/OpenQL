@@ -26,12 +26,11 @@ class OperandContext;
 
 class Backend {
 public:
-    Backend() = default;
-
-    void compile(const ir::Ref &ir, const OptionsRef &options);
+    Backend(const ir::Ref &ir, const OptionsRef &options);
+    ~Backend() = default;
 
 private:
-    void codegen_block(const OperandContext &operandContext, const ir::BlockBaseRef &block, const Str &name);
+    void codegen_block(const ir::BlockBaseRef &block, const Str &name);
 
 #if 0   // FIXME
     static Str loopLabel(const ir::compat::KernelRef &k);
@@ -44,8 +43,8 @@ private:
 
 private: // vars
     Codegen codegen;
-    Int bundleIdx;
-    Int block_number;       // sequential block number to keep labels unique
+    Int bundleIdx = 0;
+    Int block_number = 0;   // sequential block number to keep labels unique
     Vec<Str> loop_label;    // stack for loop labels (in conjunction with 'break'/'continue' instruction)
 
 }; // class
