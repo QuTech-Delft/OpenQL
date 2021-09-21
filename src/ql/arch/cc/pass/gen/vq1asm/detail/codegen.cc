@@ -738,6 +738,41 @@ void Codegen::if_start(const OperandContext &operandContext, const ir::Expressio
     handle_expression(operandContext, condition, to_end(label), "if.condition");
 }
 
+
+void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label) {
+    emit(to_start(label)+":", "", "");    // label for looping or 'continue'
+
+#if 0
+    handle_set_instruction(operandContext, *initialize, "for.initialize");
+
+    static_loop->lhs->target;
+    static_loop->frm->value;
+#endif
+}
+
+
+void Codegen::foreach_end(const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label) {
+#if 0
+    static_loop->frm->value;
+    static_loop->to->value;
+#endif
+    emit("", "jmp", "@"+to_start(label), "# loop");
+    emit(to_end(label)+":", "", "");    // label for loop end or 'break'
+}
+
+
+void Codegen::repeat(const Str &label) {
+    emit(to_start(label)+":", "", "");    // label for looping or 'continue'
+}
+
+
+void Codegen::until(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label) {
+    handle_expression(operandContext, condition, to_end(label), "until.condition");
+    emit("", "jmp", "@"+to_start(label), "# loop");
+    emit(to_end(label)+":", "", "");    // label for loop end or 'break'
+}
+
+
 void Codegen::for_start(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &initialize, const ir::ExpressionRef &condition, const Str &label) {
     comment(
         "# FOR_START: "
@@ -786,14 +821,14 @@ void Codegen::comment(const Str &c) {
 
 void Codegen::handle_set_instruction(const OperandContext &operandContext, const ir::SetInstruction &set, const Str &descr)
 {
-    QL_IOUT(descr << ": '" << ir::describe(set) << "'");
+    QL_DOUT(descr << ": '" << ir::describe(set) << "'");
     do_handle_expression(operandContext, set.rhs, set.lhs, "", descr);
 
 }
 
 void Codegen::handle_expression(const OperandContext &operandContext, const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr)
 {
-    QL_IOUT(descr << ": '" << ir::describe(expression) << "'");
+    QL_DOUT(descr << ": '" << ir::describe(expression) << "'");
     do_handle_expression(operandContext, expression, One<ql::ir::Expression>(), label_if_false, descr);
 }
 

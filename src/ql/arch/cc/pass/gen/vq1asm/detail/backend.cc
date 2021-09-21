@@ -222,6 +222,7 @@ typedef struct {
     ConditionType cond_type;
 } tInstructionCondition;
 
+// FIXME: move to codegen, together with operandContext
 /**
  * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
  * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
@@ -371,7 +372,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
             //****************************************************************
             auto duration = ir::get_duration_of_statement(stmt);
 
-            QL_IOUT(
+            QL_DOUT(
                 "instruction: " + ir::describe(stmt)
                 + ", cycle=" + std::to_string(insn->cycle)
                 + ", duration=" + std::to_string(duration)
@@ -432,13 +433,14 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                 // Instruction: conditional
                 //****************************************************************
 
-                // Handle the condition.
-                tInstructionCondition instrCond = decode_condition(operandContext, cinsn->condition);
-
                 // Handle the conditional instruction subtypes.
                 if (auto custom = cinsn->as_custom_instruction()) {
 
                     QL_IOUT("custom instruction: name=" + custom->instruction_type->name);
+
+                    // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
+                    // but we only handle it for custom_instruction
+                    tInstructionCondition instrCond = decode_condition(operandContext, cinsn->condition);
 
                     // Handle the normal operands for custom instructions.
                     Operands ops;
@@ -476,7 +478,7 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                         );
                         kernel->gates.back()->int_operand = ops.integer;
                     }
-#else   // FIXME: cc
+#endif
                     codegen.customGate(
                         custom->instruction_type->name,
                         ops.qubits,     // operands
@@ -488,15 +490,22 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
                         insn->cycle,    // startCycle
                         ir::get_duration_of_statement(stmt)    // durationInCycles
                     );
-#endif
 
                 } else if (auto set_instruction = cinsn->as_set_instruction()) {
 
                     //****************************************************************
                     // Instruction: set
                     //****************************************************************
-                    // FIXME: could have instrCond
+                    CHECK_COMPAT(
+                        set_instruction->condition->as_bit_literal()
+                        && set_instruction->condition->as_bit_literal()->value
+                        , "conditions other then 'true' are not supported for set instruction"
+                    );
                     codegen.handle_set_instruction(operandContext, *set_instruction, "conditional.set");
+
+                } else if (cinsn->as_goto_instruction()) {
+                    QL_INPUT_ERROR("goto instruction not supported");
+
                 } else {
                     QL_ICE(
                         "unsupported instruction type encountered"
@@ -590,66 +599,47 @@ void Backend::codegen_block(const OperandContext &operandContext, const ir::Bloc
 
             } else if (auto static_loop = stmt->as_static_loop()) {
 
-                // Handle static loops. Note that the old IR conceptually
-                // doesn't have a loop variable for these, so the loop var can't
-                // be a creg (or anything else that's referenced elsewhere as
-                // well).
-//                CHECK_COMPAT(
-//                    static_loop->lhs->target != creg_ob,
-//                    "static loop variable cannot be a mapped creg"
-//                );
-//                compat::ProgramRef body;
-//                body.emplace(
-//                    make_kernel_name(block), old->platform,
-//                    old->qubit_count, old->creg_count, old->breg_count
-//                );
+                // Handle static loops.
+                loop_label.push_back(label());          // remind label for break/continue, before recursing
+
+                // start:
+                codegen.foreach_start(*static_loop->lhs, *static_loop->frm, loop_label.back());
+
                 try {
-//                    convert_block(static_loop->body, body);
+                    codegen_block(operandContext, static_loop->body, block_child_name("static_for"));
                 } catch (utils::Exception &e) {
                     e.add_context("in static loop body", true);
                     throw;
                 }
-//                program->add_for(
-//                    body,
-//                    utils::abs<utils::Int>(
-//                        static_loop->to->value - static_loop->frm->value
-//                    ) + 1
-//                );
+
+                // end:
+                codegen.foreach_end(*static_loop->frm, *static_loop->to, loop_label.back());
+
+                loop_label.pop_back();
 
             } else if (auto repeat_until_loop = stmt->as_repeat_until_loop()) {
 
-                // Handle repeat-until/do-while loops.
-//                compat::ProgramRef body;
-//                body.emplace(
-//                    make_kernel_name(block), old->platform,
-//                    old->qubit_count, old->creg_count, old->breg_count
-//                );
+                // Handle repeat-until loops.
+                loop_label.push_back(label());          // remind label for break/continue, before recursing
+                codegen.repeat(loop_label.back());
+
                 try {
-//                    convert_block(repeat_until_loop->body, body);
+                    codegen_block(operandContext, repeat_until_loop->body, block_child_name("repeat_until"));
                 } catch (utils::Exception &e) {
-                    e.add_context("in repeat-until/do-while loop body", true);
+                    e.add_context("in repeat-until loop body", true);
                     throw;
                 }
-                try {
-//                    program->add_do_while(
-//                        body,
-//                        convert_classical_condition(
-//                            repeat_until_loop->condition,
-//                            true
-//                        )
-//                    );
-                } catch (utils::Exception &e) {
-                    e.add_context("in repeat-until/do-while condition", true);
-                    throw;
-                }
+
+                codegen.until(operandContext, repeat_until_loop->condition, loop_label.back());
+                loop_label.pop_back();
 
             } else if (auto for_loop = stmt->as_for_loop()) {
 
                 // for loop: start
-                codegen.for_start(operandContext, for_loop->initialize, for_loop->condition, label());
+                loop_label.push_back(label());          // remind label for break/continue, before recursing
+                codegen.for_start(operandContext, for_loop->initialize, for_loop->condition, loop_label.back());
 
                 // handle body
-                loop_label.push_back(label());          // remind label for break/continue, and .for_end() below
                 try {
                     codegen_block(operandContext, for_loop->body, block_child_name("for"));
                 } catch (utils::Exception &e) {

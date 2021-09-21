@@ -64,22 +64,16 @@ public: //  functions
     );
     void nopGate();
 
-#if 0   // FIXME
-    // Classical operations on kernels
-    void ifStart(UInt op0, const Str &opName, UInt op1);
-    void elseStart(UInt op0, const Str &opName, UInt op1);
-    void forStart(const Str &label, UInt iterations);
-    void forEnd(const Str &label);
-    void doWhileStart(const Str &label);
-    void doWhileEnd(const Str &label, UInt op0, const std::string &opName, UInt op1);
-#else
     void if_start(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label);
+    // else_start
+    void foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label);
+    void foreach_end(const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label);
+    void repeat(const Str &label);
+    void until(const OperandContext &operandContext, const ir::ExpressionRef &condition, const Str &label);
     void for_start(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &initialize, const ir::ExpressionRef &condition, const Str &label);
     void for_end(const OperandContext &operandContext, utils::Maybe<ir::SetInstruction> &update, const Str &label);
     void do_break(const Str &label);
     void do_continue(const Str &label);
-
-#endif
 
     void comment(const Str &c);
 
