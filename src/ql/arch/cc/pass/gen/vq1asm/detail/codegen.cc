@@ -46,11 +46,6 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
 void Codegen::init() {
     // NB: a new eqasm_backend_cc is instantiated per call to compile, and
     // as a result also a codegen_cc, so we don't need to cleanup
-#if 0
-    this->platform = platform;
-    this->options = options;
-    operandContext
-#endif
 
 #if 1
     // based on NewToOldConverter::NewToOldConverter
@@ -839,66 +834,10 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
 }
 
-
-void Codegen::nopGate() {
-    comment("# NOP gate");
-    QL_ICE("FIXME: NOP gate not implemented");
-}
-
 /************************************************************************\
 | Classical operations on kernels
 \************************************************************************/
 
-#if 0   // FIXME
-void Codegen::ifStart(UInt op0, const Str &opName, UInt op1) {
-    comment(QL_SS2S("# IF_START(R" << op0 << " " << opName << " R" << op1 << ")"));
-    QL_ICE("FIXME: not implemented");
-}
-
-void Codegen::elseStart(UInt op0, const Str &opName, UInt op1) {
-    comment(QL_SS2S("# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")"));
-    QL_ICE("FIXME: not implemented");
-}
-
-void Codegen::forStart(const Str &label, UInt iterations) {
-    comment(QL_SS2S("# FOR_START(" << iterations << ")"));
-    // FIXME: reserve register
-    emit("", "move", QL_SS2S(iterations << ",R62"), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested for loops (not supported by program.cc either)
-    emit((label+":"), "", "", "# ");
-#if OPT_PRAGMA
-    pragmaLoopLabel.push_back(label);        // remind label for pragma/break FIXME: implement properly later on
-#endif
-}
-
-void Codegen::forEnd(const Str &label) {
-    comment("# FOR_END");
-    // FIXME: free register
-    emit("", "loop", QL_SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested for loops (not supported by program.cc either)
-#if OPT_PRAGMA
-    emit((label+"_end:"), "", "", "# ");    // label for 'break'
-    pragmaLoopLabel.pop_back();
-#endif
-}
-
-void Codegen::doWhileStart(const Str &label) {
-    comment("# DO_WHILE_START");
-    emit((label+":"), "", "", "# ");
-#if OPT_PRAGMA
-    pragmaLoopLabel.push_back(label);        // remind label for pragma/break FIXME: implement properly later on
-#endif
-}
-
-void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1) {
-    comment(QL_SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
-    emit("", "jmp", QL_SS2S("@" << label), "# FIXME: we don't support conditions, just an endless loop'");        // FIXME: just endless loop
-    QL_WOUT("CC backend ignores condition of do while loop");
-#if OPT_PRAGMA
-    emit((label+"_end:"), "", "", "# ");    // label for 'break'
-    pragmaLoopLabel.pop_back();
-#endif
-}
-
-#else
 void Codegen::if_start(const ir::ExpressionRef &condition, const Str &label) {
     comment(
         "# IF_START: "
@@ -980,7 +919,7 @@ void Codegen::do_break(const Str &label) {
 void Codegen::do_continue(const Str &label) {
     emit("", "jmp", "@"+to_start(label), "# continue");
 }
-#endif
+
 
 void Codegen::comment(const Str &c) {
     if (options->verbose) emit(c);

@@ -63,7 +63,6 @@ public: //  functions
         UInt startCycle, UInt durationInCycles
     );
     void custom_instruction(const ir::CustomInstruction &custom);
-    void nopGate();
 
     void if_start(const ir::ExpressionRef &condition, const Str &label);
     // else_start
