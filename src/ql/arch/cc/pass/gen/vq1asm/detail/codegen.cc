@@ -44,8 +44,8 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
 \************************************************************************/
 
 void Codegen::init() {
-    // NB: a new eqasm_backend_cc is instantiated per call to compile, and
-    // as a result also a codegen_cc, so we don't need to cleanup
+    // NB: a new Backend is instantiated per call to compile, and
+    // as a result also a Codegen, so we don't need to cleanup
 
 #if 1
     // based on NewToOldConverter::NewToOldConverter

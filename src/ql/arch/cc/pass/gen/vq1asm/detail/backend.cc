@@ -221,6 +221,7 @@ void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
 // FIXME: convert block relative cycles to absolute cycles somewhere
 // FIXME: runOnce automatically on cQASM input
 // FIXME: provide (more) context in all QL_ICE and e.add_context
+// FIXME: use annotations in comments/messages
 void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
 {
     // helper lambdas
