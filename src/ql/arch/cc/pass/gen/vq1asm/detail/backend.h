@@ -34,7 +34,7 @@ private:
 
 private: // vars
     Codegen codegen;
-    Int bundleIdx = 0;
+    Int bundleIdx = -1;     // effectively, numbering starts at 0 because of pre-increment
     Int block_number = 0;   // sequential block number to keep labels unique
     Vec<Str> loop_label;    // stack for loop labels (in conjunction with 'break'/'continue' instruction)
 

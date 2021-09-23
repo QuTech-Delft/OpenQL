@@ -212,22 +212,22 @@ void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
 
 
 /*
- * Generate code for a single block (which sort of matches a th concept of a Kernel in the old API). Recursively calls
+ * Generate code for a single block (which sort of matches the concept of a Kernel in the old API). Recursively calls
  * itself where necessary.
  * Based on NewToOldConverter::convert_block
  */
-//
-// FIXME: we need to collect 'Bundles' (i.e. statements starting in the same cycle)
 // FIXME: convert block relative cycles to absolute cycles somewhere
 // FIXME: runOnce automatically on cQASM input
 // FIXME: provide (more) context in all QL_ICE and e.add_context
 // FIXME: use annotations in comments/messages
 void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
 {
-    // helper lambdas
-    // FIXME: names must be useable as q1asm labels
+    // Return the name for a child of this block
     auto block_child_name = [name](const Str &child_name) { return name + "_" + child_name; };
-    auto label = [this, name]() { return QL_SS2S(name << "_" << block_number); };   // block_number is to uniquify anonymous blocks like for loops
+
+    // Return the label (stem) for this block. Note that this is used as q1asm label and must adhere to
+    // the allowed structure of that. The appending of block_number is to uniquify anonymous blocks like for loops.
+    auto label = [this, name]() { return QL_SS2S(name << "_" << block_number); };
 
 #if 0   // FIXME: org
     // Whether this is the first lazily-constructed kernel. Only if this is true
@@ -251,53 +251,65 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
     }
 #endif
 
-    // FIXME: comments
-    Int current_cycle = -1;
-    Bool is_first_bundle = true;
+
+
+    // FIXME: add comments
+    Int bundle_start_cycle = -1;
+    Int bundle_end_cycle = -1;
+    Bool is_bundle_open = false;
+
+    // helper
+    auto bundle_finish = [this, &bundle_start_cycle, &bundle_end_cycle](Bool is_last_bundle) {
+        Int bundle_duration =  bundle_end_cycle - bundle_start_cycle;
+        QL_DOUT(QL_SS2S("Finishing bundle " << bundleIdx << ": start_cycle=" << bundle_start_cycle << ", duration=" << bundle_duration));
+        codegen.bundleFinish(bundle_start_cycle, bundle_duration, is_last_bundle);
+    };
 
     QL_IOUT("Compiling block '" + label() + "'");
-    codegen.kernelStart(name);  // FIXME: difference between block and Bundles, adapt naming
+    codegen.block_start(name);
 
     // Loop over the statements and handle them individually.
-    for (const auto &stmt : block->statements) {
+    for (auto it=block->statements.begin(); it!=block->statements.end(); it++) {
+        const auto &stmt = *it;
+
         if (auto insn = stmt->as_instruction()) {
             //****************************************************************
             // Statement: instruction
             //****************************************************************
-            auto duration = ir::get_duration_of_statement(stmt);
 
+            auto duration = ir::get_duration_of_statement(stmt);
             QL_DOUT(
-                "instruction: " + ir::describe(stmt)
-                + ", cycle=" + std::to_string(insn->cycle)
+                "instruction: '" + ir::describe(stmt)
+                + "', cycle=" + std::to_string(insn->cycle)
                 + ", duration=" + std::to_string(duration)
             );
 
-            // generate bundle trailer when necessary
-            Bool is_new_bundle = insn->cycle != current_cycle;
-            Bool is_last_statement = stmt == block->statements.back();
-            if (is_new_bundle || is_last_statement) {
-                if (!is_first_bundle) {
-                    Int bundleDuration = insn->cycle-current_cycle+duration;
-                    QL_DOUT(QL_SS2S("Finishing bundle " << bundleIdx << ": start_cycle=" << current_cycle << ", duration=" << bundleDuration));
-                    // generate bundle trailer, and code for classical gates
-                    Bool isLastBundle = is_last_statement;
-                    codegen.bundleFinish(current_cycle, bundleDuration, isLastBundle);
-                }
+            bundle_end_cycle = insn->cycle + duration;  // keep updating, used by bundle_finish()
+
+            // Generate bundle trailer when necessary.
+            Bool is_new_bundle = insn->cycle != bundle_start_cycle;
+            Bool is_last_statement = it == block->statements.end();
+//            auto &next_statement = *(it + 1);
+//            Bool is_last_instruction = false;//!is_last_statement && !next_statement.empty() && !next_statement->as_instruction();
+            if (is_new_bundle && is_bundle_open) {
+                QL_IOUT("Finishing bundle to make place for next");
+                bundle_finish(false);   // NB: finishing previous bundle, so that isn't the last one
+                is_bundle_open = false;
             }
 
-            // generate bundle header when necessary
-            if (is_new_bundle) {
+            // Generate bundle header when necessary.
+            if (is_new_bundle) {    // FIXME
+                bundleIdx++;
                 QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << insn->cycle));
-                // FIXME: first instruction may be wait with zero duration, more generally: duration of first statement != bundle duration
+                // NB: first instruction may be wait with zero duration, more generally: duration of first statement != bundle duration
                 codegen.bundleStart(QL_SS2S(
-                    "## Bundle " << bundleIdx++
+                    "## Bundle " << bundleIdx
                     << ": start_cycle=" << insn->cycle
-//                    << ", duration_in_cycles=" << duration
                     << ":"
                 ));
 
-                is_first_bundle = false;
-                current_cycle = insn->cycle;
+                is_bundle_open = true;
+                bundle_start_cycle = insn->cycle;
             }
 
 #if 0   // FIXME: org
@@ -456,7 +468,6 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
 
                 // end:
                 codegen.foreach_end(*static_loop->frm, *static_loop->to, loop_label.back());
-
                 loop_label.pop_back();
 
             } else if (auto repeat_until_loop = stmt->as_repeat_until_loop()) {
@@ -517,20 +528,26 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
 
 #if 0   // FIXME: org
     // Flush any pending kernel.
-//    if (!kernel.empty()) {
-//
-//        // If this block produced only one kernel, copy kernel-wide annotations.
-//        if (first_kernel) {
-//            kernel->copy_annotations(*block);
-//        }
-//
-//        kernel->cycles_valid = cycles_valid;
-//        program->add(kernel);
-//        kernel.reset();
-//    }
+    if (!kernel.empty()) {
+
+        // If this block produced only one kernel, copy kernel-wide annotations.
+        if (first_kernel) {
+            kernel->copy_annotations(*block);
+        }
+
+        kernel->cycles_valid = cycles_valid;
+        program->add(kernel);
+        kernel.reset();
+    }
 #endif
 
-    codegen.kernelFinish(name, ir::get_duration_of_block(block));
+    // Flush any pending bundle.
+    if (is_bundle_open) {
+        QL_IOUT("Finishing open bundle, bundle_start_cycle=" << bundle_start_cycle);
+        bundle_finish(true);
+    }
+
+    codegen.block_finish(name, ir::get_duration_of_block(block));
     QL_IOUT("Finished compiling block '" + label() + "'");
     block_number++;
 

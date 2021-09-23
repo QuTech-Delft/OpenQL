@@ -175,8 +175,16 @@ while (b[0] && b[1]) {
 #while (4==4) {
 #}
 
-
-
+# single block, with structured control flow mid way
+# 'while' loop does not seem to be a barrier for scheduling by itself
+.multiKernel
+rx180 q[0]
+barrier
+while (true) {
+    rx180 q[1]
+}
+barrier
+rx180 q[2]
 
 
 

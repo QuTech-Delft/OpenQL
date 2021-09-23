@@ -129,20 +129,24 @@ void Codegen::programFinish(const Str &progName) {
 }
 
 /************************************************************************\
-| 'Kernel' level functions
+| 'Block' (fka 'Kernel', this name stays relevant as it is used by the
+| API) level functions
 \************************************************************************/
 
-void Codegen::kernelStart(const Str &kernelName) {
-    comment(QL_SS2S("### Kernel: '" << kernelName << "'"));
-    zero(lastEndCycle); // new IR starts counting at zero
+void Codegen::block_start(const Str &kernelName) {
+    comment(QL_SS2S("### Block (kernel): '" << kernelName << "'"));
+    zero(lastEndCycle); // NB; new IR starts counting at zero
 }
 
-void Codegen::kernelFinish(const Str &kernelName, UInt durationInCycles) {
+void Codegen::block_finish(const Str &kernelName, UInt durationInCycles) {
+    comment(QL_SS2S("### End of block (kernel): '" << kernelName << "'"));
     vcd.kernelFinish(kernelName, durationInCycles);
 }
 
 /************************************************************************\
-| 'Bundle' level functions
+| 'Bundle' level functions. Although the new IR no longer organizes
+| instructions in Bundles, we still need to process them as such, i.e.
+| evaluate all instructions issued in the same cycle together.
 \************************************************************************/
 
 /*
