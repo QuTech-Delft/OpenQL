@@ -269,8 +269,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
     codegen.block_start(name);
 
     // Loop over the statements and handle them individually.
-    for (auto it=block->statements.begin(); it!=block->statements.end(); it++) {
-        const auto &stmt = *it;
+    for (const auto &stmt : block->statements) {
 
         if (auto insn = stmt->as_instruction()) {
             //****************************************************************
@@ -288,11 +287,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
 
             // Generate bundle trailer when necessary.
             Bool is_new_bundle = insn->cycle != bundle_start_cycle;
-            Bool is_last_statement = it == block->statements.end();
-//            auto &next_statement = *(it + 1);
-//            Bool is_last_instruction = false;//!is_last_statement && !next_statement.empty() && !next_statement->as_instruction();
             if (is_new_bundle && is_bundle_open) {
-                QL_IOUT("Finishing bundle to make place for next");
                 bundle_finish(false);   // NB: finishing previous bundle, so that isn't the last one
                 is_bundle_open = false;
             }
@@ -543,7 +538,6 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
 
     // Flush any pending bundle.
     if (is_bundle_open) {
-        QL_IOUT("Finishing open bundle, bundle_start_cycle=" << bundle_start_cycle);
         bundle_finish(true);
     }
 
