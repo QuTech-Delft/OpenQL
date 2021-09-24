@@ -45,8 +45,8 @@ public: //  functions
     // Compile support
     void programStart(const Str &progName);
     void programFinish(const Str &progName);
-    void block_start(const Str &kernelName);
-    void block_finish(const Str &kernelName, UInt durationInCycles);
+    void block_start(const Str &block_name);
+    void block_finish(const Str &block_name, UInt durationInCycles);
     void bundleStart(const Str &cmnt);
     void bundleFinish(UInt startCycle, UInt durationInCycles, Bool isLastBundle);
 
@@ -64,8 +64,8 @@ public: //  functions
     );
     void custom_instruction(const ir::CustomInstruction &custom);
 
-    void if_start(const ir::ExpressionRef &condition, const Str &label);
-    // else_start
+    void if_else(const ir::ExpressionRef &condition, const Str &label, Int branch);
+    void otherwise(const Str &label, Int branch);
     void foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label);
     void foreach_end(const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label);
     void repeat(const Str &label);

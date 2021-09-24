@@ -113,7 +113,7 @@ if (i==0) {
 
 .ifElifElseStatement
 if (i==0) {
-#} else if (i==1)  { # Error: encountered if-else chain with multiple conditions
+} else if (i==1)  {
 } else {
 }
 

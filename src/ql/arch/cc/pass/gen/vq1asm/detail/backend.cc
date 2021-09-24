@@ -222,12 +222,14 @@ void Backend::codegenKernelEpilogue(const ir::compat::KernelRef &k) {
 // FIXME: use annotations in comments/messages
 void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
 {
-    // Return the name for a child of this block
-    auto block_child_name = [name](const Str &child_name) { return name + "_" + child_name; };
+    // Return the name for a child of this block. We use "__" to prevent clashes with names assigned by user (assuming
+    // they won't use names with "__", similar to the C rule for identifiers), and give some sense of hierarchy
+    // level.
+    auto block_child_name = [name](const Str &child_name) { return "__" + name + "__" + child_name; };
 
     // Return the label (stem) for this block. Note that this is used as q1asm label and must adhere to
     // the allowed structure of that. The appending of block_number is to uniquify anonymous blocks like for loops.
-    auto label = [this, name]() { return QL_SS2S(name << "_" << block_number); };
+    auto label = [this, name]() { return QL_SS2S(name << "__" << block_number); };
 
 #if 0   // FIXME: org
     // Whether this is the first lazily-constructed kernel. Only if this is true
@@ -284,16 +286,16 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
             );
 
             bundle_end_cycle = insn->cycle + duration;  // keep updating, used by bundle_finish()
+            Bool is_new_bundle = insn->cycle != bundle_start_cycle;
 
             // Generate bundle trailer when necessary.
-            Bool is_new_bundle = insn->cycle != bundle_start_cycle;
             if (is_new_bundle && is_bundle_open) {
                 bundle_finish(false);   // NB: finishing previous bundle, so that isn't the last one
                 is_bundle_open = false;
             }
 
             // Generate bundle header when necessary.
-            if (is_new_bundle) {    // FIXME
+            if (is_new_bundle) {
                 bundleIdx++;
                 QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << insn->cycle));
                 // NB: first instruction may be wait with zero duration, more generally: duration of first statement != bundle duration
@@ -409,42 +411,38 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
             // Handle the different types of structured statements.
             if (auto if_else = stmt->as_if_else()) {
 
-                // Handle if-else or if statement.
-#if 1   // FIXME: allow
-                CHECK_COMPAT(
-                    if_else->branches.size() == 1,
-                    "encountered if-else chain with multiple conditions"
-                );
-#endif
-                // if-condition
-                try {
-                    codegen.if_start(if_else->branches[0]->condition, label());
-                } catch (utils::Exception &e) {
-                    e.add_context("in 'if' condition", true);
-                    throw;
-                }
-                // FIXME make it jump: always add labels around blocks
-
-                // if-block
-                try {
-                    codegen_block(if_else->branches[0]->body, block_child_name("if"));
-                } catch (utils::Exception &e) {
-                    e.add_context("in 'if' block", true);
-                    throw;
-                }
-
-                // else-block
-                // FIXME: elseLabel
-                if (!if_else->otherwise.empty()) {
+                // Handle if-else (or just if) statement.
+                Str saved_label = label();  // changes when recursing
+                for(UInt branch=0; branch<if_else->branches.size(); branch++) {
+                    // if-condition
                     try {
-                        codegen_block(if_else->otherwise, block_child_name("else"));
+                        codegen.if_else(if_else->branches[branch]->condition, saved_label, branch);
                     } catch (utils::Exception &e) {
-                        e.add_context("in 'else' block", true);
+                        e.add_context("in 'if' condition", true);
+                        throw;
+                    }
+
+                    // if-block
+                    try {
+                        codegen_block(if_else->branches[branch]->body, block_child_name(QL_SS2S("if_else_"<<branch)));
+                    } catch (utils::Exception &e) {
+                        e.add_context("in 'if_else' block", true);
                         throw;
                     }
                 }
 
-                // FIXME: if_end
+                // otherwise
+                codegen.otherwise(saved_label, if_else->branches.size());   // NB: doesn't throw exceptions
+
+                // otherwise-block
+                if (!if_else->otherwise.empty()) {
+                    try {
+                        codegen_block(if_else->otherwise, block_child_name("otherwise"));
+                    } catch (utils::Exception &e) {
+                        e.add_context("in final 'else' block", true);
+                        throw;
+                    }
+                }
 
             } else if (auto static_loop = stmt->as_static_loop()) {
 

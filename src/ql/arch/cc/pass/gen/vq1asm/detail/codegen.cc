@@ -26,9 +26,10 @@ namespace detail {
 
 using namespace utils;
 
-// helpers for label generation
+// helpers for label generation.
 Str to_start(const Str &base) { return base + "_start"; };
 Str to_end(const Str &base) { return base + "_end"; };
+Str to_ifbranch(const Str &base, Int branch) { return QL_SS2S(base << "_" << branch); }
 
 
 Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
@@ -133,14 +134,14 @@ void Codegen::programFinish(const Str &progName) {
 | API) level functions
 \************************************************************************/
 
-void Codegen::block_start(const Str &kernelName) {
-    comment(QL_SS2S("### Block (kernel): '" << kernelName << "'"));
+void Codegen::block_start(const Str &block_name) {
+    comment(QL_SS2S("### Block: '" << block_name << "'"));
     zero(lastEndCycle); // NB; new IR starts counting at zero
 }
 
-void Codegen::block_finish(const Str &kernelName, UInt durationInCycles) {
-    comment(QL_SS2S("### End of block (kernel): '" << kernelName << "'"));
-    vcd.kernelFinish(kernelName, durationInCycles);
+void Codegen::block_finish(const Str &block_name, UInt durationInCycles) {
+    comment(QL_SS2S("### Block end: '" << block_name << "'"));
+    vcd.kernelFinish(block_name, durationInCycles);
 }
 
 /************************************************************************\
@@ -842,14 +843,28 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 | Classical operations on kernels
 \************************************************************************/
 
-void Codegen::if_start(const ir::ExpressionRef &condition, const Str &label) {
+void Codegen::if_else(const ir::ExpressionRef &condition, const Str &label, Int branch) {
     comment(
-        "# IF_START: "
+        "# IF_ELSE: "
         "condition = '" + ir::describe(condition) + "'"
+        ", label = '" + label + "'"
     );
 
-//    emit(to_start(label)+":", "", "");    // label for looping or 'continue'
-    handle_expression(condition, to_end(label), "if.condition");
+    Str my_label = to_ifbranch(label, branch);
+    Str jmp_label = to_ifbranch(label, branch+1);
+    emit(my_label+":", "", "");     // not used if branch==0
+    handle_expression(condition, jmp_label, "if.condition");
+}
+
+
+void Codegen::otherwise(const Str &label, Int branch) {
+    comment(
+        "# OTHERWISE: "
+        ", label = '" + label + "'"
+    );
+
+    Str my_label = to_ifbranch(label, branch);
+    emit(my_label+":", "", "");
 }
 
 
@@ -1375,7 +1390,8 @@ void Codegen::do_handle_expression(
         return reg;
     };
     auto dest_reg = [creg2reg, lhs]() { return creg2reg(lhs); };
-    // helpers to convert expression operand to Q1 instruction argument
+
+    // Convert integer/creg function_call.operands expression to Q1 instruction argument.
     auto op_str_int = [creg2reg](const ir::ExpressionRef &op) {
         if(op->as_reference()) {
             return QL_SS2S("R" << creg2reg(op));
@@ -1385,6 +1401,8 @@ void Codegen::do_handle_expression(
             QL_ICE("Expected integer operand");
         }
     };
+
+    // Convert bit/breg function_call.operands expression to FIXME: return type makes no sense
     auto op_str_bit = [breg2reg](const ir::ExpressionRef &op) {   // FIXME: misnomer op_str_bit
         if(op->as_reference()) {
             return breg2reg(op);
@@ -1394,7 +1412,9 @@ void Codegen::do_handle_expression(
             QL_ICE("Expected bit operand");
         }
     };
+
     auto emit_bin_cast = [this, op_str_bit](Any<ir::Expression> operands) {
+//    auto emit_bin_cast = [this, op_str_bit](Vec<Int> operands) {
         // FIXME: based on emitPragma, cleanup
         // FIXME: CHECK_COMPAT
         auto num_ops = operands.size();
@@ -1456,6 +1476,7 @@ void Codegen::do_handle_expression(
                 );
             } else {
                 auto breg = operandContext.convert_breg_reference(expression);
+                comment(QL_SS2S("# FIXME: cast " << ir::describe(expression)));
 //                emit_bin_cast(expression);
                 // FIXME: move to lhs
             }
@@ -1619,7 +1640,7 @@ void Codegen::do_handle_expression(
                                 "",
                                 "jge",
                                 QL_SS2S(
-                                    op_str_int(fn->operands[0])
+                                    op_str_int(fn->operands[0]) << ","
                                     << fn->operands[1]->as_int_literal()->value + 1    // increment literal since we lack 'jgt'
                                     << ",@"+label_if_false
                                 )
