@@ -148,6 +148,12 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
             ref->data_type == operandContext.creg_ob->data_type
         ) {
             cregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
+#if 0   // FIXME: handle variable reference here
+        } else if {
+            ref->data_type == operandContext.ir->platform->
+        }
+        ) {
+#endif
         } else {
             QL_ICE(
                 "encountered unknown object reference to "

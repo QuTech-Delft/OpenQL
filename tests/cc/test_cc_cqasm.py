@@ -49,8 +49,20 @@ class Test_cQASM(unittest.TestCase):
 
             if 1:
                 # use pass manager
-                pl = ql.Platform("cc", "config_cc_s17_direct_iq_cqasm1.2.json")
+                # pl = ql.Platform("cc", "config_cc_s17_direct_iq_cqasm1.2.json")
+                pl = ql.Platform("cc", "config_cc_s17_direct_iq_openql_0_10.json")
                 c = pl.get_compiler()
+
+                if 1:
+                    # insert decomposer for legacy decompositions
+                    c.prefix_pass(
+                        'dec.Instructions',
+                        'legacy',  # sets predicate key to use legacy decompositions
+                        {
+                            'output_prefix': 'test_output/%N.%P',
+                            'debug': 'yes'
+                        }
+                    )
 
                 # insert cQASM reader
                 c.prefix_pass(
@@ -64,7 +76,7 @@ class Test_cQASM(unittest.TestCase):
                 )
 
                 # set scheduler options
-                c.set_option('scheduler.debug', 'yes')
+#               c.set_option('scheduler.debug', 'yes')
 
                 c.print_strategy()
                 c.compile_with_frontend(pl)
@@ -75,7 +87,7 @@ class Test_cQASM(unittest.TestCase):
         finally:
             os.chdir(old_wd)
 
-    def _test_rus_elements(self):
+    def test_rus_elements(self):
         self.run_test_case('rus_elements')
 
     def test_looping(self):

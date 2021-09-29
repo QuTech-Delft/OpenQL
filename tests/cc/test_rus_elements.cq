@@ -34,7 +34,7 @@ prepz qOutput4
 ################################################
 .repeatUntilSuccess
 for (i=0; i<10000; i=i+1) {
-#    cz qInput2, qAncilla3 # FIXME: requires decomposition
+    cz qInput2, qAncilla3 # FIXME: requires decomposition
     rx180 qOutput4
     i qOutput4
     rx180 qOutput4

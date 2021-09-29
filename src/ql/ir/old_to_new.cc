@@ -87,7 +87,7 @@ static ExpressionRef parse_instruction_parameter(
         if (implicit_breg) {
             ref->data_type = ir->platform->implicit_bit_type;
         }
-        return ref;
+        return std::move(ref);
     } else {
         auto obj = find_physical_object(ir, param.substr(0, 1));
         if (obj.empty()) {
@@ -457,17 +457,26 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
                 // Check whether the operand list matches the specializations
                 // specified in the old way.
-                if (insn->template_operands.size() > insn->operand_types.size()) {
+                // FIXME: debug WIP, also see use of template_operands further down
+                if (/*FIXMEinsn->*/template_operands.size() > insn->operand_types.size()) {
                     QL_ICE("need at least operands for the specialization parameters");
                 } else {
                     for (utils::UInt i = 0; i < template_params.size(); i++) {
-                        if (insn->operand_types[i]->data_type != get_type_of(insn->template_operands[i])) {
+#if 1   // FIXME: consistency checks to prevent Container error, triggered by use of insn->template_operands[i] iso template_operands[i]
+                        if (i >= insn->operand_types.size()) {
+                            QL_ICE("operand_types[" << i << "] does not exist");
+                        }
+                        if (i >= /*FIXMEinsn->*/template_operands.size()) {
+                            QL_ICE("template_operands[" << i << "] does not exist");
+                        }
+#endif
+                        if (insn->operand_types[i]->data_type != get_type_of(/*FIXMEinsn->*/template_operands[i])) {
                             QL_ICE("specialization parameter operand type mismatch");
                         }
                     }
                 }
 
-            } else {
+            } else {    // no "prototype" key
 
                 // We have to infer the prototype somehow...
                 prototype_inferred = true;
