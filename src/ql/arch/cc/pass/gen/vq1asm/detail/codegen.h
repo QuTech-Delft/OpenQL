@@ -65,7 +65,8 @@ public: //  functions
     void custom_instruction(const ir::CustomInstruction &custom);
 
     void if_else(const ir::ExpressionRef &condition, const Str &label, Int branch);
-    void otherwise(const Str &label, Int branch);
+    void if_otherwise(const Str &label, Int branch);
+    void if_end(const Str &label);
     void foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label);
     void foreach_end(const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label);
     void repeat(const Str &label);

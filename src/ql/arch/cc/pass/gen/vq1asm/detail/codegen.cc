@@ -30,6 +30,8 @@ using namespace utils;
 Str to_start(const Str &base) { return base + "_start"; };
 Str to_end(const Str &base) { return base + "_end"; };
 Str to_ifbranch(const Str &base, Int branch) { return QL_SS2S(base << "_" << branch); }
+Str as_label(const Str &label) { return label + ":"; }
+Str as_target(const Str &label) { return "@" + label; }
 
 
 Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
@@ -844,32 +846,46 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 \************************************************************************/
 
 void Codegen::if_else(const ir::ExpressionRef &condition, const Str &label, Int branch) {
+    // finish previous branch
+    if (branch>0) {
+        emit("", "jmp", as_target(to_end(label)));
+    }
+
     comment(
         "# IF_ELSE: "
         "condition = '" + ir::describe(condition) + "'"
         ", label = '" + label + "'"
     );
-
     Str my_label = to_ifbranch(label, branch);
     Str jmp_label = to_ifbranch(label, branch+1);
-    emit(my_label+":", "", "");     // not used if branch==0
+    emit(as_label(my_label), "", "");     // not used if branch==0
     handle_expression(condition, jmp_label, "if.condition");
 }
 
 
-void Codegen::otherwise(const Str &label, Int branch) {
+void Codegen::if_otherwise(const Str &label, Int branch) {
     comment(
-        "# OTHERWISE: "
+        "# IF_OTHERWISE: "
         ", label = '" + label + "'"
     );
 
     Str my_label = to_ifbranch(label, branch);
-    emit(my_label+":", "", "");
+    emit(as_label(my_label), "", "");
+}
+
+
+void Codegen::if_end(const Str &label) {
+    comment(
+        "# IF_END: "
+        ", label = '" + label + "'"
+    );
+
+     emit(as_label(to_end(label)), "", "");
 }
 
 
 void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label) {
-    emit(to_start(label)+":", "", "");    // label for looping or 'continue'
+    emit(as_label(to_start(label)), "", "");    // label for looping or 'continue'
 
 #if 0
     handle_set_instruction(*initialize, "for.initialize");
@@ -885,20 +901,20 @@ void Codegen::foreach_end(const ir::IntLiteral &frm, const ir::IntLiteral &to, c
     static_loop->frm->value;
     static_loop->to->value;
 #endif
-    emit("", "jmp", "@"+to_start(label), "# loop");
-    emit(to_end(label)+":", "", "");    // label for loop end or 'break'
+    emit("", "jmp", as_target(to_start(label)), "# loop");
+    emit(as_label(to_end(label)), "", "");    // label for loop end or 'break'
 }
 
 
 void Codegen::repeat(const Str &label) {
-    emit(to_start(label)+":", "", "");    // label for looping or 'continue'
+    emit(as_label(to_start(label)), "", "");    // label for looping or 'continue'
 }
 
 
 void Codegen::until(const ir::ExpressionRef &condition, const Str &label) {
     handle_expression(condition, to_end(label), "until.condition");
-    emit("", "jmp", "@"+to_start(label), "# loop");
-    emit(to_end(label)+":", "", "");    // label for loop end or 'break'
+    emit("", "jmp", as_target(to_start(label)), "# loop");
+    emit(as_label(to_end(label)), "", "");    // label for loop end or 'break'
 }
 
 
@@ -914,7 +930,7 @@ void Codegen::for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::
         handle_set_instruction(*initialize, "for.initialize");
     }
 
-    emit(to_start(label)+":", "", "");    // label for looping or 'continue'
+    emit(as_label(to_start(label)), "", "");    // label for looping or 'continue'
     handle_expression(condition, to_end(label), "for.condition");
 }
 
@@ -927,16 +943,16 @@ void Codegen::for_end(utils::Maybe<ir::SetInstruction> &update, const Str &label
     if (!update.empty()) {
         handle_set_instruction(*update, "for.update");
     }
-    emit("", "jmp", "@"+to_start(label), "# loop");
-    emit(to_end(label)+":", "", "");    // label for loop end or 'break'
+    emit("", "jmp", as_target(to_start(label)), "# loop");
+    emit(as_label(to_end(label)), "", "");    // label for loop end or 'break'
 }
 
 void Codegen::do_break(const Str &label) {
-    emit("", "jmp", "@"+to_end(label), "# break");
+    emit("", "jmp", as_target(to_end(label)), "# break");
 }
 
 void Codegen::do_continue(const Str &label) {
-    emit("", "jmp", "@"+to_start(label), "# continue");
+    emit("", "jmp", as_target(to_start(label)), "# continue");
 }
 
 
@@ -1622,15 +1638,15 @@ void Codegen::do_handle_expression(
                     operation = ">=";   // NB: actual contents unused here
                     switch (get_profile(fn->operands)) {
                         case RL:    // fall through
-                        case RR:    emit_mnem2args("jge", 0, 1, "@" + label_if_false); break;
-                        case LR:    emit_mnem2args("jlt", 1, 0), "@" + label_if_false; break;   // reverse operands (and instruction) to match Q1 instruction set
+                        case RR:    emit_mnem2args("jge", 0, 1, as_target(label_if_false)); break;
+                        case LR:    emit_mnem2args("jlt", 1, 0, as_target(label_if_false)); break;   // reverse operands (and instruction) to match Q1 instruction set
                     }
                 } else if (fn->function_type->name == "operator<") {
                     operation = "<";
                     switch (get_profile(fn->operands)) {
                         case RL:    // fall through
-                        case RR:    emit_mnem2args("jlt", 0, 1, "@" + label_if_false); break;
-                        case LR:    emit_mnem2args("jge", 1, 0), "@" + label_if_false; break;   // reverse operands (and instruction) to match Q1 instruction set
+                        case RR:    emit_mnem2args("jlt", 0, 1, as_target(label_if_false)); break;
+                        case LR:    emit_mnem2args("jge", 1, 0, as_target(label_if_false)); break;   // reverse operands (and instruction) to match Q1 instruction set
                     }
                 } else if (fn->function_type->name == "operator>") {
                     operation = ">";

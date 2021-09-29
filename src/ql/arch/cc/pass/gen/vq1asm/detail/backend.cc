@@ -411,8 +411,9 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
             // Handle the different types of structured statements.
             if (auto if_else = stmt->as_if_else()) {
 
-                // Handle if-else (or just if) statement.
                 Str saved_label = label();  // changes when recursing
+
+                // Handle if-else (or just if) statement.
                 for(UInt branch=0; branch<if_else->branches.size(); branch++) {
                     // if-condition
                     try {
@@ -432,7 +433,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
                 }
 
                 // otherwise
-                codegen.otherwise(saved_label, if_else->branches.size());   // NB: doesn't throw exceptions
+                codegen.if_otherwise(saved_label, if_else->branches.size());   // NB: doesn't throw exceptions
 
                 // otherwise-block
                 if (!if_else->otherwise.empty()) {
@@ -443,6 +444,8 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
                         throw;
                     }
                 }
+
+                codegen.if_end(saved_label);   // NB: doesn't throw exceptions
 
             } else if (auto static_loop = stmt->as_static_loop()) {
 
@@ -497,10 +500,10 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
                 codegen.for_end(for_loop->update, loop_label.back());   // NB: label() has changed because of recursion into codegen_block
                 loop_label.pop_back();
 
-            } else if (auto break_statement = stmt->as_break_statement()) {
+            } else if (stmt->as_break_statement()) {
                 codegen.do_break(loop_label.back());
 
-            } else if (auto continue_statement = stmt->as_continue_statement()) {
+            } else if (stmt->as_continue_statement()) {
                 codegen.do_continue(loop_label.back());
 
             } else {
