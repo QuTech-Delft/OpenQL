@@ -1278,23 +1278,28 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
     } else {
         // verify signal dimensions
         UInt channelsPergroup = ret.si.ic.controlModeGroupSize;
-        if (instructionSignalValue.size() != channelsPergroup) {
-            QL_JSON_ERROR(
+        UInt size = instructionSignalValue.is_array() ? instructionSignalValue.size() : 1;  // For objects, size() returns number of keys
+        if (size != channelsPergroup) {
+//            QL_JSON_ERROR(
+            QL_WOUT(    // FIXME: we're transitioning on the semantics of signalValue
                 "signal dimension mismatch on instruction '" << iname
                 << "' : control mode '" << ret.si.ic.refControlMode
                 << "' requires " <<  channelsPergroup
                 << " signals, but signal '" << signalSPath+"/value"
-                << "' provides " << instructionSignalValue.size()
+                << "' provides " << size
+                << " (value='" << instructionSignalValue << "')"
             );
         }
 
         // expand macros
         sv = replace_all(sv, "\"", "");   // get rid of quotes
+#if 1   // FIXME: deprecate?
         sv = replace_all(sv, "{gateName}", iname);
         sv = replace_all(sv, "{instrumentName}", ret.si.ic.ii.instrumentName);
         sv = replace_all(sv, "{instrumentGroup}", to_string(ret.si.group));
         // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
         sv = replace_all(sv, "{qubit}", to_string(qubit));
+#endif
         ret.signalValueString = sv;
 
         // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords

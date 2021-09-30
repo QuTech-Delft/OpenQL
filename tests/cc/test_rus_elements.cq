@@ -2,7 +2,7 @@
 # Purpose:      test elements of Repeat Until Success
 # Notes:
 # - gate definitions require prototype, e.g. '"prototype": ["U:qubit"],'
-# - legacy gate decompositions (like 'measure_fb') are not recognized, use new instruction key "decomposition"
+# - legacy gate decompositions (like 'measure_fb') require pass 'dec.Instructions', or use new instruction key "decomposition"
 # - make up mind about preferred gate names in cQASM versus API
 # - gates with upper case (e.g. rmX180) don't work
 
@@ -14,8 +14,8 @@ pragma @ql.platform("config_cc_s17_direct_iq_cqasm1.2.json")
 
 .def
 map qInput1 = q[0]
-map qInput2 = q[1]
-map qAncilla3 = q[2]
+map qInput2 = q[8]
+map qAncilla3 = q[10]
 map qOutput4 = q[3]
 var mAncilla3: bool
 map i = creg(0)
@@ -34,13 +34,13 @@ prepz qOutput4
 ################################################
 .repeatUntilSuccess
 for (i=0; i<10000; i=i+1) {
-#    cz qInput2, qAncilla3 # FIXME: requires decomposition
+    cz qInput2, qAncilla3
     rx180 qOutput4
     i qOutput4
     rx180 qOutput4
     barrier
 
-#    measure_fb qAncilla3, mAncilla3 # FIXME: requires decomposition
+    measure_fb qAncilla3 #, mAncilla3 # FIXME: requires different decomposition
     rx180 qOutput4
 #    for _ in range(8):
 # FIXME: repeat as intended
