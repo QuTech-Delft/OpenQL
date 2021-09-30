@@ -49,7 +49,6 @@ class Test_cQASM(unittest.TestCase):
 
             if 1:
                 # use pass manager
-                #pl = ql.Platform("cc", "config_cc_s17_direct_iq_cqasm1.2.json")
                 pl = ql.Platform("cc", "config_cc_s17_direct_iq_openql_0_10.json")
                 c = pl.get_compiler()
 
@@ -89,6 +88,9 @@ class Test_cQASM(unittest.TestCase):
 
     def test_rus_elements(self):
         self.run_test_case('rus_elements')
+
+    def test_rus_private(self):
+        self.run_test_case('rus_private')
 
     def test_looping(self):
         self.run_test_case('looping')

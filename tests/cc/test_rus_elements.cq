@@ -10,7 +10,7 @@ version 1.2
 qubits 17
 
 pragma @ql.name("test_rus_elements")
-pragma @ql.platform("config_cc_s17_direct_iq_cqasm1.2.json")
+pragma @ql.platform("config_cc_s17_direct_iq_openql_0_10.json")
 
 .def
 map qInput1 = q[0]
@@ -33,9 +33,9 @@ prepz qOutput4
 # repeat until success
 ################################################
 .repeatUntilSuccess
-for (i=0; i<10000; i=i+1) {
+for (; true; ) {
     cz qInput2, qAncilla3
-    rx180 qOutput4
+    x qOutput4
     i qOutput4
     rx180 qOutput4
     barrier

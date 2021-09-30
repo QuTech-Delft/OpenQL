@@ -6,7 +6,7 @@ version 1.2
 qubits 17
 
 pragma @ql.name("test_looping")
-pragma @ql.platform("config_cc_s17_direct_iq_cqasm1.2.json")
+pragma @ql.platform("config_cc_s17_direct_iq_openql_0_10.json")
 
 .def
 map qInput1 = q[0]

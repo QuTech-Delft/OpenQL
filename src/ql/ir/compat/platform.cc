@@ -542,11 +542,11 @@ void Platform::load(
 
     // load hardware_settings
     if (platform_config.count("hardware_settings") <= 0) {
-        QL_FATAL("'hardware_settings' section is not specified in the hardware config file");
+        QL_JSON_ERROR("'hardware_settings' section is not specified in the hardware config file");
     } else {
         hardware_settings = platform_config["hardware_settings"];
         if (hardware_settings.count("qubit_number") <= 0) {
-            QL_FATAL("qubit number of the platform is not specified in the configuration file !");
+            QL_JSON_ERROR("qubit number of the platform is not specified in the configuration file !");
         } else {
             qubit_count = hardware_settings["qubit_number"];
         }
@@ -574,7 +574,7 @@ void Platform::load(
 
     // load instruction_settings
     if (platform_config.count("instructions") <= 0) {
-        QL_FATAL("'instructions' section is not specified in the hardware config file");
+        QL_JSON_ERROR("'instructions' section is not specified in the hardware config file");
     } else {
         instruction_settings = platform_config["instructions"];
     }
@@ -660,7 +660,7 @@ void Platform::load(
             // check that we're looking at array
             utils::Json sub_instructions = *it;
             if (!sub_instructions.is_array()) {
-                QL_FATAL(
+                QL_JSON_ERROR(
                     "gate decomposition rule for '" << comp_ins << "' is "
                     "malformed (not an array)"
                 );
@@ -679,7 +679,7 @@ void Platform::load(
                     gs.add(instruction_map.at(sub_ins));
                 } else if (sub_ins.find("cond(") !=
                            utils::Str::npos) {              // conditional gate?
-                    QL_FATAL("conditional gate not supported in gate_decomposition: '" << sub_ins << "'");
+                    QL_JSON_ERROR("conditional gate not supported in gate_decomposition: '" << sub_ins << "'");
                 } else if (sub_ins.find("%") !=
                            utils::Str::npos) {              // parameterized composite gate? FIXME: no syntax check
                     // adding new sub ins if not already available, e.g. "x %0"
@@ -696,7 +696,7 @@ void Platform::load(
 #else
                     // for specialized custom instructions, raise error if instruction
                     // is not already available
-                    QL_FATAL("custom instruction not found for '" << sub_ins << "'");
+                    QL_JSON_ERROR("custom instruction not found for '" << sub_ins << "'");
 #endif
                 }
             }
@@ -731,9 +731,9 @@ Platform::Platform(
         try {
             config = utils::load_json(platform_config);
         } catch (utils::Json::exception &e) {
-            QL_FATAL(
+            QL_JSON_ERROR(
                 "failed to load the hardware config file : malformed json file: \n\t"
-                    << utils::Str(e.what()));
+                << utils::Str(e.what()));
         }
         platform_config_fname = platform_config;
     }
@@ -804,7 +804,7 @@ void Platform::dump_info(std::ostream &os, utils::Str line_prefix) const {
 const utils::Json &Platform::find_instruction(const utils::Str &iname) const {
     // search the JSON defined instructions, to prevent JSON exception if key does not exist
     if (!QL_JSON_EXISTS(instruction_settings, iname)) {
-        QL_FATAL("JSON file: instruction not found: '" << iname << "'");
+        QL_JSON_ERROR("instruction not found: '" << iname << "'");
     }
     return instruction_settings[iname];
 }

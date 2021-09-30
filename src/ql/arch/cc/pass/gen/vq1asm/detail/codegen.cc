@@ -1705,12 +1705,12 @@ void Codegen::do_handle_expression(
                     // FIXME
                 }
                 if(!operation.empty()) {
-                    // NB: all work done above
+                    // NB: all work already done above
                 }
             }
 
             if(operation.empty()) {
-                // NB: if we arrive here, there's an unintended inconsistency between the functions registered in
+                // NB: if we arrive here, there's an inconsistency between the functions registered in
                 // 'ql::ir::cqasm:read()' (see comment at beginning of this function) and our decoding here.
                 QL_ICE(
                     "function '" << fn->function_type->name << "' not supported by CC backend, but it should be"
