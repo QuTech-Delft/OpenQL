@@ -49,7 +49,7 @@ class Test_cQASM(unittest.TestCase):
 
             if 1:
                 # use pass manager
-                # pl = ql.Platform("cc", "config_cc_s17_direct_iq_cqasm1.2.json")
+                #pl = ql.Platform("cc", "config_cc_s17_direct_iq_cqasm1.2.json")
                 pl = ql.Platform("cc", "config_cc_s17_direct_iq_openql_0_10.json")
                 c = pl.get_compiler()
 
