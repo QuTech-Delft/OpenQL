@@ -57,14 +57,14 @@ class Test_cQASM(unittest.TestCase):
                     # insert decomposer for legacy decompositions
                     c.prefix_pass(
                         'dec.Instructions',
-                        'legacy',  # sets predicate key to use legacy decompositions
+                        'legacy',  # sets predicate key to use legacy decompositions (FIXME: TBC)
                         {
                             'output_prefix': 'test_output/%N.%P',
                             'debug': 'yes'
                         }
                     )
 
-                # insert cQASM reader
+                # insert cQASM reader (as very first step)
                 c.prefix_pass(
                     'io.cqasm.Read',
                     'reader',
