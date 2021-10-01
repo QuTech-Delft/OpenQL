@@ -570,7 +570,7 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
     QL_JSON_ASSERT(data, "instructions", "/");
     utils::Json &instructions = data["instructions"];
 
-    // FIXME: similar to Settings::loadBackendSettings()
+    // NB: based on Settings::loadBackendSettings()
     QL_JSON_ASSERT(data, "hardware_settings", "/");
     const utils::Json &hardware_settings = data["hardware_settings"];
     QL_JSON_ASSERT(hardware_settings, "eqasm_backend_cc", "hardware_settings");
@@ -578,6 +578,7 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
     QL_JSON_ASSERT(jsonBackendSettings, "signals", "eqasm_backend_cc");
     utils::RawPtr<const utils::Json> signals = &jsonBackendSettings["signals"];
 
+    // add predicates to instructions
     for (auto &it : instructions.items()) {
         if (pass::gen::vq1asm::detail::Settings::isReadout(it.value(), it.key())) {
             QL_IOUT("desugaring readout instruction: '" << it.key() << "'");

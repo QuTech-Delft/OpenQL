@@ -51,6 +51,9 @@ void Codegen::init() {
     // as a result also a Codegen, so we don't need to cleanup
 
 #if 1
+#if 0
+    settings.loadBackendSettings(ir->platform);
+#else
     // based on NewToOldConverter::NewToOldConverter
     // FIXME: bit expensive to go back to old
     settings.loadBackendSettings(
@@ -58,6 +61,7 @@ void Codegen::init() {
             ir->platform->name,
             ir->platform->data.data)
     );
+#endif
 #else
     settings = platform->get_annotation<pass::gen::vq1asm::detail::Settings>();  // NB: set in Info::post_process_platform() FIXME: will that retain the platform member var
 #endif
@@ -789,10 +793,38 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         // but we only handle it for custom_instruction
         tInstructionCondition instrCond = decode_condition(operandContext, custom.condition);
 
-        // Handle the normal operands for custom instructions.
         Operands ops;
+
+        // Handle the template operands for the instruction_type we got. Note that these are empty if that is a 'root'
+        // InstructionType, and only contains data if it is one of the specializations (see ir.gen.h)
+
+// FIXME: these are operands that match a specialized instruction definition, e.g. "cz q0,q10"
+// FIXME: these are not handled below, so things fail if we have such definitions
+//cQASM "cz q[0],q[10]" with JSON "cz q0,q10" results in:
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:814 found template_operands: JSON = {"cc":{"signal":[],"static_codeword_override":[0]},"duration":40}
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[0]
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[10]
+//
+//cQASM "cz q[0],q[10]" with JSON "cz q0,q9" results in:
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:814 found template_operands: JSON = {"cc":{"signal":[],"static_codeword_override":[0]},"duration":40}
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[0]
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:809 operand: q[10]
+//
+//cQASM "cz q[0],q[10]" with JSON "cz q1,q10" results in:
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[0]
+//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[10]
+
+        // FIXME: check for existing decompositions (which should have been performed already by an upstream pass)
+
+        if(!custom.instruction_type->template_operands.empty()) {
+            QL_DOUT("found template_operands: JSON = " << custom.instruction_type->data.data );
+        }
+
         for (const auto &ob : custom.instruction_type->template_operands) {
-            QL_IOUT("template operand: " + ir::describe(ob));
+            QL_DOUT("template operand: " + ir::describe(ob));
             try {
                 ops.append(operandContext, ob);
             } catch (utils::Exception &e) {
@@ -801,7 +833,9 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             }
         }
 
+        // Handle the 'plain' operands for custom instructions.
         for (utils::UInt i = 0; i < custom.operands.size(); i++) {
+            QL_DOUT("operand: " + ir::describe(custom.operands[i]));
             try {
                 ops.append(operandContext, custom.operands[i]);
             } catch (utils::Exception &e) {
@@ -813,7 +847,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 throw;
             }
         }
-#if 0   // org
+#if 0   // org: processes org.has_integer/ops.integer
         kernel->gate(
             custom.instruction_type->name, ops.qubits, ops.cregs,
             0, ops.angle, ops.bregs
@@ -826,6 +860,11 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             kernel->gates.back()->int_operand = ops.integer;
         }
 #endif
+
+        // FIXME: if we have a cz with operands for which no decomposition exists, we'll end up with:
+        // RuntimeError: JSON error: in pass VQ1Asm, phase main: in block 'repeatUntilSuccess': in for loop body: instruction not found: 'cz'
+        // This provides little insight, and why do we get upto here anyway? See above: template_operands
+
         customGate(
             custom.instruction_type->name,
             ops.qubits,     // operands
@@ -835,7 +874,6 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             instrCond.cond_operands,  // cond_operands
             ops.angle,      // angle
             custom.cycle,    // startCycle
-//            ir::get_duration_of_statement(stmt)    // durationInCycles
             custom.instruction_type->duration    // durationInCycles
         );
 

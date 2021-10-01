@@ -800,6 +800,7 @@ void Platform::dump_info(std::ostream &os, utils::Str line_prefix) const {
 /**
  * Returns the JSON data for a custom gate, throwing a semi-useful
  * exception if the instruction is not found.
+ * NB: iname can refer to specialized or generalized gate name
  */
 const utils::Json &Platform::find_instruction(const utils::Str &iname) const {
     // search the JSON defined instructions, to prevent JSON exception if key does not exist

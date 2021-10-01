@@ -12,6 +12,7 @@
 #include "options.h"
 
 #include "ql/ir/compat/platform.h"  // FIXME
+#include "ql/ir/ir.h"
 
 namespace ql {
 namespace arch {
@@ -58,14 +59,17 @@ public: // functions
     ~Settings() = default;
 
     void loadBackendSettings(const ir::compat::PlatformRef &platform);
+    void loadBackendSettings(const ir::PlatformRef &platform);
 
     Str getReadoutMode(const Str &iname);
     static Bool isReadout(const Json &instruction, const Str &iname);
     Bool isReadout(const Str &iname);
     static Bool isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
     Bool isFlux(const Str &iname);
+#if OPT_PRAGMA
     Bool isPragma(const Str &iname);
     RawPtr<const Json> getPragma(const Str &iname);
+#endif
 
     static SignalDef findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
@@ -81,6 +85,9 @@ public: // functions
     // 'getters'
     const Json &getInstrumentAtIdx(UInt instrIdx) const { return (*jsonInstruments)[instrIdx]; }
     UInt getInstrumentsSize() const { return jsonInstruments->size(); }
+
+private:    // functions
+    void doLoadBackendSettings(const Json &jsonBackendSettings);
 
 private:    // vars
     ir::compat::PlatformRef platform;

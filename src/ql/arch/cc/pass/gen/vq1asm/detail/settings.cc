@@ -18,54 +18,24 @@ namespace detail {
 
 using namespace utils;
 
-// FIXME: we use compat::Platform here, because we are called from both Info::post_process_platform() and Backend::compile()
+// support for Info::post_process_platform()
 void Settings::loadBackendSettings(const ir::compat::PlatformRef &platform) {
-    this->platform = platform;
+    this->platform = platform;  // FIXME
 
     // remind some main JSON areas
     QL_JSON_ASSERT(platform->hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
     const Json &jsonBackendSettings = platform->hardware_settings["eqasm_backend_cc"];
-
-    QL_JSON_ASSERT(jsonBackendSettings, "instrument_definitions", "eqasm_backend_cc");
-    jsonInstrumentDefinitions = &jsonBackendSettings["instrument_definitions"];
-
-    QL_JSON_ASSERT(jsonBackendSettings, "control_modes", "eqasm_backend_cc");
-    jsonControlModes = &jsonBackendSettings["control_modes"];
-
-    QL_JSON_ASSERT(jsonBackendSettings, "instruments", "eqasm_backend_cc");
-    jsonInstruments = &jsonBackendSettings["instruments"];
-
-    QL_JSON_ASSERT(jsonBackendSettings, "signals", "eqasm_backend_cc");
-    jsonSignals = &jsonBackendSettings["signals"];
-
-#if 0   // FIXME: print some info, which also helps detecting errors early on
-    // read instrument definitions
-    // FIXME: the following requires json>v3.1.0: (NB: we now moved to 3.9!) for(auto& id : jsonInstrumentDefinitions->items()) {
-    for (UInt i = 0; i < jsonInstrumentDefinitions->size(); i++) {
-        Str idName = (*jsonInstrumentDefinitions)[i].get<Str>();
-        QL_DOUT("found instrument definition: '" << idName <<"'");
-    }
-
-    // read control modes
-    for (UInt i = 0; i < jsonControlModes->size(); i++) {
-        const Json &name = (*jsonControlModes)[i]["name"];
-        QL_DOUT("found control mode '" << name <<"'");
-    }
-
-    // read instruments
-    const Json &ccSetupType = jsonCcSetup["type"];
-
-    // CC specific
-    const Json &ccSetupSlots = jsonCcSetup["slots"];                      // FIXME: check against jsonInstrumentDefinitions
-    for (UInt slot = 0; slot < ccSetupSlots.size(); slot++) {
-        const Json &instrument = ccSetupSlots[slot]["instrument"];
-        Str instrumentName = instrument["name"].get<Str>();
-        Str signalType = instrument["signal_type"].get<Str>();
-
-        QL_DOUT("found instrument: name='" << instrumentName << "', signal type='" << signalType << "'");
-    }
-#endif
+    doLoadBackendSettings(jsonBackendSettings);
 }
+
+// support for Backend::Backend() (Codegen::init)
+void Settings::loadBackendSettings(const ir::PlatformRef &platform) {
+    const Json &hardwareSettings = platform->data.data["hardware_settings"];
+    QL_JSON_ASSERT(hardwareSettings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
+    const Json &jsonBackendSettings = hardwareSettings["eqasm_backend_cc"];
+    doLoadBackendSettings(jsonBackendSettings);
+}
+
 
 // NB: assumes prior test for isReadout()==true
 Str Settings::getReadoutMode(const Str &iname) {
@@ -84,20 +54,8 @@ Bool Settings::isReadout(const Json &instruction, const Str &iname) {
 
 // determine whether this is a 'readout instruction'
 Bool Settings::isReadout(const Str &iname) {
-#if 1    // new semantics
     const Json &instruction = platform->find_instruction(iname);
     return isReadout(instruction, iname);
-#else
-    /*
-        NB: we only use the instruction_type "readout" and don't care about the rest
-        because the terms "mw" and "flux" don't fully cover gate functionality. It
-        would be nice if custom gates could mimic gate_type_t
-    */
-    // FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL, so we need a better criterion
-    // FIXME: must not trigger in "prepz", which has type "readout" in (some?) configuration files (with empty signal though)
-    // FIXME: gate semantics should be handled at the OpenQL core
-    return platform->find_instruction_type(iname) == "readout";
-#endif
 }
 
 
@@ -116,24 +74,15 @@ Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const
 }
 
 Bool Settings::isFlux(const Str &iname) {
-#if 1   //new semantics
     const Json &instruction = platform->find_instruction(iname);
     return isFlux(instruction, jsonSignals, iname);
-#else
-    const Json &instruction = platform->find_instruction(iname);
-    if (!QL_JSON_EXISTS(instruction, "type")) {
-        return false;
-    } else {
-        return instruction["type"] == "flux";
-    }
-#endif
 }
 
 
+#if OPT_PRAGMA
 Bool Settings::isPragma(const Str &iname) {
     return getPragma(iname).has_value();
 }
-
 
 RawPtr<const Json> Settings::getPragma(const Str &iname) {
     const Json &instruction = platform->find_instruction(iname);
@@ -145,7 +94,7 @@ RawPtr<const Json> Settings::getPragma(const Str &iname) {
         return nullptr;
     }
 }
-
+#endif
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
 Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
@@ -287,7 +236,7 @@ Int Settings::getResultBit(const InstrumentControl &ic, Int group) {
 
 // find instrument&group given instructionSignalType for qubit
 // NB: this implies that we map signal *vectors* to groups, i.e. it is not possible to map individual channels
-// Conceptually, this is were we map an abstract signal definition, eg: {"flux", q3} (which may also be
+// Conceptually, this is where we map an abstract signal definition, eg: {"flux", q3} (which may also be
 // interpreted as port "q3.flux") onto an instrument & group
 Settings::SignalInfo Settings::findSignalInfoForQubit(const Str &instructionSignalType, UInt qubit) const {
     SignalInfo ret;
@@ -388,6 +337,53 @@ Int Settings::findStaticCodewordOverride(const Json &instruction, UInt operandId
     return staticCodewordOverride;
 }
 //#endif
+
+/************************************************************************\
+| Private
+\************************************************************************/
+
+void Settings::doLoadBackendSettings(const Json &jsonBackendSettings) {
+    QL_JSON_ASSERT(jsonBackendSettings, "instrument_definitions", "eqasm_backend_cc");
+    jsonInstrumentDefinitions = &jsonBackendSettings["instrument_definitions"];
+
+    QL_JSON_ASSERT(jsonBackendSettings, "control_modes", "eqasm_backend_cc");
+    jsonControlModes = &jsonBackendSettings["control_modes"];
+
+    QL_JSON_ASSERT(jsonBackendSettings, "instruments", "eqasm_backend_cc");
+    jsonInstruments = &jsonBackendSettings["instruments"];
+
+    QL_JSON_ASSERT(jsonBackendSettings, "signals", "eqasm_backend_cc");
+    jsonSignals = &jsonBackendSettings["signals"];
+
+#if 0   // FIXME: print some info, which also helps detecting errors early on
+    // read instrument definitions
+    // FIXME: the following requires json>v3.1.0: (NB: we now moved to 3.9!) for(auto& id : jsonInstrumentDefinitions->items()) {
+    for (UInt i = 0; i < jsonInstrumentDefinitions->size(); i++) {
+        Str idName = (*jsonInstrumentDefinitions)[i].get<Str>();
+        QL_DOUT("found instrument definition: '" << idName <<"'");
+    }
+
+    // read control modes
+    for (UInt i = 0; i < jsonControlModes->size(); i++) {
+        const Json &name = (*jsonControlModes)[i]["name"];
+        QL_DOUT("found control mode '" << name <<"'");
+    }
+
+    // read instruments
+    const Json &ccSetupType = jsonCcSetup["type"];
+
+    // CC specific
+    const Json &ccSetupSlots = jsonCcSetup["slots"];                      // FIXME: check against jsonInstrumentDefinitions
+    for (UInt slot = 0; slot < ccSetupSlots.size(); slot++) {
+        const Json &instrument = ccSetupSlots[slot]["instrument"];
+        Str instrumentName = instrument["name"].get<Str>();
+        Str signalType = instrument["signal_type"].get<Str>();
+
+        QL_DOUT("found instrument: name='" << instrumentName << "', signal type='" << signalType << "'");
+    }
+#endif
+}
+
 
 } // namespace detail
 } // namespace vq1asm
