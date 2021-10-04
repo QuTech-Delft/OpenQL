@@ -223,7 +223,6 @@ public:
         }
 
         // Check existence of the topology, architecture, and resources objects.
-#if 1   // FIXME
         if (!node.topology.is_populated()) {
             QL_ICE("IR is missing topology information");
         }
@@ -233,7 +232,6 @@ public:
         if (!node.resources.is_populated()) {
             QL_ICE("IR is missing resource information");
         }
-#endif
 
     }
 

@@ -872,7 +872,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
         }
     }
 
-#if 0    // FIXME: potentially calls parse_decomposition_rule() -> cqasm::read() -> check_consistency -> error
+#if 0    // FIXME: moved down, see comment overthere
     // Now that we have all the instruction types, compute the decomposition
     // expansions that we postponed.
     for (const auto &fn : todo) {
@@ -923,11 +923,11 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     resources.emplace(rmgr::Manager::from_defaults(old, {}, ir));
     ir->platform->resources.populate(resources);
 
-#if 1
+#if 1   // FIXME
     // Now that we have all the instruction types, compute the decomposition
     // expansions that we postponed.
-    // NB: perform after populating topology and friends, otherwise check_consistency() may fail if cqasm::read is
-    // called from here
+    // NB: perform after populating topology and friends, otherwise check_consistency() may fail [called through
+    // parse_decomposition_rule() -> cqasm::read() ].
     for (const auto &fn : todo) {
         fn();
     }

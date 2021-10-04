@@ -1508,8 +1508,6 @@ void read(
     // The resulting tree is only going to be consistent if the op() function
     // was not used, otherwise links will be missing. So we just skip the check
     // if operands were specified.
-    // FIXME: if we were performing gate decomposition, the tree is also invalid because because topology and friends are not
-    // yet populated by convert_old_to_new
     if (options.operands.empty()) {
         check_consistency(ir);
     }
