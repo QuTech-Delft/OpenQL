@@ -437,19 +437,22 @@
 
 //{
 //	"instructions": {
-        // based on PyqQED_py3 'mw_lutman.py' (matches default_mw_lutmap) and 'generate_CCL_cfg.py':
-//        "cz q0,q10": {  // FIXME: test
-//            "prototype": ["Z:qubit", "Z:qubit"],
-//            "duration": 40,
-//            "cc": {
-//                "signal": [],   // no signal, to prevent conflicts with other gates (NB: will output nothing because VSM stays off)
-//                "static_codeword_override": [0]
-//            }//,
-// triggers: RuntimeError: Internal compiler error: IR is missing topology information,
-//            "decomposition": {
-//                "into": "_cz_sw_ne_park q[0],q[10],q[11]" // FIXME: just to test decomposition
-//            }
-//        },
+        "cz q0,q10": {  // FIXME: test
+//        "cz": {  // FIXME: test
+//        "cz q[0],q[1]": {  // FIXME: test
+            "prototype": ["Z:qubit", "Z:qubit"],
+            "duration": 40,
+            "cc": {
+                "signal": [],   // no signal, to prevent conflicts with other gates (NB: will output nothing because VSM stays off)
+                "static_codeword_override": [0]
+            }
+            // triggers: RuntimeError: Internal compiler error: IR is missing topology information,
+            , "decomposition": {
+                "into": "_cz_sw_ne_park q[0],q[10],q[11]" // FIXME: just to test decomposition
+//                "into": "_cz_sw_ne_park op(0),op(1),op(1)" // FIXME: just to test decomposition
+            }
+        },
+//         based on PyqQED_py3 'mw_lutman.py' (matches default_mw_lutmap) and 'generate_CCL_cfg.py':
         "i": {
             "duration": 20,
             "cc": {

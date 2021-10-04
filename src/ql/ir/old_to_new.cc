@@ -725,7 +725,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 insn->cqasm_name = insn->name;
                 template_params.pop_front();
                 if (!std::regex_match(insn->name, IDENTIFIER_RE)) {
-                    throw utils::Exception(
+                    throw utils::Exception( // FIXME: QL_USER_ERROR??, also see below
                         "instruction name is not a valid identifier"
                     );
                 }
@@ -872,11 +872,13 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
         }
     }
 
+#if 0    // FIXME: potentially calls parse_decomposition_rule() -> cqasm::read() -> check_consistency -> error
     // Now that we have all the instruction types, compute the decomposition
     // expansions that we postponed.
     for (const auto &fn : todo) {
         fn();
     }
+#endif
 
     // Populate the default function types.
     auto fn = add_function_type(ir, utils::make<FunctionType>("operator!"));
@@ -921,6 +923,16 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     resources.emplace(rmgr::Manager::from_defaults(old, {}, ir));
     ir->platform->resources.populate(resources);
 
+#if 1
+    // Now that we have all the instruction types, compute the decomposition
+    // expansions that we postponed.
+    // NB: perform after populating topology and friends, otherwise check_consistency() may fail if cqasm::read is
+    // called from here
+    for (const auto &fn : todo) {
+        fn();
+    }
+#endif
+
     // Populate platform JSON data.
     ir->platform->data = old->platform_config;
 
@@ -929,7 +941,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     ir->platform->set_annotation<compat::PlatformRef>(old);
 
     // Check the result.
-#if 0   // FIXME: too verbose
+#if 1   // FIXME: too verbose
     QL_DOUT("Result of old->new IR platform conversion:");
     QL_IF_LOG_DEBUG(ir->dump_seq());
 #endif
