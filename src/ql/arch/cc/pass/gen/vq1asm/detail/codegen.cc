@@ -821,6 +821,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
         if(!custom.instruction_type->template_operands.empty()) {
             QL_DOUT("found template_operands: JSON = " << custom.instruction_type->data.data );
+            QL_INPUT_ERROR("CC backend cannot yet handle specialized instructions");
         }
 
         for (const auto &ob : custom.instruction_type->template_operands) {
