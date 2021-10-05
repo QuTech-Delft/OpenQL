@@ -535,16 +535,6 @@ void Codegen::bundleFinish(
 | Quantum instructions
 \************************************************************************/
 
-// helper
-static Str qasm(const Str &iname, const Vec<UInt> &operands, const Vec<UInt> &breg_operands) {
-    // FIXME: hack
-    ir::compat::gate_types::Custom g(iname);
-    g.operands = operands;
-    g.breg_operands = breg_operands;
-    return g.qasm();
-}
-
-
 typedef struct {
     utils::Vec<utils::UInt> cond_operands;
     ConditionType cond_type;
@@ -772,10 +762,10 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         // generate comment
         Bool isReadout = settings.isReadout(*custom.instruction_type);        //  determine whether this is a readout instruction
         if (isReadout) {
-            comment(Str(" # READOUT: '") + qasm(iname, operands, breg_operands) + "'"); // FIXME: qasm
+            comment(Str(" # READOUT: '") + ir::describe(custom) + "'");
         } else { // handle all other instruction types than "readout"
             // generate comment. NB: we don't have a particular limit for the number of operands
-            comment(Str(" # gate '") + qasm(iname, operands, breg_operands) + "'");
+            comment(Str(" # gate '") + ir::describe(custom) + "'");
         }
 
         // find signal vector definition for instruction
@@ -829,7 +819,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 // operand checks
                 if (operands.size() != 1) {
                     QL_INPUT_ERROR(
-                        "Readout instruction '" << qasm(iname, operands, breg_operands)
+                        "Readout instruction '" << ir::describe(custom)
                         << "' requires exactly 1 quantum operand, not " << operands.size()
                     );
                 }
@@ -838,7 +828,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 }
                 if (breg_operands.size() > 1) {
                     QL_INPUT_ERROR(
-                        "Readout instruction '" << qasm(iname, operands, breg_operands)
+                        "Readout instruction '" << ir::describe(custom)
                         << "' requires 0 or 1 bit operands, not " << breg_operands.size()
                     );
                 }
