@@ -51,7 +51,7 @@ void Codegen::init() {
     // as a result also a Codegen, so we don't need to cleanup
 
 #if 1
-#if 0
+#if 1
     settings.loadBackendSettings(ir->platform);
 #else
     // based on NewToOldConverter::NewToOldConverter
@@ -914,11 +914,11 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
         vcd.customGate(iname, operands, startCycle, durationInCycles);
 
-        Bool isReadout = settings.isReadout(iname);        //  determine whether this is a readout instruction
+        Bool isReadout = settings.isReadout(*custom.instruction_type);        //  determine whether this is a readout instruction
 
         // generate comment
         if (isReadout) {
-            comment(Str(" # READOUT: '") + qasm(iname, operands, breg_operands) + "'");
+            comment(Str(" # READOUT: '") + qasm(iname, operands, breg_operands) + "'"); // FIXME: qasm
         } else { // handle all other instruction types than "readout"
             // generate comment. NB: we don't have a particular limit for the number of operands
             comment(Str(" # gate '") + qasm(iname, operands, breg_operands) + "'");
@@ -928,8 +928,9 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         // find instruction (gate definition)
         const Json &instruction = platform->find_instruction(iname);
 #else
-        // find instruction (gate definition) in JSON platform data
-        const Json &instruction = ir->platform->data.data["instructions"][iname];     // FIXME: check JSON access. FIXME: how about generalizations/specializations
+        // find JSON data for instruction (gate definition)
+//        const Json &instruction = ir->platform->data.data["instructions"][iname];     // FIXME: check JSON access. FIXME: how about generalizations/specializations
+        const Json &instruction = custom.instruction_type->data.data;
 #endif
         // find signal vector definition for instruction
         Settings::SignalDef sd = settings.findSignalDefinition(instruction, iname);
@@ -996,7 +997,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 }
 
                 // store operands
-                if (settings.getReadoutMode(iname)=="feedback") {
+                if (settings.getReadoutMode(*custom.instruction_type)=="feedback") {
                     bi.isMeasFeedback = true;
                     bi.operands = operands;
                     //bi.creg_operands = creg_operands;    // NB: will be empty because of checks performed earlier

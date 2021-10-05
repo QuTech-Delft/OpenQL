@@ -20,29 +20,12 @@ using namespace utils;
 
 // support for Info::post_process_platform()
 void Settings::loadBackendSettings(const ir::compat::PlatformRef &platform) {
-    this->platform = platform;  // FIXME
+//    this->platform = platform;  // FIXME
 
     // remind some main JSON areas
     QL_JSON_ASSERT(platform->hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
     const Json &jsonBackendSettings = platform->hardware_settings["eqasm_backend_cc"];
     doLoadBackendSettings(jsonBackendSettings);
-}
-
-// support for Backend::Backend() (Codegen::init)
-void Settings::loadBackendSettings(const ir::PlatformRef &platform) {
-    const Json &hardwareSettings = platform->data.data["hardware_settings"];
-    QL_JSON_ASSERT(hardwareSettings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
-    const Json &jsonBackendSettings = hardwareSettings["eqasm_backend_cc"];
-    doLoadBackendSettings(jsonBackendSettings);
-}
-
-
-// NB: assumes prior test for isReadout()==true
-Str Settings::getReadoutMode(const Str &iname) {
-    const Json &instruction = platform->find_instruction(iname);
-    Str instructionPath = "instructions/"+iname;
-    QL_JSON_ASSERT(instruction, "cc", instructionPath);
-    return json_get<Str>(instruction["cc"], "readout_mode", instructionPath);
 }
 
 // determine whether this is a 'readout instruction'
@@ -51,13 +34,6 @@ Bool Settings::isReadout(const Json &instruction, const Str &iname) {
     QL_JSON_ASSERT(instruction, "cc", instructionPath);
     return QL_JSON_EXISTS(instruction["cc"], "readout_mode");
 }
-
-// determine whether this is a 'readout instruction'
-Bool Settings::isReadout(const Str &iname) {
-    const Json &instruction = platform->find_instruction(iname);
-    return isReadout(instruction, iname);
-}
-
 
 // determine whether this is a 'flux instruction'
 Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
@@ -73,9 +49,35 @@ Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const
     }
 }
 
-Bool Settings::isFlux(const Str &iname) {
-    const Json &instruction = platform->find_instruction(iname);
-    return isFlux(instruction, jsonSignals, iname);
+
+
+// support for Backend::Backend() (Codegen::init)
+void Settings::loadBackendSettings(const ir::PlatformRef &platform) {
+    const Json &hardwareSettings = platform->data.data["hardware_settings"];
+    QL_JSON_ASSERT(hardwareSettings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
+    const Json &jsonBackendSettings = hardwareSettings["eqasm_backend_cc"];
+    doLoadBackendSettings(jsonBackendSettings);
+}
+
+
+// NB: assumes prior test for isReadout()==true
+Str Settings::getReadoutMode(const ir::InstructionType &instrType) {
+    const Json &instruction = instrType.data.data;
+    Str instructionPath = "instructions/" + instrType.name;
+    QL_JSON_ASSERT(instruction, "cc", instructionPath);
+    return json_get<Str>(instruction["cc"], "readout_mode", instructionPath);
+}
+
+// determine whether this is a 'readout instruction'
+Bool Settings::isReadout(const ir::InstructionType &instrType) {
+    const Json &instruction = instrType.data.data;
+    return isReadout(instruction, instrType.name);
+}
+
+
+Bool Settings::isFlux(const ir::InstructionType &instrType) {
+    const Json &instruction = instrType.data.data;
+    return isFlux(instruction, jsonSignals, instrType.name);
 }
 
 
@@ -115,7 +117,7 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawP
         ret.path = "signals/" + refSignal;
     } else {                                                                    // alternative syntax: "signal"
         ret.signal = json_get<Json>(instruction["cc"], "signal", instructionPath + "/cc");
-        QL_DOUT("signal for '" << instruction << "': " << ret.signal);
+        QL_DOUT("signal for '" << instruction << "': '" << ret.signal << "'");
         ret.path = instructionPath + "/cc/signal";
     }
     return ret;
@@ -123,6 +125,8 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawP
 
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
+// FIXME: Settings::SignalDef Settings::findSignalDefinition(const ir::InstructionType &instrType) const {
+// FIXME: deprecate "ref_signal"?
 Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, const Str &iname) const {
 #if 1
     return findSignalDefinition(instruction, jsonSignals, iname);

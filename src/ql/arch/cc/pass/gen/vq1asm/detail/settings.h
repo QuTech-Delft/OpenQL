@@ -25,14 +25,14 @@ namespace detail {
 class Settings {
 public: // types
     struct SignalDef {
-        Json signal;        // a copy of the signal node found
-        Str path;           // path of the node, for reporting purposes
+        Json signal;                // a copy of the signal node found
+        Str path;                   // path of the node, for reporting purposes
     };
 
     struct InstrumentInfo {         // information from key 'instruments'
         RawPtr<const Json> instrument;
         Str instrumentName;         // key 'instruments[]/name'
-        Int slot;                  // key 'instruments[]/controller/slot'
+        Int slot;                   // key 'instruments[]/controller/slot'
 #if OPT_FEEDBACK
         Bool forceCondGatesOn;      // optional key 'instruments[]/force_cond_gates_on', can be used to always enable AWG if gate execution is controlled by VSM
 #endif
@@ -58,14 +58,16 @@ public: // functions
     Settings() = default;
     ~Settings() = default;
 
+    // support for Info::preprocess_platform
     void loadBackendSettings(const ir::compat::PlatformRef &platform);
-    void loadBackendSettings(const ir::PlatformRef &platform);
-
-    Str getReadoutMode(const Str &iname);
     static Bool isReadout(const Json &instruction, const Str &iname);
-    Bool isReadout(const Str &iname);
     static Bool isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
-    Bool isFlux(const Str &iname);
+
+    // support for backend
+    void loadBackendSettings(const ir::PlatformRef &platform);
+    Str getReadoutMode(const ir::InstructionType &instrType);
+    Bool isReadout(const ir::InstructionType &instrType);
+    Bool isFlux(const ir::InstructionType &instrType);
 #if OPT_PRAGMA
     Bool isPragma(const Str &iname);
     RawPtr<const Json> getPragma(const Str &iname);
@@ -90,7 +92,7 @@ private:    // functions
     void doLoadBackendSettings(const Json &jsonBackendSettings);
 
 private:    // vars
-    ir::compat::PlatformRef platform;
+//    ir::compat::PlatformRef platform;
     RawPtr<const Json> jsonInstrumentDefinitions;
     RawPtr<const Json> jsonControlModes;
     RawPtr<const Json> jsonInstruments;
