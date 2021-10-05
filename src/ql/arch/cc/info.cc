@@ -570,7 +570,8 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
     QL_JSON_ASSERT(data, "instructions", "/");
     utils::Json &instructions = data["instructions"];
 
-    // NB: based on Settings::loadBackendSettings() FIXME: use new
+    // FIXME: add Settings::loadBackendSettings(const utils::Json &data)
+    // NB: based on Settings::loadBackendSettings()
     QL_JSON_ASSERT(data, "hardware_settings", "/");
     const utils::Json &hardware_settings = data["hardware_settings"];
     QL_JSON_ASSERT(hardware_settings, "eqasm_backend_cc", "hardware_settings");

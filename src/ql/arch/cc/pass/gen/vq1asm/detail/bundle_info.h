@@ -45,6 +45,7 @@ public: // vars
 #if OPT_FEEDBACK
     // readout feedback
     Bool isMeasFeedback = false;
+    // FIXME: use new class Operands
     Vec<UInt> operands;                         // NB: also used by OPT_PRAGMA
     Vec<UInt> creg_operands;
     Vec<UInt> breg_operands;

@@ -721,22 +721,22 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
         // FIXME: adapt parameters because we inlined customGate below. Cleanup!
         const Str iname = custom.instruction_type->name;
-        const Vec<UInt> operands = ops.qubits;
-        const Vec<UInt> creg_operands = ops.cregs;
-        const Vec<UInt> breg_operands = ops.bregs;
+//        const Vec<UInt> operands = ops.qubits;
+//        const Vec<UInt> creg_operands = ops.cregs;
+//        const Vec<UInt> breg_operands = ops.bregs;
         ConditionType condition = instrCond.cond_type;
         const Vec<UInt> cond_operands = instrCond.cond_operands;
-        Real angle = ops.angle;
+//        Real angle = ops.angle;
         UInt startCycle = custom.cycle;
         UInt durationInCycles = custom.instruction_type->duration;
 
 #if 0   // FIXME: test for angle parameter
-        if(angle != 0.0) {
+        if(ops.angle != 0.0) {
             QL_DOUT("iname=" << iname << ", angle=" << angle);
         }
 #endif
 
-        vcd.customGate(iname, operands, startCycle, durationInCycles);
+        vcd.customGate(iname, ops.qubits, startCycle, durationInCycles);
 
         // generate comment
         Bool isReadout = settings.isReadout(*custom.instruction_type);        //  determine whether this is a readout instruction
@@ -753,7 +753,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
         // scatter signals defined for instruction (e.g. several operands and/or types) to instruments & groups
         for (UInt s = 0; s < sd.signal.size(); s++) {
-            CalcSignalValue csv = calcSignalValue(sd, s, operands, iname);
+            CalcSignalValue csv = calcSignalValue(sd, s, ops.qubits, iname);
 
             // store signal value, checking for conflicts
             BundleInfo &bi = bundleInfo[csv.si.instrIdx][csv.si.group];         // shorthand
@@ -794,30 +794,31 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                  *             note that Creg's are managed through a class, whereas bregs are just numbers
                  *         - breg result (new)
                  */
+                // FIXME: comment reflects old IR
 
                 // operand checks
-                if (operands.size() != 1) {
+                if (ops.qubits.size() != 1) {
                     QL_INPUT_ERROR(
                         "Readout instruction '" << ir::describe(custom)
-                        << "' requires exactly 1 quantum operand, not " << operands.size()
+                        << "' requires exactly 1 quantum operand, not " << ops.qubits.size()
                     );
                 }
-                if (!creg_operands.empty()) {
+                if (!ops.cregs.empty()) {
                     QL_INPUT_ERROR("Using Creg as measurement target is deprecated, use new breg_operands");
                 }
-                if (breg_operands.size() > 1) {
+                if (ops.bregs.size() > 1) {
                     QL_INPUT_ERROR(
                         "Readout instruction '" << ir::describe(custom)
-                        << "' requires 0 or 1 bit operands, not " << breg_operands.size()
+                        << "' requires 0 or 1 bit operands, not " << ops.bregs.size()
                     );
                 }
 
                 // store operands
                 if (settings.getReadoutMode(*custom.instruction_type)=="feedback") {
                     bi.isMeasFeedback = true;
-                    bi.operands = operands;
-                    //bi.creg_operands = creg_operands;    // NB: will be empty because of checks performed earlier
-                    bi.breg_operands = breg_operands;
+                    bi.operands = ops.qubits;
+                    //bi.creg_operands = ops.cregs;    // NB: will be empty because of checks performed earlier
+                    bi.breg_operands = ops.bregs;
                 }
             }
 
@@ -845,9 +846,9 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 vbi[0].pragma = pragma;
 
                 // store operands
-                vbi[0].operands = operands;
-                //vbi[0].creg_operands = creg_operands;    // NB: will be empty because of checks performed earlier
-                vbi[0].breg_operands = breg_operands;
+                vbi[0].operands = ops.qubits;
+                //vbi[0].creg_operands = ops.cregs;    // NB: will be empty because of checks performed earlier
+                vbi[0].breg_operands = ops.bregs;
             }
         }
 #endif

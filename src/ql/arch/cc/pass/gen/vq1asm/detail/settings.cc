@@ -20,8 +20,6 @@ using namespace utils;
 
 // support for Info::post_process_platform()
 void Settings::loadBackendSettings(const ir::compat::PlatformRef &platform) {
-//    this->platform = platform;  // FIXME
-
     // remind some main JSON areas
     QL_JSON_ASSERT(platform->hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
     const Json &jsonBackendSettings = platform->hardware_settings["eqasm_backend_cc"];
