@@ -439,7 +439,6 @@
 //	"instructions": {
         "cz q0,q10": {  // FIXME: test
 //        "cz": {  // FIXME: test
-//        "cz q[0],q[1]": {  // FIXME: test
             "prototype": ["Z:qubit", "Z:qubit"],
             "duration": 40,
             "cc": {
