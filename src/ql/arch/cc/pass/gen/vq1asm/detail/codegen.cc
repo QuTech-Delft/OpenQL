@@ -164,8 +164,8 @@ void Codegen::block_finish(const Str &block_name, UInt durationInCycles) {
     - bundleStart():
     clear bundleInfo, which maintains the work that needs to be performed for bundle
 
-    - customGate():
-    collect gate information in bundleInfo
+    - custom_instruction():
+    collect instruction (FKA as gate) information in bundleInfo
 
     - bundleFinish():
     generate code for bundle from information collected in bundleInfo (which
@@ -634,6 +634,10 @@ tInstructionCondition decode_condition(const OperandContext &operandContext, con
     return {cond_operands, cond_type};
 }
 
+
+// custom_instruction: single/two/N qubit gate, including readout, see 'strategy' above
+// translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
+// Does not deal with the control mode and digital interface of the instrument.
 void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
         // but we only handle it for custom_instruction
@@ -694,6 +698,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 throw;
             }
         }
+
 #if 0   // org: processes org.has_integer/ops.integer
         kernel->gate(
             custom.instruction_type->name, ops.qubits, ops.cregs,
@@ -712,21 +717,9 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         // RuntimeError: JSON error: in pass VQ1Asm, phase main: in block 'repeatUntilSuccess': in for loop body: instruction not found: 'cz'
         // This provides little insight, and why do we get upto here anyway? See above: template_operands
 
-#if 0
-        customGate(
-            custom.instruction_type->name,
-            ops.qubits,     // operands
-            ops.cregs,      // creg_operands
-            ops.bregs,      // breg_operands
-            instrCond.cond_type,      // condition
-            instrCond.cond_operands,  // cond_operands
-            ops.angle,      // angle
-            custom.cycle,    // startCycle
-            custom.instruction_type->duration    // durationInCycles
-        );
-#else   // customGate inlined here, modified to fit
-#if 1
-        // FIXME: adapt parameters
+
+
+        // FIXME: adapt parameters because we inlined customGate below. Cleanup!
         const Str iname = custom.instruction_type->name;
         const Vec<UInt> operands = ops.qubits;
         const Vec<UInt> creg_operands = ops.cregs;
@@ -736,21 +729,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         Real angle = ops.angle;
         UInt startCycle = custom.cycle;
         UInt durationInCycles = custom.instruction_type->duration;
-#else
-    // customGate: single/two/N qubit gate, including readout, see 'strategy' above
-    // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
-    // Does not deal with the control mode and digital interface of the instrument.
-    void Codegen::customGate(
-        const Str &iname,
-        const Vec<UInt> &operands,
-        const Vec<UInt> &creg_operands,
-        const Vec<UInt> &breg_operands,
-        ConditionType condition,
-        const Vec<UInt> &cond_operands,
-        Real angle,
-        UInt startCycle, UInt durationInCycles
-    ) {
-#endif
+
 #if 0   // FIXME: test for angle parameter
         if(angle != 0.0) {
             QL_DOUT("iname=" << iname << ", angle=" << angle);
@@ -872,9 +851,6 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             }
         }
 #endif
-
-#endif
-
 }
 
 /************************************************************************\
