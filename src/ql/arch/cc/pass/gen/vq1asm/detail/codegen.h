@@ -51,17 +51,6 @@ public: //  functions
     void bundleFinish(UInt startCycle, UInt durationInCycles, Bool isLastBundle);
 
     // Quantum instructions
-    void customGate(
-        // FIXME consider passing a gate&, custom_gate& or (new type) GateOperands&
-        const Str &iname,
-        const Vec<UInt> &operands,                  // qubit operands (FKA qops)
-        const Vec<UInt> &creg_operands,             // classic operands (FKA cops)
-        const Vec<UInt> &breg_operands,             // bit operands e.g. assigned to by measure
-        ConditionType condition,
-        const Vec<UInt> &cond_operands,             // 0, 1 or 2 bit operands of condition
-        Real angle,
-        UInt startCycle, UInt durationInCycles
-    );
     void custom_instruction(const ir::CustomInstruction &custom);
 
     void if_else(const ir::ExpressionRef &condition, const Str &label, Int branch);

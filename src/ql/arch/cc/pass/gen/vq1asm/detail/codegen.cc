@@ -545,151 +545,6 @@ static Str qasm(const Str &iname, const Vec<UInt> &operands, const Vec<UInt> &br
 }
 
 
-#if 0   // FIXME: inlined
-// customGate: single/two/N qubit gate, including readout, see 'strategy' above
-// translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
-// Does not deal with the control mode and digital interface of the instrument.
-void Codegen::customGate(
-    const Str &iname,
-    const Vec<UInt> &operands,
-    const Vec<UInt> &creg_operands,
-    const Vec<UInt> &breg_operands,
-    ConditionType condition,
-    const Vec<UInt> &cond_operands,
-    Real angle,
-    UInt startCycle, UInt durationInCycles
-) {
-#if 0   // FIXME: test for angle parameter
-    if(angle != 0.0) {
-        QL_DOUT("iname=" << iname << ", angle=" << angle);
-    }
-#endif
-
-    vcd.customGate(iname, operands, startCycle, durationInCycles);
-
-    Bool isReadout = settings.isReadout(iname);        //  determine whether this is a readout instruction
-
-    // generate comment
-    if (isReadout) {
-        comment(Str(" # READOUT: '") + qasm(iname, operands, breg_operands) + "'");
-    } else { // handle all other instruction types than "readout"
-        // generate comment. NB: we don't have a particular limit for the number of operands
-        comment(Str(" # gate '") + qasm(iname, operands, breg_operands) + "'");
-    }
-
-#if 0   // FIXME: org
-    // find instruction (gate definition)
-    const Json &instruction = platform->find_instruction(iname);
-#else
-    // find instruction (gate definition) in JSON platform data
-    const Json &instruction = ir->platform->data.data["instructions"][iname];     // FIXME: check JSON access. FIXME: how about generalizations/specializations
-#endif
-    // find signal vector definition for instruction
-    Settings::SignalDef sd = settings.findSignalDefinition(instruction, iname);
-
-    // scatter signals defined for instruction (e.g. several operands and/or types) to instruments & groups
-    for (UInt s = 0; s < sd.signal.size(); s++) {
-        CalcSignalValue csv = calcSignalValue(sd, s, operands, iname);
-
-        // store signal value, checking for conflicts
-        BundleInfo &bi = bundleInfo[csv.si.instrIdx][csv.si.group];         // shorthand
-        if (!csv.signalValueString.empty()) {                               // empty implies no signal
-            if (bi.signalValue.empty()) {                                   // signal not yet used
-                bi.signalValue = csv.signalValueString;
-#if OPT_SUPPORT_STATIC_CODEWORDS
-                // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
-                bi.staticCodewordOverride = Settings::findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
-#endif
-            } else if (bi.signalValue == csv.signalValueString) {           // signal unchanged
-                // do nothing
-            } else {
-                showCodeSoFar();
-                QL_USER_ERROR(
-                    "Signal conflict on instrument='" << csv.si.ic.ii.instrumentName
-                    << "', group=" << csv.si.group
-                    << ", between '" << bi.signalValue
-                    << "' and '" << csv.signalValueString << "'"
-                );  // FIXME: add offending instruction
-            }
-        }
-
-        // store signal duration
-        bi.durationInCycles = durationInCycles;
-
-#if OPT_FEEDBACK
-        // FIXME: assumes that group configuration for readout input matches that of output
-        // store operands used for readout, actual work is postponed to bundleFinish()
-        if (isReadout) {
-            /*
-             * kernel->gate allows 3 types of measurement:
-             *         - no explicit result. Historically this implies either:
-             *             - no result, measurement results are often read offline from the readout device (mostly the raw values
-             *             instead of the binary result), without the control device ever taking notice of the value
-             *             - implicit bit result for qubit, e.g. for the CC-light using conditional gates
-             *         - creg result (old, no longer valid)
-             *             note that Creg's are managed through a class, whereas bregs are just numbers
-             *         - breg result (new)
-             */
-
-            // operand checks
-            if (operands.size() != 1) {
-                QL_INPUT_ERROR(
-                    "Readout instruction '" << qasm(iname, operands, breg_operands)
-                    << "' requires exactly 1 quantum operand, not " << operands.size()
-                );
-            }
-            if (!creg_operands.empty()) {
-                QL_INPUT_ERROR("Using Creg as measurement target is deprecated, use new breg_operands");
-            }
-            if (breg_operands.size() > 1) {
-                QL_INPUT_ERROR(
-                    "Readout instruction '" << qasm(iname, operands, breg_operands)
-                    << "' requires 0 or 1 bit operands, not " << breg_operands.size()
-                );
-            }
-
-            // store operands
-            if (settings.getReadoutMode(iname)=="feedback") {
-                bi.isMeasFeedback = true;
-                bi.operands = operands;
-                //bi.creg_operands = creg_operands;    // NB: will be empty because of checks performed earlier
-                bi.breg_operands = breg_operands;
-            }
-        }
-
-        // store 'expression' for conditional gates
-        bi.condition = condition;
-        bi.cond_operands = cond_operands;
-#endif
-
-        QL_DOUT("customGate(): iname='" << iname <<
-             "', duration=" << durationInCycles <<
-             " [cycles], instrIdx=" << csv.si.instrIdx <<
-             ", group=" << csv.si.group);
-
-        // NB: code is generated in bundleFinish()
-    }   // for(signal)
-
-#if OPT_PRAGMA
-    RawPtr<const Json> pragma = settings.getPragma(iname);
-    if (pragma) {
-        for (Vec<BundleInfo> &vbi : bundleInfo) {
-            // FIXME: for now we just store the JSON of the pragma statement in bundleInfo[*][0]
-            if(vbi[0].pragma) {
-                QL_INPUT_ERROR("Bundle contains more than one gate with 'pragma' key");    // FIXME: provide context
-            }
-            vbi[0].pragma = pragma;
-
-            // store operands
-            vbi[0].operands = operands;
-            //vbi[0].creg_operands = creg_operands;    // NB: will be empty because of checks performed earlier
-            vbi[0].breg_operands = breg_operands;
-        }
-    }
-#endif
-}
-#endif
-
 typedef struct {
     utils::Vec<utils::UInt> cond_operands;
     ConditionType cond_type;
@@ -914,9 +769,8 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
         vcd.customGate(iname, operands, startCycle, durationInCycles);
 
-        Bool isReadout = settings.isReadout(*custom.instruction_type);        //  determine whether this is a readout instruction
-
         // generate comment
+        Bool isReadout = settings.isReadout(*custom.instruction_type);        //  determine whether this is a readout instruction
         if (isReadout) {
             comment(Str(" # READOUT: '") + qasm(iname, operands, breg_operands) + "'"); // FIXME: qasm
         } else { // handle all other instruction types than "readout"
@@ -924,15 +778,8 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             comment(Str(" # gate '") + qasm(iname, operands, breg_operands) + "'");
         }
 
-#if 0   // FIXME: org
-        // find instruction (gate definition)
-        const Json &instruction = platform->find_instruction(iname);
-#else
-        // find JSON data for instruction (gate definition)
-//        const Json &instruction = ir->platform->data.data["instructions"][iname];     // FIXME: check JSON access. FIXME: how about generalizations/specializations
-        const Json &instruction = custom.instruction_type->data.data;
-#endif
         // find signal vector definition for instruction
+        const Json &instruction = custom.instruction_type->data.data;
         Settings::SignalDef sd = settings.findSignalDefinition(instruction, iname);
 
         // scatter signals defined for instruction (e.g. several operands and/or types) to instruments & groups
