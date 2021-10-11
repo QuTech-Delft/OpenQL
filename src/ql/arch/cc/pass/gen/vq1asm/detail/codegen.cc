@@ -972,6 +972,7 @@ void Codegen::for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::
     // for loop: initialize
     if (!initialize.empty()) {
         handle_set_instruction(*initialize, "for.initialize");
+        emit("", "nop");    // register dependency between initialize and handle_expression (if those use the same register, which is likely)
     }
 
     emit(as_label(to_start(label)));    // label for looping or 'continue'
@@ -1532,7 +1533,11 @@ void Codegen::do_handle_expression(
 
 
     try {
-        // FIXME: emit lhs+expression as comment (only here)
+        if(!lhs.empty()) {
+            comment(QL_SS2S("# Expression '" << descr << "': " << ir::describe(lhs) << " = " << ir::describe(expression)));
+        } else {
+            comment(QL_SS2S("# Expression '" << descr << "': " << ir::describe(expression)));
+        }
 
         if (auto ilit = expression->as_int_literal()) {
             check_int_literal(*ilit);
@@ -1656,8 +1661,8 @@ void Codegen::do_handle_expression(
                 if (!operation.empty()) {
                     switch (get_profile(fn->operands)) {
                         case RL:    // fall through
-                        case RR:    emit_mnem2args(operation, 0, 1); break;
-                        case LR:    emit_mnem2args(operation, 1, 0); break;   // reverse operands to match Q1 instruction set
+                        case RR:    emit_mnem2args(operation, 0, 1, QL_SS2S("R"<<dest_reg())); break;
+                        case LR:    emit_mnem2args(operation, 1, 0, QL_SS2S("R"<<dest_reg())); break;   // reverse operands to match Q1 instruction set
                             if (operation == "sub") {
                                 // FIXME: correct for changed op order
                             }
