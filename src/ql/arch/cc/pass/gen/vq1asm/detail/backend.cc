@@ -205,7 +205,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
                 for(UInt branch=0; branch<if_else->branches.size(); branch++) {
                     // if-condition
                     try {
-                        codegen.if_else(if_else->branches[branch]->condition, saved_label, branch);
+                        codegen.if_elif(if_else->branches[branch]->condition, saved_label, branch);
                     } catch (utils::Exception &e) {
                         e.add_context("in 'if' condition", true);
                         throw;
@@ -289,6 +289,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
                 loop_label.pop_back();
 
             } else if (stmt->as_break_statement()) {
+
                 codegen.do_break(loop_label.back());
 
             } else if (stmt->as_continue_statement()) {

@@ -21,7 +21,9 @@
 
 #define REG_TMP0 "R63"                          // Q1 register for temporary use
 #define REG_TMP1 "R62"                          // Q1 register for temporary use
-#define NUM_CREGS (64-2)
+#define NUM_RSRVD_CREGS 2                       // must match number of REG_TMP*
+#define NUM_CREGS (64-NUM_RSRVD_CREGS)
+#define NUM_BREGS 1024
 
 namespace ql {
 namespace arch {
@@ -54,7 +56,7 @@ public: //  functions
     void custom_instruction(const ir::CustomInstruction &custom);
 
     // Structured control flow
-    void if_else(const ir::ExpressionRef &condition, const Str &label, Int branch);
+    void if_elif(const ir::ExpressionRef &condition, const Str &label, Int branch);
     void if_otherwise(const Str &label, Int branch);
     void if_end(const Str &label);
     void foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label);

@@ -44,153 +44,105 @@ static void check_int_literal(const ir::IntLiteral &ilit, Int bottomRoom=0, Int 
 }
 
 
-Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
-    : ir(ir)
-    , options(options)
-    , operandContext(ir)
-{
-    init(); // FIXME: inline, or make private
-}
+typedef struct {
+    ConditionType cond_type;
+    utils::Vec<utils::UInt> cond_operands;
+} tInstructionCondition;
 
-/************************************************************************\
-| Generic
-\************************************************************************/
+/**
+ * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
+ * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
+ */
+static tInstructionCondition decode_condition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
+    ConditionType cond_type;
+    utils::Vec<utils::UInt> cond_operands;
 
-void Codegen::init() {
-    // NB: a new Backend is instantiated per call to compile, and
-    // as a result also a Codegen, so we don't need to cleanup
-
-    settings.loadBackendSettings(ir->platform);
-
-    // optionally preload codewordTable
-    Str map_input_file = options->map_input_file;
-    if (!map_input_file.empty()) {
-        QL_DOUT("loading map_input_file='" << map_input_file << "'");
-        Json map = load_json(map_input_file);
-        codewordTable = map["codeword_table"];      // FIXME: use json_get
-        mapPreloaded = true;
-    }
-
-#if OPT_FEEDBACK
-    // iterate over instruments
-    for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
-        const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
-        if (QL_JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
-            QL_IOUT("instrument '" << ic.ii.instrumentName << "' (index " << instrIdx << ") is used for feedback");
+    try {
+        if (auto blit = condition->as_bit_literal()) {
+            if (blit->value) {
+                cond_type = ConditionType::ALWAYS;
+            } else {
+                cond_type = ConditionType::NEVER;
+            }
+        } else if (condition->as_reference()) {
+            cond_operands.push_back(operandContext.convert_breg_reference(condition));
+            cond_type = ConditionType::UNARY;
+        } else if (auto fn = condition->as_function_call()) {
+            if (
+                fn->function_type->name == "operator!" ||
+                fn->function_type->name == "operator~"
+            ) {
+                CHECK_COMPAT(fn->operands.size() == 1, "unsupported condition function");
+                if (fn->operands[0]->as_reference()) {
+                    cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
+                    cond_type = ConditionType::NOT;
+                } else if (auto fn2 = fn->operands[0]->as_function_call()) {
+                    CHECK_COMPAT(fn2->operands.size() == 2, "unsupported condition function");
+                    cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[0]));
+                    cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[1]));
+                    if (
+                        fn2->function_type->name == "operator&" ||
+                        fn2->function_type->name == "operator&&"
+                    ) {
+                        cond_type = ConditionType::NAND;
+                    } else if (
+                        fn2->function_type->name == "operator|" ||
+                        fn2->function_type->name == "operator||"
+                    ) {
+                        cond_type = ConditionType::NOR;
+                    } else if (
+                        fn2->function_type->name == "operator^" ||
+                        fn2->function_type->name == "operator^^" ||
+                        fn2->function_type->name == "operator!="
+                    ) {
+                        cond_type = ConditionType::NXOR;
+                    } else if (
+                        fn2->function_type->name == "operator=="
+                    ) {
+                        cond_type = ConditionType::XOR;
+                    } else {
+                        QL_ICE("unsupported gate condition");
+                    }
+                } else {
+                    QL_ICE("unsupported gate condition");
+                }
+            } else {
+                CHECK_COMPAT(fn->operands.size() == 2, "unsupported condition function");
+                cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
+                cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[1]));
+                if (
+                    fn->function_type->name == "operator&" ||
+                    fn->function_type->name == "operator&&"
+                ) {
+                    cond_type = ConditionType::AND;
+                } else if (
+                    fn->function_type->name == "operator|" ||
+                    fn->function_type->name == "operator||"
+                ) {
+                    cond_type = ConditionType::OR;
+                } else if (
+                    fn->function_type->name == "operator^" ||
+                    fn->function_type->name == "operator^^" ||
+                    fn->function_type->name == "operator!="
+                ) {
+                    cond_type = ConditionType::XOR;
+                } else if (
+                    fn->function_type->name == "operator=="
+                ) {
+                    cond_type = ConditionType::NXOR;
+                } else {
+                    QL_ICE("unsupported condition function");
+                }
+            }
+        } else {
+            QL_ICE("unsupported condition expression");
         }
+    } catch (utils::Exception &e) {
+        e.add_context("in gate condition", true);
+        throw;
     }
-#endif
+    return {cond_type, cond_operands};
 }
-
-Str Codegen::getProgram() {
-#if OPT_FEEDBACK
-    return codeSection.str() + dp.getDatapathSection();
-#else
-    return codeSection.str();
-#endif
-}
-
-Str Codegen::getMap() {
-    Json map;
-
-    map["note"] = "generated by OpenQL CC backend version " CC_BACKEND_VERSION_STRING;
-    map["codeword_table"] = codewordTable;
-    return QL_SS2S(std::setw(4) << map << std::endl);
-}
-
-
-/************************************************************************\
-| 'Program' level functions
-\************************************************************************/
-
-void Codegen::programStart(const Str &progName) {
-    emitProgramStart(progName);
-
-    dp.programStart();
-
-    // Determine number of qubits.
-    utils::UInt num_qubits;
-    if (ir->platform->qubits->shape.size() == 1) {
-        num_qubits = ir->platform->qubits->shape[0];
-    } else {
-        QL_USER_ERROR("main qubit register has wrong dimensionality");
-    };
-
-    // Get cycle time from old Platform (NB: in new Platform, all durations are in quantum cycles, not ns).
-    auto &json = ir->platform->data.data;
-    QL_JSON_ASSERT(json, "hardware_settings", "hardware_settings");
-    auto hardware_settings = json["hardware_settings"];
-    QL_JSON_ASSERT(hardware_settings, "cycle_time", "hardware_settings/cycle_time");
-    UInt cycle_time = hardware_settings["cycle_time"];
-
-    vcd.programStart(num_qubits, cycle_time, MAX_GROUPS, settings);
-}
-
-
-void Codegen::programFinish(const Str &progName) {
-    emitProgramFinish();
-
-    dp.programFinish();
-
-    vcd.programFinish(options->output_prefix + ".vcd");
-}
-
-/************************************************************************\
-| 'Block' (fka 'Kernel', this name stays relevant as it is used by the
-| API) level functions
-\************************************************************************/
-
-void Codegen::block_start(const Str &block_name) {
-    comment(QL_SS2S("### Block: '" << block_name << "'"));
-    zero(lastEndCycle); // NB; new IR starts counting at zero
-}
-
-void Codegen::block_finish(const Str &block_name, UInt durationInCycles) {
-    comment(QL_SS2S("### Block end: '" << block_name << "'"));
-    vcd.kernelFinish(block_name, durationInCycles);
-}
-
-/************************************************************************\
-| 'Bundle' level functions. Although the new IR no longer organizes
-| instructions in Bundles, we still need to process them as such, i.e.
-| evaluate all instructions issued in the same cycle together.
-\************************************************************************/
-
-/*
-    Our strategy is to first process all customGate's in a bundle, storing the
-    relevant information in bundleInfo. Then, when all work for a bundle has
-    been collected, we generate code in bundleFinish
-
-    - bundleStart():
-    clear bundleInfo, which maintains the work that needs to be performed for bundle
-
-    - custom_instruction():
-    collect instruction (FKA as gate) information in bundleInfo
-
-    - bundleFinish():
-    generate code for bundle from information collected in bundleInfo (which
-    may be empty if no custom gates are present in bundle)
-*/
-
-// bundleStart: see 'strategy' above
-void Codegen::bundleStart(const Str &cmnt) {
-    // create 'matrix' of BundleInfo with proper vector size per instrument
-    bundleInfo.clear();
-    BundleInfo empty;
-    for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
-        const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
-        bundleInfo.emplace_back(
-            ic.controlModeGroupCnt,     // one BundleInfo per group in the control mode selected for instrument
-            empty                       // empty BundleInfo
-        );
-    }
-
-    // generate source code comments
-    comment(cmnt);
-    dp.comment(cmnt, options->verbose);      // FIXME: comment is not fully appropriate, but at least allows matching with .CODE section
-}
-
-
 
 
 // Static helper function for bundleFinish()
@@ -311,6 +263,156 @@ static CalcGroupDigOut calcGroupDigOut(
     }
 
     return ret;
+}
+
+
+
+
+
+
+Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
+    : ir(ir)
+    , options(options)
+    , operandContext(ir)
+{
+    init(); // FIXME: inline, or make private
+}
+
+/************************************************************************\
+| Generic
+\************************************************************************/
+
+void Codegen::init() {
+    // NB: a new Backend is instantiated per call to compile, and
+    // as a result also a Codegen, so we don't need to cleanup
+
+    settings.loadBackendSettings(ir->platform);
+
+    // optionally preload codewordTable
+    Str map_input_file = options->map_input_file;
+    if (!map_input_file.empty()) {
+        QL_DOUT("loading map_input_file='" << map_input_file << "'");
+        Json map = load_json(map_input_file);
+        codewordTable = map["codeword_table"];      // FIXME: use json_get
+        mapPreloaded = true;
+    }
+
+#if OPT_FEEDBACK
+    // iterate over instruments
+    for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
+        const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
+        if (QL_JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
+            QL_IOUT("instrument '" << ic.ii.instrumentName << "' (index " << instrIdx << ") is used for feedback");
+        }
+    }
+#endif
+}
+
+Str Codegen::getProgram() {
+#if OPT_FEEDBACK
+    return codeSection.str() + dp.getDatapathSection();
+#else
+    return codeSection.str();
+#endif
+}
+
+Str Codegen::getMap() {
+    Json map;
+
+    map["note"] = "generated by OpenQL CC backend version " CC_BACKEND_VERSION_STRING;
+    map["codeword_table"] = codewordTable;
+    return QL_SS2S(std::setw(4) << map << std::endl);
+}
+
+/************************************************************************\
+| 'Program' level functions
+\************************************************************************/
+
+void Codegen::programStart(const Str &progName) {
+    emitProgramStart(progName);
+
+    dp.programStart();
+
+    // Determine number of qubits.
+    utils::UInt num_qubits;
+    if (ir->platform->qubits->shape.size() == 1) {
+        num_qubits = ir->platform->qubits->shape[0];
+    } else {
+        QL_USER_ERROR("main qubit register has wrong dimensionality");
+    };
+
+    // Get cycle time from old Platform (NB: in new Platform, all durations are in quantum cycles, not ns).
+    auto &json = ir->platform->data.data;
+    QL_JSON_ASSERT(json, "hardware_settings", "hardware_settings");
+    auto hardware_settings = json["hardware_settings"];
+    QL_JSON_ASSERT(hardware_settings, "cycle_time", "hardware_settings/cycle_time");
+    UInt cycle_time = hardware_settings["cycle_time"];
+
+    vcd.programStart(num_qubits, cycle_time, MAX_GROUPS, settings);
+}
+
+
+void Codegen::programFinish(const Str &progName) {
+    emitProgramFinish();
+
+    dp.programFinish();
+
+    vcd.programFinish(options->output_prefix + ".vcd");
+}
+
+/************************************************************************\
+| 'Block' (fka 'Kernel', this name stays relevant as it is used by the
+| API) level functions
+\************************************************************************/
+
+void Codegen::block_start(const Str &block_name) {
+    comment(QL_SS2S("### Block: '" << block_name << "'"));
+    zero(lastEndCycle); // NB; new IR starts counting at zero
+}
+
+void Codegen::block_finish(const Str &block_name, UInt durationInCycles) {
+    comment(QL_SS2S("### Block end: '" << block_name << "'"));
+    vcd.kernelFinish(block_name, durationInCycles);
+}
+
+/************************************************************************\
+| 'Bundle' level functions. Although the new IR no longer organizes
+| instructions in Bundles, we still need to process them as such, i.e.
+| evaluate all instructions issued in the same cycle together.
+\************************************************************************/
+
+/*
+    Our strategy is to first process all customGate's in a bundle, storing the
+    relevant information in bundleInfo. Then, when all work for a bundle has
+    been collected, we generate code in bundleFinish
+
+    - bundleStart():
+    clear bundleInfo, which maintains the work that needs to be performed for bundle
+
+    - custom_instruction():
+    collect instruction (FKA as gate) information in bundleInfo
+
+    - bundleFinish():
+    generate code for bundle from information collected in bundleInfo (which
+    may be empty if no custom gates are present in bundle)
+*/
+
+// bundleStart: see 'strategy' above
+void Codegen::bundleStart(const Str &cmnt) {
+    // create ragged 'matrix' of BundleInfo with proper vector size per instrument
+    bundleInfo.clear();
+    BundleInfo empty;
+    for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
+        const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
+        bundleInfo.emplace_back(
+            ic.controlModeGroupCnt,     // one BundleInfo per group in the control mode selected for instrument
+            empty                       // empty BundleInfo
+        );
+    }
+
+    // generate source code comments
+    comment(cmnt);
+    dp.comment(cmnt, options->verbose);      // FIXME: comment is not fully appropriate, but at least allows matching with .CODE section
 }
 
 
@@ -535,106 +637,6 @@ void Codegen::bundleFinish(
 | Quantum instructions
 \************************************************************************/
 
-typedef struct {
-    utils::Vec<utils::UInt> cond_operands;
-    ConditionType cond_type;
-} tInstructionCondition;
-
-/**
- * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
- * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
- */
-tInstructionCondition decode_condition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
-    utils::Vec<utils::UInt> cond_operands;
-    ConditionType cond_type;
-    try {
-        if (auto blit = condition->as_bit_literal()) {
-            if (blit->value) {
-                cond_type = ConditionType::ALWAYS;
-            } else {
-                cond_type = ConditionType::NEVER;
-            }
-        } else if (condition->as_reference()) {
-            cond_operands.push_back(operandContext.convert_breg_reference(condition));
-            cond_type = ConditionType::UNARY;
-        } else if (auto fn = condition->as_function_call()) {
-            if (
-                fn->function_type->name == "operator!" ||
-                fn->function_type->name == "operator~"
-            ) {
-                CHECK_COMPAT(fn->operands.size() == 1, "unsupported condition function");
-                if (fn->operands[0]->as_reference()) {
-                    cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
-                    cond_type = ConditionType::NOT;
-                } else if (auto fn2 = fn->operands[0]->as_function_call()) {
-                    CHECK_COMPAT(fn2->operands.size() == 2, "unsupported condition function");
-                    cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[0]));
-                    cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[1]));
-                    if (
-                        fn2->function_type->name == "operator&" ||
-                        fn2->function_type->name == "operator&&"
-                    ) {
-                        cond_type = ConditionType::NAND;
-                    } else if (
-                        fn2->function_type->name == "operator|" ||
-                        fn2->function_type->name == "operator||"
-                    ) {
-                        cond_type = ConditionType::NOR;
-                    } else if (
-                        fn2->function_type->name == "operator^" ||
-                        fn2->function_type->name == "operator^^" ||
-                        fn2->function_type->name == "operator!="
-                    ) {
-                        cond_type = ConditionType::NXOR;
-                    } else if (
-                        fn2->function_type->name == "operator=="
-                    ) {
-                        cond_type = ConditionType::XOR;
-                    } else {
-                        QL_ICE("unsupported gate condition");
-                    }
-                } else {
-                    QL_ICE("unsupported gate condition");
-                }
-            } else {
-                CHECK_COMPAT(fn->operands.size() == 2, "unsupported condition function");
-                cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
-                cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[1]));
-                if (
-                    fn->function_type->name == "operator&" ||
-                    fn->function_type->name == "operator&&"
-                ) {
-                    cond_type = ConditionType::AND;
-                } else if (
-                    fn->function_type->name == "operator|" ||
-                    fn->function_type->name == "operator||"
-                ) {
-                    cond_type = ConditionType::OR;
-                } else if (
-                    fn->function_type->name == "operator^" ||
-                    fn->function_type->name == "operator^^" ||
-                    fn->function_type->name == "operator!="
-                ) {
-                    cond_type = ConditionType::XOR;
-                } else if (
-                    fn->function_type->name == "operator=="
-                ) {
-                    cond_type = ConditionType::NXOR;
-                } else {
-                    QL_ICE("unsupported condition function");
-                }
-            }
-        } else {
-            QL_ICE("unsupported condition expression");
-        }
-    } catch (utils::Exception &e) {
-        e.add_context("in gate condition", true);
-        throw;
-    }
-    return {cond_operands, cond_type};
-}
-
-
 // custom_instruction: single/two/N qubit gate, including readout, see 'strategy' above
 // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
 // Does not deal with the control mode and digital interface of the instrument.
@@ -848,23 +850,27 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 }
 
 /************************************************************************\
-| Classical operations on kernels
+| Structured control flow
 \************************************************************************/
 
-void Codegen::if_else(const ir::ExpressionRef &condition, const Str &label, Int branch) {
+void Codegen::if_elif(const ir::ExpressionRef &condition, const Str &label, Int branch) {
     // finish previous branch
     if (branch>0) {
         emit("", "jmp", as_target(to_end(label)));
     }
 
     comment(
-        "# IF_ELSE: "
+        "# IF_ELIF: "
         "condition = '" + ir::describe(condition) + "'"
         ", label = '" + label + "'"
     );
-    Str my_label = to_ifbranch(label, branch);
+
+    if(branch > 0) {    // label not used if branch==0
+        Str my_label = to_ifbranch(label, branch);
+        emit(as_label(my_label), "", "");
+    }
+
     Str jmp_label = to_ifbranch(label, branch+1);
-    emit(as_label(my_label), "", "");     // not used if branch==0
     handle_expression(condition, jmp_label, "if.condition");
 }
 
@@ -972,6 +978,7 @@ void Codegen::for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::
     handle_expression(condition, to_end(label), "for.condition");
 }
 
+
 void Codegen::for_end(utils::Maybe<ir::SetInstruction> &update, const Str &label) {
     comment(
         "# FOR_END: "
@@ -985,9 +992,11 @@ void Codegen::for_end(utils::Maybe<ir::SetInstruction> &update, const Str &label
     emit(as_label(to_end(label)), "", "");    // label for loop end or 'break'
 }
 
+
 void Codegen::do_break(const Str &label) {
     emit("", "jmp", as_target(to_end(label)), "# break");
 }
+
 
 void Codegen::do_continue(const Str &label) {
     emit("", "jmp", as_target(to_start(label)), "# continue");
@@ -1061,6 +1070,7 @@ void Codegen::showCodeSoFar() {
     // provide context to help finding reason. FIXME: limit # lines
     QL_EOUT("Code so far:\n" << codeSection.str());
 }
+
 
 void Codegen::emitProgramStart(const Str &progName) {
     // emit program header
@@ -1197,7 +1207,8 @@ void Codegen::emitOutput(
     lastEndCycle[instrIdx] = startCycle + instrMaxDurationInCycles;
 }
 
-#if 0
+
+#if 0   // FIXME
 void Codegen::emitPragma(
     const Json &pragma,
     Int pragmaSmBit,
@@ -1244,7 +1255,7 @@ void Codegen::emitPragma(
 
 void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName) {
     // compute prePadding: time to bridge to align timing
-    int prePadding = startCycle - lastEndCycle[instrIdx];
+    Int prePadding = startCycle - lastEndCycle[instrIdx];
     if (prePadding < 0) {
         QL_EOUT("Inconsistency detected in bundle contents: printing code generated so far");
         showCodeSoFar();
@@ -1445,12 +1456,15 @@ void Codegen::do_handle_expression(
     // function global helpers
     auto breg2reg = [this](const ir::ExpressionRef &ref) {    // FIXME: makes no sense, and needs to go through DSM bit allocator
         auto reg = operandContext.convert_breg_reference(ref);
-//        if(reg >= NUM_CREGS) {
-//            QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
-//        }
+        if(reg >= NUM_BREGS) {
+            QL_INPUT_ERROR("bit register index " << reg << " exceeds maximum");
+        }
         return reg;
     };
-    auto dest_reg = [this, lhs]() { return creg2reg(*lhs->as_reference()); };
+
+    auto dest_reg = [this, lhs]() {
+        return creg2reg(*lhs->as_reference());
+    };
 
     // Convert integer/creg function_call.operands expression to Q1 instruction argument.
     auto op_str_int = [this](const ir::ExpressionRef &op) {
@@ -1475,22 +1489,19 @@ void Codegen::do_handle_expression(
         }
     };
 
+    // emit code for casting a bit value (i.e. DSM bit) to an integer (i.e. Q1 register)
     auto emit_bin_cast = [this, op_str_bit](Any<ir::Expression> operands) {
-//    auto emit_bin_cast = [this, op_str_bit](Vec<Int> operands) {
         // FIXME: based on emitPragma, cleanup
         // FIXME: CHECK_COMPAT
-        auto num_ops = operands.size();
-        UInt smBit = op_str_bit(operands[0]);   // FIXME: lookup allocation
-        auto arg0 = op_str_bit(operands[0]);
-        auto arg1 = op_str_bit(operands[1]);
+        UInt mask = 0;
+        for (Int i=0; i<operands.size(); i++) {
+            UInt arg = op_str_bit(operands[i]);
+            auto smBit = arg;   // FIXME: lookup allocation
+            UInt smAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
+            mask |= 1ul << (smBit % 32);
+        }
 
-//                Int pragmaBreakVal = json_get<Int>(pragma, "break", "pragma of unknown instruction");        // FIXME: we don't know which instruction we're dealing with, so better move
-        UInt smAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
-        UInt mask = 1ul << (smBit % 32);
-//                std::string label = pragmaLoopLabel.back() + "_end";        // FIXME: must match label set in forEnd(), assumes we are actually inside a for loop
-
-        // emit code for pragma "break". NB: code is identical for all instruments
-        // FIXME: verify that instruction duration matches actual time
+        // FIXME: verify that instruction duration matches actual time. We don't have a matching instruction for the break, but do take up quantum time
         /*
             seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
             seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch
@@ -1516,6 +1527,7 @@ void Codegen::do_handle_expression(
     };
     // ----------- end of global helpers -------------
 
+
     try {
         // FIXME: emit lhs+expression as comment (only here)
 
@@ -1527,7 +1539,9 @@ void Codegen::do_handle_expression(
                 QL_SS2S(ilit->value << ",R" << dest_reg())
                 , "# " + ir::describe(expression)
             );
-        // FIXME expression->as_bit_literal()
+#if 0 // FIXME
+        } else if (expression->as_bit_literal()) {
+#endif
         } else if (expression->as_reference()) {
             if(operandContext.is_creg_reference(expression)) {
                 auto reg = creg2reg(*expression->as_reference());
@@ -1539,9 +1553,11 @@ void Codegen::do_handle_expression(
                 );
             } else {
                 auto breg = operandContext.convert_breg_reference(expression);
-                comment(QL_SS2S("# FIXME: cast " << ir::describe(expression)));
-//                emit_bin_cast(expression);
-                // FIXME: move to lhs
+                comment(QL_SS2S("# FIXME: cast '" << ir::describe(expression) << "', breg=" << breg));
+                utils::Any<ir::Expression> expressions;
+                expressions.add(expression);
+                emit_bin_cast(expressions);
+                // FIXME: perform operation
             }
         } else if (auto fn = expression->as_function_call()) {
             // function call helpers
@@ -1618,7 +1634,7 @@ void Codegen::do_handle_expression(
                 operation = "not";
                 //CHECK_COMPAT
                 emit_bin_cast(fn->operands);
-                // FIXME: do something
+                // FIXME: perform operation
             }
 
             // int arithmetic, 2 operands
