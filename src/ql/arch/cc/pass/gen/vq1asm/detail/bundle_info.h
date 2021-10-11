@@ -19,7 +19,7 @@ namespace detail {
 
 /*
  * additional definitions for describing conditional gates
- * FIXME: copied from gate.h, reused for now, will change if we want to support more complex expressions for conditional gates
+ * NB: copied from gate.h, reused for now, will change if we want to support more complex expressions for conditional gates
  */
 enum class ConditionType {
     // 0 operands:

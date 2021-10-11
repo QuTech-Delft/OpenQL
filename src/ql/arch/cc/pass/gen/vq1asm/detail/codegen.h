@@ -53,6 +53,7 @@ public: //  functions
     // Quantum instructions
     void custom_instruction(const ir::CustomInstruction &custom);
 
+    // Structured control flow
     void if_else(const ir::ExpressionRef &condition, const Str &label, Int branch);
     void if_otherwise(const Str &label, Int branch);
     void if_end(const Str &label);
@@ -149,8 +150,6 @@ private:    // funcs
 
     // expression helpers
     void do_handle_expression(const ir::ExpressionRef &expression, const ir::ExpressionRef &lhs, const Str &label_if_false="", const Str &descr="");
-
-
 }; // class
 
 } // namespace detail

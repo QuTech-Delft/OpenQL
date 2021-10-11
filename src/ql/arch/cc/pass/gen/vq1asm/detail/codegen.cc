@@ -27,11 +27,11 @@ namespace detail {
 using namespace utils;
 
 // helpers for label generation.
-Str to_start(const Str &base) { return base + "_start"; };
-Str to_end(const Str &base) { return base + "_end"; };
-Str to_ifbranch(const Str &base, Int branch) { return QL_SS2S(base << "_" << branch); }
-Str as_label(const Str &label) { return label + ":"; }
-Str as_target(const Str &label) { return "@" + label; }
+static Str to_start(const Str &base) { return base + "_start"; };
+static Str to_end(const Str &base) { return base + "_end"; };
+static Str to_ifbranch(const Str &base, Int branch) { return QL_SS2S(base << "_" << branch); }
+static Str as_label(const Str &label) { return label + ":"; }
+static Str as_target(const Str &label) { return "@" + label; }
 
 
 Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
@@ -50,21 +50,7 @@ void Codegen::init() {
     // NB: a new Backend is instantiated per call to compile, and
     // as a result also a Codegen, so we don't need to cleanup
 
-#if 1
-#if 1
     settings.loadBackendSettings(ir->platform);
-#else
-    // based on NewToOldConverter::NewToOldConverter
-    // FIXME: bit expensive to go back to old
-    settings.loadBackendSettings(
-        ir::compat::Platform::build(
-            ir->platform->name,
-            ir->platform->data.data)
-    );
-#endif
-#else
-    settings = platform->get_annotation<pass::gen::vq1asm::detail::Settings>();  // NB: set in Info::post_process_platform() FIXME: will that retain the platform member var
-#endif
 
     // optionally preload codewordTable
     Str map_input_file = options->map_input_file;
@@ -120,8 +106,12 @@ void Codegen::programStart(const Str &progName) {
         QL_USER_ERROR("main qubit register has wrong dimensionality");
     };
 
-    // Get cycle time from old Platform (NB: in new Platform, all durations are in cycles, not ns).
-    utils::UInt cycle_time = ir->platform->data.data["hardware_settings"]["cycle_time"];     // FIXME: check JSON access
+    // Get cycle time from old Platform (NB: in new Platform, all durations are in quantum cycles, not ns).
+    auto &json = ir->platform->data.data;
+    QL_JSON_ASSERT(json, "hardware_settings", "hardware_settings");
+    auto hardware_settings = json["hardware_settings"];
+    QL_JSON_ASSERT(hardware_settings, "cycle_time", "hardware_settings/cycle_time");
+    UInt cycle_time = hardware_settings["cycle_time"];
 
     vcd.programStart(num_qubits, cycle_time, MAX_GROUPS, settings);
 }
@@ -718,16 +708,8 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         // This provides little insight, and why do we get upto here anyway? See above: template_operands
 
 
-
-        // FIXME: adapt parameters because we inlined customGate below. Cleanup!
+        // some shorthand for parameter fields
         const Str iname = custom.instruction_type->name;
-//        const Vec<UInt> operands = ops.qubits;
-//        const Vec<UInt> creg_operands = ops.cregs;
-//        const Vec<UInt> breg_operands = ops.bregs;
-        ConditionType condition = instrCond.cond_type;
-        const Vec<UInt> cond_operands = instrCond.cond_operands;
-//        Real angle = ops.angle;
-        UInt startCycle = custom.cycle;
         UInt durationInCycles = custom.instruction_type->duration;
 
 #if 0   // FIXME: test for angle parameter
@@ -736,7 +718,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         }
 #endif
 
-        vcd.customGate(iname, ops.qubits, startCycle, durationInCycles);
+        vcd.customGate(iname, ops.qubits, custom.cycle, durationInCycles);
 
         // generate comment
         Bool isReadout = settings.isReadout(*custom.instruction_type);        //  determine whether this is a readout instruction
@@ -785,7 +767,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             // store operands used for readout, actual work is postponed to bundleFinish()
             if (isReadout) {
                 /*
-                 * kernel->gate allows 3 types of measurement:
+                 * in the old IR, kernel->gate allows 3 types of measurement:
                  *         - no explicit result. Historically this implies either:
                  *             - no result, measurement results are often read offline from the readout device (mostly the raw values
                  *             instead of the binary result), without the control device ever taking notice of the value
@@ -794,7 +776,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                  *             note that Creg's are managed through a class, whereas bregs are just numbers
                  *         - breg result (new)
                  */
-                // FIXME: comment reflects old IR
+                // FIXME: comment reflects old IR, also discuss new IR
 
                 // operand checks
                 if (ops.qubits.size() != 1) {
@@ -823,8 +805,9 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             }
 
             // store 'expression' for conditional gates
-            bi.condition = condition;
-            bi.cond_operands = cond_operands;
+            // FIXME: change bi to use tInstructionCondition
+            bi.condition = instrCond.cond_type;
+            bi.cond_operands = instrCond.cond_operands;
 #endif
 
             QL_DOUT("customGate(): iname='" << iname <<
