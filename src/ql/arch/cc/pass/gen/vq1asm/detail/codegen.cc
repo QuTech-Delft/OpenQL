@@ -867,7 +867,7 @@ void Codegen::if_elif(const ir::ExpressionRef &condition, const Str &label, Int 
 
     if(branch > 0) {    // label not used if branch==0
         Str my_label = to_ifbranch(label, branch);
-        emit(as_label(my_label), "", "");
+        emit(as_label(my_label));
     }
 
     Str jmp_label = to_ifbranch(label, branch+1);
@@ -882,7 +882,7 @@ void Codegen::if_otherwise(const Str &label, Int branch) {
     );
 
     Str my_label = to_ifbranch(label, branch);
-    emit(as_label(my_label), "", "");
+    emit(as_label(my_label));
 }
 
 
@@ -892,7 +892,7 @@ void Codegen::if_end(const Str &label) {
         ", label = '" + label + "'"
     );
 
-     emit(as_label(to_end(label)), "", "");
+     emit(as_label(to_end(label)));
 }
 
 
@@ -907,7 +907,7 @@ void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm,
 
     auto reg = QL_SS2S("R" << creg2reg(lhs));
     emit("", "move", QL_SS2S(frm.value << "," << reg));
-    emit(as_label(to_start(label)), "", "");    // label for looping or 'continue'
+    emit(as_label(to_start(label)));    // label for looping or 'continue'
 }
 
 
@@ -937,7 +937,7 @@ void Codegen::foreach_end(const ir::Reference &lhs, const ir::IntLiteral &frm, c
         }
     }
 
-    emit(as_label(to_end(label)), "", "");    // label for loop end or 'break'
+    emit(as_label(to_end(label)));    // label for loop end or 'break'
 }
 
 
@@ -946,7 +946,7 @@ void Codegen::repeat(const Str &label) {
         "# REPEAT: "
         ", label = '" + label + "'"
     );
-    emit(as_label(to_start(label)), "", "");    // label for looping or 'continue'
+    emit(as_label(to_start(label)));    // label for looping or 'continue'
 }
 
 
@@ -958,7 +958,7 @@ void Codegen::until(const ir::ExpressionRef &condition, const Str &label) {
     );
     handle_expression(condition, to_end(label), "until.condition");
     emit("", "jmp", as_target(to_start(label)), "# loop");
-    emit(as_label(to_end(label)), "", "");    // label for loop end or 'break'
+    emit(as_label(to_end(label)));    // label for loop end or 'break'
 }
 
 
@@ -974,7 +974,7 @@ void Codegen::for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::
         handle_set_instruction(*initialize, "for.initialize");
     }
 
-    emit(as_label(to_start(label)), "", "");    // label for looping or 'continue'
+    emit(as_label(to_start(label)));    // label for looping or 'continue'
     handle_expression(condition, to_end(label), "for.condition");
 }
 
@@ -989,7 +989,7 @@ void Codegen::for_end(utils::Maybe<ir::SetInstruction> &update, const Str &label
         handle_set_instruction(*update, "for.update");
     }
     emit("", "jmp", as_target(to_start(label)), "# loop");
-    emit(as_label(to_end(label)), "", "");    // label for loop end or 'break'
+    emit(as_label(to_end(label)));    // label for loop end or 'break'
 }
 
 
@@ -1106,7 +1106,7 @@ void Codegen::emitProgramFinish() {
         emit("", "stop");
     } else {   // CC-light emulation: loop indefinitely
         // prevent real time pipeline emptying during jmp below (especially in conjunction with pragma/break
-        emit("", "seq_wait", "1", "");
+        emit("", "seq_wait", "1");
 
         // loop indefinitely
         emit("",      // no CCIO selector
@@ -1239,15 +1239,15 @@ void Codegen::emitPragma(
     jlt         Rb,1,@loop
 */
     emit(slot, "seq_cl_sm", QL_SS2S("S" << smAddr), QL_SS2S("# 'break if " << pragmaBreakVal << "' on '" << instrumentName << "'"));
-    emit(slot, "seq_wait", "3", "");
+    emit(slot, "seq_wait", "3");
     emit(slot, "move_sm", REG_TMP0, "");
-    emit(slot, "nop", "", "");
-    emit(slot, "and", QL_SS2S(REG_TMP0<< "," << mask << "," << REG_TMP1), "");    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-    emit(slot, "nop", "", "");
+    emit(slot, "nop");
+    emit(slot, "and", QL_SS2S(REG_TMP0<< "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+    emit(slot, "nop");
     if (pragmaBreakVal == 0) {
-        emit(slot, "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label), "");
+        emit(slot, "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label));
     } else {
-        emit(slot, "jge", QL_SS2S(REG_TMP1 << ",1,@" << label), "");
+        emit(slot, "jge", QL_SS2S(REG_TMP1 << ",1,@" << label));
     }
 }
 #endif
@@ -1500,6 +1500,7 @@ void Codegen::do_handle_expression(
             UInt smAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
             mask |= 1ul << (smBit % 32);
         }
+        UInt smAddr = 0;    // FIXME
 
         // FIXME: verify that instruction duration matches actual time. We don't have a matching instruction for the break, but do take up quantum time
         /*
@@ -1511,17 +1512,19 @@ void Codegen::do_handle_expression(
             nop                             ; register dependency R1
             jlt         Rb,1,@loop
         */
-        emit("", "seq_cl_sm", QL_SS2S("S" << smAddr), "");
-        emit("", "seq_wait", "3", "");
-        emit("", "move_sm", REG_TMP0, "");
-        emit("", "nop", "", "");
-        emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1), "");    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-        emit("", "nop", "", "");
+        emit("", "seq_cl_sm", QL_SS2S("S" << smAddr));
+        emit("", "seq_wait", "3");
+        emit("", "move_sm", REG_TMP0);
+        emit("", "nop");
+
+        // FIXME: move to caller:
+        emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+        emit("", "nop");
 #if 0
         if (pragmaBreakVal == 0) {
-            emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label), "");
+            emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label));
         } else {
-            emit("", "jge", QL_SS2S(REG_TMP1 << ",1,@" << label), "");
+            emit("", "jge", QL_SS2S(REG_TMP1 << ",1,@" << label));
         }
 #endif
     };
@@ -1557,7 +1560,7 @@ void Codegen::do_handle_expression(
                 utils::Any<ir::Expression> expressions;
                 expressions.add(expression);
                 emit_bin_cast(expressions);
-                // FIXME: perform operation
+                // FIXME: jmp label_if_false
             }
         } else if (auto fn = expression->as_function_call()) {
             // function call helpers
@@ -1634,7 +1637,7 @@ void Codegen::do_handle_expression(
                 operation = "not";
                 //CHECK_COMPAT
                 emit_bin_cast(fn->operands);
-                // FIXME: perform operation
+                // FIXME: jmp label_if_false
             }
 
             // int arithmetic, 2 operands
@@ -1673,7 +1676,7 @@ void Codegen::do_handle_expression(
                 }
                 if (!operation.empty()) {
                     emit_bin_cast(fn->operands);
-                    // FIXME: perform operation
+                // FIXME: jmp label_if_false
                 }
             }
 
@@ -1690,8 +1693,8 @@ void Codegen::do_handle_expression(
                         case RR:    emit_mnem2args("xor", 0, 1); break;
                         case LR:    emit_mnem2args("xor", 1, 0); break;   // reverse operands to match Q1 instruction set
                     }
-                    emit("", "nop", "", "");    // register dependency
-                    emit("", operation, Str(REG_TMP0)+",1,@"+label_if_false, "");
+                    emit("", "nop");    // register dependency
+                    emit("", operation, Str(REG_TMP0)+",1,@"+label_if_false);
                 }
             }
 
@@ -1736,7 +1739,7 @@ void Codegen::do_handle_expression(
                                     << "," << REG_TMP0
                                 )
                             );                      // increment arg1
-                            emit("", "nop", "");    // register dependency
+                                emit("", "nop");    // register dependency
                             emit(
                                 "",
                                 "jge",
