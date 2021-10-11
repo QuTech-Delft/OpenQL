@@ -78,17 +78,17 @@ Bool OperandContext::is_creg_reference(const ir::ExpressionRef &ref) const {
 /**
  * Converts a creg reference to a register index.
  */
-Int OperandContext::convert_creg_reference(const ir::ExpressionRef &ref) const {
-    auto lhs = ref->as_reference();
+Int OperandContext::convert_creg_reference(const ir::Reference &ref) const {
+//    auto lhs = ref->as_reference();
     CHECK_COMPAT(
-        lhs &&
-        lhs->target == creg_ob &&
-        lhs->data_type == creg_ob->data_type &&
-        lhs->indices.size() == 1 &&
-        lhs->indices[0]->as_int_literal(),
+//        lhs &&
+        ref.target == creg_ob &&
+        ref.data_type == creg_ob->data_type &&
+        ref.indices.size() == 1 &&
+        ref.indices[0]->as_int_literal(),
         "expected creg reference, but got something else"
     );
-    return lhs->indices[0]->as_int_literal()->value;    // NB: checking to be done by caller
+    return ref.indices[0]->as_int_literal()->value;    // NB: range checking to be done by caller
 }
 
 
@@ -102,7 +102,7 @@ Int OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
         ops.bregs.size() == 1,
         "expected bit reference (breg), but got something else"
     );
-    return ops.bregs[0];    // NB: checking to be done by caller
+    return ops.bregs[0];    // NB: range checking to be done by caller
 }
 
 

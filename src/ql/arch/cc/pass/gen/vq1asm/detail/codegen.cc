@@ -33,6 +33,16 @@ static Str to_ifbranch(const Str &base, Int branch) { return QL_SS2S(base << "_"
 static Str as_label(const Str &label) { return label + ":"; }
 static Str as_target(const Str &label) { return "@" + label; }
 
+// helpers
+static void check_int_literal(const ir::IntLiteral &ilit, Int bottomRoom=0, Int headRoom=0) {
+    if(ilit.value-bottomRoom < 0) {
+        QL_INPUT_ERROR("CC backend cannot handle negative integer literals: value=" << ilit.value << ", bottomRoom=" << bottomRoom);
+    }
+    if(ilit.value >= (1L<<32) - 1 - headRoom) {
+        QL_INPUT_ERROR("CC backend requires integer literals limited to 32 bits: value=" << ilit.value << ", headRoom=" << headRoom);
+    }
+}
+
 
 Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
     : ir(ir)
@@ -881,33 +891,65 @@ void Codegen::if_end(const Str &label) {
 
 
 void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label) {
+    check_int_literal(frm.value);
+
+    comment(
+        "# FOREACH_START: "
+        "from = " + ir::describe(frm)
+        + ", label = '" + label + "'"
+    );
+
+    auto reg = QL_SS2S("R" << creg2reg(lhs));
+    emit("", "move", QL_SS2S(frm.value << "," << reg));
     emit(as_label(to_start(label)), "", "");    // label for looping or 'continue'
-
-#if 0
-    handle_set_instruction(*initialize, "for.initialize");
-
-    static_loop->lhs->target;
-    static_loop->frm->value;
-#endif
 }
 
 
-void Codegen::foreach_end(const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label) {
-#if 0
-    static_loop->frm->value;
-    static_loop->to->value;
-#endif
-    emit("", "jmp", as_target(to_start(label)), "# loop");
+void Codegen::foreach_end(const ir::Reference &lhs, const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label) {
+    check_int_literal(to.value);
+
+    comment(
+        "# FOREACH_END: "
+        "from = " + ir::describe(frm)
+        + ", to = " + ir::describe(to)
+        + ", label = '" + label + "'"
+    );
+
+    auto reg = QL_SS2S("R" << creg2reg(lhs));
+
+    if(to.value >= frm.value) {     // count up
+        emit("", "add", QL_SS2S(reg << ",1," << reg));
+        emit("", "nop");
+        emit("", "jlt", QL_SS2S(reg << "," << to.value+1 << "," << as_target(to_start(label))), "# loop");
+    } else {
+        if(to.value == 0) {
+            emit("", "loop", QL_SS2S(reg << "," << as_target(to_start(label))), "# loop");
+        } else {
+            emit("", "sub", QL_SS2S(reg << ",1," << reg));
+            emit("", "nop");
+            emit("", "jge", QL_SS2S(reg << "," << to.value << "," << as_target(to_start(label))), "# loop");
+        }
+    }
+
     emit(as_label(to_end(label)), "", "");    // label for loop end or 'break'
 }
 
 
 void Codegen::repeat(const Str &label) {
+    comment(
+        "# REPEAT: "
+        ", label = '" + label + "'"
+    );
     emit(as_label(to_start(label)), "", "");    // label for looping or 'continue'
 }
 
 
 void Codegen::until(const ir::ExpressionRef &condition, const Str &label) {
+    comment(
+        "# UNTIL: "
+        "condition = '" + ir::describe(condition) + "'"
+        ", label = '" + label + "'"
+    );
     handle_expression(condition, to_end(label), "until.condition");
     emit("", "jmp", as_target(to_start(label)), "# loop");
     emit(as_label(to_end(label)), "", "");    // label for loop end or 'break'
@@ -970,7 +1012,7 @@ void Codegen::handle_set_instruction(const ir::SetInstruction &set, const Str &d
 void Codegen::handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr)
 {
     QL_DOUT(descr << ": '" << ir::describe(expression) << "'");
-    do_handle_expression(expression, One<ql::ir::Expression>(), label_if_false, descr);
+    do_handle_expression(expression, One<ir::Expression>(), label_if_false, descr);
 }
 
 
@@ -987,15 +1029,16 @@ void Codegen::handle_expression(const ir::ExpressionRef &expression, const Str &
 // FIXME: assure space between fields!
 // FIXME: make comment output depend on verboseCode
 
+// FIXME: merge with next function
 void Codegen::emit(const Str &labelOrComment, const Str &instr) {
-    if (labelOrComment.empty()) {                       // no label
-        codeSection << "        " << instr << std::endl;
-    } else if (labelOrComment.length() < 8) {           // label fits before instr
-        codeSection << std::setw(8) << labelOrComment << instr << std::endl;
-    } else if (instr.empty()) {                         // no instr
+    if (labelOrComment.empty()) {                           // no label
+        codeSection << "                " << instr << std::endl;
+    } else if (labelOrComment.length() < 16) {              // label fits before instr
+        codeSection << std::setw(16) << labelOrComment << std::setw(16) << instr << std::endl;
+    } else if (instr.empty()) {                             // no instr
         codeSection << labelOrComment << std::endl;
     } else {
-        codeSection << labelOrComment << std::endl << "        " << instr << std::endl;
+        codeSection << labelOrComment << std::endl << "                " << instr << std::endl;
     }
 }
 
@@ -1361,6 +1404,14 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
 | expression helpers
 \************************************************************************/
 
+Int Codegen::creg2reg(const ir::Reference &ref) {
+    auto reg = operandContext.convert_creg_reference(ref);
+    if(reg >= NUM_CREGS) {
+        QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
+    }
+    return reg;
+};
+
 // FIXME: recursion?
 // FIXME: or pass SetInstruction or Expression depending on use
 // FIXME: adopt structure of cQASM's cqasm-v1-functions-gen.cpp register_into used for constant propagation
@@ -1392,13 +1443,6 @@ void Codegen::do_handle_expression(
     const Str &descr
 ) {
     // function global helpers
-    auto creg2reg = [this](const ir::ExpressionRef &ref) {
-        auto reg = operandContext.convert_creg_reference(ref);
-        if(reg >= NUM_CREGS) {
-            QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
-        }
-        return reg;
-    };
     auto breg2reg = [this](const ir::ExpressionRef &ref) {    // FIXME: makes no sense, and needs to go through DSM bit allocator
         auto reg = operandContext.convert_breg_reference(ref);
 //        if(reg >= NUM_CREGS) {
@@ -1406,14 +1450,15 @@ void Codegen::do_handle_expression(
 //        }
         return reg;
     };
-    auto dest_reg = [creg2reg, lhs]() { return creg2reg(lhs); };
+    auto dest_reg = [this, lhs]() { return creg2reg(*lhs->as_reference()); };
 
     // Convert integer/creg function_call.operands expression to Q1 instruction argument.
-    auto op_str_int = [creg2reg](const ir::ExpressionRef &op) {
+    auto op_str_int = [this](const ir::ExpressionRef &op) {
         if(op->as_reference()) {
-            return QL_SS2S("R" << creg2reg(op));
-        } else if(op->as_int_literal()) {
-            return QL_SS2S(op->as_int_literal()->value);
+            return QL_SS2S("R" << creg2reg(*op->as_reference()));
+        } else if(auto ilit = op->as_int_literal()) {
+            check_int_literal(*ilit);
+            return QL_SS2S(ilit->value);
         } else {
             QL_ICE("Expected integer operand");
         }
@@ -1475,6 +1520,7 @@ void Codegen::do_handle_expression(
         // FIXME: emit lhs+expression as comment (only here)
 
         if (auto ilit = expression->as_int_literal()) {
+            check_int_literal(*ilit);
             emit(
                 "",
                 "move",
@@ -1484,7 +1530,7 @@ void Codegen::do_handle_expression(
         // FIXME expression->as_bit_literal()
         } else if (expression->as_reference()) {
             if(operandContext.is_creg_reference(expression)) {
-                auto reg = creg2reg(expression);
+                auto reg = creg2reg(*expression->as_reference());
                 emit(
                     "",
                     "move",
@@ -1653,6 +1699,7 @@ void Codegen::do_handle_expression(
                     operation = ">";
                     switch (get_profile(fn->operands)) {
                         case RL:
+                            check_int_literal(*fn->operands[1]->as_int_literal(), 0, 1);
                             emit(
                                 "",
                                 "jge",
@@ -1685,6 +1732,7 @@ void Codegen::do_handle_expression(
                             );
                             break;
                         case LR:
+                            check_int_literal(*fn->operands[0]->as_int_literal(), 1, 0);
                             emit(
                                 "",
                                 "jlt",                              // reverse instruction

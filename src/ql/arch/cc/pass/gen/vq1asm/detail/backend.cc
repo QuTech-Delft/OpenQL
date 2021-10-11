@@ -251,7 +251,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
                 }
 
                 // end:
-                codegen.foreach_end(*static_loop->frm, *static_loop->to, loop_label.back());
+                codegen.foreach_end(*static_loop->lhs, *static_loop->frm, *static_loop->to, loop_label.back());
                 loop_label.pop_back();
 
             } else if (auto repeat_until_loop = stmt->as_repeat_until_loop()) {

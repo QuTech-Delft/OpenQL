@@ -87,9 +87,25 @@ for (; true; )  {
     }
 }
 
-.foreachLoop
+.foreachLoopUp
 foreach (i = 0..10) {
 }
+
+
+.foreachLoopDown0 # counting down towards zero gets special treatment
+foreach (i = 10..0) {
+}
+
+
+.foreachLoopDown
+foreach (i = 10..5) {
+}
+
+
+# FIXME: we do not handle negative numbers
+#.foreachLoopDown2
+#foreach (i = 10..-5) {
+#}
 
 
 .whileLoop

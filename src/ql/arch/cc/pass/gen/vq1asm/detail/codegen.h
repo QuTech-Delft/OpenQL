@@ -58,7 +58,7 @@ public: //  functions
     void if_otherwise(const Str &label, Int branch);
     void if_end(const Str &label);
     void foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label);
-    void foreach_end(const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label);
+    void foreach_end(const ir::Reference &lhs, const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label);
     void repeat(const Str &label);
     void until(const ir::ExpressionRef &condition, const Str &label);
     void for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::ExpressionRef &condition, const Str &label);
@@ -149,6 +149,7 @@ private:    // funcs
 #endif
 
     // expression helpers
+    Int creg2reg(const ir::Reference &ref);
     void do_handle_expression(const ir::ExpressionRef &expression, const ir::ExpressionRef &lhs, const Str &label_if_false="", const Str &descr="");
 }; // class
 
