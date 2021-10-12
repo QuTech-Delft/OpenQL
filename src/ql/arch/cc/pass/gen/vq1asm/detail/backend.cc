@@ -40,7 +40,7 @@ Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, opt
     // NB: based on NewToOldConverter::NewToOldConverter
     for (const auto &block : ir->program->blocks) {
         try {
-            codegen_block(block, block->name);
+            codegen_block(block, block->name, 0);
         } catch (utils::Exception &e) {
             e.add_context("in block '" + block->name + "'");
             throw;
@@ -74,7 +74,7 @@ Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, opt
 // FIXME: runOnce automatically on cQASM input
 // FIXME: provide (more) context in all QL_ICE and e.add_context
 // FIXME: process block->next? And entrypoint?
-void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
+void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int depth)
 {
     // Return the name for a child of this block. We use "__" to prevent clashes with names assigned by user (assuming
     // they won't use names with "__", similar to the C rule for identifiers), and give some sense of hierarchy
@@ -98,7 +98,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
     };
 
     QL_IOUT("Compiling block '" + label() + "'");
-    codegen.block_start(name);
+    codegen.block_start(name, depth);
 
     // Loop over the statements and handle them individually.
     for (const auto &stmt : block->statements) {
@@ -213,9 +213,9 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
 
                     // if-block
                     try {
-                        codegen_block(if_else->branches[branch]->body, block_child_name(QL_SS2S("if_else_"<<branch)));
+                        codegen_block(if_else->branches[branch]->body, block_child_name(QL_SS2S("if_elif_"<<branch)), depth+1);
                     } catch (utils::Exception &e) {
-                        e.add_context("in 'if_else' block", true);
+                        e.add_context("in 'if_elif' block", true);
                         throw;
                     }
                 }
@@ -226,7 +226,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
                 // otherwise-block
                 if (!if_else->otherwise.empty()) {
                     try {
-                        codegen_block(if_else->otherwise, block_child_name("otherwise"));
+                        codegen_block(if_else->otherwise, block_child_name("otherwise"), depth+1);
                     } catch (utils::Exception &e) {
                         e.add_context("in final 'else' block", true);
                         throw;
@@ -244,7 +244,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
                 codegen.foreach_start(*static_loop->lhs, *static_loop->frm, loop_label.back());
 
                 try {
-                    codegen_block(static_loop->body, block_child_name("static_for"));
+                    codegen_block(static_loop->body, block_child_name("static_for"), depth+1);
                 } catch (utils::Exception &e) {
                     e.add_context("in static loop body", true);
                     throw;
@@ -261,7 +261,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
                 codegen.repeat(loop_label.back());
 
                 try {
-                    codegen_block(repeat_until_loop->body, block_child_name("repeat_until"));
+                    codegen_block(repeat_until_loop->body, block_child_name("repeat_until"), depth+1);
                 } catch (utils::Exception &e) {
                     e.add_context("in repeat-until loop body", true);
                     throw;
@@ -272,15 +272,16 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
 
             } else if (auto for_loop = stmt->as_for_loop()) {
 
+                // NB: 'while' statements are also represented as a for_loop in the IR
                 // for loop: start
                 loop_label.push_back(label());          // remind label for break/continue, before recursing
                 codegen.for_start(for_loop->initialize, for_loop->condition, loop_label.back());
 
                 // handle body
                 try {
-                    codegen_block(for_loop->body, block_child_name("for"));
+                    codegen_block(for_loop->body, block_child_name("body"), depth+1);
                 } catch (utils::Exception &e) {
-                    e.add_context("in for loop body", true);
+                    e.add_context("in for/while loop body", true);
                     throw;
                 }
 
@@ -316,7 +317,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name)
         bundle_finish(true);
     }
 
-    codegen.block_finish(name, ir::get_duration_of_block(block));
+    codegen.block_finish(name, ir::get_duration_of_block(block), depth);
     QL_IOUT("Finished compiling block '" + label() + "'");
     block_number++;
 

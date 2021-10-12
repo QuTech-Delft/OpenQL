@@ -30,7 +30,7 @@ public:
     ~Backend() = default;
 
 private:
-    void codegen_block(const ir::BlockBaseRef &block, const Str &name);
+    void codegen_block(const ir::BlockBaseRef &block, const Str &name, Int depth);
 
 private: // vars
     Codegen codegen;

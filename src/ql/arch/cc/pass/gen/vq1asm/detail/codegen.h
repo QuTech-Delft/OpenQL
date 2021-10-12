@@ -47,8 +47,8 @@ public: //  functions
     // Compile support
     void programStart(const Str &progName);
     void programFinish(const Str &progName);
-    void block_start(const Str &block_name);
-    void block_finish(const Str &block_name, UInt durationInCycles);
+    void block_start(const Str &block_name, Int depth);
+    void block_finish(const Str &block_name, UInt durationInCycles, Int depth);
     void bundleStart(const Str &cmnt);
     void bundleFinish(UInt startCycle, UInt durationInCycles, Bool isLastBundle);
 
@@ -118,8 +118,9 @@ private:    // vars
     Json codewordTable;                                         // codewords versus signals per instrument group
     StrStrm codeSection;                                        // the code generated
 
-    // codegen state, kernel scope FIXME: create class
+    // codegen state, block(kernel) scope FIXME: create class
     UInt lastEndCycle[MAX_INSTRS];                              // vector[instrIdx], maintain where we got per slot
+    Int depth = 0;                                              // depth of current block, used for indentation of comments
 #if OPT_PRAGMA
     Vec<Str> pragmaLoopLabel;                                   // stack for loop labels (in conjunction with 'break' instruction)
 #endif

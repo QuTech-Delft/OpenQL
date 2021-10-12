@@ -365,12 +365,17 @@ void Codegen::programFinish(const Str &progName) {
 | API) level functions
 \************************************************************************/
 
-void Codegen::block_start(const Str &block_name) {
+void Codegen::block_start(const Str &block_name, Int depth) {
+    this->depth = depth;
+    if(depth == 0) {
+        comment("");    // white space before top level block
+    }
     comment(QL_SS2S("### Block: '" << block_name << "'"));
     zero(lastEndCycle); // NB; new IR starts counting at zero
 }
 
-void Codegen::block_finish(const Str &block_name, UInt durationInCycles) {
+void Codegen::block_finish(const Str &block_name, UInt durationInCycles, Int depth) {
+    this->depth = depth;
     comment(QL_SS2S("### Block end: '" << block_name << "'"));
     vcd.kernelFinish(block_name, durationInCycles);
 }
@@ -907,6 +912,7 @@ void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm,
 
     auto reg = QL_SS2S("R" << creg2reg(lhs));
     emit("", "move", QL_SS2S(frm.value << "," << reg));
+    // FIXME: if loop has no contents at all, register dependency is violated
     emit(as_label(to_start(label)));    // label for looping or 'continue'
 }
 
@@ -961,10 +967,10 @@ void Codegen::until(const ir::ExpressionRef &condition, const Str &label) {
     emit(as_label(to_end(label)));    // label for loop end or 'break'
 }
 
-
+// NB: also used for 'while' loops
 void Codegen::for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::ExpressionRef &condition, const Str &label) {
     comment(
-        "# FOR_START: "
+        "# LOOP_START: "
         + (!initialize.empty() ? "initialize = '"+ir::describe(initialize)+"', " : "")
         + "condition = '" + ir::describe(condition) + "'"
     );
@@ -976,16 +982,15 @@ void Codegen::for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::
     }
 
     emit(as_label(to_start(label)));    // label for looping or 'continue'
-    handle_expression(condition, to_end(label), "for.condition");
+    handle_expression(condition, to_end(label), "for/while.condition");
 }
 
 
 void Codegen::for_end(utils::Maybe<ir::SetInstruction> &update, const Str &label) {
     comment(
-        "# FOR_END: "
+        "# LOOP_END: "
         + (!update.empty() ? " update = '"+ir::describe(update)+"'" : "")
     );
-    // FIXME: use 'loop' instruction if possible
     if (!update.empty()) {
         handle_set_instruction(*update, "for.update");
     }
@@ -1005,7 +1010,9 @@ void Codegen::do_continue(const Str &label) {
 
 
 void Codegen::comment(const Str &c) {
-    if (options->verbose) emit(c);
+    if (options->verbose) {
+        emit(Str(2*depth, ' ') + c);  // indent by depth
+    }
 }
 
 /************************************************************************\
@@ -1536,7 +1543,9 @@ void Codegen::do_handle_expression(
         if(!lhs.empty()) {
             comment(QL_SS2S("# Expression '" << descr << "': " << ir::describe(lhs) << " = " << ir::describe(expression)));
         } else {
+#if 0   // FIXME: redundant information, also provided by structured control flow comments
             comment(QL_SS2S("# Expression '" << descr << "': " << ir::describe(expression)));
+#endif
         }
 
         if (auto ilit = expression->as_int_literal()) {
