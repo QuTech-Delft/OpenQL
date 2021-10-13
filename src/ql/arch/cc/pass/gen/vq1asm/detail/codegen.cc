@@ -481,21 +481,6 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
             } // if(signal defined)
 
 
-#if OPT_PRAGMA
-            // handle pragma
-            if (bi.pragma) {
-                // FIXME: enforce single pragma per bundle (currently by design)
-                // FIXME: enforce no other work
-                codeGenInfo.pragma = bi.pragma;
-
-                // FIXME: use breg_operands if present? How about qubit (operand) then?
-                UInt breg_operand = bi.operands[0];                    // implicit classic bit for qubit. FIXME: perform checks
-                // get SM bit for classic operand (allocated during readout)
-                codeGenInfo.pragmaSmBit = dp.getSmBit(breg_operand, instrIdx);
-            }
-#endif
-
-
 #if OPT_FEEDBACK
             // handle readout (i.e. when necessary, create feedbackMap entry
             // NB: we allow for instruments that perform the input side of readout only, without signal generation by the
@@ -590,19 +575,6 @@ void Codegen::bundleFinish(
         } else {    // !instrHasOutput
             // nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
         }
-
-#if OPT_PRAGMA
-        if (codeGenInfo.pragma) {    // NB: note that this will only work because we set the pragma for all instruments, and thus already encounter this for the first instrument FIXME: update comment
-            emitPragma(
-                *codeGenInfo.pragma,
-                codeGenInfo.pragmaSmBit,
-                instrIdx,
-                startCycle,
-                codeGenInfo.slot,
-                codeGenInfo.instrumentName
-            );
-        }
-#endif
 
 #if OPT_FEEDBACK
         if (bundleHasFeedback) {
@@ -847,24 +819,6 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
             // NB: code is generated in bundleFinish()
         }   // for(signal)
-
-#if OPT_PRAGMA
-        RawPtr<const Json> pragma = settings.getPragma(iname);
-        if (pragma) {
-            for (Vec<BundleInfo> &vbi : bundleInfo) {
-                // FIXME: for now we just store the JSON of the pragma statement in bundleInfo[*][0]
-                if(vbi[0].pragma) {
-                    QL_INPUT_ERROR("Bundle contains more than one gate with 'pragma' key");    // FIXME: provide context
-                }
-                vbi[0].pragma = pragma;
-
-                // store operands
-                vbi[0].operands = ops.qubits;
-                //vbi[0].creg_operands = ops.cregs;    // NB: will be empty because of checks performed earlier
-                vbi[0].breg_operands = ops.bregs;
-            }
-        }
-#endif
 }
 
 /************************************************************************\

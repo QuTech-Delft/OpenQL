@@ -46,17 +46,13 @@ public: // vars
     // readout feedback
     Bool isMeasFeedback = false;
     // FIXME: use new class Operands
-    Vec<UInt> operands;                         // NB: also used by OPT_PRAGMA
+    Vec<UInt> operands;
     Vec<UInt> creg_operands;
     Vec<UInt> breg_operands;
 
     // conditional gates
     ConditionType condition = ConditionType::ALWAYS;        // FIXME
     Vec<UInt> cond_operands;
-#endif
-#if OPT_PRAGMA
-    // pragma 'gates'
-    RawPtr<const Json> pragma;
 #endif
 }; // information for an instrument group (of channels), for a single instruction
 // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?

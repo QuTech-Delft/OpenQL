@@ -68,10 +68,6 @@ public: // functions
     Str getReadoutMode(const ir::InstructionType &instrType);
     Bool isReadout(const ir::InstructionType &instrType);
     Bool isFlux(const ir::InstructionType &instrType);
-#if OPT_PRAGMA
-    Bool isPragma(const Str &iname);
-    RawPtr<const Json> getPragma(const Str &iname);
-#endif
 
     static SignalDef findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;

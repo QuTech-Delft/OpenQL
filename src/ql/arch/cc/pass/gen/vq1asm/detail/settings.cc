@@ -81,23 +81,6 @@ Bool Settings::isFlux(const ir::InstructionType &instrType) {
 }
 
 
-#if OPT_PRAGMA
-Bool Settings::isPragma(const Str &iname) {
-    return getPragma(iname).has_value();
-}
-
-RawPtr<const Json> Settings::getPragma(const Str &iname) {
-    const Json &instruction = platform->find_instruction(iname);
-    Str instructionPath = "instructions/" + iname;
-    QL_JSON_ASSERT(instruction, "cc", instructionPath);
-    if (QL_JSON_EXISTS(instruction["cc"], "pragma")) {
-        return &instruction["cc"]["pragma"];
-    } else {
-        return nullptr;
-    }
-}
-#endif
-
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
 Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
     SignalDef ret;

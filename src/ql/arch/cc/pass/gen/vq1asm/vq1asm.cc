@@ -37,7 +37,6 @@ void GenerateVQ1AsmPass::dump_docs(
      - `OPT_STATIC_CODEWORDS_ARRAYS` = )"  + utils::to_string(OPT_STATIC_CODEWORDS_ARRAYS)  + R"(
      - `OPT_VECTOR_MODE` = )"              + utils::to_string(OPT_VECTOR_MODE)              + R"(
      - `OPT_FEEDBACK` = )"                 + utils::to_string(OPT_FEEDBACK)                 + R"(
-     - `OPT_PRAGMA` = )"                   + utils::to_string(OPT_PRAGMA)                   + R"(
     )");
 }
 

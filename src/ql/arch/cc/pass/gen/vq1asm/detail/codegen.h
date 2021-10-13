@@ -82,10 +82,6 @@ private:    // types
         FeedbackMap feedbackMap;
         CondGateMap condGateMap;
 #endif
-#if OPT_PRAGMA
-        RawPtr<const Json> pragma;
-        Int pragmaSmBit;
-#endif
         // info copied from tInstrumentInfo
         Str instrumentName;
         Int slot;
@@ -120,9 +116,6 @@ private:    // vars
     // codegen state, block(kernel) scope FIXME: create class
     UInt lastEndCycle[MAX_INSTRS];                              // vector[instrIdx], maintain where we got per slot
     Int depth = 0;                                              // depth of current block, used for indentation of comments
-#if OPT_PRAGMA
-    Vec<Str> pragmaLoopLabel;                                   // stack for loop labels (in conjunction with 'break' instruction)
-#endif
 
     // codegen state, bundle scope
     Vec<Vec<BundleInfo>> bundleInfo;                            // matrix[instrIdx][group]
@@ -140,9 +133,6 @@ private:    // funcs
     void emitProgramFinish();
     void emitFeedback(const FeedbackMap &feedbackMap, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
     void emitOutput(const CondGateMap &condGateMap, tDigital digOut, UInt instrMaxDurationInCycles, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
-#if OPT_PRAGMA
-    void emitPragma(const Json &pragma, Int pragmaSmBit, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
-#endif
     void emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
 
     // generic helpers
