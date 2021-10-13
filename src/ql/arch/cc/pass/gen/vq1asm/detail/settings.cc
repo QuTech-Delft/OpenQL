@@ -27,6 +27,8 @@ void Settings::loadBackendSettings(const ir::compat::PlatformRef &platform) {
 }
 
 // determine whether this is a 'readout instruction'
+// FIXME: make clear that that isn't "measure", but, in our files, "_dist_dsm", which does the actual reading of the measurement result.
+// FIXME: this checks existence of key, elsewhere we check contents for "feedback"
 Bool Settings::isReadout(const Json &instruction, const Str &iname) {
     Str instructionPath = "instructions/" + iname;
     QL_JSON_ASSERT(instruction, "cc", instructionPath);

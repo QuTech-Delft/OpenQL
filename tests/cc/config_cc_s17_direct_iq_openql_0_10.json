@@ -603,6 +603,7 @@
 
         "measure": {
             "duration": 800,
+            "prototype": ["M:qubit"],
             "cc": {
                 "signal": [
                     {   "type": "measure",

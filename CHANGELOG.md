@@ -5,15 +5,20 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [ next ] - [ TBD ]
 ### Added
-- ...
+- CC backend:
+  - support for cQASM 1.2 features through new IR 
+  - limitations
+    - integer values must be non-negative
+    - 
 
 ### Changed
 - CC backend:
   - now uses new IR
-- ...
+  - 
 
 ### Removed
-- ...
+- CC backend:
+  - deprecated JSON key "pragma/break" for instruction definitions
 
 ### Fixed
 - ...

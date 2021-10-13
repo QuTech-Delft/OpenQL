@@ -74,7 +74,7 @@ UInt Datapath::allocateSmBit(UInt breg_operand, UInt instrIdx) {
 }
 
 // NB: bit_operand can be breg_operand or cond_operand, depending on context of caller
-UInt Datapath::getSmBit(UInt bit_operand, UInt instrIdx) {
+UInt Datapath::getSmBit(UInt bit_operand) {
     UInt smBit;
 
     auto it = mapBregToSmBit.find(bit_operand);
@@ -209,7 +209,7 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
         // shorthand
         auto winBit = [this, cgi, instrIdx, &minMaxValid, &minSmBit, &maxSmBit](int i)
         {
-            UInt smBit = getSmBit(cgi.cond_operands[i], instrIdx);
+            UInt smBit = getSmBit(cgi.cond_operands[i]);
             minMaxValid = true;
             minSmBit = min(minSmBit, smBit);
             maxSmBit = max(maxSmBit, smBit);

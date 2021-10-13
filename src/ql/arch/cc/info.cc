@@ -340,7 +340,6 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
         ```javascript
         "ry180": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [2]
@@ -348,7 +347,6 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
         },
         "cz_park": {
             "duration": 40,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "signal": [
                     {   "type": "flux",
@@ -369,14 +367,12 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
         }
         "_wait_uhfqa": {
             "duration": 220,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "signal": []
             }
         },)" R"(
         "_dist_dsm": {
             "duration": 20,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "readout_mode": "feedback",
                 "signal": [
@@ -389,14 +385,12 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
         },
         "_wait_dsm": {
             "duration": 80,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "signal": []
             }
         },
         "if_1_break": {
             "duration": 60,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "signal": [],
                 "pragma": {

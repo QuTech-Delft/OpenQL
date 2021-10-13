@@ -737,6 +737,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
         // generate comment
         Bool isReadout = settings.isReadout(*custom.instruction_type);        //  determine whether this is a readout instruction
+        // FIXME: does this make a lot of sense, only triggers for "_dist_dsm"
         if (isReadout) {
             comment(Str(" # READOUT: '") + ir::describe(custom) + "'");
         } else { // handle all other instruction types than "readout"
@@ -781,8 +782,9 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             // FIXME: assumes that group configuration for readout input matches that of output
             // store operands used for readout, actual work is postponed to bundleFinish()
             if (isReadout) {
+                // FIXME: isReadout in itself does nothing, and doesn't occur in conf files: cleanup
                 /*
-                 * in the old IR, kernel->gate allows 3 types of measurement:
+                 * In the old IR, kernel->gate allows 3 types of measurement:
                  *         - no explicit result. Historically this implies either:
                  *             - no result, measurement results are often read offline from the readout device (mostly the raw values
                  *             instead of the binary result), without the control device ever taking notice of the value
@@ -790,16 +792,27 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                  *         - creg result (old, no longer valid)
                  *             note that Creg's are managed through a class, whereas bregs are just numbers
                  *         - breg result (new)
+                 *
+                 *  In the new IR (or, better said, in the new way "prototype"s for instruction operands van be defined
+                 *  using access modes as described in
+                 *  https://openql.readthedocs.io/en/latest/gen/reference_configuration.html#instructions-section
+                 *  it is not well possible to specify a measurement that returns its result in a different bit than
+                 *  the default bit.
+                 *  Since this poses no immediate problem, we only support measurements to the implicit default bit.
+                 *
+                 *  Also note that old_to_new.cc only uses the qubit operand, and the whole fact that any type of
+                 *  operand could be specified to any gate is a quirk of the kernel.gate() functions of the API.
                  */
-                // FIXME: comment reflects old IR, also discuss new IR
 
-                // operand checks
+                // operand checks.
+                // Note that if all instruction definitions have proper prototypes this would be guaranteed upstream.
                 if (ops.qubits.size() != 1) {
                     QL_INPUT_ERROR(
                         "Readout instruction '" << ir::describe(custom)
                         << "' requires exactly 1 quantum operand, not " << ops.qubits.size()
                     );
                 }
+#if 0   // FIXME
                 if (!ops.cregs.empty()) {
                     QL_INPUT_ERROR("Using Creg as measurement target is deprecated, use new breg_operands");
                 }
@@ -809,9 +822,11 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                         << "' requires 0 or 1 bit operands, not " << ops.bregs.size()
                     );
                 }
+#endif
 
                 // store operands
-                if (settings.getReadoutMode(*custom.instruction_type)=="feedback") {
+                // FIXME: this generates code to read the DIO interface and distribute the result, see "_dist_dsm"
+                if (settings.getReadoutMode(*custom.instruction_type) == "feedback") {
                     bi.isMeasFeedback = true;
                     bi.operands = ops.qubits;
                     //bi.creg_operands = ops.cregs;    // NB: will be empty because of checks performed earlier
@@ -1496,41 +1511,64 @@ void Codegen::do_handle_expression(
     };
 
     // emit code for casting a bit value (i.e. DSM bit) to an integer (i.e. Q1 register)
-    auto emit_bin_cast = [this, op_str_bit](Any<ir::Expression> operands) {
-        // FIXME: based on emitPragma, cleanup
-        // FIXME: CHECK_COMPAT
-        UInt mask = 0;
+    auto emit_bin_cast = [this, breg2reg](Any<ir::Expression> operands, Int expOpCnt) {
+        if(operands.size() != expOpCnt) {
+            QL_ICE("Expected " << expOpCnt << " bit operands, got " << operands.size());
+        }
+
+        // Compute DSM address and mask for operands.
+        UInt smAddr = 0;
+        UInt mask = 0;      // mask for used SM bits in 32 bit word transferred using move_sm
         for (Int i=0; i<operands.size(); i++) {
-            UInt arg = op_str_bit(operands[i]);
-            auto smBit = arg;   // FIXME: lookup allocation
-            UInt smAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
+            auto &op = operands[i];
+
+            Int breg;
+            if(op->as_reference()) {
+                breg = breg2reg(op);
+            } else {
+                QL_ICE("Expected bit operand, got '" << ir::describe(op) << "'");
+            }
+
+            // get SM bit for classic operand (allocated during readout)
+            UInt smBit = dp.getSmBit(breg);
+
+            // compute and check SM address
+            UInt mySmAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
+            if(i==0) {
+                smAddr = mySmAddr;
+            } else {
+                if(smAddr != mySmAddr) {
+                    QL_USER_ERROR("Cannot access DSM address " << smAddr << " and " << mySmAddr << " in single transfer");
+                    // NB: we could setup several transfers
+                }
+            }
+
+            // update mask of used bits
             mask |= 1ul << (smBit % 32);
         }
-        UInt smAddr = 0;    // FIXME
-
-/*
-        // get SM bit for classic operand (allocated during readout)
-        codeGenInfo.pragmaSmBit = dp.getSmBit(breg_operand, instrIdx);
-*/
 
         // FIXME: verify that instruction duration matches actual time. We don't have a matching instruction for the break, but do take up quantum time
         /*
             seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
             seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch
             move_sm     Ra                  ; ... and move to register
-            nop                             ; register dependency R0
+            nop                             ; register dependency Ra
+
             and         Ra,<mask>,Rb        ; mask depends on DSM bit location
-            nop                             ; register dependency R1
+            nop                             ; register dependency Rb
             jlt         Rb,1,@loop
         */
         emit("", "seq_cl_sm", QL_SS2S("S" << smAddr));
         emit("", "seq_wait", "3");
         emit("", "move_sm", REG_TMP0);
         emit("", "nop");
+        return mask;
 
+#if 0
         // FIXME: move to caller:
         emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
         emit("", "nop");
+#endif
 #if 0
         if (pragmaBreakVal == 0) {
             emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label));
@@ -1572,12 +1610,15 @@ void Codegen::do_handle_expression(
                     , "# " + ir::describe(expression)
                 );
             } else {
-                auto breg = operandContext.convert_breg_reference(expression);
-                comment(QL_SS2S("# FIXME: cast '" << ir::describe(expression) << "', breg=" << breg));
-                utils::Any<ir::Expression> expressions;
-                expressions.add(expression);
-                emit_bin_cast(expressions);
-                // FIXME: jmp label_if_false
+                // convert ir::Expression to utils::Any<ir::Expression>
+                utils::Any<ir::Expression> anyExpression;
+                anyExpression.add(expression);
+
+                UInt mask = emit_bin_cast(anyExpression, 1);
+                // FIXME: assign to LHS. Can we even write 'creg[0] = breg[0]' without a cast?
+                emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+                emit("", "nop");
+//                emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
             }
         } else if (auto fn = expression->as_function_call()) {
             // function call helpers
@@ -1633,10 +1674,9 @@ void Codegen::do_handle_expression(
                     "'int()' cast target must be a function"
                 );
                 fn = fn->operands[0]->as_function_call();   // FIXME: step into. Shouldn't we recurse to allow e.g. casting a breg??
-            }
 
             // int arithmetic, 1 operand
-            if (fn->function_type->name == "operator~") {
+            } else if (fn->function_type->name == "operator~") {
                 operation = "not";
                 emit(
                     "",
@@ -1647,14 +1687,15 @@ void Codegen::do_handle_expression(
                     )
                     , "# " + ir::describe(expression)
                 );
-            }
 
             // bit arithmetic, 1 operand
-            if (fn->function_type->name == "operator!") {
+            } else if (fn->function_type->name == "operator!") {
                 operation = "not";
-                //CHECK_COMPAT
-                emit_bin_cast(fn->operands);
-                // FIXME: jmp label_if_false
+                UInt mask = emit_bin_cast(fn->operands, 1);
+
+                emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+                emit("", "nop");
+                emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
             }
 
             // int arithmetic, 2 operands
@@ -1682,7 +1723,7 @@ void Codegen::do_handle_expression(
                 }
             }
 
-            // bool/bit arithmetic, 2 operands
+            // bit arithmetic, 2 operands
             if(operation.empty()) {
                 if (fn->function_type->name == "operator&&") {
                     operation = "FIXME";
@@ -1692,8 +1733,11 @@ void Codegen::do_handle_expression(
                     operation = "FIXME";
                 }
                 if (!operation.empty()) {
-                    emit_bin_cast(fn->operands);
-                // FIXME: jmp label_if_false
+                    UInt mask = emit_bin_cast(fn->operands, 2);
+                    // FIXME:
+                    emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+                    emit("", "nop");
+                    emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
                 }
             }
 
