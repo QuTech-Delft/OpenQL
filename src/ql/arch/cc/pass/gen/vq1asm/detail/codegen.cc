@@ -375,9 +375,11 @@ void Codegen::block_start(const Str &block_name, Int depth) {
 }
 
 void Codegen::block_finish(const Str &block_name, UInt durationInCycles, Int depth) {
-    this->depth = depth;
     comment(QL_SS2S("### Block end: '" << block_name << "'"));
     vcd.kernelFinish(block_name, durationInCycles);
+
+    // unindent, unless at top (in which case nothing follows)
+    this->depth = depth>0 ? depth-1 : 0;
 }
 
 /************************************************************************\
@@ -1697,7 +1699,7 @@ void Codegen::do_handle_expression(
             // relop, group 1
             if(operation.empty()) {
                 if (fn->function_type->name == "operator==") {
-                    operation = "jge";
+                    operation = "jge";  // note that we need to invert the operation, because we jump on the condition being false
                 } else if (fn->function_type->name == "operator!=") {
                     operation = "jlt";
                 }
@@ -1706,9 +1708,10 @@ void Codegen::do_handle_expression(
                         case RL:    // fall through
                         case RR:    emit_mnem2args("xor", 0, 1); break;
                         case LR:    emit_mnem2args("xor", 1, 0); break;   // reverse operands to match Q1 instruction set
+                        // FIXME: optimization possible if Literal==0
                     }
                     emit("", "nop");    // register dependency
-                    emit("", operation, Str(REG_TMP0)+",1,@"+label_if_false);
+                    emit("", operation, Str(REG_TMP0)+",1,@"+label_if_false, "# skip next part if condition is false");
                 }
             }
 
@@ -1740,7 +1743,8 @@ void Codegen::do_handle_expression(
                                     op_str_int(fn->operands[0]) << ","
                                     << fn->operands[1]->as_int_literal()->value + 1    // increment literal since we lack 'jgt'
                                     << ",@"+label_if_false
-                                )
+                                ),
+                                "# skip next part if condition is false"
                             );
                             break;
                         case RR:
@@ -1761,7 +1765,8 @@ void Codegen::do_handle_expression(
                                     op_str_int(fn->operands[0])
                                     << "," << REG_TMP0
                                     << ",@"+label_if_false
-                                )
+                                ),
+                                "# skip next part if condition is false"
                             );
                             break;
                         case LR:
@@ -1773,13 +1778,14 @@ void Codegen::do_handle_expression(
                                     op_str_int(fn->operands[1])     // reverse operands
                                     << fn->operands[0]->as_int_literal()->value - 1    // DECrement literal since we lack 'jle'
                                     << ",@"+label_if_false
-                                )
+                                ),
+                                "# skip next part if condition is false"
                             );
                             break;
                     }
                 } else if (fn->function_type->name == "operator<=") {
                     operation = "<=";
-                    // FIXME
+                    QL_ICE("FIXME: '<=' not yet implemented");
                 }
                 if(!operation.empty()) {
                     // NB: all work already done above
