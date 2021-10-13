@@ -275,14 +275,6 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
     , options(options)
     , operandContext(ir)
 {
-    init(); // FIXME: inline, or make private
-}
-
-/************************************************************************\
-| Generic
-\************************************************************************/
-
-void Codegen::init() {
     // NB: a new Backend is instantiated per call to compile, and
     // as a result also a Codegen, so we don't need to cleanup
 
@@ -307,6 +299,10 @@ void Codegen::init() {
     }
 #endif
 }
+
+/************************************************************************\
+| Generic
+\************************************************************************/
 
 Str Codegen::getProgram() {
 #if OPT_FEEDBACK
@@ -509,7 +505,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
             if (bi.isMeasFeedback) {
                 UInt resultBit = Settings::getResultBit(ic, group);
 
-#if 0    // FIXME: partly redundant
+#if 0    // FIXME: partly redundant, but partly useful
                 // get our qubit
                 const Json qubits = json_get<const Json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const Json&> unavailable
                 UInt qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
@@ -1511,6 +1507,11 @@ void Codegen::do_handle_expression(
             mask |= 1ul << (smBit % 32);
         }
         UInt smAddr = 0;    // FIXME
+
+/*
+        // get SM bit for classic operand (allocated during readout)
+        codeGenInfo.pragmaSmBit = dp.getSmBit(breg_operand, instrIdx);
+*/
 
         // FIXME: verify that instruction duration matches actual time. We don't have a matching instruction for the break, but do take up quantum time
         /*
