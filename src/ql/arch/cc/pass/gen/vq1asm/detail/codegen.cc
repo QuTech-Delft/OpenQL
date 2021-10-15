@@ -44,11 +44,6 @@ static void check_int_literal(const ir::IntLiteral &ilit, Int bottomRoom=0, Int 
 }
 
 
-typedef struct {
-    ConditionType cond_type;
-    utils::Vec<utils::UInt> cond_operands;
-} tInstructionCondition;
-
 /**
  * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
  * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
@@ -461,11 +456,11 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 // conditional gates
                 // store condition and groupDigOut in condMap, if all groups are unconditional we use old scheme, otherwise
                 // datapath is configured to generate proper digital output
-                if (bi.condition == ConditionType::ALWAYS || ic.ii.forceCondGatesOn) {
+                if (bi.instructionCondition.cond_type == ConditionType::ALWAYS || ic.ii.forceCondGatesOn) {
                     // nothing to do, just use digOut
                 } else {    // other conditions, including cond_never
                     // remind mapping for setting PL
-                    codeGenInfo.condGateMap.emplace(group, CondGateInfo{bi.condition, bi.cond_operands, gdo.groupDigOut});
+                    codeGenInfo.condGateMap.emplace(group, CondGateInfo{bi.instructionCondition, gdo.groupDigOut});
                 }
 
                 vcd.bundleFinishGroup(startCycle, bi.durationInCycles, gdo.groupDigOut, bi.signalValue, instrIdx, group);
@@ -500,12 +495,12 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
 #endif
                 // get classic operand
                 UInt breg_operand;
-                if (bi.breg_operands.empty()) {
-                    breg_operand = bi.operands[0];                    // implicit classic bit for qubit
-                    QL_IOUT("Using implicit bit " << breg_operand << " for qubit " << bi.operands[0]);
+                if (bi.bregs.empty()) {
+                    breg_operand = bi.qubits[0];                    // implicit classic bit for qubit
+                    QL_IOUT("Using implicit bit " << breg_operand << " for qubit " << bi.qubits[0]);
                 } else {    // FIXME: currently inpossible
-                    breg_operand = bi.breg_operands[0];
-                    QL_IOUT("Using explicit bit " << breg_operand << " for qubit " << bi.operands[0]);
+                    breg_operand = bi.bregs[0];
+                    QL_IOUT("Using explicit bit " << breg_operand << " for qubit " << bi.qubits[0]);
                 }
 
                 // allocate SM bit for classic operand
@@ -673,10 +668,6 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
     // RuntimeError: JSON error: in pass VQ1Asm, phase main: in block 'repeatUntilSuccess': in for loop body: instruction not found: 'cz'
     // This provides little insight, and why do we get upto here anyway? See above: template_operands
 
-    // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
-    // but we only handle it for custom_instruction
-    tInstructionCondition instrCond = decode_condition(operandContext, custom.condition);
-
 
 
     // some shorthand for parameter fields
@@ -729,6 +720,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             && settings.getReadoutMode(*custom.instruction_type) == "feedback"
         ) {
             // FIXME: move the checks to collectCodeGenInfo?
+            // FIXME: at the output side, similar checks are not performed
             /*
              * In the old IR, kernel->gate allows 3 types of measurement:
              *         - no explicit result. Historically this implies either:
@@ -769,20 +761,17 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 );
             }
 #endif
-            // flag this bundle as performing feedback
-            bi.isMeasFeedback = true;
-
-            // store operands
+            // flag this bundle as performing feedback and store operands
             // FIXME: this generates code to read the DIO interface and distribute the result, see "_dist_dsm"
-            bi.operands = ops.qubits;
-            //bi.creg_operands = ops.cregs;    // NB: will be empty because of checks performed earlier
-            bi.breg_operands = ops.bregs;
+            bi.isMeasFeedback = true;
+            bi.qubits = ops.qubits;
+            bi.bregs = ops.bregs;
         }
 
-        // store 'expression' for conditional gates
-        // FIXME: change bi to use tInstructionCondition
-        bi.condition = instrCond.cond_type;
-        bi.cond_operands = instrCond.cond_operands;
+        // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
+        // but we only handle it for custom_instruction
+        tInstructionCondition instrCond = decode_condition(operandContext, custom.condition);
+        bi.instructionCondition = instrCond;
 
         QL_DOUT("customGate(): iname='" << iname <<
              "', duration=" << durationInCycles <<

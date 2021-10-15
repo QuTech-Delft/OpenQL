@@ -31,6 +31,13 @@ enum class ConditionType {
 };
 
 
+typedef struct {
+    ConditionType cond_type;
+    utils::Vec<utils::UInt> cond_operands;
+} tInstructionCondition;
+
+
+
 class BundleInfo {
 public: // funcs
     BundleInfo() = default;
@@ -44,14 +51,12 @@ public: // vars
 #endif
 
     // conditional gate
-    ConditionType condition = ConditionType::ALWAYS;        // FIXME
-    Vec<UInt> cond_operands;
+    tInstructionCondition instructionCondition;
 
-    // readout feedback
+    // readout feedback: flag and operands
     Bool isMeasFeedback = false;
-    // operands
-    Vec<UInt> operands;
-    Vec<UInt> breg_operands;
+    Vec<UInt> qubits;
+    Vec<UInt> bregs;
 }; // information for an instrument group (of channels), for a single instruction
 // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?
 

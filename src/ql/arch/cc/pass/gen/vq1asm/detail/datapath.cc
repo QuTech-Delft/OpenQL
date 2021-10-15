@@ -154,7 +154,7 @@ void Datapath::emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, I
         emit(
             slot,
             QL_SS2S("SM[" << winBit << "] := I[" << fi.bit << "]"),
-            QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->operands[0] << ")")
+            QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->qubits[0] << ")")
         );
     }
 }
@@ -200,7 +200,7 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
         CondGateInfo cgi = cg.second;
 
         // emit comment for group
-        Str condition = cond_qasm(cgi.condition, cgi.cond_operands);
+        Str condition = cond_qasm(cgi.instructionCondition.cond_type, cgi.instructionCondition.cond_operands);
         emit(
             slot,
             QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", condition='" << condition << "'")
@@ -209,7 +209,7 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
         // shorthand
         auto winBit = [this, cgi, &minMaxValid, &minSmBit, &maxSmBit](int i)
         {
-            UInt smBit = getSmBit(cgi.cond_operands[i]);
+            UInt smBit = getSmBit(cgi.instructionCondition.cond_operands[i]);
             minMaxValid = true;
             minSmBit = min(minSmBit, smBit);
             maxSmBit = max(maxSmBit, smBit);
@@ -219,7 +219,7 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
         // compute RHS of PL expression
         Str inv;
         StrStrm rhs;
-        switch (cgi.condition) {
+        switch (cgi.instructionCondition.cond_type) {
             // 0 operands:
             case ConditionType::ALWAYS:
                 rhs << "1";

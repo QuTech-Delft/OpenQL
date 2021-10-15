@@ -93,7 +93,7 @@ private:    // types
 
     struct CalcSignalValue {
         Str signalValueString;
-        UInt operandIdx;
+        UInt operandIdx;                                        // NB: in the new IR, 'operand' is called 'qubit' in most places
         Settings::SignalInfo si;
     }; // return type for calcSignalValue()
 
