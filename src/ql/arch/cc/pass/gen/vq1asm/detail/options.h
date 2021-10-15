@@ -18,7 +18,6 @@
 #define OPT_SUPPORT_STATIC_CODEWORDS    1   // support (currently: require) static codewords, instead of allocating them on demand
 #define OPT_STATIC_CODEWORDS_ARRAYS     1   // JSON field static_codeword_override is an array with one element per qubit parameter
 #define OPT_VECTOR_MODE                 0   // 1=generate single code word for all output groups together (requires codewords allocated by backend)
-#define OPT_FEEDBACK                    1   // feedback support. New feature in being developed
 
 // NOTE JvS: I added these to the documentation string for the backend pass, so
 //  you can see these values at runtime.

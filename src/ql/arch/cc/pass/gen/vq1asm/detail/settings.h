@@ -33,9 +33,7 @@ public: // types
         RawPtr<const Json> instrument;
         Str instrumentName;         // key 'instruments[]/name'
         Int slot;                   // key 'instruments[]/controller/slot'
-#if OPT_FEEDBACK
         Bool forceCondGatesOn;      // optional key 'instruments[]/force_cond_gates_on', can be used to always enable AWG if gate execution is controlled by VSM
-#endif
     };
 
     struct InstrumentControl {      // information from key 'instruments/ref_control_mode'

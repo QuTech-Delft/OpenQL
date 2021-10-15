@@ -75,13 +75,15 @@ public: //  functions
 
 private:    // types
     struct CodeGenInfo {
+        // output related
         Bool instrHasOutput;
         tDigital digOut;                                        // the digital output value sent over the instrument interface
         UInt instrMaxDurationInCycles;                          // maximum duration over groups that are used, one instrument
-#if OPT_FEEDBACK
+
+        // feedback related
         FeedbackMap feedbackMap;
         CondGateMap condGateMap;
-#endif
+
         // info copied from tInstrumentInfo
         Str instrumentName;
         Int slot;
