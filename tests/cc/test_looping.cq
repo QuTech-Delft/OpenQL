@@ -59,7 +59,7 @@ for (; true; )  {
 
 .forLoopBreak
 for (; true; )  {
-    measure q[0]    #,b[0] # FIXME: requires measure_fb in practice
+    measure_fb q[0]
     if (b[0]) {
         break;
     }
@@ -172,9 +172,10 @@ while (b[0]) {
 #while (b[0:2]) { # Error: Usage error: in pass reader, phase main: unexpected number of single-gate-multiple-qubit bit indices specified; found 3, expected 1
 #}
 
-.condBit4
-while (b[0] && b[1]) {
-}
+#.condBit4
+#measure_fb q[0:1]
+#while (b[0] && b[1]) { # Eroor:  in expression '(bit)q[0] && (bit)q[1]': Cannot access DSM address 1 and 0 in single transfer
+#}
 
 #.condLit
 #while (5) {    # Error: loop condition must be a boolean

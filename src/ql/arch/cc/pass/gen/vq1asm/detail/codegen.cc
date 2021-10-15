@@ -479,7 +479,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
             // same instrument.
             // FIXME: also generate VCD
 
-            if (bi.isMeasFeedback) {
+            if (bi.isMeasFeedback) {    // FIXME: i.e. dist_dsm
                 UInt resultBit = Settings::getResultBit(ic, group);
 
 #if 0    // FIXME: partly redundant, but partly useful
@@ -503,7 +503,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 if (bi.breg_operands.empty()) {
                     breg_operand = bi.operands[0];                    // implicit classic bit for qubit
                     QL_IOUT("Using implicit bit " << breg_operand << " for qubit " << bi.operands[0]);
-                } else {
+                } else {    // FIXME: currently inpossible
                     breg_operand = bi.breg_operands[0];
                     QL_IOUT("Using explicit bit " << breg_operand << " for qubit " << bi.operands[0]);
                 }
@@ -605,10 +605,6 @@ void Codegen::bundleFinish(
 // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
 // Does not deal with the control mode and digital interface of the instrument.
 void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
-    // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
-    // but we only handle it for custom_instruction
-    tInstructionCondition instrCond = decode_condition(operandContext, custom.condition);
-
 #if 0   // FIXME
 // FIXME: these are operands that match a specialized instruction definition, e.g. "cz q0,q10"
 // FIXME: these are not handled below, so things fail if we have such definitions
@@ -677,6 +673,11 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
     // RuntimeError: JSON error: in pass VQ1Asm, phase main: in block 'repeatUntilSuccess': in for loop body: instruction not found: 'cz'
     // This provides little insight, and why do we get upto here anyway? See above: template_operands
 
+    // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
+    // but we only handle it for custom_instruction
+    tInstructionCondition instrCond = decode_condition(operandContext, custom.condition);
+
+
 
     // some shorthand for parameter fields
     const Str iname = custom.instruction_type->name;
@@ -692,7 +693,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
     const Json &instruction = custom.instruction_type->data.data;
     Settings::SignalDef sd = settings.findSignalDefinition(instruction, iname);
 
-    // scatter signals defined for instruction (e.g. several operands and/or types) to instruments & groups
+    // turn signals defined for instruction into instruments & groups, and update matching BundleInfo records
     for (UInt s = 0; s < sd.signal.size(); s++) {
         CalcSignalValue csv = calcSignalValue(sd, s, ops.qubits, iname);
 
@@ -721,13 +722,13 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         // store signal duration
         bi.durationInCycles = durationInCycles;
 
-        // FIXME: assumes that group configuration for readout input matches that of output
+        // FIXME: this is actually about _dist_dsm
         // store operands used for readout, actual work is postponed to bundleFinish()
         if (
             settings.isReadout(*custom.instruction_type)    // key present
             && settings.getReadoutMode(*custom.instruction_type) == "feedback"
         ) {
-            // FIXME: isReadout in itself does nothing, and doesn't occur in conf files: cleanup
+            // FIXME: move the checks to collectCodeGenInfo?
             /*
              * In the old IR, kernel->gate allows 3 types of measurement:
              *         - no explicit result. Historically this implies either:
@@ -768,10 +769,11 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 );
             }
 #endif
+            // flag this bundle as performing feedback
+            bi.isMeasFeedback = true;
 
             // store operands
             // FIXME: this generates code to read the DIO interface and distribute the result, see "_dist_dsm"
-            bi.isMeasFeedback = true;
             bi.operands = ops.qubits;
             //bi.creg_operands = ops.cregs;    // NB: will be empty because of checks performed earlier
             bi.breg_operands = ops.bregs;
@@ -1148,51 +1150,6 @@ void Codegen::emitOutput(
     // update lastEndCycle
     lastEndCycle[instrIdx] = startCycle + instrMaxDurationInCycles;
 }
-
-
-#if 0   // FIXME
-void Codegen::emitPragma(
-    const Json &pragma,
-    Int pragmaSmBit,
-    UInt instrIdx,
-    UInt startCycle,
-    Int slot,
-    const Str &instrumentName
-) {
-    if (startCycle > lastEndCycle[instrIdx]) {    // i.e. if(!instrHasOutput)
-        emitPadToCycle(instrIdx, startCycle, slot, instrumentName);
-    }
-
-    // FIXME: the only pragma possible is "break" for now
-    Int pragmaBreakVal = json_get<Int>(pragma, "break", "pragma of unknown instruction");        // FIXME: we don't know which instruction we're dealing with, so better move
-    UInt smAddr = pragmaSmBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
-    UInt mask = 1ul << (pragmaSmBit % 32);
-    std::string label = pragmaLoopLabel.back() + "_end";        // FIXME: must match label set in forEnd(), assumes we are actually inside a for loop
-
-    // emit code for pragma "break". NB: code is identical for all instruments
-    // FIXME: verify that instruction duration matches actual time
-/*
-    seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
-    seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch
-    move_sm     Ra                  ; ... and move to register
-    nop                             ; register dependency Ra
-    and         Ra,<mask>,Rb        ; mask depends on DSM bit location
-    nop                             ; register dependency Rb
-    jlt         Rb,1,@loop
-*/
-    emit(slot, "seq_cl_sm", QL_SS2S("S" << smAddr), QL_SS2S("# 'break if " << pragmaBreakVal << "' on '" << instrumentName << "'"));
-    emit(slot, "seq_wait", "3");
-    emit(slot, "move_sm", REG_TMP0, "");
-    emit(slot, "nop");
-    emit(slot, "and", QL_SS2S(REG_TMP0<< "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-    emit(slot, "nop");
-    if (pragmaBreakVal == 0) {
-        emit(slot, "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label));
-    } else {
-        emit(slot, "jge", QL_SS2S(REG_TMP1 << ",1,@" << label));
-    }
-}
-#endif
 
 
 void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName) {

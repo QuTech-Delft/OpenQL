@@ -207,7 +207,7 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
         );
 
         // shorthand
-        auto winBit = [this, cgi, instrIdx, &minMaxValid, &minSmBit, &maxSmBit](int i)
+        auto winBit = [this, cgi, &minMaxValid, &minSmBit, &maxSmBit](int i)
         {
             UInt smBit = getSmBit(cgi.cond_operands[i]);
             minMaxValid = true;

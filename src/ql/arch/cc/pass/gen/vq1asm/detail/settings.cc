@@ -202,6 +202,7 @@ Settings::InstrumentControl Settings::getInstrumentControl(UInt instrIdx) const 
 }
 
 
+// FIXME: assumes that group configuration for readout input matches that of output
 Int Settings::getResultBit(const InstrumentControl &ic, Int group) {
     // FIXME: test similar to settings_cc::getInstrumentControl, move
     // check existence of key 'result_bits'

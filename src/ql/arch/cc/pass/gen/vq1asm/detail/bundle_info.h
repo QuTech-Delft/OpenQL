@@ -43,18 +43,15 @@ public: // vars
     Int staticCodewordOverride = Settings::NO_STATIC_CODEWORD_OVERRIDE;
 #endif
 
-    // operands
-    // FIXME: use new class Operands
-    Vec<UInt> operands;
-    Vec<UInt> creg_operands;
-    Vec<UInt> breg_operands;
-
-    // conditional gate operands
+    // conditional gate
     ConditionType condition = ConditionType::ALWAYS;        // FIXME
     Vec<UInt> cond_operands;
 
     // readout feedback
     Bool isMeasFeedback = false;
+    // operands
+    Vec<UInt> operands;
+    Vec<UInt> breg_operands;
 }; // information for an instrument group (of channels), for a single instruction
 // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?
 
