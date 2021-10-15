@@ -469,12 +469,10 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
             } // if(signal defined)
 
 
-            // handle readout (i.e. when necessary, create feedbackMap entry
+            // handle real-time measurement results (i.e. when necessary, create feedbackMap entry
             // NB: we allow for instruments that only perform the input side of readout, without signal generation by the
             // same instrument.
-            // FIXME: also generate VCD
-
-            if (bi.isMeasFeedback) {    // FIXME: i.e. dist_dsm
+            if (bi.isMeasRsltRealTime) {
                 UInt resultBit = Settings::getResultBit(ic, group);
 
 #if 0    // FIXME: partly redundant, but partly useful
@@ -508,6 +506,8 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
 
                 // remind mapping of bit -> smBit for setting MUX
                 codeGenInfo.feedbackMap.emplace(group, FeedbackInfo{smBit, resultBit, bi});
+
+                // FIXME: also generate VCD
             }
         } // for(group)
         codeGenMap.set(instrIdx) = codeGenInfo;
@@ -714,11 +714,9 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         bi.durationInCycles = durationInCycles;
 
         // FIXME: this is actually about _dist_dsm
-        // store operands used for readout, actual work is postponed to bundleFinish()
-        if (
-            settings.isReadout(*custom.instruction_type)    // key present
-            && settings.getReadoutMode(*custom.instruction_type) == "feedback"
-        ) {
+        //  , which requires '"signal": [ {	"type": "measure"' to be sort of tied to the UHF
+        // store operands used for real-time measurements, actual work is postponed to bundleFinish()
+        if (settings.isMeasRsltRealTime(*custom.instruction_type)) {
             // FIXME: move the checks to collectCodeGenInfo?
             // FIXME: at the output side, similar checks are not performed
             /*
@@ -761,9 +759,8 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 );
             }
 #endif
-            // flag this bundle as performing feedback and store operands
-            // FIXME: this generates code to read the DIO interface and distribute the result, see "_dist_dsm"
-            bi.isMeasFeedback = true;
+            // flag this bundle as performing real-time measurements, and store operands
+            bi.isMeasRsltRealTime = true;
             bi.qubits = ops.qubits;
             bi.bregs = ops.bregs;
         }
@@ -1053,6 +1050,8 @@ void Codegen::emitProgramFinish() {
 
 
 // generate code to input measurement results and distribute them via DSM
+// FIXME: naming: here still feedback, elsewhere now MeasRsltRealTime (was Readout, MeasFeedback, )
+//  the name feedback is confusing, because we only the input side of it here
 void Codegen::emitFeedback(
     const FeedbackMap &feedbackMap,
     UInt instrIdx,

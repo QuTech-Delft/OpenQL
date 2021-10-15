@@ -37,7 +37,6 @@ typedef struct {
 } tInstructionCondition;
 
 
-
 class BundleInfo {
 public: // funcs
     BundleInfo() = default;
@@ -50,13 +49,13 @@ public: // vars
     Int staticCodewordOverride = Settings::NO_STATIC_CODEWORD_OVERRIDE;
 #endif
 
-    // conditional gate
+    // conditional gate info
     tInstructionCondition instructionCondition;
 
-    // readout feedback: flag and operands
-    Bool isMeasFeedback = false;
+    // real-time measurement results: flag and operands
+    Bool isMeasRsltRealTime = false;
     Vec<UInt> qubits;
-    Vec<UInt> bregs;
+    Vec<UInt> bregs;    // FIXME: not yet really used
 }; // information for an instrument group (of channels), for a single instruction
 // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?
 

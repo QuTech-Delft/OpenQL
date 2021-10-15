@@ -58,13 +58,14 @@ public: // functions
 
     // support for Info::preprocess_platform
     void loadBackendSettings(const ir::compat::PlatformRef &platform);
-    static Bool isReadout(const Json &instruction, const Str &iname);
+    static Bool isReadout(const Json &instruction, const Str &iname);   // FIXME: should be true for "measure" (because it uses a UHF)
     static Bool isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
 
     // support for backend
     void loadBackendSettings(const ir::PlatformRef &platform);
     Str getReadoutMode(const ir::InstructionType &instrType);
-    Bool isReadout(const ir::InstructionType &instrType);
+    Bool isReadout(const ir::InstructionType &instrType);   // FIXME: naming
+    Bool isMeasRsltRealTime(const ir::InstructionType &instrType) { return isReadout(instrType) && getReadoutMode(instrType) == "feedback"; };
     Bool isFlux(const ir::InstructionType &instrType);
 
     static SignalDef findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname);

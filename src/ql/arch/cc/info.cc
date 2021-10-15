@@ -575,7 +575,7 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
 
     // add predicates to instructions
     for (auto &it : instructions.items()) {
-        if (pass::gen::vq1asm::detail::Settings::isReadout(it.value(), it.key())) {
+        if (pass::gen::vq1asm::detail::Settings::isReadout(it.value(), it.key())) {     // FIXME: should be on for measurements, naming is too obscure. Or get from instrument
             QL_IOUT("desugaring readout instruction: '" << it.key() << "'");
             instructions[it.key()][predicateKeyInstructionType] = predicateValueMeas;
         } else if (pass::gen::vq1asm::detail::Settings::isFlux(it.value(), signals, it.key())) {

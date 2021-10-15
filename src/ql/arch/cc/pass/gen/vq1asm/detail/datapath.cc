@@ -154,7 +154,7 @@ void Datapath::emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, I
         emit(
             slot,
             QL_SS2S("SM[" << winBit << "] := I[" << fi.bit << "]"),
-            QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->qubits[0] << ")")
+            QL_SS2S("# readout(q" << fi.bi->qubits[0] << ")")
         );
     }
 }
