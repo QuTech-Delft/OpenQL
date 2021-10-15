@@ -59,7 +59,7 @@ for (; true; )  {
 
 .forLoopBreak
 for (; true; )  {
-    measure q[0],b[0] # FIXME: requires measure_fb in practice
+    measure q[0]    #,b[0] # FIXME: requires measure_fb in practice
     if (b[0]) {
         break;
     }

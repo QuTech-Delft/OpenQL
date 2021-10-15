@@ -605,15 +605,11 @@ void Codegen::bundleFinish(
 // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
 // Does not deal with the control mode and digital interface of the instrument.
 void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
-        // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
-        // but we only handle it for custom_instruction
-        tInstructionCondition instrCond = decode_condition(operandContext, custom.condition);
+    // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
+    // but we only handle it for custom_instruction
+    tInstructionCondition instrCond = decode_condition(operandContext, custom.condition);
 
-        Operands ops;
-
-        // Handle the template operands for the instruction_type we got. Note that these are empty if that is a 'root'
-        // InstructionType, and only contains data if it is one of the specializations (see ir.gen.h)
-
+#if 0   // FIXME
 // FIXME: these are operands that match a specialized instruction definition, e.g. "cz q0,q10"
 // FIXME: these are not handled below, so things fail if we have such definitions
 //cQASM "cz q[0],q[10]" with JSON "cz q0,q10" results in:
@@ -632,180 +628,167 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 //[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
 //[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[0]
 //[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[10]
-
-        // FIXME: check for existing decompositions (which should have been performed already by an upstream pass)
-
-        if(!custom.instruction_type->template_operands.empty()) {
-            QL_DOUT("found template_operands: JSON = " << custom.instruction_type->data.data );
-            QL_INPUT_ERROR("CC backend cannot yet handle specialized instructions");
-        }
-
-        for (const auto &ob : custom.instruction_type->template_operands) {
-            QL_DOUT("template operand: " + ir::describe(ob));
-            try {
-                ops.append(operandContext, ob);
-            } catch (utils::Exception &e) {
-                e.add_context("name=" + custom.instruction_type->name + ", qubits=" + ops.qubits.to_string());
-                throw;
-            }
-        }
-
-        // Handle the 'plain' operands for custom instructions.
-        for (utils::UInt i = 0; i < custom.operands.size(); i++) {
-            QL_DOUT("operand: " + ir::describe(custom.operands[i]));
-            try {
-                ops.append(operandContext, custom.operands[i]);
-            } catch (utils::Exception &e) {
-                e.add_context(
-                    "name=" + custom.instruction_type->name
-                    + ", qubits=" + ops.qubits.to_string()
-                    + ", operand=" + std::to_string(i)
-                    );
-                throw;
-            }
-        }
-
-#if 0   // org: processes org.has_integer/ops.integer
-        kernel->gate(
-            custom.instruction_type->name, ops.qubits, ops.cregs,
-            0, ops.angle, ops.bregs
-        );
-        if (ops.has_integer) {
-            CHECK_COMPAT(
-                kernel->gates.size() == first_gate_index + 1,
-                "gate with integer operand cannot be ad-hoc decomposed"
-            );
-            kernel->gates.back()->int_operand = ops.integer;
-        }
 #endif
 
-        // FIXME: if we have a cz with operands for which no decomposition exists, we'll end up with:
-        // RuntimeError: JSON error: in pass VQ1Asm, phase main: in block 'repeatUntilSuccess': in for loop body: instruction not found: 'cz'
-        // This provides little insight, and why do we get upto here anyway? See above: template_operands
+    Operands ops;
 
-
-        // some shorthand for parameter fields
-        const Str iname = custom.instruction_type->name;
-        UInt durationInCycles = custom.instruction_type->duration;
-
-#if 0   // FIXME: test for angle parameter
-        if(ops.angle != 0.0) {
-            QL_DOUT("iname=" << iname << ", angle=" << angle);
+    // Handle the template operands for the instruction_type we got. Note that these are empty if that is a 'root'
+    // InstructionType, and only contains data if it is one of the specializations (see ir.gen.h)
+    // FIXME: check for existing decompositions (which should have been performed already by an upstream pass)
+#if 1
+    if(!custom.instruction_type->template_operands.empty()) {
+        QL_DOUT("found template_operands: JSON = " << custom.instruction_type->data.data );
+        QL_INPUT_ERROR("CC backend cannot yet handle specialized instructions");
+    }
+#else
+    for (const auto &ob : custom.instruction_type->template_operands) {
+        QL_DOUT("template operand: " + ir::describe(ob));
+        try {
+            ops.append(operandContext, ob);
+        } catch (utils::Exception &e) {
+            e.add_context("name=" + custom.instruction_type->name + ", qubits=" + ops.qubits.to_string());
+            throw;
         }
+    }
 #endif
 
-        vcd.customGate(iname, ops.qubits, custom.cycle, durationInCycles);
-
-        // generate comment
-        Bool isReadout = settings.isReadout(*custom.instruction_type);        //  determine whether this is a readout instruction
-        // FIXME: does this make a lot of sense, only triggers for "_dist_dsm"
-        if (isReadout) {
-            comment(Str(" # READOUT: '") + ir::describe(custom) + "'");
-        } else { // handle all other instruction types than "readout"
-            // generate comment. NB: we don't have a particular limit for the number of operands
-            comment(Str(" # gate '") + ir::describe(custom) + "'");
+    // Process the 'plain' operands for custom instructions.
+    for (utils::UInt i = 0; i < custom.operands.size(); i++) {
+        QL_DOUT("operand: " + ir::describe(custom.operands[i]));
+        try {
+            ops.append(operandContext, custom.operands[i]);
+        } catch (utils::Exception &e) {
+            e.add_context(
+                "name=" + custom.instruction_type->name
+                + ", qubits=" + ops.qubits.to_string()
+                + ", operand=" + std::to_string(i)
+                );
+            throw;
         }
+    }
+    if (ops.has_integer) {
+        QL_INPUT_ERROR("CC backend cannot handle real (angle) operands yet");
+    }
+    if (ops.has_angle) {
+        QL_INPUT_ERROR("CC backend cannot handle integer operands yet");
+    }
 
-        // find signal vector definition for instruction
-        const Json &instruction = custom.instruction_type->data.data;
-        Settings::SignalDef sd = settings.findSignalDefinition(instruction, iname);
+    // FIXME: if we have a cz with operands for which no decomposition exists, we'll end up with:
+    // RuntimeError: JSON error: in pass VQ1Asm, phase main: in block 'repeatUntilSuccess': in for loop body: instruction not found: 'cz'
+    // This provides little insight, and why do we get upto here anyway? See above: template_operands
 
-        // scatter signals defined for instruction (e.g. several operands and/or types) to instruments & groups
-        for (UInt s = 0; s < sd.signal.size(); s++) {
-            CalcSignalValue csv = calcSignalValue(sd, s, ops.qubits, iname);
 
-            // store signal value, checking for conflicts
-            BundleInfo &bi = bundleInfo[csv.si.instrIdx][csv.si.group];         // shorthand
-            if (!csv.signalValueString.empty()) {                               // empty implies no signal
-                if (bi.signalValue.empty()) {                                   // signal not yet used
-                    bi.signalValue = csv.signalValueString;
+    // some shorthand for parameter fields
+    const Str iname = custom.instruction_type->name;
+    UInt durationInCycles = custom.instruction_type->duration;
+
+    // generate VCD
+    vcd.customGate(iname, ops.qubits, custom.cycle, durationInCycles);
+
+    // generate comment
+    comment(Str(" # gate '") + ir::describe(custom) + "'");
+
+    // find signal vector definition for instruction
+    const Json &instruction = custom.instruction_type->data.data;
+    Settings::SignalDef sd = settings.findSignalDefinition(instruction, iname);
+
+    // scatter signals defined for instruction (e.g. several operands and/or types) to instruments & groups
+    for (UInt s = 0; s < sd.signal.size(); s++) {
+        CalcSignalValue csv = calcSignalValue(sd, s, ops.qubits, iname);
+
+        // store signal value, checking for conflicts
+        BundleInfo &bi = bundleInfo[csv.si.instrIdx][csv.si.group];         // shorthand
+        if (!csv.signalValueString.empty()) {                               // empty implies no signal
+            if (bi.signalValue.empty()) {                                   // signal not yet used
+                bi.signalValue = csv.signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
-                    // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
-                    bi.staticCodewordOverride = Settings::findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
+                // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
+                bi.staticCodewordOverride = Settings::findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
 #endif
-                } else if (bi.signalValue == csv.signalValueString) {           // signal unchanged
-                    // do nothing
-                } else {
-                    showCodeSoFar();
-                    QL_USER_ERROR(
-                        "Signal conflict on instrument='" << csv.si.ic.ii.instrumentName
-                        << "', group=" << csv.si.group
-                        << ", between '" << bi.signalValue
-                        << "' and '" << csv.signalValueString << "'"
-                    );  // FIXME: add offending instruction
-                }
+            } else if (bi.signalValue == csv.signalValueString) {           // signal unchanged
+                // do nothing
+            } else {
+                showCodeSoFar();
+                QL_USER_ERROR(
+                    "Signal conflict on instrument='" << csv.si.ic.ii.instrumentName
+                    << "', group=" << csv.si.group
+                    << ", between '" << bi.signalValue
+                    << "' and '" << csv.signalValueString << "'"
+                );  // FIXME: add offending instruction
             }
+        }
 
-            // store signal duration
-            bi.durationInCycles = durationInCycles;
+        // store signal duration
+        bi.durationInCycles = durationInCycles;
 
-            // FIXME: assumes that group configuration for readout input matches that of output
-            // store operands used for readout, actual work is postponed to bundleFinish()
-            if (isReadout) {
-                // FIXME: isReadout in itself does nothing, and doesn't occur in conf files: cleanup
-                /*
-                 * In the old IR, kernel->gate allows 3 types of measurement:
-                 *         - no explicit result. Historically this implies either:
-                 *             - no result, measurement results are often read offline from the readout device (mostly the raw values
-                 *             instead of the binary result), without the control device ever taking notice of the value
-                 *             - implicit bit result for qubit, e.g. for the CC-light using conditional gates
-                 *         - creg result (old, no longer valid)
-                 *             note that Creg's are managed through a class, whereas bregs are just numbers
-                 *         - breg result (new)
-                 *
-                 *  In the new IR (or, better said, in the new way "prototype"s for instruction operands van be defined
-                 *  using access modes as described in
-                 *  https://openql.readthedocs.io/en/latest/gen/reference_configuration.html#instructions-section
-                 *  it is not well possible to specify a measurement that returns its result in a different bit than
-                 *  the default bit.
-                 *  Since this poses no immediate problem, we only support measurements to the implicit default bit.
-                 *
-                 *  Also note that old_to_new.cc only uses the qubit operand, and the whole fact that any type of
-                 *  operand could be specified to any gate is a quirk of the kernel.gate() functions of the API.
-                 */
+        // FIXME: assumes that group configuration for readout input matches that of output
+        // store operands used for readout, actual work is postponed to bundleFinish()
+        if (
+            settings.isReadout(*custom.instruction_type)    // key present
+            && settings.getReadoutMode(*custom.instruction_type) == "feedback"
+        ) {
+            // FIXME: isReadout in itself does nothing, and doesn't occur in conf files: cleanup
+            /*
+             * In the old IR, kernel->gate allows 3 types of measurement:
+             *         - no explicit result. Historically this implies either:
+             *             - no result, measurement results are often read offline from the readout device (mostly the raw values
+             *             instead of the binary result), without the control device ever taking notice of the value
+             *             - implicit bit result for qubit, e.g. for the CC-light using conditional gates
+             *         - creg result (old, no longer valid)
+             *             note that Creg's are managed through a class, whereas bregs are just numbers
+             *         - breg result (new)
+             *
+             *  In the new IR (or, better said, in the new way "prototype"s for instruction operands van be defined
+             *  using access modes as described in
+             *  https://openql.readthedocs.io/en/latest/gen/reference_configuration.html#instructions-section
+             *  it is not well possible to specify a measurement that returns its result in a different bit than
+             *  the default bit.
+             *  Since this poses no immediate problem, we only support measurements to the implicit default bit.
+             *
+             *  Also note that old_to_new.cc only uses the qubit operand, and the whole fact that any type of
+             *  operand could be specified to any gate is a quirk of the kernel.gate() functions of the API.
+             */
 
-                // operand checks.
-                // Note that if all instruction definitions have proper prototypes this would be guaranteed upstream.
-                if (ops.qubits.size() != 1) {
-                    QL_INPUT_ERROR(
-                        "Readout instruction '" << ir::describe(custom)
-                        << "' requires exactly 1 quantum operand, not " << ops.qubits.size()
-                    );
-                }
+            // operand checks.
+            // Note that if all instruction definitions have proper prototypes this would be guaranteed upstream.
+            if (ops.qubits.size() != 1) {
+                QL_INPUT_ERROR(
+                    "Readout instruction '" << ir::describe(custom)
+                    << "' requires exactly 1 quantum operand, not " << ops.qubits.size()
+                );
+            }
 #if 0   // FIXME
-                if (!ops.cregs.empty()) {
-                    QL_INPUT_ERROR("Using Creg as measurement target is deprecated, use new breg_operands");
-                }
-                if (ops.bregs.size() > 1) {
-                    QL_INPUT_ERROR(
-                        "Readout instruction '" << ir::describe(custom)
-                        << "' requires 0 or 1 bit operands, not " << ops.bregs.size()
-                    );
-                }
+            if (!ops.cregs.empty()) {
+                QL_INPUT_ERROR("Using Creg as measurement target is deprecated, use new breg_operands");
+            }
+            if (ops.bregs.size() > 1) {
+                QL_INPUT_ERROR(
+                    "Readout instruction '" << ir::describe(custom)
+                    << "' requires 0 or 1 bit operands, not " << ops.bregs.size()
+                );
+            }
 #endif
 
-                // store operands
-                // FIXME: this generates code to read the DIO interface and distribute the result, see "_dist_dsm"
-                if (settings.getReadoutMode(*custom.instruction_type) == "feedback") {
-                    bi.isMeasFeedback = true;
-                    bi.operands = ops.qubits;
-                    //bi.creg_operands = ops.cregs;    // NB: will be empty because of checks performed earlier
-                    bi.breg_operands = ops.bregs;
-                }
-            }
+            // store operands
+            // FIXME: this generates code to read the DIO interface and distribute the result, see "_dist_dsm"
+            bi.isMeasFeedback = true;
+            bi.operands = ops.qubits;
+            //bi.creg_operands = ops.cregs;    // NB: will be empty because of checks performed earlier
+            bi.breg_operands = ops.bregs;
+        }
 
-            // store 'expression' for conditional gates
-            // FIXME: change bi to use tInstructionCondition
-            bi.condition = instrCond.cond_type;
-            bi.cond_operands = instrCond.cond_operands;
+        // store 'expression' for conditional gates
+        // FIXME: change bi to use tInstructionCondition
+        bi.condition = instrCond.cond_type;
+        bi.cond_operands = instrCond.cond_operands;
 
-            QL_DOUT("customGate(): iname='" << iname <<
-                 "', duration=" << durationInCycles <<
-                 " [cycles], instrIdx=" << csv.si.instrIdx <<
-                 ", group=" << csv.si.group);
+        QL_DOUT("customGate(): iname='" << iname <<
+             "', duration=" << durationInCycles <<
+             " [cycles], instrIdx=" << csv.si.instrIdx <<
+             ", group=" << csv.si.group);
 
-            // NB: code is generated in bundleFinish()
-        }   // for(signal)
+        // NB: code is generated in bundleFinish()
+    }   // for(signal)
 }
 
 /************************************************************************\
@@ -1426,6 +1409,7 @@ void Codegen::do_handle_expression(
     };
 
     // Convert integer/creg function_call.operands expression to Q1 instruction argument.
+    // FIXME: improve name
     auto op_str_int = [this](const ir::ExpressionRef &op) {
         if(op->as_reference()) {
             return QL_SS2S("R" << creg2reg(*op->as_reference()));
@@ -1437,6 +1421,7 @@ void Codegen::do_handle_expression(
         }
     };
 
+#if 0   // FIXME
     // Convert bit/breg function_call.operands expression to FIXME: return type makes no sense
     auto op_str_bit = [breg2reg](const ir::ExpressionRef &op) {   // FIXME: misnomer op_str_bit
         if(op->as_reference()) {
@@ -1447,6 +1432,7 @@ void Codegen::do_handle_expression(
             QL_ICE("Expected bit operand");
         }
     };
+#endif
 
     // emit code for casting a bit value (i.e. DSM bit) to an integer (i.e. Q1 register)
     auto emit_bin_cast = [this, breg2reg](Any<ir::Expression> operands, Int expOpCnt) {

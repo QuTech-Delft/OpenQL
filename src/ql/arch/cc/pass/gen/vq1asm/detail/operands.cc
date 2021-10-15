@@ -16,6 +16,7 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
+// FIXME: cleanup
 OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
     // Determine number of qubits.
     CHECK_COMPAT(
@@ -30,7 +31,7 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
 
     // Determine number of bregs. The first num_qubits bregs are the implicit
     // bits associated with qubits, so there are always num_qubits of these.
-    auto num_bregs = num_qubits;
+//    auto num_bregs = num_qubits;
     breg_ob = find_physical_object(ir, "breg");
 #if 0   // FIXME
     if (ir->program->has_annotation<ObjectUsage>()) {
@@ -49,7 +50,7 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
 #endif
 
     // Determine number of cregs.
-    utils::UInt num_cregs = 0;
+//    utils::UInt num_cregs = 0;
     creg_ob = find_physical_object(ir, "creg");
 #if 0   // FIXME
     if (ir->program->has_annotation<ObjectUsage>()) {
@@ -111,6 +112,7 @@ Int OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
  */
 // FIXME: see ql::ir::cqasm::convert_expression() for how expressions are built from cQASM, and ql::ir::cqasm::read for register definitions
 // FIXME: see ql::ir::convert_old_to_new(const compat::PlatformRef &old) on how cregs/bregs are created. This is also used by the NEW cQASM reader
+// FIXME: maybe allow multiple real and int operands at so e point
 void Operands::append(const OperandContext &operandContext, const ir::ExpressionRef &expr) {
     if (auto real_lit = expr->as_real_literal()) {
         CHECK_COMPAT(!has_angle, "encountered gate with multiple angle (real) operands");
