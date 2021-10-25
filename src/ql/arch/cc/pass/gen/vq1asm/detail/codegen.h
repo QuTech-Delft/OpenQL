@@ -81,7 +81,7 @@ private:    // types
         UInt instrMaxDurationInCycles;                          // maximum duration over groups that are used, one instrument
 
         // feedback related
-        FeedbackMap feedbackMap;
+        MeasResultRealTimeMap measResultRealTimeMap;
         CondGateMap condGateMap;
 
         // info copied from tInstrumentInfo
@@ -133,7 +133,7 @@ private:    // funcs
     void showCodeSoFar();
     void emitProgramStart(const Str &progName);
     void emitProgramFinish();
-    void emitFeedback(const FeedbackMap &feedbackMap, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
+    void emitMeasRsltRealTime(const MeasResultRealTimeMap &measResultRealTimeMap, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
     void emitOutput(const CondGateMap &condGateMap, tDigital digOut, UInt instrMaxDurationInCycles, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
     void emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
 

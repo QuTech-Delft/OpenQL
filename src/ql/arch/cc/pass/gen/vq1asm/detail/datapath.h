@@ -25,13 +25,13 @@ namespace vq1asm {
 namespace detail {
 
 // NB: types shared with codegen_cc. FIXME: move
-struct FeedbackInfo {                                       // information for feedback on single instrument group
+struct MeasResultRealTimeInfo {                             // information for RT measurement results on single instrument group
     UInt smBit;
     UInt bit;
     Ptr<const BundleInfo> bi;                               // used for annotation only
 };
 
-using FeedbackMap = Map<Int, FeedbackInfo>;                 // NB: key is instrument group
+using MeasResultRealTimeMap = Map<Int, MeasResultRealTimeInfo>;   // NB: key is instrument group
 
 struct CondGateInfo {   // information for conditional gate on single instrument group
     tInstructionCondition instructionCondition;
@@ -54,11 +54,11 @@ public: // functions
 
     UInt allocateSmBit(UInt breg_operand, UInt instrIdx);
     UInt getSmBit(UInt bit_operand);
-    UInt getOrAssignMux(UInt instrIdx, const FeedbackMap &feedbackMap);
+    UInt getOrAssignMux(UInt instrIdx, const MeasResultRealTimeMap &measResultRealTimeMap);
     UInt getOrAssignPl(UInt instrIdx, const CondGateMap &condGateMap);
     static UInt getSizeTag(UInt numReadouts);
-    void emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, Int slot);
-    static UInt getMuxSmAddr(const FeedbackMap &feedbackMap);
+    void emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeMap, UInt instrIdx, Int slot);
+    static UInt getMuxSmAddr(const MeasResultRealTimeMap &measResultRealTimeMap);
     UInt emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Int slot);
 
     Str getDatapathSection() { return datapathSection.str(); }

@@ -87,7 +87,7 @@ UInt Datapath::getSmBit(UInt bit_operand) {
     return smBit;
 }
 
-UInt Datapath::getOrAssignMux(UInt instrIdx, const FeedbackMap &feedbackMap) {
+UInt Datapath::getOrAssignMux(UInt instrIdx, const MeasResultRealTimeMap &measResultRealTimeMap) {
     // We need a different MUX for every new combination of simultaneous readouts (per instrument)
     UInt mux = lastMux[instrIdx]++;    // FIXME: no reuse of identical combinations yet
     if (mux == MUX_CNT) {
@@ -139,40 +139,40 @@ static Str cond_qasm(ConditionType condition, const Vec<UInt> &cond_operands) {
 }
 
 
-void Datapath::emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, Int slot) {
-    if (feedbackMap.empty()) {
-        QL_ICE("feedbackMap must not be empty");
+void Datapath::emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeMap, UInt instrIdx, Int slot) {
+    if (measResultRealTimeMap.empty()) {
+        QL_ICE("measResultRealTimeMap must not be empty");
     }
 
     emit(selString(slot) + QL_SS2S(".MUX " << mux), "");    // NB: no white space before ".MUX"
 
-    for (const auto &feedback : feedbackMap) {
-        FeedbackInfo fi = feedback.second;
+    for (const auto &measResult : measResultRealTimeMap) {
+        MeasResultRealTimeInfo info = measResult.second;
 
-        unsigned int winBit = fi.smBit % MUX_SM_WIN_SIZE;
+        unsigned int winBit = info.smBit % MUX_SM_WIN_SIZE;
 
         emit(
             slot,
-            QL_SS2S("SM[" << winBit << "] := I[" << fi.bit << "]"),
-            QL_SS2S("# readout(q" << fi.bi->qubits[0] << ")")
+            QL_SS2S("SM[" << winBit << "] := I[" << info.bit << "]"),
+            QL_SS2S("# readout(q" << info.bi->qubits[0] << ")")
         );
     }
 }
 
 
-UInt Datapath::getMuxSmAddr(const FeedbackMap &feedbackMap) {
+UInt Datapath::getMuxSmAddr(const MeasResultRealTimeMap &measResultRealTimeMap) {
     UInt minSmBit = MAX;
     UInt maxSmBit = 0;
 
-    if (feedbackMap.empty()) {
-        QL_ICE("feedbackMap must not be empty");
+    if (measResultRealTimeMap.empty()) {
+        QL_ICE("measResultRealTimeMap must not be empty");
     }
 
-    for (auto &feedback : feedbackMap) {
-        FeedbackInfo fi = feedback.second;
+    for (auto &measResult : measResultRealTimeMap) {
+        MeasResultRealTimeInfo info = measResult.second;
 
-        minSmBit = min(minSmBit, fi.smBit);
-        maxSmBit = max(maxSmBit, fi.smBit);
+        minSmBit = min(minSmBit, info.smBit);
+        maxSmBit = max(maxSmBit, info.smBit);
     }
 
     // perform checks

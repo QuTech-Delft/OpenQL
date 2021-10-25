@@ -284,11 +284,11 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
         mapPreloaded = true;
     }
 
-    // show instruments that can produce feedback results
+    // show instruments that can produce real-time measurement results
     for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
         const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
         if (QL_JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
-            QL_IOUT("instrument '" << ic.ii.instrumentName << "' (index " << instrIdx << ") is used for feedback");
+            QL_IOUT("instrument '" << ic.ii.instrumentName << "' (index " << instrIdx << ") can produce real-time measurement results");
         }
     }
 }
@@ -469,7 +469,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
             } // if(signal defined)
 
 
-            // handle real-time measurement results (i.e. when necessary, create feedbackMap entry
+            // handle real-time measurement results (i.e. when necessary, create measResultRealTimeMap entry
             // NB: we allow for instruments that only perform the input side of readout, without signal generation by the
             // same instrument.
             if (bi.isMeasRsltRealTime) {
@@ -505,7 +505,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 UInt smBit = dp.allocateSmBit(breg_operand, instrIdx);
 
                 // remind mapping of bit -> smBit for setting MUX
-                codeGenInfo.feedbackMap.emplace(group, FeedbackInfo{smBit, resultBit, bi});
+                codeGenInfo.measResultRealTimeMap.emplace(group, MeasResultRealTimeInfo{smBit, resultBit, bi});
 
                 // FIXME: also generate VCD
             }
@@ -529,11 +529,11 @@ void Codegen::bundleFinish(
     // FIXME: add
     // - DSM used, for seq_inv_sm
 
-    // determine whether bundle has any feedback
-    Bool bundleHasFeedback = false;
+    // determine whether bundle has any real-time measurement results
+    Bool bundleHasMeasRsltRealTime = false;
     for (const auto &codeGenInfo : codeGenMap) {
-        if (!codeGenInfo.second.feedbackMap.empty()) {
-            bundleHasFeedback = true;
+        if (!codeGenInfo.second.measResultRealTimeMap.empty()) {
+            bundleHasMeasRsltRealTime = true;
             // FIXME: calc min and max SM address used
             //  unsigned int smAddr = datapath_cc::getMuxSmAddr(feedbackMap);
         }
@@ -562,13 +562,13 @@ void Codegen::bundleFinish(
             // nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
         }
 
-        if (bundleHasFeedback) {
-            emitFeedback(
-                codeGenInfo.feedbackMap,
-                instrIdx,
-                startCycle,
-                codeGenInfo.slot,
-                codeGenInfo.instrumentName
+        if (bundleHasMeasRsltRealTime) {
+            emitMeasRsltRealTime(
+                    codeGenInfo.measResultRealTimeMap,
+                    instrIdx,
+                    startCycle,
+                    codeGenInfo.slot,
+                    codeGenInfo.instrumentName
             );
         }
 
@@ -1050,10 +1050,8 @@ void Codegen::emitProgramFinish() {
 
 
 // generate code to input measurement results and distribute them via DSM
-// FIXME: naming: here still feedback, elsewhere now MeasRsltRealTime (was Readout, MeasFeedback, )
-//  the name feedback is confusing, because we only the input side of it here
-void Codegen::emitFeedback(
-    const FeedbackMap &feedbackMap,
+void Codegen::emitMeasRsltRealTime(
+    const MeasResultRealTimeMap &measResultRealTimeMap,
     UInt instrIdx,
     UInt startCycle,
     Int slot,
@@ -1063,22 +1061,23 @@ void Codegen::emitFeedback(
         emitPadToCycle(instrIdx, startCycle, slot, instrumentName);
     }
 
-    // code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
-    if (!feedbackMap.empty()) {    // this instrument performs readout for feedback now
-        UInt mux = dp.getOrAssignMux(instrIdx, feedbackMap);
-        dp.emitMux(mux, feedbackMap, instrIdx, slot);
+    // code generation for participating and non-participating instruments
+    // NB: both code paths must take equal number of sequencer cycles
+    if (!measResultRealTimeMap.empty()) {    // this instrument produces real-time measurements now
+        UInt mux = dp.getOrAssignMux(instrIdx, measResultRealTimeMap);
+        dp.emitMux(mux, measResultRealTimeMap, instrIdx, slot);
 
         // emit code for slot input
-        UInt sizeTag = Datapath::getSizeTag(feedbackMap.size());        // compute DSM transfer size tag (for 'seq_in_sm' instruction)
-        UInt smAddr = Datapath::getMuxSmAddr(feedbackMap);
+        UInt sizeTag = Datapath::getSizeTag(measResultRealTimeMap.size());        // compute DSM transfer size tag (for 'seq_in_sm' instruction)
+        UInt smAddr = Datapath::getMuxSmAddr(measResultRealTimeMap);
         emit(
             slot,
             "seq_in_sm",
             QL_SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
-            QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": feedback on '" << instrumentName+"'")
+            QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": real-time measurement result on '" << instrumentName+"'")
         );
         lastEndCycle[instrIdx]++;
-    } else {    // this instrument does not perform readout for feedback now
+    } else {    // this instrument does not produce real-time measurements now
         // emit code for non-participating instrument
         // FIXME: may invalidate DSM that ust arrived dependent on individual SEQBAR counts
         UInt smAddr = 0;
