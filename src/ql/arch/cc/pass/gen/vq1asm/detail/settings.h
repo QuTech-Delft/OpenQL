@@ -66,7 +66,6 @@ public: // functions
     Str getReadoutMode(const ir::InstructionType &instrType);
     Bool isReadout(const ir::InstructionType &instrType);   // FIXME: naming
     Bool isMeasRsltRealTime(const ir::InstructionType &instrType) { return isReadout(instrType) && getReadoutMode(instrType) == "feedback"; };
-    Bool isFlux(const ir::InstructionType &instrType);
 
     static SignalDef findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;

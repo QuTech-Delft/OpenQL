@@ -50,7 +50,6 @@ Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const
 }
 
 
-
 // support for Backend::Backend() (Codegen::init)
 void Settings::loadBackendSettings(const ir::PlatformRef &platform) {
     const Json &hardwareSettings = platform->data.data["hardware_settings"];
@@ -72,12 +71,6 @@ Str Settings::getReadoutMode(const ir::InstructionType &instrType) {
 Bool Settings::isReadout(const ir::InstructionType &instrType) {
     const Json &instruction = instrType.data.data;
     return isReadout(instruction, instrType.name);
-}
-
-
-Bool Settings::isFlux(const ir::InstructionType &instrType) {
-    const Json &instruction = instrType.data.data;
-    return isFlux(instruction, jsonSignals, instrType.name);
 }
 
 

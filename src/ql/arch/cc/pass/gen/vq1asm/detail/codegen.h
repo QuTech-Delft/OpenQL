@@ -139,7 +139,7 @@ private:    // funcs
 
     // generic helpers
     CodeGenMap collectCodeGenInfo(UInt startCycle, UInt durationInCycles);
-    CalcSignalValue calcSignalValue(const Settings::SignalDef &sd, UInt s, const Vec<UInt> &operands, const Str &iname);
+    CalcSignalValue calcSignalValue(const Settings::SignalDef &sd, UInt s, const Vec<UInt> &qubits, const Str &iname);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
     Codeword assignCodeword(const Str &instrumentName, Int instrIdx, Group group);
 #endif

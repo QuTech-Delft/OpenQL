@@ -142,7 +142,7 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
 
 // Static helper function for bundleFinish()
 typedef struct {
-    tDigital groupDigOut;    // codeword/mask fragment for this group
+    tDigital groupDigOut;   // codeword/mask fragment for this group
     Str comment;            // comment for instruction stream
 } CalcGroupDigOut;
 
@@ -260,10 +260,9 @@ static CalcGroupDigOut calcGroupDigOut(
     return ret;
 }
 
-
-
-
-
+/************************************************************************\
+| Class Codegen
+\************************************************************************/
 
 Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
     : ir(ir)
@@ -496,7 +495,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 if (bi.bregs.empty()) {
                     breg_operand = bi.qubits[0];                    // implicit classic bit for qubit
                     QL_IOUT("Using implicit bit " << breg_operand << " for qubit " << bi.qubits[0]);
-                } else {    // FIXME: currently inpossible
+                } else {    // FIXME: currently impossible
                     breg_operand = bi.bregs[0];
                     QL_IOUT("Using explicit bit " << breg_operand << " for qubit " << bi.qubits[0]);
                 }
@@ -564,11 +563,11 @@ void Codegen::bundleFinish(
 
         if (bundleHasMeasRsltRealTime) {
             emitMeasRsltRealTime(
-                    codeGenInfo.measResultRealTimeMap,
-                    instrIdx,
-                    startCycle,
-                    codeGenInfo.slot,
-                    codeGenInfo.instrumentName
+                codeGenInfo.measResultRealTimeMap,
+                instrIdx,
+                startCycle,
+                codeGenInfo.slot,
+                codeGenInfo.instrumentName
             );
         }
 
@@ -713,8 +712,6 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         // store signal duration
         bi.durationInCycles = durationInCycles;
 
-        // FIXME: this is actually about _dist_dsm
-        //  , which requires '"signal": [ {	"type": "measure"' to be sort of tied to the UHF
         // store operands used for real-time measurements, actual work is postponed to bundleFinish()
         if (settings.isMeasRsltRealTime(*custom.instruction_type)) {
             // FIXME: move the checks to collectCodeGenInfo?
@@ -1079,7 +1076,7 @@ void Codegen::emitMeasRsltRealTime(
         lastEndCycle[instrIdx]++;
     } else {    // this instrument does not produce real-time measurements now
         // emit code for non-participating instrument
-        // FIXME: may invalidate DSM that ust arrived dependent on individual SEQBAR counts
+        // FIXME FIXME FIXME: may invalidate DSM that just arrived dependent on individual SEQBAR counts
         UInt smAddr = 0;
         UInt smTotalSize = 1;    // FIXME: inexact, but me must not invalidate memory that we will not write
         emit(
@@ -1172,7 +1169,7 @@ void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str
 Codegen::CalcSignalValue Codegen::calcSignalValue(
     const Settings::SignalDef &sd,
     UInt s,
-    const Vec<UInt> &operands,
+    const Vec<UInt> &qubits,
     const Str &iname
 ) {
     CalcSignalValue ret;
@@ -1182,17 +1179,18 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
     | get signal properties, mapping operand index to qubit
     \************************************************************************/
 
-    // get the operand index & qubit to work on
+    // get the operand (i.e. qubit) index & qubit to work on
+    // NB: the key name "operand_idx" is a historical artifact: formerly all operands were qubits
     ret.operandIdx = json_get<UInt>(sd.signal[s], "operand_idx", signalSPath);
-    if (ret.operandIdx >= operands.size()) {
+    if (ret.operandIdx >= qubits.size()) {
         QL_JSON_ERROR(
             "instruction '" << iname
             << "': JSON file defines operand_idx " << ret.operandIdx
-            << ", but only " << operands.size()
-            << " operands were provided (correct JSON, or provide enough operands)"
+            << ", but only " << qubits.size()
+            << " qubit operands were provided (correct JSON, or provide enough operands)"
         ); // FIXME: add offending statement
     }
-    UInt qubit = operands[ret.operandIdx];
+    UInt qubit = qubits[ret.operandIdx];
 
     // get signal value
     const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
@@ -1217,7 +1215,7 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
         UInt size = instructionSignalValue.is_array() ? instructionSignalValue.size() : 1;  // For objects, size() returns number of keys
         if (size != channelsPergroup) {
 //            QL_JSON_ERROR(
-            QL_WOUT(    // FIXME: we're transitioning on the semantics of signalValue
+            QL_WOUT(    // FIXME: we're transitioning on the semantics of signalValue, therefore only warn
                 "signal dimension mismatch on instruction '" << iname
                 << "' : control mode '" << ret.si.ic.refControlMode
                 << "' requires " <<  channelsPergroup
@@ -1340,21 +1338,13 @@ void Codegen::do_handle_expression(
     const Str &descr
 ) {
     // function global helpers
-    auto breg2reg = [this](const ir::ExpressionRef &ref) {    // FIXME: makes no sense, and needs to go through DSM bit allocator
-        auto reg = operandContext.convert_breg_reference(ref);
-        if(reg >= NUM_BREGS) {
-            QL_INPUT_ERROR("bit register index " << reg << " exceeds maximum");
-        }
-        return reg;
-    };
 
     auto dest_reg = [this, lhs]() {
         return creg2reg(*lhs->as_reference());
     };
 
     // Convert integer/creg function_call.operands expression to Q1 instruction argument.
-    // FIXME: improve name
-    auto op_str_int = [this](const ir::ExpressionRef &op) {
+    auto expr2q1Arg = [this](const ir::ExpressionRef &op) {
         if(op->as_reference()) {
             return QL_SS2S("R" << creg2reg(*op->as_reference()));
         } else if(auto ilit = op->as_int_literal()) {
@@ -1365,21 +1355,8 @@ void Codegen::do_handle_expression(
         }
     };
 
-#if 0   // FIXME
-    // Convert bit/breg function_call.operands expression to FIXME: return type makes no sense
-    auto op_str_bit = [breg2reg](const ir::ExpressionRef &op) {   // FIXME: misnomer op_str_bit
-        if(op->as_reference()) {
-            return breg2reg(op);
-        } else if(op->as_int_literal()) {   // FIXME: do literals make sense here
-            return op->as_int_literal()->value;
-        } else {
-            QL_ICE("Expected bit operand");
-        }
-    };
-#endif
-
     // emit code for casting a bit value (i.e. DSM bit) to an integer (i.e. Q1 register)
-    auto emit_bin_cast = [this, breg2reg](Any<ir::Expression> operands, Int expOpCnt) {
+    auto emit_bin_cast = [this](Any<ir::Expression> operands, Int expOpCnt) {
         if(operands.size() != expOpCnt) {
             QL_ICE("Expected " << expOpCnt << " bit operands, got " << operands.size());
         }
@@ -1390,9 +1367,13 @@ void Codegen::do_handle_expression(
         for (Int i=0; i<operands.size(); i++) {
             auto &op = operands[i];
 
+            // Convert breg reference to the register index
             Int breg;
             if(op->as_reference()) {
-                breg = breg2reg(op);
+                breg = operandContext.convert_breg_reference(op);
+                if(breg >= NUM_BREGS) {
+                    QL_INPUT_ERROR("bit register index " << breg << " exceeds maximum");
+                }
             } else {
                 QL_ICE("Expected bit operand, got '" << ir::describe(op) << "'");
             }
@@ -1415,13 +1396,15 @@ void Codegen::do_handle_expression(
             mask |= 1ul << (smBit % 32);
         }
 
-        // FIXME: verify that instruction duration matches actual time. We don't have a matching instruction for the break, but do take up quantum time
+        // FIXME: We don't have a matching quantum instruction for the break (formerly, we had 'if_1_break' etc), but do take up quantum time,
+        //  so the timeline is silently shifted
         /*
             seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
             seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch
             move_sm     Ra                  ; ... and move to register
             nop                             ; register dependency Ra
 
+            ; NB: example code added by caller
             and         Ra,<mask>,Rb        ; mask depends on DSM bit location
             nop                             ; register dependency Rb
             jlt         Rb,1,@loop
@@ -1431,25 +1414,12 @@ void Codegen::do_handle_expression(
         emit("", "move_sm", REG_TMP0);
         emit("", "nop");
         return mask;
-
-#if 0
-        // FIXME: move to caller:
-        emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-        emit("", "nop");
-#endif
-#if 0
-        if (pragmaBreakVal == 0) {
-            emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label));
-        } else {
-            emit("", "jge", QL_SS2S(REG_TMP1 << ",1,@" << label));
-        }
-#endif
     };
     // ----------- end of global helpers -------------
 
 
     try {
-        if(!lhs.empty()) {
+        if (!lhs.empty()) {
             comment(QL_SS2S("# Expression '" << descr << "': " << ir::describe(lhs) << " = " << ir::describe(expression)));
         } else {
 #if 0   // FIXME: redundant information, also provided by structured control flow comments
@@ -1465,7 +1435,7 @@ void Codegen::do_handle_expression(
                 QL_SS2S(ilit->value << ",R" << dest_reg())
                 , "# " + ir::describe(expression)
             );
-#if 0 // FIXME
+#if 0 // FIXME: implement
         } else if (expression->as_bit_literal()) {
 #endif
         } else if (expression->as_reference()) {
@@ -1474,7 +1444,7 @@ void Codegen::do_handle_expression(
                 emit(
                     "",
                     "move",
-                    QL_SS2S("R" << reg << ",R" << dest_reg())  // FIXME: use op_str_int?
+                    QL_SS2S("R" << reg << ",R" << dest_reg())  // FIXME: use expr2q1Arg?
                     , "# " + ir::describe(expression)
                 );
             } else {
@@ -1507,24 +1477,23 @@ void Codegen::do_handle_expression(
                 } else if(operands[0]->as_reference() && operands[1]->as_reference()) {
                     return RR;
                 } else if(operands[0]->as_int_literal() && operands[1]->as_int_literal()) {
-                    QL_INPUT_ERROR("cannot currently handle functions on two literal paremeters");
+                    QL_INPUT_ERROR("cannot currently handle functions on two literal parameters");
                 } else if(operands[0]->as_function_call()) {
-                    QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(operands[0]) << "'");
-                    // FIXME: etc, also handle "creg(0)=creg(0)+1+1" or "1 < i+3"
+                    QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[0]) << "'");
                 } else if(operands[1]->as_function_call()) {
-                    QL_INPUT_ERROR("cannot handle function call within function call '" << ir::describe(operands[1]) << "'");
+                    QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[1]) << "'");
                 } else {
-                    QL_INPUT_ERROR("cannot handle parameter combination '" << ir::describe(operands[0]) << "' , '" << ir::describe(operands[1]) << "'");
+                    QL_INPUT_ERROR("cannot currently handle parameter combination '" << ir::describe(operands[0]) << "' , '" << ir::describe(operands[1]) << "'");
                     // NB: includes both parameters being int_literal, which we may handle in the future by a separate pass
                 }
             };
-            auto emit_mnem2args = [this, op_str_int, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target=REG_TMP0) {
+            auto emit_mnem2args = [this, expr2q1Arg, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target=REG_TMP0) {
                 emit(
                     "",
                     mnem,
                     QL_SS2S(
-                        op_str_int(fn->operands[arg0])
-                        << "," << op_str_int(fn->operands[arg1])
+                        expr2q1Arg(fn->operands[arg0])
+                        << "," << expr2q1Arg(fn->operands[arg1])
                         << "," << target
                     )
                     , "# " + ir::describe(expression)
@@ -1550,7 +1519,7 @@ void Codegen::do_handle_expression(
                     "",
                     operation,
                     QL_SS2S(
-                        op_str_int(fn->operands[0])
+                        expr2q1Arg(fn->operands[0])
                         << ",R" << dest_reg()
                     )
                     , "# " + ir::describe(expression)
@@ -1583,10 +1552,12 @@ void Codegen::do_handle_expression(
                     switch (get_profile(fn->operands)) {
                         case RL:    // fall through
                         case RR:    emit_mnem2args(operation, 0, 1, QL_SS2S("R"<<dest_reg())); break;
-                        case LR:    emit_mnem2args(operation, 1, 0, QL_SS2S("R"<<dest_reg())); break;   // reverse operands to match Q1 instruction set
+                        case LR:
+                            emit_mnem2args(operation, 1, 0, QL_SS2S("R"<<dest_reg()));   // reverse operands to match Q1 instruction set
                             if (operation == "sub") {
                                 // FIXME: correct for changed op order
                             }
+                            break;
                     }
                 }
             }
@@ -1602,7 +1573,7 @@ void Codegen::do_handle_expression(
                 }
                 if (!operation.empty()) {
                     UInt mask = emit_bin_cast(fn->operands, 2);
-                    // FIXME:
+                    // FIXME: handle operation
                     emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
                     emit("", "nop");
                     emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
@@ -1653,7 +1624,7 @@ void Codegen::do_handle_expression(
                                 "",
                                 "jge",
                                 QL_SS2S(
-                                    op_str_int(fn->operands[0]) << ","
+                                    expr2q1Arg(fn->operands[0]) << ","
                                     << fn->operands[1]->as_int_literal()->value + 1    // increment literal since we lack 'jgt'
                                     << ",@"+label_if_false
                                 ),
@@ -1666,7 +1637,7 @@ void Codegen::do_handle_expression(
                                 "add",
                                 QL_SS2S(
                                     "1,"
-                                    << op_str_int(fn->operands[1])
+                                    << expr2q1Arg(fn->operands[1])
                                     << "," << REG_TMP0
                                 )
                             );                      // increment arg1
@@ -1675,7 +1646,7 @@ void Codegen::do_handle_expression(
                                 "",
                                 "jge",
                                 QL_SS2S(
-                                    op_str_int(fn->operands[0])
+                                    expr2q1Arg(fn->operands[0])
                                     << "," << REG_TMP0
                                     << ",@"+label_if_false
                                 ),
@@ -1688,7 +1659,7 @@ void Codegen::do_handle_expression(
                                 "",
                                 "jlt",                              // reverse instruction
                                 QL_SS2S(
-                                    op_str_int(fn->operands[1])     // reverse operands
+                                    expr2q1Arg(fn->operands[1])     // reverse operands
                                     << fn->operands[0]->as_int_literal()->value - 1    // DECrement literal since we lack 'jle'
                                     << ",@"+label_if_false
                                 ),
@@ -1720,7 +1691,6 @@ void Codegen::do_handle_expression(
     }
 
 }
-
 
 } // namespace detail
 } // namespace vq1asm
