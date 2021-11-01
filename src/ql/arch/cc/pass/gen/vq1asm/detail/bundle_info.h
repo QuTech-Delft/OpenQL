@@ -31,10 +31,21 @@ enum class ConditionType {
 };
 
 
-typedef struct {
+class tInstructionCondition {
+public:
+#if 0   // FIXME: WIP
+    tInstructionCondition() = default;
+    tInstructionCondition(tInstructionCondition &condition) = default;
+    tInstructionCondition(tInstructionCondition &&) = default;
+    tInstructionCondition& operator=(tInstructionCondition&&) = default;
+    tInstructionCondition& operator=(tInstructionCondition&) = default;
+
+    const ir::ExpressionRef &cond_expression;   // for annotation purposes
+#endif
+
     ConditionType cond_type;
     utils::Vec<utils::UInt> cond_operands;
-} tInstructionCondition;
+};
 
 
 class BundleInfo {

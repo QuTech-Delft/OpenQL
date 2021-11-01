@@ -150,7 +150,12 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                 if (auto custom = cinsn->as_custom_instruction()) {
 
                     QL_DOUT("custom instruction: name=" + custom->instruction_type->name);
-                    codegen.custom_instruction(*custom);
+                    try {
+                        codegen.custom_instruction(*custom);
+                    } catch (utils::Exception &e) {
+                        e.add_context(QL_SS2S("in custom instruction '" << ir::describe(*custom) << "'"), true);
+                        throw;
+                    }
 
                 } else if (auto set_instruction = cinsn->as_set_instruction()) {
 
@@ -162,7 +167,12 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                         && set_instruction->condition->as_bit_literal()->value
                         , "conditions other then 'true' are not supported for set instruction"
                     );
-                    codegen.handle_set_instruction(*set_instruction, "conditional.set");
+                    try {
+                        codegen.handle_set_instruction(*set_instruction, "conditional.set");
+                    } catch (utils::Exception &e) {
+                        e.add_context(QL_SS2S("in set_instruction '" << ir::describe(*set_instruction) << "'") , true);
+                        throw;
+                    }
 
                 } else if (cinsn->as_goto_instruction()) {
                     QL_INPUT_ERROR("goto instruction not supported");
@@ -290,7 +300,6 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                 loop_label.pop_back();
 
             } else if (stmt->as_break_statement()) {
-
                 codegen.do_break(loop_label.back());
 
             } else if (stmt->as_continue_statement()) {

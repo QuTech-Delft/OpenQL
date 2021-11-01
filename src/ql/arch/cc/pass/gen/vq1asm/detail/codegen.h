@@ -23,7 +23,7 @@
 #define REG_TMP1 "R62"                          // Q1 register for temporary use
 #define NUM_RSRVD_CREGS 2                       // must match number of REG_TMP*
 #define NUM_CREGS (64-NUM_RSRVD_CREGS)
-#define NUM_BREGS 1024
+#define NUM_BREGS 1024                          // bregs require mapping to DSM, which introduces holes, so we probably fail before we reach this limit
 
 namespace ql {
 namespace arch {
@@ -34,6 +34,7 @@ namespace vq1asm {
 namespace detail {
 
 
+// FIXME: split aff the actual code generation, and simplify support for architectures that are similar
 class Codegen {
 public: //  functions
     Codegen(const ir::Ref &ir, const OptionsRef &options);
@@ -115,7 +116,7 @@ private:    // vars
     Json codewordTable;                                         // codewords versus signals per instrument group
     StrStrm codeSection;                                        // the code generated
 
-    // codegen state, block(kernel) scope FIXME: create class
+    // codegen state, block(kernel) scope
     UInt lastEndCycle[MAX_INSTRS];                              // vector[instrIdx], maintain where we got per slot
     Int depth = 0;                                              // depth of current block, used for indentation of comments
 

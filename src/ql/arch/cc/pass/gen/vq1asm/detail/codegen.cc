@@ -12,7 +12,7 @@
 #include "ql/version.h"
 #include "ql/com/options.h"
 #include "ql/ir/describe.h"
-#include "ql/ir/ops.h"
+//#include "ql/ir/ops.h"
 
 #include <iosfwd>
 
@@ -705,7 +705,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                     << "', group=" << csv.si.group
                     << ", between '" << bi.signalValue
                     << "' and '" << csv.signalValueString << "'"
-                );  // FIXME: add offending instruction
+                );
             }
         }
 
@@ -741,8 +741,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             // Note that if all instruction definitions have proper prototypes this would be guaranteed upstream.
             if (ops.qubits.size() != 1) {
                 QL_INPUT_ERROR(
-                    "Readout instruction '" << ir::describe(custom)
-                    << "' requires exactly 1 quantum operand, not " << ops.qubits.size()
+                    "Readout instruction requires exactly 1 quantum operand, not " << ops.qubits.size()
                 );
             }
 #if 0   // FIXME
@@ -751,8 +750,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             }
             if (ops.bregs.size() > 1) {
                 QL_INPUT_ERROR(
-                    "Readout instruction '" << ir::describe(custom)
-                    << "' requires 0 or 1 bit operands, not " << ops.bregs.size()
+                    "Readout instruction requires 0 or 1 bit operands, not " << ops.bregs.size()
                 );
             }
 #endif
