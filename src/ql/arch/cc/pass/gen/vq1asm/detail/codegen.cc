@@ -1438,7 +1438,7 @@ void Codegen::do_handle_expression(
         } else if (expression->as_bit_literal()) {
 #endif
         } else if (expression->as_reference()) {
-            if(operandContext.is_creg_reference(expression)) {
+            if(operandContext.is_creg_reference(expression)) {  // creg, as RHS of a SetInstruction
                 auto reg = creg2reg(*expression->as_reference());
                 emit(
                     "",
@@ -1446,17 +1446,16 @@ void Codegen::do_handle_expression(
                     QL_SS2S("R" << reg << ",R" << dest_reg())  // FIXME: use expr2q1Arg?
                     , "# " + ir::describe(expression)
                 );
-            } else {
+            } else {    // breg as condition, like in "if(b[0])"
                 // convert ir::Expression to utils::Any<ir::Expression>
                 utils::Any<ir::Expression> anyExpression;
                 anyExpression.add(expression);
 
                 UInt mask = emit_bin_cast(anyExpression, 1);
-                // FIXME: assign to LHS. Can we even write 'creg[0] = breg[0]' without a cast?
                 emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
                 emit("", "nop");
-//                emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
-                QL_ICE("FIXME: breg reference not yet handled by CC backend");
+                emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
+                // FIXME: be more consistent in annotating jlt/jge with expression and: , "# skip next part if condition is false"
             }
         } else if (auto fn = expression->as_function_call()) {
             // function call helpers
