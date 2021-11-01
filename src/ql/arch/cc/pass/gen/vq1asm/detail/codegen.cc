@@ -1512,7 +1512,7 @@ void Codegen::do_handle_expression(
                 );
                 fn = fn->operands[0]->as_function_call();   // step into. FIXME: Shouldn't we recurse to allow e.g. casting a breg??
 
-            // int arithmetic, 1 operand
+            // int arithmetic, 1 operand: "~"
             } else if (fn->function_type->name == "operator~") {
                 operation = "not";
                 emit(
@@ -1525,7 +1525,7 @@ void Codegen::do_handle_expression(
                     , "# " + ir::describe(expression)
                 );
 
-            // bit arithmetic, 1 operand
+            // bit arithmetic, 1 operand: "!"
             } else if (fn->function_type->name == "operator!") {
                 operation = "not";
                 UInt mask = emit_bin_cast(fn->operands, 1);
@@ -1535,7 +1535,7 @@ void Codegen::do_handle_expression(
                 emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
             }
 
-            // int arithmetic, 2 operands
+            // int arithmetic, 2 operands: "+", "-", "&", "|", "^"
             if (operation.empty()) {    // check group only if nothing found yet
                 if (fn->function_type->name == "operator+") {
                     operation = "add";
@@ -1565,7 +1565,7 @@ void Codegen::do_handle_expression(
                 }
             }
 
-            // bit arithmetic, 2 operands
+            // bit arithmetic, 2 operands: "&&", "||", "^^"
             if(operation.empty()) {
                 if (fn->function_type->name == "operator&&") {
                     operation = "FIXME";
@@ -1584,7 +1584,7 @@ void Codegen::do_handle_expression(
                 }
             }
 
-            // relop, group 1
+            // relop, group 1: "==", "!="
             if(operation.empty()) {
                 if (fn->function_type->name == "operator==") {
                     operation = "jge";  // note that we need to invert the operation, because we jump on the condition being false
@@ -1603,7 +1603,7 @@ void Codegen::do_handle_expression(
                 }
             }
 
-            // relop, group 2
+            // relop, group 2: ">=", "<"
             if(operation.empty()) {
                 if (fn->function_type->name == "operator>=") {
                     operation = ">=";   // NB: actual contents unused here
@@ -1619,8 +1619,13 @@ void Codegen::do_handle_expression(
                         case RR:    emit_mnem2args("jlt", 0, 1, as_target(label_if_false)); break;
                         case LR:    emit_mnem2args("jge", 1, 0, as_target(label_if_false)); break;   // reverse operands (and instruction) to match Q1 instruction set
                     }
-                } else if (fn->function_type->name == "operator>") {
-                    operation = ">";
+                }
+            }
+
+            // relop, group 3: ">", "<="
+            if(operation.empty()) {
+                if (fn->function_type->name == "operator>") {
+                    operation = ">";   // NB: actual contents unused here
                     switch (get_profile(fn->operands)) {
                         case RL:
                             check_int_literal(*fn->operands[1]->as_int_literal(), 0, 1);
@@ -1645,7 +1650,7 @@ void Codegen::do_handle_expression(
                                     << "," << REG_TMP0
                                 )
                             );                      // increment arg1
-                                emit("", "nop");    // register dependency
+                            emit("", "nop");        // register dependency
                             emit(
                                 "",
                                 "jge",
@@ -1673,6 +1678,7 @@ void Codegen::do_handle_expression(
                     }
                 } else if (fn->function_type->name == "operator<=") {
                     operation = "<=";
+                    // FIXME: same as above, replace jge -> jlt and vv
                     QL_ICE("FIXME: '<=' not yet implemented in CC backend");
                 }
                 if(!operation.empty()) {
