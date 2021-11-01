@@ -1164,6 +1164,7 @@ void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str
 
 
 // compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
+// NB: helper for custum_intruction, which is called with try/catch to add error context
 Codegen::CalcSignalValue Codegen::calcSignalValue(
     const Settings::SignalDef &sd,
     UInt s,
@@ -1186,7 +1187,7 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
             << "': JSON file defines operand_idx " << ret.operandIdx
             << ", but only " << qubits.size()
             << " qubit operands were provided (correct JSON, or provide enough operands)"
-        ); // FIXME: add offending statement
+        );
     }
     UInt qubit = qubits[ret.operandIdx];
 
@@ -1420,7 +1421,7 @@ void Codegen::do_handle_expression(
         if (!lhs.empty()) {
             comment(QL_SS2S("# Expression '" << descr << "': " << ir::describe(lhs) << " = " << ir::describe(expression)));
         } else {
-#if 0   // FIXME: redundant information, also provided by structured control flow comments
+#if 0   // NB: redundant information, also provided by structured control flow comments
             comment(QL_SS2S("# Expression '" << descr << "': " << ir::describe(expression)));
 #endif
         }
@@ -1433,7 +1434,7 @@ void Codegen::do_handle_expression(
                 QL_SS2S(ilit->value << ",R" << dest_reg())
                 , "# " + ir::describe(expression)
             );
-#if 0 // FIXME: implement
+#if 0 // FIXME: implement? Now fails in final 'otherwise' below
         } else if (expression->as_bit_literal()) {
 #endif
         } else if (expression->as_reference()) {
@@ -1455,6 +1456,7 @@ void Codegen::do_handle_expression(
                 emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
                 emit("", "nop");
 //                emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
+                QL_ICE("FIXME: breg reference not yet handled by CC backend");
             }
         } else if (auto fn = expression->as_function_call()) {
             // function call helpers
@@ -1508,7 +1510,7 @@ void Codegen::do_handle_expression(
                     fn->operands[0]->as_function_call(),
                     "'int()' cast target must be a function"
                 );
-                fn = fn->operands[0]->as_function_call();   // FIXME: step into. Shouldn't we recurse to allow e.g. casting a breg??
+                fn = fn->operands[0]->as_function_call();   // step into. FIXME: Shouldn't we recurse to allow e.g. casting a breg??
 
             // int arithmetic, 1 operand
             } else if (fn->function_type->name == "operator~") {
@@ -1553,7 +1555,10 @@ void Codegen::do_handle_expression(
                         case LR:
                             emit_mnem2args(operation, 1, 0, QL_SS2S("R"<<dest_reg()));   // reverse operands to match Q1 instruction set
                             if (operation == "sub") {
-                                // FIXME: correct for changed op order
+                                // Negate result in 2's complement to correct for changed op order
+                                emit("", "not", QL_SS2S("R"<<dest_reg()));                      // invert
+                                emit("", "nop");
+                                emit("", "add", QL_SS2S("1,R"<<dest_reg()<<",R"<<dest_reg()));  // add 1
                             }
                             break;
                     }
@@ -1571,10 +1576,11 @@ void Codegen::do_handle_expression(
                 }
                 if (!operation.empty()) {
                     UInt mask = emit_bin_cast(fn->operands, 2);
-                    // FIXME: handle operation
+                    // FIXME: handle operation properly
                     emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
                     emit("", "nop");
                     emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
+                    QL_ICE("CC backend does not yet support " << fn->function_type->name);
                 }
             }
 
@@ -1667,7 +1673,7 @@ void Codegen::do_handle_expression(
                     }
                 } else if (fn->function_type->name == "operator<=") {
                     operation = "<=";
-                    QL_ICE("FIXME: '<=' not yet implemented");
+                    QL_ICE("FIXME: '<=' not yet implemented in CC backend");
                 }
                 if(!operation.empty()) {
                     // NB: all work already done above

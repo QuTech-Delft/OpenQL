@@ -72,7 +72,7 @@ public: //  functions
 
     // new IR expressions
     void handle_set_instruction(const ir::SetInstruction &set, const Str &descr);
-    void handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);
+    void handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);   // FIXME: private?
 
 private:    // types
     struct CodeGenInfo {
