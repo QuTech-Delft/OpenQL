@@ -1363,6 +1363,7 @@ void Codegen::do_handle_expression(
         // Compute DSM address and mask for operands.
         UInt smAddr = 0;
         UInt mask = 0;      // mask for used SM bits in 32 bit word transferred using move_sm
+        Str descr;
         for (Int i=0; i<operands.size(); i++) {
             auto &op = operands[i];
 
@@ -1379,6 +1380,7 @@ void Codegen::do_handle_expression(
 
             // get SM bit for classic operand (allocated during readout)
             UInt smBit = dp.getSmBit(breg);
+            descr += QL_SS2S("b[" << breg << "]=DSMbit[" << smBit << "]; ");
 
             // compute and check SM address
             UInt mySmAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
@@ -1395,7 +1397,7 @@ void Codegen::do_handle_expression(
             mask |= 1ul << (smBit % 32);
         }
 
-        // FIXME: We don't have a matching quantum instruction for the break (formerly, we had 'if_1_break' etc), but do take up quantum time,
+        // FIXME: We don't have a matching quantum instruction for this cast (formerly, we had 'if_1_break' etc), but do take up quantum time,
         //  so the timeline is silently shifted
         /*
             seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
@@ -1408,7 +1410,7 @@ void Codegen::do_handle_expression(
             nop                             ; register dependency Rb
             jlt         Rb,1,@loop
         */
-        emit("", "seq_cl_sm", QL_SS2S("S" << smAddr));
+        emit("", "seq_cl_sm", QL_SS2S("S" << smAddr), "# transfer DSM bits to Q1: " + descr);
         emit("", "seq_wait", "3");
         emit("", "move_sm", REG_TMP0);
         emit("", "nop");
@@ -1452,10 +1454,14 @@ void Codegen::do_handle_expression(
                 anyExpression.add(expression);
 
                 UInt mask = emit_bin_cast(anyExpression, 1);
-                emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+                emit(
+                    "",
+                    "and",
+                    QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1),
+                    "# mask for '" + ir::describe(expression) + "'"
+                );    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
                 emit("", "nop");
-                emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
-                // FIXME: be more consistent in annotating jlt/jge with expression and: , "# skip next part if condition is false"
+                emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# skip next part if condition is false");
             }
         } else if (auto fn = expression->as_function_call()) {
             // function call helpers
@@ -1526,12 +1532,18 @@ void Codegen::do_handle_expression(
 
             // bit arithmetic, 1 operand: "!"
             } else if (fn->function_type->name == "operator!") {
+                // NB: note similarity with handling breg reference above
                 operation = "not";
                 UInt mask = emit_bin_cast(fn->operands, 1);
 
-                emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+                emit(
+                    "",
+                    "and",
+                    QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1),
+                    "# mask for '" + ir::describe(expression) + "'"
+                );    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
                 emit("", "nop");
-                emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
+                emit("", "jge", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# skip next part if inverted condition is false");  // NB: we use "jge" instead of "jlt" to invert
             }
 
             // int arithmetic, 2 operands: "+", "-", "&", "|", "^"

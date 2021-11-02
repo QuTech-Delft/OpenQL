@@ -83,7 +83,7 @@ for (; true; )  {
 
 .forLoopContinue
 for (; true; )  {
-    if (b[0]) {
+    if (!b[0]) { # NB: inverted condition
         continue;
     }
 }
