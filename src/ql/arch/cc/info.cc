@@ -583,6 +583,8 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
             instructions[it.key()][predicateKeyInstructionType] = predicateValueFlux;
         }
     }
+
+    QL_IOUT("finished desugaring CC instructions");
 }
 
 
@@ -662,7 +664,7 @@ void Info::post_process_platform(
     //  platform->set_annotation(pass::gen::vq1asm::detail::Settings());
     //  platform->get_annotation<pass::gen::vq1asm::detail::Settings>().loadBackendSettings(platform);
 
-    QL_IOUT("CC Info::post_process_platform, variant='" << variant << "'");
+    QL_IOUT("post_process_platform, variant='" << variant << "'");
 
     // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
     QL_IOUT("desugaring CC instrument resource");
@@ -705,7 +707,7 @@ void Info::post_process_platform(
     // Create Instrument resources from gathered information
     platform->resources["resources"]["meas"] = buildInstrumentResource("meas", measQubits, predicateValueMeas);
     platform->resources["resources"]["flux"] = buildInstrumentResource("flux", fluxQubits, predicateValueFlux);
-    QL_IOUT("CC: created resources:\n" << std::setw(4) << platform->resources);
+    QL_DOUT("created resources:\n" << std::setw(4) << platform->resources);
 
     // NB: we get the Qubit resource for free, independent of JSON contents (see ql/rmgr/factory.cc and QubitResource::on_initialize)
 }

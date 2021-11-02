@@ -455,6 +455,7 @@ static GateRef load_instruction(
  * Loads the platform members from the given JSON data and optional
  * auxiliary compiler configuration file.
  */
+// FIXME: add parameter to disable loading parts not used by new IR
 void Platform::load(
     utils::Json &platform_cfg,
     const utils::Str &platform_config_fname,
@@ -541,6 +542,7 @@ void Platform::load(
     architecture->preprocess_platform(platform_config);
 
     // load hardware_settings
+    QL_DOUT("loading hardware_settings");
     if (platform_config.count("hardware_settings") <= 0) {
         QL_JSON_ERROR("'hardware_settings' section is not specified in the hardware config file");
     } else {
@@ -596,6 +598,7 @@ void Platform::load(
     }
 
     // load instructions
+    QL_DOUT("loading instructions");    // NB: these are unused if the exclusively use the new IR
     const utils::Json &instructions = platform_config["instructions"];
     static const std::regex comma_space_pattern("\\s*,\\s*");
 
@@ -629,6 +632,7 @@ void Platform::load(
     // Examples:
     // - Parametrized gate-decomposition: "cl_2 %0": ["rxm90 %0", "rym90 %0"]
     // - Specialized gate-decomposition:  "rx180 q0" : ["x q0"]
+    QL_DOUT("loading gate_decomposition");    // NB: these are unused if the exclusively use the new IR
     if (platform_config.count("gate_decomposition") > 0) {
         const utils::Json &gate_decomposition = platform_config["gate_decomposition"];
         for (auto it = gate_decomposition.begin();
@@ -703,6 +707,7 @@ void Platform::load(
             instruction_map.set(comp_ins).emplace<gate_types::Composite>(comp_ins, gs);
         }
     }
+    QL_DOUT("load done");
 
 }
 

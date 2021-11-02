@@ -248,6 +248,8 @@ static void parse_decomposition_rule(
  * See convert_old_to_new(const compat::ProgramRef&) for details.
  */
 Ref convert_old_to_new(const compat::PlatformRef &old) {
+    QL_DOUT("converting old platform");
+
     Ref ir;
     ir.emplace();
 
@@ -324,6 +326,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     utils::List<std::function<void()>> todo;
 
     // Now load the sorted instruction list.
+    QL_DOUT("processing instructions");
     for (const UnparsedGateType &unparsed_gate_type : unparsed_gate_types) {
         try {
 
@@ -706,6 +709,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Add legacy decompositions to the new system, for gates added by passes
     // (notably swap and relatives for the mapper).
+    QL_DOUT("converting decompositions");
     auto it = old->platform_config.find("gate_decomposition");
     if (it != old->platform_config.end()) {
         for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
@@ -880,6 +884,8 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     }
 #endif
 
+    QL_DOUT("populate defaults");
+
     // Populate the default function types.
     auto fn = add_function_type(ir, utils::make<FunctionType>("operator!"));
     fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
@@ -928,6 +934,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     // expansions that we postponed.
     // NB: perform after populating topology and friends, otherwise check_consistency() may fail [called through
     // parse_decomposition_rule() -> cqasm::read() ].
+    QL_DOUT("expand decompositions");
     for (const auto &fn : todo) {
         fn();
     }
@@ -947,6 +954,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 #endif
     check_consistency(ir);
 
+    QL_DOUT("finished converting old platform");
     return ir;
 }
 

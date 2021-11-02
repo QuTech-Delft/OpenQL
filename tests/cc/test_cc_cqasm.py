@@ -59,6 +59,7 @@ class Test_cQASM(unittest.TestCase):
                         'legacy',  # sets predicate key to use legacy decompositions (FIXME: TBC)
                         {
                             'output_prefix': 'test_output/%N.%P',
+#                            'ignore_schedule': 'no',    # FIXME: see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
                             'debug': 'yes'
                         }
                     )
