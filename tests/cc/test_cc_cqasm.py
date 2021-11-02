@@ -74,8 +74,14 @@ class Test_cQASM(unittest.TestCase):
                     }
                 )
 
+
+
                 # set scheduler options
+                # sch = c.get_pass('scheduler')
+                # sch.set_option('scheduler_target', 'asap')
 #               c.set_option('scheduler.debug', 'yes')
+                c.set_option('scheduler.scheduler_target', 'asap')
+                c.set_option('scheduler.scheduler_heuristic', 'none')
 
                 c.print_strategy()
                 c.compile_with_frontend(pl)
@@ -89,6 +95,7 @@ class Test_cQASM(unittest.TestCase):
     def test_rus_elements(self):
         self.run_test_case('rus_elements')
 
+    @unittest.skip
     def test_rus_private(self):
         self.run_test_case('rus_private')
 

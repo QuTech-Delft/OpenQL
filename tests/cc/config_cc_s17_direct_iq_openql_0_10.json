@@ -618,14 +618,14 @@
 
         // additions for measurements using real time feedback
 		"_wait_uhfqa": {
-            "prototype": ["Z:qubit"],
+            "prototype": ["B:qubit"],
             "duration": 720,
             "cc": {
                 "signal": []
             }
         },
         "_dist_dsm": {
-            "prototype": ["Z:qubit"],
+            "prototype": ["U:qubit"],
 			"duration": 20,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"cc": {
@@ -639,7 +639,7 @@
 			}
 		},
         "_wait_dsm": {
-            "prototype": ["Z:qubit"],
+            "prototype": ["U:qubit"],
             "duration": 280,
             "cc": {
                 "signal": []
