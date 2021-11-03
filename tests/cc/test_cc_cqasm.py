@@ -93,7 +93,7 @@ class Test_cQASM(unittest.TestCase):
         finally:
             os.chdir(old_wd)
 
-    def _test_rus_elements(self):
+    def test_rus_elements(self):
         self.run_test_case('rus_elements')
 
     def test_looping(self):

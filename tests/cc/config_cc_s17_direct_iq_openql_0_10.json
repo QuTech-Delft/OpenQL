@@ -618,7 +618,7 @@
 
         // additions for measurements using real time feedback
 		"_wait_uhfqa": {
-            "prototype": ["B:qubit"],
+            "prototype": ["U:qubit"],
             "duration": 720,
             "cc": {
                 "signal": []
