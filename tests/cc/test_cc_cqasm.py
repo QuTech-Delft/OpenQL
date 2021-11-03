@@ -54,12 +54,12 @@ class Test_cQASM(unittest.TestCase):
 
                 if 1:
                     # insert decomposer for legacy decompositions
+                    # See; see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
                     c.prefix_pass(
                         'dec.Instructions',
                         'legacy',  # sets predicate key to use legacy decompositions (FIXME: TBC)
                         {
                             'output_prefix': 'test_output/%N.%P',
-#                            'ignore_schedule': 'no',    # FIXME: see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
                             'debug': 'yes'
                         }
                     )
@@ -81,8 +81,8 @@ class Test_cQASM(unittest.TestCase):
                 # sch = c.get_pass('scheduler')
                 # sch.set_option('scheduler_target', 'asap')
 #               c.set_option('scheduler.debug', 'yes')
-                c.set_option('scheduler.scheduler_target', 'asap')
-                c.set_option('scheduler.scheduler_heuristic', 'none')
+#                 c.set_option('scheduler.scheduler_target', 'asap')
+#                 c.set_option('scheduler.scheduler_heuristic', 'none')
 
                 c.print_strategy()
                 c.compile_with_frontend(pl)
@@ -93,16 +93,15 @@ class Test_cQASM(unittest.TestCase):
         finally:
             os.chdir(old_wd)
 
-    def test_rus_elements(self):
+    def _test_rus_elements(self):
         self.run_test_case('rus_elements')
-
-    @unittest.skip
-    def test_rus_private(self):
-        self.run_test_case('rus_private')
 
     def test_looping(self):
         self.run_test_case('looping')
 
+    @unittest.skip("private test")
+    def test_rus_private(self):
+        self.run_test_case('rus_private')
 
 if __name__ == '__main__':
     unittest.main()
