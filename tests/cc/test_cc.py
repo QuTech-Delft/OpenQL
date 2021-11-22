@@ -23,50 +23,8 @@ class Test_central_controller(unittest.TestCase):
     def setUp(self):
         ql.initialize()
         ql.set_option('output_dir', output_dir)
-        ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
-
-    def test_classical(self):
-        platform = ql.Platform(platform_name, config_fn)
-
-        p = ql.Program('test_classical', platform, num_qubits, num_cregs, num_bregs)
-        k = ql.Kernel('aKernel1', platform, num_qubits, num_cregs, num_bregs)
-
-        # quantum operations
-        k.gate('x', [6])
-        k.gate('cz', [6, 7])
-
-        # create classical registers
-        if 0:   # FIXME: deprecated by branch condex
-            rd = ql.CReg(1)
-            rs1 = ql.CReg(2)
-            rs2 = ql.CReg(3)
-
-        if 0:
-            # add/sub/and/or/xor
-            k.classical(rd, ql.Operation(rs1, '+', rs2))
-
-            # not
-            k.classical(rd, ql.Operation('~', rs2))
-
-            # comparison
-            k.classical(rd, ql.Operation(rs1, '==', rs2))
-
-            # initialize (r1 = 2)
-            k.classical(rs1, ql.Operation(2))
-
-            # assign (r1 = r2)
-            k.classical(rs1, ql.Operation(rs2))
-
-        # measure
-        k.barrier([])
-        k.gate('measure', [6], 0,0.0, [0])
-        k.gate('measure', [7], 0,0.0, [1])
-
-        # add kernel
-        p.add_kernel(k)
-        p.compile()
 
     # Quantum Error Correction cycle
     def test_qec(self):
@@ -138,7 +96,7 @@ class Test_central_controller(unittest.TestCase):
 
         k.gate("ry90", [z])
         # k.gate("measure", [z], rdZ)
-        k.gate('measure', [z], 0,0.0, [1])
+        k.gate('measure', [z], 0, 0.0, [1])
 
         p.add_kernel(k)
         p.compile()
@@ -155,10 +113,10 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     def test_qi_example(self):
-        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq_openql_0_10.json'))
 
-        p = ql.Program('test_qi_example', platform, 5, num_cregs, num_bregs)
-        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
+        p = ql.Program('test_qi_example', platform, 17, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 17, num_cregs, num_bregs)
 
         k.barrier([])
         for q in [0, 1, 2, 3, 4]:
@@ -166,7 +124,8 @@ class Test_central_controller(unittest.TestCase):
         k.barrier([])
 
         k.gate("ry180", [0, 2])     # FIXME: "y" does not work, but gate decomposition should handle?
-        k.gate("cz", [0, 2])
+        # k.gate("cz", [0, 2])
+        k.gate("cz", [8, 10])   # FIXME: use valid qubits for config_cc_s17_direct_iq_openql_0_10, otherwise we get: "Error in JSON definition: key 'cc' not found on path 'instructions/cz', actual node contents '{}'"
         k.gate("y90", [2])
         k.barrier([])
         for q in [0, 1, 2, 3, 4]:
@@ -174,19 +133,33 @@ class Test_central_controller(unittest.TestCase):
         k.barrier([])
 
         p.add_kernel(k)
-        p.compile()
+        if 1:
+            c = platform.get_compiler()
+            # insert decomposer for legacy decompositions
+            # See; see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
+            c.prefix_pass(
+                'dec.Instructions',
+                'legacy',  # sets predicate key to use legacy decompositions (FIXME: TBC)
+                {
+                    'output_prefix': 'test_output/%N.%P',
+                    'debug': 'yes'
+                }
+            )
+            c.print_strategy()
+            c.compile(p)
+        else:
+            p.compile()
 
     def test_gate_decomposition_builtin_gates(self):
-        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq_openql_0_10.json'))
 
-        p = ql.Program('test_gate_decomposition_builtin_gates', platform, 5, num_cregs, num_bregs)
-        k = ql.Kernel('kernel_0', platform, 5, num_cregs, num_bregs)
+        p = ql.Program('test_gate_decomposition_builtin_gates', platform, 17, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 17, num_cregs, num_bregs)
 
-        k.gate("cz", [0, 2])
-        k.gate("cz", [2, 3])
-        k.gate("cz", [3, 2])
-        k.gate("cz", [2, 4])
-        k.gate("cz", [4, 2])
+        k.gate("cz", [8, 10])
+        k.gate("cz", [8, 11])
+        k.gate("cz", [10, 14])
+        k.gate("cz", [12, 15])
 
         p.add_kernel(k)
         p.compile()
@@ -438,7 +411,7 @@ class Test_central_controller(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-    @unittest.skip("fails with new list scheduler")  # FIXME: solve for real
+    @unittest.skip("fails with: 'Inconsistency detected in bundle contents: time travel not yet possible in this version'")  # FIXME: solve for real
     def test_rc_sched_measure_asap(self):
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
 
