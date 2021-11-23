@@ -55,7 +55,6 @@ repeat {
         barrier qAncilla1,qAncilla2,qData
     }
 
-    # FIXME: starts new block counting from 0
     rx180 qAncilla2
     rx180 qData
     rym90 qData

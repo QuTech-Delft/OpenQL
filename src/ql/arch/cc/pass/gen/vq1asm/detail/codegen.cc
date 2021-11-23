@@ -38,7 +38,7 @@ static void check_int_literal(const ir::IntLiteral &ilit, Int bottomRoom=0, Int 
     if(ilit.value-bottomRoom < 0) {
         QL_INPUT_ERROR("CC backend cannot handle negative integer literals: value=" << ilit.value << ", bottomRoom=" << bottomRoom);
     }
-    if(ilit.value >= (1L<<32) - 1 - headRoom) {
+    if(ilit.value >= (1LL<<32) - 1 - headRoom) {
         QL_INPUT_ERROR("CC backend requires integer literals limited to 32 bits: value=" << ilit.value << ", headRoom=" << headRoom);
     }
 }

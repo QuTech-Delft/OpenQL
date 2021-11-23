@@ -103,6 +103,11 @@ class Test_cQASM(unittest.TestCase):
     def test_looping(self):
         self.run_test_case('looping')
 
+    # def test_from_string(self):
+    #     pl = ql.Platform("cc", "config_cc_s17_direct_iq_openql_0_10.json")
+    #     c = pl.get_compiler()
+    #     # FIXME
+
     @unittest.skip("private test")
     def test_rus_private(self):
         self.run_test_case('rus_private')
