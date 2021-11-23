@@ -25,8 +25,9 @@ class Test_cQASM(unittest.TestCase):
             gold_fn = 'golden/' + name + '_out.cq'
 
             ql.initialize()
-            # ql.set_option('log_level', 'LOG_INFO')
-            ql.set_option('log_level', 'LOG_DEBUG')
+            ql.set_option('log_level', 'LOG_INFO')
+            # ql.set_option('log_level', 'LOG_DEBUG')
+            # ql.set_option('log_level', 'LOG_WARNING')
 
             if 0:
                 # use compatibility

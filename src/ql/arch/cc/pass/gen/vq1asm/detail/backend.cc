@@ -97,7 +97,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
         codegen.bundleFinish(bundle_start_cycle, bundle_duration, is_last_bundle);
     };
 
-    QL_IOUT("Compiling block '" + label() + "'");
+    QL_IOUT("compiling block '" + label() + "'");
     codegen.block_start(name, depth);
 
     // Loop over the statements and handle them individually.
@@ -206,6 +206,17 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
             //****************************************************************
             QL_IOUT("structured: " + ir::describe(stmt));
 
+            // All structured statements except loop_control_statement (break/continue) contain at least one sub-block.
+            // Every (scheduled) block restarts cycle numbers from zero, because a block constitutes a scheduling realm.
+            // Any statements _after_ a sub-block _also_ restart numbering from zero, which makes a lot of sense.
+            // We handle that by wrapping the relevant structured statements in block_finish/block_start, as if the
+            // different parts were in separate blocks
+
+            if(!stmt->as_loop_control_statement()) {
+                // FIXME: add part number to name
+                codegen.block_finish(name, ir::get_duration_of_block(block), depth);    // FIXME: duration for full block, excluding sub-blocks
+            }
+
             // Handle the different types of structured statements.
             if (auto if_else = stmt->as_if_else()) {
 
@@ -313,6 +324,12 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                 );
             }
 
+            if(!stmt->as_loop_control_statement()) {
+                // FIXME: reopen block, see comment
+                // FIXME: add part number to name
+                codegen.block_start(name, depth);
+            }
+
         } else {
             QL_ICE(
                 "unsupported statement type encountered"
@@ -326,8 +343,8 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
         bundle_finish(true);
     }
 
-    codegen.block_finish(name, ir::get_duration_of_block(block), depth);
-    QL_IOUT("Finished compiling block '" + label() + "'");
+    codegen.block_finish(name, ir::get_duration_of_block(block), depth);    // FIXME: duration for full block, excluding sub-blocks
+    QL_IOUT("finished compiling block '" + label() + "'");
     block_number++;
 
 }

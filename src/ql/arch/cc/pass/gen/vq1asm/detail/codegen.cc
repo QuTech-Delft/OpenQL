@@ -494,10 +494,10 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 UInt breg_operand;
                 if (bi.bregs.empty()) {
                     breg_operand = bi.qubits[0];                    // implicit classic bit for qubit
-                    QL_IOUT("Using implicit bit " << breg_operand << " for qubit " << bi.qubits[0]);
+                    QL_IOUT("using implicit bit " << breg_operand << " for qubit " << bi.qubits[0]);
                 } else {    // FIXME: currently impossible
                     breg_operand = bi.bregs[0];
-                    QL_IOUT("Using explicit bit " << breg_operand << " for qubit " << bi.qubits[0]);
+                    QL_IOUT("using explicit bit " << breg_operand << " for qubit " << bi.qubits[0]);
                 }
 
                 // allocate SM bit for classic operand
@@ -628,7 +628,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 #if 1
     if(!custom.instruction_type->template_operands.empty()) {
         QL_DOUT("found template_operands: JSON = " << custom.instruction_type->data.data );
-        QL_INPUT_ERROR("CC backend cannot yet handle specialized instructions");
+        QL_INPUT_ERROR("CC backend cannot yet handle specialized instructions (check gate decompositions and parameters)");
     }
 #else
     for (const auto &ob : custom.instruction_type->template_operands) {

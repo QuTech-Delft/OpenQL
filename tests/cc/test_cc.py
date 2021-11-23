@@ -219,7 +219,7 @@ class Test_central_controller(unittest.TestCase):
 
         k.gate("ry180", [0, 2])     # FIXME: "y" does not work, but gate decomposition should handle?
         # k.gate("cz", [0, 2])
-        k.gate("cz", [8, 10])   # FIXME: use valid qubits for config_cc_s17_direct_iq_openql_0_10, otherwise we get: "Error in JSON definition: key 'cc' not found on path 'instructions/cz', actual node contents '{}'"
+        k.gate("cz", [8, 10])
         k.gate("y90", [2])
         k.barrier([])
         for q in [0, 1, 2, 3, 4]:
@@ -227,22 +227,7 @@ class Test_central_controller(unittest.TestCase):
         k.barrier([])
 
         p.add_kernel(k)
-        if 0:   # FIXME: decomposer built into API
-            c = platform.get_compiler()
-            # insert decomposer for legacy decompositions
-            # See; see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
-            c.prefix_pass(
-                'dec.Instructions',
-                'legacy',  # sets predicate key to use legacy decompositions (FIXME: TBC)
-                {
-                    'output_prefix': 'test_output/%N.%P',
-                    'debug': 'yes'
-                }
-            )
-            c.print_strategy()
-            c.compile(p)
-        else:
-            p.compile()
+        p.compile()
 
     # based on ../test_cqasm_reader.py::test_conditions
     def test_cqasm_conditions(self):
@@ -372,8 +357,8 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     # based on DCL test program
-    @unittest.skip("fails on sf_cz_sw")  # FIXME: solve for real
-    # additionally, we don't support if_?_break anymore
+    @unittest.skip("fails on sf_cz_sw")
+    # FIXME: additionally, we don't support if_?_break anymore
     def test_nested_rus_angle_0(self):
         num_qubits = 17
 

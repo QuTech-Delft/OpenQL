@@ -60,11 +60,11 @@ UInt Datapath::allocateSmBit(UInt breg_operand, UInt instrIdx) {
 
         auto it = mapBregToSmBit.find(breg_operand);
         if (it != mapBregToSmBit.end()) {
-            QL_IOUT("Overwriting mapping of breg_operand " << it->second);
+            QL_IOUT("overwriting mapping of breg_operand " << it->second);
         }
     }
 
-    QL_IOUT("Mapping breg_operand " << breg_operand << " to smBit " << smBit);
+    QL_IOUT("mapping breg_operand " << breg_operand << " to smBit " << smBit);
     mapBregToSmBit.set(breg_operand) = smBit;    // created on demand
 
     smBitLastInstrIdx = instrIdx;
@@ -80,7 +80,7 @@ UInt Datapath::getSmBit(UInt bit_operand) {
     auto it = mapBregToSmBit.find(bit_operand);
     if (it != mapBregToSmBit.end()) {
         smBit = it->second;
-        QL_DOUT("Found mapping: bit_operand " << bit_operand << " to smBit " << smBit);
+        QL_DOUT("found mapping: bit_operand " << bit_operand << " to smBit " << smBit);
     } else {
         QL_INPUT_ERROR("Request for DSM bit of bit_operand " << bit_operand << " that was never assigned by measurement");        // NB: message refers to user perspective (and thus calling semantics)
     }
