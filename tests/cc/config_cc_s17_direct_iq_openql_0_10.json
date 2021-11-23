@@ -947,6 +947,7 @@
             }
         },
         "cw_09": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "ref_signal": "single-qubit-mw",
