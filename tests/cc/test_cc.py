@@ -26,6 +26,100 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
 
+    def test_gate_decomposition_cz(self):
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq_openql_0_10.json'))
+
+        p = ql.Program('test_gate_decomposition_cz', platform, 17, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 17, num_cregs, num_bregs)
+
+        k.gate("cz", [8, 10])
+        k.gate("cz", [10, 8])
+        k.gate("cz", [8, 11])
+        k.gate("cz", [11, 9])
+        k.gate("cz", [11, 14])
+        k.gate("cz", [14, 11])
+        k.gate("cz", [10, 14])
+        k.gate("cz", [14, 10])
+        k.gate("cz", [9, 11])
+        k.gate("cz", [11, 9])
+        k.gate("cz", [9, 12])
+        k.gate("cz", [12, 9])
+        k.gate("cz", [11, 15])
+        k.gate("cz", [15, 11])
+        k.gate("cz", [12, 15])
+        k.gate("cz", [15, 12])
+
+        p.add_kernel(k)
+        p.compile()
+
+    def test_native_instructions(self):
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq_openql_0_10.json'))
+
+        p = ql.Program('test_native_instructions', platform, 17, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 17, num_cregs, num_bregs)
+
+        k.gate("prepz", [0])
+        k.gate("i", [0])
+        k.gate("rx180", [0])
+        k.gate("ry180", [0])
+        k.gate("rx90", [0])
+        k.gate("ry90", [0])
+        k.gate("rxm90", [0])
+        k.gate("rym90", [0])
+
+        k.gate("measure", [0])
+
+        p.add_kernel(k)
+        p.compile()
+
+    def test_special_instructions(self):
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq_openql_0_10.json'))
+
+        p = ql.Program('test_special_instructions', platform, 17, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 17, num_cregs, num_bregs)
+
+        k.gate("spec", [0])
+        k.gate("rx12", [0])
+        k.gate("square", [0])
+        k.gate("rx45", [0])
+
+        k.gate("rx2theta", [0])
+        k.gate("rxm2theta", [0])
+        k.gate("rx2thetaalpha", [0])
+        k.gate("rphi180", [0])
+        k.gate("rphi180beta", [0])
+        k.gate("rx180beta", [0])
+        k.gate("rphi180beta2", [0])
+        k.gate("ry90beta", [0])
+        k.gate("rym90alpha", [0])
+        k.gate("ry90betapi", [0])
+        k.gate("rphi180alpha", [0])
+        k.gate("rx90alpha", [0])
+        k.gate("rx180alpha2", [0])
+        k.gate("rphim2theta", [0])
+
+        p.add_kernel(k)
+        p.compile()
+
+    def test_gate_decompositions_alias(self):
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq_openql_0_10.json'))
+
+        p = ql.Program('test_gate_decompositions_alias', platform, 17, num_cregs, num_bregs)
+        k = ql.Kernel('kernel_0', platform, 17, num_cregs, num_bregs)
+
+        k.gate("x", [0])
+        k.gate("y", [0])
+        k.gate("roty90", [0])
+        k.gate("x180", [0])
+        k.gate("y180", [0])
+        k.gate("y90", [0])
+        k.gate("x90", [0])
+        k.gate("my90", [0])
+        k.gate("mx90", [0])
+
+        p.add_kernel(k)
+        p.compile()
+
     # Quantum Error Correction cycle
     def test_qec(self):
         platform = ql.Platform(platform_name, config_fn)
@@ -150,20 +244,6 @@ class Test_central_controller(unittest.TestCase):
         else:
             p.compile()
 
-    def test_gate_decomposition_builtin_gates(self):
-        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq_openql_0_10.json'))
-
-        p = ql.Program('test_gate_decomposition_builtin_gates', platform, 17, num_cregs, num_bregs)
-        k = ql.Kernel('kernel_0', platform, 17, num_cregs, num_bregs)
-
-        k.gate("cz", [8, 10])
-        k.gate("cz", [8, 11])
-        k.gate("cz", [10, 14])
-        k.gate("cz", [12, 15])
-
-        p.add_kernel(k)
-        p.compile()
-
     # based on ../test_cqasm_reader.py::test_conditions
     def test_cqasm_conditions(self):
         cqasm_config_fn = os.path.join(curdir, 'cqasm_config_cc.json')
@@ -261,12 +341,13 @@ class Test_central_controller(unittest.TestCase):
         program.compile()
 
     # based on test_hybrid.py::test_do_while_nested_for()
-    @unittest.skip("fails on sf_cz_sw")  # FIXME: solve for real
+    @unittest.skip("fails on sf_cz_sw")  # FIXME: now fails with "in repeat-until loop body: expected creg reference, but got something else"
+    # additionally, we don't support if_?_break anymore
     def test_nested_rus(self):
         num_qubits = 5
         qidx = 0
 
-        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq_openql_0_10.json'))
         p = ql.Program('test_nested_rus', platform, num_qubits, num_cregs, num_bregs)
 
         outer_program = ql.Program('outer_program', platform, num_qubits, num_cregs, num_bregs)
@@ -278,7 +359,7 @@ class Test_central_controller(unittest.TestCase):
         inner_program = ql.Program('inner_program', platform, num_qubits, num_cregs, num_bregs)
         inner_kernel = ql.Kernel('inner_kernel', platform, num_qubits, num_cregs)
         inner_kernel.gate("measure_fb", [qidx])
-        inner_kernel. gate("if_0_break", [qidx])
+        inner_kernel.gate("if_0_break", [qidx])
         inner_kernel.gate("rx180", [qidx])
         inner_program.add_for(inner_kernel, 1000000) # NB: loops *kernel*
 
@@ -292,6 +373,7 @@ class Test_central_controller(unittest.TestCase):
 
     # based on DCL test program
     @unittest.skip("fails on sf_cz_sw")  # FIXME: solve for real
+    # additionally, we don't support if_?_break anymore
     def test_nested_rus_angle_0(self):
         num_qubits = 17
 

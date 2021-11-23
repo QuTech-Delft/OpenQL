@@ -34,7 +34,7 @@ Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, opt
     codegen.programStart(ir->program->unique_name);
 
     // FIXME: Nodes of interest:
-    // ir->program->entry_point.links_to
+    //  - ir->program->entry_point.links_to
 
     // generate code for all blocks
     // NB: based on NewToOldConverter::NewToOldConverter

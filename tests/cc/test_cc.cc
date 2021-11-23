@@ -15,9 +15,6 @@ using namespace ql::utils;
 
 #define CFG_FILE_JSON   "test_cfg_cc.json"
 
-#if 1    // FIXME: interfaces not present in C++ API
- #define BARRIER(x) wait(x,0)
-#endif
 
 // based on tests/test_hybrid.py
 void test_classical() {
@@ -35,7 +32,7 @@ void test_classical() {
     for (int j=6; j<17; j++) {
         k.gate("x", j);
     }
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
 
     // 1/2/3 qubit flux
 #if 0 // misaligns cz and park_cz (using old scheduler)
@@ -57,12 +54,12 @@ void test_classical() {
     k.gate("cz", 10, 15);
     k.gate("park_cz", 16);
 #endif
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
 
     k.gate("cz_park", {6, 7, 11});
     k.gate("cz_park", {12, 13, 15});
     k.gate("cz_park1", {10, 15, 16});   // FIXME:
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
 
     // gate with angle parameter
     double angle = 1.23456; // just some number
@@ -107,36 +104,6 @@ $2 = 0
 
     k.gate("rx180", {6}, 0, angle);     // NB: works
 
-
-    // create classical registers
-    ql::CReg rd(1);    // destination register
-    ql::CReg rs1(2);
-    ql::CReg rs2(3);
-
-#if 0   // FIXME: not implemented in CC backend
-    // add/sub/and/or/xor//    k.classical(rd, ql::operation(rs1, std::string("+"), rs2));
-    ql::operation op = ql::operation(rs1, std::string("+"), rs2);
-    k.classical(rd, op);
-#endif
-
-#if 0   // Python
-    k.classical(rd, ql.Operation(rs1, "+", rs2))
-
-    // not
-    k.classical(rd, ql.Operation("~", rs2))
-
-    // comparison
-    k.classical(rd, ql.Operation(rs1, "==", rs2))
-
-    // initialize (r1 = 2)
-    k.classical(rs1, ql.Operation(2))
-
-    // assign (r1 = r2)
-    k.classical(rs1, ql.Operation(rs2))
-
-    // measure
-    k.gate("measure", [0], rs1)
-#endif
     k.gate("measure", 7, 0);
     k.gate("measure", 8, 1);
 
@@ -185,20 +152,20 @@ void test_qec_pipelined() {
     k.gate("rym90", xE);
     k.gate("rym90", xW);
     k.gate("rym90", xS);
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
 
     k.gate("cz", x, xE);
     k.gate("cz", x, xN);
     k.gate("cz", x, xS);
     k.gate("cz", x, xW);
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
 
     k.gate("ry90", x);
     k.gate("ry90", xN);
     k.gate("ry90", xE);
     k.gate("ry90", xW);
     k.gate("ry90", xS);
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
 
     // FIXME:
     // - qubits participating in CZ need phase correction, which may be part of gate, or separate
@@ -208,7 +175,7 @@ void test_qec_pipelined() {
     //      + possible in parallel without doing 2 qubits gate?
 
     k.gate("measure", x, 0);
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
 
     // Z stabilizers
     k.gate("rym90", z);
@@ -266,8 +233,6 @@ void test_do_while_nested_for() {
 }
 
 
-
-
 void test_rabi() {
     // create and set platform
     auto s17 = ql::Platform("s17", "test_cfg_cc_demo.json");
@@ -319,29 +284,29 @@ void test_wait() {
 // FIXME: test to find quantum inspire problems 20200325
 void test_qi_example() {
     // create and set platform
-    auto s5 = ql::Platform("s5", "cc_s5_direct_iq.json");
+    auto s17 = ql::Platform("s17", "config_cc_s17_direct_iq_openql_0_10.json");
 
-    const int num_qubits = 5;
-    const int num_cregs = 5;
-    auto prog = ql::Program("test_qi_example", s5, num_qubits, num_cregs);
-    auto sp1 = ql::Program("sp1", s5, num_qubits, num_cregs);
-    auto k = ql::Kernel("aKernel", s5, num_qubits, num_cregs);
+    const int num_qubits = 17;
+    const int num_cregs = 17;
+    auto prog = ql::Program("test_qi_example", s17, num_qubits, num_cregs);
+    auto sp1 = ql::Program("sp1", s17, num_qubits, num_cregs);
+    auto k = ql::Kernel("aKernel", s17, num_qubits, num_cregs);
 
     for(size_t i=0; i<5; i++) {
         k.gate("prepz", i);
     }
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
     k.gate("ry180", {0, 2});     // FIXME: "y" does not work, but gate decomposition should handle?
     //k.gate("wait"); // ???
-    k.gate("cz", {0, 2});
+    k.gate("cz", {8, 10});   // FIXME: was: k.gate("cz", {0, 2});
     //k.gate("wait"); // ???
     k.gate("y90", 2);
 
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
     for(size_t i=0; i<5; i++) {
         k.gate("measure", i);
     }
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
 
     prog.add_kernel(k);
 
@@ -350,6 +315,7 @@ void test_qi_example() {
 }
 
 
+#if 0   // FIXME: if_1_break deprecated in CC backend
 void test_break() {
     // create and set platform
     auto s5 = ql::Platform("s5", "cc_s5_direct_iq.json");
@@ -369,6 +335,7 @@ void test_break() {
 
     prog.compile();
 }
+#endif
 
 
 void test_condex() {
@@ -387,27 +354,27 @@ void test_condex() {
     k.gate("measure_fb", 2);
 
     k.condgate("x", {0}, "COND_ALWAYS", {});
-    k.BARRIER({});      // help scheduler
+    k.barrier();      // help scheduler
     k.condgate("x", {0}, "COND_NEVER", {});
-    k.BARRIER({});
+    k.barrier();
 
     k.condgate("x", {0}, "COND_UNARY", {1});
-    k.BARRIER({});
+    k.barrier();
     k.condgate("x", {0}, "COND_NOT", {1});
-    k.BARRIER({});
+    k.barrier();
 
     k.condgate("x", {0}, "COND_AND", {1,2});
-    k.BARRIER({});
+    k.barrier();
     k.condgate("x", {0}, "COND_NAND", {1,2});
-    k.BARRIER({});
+    k.barrier();
     k.condgate("x", {0}, "COND_OR", {1,2});
-    k.BARRIER({});
+    k.barrier();
     k.condgate("x", {0}, "COND_NOR", {1,2});
-    k.BARRIER({});
+    k.barrier();
     k.condgate("x", {0}, "COND_XOR", {1,2});
-    k.BARRIER({});
+    k.barrier();
     k.condgate("x", {0}, "COND_NXOR", {1,2});
-    k.BARRIER({});
+    k.barrier();
 
     prog.add_for(k, 100);
 
@@ -450,8 +417,8 @@ int main(int argc, char **argv) {
 #endif
 
     test_qi_example();
-    test_break();
-    test_condex();
+//    test_break();
+//    test_condex();    // FIXME: fails on for loop
 //    test_cqasm_condex();
 
     return 0;

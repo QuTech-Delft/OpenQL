@@ -682,6 +682,7 @@
         // FIXME: replace signal/value/type with sensible info
         // FIXME: check codewords, fix conflicts
         "rx2theta": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -695,6 +696,7 @@
             }
         },
         "rxm2theta": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -708,6 +710,7 @@
             }
         },
         "rx2thetaalpha": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -721,6 +724,7 @@
             }
         },
         "rphi180": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -734,6 +738,7 @@
             }
         },
         "rphi180beta": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -747,6 +752,7 @@
             }
         },
         "rx180beta": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -760,6 +766,7 @@
             }
         },
         "rphi180beta2": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -773,6 +780,7 @@
             }
         },
         "ry90beta": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -786,6 +794,7 @@
             }
         },
         "rym90alpha": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -799,6 +808,7 @@
             }
         },
         "ry90betapi": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -812,6 +822,7 @@
             }
         },
         "rphi180alpha": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -825,6 +836,7 @@
             }
         },
         "rx90alpha": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -838,6 +850,7 @@
             }
         },
         "rx180alpha2": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [
@@ -851,6 +864,7 @@
             }
         },
         "rphim2theta": {
+            "prototype": ["U:qubit"],
             "duration": 20,
             "cc": {
                 "signal": [

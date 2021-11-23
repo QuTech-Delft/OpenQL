@@ -355,7 +355,7 @@ void Codegen::block_start(const Str &block_name, Int depth) {
         comment("");    // white space before top level block
     }
     comment(QL_SS2S("### Block: '" << block_name << "'"));
-    zero(lastEndCycle); // NB; new IR starts counting at zero
+    zero(lastEndCycle); // NB: new IR starts counting at zero
 }
 
 void Codegen::block_finish(const Str &block_name, UInt durationInCycles, Int depth) {

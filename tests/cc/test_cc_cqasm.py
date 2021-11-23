@@ -96,6 +96,9 @@ class Test_cQASM(unittest.TestCase):
     def test_rus_elements(self):
         self.run_test_case('rus_elements')
 
+    def test_nested_rus_angle_0(self):
+        self.run_test_case('nested_rus_angle_0')
+
     def test_looping(self):
         self.run_test_case('looping')
 

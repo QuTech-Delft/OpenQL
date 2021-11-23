@@ -83,7 +83,7 @@ utils::Int GenerateVQ1AsmPass::run(
     const pmgr::pass_types::Context &context
 ) const {
 
-#if 0   // FIXME
+#if 0   // FIXME: reimplement
     // Make sure that the incoming code is scheduled, as expected.
     for (const auto &kernel : program->kernels) {
         if (!kernel->cycles_valid) {
