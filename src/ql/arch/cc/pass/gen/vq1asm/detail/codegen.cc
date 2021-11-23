@@ -663,10 +663,6 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         QL_INPUT_ERROR("CC backend cannot handle integer operands yet");
     }
 
-    // FIXME: if we have a cz with operands for which no decomposition exists, we'll end up with:
-    // RuntimeError: JSON error: in pass VQ1Asm, phase main: in block 'repeatUntilSuccess': in for loop body: instruction not found: 'cz'
-    // This provides little insight, and why do we get upto here anyway? See above: template_operands
-
 
 
     // some shorthand for parameter fields

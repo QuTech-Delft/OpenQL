@@ -227,7 +227,7 @@ class Test_central_controller(unittest.TestCase):
         k.barrier([])
 
         p.add_kernel(k)
-        if 1:
+        if 0:   # FIXME: decomposer built into API
             c = platform.get_compiler()
             # insert decomposer for legacy decompositions
             # See; see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer

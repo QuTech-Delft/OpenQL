@@ -79,7 +79,19 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawP
     SignalDef ret;
 
     Str instructionPath = "instructions/" + iname;
+#if 0
     QL_JSON_ASSERT(instruction, "cc", instructionPath);
+#else
+    // FIXME: if we have a cz with operands for which no decomposition exists, we'll end up with:
+    // RuntimeError: JSON error: in pass VQ1Asm, phase main: in block 'repeatUntilSuccess': in for loop body: instruction not found: 'cz'
+    // This provides little insight, and why do we get upto here anyway? See above: template_operands
+
+    // FIXME: similarly, if we also receive: "Error in JSON definition: key 'cc' not found on path 'instructions/cz', actual node contents '{}'"
+    //
+    if(!QL_JSON_EXISTS(instruction, "cc")) {
+        QL_JSON_ERROR("key 'cc' not found on path '" << instructionPath <<"': check instruction definition and/or decompositions and qubit parameters" );
+    }
+#endif
     if (QL_JSON_EXISTS(instruction["cc"], "ref_signal")) {                      // optional syntax: "ref_signal"
         Str refSignal = instruction["cc"]["ref_signal"].get<Str>();
         ret.signal = (*signals)[refSignal];                                     // poor man's JSON pointer

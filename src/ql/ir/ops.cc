@@ -365,7 +365,7 @@ InstructionTypeLink find_instruction_type(
     // name, i.e. at pos, to maintain sort order.
     ir->platform->instructions.get_vec().insert(pos, ityp);
 
-    return ityp;
+    return std::move(ityp);
 }
 
 /**

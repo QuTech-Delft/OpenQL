@@ -23,6 +23,8 @@ namespace diamond {
 class Info : public InfoBase {
 public:
 
+    virtual ~Info() = default;
+
     /**
      * Writes the documentation for this architecture to the given output
      * stream.
