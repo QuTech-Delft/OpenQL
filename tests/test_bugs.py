@@ -89,15 +89,18 @@ class Test_bugs(unittest.TestCase):
             QISA_fn_2 = os.path.join(output_dir, p.name+'_'+str(i+1)+'_last.qasm')
             self.assertTrue( file_compare(QISA_fn_1, QISA_fn_2))
 
- #   def test_empty_infinite_loop(self):
- #       name = 'empty_infinite_loop'
- #       in_fn = 'test_' + name + '.cq'
- #       out_fn = 'test_output/' + name + '_out.cq'
- #       gold_fn = 'golden/' + name + '_out.cq'
- #       ql.initialize()
- #       #ql.set_option('log_level', 'LOG_DEBUG')
- #       ql.compile(in_fn)
- #       self.assertTrue(file_compare(out_fn, gold_fn))
+# Unclear how this test works.
+# When clear, enable it again.
+# Now it fails, not clear how to repair, so it is disabled.
+#    def test_empty_infinite_loop(self):
+#        name = 'empty_infinite_loop'
+#        in_fn = 'test_' + name + '.cq'
+#        out_fn = 'test_output/' + name + '_out.cq'
+#        gold_fn = 'golden/' + name + '_out.cq'
+#        ql.initialize()
+#        #ql.set_option('log_level', 'LOG_DEBUG')
+#        ql.compile(in_fn)
+#        self.assertTrue(file_compare(out_fn, gold_fn))
 
 if __name__ == '__main__':
     unittest.main()
