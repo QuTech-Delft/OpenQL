@@ -217,11 +217,6 @@ class Builder {
 private:
 
     /**
-     * IR root node.
-     */
-//    const ir::Ref &ir;
-
-    /**
      * The block that we're building for.
      */
     const ir::BlockBaseRef &block;
@@ -427,16 +422,12 @@ private:
         }
         if (!any_edge) {
             for (const auto &nc : global_write) {
-#if 0
-                QL_ASSERT(!nc.get().commutes_with(incoming));
-#else   // FIXME
                 if(nc.get().commutes_with(incoming)) {
                     QL_ICE(
                         "DDG build: event '" + ir::describe(incoming.statement)
                         + "' commutes with '" + ir::describe(nc.get().statement) + "'"
                     );
                 }
-#endif
                 add_edge(nc, incoming);
             }
         }
@@ -494,7 +485,6 @@ public:
         utils::Bool commute_multi_qubit,
         utils::Bool commute_single_qubit
     ) :
-//        ir(ir),
         block(block),
         gatherer(ir),
         order_accumulator(0)

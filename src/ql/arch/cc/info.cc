@@ -31,6 +31,7 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
     // in the Sphinx/ReadTheDocs documentation (generated from it) before
     // modifying this.
 
+    // FIXME: contents are outdated
     utils::dump_str(os, line_prefix, R"(
     This architecture allows compilation for the QuTech Central Controller, as
     currently in use in DiCarloLab for the Starmon chip.
@@ -626,7 +627,7 @@ static utils::Json buildInstrumentResource(
 }
 
 /*
- * FIXME
+ * FIXME: add doc
  */
 static Qubits ccInstrument2qubits(const utils::Json &instrument) {
     Qubits ret;

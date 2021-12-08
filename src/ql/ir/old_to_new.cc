@@ -87,7 +87,7 @@ static ExpressionRef parse_instruction_parameter(
         if (implicit_breg) {
             ref->data_type = ir->platform->implicit_bit_type;
         }
-        return std::move(ref);
+        return ref;
     } else {
         auto obj = find_physical_object(ir, param.substr(0, 1));
         if (obj.empty()) {

@@ -1266,7 +1266,7 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
                     << "' not found in group " << group
                     << ", which contains " << myCodewordArray);
             if (mapPreloaded) {
-                QL_USER_ERROR("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
+                QL_USER_ERROR("mismatch between preloaded 'map_input_file' and program requirements:" << msg)
             } else {
                 QL_DOUT(msg);
                 // NB: codeword already contains last used value + 1
@@ -1276,7 +1276,7 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
         }
     } else {    // new instrument or group
         if (mapPreloaded) {
-            QL_USER_ERROR("mismatch between preloaded 'backend_cc_map_input_file' and program requirements: instrument '"
+            QL_USER_ERROR("mismatch between preloaded 'map_input_file' and program requirements: instrument '"
                   << instrumentName << "', group "
                   << group
                   << " not present in file");

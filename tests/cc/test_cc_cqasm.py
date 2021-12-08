@@ -57,7 +57,7 @@ class Test_cQASM(unittest.TestCase):
 
                 if 1:
                     # insert decomposer for legacy decompositions
-                    # See; see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
+                    # See: see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
                     c.prefix_pass(
                         'dec.Instructions',
                         'legacy',  # sets predicate key to use legacy decompositions (FIXME: TBC)
@@ -99,7 +99,6 @@ class Test_cQASM(unittest.TestCase):
     def run_test_case_string(self, name: str, src: str):
         pathlib.Path(curdir+"/test_"+name+".cq").write_text(inspect.cleandoc(src))
         self.run_test_case(name)
-
 
     def test_rus_elements(self):
         self.run_test_case('rus_elements')

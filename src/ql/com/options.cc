@@ -399,6 +399,7 @@ Options make_ql_options() {
         true
     );
 
+#if 0 // FIXME: removed, use pass options
     //========================================================================//
     // Default-inserted CC code generation pass behavior                      //
     //========================================================================//
@@ -426,6 +427,7 @@ Options make_ql_options() {
         "which creates a .vq1asm program that runs once instead of repeating "
         "indefinitely."
     );
+#endif
 
     //========================================================================//
     // Defunct options                                                        //
