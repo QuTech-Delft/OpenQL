@@ -14,7 +14,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - CC backend:
   - now uses new IR
-  - 
+  - no longer requires key "cc" to be present in instructions that define gate decompositions
 
 ### Removed
 - CC backend:
