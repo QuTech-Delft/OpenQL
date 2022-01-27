@@ -603,7 +603,7 @@ lqa::Analyzer ReaderImpl::build_analyzer() {
     a.register_function("operator!=", "bb", op_lxor_bb);
     for (const auto &gate : gateset) {
         a.register_instruction(gate->cq_insn);
-        a.register_instruction("skip", "i", false, false);
+        a.register_instruction("skip", "i", false, false);  // FIXME: why inside loop
     }
     return a;
 }

@@ -709,7 +709,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Add legacy decompositions to the new system, for gates added by passes
     // (notably swap and relatives for the mapper).
-    QL_DOUT("converting decompositions");
+    QL_DOUT("converting legacy decompositions");
     auto it = old->platform_config.find("gate_decomposition");
     if (it != old->platform_config.end()) {
         for (auto it2 = it->begin(); it2 != it->end(); ++it2) {

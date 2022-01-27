@@ -1478,14 +1478,13 @@ void Codegen::do_handle_expression(
                 } else if(operands[0]->as_reference() && operands[1]->as_reference()) {
                     return RR;
                 } else if(operands[0]->as_int_literal() && operands[1]->as_int_literal()) {
-                    QL_INPUT_ERROR("cannot currently handle functions on two literal parameters");
+                    QL_INPUT_ERROR("cannot currently handle functions on two literal parameters"); // FIXME: maybe handle in separate pass
                 } else if(operands[0]->as_function_call()) {
                     QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[0]) << "'");
                 } else if(operands[1]->as_function_call()) {
                     QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[1]) << "'");
                 } else {
                     QL_INPUT_ERROR("cannot currently handle parameter combination '" << ir::describe(operands[0]) << "' , '" << ir::describe(operands[1]) << "'");
-                    // NB: includes both parameters being int_literal, which we may handle in the future by a separate pass
                 }
             };
             auto emit_mnem2args = [this, expr2q1Arg, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target=REG_TMP0) {

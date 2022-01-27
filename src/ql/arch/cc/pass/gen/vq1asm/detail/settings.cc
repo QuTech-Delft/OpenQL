@@ -30,15 +30,24 @@ void Settings::loadBackendSettings(const ir::compat::PlatformRef &platform) {
 // FIXME: make clear that that isn't "measure", but, in our files, "_dist_dsm", which does the actual reading of the measurement result.
 // FIXME: this checks existence of key, elsewhere we check contents for "feedback"
 Bool Settings::isReadout(const Json &instruction, const Str &iname) {
+#if 0
     Str instructionPath = "instructions/" + iname;
     QL_JSON_ASSERT(instruction, "cc", instructionPath);
     return QL_JSON_EXISTS(instruction["cc"], "readout_mode");
+#else // FIXME: make key "cc" optional, since we may be looking at a 'gate decomposition' instruction
+    if (!QL_JSON_EXISTS(instruction, "cc")) return false;
+    return QL_JSON_EXISTS(instruction["cc"], "readout_mode");
+#endif
 }
 
 // determine whether this is a 'flux instruction'
 Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
+#if 0
     Str instructionPath = "instructions/" + iname;
     QL_JSON_ASSERT(instruction, "cc", instructionPath);
+#else   // FIXME: make key "cc" optional, since we may be looking at a 'gate decomposition' instruction
+    if (!QL_JSON_EXISTS(instruction, "cc")) return false;
+#endif
     SignalDef sd = findSignalDefinition(instruction, signals, iname);
     if (!QL_JSON_EXISTS(sd.signal[0], "type")) {   // FIXME: looks at first signal only
         QL_DOUT("no type detected for '" << iname << "', signal=" << sd.signal);
