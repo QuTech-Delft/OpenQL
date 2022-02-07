@@ -597,7 +597,7 @@ void Scheduler::init(
     }
 
     // when in doubt about dependence graph, enable next line to get a dump of it in debugging output
-    dprint_depgraph("init");
+//    dprint_depgraph("init");
 
     // useless as well because by construction, there cannot be cycles
     // but when afterwards dependencies are added, cycles may be created,
@@ -607,7 +607,7 @@ void Scheduler::init(
     if (!dag(graph)) {
         QL_FATAL("The dependency graph is not a DAG.");
     }
-    QL_DOUT("dependency graph creation Done.");
+    QL_DOUT("dependency graph creation [DONE].");
 }
 
 // print depgraph for debugging with string parameter identifying where
@@ -788,11 +788,11 @@ void Scheduler::schedule_alap() {
 void Scheduler::set_remaining_gate(const ir::compat::GateRef &gp, rmgr::Direction dir) {
     ListDigraph::Node curr_node = node.at(gp);
     UInt curr_remain = 0;
-    QL_DOUT("... set_remaining of node " << graph.id(curr_node) << ": " << gp->qasm() << " ...");
+//    QL_DOUT("... set_remaining of node " << graph.id(curr_node) << ": " << gp->qasm() << " ...");
     if (dir == rmgr::Direction::FORWARD) {
         for (ListDigraph::OutArcIt arc(graph, curr_node); arc != lemon::INVALID; ++arc) {
             auto nextNode = graph.target(arc);
-            QL_DOUT("...... target of arc " << graph.id(arc) << " to node " << graph.id(nextNode));
+//            QL_DOUT("...... target of arc " << graph.id(arc) << " to node " << graph.id(nextNode));
             if (remaining.at(nextNode) == ir::compat::MAX_CYCLE) {
                 set_remaining_gate(instruction[nextNode], dir);
             }
@@ -801,7 +801,7 @@ void Scheduler::set_remaining_gate(const ir::compat::GateRef &gp, rmgr::Directio
     } else {
         for (ListDigraph::InArcIt arc(graph, curr_node); arc != lemon::INVALID; ++arc) {
             auto nextNode = graph.source(arc);
-            QL_DOUT("...... source of arc " << graph.id(arc) << " from node " << graph.id(nextNode));
+ //           QL_DOUT("...... source of arc " << graph.id(arc) << " from node " << graph.id(nextNode));
             if (remaining.at(nextNode) == ir::compat::MAX_CYCLE) {
                 set_remaining_gate(instruction[nextNode], dir);
             }
@@ -816,6 +816,7 @@ void Scheduler::set_remaining(rmgr::Direction dir) {
     // note when iterating that graph contains SOURCE and SINK whereas the circuit doesn't;
     // regretfully, the order of visiting the nodes while iterating over the graph, is undefined
     // and in set_remaining (and set_cycle) the order matters (i.e. in circuit order or reversed circuit order)
+//    QL_DOUT("set_remaining start");
     for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
         remaining.set(n) = ir::compat::MAX_CYCLE;               // not yet visited successfully by set_remaining_gate
     }
@@ -838,6 +839,7 @@ void Scheduler::set_remaining(rmgr::Direction dir) {
         }
         set_remaining_gate(instruction[t], dir);
     }
+//    QL_DOUT("set_remaining [DONE]");
 }
 
 ir::compat::GateRef Scheduler::find_mostcritical(const List<ir::compat::GateRef> &lg) {
@@ -917,9 +919,10 @@ void Scheduler::get_depending_nodes(
     }
 }
 
-// Compute of two nodes whether the first one is less deep-critical than the second, for the given scheduling direction;
-// criticality of a node is given by its remaining[node] value which is precomputed;
-// deep-criticality takes into account the criticality of depending nodes (in the right direction!);
+// Compute of two nodes whether the first one is less critical than the second, for the given scheduling direction;
+// criticality of a node is initially given by its remaining[node] value which is precomputed;
+// when inconclusive, a larger size of the list of depending nodes in the right direction implies more critical;
+// criticality takes into account the criticality of depending nodes (in the right direction!);
 // this function is used to order the avlist in an order from highest deep-criticality to lowest deep-criticality;
 // it is the core of the heuristics of the critical path list scheduler.
 Bool Scheduler::criticality_lessthan(
@@ -931,42 +934,28 @@ Bool Scheduler::criticality_lessthan(
 
     if (remaining.at(n1) < remaining.at(n2)) return true;
     if (!enable_criticality) return false;
+//    QL_DOUT(".......... criticality_lessthan n1 (" << name[n1] << " crit=" << remaining.dbg(n1) << ") and n2 (" << name[n2] << " crit=" << remaining.dbg(n2) << ": enable_criticality is true");
     if (remaining.at(n1) > remaining.at(n2)) return false;
     // so: remaining[n1] == remaining[n2]
 
     List<ListDigraph::Node> ln1;
     List<ListDigraph::Node> ln2;
 
+//    QL_DOUT(".......... criticality_lessthan n1 (" << name[n1] << " crit=" << remaining.dbg(n1) << ") and n2 (" << name[n2] << " crit=" << remaining.dbg(n2) << ": get_depending_nodes for n1");
     get_depending_nodes(n1, dir, ln1);
+//    QL_DOUT(".......... criticality_lessthan n1 (" << name[n1] << " crit=" << remaining.dbg(n1) << ") and n2 (" << name[n2] << " crit=" << remaining.dbg(n2) << ": get_depending_nodes for n2");
     get_depending_nodes(n2, dir, ln2);
-    if (ln2.empty()) return false;          // strictly < only when ln1.empty and ln2.not_empty
-    if (ln1.empty()) return true;           // so when both empty, it is equal, so not strictly <, so false
-    // so: ln1.non_empty && ln2.non_empty
-/*
-    ln1.sort([this](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
-    ln2.sort([this](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
 
-    UInt crit_dep_n1 = remaining.at(ln1.back());    // the last of the list is the one with the largest remaining value
-    UInt crit_dep_n2 = remaining.at(ln2.back());
+    List<ListDigraph::Node>::size_type ln1_size = ln1.size();
+    List<ListDigraph::Node>::size_type ln2_size = ln2.size();
 
-    if (crit_dep_n1 < crit_dep_n2) return true;
-    if (crit_dep_n1 > crit_dep_n2) return false;
-    // so: crit_dep_n1 == crit_dep_n2, call this crit_dep
+//    QL_DOUT(".......... criticality_lessthan n1 (" << name[n1] << " depsize=" << ln1_size << ") and n2 (" << name[n2] << " depsize=" << ln2_size << ": sizes of lists of depending nodes determine criticality");
+    if (ln1_size < ln2_size) return true;
+    if (ln1_size > ln2_size) return false;
+    // so: ln1.size == ln2.size
 
-    ln1.remove_if([this,crit_dep_n1](ListDigraph::Node n) { return remaining.at(n) < crit_dep_n1; });
-    ln2.remove_if([this,crit_dep_n2](ListDigraph::Node n) { return remaining.at(n) < crit_dep_n2; });
-    // because both contain element with remaining == crit_dep: ln1.non_empty && ln2.non_empty
-
-    if (ln1.size() < ln2.size()) return true;
-    if (ln1.size() > ln2.size()) return false;
-    // so: ln1.size() == ln2.size() >= 1
-*/
-    ln1.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
-    ln2.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
-    if (criticality_lessthan(ln1.back(), ln2.back(), dir)) return true;
-    if (criticality_lessthan(ln2.back(), ln1.back(), dir)) return false;
-
-    // fall back to original gate order for stability
+    // fall back to original gate order for stability: later in order means less critical
+//    QL_DOUT(".......... criticality_lessthan n1 (" << name[n1] << " order=" << order[n1] << ") and n2 (" << name[n2] << " order=" << order[n2] << ": just use reversed order");
     return order[n1] > order[n2];
 }
 
@@ -988,10 +977,17 @@ void Scheduler::make_available(
     Bool first_lower_criticality_found = false;                          // for keeping avlist ordered
 
     QL_DOUT(".... making available node " << name[n] << " remaining: " << remaining.dbg(n));
+//    QL_IF_LOG_DEBUG {
+//        for (const auto &avlist_node : avlist) {
+//            QL_DOUT("..... existing avlist member, remaining=" << remaining.at(avlist_node) << ": " << name[avlist_node]);
+//        }
+//    }
     for (auto inp = avlist.begin(); inp != avlist.end(); inp++) {
+        // as soon as: n is found in avlist or a lower critical node is found, break this loop
         if (*inp == n) {
             already_in_avlist = true;
-            QL_DOUT("...... duplicate when making available: " << name[n]);
+            QL_DOUT("...... node is already available: " << name[n]);
+            return;
         } else {
             // scanning avlist from front to back (avlist is ordered from high to low criticality)
             // when encountering first node *inp with less criticality,
@@ -1002,19 +998,27 @@ void Scheduler::make_available(
             // when a node has same criticality as n, new node n is put after it, as last one of set of same criticality,
             // so order of calling MakeAvailable (and probably original circuit, and running other scheduler first) matters,
             // also when all dependency sets (and so remaining values) are identical!
+            QL_DOUT("...... node to be made availabe is criticality checked with: " << name[*inp]);
             if (criticality_lessthan(*inp, n, dir) && !first_lower_criticality_found) {
+                QL_DOUT("...... first lower critical node found: " << name[*inp]);
                 first_lower_criticality_inp = inp;
                 first_lower_criticality_found = true;
+                break;
             }
+            QL_DOUT("...... first lower critical not yet found, continuing checking");
         }
     }
     if (!already_in_avlist) {
+        // n not already in avlist OR avlist is empty OR no lower critical node in avlist
+        QL_DOUT(".... node to be made available " << name[n] << " gets its cycle set");
         set_cycle_gate(instruction[n], dir);        // for the schedulers to inspect whether gate has completed
         if (first_lower_criticality_found) {
             // add n to avlist just before the first with lower criticality
+            QL_DOUT(".... node to be made available " << name[n] << " is put in front of found lower critical one");
             avlist.insert(first_lower_criticality_inp, n);
         } else {
             // add n to end of avlist, if none found with less criticality
+            QL_DOUT(".... node to be made available " << name[n] << " is put at end of avlist, as most critical one");
             avlist.push_back(n);
         }
         QL_DOUT("...... made available node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining.dbg(n));
@@ -1046,10 +1050,12 @@ void Scheduler::take_available(
 ) {
     scheduled.set(instruction[n]) = true;
     avlist.remove(n);
+    QL_DOUT("...... take_available: taken from avlist: " << name[n] );
 
     if (dir == rmgr::Direction::FORWARD) {
         for (ListDigraph::OutArcIt succ_arc(graph, n); succ_arc != lemon::INVALID; ++succ_arc) {
             auto succ_node = graph.target(succ_arc);
+            QL_DOUT("....... successor node that could become available: " << name[succ_node] );
             Bool schedulable = true;
             for (ListDigraph::InArcIt pred_arc(graph, succ_node); pred_arc != lemon::INVALID; ++pred_arc) {
                 ListDigraph::Node predNode = graph.source(pred_arc);
@@ -1059,12 +1065,14 @@ void Scheduler::take_available(
                 }
             }
             if (schedulable) {
+                QL_DOUT("....... successor node is to be made available (all predecessors were scheduled): " << name[succ_node] );
                 make_available(succ_node, avlist, dir);
             }
         }
     } else {
         for (ListDigraph::InArcIt pred_arc(graph, n); pred_arc != lemon::INVALID; ++pred_arc) {
             auto pred_node = graph.source(pred_arc);
+            QL_DOUT("....... predecessor node that could become available: " << name[pred_node] );
             Bool schedulable = true;
             for (ListDigraph::OutArcIt succ_arc(graph, pred_node); succ_arc != lemon::INVALID; ++succ_arc) {
                 auto succ_node = graph.target(succ_arc);
@@ -1074,10 +1082,12 @@ void Scheduler::take_available(
                 }
             }
             if (schedulable) {
+                QL_DOUT("....... predecessor node is to be made available (all predecessors were scheduled): " << name[pred_node] );
                 make_available(pred_node, avlist, dir);
             }
         }
     }
+    QL_DOUT("...... take_available: taken from avlist: " << name[n] << " [DONE]" );
 }
 
 // advance curr_cycle

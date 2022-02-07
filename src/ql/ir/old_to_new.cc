@@ -921,7 +921,8 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Check the result.
     QL_DOUT("Result of old->new IR platform conversion:");
-    QL_IF_LOG_DEBUG(ir->dump_seq());
+    QL_DOUT("(disabled)");
+    // QL_IF_LOG_DEBUG(ir->dump_seq());
     check_consistency(ir);
 
     return ir;
@@ -1687,7 +1688,8 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
 
     // Check the result.
     QL_DOUT("Result of old->new IR program conversion:");
-    QL_IF_LOG_DEBUG(ir->dump_seq());
+    QL_DOUT("(disabled)");
+    // QL_IF_LOG_DEBUG(ir->dump_seq());
     check_consistency(ir);
 
     return ir;
