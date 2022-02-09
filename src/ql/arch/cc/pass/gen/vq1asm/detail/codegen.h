@@ -75,6 +75,7 @@ public: //  functions
     void handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);   // FIXME: private?
 
 private:    // types
+    // code generation info for instrument
     struct CodeGenInfo {
         // output related
         Bool instrHasOutput;
@@ -90,7 +91,8 @@ private:    // types
         Int slot;
     };
 
-    using CodeGenMap = Map<Int, CodeGenInfo>;                   // NB: key is instrument group
+    // code generation info for all instruments
+    using CodeGenMap = Map<Int, CodeGenInfo>;                   // NB: key is instrument index
 
 
 private:    // vars

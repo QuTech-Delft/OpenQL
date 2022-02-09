@@ -139,7 +139,7 @@ static Str cond_qasm(ConditionType condition, const Vec<UInt> &cond_operands) {
 }
 
 
-void Datapath::emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeMap, UInt instrIdx, Int slot) {
+void Datapath::emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeMap, Int slot) {
     if (measResultRealTimeMap.empty()) {
         QL_ICE("measResultRealTimeMap must not be empty");
     }
@@ -154,7 +154,7 @@ void Datapath::emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeM
         emit(
             slot,
             QL_SS2S("SM[" << winBit << "] := I[" << info.bit << "]"),
-            QL_SS2S("# readout(q" << info.bi->qubits[0] << ")")
+            QL_SS2S("# " << info.describe)
         );
     }
 }

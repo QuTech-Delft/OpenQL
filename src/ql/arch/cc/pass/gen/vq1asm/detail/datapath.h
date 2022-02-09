@@ -28,7 +28,9 @@ namespace detail {
 struct MeasResultRealTimeInfo {                             // information for RT measurement results on single instrument group
     UInt smBit;
     UInt bit;
-    Ptr<const BundleInfo> bi;                               // used for annotation only
+
+    // original instruction, copied from BundleInfo
+    Str describe;
 };
 
 using MeasResultRealTimeMap = Map<Int, MeasResultRealTimeInfo>;   // NB: key is instrument group
@@ -57,7 +59,7 @@ public: // functions
     UInt getOrAssignMux(UInt instrIdx, const MeasResultRealTimeMap &measResultRealTimeMap);
     UInt getOrAssignPl(UInt instrIdx, const CondGateMap &condGateMap);
     static UInt getSizeTag(UInt numReadouts);
-    void emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeMap, UInt instrIdx, Int slot);
+    void emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeMap, Int slot);
     static UInt getMuxSmAddr(const MeasResultRealTimeMap &measResultRealTimeMap);
     UInt emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Int slot);
 

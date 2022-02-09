@@ -129,7 +129,7 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, cons
 
 
 // compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
-// NB: helper for dodegen::custom_intruction, which is called with try/catch to add error context
+// NB: helper for codegen::custom_instruction, which is called with try/catch to add error context
 Settings::CalcSignalValue Settings::calcSignalValue(
     const Settings::SignalDef &sd,
     UInt s,
@@ -164,10 +164,11 @@ Settings::CalcSignalValue Settings::calcSignalValue(
     // get signal value
     // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
     const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
-    Str sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
-    if (sv.empty()) {    // allow empty signal
+    if (instructionSignalValue.empty()) {    // allow empty signal
         ret.signalValueString = "";
     } else {
+        Str sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
+        
         // expand macros
         sv = replace_all(sv, "\"", "");   // get rid of quotes FIXME: is this still useful?
 #if 1   // FIXME: no longer useful? Maybe to disambiguate different signal_ref

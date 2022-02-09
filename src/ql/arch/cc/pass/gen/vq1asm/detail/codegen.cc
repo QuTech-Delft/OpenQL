@@ -490,24 +490,15 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                     QL_ICE("inconsistency FIXME");
                 };
 #endif
-                // get classic operand
-                UInt breg_operand;
-                if (bi.bregs.empty()) {
-                    breg_operand = bi.qubits[0];                    // implicit classic bit for qubit
-                    QL_IOUT("using implicit bit " << breg_operand << " for qubit " << bi.qubits[0]);
-                } else {    // FIXME: currently impossible
-                    breg_operand = bi.bregs[0];
-                    QL_IOUT("using explicit bit " << breg_operand << " for qubit " << bi.qubits[0]);
-                }
-
                 // allocate SM bit for classic operand
-                UInt smBit = dp.allocateSmBit(breg_operand, instrIdx);
+                UInt smBit = dp.allocateSmBit(bi.breg_operand, instrIdx);
 
                 // remind mapping of bit -> smBit for setting MUX
-                codeGenInfo.measResultRealTimeMap.emplace(group, MeasResultRealTimeInfo{smBit, resultBit, bi});
+                codeGenInfo.measResultRealTimeMap.emplace(group, MeasResultRealTimeInfo{smBit, resultBit, bi.describe});
 
                 // FIXME: also generate VCD
             }
+
         } // for(group)
         codeGenMap.set(instrIdx) = codeGenInfo;
      } // for(instrIdx)
@@ -597,34 +588,34 @@ void Codegen::bundleFinish(
 
 // custom_instruction: single/two/N qubit gate, including readout, see 'strategy' above
 // translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
-// Does not deal with the control mode and digital interface of the instrument.
+// Does not deal with the control mode and digital interface of the instrument, since we first need to collect all work
+// per instrument
 void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
-#if 0   // FIXME
-// FIXME: these are operands that match a specialized instruction definition, e.g. "cz q0,q10"
-// FIXME: these are not handled below, so things fail if we have such definitions
-//cQASM "cz q[0],q[10]" with JSON "cz q0,q10" results in:
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:814 found template_operands: JSON = {"cc":{"signal":[],"static_codeword_override":[0]},"duration":40}
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[0]
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[10]
-//
-//cQASM "cz q[0],q[10]" with JSON "cz q0,q9" results in:
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:814 found template_operands: JSON = {"cc":{"signal":[],"static_codeword_override":[0]},"duration":40}
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[0]
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:809 operand: q[10]
-//
-//cQASM "cz q[0],q[10]" with JSON "cz q1,q10" results in:
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[0]
-//[OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[10]
-#endif
-
     Operands ops;
 
     // Handle the template operands for the instruction_type we got. Note that these are empty if that is a 'root'
     // InstructionType, and only contains data if it is one of the specializations (see ir.gen.h)
     // FIXME: check for existing decompositions (which should have been performed already by an upstream pass)
+    /*
+     FIXME: these are operands that match a specialized instruction definition, e.g. "cz q0,q10"
+     FIXME: these are not handled below, so things fail if we have such definitions
+    cQASM "cz q[0],q[10]" with JSON "cz q0,q10" results in:
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:814 found template_operands: JSON = {"cc":{"signal":[],"static_codeword_override":[0]},"duration":40}
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[0]
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[10]
+
+    cQASM "cz q[0],q[10]" with JSON "cz q0,q9" results in:
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:814 found template_operands: JSON = {"cc":{"signal":[],"static_codeword_override":[0]},"duration":40}
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[0]
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:809 operand: q[10]
+
+    cQASM "cz q[0],q[10]" with JSON "cz q1,q10" results in:
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[0]
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[10]
+    */
 #if 1
     if(!custom.instruction_type->template_operands.empty()) {
         QL_DOUT("found template_operands: JSON = " << custom.instruction_type->data.data );
@@ -662,7 +653,6 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
     if (ops.has_angle) {
         QL_INPUT_ERROR("CC backend cannot handle real (angle) operands yet");
     }
-
 
     // some shorthand for parameter fields
     const Str iname = custom.instruction_type->name;
@@ -759,8 +749,15 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 #endif
             // flag this bundle as performing real-time measurements, and store operands
             bi.isMeasRsltRealTime = true;
-            bi.qubits = ops.qubits;
-            bi.bregs = ops.bregs;
+
+            // handle classic operand
+            if (ops.bregs.empty()) {    // FIXME: currently always
+                bi.breg_operand = ops.qubits[0];                    // implicit classic bit for qubit
+                QL_IOUT("using implicit bit " << bi.breg_operand << " for qubit " << ops.qubits[0]);
+            } else {    // FIXME: currently impossible
+                bi.breg_operand = ops.bregs[0];
+                QL_IOUT("using explicit bit " << bi.breg_operand << " for qubit " << ops.qubits[0]);
+            }
         }
 
         // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
@@ -768,7 +765,10 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         tInstructionCondition instrCond = decode_condition(operandContext, custom.condition);
         bi.instructionCondition = instrCond;
 
-        QL_DOUT("customGate(): iname='" << iname <<
+        // store annotation
+        bi.describe = ir::describe(custom);
+
+        QL_DOUT("custom_instruction(): iname='" << iname <<
              "', duration=" << durationInCycles <<
              " [cycles], instrIdx=" << csv.si.instrIdx <<
              ", group=" << csv.si.group);
@@ -1063,7 +1063,7 @@ void Codegen::emitMeasRsltRealTime(
     // NB: both code paths must take equal number of sequencer cycles
     if (!measResultRealTimeMap.empty()) {    // this instrument produces real-time measurements now
         UInt mux = dp.getOrAssignMux(instrIdx, measResultRealTimeMap);
-        dp.emitMux(mux, measResultRealTimeMap, instrIdx, slot);
+        dp.emitMux(mux, measResultRealTimeMap, slot);
 
         // emit code for slot input
         UInt sizeTag = Datapath::getSizeTag(measResultRealTimeMap.size());        // compute DSM transfer size tag (for 'seq_in_sm' instruction)

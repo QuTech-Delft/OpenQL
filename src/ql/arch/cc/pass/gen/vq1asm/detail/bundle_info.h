@@ -19,7 +19,7 @@ namespace detail {
 
 /*
  * additional definitions for describing conditional gates
- * NB: copied from gate.h, reused for now, will change if we want to support more complex expressions for conditional gates
+ * NB: copied from gate.h, reused for now, will need change if we want to support more complex expressions for conditional gates
  */
 enum class ConditionType {
     // 0 operands:
@@ -48,6 +48,8 @@ public:
 };
 
 
+// information for an instrument group (of channels), for a single instruction
+// FIXME: rename tInstrInfo, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?
 class BundleInfo {
 public: // funcs
     BundleInfo() = default;
@@ -65,11 +67,11 @@ public: // vars
 
     // real-time measurement results: flag and operands
     Bool isMeasRsltRealTime = false;
-    Vec<UInt> qubits;
-    Vec<UInt> bregs;    // FIXME: not yet really used
-}; // information for an instrument group (of channels), for a single instruction
-// FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR, together with customGate(), bundleStart(), bundleFinish()?
+    UInt breg_operand;
 
+    // original instruction
+    Str describe;
+};
 } // namespace detail
 } // namespace vq1asm
 } // namespace gen
