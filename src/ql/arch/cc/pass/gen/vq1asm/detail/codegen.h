@@ -140,6 +140,7 @@ private:    // funcs
 
     // generic helpers
     CodeGenMap collectCodeGenInfo(UInt startCycle, UInt durationInCycles);
+    CalcSignalValue mapSignalValue(UInt qubit, const Str &instructionSignalType, const Str &instructionSignalValueStr);
     CalcSignalValue calcSignalValue(const Settings::SignalDef &sd, UInt s, const Vec<UInt> &qubits, const Str &iname);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
     Codeword assignCodeword(const Str &instrumentName, Int instrIdx, Group group);

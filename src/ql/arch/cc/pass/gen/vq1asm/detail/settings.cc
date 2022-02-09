@@ -84,6 +84,8 @@ Bool Settings::isReadout(const ir::InstructionType &instrType) {
 
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
+// FIXME: Settings::SignalDef Settings::findSignalDefinition(const ir::InstructionType &instrType) const {
+// FIXME: deprecate "ref_signal"?
 Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
     SignalDef ret;
 
@@ -95,12 +97,11 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawP
     // RuntimeError: JSON error: in pass VQ1Asm, phase main: in block 'repeatUntilSuccess': in for loop body: instruction not found: 'cz'
     // This provides little insight, and why do we get upto here anyway? See above: template_operands
 
-    // FIXME: similarly, if we also receive: "Error in JSON definition: key 'cc' not found on path 'instructions/cz', actual node contents '{}'"
-    //
     if(!QL_JSON_EXISTS(instruction, "cc")) {
         QL_JSON_ERROR("key 'cc' not found on path '" << instructionPath <<"': check instruction definition and/or decompositions and qubit parameters" );
     }
 #endif
+    // FIXME: deprecate ref_signal? Not useful once we have fully switched to new semantics for signal contents
     if (QL_JSON_EXISTS(instruction["cc"], "ref_signal")) {                      // optional syntax: "ref_signal"
         Str refSignal = instruction["cc"]["ref_signal"].get<Str>();
         ret.signal = (*signals)[refSignal];                                     // poor man's JSON pointer
@@ -122,34 +123,8 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawP
 
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
-// FIXME: Settings::SignalDef Settings::findSignalDefinition(const ir::InstructionType &instrType) const {
-// FIXME: deprecate "ref_signal"?
 Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, const Str &iname) const {
-#if 1
     return findSignalDefinition(instruction, jsonSignals, iname);
-#else
-    SignalDef ret;
-
-    Str instructionPath = "instructions/" + iname;
-    QL_JSON_ASSERT(instruction, "cc", instructionPath);
-    if (QL_JSON_EXISTS(instruction["cc"], "ref_signal")) {                      // optional syntax: "ref_signal"
-        Str refSignal = instruction["cc"]["ref_signal"].get<Str>();
-        ret.signal = (*jsonSignals)[refSignal];                                 // poor man's JSON pointer
-        if(ret.signal.empty()) {
-            QL_JSON_ERROR(
-                "instruction '" << iname
-                << "': ref_signal '" << refSignal
-                << "' does not resolve"
-            );
-        }
-        ret.path = "signals/" + refSignal;
-    } else {                                                                    // alternative syntax: "signal"
-        ret.signal = json_get<Json>(instruction["cc"], "signal", instructionPath + "/cc");
-        QL_DOUT("signal for '" << instruction << "': " << ret.signal);
-        ret.path = instructionPath + "/cc/signal";
-    }
-    return ret;
-#endif
 }
 
 
@@ -383,7 +358,6 @@ void Settings::doLoadBackendSettings(const Json &jsonBackendSettings) {
     }
 #endif
 }
-
 
 } // namespace detail
 } // namespace vq1asm

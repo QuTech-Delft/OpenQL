@@ -8,8 +8,10 @@
 #include "ql/ir/ops.h"
 #include "ql/ir/consistency.h"
 #include "ql/ir/cqasm/read.h"
+#include "ql/arch/architecture.h"
 #include "ql/rmgr/manager.h"
 #include "ql/arch/diamond/annotations.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/options.h" // FIXME: remove when OPT_CC_USER_FUNCTIONS is no longer needed
 
 namespace ql {
 namespace ir {
@@ -884,7 +886,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     }
 #endif
 
-    QL_DOUT("populate defaults");
+    QL_DOUT("populate default functions");
 
     // Populate the default function types.
     auto fn = add_function_type(ir, utils::make<FunctionType>("operator!"));
@@ -915,6 +917,8 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
     fn->return_type = int_type;
 
+    QL_DOUT("populate defaults");
+
     // Populate topology. This is a bit annoying because the old platform has
     // it contained in an Opt rather than a Ptr.
     utils::Ptr<com::Topology> top;
@@ -929,7 +933,23 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     resources.emplace(rmgr::Manager::from_defaults(old, {}, ir));
     ir->platform->resources.populate(resources);
 
-#if 1   // FIXME
+#if OPT_CC_USER_FUNCTIONS   // FIXME: replace by more flexible mechanism, e.g. configuration based on new JSON key to be added to 'old'
+    // Infer (default) architecture from the rest of the platform.
+    utils::Str architecture = ir->platform->architecture->family->get_namespace_name();
+
+    if(architecture == "cc") {
+        QL_WOUT("adding hardcoded CC functions");
+        fn = add_function_type(ir, utils::make<FunctionType>("rnd_seed"));
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // seed
+        fn->return_type = int_type;
+
+        fn = add_function_type(ir, utils::make<FunctionType>("rnd"));
+        fn->operand_types.emplace(prim::OperandMode::READ, real_type);   // threshold
+        fn->return_type = bit_type;
+    }
+#endif
+
+#if 1   // FIXME: moved from above
     // Now that we have all the instruction types, compute the decomposition
     // expansions that we postponed.
     // NB: perform after populating topology and friends, otherwise check_consistency() may fail [called through

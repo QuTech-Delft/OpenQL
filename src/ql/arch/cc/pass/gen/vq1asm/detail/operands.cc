@@ -112,7 +112,7 @@ Int OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
  */
 // FIXME: see ql::ir::cqasm::convert_expression() for how expressions are built from cQASM, and ql::ir::cqasm::read for register definitions
 // FIXME: see ql::ir::convert_old_to_new(const compat::PlatformRef &old) on how cregs/bregs are created. This is also used by the NEW cQASM reader
-// FIXME: maybe allow multiple real and int operands at so e point
+// FIXME: maybe allow multiple real and int operands at some point
 void Operands::append(const OperandContext &operandContext, const ir::ExpressionRef &expr) {
     if (auto real_lit = expr->as_real_literal()) {
         CHECK_COMPAT(!has_angle, "encountered gate with multiple angle (real) operands");

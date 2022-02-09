@@ -217,12 +217,7 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
            Several signals with the same operand_idx can be defined to select
            several signal types, as shown in "single-qubit-mw" which has both
            "mw" (provided by an AWG) and "switch" (provided by a VSM).
-         - `"value"` defines a vector of signal names. Supports the following
-           macro expansions:
-            - `{gateName}`
-            - `{instrumentName}`
-            - `{instrumentGroup}`
-            - `{qubit}`
+         - `"value"` defines a vector of signal names.
     )"
 
     // FIXME:
@@ -389,15 +384,6 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
             "cc": {
                 "signal": []
             }
-        },
-        "if_1_break": {
-            "duration": 60,
-            "cc": {
-                "signal": [],
-                "pragma": {
-                    "break": 1
-                }
-            }
         }
         ```
 )" R"(
@@ -405,7 +391,7 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
 
          - `"ref_signal"` points to a signal definition in
            `hardware_settings/eqasm_backend_cc/signals`, which must exist or
-            an error is raised.
+           an error is raised.
          - `"signal"` defines a signal in place, in an identical fashion as
            `hardware_settings/eqasm_backend_cc/signals`. May be empty (`[]`)
            to disable signal generation.
@@ -417,22 +403,16 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
          - `"readout_mode"` defines an instruction to perform readout if
            non-empty. If the value "feedback" is used, code is generated to
            read and distribute the instrument result.
-         - `"pragma/break"` enables special functionality which makes the gate
-           break out of a for loop if the associated qubit was measured as 1
-           (`"pragma" { "break": 1 }`) or 0 (`"pragma" { "break": 0 }`).
 )" R"(
     * Program flow feedback *
 
-      To support Repeat Until Success type experiments, two special fields
+      To support Repeat Until Success type experiments, a special field
       were added to the gate definition for the CC, as shown in the previous
       section:
 
        - the `"readout_mode": "feedback"` clause in the `"_dist_dsm"` gate
          causes the backend to generate code to retrieve the measurement result
-         from the DIO interface and distribute it across the CC;
-       - the `"pragma": { "break": 1 }` clause  in the `"if_1_break"` gate
-         causes the backend to generate code to break out of a OpenQL loop if
-         the associated qubit is read as 1 (or similarly if 0).
+         from the DIO interface and distribute it across the CC.
 
       For convenience, the gate decomposition section can be extended with
       `"measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"]`
@@ -442,10 +422,11 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
        - triggering a measurement (on the UHFQA);
        - waiting for the internal processing time of the UHFQA;
        - retrieve the measurement result, and distribute it across the CC; and
-       - wait fot the data distribution to finish.
-
+       - wait for the data distribution to finish.
+)"
+#if 0   // FIXME: outdated
+R"(
       The following example code contains a real RUS experiment using PycQED:
-)" R"(
       ```python
       from pycqed.measurement.openql_experiments import openql_helpers as oqh
       for i, angle in enumerate(angles):
@@ -481,7 +462,9 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
 
           oqh.compile(p, extra_openql_options=[('backend_cc_run_once', 'yes')])
       ```
-)" R"(
+)"
+#endif
+R"(
       Caveats:
 
        - It is not possible to mix `measure_fb` and `measure` in a single
@@ -491,10 +474,6 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
          only popped by a `measure_fb` instruction. If the two types are mixed,
          misalignment occurs between what is written and read. No check is
          currently performed by the backend.
-       - `break` statements may only occur inside a `for` loop. No check is
-         currently performed by the backend.
-       - `break` statements implicitly refer to the last `measure_fb` earlier
-         in code as a result of implicit allocation of variables.
 
       These limitations will vanish when integration with cQASM 2.0 is
       completed.

@@ -628,7 +628,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 #if 1
     if(!custom.instruction_type->template_operands.empty()) {
         QL_DOUT("found template_operands: JSON = " << custom.instruction_type->data.data );
-        QL_INPUT_ERROR("CC backend cannot yet handle specialized instructions (check gate decompositions and parameters)");
+        QL_INPUT_ERROR("CC backend cannot yet handle specialized instructions (check gate decompositions and parameters)");  // FIXME: add context
     }
 #else
     for (const auto &ob : custom.instruction_type->template_operands) {
@@ -657,12 +657,11 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
         }
     }
     if (ops.has_integer) {
-        QL_INPUT_ERROR("CC backend cannot handle real (angle) operands yet");
-    }
-    if (ops.has_angle) {
         QL_INPUT_ERROR("CC backend cannot handle integer operands yet");
     }
-
+    if (ops.has_angle) {
+        QL_INPUT_ERROR("CC backend cannot handle real (angle) operands yet");
+    }
 
 
     // some shorthand for parameter fields
@@ -690,7 +689,8 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 bi.signalValue = csv.signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
                 // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
-                bi.staticCodewordOverride = Settings::findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
+                // NB: value NO_STATIC_CODEWORD_OVERRIDE (-1) means 'no override'
+                bi.staticCodewordOverride = Settings::findStaticCodewordOverride(instruction, csv.operandIdx, iname);
 #endif
             } else if (bi.signalValue == csv.signalValueString) {           // signal unchanged
                 // do nothing
@@ -1158,59 +1158,27 @@ void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str
     lastEndCycle[instrIdx] = startCycle;
 }
 
-
-// compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
-// NB: helper for custum_intruction, which is called with try/catch to add error context
-Codegen::CalcSignalValue Codegen::calcSignalValue(
-    const Settings::SignalDef &sd,
-    UInt s,
-    const Vec<UInt> &qubits,
-    const Str &iname
+Codegen::CalcSignalValue Codegen::mapSignalValue(
+    UInt qubit,
+    const Str &instructionSignalType,
+    const Str &instructionSignalValueStr
 ) {
     CalcSignalValue ret;
-    Str signalSPath = QL_SS2S(sd.path<<"["<<s<<"]");                   // for JSON error reporting
 
-    /************************************************************************\
-    | get signal properties, mapping operand index to qubit
-    \************************************************************************/
-
-    // get the operand (i.e. qubit) index & qubit to work on
-    // NB: the key name "operand_idx" is a historical artifact: formerly all operands were qubits
-    ret.operandIdx = json_get<UInt>(sd.signal[s], "operand_idx", signalSPath);
-    if (ret.operandIdx >= qubits.size()) {
-        QL_JSON_ERROR(
-            "instruction '" << iname
-            << "': JSON file defines operand_idx " << ret.operandIdx
-            << ", but only " << qubits.size()
-            << " qubit operands were provided (correct JSON, or provide enough operands)"
-        );
-    }
-    UInt qubit = qubits[ret.operandIdx];
-
-    // get signal value
-    const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
-    Str sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
-
-    // get instruction signal type (e.g. "mw", "flux", etc)
-    // NB: instructionSignalType is different from "instruction/type" provided by find_instruction_type, although some identical strings are used). NB: that key is no longer used by the 'core' of OpenQL
-    Str instructionSignalType = json_get<Str>(sd.signal[s], "type", signalSPath);
-
-    /************************************************************************\
-    | map signal type for qubit to instrument & group
-    \************************************************************************/
-
-    // find signalInfo, i.e. perform the mapping
+    // find signalInfo, i.e. perform the mapping of abstract signals to instruments
     ret.si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
 
-    if (instructionSignalValue.empty()) {    // allow empty signal
+    // get signalValueString
+    if (instructionSignalValueStr.empty()) {    // allow empty signal
         ret.signalValueString = "";
     } else {
+#if 0   // FIXME: no longer useful
         // verify signal dimensions
         UInt channelsPergroup = ret.si.ic.controlModeGroupSize;
         UInt size = instructionSignalValue.is_array() ? instructionSignalValue.size() : 1;  // For objects, size() returns number of keys
         if (size != channelsPergroup) {
 //            QL_JSON_ERROR(
-            QL_WOUT(    // FIXME: we're transitioning on the semantics of signalValue, therefore only warn
+            QL_DOUT(    // FIXME: we're transitioning on the semantics of signalValue, therefore only generate debug message
                 "signal dimension mismatch on instruction '" << iname
                 << "' : control mode '" << ret.si.ic.refControlMode
                 << "' requires " <<  channelsPergroup
@@ -1219,14 +1187,15 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
                 << " (value='" << instructionSignalValue << "')"
             );
         }
+#endif
 
         // expand macros
-        sv = replace_all(sv, "\"", "");   // get rid of quotes
-#if 1   // FIXME: deprecate?
+        Str sv = instructionSignalValueStr;
+        sv = replace_all(sv, "\"", "");   // get rid of quotes FIXME: is this still useful?
+#if 0   // FIXME: no longer useful? Maybe to disambiguate different signal_ref
         sv = replace_all(sv, "{gateName}", iname);
         sv = replace_all(sv, "{instrumentName}", ret.si.ic.ii.instrumentName);
         sv = replace_all(sv, "{instrumentGroup}", to_string(ret.si.group));
-        // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
         sv = replace_all(sv, "{qubit}", to_string(qubit));
 #endif
         ret.signalValueString = sv;
@@ -1241,6 +1210,54 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
         << "': signalValue='" << ret.signalValueString << "'"
     ));
 
+    return ret;
+}
+
+// compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
+// NB: helper for custom_intruction, which is called with try/catch to add error context
+Codegen::CalcSignalValue Codegen::calcSignalValue(
+    const Settings::SignalDef &sd,
+    UInt s,
+    const Vec<UInt> &qubits,
+    const Str &iname
+) {
+    Str signalSPath = QL_SS2S(sd.path<<"["<<s<<"]");                   // for JSON error reporting
+
+    /************************************************************************\
+    | decode sd.signal[s], and map operand index to qubit
+    \************************************************************************/
+
+    // get the operand (i.e. qubit) index & qubit to work on
+    // NB: the key name "operand_idx" is a historical artifact: formerly all operands were qubits
+    // FIXME: replace array sd containing operand_idx with array (dimension: # operands) of arrays (dimension: # signals for operands, mostly 1, more for special cases like flux during measurement and phase corrections during CZ)
+    UInt operandIdx = json_get<UInt>(sd.signal[s], "operand_idx", signalSPath);
+    if (operandIdx >= qubits.size()) {
+        QL_JSON_ERROR(
+            "instruction '" << iname
+            << "': JSON file defines operand_idx " << operandIdx
+            << ", but only " << qubits.size()
+            << " qubit operands were provided (correct JSON, or provide enough operands)"
+        );
+    }
+    UInt qubit = qubits[operandIdx];
+
+    // get instruction signal type (e.g. "mw", "flux", etc)
+    // NB: instructionSignalType is different from "instruction/type" provided by find_instruction_type, although some identical strings are used). NB: that key is no longer used by the 'core' of OpenQL
+    Str instructionSignalType = json_get<Str>(sd.signal[s], "type", signalSPath);
+
+    // get signal value
+    const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
+    Str instructionSignalValueStr = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
+
+    /************************************************************************\
+    | map signal type for qubit to instrument & group
+    \************************************************************************/
+
+    CalcSignalValue ret;
+    ret = mapSignalValue(qubit, instructionSignalType, instructionSignalValueStr);
+#if OPT_SUPPORT_STATIC_CODEWORDS
+    ret.operandIdx = operandIdx;
+#endif
     return ret;
 }
 
@@ -1322,7 +1339,7 @@ Int Codegen::creg2reg(const ir::Reference &ref) {
  * if the arguments are not constant)
  *
  * Some of these are overridden by OpenQL to allow use of non-constant arguments. This is a 2 step process, where
- * 'convert_old_to_new(const compat::PlatformRef &old)' adds functions to the platform using 'add_function_type',
+ * 'convert_old_to_new(const compat::PlatformRef &old)' adds functions to ir->platform using 'add_function_type',
  * and 'ql::ir::cqasm:read()' then walks 'ir->platform->functions' and adds the functions using 'register_function()'.
  * These functions add a 'cqv::Function' node to the IR (even if the arguments are constant).
  */
@@ -1691,7 +1708,17 @@ void Codegen::do_handle_expression(
                     // NB: all work already done above
                 }
             }
-
+#if OPT_CC_USER_FUNCTIONS
+            if(operation.empty()) {
+                if (fn->function_type->name == "rnd_seed") {
+                    operation = "rnd_seed";
+                    QL_WOUT("FIXME: rnd_seed() not implemented");
+                } else  if (fn->function_type->name == "rnd") {
+                    operation = "rnd";
+                    QL_WOUT("FIXME: rnd() not implemented");
+                }
+            }
+#endif
             if(operation.empty()) {
                 // NB: if we arrive here, there's an inconsistency between the functions registered in
                 // 'ql::ir::cqasm:read()' (see comment at beginning of this function) and our decoding here.

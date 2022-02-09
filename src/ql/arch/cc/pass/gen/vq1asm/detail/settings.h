@@ -86,7 +86,6 @@ private:    // functions
     void doLoadBackendSettings(const Json &jsonBackendSettings);
 
 private:    // vars
-//    ir::compat::PlatformRef platform;
     RawPtr<const Json> jsonInstrumentDefinitions;
     RawPtr<const Json> jsonControlModes;
     RawPtr<const Json> jsonInstruments;

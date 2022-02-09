@@ -19,6 +19,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Removed
 - CC backend:
   - deprecated JSON key "pragma/break" for instruction definitions
+  - macro expansion for JSON key instruction/signal/value (unused anyway) 
 
 ### Fixed
 - ...
