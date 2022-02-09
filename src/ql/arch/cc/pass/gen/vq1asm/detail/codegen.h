@@ -92,12 +92,6 @@ private:    // types
 
     using CodeGenMap = Map<Int, CodeGenInfo>;                   // NB: key is instrument group
 
-    struct CalcSignalValue {
-        Str signalValueString;
-        UInt operandIdx;                                        // NB: in the new IR, 'operand' is called 'qubit' in most places
-        Settings::SignalInfo si;
-    }; // return type for calcSignalValue()
-
 
 private:    // vars
     static const Int MAX_SLOTS = 12;                            // physical maximum of CC
@@ -140,7 +134,6 @@ private:    // funcs
 
     // generic helpers
     CodeGenMap collectCodeGenInfo(UInt startCycle, UInt durationInCycles);
-    CalcSignalValue calcSignalValue(const Settings::SignalDef &sd, UInt s, const Vec<UInt> &qubits, const Str &iname);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
     Codeword assignCodeword(const Str &instrumentName, Int instrIdx, Group group);
 #endif

@@ -50,6 +50,12 @@ public: // types
         Int group;                  // the group of channels within the instrument that provides the signal
     };
 
+    struct CalcSignalValue {
+        Str signalValueString;
+        UInt operandIdx;                                        // NB: in the new IR, 'operand' is called 'qubit' in most places
+        Settings::SignalInfo si;
+    }; // return type for calcSignalValue()
+
     static const Int NO_STATIC_CODEWORD_OVERRIDE = -1;
 
 public: // functions
@@ -69,6 +75,7 @@ public: // functions
 
     static SignalDef findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
+    CalcSignalValue calcSignalValue(const Settings::SignalDef &sd, UInt s, const Vec<UInt> &qubits, const Str &iname);
     InstrumentInfo getInstrumentInfo(UInt instrIdx) const;
     InstrumentControl getInstrumentControl(UInt instrIdx) const;
     static Int getResultBit(const InstrumentControl &ic, Int group) ;

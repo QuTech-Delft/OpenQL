@@ -128,6 +128,71 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, cons
 }
 
 
+// compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
+// NB: helper for dodegen::custom_intruction, which is called with try/catch to add error context
+Settings::CalcSignalValue Settings::calcSignalValue(
+    const Settings::SignalDef &sd,
+    UInt s,
+    const Vec<UInt> &qubits,
+    const Str &iname
+) {
+    CalcSignalValue ret;
+    Str signalSPath = QL_SS2S(sd.path<<"["<<s<<"]");                   // for JSON error reporting
+
+    /************************************************************************\
+    | decode sd.signal[s], and map operand index to qubit
+    \************************************************************************/
+
+    // get the operand (i.e. qubit) index & qubit to work on
+    // NB: the key name "operand_idx" is a historical artifact: formerly all operands were qubits
+    // FIXME: replace array sd containing operand_idx with array (dimension: # operands) of arrays (dimension: # signals for operands, mostly 1, more for special cases like flux during measurement and phase corrections during CZ)
+    UInt operandIdx = json_get<UInt>(sd.signal[s], "operand_idx", signalSPath);
+    if (operandIdx >= qubits.size()) {
+        QL_JSON_ERROR(
+            "instruction '" << iname
+            << "': JSON file defines operand_idx " << operandIdx
+            << ", but only " << qubits.size()
+            << " qubit operands were provided (correct JSON, or provide enough operands)"
+        );
+    }
+    UInt qubit = qubits[operandIdx];
+
+    // get instruction signal type (e.g. "mw", "flux", etc)
+    // NB: instructionSignalType is different from "instruction/type" provided by find_instruction_type, although some identical strings are used). NB: that key is no longer used by the 'core' of OpenQL
+    Str instructionSignalType = json_get<Str>(sd.signal[s], "type", signalSPath);
+
+    // get signal value
+    // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
+    const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
+    Str sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
+    if (sv.empty()) {    // allow empty signal
+        ret.signalValueString = "";
+    } else {
+        // expand macros
+        sv = replace_all(sv, "\"", "");   // get rid of quotes FIXME: is this still useful?
+#if 1   // FIXME: no longer useful? Maybe to disambiguate different signal_ref
+        sv = replace_all(sv, "{gateName}", iname);
+//        sv = replace_all(sv, "{instrumentName}", FIXMEret.si.ic.ii.instrumentName);
+//        sv = replace_all(sv, "{instrumentGroup}", to_string(ret.si.group));
+        sv = replace_all(sv, "{qubit}", to_string(qubit));
+#endif
+        ret.signalValueString = sv;
+    }
+
+    /************************************************************************\
+    | map signal type for qubit to instrument & group
+    \************************************************************************/
+
+    // find signalInfo, i.e. perform the mapping of abstract signals to instruments
+    ret.si = findSignalInfoForQubit(instructionSignalType, qubit);
+
+#if OPT_SUPPORT_STATIC_CODEWORDS
+    ret.operandIdx = operandIdx;
+#endif
+    return ret;
+}
+
+
 // collect some configuration info for an instrument
 Settings::InstrumentInfo Settings::getInstrumentInfo(UInt instrIdx) const {
     InstrumentInfo ret = {nullptr};
