@@ -1158,61 +1158,6 @@ void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str
     lastEndCycle[instrIdx] = startCycle;
 }
 
-Codegen::CalcSignalValue Codegen::mapSignalValue(
-    UInt qubit,
-    const Str &instructionSignalType,
-    const Str &instructionSignalValueStr
-) {
-    CalcSignalValue ret;
-
-    // find signalInfo, i.e. perform the mapping of abstract signals to instruments
-    ret.si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
-
-    // get signalValueString
-    if (instructionSignalValueStr.empty()) {    // allow empty signal
-        ret.signalValueString = "";
-    } else {
-#if 0   // FIXME: no longer useful
-        // verify signal dimensions
-        UInt channelsPergroup = ret.si.ic.controlModeGroupSize;
-        UInt size = instructionSignalValue.is_array() ? instructionSignalValue.size() : 1;  // For objects, size() returns number of keys
-        if (size != channelsPergroup) {
-//            QL_JSON_ERROR(
-            QL_DOUT(    // FIXME: we're transitioning on the semantics of signalValue, therefore only generate debug message
-                "signal dimension mismatch on instruction '" << iname
-                << "' : control mode '" << ret.si.ic.refControlMode
-                << "' requires " <<  channelsPergroup
-                << " signals, but signal '" << signalSPath+"/value"
-                << "' provides " << size
-                << " (value='" << instructionSignalValue << "')"
-            );
-        }
-#endif
-
-        // expand macros
-        Str sv = instructionSignalValueStr;
-        sv = replace_all(sv, "\"", "");   // get rid of quotes FIXME: is this still useful?
-#if 0   // FIXME: no longer useful? Maybe to disambiguate different signal_ref
-        sv = replace_all(sv, "{gateName}", iname);
-        sv = replace_all(sv, "{instrumentName}", ret.si.ic.ii.instrumentName);
-        sv = replace_all(sv, "{instrumentGroup}", to_string(ret.si.group));
-        sv = replace_all(sv, "{qubit}", to_string(qubit));
-#endif
-        ret.signalValueString = sv;
-
-        // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
-    }
-
-    comment(QL_SS2S(
-        "  # slot=" << ret.si.ic.ii.slot
-        << ", instrument='" << ret.si.ic.ii.instrumentName << "'"
-        << ", group=" << ret.si.group
-        << "': signalValue='" << ret.signalValueString << "'"
-    ));
-
-    return ret;
-}
-
 // compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
 // NB: helper for custom_intruction, which is called with try/catch to add error context
 Codegen::CalcSignalValue Codegen::calcSignalValue(
@@ -1221,6 +1166,7 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
     const Vec<UInt> &qubits,
     const Str &iname
 ) {
+    CalcSignalValue ret;
     Str signalSPath = QL_SS2S(sd.path<<"["<<s<<"]");                   // for JSON error reporting
 
     /************************************************************************\
@@ -1246,15 +1192,37 @@ Codegen::CalcSignalValue Codegen::calcSignalValue(
     Str instructionSignalType = json_get<Str>(sd.signal[s], "type", signalSPath);
 
     // get signal value
+    // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
     const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
-    Str instructionSignalValueStr = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
+    Str sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
+    if (sv.empty()) {    // allow empty signal
+        ret.signalValueString = "";
+    } else {
+        // expand macros
+        sv = replace_all(sv, "\"", "");   // get rid of quotes FIXME: is this still useful?
+#if 1   // FIXME: no longer useful? Maybe to disambiguate different signal_ref
+        sv = replace_all(sv, "{gateName}", iname);
+//        sv = replace_all(sv, "{instrumentName}", FIXMEret.si.ic.ii.instrumentName);
+//        sv = replace_all(sv, "{instrumentGroup}", to_string(ret.si.group));
+        sv = replace_all(sv, "{qubit}", to_string(qubit));
+#endif
+        ret.signalValueString = sv;
+    }
 
     /************************************************************************\
     | map signal type for qubit to instrument & group
     \************************************************************************/
 
-    CalcSignalValue ret;
-    ret = mapSignalValue(qubit, instructionSignalType, instructionSignalValueStr);
+    // find signalInfo, i.e. perform the mapping of abstract signals to instruments
+    ret.si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
+
+    comment(QL_SS2S(
+        "  # slot=" << ret.si.ic.ii.slot
+        << ", instrument='" << ret.si.ic.ii.instrumentName << "'"
+        << ", group=" << ret.si.group
+        << "': signalValue='" << ret.signalValueString << "'"
+    ));
+
 #if OPT_SUPPORT_STATIC_CODEWORDS
     ret.operandIdx = operandIdx;
 #endif
