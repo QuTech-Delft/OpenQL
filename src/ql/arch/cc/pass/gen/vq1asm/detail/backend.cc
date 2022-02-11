@@ -54,9 +54,8 @@ Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, opt
     QL_IOUT("Writing Central Controller program to " << file_name);
     OutFile(file_name).write(codegen.getProgram());
 
-    // write instrument map to file (unless we were using input file)
-    Str map_input_file = options->map_input_file;
-    if (!map_input_file.empty()) {
+    // write map to file (unless we were using input file)
+    if (options->map_input_file.empty()) {
         Str file_name_map(options->output_prefix + ".map");
         QL_IOUT("Writing instrument map to " << file_name_map);
         OutFile(file_name_map).write(codegen.getMap());

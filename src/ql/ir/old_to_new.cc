@@ -465,6 +465,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 // FIXME: debug WIP, also see use of template_operands further down
                 if (/*FIXMEinsn->*/template_operands.size() > insn->operand_types.size()) {
                     QL_ICE("need at least operands for the specialization parameters");
+                    // FIXME: refers to prototype (happens e.g. when a specialised instruction is defined with an empty prototype), improve message
                 } else {
                     for (utils::UInt i = 0; i < template_params.size(); i++) {
 #if 1   // FIXME: consistency checks to prevent Container error, triggered by use of insn->template_operands[i] iso template_operands[i]

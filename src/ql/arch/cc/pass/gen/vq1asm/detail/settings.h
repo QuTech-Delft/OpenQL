@@ -62,19 +62,44 @@ public: // functions
     Settings() = default;
     ~Settings() = default;
 
-    // support for Info::preprocess_platform
-    void loadBackendSettings(const ir::compat::PlatformRef &platform);
-    static Bool isReadout(const Json &instruction, const Str &iname);   // FIXME: should be true for "measure" (because it uses a UHF)
+    /************************************************************************\
+    | support for Info::preprocess_platform(), when we only have raw JSON
+    | data available
+    \************************************************************************/
+
+    static Bool isReadout(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
     static Bool isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
 
-    // support for backend
-    void loadBackendSettings(const ir::PlatformRef &platform);
-    Str getReadoutMode(const ir::InstructionType &instrType);
-    Bool isReadout(const ir::InstructionType &instrType);   // FIXME: naming
-    Bool isMeasRsltRealTime(const ir::InstructionType &instrType) { return isReadout(instrType) && getReadoutMode(instrType) == "feedback"; };
+    /************************************************************************\
+    | support for Info::postprocess_platform(), when we only have an old
+    | (ir::compat::PlatformRef) platform available
+    \************************************************************************/
 
+    void loadBackendSettings(const ir::compat::PlatformRef &platform);
+
+    // FIXME: this adds semantics to "signal_type", whereas the names are otherwise fully up to the user: optionally get from JSON
+    static Str getInstrumentSignalTypeMeasure() { return "measure"; }
+    static Str getInstrumentSignalTypeFlux() { return "flux"; }
+
+    /************************************************************************\
+    | support for Backend::Backend() (Codegen::init)
+    \************************************************************************/
+
+    void loadBackendSettings(const ir::PlatformRef &platform);
+
+    /**
+     * Does this instruction process real time measurement results:
+     * - should be false for an instruction that initiates the measurement, e.g. "measure"
+     * - should be true for an instruction that acquires the bits resulting from the measurement, e.g. "_dist_dsm"
+     */
+    Bool isMeasRsltRealTime(const ir::InstructionType &instrType);
+
+    /**
+     * Find JSON signal definition for instruction, either inline or via 'ref_signal'
+     */
     static SignalDef findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
+
     CalcSignalValue calcSignalValue(const Settings::SignalDef &sd, UInt s, const Vec<UInt> &qubits, const Str &iname);
     InstrumentInfo getInstrumentInfo(UInt instrIdx) const;
     InstrumentControl getInstrumentControl(UInt instrIdx) const;

@@ -179,7 +179,7 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
                 {   "type": "mw",
                     "operand_idx": 0,
                     "value": [
-                        "{gateName}-{instrumentName}:{instrumentGroup}-gi",
+                        "{gateName}-{instrumentName}:{instrumentGroup}-gi",  // FIXME: outdated
                         "{gateName}-{instrumentName}:{instrumentGroup}-gq",
                         "{gateName}-{instrumentName}:{instrumentGroup}-di",
                         "{gateName}-{instrumentName}:{instrumentGroup}-dq"
@@ -217,7 +217,9 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
            Several signals with the same operand_idx can be defined to select
            several signal types, as shown in "single-qubit-mw" which has both
            "mw" (provided by an AWG) and "switch" (provided by a VSM).
-         - `"value"` defines a vector of signal names.
+         - `"value"` defines the signal name. The CC backend itself makes no
+           assumptions on this other that different instructions have different
+           signal names.
     )"
 
     // FIXME:
@@ -553,9 +555,9 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
     QL_JSON_ASSERT(jsonBackendSettings, "signals", "eqasm_backend_cc");
     utils::RawPtr<const utils::Json> signals = &jsonBackendSettings["signals"];
 
-    // add predicates to instructions
+    // add predicates to instructions (for instrument resources created in post_process_platform())
     for (auto &it : instructions.items()) {
-        if (pass::gen::vq1asm::detail::Settings::isReadout(it.value(), it.key())) {     // FIXME: should be on for measurements, naming is too obscure. Or get from instrument
+        if (pass::gen::vq1asm::detail::Settings::isReadout(it.value(), signals, it.key())) {     // FIXME: should be on for measurements, naming is too obscure. Or get from instrument
             QL_IOUT("desugaring readout instruction: '" << it.key() << "'");
             instructions[it.key()][predicateKeyInstructionType] = predicateValueMeas;
         } else if (pass::gen::vq1asm::detail::Settings::isFlux(it.value(), signals, it.key())) {
@@ -638,35 +640,38 @@ void Info::post_process_platform(
     const utils::Str &variant
 ) const {
 
+    QL_IOUT("post_process_platform, variant='" << variant << "'");
+
+    // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
+    QL_IOUT("desugaring CC instrument resource");
+
+    // load CC settings
+    pass::gen::vq1asm::detail::Settings settings;
+    settings.loadBackendSettings(platform);
+
+#if 0   // FIXME: untested, counterpart in Codegen::init does not seem to work
     // TODO Wouter: something with vq1asm::detail::Settings, I guess. Note: to
     //  keep track of the structure alongside the platform, you can add it as
     //  an annotation like so:
     //  platform->set_annotation(pass::gen::vq1asm::detail::Settings());
     //  platform->get_annotation<pass::gen::vq1asm::detail::Settings>().loadBackendSettings(platform);
 
-    QL_IOUT("post_process_platform, variant='" << variant << "'");
-
-    // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
-    QL_IOUT("desugaring CC instrument resource");
-    // load CC settings
-    pass::gen::vq1asm::detail::Settings settings;
-    settings.loadBackendSettings(platform);
-#if 0   // FIXME: untested, counterpart in Codegen::init does not seem to work
     platform->set_annotation(pass::gen::vq1asm::detail::Settings());
     platform->get_annotation<pass::gen::vq1asm::detail::Settings>().loadBackendSettings(platform);
 #endif
 
     // Gather qubit information from CC instrument definitions.
+    const utils::Str instrumentSignalTypeMeasure = settings.getInstrumentSignalTypeMeasure();
+    const utils::Str instrumentSignalTypeFlux = settings.getInstrumentSignalTypeFlux();
     InstrVsQubits measQubits;
     InstrVsQubits fluxQubits{Qubits{}};     // one empty vector
     for (utils::UInt i=0; i<settings.getInstrumentsSize(); i++) {
         const utils::Json &instrument = settings.getInstrumentAtIdx(i);
-        utils::Str signal_type = utils::json_get<utils::Str>(instrument, "signal_type");    // FIXME: nodePath
-        // FIXME: this adds semantics to "signal_type", whereas the names are otherwise fully up to the user
-        if ("measure" == signal_type) { // FIXME: define constant used throughout
+        utils::Str instrumentSignalType = utils::json_get<utils::Str>(instrument, "signal_type");    // FIXME: nodePath
+        if (instrumentSignalType == instrumentSignalTypeMeasure) {
             Qubits qubits = ccInstrument2qubits(instrument);
             measQubits.push_back(qubits);
-        } else if ("flux" == signal_type) { // FIXME: define constant used throughout
+        } else if (instrumentSignalType == instrumentSignalTypeFlux) {
             /*  we map all fluxing on a single instrument resource: the actual resource we'd like to manage is a *signal* that connects
                 to a flux line of a qubit. On a single instrument (e.g. ZI HDAWG) these signals cannot be triggered
                 during playback of other signals.

@@ -108,9 +108,10 @@ private:    // vars
 
     Bool mapPreloaded = false;                                  // flag whether we have a preloaded map
 
-    // codegen state, program scope
-    Json codewordTable;                                         // codewords versus signals per instrument group
+    // codegen state, global(program) scope
     StrStrm codeSection;                                        // the code generated
+    Json codewordTable;                                         // codewords versus signals per instrument group
+    Json measTable;                                             // measurement table, to assist downstream software in retrieving measurements
 
     // codegen state, block(kernel) scope
     UInt lastEndCycle[MAX_INSTRS];                              // vector[instrIdx], maintain where we got per slot

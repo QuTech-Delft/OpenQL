@@ -18,7 +18,72 @@ namespace detail {
 
 using namespace utils;
 
-// support for Info::post_process_platform()
+/************************************************************************\
+| support for Info::preprocess_platform()
+\************************************************************************/
+
+// Determine whether this is a 'readout instruction', i.e. whether it produces any signal with "type" matching "measure".
+// Note that both isReadout() and isFlux() may be true on the same instruction.
+// Used as guidance for resource constraint scheduling.
+// FIXME: make clear that that isn't "measure", but, in our files, "_dist_dsm", which does the actual reading of the measurement result.
+// FIXME: this checks existence of key, in isMeasRsltRealTime() we check contents for "feedback"
+Bool Settings::isReadout(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
+    // key "cc" is optional, since we may be looking at a 'gate decomposition' instruction
+    if (!QL_JSON_EXISTS(instruction, "cc")) return false;
+
+#if 0
+    return QL_JSON_EXISTS(instruction["cc"], "readout_mode"); // FIXME: currently only on for "_dist_dsm"
+#else
+    // return true if any "signal/type" matches
+    SignalDef sd = findSignalDefinition(instruction, signals, iname);
+    for (UInt s = 0; s < sd.signal.size(); s++) {
+        const Json &signal = sd.signal[s];
+        if (!QL_JSON_EXISTS(signal, "type")) {
+            QL_WOUT("no type detected for '" << iname << "', signal=" << signal);
+        } else {
+            QL_DOUT("type detected for '" << iname << "': " << signal["type"]);
+            if(signal["type"] == getInstrumentSignalTypeMeasure()) return true;
+        }
+    }
+    return false;
+#endif
+}
+
+// Determine whether this is a 'flux instruction', i.e. whether it produces any signal with "type" matching "flux".
+// Note that both isReadout() and isFlux() may be true on the same instruction.
+// Used as guidance for resource constraint scheduling.
+Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
+    // key "cc" is optional, since we may be looking at a 'gate decomposition' instruction
+    if (!QL_JSON_EXISTS(instruction, "cc")) return false;
+
+    // return true if any "signal/type" matches
+    SignalDef sd = findSignalDefinition(instruction, signals, iname);
+#if 0
+    if (!QL_JSON_EXISTS(sd.signal[0], "type")) {   // FIXME: looks at first signal only
+        QL_DOUT("no type detected for '" << iname << "', signal=" << sd.signal);
+        return false;
+    } else {
+        QL_DOUT("type detected for '" << iname << "': " << sd.signal[0]["type"]);
+        return sd.signal[0]["type"] == getInstrumentSignalTypeFlux();
+    }
+#else
+    for (UInt s = 0; s < sd.signal.size(); s++) {
+        const Json &signal = sd.signal[s];
+        if (!QL_JSON_EXISTS(signal, "type")) {
+            QL_WOUT("no type detected for '" << iname << "', signal=" << signal);
+        } else {
+            QL_DOUT("type detected for '" << iname << "': " << signal["type"]);
+            if(signal["type"] == getInstrumentSignalTypeFlux()) return true;
+        }
+    }
+    return false;
+#endif
+}
+
+/************************************************************************\
+| support for Info::postprocess_platform()
+\************************************************************************/
+
 void Settings::loadBackendSettings(const ir::compat::PlatformRef &platform) {
     // remind some main JSON areas
     QL_JSON_ASSERT(platform->hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
@@ -26,40 +91,10 @@ void Settings::loadBackendSettings(const ir::compat::PlatformRef &platform) {
     doLoadBackendSettings(jsonBackendSettings);
 }
 
-// determine whether this is a 'readout instruction'
-// FIXME: make clear that that isn't "measure", but, in our files, "_dist_dsm", which does the actual reading of the measurement result.
-// FIXME: this checks existence of key, elsewhere we check contents for "feedback"
-Bool Settings::isReadout(const Json &instruction, const Str &iname) {
-#if 0
-    Str instructionPath = "instructions/" + iname;
-    QL_JSON_ASSERT(instruction, "cc", instructionPath);
-    return QL_JSON_EXISTS(instruction["cc"], "readout_mode");
-#else // FIXME: make key "cc" optional, since we may be looking at a 'gate decomposition' instruction
-    if (!QL_JSON_EXISTS(instruction, "cc")) return false;
-    return QL_JSON_EXISTS(instruction["cc"], "readout_mode");
-#endif
-}
+/************************************************************************\
+| support for Backend::Backend() (Codegen::init)
+\************************************************************************/
 
-// determine whether this is a 'flux instruction'
-Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
-#if 0
-    Str instructionPath = "instructions/" + iname;
-    QL_JSON_ASSERT(instruction, "cc", instructionPath);
-#else   // FIXME: make key "cc" optional, since we may be looking at a 'gate decomposition' instruction
-    if (!QL_JSON_EXISTS(instruction, "cc")) return false;
-#endif
-    SignalDef sd = findSignalDefinition(instruction, signals, iname);
-    if (!QL_JSON_EXISTS(sd.signal[0], "type")) {   // FIXME: looks at first signal only
-        QL_DOUT("no type detected for '" << iname << "', signal=" << sd.signal);
-        return false;
-    } else {
-        QL_DOUT("type detected for '" << iname << "': " << sd.signal[0]["type"]);
-        return sd.signal[0]["type"] == "flux";
-    }
-}
-
-
-// support for Backend::Backend() (Codegen::init)
 void Settings::loadBackendSettings(const ir::PlatformRef &platform) {
     const Json &hardwareSettings = platform->data.data["hardware_settings"];
     QL_JSON_ASSERT(hardwareSettings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
@@ -68,22 +103,16 @@ void Settings::loadBackendSettings(const ir::PlatformRef &platform) {
 }
 
 
-// NB: assumes prior test for isReadout()==true
-Str Settings::getReadoutMode(const ir::InstructionType &instrType) {
+Bool Settings::isMeasRsltRealTime(const ir::InstructionType &instrType) {
     const Json &instruction = instrType.data.data;
     Str instructionPath = "instructions/" + instrType.name;
     QL_JSON_ASSERT(instruction, "cc", instructionPath);
-    return json_get<Str>(instruction["cc"], "readout_mode", instructionPath);
-}
+    if(!QL_JSON_EXISTS(instruction["cc"], "readout_mode")) return false;
 
-// determine whether this is a 'readout instruction'
-Bool Settings::isReadout(const ir::InstructionType &instrType) {
-    const Json &instruction = instrType.data.data;
-    return isReadout(instruction, instrType.name);
-}
+    return instruction["cc"]["readout_mode"] == "feedback";
+};
 
 
-// find JSON signal definition for instruction, either inline or via 'ref_signal'
 // FIXME: Settings::SignalDef Settings::findSignalDefinition(const ir::InstructionType &instrType) const {
 // FIXME: deprecate "ref_signal"?
 Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
@@ -168,13 +197,13 @@ Settings::CalcSignalValue Settings::calcSignalValue(
         ret.signalValueString = "";
     } else {
         Str sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
-        
+
+#if 0   // FIXME: no longer useful? Maybe to disambiguate different signal_ref
         // expand macros
-        sv = replace_all(sv, "\"", "");   // get rid of quotes FIXME: is this still useful?
-#if 1   // FIXME: no longer useful? Maybe to disambiguate different signal_ref
+        sv = replace_all(sv, "\"", "");   // get rid of quotes
         sv = replace_all(sv, "{gateName}", iname);
-//        sv = replace_all(sv, "{instrumentName}", FIXMEret.si.ic.ii.instrumentName);
-//        sv = replace_all(sv, "{instrumentGroup}", to_string(ret.si.group));
+        sv = replace_all(sv, "{instrumentName}", FIXMEret.si.ic.ii.instrumentName);
+        sv = replace_all(sv, "{instrumentGroup}", to_string(ret.si.group));
         sv = replace_all(sv, "{qubit}", to_string(qubit));
 #endif
         ret.signalValueString = sv;

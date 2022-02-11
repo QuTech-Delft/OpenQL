@@ -597,8 +597,8 @@ void Platform::load(
         topology.emplace(qubit_count, platform_config["topology"]);
     }
 
-    // load instructions
-    QL_DOUT("loading instructions");    // NB: these are unused if the exclusively use the new IR
+    // load instructions into instruction_map
+    QL_DOUT("loading instructions");    // NB: these are unused if we exclusively use the new IR
     const utils::Json &instructions = platform_config["instructions"];
     static const std::regex comma_space_pattern("\\s*,\\s*");
 
@@ -632,7 +632,7 @@ void Platform::load(
     // Examples:
     // - Parametrized gate-decomposition: "cl_2 %0": ["rxm90 %0", "rym90 %0"]
     // - Specialized gate-decomposition:  "rx180 q0" : ["x q0"]
-    QL_DOUT("loading gate_decomposition");    // NB: these are unused if the exclusively use the new IR
+    QL_DOUT("loading gate_decomposition");    // NB: these are unused if we exclusively use the new IR
     if (platform_config.count("gate_decomposition") > 0) {
         const utils::Json &gate_decomposition = platform_config["gate_decomposition"];
         for (auto it = gate_decomposition.begin();
