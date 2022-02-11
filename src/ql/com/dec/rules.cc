@@ -8,6 +8,8 @@
 #include "ql/ir/describe.h"
 #include "ql/com/map/expression_mapper.h"
 
+#define DEBUG(s) QL_WOUT(s)
+
 namespace ql {
 namespace com {
 namespace dec {
@@ -132,13 +134,16 @@ utils::UInt apply_decomposition_rules(
         remaining.pop_front();
         utils::Bool rule_applied = false;
         if (auto insn = stmt->as_custom_instruction()) {
+            DEBUG("expanding '" << ir::describe(stmt) << "'");
             for (const auto &rule : insn->instruction_type->decompositions) {
 
                 // Ignore decomposition rules that don't match the predicate.
                 if (!predicate(rule)) {
+                    DEBUG("ignoring rule '" << ir::describe(rule) << "'");
                     continue;
                 }
 
+                DEBUG("applying rule '" << ir::describe(rule) << "'");
                 // Expression mapper for updating variable and parameter
                 // references in the expansion.
                 DecompositionRuleExpressionMapper mapper;
@@ -162,21 +167,41 @@ utils::UInt apply_decomposition_rules(
                 }
 
                 // Perform the expansion.
-                auto it = remaining.begin();
+                auto it = remaining.begin();  // the insertion point for expanded instructions
                 for (const auto &orig_exp_stmt : rule->expansion) {
                     auto exp_stmt = orig_exp_stmt.clone();
+                    DEBUG("insertion point: " << (it!=remaining.end() ? ir::describe(*it) : "<end>"));
+                    DEBUG("into: '" << ir::describe(exp_stmt) << "'");
                     mapper.process_statement(exp_stmt);
                     if (ignore_schedule) {
                         exp_stmt->cycle = stmt->cycle;
                     } else {
                         exp_stmt->cycle += stmt->cycle;
                     }
+#if 1   // FIXME: reverses order
                     it = remaining.insert(it, exp_stmt);
+ #if 1 // insert subsequent expansians after this one
+                    it = std::next(it);
+ #endif
+#else
+                    // insert exp_stmt *after* it
+                    if(remaining.size() > 1) {
+                        it = remaining.insert(std::next(it), exp_stmt);
+                    } else {
+                        remaining.push_back(exp_stmt);
+                        it = std::prev(remaining.end());    // last element
+                    }
+#endif
+                }
+                DEBUG("remaining:");
+                for(auto &r : remaining) {
+                    DEBUG("    '" << ir::describe(r) << "'");
                 }
 
                 rule_applied = true;
                 break;
             }
+            DEBUG("done expanding '" << ir::describe(stmt) << "'");
         }
         if (rule_applied) {
             number_of_applications++;
