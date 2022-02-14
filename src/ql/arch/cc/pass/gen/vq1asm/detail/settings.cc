@@ -193,6 +193,7 @@ Settings::CalcSignalValue Settings::calcSignalValue(
     // get signal value
     // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
     const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
+    // FIXME: also allow key "value" to be absent
     if (instructionSignalValue.empty()) {    // allow empty signal
         ret.signalValueString = "";
     } else {

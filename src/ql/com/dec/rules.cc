@@ -8,7 +8,7 @@
 #include "ql/ir/describe.h"
 #include "ql/com/map/expression_mapper.h"
 
-#define DEBUG(s) QL_WOUT(s)
+#define DEBUG(s) // QL_DOUT(s)
 
 namespace ql {
 namespace com {
@@ -111,6 +111,7 @@ public:
  * the original statement. If ignore_schedule is not set, the schedule is copied
  * from the decomposition rule, possibly resulting in instructions being
  * reordered.
+ * FIXME: Note that loops in decompositions are not handled gracefully.
  */
 utils::UInt apply_decomposition_rules(
     const ir::Ref &ir,
@@ -178,20 +179,8 @@ utils::UInt apply_decomposition_rules(
                     } else {
                         exp_stmt->cycle += stmt->cycle;
                     }
-#if 1   // FIXME: reverses order
-                    it = remaining.insert(it, exp_stmt);
- #if 1 // insert subsequent expansians after this one
-                    it = std::next(it);
- #endif
-#else
-                    // insert exp_stmt *after* it
-                    if(remaining.size() > 1) {
-                        it = remaining.insert(std::next(it), exp_stmt);
-                    } else {
-                        remaining.push_back(exp_stmt);
-                        it = std::prev(remaining.end());    // last element
-                    }
-#endif
+                    // insert exp_stmt (and any subsequent expansions *after* this one (i.e. before the next))
+                    it = std::next(remaining.insert(it, exp_stmt));
                 }
                 DEBUG("remaining:");
                 for(auto &r : remaining) {

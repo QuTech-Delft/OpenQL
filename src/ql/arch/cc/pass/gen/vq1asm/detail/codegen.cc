@@ -474,7 +474,6 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
             // NB: we allow for instruments that only perform the input side of readout, without signal generation by the
             // same instrument.
             if (bi.isMeasRsltRealTime) {
-                QL_WOUT("bi.isMeasRsltRealTime is true");
                 UInt resultBit = Settings::getResultBit(ic, group);
 
 #if 0    // FIXME: partly redundant, but partly useful
@@ -622,7 +621,10 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 #if 1
     if(!custom.instruction_type->template_operands.empty()) {
         QL_DOUT("found template_operands: JSON = " << custom.instruction_type->data.data );
-        QL_INPUT_ERROR("CC backend cannot yet handle specialized instructions (check gate decompositions and parameters)");  // FIXME: add context
+        QL_INPUT_ERROR(
+            "CC backend requires specialized instruction '" << ir::describe(custom) <<
+            "' to be decomposed: check gate decompositions and parameters"
+        );
     }
 #else
     for (const auto &ob : custom.instruction_type->template_operands) {
@@ -710,7 +712,6 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
         // store operands used for real-time measurements, actual work is postponed to bundleFinish()
         if (settings.isMeasRsltRealTime(*custom.instruction_type)) {
-            QL_WOUT("settings.isMeasRsltRealTime is true: " << ir::describe(custom));
             // FIXME: move the checks to collectCodeGenInfo?
             // FIXME: at the output side, similar checks are not performed
             /*
@@ -762,9 +763,6 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
                 bi.breg_operand = ops.bregs[0];
                 QL_IOUT("using explicit bit " << bi.breg_operand << " for qubit " << ops.qubits[0]);
             }
-        }
-        else {  // FIXME
-            QL_WOUT("settings.isMeasRsltRealTime is false: " << ir::describe(custom));
         }
 
         // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
