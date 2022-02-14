@@ -402,8 +402,7 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
            this key is compulsory (if signal is non-empty), but in the future,
            codewords will be assigned automatically to make better use of the
            limited codeword space.
-         - `"readout_mode"` defines an instruction to perform readout if
-           non-empty. If the value "feedback" is used, code is generated to
+         - if `"readout_mode"` with value "feedback" is used, code is generated to
            read and distribute the instrument result.
 )" R"(
     * Program flow feedback *
