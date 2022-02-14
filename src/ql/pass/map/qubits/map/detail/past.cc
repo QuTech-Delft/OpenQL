@@ -631,10 +631,12 @@ void Past::make_primitive(const ir::compat::GateRef &gate, ir::compat::GateRefs 
             gate->cond_operands
         );
         if (!created) {
-            QL_FATAL("MakePrimtive: failed creating gate " << prim_gname << " or " << gname);
+            QL_FATAL("make_primitive: failed creating gate " << prim_gname << " or " << gname);
         }
+        QL_IOUT("... make_primitive: new gate created for: " << gname);
+    } else {
+        QL_IOUT("... make_primitive: new gate created for: " << prim_gname);
     }
-    QL_DOUT("... MakePrimtive: new gate created for: " << prim_gname << " or " << gname);
 
     if (gate->swap_params.part_of_swap) {
         QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");

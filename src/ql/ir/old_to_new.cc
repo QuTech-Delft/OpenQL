@@ -921,8 +921,8 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Check the result.
     QL_DOUT("Result of old->new IR platform conversion:");
-    QL_DOUT("(disabled)");
-    // QL_IF_LOG_DEBUG(ir->dump_seq());
+    // QL_DOUT("(disabled)");
+    QL_IF_LOG_DEBUG(ir->dump_seq());
     check_consistency(ir);
 
     return ir;
@@ -1636,11 +1636,13 @@ static utils::Str convert_kernels(
 Ref convert_old_to_new(const compat::ProgramRef &old) {
 
     // Build the platform.
+    QL_DOUT("Convert_old_to_new");
     auto ir = convert_old_to_new(old->platform);
 
     // If there are no kernels in the old program, don't create a program node
     // at all.
     if (old->kernels.empty()) {
+        QL_DOUT("Convert_old_to_new (no kernels) [DONE]");
         return ir;
     }
 
@@ -1655,6 +1657,7 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
         old->breg_count
     });
 
+    QL_DOUT("Convert_old_to_new: about to convert kernels");
     // Convert the kernels.
     utils::Set<utils::Str> names;
     for (utils::UInt idx = 0; idx < old->kernels.size(); ) {
@@ -1691,6 +1694,7 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
     QL_DOUT("(disabled)");
     // QL_IF_LOG_DEBUG(ir->dump_seq());
     check_consistency(ir);
+    QL_DOUT("Convert_old_to_new [DONE]");
 
     return ir;
 }
