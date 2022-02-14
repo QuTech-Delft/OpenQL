@@ -541,47 +541,27 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
 
     QL_IOUT("desugaring CC instructions");
 
-    // get some data sections, since we don't have Platform yet at this stage
-    QL_JSON_ASSERT(data, "instructions", "/");
-    utils::Json &instructions = data["instructions"];
-
-#if 0
-    // FIXME: add Settings::loadBackendSettings(const utils::Json &data)
-    // NB: based on Settings::loadBackendSettings()
-    QL_JSON_ASSERT(data, "hardware_settings", "/");
-    const utils::Json &hardware_settings = data["hardware_settings"];
-    QL_JSON_ASSERT(hardware_settings, "eqasm_backend_cc", "hardware_settings");
-    const utils::Json &jsonBackendSettings = hardware_settings["eqasm_backend_cc"];
-    QL_JSON_ASSERT(jsonBackendSettings, "signals", "eqasm_backend_cc");
-    utils::RawPtr<const utils::Json> signals = &jsonBackendSettings["signals"];
-
-    // add predicates to instructions (for instrument resources created in post_process_platform())
-    for (auto &it : instructions.items()) {
-        if (pass::gen::vq1asm::detail::Settings::isMeasure(it.value(), signals, it.key())) {
-            QL_IOUT("desugaring measure instruction: '" << it.key() << "'");
-            instructions[it.key()][predicateKeyInstructionType] = predicateValueMeas;
-        } else if (pass::gen::vq1asm::detail::Settings::isFlux(it.value(), signals, it.key())) {
-            QL_IOUT("desugaring flux instruction: '" << it.key() << "'");
-            instructions[it.key()][predicateKeyInstructionType] = predicateValueFlux;
-        }
-    }
-#else
     // load CC settings
     pass::gen::vq1asm::detail::Settings settings;
     settings.loadBackendSettings(data);
+
+    // get instruction section, since we don't have Platform yet at this stage
+    QL_JSON_ASSERT(data, "instructions", "/");
+    utils::Json &instructions = data["instructions"];
 
     // add predicates to instructions (for instrument resources created in post_process_platform())
     for (auto &it : instructions.items()) {
         if (settings.isMeasure(it.value(), it.key())) {
             QL_IOUT("desugaring measure instruction: '" << it.key() << "'");
             instructions[it.key()][predicateKeyInstructionType] = predicateValueMeas;
-        } else if (settings.isFlux(it.value(), it.key())) {
+        }
+
+        // (note that both isMeasure() and isFlux() can be true)
+        if (settings.isFlux(it.value(), it.key())) {
             QL_IOUT("desugaring flux instruction: '" << it.key() << "'");
             instructions[it.key()][predicateKeyInstructionType] = predicateValueFlux;
         }
     }
-
-#endif
 
     QL_IOUT("finished desugaring CC instructions");
 }
