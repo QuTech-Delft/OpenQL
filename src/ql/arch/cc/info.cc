@@ -545,6 +545,7 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
     QL_JSON_ASSERT(data, "instructions", "/");
     utils::Json &instructions = data["instructions"];
 
+#if 0
     // FIXME: add Settings::loadBackendSettings(const utils::Json &data)
     // NB: based on Settings::loadBackendSettings()
     QL_JSON_ASSERT(data, "hardware_settings", "/");
@@ -556,14 +557,31 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
 
     // add predicates to instructions (for instrument resources created in post_process_platform())
     for (auto &it : instructions.items()) {
-        if (pass::gen::vq1asm::detail::Settings::isReadout(it.value(), signals, it.key())) {     // FIXME: should be on for measurements, naming is too obscure. Or get from instrument
-            QL_IOUT("desugaring readout instruction: '" << it.key() << "'");
+        if (pass::gen::vq1asm::detail::Settings::isMeasure(it.value(), signals, it.key())) {
+            QL_IOUT("desugaring measure instruction: '" << it.key() << "'");
             instructions[it.key()][predicateKeyInstructionType] = predicateValueMeas;
         } else if (pass::gen::vq1asm::detail::Settings::isFlux(it.value(), signals, it.key())) {
             QL_IOUT("desugaring flux instruction: '" << it.key() << "'");
             instructions[it.key()][predicateKeyInstructionType] = predicateValueFlux;
         }
     }
+#else
+    // load CC settings
+    pass::gen::vq1asm::detail::Settings settings;
+    settings.loadBackendSettings(data);
+
+    // add predicates to instructions (for instrument resources created in post_process_platform())
+    for (auto &it : instructions.items()) {
+        if (settings.isMeasure(it.value(), it.key())) {
+            QL_IOUT("desugaring measure instruction: '" << it.key() << "'");
+            instructions[it.key()][predicateKeyInstructionType] = predicateValueMeas;
+        } else if (settings.isFlux(it.value(), it.key())) {
+            QL_IOUT("desugaring flux instruction: '" << it.key() << "'");
+            instructions[it.key()][predicateKeyInstructionType] = predicateValueFlux;
+        }
+    }
+
+#endif
 
     QL_IOUT("finished desugaring CC instructions");
 }

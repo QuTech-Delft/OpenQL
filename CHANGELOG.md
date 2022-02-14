@@ -15,10 +15,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - CC backend:
   - now uses new IR
   - no longer requires key "cc" to be present in instructions that define gate decompositions
+  - base classification of gates as measurement on signal definition instead of presence of key "readout_mode" (used for resource constrained scheduler)
 
 ### Removed
 - CC backend:
-  - deprecated JSON key "pragma/break" for instruction definitions
+  - support for JSON key "pragma/break" for instruction definitions
   - macro expansion for JSON key instruction/signal/value (unused anyway) 
 
 ### Fixed

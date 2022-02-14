@@ -67,8 +67,10 @@ public: // functions
     | data available
     \************************************************************************/
 
-    static Bool isReadout(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
-    static Bool isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
+    void loadBackendSettings(const utils::Json &data);
+
+    Bool isMeasure(const Json &instruction, const Str &iname);
+    Bool isFlux(const Json &instruction, const Str &iname);
 
     /************************************************************************\
     | support for Info::postprocess_platform(), when we only have an old
@@ -97,7 +99,6 @@ public: // functions
     /**
      * Find JSON signal definition for instruction, either inline or via 'ref_signal'
      */
-    static SignalDef findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname);
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
 
     CalcSignalValue calcSignalValue(const Settings::SignalDef &sd, UInt s, const Vec<UInt> &qubits, const Str &iname);

@@ -22,20 +22,23 @@ using namespace utils;
 | support for Info::preprocess_platform()
 \************************************************************************/
 
-// Determine whether this is a 'readout instruction', i.e. whether it produces any signal with "type" matching "measure".
-// Note that both isReadout() and isFlux() may be true on the same instruction.
-// Used as guidance for resource constraint scheduling.
-// FIXME: make clear that that isn't "measure", but, in our files, "_dist_dsm", which does the actual reading of the measurement result.
-// FIXME: this checks existence of key, in isMeasRsltRealTime() we check contents for "feedback"
-Bool Settings::isReadout(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
+void Settings::loadBackendSettings(const utils::Json &data) {
+    QL_JSON_ASSERT(data, "hardware_settings", "/");
+    const utils::Json &hardware_settings = data["hardware_settings"];
+    QL_JSON_ASSERT(hardware_settings, "eqasm_backend_cc", "hardware_settings");
+    const utils::Json &jsonBackendSettings = hardware_settings["eqasm_backend_cc"];
+    doLoadBackendSettings(jsonBackendSettings);
+}
+
+// Determine whether this is a 'measure instruction', i.e. whether it produces any signal with "type" matching "measure".
+// Note that both isMeasure() and isFlux() may be true on the same instruction.
+// Used as guidance for resource constrained scheduling.
+Bool Settings::isMeasure(const Json &instruction, const Str &iname) {
     // key "cc" is optional, since we may be looking at a 'gate decomposition' instruction
     if (!QL_JSON_EXISTS(instruction, "cc")) return false;
 
-#if 0
-    return QL_JSON_EXISTS(instruction["cc"], "readout_mode"); // FIXME: currently only on for "_dist_dsm"
-#else
     // return true if any "signal/type" matches
-    SignalDef sd = findSignalDefinition(instruction, signals, iname);
+    SignalDef sd = findSignalDefinition(instruction, iname);
     for (UInt s = 0; s < sd.signal.size(); s++) {
         const Json &signal = sd.signal[s];
         if (!QL_JSON_EXISTS(signal, "type")) {
@@ -46,27 +49,17 @@ Bool Settings::isReadout(const Json &instruction, RawPtr<const Json> signals, co
         }
     }
     return false;
-#endif
 }
 
 // Determine whether this is a 'flux instruction', i.e. whether it produces any signal with "type" matching "flux".
-// Note that both isReadout() and isFlux() may be true on the same instruction.
-// Used as guidance for resource constraint scheduling.
-Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
+// Note that both isMeasure() and isFlux() may be true on the same instruction.
+// Used as guidance for resource constrained scheduling.
+Bool Settings::isFlux(const Json &instruction, const Str &iname) {
     // key "cc" is optional, since we may be looking at a 'gate decomposition' instruction
     if (!QL_JSON_EXISTS(instruction, "cc")) return false;
 
     // return true if any "signal/type" matches
-    SignalDef sd = findSignalDefinition(instruction, signals, iname);
-#if 0
-    if (!QL_JSON_EXISTS(sd.signal[0], "type")) {   // FIXME: looks at first signal only
-        QL_DOUT("no type detected for '" << iname << "', signal=" << sd.signal);
-        return false;
-    } else {
-        QL_DOUT("type detected for '" << iname << "': " << sd.signal[0]["type"]);
-        return sd.signal[0]["type"] == getInstrumentSignalTypeFlux();
-    }
-#else
+    SignalDef sd = findSignalDefinition(instruction, iname);
     for (UInt s = 0; s < sd.signal.size(); s++) {
         const Json &signal = sd.signal[s];
         if (!QL_JSON_EXISTS(signal, "type")) {
@@ -77,7 +70,6 @@ Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const
         }
     }
     return false;
-#endif
 }
 
 /************************************************************************\
@@ -85,7 +77,6 @@ Bool Settings::isFlux(const Json &instruction, RawPtr<const Json> signals, const
 \************************************************************************/
 
 void Settings::loadBackendSettings(const ir::compat::PlatformRef &platform) {
-    // remind some main JSON areas
     QL_JSON_ASSERT(platform->hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
     const Json &jsonBackendSettings = platform->hardware_settings["eqasm_backend_cc"];
     doLoadBackendSettings(jsonBackendSettings);
@@ -113,9 +104,10 @@ Bool Settings::isMeasRsltRealTime(const ir::InstructionType &instrType) {
 };
 
 
-// FIXME: Settings::SignalDef Settings::findSignalDefinition(const ir::InstructionType &instrType) const {
+// FIXME: add Settings::SignalDef Settings::findSignalDefinition(const ir::InstructionType &instrType) const
 // FIXME: deprecate "ref_signal"?
-Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawPtr<const Json> signals, const Str &iname) {
+// FIXME: merge into non-static function below, static function no longer required (TBC)
+Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, const Str &iname) const {
     SignalDef ret;
 
     Str instructionPath = "instructions/" + iname;
@@ -133,7 +125,7 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawP
     // FIXME: deprecate ref_signal? Not useful once we have fully switched to new semantics for signal contents
     if (QL_JSON_EXISTS(instruction["cc"], "ref_signal")) {                      // optional syntax: "ref_signal"
         Str refSignal = instruction["cc"]["ref_signal"].get<Str>();
-        ret.signal = (*signals)[refSignal];                                     // poor man's JSON pointer
+        ret.signal = (*jsonSignals)[refSignal];                                 // poor man's JSON pointer
         if(ret.signal.empty()) {
             QL_JSON_ERROR(
                 "instruction '" << iname
@@ -148,12 +140,6 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, RawP
         ret.path = instructionPath + "/cc/signal";
     }
     return ret;
-}
-
-
-// find JSON signal definition for instruction, either inline or via 'ref_signal'
-Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, const Str &iname) const {
-    return findSignalDefinition(instruction, jsonSignals, iname);
 }
 
 
@@ -414,6 +400,7 @@ Int Settings::findStaticCodewordOverride(const Json &instruction, UInt operandId
 \************************************************************************/
 
 void Settings::doLoadBackendSettings(const Json &jsonBackendSettings) {
+    // remind some main JSON areas
     QL_JSON_ASSERT(jsonBackendSettings, "instrument_definitions", "eqasm_backend_cc");
     jsonInstrumentDefinitions = &jsonBackendSettings["instrument_definitions"];
 
