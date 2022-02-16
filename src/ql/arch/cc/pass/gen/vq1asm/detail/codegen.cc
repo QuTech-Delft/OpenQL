@@ -571,7 +571,9 @@ void Codegen::bundleFinish(
 
         // handle measurement
         if(!codeGenInfo.measQubits.empty()) {
-            measTable.push_back(codeGenInfo.measQubits);
+            auto qubits = codeGenInfo.measQubits;
+            std::sort(qubits.begin(), qubits.end());    // not strictly required, but improves readability
+            measTable.push_back({codeGenInfo.instrumentName, qubits});
         }
 
         if (bundleHasMeasRsltRealTime) {
