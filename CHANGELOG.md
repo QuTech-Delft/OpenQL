@@ -7,15 +7,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - CC backend:
   - support for cQASM 1.2 features through new IR 
-  - limitations
-    - integer values must be non-negative
-    - 
+    - limitations
+      - integer values must be non-negative
+  - support for resource constrained scheduler
+  - creates .map file reporting measurement statements present in input, to allow retrieving measurements downstream 
 
 ### Changed
 - CC backend:
   - now uses new IR
   - no longer requires key "cc" to be present in instructions that define gate decompositions
-  - base classification of gates as measurement on signal definition instead of presence of key "readout_mode" (used for resource constrained scheduler)
+  - key "readout_mode" no longer used
+    - classification of gates as measurement - which is used for the resource constrained scheduler, and to output a map of measurements - now based on signal definition ("signal/type" equals "measure" and "signal/value" non-empty)
+    - classification of gates as *real-time* measurement now based on signal definition ("signal/type" equals "measure" and "signal/value" empty)
 
 ### Removed
 - CC backend:

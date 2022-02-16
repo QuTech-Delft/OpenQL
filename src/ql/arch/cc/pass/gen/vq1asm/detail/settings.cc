@@ -19,33 +19,22 @@ namespace detail {
 using namespace utils;
 
 
-static bool hasMeasRsltSignalRealTime(const Json &signal, const Str &iname) {
-    if (QL_JSON_EXISTS(signal, "readout_mode")) {
-        auto rm = signal["readout_mode"];
-        if(rm == "feedback") {
-            return true;
-        } else {
-            QL_JSON_ERROR("Unsupported value '" << rm << "' for JSON key 'readout_mode' in instruction '" << iname << "'");
-        }
-    }
+static bool isMeasureSignal(const Json &signal, const Str &iname, bool realTime=false) {
+    QL_JSON_ASSERT(signal, "type", iname);
+    QL_JSON_ASSERT(signal, "value", iname);
+
+    // check type
+    if(signal["type"] != Settings::getInstrumentSignalTypeMeasure()) return false;
+
+    // value must be non-empty on true measurements (and empty on instructions where hasMeasRsltSignalRealTime()==true)
+    // value must be empty on instructions retrieving measurements in real-time
+    if(signal["value"].empty() == realTime) return true;
     return false;
 }
 
-static bool hasMeasureSignal(const Json &signal, const Str &iname) {
-    if (!QL_JSON_EXISTS(signal, "type")) {
-        QL_WOUT("no type detected for '" << iname << "', signal=" << signal);
-    } else {
-        QL_DOUT("type detected for '" << iname << "': " << signal["type"]);
-        if(signal["type"] == Settings::getInstrumentSignalTypeMeasure()) return true;
-    }
-    return false;
-}
-
-static bool isMeasureSignal(const Json &signal, const Str &iname) {
-    // since an instruction with hasMeasRsltSignalRealTime()=true is bound to also have
-    // hasMeasureSignal()=true (to be able to refer to the measurement instrument), we need this test.
-    // FIXME: we could also look for signal/value to be non-empty
-    return hasMeasureSignal(signal, iname) && !hasMeasRsltSignalRealTime(signal, iname);
+// return true for instructions retrieving measurements in real-time (e.g. '_dist_dsm')
+static bool isMeasRsltSignalRealTime(const Json &signal, const Str &iname) {
+    return isMeasureSignal(signal, iname, true);
 }
 
 /************************************************************************\
@@ -64,14 +53,11 @@ Bool Settings::isMeasure(const Json &instruction, const Str &iname) {
     // key "cc" is optional, since we may be looking at a 'gate decomposition' instruction
     if (!QL_JSON_EXISTS(instruction, "cc")) return false;
 
-    // return false for instructions retrieving measurements in real time (e.g. '_dist_dsm')
-    if(isMeasRsltRealTime(instruction, iname)) return false;
-
     // return true if any "signal/type" matches
     SignalDef sd = findSignalDefinition(instruction, iname);
     for (UInt s = 0; s < sd.signal.size(); s++) {
         const Json &signal = sd.signal[s];
-        if(hasMeasureSignal(signal, iname)) return true;
+        if(isMeasureSignal(signal, iname)) return true;
     }
     return false;
 }
@@ -120,11 +106,11 @@ Bool Settings::isMeasRsltRealTime(const Json &instruction, const Str &iname) {
     // key "cc" is optional, since we may be looking at a 'gate decomposition' instruction
     if (!QL_JSON_EXISTS(instruction, "cc")) return false;
 
-    // return true if any "signal/type" matches
+    // return true if any "signal/type" matches (note that a qualifying instruction will only have a single signal in practice)
     SignalDef sd = findSignalDefinition(instruction, iname);
     for (UInt s = 0; s < sd.signal.size(); s++) {
         const Json &signal = sd.signal[s];
-        if(hasMeasRsltSignalRealTime(signal, iname)) return true;
+        if(isMeasRsltSignalRealTime(signal, iname)) return true;
     }
     return false;
 };
