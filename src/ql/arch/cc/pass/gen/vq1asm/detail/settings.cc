@@ -122,38 +122,31 @@ Bool Settings::isMeasRsltRealTime(const ir::InstructionType &instrType) {
 
 // FIXME: add Settings::SignalDef Settings::findSignalDefinition(const ir::InstructionType &instrType) const
 // FIXME: deprecate "ref_signal"?
-// FIXME: merge into non-static function below, static function no longer required (TBC)
 Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, const Str &iname) const {
     SignalDef ret;
 
     Str instructionPath = "instructions/" + iname;
-#if 0
-    QL_JSON_ASSERT(instruction, "cc", instructionPath);
-#else
-    // FIXME: if we have a cz with operands for which no decomposition exists, we'll end up with:
-    // RuntimeError: JSON error: in pass VQ1Asm, phase main: in block 'repeatUntilSuccess': in for loop body: instruction not found: 'cz'
-    // This provides little insight, and why do we get upto here anyway? See above: template_operands
-
     if(!QL_JSON_EXISTS(instruction, "cc")) {
-        QL_JSON_ERROR("key 'cc' not found on path '" << instructionPath <<"': check instruction definition and/or decompositions and qubit parameters" );
-    }
-#endif
-    // FIXME: deprecate ref_signal? Not useful once we have fully switched to new semantics for signal contents
-    if (QL_JSON_EXISTS(instruction["cc"], "ref_signal")) {                      // optional syntax: "ref_signal"
-        Str refSignal = instruction["cc"]["ref_signal"].get<Str>();
-        ret.signal = (*jsonSignals)[refSignal];                                 // poor man's JSON pointer
-        if(ret.signal.empty()) {
-            QL_JSON_ERROR(
-                "instruction '" << iname
-                << "': ref_signal '" << refSignal
-                << "' does not resolve"
-            );
+        ret.signal = {};
+        ret.path = instructionPath;
+    } else {
+        // FIXME: deprecate ref_signal? Not useful once we have fully switched to new semantics for signal contents. Wait until new configuration has percolated to the lab
+        if (QL_JSON_EXISTS(instruction["cc"], "ref_signal")) {                      // optional syntax: "ref_signal"
+            Str refSignal = instruction["cc"]["ref_signal"].get<Str>();
+            ret.signal = (*jsonSignals)[refSignal];                                 // poor man's JSON pointer
+            if(ret.signal.empty()) {
+                QL_JSON_ERROR(
+                    "instruction '" << iname
+                    << "': ref_signal '" << refSignal
+                    << "' does not resolve"
+                );
+            }
+            ret.path = "signals/" + refSignal;
+        } else {                                                                    // alternative syntax: "signal"
+            ret.signal = json_get<Json>(instruction["cc"], "signal", instructionPath + "/cc");
+            QL_DOUT("signal for '" << instruction << "': '" << ret.signal << "'");
+            ret.path = instructionPath + "/cc/signal";
         }
-        ret.path = "signals/" + refSignal;
-    } else {                                                                    // alternative syntax: "signal"
-        ret.signal = json_get<Json>(instruction["cc"], "signal", instructionPath + "/cc");
-        QL_DOUT("signal for '" << instruction << "': '" << ret.signal << "'");
-        ret.path = instructionPath + "/cc/signal";
     }
     return ret;
 }

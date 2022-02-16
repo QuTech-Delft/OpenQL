@@ -228,14 +228,16 @@ static void parse_decomposition_rule(
             "expansions"
         );
     }
-    utils::UInt decomp_duration = get_duration_of_block(rule_ir->program->blocks[0]);
-    if (decomp_duration > ityp->duration) {
-        QL_USER_ERROR(
-            "in " << description.str() << ": the duration of the schedule of " <<
-            "the decomposition (" << decomp_duration << ") cannot be longer " <<
-            "than the duration of the to-be-decomposed instruction (" <<
-            ityp->duration << ")"
-        );
+    if (ityp->duration > 0) {   // 0 implies that durations are just added up, requires scheduling after decomposition
+        utils::UInt decomp_duration = get_duration_of_block(rule_ir->program->blocks[0]);
+        if (decomp_duration > ityp->duration) {
+            QL_USER_ERROR(
+                "in " << description.str() << ": the duration of the schedule of " <<
+                "the decomposition (" << decomp_duration << ") cannot be longer " <<
+                "than the duration of the to-be-decomposed instruction (" <<
+                ityp->duration << ")"
+            );
+        }
     }
     decomp->expansion = rule_ir->program->blocks[0]->statements;
 
@@ -934,7 +936,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     resources.emplace(rmgr::Manager::from_defaults(old, {}, ir));
     ir->platform->resources.populate(resources);
 
-#if OPT_CC_USER_FUNCTIONS   // FIXME: replace by more flexible mechanism, e.g. configuration based on new JSON key to be added to 'old'
+#if OPT_CC_USER_FUNCTIONS   // FIXME: replace by more flexible mechanism, e.g. configuration based on new JSON key to be added to 'old'. Or just await cQQASM 2.0
     // Infer (default) architecture from the rest of the platform.
     utils::Str architecture = ir->platform->architecture->family->get_namespace_name();
 
@@ -969,7 +971,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     ir->platform->set_annotation<compat::PlatformRef>(old);
 
     // Check the result.
-#if 1   // FIXME: too verbose
+#if 1   // NB: very verbose
     QL_DOUT("Result of old->new IR platform conversion:");
     QL_IF_LOG_DEBUG(ir->dump_seq());
 #endif

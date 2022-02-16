@@ -179,12 +179,8 @@ utils::UInt apply_decomposition_rules(
                     } else {
                         exp_stmt->cycle += stmt->cycle;
                     }
-                    // insert exp_stmt (and any subsequent expansions *after* this one (i.e. before the next))
+                    // insert exp_stmt, any subsequent expansions go *after* this one (i.e. before the next)
                     it = std::next(remaining.insert(it, exp_stmt));
-                }
-                DEBUG("remaining:");
-                for(auto &r : remaining) {
-                    DEBUG("    '" << ir::describe(r) << "'");
                 }
 
                 rule_applied = true;
