@@ -614,13 +614,6 @@ static Qubits ccInstrument2qubits(const utils::Json &instrument) {
     utils::UInt qubitGroupCnt = qubits.size();  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
     for (utils::UInt group=0; group<qubitGroupCnt; group++) {
         const utils::Json &qubitsOfGroup = qubits[group];
-#if 0   // FIXME: old
-        if (qubitsOfGroup.size() == 1) {    // FIXME: specific for measurements
-            utils::Int qubit = qubitsOfGroup[0].get<utils::Int>();
-            QL_IOUT("instrument " << unit << "/" << instrument["name"] << ": adding qubit " << qubit);
-            ret.set(qubit) = unit;
-        }
-#endif
         for (utils::UInt i=0; i<qubitsOfGroup.size(); i++) {
             ret.push_back(qubitsOfGroup[0].get<utils::UInt>());
         }

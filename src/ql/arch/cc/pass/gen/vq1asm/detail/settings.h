@@ -52,7 +52,8 @@ public: // types
 
     struct CalcSignalValue {
         Str signalValueString;
-        UInt operandIdx;                                        // NB: in the new IR, 'operand' is called 'qubit' in most places
+        Bool isMeasure;
+        UInt operandIdx;            // NB: in the new IR, 'operand' is called 'qubit' in most places. FIXME: required for findStaticCodewordOverride()
         Settings::SignalInfo si;
     }; // return type for calcSignalValue()
 
@@ -69,7 +70,20 @@ public: // functions
 
     void loadBackendSettings(const utils::Json &data);
 
+    /*
+     * Determine whether the instruction record refers to a 'measure instruction', i.e. whether it produces any signal
+     * with "type" matching "measure" AND isMeasRsltRealTime() is false
+     * Note that both isMeasure() and isFlux() may be true on the same instruction.
+     * Used as guidance for resource constrained scheduling.
+     */
     Bool isMeasure(const Json &instruction, const Str &iname);
+
+    /*
+     * Determine whether the instruction record refers to a 'flux instruction', i.e. whether it produces any signal with
+     * "type" matching "flux".
+     * Note that both isMeasure() and isFlux() may be true on the same instruction.
+     * Used as guidance for resource constrained scheduling.
+     */
     Bool isFlux(const Json &instruction, const Str &iname);
 
     /************************************************************************\
@@ -91,9 +105,10 @@ public: // functions
 
     /**
      * Does this instruction process real time measurement results:
-     * - should be false for an instruction that initiates the measurement, e.g. "measure"
-     * - should be true for an instruction that acquires the bits resulting from the measurement, e.g. "_dist_dsm"
+     * - false for an instruction that initiates the measurement, e.g. "measure"
+     * - true for an instruction that acquires the bits resulting from the measurement, e.g. "_dist_dsm"
      */
+    Bool isMeasRsltRealTime(const Json &instruction, const Str &iname);
     Bool isMeasRsltRealTime(const ir::InstructionType &instrType);
 
     /**

@@ -81,7 +81,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
     auto block_child_name = [name](const Str &child_name) { return "__" + name + "__" + child_name; };
 
     // Return the label (stem) for this block. Note that this is used as q1asm label and must adhere to
-    // the allowed structure of that. The appending of block_number is to uniquify anonymous blocks like for loops.
+    // the allowed structure of that. The appending of block_number is to uniquify anonymous blocks like 'for loops'.
     auto label = [this, name]() { return QL_SS2S(name << "__" << block_number); };
 
     // FIXME: add comments

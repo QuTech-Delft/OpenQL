@@ -75,12 +75,15 @@ public: //  functions
     void handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);   // FIXME: private?
 
 private:    // types
-    // code generation info for instrument
+    // code generation info for single instrument
     struct CodeGenInfo {
         // output related
         Bool instrHasOutput;
         tDigital digOut;                                        // the digital output value sent over the instrument interface
         UInt instrMaxDurationInCycles;                          // maximum duration over groups that are used, one instrument
+
+        // measurement related
+        Vec<UInt> measQubits;                                   // the qubits measured
 
         // feedback related
         MeasResultRealTimeMap measResultRealTimeMap;
@@ -136,6 +139,11 @@ private:    // funcs
     void emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
 
     // generic helpers
+
+    /*
+     * Build a map of CodeGenInfo with the information required for code generation, based on BundleInfo records for all
+     * instrument groups
+     */
     CodeGenMap collectCodeGenInfo(UInt startCycle, UInt durationInCycles);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
     Codeword assignCodeword(const Str &instrumentName, Int instrIdx, Group group);

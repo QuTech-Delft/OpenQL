@@ -18,6 +18,36 @@ namespace detail {
 
 using namespace utils;
 
+
+static bool hasMeasRsltSignalRealTime(const Json &signal, const Str &iname) {
+    if (QL_JSON_EXISTS(signal, "readout_mode")) {
+        auto rm = signal["readout_mode"];
+        if(rm == "feedback") {
+            return true;
+        } else {
+            QL_JSON_ERROR("Unsupported value '" << rm << "' for JSON key 'readout_mode' in instruction '" << iname << "'");
+        }
+    }
+    return false;
+}
+
+static bool hasMeasureSignal(const Json &signal, const Str &iname) {
+    if (!QL_JSON_EXISTS(signal, "type")) {
+        QL_WOUT("no type detected for '" << iname << "', signal=" << signal);
+    } else {
+        QL_DOUT("type detected for '" << iname << "': " << signal["type"]);
+        if(signal["type"] == Settings::getInstrumentSignalTypeMeasure()) return true;
+    }
+    return false;
+}
+
+static bool isMeasureSignal(const Json &signal, const Str &iname) {
+    // since an instruction with hasMeasRsltSignalRealTime()=true is bound to also have
+    // hasMeasureSignal()=true (to be able to refer to the measurement instrument), we need this test.
+    // FIXME: we could also look for signal/value to be non-empty
+    return hasMeasureSignal(signal, iname) && !hasMeasRsltSignalRealTime(signal, iname);
+}
+
 /************************************************************************\
 | support for Info::preprocess_platform()
 \************************************************************************/
@@ -30,30 +60,22 @@ void Settings::loadBackendSettings(const utils::Json &data) {
     doLoadBackendSettings(jsonBackendSettings);
 }
 
-// Determine whether this is a 'measure instruction', i.e. whether it produces any signal with "type" matching "measure".
-// Note that both isMeasure() and isFlux() may be true on the same instruction.
-// Used as guidance for resource constrained scheduling.
 Bool Settings::isMeasure(const Json &instruction, const Str &iname) {
     // key "cc" is optional, since we may be looking at a 'gate decomposition' instruction
     if (!QL_JSON_EXISTS(instruction, "cc")) return false;
+
+    // return false for instructions retrieving measurements in real time (e.g. '_dist_dsm')
+    if(isMeasRsltRealTime(instruction, iname)) return false;
 
     // return true if any "signal/type" matches
     SignalDef sd = findSignalDefinition(instruction, iname);
     for (UInt s = 0; s < sd.signal.size(); s++) {
         const Json &signal = sd.signal[s];
-        if (!QL_JSON_EXISTS(signal, "type")) {
-            QL_WOUT("no type detected for '" << iname << "', signal=" << signal);
-        } else {
-            QL_DOUT("type detected for '" << iname << "': " << signal["type"]);
-            if(signal["type"] == getInstrumentSignalTypeMeasure()) return true;
-        }
+        if(hasMeasureSignal(signal, iname)) return true;
     }
     return false;
 }
 
-// Determine whether this is a 'flux instruction', i.e. whether it produces any signal with "type" matching "flux".
-// Note that both isMeasure() and isFlux() may be true on the same instruction.
-// Used as guidance for resource constrained scheduling.
 Bool Settings::isFlux(const Json &instruction, const Str &iname) {
     // key "cc" is optional, since we may be looking at a 'gate decomposition' instruction
     if (!QL_JSON_EXISTS(instruction, "cc")) return false;
@@ -94,14 +116,22 @@ void Settings::loadBackendSettings(const ir::PlatformRef &platform) {
 }
 
 
-Bool Settings::isMeasRsltRealTime(const ir::InstructionType &instrType) {
-    const Json &instruction = instrType.data.data;
-    Str instructionPath = "instructions/" + instrType.name;
-    QL_JSON_ASSERT(instruction, "cc", instructionPath);
-    if(!QL_JSON_EXISTS(instruction["cc"], "readout_mode")) return false;
+Bool Settings::isMeasRsltRealTime(const Json &instruction, const Str &iname) {
+    // key "cc" is optional, since we may be looking at a 'gate decomposition' instruction
+    if (!QL_JSON_EXISTS(instruction, "cc")) return false;
 
-    return instruction["cc"]["readout_mode"] == "feedback";
+    // return true if any "signal/type" matches
+    SignalDef sd = findSignalDefinition(instruction, iname);
+    for (UInt s = 0; s < sd.signal.size(); s++) {
+        const Json &signal = sd.signal[s];
+        if(hasMeasRsltSignalRealTime(signal, iname)) return true;
+    }
+    return false;
 };
+
+Bool Settings::isMeasRsltRealTime(const ir::InstructionType &instrType) {
+    return isMeasRsltRealTime(instrType.data.data, instrType.name);
+}
 
 
 // FIXME: add Settings::SignalDef Settings::findSignalDefinition(const ir::InstructionType &instrType) const
@@ -172,10 +202,6 @@ Settings::CalcSignalValue Settings::calcSignalValue(
     }
     UInt qubit = qubits[operandIdx];
 
-    // get instruction signal type (e.g. "mw", "flux", etc)
-    // NB: instructionSignalType is different from "instruction/type" provided by find_instruction_type, although some identical strings are used). NB: that key is no longer used by the 'core' of OpenQL
-    Str instructionSignalType = json_get<Str>(sd.signal[s], "type", signalSPath);
-
     // get signal value
     // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
     const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
@@ -184,7 +210,6 @@ Settings::CalcSignalValue Settings::calcSignalValue(
         ret.signalValueString = "";
     } else {
         Str sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
-
 #if 0   // FIXME: no longer useful? Maybe to disambiguate different signal_ref
         // expand macros
         sv = replace_all(sv, "\"", "");   // get rid of quotes
@@ -195,6 +220,14 @@ Settings::CalcSignalValue Settings::calcSignalValue(
 #endif
         ret.signalValueString = sv;
     }
+
+    // is this a measurement?
+    ret.isMeasure = isMeasureSignal(sd.signal[s], iname);
+
+    // get instruction signal type (e.g. "mw", "flux", etc).
+    // NB: instructionSignalType is different from "instruction/type" provided by find_instruction_type, although some
+    // identical strings are used). NB: that key is no longer used by the 'core' of OpenQL
+    Str instructionSignalType = json_get<Str>(sd.signal[s], "type", signalSPath);
 
     /************************************************************************\
     | map signal type for qubit to instrument & group

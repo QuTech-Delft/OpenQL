@@ -65,11 +65,15 @@ public: // vars
     // conditional gate info
     tInstructionCondition instructionCondition;
 
+    // measurement
+    Bool isMeasure = false;
+    UInt measQubit = 0;
+
     // real-time measurement results: flag and operands
     Bool isMeasRsltRealTime = false;
-    UInt breg_operand;
+    UInt breg_operand = 0;  // the breg where the result is to be stored
 
-    // original instruction
+    // original instruction, for logging purposes
     Str describe;
 };
 } // namespace detail
