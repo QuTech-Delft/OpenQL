@@ -189,9 +189,9 @@ Settings::CalcSignalValue Settings::calcSignalValue(
         ret.signalValueString = "";
     } else {
         Str sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
+        sv = replace_all(sv, "\"", "");   // get rid of quotes
 #if 0   // FIXME: no longer useful? Maybe to disambiguate different signal_ref
         // expand macros
-        sv = replace_all(sv, "\"", "");   // get rid of quotes
         sv = replace_all(sv, "{gateName}", iname);
         sv = replace_all(sv, "{instrumentName}", FIXMEret.si.ic.ii.instrumentName);
         sv = replace_all(sv, "{instrumentGroup}", to_string(ret.si.group));

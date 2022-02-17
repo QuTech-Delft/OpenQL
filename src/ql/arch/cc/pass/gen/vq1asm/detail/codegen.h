@@ -146,7 +146,7 @@ private:    // funcs
      */
     CodeGenMap collectCodeGenInfo(UInt startCycle, UInt durationInCycles);
 #if !OPT_SUPPORT_STATIC_CODEWORDS
-    Codeword assignCodeword(const Str &instrumentName, Int instrIdx, Group group);
+    tCodeword assignCodeword(const Str &instrumentName, Int instrIdx, Int group);
 #endif
 
     // expression helpers

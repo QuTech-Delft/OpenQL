@@ -461,6 +461,10 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 codeGenInfo.digOut |= gdo.groupDigOut;
                 comment(gdo.comment);
 
+                // save codeword mapping
+                // FIXME: store JSON signal iso string, store codeword as key
+                codewordTable[ic.ii.instrumentName][group] = {bi.staticCodewordOverride, bi.signalValue};   // NB: structure created on demand
+
                 // conditional gates
                 // store condition and groupDigOut in condMap, if all groups are unconditional we use old scheme, otherwise
                 // datapath is configured to generate proper digital output
@@ -1203,9 +1207,10 @@ void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str
 }
 
 
+// FIXME: broken, but we do want to reinstate automatic codeword generation at some point
 #if !OPT_SUPPORT_STATIC_CODEWORDS
-Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int group) {
-    Codeword codeword;
+tCodeword Codegen::assignCodeword(const Str &instrumentName, Int instrIdx, Int group) {
+    tCodeword codeword;
     Str signalValue = bi->signalValue;
 
     if (QL_JSON_EXISTS(codewordTable, instrumentName)                       // instrument exists
