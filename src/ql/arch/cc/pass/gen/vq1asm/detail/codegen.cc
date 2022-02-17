@@ -573,7 +573,7 @@ void Codegen::bundleFinish(
         if(!codeGenInfo.measQubits.empty()) {
             auto qubits = codeGenInfo.measQubits;
             std::sort(qubits.begin(), qubits.end());    // not strictly required, but improves readability
-            measTable.push_back({codeGenInfo.instrumentName, qubits});
+            measTable[codeGenInfo.instrumentName].push_back(qubits);
         }
 
         if (bundleHasMeasRsltRealTime) {
@@ -1521,9 +1521,10 @@ void Codegen::do_handle_expression(
                             emit_mnem2args(operation, 1, 0, QL_SS2S("R"<<dest_reg()));   // reverse operands to match Q1 instruction set
                             if (operation == "sub") {
                                 // Negate result in 2's complement to correct for changed op order
-                                emit("", "not", QL_SS2S("R"<<dest_reg()));                      // invert
+                                Str reg = QL_SS2S("R"<<dest_reg());
+                                emit("", "not", reg);                       // invert
                                 emit("", "nop");
-                                emit("", "add", QL_SS2S("1,R"<<dest_reg()<<",R"<<dest_reg()));  // add 1
+                                emit("", "add", "1,"+reg+","+reg);          // add 1
                             }
                             break;
                     }
