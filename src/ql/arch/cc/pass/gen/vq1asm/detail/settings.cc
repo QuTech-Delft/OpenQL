@@ -32,7 +32,7 @@ static bool isMeasureSignal(const Json &signal, const Str &iname, bool realTime=
     return false;
 }
 
-// return true for instructions retrieving measurements in real-time (e.g. '_dist_dsm')
+// return true for instructions retrieving measurement *results* in real-time (e.g. '_dist_dsm')
 static bool isMeasRsltSignalRealTime(const Json &signal, const Str &iname) {
     return isMeasureSignal(signal, iname, true);
 }
@@ -152,8 +152,6 @@ Settings::SignalDef Settings::findSignalDefinition(const Json &instruction, cons
 }
 
 
-// compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
-// NB: helper for codegen::custom_instruction, which is called with try/catch to add error context
 Settings::CalcSignalValue Settings::calcSignalValue(
     const Settings::SignalDef &sd,
     UInt s,
@@ -222,7 +220,6 @@ Settings::CalcSignalValue Settings::calcSignalValue(
 }
 
 
-// collect some configuration info for an instrument
 Settings::InstrumentInfo Settings::getInstrumentInfo(UInt instrIdx) const {
     InstrumentInfo ret = {nullptr};
 
@@ -272,7 +269,7 @@ Settings::InstrumentControl Settings::getInstrumentControl(UInt instrIdx) const 
     // get number of channels of instrument
     UInt channels = json_get<UInt>(instrumentDefinition, "channels", refInstrumentDefinition);
     // calculate groups size (#channels) of control mode
-    ret.controlModeGroupSize = channels / ret.controlModeGroupCnt;  // FIXME: handle 0 div, and rounding
+    ret.controlModeGroupSize = channels / ret.controlModeGroupCnt;  // FIXME: handle 0 div, and rounding. FIXME: no longer really used
 
     // verify that group size is allowed
     const Json controlGroupSizes = json_get<const Json>(instrumentDefinition, "control_group_sizes", refInstrumentDefinition);
@@ -303,10 +300,6 @@ Int Settings::getResultBit(const InstrumentControl &ic, Int group) {
 }
 
 
-// find instrument&group given instructionSignalType for qubit
-// NB: this implies that we map signal *vectors* to groups, i.e. it is not possible to map individual channels
-// Conceptually, this is where we map an abstract signal definition, eg: {"flux", q3} (which may also be
-// interpreted as port "q3.flux") onto an instrument & group
 Settings::SignalInfo Settings::findSignalInfoForQubit(const Str &instructionSignalType, UInt qubit) const {
     SignalInfo ret;
     Bool signalTypeFound = false;

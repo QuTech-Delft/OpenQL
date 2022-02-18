@@ -41,16 +41,16 @@ public: //  functions
     ~Codegen() = default;
 
     // Generic
-    Str getProgram();                           // return the CC source code that was created
-    Str getMap();                               // return a map of codeword assignments, useful for configuring AWGs
+    Str get_program();                           // return the CC source code that was created
+    Str get_map();                               // return a map of codeword assignments, useful for configuring AWGs
 
     // Compile support
-    void programStart(const Str &progName);
-    void programFinish(const Str &progName);
+    void program_start(const Str &progName);
+    void program_finish(const Str &progName);
     void block_start(const Str &block_name, Int depth);
     void block_finish(const Str &block_name, UInt durationInCycles, Int depth);
-    void bundleStart(const Str &cmnt);
-    void bundleFinish(UInt startCycle, UInt durationInCycles, Bool isLastBundle);
+    void bundle_start(const Str &cmnt);
+    void bundle_finish(UInt startCycle, UInt durationInCycles, Bool isLastBundle);
 
     // Quantum instructions
     void custom_instruction(const ir::CustomInstruction &custom);

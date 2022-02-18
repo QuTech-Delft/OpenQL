@@ -31,7 +31,7 @@ Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, opt
     QL_DOUT("Compiling Central Controller program ... ");
 
     // generate program header
-    codegen.programStart(ir->program->unique_name);
+        codegen.program_start(ir->program->unique_name);
 
     // FIXME: Nodes of interest:
     //  - ir->program->entry_point.links_to
@@ -47,18 +47,18 @@ Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, opt
         }
     }
 
-    codegen.programFinish(ir->program->unique_name);
+        codegen.program_finish(ir->program->unique_name);
 
     // write program to file
     Str file_name(options->output_prefix + ".vq1asm");
     QL_IOUT("Writing Central Controller program to " << file_name);
-    OutFile(file_name).write(codegen.getProgram());
+    OutFile(file_name).write(codegen.get_program());
 
     // write map to file (unless we were using input file)
     if (options->map_input_file.empty()) {
         Str file_name_map(options->output_prefix + ".map");
         QL_IOUT("Writing instrument map to " << file_name_map);
-        OutFile(file_name_map).write(codegen.getMap());
+        OutFile(file_name_map).write(codegen.get_map());
     }
 
     QL_DOUT("Compiling Central Controller program [Done]");
@@ -93,7 +93,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
     auto bundle_finish = [this, &bundle_start_cycle, &bundle_end_cycle](Bool is_last_bundle) {
         Int bundle_duration =  bundle_end_cycle - bundle_start_cycle;
         QL_DOUT(QL_SS2S("Finishing bundle " << bundleIdx << ": start_cycle=" << bundle_start_cycle << ", duration=" << bundle_duration));
-        codegen.bundleFinish(bundle_start_cycle, bundle_duration, is_last_bundle);
+        codegen.bundle_finish(bundle_start_cycle, bundle_duration, is_last_bundle);
     };
 
     QL_IOUT("compiling block '" + label() + "'");
@@ -128,11 +128,11 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                 bundleIdx++;
                 QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << insn->cycle));
                 // NB: first instruction may be wait with zero duration, more generally: duration of first statement != bundle duration
-                codegen.bundleStart(QL_SS2S(
-                    "## Bundle " << bundleIdx
-                    << ": start_cycle=" << insn->cycle
-                    << ":"
-                ));
+                codegen.bundle_start(QL_SS2S(
+                                             "## Bundle " << bundleIdx
+                                                          << ": start_cycle=" << insn->cycle
+                                                          << ":"
+                                     ));
 
                 is_bundle_open = true;
                 bundle_start_cycle = insn->cycle;

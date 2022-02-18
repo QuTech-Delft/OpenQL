@@ -140,7 +140,7 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
 }
 
 
-// Static helper function for bundleFinish()
+// Static helper function for bundle_finish()
 typedef struct {
     tDigital groupDigOut;   // codeword/mask fragment for this group
     Str comment;            // comment for instruction stream
@@ -296,11 +296,11 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
 | Generic
 \************************************************************************/
 
-Str Codegen::getProgram() {
+Str Codegen::get_program() {
     return codeSection.str() + dp.getDatapathSection();
 }
 
-Str Codegen::getMap() {
+Str Codegen::get_map() {
     Json map;
 
     map["openql"]["version"] = OPENQL_VERSION_STRING;
@@ -320,7 +320,7 @@ Str Codegen::getMap() {
 | 'Program' level functions
 \************************************************************************/
 
-void Codegen::programStart(const Str &progName) {
+void Codegen::program_start(const Str &progName) {
     emitProgramStart(progName);
 
     dp.programStart();
@@ -344,7 +344,7 @@ void Codegen::programStart(const Str &progName) {
 }
 
 
-void Codegen::programFinish(const Str &progName) {
+void Codegen::program_finish(const Str &progName) {
     emitProgramFinish();
 
     dp.programFinish();
@@ -383,21 +383,21 @@ void Codegen::block_finish(const Str &block_name, UInt durationInCycles, Int dep
 /*
     Our strategy is to first process all customGate's in a bundle, storing the
     relevant information in bundleInfo. Then, when all work for a bundle has
-    been collected, we generate code in bundleFinish
+    been collected, we generate code in bundle_finish
 
-    - bundleStart():
+    - bundle_start():
     clear bundleInfo, which maintains the work that needs to be performed for bundle
 
     - custom_instruction():
     collect instruction (FKA as gate) information in bundleInfo
 
-    - bundleFinish():
+    - bundle_finish():
     generate code for bundle from information collected in bundleInfo (which
     may be empty if no custom gates are present in bundle)
 */
 
-// bundleStart: see 'strategy' above
-void Codegen::bundleStart(const Str &cmnt) {
+// bundle_start: see 'strategy' above
+void Codegen::bundle_start(const Str &cmnt) {
     // create ragged 'matrix' of BundleInfo with proper vector size per instrument
     bundleInfo.clear();
     BundleInfo empty;
@@ -527,8 +527,8 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
 }
 
 
-// bundleFinish: see 'strategy' above
-void Codegen::bundleFinish(
+// bundle_finish: see 'strategy' above
+void Codegen::bundle_finish(
     UInt startCycle,
     UInt durationInCycles,
     Bool isLastBundle
@@ -754,7 +754,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             bi.measQubit = ops.qubits[0];
         }
 
-        // store operands used for real-time measurements, actual work is postponed to bundleFinish()
+        // store operands used for real-time measurements, actual work is postponed to bundle_finish()
         if (settings.isMeasRsltRealTime(*custom.instruction_type)) {
             // FIXME: move the checks to collectCodeGenInfo?
             // FIXME: at the output side, similar checks are not performed
@@ -814,7 +814,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
              " [cycles], instrIdx=" << csv.si.instrIdx <<
              ", group=" << csv.si.group);
 
-        // NB: code is generated in bundleFinish()
+        // NB: code is generated in bundle_finish()
     }   // for(signal)
 }
 

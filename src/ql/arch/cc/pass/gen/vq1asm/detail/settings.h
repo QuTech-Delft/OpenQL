@@ -29,33 +29,36 @@ public: // types
         Str path;                   // path of the node, for reporting purposes
     };
 
-    struct InstrumentInfo {         // information from key 'instruments'
+    // information from key 'instruments'
+    struct InstrumentInfo {
         RawPtr<const Json> instrument;
         Str instrumentName;         // key 'instruments[]/name'
         Int slot;                   // key 'instruments[]/controller/slot'
         Bool forceCondGatesOn;      // optional key 'instruments[]/force_cond_gates_on', can be used to always enable AWG if gate execution is controlled by VSM
     };
 
-    struct InstrumentControl {      // information from key 'instruments/ref_control_mode'
-        InstrumentInfo ii;
-        Str refControlMode;
-        Json controlMode;           // FIXME: pointer
+    // information from key 'instruments/ref_control_mode'
+    struct InstrumentControl {
+        Str refControlMode;         // the name of the control mode
+        Json controlMode;           // the data of the control mode FIXME: use pointer
         UInt controlModeGroupCnt;   // number of groups in key 'control_bits' of effective control mode
         UInt controlModeGroupSize;  // the size (#channels) of the effective control mode group
+        InstrumentInfo ii;
     };
 
     struct SignalInfo {
-        InstrumentControl ic;
         UInt instrIdx;              // the index into JSON "eqasm_backend_cc/instruments" that provides the signal
         Int group;                  // the group of channels within the instrument that provides the signal
+        InstrumentControl ic;
     };
 
+    // return type for calcSignalValue()
     struct CalcSignalValue {
         Str signalValueString;
         Bool isMeasure;
         UInt operandIdx;            // NB: in the new IR, 'operand' is called 'qubit' in most places. FIXME: required for findStaticCodewordOverride()
-        Settings::SignalInfo si;
-    }; // return type for calcSignalValue()
+        SignalInfo si;
+    };
 
     static const Int NO_STATIC_CODEWORD_OVERRIDE = -1;
 
@@ -68,6 +71,9 @@ public: // functions
     | data available
     \************************************************************************/
 
+    /*
+     * Load backend settings from raw JSON data.
+     */
     void loadBackendSettings(const utils::Json &data);
 
     /*
@@ -91,6 +97,9 @@ public: // functions
     | (ir::compat::PlatformRef) platform available
     \************************************************************************/
 
+    /*
+     * Load backend settings from old-style platform.
+     */
     void loadBackendSettings(const ir::compat::PlatformRef &platform);
 
     // FIXME: this adds semantics to "signal_type", whereas the names are otherwise fully up to the user: optionally get from JSON
@@ -101,6 +110,9 @@ public: // functions
     | support for Backend::Backend() (Codegen::init)
     \************************************************************************/
 
+    /*
+     * Load backend settings from new-style platform.
+     */
     void loadBackendSettings(const ir::PlatformRef &platform);
 
     /**
@@ -116,12 +128,29 @@ public: // functions
      */
     SignalDef findSignalDefinition(const Json &instruction, const Str &iname) const;
 
+    /*
+     * Compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition
+     * of an instruction)
+     * NB: helper for codegen::custom_instruction, which is called with try/catch to add error context
+     */
     CalcSignalValue calcSignalValue(const Settings::SignalDef &sd, UInt s, const Vec<UInt> &qubits, const Str &iname);
+
+    /*
+     * Collect some configuration info for an instrument.
+     */
     InstrumentInfo getInstrumentInfo(UInt instrIdx) const;
+
     InstrumentControl getInstrumentControl(UInt instrIdx) const;
     static Int getResultBit(const InstrumentControl &ic, Int group) ;
 
-    // find instrument/group providing instructionSignalType for qubit
+    /*
+     * Find instrument&group given instructionSignalType for qubit.
+     *
+     * NB: we map signal *vectors* to groups, i.e. it is not possible to map individual channels.
+     *
+     * Conceptually, this is where we map an abstract signal definition, eg: {"flux", q3} (which may also be interpreted
+     * as port "q3.flux") onto an instrument & group
+     */
     SignalInfo findSignalInfoForQubit(const Str &instructionSignalType, UInt qubit) const;
 
     static Int findStaticCodewordOverride(const Json &instruction, UInt operandIdx, const Str &iname);
