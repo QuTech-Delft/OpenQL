@@ -19,12 +19,6 @@
 #include "settings.h"
 #include "vcd.h"
 
-#define REG_TMP0 "R63"                          // Q1 register for temporary use
-#define REG_TMP1 "R62"                          // Q1 register for temporary use
-#define NUM_RSRVD_CREGS 2                       // must match number of REG_TMP*
-#define NUM_CREGS (64-NUM_RSRVD_CREGS)
-#define NUM_BREGS 1024                          // bregs require mapping to DSM, which introduces holes, so we probably fail before we reach this limit
-
 namespace ql {
 namespace arch {
 namespace cc {
@@ -45,14 +39,47 @@ public: //  functions
     Str get_map();                               // return a map of codeword assignments, useful for configuring AWGs
 
     // Compile support
+
+    /*
+     * 'Program' level functions
+     */
     void program_start(const Str &progName);
     void program_finish(const Str &progName);
+
+    /*
+     * 'Block' level functions
+     * (fka 'Kernel', this name stays relevant as it is used by the API)
+     */
     void block_start(const Str &block_name, Int depth);
     void block_finish(const Str &block_name, UInt durationInCycles, Int depth);
+
+    /*
+     * 'Bundle' level functions.
+     * Although the new IR no longer organizes instructions in Bundles, we still need to process them as such, i.e.
+     * evaluate all instructions issued in the same cycle together.
+     *
+     *  Our strategy is to first process all CustomInstruction's in a bundle, storing the relevant information in
+     *  BundleInfo. Then, when all work for a bundle has been collected, we generate code in bundle_finish
+     */
+
+    /**
+     * Clear bundleInfo, which maintains the work that needs to be performed for bundle
+     */
     void bundle_start(const Str &cmnt);
+
+    /**
+     * Generate code for bundle from information collected in bundleInfo (which may be empty if no custom gates are
+     * present in bundle)
+     */
     void bundle_finish(UInt startCycle, UInt durationInCycles, Bool isLastBundle);
 
-    // Quantum instructions
+    /**
+     * Collect information from CustomInstruction (single/two/N qubit gate, including readout. FKA as gate). Translates
+     * 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
+     *
+     * Does not deal with the control mode and digital interface of the instrument, since we first need to collect all
+     * work per instrument
+     */
     void custom_instruction(const ir::CustomInstruction &custom);
 
     // Structured control flow
@@ -75,7 +102,9 @@ public: //  functions
     void handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);   // FIXME: private?
 
 private:    // types
-    // code generation info for single instrument
+    /**
+     * Code generation info for single instrument.
+     */
     struct CodeGenInfo {
         // output related
         Bool instrHasOutput;
@@ -94,7 +123,9 @@ private:    // types
         Int slot;
     };
 
-    // code generation info for all instruments
+    /**
+     * Code generation info for all instruments.
+     */
     using CodeGenMap = Map<Int, CodeGenInfo>;                   // NB: key is instrument index
 
 

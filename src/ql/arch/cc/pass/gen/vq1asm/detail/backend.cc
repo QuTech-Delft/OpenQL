@@ -26,7 +26,7 @@ namespace detail {
 
 using namespace utils;
 
-// compile for Central Controller
+
 Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, options) {
     QL_DOUT("Compiling Central Controller program ... ");
 
@@ -65,14 +65,9 @@ Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, opt
 }
 
 
-/*
- * Generate code for a single block (which sort of matches the concept of a Kernel in the old API). Recursively calls
- * itself where necessary.
- * Based on NewToOldConverter::convert_block
- */
-// FIXME: runOnce automatically on cQASM input
 // FIXME: provide (more) context in all QL_ICE and e.add_context
 // FIXME: process block->next? And entrypoint?
+
 void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int depth)
 {
     // Return the name for a child of this block. We use "__" to prevent clashes with names assigned by user (assuming
@@ -80,11 +75,11 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
     // level.
     auto block_child_name = [name](const Str &child_name) { return "__" + name + "__" + child_name; };
 
-    // Return the label (stem) for this block. Note that this is used as q1asm label and must adhere to
+    // Return the label (-stem) for this block. Note that this is used as q1asm label and must adhere to
     // the allowed structure of that. The appending of block_number is to uniquify anonymous blocks like 'for loops'.
     auto label = [this, name]() { return QL_SS2S(name << "__" << block_number); };
 
-    // FIXME: add comments
+    // bundle state
     Int bundle_start_cycle = -1;
     Int bundle_end_cycle = -1;
     Bool is_bundle_open = false;
@@ -128,11 +123,13 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                 bundleIdx++;
                 QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << insn->cycle));
                 // NB: first instruction may be wait with zero duration, more generally: duration of first statement != bundle duration
-                codegen.bundle_start(QL_SS2S(
-                                             "## Bundle " << bundleIdx
-                                                          << ": start_cycle=" << insn->cycle
-                                                          << ":"
-                                     ));
+                codegen.bundle_start(
+                    QL_SS2S(
+                        "## Bundle " << bundleIdx
+                        << ": start_cycle=" << insn->cycle
+                        << ":"
+                    )
+                );
 
                 is_bundle_open = true;
                 bundle_start_cycle = insn->cycle;

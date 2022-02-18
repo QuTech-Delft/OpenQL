@@ -12,9 +12,16 @@
 #include "ql/version.h"
 #include "ql/com/options.h"
 #include "ql/ir/describe.h"
-//#include "ql/ir/ops.h"
 
 #include <iosfwd>
+
+// Constants
+#define REG_TMP0 "R63"                          // Q1 register for temporary use
+#define REG_TMP1 "R62"                          // Q1 register for temporary use
+#define NUM_RSRVD_CREGS 2                       // must match number of REG_TMP*
+#define NUM_CREGS (64-NUM_RSRVD_CREGS)
+#define NUM_BREGS 1024                          // bregs require mapping to DSM, which introduces holes, so we probably fail before we reach this limit
+
 
 namespace ql {
 namespace arch {
@@ -140,12 +147,18 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
 }
 
 
-// Static helper function for bundle_finish()
+/*
+ * Return type for calcGroupDigOut()
+ */
 typedef struct {
     tDigital groupDigOut;   // codeword/mask fragment for this group
     Str comment;            // comment for instruction stream
 } CalcGroupDigOut;
 
+/*
+ * Calculate the digital output for a single instrument group.
+ * Static helper function for bundle_finish()
+ */
 static CalcGroupDigOut calcGroupDigOut(
         UInt instrIdx,
         UInt group,
@@ -185,7 +198,6 @@ static CalcGroupDigOut calcGroupDigOut(
         << ", group control bits: " << groupControlBits
     );
     UInt nrGroupControlBits = groupControlBits.size();
-
 
     // calculate digital output for group
     if (nrGroupControlBits == 1) {       // single bit, implying this is a mask (not code word)
@@ -316,9 +328,6 @@ Str Codegen::get_map() {
     return QL_SS2S(std::setw(4) << map << std::endl);
 }
 
-/************************************************************************\
-| 'Program' level functions
-\************************************************************************/
 
 void Codegen::program_start(const Str &progName) {
     emitProgramStart(progName);
@@ -352,10 +361,6 @@ void Codegen::program_finish(const Str &progName) {
     vcd.programFinish(options->output_prefix + ".vcd");
 }
 
-/************************************************************************\
-| 'Block' (fka 'Kernel', this name stays relevant as it is used by the
-| API) level functions
-\************************************************************************/
 
 void Codegen::block_start(const Str &block_name, Int depth) {
     this->depth = depth;
@@ -374,29 +379,7 @@ void Codegen::block_finish(const Str &block_name, UInt durationInCycles, Int dep
     this->depth = depth>0 ? depth-1 : 0;
 }
 
-/************************************************************************\
-| 'Bundle' level functions. Although the new IR no longer organizes
-| instructions in Bundles, we still need to process them as such, i.e.
-| evaluate all instructions issued in the same cycle together.
-\************************************************************************/
 
-/*
-    Our strategy is to first process all customGate's in a bundle, storing the
-    relevant information in bundleInfo. Then, when all work for a bundle has
-    been collected, we generate code in bundle_finish
-
-    - bundle_start():
-    clear bundleInfo, which maintains the work that needs to be performed for bundle
-
-    - custom_instruction():
-    collect instruction (FKA as gate) information in bundleInfo
-
-    - bundle_finish():
-    generate code for bundle from information collected in bundleInfo (which
-    may be empty if no custom gates are present in bundle)
-*/
-
-// bundle_start: see 'strategy' above
 void Codegen::bundle_start(const Str &cmnt) {
     // create ragged 'matrix' of BundleInfo with proper vector size per instrument
     bundleInfo.clear();
@@ -614,10 +597,6 @@ void Codegen::bundle_finish(
 | Quantum instructions
 \************************************************************************/
 
-// custom_instruction: single/two/N qubit gate, including readout, see 'strategy' above
-// translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
-// Does not deal with the control mode and digital interface of the instrument, since we first need to collect all work
-// per instrument
 void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
     Operands ops;
 

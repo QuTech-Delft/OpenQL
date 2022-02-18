@@ -26,10 +26,19 @@ class OperandContext;
 
 class Backend {
 public:
+    /**
+     * Compile for Central Controller.
+     */
     Backend(const ir::Ref &ir, const OptionsRef &options);
+
     ~Backend() = default;
 
 private:
+    /*
+     * Generate code for a single block. Recursively calls itself where necessary.
+     * Based on NewToOldConverter::convert_block
+     * Note that a block sort of matches the concept of a Kernel in the old API
+     */
     void codegen_block(const ir::BlockBaseRef &block, const Str &name, Int depth);
 
 private: // vars
