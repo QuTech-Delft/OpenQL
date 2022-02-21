@@ -812,11 +812,13 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
         );
         QL_DOUT("NewToOldConverter: got old_platform by building it (compat::Platform::build) from new platform data");
     }
-    QL_IF_LOG_DEBUG {
-        for (const auto &i : old_platform->instruction_map) {
-            QL_DOUT("NewToOldConvertor.old_platform.instruction_map[]" << i.first);
-        }
-    }
+    QL_DOUT("NewToOldConvertor old instruction_map:");
+    QL_DOUT("(disabled)");
+//    QL_IF_LOG_DEBUG {
+//        for (const auto &i : old_platform->instruction_map) {
+//            QL_DOUT("NewToOldConvertor.old_platform.instruction_map[]" << i.first);
+//        }
+//    }
 
 
     // If the program node is empty, build an empty dummy program.
