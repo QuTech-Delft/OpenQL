@@ -58,8 +58,8 @@ public: //  functions
      * Although the new IR no longer organizes instructions in Bundles, we still need to process them as such, i.e.
      * evaluate all instructions issued in the same cycle together.
      *
-     *  Our strategy is to first process all CustomInstruction's in a bundle, storing the relevant information in
-     *  BundleInfo. Then, when all work for a bundle has been collected, we generate code in bundle_finish
+     * Our strategy is to first process all CustomInstruction's in a bundle, storing the relevant information in
+     * BundleInfo. Then, when all work for a bundle has been collected, we generate code in bundle_finish
      */
 
     /**

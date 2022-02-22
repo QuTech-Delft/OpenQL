@@ -31,7 +31,7 @@ Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, opt
     QL_DOUT("Compiling Central Controller program ... ");
 
     // generate program header
-        codegen.program_start(ir->program->unique_name);
+    codegen.program_start(ir->program->unique_name);
 
     // FIXME: Nodes of interest:
     //  - ir->program->entry_point.links_to
@@ -47,14 +47,14 @@ Backend::Backend(const ir::Ref &ir, const OptionsRef &options) : codegen(ir, opt
         }
     }
 
-        codegen.program_finish(ir->program->unique_name);
+    codegen.program_finish(ir->program->unique_name);
 
     // write program to file
     Str file_name(options->output_prefix + ".vq1asm");
     QL_IOUT("Writing Central Controller program to " << file_name);
     OutFile(file_name).write(codegen.get_program());
 
-    // write map to file (unless we were using input file)
+    // write map to file (unless we were using input file. FIXME: that no longer makes sense)
     if (options->map_input_file.empty()) {
         Str file_name_map(options->output_prefix + ".map");
         QL_IOUT("Writing instrument map to " << file_name_map);

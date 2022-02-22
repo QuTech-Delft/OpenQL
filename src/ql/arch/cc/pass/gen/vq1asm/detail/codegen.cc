@@ -1245,14 +1245,18 @@ Int Codegen::creg2reg(const ir::Reference &ref) {
     return reg;
 };
 
+
 // FIXME: recursion?
 // FIXME: or pass SetInstruction or Expression depending on use
 // FIXME: adopt structure of cQASM's cqasm-v1-functions-gen.cpp register_into used for constant propagation
 
-/* Actually perform the code generation for an expression. Can be called to handle:
+/**
+ * Actually perform the code generation for an expression.
+ *
+ * Can be called to handle:
  * - the RHS of a SetInstruction, in which case parameter 'lhs' must be valid
  * - an Expression that acts as a condition for structured control, in which case parameter 'label_if_false' must contain
- * the label to jump to if the expression evaluates as false
+ *   the label to jump to if the expression evaluates as false
  * The distinction between the two modes of operation is made based on the type of expression, either 'bit' or 'int',
  * which is possible because of the rather strict separation between these two types.
  *
@@ -1336,8 +1340,8 @@ void Codegen::do_handle_expression(
             mask |= 1ul << (smBit % 32);
         }
 
-        // FIXME: We don't have a matching quantum instruction for this cast (formerly, we had 'if_1_break' etc), but do take up quantum time,
-        //  so the timeline is silently shifted
+        // FIXME: We don't have a matching quantum instruction for this cast (formerly, we had 'if_1_break' etc), but do
+        //  take up 'quantum' time, so the timeline is silently shifted
         /*
             seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
             seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch

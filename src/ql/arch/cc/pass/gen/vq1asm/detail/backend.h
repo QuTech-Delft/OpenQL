@@ -2,7 +2,7 @@
  * @file   arch/cc/pass/gen/vq1asm/detail/backend.h
  * @date   201809xx
  * @author Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
- * @brief  eqasm backend for the Central Controller
+ * @brief  'eqasm' backend for the Central Controller
  * @remark based on cc_light_eqasm_compiler.h, commit f34c0d9
  */
 
@@ -36,6 +36,7 @@ public:
 private:
     /*
      * Generate code for a single block. Recursively calls itself where necessary.
+     *
      * Based on NewToOldConverter::convert_block
      * Note that a block sort of matches the concept of a Kernel in the old API
      */
