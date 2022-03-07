@@ -1,6 +1,7 @@
 // FIXME: WIP on splitting off function handling from codegen.cc
 
 #include "functions.h"
+#include "ql/ir/describe.h"
 
 namespace ql {
 namespace arch {
@@ -12,16 +13,88 @@ namespace detail {
 
 using namespace utils;
 
-/**
- * Function naming follows libqasm's func_gen::Function::unique_name
- */
+// FIXME: copied from codegen.cc
+static Str as_target(const Str &label) { return "@" + label; }
 
-typedef struct {
-    ir::Any<ir::Expression> operands;
-} OpArgs;
 
-// bitwise inversion
-void op_binv_x(const OpArgs &a) {
+// helpers
+static void check_int_literal(const ir::IntLiteral &ilit, Int bottomRoom=0, Int headRoom=0) {
+    if(ilit.value-bottomRoom < 0) {
+        QL_INPUT_ERROR("CC backend cannot handle negative integer literals: value=" << ilit.value << ", bottomRoom=" << bottomRoom);
+    }
+    if(ilit.value >= (1LL<<32) - 1 - headRoom) {
+        QL_INPUT_ERROR("CC backend requires integer literals limited to 32 bits: value=" << ilit.value << ", headRoom=" << headRoom);
+    }
+}
+
+
+void Functions::dispatch(const Str &name, ir::Any<ir::Expression> operands) {
+    OpArgs opArgs;
+
+
+    // split operands into different types, and determine profile
+    Operands ops;
+    for(auto &op : operands) {
+        ops.append(operandContext, op);
+        // FIXME: maintaion  profile -n ops.append
+
+        if(op->as_reference()) {
+            //return QL_SS2S("R" << creg2reg(*op->as_reference()));
+            breg = operandContext.convert_breg_reference(op);
+            if(breg >= NUM_BREGS) {
+                QL_INPUT_ERROR("bit register index " << breg << " exceeds maximum");
+            }
+
+        } else if(auto ilit = op->as_int_literal()) {
+//            return QL_SS2S(ilit->value);
+        } else {
+            QL_ICE("Expected integer operand");
+        }
+   }
+
+#if 0
+       CHECK_COMPAT(
+        operands.size() == 2,
+        "expected 2 operands"
+    );
+    if(operands[0]->as_int_literal() && operands[1]->as_reference()) {
+        return LR;
+    } else if(operands[0]->as_reference() && operands[1]->as_int_literal()) {
+        return RL;
+    } else if(operands[0]->as_reference() && operands[1]->as_reference()) {
+        return RR;
+    } else if(operands[0]->as_int_literal() && operands[1]->as_int_literal()) {
+        QL_INPUT_ERROR("cannot currently handle functions on two literal parameters"); // FIXME: maybe handle in separate pass
+    } else if(operands[0]->as_function_call()) {
+        QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[0]) << "'");
+    } else if(operands[1]->as_function_call()) {
+        QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[1]) << "'");
+    } else {
+        QL_INPUT_ERROR("cannot currently handle parameter combination '" << ir::describe(operands[0]) << "' , '" << ir::describe(operands[1]) << "'");
+
+
+   Str Functions::expr2q1Arg(const ir::ExpressionRef &op) {
+    if(op->as_reference()) {
+        return QL_SS2S("R" << creg2reg(*op->as_reference()));
+    } else if(auto ilit = op->as_int_literal()) {
+        check_int_literal(*ilit);
+        return QL_SS2S(ilit->value);
+    };
+#endif
+
+
+    // match name and operand profile against table of available functions
+
+
+    // call the function
+
+
+}
+
+
+
+
+void Functions::op_binv_x(const OpArgs &a) {
     emit(
         "",
         "not",
@@ -29,35 +102,33 @@ void op_binv_x(const OpArgs &a) {
             expr2q1Arg(a.operands[0])
             << ",R" << dest_reg()
         )
-        , "# " + ir::describe(expression)
+        , "# " + ir::describe(a.expression)
     );
 }
 
-// logical inversion
-void op_linv_b(ir::Any<ir::Expression> operands) {
-    UInt mask = emit_bin_cast(operands, 1);
+void Functions::op_linv_b(const OpArgs &a) {
+    UInt mask = emit_bin_cast(a.operands, 1);
 
     emit(
         "",
         "and",
         QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1),
-        "# mask for '" + ir::describe(expression) + "'"
+        "# mask for '" + ir::describe(a.expression) + "'"
     );    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
     emit("", "nop");
-    emit("", "jge", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# skip next part if inverted condition is false");  // NB: we use "jge" instead of "jlt" to invert
+    emit("", "jge", QL_SS2S(REG_TMP1 << ",1,@" << a.label_if_false), "# skip next part if inverted condition is false");  // NB: we use "jge" instead of "jlt" to invert
 }
 
-// int arithmetic, 2 operands: "+", "-", "&", "|", "^"
-void op_grp_int_2op_rx() {
-    emit_mnem2args(operation, 0, 1, QL_SS2S("R"<<dest_reg()));
+void Functions::op_grp_int_2op_rx(const OpArgs &a) {
+    emit_mnem2args(a, 0, 1, QL_SS2S("R"<<dest_reg()));
 }
 
-void op_grp_int_2op_lr() {
-    emit_mnem2args(operation, 1, 0, QL_SS2S("R"<<dest_reg()));   // reverse operands to match Q1 instruction set
+void Functions::op_grp_int_2op_lr(const OpArgs &a) {
+    emit_mnem2args(a, 1, 0, QL_SS2S("R"<<dest_reg()));   // reverse operands to match Q1 instruction set
 }
 
-void op_sub_lr() {
-    emit_mnem2args(operation, 1, 0, QL_SS2S("R"<<dest_reg()));   // reverse operands to match Q1 instruction set
+void Functions::op_sub_lr(const OpArgs &a) {
+    emit_mnem2args(a, 1, 0, QL_SS2S("R"<<dest_reg()));   // reverse operands to match Q1 instruction set
     // Negate result in 2's complement to correct for changed op order
     Str reg = QL_SS2S("R"<<dest_reg());
     emit("", "not", reg);                       // invert
@@ -65,87 +136,82 @@ void op_sub_lr() {
     emit("", "add", "1,"+reg+","+reg);          // add 1
 }
 
-
-// bit arithmetic, 2 operands: "&&", "||", "^^"
-void op_grp_bit_2op() {
-    UInt mask = emit_bin_cast(fn->operands, 2);
+void Functions::op_grp_bit_2op(const OpArgs &a) {
+    UInt mask = emit_bin_cast(a.operands, 2);
     // FIXME: handle operation properly
     emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
     emit("", "nop");
-    emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
+    emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << a.label_if_false), "# " + ir::describe(a.expression));
     QL_ICE("CC backend does not yet support " << fn->function_type->name);
 }
 
-// relop, group 1: "==", "!="
-void op_grp_rel1_rx() {
+void Functions::op_grp_rel1_rx(const OpArgs &a) {
     emit_mnem2args("xor", 0, 1);
     emit("", "nop");    // register dependency
-    emit("", operation, Str(REG_TMP0)+",1,@"+label_if_false, "# skip next part if condition is false");
+    emit("", a.operation, Str(REG_TMP0)+",1,@"+a.label_if_false, "# skip next part if condition is false");
 }
 
-void op_grp_rel1_lr() {
-    emit_mnem2args("xor", 1, 0); break;   // reverse operands to match Q1 instruction set
+void Functions::op_grp_rel1_lr(const OpArgs &a) {
+    emit_mnem2args("xor", 1, 0);   // reverse operands to match Q1 instruction set
     // FIXME: common with previous function
     emit("", "nop");    // register dependency
-    emit("", operation, Str(REG_TMP0)+",1,@"+label_if_false, "# skip next part if condition is false");
+    emit("", a.operation, Str(REG_TMP0)+",1,@"+a.label_if_false, "# skip next part if condition is false");
 }
 
-// relop, group 2: ">=", "<"
-void op_grp_rel2_rx() {
-    emit_mnem2args(operation, 0, 1, as_target(label_if_false)); break;
+void Functions::op_grp_rel2_rx(const OpArgs &a) {
+    emit_mnem2args(a, 0, 1, as_target(a.label_if_false)); break;
 }
 
-void op_grp_rel2_lr() {
-    emit_mnem2args(operation, 1, 0, as_target(label_if_false)); break;   // reverse operands (and instruction) to match Q1 instruction set
+void Functions::op_grp_rel2_lr(const OpArgs &a) {
+    emit_mnem2args(a, 1, 0, as_target(a.label_if_false)); break;   // reverse operands (and instruction) to match Q1 instruction set
 }
 
-// relop, group 3: ">", "<="
-void op_gt_rl() {
-    check_int_literal(*fn->operands[1]->as_int_literal(), 0, 1);
+void Functions::op_gt_rl(const OpArgs &a) {
+    check_int_literal(*a.operands[1]->as_int_literal(), 0, 1);
     emit(
         "",
-        operation,
+        a.operation,
         QL_SS2S(
-            expr2q1Arg(fn->operands[0]) << ","
-            << fn->operands[1]->as_int_literal()->value + 1    // increment literal since we lack 'jgt'
-            << ",@"+label_if_false
+            expr2q1Arg(a.operands[0]) << ","
+            << a.operands[1]->as_int_literal()->value + 1    // increment literal since we lack 'jgt'
+            << ",@"+a.label_if_false
         ),
         "# skip next part if condition is false"
     );
 }
 
-void op_gt_rr() {
+void Functions::op_gt_rr(const OpArgs &a) {
     emit(
         "",
         "add",
         QL_SS2S(
             "1,"
-            << expr2q1Arg(fn->operands[1])
+            << expr2q1Arg(a.operands[1])
             << "," << REG_TMP0
         )
     );                      // increment arg1
     emit("", "nop");        // register dependency
     emit(
         "",
-        operation,
+        a.operation,
         QL_SS2S(
-            expr2q1Arg(fn->operands[0])
+            expr2q1Arg(a.operands[0])
             << "," << REG_TMP0
-            << ",@"+label_if_false
+            << ",@"+a.label_if_false
         ),
         "# skip next part if condition is false"
     );
 }
 
-void op_gt_lr() {
-    check_int_literal(*fn->operands[0]->as_int_literal(), 1, 0);
+void Functions::op_gt_lr(const OpArgs &a) {
+    check_int_literal(*a.operands[0]->as_int_literal(), 1, 0);
     emit(
         "",
-        operation,
+        a.operation,
         QL_SS2S(
-            expr2q1Arg(fn->operands[1])     // reverse operands
-            << fn->operands[0]->as_int_literal()->value - 1    // DECrement literal since we lack 'jle'
-            << ",@"+label_if_false
+            expr2q1Arg(a.operands[1])     // reverse operands
+            << a.operands[0]->as_int_literal()->value - 1    // DECrement literal since we lack 'jle'
+            << ",@"+a.label_if_false
         ),
         "# skip next part if condition is false"
     );
@@ -208,9 +274,12 @@ X("operator<="              op_gt,              rr,     "jlt") \
 X("operator<="              op_gt,              lr,     "jge") \
 \
 /* user functions */ \
-X("rnd_seed",               rnd_seed,           ,       "") \
-X("rnd",                    rnd                 ,       "" )
+X("rnd_seed",               rnd_seed,           -,       "") \
+X("rnd",                    rnd                 -,       "" )
 
+#define X(name, func, profile, operation)
+CC_FUNCTION_LIST
+#undef X
 
 
 Functions::Profile Functions::get_profile(Any<ir::Expression> operands) {
@@ -236,6 +305,7 @@ Functions::Profile Functions::get_profile(Any<ir::Expression> operands) {
 };
 
 
+// FIXME: uses dp.
 UInt Functions::emit_bin_cast(Any<ir::Expression> operands, Int expOpCnt) {
     if(operands.size() != expOpCnt) {
         QL_ICE("Expected " << expOpCnt << " bit operands, got " << operands.size());
@@ -279,6 +349,43 @@ UInt Functions::emit_bin_cast(Any<ir::Expression> operands, Int expOpCnt) {
     }
 }
 
+void Functions::emit_mnem2args(const OpArgs &a, Int arg0, Int arg1, const Str &target) {
+    emit(
+        "",
+        a.operation, // mnemonic
+        QL_SS2S(
+            expr2q1Arg(a.operands[arg0])
+            << "," << expr2q1Arg(a.operands[arg1])
+            << "," << target
+        )
+        , "# " + ir::describe(a.expression)
+    );
+}
+
+
+Int Functions::creg2reg(const ir::Reference &ref) {
+    auto reg = operandContext.convert_creg_reference(ref);
+    if(reg >= NUM_CREGS) {
+        QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
+    }
+    return reg;
+};
+
+Int Functions::dest_reg(const ir::ExpressionRef &lhs) {
+    return creg2reg(*lhs->as_reference());
+};
+
+// FIXME: resolve operands based on profile
+Str Functions::expr2q1Arg(const ir::ExpressionRef &op) {
+    if(op->as_reference()) {
+        return QL_SS2S("R" << creg2reg(*op->as_reference()));
+    } else if(auto ilit = op->as_int_literal()) {
+        check_int_literal(*ilit);
+        return QL_SS2S(ilit->value);
+    } else {
+        QL_ICE("Expected integer operand");
+    }
+};
 
 } // namespace detail
 } // namespace vq1asm

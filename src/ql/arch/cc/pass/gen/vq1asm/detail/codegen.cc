@@ -15,13 +15,16 @@
 
 #include <iosfwd>
 
+#define OPT_OLD_FUNC 1  // FIXME: WIP
+
+#if OPT_OLD_FUNC
 // Constants
 #define REG_TMP0 "R63"                          // Q1 register for temporary use
 #define REG_TMP1 "R62"                          // Q1 register for temporary use
 #define NUM_RSRVD_CREGS 2                       // must match number of REG_TMP*
 #define NUM_CREGS (64-NUM_RSRVD_CREGS)
 #define NUM_BREGS 1024                          // bregs require mapping to DSM, which introduces holes, so we probably fail before we reach this limit
-
+#endif
 
 namespace ql {
 namespace arch {
@@ -1233,6 +1236,7 @@ tCodeword Codegen::assignCodeword(const Str &instrumentName, Int instrIdx, Int g
 }
 #endif
 
+#if OPT_OLD_FUNC
 /************************************************************************\
 | expression helpers
 \************************************************************************/
@@ -1244,7 +1248,7 @@ Int Codegen::creg2reg(const ir::Reference &ref) {
     }
     return reg;
 };
-
+#endif
 
 // FIXME: recursion?
 // FIXME: or pass SetInstruction or Expression depending on use
@@ -1281,11 +1285,12 @@ void Codegen::do_handle_expression(
 ) {
     // function global helpers
 
+#if OPT_OLD_FUNC
     auto dest_reg = [this, lhs]() {
         return creg2reg(*lhs->as_reference());
     };
 
-    // Convert integer/creg function_call.operands expression to Q1 instruction argument.
+    // Convert integer/creg function_call/operands expression to Q1 instruction argument.
     auto expr2q1Arg = [this](const ir::ExpressionRef &op) {
         if(op->as_reference()) {
             return QL_SS2S("R" << creg2reg(*op->as_reference()));
@@ -1359,6 +1364,7 @@ void Codegen::do_handle_expression(
         emit("", "nop");
         return mask;
     };
+#endif
     // ----------- end of global helpers -------------
 
 
@@ -1407,6 +1413,7 @@ void Codegen::do_handle_expression(
                 emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# skip next part if condition is false");
             }
         } else if (auto fn = expression->as_function_call()) {
+#if OPT_OLD_FUNC
             // function call helpers
             enum Profile {
                 LR,     // int Literal, Reference
@@ -1446,6 +1453,7 @@ void Codegen::do_handle_expression(
                     , "# " + ir::describe(expression)
                 );
             };
+#endif
             // ----------- end of function call helpers -------------
 
             utils::Str operation;
@@ -1459,6 +1467,7 @@ void Codegen::do_handle_expression(
                 );
                 fn = fn->operands[0]->as_function_call();   // step into. FIXME: Shouldn't we recurse to allow e.g. casting a breg??
 
+#if OPT_OLD_FUNC
             // int arithmetic, 1 operand: "~"
             } else if (fn->function_type->name == "operator~") {
                 operation = "not";
@@ -1657,6 +1666,7 @@ void Codegen::do_handle_expression(
                     "function '" << fn->function_type->name << "' not supported by CC backend, but it should be"
                 );
             }
+#endif
         }
     }
     catch (utils::Exception &e) {
