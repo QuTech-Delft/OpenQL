@@ -1,5 +1,5 @@
-# File:         test_rus_private.py
-# Purpose:      test RUS using cQASM1.2
+# File:         test_cc_cqasm.py
+# Purpose:      test CC using cQASM1.2
 # Based on:     test_structure_decomposition.py
 
 import os

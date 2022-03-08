@@ -146,6 +146,7 @@ private:    // vars
     StrStrm codeSection;                                        // the code generated
     Json codewordTable;                                         // codewords versus signals per instrument group
     Json measTable;                                             // measurement table, to assist downstream software in retrieving measurements
+    Json shotsTable;                                            // nr of shots per instrument, companion to measTable
 
     // codegen state, block(kernel) scope
     UInt lastEndCycle[MAX_INSTRS];                              // vector[instrIdx], maintain where we got per slot

@@ -322,8 +322,9 @@ Str Codegen::get_map() {
     map["codewords"]["version"] = 1;
     map["codewords"]["data"] = codewordTable;
 
-    map["measurements"]["version"] = 1;
+    map["measurements"]["version"] = 2;
     map["measurements"]["data"] = measTable;
+    map["measurements"]["nr-shots"] = shotsTable;
 
     return QL_SS2S(std::setw(4) << map << std::endl);
 }
@@ -534,6 +535,7 @@ void Codegen::bundle_finish(
     }
 
     // turn code generation info collected above into actual code
+    Json measTableEntry;    // entry for measTable
     for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
         CodeGenInfo codeGenInfo = codeGenMap.at(instrIdx);
 
@@ -558,9 +560,24 @@ void Codegen::bundle_finish(
 
         // handle measurement
         if(!codeGenInfo.measQubits.empty()) {
+            // save measurements
             auto qubits = codeGenInfo.measQubits;
             std::sort(qubits.begin(), qubits.end());    // not strictly required, but improves readability
-            measTable[codeGenInfo.instrumentName].push_back(qubits);
+            measTableEntry[codeGenInfo.instrumentName] = qubits;
+
+            // update shots per instrument
+            if(!QL_JSON_EXISTS(shotsTable, codeGenInfo.instrumentName)) {
+                shotsTable[codeGenInfo.instrumentName] = 1; // first shot
+            } else {
+#if 0   // FIXME: fails
+                QL_WOUT("shotsTable[" << codeGenInfo.instrumentName << "] was " << shotsTable[codeGenInfo.instrumentName]);
+                shotsTable[codeGenInfo.instrumentName] += 1;
+                QL_WOUT("shotsTable[" << codeGenInfo.instrumentName << "] is " << shotsTable[codeGenInfo.instrumentName]);
+#else
+                Int shots = shotsTable[codeGenInfo.instrumentName];
+                shotsTable[codeGenInfo.instrumentName] = shots+1;
+#endif
+            }
         }
 
         if (bundleHasMeasRsltRealTime) {
@@ -588,7 +605,13 @@ void Codegen::bundle_finish(
             codeGenInfo.instrMaxDurationInCycles,
             instrIdx
         );    // FIXME: conditional gates, etc
+
     } // for(instrIdx)
+
+    // save measurements if present
+    if(!measTableEntry.empty()) {
+        measTable.push_back(measTableEntry);
+    }
 
     comment("");    // blank line to separate bundles
 }
