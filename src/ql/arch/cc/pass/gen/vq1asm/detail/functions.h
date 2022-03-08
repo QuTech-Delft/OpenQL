@@ -28,23 +28,24 @@ public:
     ~Functions();
 
     void register_();
-    void dispatch(const Str &name, ir::Any<ir::Expression> operands);
+    void dispatch(const Str &name, const ir::ExpressionRef &expression);
 
 
 private:  // types
-    typedef struct {
-        ir::Any<ir::Expression> operands;
+    class  OpArgs {
+    public:
+        OpArgs(const ir::ExpressionRef &e) : expression(e) {};
+
+//    private:
+//        ir::Any<ir::Expression> operands;   // FIXME: use ops
         Operands ops;
+        UInt dest_reg;
         Str label_if_false;
         Str operation;  // from function table
         const ir::ExpressionRef &expression; // full expression to generate comments
-    } OpArgs;
 
-    enum Profile {
-        LR,     // int Literal, Reference
-        RL,
-        RR
     };
+
 
 private:    // vars
     // FIXME
@@ -56,26 +57,7 @@ private:    // methods
      * operator functions
      *
      * Function naming follows libqasm's func_gen::Function::unique_name
-     *
-     * FIXME: properly define meaning of profile, this is WIP. And remove X and fully decode, so function knows what it gets
-     * - 'l': literal (FIXME: int or bit)
-     * - 'r': reference (FIXME: creg or breg)
-     * - 'x': literal or reference FIXME
-     * - 'b': bit
-     *
-     * FIXME: Also see func_gen::Function::generate_impl_footer:
-     *  - 'b': returns a ConstBool, return_expr must be a primitive::Bool.
-     *  - 'a': returns a ConstAxis, return_expr must be a primitive::Axis.
-     *  - 'i': returns a ConstInt, return_expr must be a primitive::Int.
-     *  - 'r': returns a ConstReal, return_expr must be a primitive::Real.
-     *  - 'c': returns a ConstComplex, return_expr must be a primitive::Complex.
-     *  - 'm': returns a ConstRealMatrix, return_expr must be a primitive::RMatrix.
-     *  - 'n': returns a ConstComplexMatrix, return_expr must be a primitive::CMatrix.
-     *  - 's': returns a ConstString, return_expr must be a primitive::Str.
-     *  - 'j': returns a ConstJson, return_expr must be a primitive::Str.
-     *  - 'Q': returns a QubitRefs, return_expr must be a Many<ConstInt>.
-     *  - 'B': returns a BitRefs, return_expr must be a Many<ConstInt>.
-     *
+     *     *
      */
 
     // bitwise inversion
@@ -86,7 +68,7 @@ private:    // methods
 
     // int arithmetic, 2 operands: "+", "-", "&", "|", "^"
     void op_grp_int_2op_rx(const OpArgs &a);
-    void op_grp_int_2op_lr(const OpArgs &a);
+    void op_grp_int_2op_iC(const OpArgs &a);
     void op_sub_lr(const OpArgs &a);    // special case
 
     // bit arithmetic, 2 operands: "&&", "||", "^^"
@@ -105,16 +87,24 @@ private:    // methods
     void op_gt_rr(const OpArgs &a);
     void op_gt_lr(const OpArgs &a);
 
+    /*
+     * Get profile of single function parameter. Encoding:
+     * - 'b': bit literal
+     * - 'i': int literal
+     * - 'B': breg reference
+     * - 'C': creg reference
+     * - 'x': literal or reference FIXME
+     *
+     * Inspired by func_gen::Function::generate_impl_footer, but notice that we add 'C' and have sightly different
+     * purpose and interpretation
+     */
+    Str get_profile(const ir::ExpressionRef &op);
 
-
-
-
-
-    Profile get_profile(ir::Any<ir::Expression> operands);
     UInt emit_bin_cast(ir::Any<ir::Expression> operands, Int expOpCnt);
 
     // FIXME: rename to emit_operation_..
     void emit_mnem2args(const OpArgs &a, Int arg0, Int arg1, const Str &target=REG_TMP0);
+    void emit_mnem2args(const OpArgs &a, const Str &arg0, const Str &arg1, const Str &target=REG_TMP0);
 
     Int creg2reg(const ir::Reference &ref);
     Int dest_reg(const ir::ExpressionRef &lhs);

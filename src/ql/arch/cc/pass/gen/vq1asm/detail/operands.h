@@ -28,6 +28,7 @@ class OperandContext {  // NB: based on class NewToOldConverter
 public:
     explicit OperandContext(const ir::Ref &ir);
     Bool is_creg_reference(const ir::ExpressionRef &ref) const;
+    Bool is_breg_reference(const ir::ExpressionRef &ref) const;
     Int convert_creg_reference(const ir::Reference &ref) const;
     Int convert_breg_reference(const ir::ExpressionRef &ref) const;
 
@@ -60,6 +61,7 @@ private:
 
 /**
  * Handles gathering the operands for a gate.
+ * FIXME: also for an expression
  */
 class Operands {
 public:

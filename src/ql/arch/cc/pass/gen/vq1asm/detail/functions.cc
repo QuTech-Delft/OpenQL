@@ -28,59 +28,30 @@ static void check_int_literal(const ir::IntLiteral &ilit, Int bottomRoom=0, Int 
 }
 
 
-void Functions::dispatch(const Str &name, ir::Any<ir::Expression> operands) {
-    OpArgs opArgs;
+void Functions::dispatch(const Str &name, const ir::ExpressionRef &expression) {
+    // check parameter
+    auto fn = expression->as_function_call();
+    if(!fn) QL_ICE("Expected function call, got '" << ir::describe(expression) << "'");
 
+    // collect arguments for operator functions
+    OpArgs opArgs(expression);
 
     // split operands into different types, and determine profile
-    Operands ops;
-    for(auto &op : operands) {
-        ops.append(operandContext, op);
-        // FIXME: maintaion  profile -n ops.append
+    Str profile;
+    for(auto &op : fn->operands) {
+        opArgs.ops.append(operandContext, op);
 
-        if(op->as_reference()) {
-            //return QL_SS2S("R" << creg2reg(*op->as_reference()));
-            breg = operandContext.convert_breg_reference(op);
-            if(breg >= NUM_BREGS) {
-                QL_INPUT_ERROR("bit register index " << breg << " exceeds maximum");
-            }
+        // FIXME: maintain  profile in ops.append
+        profile += get_profile(op);
+    }
 
-        } else if(auto ilit = op->as_int_literal()) {
-//            return QL_SS2S(ilit->value);
-        } else {
-            QL_ICE("Expected integer operand");
-        }
-   }
-
-#if 0
-       CHECK_COMPAT(
-        operands.size() == 2,
-        "expected 2 operands"
-    );
-    if(operands[0]->as_int_literal() && operands[1]->as_reference()) {
-        return LR;
-    } else if(operands[0]->as_reference() && operands[1]->as_int_literal()) {
-        return RL;
-    } else if(operands[0]->as_reference() && operands[1]->as_reference()) {
-        return RR;
-    } else if(operands[0]->as_int_literal() && operands[1]->as_int_literal()) {
-        QL_INPUT_ERROR("cannot currently handle functions on two literal parameters"); // FIXME: maybe handle in separate pass
-    } else if(operands[0]->as_function_call()) {
-        QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[0]) << "'");
-    } else if(operands[1]->as_function_call()) {
-        QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[1]) << "'");
-    } else {
-        QL_INPUT_ERROR("cannot currently handle parameter combination '" << ir::describe(operands[0]) << "' , '" << ir::describe(operands[1]) << "'");
+    // set dest_reg
+    opArgs.dest_reg = creg2reg(*lhs->as_reference());
 
 
-   Str Functions::expr2q1Arg(const ir::ExpressionRef &op) {
-    if(op->as_reference()) {
-        return QL_SS2S("R" << creg2reg(*op->as_reference()));
-    } else if(auto ilit = op->as_int_literal()) {
-        check_int_literal(*ilit);
-        return QL_SS2S(ilit->value);
-    };
-#endif
+    // FIXME:
+    // check creg, breg range
+
 
 
     // match name and operand profile against table of available functions
@@ -119,15 +90,23 @@ void Functions::op_linv_b(const OpArgs &a) {
     emit("", "jge", QL_SS2S(REG_TMP1 << ",1,@" << a.label_if_false), "# skip next part if inverted condition is false");  // NB: we use "jge" instead of "jlt" to invert
 }
 
-void Functions::op_grp_int_2op_rx(const OpArgs &a) {
-    emit_mnem2args(a, 0, 1, QL_SS2S("R"<<dest_reg()));
+
+void Functions::op_grp_int_2op_CC(const OpArgs &a) {
+    emit_mnem2args(a, QL_SS2S(a.ops.cregs[0]), QL_SS2S(a.ops.cregs[1]), QL_SS2S("R"<<a.dest_reg));
 }
 
-void Functions::op_grp_int_2op_lr(const OpArgs &a) {
-    emit_mnem2args(a, 1, 0, QL_SS2S("R"<<dest_reg()));   // reverse operands to match Q1 instruction set
+void Functions::op_grp_int_2op_Ci(const OpArgs &a) {
+    emit_mnem2args(a, QL_SS2S(a.ops.cregs[0]), QL_SS2S("R"<<a.ops.integer), QL_SS2S("R"<<a.dest_reg));
 }
 
-void Functions::op_sub_lr(const OpArgs &a) {
+void Functions::op_grp_int_2op_iC(const OpArgs &a) {
+    // reverse operands to match Q1 instruction set
+    // FIXME: reversal is for free, because we split types
+    emit_mnem2args(a, QL_SS2S(a.ops.cregs[0]), QL_SS2S("R"<<a.ops.integer), QL_SS2S("R"<<a.dest_reg));
+}
+
+
+void Functions::op_sub_iC(const OpArgs &a) {
     emit_mnem2args(a, 1, 0, QL_SS2S("R"<<dest_reg()));   // reverse operands to match Q1 instruction set
     // Negate result in 2's complement to correct for changed op order
     Str reg = QL_SS2S("R"<<dest_reg());
@@ -226,7 +205,8 @@ void Functions::op_gt_lr(const OpArgs &a) {
  * FIXME: copy more of the comment of Codegen::do_handle_expression
  */
 
-//name		    ret         func                profile operation
+// FIXME: add return type
+//name		                func stem           profile operation
 #define CC_FUNCTION_LIST \
 X("operator~",              op_binv,            x,      "") \
 \
@@ -234,16 +214,21 @@ X("operator~",              op_binv,            x,      "") \
 X("operator!",              op_linv,            b,      "") \
 \
 /* int arithmetic, 2 operands: "+", "-", "&", "|", "^" */ \
-X("operator+",              op_grp_int_2op,     rx,     "add") \
-X("operator+",              op_grp_int_2op,     lr,     "add") \
-X("operator-",              op_grp_int_2op,     rx,     "sub") \
-X("operator-",              op_grp_int_2op,     lr,     "sub") \
-X("operator&",              op_grp_int_2op,     rx,     "and") \
-X("operator&",              op_grp_int_2op,     lr,     "and") \
-X("operator|",              op_grp_int_2op,     rx,     "or") \
-X("operator|",              op_grp_int_2op,     lr,     "or") \
-X("operator^",              op_grp_int_2op,     rx,     "xor") \
-X("operator^",              op_grp_int_2op,     lr,     "xor") \
+X("operator+",              op_grp_int_2op,     CC,     "add") \
+X("operator+",              op_grp_int_2op,     Ci,     "add") \
+X("operator+",              op_grp_int_2op,     iC,     "add") \
+X("operator-",              op_grp_int_2op,     CC,     "sub") \
+X("operator-",              op_grp_int_2op,     Ci,     "sub") \
+X("operator-",              op_sub,             iC,     "sub") \
+X("operator&",              op_grp_int_2op,     CC,     "and") \
+X("operator&",              op_grp_int_2op,     Ci,     "and") \
+X("operator&",              op_grp_int_2op,     iC,     "and") \
+X("operator|",              op_grp_int_2op,     CC,     "or") \
+X("operator|",              op_grp_int_2op,     Ci,     "or") \
+X("operator|",              op_grp_int_2op,     iC,     "or") \
+X("operator^",              op_grp_int_2op,     CC,     "xor") \
+X("operator^",              op_grp_int_2op,     Ci,     "xor") \
+X("operator^",              op_grp_int_2op,     iC,     "xor") \
 \
 /* bit arithmetic, 2 operands: "&&", "||", "^^" */ \
 X("operator&&",             op_grp_bit_2op,     bb,     "") \
@@ -260,49 +245,49 @@ X("operator!=",             op_grp_rel1,        lr,     "jlt") \
 /* relop, group 2: ">=", "<" */ \
 X("operator>=",             op_grp_rel2,        rx,     "jge") \
 X("operator>=",             op_grp_rel2,        lr,     "jlt") \
-/* repeat, with operation inversed */ \
+/* repeat, with inverse operation */ \
 X("operator<",              op_grp_rel2,        rx,     "jlt") \
 X("operator<",              op_grp_rel2,        lr,     "jge") \
 \
 /* relop, group 3: ">", "<=" */ \
 X("operator>",              op_gt,              rl,     "jge") \
 X("operator>",              op_gt,              rr,     "jge") \
-X("operator>",              op_gt,              lr,     "jlt" /* inverse operation */) \
-/* repeat, with operation inversed */ \
-X("operator<="              op_gt,              rl,     "jlt") \
-X("operator<="              op_gt,              rr,     "jlt") \
-X("operator<="              op_gt,              lr,     "jge") \
+X("operator>",              op_gt,              lr,     "jlt") /* inverse operation */ \
+/* repeat, with inverse operation */ \
+X("operator<=",             op_gt,              rl,     "jlt") \
+X("operator<=",             op_gt,              rr,     "jlt") \
+X("operator<=",             op_gt,              lr,     "jge") \
 \
 /* user functions */ \
 X("rnd_seed",               rnd_seed,           -,       "") \
-X("rnd",                    rnd                 -,       "" )
+X("rnd",                    rnd,                -,       "")
 
-#define X(name, func, profile, operation)
+#define X(name, func, profile, operation) name,
+const char *names[] = {
 CC_FUNCTION_LIST
+};
 #undef X
 
 
-Functions::Profile Functions::get_profile(Any<ir::Expression> operands) {
-    CHECK_COMPAT(
-        operands.size() == 2,
-        "expected 2 operands"
-    );
-    if(operands[0]->as_int_literal() && operands[1]->as_reference()) {
-        return LR;
-    } else if(operands[0]->as_reference() && operands[1]->as_int_literal()) {
-        return RL;
-    } else if(operands[0]->as_reference() && operands[1]->as_reference()) {
-        return RR;
-    } else if(operands[0]->as_int_literal() && operands[1]->as_int_literal()) {
-        QL_INPUT_ERROR("cannot currently handle functions on two literal parameters"); // FIXME: maybe handle in separate pass
-    } else if(operands[0]->as_function_call()) {
-        QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[0]) << "'");
-    } else if(operands[1]->as_function_call()) {
-        QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[1]) << "'");
+Str Functions::get_profile(const ir::ExpressionRef &op) {
+    if(op->as_int_literal()) {
+        return "i";
+    } else if(op->as_bit_literal()) {
+        return "b";
+    } else if(op->as_reference()) {
+        if(operandContext.is_creg_reference(op)) {
+            return "C";
+        } else if(operandContext.is_breg_reference(op)) {
+            return "B";
+        } else {
+            QL_ICE("Operand '" << ir::describe(op) << "' has unsupported type");
+        }
+    } else if(op->as_function_call()) {
+        QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(op) << "'");
     } else {
-        QL_INPUT_ERROR("cannot currently handle parameter combination '" << ir::describe(operands[0]) << "' , '" << ir::describe(operands[1]) << "'");
+        QL_INPUT_ERROR("cannot currently handle parameter '" << ir::describe(op) << "'");
     }
-};
+}
 
 
 // FIXME: uses dp.
@@ -356,6 +341,20 @@ void Functions::emit_mnem2args(const OpArgs &a, Int arg0, Int arg1, const Str &t
         QL_SS2S(
             expr2q1Arg(a.operands[arg0])
             << "," << expr2q1Arg(a.operands[arg1])
+            << "," << target
+        )
+        , "# " + ir::describe(a.expression)
+    );
+}
+
+
+void Functions::emit_mnem2args(const OpArgs &a, const Str &arg0, const Str &arg1, const Str &target) {
+    emit(
+        "",
+        a.operation, // mnemonic
+        QL_SS2S(
+            arg0
+            << "," << arg1
             << "," << target
         )
         , "# " + ir::describe(a.expression)

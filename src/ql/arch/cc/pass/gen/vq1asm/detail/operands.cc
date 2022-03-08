@@ -75,6 +75,11 @@ Bool OperandContext::is_creg_reference(const ir::ExpressionRef &ref) const {
     return lhs && lhs->target == creg_ob;
 }
 
+Bool OperandContext::is_breg_reference(const ir::ExpressionRef &ref) const {
+    auto lhs = ref->as_reference();
+    return lhs && lhs->target == breg_ob;
+}
+
 
 /**
  * Converts a creg reference to a register index.
@@ -122,6 +127,7 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
         CHECK_COMPAT(!has_integer, "encountered gate with multiple integer operands");
         has_integer = true;
         integer = int_lit->value;
+    // FIXME: add as_bit_literal
     } else if (auto ref = expr->as_reference()) {
 
         if (ref->indices.size() != 1 || !ref->indices[0]->as_int_literal()) {
