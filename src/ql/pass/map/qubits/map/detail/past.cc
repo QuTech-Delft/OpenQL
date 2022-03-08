@@ -633,9 +633,9 @@ void Past::make_primitive(const ir::compat::GateRef &gate, ir::compat::GateRefs 
         if (!created) {
             QL_FATAL("make_primitive: failed creating gate " << prim_gname << " or " << gname);
         }
-        QL_IOUT("... make_primitive: new gate created for: " << gname);
+        QL_DOUT("... make_primitive: new gate created for: " << gname);
     } else {
-        QL_IOUT("... make_primitive: new gate created for: " << prim_gname);
+        QL_DOUT("... make_primitive: new gate created for: " << prim_gname);
     }
 
     if (gate->swap_params.part_of_swap) {
