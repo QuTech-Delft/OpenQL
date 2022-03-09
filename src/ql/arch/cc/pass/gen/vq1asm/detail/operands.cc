@@ -150,6 +150,7 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
             ref->target == operandContext.breg_ob &&
             ref->data_type == operandContext.breg_ob->data_type
         ) {
+            // NB: map explicit bregs after those implicit to qubits. FIXME: is that wanted,
             bregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value + operandContext.num_qubits);
         } else if (
             ref->target == operandContext.creg_ob &&

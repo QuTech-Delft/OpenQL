@@ -44,6 +44,7 @@ static Str as_label(const Str &label) { return label + ":"; }
 static Str as_target(const Str &label) { return "@" + label; }
 
 // helpers
+// FIXME: use Functions::as_int()?
 static void check_int_literal(const ir::IntLiteral &ilit, Int bottomRoom=0, Int headRoom=0) {
     if(ilit.value-bottomRoom < 0) {
         QL_INPUT_ERROR("CC backend cannot handle negative integer literals: value=" << ilit.value << ", bottomRoom=" << bottomRoom);

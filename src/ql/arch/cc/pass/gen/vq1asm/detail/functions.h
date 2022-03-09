@@ -4,13 +4,14 @@
 
 #include "types.h"
 #include "operands.h"
+#include "datapath.h"
 
 // Constants
 // FIXME: move out of .h
 #define REG_TMP0 "R63"                          // Q1 register for temporary use
 #define REG_TMP1 "R62"                          // Q1 register for temporary use
 #define NUM_RSRVD_CREGS 2                       // must match number of REG_TMP*
-#define NUM_CREGS (64-NUM_RSRVD_CREGS)
+#define NUM_CREGS (64-NUM_RSRVD_CREGS)          // starting from R0
 #define NUM_BREGS 1024                          // bregs require mapping to DSM, which introduces holes, so we probably fail before we reach this limit
 
 namespace ql {
@@ -28,7 +29,7 @@ public:
     ~Functions();
 
     void register_();
-    void dispatch(const Str &name, const ir::ExpressionRef &expression);
+    void dispatch(const Str &name, const ir::ExpressionRef &lhs, const ir::ExpressionRef &expression);
 
 
 private:  // types
@@ -50,42 +51,44 @@ private:  // types
 private:    // vars
     // FIXME
     OperandContext operandContext;                              // context for Operand processing
+    // FIXME: const &
+    Datapath dp;                                                // handling of CC datapath
 
 
 private:    // methods
     /*
      * operator functions
      *
-     * Function naming follows libqasm's func_gen::Function::unique_name
-     *     *
+     * Function naming inspired by libqasm's func_gen::Function::unique_name
      */
 
     // bitwise inversion
-    void op_binv_x(const OpArgs &a);
+    void op_binv__C(const OpArgs &a);
 
     // logical inversion
-    void op_linv_b(const OpArgs &a);
+    void op_linv__B(const OpArgs &a);
 
     // int arithmetic, 2 operands: "+", "-", "&", "|", "^"
-    void op_grp_int_2op_rx(const OpArgs &a);
-    void op_grp_int_2op_iC(const OpArgs &a);
-    void op_sub_lr(const OpArgs &a);    // special case
+    void op_grp_int_2op__CC(const OpArgs &a);
+    void op_grp_int_2op__Ci_iC(const OpArgs &a);
+    void op_sub__iC(const OpArgs &a);    // special case
 
     // bit arithmetic, 2 operands: "&&", "||", "^^"
-    void op_grp_bit_2op(const OpArgs &a);
+    void op_grp_bit_2op__BB(const OpArgs &a);
 
     // relop, group 1: "==", "!="
-    void op_grp_rel1_rx(const OpArgs &a);
-    void op_grp_rel1_lr(const OpArgs &a);
+    void op_grp_rel1_tail(const OpArgs &a);
+    void op_grp_rel1__CC(const OpArgs &a);
+    void op_grp_rel1__Ci_iC(const OpArgs &a);
 
     // relop, group 2: ">=", "<"
-    void op_grp_rel2_rx(const OpArgs &a);
-    void op_grp_rel2_lr(const OpArgs &a);
+    void op_grp_rel2__CC(const OpArgs &a);
+    void op_grp_rel2__Ci_iC(const OpArgs &a);
 
     // relop, group 3: ">", "<="
-    void op_gt_rl(const OpArgs &a);
-    void op_gt_rr(const OpArgs &a);
-    void op_gt_lr(const OpArgs &a);
+    void op_gt__CC(const OpArgs &a);
+    void op_gt__Ci(const OpArgs &a);
+    void op_gt__iC(const OpArgs &a);
 
     /*
      * Get profile of single function parameter. Encoding:
@@ -100,7 +103,8 @@ private:    // methods
      */
     Str get_profile(const ir::ExpressionRef &op);
 
-    UInt emit_bin_cast(ir::Any<ir::Expression> operands, Int expOpCnt);
+//    UInt emit_bin_cast(ir::Any<ir::Expression> operands, Int expOpCnt);
+    UInt emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt);
 
     // FIXME: rename to emit_operation_..
     void emit_mnem2args(const OpArgs &a, Int arg0, Int arg1, const Str &target=REG_TMP0);
