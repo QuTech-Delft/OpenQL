@@ -25,8 +25,8 @@ namespace detail {
 
 class Functions {
 public:
-    Functions();
-    ~Functions();
+    Functions(const OperandContext &operandContext, const Datapath &dp);
+    ~Functions() = default;
 
     void register_();
     void dispatch(const Str &name, const ir::ExpressionRef &lhs, const ir::ExpressionRef &expression);
@@ -47,87 +47,110 @@ private:  // types
 
     };
 
+    typedef void (Functions::*tOpFunc)(const OpArgs &a);
+
+    struct FuncInfo {
+        tOpFunc func;
+        Str operation;
+    };
+
 
 private:    // vars
     // FIXME
-    OperandContext operandContext;                              // context for Operand processing
-    // FIXME: const &
-    Datapath dp;                                                // handling of CC datapath
+    const OperandContext &operandContext;                       // context for Operand processing
+    const Datapath &dp;                                         // handling of CC datapath
 
+    // map name to function, see register_functions()
+    std::map<Str, FuncInfo> func_map;
 
 private:    // methods
     /*
-     * operator functions
+     * operator functions for code generation in expressions
      *
-     * Function naming inspired by libqasm's func_gen::Function::unique_name
+     * Naming conventions:
+     * - functions handling a single operator have naming inspired by libqasm's func_gen::Function::unique_name
+     * - functions handling a group of operators are named "op_grp_<groupName>"
+     * - the suffix defines the argument profile(s), using the naming from get_operand_type()
      */
 
     // bitwise inversion
-    void op_binv__C(const OpArgs &a);
+    void op_binv_C(const OpArgs &a);
 
     // logical inversion
-    void op_linv__B(const OpArgs &a);
+    void op_linv_B(const OpArgs &a);
 
     // int arithmetic, 2 operands: "+", "-", "&", "|", "^"
-    void op_grp_int_2op__CC(const OpArgs &a);
-    void op_grp_int_2op__Ci_iC(const OpArgs &a);
-    void op_sub__iC(const OpArgs &a);    // special case
+    void op_grp_int_2op_CC(const OpArgs &a);
+    void op_grp_int_2op_Ci_iC(const OpArgs &a);
+    void op_sub_iC(const OpArgs &a);    // special case
 
     // bit arithmetic, 2 operands: "&&", "||", "^^"
-    void op_grp_bit_2op__BB(const OpArgs &a);
+    void op_grp_bit_2op_BB(const OpArgs &a);
 
     // relop, group 1: "==", "!="
-    void op_grp_rel1_tail(const OpArgs &a);
-    void op_grp_rel1__CC(const OpArgs &a);
-    void op_grp_rel1__Ci_iC(const OpArgs &a);
+    void op_grp_rel1_tail(const OpArgs &a); // common tail for functions below
+    void op_grp_rel1_CC(const OpArgs &a);
+    void op_grp_rel1_Ci_iC(const OpArgs &a);
 
     // relop, group 2: ">=", "<"
-    void op_grp_rel2__CC(const OpArgs &a);
-    void op_grp_rel2__Ci_iC(const OpArgs &a);
+    void op_grp_rel2_CC(const OpArgs &a);
+    void op_grp_rel2_Ci_iC(const OpArgs &a);
 
     // relop, group 3: ">", "<="
-    void op_gt__CC(const OpArgs &a);
-    void op_gt__Ci(const OpArgs &a);
-    void op_gt__iC(const OpArgs &a);
+    void op_gt_CC(const OpArgs &a);
+    void op_gt_Ci(const OpArgs &a);
+    void op_gt_iC(const OpArgs &a);
 
     /*
-     * Get profile of single function parameter. Encoding:
+     * other functions for code generation in expressions
+     */
+#if OPT_CC_USER_FUNCTIONS
+    void rnd_seed_C(const OpArgs &a);
+    void rnd_seed_i(const OpArgs &a);
+    void rnd(const OpArgs &a);
+#endif
+
+    /*
+     * Register the functions supported by the CC backend
+     */
+    void register_functions();
+
+    /*
+     * Get type of single function operand. Encoding:
      * - 'b': bit literal
      * - 'i': int literal
      * - 'B': breg reference
      * - 'C': creg reference
-     * - 'x': literal or reference FIXME
      *
-     * Inspired by func_gen::Function::generate_impl_footer, but notice that we add 'C' and have sightly different
-     * purpose and interpretation
+     * Inspired by func_gen::Function::generate_impl_footer and cqasm::types::from_spec, but notice that we add 'C' and
+     * have sightly different purpose and interpretation
      */
-    Str get_profile(const ir::ExpressionRef &op);
+    Str get_operand_type(const ir::ExpressionRef &op);
 
-//    UInt emit_bin_cast(ir::Any<ir::Expression> operands, Int expOpCnt);
+    /*
+     * Cast bregs to bits in REG_TMP0, i.e. transfer them from DSM to processor.
+     * Returns a mask of bits set in REG_TMP0. FIXME: provides no knowledge about relation with DSM bits
+     *
+     * FIXME: We don't have a matching quantum instruction for this cast (formerly, we had 'if_1_break' etc), but do
+     *  take up 'quantum' time, so the timeline is silently shifted
+     */
     UInt emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt);
 
     // FIXME: rename to emit_operation_..
-    void emit_mnem2args(const OpArgs &a, Int arg0, Int arg1, const Str &target=REG_TMP0);
+//    void emit_mnem2args(const OpArgs &a, Int arg0, Int arg1, const Str &target=REG_TMP0);
     void emit_mnem2args(const OpArgs &a, const Str &arg0, const Str &arg1, const Str &target=REG_TMP0);
 
     Int creg2reg(const ir::Reference &ref);
-    Int dest_reg(const ir::ExpressionRef &lhs);
+//    Int dest_reg(const ir::ExpressionRef &lhs);
 
     // Convert integer/creg function_call/operands expression to Q1 instruction argument.
-    Str expr2q1Arg(const ir::ExpressionRef &op);
+//    Str expr2q1Arg(const ir::ExpressionRef &op);
 
 
     // helpers to ease nice assembly formatting
     void emit(const Str &labelOrComment, const Str &instr="");
     void emit(const Str &label, const Str &instr, const Str &ops, const Str &comment="");
     void emit(Int slot, const Str &instr, const Str &ops, const Str &comment="");
-
-
-
-
-
-private:
-    // map name to function
 };
 
 

@@ -55,7 +55,7 @@ public: // functions
     void programFinish();
 
     UInt allocateSmBit(UInt breg_operand, UInt instrIdx);
-    UInt getSmBit(UInt bit_operand);
+    UInt getSmBit(UInt bit_operand) const;
     UInt getOrAssignMux(UInt instrIdx, const MeasResultRealTimeMap &measResultRealTimeMap);
     UInt getOrAssignPl(UInt instrIdx, const CondGateMap &condGateMap);
     static UInt getSizeTag(UInt numReadouts);
@@ -63,7 +63,7 @@ public: // functions
     static UInt getMuxSmAddr(const MeasResultRealTimeMap &measResultRealTimeMap);
     UInt emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Int slot);
 
-    Str getDatapathSection() { return datapathSection.str(); }
+    Str getDatapathSection() const { return datapathSection.str(); }
 
     void comment(const Str &cmnt, Bool verboseCode) {
         if (verboseCode) datapathSection << cmnt << std::endl;

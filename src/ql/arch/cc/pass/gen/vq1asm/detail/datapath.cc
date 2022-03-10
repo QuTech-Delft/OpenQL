@@ -74,7 +74,7 @@ UInt Datapath::allocateSmBit(UInt breg_operand, UInt instrIdx) {
 }
 
 // NB: bit_operand can be breg_operand or cond_operand, depending on context of caller
-UInt Datapath::getSmBit(UInt bit_operand) {
+UInt Datapath::getSmBit(UInt bit_operand) const {
     UInt smBit;
 
     auto it = mapBregToSmBit.find(bit_operand);

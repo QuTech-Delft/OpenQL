@@ -1,5 +1,3 @@
-// FIXME: WIP on splitting off function handling from codegen.cc
-
 #include "functions.h"
 #include "ql/ir/describe.h"
 
@@ -17,7 +15,7 @@ using namespace utils;
 static Str as_target(const Str &label) { return "@" + label; }
 
 // new
-static Str as_reg(Int creg) {
+static Str as_reg(UInt creg) {
     if(creg >= NUM_CREGS) {
         QL_INPUT_ERROR("register index " << creg << " exceeds maximum of " << NUM_CREGS);
     }
@@ -36,6 +34,12 @@ static Str as_int(Int val, Int add=0) {
 }
 
 
+Functions::Functions(const OperandContext &operandContext, const Datapath &dp)
+    : operandContext(operandContext)
+    , dp(dp) {
+    register_functions();
+}
+
 void Functions::dispatch(const Str &name, const ir::ExpressionRef &lhs, const ir::ExpressionRef &expression) {
     // check parameter
     auto fn = expression->as_function_call();
@@ -50,7 +54,7 @@ void Functions::dispatch(const Str &name, const ir::ExpressionRef &lhs, const ir
         opArgs.ops.append(operandContext, op);
 
         // FIXME: maintain  profile in ops.append
-        profile += get_profile(op);
+        profile += get_operand_type(op);
     }
 
     // set dest_reg
@@ -62,17 +66,33 @@ void Functions::dispatch(const Str &name, const ir::ExpressionRef &lhs, const ir
 
 
 
-    // match name and operand profile against table of available functions
+    // create key from name and operand profile, using the same encoding as register_functions()
+    Str key = fn->function_type->name + "_" + profile;
 
+    // lookup key
+    auto it = func_map.find(key);
+    if (it == func_map.end()) {
+        /*
+         * NB: if we arrive here, there's an inconsistency between the functions registered in 'ql::ir::cqasm:read()'
+         * (see comment at beginning of Codegen::do_handle_expression) and those available in func_map.
+         */
+        QL_ICE(
+            "function '" << fn->function_type->name
+            << "' with profile '" << profile
+            << "' not supported by CC backend, but it should be"
+        );
+    }
+
+    // finish arguments
+    opArgs.operation = it->second.operation;
 
     // call the function
-
-
+    (this->*it->second.func)(opArgs);
 }
 
 
 
-void Functions::op_binv__C(const OpArgs &a) {
+void Functions::op_binv_C(const OpArgs &a) {
     emit(
         "",
         "not",
@@ -81,7 +101,8 @@ void Functions::op_binv__C(const OpArgs &a) {
     );
 }
 
-void Functions::op_linv__B(const OpArgs &a) {
+void Functions::op_linv_B(const OpArgs &a) {
+    // transfer single breg to REG_TMP0
     UInt mask = emit_bin_cast(a.ops.bregs, 1);
 
     emit(
@@ -100,17 +121,17 @@ void Functions::op_linv__B(const OpArgs &a) {
 }
 
 
-void Functions::op_grp_int_2op__CC(const OpArgs &a) {
+void Functions::op_grp_int_2op_CC(const OpArgs &a) {
     emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_reg(a.ops.cregs[1]), as_reg(a.dest_reg));
 }
 
-void Functions::op_grp_int_2op__Ci_iC(const OpArgs &a) {
+void Functions::op_grp_int_2op_Ci_iC(const OpArgs &a) {
     // NB: for profile "iC" we 'reverse' operands to match Q1 instruction set; this is for free because the operands
     // are split based on their type
     emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
 }
 
-void Functions::op_sub__iC(const OpArgs &a) {
+void Functions::op_sub_iC(const OpArgs &a) {
     // NB: 'reverse' operands to match Q1 instruction set
     emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
 
@@ -122,8 +143,10 @@ void Functions::op_sub__iC(const OpArgs &a) {
 }
 
 
-void Functions::op_grp_bit_2op__BB(const OpArgs &a) {
+void Functions::op_grp_bit_2op_BB(const OpArgs &a) {
+    // transfer 2 bregs to REG_TMP0
     UInt mask = emit_bin_cast(a.ops.bregs, 2);
+
 #if 0    // FIXME: handle operation properly, this is just copy/paste from op_linv
     emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
     emit("", "nop");
@@ -143,7 +166,7 @@ void Functions::op_grp_rel1_tail(const OpArgs &a) {
     );
 }
 
-void Functions::op_grp_rel1__CC(const OpArgs &a) {
+void Functions::op_grp_rel1_CC(const OpArgs &a) {
     emit(
         "",
         "xor",
@@ -153,7 +176,7 @@ void Functions::op_grp_rel1__CC(const OpArgs &a) {
     op_grp_rel1_tail(a);
 }
 
-void Functions::op_grp_rel1__Ci_iC(const OpArgs &a) {
+void Functions::op_grp_rel1_Ci_iC(const OpArgs &a) {
     emit(
         "",
         "xor",
@@ -164,18 +187,18 @@ void Functions::op_grp_rel1__Ci_iC(const OpArgs &a) {
 }
 
 
-void Functions::op_grp_rel2__CC(const OpArgs &a) {
+void Functions::op_grp_rel2_CC(const OpArgs &a) {
     emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_reg(a.ops.cregs[1]), as_target(a.label_if_false));
 }
 
-void Functions::op_grp_rel2__Ci_iC(const OpArgs &a) {
+void Functions::op_grp_rel2_Ci_iC(const OpArgs &a) {
     // NB: for profile "iC" we 'reverse' operands to match Q1 instruction set; this is for free because the operands
     // are split based on their type
     emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_target(a.label_if_false));
 }
 
 
-void Functions::op_gt__CC(const OpArgs &a) {
+void Functions::op_gt_CC(const OpArgs &a) {
     // increment arg1 since we lack 'jgt'
     emit(
         "",
@@ -195,7 +218,7 @@ void Functions::op_gt__CC(const OpArgs &a) {
     );
 }
 
-void Functions::op_gt__Ci(const OpArgs &a) {
+void Functions::op_gt_Ci(const OpArgs &a) {
     // conditional jump, increment literal since we lack 'jgt'
     emit(
         "",
@@ -205,7 +228,7 @@ void Functions::op_gt__Ci(const OpArgs &a) {
     );
 }
 
-void Functions::op_gt__iC(const OpArgs &a) {
+void Functions::op_gt_iC(const OpArgs &a) {
     // conditional jump, deccrement literal since we lack 'jle'
     emit(
         "",
@@ -216,83 +239,123 @@ void Functions::op_gt__iC(const OpArgs &a) {
 }
 
 
+#if OPT_CC_USER_FUNCTIONS
+void Functions::rnd_seed_C(const OpArgs &a) {
+}
+
+void Functions::rnd_seed_i(const OpArgs &a) {
+}
+
+void Functions::rnd(const OpArgs &a) {
+}
+#endif
+
 
 /*
  * Function table
  *
- * The set of available names should match that in platform as set by 'convert_old_to_new(const compat::PlatformRef &old)'
- * FIXME: copy more of the comment of Codegen::do_handle_expression
+ * The set of available functions should match that in the platform as set by
+ * 'convert_old_to_new(const compat::PlatformRef &old)'
+ *
+ * Also see Codegen::do_handle_expression()
  */
 
 // FIXME: add return type
-//name		   profile  func                    operation
+//name		   profile      func                    operation
 #define CC_FUNCTION_LIST \
-X("operator~",      C,      op_binv__C,             "") \
+X("operator~",      C,      op_binv_C,             "") \
 \
 /* bit arithmetic, 1 operand: "!" */ \
-X("operator!",      B,      op_linv__B,             "") \
+X("operator!",      B,      op_linv_B,              "") \
 \
 /* int arithmetic, 2 operands: "+", "-", "&", "|", "^" */ \
-X("operator+",      CC,     op_grp_int_2op__CC,     "add") \
-X("operator+",      Ci,     op_grp_int_2op__Ci_iC,  "add") \
-X("operator+",      iC,     op_grp_int_2op__Ci_iC,  "add") \
-X("operator-",      CC,     op_grp_int_2op__CC,     "sub") \
-X("operator-",      Ci,     op_grp_int_2op__Ci_iC,  "sub") \
-X("operator-",      iC,     op_sub__iC,             "sub") \
-X("operator&",      CC,     op_grp_int_2op__CC,     "and") \
-X("operator&",      Ci,     op_grp_int_2op__Ci_iC,  "and") \
-X("operator&",      iC,     op_grp_int_2op__Ci_iC,  "and") \
-X("operator|",      CC,     op_grp_int_2op__CC,     "or") \
-X("operator|",      Ci,     op_grp_int_2op__Ci_iC,  "or") \
-X("operator|",      iC,     op_grp_int_2op__Ci_iC,  "or") \
-X("operator^",      CC,     op_grp_int_2op__CC,     "xor") \
-X("operator^",      Ci,     op_grp_int_2op__Ci_iC,  "xor") \
-X("operator^",      iC,     op_grp_int_2op__Ci_iC,  "xor") \
+X("operator+",      CC,     op_grp_int_2op_CC,      "add") \
+X("operator+",      Ci,     op_grp_int_2op_Ci_iC,   "add") \
+X("operator+",      iC,     op_grp_int_2op_Ci_iC,   "add") \
+X("operator-",      CC,     op_grp_int_2op_CC,      "sub") \
+X("operator-",      Ci,     op_grp_int_2op_Ci_iC,   "sub") \
+X("operator-",      iC,     op_sub_iC,              "sub") \
+X("operator&",      CC,     op_grp_int_2op_CC,      "and") \
+X("operator&",      Ci,     op_grp_int_2op_Ci_iC,   "and") \
+X("operator&",      iC,     op_grp_int_2op_Ci_iC,   "and") \
+X("operator|",      CC,     op_grp_int_2op_CC,      "or") \
+X("operator|",      Ci,     op_grp_int_2op_Ci_iC,   "or") \
+X("operator|",      iC,     op_grp_int_2op_Ci_iC,   "or") \
+X("operator^",      CC,     op_grp_int_2op_CC,      "xor") \
+X("operator^",      Ci,     op_grp_int_2op_Ci_iC,   "xor") \
+X("operator^",      iC,     op_grp_int_2op_Ci_iC,   "xor") \
 \
 /* bit arithmetic, 2 operands: "&&", "||", "^^" */ \
-X("operator&&",     BB,     op_grp_bit_2op__BB,     "") \
-X("operator||",     BB,     op_grp_bit_2op__BB,     "") \
-X("operator^^",     BB,     op_grp_bit_2op__BB,     "") \
+X("operator&&",     BB,     op_grp_bit_2op_BB,      "") \
+X("operator||",     BB,     op_grp_bit_2op_BB,      "") \
+X("operator^^",     BB,     op_grp_bit_2op_BB,      "") \
 \
 /* relop, group 1: "==", "!=" */ \
-X("operator==",     CC,     op_grp_rel1__CC,        "jge") \
-X("operator==",     Ci,     op_grp_rel1__Ci_iC,     "jge") \
-X("operator==",     iC,     op_grp_rel1__Ci_iC,     "jge") \
+X("operator==",     CC,     op_grp_rel1_CC,         "jge") \
+X("operator==",     Ci,     op_grp_rel1_Ci_iC,      "jge") \
+X("operator==",     iC,     op_grp_rel1_Ci_iC,      "jge") \
 /* repeat, with operation inversed */ \
-X("operator!=",     CC,     op_grp_rel1__CC,        "jlt") \
-X("operator!=",     Ci,     op_grp_rel1__Ci_iC,     "jlt") \
-X("operator!=",     iC,     op_grp_rel1__Ci_iC,     "jlt") \
+X("operator!=",     CC,     op_grp_rel1_CC,         "jlt") \
+X("operator!=",     Ci,     op_grp_rel1_Ci_iC,      "jlt") \
+X("operator!=",     iC,     op_grp_rel1_Ci_iC,      "jlt") \
 \
 /* relop, group 2: ">=", "<" */ \
-X("operator>=",     CC,     op_grp_rel2__CC,        "jge") \
-X("operator>=",     Ci,     op_grp_rel2__Ci_iC,     "jge") \
-X("operator>=",     iC,     op_grp_rel2__Ci_iC,     "jlt") /* inverse operation */ \
+X("operator>=",     CC,     op_grp_rel2_CC,         "jge") \
+X("operator>=",     Ci,     op_grp_rel2_Ci_iC,      "jge") \
+X("operator>=",     iC,     op_grp_rel2_Ci_iC,      "jlt") /* inverse operation */ \
 /* repeat, with inverse operation */ \
-X("operator<",      CC,     op_grp_rel2__CC,        "jlt") \
-X("operator<",      Ci,     op_grp_rel2__Ci_iC,     "jlt") \
-X("operator<",      iC,     op_grp_rel2__Ci_iC,     "jge") /* inverse operation */ \
+X("operator<",      CC,     op_grp_rel2_CC,         "jlt") \
+X("operator<",      Ci,     op_grp_rel2_Ci_iC,      "jlt") \
+X("operator<",      iC,     op_grp_rel2_Ci_iC,      "jge") /* inverse operation */ \
 \
 /* relop, group 3: ">", "<=" */ \
-X("operator>",      CC,     op_gt__CC,              "jge") \
-X("operator>",      Ci,     op_gt__Ci,              "jge") \
-X("operator>",      iC,     op_gt__iC,              "jlt") /* inverse operation */ \
+X("operator>",      CC,     op_gt_CC,               "jge") \
+X("operator>",      Ci,     op_gt_Ci,               "jge") \
+X("operator>",      iC,     op_gt_iC,               "jlt") /* inverse operation */ \
 /* repeat, with inverse operation */ \
-X("operator<=",     CC,     op_gt__CC,              "jlt") \
-X("operator<=",     Ci,     op_gt__Ci,              "jlt") \
-X("operator<=",     iC,     op_gt__iC,              "jge") /* inverse operation */ \
-\
+X("operator<=",     CC,     op_gt_CC,               "jlt") \
+X("operator<=",     Ci,     op_gt_Ci,               "jlt") \
+X("operator<=",     iC,     op_gt_iC,               "jge") /* inverse operation */
+
+#define CC_FUNCTION_LIST_USER \
 /* user functions */ \
-X("rnd_seed",       -,      rnd_seed,               "") \
+X("rnd_seed",       C,      rnd_seed_C,             "") \
+X("rnd_seed",       i,      rnd_seed_i,             "") \
 X("rnd",            -,      rnd,                    "")
 
-#define X(name, func, profile, operation) name,
-const char *names[] = {
-CC_FUNCTION_LIST
-};
-#undef X
+
+void Functions::register_functions() {
+//    #define X(name, profile, func, operation) { name, #profile, &Functions::func, operation } ,
+//    struct {
+//        Str name;
+//        Str profile;
+//        tOpFunc func;
+//        Str operation;
+//    } func_table[] = {
+//        CC_FUNCTION_LIST
+//        #if OPT_CC_USER_FUNCTIONS
+//         CC_FUNCTION_LIST_USER
+//        #endif
+//    };
+//    #undef X
+
+    /*
+     * Initialize func_map with the functions from CC_FUNCTION_LIST and optionally CC_FUNCTION_LIST_USER.
+     * The key consists of the concatenation of name, "_" and the stringified profile, e.g "operator~_C"
+     */
 
 
-Str Functions::get_profile(const ir::ExpressionRef &op) {
+    #define X(name, profile, func, operation) { name "_" #profile, { &Functions::func, operation } } ,
+    func_map = {
+        CC_FUNCTION_LIST
+        #if OPT_CC_USER_FUNCTIONS
+         CC_FUNCTION_LIST_USER
+        #endif
+    };
+    #undef X
+}
+
+Str Functions::get_operand_type(const ir::ExpressionRef &op) {
     if(op->as_int_literal()) {
         return "i";
     } else if(op->as_bit_literal()) {
@@ -312,51 +375,6 @@ Str Functions::get_profile(const ir::ExpressionRef &op) {
     }
 }
 
-#if 0
-// FIXME: uses dp.
-UInt Functions::emit_bin_cast(Any<ir::Expression> operands, Int expOpCnt) {
-    if(operands.size() != expOpCnt) {
-        QL_ICE("Expected " << expOpCnt << " bit operands, got " << operands.size());
-    }
-
-    // Compute DSM address and mask for operands.
-    UInt smAddr = 0;
-    UInt mask = 0;      // mask for used SM bits in 32 bit word transferred using move_sm
-    Str descr;
-    for (Int i=0; i<operands.size(); i++) {
-        auto &op = operands[i];
-
-        // Convert breg reference to the register index
-        Int breg;
-        if(op->as_reference()) {
-            breg = operandContext.convert_breg_reference(op);
-            if(breg >= NUM_BREGS) {
-                QL_INPUT_ERROR("bit register index " << breg << " exceeds maximum");
-            }
-        } else {
-            QL_ICE("Expected bit operand, got '" << ir::describe(op) << "'");
-        }
-
-        // get SM bit for classic operand (allocated during readout)
-        UInt smBit = dp.getSmBit(breg);
-        descr += QL_SS2S("b[" << breg << "]=DSMbit[" << smBit << "]; ");
-
-        // compute and check SM address
-        UInt mySmAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
-        if(i==0) {
-            smAddr = mySmAddr;
-        } else {
-            if(smAddr != mySmAddr) {
-                QL_USER_ERROR("Cannot access DSM address " << smAddr << " and " << mySmAddr << " in single transfer");
-                // NB: we could setup several transfers
-            }
-        }
-
-        // update mask of used bits
-        mask |= 1ul << (smBit % 32);
-    }
-}
-#else
 UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
     if(bregs.size() != expOpCnt) {
         QL_ICE("Expected " << expOpCnt << " breg operands, got " << bregs.size());
@@ -367,7 +385,7 @@ UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
     UInt mask = 0;      // mask for used SM bits in 32 bit word transferred using move_sm
     Str descr;
     for (Int i=0; i<bregs.size(); i++) {
-        Int breg = bregs[i];
+        auto breg = bregs[i];
         if(breg >= NUM_BREGS) {
             QL_INPUT_ERROR("bit register index " << breg << " exceeds maximum of " << NUM_BREGS);   // FIXME: cleanup "breg" vs. "bit register index"
         }
@@ -390,9 +408,25 @@ UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
         // update mask of used bits
         mask |= 1ul << (smBit % 32);
     }
-}
-#endif
 
+    /*
+     * Code inserted here:
+     *      seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
+     *      seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch
+     *      move_sm     Ra                  ; ... and move to register
+     *      nop                             ; register dependency Ra
+     *
+     * Example code to be added by caller
+     *      and         Ra,<mask>,Rb        ; mask depends on DSM bit location
+     *      nop                             ; register dependency Rb
+     *      jlt         Rb,1,@loop
+     */
+    emit("", "seq_cl_sm", QL_SS2S("S" << smAddr), "# transfer DSM bits to Q1: " + descr);
+    emit("", "seq_wait", "3");
+    emit("", "move_sm", REG_TMP0);
+    emit("", "nop");
+    return mask;
+}
 
 
 #if 0

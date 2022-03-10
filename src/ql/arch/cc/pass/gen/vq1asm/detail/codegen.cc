@@ -15,7 +15,7 @@
 
 #include <iosfwd>
 
-#define OPT_OLD_FUNC 1  // FIXME: WIP
+#define OPT_OLD_FUNC    0  // FIXME: WIP
 
 #if OPT_OLD_FUNC
 // Constants
@@ -284,6 +284,7 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
     : ir(ir)
     , options(options)
     , operandContext(ir)
+    , fncs(operandContext, dp)
 {
     // NB: a new Backend is instantiated per call to compile, and
     // as a result also a Codegen, so we don't need to cleanup
@@ -1309,7 +1310,7 @@ void Codegen::do_handle_expression(
 ) {
     // function global helpers
 
-#if OPT_OLD_FUNC
+//#if OPT_OLD_FUNC
     auto dest_reg = [this, lhs]() {
         return creg2reg(*lhs->as_reference());
     };
@@ -1388,7 +1389,7 @@ void Codegen::do_handle_expression(
         emit("", "nop");
         return mask;
     };
-#endif
+//#endif
     // ----------- end of global helpers -------------
 
 
@@ -1689,6 +1690,10 @@ void Codegen::do_handle_expression(
                 QL_ICE(
                     "function '" << fn->function_type->name << "' not supported by CC backend, but it should be"
                 );
+            }
+#else   // FIXME: use functions
+            } else {
+                fncs.dispatch(fn->function_type->name, lhs, expression);
             }
 #endif
         }

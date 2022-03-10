@@ -15,6 +15,7 @@
 #include "types.h"
 #include "options.h"
 #include "bundle_info.h"
+#include "functions.h"
 #include "datapath.h"
 #include "settings.h"
 #include "vcd.h"
@@ -138,6 +139,7 @@ private:    // vars
     OperandContext operandContext;                              // context for Operand processing
     Settings settings;                                          // handling of JSON settings
     Datapath dp;                                                // handling of CC datapath
+    Functions fncs;                                             // handling of functions within expressions
     Vcd vcd;                                                    // handling of VCD file output
 
     Bool mapPreloaded = false;                                  // flag whether we have a preloaded map
