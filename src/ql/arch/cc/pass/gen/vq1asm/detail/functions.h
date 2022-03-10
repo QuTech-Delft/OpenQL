@@ -5,6 +5,7 @@
 #include "types.h"
 #include "operands.h"
 #include "datapath.h"
+//#include "codegen.h"
 
 // Constants
 // FIXME: move out of .h
@@ -22,13 +23,14 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
+class Codegen;  // FIXME, to prevent include loop
 
 class Functions {
 public:
-    Functions(const OperandContext &operandContext, const Datapath &dp);
+    explicit Functions(OperandContext &operandContext, Datapath &dp, Codegen &cg);
     ~Functions() = default;
 
-    void register_();
+//    void register_();
     void dispatch(const Str &name, const ir::ExpressionRef &lhs, const ir::ExpressionRef &expression);
 
 
@@ -56,9 +58,10 @@ private:  // types
 
 
 private:    // vars
-    // FIXME
-    const OperandContext &operandContext;                       // context for Operand processing
-    const Datapath &dp;                                         // handling of CC datapath
+    // Object instances needed
+    OperandContext &operandContext;                             // context for Operand processing
+    Datapath &dp;                                               // handling of CC datapath
+    Codegen &cg;                                                // code generation, used for helpers
 
     // map name to function, see register_functions()
     std::map<Str, FuncInfo> func_map;
@@ -148,9 +151,9 @@ private:    // methods
 
 
     // helpers to ease nice assembly formatting
-    void emit(const Str &labelOrComment, const Str &instr="");
-    void emit(const Str &label, const Str &instr, const Str &ops, const Str &comment="");
-    void emit(Int slot, const Str &instr, const Str &ops, const Str &comment="");
+//    void emit(const Str &labelOrComment, const Str &instr="");
+//    void emit(const Str &label, const Str &instr, const Str &ops, const Str &comment="");
+//    void emit(Int slot, const Str &instr, const Str &ops, const Str &comment="");
 };
 
 

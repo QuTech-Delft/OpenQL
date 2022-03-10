@@ -284,7 +284,7 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
     : ir(ir)
     , options(options)
     , operandContext(ir)
-    , fncs(operandContext, dp)
+    , fncs(operandContext, dp, *this)
 {
     // NB: a new Backend is instantiated per call to compile, and
     // as a result also a Codegen, so we don't need to cleanup
@@ -1261,7 +1261,7 @@ tCodeword Codegen::assignCodeword(const Str &instrumentName, Int instrIdx, Int g
 }
 #endif
 
-#if OPT_OLD_FUNC
+//#if OPT_OLD_FUNC
 /************************************************************************\
 | expression helpers
 \************************************************************************/
@@ -1273,7 +1273,7 @@ Int Codegen::creg2reg(const ir::Reference &ref) {
     }
     return reg;
 };
-#endif
+//#endif
 
 // FIXME: recursion?
 // FIXME: or pass SetInstruction or Expression depending on use

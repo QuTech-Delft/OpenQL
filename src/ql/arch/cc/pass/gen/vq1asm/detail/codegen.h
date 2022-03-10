@@ -102,6 +102,16 @@ public: //  functions
     void handle_set_instruction(const ir::SetInstruction &set, const Str &descr);
     void handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);   // FIXME: private?
 
+
+protected:
+    // FIXME: split off emitting into separate class
+    friend class Functions;                                     // needs access to emit*()
+    // helpers to ease nice assembly formatting
+    void emit(const Str &labelOrComment, const Str &instr="");
+    void emit(const Str &label, const Str &instr, const Str &ops, const Str &comment="");
+    void emit(Int slot, const Str &instr, const Str &ops, const Str &comment="");
+
+
 private:    // types
     /**
      * Code generation info for single instrument.
@@ -159,11 +169,6 @@ private:    // vars
 
 
 private:    // funcs
-    // helpers to ease nice assembly formatting
-    void emit(const Str &labelOrComment, const Str &instr="");
-    void emit(const Str &label, const Str &instr, const Str &ops, const Str &comment="");
-    void emit(Int slot, const Str &instr, const Str &ops, const Str &comment="");
-
     // code generation helpers
     void showCodeSoFar();
     void emitProgramStart(const Str &progName);
