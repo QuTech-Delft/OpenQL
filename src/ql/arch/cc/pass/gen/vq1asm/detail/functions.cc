@@ -19,7 +19,7 @@ static Str as_target(const Str &label) { return "@" + label; }
 // new
 static Str as_reg(UInt creg) {
     if(creg >= NUM_CREGS) {
-        QL_INPUT_ERROR("register index " << creg << " exceeds maximum of " << NUM_CREGS);
+        QL_INPUT_ERROR("register index " << creg << " exceeds maximum of " << NUM_CREGS-1);
     }
     return QL_SS2S("R"<<creg);
 }
@@ -61,7 +61,11 @@ void Functions::dispatch(const Str &name, const ir::ExpressionRef &lhs, const ir
     }
 
     // set dest_reg
-    opArgs.dest_reg = creg2reg(*lhs->as_reference());
+    if(lhs.empty()) {
+        opArgs.dest_reg = 0;
+    } else {
+        opArgs.dest_reg = creg2reg(*lhs->as_reference());
+    }
 
 
     // FIXME:
@@ -368,8 +372,10 @@ Str Functions::get_operand_type(const ir::ExpressionRef &op) {
             return "C";
         } else if(operandContext.is_breg_reference(op)) {
             return "B";
+        } else if(operandContext.is_implicit_breg_reference(op)) {
+            return "B"; // FIXME: WIP
         } else {
-            QL_ICE("Operand '" << ir::describe(op) << "' has unsupported type");
+            QL_ICE("operand '" << ir::describe(op) << "' has unsupported type");
         }
     } else if(op->as_function_call()) {
         QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(op) << "'");
@@ -390,7 +396,7 @@ UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
     for (Int i=0; i<bregs.size(); i++) {
         auto breg = bregs[i];
         if(breg >= NUM_BREGS) {
-            QL_INPUT_ERROR("bit register index " << breg << " exceeds maximum of " << NUM_BREGS);   // FIXME: cleanup "breg" vs. "bit register index"
+            QL_INPUT_ERROR("bit register index " << breg << " exceeds maximum of " << NUM_BREGS-1);   // FIXME: cleanup "breg" vs. "bit register index"
         }
 
         // get SM bit for classic operand (allocated during readout)

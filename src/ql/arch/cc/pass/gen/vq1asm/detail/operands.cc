@@ -16,7 +16,7 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
-// FIXME: cleanup
+// FIXME: cleanup, copied from NewToOldConverter
 OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
     // Determine number of qubits.
     CHECK_COMPAT(
@@ -30,7 +30,8 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
 //    }
 
     // Determine number of bregs. The first num_qubits bregs are the implicit
-    // bits associated with qubits, so there are always num_qubits of these.
+    // bits associated with qubits, so there are always num_qubits of these; only
+    // beyond that is the b register used.
 //    auto num_bregs = num_qubits;
     breg_ob = find_physical_object(ir, "breg");
 #if 0   // FIXME
@@ -48,6 +49,9 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
         num_bregs += breg_ob->shape[0];
     }
 #endif
+
+    // FIXME: add q_ob, see 'Ref convert_old_to_new(const compat::PlatformRef &old)'
+    q_ob  = find_physical_object(ir, "q");
 
     // Determine number of cregs.
 //    utils::UInt num_cregs = 0;
@@ -69,7 +73,7 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
 #endif
 }
 
-// FIXME
+// FIXME: also perform checks from convert_creg_reference?
 Bool OperandContext::is_creg_reference(const ir::ExpressionRef &ref) const {
     auto lhs = ref->as_reference();
     return lhs && lhs->target == creg_ob;
@@ -77,8 +81,14 @@ Bool OperandContext::is_creg_reference(const ir::ExpressionRef &ref) const {
 
 Bool OperandContext::is_breg_reference(const ir::ExpressionRef &ref) const {
     auto lhs = ref->as_reference();
-    return lhs && lhs->target == breg_ob;
+    return lhs && lhs->target == breg_ob; // FIXME: The object used by the new IR to refer to bregs from num_qubits onwards
 }
+
+Bool OperandContext::is_implicit_breg_reference(const ir::ExpressionRef &ref) const {
+    auto lhs = ref->as_reference();
+    return lhs && lhs->target == q_ob;
+}
+
 
 
 /**
@@ -150,7 +160,12 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
             ref->target == operandContext.breg_ob &&
             ref->data_type == operandContext.breg_ob->data_type
         ) {
-            // NB: map explicit bregs after those implicit to qubits. FIXME: is that wanted,
+            // NB: map explicit bregs after those implicit to qubits.
+            // FIXME: is that wanted? Also see definition of breg_ob
+            //  from: old_to_new::convert_gate:
+            //  The first num_qubits
+            //  bits are mapped to the implicit bits associated with the qubits; only
+            //  beyond that is the b register used.
             bregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value + operandContext.num_qubits);
         } else if (
             ref->target == operandContext.creg_ob &&

@@ -29,6 +29,7 @@ public:
     explicit OperandContext(const ir::Ref &ir);
     Bool is_creg_reference(const ir::ExpressionRef &ref) const;
     Bool is_breg_reference(const ir::ExpressionRef &ref) const;
+    Bool is_implicit_breg_reference(const ir::ExpressionRef &ref) const;
     Int convert_creg_reference(const ir::Reference &ref) const;
     Int convert_breg_reference(const ir::ExpressionRef &ref) const;
 
@@ -54,6 +55,11 @@ private:
      * The object used by the new IR to refer to cregs.
      */
     ir::ObjectLink creg_ob;
+
+    /**
+     * The object used by the new IR to refer to qubits.
+     */
+    ir::ObjectLink q_ob;
 };
 
 

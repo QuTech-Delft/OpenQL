@@ -1304,6 +1304,7 @@ static InstructionRef convert_gate(
             operands.add(make_int_lit(ir, gate->int_operand));
         }
 
+#if 1 // OPT_DIAMOND
         // Handle the annotations for additional integer literal arguments used
         // by Diamond.
         if (auto emp = gate->get_annotation_ptr<arch::diamond::annotations::ExciteMicrowaveParameters>()) {
@@ -1331,7 +1332,7 @@ static InstructionRef convert_gate(
             operands.add(make_int_lit(ir, rp->duration));
             operands.add(make_int_lit(ir, rp->t_max));
         }
-
+#endif
         // Try to make an instruction for the name and operand list we found.
         auto insn = make_instruction(ir, name, operands, condition, true, true);
         if (!insn.empty()) {

@@ -31,6 +31,10 @@ public:
     ~Functions() = default;
 
 //    void register_();
+    /*
+     * Notes:
+     * - expression->as_function_call() must be non-zero
+     */
     void dispatch(const Str &name, const ir::ExpressionRef &lhs, const ir::ExpressionRef &expression);
 
 
