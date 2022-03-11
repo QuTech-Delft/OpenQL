@@ -1245,75 +1245,6 @@ void Codegen::do_handle_expression(
     const Str &label_if_false,
     const Str &descr
 ) {
-#if 0
-    // function global helpers
-
-    // emit code for casting a bit value (i.e. DSM bit) to an integer (i.e. Q1 register)
-    auto emit_bin_cast = [this](Any<ir::Expression> operands, Int expOpCnt) {
-        if(operands.size() != expOpCnt) {
-            QL_ICE("Expected " << expOpCnt << " bit operands, got " << operands.size());
-        }
-
-        // Compute DSM address and mask for operands.
-        UInt smAddr = 0;
-        UInt mask = 0;      // mask for used SM bits in 32 bit word transferred using move_sm
-        Str descr;
-        for (Int i=0; i<operands.size(); i++) {
-            auto &op = operands[i];
-
-            // Convert breg reference to the register index
-            Int breg;
-            if(op->as_reference()) {
-                breg = operandContext.convert_breg_reference(op);
-                if(breg >= NUM_BREGS) {
-                    QL_INPUT_ERROR("bit register index " << breg << " exceeds maximum");
-                }
-            } else {
-                QL_ICE("Expected bit operand, got '" << ir::describe(op) << "'");
-            }
-
-            // get SM bit for classic operand (allocated during readout)
-            UInt smBit = dp.getSmBit(breg);
-            descr += QL_SS2S("b[" << breg << "]=DSMbit[" << smBit << "]; ");
-
-            // compute and check SM address
-            UInt mySmAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
-            if(i==0) {
-                smAddr = mySmAddr;
-            } else {
-                if(smAddr != mySmAddr) {
-                    QL_USER_ERROR("Cannot access DSM address " << smAddr << " and " << mySmAddr << " in single transfer");
-                    // NB: we could setup several transfers
-                }
-            }
-
-            // update mask of used bits
-            mask |= 1ul << (smBit % 32);
-        }
-
-        // FIXME: We don't have a matching quantum instruction for this cast (formerly, we had 'if_1_break' etc), but do
-        //  take up 'quantum' time, so the timeline is silently shifted
-        /*
-            seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
-            seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch
-            move_sm     Ra                  ; ... and move to register
-            nop                             ; register dependency Ra
-
-            ; NB: example code added by caller
-            and         Ra,<mask>,Rb        ; mask depends on DSM bit location
-            nop                             ; register dependency Rb
-            jlt         Rb,1,@loop
-        */
-        cs.emit("", "seq_cl_sm", QL_SS2S("S" << smAddr), "# transfer DSM bits to Q1: " + descr);
-        cs.emit("", "seq_wait", "3");
-        cs.emit("", "move_sm", REG_TMP0);
-        cs.emit("", "nop");
-        return mask;
-    };
-    // ----------- end of global helpers -------------
-#endif
-
-
     try {
         if (!lhs.empty()) {
             comment(QL_SS2S("# Expression '" << descr << "': " << ir::describe(lhs) << " = " << ir::describe(expression)));
@@ -1347,18 +1278,11 @@ void Codegen::do_handle_expression(
                     "# " + ir::describe(expression)
                 );
             } else {    // breg as condition, like in "if(b[0])"
-#if 0   // FIXME
-                // convert ir::Expression to utils::Any<ir::Expression>
-                utils::Any<ir::Expression> anyExpression;
-                anyExpression.add(expression);
-                UInt mask = emit_bin_cast(anyExpression, 1);
-#else
+                // FIXME: check is_implicit_breg_reference/is_explicit_breg_reference
                 // transfer single breg to REG_TMP0
-                utils::Vec<utils::UInt> bregs;
-                // FIXME, see dispatch
-                xx
+                auto breg = operandContext.convert_breg_reference(expression);
+                utils::Vec<utils::UInt> bregs{breg};
                 UInt mask = fncs.emit_bin_cast(bregs, 1);
-#endif
 
                 cs.emit(
                     "",

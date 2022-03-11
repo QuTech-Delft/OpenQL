@@ -30,11 +30,11 @@ public:
 
     Bool is_qubit_reference(const ir::Reference *ref) const;
     Bool is_implicit_breg_reference(const ir::Reference *ref) const;
-    Bool is_breg_reference(const ir::Reference *ref) const;
+    Bool is_explicit_breg_reference(const ir::Reference *ref) const;
     Bool is_creg_reference(const ir::Reference *ref) const;
 
     Bool is_creg_reference(const ir::ExpressionRef &ref) const;
-    Bool is_breg_reference(const ir::ExpressionRef &ref) const;
+    Bool is_explicit_breg_reference(const ir::ExpressionRef &ref) const;
     Bool is_implicit_breg_reference(const ir::ExpressionRef &ref) const;
 
     /**
@@ -45,7 +45,7 @@ public:
     /**
      * Converts a bit reference to its breg index.
      */
-    Int convert_breg_reference(const ir::ExpressionRef &ref) const;
+    UInt convert_breg_reference(const ir::ExpressionRef &ref) const;
 
 private:
     friend class Operands;

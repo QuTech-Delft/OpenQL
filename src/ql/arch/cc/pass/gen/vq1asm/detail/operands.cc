@@ -88,7 +88,7 @@ Bool OperandContext::is_implicit_breg_reference(const ir::Reference *ref) const 
         && ref->data_type == ir->platform->default_bit_type;
 }
 
-Bool OperandContext::is_breg_reference(const ir::Reference *ref) const {
+Bool OperandContext::is_explicit_breg_reference(const ir::Reference *ref) const {
     return
         ref->target == breg_ob
         && ref->data_type == breg_ob->data_type;
@@ -108,7 +108,7 @@ Bool OperandContext::is_creg_reference(const ir::ExpressionRef &ref) const {
     return r && r->target == creg_ob;
 }
 
-Bool OperandContext::is_breg_reference(const ir::ExpressionRef &ref) const {
+Bool OperandContext::is_explicit_breg_reference(const ir::ExpressionRef &ref) const {
     auto r = ref->as_reference();
     return r && r->target == breg_ob; // FIXME: The object used by the new IR to refer to bregs from num_qubits onwards
 }
@@ -134,8 +134,8 @@ Int OperandContext::convert_creg_reference(const ir::Reference &ref) const {
     return ref.indices[0]->as_int_literal()->value;    // NB: range checking to be done by caller
 }
 
-
-Int OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
+// NB: converts both explicit and implicit bregs
+UInt OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
     Operands ops;
     ops.append(*this, ref); // FIXME: use same mechanism here and in convert_creg_reference
     CHECK_COMPAT(
@@ -144,6 +144,31 @@ Int OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
     );
     return ops.bregs[0];    // NB: range checking to be done by caller
 }
+
+
+#if 0   // FIXME: remove
+Str Functions::get_operand_type(const ir::ExpressionRef &op) {
+    if(op->as_int_literal()) {
+        return "i";
+    } else if(op->as_bit_literal()) {
+        return "b";
+    } else if(op->as_reference()) {
+        if(operandContext.is_creg_reference(op)) {
+            return "C";
+        } else if(operandContext.is_explicit_breg_reference(op)) {
+            return "B";
+        } else if(operandContext.is_implicit_breg_reference(op)) {
+            return "B"; // FIXME: WIP
+        } else {
+            QL_ICE("operand '" << ir::describe(op) << "' has unsupported type");
+        }
+    } else if(op->as_function_call()) {
+        QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(op) << "'");
+    } else {
+        QL_INPUT_ERROR("cannot currently handle parameter '" << ir::describe(op) << "'");
+    }
+}
+#endif
 
 
 // FIXME: see ql::ir::cqasm::convert_expression() for how expressions are built from cQASM, and ql::ir::cqasm::read for register definitions
@@ -177,7 +202,7 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
         } else if (operandContext.is_implicit_breg_reference(ref)) {
             bregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
             operand_type = "B";
-        } else if (operandContext.is_breg_reference(ref)) {
+        } else if (operandContext.is_explicit_breg_reference(ref)) {
             // NB: map explicit bregs (register 'b') after those implicit to qubits.
             bregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value + operandContext.num_qubits);
             operand_type = "B";

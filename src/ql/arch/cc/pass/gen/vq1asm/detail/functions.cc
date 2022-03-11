@@ -368,30 +368,6 @@ void Functions::register_functions() {
     #undef X
 }
 
-#if 0
-// FIXME: move to Operands
-Str Functions::get_operand_type(const ir::ExpressionRef &op) {
-    if(op->as_int_literal()) {
-        return "i";
-    } else if(op->as_bit_literal()) {
-        return "b";
-    } else if(op->as_reference()) {
-        if(operandContext.is_creg_reference(op)) {
-            return "C";
-        } else if(operandContext.is_breg_reference(op)) {
-            return "B";
-        } else if(operandContext.is_implicit_breg_reference(op)) {
-            return "B"; // FIXME: WIP
-        } else {
-            QL_ICE("operand '" << ir::describe(op) << "' has unsupported type");
-        }
-    } else if(op->as_function_call()) {
-        QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(op) << "'");
-    } else {
-        QL_INPUT_ERROR("cannot currently handle parameter '" << ir::describe(op) << "'");
-    }
-}
-#endif
 
 void Functions::emit_mnem2args(const FncArgs &a, const Str &arg0, const Str &arg1, const Str &target) {
     cs.emit(
