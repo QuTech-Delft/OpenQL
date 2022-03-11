@@ -4,6 +4,10 @@
 
 #include "alter.h"
 
+// comment two lines below out to enable LOG_DEBUG ir dumping
+#undef QL_IF_LOG_DEBUG
+#define QL_IF_LOG_DEBUG if (0)
+
 namespace ql {
 namespace pass {
 namespace map {
@@ -64,8 +68,11 @@ void Alter::print(const utils::Str &s) const {
  * verbosity is at least debug.
  */
 void Alter::debug_print(const utils::Str &s) const {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("Printing current Alter's state: ");
         print(s);
+    } else {
+        QL_DOUT("Printing current Alter's state (disabled)");
     }
 }
 
@@ -91,8 +98,11 @@ void Alter::print(const utils::Str &s, const utils::List<Alter> &la) {
  * logging verbosity is at least debug.
  */
 void Alter::debug_print(const utils::Str &s, const utils::List<Alter> &la) {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("Print list of Alters: ");
         print(s, la);
+    } else {
+        QL_DOUT("Print list of Alters (disabled)");
     }
 }
 

@@ -460,7 +460,7 @@ void Platform::load(
     const utils::Str &platform_config_fname,
     const utils::Str &compiler_config
 ) {
-    QL_DOUT("compat::platform::load");
+    QL_DOUT("compatibility load of configuration from json");
     platform_config = platform_cfg;
     arch::Factory arch_factory = {};
 
@@ -714,8 +714,7 @@ void Platform::load(
             instruction_map.set(comp_ins).emplace<gate_types::Composite>(comp_ins, gs);
         }
     }
-    QL_DOUT("compat::platform::load [DONE]");
-
+    QL_DOUT("compatibility load of configuration from json [DONE]");
 }
 
 /**

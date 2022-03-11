@@ -553,7 +553,7 @@ Bool Kernel::add_custom_gate_if_available(
 
     // first check if a specialized custom gate is available
     // a specialized custom gate is of the form: "cz q0 q3"
-    QL_DOUT("is specialized custom gate availablefor for instr " << instr);
+    QL_DOUT("is specialized custom gate available for for instr " << instr);
     auto it = platform->instruction_map.find(instr);
     if (it == platform->instruction_map.end()) {
         QL_DOUT("is parameterized custom gate available for gate " << gname);

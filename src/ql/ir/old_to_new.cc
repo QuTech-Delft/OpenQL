@@ -11,6 +11,10 @@
 #include "ql/rmgr/manager.h"
 #include "ql/arch/diamond/annotations.h"
 
+// comment two lines below out to enable LOG_DEBUG ir dumping
+#undef QL_IF_LOG_DEBUG
+#define QL_IF_LOG_DEBUG if (0)
+
 namespace ql {
 namespace ir {
 
@@ -920,9 +924,12 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     ir->platform->set_annotation<compat::PlatformRef>(old);
 
     // Check the result.
-    QL_DOUT("Result of old->new IR platform conversion:");
-    QL_DOUT("(disabled)");
-    // QL_IF_LOG_DEBUG(ir->dump_seq());
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("Result of old->new IR platform conversion:");
+        ir->dump_seq(); 
+    } else {
+        QL_DOUT("Result of old->new IR platform conversion (disabled)");
+    }
     check_consistency(ir);
 
     return ir;
@@ -1690,9 +1697,12 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
     }
 
     // Check the result.
-    QL_DOUT("Result of old->new IR program conversion:");
-    QL_DOUT("(disabled)");
-    // QL_IF_LOG_DEBUG(ir->dump_seq());
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("Result of old->new IR program conversion:");
+        ir->dump_seq();
+    } else {
+        QL_DOUT("Result of old->new IR program conversion (disabled)");
+    }
     check_consistency(ir);
     QL_DOUT("Convert_old_to_new [DONE]");
 

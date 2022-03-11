@@ -5,10 +5,11 @@
 
 #include "ql/resource/instrument.h"
 
+// comment lines below out to enable LOG_DEBUG ir dumping
 /*#undef QL_DOUT
 #define QL_DOUT(x) ::std::cout << x << ::std::endl
 #undef QL_IF_LOG_DEBUG
-#define QL_IF_LOG_DEBUG if (1)*/
+#define QL_IF_LOG_DEBUG if (0)*/
 
 namespace ql {
 namespace resource {
@@ -464,33 +465,36 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
     state.resize(cfg->instrument_names.size());
 
     // Print result if debug is enabled.
-//    QL_IF_LOG_DEBUG {
-//        std::cout << "====================================" << std::endl;
-//        std::cout << "resource instance " << context->instance_name;
-//        std::cout << " of type " << context->type_name << std::endl;
-//        std::cout << "------------------------------------" << std::endl;
-//        std::cout << "incoming JSON:" << std::endl;
-//        std::cout << context->configuration.dump(4) << std::endl;
-//        std::cout << "------------------------------------" << std::endl;
-//        std::cout << "desugared JSON:" << std::endl;
-//        std::cout << config->json.dump(4) << std::endl;
-//        std::cout << "------------------------------------" << std::endl;
-//        std::cout << "names: " << config->instrument_names << std::endl;
-//        std::cout << "preds[1q]: " << config->predicates[0] << std::endl;
-//        std::cout << "preds[2q]: " << config->predicates[1] << std::endl;
-//        std::cout << "preds[nq]: " << config->predicates[2] << std::endl;
-//        std::cout << "function: " << config->function_keys << std::endl;
-//        std::cout << "mutex: " << config->mutually_exclusive << std::endl;
-//        std::cout << "allow overlap: " << config->allow_overlap << std::endl;
-//        std::cout << "1q_instr: " << config->single_qubit_instruments << std::endl;
-//        std::cout << "2q_instr_q0: " << config->two_qubit_instrument[0] << std::endl;
-//        std::cout << "2q_instr_q1: " << config->two_qubit_instrument[1] << std::endl;
-//        std::cout << "2q_instr_edge: " << config->two_qubit_edge_instrument << std::endl;
-//        std::cout << "nq_instr_q0: " << config->multi_qubit_instrument[0] << std::endl;
-//        std::cout << "nq_instr_q1: " << config->multi_qubit_instrument[1] << std::endl;
-//        std::cout << "nq_instr_qn: " << config->multi_qubit_instrument[2] << std::endl;
-//        std::cout << "====================================" << std::endl;
-//    }
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("Print result of initializing instrument resource: ");
+        std::cout << "====================================" << std::endl;
+        std::cout << "resource instance " << context->instance_name;
+        std::cout << " of type " << context->type_name << std::endl;
+        std::cout << "------------------------------------" << std::endl;
+        std::cout << "incoming JSON:" << std::endl;
+        std::cout << context->configuration.dump(4) << std::endl;
+        std::cout << "------------------------------------" << std::endl;
+        std::cout << "desugared JSON:" << std::endl;
+        std::cout << config->json.dump(4) << std::endl;
+        std::cout << "------------------------------------" << std::endl;
+        std::cout << "names: " << config->instrument_names << std::endl;
+        std::cout << "preds[1q]: " << config->predicates[0] << std::endl;
+        std::cout << "preds[2q]: " << config->predicates[1] << std::endl;
+        std::cout << "preds[nq]: " << config->predicates[2] << std::endl;
+        std::cout << "function: " << config->function_keys << std::endl;
+        std::cout << "mutex: " << config->mutually_exclusive << std::endl;
+        std::cout << "allow overlap: " << config->allow_overlap << std::endl;
+        std::cout << "1q_instr: " << config->single_qubit_instruments << std::endl;
+        std::cout << "2q_instr_q0: " << config->two_qubit_instrument[0] << std::endl;
+        std::cout << "2q_instr_q1: " << config->two_qubit_instrument[1] << std::endl;
+        std::cout << "2q_instr_edge: " << config->two_qubit_edge_instrument << std::endl;
+        std::cout << "nq_instr_q0: " << config->multi_qubit_instrument[0] << std::endl;
+        std::cout << "nq_instr_q1: " << config->multi_qubit_instrument[1] << std::endl;
+        std::cout << "nq_instr_qn: " << config->multi_qubit_instrument[2] << std::endl;
+        std::cout << "====================================" << std::endl;
+    } else {
+        QL_DOUT("Print result of initializing instrument resource (disabled)");
+    }
 #undef ERROR
 
 }
@@ -642,9 +646,11 @@ utils::Bool InstrumentResource::on_gate(
 
         // Check the resources based on function index.
         for (auto index : affected) {
-            QL_DOUT("    reservations for instrument " << config->instrument_names[index] << ":");
             QL_IF_LOG_DEBUG {
+                QL_DOUT("    reservations for instrument " << config->instrument_names[index] << ":");
                 state[index].dump_state(std::cout, "      ");
+            } else {
+                QL_DOUT("    reservations for instrument " << config->instrument_names[index] << " (disabled)");
             }
             auto result = state[index].find(range);
             switch (result.type) {

@@ -10,6 +10,10 @@
 #include "ql/ir/describe.h"
 #include "ql/arch/diamond/annotations.h"
 
+// comment two lines below out to enable LOG_DEBUG ir dumping
+#undef QL_IF_LOG_DEBUG
+#define QL_IF_LOG_DEBUG if (0)
+
 namespace ql {
 namespace ir {
 
@@ -812,13 +816,15 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
         );
         QL_DOUT("NewToOldConverter: got old_platform by building it (compat::Platform::build) from new platform data");
     }
-    QL_DOUT("NewToOldConvertor old instruction_map:");
-    QL_DOUT("(disabled)");
-//    QL_IF_LOG_DEBUG {
-//        for (const auto &i : old_platform->instruction_map) {
-//            QL_DOUT("NewToOldConvertor.old_platform.instruction_map[]" << i.first);
-//        }
-//    }
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("NewToOldConvertor old instruction_map:");
+        for (const auto &i : old_platform->instruction_map) {
+            QL_DOUT("NewToOldConvertor.old_platform.instruction_map[]" << i.first);
+        }
+    } else {
+        QL_DOUT("NewToOldConvertor old instruction_map (disabled)");
+    }
+
 
 
     // If the program node is empty, build an empty dummy program.

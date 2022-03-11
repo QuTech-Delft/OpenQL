@@ -7,6 +7,10 @@
 #include "ql/utils/filesystem.h"
 #include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
 
+// comment two lines below out to enable LOG_DEBUG ir dumping
+/*#undef QL_IF_LOG_DEBUG
+#define QL_IF_LOG_DEBUG if (0)*/
+
 namespace ql {
 namespace pass {
 namespace map {
@@ -68,8 +72,11 @@ void Past::print_fc() const{
  * is at least debug.
  */
 void Past::debug_print_fc() const {
-    if (utils::logger::log_level >= utils::logger::LogLevel::LOG_DEBUG) {
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("FreeCycle dump:");
         fc.print("");
+    } else {
+        QL_DOUT("FreeCycle dump (disabled)");
     }
 }
 

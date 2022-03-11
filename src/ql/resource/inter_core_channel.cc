@@ -5,6 +5,10 @@
 
 #include "ql/resource/inter_core_channel.h"
 
+// comment two lines below out to enable LOG_DEBUG ir dumping
+/*#undef QL_IF_LOG_DEBUG
+#define QL_IF_LOG_DEBUG if (0)*/
+
 namespace ql {
 namespace resource {
 namespace inter_core_channel {
@@ -185,26 +189,29 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
     }
 
     // Print result if debug is enabled.
-//    QL_IF_LOG_DEBUG {
-//        std::cout << "====================================" << std::endl;
-//        std::cout << "resource instance " << context->instance_name;
-//        std::cout << " of type " << context->type_name << std::endl;
-//        std::cout << "------------------------------------" << std::endl;
-//        std::cout << "incoming JSON:" << std::endl;
-//        std::cout << context->configuration.dump(4) << std::endl;
-//        std::cout << "------------------------------------" << std::endl;
-//        std::cout << "desugared JSON:" << std::endl;
-//        std::cout << config->json.dump(4) << std::endl;
-//        std::cout << "------------------------------------" << std::endl;
-//        std::cout << "preds[1q]: " << config->predicates[0] << std::endl;
-//        std::cout << "preds[2q]: " << config->predicates[1] << std::endl;
-//        std::cout << "preds[nq]: " << config->predicates[2] << std::endl;
-//        std::cout << "inter_core_required: " << config->inter_core_required << std::endl;
-//        std::cout << "communication_qubit_only: " << config->communication_qubit_only << std::endl;
-//        std::cout << "num_cores: " << config->num_cores << std::endl;
-//        std::cout << "num_channels: " << config->num_channels << std::endl;
-//        std::cout << "====================================" << std::endl;
-//    }
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("Print result of initializing inter-core channel resource: ");
+        std::cout << "====================================" << std::endl;
+        std::cout << "resource instance " << context->instance_name;
+        std::cout << " of type " << context->type_name << std::endl;
+        std::cout << "------------------------------------" << std::endl;
+        std::cout << "incoming JSON:" << std::endl;
+        std::cout << context->configuration.dump(4) << std::endl;
+        std::cout << "------------------------------------" << std::endl;
+        std::cout << "desugared JSON:" << std::endl;
+        std::cout << config->json.dump(4) << std::endl;
+        std::cout << "------------------------------------" << std::endl;
+        std::cout << "preds[1q]: " << config->predicates[0] << std::endl;
+        std::cout << "preds[2q]: " << config->predicates[1] << std::endl;
+        std::cout << "preds[nq]: " << config->predicates[2] << std::endl;
+        std::cout << "inter_core_required: " << config->inter_core_required << std::endl;
+        std::cout << "communication_qubit_only: " << config->communication_qubit_only << std::endl;
+        std::cout << "num_cores: " << config->num_cores << std::endl;
+        std::cout << "num_channels: " << config->num_channels << std::endl;
+        std::cout << "====================================" << std::endl;
+    } else {
+        QL_DOUT("Print result of initializing inter-core channel resource (disabled)");
+    }
 
 #undef ERROR
 }

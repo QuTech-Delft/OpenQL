@@ -12,6 +12,10 @@
 #include "ql/com/sch/scheduler.h"
 #include "ql/pmgr/pass_types/base.h"
 
+// comment two lines below out to enable LOG_DEBUG ir dumping
+/*#undef QL_IF_LOG_DEBUG
+#define QL_IF_LOG_DEBUG if (0)*/
+
 namespace ql {
 namespace pass {
 namespace sch {
@@ -210,9 +214,11 @@ void ListSchedulePass::run_on_block(
     }
 
     // Always dump dot for the schedule if we're debugging.
-    if (QL_IS_LOG_DEBUG) {
-        QL_COUT("dumping dot file...");
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("dumping dot file...");
         com::ddg::dump_dot(block);
+    } else {
+        QL_DOUT("dumping dot file (disabled)");
     }
 
     // Write the schedule as a dot file if requested.

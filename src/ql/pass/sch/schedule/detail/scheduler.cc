@@ -89,6 +89,10 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/filesystem.h"
 
+// comment two lines below out to enable LOG_DEBUG ir dumping
+#undef QL_IF_LOG_DEBUG
+#define QL_IF_LOG_DEBUG if (0)
+
 namespace ql {
 namespace pass {
 namespace sch {
@@ -612,7 +616,8 @@ void Scheduler::init(
 
 // print depgraph for debugging with string parameter identifying where
 void Scheduler::dprint_depgraph(const Str &s) const {
-    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("dependence graph dump: ");
         std::cout << "Depgraph " << s << std::endl;
         for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
             std::cout << "Node " << graph.id(n) << " \"" << name[n] << "\" :" << std::endl;
@@ -628,6 +633,8 @@ void Scheduler::dprint_depgraph(const Str &s) const {
             std::cout << std::endl;
         }
         std::cout << "End Depgraph" << std::endl;
+    } else {
+        QL_DOUT("dependence graph dump (disabled)");
     }
 }
 
@@ -976,12 +983,14 @@ void Scheduler::make_available(
     List<ListDigraph::Node>::iterator first_lower_criticality_inp; // for keeping avlist ordered
     Bool first_lower_criticality_found = false;                          // for keeping avlist ordered
 
-    QL_DOUT(".... making available node " << name[n] << " remaining: " << remaining.dbg(n));
-//    QL_IF_LOG_DEBUG {
-//        for (const auto &avlist_node : avlist) {
-//            QL_DOUT("..... existing avlist member, remaining=" << remaining.at(avlist_node) << ": " << name[avlist_node]);
-//        }
-//    }
+    QL_IF_LOG_DEBUG {
+        QL_DOUT(".... making available node " << name[n] << " remaining: " << remaining.dbg(n));
+        for (const auto &avlist_node : avlist) {
+            QL_DOUT("..... existing avlist member, remaining=" << remaining.at(avlist_node) << ": " << name[avlist_node]);
+        }
+    } else {
+        QL_DOUT(".... making available node " << name[n] << " remaining (disabled)");
+    }
     for (auto inp = avlist.begin(); inp != avlist.end(); inp++) {
         // as soon as: n is found in avlist or a lower critical node is found, break this loop
         if (*inp == n) {
