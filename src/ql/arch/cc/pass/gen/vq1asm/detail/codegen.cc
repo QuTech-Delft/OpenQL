@@ -8,6 +8,7 @@
  */
 
 #include "codegen.h"
+#include "q1helpers.h"
 
 #include "ql/version.h"
 #include "ql/com/options.h"
@@ -16,15 +17,6 @@
 #include <iosfwd>
 
 #define OPT_OLD_FUNC    0  // FIXME: WIP
-
-#if OPT_OLD_FUNC
-// Constants
-#define REG_TMP0 "R63"                          // Q1 register for temporary use
-#define REG_TMP1 "R62"                          // Q1 register for temporary use
-#define NUM_RSRVD_CREGS 2                       // must match number of REG_TMP*
-#define NUM_CREGS (64-NUM_RSRVD_CREGS)
-#define NUM_BREGS 1024                          // bregs require mapping to DSM, which introduces holes, so we probably fail before we reach this limit
-#endif
 
 namespace ql {
 namespace arch {
@@ -41,7 +33,6 @@ static Str to_start(const Str &base) { return base + "_start"; };
 static Str to_end(const Str &base) { return base + "_end"; };
 static Str to_ifbranch(const Str &base, Int branch) { return QL_SS2S(base << "_" << branch); }
 static Str as_label(const Str &label) { return label + ":"; }
-static Str as_target(const Str &label) { return "@" + label; }
 
 // helpers
 // FIXME: use Functions::as_int()?
@@ -1407,12 +1398,15 @@ void Codegen::do_handle_expression(
             emit(
                 "",
                 "move",
-                QL_SS2S(ilit->value << ",R" << dest_reg())
+                QL_SS2S(ilit->value << ",R" << dest_reg())  // FIXME: use Function helpers
                 , "# " + ir::describe(expression)
             );
-#if 0 // FIXME: implement? Now fails in final 'otherwise' below
-        } else if (expression->as_bit_literal()) {
-#endif
+        } else if (auto blit = expression->as_bit_literal()) {
+            if(blit->value) {
+                // do nothing (to jump out of loop). FIXME: other contexts may exist
+            } else {
+                QL_ICE("bit literal 'false' currently not supported in '" << ir::describe(expression) << "'");
+            }
         } else if (expression->as_reference()) {
             if(operandContext.is_creg_reference(expression)) {  // creg, as RHS of a SetInstruction
                 auto reg = creg2reg(*expression->as_reference());
@@ -1423,11 +1417,18 @@ void Codegen::do_handle_expression(
                     , "# " + ir::describe(expression)
                 );
             } else {    // breg as condition, like in "if(b[0])"
+#if 1   // FIXME
                 // convert ir::Expression to utils::Any<ir::Expression>
                 utils::Any<ir::Expression> anyExpression;
                 anyExpression.add(expression);
-
                 UInt mask = emit_bin_cast(anyExpression, 1);
+#else
+                // transfer single breg to REG_TMP0
+                utils::Vec<utils::UInt> bregs;
+                // FIXME, see dispatch
+                UInt mask = fncs.emit_bin_cast(bregs, 1);
+#endif
+
                 emit(
                     "",
                     "and",
@@ -1438,51 +1439,6 @@ void Codegen::do_handle_expression(
                 emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# skip next part if condition is false");
             }
         } else if (auto fn = expression->as_function_call()) {
-#if OPT_OLD_FUNC
-            // function call helpers
-            enum Profile {
-                LR,     // int Literal, Reference
-                RL,
-                RR
-            };
-            auto get_profile = [](Any<ir::Expression> operands) {
-                CHECK_COMPAT(
-                    operands.size() == 2,
-                    "expected 2 operands"
-                );
-                if(operands[0]->as_int_literal() && operands[1]->as_reference()) {
-                    return LR;
-                } else if(operands[0]->as_reference() && operands[1]->as_int_literal()) {
-                    return RL;
-                } else if(operands[0]->as_reference() && operands[1]->as_reference()) {
-                    return RR;
-                } else if(operands[0]->as_int_literal() && operands[1]->as_int_literal()) {
-                    QL_INPUT_ERROR("cannot currently handle functions on two literal parameters"); // FIXME: maybe handle in separate pass
-                } else if(operands[0]->as_function_call()) {
-                    QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[0]) << "'");
-                } else if(operands[1]->as_function_call()) {
-                    QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(operands[1]) << "'");
-                } else {
-                    QL_INPUT_ERROR("cannot currently handle parameter combination '" << ir::describe(operands[0]) << "' , '" << ir::describe(operands[1]) << "'");
-                }
-            };
-            auto emit_mnem2args = [this, expr2q1Arg, fn, expression](const Str &mnem, Int arg0, Int arg1, const Str &target=REG_TMP0) {
-                emit(
-                    "",
-                    mnem,
-                    QL_SS2S(
-                        expr2q1Arg(fn->operands[arg0])
-                        << "," << expr2q1Arg(fn->operands[arg1])
-                        << "," << target
-                    )
-                    , "# " + ir::describe(expression)
-                );
-            };
-#endif
-            // ----------- end of function call helpers -------------
-
-            utils::Str operation;
-
             // handle cast
             if (fn->function_type->name == "int") {
                 CHECK_COMPAT(
@@ -1491,211 +1447,12 @@ void Codegen::do_handle_expression(
                     "'int()' cast target must be a function"
                 );
                 fn = fn->operands[0]->as_function_call();   // step into. FIXME: Shouldn't we recurse to allow e.g. casting a breg??
-
-#if OPT_OLD_FUNC
-            // int arithmetic, 1 operand: "~"
-            } else if (fn->function_type->name == "operator~") {
-                operation = "not";
-                emit(
-                    "",
-                    operation,
-                    QL_SS2S(
-                        expr2q1Arg(fn->operands[0])
-                        << ",R" << dest_reg()
-                    )
-                    , "# " + ir::describe(expression)
-                );
-
-            // bit arithmetic, 1 operand: "!"
-            } else if (fn->function_type->name == "operator!") {
-                // NB: note similarity with handling breg reference above
-                operation = "not";
-                UInt mask = emit_bin_cast(fn->operands, 1);
-
-                emit(
-                    "",
-                    "and",
-                    QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1),
-                    "# mask for '" + ir::describe(expression) + "'"
-                );    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-                emit("", "nop");
-                emit("", "jge", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# skip next part if inverted condition is false");  // NB: we use "jge" instead of "jlt" to invert
             }
 
-            // int arithmetic, 2 operands: "+", "-", "&", "|", "^"
-            if (operation.empty()) {    // check group only if nothing found yet
-                if (fn->function_type->name == "operator+") {
-                    operation = "add";
-                } else if (fn->function_type->name == "operator-") {
-                    operation = "sub";
-                } else if (fn->function_type->name == "operator&") {
-                    operation = "and";
-                } else if (fn->function_type->name == "operator|") {
-                    operation = "or";
-                } else if (fn->function_type->name == "operator^") {
-                    operation = "xor";
-                }
-                if (!operation.empty()) {
-                    switch (get_profile(fn->operands)) {
-                        case RL:    // fall through
-                        case RR:    emit_mnem2args(operation, 0, 1, QL_SS2S("R"<<dest_reg())); break;
-                        case LR:
-                            emit_mnem2args(operation, 1, 0, QL_SS2S("R"<<dest_reg()));   // reverse operands to match Q1 instruction set
-                            if (operation == "sub") {
-                                // Negate result in 2's complement to correct for changed op order
-                                Str reg = QL_SS2S("R"<<dest_reg());
-                                emit("", "not", reg);                       // invert
-                                emit("", "nop");
-                                emit("", "add", "1,"+reg+","+reg);          // add 1
-                            }
-                            break;
-                    }
-                }
-            }
-
-            // bit arithmetic, 2 operands: "&&", "||", "^^"
-            if(operation.empty()) {
-                if (fn->function_type->name == "operator&&") {
-                    operation = "FIXME";
-                } else if (fn->function_type->name == "operator||") {
-                    operation = "FIXME";
-                } else if (fn->function_type->name == "operator^^") {
-                    operation = "FIXME";
-                }
-                if (!operation.empty()) {
-                    UInt mask = emit_bin_cast(fn->operands, 2);
-                    // FIXME: handle operation properly
-                    emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-                    emit("", "nop");
-                    emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# " + ir::describe(expression));
-                    QL_ICE("CC backend does not yet support " << fn->function_type->name);
-                }
-            }
-
-            // relop, group 1: "==", "!="
-            if(operation.empty()) {
-                if (fn->function_type->name == "operator==") {
-                    operation = "jge";  // note that we need to invert the operation, because we jump on the condition being false
-                } else if (fn->function_type->name == "operator!=") {
-                    operation = "jlt";
-                }
-                if(!operation.empty()) {
-                    switch (get_profile(fn->operands)) {
-                        case RL:    // fall through
-                        case RR:    emit_mnem2args("xor", 0, 1); break;
-                        case LR:    emit_mnem2args("xor", 1, 0); break;   // reverse operands to match Q1 instruction set
-                        // FIXME: optimization possible if Literal==0
-                    }
-                    emit("", "nop");    // register dependency
-                    emit("", operation, Str(REG_TMP0)+",1,@"+label_if_false, "# skip next part if condition is false");
-                }
-            }
-
-            // relop, group 2: ">=", "<"
-            if(operation.empty()) {
-                if (fn->function_type->name == "operator>=") {
-                    operation = ">=";   // NB: actual contents unused here
-                    switch (get_profile(fn->operands)) {
-                        case RL:    // fall through
-                        case RR:    emit_mnem2args("jge", 0, 1, as_target(label_if_false)); break;
-                        case LR:    emit_mnem2args("jlt", 1, 0, as_target(label_if_false)); break;   // reverse operands (and instruction) to match Q1 instruction set
-                    }
-                } else if (fn->function_type->name == "operator<") {
-                    operation = "<";
-                    switch (get_profile(fn->operands)) {
-                        case RL:    // fall through
-                        case RR:    emit_mnem2args("jlt", 0, 1, as_target(label_if_false)); break;
-                        case LR:    emit_mnem2args("jge", 1, 0, as_target(label_if_false)); break;   // reverse operands (and instruction) to match Q1 instruction set
-                    }
-                }
-            }
-
-            // relop, group 3: ">", "<="
-            if(operation.empty()) {
-                if (fn->function_type->name == "operator>") {
-                    operation = ">";   // NB: actual contents unused here
-                    switch (get_profile(fn->operands)) {
-                        case RL:
-                            check_int_literal(*fn->operands[1]->as_int_literal(), 0, 1);
-                            emit(
-                                "",
-                                "jge",
-                                QL_SS2S(
-                                    expr2q1Arg(fn->operands[0]) << ","
-                                    << fn->operands[1]->as_int_literal()->value + 1    // increment literal since we lack 'jgt'
-                                    << ",@"+label_if_false
-                                ),
-                                "# skip next part if condition is false"
-                            );
-                            break;
-                        case RR:
-                            emit(
-                                "",
-                                "add",
-                                QL_SS2S(
-                                    "1,"
-                                    << expr2q1Arg(fn->operands[1])
-                                    << "," << REG_TMP0
-                                )
-                            );                      // increment arg1
-                            emit("", "nop");        // register dependency
-                            emit(
-                                "",
-                                "jge",
-                                QL_SS2S(
-                                    expr2q1Arg(fn->operands[0])
-                                    << "," << REG_TMP0
-                                    << ",@"+label_if_false
-                                ),
-                                "# skip next part if condition is false"
-                            );
-                            break;
-                        case LR:
-                            check_int_literal(*fn->operands[0]->as_int_literal(), 1, 0);
-                            emit(
-                                "",
-                                "jlt",                              // reverse instruction
-                                QL_SS2S(
-                                    expr2q1Arg(fn->operands[1])     // reverse operands
-                                    << fn->operands[0]->as_int_literal()->value - 1    // DECrement literal since we lack 'jle'
-                                    << ",@"+label_if_false
-                                ),
-                                "# skip next part if condition is false"
-                            );
-                            break;
-                    }
-                } else if (fn->function_type->name == "operator<=") {
-                    operation = "<=";
-                    // FIXME: same as above, replace jge -> jlt and vv
-                    QL_ICE("FIXME: '<=' not yet implemented in CC backend");
-                }
-                if(!operation.empty()) {
-                    // NB: all work already done above
-                }
-            }
-#if OPT_CC_USER_FUNCTIONS
-            if(operation.empty()) {
-                if (fn->function_type->name == "rnd_seed") {
-                    operation = "rnd_seed";
-                    QL_WOUT("FIXME: rnd_seed() not implemented");
-                } else  if (fn->function_type->name == "rnd") {
-                    operation = "rnd";
-                    QL_WOUT("FIXME: rnd() not implemented");
-                }
-            }
-#endif
-            if(operation.empty()) {
-                // NB: if we arrive here, there's an inconsistency between the functions registered in
-                // 'ql::ir::cqasm:read()' (see comment at beginning of this function) and our decoding here.
-                QL_ICE(
-                    "function '" << fn->function_type->name << "' not supported by CC backend, but it should be"
-                );
-            }
-#else   // FIXME: use functions
-            } else {
-                fncs.dispatch(fn->function_type->name, lhs, expression);
-            }
-#endif
+            // handle the function
+            fncs.dispatch(lhs, fn, ir::describe(expression));
+        } else {
+            QL_ICE("unsupported expression type for '" << ir::describe(expression));
         }
     }
     catch (utils::Exception &e) {

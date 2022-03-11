@@ -5,15 +5,7 @@
 #include "types.h"
 #include "operands.h"
 #include "datapath.h"
-//#include "codegen.h"
-
-// Constants
-// FIXME: move out of .h
-#define REG_TMP0 "R63"                          // Q1 register for temporary use
-#define REG_TMP1 "R62"                          // Q1 register for temporary use
-#define NUM_RSRVD_CREGS 2                       // must match number of REG_TMP*
-#define NUM_CREGS (64-NUM_RSRVD_CREGS)          // starting from R0
-#define NUM_BREGS 1024                          // bregs require mapping to DSM, which introduces holes, so we probably fail before we reach this limit
+#include "q1helpers.h"
 
 namespace ql {
 namespace arch {
@@ -23,34 +15,35 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
-class Codegen;  // FIXME, to prevent include loop
+class Codegen;  // FIXME, to prevent recursive include loop
 
 class Functions {
 public:
     explicit Functions(OperandContext &operandContext, Datapath &dp, Codegen &cg);
     ~Functions() = default;
 
-//    void register_();
     /*
-     * Notes:
-     * - expression->as_function_call() must be non-zero
+     * FIXME: add comment
      */
-    void dispatch(const Str &name, const ir::ExpressionRef &lhs, const ir::ExpressionRef &expression);
+    void dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *fn, const Str &describe);
+
+    /*
+     * Cast bregs to bits in REG_TMP0, i.e. transfer them from DSM to processor.
+     * Returns a mask of bits set in REG_TMP0. FIXME: provides no knowledge about relation with DSM bits
+     *
+     * FIXME: We don't have a matching quantum instruction for this cast (formerly, we had 'if_1_break' etc), but do
+     *  take up 'quantum' time, so the timeline is silently shifted
+     */
+    UInt emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt);
 
 
 private:  // types
-    class  OpArgs {
-    public:
-        OpArgs(const ir::ExpressionRef &e) : expression(e) {};
-
-//    private:
-//        ir::Any<ir::Expression> operands;   // FIXME: use ops
+    struct  OpArgs {
         Operands ops;
         UInt dest_reg;
         Str label_if_false;
         Str operation;  // from function table
-        const ir::ExpressionRef &expression; // full expression to generate comments
-
+        Str describe; // to generate comments
     };
 
     typedef void (Functions::*tOpFunc)(const OpArgs &a);
@@ -134,32 +127,11 @@ private:    // methods
      */
     Str get_operand_type(const ir::ExpressionRef &op);
 
-    /*
-     * Cast bregs to bits in REG_TMP0, i.e. transfer them from DSM to processor.
-     * Returns a mask of bits set in REG_TMP0. FIXME: provides no knowledge about relation with DSM bits
-     *
-     * FIXME: We don't have a matching quantum instruction for this cast (formerly, we had 'if_1_break' etc), but do
-     *  take up 'quantum' time, so the timeline is silently shifted
-     */
-    UInt emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt);
-
     // FIXME: rename to emit_operation_..
-//    void emit_mnem2args(const OpArgs &a, Int arg0, Int arg1, const Str &target=REG_TMP0);
     void emit_mnem2args(const OpArgs &a, const Str &arg0, const Str &arg1, const Str &target=REG_TMP0);
 
     Int creg2reg(const ir::Reference &ref);
-//    Int dest_reg(const ir::ExpressionRef &lhs);
-
-    // Convert integer/creg function_call/operands expression to Q1 instruction argument.
-//    Str expr2q1Arg(const ir::ExpressionRef &op);
-
-
-    // helpers to ease nice assembly formatting
-//    void emit(const Str &labelOrComment, const Str &instr="");
-//    void emit(const Str &label, const Str &instr, const Str &ops, const Str &comment="");
-//    void emit(Int slot, const Str &instr, const Str &ops, const Str &comment="");
 };
-
 
 } // namespace detail
 } // namespace vq1asm

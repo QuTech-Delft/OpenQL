@@ -63,11 +63,12 @@ private:
 };
 
 
-// FIXME: shameless copy of new_to_old.cc::Operands, edited to suit
 
 /**
  * Handles gathering the operands for a gate.
  * FIXME: also for an expression
+ *
+ * NB: shameless copy of new_to_old.cc::Operands, edited to suit
  */
 class Operands {
 public:
