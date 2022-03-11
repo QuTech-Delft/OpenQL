@@ -553,10 +553,10 @@ Bool Kernel::add_custom_gate_if_available(
 
     // first check if a specialized custom gate is available
     // a specialized custom gate is of the form: "cz q0 q3"
-    QL_DOUT("is specialized custom gate available for for instr " << instr);
+    // QL_DOUT("is specialized custom gate available for for instr " << instr);
     auto it = platform->instruction_map.find(instr);
     if (it == platform->instruction_map.end()) {
-        QL_DOUT("is parameterized custom gate available for gate " << gname);
+        // QL_DOUT("is parameterized custom gate available for gate " << gname);
         it = platform->instruction_map.find(gname);
     }
     if (it == platform->instruction_map.end()) {
@@ -604,7 +604,7 @@ void Kernel::get_decomposed_ins(
         QL_DOUT("  sub ins: " << sub_ins);
         auto it = platform->instruction_map.find(sub_ins);
         if (it != platform->instruction_map.end()) {
-            QL_DOUT("  sub ins found in instruction_map: " << sub_ins);
+            // QL_DOUT("  sub ins found in instruction_map: " << sub_ins);
             sub_instructions.push_back(sub_ins);
         } else {
             QL_ICE("gate decomposition not available for '" << sub_ins << "' in the target platform");

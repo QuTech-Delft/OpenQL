@@ -541,7 +541,7 @@ void Platform::load(
     // Do architecture-specific preprocessing before anything else.
     architecture->preprocess_platform(platform_config);
 
-    QL_DOUT("compat::platform::load has determined architecture etc.,  now go for hardware_settings");
+    QL_DOUT("compatibility platform load has determined architecture etc.,  now go for hardware_settings");
 
     // load hardware_settings
     if (platform_config.count("hardware_settings") <= 0) {
@@ -575,7 +575,7 @@ void Platform::load(
         }
     }
 
-    QL_DOUT("compat::platform::load go for instruction_settings, resources and topology");
+    QL_DOUT("compatibility platform load go for instruction_settings, resources and topology");
 
     // load instruction_settings
     if (platform_config.count("instructions") <= 0) {
@@ -600,7 +600,7 @@ void Platform::load(
         topology.emplace(qubit_count, platform_config["topology"]);
     }
 
-    QL_DOUT("compat::platform::load instructions");
+    QL_DOUT("compatibility platform load instructions");
 
     // load instructions
     const utils::Json &instructions = platform_config["instructions"];
@@ -632,7 +632,7 @@ void Platform::load(
         QL_DOUT("instruction '" << instr_name << "' loaded.");
     }
 
-    QL_DOUT("compat::platform::load gate_decomposition");
+    QL_DOUT("compatibility platform load gate_decomposition");
 
     // load optional section gate_decomposition
     // Examples:

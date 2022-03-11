@@ -601,7 +601,7 @@ void Scheduler::init(
     }
 
     // when in doubt about dependence graph, enable next line to get a dump of it in debugging output
-//    dprint_depgraph("init");
+    dprint_depgraph("init");
 
     // useless as well because by construction, there cannot be cycles
     // but when afterwards dependencies are added, cycles may be created,
@@ -929,7 +929,6 @@ void Scheduler::get_depending_nodes(
 // Compute of two nodes whether the first one is less critical than the second, for the given scheduling direction;
 // criticality of a node is initially given by its remaining[node] value which is precomputed;
 // when inconclusive, a larger size of the list of depending nodes in the right direction implies more critical;
-// criticality takes into account the criticality of depending nodes (in the right direction!);
 // this function is used to order the avlist in an order from highest deep-criticality to lowest deep-criticality;
 // it is the core of the heuristics of the critical path list scheduler.
 Bool Scheduler::criticality_lessthan(
