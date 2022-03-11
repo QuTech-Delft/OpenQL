@@ -86,7 +86,7 @@ Bool OperandContext::is_breg_reference(const ir::ExpressionRef &ref) const {
 
 Bool OperandContext::is_implicit_breg_reference(const ir::ExpressionRef &ref) const {
     auto lhs = ref->as_reference();
-    return lhs && lhs->target == q_ob; // FIXME: also test type
+    return lhs && lhs->target == q_ob;
 }
 
 

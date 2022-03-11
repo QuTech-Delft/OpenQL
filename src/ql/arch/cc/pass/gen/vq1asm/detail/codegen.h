@@ -15,6 +15,7 @@
 #include "types.h"
 #include "options.h"
 #include "bundle_info.h"
+#include "codesection.h"
 #include "functions.h"
 #include "datapath.h"
 #include "settings.h"
@@ -105,11 +106,7 @@ public: //  functions
 
 protected:
     // FIXME: split off emitting into separate class
-    friend class Functions;                                     // needs access to emit*()
-    // helpers to ease nice assembly formatting
-    void emit(const Str &labelOrComment, const Str &instr="");
-    void emit(const Str &label, const Str &instr, const Str &ops, const Str &comment="");
-    void emit(Int slot, const Str &instr, const Str &ops, const Str &comment="");
+//    friend class Functions;                                     // needs access to emit*()
 
 
 private:    // types
@@ -148,6 +145,7 @@ private:    // vars
     OptionsRef options;                                         // remind options
     OperandContext operandContext;                              // context for Operand processing
     Settings settings;                                          // handling of JSON settings
+    CodeSection cs;                                             // handling of CC code
     Datapath dp;                                                // handling of CC datapath
     Functions fncs;                                             // handling of functions within expressions
     Vcd vcd;                                                    // handling of VCD file output
@@ -155,7 +153,6 @@ private:    // vars
     Bool mapPreloaded = false;                                  // flag whether we have a preloaded map
 
     // codegen state, global(program) scope
-    StrStrm codeSection;                                        // the code generated
     Json codewordTable;                                         // codewords versus signals per instrument group
     Json measTable;                                             // measurement table, to assist downstream software in retrieving measurements
     Json shotsTable;                                            // nr of shots per instrument, companion to measTable
@@ -170,7 +167,7 @@ private:    // vars
 
 private:    // funcs
     // code generation helpers
-    void showCodeSoFar();
+    void showCodeSoFar() { cs.showCodeSoFar(); };
     void emitProgramStart(const Str &progName);
     void emitProgramFinish();
     void emitMeasRsltRealTime(const MeasResultRealTimeMap &measResultRealTimeMap, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
@@ -189,7 +186,6 @@ private:    // funcs
 #endif
 
     // expression helpers
-    Int creg2reg(const ir::Reference &ref);
     void do_handle_expression(const ir::ExpressionRef &expression, const ir::ExpressionRef &lhs, const Str &label_if_false="", const Str &descr="");
 }; // class
 

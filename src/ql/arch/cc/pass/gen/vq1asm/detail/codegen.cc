@@ -8,7 +8,7 @@
  */
 
 #include "codegen.h"
-#include "q1helpers.h"
+#include "codesection.h"
 
 #include "ql/version.h"
 #include "ql/com/options.h"
@@ -275,7 +275,7 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
     : ir(ir)
     , options(options)
     , operandContext(ir)
-    , fncs(operandContext, dp, *this)
+    , fncs(operandContext, dp, cs)
 {
     // NB: a new Backend is instantiated per call to compile, and
     // as a result also a Codegen, so we don't need to cleanup
@@ -305,7 +305,7 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
 \************************************************************************/
 
 Str Codegen::get_program() {
-    return codeSection.str() + dp.getDatapathSection();
+    return cs.getCodeSection() + dp.getDatapathSection();
 }
 
 Str Codegen::get_map() {
@@ -823,7 +823,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 void Codegen::if_elif(const ir::ExpressionRef &condition, const Str &label, Int branch) {
     // finish previous branch
     if (branch>0) {
-        emit("", "jmp", as_target(to_end(label)));
+        cs.emit("", "jmp", as_target(to_end(label)));
     }
 
     comment(
@@ -834,7 +834,7 @@ void Codegen::if_elif(const ir::ExpressionRef &condition, const Str &label, Int 
 
     if(branch > 0) {    // label not used if branch==0
         Str my_label = to_ifbranch(label, branch);
-        emit(as_label(my_label));
+        cs.emit(as_label(my_label));
     }
 
     Str jmp_label = to_ifbranch(label, branch+1);
@@ -849,7 +849,7 @@ void Codegen::if_otherwise(const Str &label, Int branch) {
     );
 
     Str my_label = to_ifbranch(label, branch);
-    emit(as_label(my_label));
+    cs.emit(as_label(my_label));
 }
 
 
@@ -859,7 +859,7 @@ void Codegen::if_end(const Str &label) {
         ", label = '" + label + "'"
     );
 
-     emit(as_label(to_end(label)));
+     cs.emit(as_label(to_end(label)));
 }
 
 
@@ -872,10 +872,10 @@ void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm,
         + ", label = '" + label + "'"
     );
 
-    auto reg = QL_SS2S("R" << creg2reg(lhs));
-    emit("", "move", QL_SS2S(frm.value << "," << reg));
+    auto reg = QL_SS2S("R" << fncs.creg2reg(lhs));
+    cs.emit("", "move", QL_SS2S(frm.value << "," << reg));
     // FIXME: if loop has no contents at all, register dependency is violated
-    emit(as_label(to_start(label)));    // label for looping or 'continue'
+    cs.emit(as_label(to_start(label)));    // label for looping or 'continue'
 }
 
 
@@ -889,23 +889,23 @@ void Codegen::foreach_end(const ir::Reference &lhs, const ir::IntLiteral &frm, c
         + ", label = '" + label + "'"
     );
 
-    auto reg = QL_SS2S("R" << creg2reg(lhs));
+    auto reg = QL_SS2S("R" << fncs.creg2reg(lhs));
 
     if(to.value >= frm.value) {     // count up
-        emit("", "add", QL_SS2S(reg << ",1," << reg));
-        emit("", "nop");
-        emit("", "jlt", QL_SS2S(reg << "," << to.value+1 << "," << as_target(to_start(label))), "# loop");
+        cs.emit("", "add", QL_SS2S(reg << ",1," << reg));
+        cs.emit("", "nop");
+        cs.emit("", "jlt", QL_SS2S(reg << "," << to.value+1 << "," << as_target(to_start(label))), "# loop");
     } else {
         if(to.value == 0) {
-            emit("", "loop", QL_SS2S(reg << "," << as_target(to_start(label))), "# loop");
+            cs.emit("", "loop", QL_SS2S(reg << "," << as_target(to_start(label))), "# loop");
         } else {
-            emit("", "sub", QL_SS2S(reg << ",1," << reg));
-            emit("", "nop");
-            emit("", "jge", QL_SS2S(reg << "," << to.value << "," << as_target(to_start(label))), "# loop");
+            cs.emit("", "sub", QL_SS2S(reg << ",1," << reg));
+            cs.emit("", "nop");
+            cs.emit("", "jge", QL_SS2S(reg << "," << to.value << "," << as_target(to_start(label))), "# loop");
         }
     }
 
-    emit(as_label(to_end(label)));    // label for loop end or 'break'
+    cs.emit(as_label(to_end(label)));    // label for loop end or 'break'
 }
 
 
@@ -914,7 +914,7 @@ void Codegen::repeat(const Str &label) {
         "# REPEAT: "
         ", label = '" + label + "'"
     );
-    emit(as_label(to_start(label)));    // label for looping or 'continue'
+    cs.emit(as_label(to_start(label)));    // label for looping or 'continue'
 }
 
 
@@ -925,8 +925,8 @@ void Codegen::until(const ir::ExpressionRef &condition, const Str &label) {
         ", label = '" + label + "'"
     );
     handle_expression(condition, to_end(label), "until.condition");
-    emit("", "jmp", as_target(to_start(label)), "# loop");
-    emit(as_label(to_end(label)));    // label for loop end or 'break'
+    cs.emit("", "jmp", as_target(to_start(label)), "# loop");
+    cs.emit(as_label(to_end(label)));    // label for loop end or 'break'
 }
 
 // NB: also used for 'while' loops
@@ -940,10 +940,10 @@ void Codegen::for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::
     // for loop: initialize
     if (!initialize.empty()) {
         handle_set_instruction(*initialize, "for.initialize");
-        emit("", "nop");    // register dependency between initialize and handle_expression (if those use the same register, which is likely)
+        cs.emit("", "nop");    // register dependency between initialize and handle_expression (if those use the same register, which is likely)
     }
 
-    emit(as_label(to_start(label)));    // label for looping or 'continue'
+    cs.emit(as_label(to_start(label)));    // label for looping or 'continue'
     handle_expression(condition, to_end(label), "for/while.condition");
 }
 
@@ -956,24 +956,24 @@ void Codegen::for_end(utils::Maybe<ir::SetInstruction> &update, const Str &label
     if (!update.empty()) {
         handle_set_instruction(*update, "for.update");
     }
-    emit("", "jmp", as_target(to_start(label)), "# loop");
-    emit(as_label(to_end(label)));    // label for loop end or 'break'
+    cs.emit("", "jmp", as_target(to_start(label)), "# loop");
+    cs.emit(as_label(to_end(label)));    // label for loop end or 'break'
 }
 
 
 void Codegen::do_break(const Str &label) {
-    emit("", "jmp", as_target(to_end(label)), "# break");
+    cs.emit("", "jmp", as_target(to_end(label)), "# break");
 }
 
 
 void Codegen::do_continue(const Str &label) {
-    emit("", "jmp", as_target(to_start(label)), "# continue");
+    cs.emit("", "jmp", as_target(to_start(label)), "# continue");
 }
 
 
 void Codegen::comment(const Str &c) {
     if (options->verbose) {
-        emit(Str(2*depth, ' ') + c);  // indent by depth
+        cs.emit(Str(2*depth, ' ') + c);  // indent by depth
     }
 }
 
@@ -1002,87 +1002,44 @@ void Codegen::handle_expression(const ir::ExpressionRef &expression, const Str &
 \************************************************************************/
 
 /************************************************************************\
-| Some helpers to ease nice assembly formatting
-\************************************************************************/
-
-// FIXME: assure space between fields!
-// FIXME: make comment output depend on verboseCode
-
-// FIXME: merge with next function
-void Codegen::emit(const Str &labelOrComment, const Str &instr) {
-    if (labelOrComment.empty()) {                           // no label
-        codeSection << "                " << instr << std::endl;
-    } else if (labelOrComment.length() < 16) {              // label fits before instr
-        codeSection << std::setw(16) << labelOrComment << std::setw(16) << instr << std::endl;
-    } else if (instr.empty()) {                             // no instr
-        codeSection << labelOrComment << std::endl;
-    } else {
-        codeSection << labelOrComment << std::endl << "                " << instr << std::endl;
-    }
-}
-
-
-// @param   labelOrSel      label must include trailing ":"
-// @param   comment         must include leading "#"
-void Codegen::emit(const Str &labelOrSel, const Str &instr, const Str &ops, const Str &comment) {
-    codeSection << std::setw(16) << labelOrSel << std::setw(16) << instr << std::setw(36) << ops << comment << std::endl;
-}
-
-void Codegen::emit(Int slot, const Str &instr, const Str &ops, const Str &comment) {
-    emit(QL_SS2S("[" << slot << "]"), instr, ops, comment);
-}
-
-/************************************************************************\
 | helpers
 \************************************************************************/
 
-void Codegen::showCodeSoFar() {
-    // provide context to help finding reason. FIXME: limit # lines
-    QL_EOUT("Code so far:\n" << codeSection.str());
-}
-
-
 void Codegen::emitProgramStart(const Str &progName) {
-    // emit program header
-    codeSection << std::left;    // assumed by emit()
-    codeSection << "# Program: '" << progName << "'" << std::endl;   // NB: put on top so it shows up in internal CC logging
-    codeSection << "# CC_BACKEND_VERSION " << CC_BACKEND_VERSION_STRING << std::endl;
-    codeSection << "# OPENQL_VERSION " << OPENQL_VERSION_STRING << std::endl;
-    codeSection << "# Note:    generated by OpenQL Central Controller backend" << std::endl;
-    codeSection << "#" << std::endl;
+    cs.emitProgramHeader(progName);
 
-    emit(".CODE");   // start .CODE section
+    cs.emit(".CODE");   // start .CODE section
 
     // NB: new seq_bar semantics (firmware from 20191219 onwards)
     comment("# synchronous start and latency compensation");
-    emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
-    emit("",                "seq_out",  "0x00000000,1",     "# allows monitoring actual start time using trace unit");
+    cs.emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
+    cs.emit("",                "seq_out",  "0x00000000,1",     "# allows monitoring actual start time using trace unit");
     if (!options->run_once) {
         comment("# start of main loop that runs indefinitely");
-        emit("__mainLoop:",     "",         "",                 "# ");    // FIXME: __mainLoop should be a forbidden kernel name
+        cs.emit("__mainLoop:",     "",         "",                 "# ");    // FIXME: __mainLoop should be a forbidden kernel name
     }
 
     // initialize state
-    emit("",                "seq_state","0",                "# clear Programmable Logic state");
+    cs.emit("",                "seq_state","0",                "# clear Programmable Logic state");
 }
 
 
 void Codegen::emitProgramFinish() {
     comment("# finish program");
     if (options->run_once) {   // program runs once only
-        emit("", "stop");
+        cs.emit("", "stop");
     } else {   // CC-light emulation: loop indefinitely
         // prevent real time pipeline emptying during jmp below (especially in conjunction with pragma/break
-        emit("", "seq_wait", "1");
+        cs.emit("", "seq_wait", "1");
 
         // loop indefinitely
-        emit("",      // no CCIO selector
+        cs.emit("",      // no CCIO selector
              "jmp",
              "@__mainLoop",
              "# loop indefinitely");
     }
 
-    emit(".END");   // end .CODE section
+    cs.emit(".END");   // end .CODE section
 }
 
 
@@ -1107,7 +1064,7 @@ void Codegen::emitMeasRsltRealTime(
         // emit code for slot input
         UInt sizeTag = Datapath::getSizeTag(measResultRealTimeMap.size());        // compute DSM transfer size tag (for 'seq_in_sm' instruction)
         UInt smAddr = Datapath::getMuxSmAddr(measResultRealTimeMap);
-        emit(
+        cs.emit(
             slot,
             "seq_in_sm",
             QL_SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
@@ -1119,7 +1076,7 @@ void Codegen::emitMeasRsltRealTime(
         // FIXME FIXME FIXME: may invalidate DSM that just arrived dependent on individual SEQBAR counts
         UInt smAddr = 0;
         UInt smTotalSize = 1;    // FIXME: inexact, but me must not invalidate memory that we will not write
-        emit(
+        cs.emit(
             slot,
             "seq_inv_sm",
             QL_SS2S("S" << smAddr << ","  << smTotalSize),
@@ -1151,7 +1108,7 @@ void Codegen::emitOutput(
 
     // emit code for slot output
     if (condGateMap.empty()) {    // all groups unconditional
-        emit(
+        cs.emit(
             slot,
             "seq_out",
             QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << instrMaxDurationInCycles),
@@ -1163,7 +1120,7 @@ void Codegen::emitOutput(
         UInt smAddr = dp.emitPl(pl, condGateMap, instrIdx, slot);
 
         // emit code for conditional gate
-        emit(
+        cs.emit(
             slot,
             "seq_out_sm",
             QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
@@ -1192,7 +1149,7 @@ void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str
     }
 
     if (prePadding > 0) {     // we need to align
-        emit(
+        cs.emit(
             slot,
             "seq_wait",
             QL_SS2S(prePadding),
@@ -1252,19 +1209,9 @@ tCodeword Codegen::assignCodeword(const Str &instrumentName, Int instrIdx, Int g
 }
 #endif
 
-//#if OPT_OLD_FUNC
 /************************************************************************\
 | expression helpers
 \************************************************************************/
-
-Int Codegen::creg2reg(const ir::Reference &ref) {
-    auto reg = operandContext.convert_creg_reference(ref);
-    if(reg >= NUM_CREGS) {
-        QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
-    }
-    return reg;
-};
-//#endif
 
 // FIXME: recursion?
 // FIXME: or pass SetInstruction or Expression depending on use
@@ -1303,19 +1250,7 @@ void Codegen::do_handle_expression(
 
 //#if OPT_OLD_FUNC
     auto dest_reg = [this, lhs]() {
-        return creg2reg(*lhs->as_reference());
-    };
-
-    // Convert integer/creg function_call/operands expression to Q1 instruction argument.
-    auto expr2q1Arg = [this](const ir::ExpressionRef &op) {
-        if(op->as_reference()) {
-            return QL_SS2S("R" << creg2reg(*op->as_reference()));
-        } else if(auto ilit = op->as_int_literal()) {
-            check_int_literal(*ilit);
-            return QL_SS2S(ilit->value);
-        } else {
-            QL_ICE("Expected integer operand");
-        }
+        return fncs.creg2reg(*lhs->as_reference());
     };
 
     // emit code for casting a bit value (i.e. DSM bit) to an integer (i.e. Q1 register)
@@ -1374,10 +1309,10 @@ void Codegen::do_handle_expression(
             nop                             ; register dependency Rb
             jlt         Rb,1,@loop
         */
-        emit("", "seq_cl_sm", QL_SS2S("S" << smAddr), "# transfer DSM bits to Q1: " + descr);
-        emit("", "seq_wait", "3");
-        emit("", "move_sm", REG_TMP0);
-        emit("", "nop");
+        cs.emit("", "seq_cl_sm", QL_SS2S("S" << smAddr), "# transfer DSM bits to Q1: " + descr);
+        cs.emit("", "seq_wait", "3");
+        cs.emit("", "move_sm", REG_TMP0);
+        cs.emit("", "nop");
         return mask;
     };
 //#endif
@@ -1395,11 +1330,11 @@ void Codegen::do_handle_expression(
 
         if (auto ilit = expression->as_int_literal()) {
             check_int_literal(*ilit);
-            emit(
+            cs.emit(
                 "",
                 "move",
-                QL_SS2S(ilit->value << ",R" << dest_reg())  // FIXME: use Function helpers
-                , "# " + ir::describe(expression)
+                as_int(ilit->value) + "," + as_reg(dest_reg()),
+                "# " + ir::describe(expression)
             );
         } else if (auto blit = expression->as_bit_literal()) {
             if(blit->value) {
@@ -1409,12 +1344,12 @@ void Codegen::do_handle_expression(
             }
         } else if (expression->as_reference()) {
             if(operandContext.is_creg_reference(expression)) {  // creg, as RHS of a SetInstruction
-                auto reg = creg2reg(*expression->as_reference());
-                emit(
+                auto reg = fncs.creg2reg(*expression->as_reference());
+                cs.emit(
                     "",
                     "move",
-                    QL_SS2S("R" << reg << ",R" << dest_reg())  // FIXME: use expr2q1Arg?
-                    , "# " + ir::describe(expression)
+                    as_reg(reg) + "," + as_reg(dest_reg()),
+                    "# " + ir::describe(expression)
                 );
             } else {    // breg as condition, like in "if(b[0])"
 #if 1   // FIXME
@@ -1429,14 +1364,19 @@ void Codegen::do_handle_expression(
                 UInt mask = fncs.emit_bin_cast(bregs, 1);
 #endif
 
-                emit(
+                cs.emit(
                     "",
                     "and",
                     QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1),
                     "# mask for '" + ir::describe(expression) + "'"
                 );    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-                emit("", "nop");
-                emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << label_if_false), "# skip next part if condition is false");
+                cs.emit("", "nop");
+                cs.emit(
+                    "",
+                    "jlt",
+                    Str(REG_TMP1) + ",1," + as_target(label_if_false),
+                    "# skip next part if condition is false"
+                );
             }
         } else if (auto fn = expression->as_function_call()) {
             // handle cast

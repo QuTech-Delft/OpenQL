@@ -4,7 +4,6 @@
 
 #include "types.h"
 #include "operands.h"
-#include "datapath.h"
 
 // Constants
 // FIXME: move out of .h
@@ -22,9 +21,10 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
-static inline Str as_target(const Str &label) { return "@" + label; }
+static inline Str as_target(const Str &label) {
+    return "@" + label;
+}
 
-// new
 static inline Str as_reg(UInt creg) {
     if(creg >= NUM_CREGS) {
         QL_INPUT_ERROR("register index " << creg << " exceeds maximum of " << NUM_CREGS-1);
@@ -43,9 +43,36 @@ static inline Str as_int(Int val, Int add=0) {
     return QL_SS2S(val+add);
 }
 
+
+class CodeSection {
+public:
+    CodeSection() = default;
+    ~CodeSection() = default;
+
+    Str getCodeSection() { return codeSection.str(); };     // return the CC source code that was created
+    void showCodeSoFar();
+    void emitProgramHeader(const Str &progName);
+
+    // helpers to ease nice assembly formatting
+    void emit(const Str &labelOrComment, const Str &instr="");
+    void emit(const Str &label, const Str &instr, const Str &ops, const Str &comment="");
+    void emit(Int slot, const Str &instr, const Str &ops, const Str &comment="");
+
+private:    // vars
+    StrStrm codeSection;                                    // the code generated
+};
+
 // FIXME: add as_bit() with checks?
+#if 0
+OperandContext
+creg2reg
+emit
 
+static inline UInt dest_reg(const ir::ExpressionRef &lhs) {
+    return creg2reg(*lhs->as_reference());
+};
 
+#endif
 
 } // namespace detail
 } // namespace vq1asm

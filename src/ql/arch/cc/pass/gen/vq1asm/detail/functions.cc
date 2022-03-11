@@ -15,10 +15,10 @@ using namespace utils;
 
 
 // FIXME: add const to parameters
-Functions::Functions(OperandContext &operandContext, Datapath &dp, Codegen &cg)
+Functions::Functions(OperandContext &operandContext, Datapath &dp, CodeSection &cs)
     : operandContext(operandContext)
     , dp(dp)
-    , cg(cg) {
+    , cs(cs) {
     register_functions();
 }
 
@@ -69,6 +69,16 @@ void Functions::dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *f
     (this->*it->second.func)(opArgs);
 }
 
+#if 1
+Int Functions::creg2reg(const ir::Reference &ref) {
+    auto reg = operandContext.convert_creg_reference(ref);
+    if(reg >= NUM_CREGS) {
+        QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
+    }
+    return reg;
+};
+#endif
+
 
 UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
     if(bregs.size() != expOpCnt) {
@@ -116,16 +126,16 @@ UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
      *      nop                             ; register dependency Rb
      *      jlt         Rb,1,@loop
      */
-    cg.emit("", "seq_cl_sm", QL_SS2S("S" << smAddr), "# transfer DSM bits to Q1: " + descr);
-    cg.emit("", "seq_wait", "3");
-    cg.emit("", "move_sm", REG_TMP0);
-    cg.emit("", "nop");
+    cs.emit("", "seq_cl_sm", QL_SS2S("S" << smAddr), "# transfer DSM bits to Q1: " + descr);
+    cs.emit("", "seq_wait", "3");
+    cs.emit("", "move_sm", REG_TMP0);
+    cs.emit("", "nop");
     return mask;
 }
 
 
 void Functions::op_binv_C(const OpArgs &a) {
-    cg.emit(
+    cs.emit(
         "",
         "not",
         as_reg(a.ops.cregs[0]) + "," + as_reg(a.dest_reg),
@@ -137,14 +147,14 @@ void Functions::op_linv_B(const OpArgs &a) {
     // transfer single breg to REG_TMP0
     UInt mask = emit_bin_cast(a.ops.bregs, 1);
 
-    cg.emit(
+    cs.emit(
         "",
         "and",
         QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1),
         "# mask for '" + a.describe + "'"
     );    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-    cg.emit("", "nop");
-    cg.emit(
+    cs.emit("", "nop");
+    cs.emit(
         "",
         "jge",  // NB: we use "jge" instead of "jlt" to invert
         QL_SS2S(REG_TMP1 << ",1," << as_target(a.label_if_false)),
@@ -169,9 +179,9 @@ void Functions::op_sub_iC(const OpArgs &a) {
 
     // Negate result in 2's complement to correct for changed op order
     Str reg = as_reg(a.dest_reg);
-    cg.emit("", "not", reg);                       // invert
-    cg.emit("", "nop");
-    cg.emit("", "add", "1,"+reg+","+reg);          // add 1
+    cs.emit("", "not", reg);                       // invert
+    cs.emit("", "nop");
+    cs.emit("", "add", "1,"+reg+","+reg);          // add 1
 }
 
 
@@ -180,17 +190,17 @@ void Functions::op_grp_bit_2op_BB(const OpArgs &a) {
     UInt mask = emit_bin_cast(a.ops.bregs, 2);
 
 #if 0    // FIXME: handle operation properly, this is just copy/paste from op_linv
-    cg.emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-    cg.emit("", "nop");
-    cg.emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << a.label_if_false), "# " + a.describe);
+    cs.emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+    cs.emit("", "nop");
+    cs.emit("", "jlt", QL_SS2S(REG_TMP1 << ",1,@" << a.label_if_false), "# " + a.describe);
 #endif
     QL_ICE("FIXME: CC backend does not yet support &&,||,^^, expression is '" << a.describe);
 }
 
 
 void Functions::op_grp_rel1_tail(const OpArgs &a) {
-    cg.emit("", "nop");    // register dependency
-    cg.emit(
+    cs.emit("", "nop");    // register dependency
+    cs.emit(
         "",
         a.operation,
         Str(REG_TMP0)+",1,"+as_target(a.label_if_false),
@@ -199,7 +209,7 @@ void Functions::op_grp_rel1_tail(const OpArgs &a) {
 }
 
 void Functions::op_grp_rel1_CC(const OpArgs &a) {
-    cg.emit(
+    cs.emit(
         "",
         "xor",
         as_reg(a.ops.cregs[0]) + "," + as_reg(a.ops.cregs[1]),
@@ -209,7 +219,7 @@ void Functions::op_grp_rel1_CC(const OpArgs &a) {
 }
 
 void Functions::op_grp_rel1_Ci_iC(const OpArgs &a) {
-    cg.emit(
+    cs.emit(
         "",
         "xor",
         as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integer),
@@ -232,17 +242,17 @@ void Functions::op_grp_rel2_Ci_iC(const OpArgs &a) {
 
 void Functions::op_gt_CC(const OpArgs &a) {
     // increment arg1 since we lack 'jgt'
-    cg.emit(
+    cs.emit(
         "",
         "add",
         "1," + as_reg(a.ops.cregs[1]) + "," + REG_TMP0
     );
 
     // register dependency
-    cg.emit("", "nop");
+    cs.emit("", "nop");
 
     // conditional jump
-    cg.emit(
+    cs.emit(
         "",
         a.operation,
         as_reg(a.ops.cregs[0]) + "," + REG_TMP0 + as_target(a.label_if_false),
@@ -252,7 +262,7 @@ void Functions::op_gt_CC(const OpArgs &a) {
 
 void Functions::op_gt_Ci(const OpArgs &a) {
     // conditional jump, increment literal since we lack 'jgt'
-    cg.emit(
+    cs.emit(
         "",
         a.operation,
         as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integer, 1) + as_target(a.label_if_false),
@@ -262,7 +272,7 @@ void Functions::op_gt_Ci(const OpArgs &a) {
 
 void Functions::op_gt_iC(const OpArgs &a) {
     // conditional jump, deccrement literal since we lack 'jle'
-    cg.emit(
+    cs.emit(
         "",
         a.operation,
         as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integer, -1) + as_target(a.label_if_false),
@@ -396,7 +406,7 @@ Str Functions::get_operand_type(const ir::ExpressionRef &op) {
 }
 
 void Functions::emit_mnem2args(const OpArgs &a, const Str &arg0, const Str &arg1, const Str &target) {
-    cg.emit(
+    cs.emit(
         "",
         a.operation, // mnemonic
         QL_SS2S(
@@ -407,32 +417,6 @@ void Functions::emit_mnem2args(const OpArgs &a, const Str &arg0, const Str &arg1
         , "# " + a.describe
     );
 }
-
-Int Functions::creg2reg(const ir::Reference &ref) {
-    auto reg = operandContext.convert_creg_reference(ref);
-    if(reg >= NUM_CREGS) {
-        QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
-    }
-    return reg;
-};
-
-#if 0
-Int Functions::dest_reg(const ir::ExpressionRef &lhs) {
-    return creg2reg(*lhs->as_reference());
-};
-
-// FIXME: resolve operands based on profile
-Str Functions::expr2q1Arg(const ir::ExpressionRef &op) {
-    if(op->as_reference()) {
-        return QL_SS2S("R" << creg2reg(*op->as_reference()));
-    } else if(auto ilit = op->as_int_literal()) {
-        check_int_literal(*ilit);
-        return QL_SS2S(ilit->value);
-    } else {
-        QL_ICE("Expected integer operand");
-    }
-};
-#endif
 
 } // namespace detail
 } // namespace vq1asm

@@ -5,7 +5,7 @@
 #include "types.h"
 #include "operands.h"
 #include "datapath.h"
-#include "q1helpers.h"
+#include "codesection.h"
 
 namespace ql {
 namespace arch {
@@ -15,17 +15,20 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
-class Codegen;  // FIXME, to prevent recursive include loop
+class Codegen;  // to prevent recursive include loop
+
 
 class Functions {
 public:
-    explicit Functions(OperandContext &operandContext, Datapath &dp, Codegen &cg);
+    explicit Functions(OperandContext &operandContext, Datapath &dp, CodeSection &cs);
     ~Functions() = default;
 
     /*
      * FIXME: add comment
      */
     void dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *fn, const Str &describe);
+
+    Int creg2reg(const ir::Reference &ref);
 
     /*
      * Cast bregs to bits in REG_TMP0, i.e. transfer them from DSM to processor.
@@ -53,12 +56,11 @@ private:  // types
         Str operation;
     };
 
-
 private:    // vars
     // Object instances needed
     OperandContext &operandContext;                             // context for Operand processing
     Datapath &dp;                                               // handling of CC datapath
-    Codegen &cg;                                                // code generation, used for helpers
+    CodeSection &cs;                                            // code section helpers
 
     // map name to function, see register_functions()
     std::map<Str, FuncInfo> func_map;
@@ -129,8 +131,6 @@ private:    // methods
 
     // FIXME: rename to emit_operation_..
     void emit_mnem2args(const OpArgs &a, const Str &arg0, const Str &arg1, const Str &target=REG_TMP0);
-
-    Int creg2reg(const ir::Reference &ref);
 };
 
 } // namespace detail
