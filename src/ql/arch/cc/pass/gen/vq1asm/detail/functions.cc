@@ -14,8 +14,7 @@ namespace detail {
 using namespace utils;
 
 
-// FIXME: add const to parameters
-Functions::Functions(OperandContext &operandContext, Datapath &dp, CodeSection &cs)
+Functions::Functions(const OperandContext &operandContext, const Datapath &dp, CodeSection &cs)
     : operandContext(operandContext)
     , dp(dp)
     , cs(cs) {
@@ -24,23 +23,19 @@ Functions::Functions(OperandContext &operandContext, Datapath &dp, CodeSection &
 
 void Functions::dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *fn, const Str &describe) {
     // collect arguments for operator functions
-    OpArgs opArgs;
-    opArgs.describe = describe;
+    FncArgs args;
+    args.describe = describe;
 
     // split operands into different types, and determine profile
-    Str profile;
     for(auto &op : fn->operands) {
-        opArgs.ops.append(operandContext, op);
-
-        // FIXME: maintain  profile in ops.append
-        profile += get_operand_type(op);
+        args.ops.append(operandContext, op);
     }
 
     // set dest_reg
     if(lhs.empty()) {
-        opArgs.dest_reg = 0;    // FIXME
+        args.dest_reg = 0;    // FIXME
     } else {
-        opArgs.dest_reg = creg2reg(*lhs->as_reference());
+        args.dest_reg = cs.dest_reg(lhs);
     }
 
     // FIXME:
@@ -48,7 +43,7 @@ void Functions::dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *f
 
 
     // create key from name and operand profile, using the same encoding as register_functions()
-    Str key = fn->function_type->name + "_" + profile;
+    Str key = fn->function_type->name + "_" + args.ops.profile;
 
     // lookup key
     auto it = func_map.find(key);
@@ -57,27 +52,17 @@ void Functions::dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *f
         // (see comment at beginning of Codegen::do_handle_expression) and those available in func_map.
         QL_ICE(
             "function '" << fn->function_type->name
-            << "' with profile '" << profile
+            << "' with profile '" << args.ops.profile
             << "' not supported by CC backend, but it should be"
         );
     }
 
     // finish arguments
-    opArgs.operation = it->second.operation;
+    args.operation = it->second.operation;
 
     // call the function
-    (this->*it->second.func)(opArgs);
+    (this->*it->second.func)(args);
 }
-
-#if 1
-Int Functions::creg2reg(const ir::Reference &ref) {
-    auto reg = operandContext.convert_creg_reference(ref);
-    if(reg >= NUM_CREGS) {
-        QL_INPUT_ERROR("register index " << reg << " exceeds maximum");
-    }
-    return reg;
-};
-#endif
 
 
 UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
@@ -134,7 +119,7 @@ UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
 }
 
 
-void Functions::op_binv_C(const OpArgs &a) {
+void Functions::op_binv_C(const FncArgs &a) {
     cs.emit(
         "",
         "not",
@@ -143,7 +128,7 @@ void Functions::op_binv_C(const OpArgs &a) {
     );
 }
 
-void Functions::op_linv_B(const OpArgs &a) {
+void Functions::op_linv_B(const FncArgs &a) {
     // transfer single breg to REG_TMP0
     UInt mask = emit_bin_cast(a.ops.bregs, 1);
 
@@ -163,17 +148,17 @@ void Functions::op_linv_B(const OpArgs &a) {
 }
 
 
-void Functions::op_grp_int_2op_CC(const OpArgs &a) {
+void Functions::op_grp_int_2op_CC(const FncArgs &a) {
     emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_reg(a.ops.cregs[1]), as_reg(a.dest_reg));
 }
 
-void Functions::op_grp_int_2op_Ci_iC(const OpArgs &a) {
+void Functions::op_grp_int_2op_Ci_iC(const FncArgs &a) {
     // NB: for profile "iC" we 'reverse' operands to match Q1 instruction set; this is for free because the operands
     // are split based on their type
     emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
 }
 
-void Functions::op_sub_iC(const OpArgs &a) {
+void Functions::op_sub_iC(const FncArgs &a) {
     // NB: 'reverse' operands to match Q1 instruction set
     emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
 
@@ -185,7 +170,7 @@ void Functions::op_sub_iC(const OpArgs &a) {
 }
 
 
-void Functions::op_grp_bit_2op_BB(const OpArgs &a) {
+void Functions::op_grp_bit_2op_BB(const FncArgs &a) {
     // transfer 2 bregs to REG_TMP0
     UInt mask = emit_bin_cast(a.ops.bregs, 2);
 
@@ -198,7 +183,7 @@ void Functions::op_grp_bit_2op_BB(const OpArgs &a) {
 }
 
 
-void Functions::op_grp_rel1_tail(const OpArgs &a) {
+void Functions::op_grp_rel1_tail(const FncArgs &a) {
     cs.emit("", "nop");    // register dependency
     cs.emit(
         "",
@@ -208,7 +193,7 @@ void Functions::op_grp_rel1_tail(const OpArgs &a) {
     );
 }
 
-void Functions::op_grp_rel1_CC(const OpArgs &a) {
+void Functions::op_grp_rel1_CC(const FncArgs &a) {
     cs.emit(
         "",
         "xor",
@@ -218,7 +203,7 @@ void Functions::op_grp_rel1_CC(const OpArgs &a) {
     op_grp_rel1_tail(a);
 }
 
-void Functions::op_grp_rel1_Ci_iC(const OpArgs &a) {
+void Functions::op_grp_rel1_Ci_iC(const FncArgs &a) {
     cs.emit(
         "",
         "xor",
@@ -229,18 +214,18 @@ void Functions::op_grp_rel1_Ci_iC(const OpArgs &a) {
 }
 
 
-void Functions::op_grp_rel2_CC(const OpArgs &a) {
+void Functions::op_grp_rel2_CC(const FncArgs &a) {
     emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_reg(a.ops.cregs[1]), as_target(a.label_if_false));
 }
 
-void Functions::op_grp_rel2_Ci_iC(const OpArgs &a) {
+void Functions::op_grp_rel2_Ci_iC(const FncArgs &a) {
     // NB: for profile "iC" we 'reverse' operands to match Q1 instruction set; this is for free because the operands
     // are split based on their type
     emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_target(a.label_if_false));
 }
 
 
-void Functions::op_gt_CC(const OpArgs &a) {
+void Functions::op_gt_CC(const FncArgs &a) {
     // increment arg1 since we lack 'jgt'
     cs.emit(
         "",
@@ -260,7 +245,7 @@ void Functions::op_gt_CC(const OpArgs &a) {
     );
 }
 
-void Functions::op_gt_Ci(const OpArgs &a) {
+void Functions::op_gt_Ci(const FncArgs &a) {
     // conditional jump, increment literal since we lack 'jgt'
     cs.emit(
         "",
@@ -270,7 +255,7 @@ void Functions::op_gt_Ci(const OpArgs &a) {
     );
 }
 
-void Functions::op_gt_iC(const OpArgs &a) {
+void Functions::op_gt_iC(const FncArgs &a) {
     // conditional jump, deccrement literal since we lack 'jle'
     cs.emit(
         "",
@@ -282,15 +267,15 @@ void Functions::op_gt_iC(const OpArgs &a) {
 
 
 #if OPT_CC_USER_FUNCTIONS
-void Functions::rnd_seed_C(const OpArgs &a) {
+void Functions::rnd_seed_C(const FncArgs &a) {
     // FIXME
 }
 
-void Functions::rnd_seed_i(const OpArgs &a) {
+void Functions::rnd_seed_i(const FncArgs &a) {
     // FIXME
 }
 
-void Functions::rnd(const OpArgs &a) {
+void Functions::rnd(const FncArgs &a) {
     // FIXME
 }
 #endif
@@ -383,6 +368,8 @@ void Functions::register_functions() {
     #undef X
 }
 
+#if 0
+// FIXME: move to Operands
 Str Functions::get_operand_type(const ir::ExpressionRef &op) {
     if(op->as_int_literal()) {
         return "i";
@@ -404,17 +391,14 @@ Str Functions::get_operand_type(const ir::ExpressionRef &op) {
         QL_INPUT_ERROR("cannot currently handle parameter '" << ir::describe(op) << "'");
     }
 }
+#endif
 
-void Functions::emit_mnem2args(const OpArgs &a, const Str &arg0, const Str &arg1, const Str &target) {
+void Functions::emit_mnem2args(const FncArgs &a, const Str &arg0, const Str &arg1, const Str &target) {
     cs.emit(
         "",
         a.operation, // mnemonic
-        QL_SS2S(
-            arg0
-            << "," << arg1
-            << "," << target
-        )
-        , "# " + a.describe
+        arg0 +  "," + arg1 + "," + target,
+        "# " + a.describe
     );
 }
 

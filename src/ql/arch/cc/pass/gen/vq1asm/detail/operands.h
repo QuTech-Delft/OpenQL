@@ -27,10 +27,24 @@ namespace detail {
 class OperandContext {  // NB: based on class NewToOldConverter
 public:
     explicit OperandContext(const ir::Ref &ir);
+
+    Bool is_qubit_reference(const ir::Reference *ref) const;
+    Bool is_implicit_breg_reference(const ir::Reference *ref) const;
+    Bool is_breg_reference(const ir::Reference *ref) const;
+    Bool is_creg_reference(const ir::Reference *ref) const;
+
     Bool is_creg_reference(const ir::ExpressionRef &ref) const;
     Bool is_breg_reference(const ir::ExpressionRef &ref) const;
     Bool is_implicit_breg_reference(const ir::ExpressionRef &ref) const;
+
+    /**
+     * Converts a creg reference to a register index.
+     */
     Int convert_creg_reference(const ir::Reference &ref) const;
+
+    /**
+     * Converts a bit reference to its breg index.
+     */
     Int convert_breg_reference(const ir::ExpressionRef &ref) const;
 
 private:
@@ -107,6 +121,19 @@ public:
      * Integer operand value.
      */
     utils::Int integer = 0;
+
+    /**
+     * The profile for the operands provided. Encoding:
+     * - 'b': bit literal
+     * - 'i': int literal
+     * - 'B': breg reference
+     * - 'C': creg reference
+     * - '?': anything else
+     *
+     * Inspired by func_gen::Function::generate_impl_footer and cqasm::types::from_spec, but notice that we add 'C' and
+     * have sightly different purpose and interpretation
+     */
+    Str profile;
 
     /**
      * Appends an operand.

@@ -43,15 +43,21 @@ static inline Str as_int(Int val, Int add=0) {
     return QL_SS2S(val+add);
 }
 
+// FIXME: add as_bit() with checks?
+
 
 class CodeSection {
 public:
-    CodeSection() = default;
+    CodeSection(OperandContext &operandContext);
     ~CodeSection() = default;
 
-    Str getCodeSection() { return codeSection.str(); };     // return the CC source code that was created
+    Str getCodeSection() { return codeSection.str(); };         // return the CC source code that was created
     void showCodeSoFar();
     void emitProgramHeader(const Str &progName);
+
+    // FIXME: move to class OperandContext? But, has knowledge on # registers, should then be configurable
+    Int creg2reg(const ir::Reference &ref);
+    UInt dest_reg(const ir::ExpressionRef &lhs);
 
     // helpers to ease nice assembly formatting
     void emit(const Str &labelOrComment, const Str &instr="");
@@ -59,20 +65,12 @@ public:
     void emit(Int slot, const Str &instr, const Str &ops, const Str &comment="");
 
 private:    // vars
-    StrStrm codeSection;                                    // the code generated
+    StrStrm codeSection;                                        // the code generated
+
+    // Object instances needed
+    OperandContext &operandContext;                             // context for Operand processing
 };
 
-// FIXME: add as_bit() with checks?
-#if 0
-OperandContext
-creg2reg
-emit
-
-static inline UInt dest_reg(const ir::ExpressionRef &lhs) {
-    return creg2reg(*lhs->as_reference());
-};
-
-#endif
 
 } // namespace detail
 } // namespace vq1asm

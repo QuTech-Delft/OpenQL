@@ -20,15 +20,13 @@ class Codegen;  // to prevent recursive include loop
 
 class Functions {
 public:
-    explicit Functions(OperandContext &operandContext, Datapath &dp, CodeSection &cs);
+    explicit Functions(const OperandContext &operandContext, const Datapath &dp, CodeSection &cs);
     ~Functions() = default;
 
     /*
      * FIXME: add comment
      */
     void dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *fn, const Str &describe);
-
-    Int creg2reg(const ir::Reference &ref);
 
     /*
      * Cast bregs to bits in REG_TMP0, i.e. transfer them from DSM to processor.
@@ -41,7 +39,8 @@ public:
 
 
 private:  // types
-    struct  OpArgs {
+    // arguments for a tOpFunc
+    struct  FncArgs {
         Operands ops;
         UInt dest_reg;
         Str label_if_false;
@@ -49,7 +48,8 @@ private:  // types
         Str describe; // to generate comments
     };
 
-    typedef void (Functions::*tOpFunc)(const OpArgs &a);
+    // function pointer for dispatch()
+    typedef void (Functions::*tOpFunc)(const FncArgs &a);
 
     struct FuncInfo {
         tOpFunc func;
@@ -57,10 +57,10 @@ private:  // types
     };
 
 private:    // vars
-    // Object instances needed
-    OperandContext &operandContext;                             // context for Operand processing
-    Datapath &dp;                                               // handling of CC datapath
-    CodeSection &cs;                                            // code section helpers
+    // references to bject instances needed
+    const OperandContext &operandContext;                       // context for Operand processing
+    const Datapath &dp;                                         // handling of CC datapath
+    CodeSection &cs;                                            // handling of code section
 
     // map name to function, see register_functions()
     std::map<Str, FuncInfo> func_map;
@@ -76,40 +76,40 @@ private:    // methods
      */
 
     // bitwise inversion
-    void op_binv_C(const OpArgs &a);
+    void op_binv_C(const FncArgs &a);
 
     // logical inversion
-    void op_linv_B(const OpArgs &a);
+    void op_linv_B(const FncArgs &a);
 
     // int arithmetic, 2 operands: "+", "-", "&", "|", "^"
-    void op_grp_int_2op_CC(const OpArgs &a);
-    void op_grp_int_2op_Ci_iC(const OpArgs &a);
-    void op_sub_iC(const OpArgs &a);    // special case
+    void op_grp_int_2op_CC(const FncArgs &a);
+    void op_grp_int_2op_Ci_iC(const FncArgs &a);
+    void op_sub_iC(const FncArgs &a);    // special case
 
     // bit arithmetic, 2 operands: "&&", "||", "^^"
-    void op_grp_bit_2op_BB(const OpArgs &a);
+    void op_grp_bit_2op_BB(const FncArgs &a);
 
     // relop, group 1: "==", "!="
-    void op_grp_rel1_tail(const OpArgs &a); // common tail for functions below
-    void op_grp_rel1_CC(const OpArgs &a);
-    void op_grp_rel1_Ci_iC(const OpArgs &a);
+    void op_grp_rel1_tail(const FncArgs &a); // common tail for functions below
+    void op_grp_rel1_CC(const FncArgs &a);
+    void op_grp_rel1_Ci_iC(const FncArgs &a);
 
     // relop, group 2: ">=", "<"
-    void op_grp_rel2_CC(const OpArgs &a);
-    void op_grp_rel2_Ci_iC(const OpArgs &a);
+    void op_grp_rel2_CC(const FncArgs &a);
+    void op_grp_rel2_Ci_iC(const FncArgs &a);
 
     // relop, group 3: ">", "<="
-    void op_gt_CC(const OpArgs &a);
-    void op_gt_Ci(const OpArgs &a);
-    void op_gt_iC(const OpArgs &a);
+    void op_gt_CC(const FncArgs &a);
+    void op_gt_Ci(const FncArgs &a);
+    void op_gt_iC(const FncArgs &a);
 
     /*
      * other functions for code generation in expressions
      */
 #if OPT_CC_USER_FUNCTIONS
-    void rnd_seed_C(const OpArgs &a);
-    void rnd_seed_i(const OpArgs &a);
-    void rnd(const OpArgs &a);
+    void rnd_seed_C(const FncArgs &a);
+    void rnd_seed_i(const FncArgs &a);
+    void rnd(const FncArgs &a);
 #endif
 
     /*
@@ -127,10 +127,10 @@ private:    // methods
      * Inspired by func_gen::Function::generate_impl_footer and cqasm::types::from_spec, but notice that we add 'C' and
      * have sightly different purpose and interpretation
      */
-    Str get_operand_type(const ir::ExpressionRef &op);
+//    Str get_operand_type(const ir::ExpressionRef &op);
 
     // FIXME: rename to emit_operation_..
-    void emit_mnem2args(const OpArgs &a, const Str &arg0, const Str &arg1, const Str &target=REG_TMP0);
+    void emit_mnem2args(const FncArgs &a, const Str &arg0, const Str &arg1, const Str &target=REG_TMP0);
 };
 
 } // namespace detail

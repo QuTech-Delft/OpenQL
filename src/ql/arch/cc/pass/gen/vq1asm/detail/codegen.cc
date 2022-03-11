@@ -16,8 +16,6 @@
 
 #include <iosfwd>
 
-#define OPT_OLD_FUNC    0  // FIXME: WIP
-
 namespace ql {
 namespace arch {
 namespace cc {
@@ -275,6 +273,7 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
     : ir(ir)
     , options(options)
     , operandContext(ir)
+    , cs(operandContext)
     , fncs(operandContext, dp, cs)
 {
     // NB: a new Backend is instantiated per call to compile, and
@@ -872,7 +871,7 @@ void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm,
         + ", label = '" + label + "'"
     );
 
-    auto reg = QL_SS2S("R" << fncs.creg2reg(lhs));
+    auto reg = QL_SS2S("R" << cs.creg2reg(lhs));
     cs.emit("", "move", QL_SS2S(frm.value << "," << reg));
     // FIXME: if loop has no contents at all, register dependency is violated
     cs.emit(as_label(to_start(label)));    // label for looping or 'continue'
@@ -889,7 +888,7 @@ void Codegen::foreach_end(const ir::Reference &lhs, const ir::IntLiteral &frm, c
         + ", label = '" + label + "'"
     );
 
-    auto reg = QL_SS2S("R" << fncs.creg2reg(lhs));
+    auto reg = QL_SS2S("R" << cs.creg2reg(lhs));
 
     if(to.value >= frm.value) {     // count up
         cs.emit("", "add", QL_SS2S(reg << ",1," << reg));
@@ -1246,12 +1245,8 @@ void Codegen::do_handle_expression(
     const Str &label_if_false,
     const Str &descr
 ) {
+#if 0
     // function global helpers
-
-//#if OPT_OLD_FUNC
-    auto dest_reg = [this, lhs]() {
-        return fncs.creg2reg(*lhs->as_reference());
-    };
 
     // emit code for casting a bit value (i.e. DSM bit) to an integer (i.e. Q1 register)
     auto emit_bin_cast = [this](Any<ir::Expression> operands, Int expOpCnt) {
@@ -1315,8 +1310,8 @@ void Codegen::do_handle_expression(
         cs.emit("", "nop");
         return mask;
     };
-//#endif
     // ----------- end of global helpers -------------
+#endif
 
 
     try {
@@ -1333,7 +1328,7 @@ void Codegen::do_handle_expression(
             cs.emit(
                 "",
                 "move",
-                as_int(ilit->value) + "," + as_reg(dest_reg()),
+                as_int(ilit->value) + "," + as_reg(cs.dest_reg(lhs)),
                 "# " + ir::describe(expression)
             );
         } else if (auto blit = expression->as_bit_literal()) {
@@ -1344,15 +1339,15 @@ void Codegen::do_handle_expression(
             }
         } else if (expression->as_reference()) {
             if(operandContext.is_creg_reference(expression)) {  // creg, as RHS of a SetInstruction
-                auto reg = fncs.creg2reg(*expression->as_reference());
+                auto reg = cs.creg2reg(*expression->as_reference());
                 cs.emit(
                     "",
                     "move",
-                    as_reg(reg) + "," + as_reg(dest_reg()),
+                    as_reg(reg) + "," + as_reg(cs.dest_reg(lhs)),
                     "# " + ir::describe(expression)
                 );
             } else {    // breg as condition, like in "if(b[0])"
-#if 1   // FIXME
+#if 0   // FIXME
                 // convert ir::Expression to utils::Any<ir::Expression>
                 utils::Any<ir::Expression> anyExpression;
                 anyExpression.add(expression);
@@ -1361,6 +1356,7 @@ void Codegen::do_handle_expression(
                 // transfer single breg to REG_TMP0
                 utils::Vec<utils::UInt> bregs;
                 // FIXME, see dispatch
+                xx
                 UInt mask = fncs.emit_bin_cast(bregs, 1);
 #endif
 

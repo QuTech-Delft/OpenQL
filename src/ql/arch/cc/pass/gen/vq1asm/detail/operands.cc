@@ -73,27 +73,54 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
 #endif
 }
 
+// FIXME: cleanup function naming for ir::Reference vs. ir::ExpressionRef
+// FIXME: functions extracted from append() check data_type, others don't
+// FIXME: functions extracted from append() compare target against platform, others use *_ob
+Bool OperandContext::is_qubit_reference(const ir::Reference *ref) const {
+    return
+        ref->target == ir->platform->qubits
+        && ref->data_type == ir->platform->qubits->data_type;
+}
+
+Bool OperandContext::is_implicit_breg_reference(const ir::Reference *ref) const {
+    return
+        ref->target == ir->platform->qubits
+        && ref->data_type == ir->platform->default_bit_type;
+}
+
+Bool OperandContext::is_breg_reference(const ir::Reference *ref) const {
+    return
+        ref->target == breg_ob
+        && ref->data_type == breg_ob->data_type;
+}
+
+Bool OperandContext::is_creg_reference(const ir::Reference *ref) const {
+    return
+        ref->target == creg_ob &&
+        ref->data_type == creg_ob->data_type;
+}
+
+
+
 // FIXME: also perform checks from convert_creg_reference?
 Bool OperandContext::is_creg_reference(const ir::ExpressionRef &ref) const {
-    auto lhs = ref->as_reference();
-    return lhs && lhs->target == creg_ob;
+    auto r = ref->as_reference();
+    return r && r->target == creg_ob;
 }
 
 Bool OperandContext::is_breg_reference(const ir::ExpressionRef &ref) const {
-    auto lhs = ref->as_reference();
-    return lhs && lhs->target == breg_ob; // FIXME: The object used by the new IR to refer to bregs from num_qubits onwards
+    auto r = ref->as_reference();
+    return r && r->target == breg_ob; // FIXME: The object used by the new IR to refer to bregs from num_qubits onwards
 }
 
+// FIXME: manage implicit vs explicit better
 Bool OperandContext::is_implicit_breg_reference(const ir::ExpressionRef &ref) const {
-    auto lhs = ref->as_reference();
-    return lhs && lhs->target == q_ob;
+    auto r = ref->as_reference();
+    return r && r->target == q_ob;
 }
 
 
 
-/**
- * Converts a creg reference to a register index.
- */
 Int OperandContext::convert_creg_reference(const ir::Reference &ref) const {
 //    auto lhs = ref->as_reference();   FIXME
     CHECK_COMPAT(
@@ -108,9 +135,6 @@ Int OperandContext::convert_creg_reference(const ir::Reference &ref) const {
 }
 
 
-/**
- * Converts a bit reference to its breg index.
- */
 Int OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
     Operands ops;
     ops.append(*this, ref); // FIXME: use same mechanism here and in convert_creg_reference
@@ -122,13 +146,12 @@ Int OperandContext::convert_breg_reference(const ir::ExpressionRef &ref) const {
 }
 
 
-/**
- * Appends an operand.
- */
 // FIXME: see ql::ir::cqasm::convert_expression() for how expressions are built from cQASM, and ql::ir::cqasm::read for register definitions
 // FIXME: see ql::ir::convert_old_to_new(const compat::PlatformRef &old) on how cregs/bregs are created. This is also used by the NEW cQASM reader
 // FIXME: maybe allow multiple real and int operands at some point
 void Operands::append(const OperandContext &operandContext, const ir::ExpressionRef &expr) {
+    Str operand_type = "?"; // default unless overwritten
+
     if (auto real_lit = expr->as_real_literal()) {
         CHECK_COMPAT(!has_angle, "encountered gate with multiple angle (real) operands");
         has_angle = true;
@@ -137,7 +160,10 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
         CHECK_COMPAT(!has_integer, "encountered gate with multiple integer operands");
         has_integer = true;
         integer = int_lit->value;
-    // FIXME: add as_bit_literal
+        operand_type = "i";
+    } else if (expr->as_bit_literal()) {
+        // FIXME: do something
+        operand_type = "b";
     } else if (auto ref = expr->as_reference()) {
 
         if (ref->indices.size() != 1 || !ref->indices[0]->as_int_literal()) {
@@ -146,32 +172,18 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
                 << ref->target->name
                 << " (size=" << ref->indices.size() << ")"
             );
-        } else if (
-            ref->target == operandContext.ir->platform->qubits &&
-            ref->data_type == operandContext.ir->platform->qubits->data_type
-        ) {
+        } else if (operandContext.is_qubit_reference(ref)) {
             qubits.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
-        } else if (
-            ref->target == operandContext.ir->platform->qubits &&
-            ref->data_type == operandContext.ir->platform->default_bit_type
-        ) {
+        } else if (operandContext.is_implicit_breg_reference(ref)) {
             bregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
-        } else if (
-            ref->target == operandContext.breg_ob &&
-            ref->data_type == operandContext.breg_ob->data_type
-        ) {
-            // NB: map explicit bregs after those implicit to qubits.
-            // FIXME: is that wanted? Also see definition of breg_ob
-            //  from: old_to_new::convert_gate:
-            //  The first num_qubits
-            //  bits are mapped to the implicit bits associated with the qubits; only
-            //  beyond that is the b register used.
+            operand_type = "B";
+        } else if (operandContext.is_breg_reference(ref)) {
+            // NB: map explicit bregs (register 'b') after those implicit to qubits.
             bregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value + operandContext.num_qubits);
-        } else if (
-            ref->target == operandContext.creg_ob &&
-            ref->data_type == operandContext.creg_ob->data_type
-        ) {
+            operand_type = "B";
+        } else if (operandContext.is_creg_reference(ref)) {
             cregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
+            operand_type = "C";
 #if 0   // FIXME: handle variable reference here
         } else if {
             ref->data_type == operandContext.ir->platform->
@@ -185,10 +197,13 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
             );
         }
     } else if (expr->as_function_call()) {
-        QL_ICE("encountered unsupported function call in gate operand list");
+        QL_ICE("encountered unsupported function call in operand list: " << describe(expr));
     } else {
-        QL_ICE("cannot convert operand expression to old IR: " << describe(expr));
+        QL_ICE("unsupported expression: " << describe(expr));
     }
+
+    // update profile
+    profile += operand_type;
 }
 
 } // namespace detail
