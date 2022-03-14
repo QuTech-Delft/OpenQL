@@ -469,9 +469,9 @@
 
 		// additions from 'CC-software-implementation.docx'
 		// flux pulses, see:
-        // - https://github.com/QE-Lab/OpenQL/issues/176
-        // - https://github.com/QE-Lab/OpenQL/issues/224
-        // - https://github.com/QE-Lab/OpenQL/pull/238
+        // - https://github.com/QuTech-Delft/OpenQL/issues/176
+        // - https://github.com/QuTech-Delft/OpenQL/issues/224
+        // - https://github.com/QuTech-Delft/OpenQL/pull/238
 
 		"park_cz" : { // park signal with same length as cz gate
 			"duration" : 80,

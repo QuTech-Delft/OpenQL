@@ -41,5 +41,5 @@ test:
     - pytest tests
 
 about:
-  home: https://github.com/QE-Lab/OpenQL
+  home: https://github.com/QuTech-Delft/OpenQL
   license: Apache v2.0
