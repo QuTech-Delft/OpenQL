@@ -5,6 +5,10 @@
 
 #include "ql/resource/inter_core_channel.h"
 
+// comment two lines below out to enable LOG_DEBUG ir dumping
+/*#undef QL_IF_LOG_DEBUG
+#define QL_IF_LOG_DEBUG if (0)*/
+
 namespace ql {
 namespace resource {
 namespace inter_core_channel {
@@ -186,6 +190,7 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
 
     // Print result if debug is enabled.
     QL_IF_LOG_DEBUG {
+        QL_DOUT("Print result of initializing inter-core channel resource: ");
         std::cout << "====================================" << std::endl;
         std::cout << "resource instance " << context->instance_name;
         std::cout << " of type " << context->type_name << std::endl;
@@ -204,6 +209,8 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
         std::cout << "num_cores: " << config->num_cores << std::endl;
         std::cout << "num_channels: " << config->num_channels << std::endl;
         std::cout << "====================================" << std::endl;
+    } else {
+        QL_DOUT("Print result of initializing inter-core channel resource (disabled)");
     }
 
 #undef ERROR

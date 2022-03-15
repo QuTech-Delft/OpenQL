@@ -128,6 +128,8 @@ utils::Bool Future::get_gates(utils::List<ir::compat::GateRef> &qlg) const {
  * taken out of the avlist, and that its successors can be made available.
  */
 void Future::completed_gate(const ir::compat::GateRef &gate) {
+    QL_DOUT("Mapped input gate:  " << gate->qasm() );
+
     if (approx_gates_remaining) {
         approx_gates_remaining--;
     }

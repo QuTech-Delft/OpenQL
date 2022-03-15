@@ -9,6 +9,10 @@
 #include "ql/pass/ana/statistics/annotations.h"
 #include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
 
+// comment two lines below out to enable LOG_DEBUG ir dumping
+#undef QL_IF_LOG_DEBUG
+#define QL_IF_LOG_DEBUG if (0)
+
 namespace ql {
 namespace pass {
 namespace map {
@@ -101,18 +105,22 @@ void Mapper::gen_shortest_paths(
     // src->n is one hop, budget from n is one less so distance(n,tgt) <= budget-1 (i.e. distance < budget)
     // when budget==d, this defaults to distance(n,tgt) <= d-1
     auto neighbors = platform->topology->get_neighbors(src);
-    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
-        QL_DOUT("gen_shortest_paths: ... neighbors: ");
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("gen_shortest_path, neighbor relations after normalizing, before iterating");
         for (auto dn : neighbors) {
             QL_DOUT("..." << dn << " ");
         }
+    } else {
+        QL_DOUT("gen_shortest_path, neighbor relations after normalizing, before iterating (disabled)");
     }
     neighbors.remove_if([this,budget,tgt](const UInt& n) { return platform->topology->get_distance(n, tgt) >= budget; });
-    if (logger::log_level >= logger::LogLevel::LOG_DEBUG) {
+    QL_IF_LOG_DEBUG {
         QL_DOUT("gen_shortest_paths: ... after reducing to steps within budget, nbl: ");
         for (auto dn : neighbors) {
             QL_DOUT("..." << dn << " ");
         }
+    } else {
+        QL_DOUT("gen_shortest_paths: ... after reducing to steps within budget, nbl (disabled) ");
     }
 
     // Update the neighbor list according to the path strategy.
@@ -147,10 +155,12 @@ void Mapper::gen_shortest_paths(
     }
 
     QL_IF_LOG_DEBUG {
-        QL_DOUT("gen_shortest_paths: ... after normalizing, before iterating, nbl: ");
+        QL_DOUT("gen_shortest_path, neighbor relations after normalizing, before iterating");
         for (auto dn : neighbors) {
             QL_DOUT("..." << dn << " ");
         }
+    } else {
+        QL_DOUT("gen_shortest_path, neighbor relations after normalizing, before iterating (disabled)");
     }
 
     // For all resulting neighbors, find all continuations of a shortest path by
@@ -475,18 +485,21 @@ Bool Mapper::map_mappable_gates(
             // av_non_quantum_gates) must be done first.
             QL_DOUT("map_mappable_gates, there is a set of non-quantum gates");
             for (const auto &gate : av_non_quantum_gates) {
+                QL_DOUT(". non-quantum gate: " << gate->qasm());
 
                 // here add code to map qubit use of any non-quantum instruction????
                 // dummy gates are nonq gates internal to OpenQL such as SOURCE/SINK; don't output them
                 if (gate->type() != ir::compat::GateType::DUMMY) {
                     // past only can contain quantum gates, so non-quantum gates must by-pass Past
+                    QL_DOUT(".. non-quantum gate (not a dummy) to be flushed to outlist: " << gate->qasm());
                     past.bypass(gate);    // this flushes past.lg first to outlg
                 }
+                QL_DOUT(".. non-quantum gate to be set to completed: " << gate->qasm());
                 future.completed_gate(gate); // so on avlist= nonNN2q -> NN2q -> 1q -> nonq: the nonq is done first
-                QL_DOUT("map_mappable_gates, done with " << gate->qasm());
+                QL_DOUT(". non-quantum gate: " << gate->qasm() << " [DONE]");
 
             }
-            QL_DOUT("map_mappable_gates, done with set of non-quantum gates, continuing ...");
+            QL_DOUT("map_mappable_gates, there is a set of non-quantum gates [DONE]");
             continue;
 
         }
@@ -510,7 +523,9 @@ Bool Mapper::map_mappable_gates(
             if (gate->type() == ir::compat::GateType::WAIT || gate->operands.size() == 1) {
 
                 // A quantum gate that never requires routing was found.
+                QL_DOUT(". never-requiring mapping quantum gate to be mapped: " << gate->qasm());
                 map_routed_gate(gate, past);
+                QL_DOUT(". never-requiring mapping quantum gate to be set to completed: " << gate->qasm());
                 future.completed_gate(gate);
                 found = true;
                 // so on avlist= nonNN2q -> NN2q -> 1q: the 1q is done first
@@ -542,8 +557,9 @@ Bool Mapper::map_mappable_gates(
 
                     // Just one hop, so gate is already nearest-neighbor and can
                     // be mapped.
-                    QL_DOUT("map_mappable_gates, NN no routing: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ")");
+                    QL_DOUT(". NN gate, to be mapped: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ")");
                     map_routed_gate(gate, past);
+                    QL_DOUT(". NN gate, to be set to completed: " << gate->qasm() );
                     future.completed_gate(gate);
                     found = true;    // a 2q quantum gate was found that was mappable
                     // so on avlist= nonNN2q -> NN2q: the NN2q is done first
@@ -559,23 +575,26 @@ Bool Mapper::map_mappable_gates(
                 // two-qubit gate), but deal with all available non-quantum and
                 // single-qubit gates first, and only when non of those remain,
                 // map a next mappable two-qubit (now most critical) gate.
-                QL_DOUT("map_mappable_gates, found and mapped an easy quantum gate, continuing ...");
+                QL_DOUT(". map_mappable_gates, found and mapped an easy quantum gate, continuing ...");
                 continue;
 
             }
-            QL_DOUT("map_mappable_gates, only nonNN 2q gates remain: ...");
+            QL_DOUT(". map_mappable_gates, only nonNN 2q gates remain: ...");
         } else {
-            QL_DOUT("map_mappable_gates, only 2q gates remain (nonNN and NN): ...");
+            QL_DOUT(". map_mappable_gates, only 2q gates remain (nonNN and NN): ...");
         }
 
         // Only two-qubit gates remain in the available gate list (when
         // also_nn_two_qubit_gate these are furthermore necessarily
         // non-nearest-neighbor, otherwise they might also be nearest-neighbor).
         gates = av_gates;
+
         QL_IF_LOG_DEBUG {
             for (const auto &gate : gates) {
-                QL_DOUT("... 2q gate returned: " << gate->qasm());
+                QL_DOUT(". map_mappable gates, 2q gates returned: " << gate->qasm());
             }
+        } else {
+            QL_DOUT("map_mappable gates, 2q gates returned (disabled)");
         }
 
         return true;
@@ -874,8 +893,10 @@ void Mapper::place(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r) 
 #endif // ifdef INITIALPLACE
     }
     QL_IF_LOG_DEBUG {
-        QL_DOUT("After InitialPlace");
+        QL_DOUT("v2r dump after InitialPlace");
         v2r.dump_state();
+    } else {
+        QL_DOUT("v2r dump after InitialPlace (disabled)");
     }
 
 }
@@ -1023,8 +1044,10 @@ void Mapper::map_kernel(const ir::compat::KernelRef &k) {
         options->assume_initialized ? com::map::QubitState::INITIALIZED : com::map::QubitState::NONE
     };
     QL_IF_LOG_DEBUG {
-        QL_DOUT("After initialization");
+        QL_DOUT("v2r dump after initialization:");
         v2r.dump_state();
+    } else {
+        QL_DOUT("v2r dump after initialization (disabled)");
     }
 
     // Save the input qubit map for reporting.
@@ -1041,8 +1064,10 @@ void Mapper::map_kernel(const ir::compat::KernelRef &k) {
     QL_DOUT("Mapper::Map before route: assume_initialized=" << options->assume_initialized);
     route(k, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
     QL_IF_LOG_DEBUG {
-        QL_DOUT("After heuristics");
+        QL_DOUT("v2r dump after heuristics");
         v2r.dump_state();
+    } else {
+        QL_DOUT("v2r dump after heuristics (disabled)");
     }
 
     // Save the routed qubit map for reporting. This is the resulting qubit map
