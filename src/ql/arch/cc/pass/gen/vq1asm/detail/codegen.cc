@@ -858,7 +858,7 @@ void Codegen::if_end(const Str &label) {
         ", label = '" + label + "'"
     );
 
-     cs.emit(as_label(to_end(label)));
+    cs.emit(as_label(to_end(label)));
 }
 
 
@@ -871,8 +871,8 @@ void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm,
         + ", label = '" + label + "'"
     );
 
-    auto reg = QL_SS2S("R" << cs.creg2reg(lhs));
-    cs.emit("", "move", QL_SS2S(frm.value << "," << reg));
+    auto reg = as_reg(cs.creg2reg(lhs));
+    cs.emit("", "move", as_int(frm.value) + "," + reg);
     // FIXME: if loop has no contents at all, register dependency is violated
     cs.emit(as_label(to_start(label)));    // label for looping or 'continue'
 }
@@ -888,19 +888,23 @@ void Codegen::foreach_end(const ir::Reference &lhs, const ir::IntLiteral &frm, c
         + ", label = '" + label + "'"
     );
 
-    auto reg = QL_SS2S("R" << cs.creg2reg(lhs));
+    auto reg = as_reg(cs.creg2reg(lhs));
 
     if(to.value >= frm.value) {     // count up
-        cs.emit("", "add", QL_SS2S(reg << ",1," << reg));
+        cs.emit("", "add", reg + ",1," + reg);
         cs.emit("", "nop");
-        cs.emit("", "jlt", QL_SS2S(reg << "," << to.value+1 << "," << as_target(to_start(label))), "# loop");
+        cs.emit(
+            "",
+            "jlt",
+            reg + "," + as_int(to.value, 1) + "," + as_target(to_start(label)),
+            "# loop");
     } else {
         if(to.value == 0) {
-            cs.emit("", "loop", QL_SS2S(reg << "," << as_target(to_start(label))), "# loop");
+            cs.emit("", "loop", reg + "," + as_target(to_start(label)), "# loop");
         } else {
-            cs.emit("", "sub", QL_SS2S(reg << ",1," << reg));
+            cs.emit("", "sub", reg + ",1," + reg);
             cs.emit("", "nop");
-            cs.emit("", "jge", QL_SS2S(reg << "," << to.value << "," << as_target(to_start(label))), "# loop");
+            cs.emit("", "jge", reg + "," + as_int(to.value) + "," + as_target(to_start(label)), "# loop");
         }
     }
 
