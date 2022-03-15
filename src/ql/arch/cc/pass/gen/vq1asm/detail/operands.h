@@ -28,14 +28,12 @@ class OperandContext {  // NB: based on class NewToOldConverter
 public:
     explicit OperandContext(const ir::Ref &ir);
 
-    Bool is_qubit_reference(const ir::Reference *ref) const;
-    Bool is_implicit_breg_reference(const ir::Reference *ref) const;
-    Bool is_explicit_breg_reference(const ir::Reference *ref) const;
-    Bool is_creg_reference(const ir::Reference *ref) const;
-
-    Bool is_creg_reference(const ir::ExpressionRef &ref) const;
-    Bool is_explicit_breg_reference(const ir::ExpressionRef &ref) const;
-    Bool is_implicit_breg_reference(const ir::ExpressionRef &ref) const;
+    // basic test functions
+    Bool is_qubit_reference(const ir::Reference &ref) const;
+    Bool is_implicit_breg_reference(const ir::Reference &ref) const;
+    Bool is_explicit_breg_reference(const ir::Reference &ref) const;
+    Bool is_breg_reference(const ir::Reference &ref) const;
+    Bool is_creg_reference(const ir::Reference &ref) const;
 
     /**
      * Converts a creg reference to a register index.
@@ -45,7 +43,8 @@ public:
     /**
      * Converts a bit reference to its breg index.
      */
-    UInt convert_breg_reference(const ir::ExpressionRef &ref) const;
+    UInt convert_breg_reference(const ir::Reference &ref) const;
+    UInt convert_breg_reference(const ir::ExpressionRef &expr) const;
 
 private:
     friend class Operands;

@@ -30,6 +30,7 @@ void Datapath::programStart() {
 }
 
 void Datapath::programFinish() {
+    // FIXME: suppress output if we have no content besides .DATAPATH
     emit(".END", "");
 }
 

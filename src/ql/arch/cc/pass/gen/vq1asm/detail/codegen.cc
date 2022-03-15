@@ -59,8 +59,8 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
             } else {
                 cond_type = ConditionType::NEVER;
             }
-        } else if (condition->as_reference()) {
-            cond_operands.push_back(operandContext.convert_breg_reference(condition));
+        } else if (auto cond = condition->as_reference()) {
+            cond_operands.push_back(operandContext.convert_breg_reference(*cond));
             cond_type = ConditionType::UNARY;
         } else if (auto fn = condition->as_function_call()) {
             if (
@@ -68,8 +68,8 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
                 fn->function_type->name == "operator~"
             ) {
                 CHECK_COMPAT(fn->operands.size() == 1, "unsupported condition function");
-                if (fn->operands[0]->as_reference()) {
-                    cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
+                if (auto op0 = fn->operands[0]->as_reference()) {
+                    cond_operands.push_back(operandContext.convert_breg_reference(*op0));
                     cond_type = ConditionType::NOT;
                 } else if (auto fn2 = fn->operands[0]->as_function_call()) {
                     CHECK_COMPAT(fn2->operands.size() == 2, "unsupported condition function");
@@ -641,7 +641,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
     [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[0]
     [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[10]
     */
-#if 1
+#if 1   // FIXME
     if(!custom.instruction_type->template_operands.empty()) {
         QL_DOUT("found template_operands: JSON = " << custom.instruction_type->data.data );
         QL_INPUT_ERROR(
@@ -665,7 +665,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
     for (utils::UInt i = 0; i < custom.operands.size(); i++) {
         QL_DOUT("operand: " + ir::describe(custom.operands[i]));
         try {
-            ops.append(operandContext, custom.operands[i]);
+            ops.append(operandContext, custom.operands[i]);     // append utils::One<expression>
         } catch (utils::Exception &e) {
             e.add_context(
                 "name=" + custom.instruction_type->name
@@ -1255,7 +1255,6 @@ void Codegen::do_handle_expression(
         }
 
         if (auto ilit = expression->as_int_literal()) {
-            check_int_literal(*ilit);
             cs.emit(
                 "",
                 "move",
@@ -1265,22 +1264,21 @@ void Codegen::do_handle_expression(
         } else if (auto blit = expression->as_bit_literal()) {
             if(blit->value) {
                 // do nothing (to jump out of loop). FIXME: other contexts may exist
-            } else {
+            } else {    // FIXME: should be handled by constant removal pass
                 QL_ICE("bit literal 'false' currently not supported in '" << ir::describe(expression) << "'");
             }
-        } else if (expression->as_reference()) {
-            if(operandContext.is_creg_reference(expression)) {  // creg, as RHS of a SetInstruction
-                auto reg = cs.creg2reg(*expression->as_reference());
+        } else if (auto ref = expression->as_reference()) {
+            if(operandContext.is_creg_reference(*ref)) {  // creg, as RHS of a SetInstruction
+                auto reg = cs.creg2reg(*ref);
                 cs.emit(
                     "",
                     "move",
                     as_reg(reg) + "," + as_reg(cs.dest_reg(lhs)),
                     "# " + ir::describe(expression)
                 );
-            } else {    // breg as condition, like in "if(b[0])"
-                // FIXME: check is_implicit_breg_reference/is_explicit_breg_reference
+            } else if (operandContext.is_breg_reference(*ref)) {    // breg as condition, like in "if(b[0])"
                 // transfer single breg to REG_TMP0
-                auto breg = operandContext.convert_breg_reference(expression);
+                auto breg = operandContext.convert_breg_reference(*ref);
                 utils::Vec<utils::UInt> bregs{breg};
                 UInt mask = fncs.emit_bin_cast(bregs, 1);
 
@@ -1297,6 +1295,8 @@ void Codegen::do_handle_expression(
                     Str(REG_TMP1) + ",1," + as_target(label_if_false),
                     "# skip next part if condition is false"
                 );
+            } else {
+                QL_ICE("expected reference to breg or creg, but got: " << ir::describe(expression));
             }
         } else if (auto fn = expression->as_function_call()) {
             // handle cast
