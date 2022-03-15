@@ -310,7 +310,7 @@ public:
      * when there is an underlying x/y grid (so not for form==gf_irregular).
      *
      * TODO/FIXME: see
-     *  https://github.com/QE-Lab/OpenQL/pull/405#issuecomment-831247204
+     *  https://github.com/QuTech-Delft/OpenQL/pull/405#issuecomment-831247204
      */
     void sort_neighbors_by_angle(Qubit src, Neighbors &nbl) const;
 

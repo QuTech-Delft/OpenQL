@@ -8,7 +8,7 @@ This page documents how OpenQL and its documentation pages can be built and inst
 .. note::
    It is very difficult to maintain these instructions, due to there being so many supported environments,
    and due to externally-maintained dependencies. Therefore, please
-   `let the OpenQL maintainers know <https://github.com/QE-Lab/OpenQL/issues/new>`_ if you run into any
+   `let the OpenQL maintainers know <https://github.com/QuTech-Delft/OpenQL/issues/new>`_ if you run into any
    difficulties with these instructions. If you're a new maintainer, update them accordingly via a PR, but
    be mindful that something that works on your machine might not work on everyone's machine!
 
@@ -160,12 +160,12 @@ Obtaining OpenQL
 ----------------
 
 OpenQL sources for each release can be downloaded from github
-`releases <https://github.com/QE-Lab/OpenQL/releases>`_ as .zip or .tar.gz archive. OpenQL can also be
+`releases <https://github.com/QuTech-Delft/OpenQL/releases>`_ as .zip or .tar.gz archive. OpenQL can also be
 cloned by:
 
 ::
 
-    git clone https://github.com/QE-Lab/OpenQL.git --recursive
+    git clone https://github.com/QuTech-Delft/OpenQL.git --recursive
 
 Note the ``--recursive``: the repository depends on various submodules. If you forgot the ``--recursive``,
 you can get/synchronize them later with ``git submodule update --init --recursive``.
