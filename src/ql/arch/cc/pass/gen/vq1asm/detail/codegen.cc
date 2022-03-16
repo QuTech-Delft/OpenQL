@@ -32,23 +32,12 @@ static Str to_end(const Str &base) { return base + "_end"; };
 static Str to_ifbranch(const Str &base, Int branch) { return QL_SS2S(base << "_" << branch); }
 static Str as_label(const Str &label) { return label + ":"; }
 
-// helpers
-// FIXME: use Functions::as_int()?
-static void check_int_literal(const ir::IntLiteral &ilit, Int bottomRoom=0, Int headRoom=0) {
-    if(ilit.value-bottomRoom < 0) {
-        QL_INPUT_ERROR("CC backend cannot handle negative integer literals: value=" << ilit.value << ", bottomRoom=" << bottomRoom);
-    }
-    if(ilit.value >= (1LL<<32) - 1 - headRoom) {
-        QL_INPUT_ERROR("CC backend requires integer literals limited to 32 bits: value=" << ilit.value << ", headRoom=" << headRoom);
-    }
-}
-
-
 /**
  * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
  * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
  */
 static tInstructionCondition decode_condition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
+    QL_IOUT("decode_condition: condition=" + ir::describe(condition));
     ConditionType cond_type;
     utils::Vec<utils::UInt> cond_operands;
 
@@ -60,6 +49,7 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
                 cond_type = ConditionType::NEVER;
             }
         } else if (auto cond = condition->as_reference()) {
+            // FIXME: add is_breg_reference()
             cond_operands.push_back(operandContext.convert_breg_reference(*cond));
             cond_type = ConditionType::UNARY;
         } else if (auto fn = condition->as_function_call()) {
@@ -67,12 +57,12 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
                 fn->function_type->name == "operator!" ||
                 fn->function_type->name == "operator~"
             ) {
-                CHECK_COMPAT(fn->operands.size() == 1, "unsupported condition function");
+                CHECK_COMPAT(fn->operands.size() == 1, "expected one operand");
                 if (auto op0 = fn->operands[0]->as_reference()) {
                     cond_operands.push_back(operandContext.convert_breg_reference(*op0));
                     cond_type = ConditionType::NOT;
                 } else if (auto fn2 = fn->operands[0]->as_function_call()) {
-                    CHECK_COMPAT(fn2->operands.size() == 2, "unsupported condition function");
+                    CHECK_COMPAT(fn2->operands.size() == 2, "expected 2 operands");
                     cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[0]));
                     cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[1]));
                     if (
@@ -102,7 +92,7 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
                     QL_ICE("unsupported gate condition");
                 }
             } else {
-                CHECK_COMPAT(fn->operands.size() == 2, "unsupported condition function");
+                CHECK_COMPAT(fn->operands.size() == 2, "expected 2 operands");
                 cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
                 cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[1]));
                 if (
@@ -133,7 +123,7 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
             QL_ICE("unsupported condition expression");
         }
     } catch (utils::Exception &e) {
-        e.add_context("in gate condition", true);
+        e.add_context("in gate condition" + ir::describe(condition), true);
         throw;
     }
     return {cond_type, cond_operands};
@@ -363,12 +353,12 @@ void Codegen::block_start(const Str &block_name, Int depth) {
     if(depth == 0) {
         comment("");    // white space before top level block
     }
-    comment(QL_SS2S("### Block: '" << block_name << "'"));
+    comment("### Block: '" + block_name + "'");
     zero(lastEndCycle); // NB: new IR starts counting at zero
 }
 
 void Codegen::block_finish(const Str &block_name, UInt durationInCycles, Int depth) {
-    comment(QL_SS2S("### Block end: '" << block_name << "'"));
+    comment("### Block end: '" + block_name + "'");
     vcd.kernelFinish(block_name, durationInCycles);
 
     // unindent, unless at top (in which case nothing follows)
@@ -535,7 +525,7 @@ void Codegen::bundle_finish(
         CodeGenInfo codeGenInfo = codeGenMap.at(instrIdx);
 
         if (isLastBundle && instrIdx == 0) {
-            comment(QL_SS2S(" # last bundle of kernel, will pad outputs to match durations"));
+            comment(" # last bundle of kernel, will pad outputs to match durations");
         }
 
         // generate code for instrument output
@@ -617,6 +607,8 @@ void Codegen::bundle_finish(
 
 void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
     Operands ops;
+
+    QL_IOUT("custum instruction: " << ir::describe(custom));    // FIXME
 
     // Handle the template operands for the instruction_type we got. Note that these are empty if that is a 'root'
     // InstructionType, and only contains data if it is one of the specializations (see ir.gen.h)
@@ -863,8 +855,6 @@ void Codegen::if_end(const Str &label) {
 
 
 void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label) {
-    check_int_literal(frm.value);
-
     comment(
         "# FOREACH_START: "
         "from = " + ir::describe(frm)
@@ -879,8 +869,6 @@ void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm,
 
 
 void Codegen::foreach_end(const ir::Reference &lhs, const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label) {
-    check_int_literal(to.value);
-
     comment(
         "# FOREACH_END: "
         "from = " + ir::describe(frm)
@@ -987,8 +975,15 @@ void Codegen::comment(const Str &c) {
 void Codegen::handle_set_instruction(const ir::SetInstruction &set, const Str &descr)
 {
     QL_DOUT(descr << ": '" << ir::describe(set) << "'");
-    do_handle_expression(set.rhs, set.lhs, "", descr);
 
+    // enforce set instruction is unconditional (since we don't handle conditionality)
+    CHECK_COMPAT(
+        set.condition->as_bit_literal()
+        && set.condition->as_bit_literal()->value
+        , "conditions other then 'true' are not supported for set instruction"
+    );
+
+    do_handle_expression(set.rhs, set.lhs, "", descr);
 }
 
 void Codegen::handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr)
@@ -1251,10 +1246,10 @@ void Codegen::do_handle_expression(
 ) {
     try {
         if (!lhs.empty()) {
-            comment(QL_SS2S("# Expression '" << descr << "': " << ir::describe(lhs) << " = " << ir::describe(expression)));
+            comment("# Expression '" + descr + "': " + ir::describe(lhs) + " = " + ir::describe(expression));
         } else {
 #if 0   // NB: redundant information, also provided by structured control flow comments
-            comment(QL_SS2S("# Expression '" << descr << "': " << ir::describe(expression)));
+            comment("# Expression '" + descr + "': " << ir::describe(expression));
 #endif
         }
 

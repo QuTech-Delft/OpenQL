@@ -155,7 +155,7 @@ void Datapath::emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeM
         emit(
             slot,
             QL_SS2S("SM[" << winBit << "] := I[" << info.bit << "]"),
-            QL_SS2S("# " << info.describe)
+            "# " + info.describe
         );
     }
 }

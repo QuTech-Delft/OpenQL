@@ -7,8 +7,8 @@
 
 // Constants
 // FIXME: move out of .h
-#define REG_TMP0 "R63"                          // Q1 register for temporary use
-#define REG_TMP1 "R62"                          // Q1 register for temporary use
+#define REG_TMP0 Str("R63")                     // Q1 register for temporary use
+#define REG_TMP1 Str("R62")                     // Q1 register for temporary use
 #define NUM_RSRVD_CREGS 2                       // must match number of REG_TMP*
 #define NUM_CREGS (64-NUM_RSRVD_CREGS)          // starting from R0
 #define NUM_BREGS 1024                          // bregs require mapping to DSM, which introduces holes, so we probably fail before we reach this limit
@@ -48,7 +48,7 @@ static inline Str as_int(Int val, Int add=0) {
 
 class CodeSection {
 public:
-    CodeSection(OperandContext &operandContext);
+    explicit CodeSection(OperandContext &operandContext);
     ~CodeSection() = default;
 
     Str getCodeSection() { return codeSection.str(); };         // return the CC source code that was created

@@ -78,8 +78,7 @@ private:
 
 
 /**
- * Handles gathering the operands for a gate.
- * FIXME: also for an expression
+ * Handles gathering the operands for a gate, and also for an expression
  *
  * NB: shameless copy of new_to_old.cc::Operands, edited to suit
  */

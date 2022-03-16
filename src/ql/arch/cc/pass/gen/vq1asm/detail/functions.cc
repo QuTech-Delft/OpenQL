@@ -142,7 +142,7 @@ void Functions::op_linv_B(const FncArgs &a) {
     cs.emit(
         "",
         "jge",  // NB: we use "jge" instead of "jlt" to invert
-        QL_SS2S(REG_TMP1 << ",1," << as_target(a.label_if_false)),
+        REG_TMP1 + ",1," + as_target(a.label_if_false),
         "# skip next part if inverted condition is false"
     );
 }
@@ -188,7 +188,7 @@ void Functions::op_grp_rel1_tail(const FncArgs &a) {
     cs.emit(
         "",
         a.operation,
-        Str(REG_TMP0)+",1,"+as_target(a.label_if_false),
+        REG_TMP0 + ",1," + as_target(a.label_if_false),
         "# skip next part if condition is false"
     );
 }
@@ -275,7 +275,11 @@ void Functions::rnd_seed_i(const FncArgs &a) {
     // FIXME
 }
 
-void Functions::rnd(const FncArgs &a) {
+void Functions::rnd_C(const FncArgs &a) {
+    // FIXME
+}
+
+void Functions::rnd_i(const FncArgs &a) {
     // FIXME
 }
 #endif
@@ -351,7 +355,8 @@ X("operator<=",     iC,     op_gt_iC,               "jge") /* inverse operation 
 /* user functions */ \
 X("rnd_seed",       C,      rnd_seed_C,             "") \
 X("rnd_seed",       i,      rnd_seed_i,             "") \
-X("rnd",            -,      rnd,                    "")
+X("rnd",            C,      rnd_C,                  "") \
+X("rnd",            i,      rnd_i,                  "")
 
 
 void Functions::register_functions() {

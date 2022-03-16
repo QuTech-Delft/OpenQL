@@ -209,14 +209,6 @@ rx180 q[2]
 
 
 # FIXME: move to its own file
-.condGate
-cond (false) x q[0]
-
-# from: deps/libqasm/src/cqasm/tests/v1-parsing/semantic/insn-condition-new-ok/input.cq
-# note; differening lengths between condition and parameters are allowed
-# cond (b[0:3]) x q[4:5] # Error: Unknown error: in pass reader, phase main: Duplicate node of type N2ql2ir10ExpressionEat address 0x7f9e8b5d9978 found in tree
-
-
 .more
 # set i = true # Error: type of right-hand side (bool/bit) could not be coerced to left-hand side (int reference)
 # set i = 4<5

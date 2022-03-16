@@ -10,6 +10,7 @@
 #include "ql/ir/consistency.h"
 #include "ql/ir/old_to_new.h"
 #include "ql/com/ddg/build.h"
+#include "ql/ir/describe.h"
 #include "cqasm.hpp"
 
 namespace ql {
@@ -789,7 +790,9 @@ static void convert_block(
                                 ql_operands[1] = x;
                             }
 
+                            QL_IOUT("ql_condition=" + (ql_condition.empty() ? "<empty>" : ir::describe(ql_condition)));
                             ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
+                            QL_IOUT("ql_inst = " << ir::describe(ql_insns.back())); // FIXME
                         }
 
                     }

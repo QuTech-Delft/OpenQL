@@ -109,7 +109,8 @@ private:    // methods
 #if OPT_CC_USER_FUNCTIONS
     void rnd_seed_C(const FncArgs &a);
     void rnd_seed_i(const FncArgs &a);
-    void rnd(const FncArgs &a);
+    void rnd_C(const FncArgs &a);
+    void rnd_i(const FncArgs &a);
 #endif
 
     /*

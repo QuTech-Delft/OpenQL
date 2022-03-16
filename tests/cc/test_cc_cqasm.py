@@ -106,6 +106,9 @@ class Test_cQASM(unittest.TestCase):
     def test_looping(self):
         self.run_test_case('looping')
 
+    def test_cond_gate(self):
+        self.run_test_case('cond_gate')
+
     # def test_from_string(self):
     #     pl = ql.Platform("cc", "config_cc_s17_direct_iq_openql_0_10.json")
     #     c = pl.get_compiler()

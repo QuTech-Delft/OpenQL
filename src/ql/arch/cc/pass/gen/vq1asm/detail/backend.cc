@@ -87,7 +87,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
     // helper
     auto bundle_finish = [this, &bundle_start_cycle, &bundle_end_cycle](Bool is_last_bundle) {
         Int bundle_duration =  bundle_end_cycle - bundle_start_cycle;
-        QL_DOUT(QL_SS2S("Finishing bundle " << bundleIdx << ": start_cycle=" << bundle_start_cycle << ", duration=" << bundle_duration));
+        QL_DOUT("Finishing bundle " << bundleIdx << ": start_cycle=" << bundle_start_cycle << ", duration=" << bundle_duration);
         codegen.bundle_finish(bundle_start_cycle, bundle_duration, is_last_bundle);
     };
 
@@ -121,7 +121,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
             // Generate bundle header when necessary.
             if (is_new_bundle) {
                 bundleIdx++;
-                QL_DOUT(QL_SS2S("Bundle " << bundleIdx << ": start_cycle=" << insn->cycle));
+                QL_DOUT("Bundle " << bundleIdx << ": start_cycle=" << insn->cycle);
                 // NB: first instruction may be wait with zero duration, more generally: duration of first statement != bundle duration
                 codegen.bundle_start(
                     QL_SS2S(
@@ -149,24 +149,16 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                     try {
                         codegen.custom_instruction(*custom);
                     } catch (utils::Exception &e) {
-                        e.add_context(QL_SS2S("in custom instruction '" << ir::describe(*custom) << "'"), true);
+                        e.add_context("in custom instruction '" + ir::describe(*custom) + "'", true);
                         throw;
                     }
 
                 } else if (auto set_instruction = cinsn->as_set_instruction()) {
 
-                    //****************************************************************
-                    // Instruction: set
-                    //****************************************************************
-                    CHECK_COMPAT(
-                        set_instruction->condition->as_bit_literal()
-                        && set_instruction->condition->as_bit_literal()->value
-                        , "conditions other then 'true' are not supported for set instruction"
-                    );
                     try {
                         codegen.handle_set_instruction(*set_instruction, "conditional.set");
                     } catch (utils::Exception &e) {
-                        e.add_context(QL_SS2S("in set_instruction '" << ir::describe(*set_instruction) << "'") , true);
+                        e.add_context("in set_instruction '" + ir::describe(*set_instruction) + "'" , true);
                         throw;
                     }
 
@@ -174,25 +166,15 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                     QL_INPUT_ERROR("goto instruction not supported");
 
                 } else {
-                    QL_ICE(
-                        "unsupported instruction type encountered"
-                        << "'" <<ir::describe(stmt) << "'"
-                    );
+                    QL_ICE("unsupported conditional instruction type encountered" << "'" <<ir::describe(stmt) << "'");
                 }
 
             } else if (auto wait = stmt->as_wait_instruction()) {
-
-                //****************************************************************
-                // Instruction: wait
-                //****************************************************************
                 // NB: waits are already accounted for during scheduling, so backend can ignore these
                 QL_DOUT("wait (ignored by backend)");
 
             } else {
-                QL_ICE(
-                    "unsupported statement type encountered: "
-                    << "'" <<ir::describe(stmt) << "'"
-                );
+                QL_ICE("unsupported instruction type encountered: " << "'" <<ir::describe(stmt) << "'");
             }
 
         } else if (stmt->as_structured()) {
@@ -313,11 +295,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                 codegen.do_continue(loop_label.back());
 
             } else {
-                QL_ICE(
-                    "unsupported structured control-flow statement"
-                    << " '" << ir::describe(stmt) << "' "
-                    << "encountered"
-                );
+                QL_ICE("unsupported structured control-flow statement encountered" << " '" << ir::describe(stmt) << "'");
             }
 
             if(!stmt->as_loop_control_statement()) {
@@ -327,10 +305,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
             }
 
         } else {
-            QL_ICE(
-                "unsupported statement type encountered"
-                << "'" <<ir::describe(stmt) << "'"
-            );
+            QL_ICE("unsupported statement type encountered" << "'" <<ir::describe(stmt) << "'");
         }
     }
 
