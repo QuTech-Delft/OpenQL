@@ -8,7 +8,7 @@
 #include "ql/ir/describe.h"
 #include "ql/com/map/expression_mapper.h"
 
-#define DEBUG(s)  QL_IOUT(s)
+#define DEBUG(s)  // QL_DOUT(s)
 
 namespace ql {
 namespace com {
@@ -176,6 +176,7 @@ utils::UInt apply_decomposition_rules(
                         exp_stmt->cycle += stmt->cycle;
                     }
 #if 1   // FIXME: copy condition
+                    // copy condition to all suitable expanded instructions
                     if (auto ci = exp_stmt->as_conditional_instruction()) {
                         ci->condition = insn->condition;
                     }

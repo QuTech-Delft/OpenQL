@@ -895,11 +895,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     auto fn = add_function_type(ir, utils::make<FunctionType>("operator!"));
     fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
     fn->return_type = bit_type;
-#if 0   // FIXME: original
-    for (const auto &op : utils::Vec<utils::Str>({"&&", "||", "==", "!="})) {
-#else // add "^^"
     for (const auto &op : utils::Vec<utils::Str>({"&&", "||", "^^", "==", "!="})) {
-#endif
         fn = add_function_type(ir, utils::make<FunctionType>("operator" + op));
         fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
         fn->operand_types.emplace(prim::OperandMode::READ, bit_type);

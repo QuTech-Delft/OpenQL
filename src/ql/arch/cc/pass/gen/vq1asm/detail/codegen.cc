@@ -1249,6 +1249,7 @@ tCodeword Codegen::assignCodeword(const Str &instrumentName, Int instrIdx, Int g
  * These functions add a 'cqv::Function' node to the IR (even if the arguments are constant).
  */
 // FIXME: see expression_mapper.cc for inspiration
+// FIXME: split into separate parts and move to callers
 void Codegen::do_handle_expression(
     const ir::ExpressionRef &expression,
     const ir::ExpressionRef &lhs,
@@ -1265,6 +1266,7 @@ void Codegen::do_handle_expression(
         }
 
         if (auto ilit = expression->as_int_literal()) {
+            CHECK_COMPAT(!lhs.empty(), "LHS required");
             cs.emit(
                 "",
                 "move",
