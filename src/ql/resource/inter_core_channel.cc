@@ -5,9 +5,8 @@
 
 #include "ql/resource/inter_core_channel.h"
 
-// comment two lines below out to enable LOG_DEBUG ir dumping
-/*#undef QL_IF_LOG_DEBUG
-#define QL_IF_LOG_DEBUG if (0)*/
+// #undef MULTI_LINE_LOG_DEBUG to disable multi-line dumping 
+#define MULTI_LINE_LOG_DEBUG
 
 namespace ql {
 namespace resource {
@@ -54,9 +53,14 @@ struct Config {
     utils::UInt num_cores;
 
     /**
-     * Number of incoming/outgoing channels for each core.
+     * Limit on number of incoming/outgoing channels for each core.
      */
     utils::UInt num_channels;
+
+    /**
+     * Limit on number of incoming/outgoing channels system-wide.
+     */
+    utils::UInt num_system_wide_channels;
 
     /**
      * When set, there is a defined scheduling direction, which means it's
@@ -98,9 +102,10 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
         cfg->json = R"(
         {
             "predicate": { "type": "extern" },
-            "inter_core_required": false,
+            "inter_core_required": true,
             "communication_qubit_only": false,
-            "num_channels": 1
+            "num_channels": 1,
+            "num_system_wide_channels": 0
         }
         )"_json;
         auto it = context->configuration.find("count");
@@ -111,12 +116,24 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
                 cfg->json["num_channels"] = *it;
             }
         }
+        auto it2 = context->configuration.find("system_wide_count");
+        if (it2 != context->configuration.end()) {
+            if (!it2->is_number_unsigned()) {
+                ERROR("system_wide_count key must be an unsigned integer if specified");
+            } else {
+                cfg->json["num_system_wide_channels"] = *it2;
+            }
+        } else {
+            // upperbound for backward compatibility without this field specified
+            cfg->json["num_system_wide_channels"] = context->platform->qubit_count;
+        }
     }
 
     // Now parse our native structure.
-    cfg->inter_core_required = true;
+    cfg->inter_core_required = false;
     cfg->communication_qubit_only = false;
     cfg->num_channels = 1;
+    cfg->num_system_wide_channels = context->platform->qubit_count;
     for (auto it = cfg->json.begin(); it != cfg->json.end(); ++it) {
         if (
             it.key() == "predicate"
@@ -170,12 +187,21 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
             } else {
                 ERROR("num_channels must be an unsigned integer if specified");
             }
+        } else if (it.key() == "num_system_wide_channels") {
+            if (it->is_number_unsigned()) {
+                cfg->num_system_wide_channels = it->get<utils::UInt>();
+            } else {
+                ERROR("num_system_wide_channels must be an unsigned integer if specified");
+            }
         } else {
             ERROR("unknown key in configuration structure: " + it.key());
         }
     }
     if (cfg->num_channels < 1) {
-        ERROR("illegal number of communication channels; need at least one");
+        ERROR("illegal number of communication channels per core, need at least one per core");
+    }
+    if (cfg->num_system_wide_channels < 2) {
+        ERROR("illegal number of communication channels system-wide, need at least two to communicate");
     }
 
     // Configuration load successful; save the constructed configuration.
@@ -189,6 +215,7 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
     }
 
     // Print result if debug is enabled.
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Print result of initializing inter-core channel resource: ");
         std::cout << "====================================" << std::endl;
@@ -208,10 +235,12 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
         std::cout << "communication_qubit_only: " << config->communication_qubit_only << std::endl;
         std::cout << "num_cores: " << config->num_cores << std::endl;
         std::cout << "num_channels: " << config->num_channels << std::endl;
+        std::cout << "num_system_wide_channels: " << config->num_system_wide_channels << std::endl;
         std::cout << "====================================" << std::endl;
-    } else {
-        QL_DOUT("Print result of initializing inter-core channel resource (disabled)");
     }
+#else
+    QL_DOUT("Print result of initializing inter-core channel resource (disabled)");
+#endif
 
 #undef ERROR
 }
@@ -280,7 +309,7 @@ utils::Bool InterCoreChannelResource::on_gate(
 
     // If inter_core_required, check whether the gate uses qubits from more than
     // one core.
-    if (config->inter_core_required && affected.size() < 2) {
+    if (config->inter_core_required && gate.qubits.size() >= 2 && affected.size() < 2) {
         QL_DOUT(" -> available: gate does not match inter-core predicate");
         return true;
     }
@@ -291,7 +320,7 @@ utils::Bool InterCoreChannelResource::on_gate(
         cycle + gate.duration_cycles
     };
 
-    // Check availability.
+    // Check availability wrt number of channels per core.
     for (auto core : affected) {
         utils::Bool core_available = false;
         for (auto &s : state[core]) {
@@ -301,9 +330,23 @@ utils::Bool InterCoreChannelResource::on_gate(
             }
         }
         if (!core_available) {
-            QL_DOUT(" -> not available because core " << core << " I/O is saturated");
+            QL_DOUT(" -> not available because core " << core << " number of channels is saturated");
             return false;
         }
+    }
+
+    // Check availability wrt number of channels system-wide
+    utils::UInt num_channels_in_use = 0;
+    for (auto &core : state) {
+        for (auto &channel : core) {
+            if (channel.find(range).type != utils::RangeMatchType::NONE) {
+                num_channels_in_use++;
+            }
+        }
+    }
+    if (num_channels_in_use >= config->num_system_wide_channels) {
+        QL_DOUT(" -> not available because system-wide number of channels is saturated");
+        return false;
     }
 
     // If we get here, the gate can be placed. If commit is set, we also need
@@ -347,11 +390,12 @@ void InterCoreChannelResource::on_dump_docs(
         utils::dump_str(os, line_prefix, R"(
         Compatibility wrapper for the CC-light channels resource. This does
         exactly the same thing as the InterCoreChannel resource, but accepts the
-        following configuration structure:
+        following configuration structure, with ``"system_wide_count"`` optional:
 
         ```
         {
-            "count": <number of channels>
+            "count": <number of channels per core>
+            "system_wide_count": <number of channels system-wide>
         }
         ```
 
@@ -363,9 +407,12 @@ void InterCoreChannelResource::on_dump_docs(
             "predicate": { "type": "extern" },
             "inter_core_required": false,
             "communication_qubit_only": false,
-            "num_channels": <taken from "count">
+            "num_channels": <taken from "count">,
+            "num_system_wide_channels": <taken from "system_wide_count">
         }
         ```
+        In absence of ``"system_wide_count"``, the number of qubits is taken
+        for ``"num_system_wide_channels"``.
         )");
         return;
     }
