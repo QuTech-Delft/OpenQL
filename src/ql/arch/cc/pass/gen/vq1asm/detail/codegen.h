@@ -184,9 +184,6 @@ private:    // funcs
 #if !OPT_SUPPORT_STATIC_CODEWORDS
     tCodeword assignCodeword(const Str &instrumentName, Int instrIdx, Int group);
 #endif
-
-    // expression helpers
-    void do_handle_expression(const ir::ExpressionRef &expression, const ir::ExpressionRef &lhs, const Str &label_if_false="", const Str &descr="");
 }; // class
 
 } // namespace detail

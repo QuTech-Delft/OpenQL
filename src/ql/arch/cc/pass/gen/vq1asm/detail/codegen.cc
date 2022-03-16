@@ -982,24 +982,140 @@ void Codegen::comment(const Str &c) {
 | new IR expressions
 \************************************************************************/
 
+// FIXME: recursion?
+// FIXME: or pass SetInstruction or Expression depending on use
+// FIXME: adopt structure of cQASM's cqasm-v1-functions-gen.cpp register_into used for constant propagation
+
+/**
+ * Actually perform the code generation for an expression.
+ *
+ * Can be called to handle:
+ * - the RHS of a SetInstruction, in which case parameter 'lhs' must be valid
+ * - an Expression that acts as a condition for structured control, in which case parameter 'label_if_false' must contain
+ *   the label to jump to if the expression evaluates as false
+ * The distinction between the two modes of operation is made based on the type of expression, either 'bit' or 'int',
+ * which is possible because of the rather strict separation between these two types.
+ *
+ *
+ * To understand how cQASM functions end up in the IR, please note that functions are handled during analyzing cQASM,
+ * see 'AnalyzerHelper::analyze_function()'.
+ *
+ * A default set of functions that only handle constant arguments is provided by libqasm, see
+ * 'register_into(resolver::FunctionTable &table)'. These functions add a constant node to the IR when called (and fail
+ * if the arguments are not constant)
+ *
+ * Some of these are overridden by OpenQL to allow use of non-constant arguments. This is a 2 step process, where
+ * 'convert_old_to_new(const compat::PlatformRef &old)' adds functions to ir->platform using 'add_function_type',
+ * and 'ql::ir::cqasm:read()' then walks 'ir->platform->functions' and adds the functions using 'register_function()'.
+ * These functions add a 'cqv::Function' node to the IR (even if the arguments are constant).
+ */
+// FIXME: see expression_mapper.cc for inspiration
+// FIXME: split with next function, move to .h
+
 void Codegen::handle_set_instruction(const ir::SetInstruction &set, const Str &descr)
 {
-    QL_DOUT(descr << ": '" << ir::describe(set) << "'");
+    Str describe = ir::describe(set);
+    QL_DOUT(descr + ": '" + describe + "'");
 
-    // enforce set instruction is unconditional (since we don't handle conditionality)
-    CHECK_COMPAT(
-        set.condition->as_bit_literal()
-        && set.condition->as_bit_literal()->value
-        , "conditions other then 'true' are not supported for set instruction"
-    );
+    try {
+        // enforce set instruction is unconditional (since we don't handle conditionality)
+        CHECK_COMPAT(
+            set.condition->as_bit_literal()
+            && set.condition->as_bit_literal()->value
+            , "conditions other then 'true' are not supported for set instruction"
+        );
 
-    do_handle_expression(set.rhs, set.lhs, "", descr);
+        comment("# Expression '" + descr + "': " + describe);
+
+        if (auto ilit = set.rhs->as_int_literal()) {
+            cs.emit(
+                "",
+                "move",
+                as_int(ilit->value) + "," + as_reg(cs.dest_reg(set.lhs)),
+                "# " + ir::describe(set.rhs) //FIXME: full expression
+            );
+        } else if (auto ref = set.rhs->as_reference()) {
+            if(operandContext.is_creg_reference(*ref)) {
+                auto reg = cs.creg2reg(*ref);
+                cs.emit(
+                    "",
+                    "move",
+                    as_reg(reg) + "," + as_reg(cs.dest_reg(set.lhs)),
+                    "# " + describe
+                );
+            } else {
+                QL_ICE("expected reference to creg, but got: " << ir::describe(set.rhs));
+            }
+        } else if (auto fn = set.rhs->as_function_call()) {
+            // handle int cast
+            if (fn->function_type->name == "int") {
+                CHECK_COMPAT(
+                    fn->operands.size() == 1 &&
+                    fn->operands[0]->as_function_call(),
+                    "'int()' cast target must be a function"
+                );
+                fn = fn->operands[0]->as_function_call();   // step into. FIXME: Shouldn't we recurse to allow e.g. casting a breg??
+            }
+
+            // handle the function
+            fncs.dispatch(set.lhs, fn, describe);
+        } else {
+            QL_ICE("unsupported expression type");
+        }
+    }
+    catch (utils::Exception &e) {
+        e.add_context("in expression '" + describe + "'", true);
+        throw;
+    }
 }
 
 void Codegen::handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr)
 {
-    QL_DOUT(descr << ": '" << ir::describe(expression) << "'");
-    do_handle_expression(expression, One<ir::Expression>(), label_if_false, descr);
+    Str describe = ir::describe(expression);
+    QL_DOUT(descr + ": '" + describe + "'");
+
+    try {
+#if 0   // NB: redundant information, also provided by structured control flow comments
+        comment("# Expression '" + descr + "': " << ir::describe(expression));
+#endif
+
+        if (auto blit = expression->as_bit_literal()) {
+            if(blit->value) {
+                // do nothing (to jump out of loop). FIXME: other contexts may exist
+            } else {    // FIXME: should be handled by constant removal pass
+                QL_ICE("bit literal 'false' currently not supported in '" << ir::describe(expression) << "'");
+            }
+        } else if (auto ref = expression->as_reference()) {
+            if (operandContext.is_breg_reference(*ref)) {    // breg as condition, like in "if(b[0])"
+                // transfer single breg to REG_TMP0
+                auto breg = operandContext.convert_breg_reference(*ref);
+                utils::Vec<utils::UInt> bregs{breg};
+                UInt mask = fncs.emit_bin_cast(bregs, 1);
+
+                cs.emit(
+                    "",
+                    "and",
+                    QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1),
+                    "# mask for '" + ir::describe(expression) + "'"
+                );    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+                cs.emit("", "nop");
+                cs.emit(
+                    "",
+                    "jlt",
+                    Str(REG_TMP1) + ",1," + as_target(label_if_false),
+                    "# skip next part if condition is false"
+                );
+            } else {
+                QL_ICE("expected reference to breg, but got: " << ir::describe(expression));
+            }
+        } else {
+            QL_ICE("unsupported expression type");
+        }
+    }
+    catch (utils::Exception &e) {
+        e.add_context("in expression '" + describe + "'", true);
+        throw;
+    }
 }
 
 
@@ -1217,122 +1333,6 @@ tCodeword Codegen::assignCodeword(const Str &instrumentName, Int instrIdx, Int g
 }
 #endif
 
-/************************************************************************\
-| expression helpers
-\************************************************************************/
-
-// FIXME: recursion?
-// FIXME: or pass SetInstruction or Expression depending on use
-// FIXME: adopt structure of cQASM's cqasm-v1-functions-gen.cpp register_into used for constant propagation
-
-/**
- * Actually perform the code generation for an expression.
- *
- * Can be called to handle:
- * - the RHS of a SetInstruction, in which case parameter 'lhs' must be valid
- * - an Expression that acts as a condition for structured control, in which case parameter 'label_if_false' must contain
- *   the label to jump to if the expression evaluates as false
- * The distinction between the two modes of operation is made based on the type of expression, either 'bit' or 'int',
- * which is possible because of the rather strict separation between these two types.
- *
- *
- * To understand how cQASM functions end up in the IR, please note that functions are handled during analyzing cQASM,
- * see 'AnalyzerHelper::analyze_function()'.
- *
- * A default set of functions that only handle constant arguments is provided by libqasm, see
- * 'register_into(resolver::FunctionTable &table)'. These functions add a constant node to the IR when called (and fail
- * if the arguments are not constant)
- *
- * Some of these are overridden by OpenQL to allow use of non-constant arguments. This is a 2 step process, where
- * 'convert_old_to_new(const compat::PlatformRef &old)' adds functions to ir->platform using 'add_function_type',
- * and 'ql::ir::cqasm:read()' then walks 'ir->platform->functions' and adds the functions using 'register_function()'.
- * These functions add a 'cqv::Function' node to the IR (even if the arguments are constant).
- */
-// FIXME: see expression_mapper.cc for inspiration
-// FIXME: split into separate parts and move to callers
-void Codegen::do_handle_expression(
-    const ir::ExpressionRef &expression,
-    const ir::ExpressionRef &lhs,
-    const Str &label_if_false,
-    const Str &descr
-) {
-    try {
-        if (!lhs.empty()) {
-            comment("# Expression '" + descr + "': " + ir::describe(lhs) + " = " + ir::describe(expression));
-        } else {
-#if 0   // NB: redundant information, also provided by structured control flow comments
-            comment("# Expression '" + descr + "': " << ir::describe(expression));
-#endif
-        }
-
-        if (auto ilit = expression->as_int_literal()) {
-            CHECK_COMPAT(!lhs.empty(), "LHS required");
-            cs.emit(
-                "",
-                "move",
-                as_int(ilit->value) + "," + as_reg(cs.dest_reg(lhs)),
-                "# " + ir::describe(expression)
-            );
-        } else if (auto blit = expression->as_bit_literal()) {
-            if(blit->value) {
-                // do nothing (to jump out of loop). FIXME: other contexts may exist
-            } else {    // FIXME: should be handled by constant removal pass
-                QL_ICE("bit literal 'false' currently not supported in '" << ir::describe(expression) << "'");
-            }
-        } else if (auto ref = expression->as_reference()) {
-            if(operandContext.is_creg_reference(*ref)) {  // creg, as RHS of a SetInstruction
-                auto reg = cs.creg2reg(*ref);
-                cs.emit(
-                    "",
-                    "move",
-                    as_reg(reg) + "," + as_reg(cs.dest_reg(lhs)),
-                    "# " + ir::describe(expression)
-                );
-            } else if (operandContext.is_breg_reference(*ref)) {    // breg as condition, like in "if(b[0])"
-                // transfer single breg to REG_TMP0
-                auto breg = operandContext.convert_breg_reference(*ref);
-                utils::Vec<utils::UInt> bregs{breg};
-                UInt mask = fncs.emit_bin_cast(bregs, 1);
-
-                cs.emit(
-                    "",
-                    "and",
-                    QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1),
-                    "# mask for '" + ir::describe(expression) + "'"
-                );    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-                cs.emit("", "nop");
-                cs.emit(
-                    "",
-                    "jlt",
-                    Str(REG_TMP1) + ",1," + as_target(label_if_false),
-                    "# skip next part if condition is false"
-                );
-            } else {
-                QL_ICE("expected reference to breg or creg, but got: " << ir::describe(expression));
-            }
-        } else if (auto fn = expression->as_function_call()) {
-            // handle cast
-            if (fn->function_type->name == "int") {
-                CHECK_COMPAT(
-                    fn->operands.size() == 1 &&
-                    fn->operands[0]->as_function_call(),
-                    "'int()' cast target must be a function"
-                );
-                fn = fn->operands[0]->as_function_call();   // step into. FIXME: Shouldn't we recurse to allow e.g. casting a breg??
-            }
-
-            // handle the function
-            fncs.dispatch(lhs, fn, ir::describe(expression));
-        } else {
-            QL_ICE("unsupported expression type for '" << ir::describe(expression));
-        }
-    }
-    catch (utils::Exception &e) {
-        e.add_context("in expression '" + ir::describe(expression) + "'", true);
-        throw;
-    }
-
-}
 
 } // namespace detail
 } // namespace vq1asm
