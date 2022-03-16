@@ -56,7 +56,7 @@ UInt Datapath::allocateSmBit(UInt breg_operand, UInt instrIdx) {
             smBit = lastSmBit + 1;
         }
         if (smBit >= SM_BIT_CNT) {
-            QL_INPUT_ERROR("Exceeded available Shared memory space of " << SM_BIT_CNT << " bits");
+            QL_INPUT_ERROR("Exceeded available shared memory space of " << SM_BIT_CNT << " bits");
         }
 
         auto it = mapBregToSmBit.find(breg_operand);
@@ -74,7 +74,7 @@ UInt Datapath::allocateSmBit(UInt breg_operand, UInt instrIdx) {
     return smBit;
 }
 
-// NB: bit_operand can be breg_operand or cond_operand, depending on context of caller
+// NB: bit_operand can be breg_operand or cond_operand, depending on context of caller. FIXME: cond_operand no longer exists,update identifiers and strings
 UInt Datapath::getSmBit(UInt bit_operand) const {
     UInt smBit;
 

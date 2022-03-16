@@ -3,6 +3,7 @@
  */
 
 #include "ql/com/map/expression_mapper.h"
+#include "ql/ir/describe.h"
 
 namespace ql {
 namespace com {
@@ -71,7 +72,9 @@ void ExpressionMapper::process_expression(utils::Maybe<ir::Expression> &expressi
  */
 void ExpressionMapper::process_statement(const ir::StatementRef &statement) {
     if (auto cond_insn = statement->as_conditional_instruction()) {
+        QL_IOUT("processing condition: " + ir::describe(cond_insn->condition));
         process_expression(cond_insn->condition);
+        QL_IOUT("resulting condition: " + ir::describe(cond_insn->condition));
         if (auto custom_insn = statement->as_custom_instruction()) {
             for (auto &operand : custom_insn->operands) {
                 process_expression(operand);

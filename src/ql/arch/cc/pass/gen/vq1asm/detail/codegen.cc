@@ -91,6 +91,16 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
                 } else {
                     QL_ICE("unsupported gate condition");
                 }
+#if OPT_CC_USER_FUNCTIONS
+            // FIXME: note that is only here to allow playing around with function calls as condition. Real support
+            //  requires a redesign
+            } else if (
+                fn->function_type->name == "rnd" ||
+                fn->function_type->name == "rnd_seed"
+            ) {
+                cond_type = ConditionType::ALWAYS;
+                QL_WOUT("FIXME: instruction condition function not yet handled: " + fn->function_type->name);
+#endif
             } else {
                 CHECK_COMPAT(fn->operands.size() == 2, "expected 2 operands");
                 cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
@@ -123,7 +133,7 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
             QL_ICE("unsupported condition expression");
         }
     } catch (utils::Exception &e) {
-        e.add_context("in gate condition" + ir::describe(condition), true);
+        e.add_context("in gate condition '" + ir::describe(condition) + "'", true);
         throw;
     }
     return {cond_type, cond_operands};
@@ -1238,6 +1248,7 @@ tCodeword Codegen::assignCodeword(const Str &instrumentName, Int instrIdx, Int g
  * and 'ql::ir::cqasm:read()' then walks 'ir->platform->functions' and adds the functions using 'register_function()'.
  * These functions add a 'cqv::Function' node to the IR (even if the arguments are constant).
  */
+// FIXME: see expression_mapper.cc for inspiration
 void Codegen::do_handle_expression(
     const ir::ExpressionRef &expression,
     const ir::ExpressionRef &lhs,
