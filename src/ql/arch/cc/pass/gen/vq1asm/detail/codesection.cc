@@ -3,6 +3,9 @@
 
 #include "ql/version.h"
 
+#include <iomanip>
+#include <ios>
+
 namespace ql {
 namespace arch {
 namespace cc {
