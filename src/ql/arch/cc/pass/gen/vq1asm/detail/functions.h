@@ -27,6 +27,7 @@ public:
      * FIXME: add comment
      */
     void dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *fn, const Str &describe);
+    void dispatch(const ir::FunctionCall *fn, const Str &label_if_false, const Str &describe);
 
     /*
      * Cast bregs to bits in REG_TMP0, i.e. transfer them from DSM to processor.
@@ -42,10 +43,18 @@ private:  // types
     // arguments for a tOpFunc
     struct  FncArgs {
         Operands ops;
-        UInt dest_reg;
+        UInt dest_reg = 0;
         Str label_if_false;
         Str operation;  // from function table
         Str describe; // to generate comments
+
+        FncArgs(const OperandContext &operandContext, ir::Any<ir::Expression> operands, const Str &describe)
+            : describe(describe) {
+            // split operands into different types, and determine profile
+            for(auto &op : operands) {
+                ops.append(operandContext, op);
+            }
+        }
     };
 
     // function pointer for dispatch()
@@ -56,16 +65,20 @@ private:  // types
         Str operation;
     };
 
+    using FuncMap = std::map<Str, FuncInfo>;
+
 private:    // vars
-    // references to bject instances needed
+    // references to object instances needed
     const OperandContext &operandContext;                       // context for Operand processing
     const Datapath &dp;                                         // handling of CC datapath
     CodeSection &cs;                                            // handling of code section
 
-    // map name to function, see register_functions()
-    std::map<Str, FuncInfo> func_map;
+    FuncMap func_map_int;                                       // map name to function info, see register_functions()
+    FuncMap func_map_bit;                                       // idem, for functions returning a bit
 
 private:    // methods
+    void do_dispatch(const FuncMap &func_map, const Str &name, FncArgs &args, const Str & return_type);
+
     /*
      * operator functions for code generation in expressions
      *
@@ -75,16 +88,12 @@ private:    // methods
      * - the suffix defines the argument profile(s), using the naming from get_operand_type()
      */
 
-    // bitwise inversion
-    void op_binv_C(const FncArgs &a);
+    /*
+     *  Functions returning a bit
+     */
 
     // logical inversion
     void op_linv_B(const FncArgs &a);
-
-    // int arithmetic, 2 operands: "+", "-", "&", "|", "^"
-    void op_grp_int_2op_CC(const FncArgs &a);
-    void op_grp_int_2op_Ci_iC(const FncArgs &a);
-    void op_sub_iC(const FncArgs &a);    // special case
 
     // bit arithmetic, 2 operands: "&&", "||", "^^"
     void op_grp_bit_2op_BB(const FncArgs &a);
@@ -104,7 +113,19 @@ private:    // methods
     void op_gt_iC(const FncArgs &a);
 
     /*
-     * other functions for code generation in expressions
+     *  Functions returning an int
+     */
+
+    // bitwise inversion
+    void op_binv_C(const FncArgs &a);
+
+    // int arithmetic, 2 operands: "+", "-", "&", "|", "^"
+    void op_grp_int_2op_CC(const FncArgs &a);
+    void op_grp_int_2op_Ci_iC(const FncArgs &a);
+    void op_sub_iC(const FncArgs &a);    // special case
+
+    /*
+     * other functions returning an int, for code generation in expressions
      */
 #if OPT_CC_USER_FUNCTIONS
     void rnd_seed_C(const FncArgs &a);

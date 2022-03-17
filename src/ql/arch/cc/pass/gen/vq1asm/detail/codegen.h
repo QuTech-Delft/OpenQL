@@ -99,8 +99,32 @@ public: //  functions
 
     void comment(const Str &c);
 
-    // new IR expressions
+    /**
+     * Handle expressions.
+     *
+     * To understand how cQASM functions end up in the IR, please note that functions are handled during analyzing
+     * cQASM, see 'AnalyzerHelper::analyze_function()'.
+     *
+     * A default set of functions that only handle constant arguments is provided by libqasm, see
+     * 'register_into(resolver::FunctionTable &table)'. These functions add a constant node to the IR when called (and
+     * fail if the arguments are not constant)
+     *
+     * Some of these are overridden by OpenQL to allow use of non-constant arguments. This is a 2 step process, where
+     * 'convert_old_to_new(const compat::PlatformRef &old)' adds functions to ir->platform using 'add_function_type',
+     * and 'ql::ir::cqasm:read()' then walks 'ir->platform->functions' and adds the functions using
+     * 'register_function()'. These functions add a 'cqv::Function' node to the IR (even if the arguments are constant,
+     * so overriding a function defeats libqasm's constant removal for that function).
+     */
+
+    /**
+     * Perform the code generation for a SetInstruction.
+     */
     void handle_set_instruction(const ir::SetInstruction &set, const Str &descr);
+
+    /**
+     * Perform the code generation for an expression. The expression should act as a condition for structured control,
+     * parameter 'label_if_false' must contain the label to jump to if the expression evaluates as false.
+     */
     void handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);   // FIXME: private?
 
 

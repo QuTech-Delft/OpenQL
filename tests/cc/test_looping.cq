@@ -1,6 +1,6 @@
 # File:         test_looping.cq
 # Purpose:      test cQasm looping with CC backend
-# Notes:
+# Notes:        most constructs make no practical sense, we're just checking the constructs and code generation
 
 version 1.2
 qubits 17

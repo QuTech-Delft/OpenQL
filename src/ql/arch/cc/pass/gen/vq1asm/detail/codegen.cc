@@ -986,29 +986,6 @@ void Codegen::comment(const Str &c) {
 // FIXME: or pass SetInstruction or Expression depending on use
 // FIXME: adopt structure of cQASM's cqasm-v1-functions-gen.cpp register_into used for constant propagation
 
-/**
- * Actually perform the code generation for an expression.
- *
- * Can be called to handle:
- * - the RHS of a SetInstruction, in which case parameter 'lhs' must be valid
- * - an Expression that acts as a condition for structured control, in which case parameter 'label_if_false' must contain
- *   the label to jump to if the expression evaluates as false
- * The distinction between the two modes of operation is made based on the type of expression, either 'bit' or 'int',
- * which is possible because of the rather strict separation between these two types.
- *
- *
- * To understand how cQASM functions end up in the IR, please note that functions are handled during analyzing cQASM,
- * see 'AnalyzerHelper::analyze_function()'.
- *
- * A default set of functions that only handle constant arguments is provided by libqasm, see
- * 'register_into(resolver::FunctionTable &table)'. These functions add a constant node to the IR when called (and fail
- * if the arguments are not constant)
- *
- * Some of these are overridden by OpenQL to allow use of non-constant arguments. This is a 2 step process, where
- * 'convert_old_to_new(const compat::PlatformRef &old)' adds functions to ir->platform using 'add_function_type',
- * and 'ql::ir::cqasm:read()' then walks 'ir->platform->functions' and adds the functions using 'register_function()'.
- * These functions add a 'cqv::Function' node to the IR (even if the arguments are constant).
- */
 // FIXME: see expression_mapper.cc for inspiration
 // FIXME: split with next function, move to .h
 
@@ -1108,6 +1085,11 @@ void Codegen::handle_expression(const ir::ExpressionRef &expression, const Str &
             } else {
                 QL_ICE("expected reference to breg, but got: " << ir::describe(expression));
             }
+        } else if (auto fn = expression->as_function_call()) {
+            // FIXME: handle (bit) cast?
+
+            // handle the function
+            fncs.dispatch(fn, label_if_false, describe);
         } else {
             QL_ICE("unsupported expression type");
         }

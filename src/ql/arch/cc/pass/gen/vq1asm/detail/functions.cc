@@ -21,38 +21,19 @@ Functions::Functions(const OperandContext &operandContext, const Datapath &dp, C
     register_functions();
 }
 
-void Functions::dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *fn, const Str &describe) {
-    // collect arguments for operator functions
-    FncArgs args;
-    args.describe = describe;
-
-    // split operands into different types, and determine profile
-    for(auto &op : fn->operands) {
-        args.ops.append(operandContext, op);
-    }
-
-    // set dest_reg
-    if(lhs.empty()) {
-        args.dest_reg = 0;    // FIXME
-    } else {
-        args.dest_reg = cs.dest_reg(lhs);
-    }
-
-    // FIXME:
-    // check creg, breg range
-
-
+void Functions::do_dispatch(const FuncMap &func_map, const Str &name, FncArgs &args, const Str & return_type) {
     // create key from name and operand profile, using the same encoding as register_functions()
-    Str key = fn->function_type->name + "_" + args.ops.profile;
+    Str key = name + "_" + args.ops.profile;
 
     // lookup key
     auto it = func_map.find(key);
     if (it == func_map.end()) {
         // NB: if we arrive here, there's an inconsistency between the functions registered in 'ql::ir::cqasm:read()'
-        // (see comment at beginning of Codegen::do_handle_expression) and those available in func_map.
+        // (see comment before Codegen::handle_set_instruction) and those available in func_map.
         QL_ICE(
-            "function '" << fn->function_type->name
+            "function '" << name
             << "' with profile '" << args.ops.profile
+            << " and return type '" << return_type
             << "' not supported by CC backend, but it should be"
         );
     }
@@ -62,6 +43,26 @@ void Functions::dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *f
 
     // call the function
     (this->*it->second.func)(args);
+}
+
+void Functions::dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *fn, const Str &describe) {
+    // collect arguments for operator functions
+    FncArgs args(operandContext, fn->operands, describe);
+    args.dest_reg = cs.dest_reg(lhs);
+
+    // FIXME: check creg, breg range? Already done, everywhere?
+
+    do_dispatch(func_map_int, fn->function_type->name, args, "int");
+}
+
+void Functions::dispatch(const ir::FunctionCall *fn, const Str &label_if_false, const Str &describe) {
+    // collect arguments for operator functions
+    FncArgs args(operandContext, fn->operands, describe);
+    args.label_if_false = label_if_false;
+
+    // FIXME: check creg, breg range? Already done, everywhere?
+
+    do_dispatch(func_map_bit, fn->function_type->name, args, "bit");
 }
 
 
@@ -118,15 +119,10 @@ UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
     return mask;
 }
 
+/*
+ * Functions returning a bit
+ */
 
-void Functions::op_binv_C(const FncArgs &a) {
-    cs.emit(
-        "",
-        "not",
-        as_reg(a.ops.cregs[0]) + "," + as_reg(a.dest_reg),
-        "# " + a.describe
-    );
-}
 
 void Functions::op_linv_B(const FncArgs &a) {
     // transfer single breg to REG_TMP0
@@ -147,29 +143,6 @@ void Functions::op_linv_B(const FncArgs &a) {
     );
 }
 
-
-void Functions::op_grp_int_2op_CC(const FncArgs &a) {
-    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_reg(a.ops.cregs[1]), as_reg(a.dest_reg));
-}
-
-void Functions::op_grp_int_2op_Ci_iC(const FncArgs &a) {
-    // NB: for profile "iC" we 'reverse' operands to match Q1 instruction set; this is for free because the operands
-    // are split based on their type
-    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
-}
-
-void Functions::op_sub_iC(const FncArgs &a) {
-    // NB: 'reverse' operands to match Q1 instruction set
-    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
-
-    // Negate result in 2's complement to correct for changed op order
-    Str reg = as_reg(a.dest_reg);
-    cs.emit("", "not", reg);                       // invert
-    cs.emit("", "nop");
-    cs.emit("", "add", "1,"+reg+","+reg);          // add 1
-}
-
-
 void Functions::op_grp_bit_2op_BB(const FncArgs &a) {
     // transfer 2 bregs to REG_TMP0
     UInt mask = emit_bin_cast(a.ops.bregs, 2);
@@ -181,7 +154,6 @@ void Functions::op_grp_bit_2op_BB(const FncArgs &a) {
 #endif
     QL_ICE("FIXME: CC backend does not yet support &&,||,^^, expression is '" << a.describe);
 }
-
 
 void Functions::op_grp_rel1_tail(const FncArgs &a) {
     cs.emit("", "nop");    // register dependency
@@ -198,7 +170,7 @@ void Functions::op_grp_rel1_CC(const FncArgs &a) {
         "",
         "xor",
         as_reg(a.ops.cregs[0]) + "," + as_reg(a.ops.cregs[1]),
-        "# skip next part if condition is false"
+        "# " + a.describe
     );
     op_grp_rel1_tail(a);
 }
@@ -208,7 +180,7 @@ void Functions::op_grp_rel1_Ci_iC(const FncArgs &a) {
         "",
         "xor",
         as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integer),
-        "# skip next part if condition is false"
+        "# " + a.describe
     );
     op_grp_rel1_tail(a);
 }
@@ -266,6 +238,40 @@ void Functions::op_gt_iC(const FncArgs &a) {
 }
 
 
+/*
+ * Functions returning an int
+ */
+
+void Functions::op_binv_C(const FncArgs &a) {
+    cs.emit(
+        "",
+        "not",
+        as_reg(a.ops.cregs[0]) + "," + as_reg(a.dest_reg),
+        "# " + a.describe
+    );
+}
+
+void Functions::op_grp_int_2op_CC(const FncArgs &a) {
+    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_reg(a.ops.cregs[1]), as_reg(a.dest_reg));
+}
+
+void Functions::op_grp_int_2op_Ci_iC(const FncArgs &a) {
+    // NB: for profile "iC" we 'reverse' operands to match Q1 instruction set; this is for free because the operands
+    // are split based on their type
+    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
+}
+
+void Functions::op_sub_iC(const FncArgs &a) {
+    // NB: 'reverse' operands to match Q1 instruction set
+    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
+
+    // Negate result in 2's complement to correct for changed op order
+    Str reg = as_reg(a.dest_reg);
+    cs.emit("", "not", reg);                       // invert
+    cs.emit("", "nop");
+    cs.emit("", "add", "1,"+reg+","+reg);          // add 1
+}
+
 #if OPT_CC_USER_FUNCTIONS
 void Functions::rnd_seed_C(const FncArgs &a) {
     // FIXME
@@ -286,21 +292,24 @@ void Functions::rnd_i(const FncArgs &a) {
 
 
 /*
- * Function table
+ * Function tables
  *
- * The set of available functions should match that in the platform as set by
- * 'convert_old_to_new(const compat::PlatformRef &old)'
+ * The set of functions available here should match that in the platform as set by
+ * 'convert_old_to_new(const compat::PlatformRef &old)'.
+ * Unfortunately, consistency must currently be maintained manually.
+ * FIXME: we might check against ir->platform->functions
  *
- * Also see Codegen::do_handle_expression()
+ * We maintain separate tables for functions returning an
+ * - int (in the context of a SetInstruction); the result is passed to the LHS register
+ * - bit (in the context of a logical expression); the result controls a jump (FIXME: which is conceptually distinct from tthe function)
+ * FIXME: note that we do not yet support SetInstructions for bits
+ *
+ * Also see Codegen::handle_set_instruction() and handle_expression()
  */
 
-// FIXME: add return type
 //name		   profile      func                    operation
-#define CC_FUNCTION_LIST \
-X("operator~",      C,      op_binv_C,             "") \
-\
-/* bit arithmetic, 1 operand: "!" */ \
-X("operator!",      B,      op_linv_B,              "") \
+#define CC_FUNCTION_LIST_INT \
+X("operator~",      C,      op_binv_C,              "") \
 \
 /* int arithmetic, 2 operands: "+", "-", "&", "|", "^" */ \
 X("operator+",      CC,     op_grp_int_2op_CC,      "add") \
@@ -318,6 +327,18 @@ X("operator|",      iC,     op_grp_int_2op_Ci_iC,   "or") \
 X("operator^",      CC,     op_grp_int_2op_CC,      "xor") \
 X("operator^",      Ci,     op_grp_int_2op_Ci_iC,   "xor") \
 X("operator^",      iC,     op_grp_int_2op_Ci_iC,   "xor") \
+
+#define CC_FUNCTION_LIST_INT_USER \
+/* user functions */ \
+X("rnd_seed",       C,      rnd_seed_C,             "") \
+X("rnd_seed",       i,      rnd_seed_i,             "") \
+X("rnd",            C,      rnd_C,                  "") \
+X("rnd",            i,      rnd_i,                  "")
+
+#define CC_FUNCTION_LIST_BIT \
+\
+/* bit arithmetic, 1 operand: "!" */ \
+X("operator!",      B,      op_linv_B,              "") \
 \
 /* bit arithmetic, 2 operands: "&&", "||", "^^" */ \
 X("operator&&",     BB,     op_grp_bit_2op_BB,      "") \
@@ -351,24 +372,21 @@ X("operator<=",     CC,     op_gt_CC,               "jlt") \
 X("operator<=",     Ci,     op_gt_Ci,               "jlt") \
 X("operator<=",     iC,     op_gt_iC,               "jge") /* inverse operation */
 
-#define CC_FUNCTION_LIST_USER \
-/* user functions */ \
-X("rnd_seed",       C,      rnd_seed_C,             "") \
-X("rnd_seed",       i,      rnd_seed_i,             "") \
-X("rnd",            C,      rnd_C,                  "") \
-X("rnd",            i,      rnd_i,                  "")
 
 
 void Functions::register_functions() {
-    // Initialize func_map with the functions from CC_FUNCTION_LIST and optionally CC_FUNCTION_LIST_USER.
+    // Initialize func_map_int with the functions from CC_FUNCTION_LIST and optionally CC_FUNCTION_LIST_USER.
     // The key consists of the concatenation of name, "_" and the stringified profile, e.g "operator~_C"
 
     #define X(name, profile, func, operation) { name "_" #profile, { &Functions::func, operation } } ,
-    func_map = {
-        CC_FUNCTION_LIST
+    func_map_int = {
+        CC_FUNCTION_LIST_INT
         #if OPT_CC_USER_FUNCTIONS
-         CC_FUNCTION_LIST_USER
+         CC_FUNCTION_LIST_INT_USER
         #endif
+    };
+    func_map_bit = {
+        CC_FUNCTION_LIST_BIT
     };
     #undef X
 }
