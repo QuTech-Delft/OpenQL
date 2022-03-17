@@ -36,6 +36,7 @@ static Str as_label(const Str &label) { return label + ":"; }
  * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
  * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
  */
+// FIXME: move to datapath
 static tInstructionCondition decode_condition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
     QL_IOUT("decode_condition: condition=" + ir::describe(condition));
     ConditionType cond_type;

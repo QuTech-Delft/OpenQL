@@ -76,16 +76,14 @@ private:    // vars
     FuncMap func_map_int;                                       // map name to function info, see register_functions()
     FuncMap func_map_bit;                                       // idem, for functions returning a bit
 
-private:    // methods
-    void do_dispatch(const FuncMap &func_map, const Str &name, FncArgs &args, const Str & return_type);
-
+private:    // operator functions
     /*
      * operator functions for code generation in expressions
      *
      * Naming conventions:
      * - functions handling a single operator have naming inspired by libqasm's func_gen::Function::unique_name
      * - functions handling a group of operators are named "op_grp_<groupName>"
-     * - the suffix defines the argument profile(s), using the naming from get_operand_type()
+     * - the suffix defines the argument profile(s), using the naming from Operands::profile()
      */
 
     /*
@@ -134,22 +132,14 @@ private:    // methods
     void rnd_i(const FncArgs &a);
 #endif
 
+
+private:    // functions
     /*
      * Register the functions supported by the CC backend
      */
     void register_functions();
 
-    /*
-     * Get type of single function operand. Encoding:
-     * - 'b': bit literal
-     * - 'i': int literal
-     * - 'B': breg reference
-     * - 'C': creg reference
-     *
-     * Inspired by func_gen::Function::generate_impl_footer and cqasm::types::from_spec, but notice that we add 'C' and
-     * have sightly different purpose and interpretation
-     */
-//    Str get_operand_type(const ir::ExpressionRef &op);
+    void do_dispatch(const FuncMap &func_map, const Str &name, FncArgs &args, const Str & return_type);
 
     // FIXME: rename to emit_operation_..
     void emit_mnem2args(const FncArgs &a, const Str &arg0, const Str &arg1, const Str &target=REG_TMP0);
