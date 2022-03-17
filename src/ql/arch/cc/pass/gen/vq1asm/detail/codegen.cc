@@ -38,7 +38,6 @@ static Str as_label(const Str &label) { return label + ":"; }
  */
 // FIXME: move to datapath
 static tInstructionCondition decode_condition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
-    QL_IOUT("decode_condition: condition=" + ir::describe(condition));
     ConditionType cond_type;
     utils::Vec<utils::UInt> cond_operands;
 
@@ -517,7 +516,7 @@ void Codegen::bundle_finish(
     CodeGenMap codeGenMap = collectCodeGenInfo(startCycle, durationInCycles);
 
     // compute stuff requiring overview over all instruments:
-    // FIXME: add
+    // FIXME: add:
     // - DSM used, for seq_inv_sm
 
     // determine whether bundle has any real-time measurement results
@@ -618,8 +617,6 @@ void Codegen::bundle_finish(
 
 void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
     Operands ops;
-
-    QL_IOUT("custum instruction: " << ir::describe(custom));    // FIXME
 
     // Handle the template operands for the instruction_type we got. Note that these are empty if that is a 'root'
     // InstructionType, and only contains data if it is one of the specializations (see ir.gen.h)
