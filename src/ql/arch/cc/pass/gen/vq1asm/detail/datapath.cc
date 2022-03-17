@@ -128,18 +128,6 @@ UInt Datapath::getSizeTag(UInt numReadouts) {
 }
 
 
-static Str cond_qasm(ConditionType condition, const Vec<UInt> &cond_operands) {
-#if 0    // FIXME: hack
-    ir::compat::gate_types::Custom g("foo");
-    g.condition = condition;
-    g.cond_operands = cond_operands;
-    return g.cond_qasm();
-#else
-    return "FIXME";
-#endif
-}
-
-
 void Datapath::emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeMap, Int slot) {
     if (measResultRealTimeMap.empty()) {
         QL_ICE("measResultRealTimeMap must not be empty");
@@ -201,10 +189,12 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
         CondGateInfo cgi = cg.second;
 
         // emit comment for group
-        Str condition = cond_qasm(cgi.instructionCondition.cond_type, cgi.instructionCondition.cond_operands);
         emit(
             slot,
-            QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", condition='" << condition << "'")
+            QL_SS2S(
+                "# group " << group
+                << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut
+                << ", condition='" << cgi.instructionCondition.describe << "'")
         );
 
         // shorthand

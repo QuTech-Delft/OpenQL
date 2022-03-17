@@ -136,7 +136,7 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
         e.add_context("in gate condition '" + ir::describe(condition) + "'", true);
         throw;
     }
-    return {cond_type, cond_operands};
+    return {cond_type, cond_operands, ir::describe(condition)};
 }
 
 
