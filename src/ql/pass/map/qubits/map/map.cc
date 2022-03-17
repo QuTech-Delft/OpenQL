@@ -463,9 +463,9 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     auto swap_selection_mode = options["swap_selection_mode"].as_str();
     if (swap_selection_mode == "one") {
         parsed_options->swap_selection_mode = detail::SwapSelectionMode::ONE;
-    } else if (path_selection_mode == "all") {
+    } else if (swap_selection_mode == "all") {
         parsed_options->swap_selection_mode = detail::SwapSelectionMode::ALL;
-    } else if (path_selection_mode == "earliest") {
+    } else if (swap_selection_mode == "earliest") {
         parsed_options->swap_selection_mode = detail::SwapSelectionMode::EARLIEST;
     } else {
         QL_ASSERT(false);

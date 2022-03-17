@@ -528,8 +528,8 @@
         },
 
         // CZ should handle:
-        // https://github.com/QE-Lab/OpenQL/issues/166
-        // https://github.com/QE-Lab/OpenQL/issues/180
+        // https://github.com/QuTech-Delft/OpenQL/issues/166
+        // https://github.com/QuTech-Delft/OpenQL/issues/180
         "cz": {
             "duration": 40,
             "type": "flux",

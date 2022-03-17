@@ -42,7 +42,7 @@ class Test_bugs(unittest.TestCase):
         p.add_kernel(k)
 
 
-    # relates to https://github.com/QE-Lab/OpenQL/issues/171
+    # relates to https://github.com/QuTech-Delft/OpenQL/issues/171
     # various runs of compiles were generating different results or in the best
     # case strange errors. So multiple (NCOMPILES) runs of compile are executed
     # to make sure there is no error and output generated in all these runs is same

@@ -74,9 +74,9 @@ For instance, ``dice.qasm`` contents are shown below:
         measure q[1]
         measure q[2]
 
-These cQASM codes can be simulated on `QX simulator <https://github.com/QE-Lab/qx-simulator>`_.
+These cQASM codes can be simulated on `QX simulator <https://github.com/QuTech-Delft/qx-simulator>`_.
 For this we are using the simplified python interface to QX known as
-`QXelarator <https://github.com/QE-Lab/qx-simulator/tree/develop/#qxelarator-qx-as-a-quantum-accelerator>`_.
+`QXelarator <https://github.com/QuTech-Delft/qx-simulator/tree/develop/#qxelarator-qx-as-a-quantum-accelerator>`_.
 This is done by the following code snippet:
 
 .. code:: python
