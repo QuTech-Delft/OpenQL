@@ -314,6 +314,9 @@ utils::Bool InterCoreChannelResource::on_gate(
         return true;
     }
 
+    // If we get here, all relevant predicates have matched, so this resource must be acquired.
+    // When acquisition fails, return false.
+    
     // Compute cycle range for this gate.
     State::Range range = {
         cycle,
@@ -344,7 +347,7 @@ utils::Bool InterCoreChannelResource::on_gate(
             }
         }
     }
-    if (num_channels_in_use >= config->num_system_wide_channels) {
+    if (num_channels_in_use + gate.qubits.size() > config->num_system_wide_channels) {
         QL_DOUT(" -> not available because system-wide number of channels is saturated");
         return false;
     }

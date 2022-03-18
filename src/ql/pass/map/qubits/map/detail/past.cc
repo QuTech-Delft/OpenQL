@@ -519,10 +519,13 @@ void Past::add_and_schedule(const ir::compat::GateRef &gate) {
  * map to it.
  */
 utils::UInt Past::map_qubit(utils::UInt virt) {
+    QL_DOUT("map_qubit(virt=" << virt);
     utils::UInt r = v2r[virt];
     if (r == com::map::UNDEFINED_QUBIT) {
+        QL_DOUT("... map_qubit, virt qubit maps to undefined real qubit, so allocate it");
         r = v2r.allocate(virt);
     }
+    QL_DOUT("-> map_qubit(virt=" << virt << " mapped to real=" << r);
     return r;
 }
 
@@ -535,7 +538,7 @@ static void strip_name(utils::Str &name) {
     if (p != utils::Str::npos) {
         name = name.substr(0,p);
     }
-    QL_DOUT("... after strip_name name=" << name);
+    QL_DOUT("... after strip_name name='" << name << "'");
 }
 
 /**
