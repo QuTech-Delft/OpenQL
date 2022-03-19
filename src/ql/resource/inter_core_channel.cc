@@ -5,8 +5,8 @@
 
 #include "ql/resource/inter_core_channel.h"
 
-// #undef MULTI_LINE_LOG_DEBUG to disable multi-line dumping 
-#define MULTI_LINE_LOG_DEBUG
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
 
 namespace ql {
 namespace resource {

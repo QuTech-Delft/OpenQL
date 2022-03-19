@@ -11,9 +11,8 @@
 #include "ql/rmgr/manager.h"
 #include "ql/arch/diamond/annotations.h"
 
-// comment two lines below out to enable LOG_DEBUG ir dumping
-#undef QL_IF_LOG_DEBUG
-#define QL_IF_LOG_DEBUG if (0)
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
 
 namespace ql {
 namespace ir {
@@ -924,12 +923,14 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     ir->platform->set_annotation<compat::PlatformRef>(old);
 
     // Check the result.
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Result of old->new IR platform conversion:");
         ir->dump_seq(); 
-    } else {
-        QL_DOUT("Result of old->new IR platform conversion (disabled)");
     }
+#else
+    QL_DOUT("Result of old->new IR platform conversion (disabled)");
+#endif
     check_consistency(ir);
 
     return ir;
