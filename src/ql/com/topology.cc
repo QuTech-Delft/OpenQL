@@ -7,9 +7,8 @@
 
 #include "ql/utils/logger.h"
 
-// comment two lines below out to enable LOG_DEBUG ir dumping
-#undef QL_IF_LOG_DEBUG
-#define QL_IF_LOG_DEBUG if (0)
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
 
 namespace ql {
 namespace com {
@@ -507,14 +506,14 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
         }
     }
 
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Dump the grid structure to stdout ...");
         dump();
-    } else {
-        QL_DOUT("Dump the grid structure to stdout (disabled)");
     }
-
-
+#else
+    QL_DOUT("Dump the grid structure to stdout (disabled)");
+#endif
 }
 
 /**

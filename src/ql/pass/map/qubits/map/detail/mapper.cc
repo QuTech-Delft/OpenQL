@@ -9,9 +9,8 @@
 #include "ql/pass/ana/statistics/annotations.h"
 #include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
 
-// comment two lines below out to enable LOG_DEBUG ir dumping
-#undef QL_IF_LOG_DEBUG
-#define QL_IF_LOG_DEBUG if (0)
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
 
 namespace ql {
 namespace pass {
@@ -105,23 +104,27 @@ void Mapper::gen_shortest_paths(
     // src->n is one hop, budget from n is one less so distance(n,tgt) <= budget-1 (i.e. distance < budget)
     // when budget==d, this defaults to distance(n,tgt) <= d-1
     auto neighbors = platform->topology->get_neighbors(src);
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("gen_shortest_path, neighbor relations after normalizing, before iterating");
         for (auto dn : neighbors) {
             QL_DOUT("..." << dn << " ");
         }
-    } else {
-        QL_DOUT("gen_shortest_path, neighbor relations after normalizing, before iterating (disabled)");
     }
+#else
+    QL_DOUT("gen_shortest_path, neighbor relations after normalizing, before iterating (disabled)");
+#endif
     neighbors.remove_if([this,budget,tgt](const UInt& n) { return platform->topology->get_distance(n, tgt) >= budget; });
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("gen_shortest_paths: ... after reducing to steps within budget, nbl: ");
         for (auto dn : neighbors) {
             QL_DOUT("..." << dn << " ");
         }
-    } else {
-        QL_DOUT("gen_shortest_paths: ... after reducing to steps within budget, nbl (disabled) ");
     }
+#else
+    QL_DOUT("gen_shortest_paths: ... after reducing to steps within budget, nbl (disabled) ");
+#endif
 
     // Update the neighbor list according to the path strategy.
     if (strategy == PathStrategy::RANDOM) {
@@ -154,14 +157,16 @@ void Mapper::gen_shortest_paths(
 
     }
 
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("gen_shortest_path, neighbor relations after normalizing, before iterating");
         for (auto dn : neighbors) {
             QL_DOUT("..." << dn << " ");
         }
-    } else {
-        QL_DOUT("gen_shortest_path, neighbor relations after normalizing, before iterating (disabled)");
     }
+#else
+    QL_DOUT("gen_shortest_path, neighbor relations after normalizing, before iterating (disabled)");
+#endif
 
     // For all resulting neighbors, find all continuations of a shortest path by
     // recursively calling ourselves.
@@ -589,13 +594,15 @@ Bool Mapper::map_mappable_gates(
         // non-nearest-neighbor, otherwise they might also be nearest-neighbor).
         gates = av_gates;
 
+#ifdef MULTI_LINE_LOG_DEBUG
         QL_IF_LOG_DEBUG {
             for (const auto &gate : gates) {
                 QL_DOUT(". map_mappable gates, 2q gates returned: " << gate->qasm());
             }
-        } else {
-            QL_DOUT("map_mappable gates, 2q gates returned (disabled)");
         }
+#else
+        QL_DOUT("map_mappable gates, 2q gates returned (disabled)");
+#endif
 
         return true;
     }
@@ -892,12 +899,14 @@ void Mapper::place(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r) 
         QL_WOUT("InitialPlace support disabled during OpenQL build [DONE]");
 #endif // ifdef INITIALPLACE
     }
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("v2r dump after InitialPlace");
         v2r.dump_state();
-    } else {
-        QL_DOUT("v2r dump after InitialPlace (disabled)");
     }
+#else
+    QL_DOUT("v2r dump after InitialPlace (disabled)");
+#endif
 
 }
 
@@ -1043,12 +1052,14 @@ void Mapper::map_kernel(const ir::compat::KernelRef &k) {
         options->initialize_one_to_one,
         options->assume_initialized ? com::map::QubitState::INITIALIZED : com::map::QubitState::NONE
     };
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("v2r dump after initialization:");
         v2r.dump_state();
-    } else {
-        QL_DOUT("v2r dump after initialization (disabled)");
     }
+#else
+    QL_DOUT("v2r dump after initialization (disabled)");
+#endif
 
     // Save the input qubit map for reporting.
     v2r_in = v2r;
@@ -1063,12 +1074,14 @@ void Mapper::map_kernel(const ir::compat::KernelRef &k) {
     // Perform heuristic routing.
     QL_DOUT("Mapper::Map before route: assume_initialized=" << options->assume_initialized);
     route(k, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("v2r dump after heuristics");
         v2r.dump_state();
-    } else {
-        QL_DOUT("v2r dump after heuristics (disabled)");
     }
+#else
+    QL_DOUT("v2r dump after heuristics (disabled)");
+#endif
 
     // Save the routed qubit map for reporting. This is the resulting qubit map
     // at the *end* of the kernel.

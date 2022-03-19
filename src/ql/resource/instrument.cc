@@ -5,11 +5,8 @@
 
 #include "ql/resource/instrument.h"
 
-// comment lines below out to enable LOG_DEBUG ir dumping
-/*#undef QL_DOUT
-#define QL_DOUT(x) ::std::cout << x << ::std::endl
-#undef QL_IF_LOG_DEBUG
-#define QL_IF_LOG_DEBUG if (0)*/
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
 
 namespace ql {
 namespace resource {
@@ -465,6 +462,7 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
     state.resize(cfg->instrument_names.size());
 
     // Print result if debug is enabled.
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Print result of initializing instrument resource: ");
         std::cout << "====================================" << std::endl;
@@ -492,9 +490,10 @@ void InstrumentResource::on_initialize(rmgr::Direction direction) {
         std::cout << "nq_instr_q1: " << config->multi_qubit_instrument[1] << std::endl;
         std::cout << "nq_instr_qn: " << config->multi_qubit_instrument[2] << std::endl;
         std::cout << "====================================" << std::endl;
-    } else {
-        QL_DOUT("Print result of initializing instrument resource (disabled)");
     }
+#else
+    QL_DOUT("Print result of initializing instrument resource (disabled)");
+#endif
 #undef ERROR
 
 }
@@ -646,12 +645,14 @@ utils::Bool InstrumentResource::on_gate(
 
         // Check the resources based on function index.
         for (auto index : affected) {
+#ifdef MULTI_LINE_LOG_DEBUG
             QL_IF_LOG_DEBUG {
                 QL_DOUT("    reservations for instrument " << config->instrument_names[index] << ":");
                 state[index].dump_state(std::cout, "      ");
-            } else {
-                QL_DOUT("    reservations for instrument " << config->instrument_names[index] << " (disabled)");
             }
+#else
+            QL_DOUT("    reservations for instrument " << config->instrument_names[index] << " (disabled)");
+#endif
             auto result = state[index].find(range);
             switch (result.type) {
                 case utils::RangeMatchType::NONE:

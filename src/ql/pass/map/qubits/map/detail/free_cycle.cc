@@ -4,9 +4,8 @@
 
 #include "free_cycle.h"
 
-// comment two lines below out to enable LOG_DEBUG ir dumping
-#undef QL_IF_LOG_DEBUG
-#define QL_IF_LOG_DEBUG if (0)
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
 
 namespace ql {
 namespace pass {
@@ -99,12 +98,14 @@ void FreeCycle::print(const utils::Str &s) const {
  * Calls print only if the loglevel is debug or more verbose.
  */
 void FreeCycle::debug_print(const utils::Str &s) const {
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Print FreeCycle state: ");
         print(s);
-    } else {
-        QL_DOUT("Print FreeCycle state (disabled)");
     }
+#else
+    QL_DOUT("Print FreeCycle state (disabled)");
+#endif
 }
 
 

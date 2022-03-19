@@ -4,9 +4,8 @@
 
 #include "alter.h"
 
-// comment two lines below out to enable LOG_DEBUG ir dumping
-#undef QL_IF_LOG_DEBUG
-#define QL_IF_LOG_DEBUG if (0)
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
 
 namespace ql {
 namespace pass {
@@ -68,12 +67,14 @@ void Alter::print(const utils::Str &s) const {
  * verbosity is at least debug.
  */
 void Alter::debug_print(const utils::Str &s) const {
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Printing current Alter's state: ");
         print(s);
-    } else {
-        QL_DOUT("Printing current Alter's state (disabled)");
     }
+#else
+    QL_DOUT("Printing current Alter's state (disabled)");
+#endif
 }
 
 /**
@@ -98,12 +99,14 @@ void Alter::print(const utils::Str &s, const utils::List<Alter> &la) {
  * logging verbosity is at least debug.
  */
 void Alter::debug_print(const utils::Str &s, const utils::List<Alter> &la) {
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Print list of Alters: ");
         print(s, la);
-    } else {
-        QL_DOUT("Print list of Alters (disabled)");
     }
+#else
+    QL_DOUT("Print list of Alters (disabled)");
+#endif
 }
 
 /**
