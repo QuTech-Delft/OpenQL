@@ -260,7 +260,7 @@ setup(
     long_description=read('README.md'),
     long_description_content_type = 'text/markdown',
     author='QuTech, TU Delft',
-    url='https://github.com/QE-Lab/OpenQL',
+    url='https://github.com/QuTech-Delft/OpenQL',
 
     classifiers = [
         'License :: OSI Approved :: Apache Software License',
