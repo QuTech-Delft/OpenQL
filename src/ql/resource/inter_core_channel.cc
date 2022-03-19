@@ -414,8 +414,8 @@ void InterCoreChannelResource::on_dump_docs(
             "num_system_wide_channels": <taken from "system_wide_count">
         }
         ```
-        In absence of ``"system_wide_count"``, the number of qubits is taken
-        for ``"num_system_wide_channels"``.
+        In absence of ``"system_wide_count"``, ``"num_system_wide_channels"``.
+        defaults to the number of qubits in the platform.
         )");
         return;
     }
@@ -424,13 +424,15 @@ void InterCoreChannelResource::on_dump_docs(
     This resource models inter-core communication with limited connectivity
     between cores. This is modelled as follows.
 
-    Each core has a limited number of channels, with which it can connect to
-    other cores. The connectivity between the channels of each core is assumed
-    to be fully connected, but the number of channels per core can be adjusted.
-    Gates matching the predicate (if any) use one of the available core/channel
-    pairs for each core that they use (communication) qubits of. The core is of
-    course determined by the qubit index, but the channel is undefined; the
-    resource will use the first available channel.
+    Each core has a limited number of channels, with which it can connect
+    to other cores. The channels are drawn from a system-wide pool of
+    limited size.  The connectivity between the channels of each core is
+    assumed to be fully connected, but the number of channels per core can
+    be adjusted, as can the size of the system-wide pool. Gates matching
+    the predicate (if any) use one of the available channels for each
+    of the gate's operand qubits.  The applicable core per qubit is of
+    course determined by the qubit index, but the channel is undefined;
+    the resource will use the first available channel.
 
     The resource is configured using the following structure.
 
@@ -445,7 +447,9 @@ void InterCoreChannelResource::on_dump_docs(
         "predicate_nq": ...,
         "inter_core_required": <boolean, default true>,
         "communication_qubit_only": <boolean, default false>,
-        "num_channels": <number of channels per core, default 1>
+        "num_channels": <number of channels per core, default 1>,
+        "num_system_wide_channels": <number of channels system-wide,
+            default the number of qubits in the platform>,
     }
     ```
 )" R"(
@@ -480,8 +484,14 @@ void InterCoreChannelResource::on_dump_docs(
     gate use communication channel resources, or whether only qubits marked as
     communication qubits are considered.
 
-    Finally, the ``"num_channels"`` key specifies how many independent channels
+    The ``"num_channels"`` key specifies how many independent channels
     each core has. The default and minimum value is 1.
+
+    Finally, the ``"num_system_wide_channels"`` key specifies how large
+    the pool of channels in the system is from which the core channels
+    draw.  The default value is the platform's number of qubits. This
+    conforms to absence of this constraint.
+
     )");
 }
 
