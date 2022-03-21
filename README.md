@@ -1,10 +1,10 @@
 # OpenQL Framework #
 
 [![Documentation Status](https://readthedocs.org/projects/openql/badge/?version=latest)](https://openql.readthedocs.io/en/latest/?badge=latest)
-[![Travis Build Status](https://travis-ci.com/QE-Lab/OpenQL.svg?branch=develop)](https://travis-ci.com/QE-Lab/OpenQL)
-[![GitHub Actions Build Status](https://github.com/QE-Lab/OpenQL/workflows/Test/badge.svg)](https://github.com/qe-lab/OpenQL/actions)
+[![Travis Build Status](https://travis-ci.com/QuTech-Delft/OpenQL.svg?branch=develop)](https://travis-ci.com/QuTech-Delft/OpenQL)
+[![GitHub Actions Build Status](https://github.com/QuTech-Delft/OpenQL/workflows/Test/badge.svg)](https://github.com/qutech-delft/OpenQL/actions)
 [![PyPI](https://badgen.net/pypi/v/qutechopenql)](https://pypi.org/project/qutechopenql/)
-[![Anaconda](https://anaconda.org/qe-lab/openql/badges/version.svg)](https://anaconda.org/qe-lab/openql/)
+[![Anaconda](https://anaconda.org/qutech/openql/badges/version.svg)](https://anaconda.org/qutech/openql/)
 
 OpenQL is a framework for high-level quantum programming in C++/Python. The
 framework provides a compiler for compiling and optimizing quantum code. The
