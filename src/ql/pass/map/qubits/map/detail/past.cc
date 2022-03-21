@@ -7,8 +7,8 @@
 #include "ql/utils/filesystem.h"
 #include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
 
-// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
-#undef MULTI_LINE_LOG_DEBUG
+// uncomment next line to enable multi-line dumping
+// #define MULTI_LINE_LOG_DEBUG
 
 namespace ql {
 namespace pass {
