@@ -190,5 +190,5 @@ configuration file for the "none" architecture.
 
 Depending on the architecture and compiler configuration, different output
 files may be generated. The above only applies because of the default pass
-list for the "none" architecture: a cQASM writer, followed by a scheduler,
+list doe the "none" architecture: a cQASM writer, followed by a scheduler,
 followed by another cQASM writer. This is fully configurable.

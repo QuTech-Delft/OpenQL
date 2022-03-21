@@ -10,6 +10,9 @@
 #include "ql/ir/describe.h"
 #include "ql/arch/diamond/annotations.h"
 
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
+
 namespace ql {
 namespace ir {
 
@@ -483,24 +486,10 @@ void NewToOldConverter::convert_block(
                     // Handle the normal operands for custom instructions.
                     Operands ops;
                     for (const auto &ob : custom->instruction_type->template_operands) {
-                        try {
-                            ops.append(*this, ob);
-                        } catch (utils::Exception &e) {
-                            e.add_context("name="+custom->instruction_type->name+", qubits="+ops.qubits.to_string());
-                            throw;
-                        }
+                        ops.append(*this, ob);
                     }
                     for (utils::UInt i = 0; i < custom->operands.size() - diamond_op_count; i++) {
-                        try {
-                            ops.append(*this, custom->operands[i]);
-                        } catch (utils::Exception &e) {
-                            e.add_context(
-                                "name=" + custom->instruction_type->name
-                                + ", qubits=" + ops.qubits.to_string()
-                                + ", operand=" + std::to_string(i)
-                                );
-                            throw;
-                        }
+                        ops.append(*this, custom->operands[i]);
                     }
                     kernel->gate(
                         custom->instruction_type->name, ops.qubits, ops.cregs,
@@ -815,18 +804,34 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
     // would already have happened to the raw JSON data associated with
     // ir->platform.
     compat::PlatformRef old_platform;
+    QL_DOUT("NewToOldConverter");
     if (ir->platform->has_annotation<compat::PlatformRef>()) {
         old_platform = ir->platform->get_annotation<compat::PlatformRef>();
+        QL_DOUT("NewToOldConverter: got old_platform from annotation of new platform");
     } else {
         old_platform = compat::Platform::build(
             ir->platform->name,
             ir->platform->data.data
         );
+        QL_DOUT("NewToOldConverter: got old_platform by building it (compat::Platform::build) from new platform data");
     }
+#ifdef MULTI_LINE_LOG_DEBUG
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("NewToOldConvertor old instruction_map:");
+        for (const auto &i : old_platform->instruction_map) {
+            QL_DOUT("NewToOldConvertor.old_platform.instruction_map[]" << i.first);
+        }
+    }
+#else
+    QL_DOUT("NewToOldConvertor old instruction_map (disabled)");
+#endif
+
+
 
     // If the program node is empty, build an empty dummy program.
     if (ir->program.empty()) {
         old.emplace("empty", old_platform, num_qubits);
+        QL_DOUT("NewToOldConverter (empty program node) [DONE]");
         return;
     }
 
@@ -907,6 +912,7 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
         "program has unsupported nontrivial goto-based control-flow: "
         "last block does not end program"
     );
+    QL_DOUT("NewToOldConverter: about to start converting blocks");
 
     // Convert all the blocks and add them to the root program.
     for (const auto &block : ir->program->blocks) {
@@ -917,7 +923,7 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
             throw;
         }
     }
-
+    QL_DOUT("NewToOldConverter [DONE]");
 }
 
 /**
@@ -947,9 +953,8 @@ void Operands::append(const NewToOldConverter &conv, const ExpressionRef &expr) 
     } else if (auto ref = expr->as_reference()) {
         if (ref->indices.size() != 1 || !ref->indices[0]->as_int_literal()) {
             QL_ICE(
-                "encountered incompatible object reference to "
-                << ref->target->name
-                << " (size=" << ref->indices.size() << ")"
+                "encountered incompatible object reference "
+                "to " << ref->target->name
             );
         } else if (
             ref->target == conv.ir->platform->qubits &&
@@ -973,8 +978,8 @@ void Operands::append(const NewToOldConverter &conv, const ExpressionRef &expr) 
             cregs.push_back(ref->indices[0].as<IntLiteral>()->value);
         } else {
             QL_ICE(
-                "encountered unknown object reference to "
-                << ref->target->name
+                "encountered incompatible object reference "
+                "to " << ref->target->name
             );
         }
     } else if (expr->as_function_call()) {
