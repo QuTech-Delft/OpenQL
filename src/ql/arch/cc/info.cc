@@ -425,46 +425,6 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
        - retrieve the measurement result, and distribute it across the CC; and
        - wait for the data distribution to finish.
 )"
-#if 0   // FIXME: outdated
-R"(
-      The following example code contains a real RUS experiment using PycQED:
-      ```python
-      from pycqed.measurement.openql_experiments import openql_helpers as oqh
-      for i, angle in enumerate(angles):
-          oqh.ql.set_option('output_dir', 'd:\\githubrepos\\pycqed_py3\\pycqed\\measurement\\openql_experiments\\output')
-          p = oqh.create_program('feedback_{}'.format(angle), config_fn)
-          k = oqh.create_kernel("initialize_block_{}".format(angle), p)
-
-          # Initialize
-          k.prepz(qidx)
-
-          # Block do once (prepare |1>)
-          k.gate("rx180", [qidx])
-          p.add_kernel(k)
-
-          # Begin conditional block
-          q = oqh.create_kernel("conditional_block_{}".format(angle), p)
-          # Repeat until success 0
-          q.gate("measure_fb", [qidx])
-          q.gate("if_0_break", [qidx])
-
-          # Correction for result 1
-          q.gate("rx180", [qidx])
-          p.add_for(q, 1000000)
-
-          # Block finalize
-          r = oqh.create_kernel("finalize_block_{}".format(angle), p)
-          cw_idx = angle // 20 + 9
-          r.gate('cw_{:02}'.format(cw_idx), [qidx])
-
-          # Final measurement
-          r.gate("measure_fb", [qidx])
-          p.add_kernel(r)
-
-          oqh.compile(p, extra_openql_options=[('backend_cc_run_once', 'yes')])
-      ```
-)"
-#endif
 R"(
       Caveats:
 
