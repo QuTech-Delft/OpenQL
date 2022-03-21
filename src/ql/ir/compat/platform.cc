@@ -461,6 +461,7 @@ void Platform::load(
     const utils::Str &platform_config_fname,
     const utils::Str &compiler_config
 ) {
+    QL_DOUT("compatibility load of configuration from json");
     platform_config = platform_cfg;
     arch::Factory arch_factory = {};
 
@@ -541,6 +542,8 @@ void Platform::load(
     // Do architecture-specific preprocessing before anything else.
     architecture->preprocess_platform(platform_config);
 
+    QL_DOUT("compatibility platform load has determined architecture etc.,  now go for hardware_settings");
+
     // load hardware_settings
     QL_DOUT("loading hardware_settings");
     if (platform_config.count("hardware_settings") <= 0) {
@@ -573,6 +576,8 @@ void Platform::load(
             cycle_time = hardware_settings["cycle_time"];
         }
     }
+
+    QL_DOUT("compatibility platform load go for instruction_settings, resources and topology");
 
     // load instruction_settings
     if (platform_config.count("instructions") <= 0) {
@@ -628,6 +633,8 @@ void Platform::load(
         QL_DOUT("instruction '" << instr_name << "' loaded.");
     }
 
+    QL_DOUT("compatibility platform load gate_decomposition");
+
     // load optional section gate_decomposition
     // Examples:
     // - Parametrized gate-decomposition: "cl_2 %0": ["rxm90 %0", "rym90 %0"]
@@ -670,6 +677,7 @@ void Platform::load(
                 );
             }
 
+            QL_DOUT(" took sub_instructions from json for composite instr : " << comp_ins);
             GateRefs gs;
             for (utils::UInt i = 0; i < sub_instructions.size(); i++) {
                 // standardize name of sub instruction
@@ -704,11 +712,11 @@ void Platform::load(
 #endif
                 }
             }
+            QL_DOUT(" added sub_instructions to 'gate references' for composite instr, replace composite in instruction_map : " << comp_ins);
             instruction_map.set(comp_ins).emplace<gate_types::Composite>(comp_ins, gs);
         }
     }
-    QL_DOUT("load done");
-
+    QL_DOUT("compatibility load of configuration from json [DONE]");
 }
 
 /**

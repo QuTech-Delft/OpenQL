@@ -42,6 +42,7 @@ class Test_multi_core(unittest.TestCase):
         ql.set_option('mapassumezeroinitstate', 'yes')
         ql.set_option('initialplace', 'no')
         ql.set_option('initialplace2qhorizon', '0')
+        ql.set_option('mapmaxalters', '1000')
         ql.set_option('mapusemoves', 'yes')
         ql.set_option('mapreverseswap', 'yes')
         ql.set_option('mappathselect', 'all')

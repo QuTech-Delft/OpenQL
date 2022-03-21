@@ -13,6 +13,8 @@
 #include "ql/arch/diamond/annotations.h"
 #include "ql/arch/cc/pass/gen/vq1asm/detail/options.h" // FIXME: remove when OPT_CC_USER_FUNCTIONS is no longer needed
 
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+
 namespace ql {
 namespace ir {
 
@@ -971,9 +973,13 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     ir->platform->set_annotation<compat::PlatformRef>(old);
 
     // Check the result.
-#if 1   // NB: very verbose
-    QL_DOUT("Result of old->new IR platform conversion:");
-    QL_IF_LOG_DEBUG(ir->dump_seq());
+#ifdef MULTI_LINE_LOG_DEBUG
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("Result of old->new IR platform conversion:");
+        ir->dump_seq(); 
+    }
+#else
+    QL_DOUT("Result of old->new IR platform conversion (disabled)");
 #endif
     check_consistency(ir);
 
@@ -1690,11 +1696,13 @@ static utils::Str convert_kernels(
 Ref convert_old_to_new(const compat::ProgramRef &old) {
 
     // Build the platform.
+    QL_DOUT("Convert_old_to_new");
     auto ir = convert_old_to_new(old->platform);
 
     // If there are no kernels in the old program, don't create a program node
     // at all.
     if (old->kernels.empty()) {
+        QL_DOUT("Convert_old_to_new (no kernels) [DONE]");
         return ir;
     }
 
@@ -1709,6 +1717,7 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
         old->breg_count
     });
 
+    QL_DOUT("Convert_old_to_new: about to convert kernels");
     // Convert the kernels.
     utils::Set<utils::Str> names;
     for (utils::UInt idx = 0; idx < old->kernels.size(); ) {
@@ -1741,9 +1750,14 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
     }
 
     // Check the result.
-    QL_DOUT("Result of old->new IR program conversion:");
-    QL_IF_LOG_DEBUG(ir->dump_seq());
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("Result of old->new IR program conversion:");
+        ir->dump_seq();
+    } else {
+        QL_DOUT("Result of old->new IR program conversion (disabled)");
+    }
     check_consistency(ir);
+    QL_DOUT("Convert_old_to_new [DONE]");
 
     return ir;
 }

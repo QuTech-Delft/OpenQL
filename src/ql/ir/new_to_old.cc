@@ -10,6 +10,9 @@
 #include "ql/ir/describe.h"
 #include "ql/arch/diamond/annotations.h"
 
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
+
 namespace ql {
 namespace ir {
 
@@ -818,18 +821,34 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
     // would already have happened to the raw JSON data associated with
     // ir->platform.
     compat::PlatformRef old_platform;
+    QL_DOUT("NewToOldConverter");
     if (ir->platform->has_annotation<compat::PlatformRef>()) {
         old_platform = ir->platform->get_annotation<compat::PlatformRef>();
+        QL_DOUT("NewToOldConverter: got old_platform from annotation of new platform");
     } else {
         old_platform = compat::Platform::build(
             ir->platform->name,
             ir->platform->data.data
         );
+        QL_DOUT("NewToOldConverter: got old_platform by building it (compat::Platform::build) from new platform data");
     }
+#ifdef MULTI_LINE_LOG_DEBUG
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("NewToOldConvertor old instruction_map:");
+        for (const auto &i : old_platform->instruction_map) {
+            QL_DOUT("NewToOldConvertor.old_platform.instruction_map[]" << i.first);
+        }
+    }
+#else
+    QL_DOUT("NewToOldConvertor old instruction_map (disabled)");
+#endif
+
+
 
     // If the program node is empty, build an empty dummy program.
     if (ir->program.empty()) {
         old.emplace("empty", old_platform, num_qubits);
+        QL_DOUT("NewToOldConverter (empty program node) [DONE]");
         return;
     }
 
@@ -910,6 +929,7 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
         "program has unsupported nontrivial goto-based control-flow: "
         "last block does not end program"
     );
+    QL_DOUT("NewToOldConverter: about to start converting blocks");
 
     // Convert all the blocks and add them to the root program.
     for (const auto &block : ir->program->blocks) {
@@ -920,7 +940,7 @@ NewToOldConverter::NewToOldConverter(const Ref &ir) : ir(ir) {
             throw;
         }
     }
-
+    QL_DOUT("NewToOldConverter [DONE]");
 }
 
 /**

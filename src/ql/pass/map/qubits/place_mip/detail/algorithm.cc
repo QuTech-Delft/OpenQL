@@ -11,6 +11,9 @@
 #include <condition_variable>
 #include <lemon/lp.h>
 
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
+
 namespace ql {
 namespace pass {
 namespace map {
@@ -366,11 +369,15 @@ Result Algorithm::body(com::map::QubitMapping &v2r) {
     }
 
     if (options.map_all) {
+        QL_DOUT("... correct location of unused mapped virtual qubits to be an unused location");
+#ifdef MULTI_LINE_LOG_DEBUG
         QL_IF_LOG_DEBUG {
-            QL_DOUT("... correct location of unused mapped virtual qubits to be an unused location");
-            QL_DOUT("... result Virt2Real map of InitialPlace before mapping unused mapped virtual qubits");
+            QL_DOUT("dump v2r of InitialPlace before mapping unused mapped virtual qubits:");
             v2r.dump_state();
-        };
+        }
+#else
+        QL_DOUT("dump v2r of InitialPlace before mapping unused mapped virtual qubits (disabled)");
+#endif
         // virtual qubits used by this kernel v have got their location k filled in in v2r[v] == k
         // unused mapped virtual qubits still have location UNDEFINED_QUBIT, fill with the remaining locs
         // this should be replaced by actually swapping them to there, when mapping multiple kernels
@@ -397,10 +404,14 @@ Result Algorithm::body(com::map::QubitMapping &v2r) {
             QL_DOUT("... end loop body over nvq when mapinitone2oneopt");
         }
     }
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("... final result Virt2Real map of InitialPlace");
         v2r.dump_state();
     }
+#else
+    QL_DOUT("... final result Virt2Real map of InitialPlace (disabled)");
+#endif
     QL_DOUT("InitialPlace.body [SUCCESS, FOUND MAPPING]");
     return Result::NEW_MAP;
 }
