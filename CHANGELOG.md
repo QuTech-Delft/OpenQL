@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   - creates .map file reporting measurement statements present in input, to allow retrieving measurements downstream 
 
 ### Changed
-- new-style decomposition rules: duration=0 now disables checking whether expansion fits, allowing automatic calculation of duration (and requiring scheduling after decomposition of such rules)
+- pass dec.Instructions: duration=0 in new-style decomposition rules now disables checking whether expansion fits, allowing automatic calculation of duration (and requiring scheduling after decomposition of such rules)
 - CC backend:
   - now uses new IR
   - no longer requires key "cc" to be present in instructions that define gate decompositions

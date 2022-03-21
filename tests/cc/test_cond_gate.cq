@@ -37,7 +37,7 @@ cond (b[0] && b[1]) x q[0]
 cond (b[0] || b[1]) x q[0]
 cond (b[0] ^^ b[1]) x q[0]
 
-cond (rnd(0.5)) x q[0] # FIXME: becomes: "cond (rnd(0.5)) x <U:qubit> q[0]" and doesn't generate code. Note the "x <U:qubit>" vs "rx180 <X:qubit>" above
+cond (rnd(0.5)) x q[0]
 
 # from: deps/libqasm/src/cqasm/tests/v1-parsing/semantic/insn-condition-new-ok/input.cq
 # note; differing lengths between condition and parameters are allowed
