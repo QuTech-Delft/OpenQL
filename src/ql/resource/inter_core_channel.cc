@@ -5,6 +5,9 @@
 
 #include "ql/resource/inter_core_channel.h"
 
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
+
 namespace ql {
 namespace resource {
 namespace inter_core_channel {
@@ -185,7 +188,9 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
     }
 
     // Print result if debug is enabled.
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
+        QL_DOUT("Print result of initializing inter-core channel resource: ");
         std::cout << "====================================" << std::endl;
         std::cout << "resource instance " << context->instance_name;
         std::cout << " of type " << context->type_name << std::endl;
@@ -205,6 +210,9 @@ void InterCoreChannelResource::on_initialize(rmgr::Direction direction) {
         std::cout << "num_channels: " << config->num_channels << std::endl;
         std::cout << "====================================" << std::endl;
     }
+#else
+    QL_DOUT("Print result of initializing inter-core channel resource (disabled)");
+#endif
 
 #undef ERROR
 }

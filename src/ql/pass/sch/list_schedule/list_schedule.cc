@@ -12,6 +12,9 @@
 #include "ql/com/sch/scheduler.h"
 #include "ql/pmgr/pass_types/base.h"
 
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
+
 namespace ql {
 namespace pass {
 namespace sch {
@@ -210,10 +213,14 @@ void ListSchedulePass::run_on_block(
     }
 
     // Always dump dot for the schedule if we're debugging.
-    if (QL_IS_LOG_DEBUG) {
-        QL_COUT("dumping dot file...");
+#ifdef MULTI_LINE_LOG_DEBUG
+    QL_IF_LOG_DEBUG {
+        QL_DOUT("dumping dot file...");
         com::ddg::dump_dot(block);
     }
+#else
+    QL_DOUT("dumping dot file (disabled)");
+#endif
 
     // Write the schedule as a dot file if requested.
     if (context.options["write_dot_graphs"].as_bool()) {

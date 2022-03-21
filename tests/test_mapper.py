@@ -1,5 +1,6 @@
 # tests for mapper
 #
+#
 # tests combination of prescheduler, clifford, mapper, clifford and postscheduler in cc_light context
 #   by generating .qisa and comparing the generated one with a golden one after assembly
 #
