@@ -28,7 +28,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   - macro expansion for JSON key instruction/signal/value (unused anyway) 
 
 ### Fixed
-- pass dec.Instructions: corrected ordering of instruction decomposition (which reversed multi-statement decompositions)
+- pass dec.Instructions
+  - corrected ordering of instruction decomposition (which reversed multi-statement decompositions)
+  - decomposed instructions were silently made unconditional, we  now copy instruction condition to decomposed instructions
 
 
 ## [ 0.10.0 ] - [ 2021-07-15 ]
