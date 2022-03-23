@@ -622,6 +622,14 @@ Topology::Neighbors Topology::get_neighbors(Qubit qubit) const {
 }
 
 /**
+ * Get the conectivity
+ */
+GridConnectivity Topology::get_connectivity(){
+    return connectivity;
+}
+
+
+/**
  * Returns whether the given qubit is a communication qubit of a core.
  */
 utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
@@ -706,10 +714,10 @@ utils::UInt Topology::get_min_hops(Qubit source, Qubit target) const {
     utils::UInt d = get_distance(source, target);
     utils::UInt cd = get_core_distance(source, target);
     QL_ASSERT(cd <= d);
-    if (cd == d) {
-        return d+2;
-    } else {
+    if (connectivity == GridConnectivity::FULL || cd != d){
         return d;
+    } else {
+        return d+2;
     }
 }
 

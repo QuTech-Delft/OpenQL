@@ -7,6 +7,7 @@ openql.egg-info
 lab
 env
 .eggs/
+examples/cpp-standalone-example/testb_build
 
 # Temp files
 *.dot
@@ -38,3 +39,6 @@ docs/_templates
 
 /.idea
 /cmake-build-*
+qiskit-vscode-log.test_output
+qiskit-vscode-log.out
+.vscode/settings.json

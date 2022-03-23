@@ -8,6 +8,11 @@
 #include "ql/utils/filesystem.h"
 #include "ql/pass/ana/statistics/annotations.h"
 #include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
+#include <math.h>
+#include <algorithm>
+
+// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+#undef MULTI_LINE_LOG_DEBUG
 
 // #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
 #undef MULTI_LINE_LOG_DEBUG
@@ -557,8 +562,9 @@ Bool Mapper::map_mappable_gates(
 
                 // Find minimum number of hops between real counterparts.
                 UInt d = platform->topology->get_min_hops(src, tgt);
+                UInt partitions = platform->topology->get_num_cores();
 
-                if (d == 1) {
+                if (d == 1 && (partitions == 1 || src/partitions == tgt/partitions)) {
 
                     // Just one hop, so gate is already nearest-neighbor and can
                     // be mapped.
@@ -824,6 +830,241 @@ void Mapper::select_alter(
 
 }
 
+void Mapper::chong(
+    List<ir::compat::GateRef> &gates, 
+    List<ir::compat::GateRef> &remaining_gates,
+    Future &future,
+    Past &past,
+    Past &base_past
+    ){
+
+    UInt partitions = platform->topology->get_num_cores();
+    UInt n_qubits = platform->topology->get_num_qubits();
+
+    std::vector<utils::UInt> part(n_qubits);
+
+    std::vector<utils::UInt> C;  
+    com::map::QubitMapping v2r;
+
+    for (auto &gate : gates){
+
+        std::vector<utils::UInt> q1;
+        std::vector<utils::UInt> q2;
+        
+        auto &q = gate->operands;
+
+        past.map_qubit(q[0]);
+        past.map_qubit(q[1]);
+
+        bool val;
+        float inf = pow(2,16);
+
+        // --------- Partition and weight matrix -----------
+
+        List<ir::compat::GateRef> remaining_gates_aux(remaining_gates);
+        std::list<ql::ir::compat::GateRef>::iterator it = remaining_gates_aux.begin();
+        float w_matrix[n_qubits][n_qubits] = {};
+        float w_aux[n_qubits][n_qubits] = {};
+
+        // Create weight matrix
+        if(remaining_gates_aux.size() == 1){
+            if(remaining_gates_aux.front() == gate)
+                remaining_gates_aux.pop_front();
+        } else {
+            for(auto &i : remaining_gates_aux){
+                if(i==gate){
+                   remaining_gates_aux.erase(it);
+                   break;
+                } 
+                it++;
+            }
+        }
+
+        w_matrix[q[0]][q[1]] = 1*inf;
+        w_matrix[q[1]][q[0]] = 1*inf;
+        w_aux[q[0]][q[1]] = 1*pow(2,-1);
+        w_aux[q[1]][q[0]] = 1*pow(2,-1);
+
+        for (int i = 0; i < n_qubits; i++){
+            for (int j = 0; j < n_qubits; j++)
+                 w_matrix[i][j] += w_aux[i][j];
+        }
+        w_aux[q[0]][q[1]] = 0;
+        w_aux[q[1]][q[0]] = 0;
+
+        Int n = 2;
+        for(const auto &gate :remaining_gates_aux){
+            auto &p = gate->operands;
+            if(p.size() > 1){
+                past.map_qubit(p[0]);
+                past.map_qubit(p[1]);
+                w_aux[p[0]][p[1]] = 1*pow(2,-n);
+                w_aux[p[1]][p[0]] = 1*pow(2,-n);
+                for (int i = 0; i < n_qubits; i++){
+                    for (int j = 0; j < n_qubits; j++)
+                         w_matrix[i][j] += w_aux[i][j];
+                }
+                w_aux[p[0]][p[1]] = 0;
+                w_aux[p[1]][p[0]] = 0;
+                n++;
+            }
+        }
+        // v2r[i]/partitions
+        past.export_mapping(v2r);
+        for(int i = 0; i < n_qubits; i++)
+            part[i] = platform->topology->get_core_index(v2r[i]);
+
+        // --------- End partition and weight matrix -----------
+
+        // --------------------- ROEE --------------------------
+        // If they are equal qubits are already in same partition
+        if (part[q[0]] != part[q[1]]){
+        float g_max = 1;
+        // Step 7
+        val = 1;
+        while(g_max > 0 && val == 1){
+                
+            if(part[q[0]] == part[q[1]]){
+                val = 0;
+                break;
+            }
+            // Step 1
+            utils::UInt index = 0;
+            C.clear();
+
+            for(int i = 0; i < n_qubits; ++i)
+                C.push_back(i);
+            // Calculating W_(i,l)
+            float W[n_qubits][partitions] = {};
+            for(int i = 0; i < n_qubits; i++){
+                for(int j = 0; j < partitions; j++){
+                    for(int p = 0; p < n_qubits; p++){
+
+                        // p is the qubit index in that core
+                        if(part[p] == j){
+                            W[i][j] += w_matrix[i][p];
+                        }
+                    }
+                }
+            }
+
+            // Calculating D(i,l) = W(i,l)-W[i,col(i)]
+            float D[n_qubits][partitions] = {};
+            for(int i = 0; i < n_qubits; i++){
+                for(int j = 0; j < partitions; j++)
+                    D[i][j] = W[i][j] - W[i][part[i]];
+            }
+
+            std::vector<float> g(C.size(), -INFINITY);
+            std::vector<int> a(C.size(), 0);
+            std::vector<int> b(C.size(), 0);
+
+            // Step 4
+            while(C.size() > 1){
+                // Step 2
+
+                // Find max g(i,l)
+                float aux= -1;
+                int a_aux = 0;
+                int b_aux = 0;
+
+                for(auto &i : C){
+                    for(auto &j : C){
+                        if( i != j ){
+                            aux = D[i][part[j]] + D[j][part[i]] - 2*w_matrix[i][j];
+                            if(aux > g[index]){
+                                g[index] = aux;
+                                a_aux = i;
+                                b_aux = j;
+                            }
+                        }
+                    }
+                }
+
+                // Delete a, b from C
+                C.erase(std::remove(C.begin(),C.end(),a_aux),C.end());
+                C.erase(std::remove(C.begin(),C.end(),b_aux),C.end());
+
+                    // Step 3
+                for(auto &i : C){
+                    for (int l = 0; l < partitions; l++){
+                        if(l == part[a_aux]){
+                            if(part[i] != part[a_aux] && part[i] != part[b_aux])
+                                D[i][l] = D[i][l] + w_matrix[i][b_aux] - w_matrix[i][a_aux];
+                            if(part[i] == part[b_aux])
+                                D[i][l] = D[i][l] + 2*w_matrix[i][b_aux] - 2*w_matrix[i][a_aux];
+                        } else if (l == part[b_aux]) {
+                            if(part[i] != part[a_aux] && part[i] != part[b_aux])
+                                D[i][l] = D[i][l] + w_matrix[i][a_aux] - w_matrix[i][b_aux];
+                            if(part[i] == part[a_aux])
+                                D[i][l] = D[i][l] + 2*w_matrix[i][a_aux] - 2*w_matrix[i][b_aux];
+                        } else {
+                            if(part[i] == part[a_aux]){
+                                D[i][l] = D[i][l] + w_matrix[i][a_aux] - w_matrix[i][b_aux];
+                            } else if(part[i] == part[b_aux]){
+                                D[i][l] = D[i][l] + w_matrix[i][b_aux] - w_matrix[i][a_aux];
+                            }    
+                        }
+                    }
+                }
+                a[index] = a_aux;
+                b[index] = b_aux;
+
+                index++;
+            }
+            // Step 5
+            // Calculate g_max
+            float g_aux = 0;
+            float g_max_idx = -1;
+
+            for(int i = 0; i < g.size(); i++ ){
+                if(g[i]==-INFINITY) 
+                    break;
+                if(g_aux+g[i] > g_aux){
+                    g_max_idx = i;
+                    g_max = g_aux+g[i];
+                }
+                g_aux += g[i];
+            }
+
+            // Step 6
+            // Exchange firstg m pairs
+            int tmp = 0;
+
+            for(int i = 0; i < g_max_idx+1 && val == 1; i++ ){
+                tmp = part[a[i]];
+                part[a[i]] = part[b[i]];
+                part[b[i]] = tmp;
+
+                q1.push_back(a[i]);
+                q2.push_back(b[i]);
+
+                if(part[q[0]] == part[q[1]]){
+                    val = 0;
+                }
+
+            }
+        }
+
+        // --------------------- End ROEE --------------------------
+
+        // --------------------- Mapping qubits -------------------
+        if(val == 1){
+            fprintf(stderr, "Valid partition not found\n");
+            exit(EXIT_FAILURE);
+        }
+
+        for(int i=0; i < q1.size(); i++){
+            if (q1[i] != q2[i])
+                past.add_swap(past.map_qubit(q1[i]), past.map_qubit(q2[i]));
+        }
+        } 
+
+        map_routed_gate(gate, past);
+        future.completed_gate(gate);
+    }
+}
+
 /**
  * Given the states of past and future, map all mappable gates and find the
  * non-mappable ones. For those, evaluate what to do next and do it. During
@@ -847,24 +1088,28 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
     // Handle all the gates one by one. map_mappable_gates returns false when no
     // gates remain.
     while (map_mappable_gates(future, past, gates, also_nn_two_qubit_gates)) {
+        if(platform->topology->get_num_cores() > 1 &&
+            platform->topology->get_connectivity() == GridConnectivity::FULL){
+            chong(gates, future.remaining_gates,future,past,base_past);
+       
+        } else {
+            // All gates in the gates list are two-qubit quantum gates that cannot
+            // be mapped yet. Select which one(s) to (partially) route, according to
+            // one of the known strategies. The only requirement on the code below
+            // is that at least something is done that decreases the problem.
 
-        // All gates in the gates list are two-qubit quantum gates that cannot
-        // be mapped yet. Select which one(s) to (partially) route, according to
-        // one of the known strategies. The only requirement on the code below
-        // is that at least something is done that decreases the problem.
+            // Generate all alternative routes.
+            List<Alter> alters;
+            gen_alters(gates, alters, past);
 
-        // Generate all alternative routes.
-        List<Alter> alters;
-        gen_alters(gates, alters, past);
+            // Select the best one based on the configured strategy.
+            Alter alter;
+            select_alter(alters, alter, future, past, base_past, 0);
 
-        // Select the best one based on the configured strategy.
-        Alter alter;
-        select_alter(alters, alter, future, past, base_past, 0);
-
-        // Commit to selected alternative. This adds all or just one swap
-        // (depending on configuration) to THIS past, and schedules them/it in.
-        commit_alter(alter, future, past);
-
+            // Commit to selected alternative. This adds all or just one swap
+            // (depending on configuration) to THIS past, and schedules them/it in.
+            commit_alter(alter, future, past);
+        }
         // Print progress every once in a while if we're taking long.
         Real progress = 1.0;
         if (future.approx_gates_total) {
