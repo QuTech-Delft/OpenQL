@@ -14,9 +14,6 @@
 // #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
 #undef MULTI_LINE_LOG_DEBUG
 
-// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
-#undef MULTI_LINE_LOG_DEBUG
-
 namespace ql {
 namespace pass {
 namespace map {
