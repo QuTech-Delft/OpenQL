@@ -491,7 +491,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 };
 #endif
                 // allocate SM bit for classic operand
-                UInt smBit = dp.allocateSmBit(bi.breg_operand, instrIdx);
+                UInt smBit = dp.allocateSmBit(bi.bregTargetMeasRsltRealTime, instrIdx);
 
                 // remind mapping of bit -> smBit for setting MUX
                 codeGenInfo.measResultRealTimeMap.emplace(group, MeasResultRealTimeInfo{smBit, resultBit, bi.describe});
@@ -675,10 +675,10 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             throw;
         }
     }
-    if (ops.has_integer) {
+    if (ops.integers.size() > 0) {
         QL_INPUT_ERROR("CC backend cannot handle integer operands yet");
     }
-    if (ops.has_angle) {
+    if (ops.angles.size() > 0) {
         QL_INPUT_ERROR("CC backend cannot handle real (angle) operands yet");
     }
 
@@ -793,11 +793,11 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
             // handle classic operand
             if (ops.bregs.empty()) {    // FIXME: currently always
-                bi.breg_operand = ops.qubits[0];                    // implicit classic bit for qubit
-                QL_IOUT("using implicit bit " << bi.breg_operand << " for qubit " << ops.qubits[0]);
+                bi.bregTargetMeasRsltRealTime = ops.qubits[0];                    // implicit classic bit for qubit
+                QL_IOUT("using implicit bit " << bi.bregTargetMeasRsltRealTime << " for qubit " << ops.qubits[0]);
             } else {    // FIXME: currently impossible
-                bi.breg_operand = ops.bregs[0];
-                QL_IOUT("using explicit bit " << bi.breg_operand << " for qubit " << ops.qubits[0]);
+                bi.bregTargetMeasRsltRealTime = ops.bregs[0];
+                QL_IOUT("using explicit bit " << bi.bregTargetMeasRsltRealTime << " for qubit " << ops.qubits[0]);
             }
         }
 

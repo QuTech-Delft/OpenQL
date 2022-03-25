@@ -55,7 +55,7 @@ public: // functions
     void programFinish();
 
     UInt allocateSmBit(UInt breg_operand, UInt instrIdx);
-    UInt getSmBit(UInt bit_operand) const;
+    UInt getSmBit(UInt breg) const;
     UInt getOrAssignMux(UInt instrIdx, const MeasResultRealTimeMap &measResultRealTimeMap);
     UInt getOrAssignPl(UInt instrIdx, const CondGateMap &condGateMap);
     static UInt getSizeTag(UInt numReadouts);

@@ -181,7 +181,7 @@ void Functions::op_grp_rel1_Ci_iC(const FncArgs &a) {
     cs.emit(
         "",
         "xor",
-        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integer),
+        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integers[0]),
         "# " + a.describe
     );
     op_grp_rel1_tail(a);
@@ -195,7 +195,7 @@ void Functions::op_grp_rel2_CC(const FncArgs &a) {
 void Functions::op_grp_rel2_Ci_iC(const FncArgs &a) {
     // NB: for profile "iC" we 'reverse' operands to match Q1 instruction set; this is for free because the operands
     // are split based on their type
-    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_target(a.label_if_false));
+    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integers[0]), as_target(a.label_if_false));
 }
 
 
@@ -224,7 +224,7 @@ void Functions::op_gt_Ci(const FncArgs &a) {
     cs.emit(
         "",
         a.operation,
-        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integer, 1) + as_target(a.label_if_false),
+        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integers[0], 1) + as_target(a.label_if_false),
         "# skip next part if condition is false"
     );
 }
@@ -234,7 +234,7 @@ void Functions::op_gt_iC(const FncArgs &a) {
     cs.emit(
         "",
         a.operation,
-        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integer, -1) + as_target(a.label_if_false),
+        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integers[0], -1) + as_target(a.label_if_false),
         "# skip next part if condition is false"
     );
 }
@@ -260,12 +260,12 @@ void Functions::op_grp_int_2op_CC(const FncArgs &a) {
 void Functions::op_grp_int_2op_Ci_iC(const FncArgs &a) {
     // NB: for profile "iC" we 'reverse' operands to match Q1 instruction set; this is for free because the operands
     // are split based on their type
-    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
+    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integers[0]), as_reg(a.dest_reg));
 }
 
 void Functions::op_sub_iC(const FncArgs &a) {
     // NB: 'reverse' operands to match Q1 instruction set
-    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
+    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integers[0]), as_reg(a.dest_reg));
 
     // Negate result in 2's complement to correct for changed op order
     Str reg = as_reg(a.dest_reg);

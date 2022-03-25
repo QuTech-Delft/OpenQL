@@ -147,13 +147,9 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
     Str operand_type = "?"; // default unless overwritten. Currently, only used for function parameters
 
     if (auto real_lit = expr->as_real_literal()) {
-        CHECK_COMPAT(!has_angle, "encountered gate with multiple angle (real) operands");
-        has_angle = true;
-        angle = real_lit->value;
+        angles.push_back(real_lit->value);
     } else if (auto int_lit = expr->as_int_literal()) {
-        CHECK_COMPAT(!has_integer, "encountered gate with multiple integer operands");
-        has_integer = true;
-        integer = int_lit->value;
+        integers.push_back(int_lit->value);
         operand_type = "i";
     } else if (expr->as_bit_literal()) {
         // FIXME: do something
@@ -188,8 +184,7 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
             );
         }
     } else if (expr->as_function_call()) {
-        QL_ICE("encountered unsupported function call in operand list: " << describe(expr));
-//        QL_INPUT_ERROR("cannot currently handle function call within function call '" << ir::describe(op) << "'");
+        QL_INPUT_ERROR("encountered unsupported function call in operand list: " << describe(expr));
     } else {
         QL_ICE("unsupported expression: " << describe(expr));
     }

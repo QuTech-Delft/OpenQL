@@ -101,24 +101,14 @@ public:
     utils::Vec<utils::UInt> bregs;
 
     /**
-     * Angle operand existence.
-     */
-    utils::Bool has_angle = false;
-
-    /**
      * Angle operand value.
      */
-    utils::Real angle = 0.0;
-
-    /**
-     * Integer operand existence.
-     */
-    utils::Bool has_integer = false;
+    utils::Vec<utils::Real> angles;
 
     /**
      * Integer operand value.
      */
-    utils::Int integer = 0;
+    utils::Vec<utils::Int> integers;
 
     /**
      * The profile for the operands provided. Encoding:
