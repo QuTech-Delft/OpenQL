@@ -274,7 +274,7 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
     , options(options)
     , operandContext(ir)
     , cs(operandContext)
-    , fncs(operandContext, dp, cs)
+    , fncs(*ir->platform, operandContext, dp, cs)
 {
     // NB: a new Backend is instantiated per call to compile, and
     // as a result also a Codegen, so we don't need to cleanup
@@ -765,7 +765,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
              *             note that Creg's are managed through a class, whereas bregs are just numbers
              *         - breg result (new)
              *
-             *  In the new IR (or, better said, in the new way "prototype"s for instruction operands van be defined
+             *  In the new IR (or, better said, in the new way "prototype"s for instruction operands can be defined
              *  using access modes as described in
              *  https://openql.readthedocs.io/en/latest/gen/reference_configuration.html#instructions-section
              *  it is not well possible to specify a measurement that returns its result in a different bit than
@@ -1084,7 +1084,7 @@ void Codegen::handle_expression(const ir::ExpressionRef &expression, const Str &
                 QL_ICE("expected reference to breg, but got: " << ir::describe(expression));
             }
         } else if (auto fn = expression->as_function_call()) {
-            // FIXME: handle (bit) cast?
+            // Note that the platform doesn't define a bit cast function
 
             // handle the function
             fncs.dispatch(fn, label_if_false, describe);

@@ -95,6 +95,8 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
     codegen.block_start(name, depth);
 
     // Loop over the statements and handle them individually.
+    //
+    // Functions that can throw an exception are wrapped in a try/catch to add context to the error message
     for (const auto &stmt : block->statements) {
 
         if (auto insn = stmt->as_instruction()) {

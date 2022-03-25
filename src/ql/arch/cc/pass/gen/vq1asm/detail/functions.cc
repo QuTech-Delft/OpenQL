@@ -2,6 +2,7 @@
 #include "codegen.h"
 
 #include "ql/ir/describe.h"
+#include "ql/ir/ops.h"
 
 namespace ql {
 namespace arch {
@@ -14,8 +15,9 @@ namespace detail {
 using namespace utils;
 
 
-Functions::Functions(const OperandContext &operandContext, const Datapath &dp, CodeSection &cs)
-    : operandContext(operandContext)
+Functions::Functions(const ir::Platform &platform, const OperandContext &operandContext, const Datapath &dp, CodeSection &cs)
+    : platform(platform)
+    , operandContext(operandContext)
     , dp(dp)
     , cs(cs) {
     register_functions();
@@ -296,8 +298,7 @@ void Functions::rnd_i(const FncArgs &a) {
  *
  * The set of functions available here should match that in the platform as set by
  * 'convert_old_to_new(const compat::PlatformRef &old)'.
- * Unfortunately, consistency must currently be maintained manually.
- * FIXME: we might check against ir->platform->functions
+ * Unfortunately, consistency must currently be maintained manually; we perform a runtime check in register_functions()
  *
  * We maintain separate tables for functions returning an
  * - int (in the context of a SetInstruction); the result is passed to the LHS register
@@ -389,6 +390,73 @@ void Functions::register_functions() {
         CC_FUNCTION_LIST_BIT
     };
     #undef X
+
+#if 1   // FIXME: WIP
+    // check consistency of our function set against platform
+
+    // get the types we expect
+    // NB: these are created in convert_old_to_new(const compat::PlatformRef &old)
+    auto bit_type = platform.default_bit_type;
+    auto int_type = platform.default_int_type;
+    auto real_type = find_type(platform, "real");
+
+    for (const auto &fnc : platform.functions) {
+
+        // determine operand data_types
+        // NB: the data_types encoding is similar to func_gen::Function::generate_impl_footer, and also Operands::profile,
+        // but note that all have different semantics
+        Str data_types;
+        for (const auto &ot : fnc->operand_types) {
+            if(ot->data_type == bit_type) {
+                data_types += "b";
+            } else if (ot->data_type == int_type) {
+                data_types += "i";
+            } else if (ot->data_type == real_type) {
+                data_types += "r";
+            } else {
+                QL_WOUT("Platform function '" << fnc->name << "' has operand of unknown type");
+            }
+
+            // FIXME: also check .mode?
+        }
+
+        // determine function map, based on return type
+        FuncMap *fm;
+        if (fnc->return_type == bit_type) {
+            fm = &func_map_bit;
+        } else if (fnc->return_type == int_type) {
+            fm = &func_map_int;
+        } else {
+            QL_WOUT("Platform function '" << fnc->name << "' has unknown return type");
+        }
+
+        // determine expected profiles for data_types
+        // Note that we do not expect profiles with only constant arguments, since these are to be handled by a separate pass
+        Vec<Str> expected_profiles;
+        if (data_types == "b") {
+            expected_profiles = {"B"};
+        } else if (data_types == "bb") {
+            expected_profiles = {"BB"};
+        } else if (data_types == "i") {
+            expected_profiles = {"C"};
+        } else if (data_types == "ii") {
+            expected_profiles = {"CC", "Ci", "iC"};
+        } else {
+            QL_WOUT("Platform function '" << fnc->name << "' with data_types '" << data_types << "' not supported by CC backend");
+        }
+
+        // check whether we implement the expected function variants
+        for (const auto &profile : expected_profiles) {
+            // make an exception for 'int cast' function that we handle elsewhere (in Codegen::handle_set_instruction)
+            if (fnc->name == "int" && profile == "B") continue;
+
+            if (fm->find(fnc->name + "_" + profile) == fm->end()) {
+                QL_WOUT("Platform function '" << fnc->name << "' with profile '" << profile << "' not supported by CC backend");
+            }
+        }
+
+    }
+#endif
 }
 
 

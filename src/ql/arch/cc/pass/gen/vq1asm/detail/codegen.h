@@ -128,11 +128,6 @@ public: //  functions
     void handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr);   // FIXME: private?
 
 
-protected:
-    // FIXME: split off emitting into separate class
-//    friend class Functions;                                     // needs access to emit*()
-
-
 private:    // types
     /**
      * Code generation info for single instrument.

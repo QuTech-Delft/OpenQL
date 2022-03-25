@@ -59,6 +59,13 @@ DataTypeLink add_type(const Ref &ir, Args... args) {
  * Returns the data type with the given name, or returns an empty link if the
  * type does not exist.
  */
+DataTypeLink find_type(const ir::Platform &platform, const utils::Str &name);
+
+/**
+ * Returns the data type with the given name, or returns an empty link if the
+ * type does not exist.
+ */
+// FIXME: this function only really needs ir->platform, similarly for several functions below
 DataTypeLink find_type(const Ref &ir, const utils::Str &name);
 
 /**

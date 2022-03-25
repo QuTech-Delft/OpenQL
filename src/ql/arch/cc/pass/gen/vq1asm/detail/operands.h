@@ -123,8 +123,8 @@ public:
     /**
      * The profile for the operands provided. Encoding:
      * - 'b': bit literal
-     * - 'i': int literal
      * - 'B': breg reference
+     * - 'i': int literal
      * - 'C': creg reference
      * - '?': anything else
      *
