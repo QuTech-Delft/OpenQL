@@ -157,6 +157,38 @@ class Test_multi_core(unittest.TestCase):
         qasm_fn = os.path.join(output_dir, prog.name+'_last.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
+    def test_mc_all_saturate(self):
+        v = 'all_saturate'
+        config = os.path.join(curdir, "test_multi_core_4x4_full.json")
+        num_qubits = 16
+
+        # create and set platform
+        prog_name = "test_mc_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("mc4x4full", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
+
+        for i in range(4):
+            k.gate("x", [4*i])
+            k.gate("x", [4*i+1])
+        for i in range(4):
+            k.gate("cnot", [4*i,4*i+1])
+        for i in range(4):
+            for j in range(4):
+                if i != j:
+                    k.gate("cnot", [4*i,4*j])
+                    k.gate("cnot", [4*i+1,4*j+1])
+                    k.gate("cnot", [4*i+2,4*j+2])
+                    k.gate("cnot", [4*i+3,4*j+3])
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        gold_fn = curdir + '/golden/' + prog_name +'_last.qasm'
+        qasm_fn = os.path.join(output_dir, prog.name+'_last.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
 if __name__ == '__main__':
     # ql.set_option('log_level', 'LOG_DEBUG')
     unittest.main()
