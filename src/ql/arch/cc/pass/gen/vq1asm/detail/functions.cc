@@ -275,15 +275,11 @@ void Functions::op_sub_iC(const FncArgs &a) {
 }
 
 #if OPT_CC_USER_FUNCTIONS
-void Functions::rnd_seed_C(const FncArgs &a) {
+void Functions::rnd_seed_ii(const FncArgs &a) {
     // FIXME
 }
 
-void Functions::rnd_seed_i(const FncArgs &a) {
-    // FIXME
-}
-
-void Functions::rnd_C(const FncArgs &a) {
+void Functions::rnd_threshold_ir(const FncArgs &a) {
     // FIXME
 }
 
@@ -331,9 +327,8 @@ X("operator^",      iC,     op_grp_int_2op_Ci_iC,   "xor") \
 
 #define CC_FUNCTION_LIST_INT_USER \
 /* user functions */ \
-X("rnd_seed",       C,      rnd_seed_C,             "") \
-X("rnd_seed",       i,      rnd_seed_i,             "") \
-X("rnd",            C,      rnd_C,                  "") \
+X("rnd_seed",       ii,     rnd_seed_ii,            "") \
+X("rnd_threshold",  ir,     rnd_threshold_ir,       "") \
 X("rnd",            i,      rnd_i,                  "")
 
 #define CC_FUNCTION_LIST_BIT \
@@ -341,10 +336,12 @@ X("rnd",            i,      rnd_i,                  "")
 /* bit arithmetic, 1 operand: "!" */ \
 X("operator!",      B,      op_linv_B,              "") \
 \
-/* bit arithmetic, 2 operands: "&&", "||", "^^" */ \
+/* bit arithmetic, 2 operands: "&&", "||", "^^", "==", "!=" */ \
 X("operator&&",     BB,     op_grp_bit_2op_BB,      "") \
 X("operator||",     BB,     op_grp_bit_2op_BB,      "") \
 X("operator^^",     BB,     op_grp_bit_2op_BB,      "") \
+X("operator==",     BB,     op_grp_bit_2op_BB,      "") \
+X("operator!=",     BB,     op_grp_bit_2op_BB,      "") \
 \
 /* relop, group 1: "==", "!=" */ \
 X("operator==",     CC,     op_grp_rel1_CC,         "jge") \
@@ -438,9 +435,19 @@ void Functions::register_functions() {
         } else if (data_types == "bb") {
             expected_profiles = {"BB"};
         } else if (data_types == "i") {
-            expected_profiles = {"C"};
+            if (fnc->name == "rnd") {   // FIXME: handle exceptions is a more scalable way
+                expected_profiles = {"i"};
+            } else {
+                expected_profiles = {"C"};
+            }
         } else if (data_types == "ii") {
-            expected_profiles = {"CC", "Ci", "iC"};
+            if (fnc->name == "rnd_seed") {   // FIXME: handle exceptions is a more scalable way
+                expected_profiles = {"ii"};
+            } else {
+                expected_profiles = {"CC", "Ci", "iC"};
+            }
+        } else if (data_types == "ir") {
+            expected_profiles = {"ir"};
         } else {
             QL_WOUT("Platform function '" << fnc->name << "' with data_types '" << data_types << "' not supported by CC backend");
         }

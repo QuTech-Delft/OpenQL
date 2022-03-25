@@ -945,11 +945,17 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     if(architecture == "cc") {
         QL_WOUT("adding hardcoded CC functions");
         fn = add_function_type(ir, utils::make<FunctionType>("rnd_seed"));
-        fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // seed
-        fn->return_type = int_type;
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // RNG_index, literal
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // seed, literal
+        fn->return_type = int_type; // FIXME: void
+
+        fn = add_function_type(ir, utils::make<FunctionType>("rnd_threshold"));
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // RNG_index, literal
+        fn->operand_types.emplace(prim::OperandMode::READ, real_type);  // threshold, literal
+        fn->return_type = int_type; // FIXME: void
 
         fn = add_function_type(ir, utils::make<FunctionType>("rnd"));
-        fn->operand_types.emplace(prim::OperandMode::READ, real_type);   // threshold
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // RNG_index, literal
         fn->return_type = bit_type;
     }
 #endif

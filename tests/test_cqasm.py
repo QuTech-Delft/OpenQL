@@ -2,7 +2,7 @@ import os
 import filecmp
 import unittest
 from utils import file_compare
-from openql import openql as ql
+import openql as ql
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 platf = ql.Platform("starmon", "none")

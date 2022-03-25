@@ -148,6 +148,7 @@ void Operands::append(const OperandContext &operandContext, const ir::Expression
 
     if (auto real_lit = expr->as_real_literal()) {
         angles.push_back(real_lit->value);
+        operand_type = "r";
     } else if (auto int_lit = expr->as_int_literal()) {
         integers.push_back(int_lit->value);
         operand_type = "i";

@@ -36,7 +36,8 @@ static Str as_label(const Str &label) { return label + ":"; }
  * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
  * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
  */
-// FIXME: move to datapath
+// FIXME: move to datapath?
+// FIXME: redesign like handle_expression()
 static tInstructionCondition decode_condition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
     ConditionType cond_type;
     utils::Vec<utils::UInt> cond_operands;
@@ -100,6 +101,7 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
             ) {
                 cond_type = ConditionType::ALWAYS;
                 QL_WOUT("FIXME: instruction condition function not yet handled: " + fn->function_type->name);
+                // FIXME: check profile
 #endif
             } else {
                 CHECK_COMPAT(fn->operands.size() == 2, "expected 2 operands");

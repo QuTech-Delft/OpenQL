@@ -128,9 +128,8 @@ private:    // operator functions
      * other functions returning an int, for code generation in expressions
      */
 #if OPT_CC_USER_FUNCTIONS
-    void rnd_seed_C(const FncArgs &a);
-    void rnd_seed_i(const FncArgs &a);
-    void rnd_C(const FncArgs &a);
+    void rnd_seed_ii(const FncArgs &a);
+    void rnd_threshold_ir(const FncArgs &a);
     void rnd_i(const FncArgs &a);
 #endif
 

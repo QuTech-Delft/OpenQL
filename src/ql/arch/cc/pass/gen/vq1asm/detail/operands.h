@@ -116,6 +116,7 @@ public:
      * - 'B': breg reference
      * - 'i': int literal
      * - 'C': creg reference
+     * - 'r': real literal (NB: we don't have registers supporting reals)
      * - '?': anything else
      *
      * Inspired by func_gen::Function::generate_impl_footer and cqasm::types::from_spec, but notice that we add 'C' and
@@ -124,7 +125,7 @@ public:
     Str profile;
 
     /**
-     * Appends an operand.
+     * Appends an operand (for an IR custom_instruction or function_call)
      */
     void append(const OperandContext &operandContext, const ir::ExpressionRef &expr);
 
