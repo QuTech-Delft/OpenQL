@@ -13,7 +13,8 @@
 #include "ql/arch/diamond/annotations.h"
 #include "ql/arch/cc/pass/gen/vq1asm/detail/options.h" // FIXME: remove when OPT_CC_USER_FUNCTIONS is no longer needed
 
-// #define MULTI_LINE_LOG_DEBUG to enable multi-line dumping 
+// uncomment next line to enable multi-line dumping
+// #define MULTI_LINE_LOG_DEBUG
 
 namespace ql {
 namespace ir {
