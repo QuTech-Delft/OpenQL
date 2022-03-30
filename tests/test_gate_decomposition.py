@@ -15,7 +15,7 @@ class Tester(unittest.TestCase):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
-        ql.set_option('log_level', 'LOG_DEBUG')
+        ql.set_option('log_level', 'LOG_NOTHING')
 
     def test_decomposition(self):
         config_fn = os.path.join(curdir, 'test_cfg_none.json')
