@@ -20,9 +20,9 @@ include "ql/ir/prim.h"
 initialize_function prim::initialize
 serdes_functions prim::serialize prim::deserialize
 
-// Include SourceLocation annotation object for the debug dump generator.
-//src_include "cqasm-parse-helper.hpp"
-//location cqasm::parser::SourceLocation
+// Include SourceLocation annotation object for the debug dump generator (i.e. class Dumper).
+// src_include "cqasm-v1-parse-helper.hpp"
+// location cqasm::v1::parser::SourceLocation
 
 # Namespace for the IR tree node classes.
 namespace ql

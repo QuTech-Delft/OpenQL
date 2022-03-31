@@ -2,6 +2,8 @@
  * cQASM 1.2 reader logic as human-readable complement of the IR.
  */
 
+#define OPT_ANNOTATE_SOURCE_LOCATION    1   // FIXME: WIP on annotation
+
 #include "ql/ir/cqasm/read.h"
 
 #include "ql/utils/filesystem.h"
@@ -10,7 +12,12 @@
 #include "ql/ir/consistency.h"
 #include "ql/ir/old_to_new.h"
 #include "ql/com/ddg/build.h"
+
 #include "cqasm.hpp"
+#if OPT_ANNOTATE_SOURCE_LOCATION
+#include "cqasm-annotations.hpp"  // for SourceLocation
+#include "ql/utils/tree.h"  // for Annotatable
+#endif
 
 namespace ql {
 namespace ir {
@@ -734,7 +741,6 @@ static void convert_block(
                                 ql_operands.add(convert_expression(ir, cq_operand, sgmq_size, sgmq_index));
                             }
                         }
-                        ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
 
                     } else if (
                         !options.measure_all_target.empty() &&
@@ -789,7 +795,15 @@ static void convert_block(
                                 ql_operands[1] = x;
                             }
 
+#if OPT_ANNOTATE_SOURCE_LOCATION
+                            auto ql_insn = make_instruction(ir, cq_insn->name, ql_operands, ql_condition);
+                            const auto source_location = cq_insn->get_annotation<::cqasm::annotations::SourceLocation>();
+                            QL_IOUT("set source location for '" << cq_insn->name << "' to '" << source_location << "'");
+                            ql_insn->set_annotation(source_location);
+                            ql_insns.push_back(ql_insn);
+#else
                             ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
+#endif
                         }
 
                     }
