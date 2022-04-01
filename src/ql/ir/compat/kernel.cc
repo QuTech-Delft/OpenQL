@@ -19,6 +19,9 @@
 #include "ql/com/options.h"
 #include "ql/com/dec/unitary.h"
 
+// uncomment next line to enable multi-line dumping
+// #define MULTI_LINE_LOG_DEBUG
+
 namespace ql {
 namespace ir {
 namespace compat {
@@ -805,7 +808,16 @@ Bool Kernel::add_param_decomposed_gate_if_available(
         added = true;
         QL_DOUT("added composite gate and subinstrs for " << instr_parameterized);
     } else {
-        QL_DOUT("composite gate not found for " << instr_parameterized);
+#ifdef MULTI_LINE_LOG_DEBUG
+        QL_IF_LOG_DEBUG {
+            QL_DOUT("composite gate not found for " << instr_parameterized << " in instruction_map:");
+            for (const auto &i : platform->instruction_map) {
+                QL_DOUT("add_param_decomposed_gate_if_available: platform->instruction_map[]" << i.first);
+            }
+        }
+#else
+        QL_DOUT("composite gate not found for " << instr_parameterized << " in instruction_map (disabled)");
+#endif
     }
     return added;
 }
