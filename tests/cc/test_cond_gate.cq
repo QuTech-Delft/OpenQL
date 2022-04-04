@@ -23,9 +23,8 @@ cond (b[0] && b[1]) rx180 q[0]
 cond (b[0] || b[1]) rx180 q[0]
 cond (b[0] ^^ b[1]) rx180 q[0]
 
-
+# initial support for error injection
 map i = creg(0)
-
 set i = rnd_seed(0, 12345678)
 # set i = rnd_seed(0, 0x12345678)  # FIXME: test_cond_gate.cq:29:21: syntax error, unexpected BAD_NUMBER
 # rnd_seed(0, 12345678)  # FIXME:  Error: test_cond_gate.cq:31:11: syntax error, unexpected ','
