@@ -21,6 +21,7 @@
 #include "ql/pass/dec/specialize/specialize.h"
 #include "ql/pass/dec/structure/structure.h"
 #include "ql/pass/opt/clifford/optimize.h"
+#include "ql/pass/opt/const_prop/const_prop.h"
 #include "ql/pass/sch/schedule/schedule.h"
 #include "ql/pass/sch/list_schedule/list_schedule.h"
 //#include "ql/pass/map/qubits/place_mip/place_mip.h" // Broken: need half-decent IR for gates and virtual vs real qubit operands first.
@@ -50,6 +51,7 @@ Factory::Factory() {
     register_pass<::ql::pass::dec::specialize::Pass>("dec.Specialize");
     register_pass<::ql::pass::dec::structure::Pass>("dec.Structure");
     register_pass<::ql::pass::opt::clifford::optimize::Pass>("opt.clifford.Optimize");
+    register_pass<::ql::pass::opt::const_prop::Pass>("opt.const_prop.const_prop");
     register_pass<::ql::pass::sch::schedule::Pass>("sch.Schedule");
     register_pass<::ql::pass::sch::list_schedule::Pass>("sch.ListSchedule");
     //register_pass<::ql::pass::map::qubits::place_mip::Pass>("map.qubits.PlaceMIP"); // Broken: need half-decent IR for gates and virtual vs real qubit operands first.
