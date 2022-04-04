@@ -1698,12 +1698,14 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
     }
 
     // Check the result.
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Result of old->new IR program conversion:");
         ir->dump_seq();
-    } else {
-        QL_DOUT("Result of old->new IR program conversion (disabled)");
     }
+#else
+    QL_DOUT("Result of old->new IR program conversion (disabled)");
+#endif
     check_consistency(ir);
     QL_DOUT("Convert_old_to_new [DONE]");
 
