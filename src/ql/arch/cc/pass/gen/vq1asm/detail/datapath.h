@@ -9,10 +9,12 @@
 #pragma once
 
 #include <iomanip>
-#include "ql/utils/logger.h"
-#include "ql/ir/compat/compat.h"
+
 #include "types.h"
 #include "bundle_info.h"
+
+#include "ql/utils/logger.h"
+#include "ql/ir/compat/compat.h"
 
 namespace ql {
 namespace arch {
@@ -23,18 +25,19 @@ namespace vq1asm {
 namespace detail {
 
 // NB: types shared with codegen_cc. FIXME: move
-struct FeedbackInfo {                                       // information for feedback on single instrument group
+struct MeasResultRealTimeInfo {                             // information for RT measurement results on single instrument group
     UInt smBit;
     UInt bit;
-    Ptr<const BundleInfo> bi;                               // used for annotation only
+
+    // original instruction, copied from BundleInfo
+    Str describe;
 };
 
-using FeedbackMap = Map<Int, FeedbackInfo>;                 // NB: key is instrument group
+using MeasResultRealTimeMap = Map<Int, MeasResultRealTimeInfo>;   // NB: key is instrument group
 
-struct CondGateInfo { // information for conditional gate on single instrument group
-    ir::compat::ConditionType condition;
-    Vec<UInt> cond_operands;
-    Digital groupDigOut;
+struct CondGateInfo {   // information for conditional gate on single instrument group
+    tInstructionCondition instructionCondition;
+    tDigital groupDigOut;
 };
 
 using CondGateMap = Map<Int, CondGateInfo>;                 // NB: key is instrument group
@@ -52,15 +55,15 @@ public: // functions
     void programFinish();
 
     UInt allocateSmBit(UInt breg_operand, UInt instrIdx);
-    UInt getSmBit(UInt bit_operand, UInt instrIdx);
-    UInt getOrAssignMux(UInt instrIdx, const FeedbackMap &feedbackMap);
+    UInt getSmBit(UInt bit_operand) const;
+    UInt getOrAssignMux(UInt instrIdx, const MeasResultRealTimeMap &measResultRealTimeMap);
     UInt getOrAssignPl(UInt instrIdx, const CondGateMap &condGateMap);
     static UInt getSizeTag(UInt numReadouts);
-    void emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, Int slot);
-    static UInt getMuxSmAddr(const FeedbackMap &feedbackMap);
+    void emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeMap, Int slot);
+    static UInt getMuxSmAddr(const MeasResultRealTimeMap &measResultRealTimeMap);
     UInt emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Int slot);
 
-    Str getDatapathSection() { return datapathSection.str(); }
+    Str getDatapathSection() const { return datapathSection.str(); }
 
     void comment(const Str &cmnt, Bool verboseCode) {
         if (verboseCode) datapathSection << cmnt << std::endl;

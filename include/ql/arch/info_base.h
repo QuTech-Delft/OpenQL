@@ -24,6 +24,8 @@ namespace arch {
 class InfoBase {
 public:
 
+    virtual ~InfoBase() = default;
+
     /**
      * Writes the documentation for this architecture to the given output
      * stream.

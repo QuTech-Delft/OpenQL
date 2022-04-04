@@ -1,0 +1,56 @@
+# File:         test_rus_elements.cq
+# Purpose:      test elements of Repeat Until Success
+# Notes:
+# - gate definitions require prototype, e.g. '"prototype": ["U:qubit"],'
+# - legacy gate decompositions (like 'measure_fb') require pass 'dec.Instructions', or use new instruction key "decomposition"
+# - make up mind about preferred gate names in cQASM versus API
+# - gates with upper case (e.g. rmX180) don't work
+
+version 1.2
+qubits 17
+
+pragma @ql.name("test_rus_elements")
+pragma @ql.platform("config_cc_s17_direct_iq_openql_0_10.json")
+
+.def
+map qInput1 = q[0]
+map qInput2 = q[8]
+map qAncilla3 = q[10]
+map qOutput4 = q[3]
+var mAncilla3: bool
+map i = creg(0)
+
+################################################
+# preparation
+################################################
+.prepare
+prepz qInput1
+prepz qInput2
+prepz qAncilla3
+prepz qOutput4
+
+################################################
+# repeat until success
+################################################
+.repeatUntilSuccess
+for (; true; ) {
+    cz qInput2, qAncilla3
+    x qOutput4
+    i qOutput4
+    rx180 qOutput4
+    barrier
+
+    measure_fb qAncilla3 #, mAncilla3 # FIXME: requires different decomposition
+    rx180 qOutput4
+#    for _ in range(8):
+# FIXME: repeat as intended
+        i qOutput4
+    barrier
+
+#    if (!mAncilla3) {
+#        break
+#    }
+    barrier
+
+    rx180 qAncilla3
+}

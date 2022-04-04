@@ -5,16 +5,32 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [ next ] - [ TBD ]
 ### Added
-- ...
+- CC backend:
+  - support for cQASM 1.2 features through new IR 
+    - limitations
+      - integer values must be non-negative
+  - support for resource constrained scheduler
+  - creates .map file reporting measurement statements present in input, to allow retrieving measurements downstream 
 
 ### Changed
-- ...
+- pass dec.Instructions: duration=0 in new-style decomposition rules now disables checking whether expansion fits, allowing automatic calculation of duration (and requiring scheduling after decomposition of such rules)
+- CC backend:
+  - now uses new IR
+  - no longer requires key "cc" to be present in instructions that define gate decompositions
+  - key "readout_mode" no longer used
+    - classification of gates as measurement - which is used for the resource constrained scheduler, and to output a map of measurements - now based on signal definition ("signal/type" equals "measure" and "signal/value" non-empty)
+    - classification of gates as *real-time* measurement now based on signal definition ("signal/type" equals "measure" and "signal/value" empty)
+  - absence of key "cc" now implies empty "signal", so `"cc": { "signal": [] }` is no longer necessary
 
 ### Removed
-- ...
+- CC backend:
+  - support for JSON key "pragma/break" for instruction definitions
+  - macro expansion for JSON key instruction/signal/value (unused anyway) 
 
 ### Fixed
-- ...
+- pass dec.Instructions
+  - corrected ordering of instruction decomposition (which reversed multi-statement decompositions)
+  - decomposed instructions were silently made unconditional, we  now copy instruction condition to decomposed instructions
 
 
 ## [ 0.10.0 ] - [ 2021-07-15 ]

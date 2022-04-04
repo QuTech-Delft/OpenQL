@@ -1,0 +1,222 @@
+# File:         test_looping.cq
+# Purpose:      test cQasm looping with CC backend
+# Notes:        most constructs make no practical sense, we're just checking the constructs and code generation
+
+version 1.2
+qubits 17
+
+pragma @ql.name("test_looping")
+pragma @ql.platform("config_cc_s17_direct_iq_openql_0_10.json")
+
+.def
+map qInput1 = q[0]
+map qInput2 = q[1]
+map qAncilla3 = q[2]
+map qOutput4 = q[3]
+
+# var mAncilla3: bool   encountered incompatible object reference to mAncilla3 (size=0)
+map mAncilla3 = b[2]
+
+map i = creg(0)
+map j = creg(1)
+
+.init
+set i = 0;
+
+.forLoop1
+for (i=0; i<10000; i=i+1) {
+#    if (!mAncilla3) { # Error: in expression '!(bit)q[2]': index 1 is out of range, size is 1
+#    if (!b[2]) {
+#        break
+#    }
+}
+
+
+.forLoop2
+for (; i<10000; )  {
+}
+
+.forLoop3
+for (; true; )  {  # NB: condition cannot be empty, defined as: utils::One<ir::Expression>
+}
+
+.forLoopConstProp
+for (; i<5*5; )  {
+}
+
+
+.forLoopTwice  # must generate unique labels
+for (; true; )  {
+}
+for (; true; )  {
+}
+
+.forLoopNested
+for (; true; )  {
+    for (; true; )  {
+    }
+}
+
+.forLoopBreak
+for (; true; )  {
+    measure_fb q[0]
+    if (b[0]) {
+        break;
+    }
+}
+
+.forLoopBreak2
+for (; true; )  {
+    if(i==1) {
+        break;
+    }
+}
+
+.forLoopBreak3
+for (; true; )  {
+    if(i==1) {
+        if(j==1) {
+            break;
+        }
+    }
+}
+
+.forLoopContinue
+for (; true; )  {
+    if (!b[0]) { # NB: inverted condition
+        continue;
+    }
+}
+
+.foreachLoopUp
+foreach (i = 0..10) {
+}
+
+
+.foreachLoopDown0 # counting down towards zero gets special treatment
+foreach (i = 10..0) {
+}
+
+
+.foreachLoopDown
+foreach (i = 10..5) {
+}
+
+
+# FIXME: we do not handle negative numbers
+#.foreachLoopDown2
+#foreach (i = 10..-5) {
+#}
+
+
+.whileLoop
+while (i<10000) {
+}
+
+
+.repeatUntilLoop
+repeat {
+} until (i==0);
+
+
+.ifStatement
+if (i==0) {
+}
+
+.ifElseStatement
+if (i==0) {
+} else {
+}
+
+.ifElifElseStatement
+if (i==0) {
+} else if (i==1)  {
+} else {
+}
+
+
+
+.condLt
+while (i<10000) {
+}
+
+.condGt
+while (i>10000) {
+}
+
+.condEq
+while (i==10000) {
+}
+
+.condNe
+while (i!=10000) {
+}
+
+.condTrue
+while (true) {
+}
+
+.condFalse
+while (false) {
+}
+
+#.condBit
+#while (mAncilla3) { # Error: encountered incompatible object reference to mAncilla3 (size=0)
+#}
+
+.condBit2
+while (b[0]) {
+}
+
+#.condBit3
+#while (b[0:2]) { # Error: Usage error: in pass reader, phase main: unexpected number of single-gate-multiple-qubit bit indices specified; found 3, expected 1
+#}
+
+#.condBit4
+#measure_fb q[0:1]
+#while (b[0] && b[1]) { # Error:  in expression '(bit)q[0] && (bit)q[1]': Cannot access DSM address 1 and 0 in single transfer
+#}
+
+#.condLit
+#while (5) {    # Error: loop condition must be a boolean
+#}
+
+#.condLitCast
+#while (bit(5)) { # Error: failed to resolve overload for bit with argument pack (int)
+#}
+
+#.condComplexExpr
+#while (1 < i+3) { # Error: Input error: in pass VQ1Asm, phase main: in block 'condComplexExpr': in expression '1 < creg[0] + 3': cannot handle function call within function call 'creg[0] + 3'
+#}
+
+#.condConstExpr
+#while (4==4) {
+#}
+
+# single block, with structured control flow mid way
+# 'while' loop does not seem to be a barrier for scheduling by itself
+.multiKernel
+rx180 q[0]
+barrier
+while (true) {
+    rx180 q[1]
+}
+barrier
+rx180 q[2]
+
+
+
+
+
+# FIXME: move to its own file
+.more
+# set i = true # Error: type of right-hand side (bool/bit) could not be coerced to left-hand side (int reference)
+# set i = 4<5
+# set i = int(1+4) # Error: Input error: in pass VQ1Asm, phase main: in block 'more': in expression '1 + 4': cannot handle parameter combination '1' , '4'. FIXME: no constant propagation
+# set i = 1+4
+set i = int(j+4)
+#set b[0] = true # Internal compiler error: in pass VQ1Asm, phase main: in block 'more': unsupported LHS for set instruction encountered: expected creg reference, but got something else
+# set b[0] = 1 # Error: type of right-hand side (int) could not be coerced to left-hand side (bool/bit reference)
+# set i = i<0 ? 2 : 3 # Error: dynamic values are not supported here
+# set i = 1<2 ? 2 : 3 # Error: dynamic values are not supported here
+# set i = 5*j # Error: dynamic values are not supported here
