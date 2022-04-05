@@ -310,6 +310,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/structure/structure.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/clifford/detail/clifford.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/clifford/optimize.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/const_prop/detail/propagate.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/opt/const_prop/const_prop.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/detail/scheduler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/schedule.cc"
