@@ -467,21 +467,22 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
                 // Check whether the operand list matches the specializations
                 // specified in the old way.
-                // FIXME: debug WIP, also see use of template_operands further down
-                if (/*FIXMEinsn->*/template_operands.size() > insn->operand_types.size()) {
-                    QL_ICE("need at least operands for the specialization parameters");
-                    // FIXME: refers to prototype (happens e.g. when a specialised instruction is defined with an empty prototype), improve message
+                if (template_operands.size() > insn->operand_types.size()) {
+                    QL_ICE(
+                        "need at least operands for the specialization parameters, template has "
+                        << template_operands.size() << " operands, instruction has "
+                        << insn->operand_types.size() << " operands"
+                    );
+                    // NB: refers to prototype (happens e.g. when a specialised instruction is defined with an empty prototype)
                 } else {
                     for (utils::UInt i = 0; i < template_params.size(); i++) {
-#if 1   // FIXME: consistency checks to prevent Container error, triggered by use of insn->template_operands[i] iso template_operands[i]
                         if (i >= insn->operand_types.size()) {
                             QL_ICE("operand_types[" << i << "] does not exist");
                         }
-                        if (i >= /*FIXMEinsn->*/template_operands.size()) {
+                        if (i >= template_operands.size()) {
                             QL_ICE("template_operands[" << i << "] does not exist");
                         }
-#endif
-                        if (insn->operand_types[i]->data_type != get_type_of(/*FIXMEinsn->*/template_operands[i])) {
+                        if (insn->operand_types[i]->data_type != get_type_of(template_operands[i])) {
                             QL_ICE("specialization parameter operand type mismatch");
                         }
                     }
