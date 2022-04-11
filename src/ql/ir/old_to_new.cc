@@ -884,14 +884,6 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
         }
     }
 
-#if 0    // FIXME: moved down, see comment overthere
-    // Now that we have all the instruction types, compute the decomposition
-    // expansions that we postponed.
-    for (const auto &fn : todo) {
-        fn();
-    }
-#endif
-
     QL_DOUT("populate default functions");
 
     // Populate the default function types.
@@ -955,16 +947,14 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     }
 #endif
 
-#if 1   // FIXME: moved from above
     // Now that we have all the instruction types, compute the decomposition
     // expansions that we postponed.
-    // NB: perform after populating topology and friends, otherwise check_consistency() may fail [called through
-    // parse_decomposition_rule() -> cqasm::read() ].
+    // Note that this must also be after populating topology and friends, otherwise check_consistency() may fail
+    // [called through parse_decomposition_rule() -> cqasm::read()].
     QL_DOUT("expand decompositions");
     for (const auto &fn : todo) {
         fn();
     }
-#endif
 
     // Populate platform JSON data.
     ir->platform->data = old->platform_config;
