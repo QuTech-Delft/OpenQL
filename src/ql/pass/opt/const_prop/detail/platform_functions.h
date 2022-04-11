@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- * Platform functions
+ * Define platform functions using the venerable X macro mechanism
  *
  * We only need to implement libqasm functions which are overridden by OpenQL, and - since libqasm supports
  * polymorphism - only for the parameter types overridden (i.e. bit and int).
@@ -19,11 +19,9 @@
  * - <build>/deps/libqasm/src/cqasm/cqasm-v1-functions-gen.cpp
  * - src/ql/arch/cc/pass/gen/vq1asm/detail/functions.cc
  *
- * Note: we might also use this file in old_to_new.cc to create the platform functions
+ * Note: to have better guarantees on consistency, we might also use this file in ir/old_to_new.cc to create the
+ * platform functions, and extend it to be usable for ir/operator_info.cc
  */
-// libqasm's cQASM resolver
-//
-//
 
 //name		        ret-type    par0    par1    operation   func
 #define PLATFORM_FUNCTION_LIST \

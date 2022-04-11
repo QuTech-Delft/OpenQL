@@ -26,16 +26,16 @@ using FncRet = utils::One<ir::Expression>;
 #define R_I(x) utils::make<ir::IntLiteral>(x)   // FIXME: use make_int_lit ?
 #define R_B(x) utils::make<ir::BitLiteral>(x)
 
-#define X2(name, ret_type, par0, par1, operation, func)  \
-static FncRet func ## _ ## par0 ## par1(FncArgs &v) {   \
-    auto a = v[0]->par0->value;                         \
-    auto b = v[1]->par1->value;                         \
-    return ret_type(operation);                         \
+#define X2(name, ret_type, par0, par1, operation, func)     \
+static FncRet func ## _ ## par0 ## par1(FncArgs &args) {    \
+    auto a = args[0]->par0->value;                          \
+    auto b = args[1]->par1->value;                          \
+    return ret_type(operation);                             \
 }
-#define X1(name, ret_type, par0, operation, func)       \
-static FncRet func ## _ ## par0 (FncArgs &v) {          \
-    auto a = v[0]->par0->value;                         \
-    return ret_type(operation);                         \
+#define X1(name, ret_type, par0, operation, func)           \
+static FncRet func ## _ ## par0 (FncArgs &args) {           \
+    auto a = args[0]->par0->value;                          \
+    return ret_type(operation);                             \
 }
 
 PLATFORM_FUNCTION_LIST
@@ -67,28 +67,64 @@ private:  // Visitor overrides
     }
 
     /**
-     * Visitor function for `FunctionCall` nodes.
+     * Visitor function for `Expression` nodes.
+     * Replace eligible functions calls with a literal expression.
      */
-    void visit_function_call(ir::FunctionCall &node) override {
-        QL_IOUT("function call" << ir::describe(node));
+
+    void visit_expression(ir::Expression &expression) override {
+        if (auto function_call = expression.as_function_call()) {
+            QL_IOUT("function call" << ir::describe(*function_call));
+
+            // generate key, consistent with register_functions()
+            utils::Str key = function_call->function_type->name + "_";
+            for (auto &operand : function_call->operands) {
+                if (operand->as_int_literal()) {
+                    key += "i";
+                } else if (operand->as_bit_literal()) {
+                    key += "b";
+                } else {
+                    return;     // we don't handle functions with other operand types, but leave them untouched
+                }
+            }
+
+            // FIXME: libqasm's cQASM resolver
+
+            // lookup key
+            auto it = func_map.find(key);
+            if (it == func_map.end()) {
+                QL_DOUT("ignoring non-eligible function '" << key << "'");
+
+            } else {
+                // call the function
+                FncRet ret = (*it->second)(function_call->operands);
+
+                // replace node
+                QL_IOUT("replacing '" << ir::describe(*function_call) << "' by '" << ir::describe(ret) << "'");
+                expression = *ret;
+            }
+        }
     }
 
     /**
      * Visitor function for `IfElse` nodes.
      */
-//    void visit_if_else(ir::IfElse &node) override {
-//        QL_IOUT("if_else" << ir::describe(node));
-//    }
+    void visit_if_else(ir::IfElse &if_else) override {
+        // Traverse down
+        RecursiveVisitor::visit_if_else(if_else);
+
+        QL_IOUT("if_else" << ir::describe(if_else));
+    }
 
 private:    // types
 
-    // function pointer for dispatch()
-    typedef FncRet (*tOpFunc)(const FncArgs &a);
+    // function pointer
+    typedef FncRet (*tOpFunc)(const FncArgs &args);
 
+    // map function key (see register_functions()) to function pointer
     using FuncMap = std::map<utils::Str, tOpFunc>;
 
 private:    // vars
-    FuncMap func_map;                                       // map name to function info, see register_functions()
+    FuncMap func_map;
 
 private:    // functions
 
@@ -115,8 +151,6 @@ private:    // functions
         #undef xstr
         #undef str
     };
-
-//    void dispatch(const ir::ExpressionRef &lhs, const ir::FunctionCall *fn, const Str &describe);
 
 };
 
