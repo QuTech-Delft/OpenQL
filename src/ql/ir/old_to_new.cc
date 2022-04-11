@@ -60,7 +60,7 @@ static ExpressionRef parse_instruction_parameter(
         // Map the first num_qubits bregs to the implicit qubit measurement
         // registers.
         auto implicit_breg = false;
-        if (name == "breg") {
+        if (name == "b") {
             auto num_qubits = get_num_qubits(ir);
             if (index < num_qubits) {
                 implicit_breg = true;
