@@ -937,7 +937,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     utils::Str architecture = ir->platform->architecture->family->get_namespace_name();
 
     if(architecture == "cc") {
-        QL_WOUT("adding hardcoded CC functions");
+        QL_IOUT("adding hardcoded CC functions");
         fn = add_function_type(ir, utils::make<FunctionType>("rnd_seed"));
         fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // seed
         fn->return_type = int_type;
