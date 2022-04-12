@@ -54,16 +54,19 @@ public:
     /**
      * Constructs a ConstantPropagator.
      */
-    ConstantPropagator() = default;
+    ConstantPropagator() {
+        register_functions();
+    };
 
-private:  // Visitor overrides
+private:  // RecursiveVisitor overrides
 
     /**
      * Fallback function.
      */
     void visit_node(ir::Node &node) override {
-        node.dump(std::cerr);
-        QL_ICE("unexpected node type encountered in ConstantPropagator");
+//        node.dump(std::cerr);
+//        QL_ICE("unexpected node type encountered in ConstantPropagator");
+        QL_DOUT("visiting node '"  << ir::describe(node) << "'");
     }
 
     /**
@@ -73,7 +76,7 @@ private:  // Visitor overrides
 
     void visit_expression(ir::Expression &expression) override {
         if (auto function_call = expression.as_function_call()) {
-            QL_IOUT("function call" << ir::describe(*function_call));
+            QL_DOUT("function call '" << ir::describe(*function_call) << "'");
 
             // generate key, consistent with register_functions()
             utils::Str key = function_call->function_type->name + "_";
@@ -99,7 +102,7 @@ private:  // Visitor overrides
                 FncRet ret = (*it->second)(function_call->operands);
 
                 // replace node
-                QL_IOUT("replacing '" << ir::describe(*function_call) << "' by '" << ir::describe(ret) << "'");
+                QL_IOUT("replacing '" << ir::describe(*function_call) << "' by '" << ir::describe(*ret) << "'");
                 expression = *ret;
             }
         }
@@ -112,7 +115,7 @@ private:  // Visitor overrides
         // Traverse down
         RecursiveVisitor::visit_if_else(if_else);
 
-        QL_IOUT("if_else" << ir::describe(if_else));
+        QL_IOUT("if_else '" << ir::describe(if_else) << "'");
     }
 
 private:    // types

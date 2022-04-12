@@ -1,0 +1,32 @@
+# File:         test_const_prop.cq
+# Purpose:      test cQasm constant propagation
+# Notes:        most constructs make no practical sense
+
+version 1.2
+qubits 17
+
+pragma @ql.name("test_const_prop")
+pragma @ql.platform("config_cc_s17_direct_iq_openql_0_10.json")
+
+.def
+map qInput1 = q[0]
+map qInput2 = q[1]
+map qAncilla3 = q[2]
+map qOutput4 = q[3]
+
+# var mAncilla3: bool   encountered incompatible object reference to mAncilla3 (size=0)
+map mAncilla3 = b[2]
+
+map i = creg(0)
+map j = creg(1)
+
+.condConstExpr
+while (4==4) {
+}
+
+
+.more
+#set i = 4<5
+set i = int(1+4)
+set i = 1+4
+set i = int(j+4)
