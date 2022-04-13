@@ -36,10 +36,21 @@ class Test_cQASM(unittest.TestCase):
                 pl = ql.Platform("cc", "config_cc_s17_direct_iq_openql_0_10.json")
                 c = pl.get_compiler()
 
+                # insert passes at front (in reverse run order)
                 if 1:
+                    # insert dead code elimination pass
+                    c.prefix_pass(
+                        'opt.DeadCodeElim',
+                        'dead_code_elim',
+                        {
+                            'output_prefix': 'test_output/%N.%P',
+                            'debug': 'yes'
+                        }
+                    )
+
                     # insert constant propagation pass
                     c.prefix_pass(
-                        'opt.const_prop.const_prop',
+                        'opt.ConstProp',
                         'const_prop',
                         {
                             'output_prefix': 'test_output/%N.%P',

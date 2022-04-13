@@ -1,5 +1,5 @@
 /** \file
- * Constant propagation pass.
+ * Dead code elimination pass.
  */
 
 #pragma once
@@ -9,18 +9,18 @@
 namespace ql {
 namespace pass {
 namespace opt {
-namespace const_prop {
+namespace dead_code_elim {
 
 /**
- * Constant propagation pass.
+ * Dead code elimination pass.
  */
-class ConstantPropagationPass : public pmgr::pass_types::Transformation {
+class DeadCodeEliminationPass : public pmgr::pass_types::Transformation {
 public:
 
     /**
-     * Constructs a constant propagation pass.
+     * Constructs a dead code elimination pass.
      */
-    ConstantPropagationPass(
+    DeadCodeEliminationPass(
         const utils::Ptr<const pmgr::Factory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
@@ -32,7 +32,7 @@ public:
     utils::Str get_friendly_type() const override;
 
     /**
-     * Runs the constant propagation pass.
+     * Runs the dead code elimination pass.
      */
     utils::Int run(
         const ir::Ref &ir,
@@ -42,21 +42,30 @@ public:
 protected:
 
     /**
-     * Dumps docs for constant propagation pass.
+     * Dumps docs for dead code elimination pass.
      */
     void dump_docs(
         std::ostream &os,
         const utils::Str &line_prefix
     ) const override;
 
+private:
+    /**
+     * Runs the dead code elimination pass on the given block.
+     */
+    static void run_on_block(
+        const ir::Ref &ir,
+        const ir::BlockBaseRef &block
+    );
+
 };
 
 /**
  * Shorthand for referring to the pass using namespace notation.
  */
-using Pass = ConstantPropagationPass;
+using Pass = DeadCodeEliminationPass;
 
-} // namespace const_prop
+} // namespace dead_code_elim
 } // namespace opt
 } // namespace pass
 } // namespace ql
