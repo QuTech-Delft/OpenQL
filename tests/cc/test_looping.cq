@@ -103,7 +103,7 @@ foreach (i = 10..5) {
 }
 
 
-# FIXME: we do not handle negative numbers
+# FIXME: CC does not handle negative numbers
 #.foreachLoopDown2
 #foreach (i = 10..-5) {
 #}
