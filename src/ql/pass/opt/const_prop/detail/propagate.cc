@@ -2,6 +2,8 @@
  * Recursively perform constant propagation on an IR node
  */
 
+#define DEBUG(x) QL_DOUT(x)
+
 #include "propagate.h"
 #include "platform_functions.h"
 
@@ -64,58 +66,52 @@ private:  // RecursiveVisitor overrides
      * Fallback function.
      */
     void visit_node(ir::Node &node) override {
-//        node.dump(std::cerr);
-//        QL_ICE("unexpected node type encountered in ConstantPropagator");
-        QL_DOUT("visiting node '"  << ir::describe(node) << "'");
+        // Note that in our case it is not an error to come here, since we don't intend to handle all
+        // node types
+        DEBUG("visiting node '"  << ir::describe(node) << "'");
     }
 
     /**
-     * Visitor function for `Expression` nodes.
-     * Replace eligible functions calls with a literal expression.
+     * Visitor function for `SetInstruction` nodes.
      */
 
-    void visit_expression(ir::Expression &expression) override {
-        if (auto function_call = expression.as_function_call()) {
-            QL_DOUT("function call '" << ir::describe(*function_call) << "'");
+    void visit_set_instruction(ir::SetInstruction &set_instruction) override {
+        handle_expression(set_instruction.rhs);
+    }
 
-            // generate key, consistent with register_functions()
-            utils::Str key = function_call->function_type->name + "_";
-            for (auto &operand : function_call->operands) {
-                if (operand->as_int_literal()) {
-                    key += "i";
-                } else if (operand->as_bit_literal()) {
-                    key += "b";
-                } else {
-                    return;     // we don't handle functions with other operand types, but leave them untouched
-                }
-            }
+    /**
+     * Visitor function for `DynamicLoop` nodes.
+     */
 
-            // FIXME: libqasm's cQASM resolver
+    void visit_dynamic_loop(ir::DynamicLoop &dynamic_loop) override {
+        handle_expression(dynamic_loop.condition);
+    }
 
-            // lookup key
-            auto it = func_map.find(key);
-            if (it == func_map.end()) {
-                QL_DOUT("ignoring non-eligible function '" << key << "'");
+    /**
+     * Visitor function for `IfElseBranch` nodes.
+     */
+    void visit_if_else_branch(ir::IfElseBranch &if_else_branch) override {
+        handle_expression(if_else_branch.condition);
+    }
 
-            } else {
-                // call the function
-                FncRet ret = (*it->second)(function_call->operands);
-
-                // replace node
-                QL_IOUT("replacing '" << ir::describe(*function_call) << "' by '" << ir::describe(*ret) << "'");
-                expression = *ret;
-            }
+    /**
+     * Visitor function for `FunctionCall` nodes.
+     */
+    void visit_function_call(ir::FunctionCall &function_call) override {
+        DEBUG("recursing into operands of function call '" << ir::describe(function_call) << "'");
+        for (auto &operand : function_call.operands) {
+            handle_expression(operand);
         }
     }
 
     /**
-     * Visitor function for `IfElse` nodes.
+     * Visitor function for `FunctionCall` nodes.
      */
-    void visit_if_else(ir::IfElse &if_else) override {
-        // Traverse down
-        RecursiveVisitor::visit_if_else(if_else);
-
-        QL_IOUT("if_else '" << ir::describe(if_else) << "'");
+    void visit_expression(ir::Expression &expression) override {
+        if(auto function_call = expression.as_function_call()) {
+            DEBUG("recursing into function call '" << ir::describe(*function_call) << "'");
+            visit_function_call(*function_call);   // descend
+        }
     }
 
 private:    // types
@@ -130,6 +126,54 @@ private:    // vars
     FuncMap func_map;
 
 private:    // functions
+
+    /*
+     * Handle an expression node, i.e. replace eligible functions calls with a literal expression.
+     *
+     * Note that we cannot directly use visit_expression(), because that has a 'ir::Expression &' as parameter.
+     * It is therefore not possible to change a function_call into a (say) int_literal. Here the expression is
+     * wrapped in a 'utils<One>', allowing polymorphic access. This does force us however to visit all relevant node
+     * types that contain an expression (although we can skip e.g. custom_instruction.operands).
+     */
+    void handle_expression(utils::One<ir::Expression> &expression) {
+        DEBUG("descending '" << ir::describe(expression));
+        visit_expression(*expression);    // descend
+        DEBUG("done descending '" << ir::describe(expression));
+
+        if (auto function_call = expression->as_function_call()) {
+            QL_IOUT("function call '" << ir::describe(*function_call) << "'");
+
+            // generate key, consistent with register_functions()
+            utils::Str key = function_call->function_type->name + "_";
+            for (auto &operand : function_call->operands) {
+                if (operand->as_int_literal()) {
+                    key += "i";
+                } else if (operand->as_bit_literal()) {
+                    key += "b";
+                } else {
+                    DEBUG("not touching operand '" << ir::describe(operand) << "'");
+                    return;     // we don't handle functions with other operand types, but leave them untouched
+                }
+            }
+
+            // FIXME: libqasm's cQASM resolver
+            //  performs type promotions, see FunctionTable::call
+
+            // lookup key
+            auto it = func_map.find(key);
+            if (it == func_map.end()) {
+                DEBUG("ignoring non-eligible function '" << key << "'");
+
+            } else {
+                // call the function
+                FncRet ret = (*it->second)(function_call->operands);
+
+                // replace node
+                QL_IOUT("replacing '" << ir::describe(*function_call) << "' by '" << ir::describe(*ret) << "'");
+                expression = ret;
+            }
+        }
+    }
 
     /**
      * Register the functions we handle.

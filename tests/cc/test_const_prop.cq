@@ -28,5 +28,6 @@ while (4==4) {
 .more
 #set i = 4<5
 set i = int(1+4)
-set i = 1+4
+set i = 1+5
+set i = 1+2-3
 set i = int(j+4)
