@@ -79,7 +79,7 @@ void DeadCodeEliminationPass::run_on_block(
                         if_else->branches.remove(branch_idx);
                         continue;   // loop, using same value for branch_idx
 
-                        // FIXME: incorrect if all if_else branches are removed, then only
+                        // NB: may remove all if_else branches (which we repair later)
                     }
                 }
                 branch_idx++;
