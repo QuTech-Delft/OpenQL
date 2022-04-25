@@ -44,6 +44,9 @@ if (3<2) {
     set j = 10
 }
 
+.deadCodeElim3
+_rx q[0], 90
+
 .more
 #set i = 4<5
 set i = int(1+4)

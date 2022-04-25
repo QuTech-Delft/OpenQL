@@ -39,11 +39,22 @@ void DeadCodeEliminationPass::run_on_block(
     const ir::BlockBaseRef &block
 ) {
     DEBUG("running dead code elimination on block");
-//    for (const auto &statement : block->statements) {
     for (utils::UInt stmt_idx = 0; stmt_idx < block->statements.size(); stmt_idx++) {    // NB: we need index for add() below
         const auto &statement = block->statements[stmt_idx];
 
-        // handle if_else
+        // handle if_else.
+        // Note that this is especially useful for 'parameterized gate decomposition', e.g. (noting that a real
+        // example would feature a longer if-tree):
+        //         "_rx": {
+        //           "prototype": ["X:qubit", "L:int"],
+        //           "duration": 20,
+        //           "decomposition": {
+        //               "into": [
+        //                     "if (op(1) < 45) {",
+        //                    "   rx45 op(0)",
+        //                    "} else {",
+        //                    "   rx90 op(0)",
+        //                    "}"
         if (auto if_else = statement->as_if_else()) {
             utils::UInt if_else_idx = stmt_idx;
             bool remove_if_else = false;
@@ -86,7 +97,7 @@ void DeadCodeEliminationPass::run_on_block(
             }
 
             // check that we still have branches
-            if (if_else->branches.size() == 0) {
+            if (if_else->branches.empty()) {
                 if (!if_else->otherwise.empty()) {
                     QL_IOUT("turn body of final 'if_else->otherwise' into statements");
 
@@ -110,7 +121,8 @@ void DeadCodeEliminationPass::run_on_block(
 
         // handle loop
         } else if (auto loop = statement->as_loop()) {
-            // note that we cannot fully remove loop (if break or continue exists)
+            // NB: placeholder, we currently have no real use for optimizing static loops, note that we cannot fully
+            // remove loop anyway if break or continue exists
         }
     }
 }
