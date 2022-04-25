@@ -298,7 +298,9 @@ void test_qi_example() {
     k.barrier();      // help scheduler
     k.gate("ry180", {0, 2});     // FIXME: "y" does not work, but gate decomposition should handle?
     //k.gate("wait"); // ???
+#if 0   // FIXME: requires decomposition pass
     k.gate("cz", {8, 10});   // FIXME: was: k.gate("cz", {0, 2});
+#endif
     //k.gate("wait"); // ???
     k.gate("y90", 2);
 
