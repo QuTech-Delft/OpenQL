@@ -54,7 +54,6 @@ private:
      * Runs the dead code elimination pass on the given block.
      */
     static void run_on_block(
-        const ir::Ref &ir,
         const ir::BlockBaseRef &block
     );
 

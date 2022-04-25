@@ -85,6 +85,9 @@ private:  // RecursiveVisitor overrides
 
     void visit_dynamic_loop(ir::DynamicLoop &dynamic_loop) override {
         handle_expression(dynamic_loop.condition);
+
+        // descend loop body
+        dynamic_loop.body->visit(*this);
     }
 
     /**
@@ -92,6 +95,9 @@ private:  // RecursiveVisitor overrides
      */
     void visit_if_else_branch(ir::IfElseBranch &if_else_branch) override {
         handle_expression(if_else_branch.condition);
+
+        // descend branch body
+        if_else_branch.body->visit(*this);
     }
 
     /**
