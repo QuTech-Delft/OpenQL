@@ -1000,20 +1000,16 @@ void Base::handle_debugging(
     utils::Str in_or_out = after_pass ? "out" : "in";
     auto debug_opt = options["debug"].as_str();
     if (debug_opt == "yes") {
-        if (!after_pass && ir->program.empty()) {  // don't dump if we haven't got a program yet
-            QL_IOUT("skipping debug output for pass " + context.full_pass_name + ", program is empty");
-        } else {
-            ir->dump_seq(
-                utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".ir").unwrap()
-            );
+        ir->dump_seq(
+            utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".ir").unwrap()
+        );
 
-            ir::cqasm::WriteOptions write_options;
-            write_options.include_statistics = true;
-            ir::cqasm::write(
-                ir, write_options,
-                utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".cq").unwrap()
-            );
-        }
+        ir::cqasm::WriteOptions write_options;
+        write_options.include_statistics = true;
+        ir::cqasm::write(
+            ir, write_options,
+            utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".cq").unwrap()
+        );
     }
     if (debug_opt == "stats" || debug_opt == "both") {
         pass::ana::statistics::report::dump_all(
