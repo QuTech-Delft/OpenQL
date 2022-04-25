@@ -5,6 +5,7 @@
 import os
 import unittest
 import openql as ql
+from typing import List, Tuple
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
@@ -26,6 +27,106 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
 
+    # NB: based on PycQED::openql_helpers.py
+    def _configure_compiler(
+            self,
+            platform: ql.Platform,
+            cqasm_src_filename: str = "",
+            extra_pass_options: List[Tuple[str, str]] = None
+    ) -> ql.Compiler:
+        # NB: for alternative ways to configure the compiler, see
+        # https://openql.readthedocs.io/en/latest/gen/reference_configuration.html#compiler-configuration
+
+        c = platform.get_compiler()
+
+
+        # remove default pass list (this also removes support for most *global* options as defined in
+        # https://openql.readthedocs.io/en/latest/gen/reference_options.html, except for 'log_level')
+        # NB: this defeats automatic backend selection by OpenQL based on key "eqasm_compiler"
+        c.clear_passes()
+
+        # add the passes we need
+        compiling_cqasm = cqasm_src_filename != ""
+        if compiling_cqasm:
+            # cQASM reader as very first step
+            c.append_pass(
+                'io.cqasm.Read',
+                'reader',
+                {
+                    'cqasm_file': cqasm_src_filename
+                }
+            )
+
+            # decomposer for legacy decompositions (those defined in the "gate_decomposition" section)
+            # FIXME: comment incorrect, also decomposes new-style definitions
+            # see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
+            c.append_pass(
+                'dec.Instructions',
+                # NB: don't change the name 'legacy', see:
+                # - https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
+                # - https://openql.readthedocs.io/en/latest/gen/reference_passes.html#predicate-key
+                'legacy',
+            )
+        else:  # FIXME: experimental. Also decompose API input to allow use of new style decompositions
+            c.append_pass(
+                'dec.Instructions',
+                # NB: don't change the name 'legacy', see:
+                # - https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
+                # - https://openql.readthedocs.io/en/latest/gen/reference_passes.html#predicate-key
+                'legacy',
+            )
+
+        # report the initial qasm
+        c.append_pass(
+            'io.cqasm.Report',
+            'initial',
+            {
+                'output_suffix': '.cq',
+                'with_timing': 'no'
+            }
+        )
+
+        # schedule
+        c.append_pass(
+            'sch.ListSchedule',
+            'scheduler',
+            {
+                'resource_constraints': 'yes'
+            }
+        )
+
+        # report scheduled qasm
+        c.append_pass(
+            'io.cqasm.Report',
+            'scheduled',
+            {
+                'output_suffix': '.cq',
+            }
+        )
+
+        # generate code using CC backend
+        # NB: OpenQL >= 0.10 no longer has a CC-light backend
+        c.append_pass(
+            'arch.cc.gen.VQ1Asm',
+            'cc_backend'
+        )
+
+        # set compiler pass options
+        # c.set_option('*.output_prefix', f'{OqlProgram.output_dir}/%N.%P')
+        # if self._arch == 'CC':
+        #     c.set_option('cc_backend.output_prefix', f'{OqlProgram.output_dir}/%N')
+        c.set_option('scheduler.scheduler_target', 'alap')
+        if compiling_cqasm:
+            c.set_option('cc_backend.run_once', 'yes')  # if you want to loop, write a cqasm loop
+
+        # finally, set user pass options
+        if extra_pass_options is not None:
+            for opt, val in extra_pass_options:
+                c.set_option(opt, val)
+
+        # log.debug("\n" + c.dump_strategy())
+        return c
+
     def test_gate_decomposition_cz(self):
         platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq_openql_0_10.json'))
 
@@ -44,13 +145,16 @@ class Test_central_controller(unittest.TestCase):
         k.gate("cz", [11, 9])
         k.gate("cz", [9, 12])
         k.gate("cz", [12, 9])
-        k.gate("cz", [11, 15])
-        k.gate("cz", [15, 11])
+        # k.gate("cz", [11, 15])
+        # k.gate("cz", [15, 11])
         k.gate("cz", [12, 15])
         k.gate("cz", [15, 12])
 
         p.add_kernel(k)
-        p.compile()
+
+        # compile, with new style gate decompositions
+        c = self._configure_compiler(platform)
+        c.compile(p)
 
     def test_native_instructions(self):
         platform = ql.Platform(platform_name, os.path.join(curdir, 'config_cc_s17_direct_iq_openql_0_10.json'))
@@ -227,7 +331,10 @@ class Test_central_controller(unittest.TestCase):
         k.barrier([])
 
         p.add_kernel(k)
-        p.compile()
+
+        # compile, with new style gate decompositions
+        c = self._configure_compiler(platform)
+        c.compile(p)
 
     # based on ../test_cqasm_reader.py::test_conditions
     # FIXME: uses old cqasm_reader
