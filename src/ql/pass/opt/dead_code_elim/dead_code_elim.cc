@@ -35,7 +35,7 @@ utils::Str DeadCodeEliminationPass::get_friendly_type() const {
  * Runs the dead code elimination pass on the given block.
  */
 void DeadCodeEliminationPass::run_on_block(
-    const ir::Ref &ir,
+    const ir::Ref &ir,  // FIXME: unused
     const ir::BlockBaseRef &block
 ) {
     DEBUG("running dead code elimination on block");
@@ -59,11 +59,24 @@ void DeadCodeEliminationPass::run_on_block(
             utils::UInt if_else_idx = stmt_idx;
             bool remove_if_else = false;
 
+//            // descend subblocks
+//            // NB: we could optimize by not descending subblocks that are erased below, but must then take care to
+//            // descend subblocks where the condition is not a bit_literal, and we do need to walk depth first.
+//            for (auto &branch : if_else->branches) {
+//                run_on_block(ir, branch->body);
+//            }
+//            if (!if_else->otherwise.empty()) {
+//                run_on_block(ir, if_else->otherwise);
+//            }
+
             // remove unreachable branches, and maybe the complete if_else statement
             for (utils::UInt branch_idx = 0; branch_idx < if_else->branches.size(); ) {    // NB: we need index for remove() below
                 auto &branch = if_else->branches[branch_idx];
                 if (auto condition = branch->condition->as_bit_literal()) {
                     if (condition->value) {   // condition 'true'
+                        // descend body
+                        run_on_block(ir, branch->body);
+
                         // delete subsequent if_else branches and if_else->otherwise, since these are unreachable
                         QL_IOUT("found 'if_else(true)': removing unreachable if_else-branches and if_else->otherwise");
                         for (utils::UInt i = branch_idx + 1; i < if_else->branches.size(); i++) {
@@ -82,21 +95,32 @@ void DeadCodeEliminationPass::run_on_block(
                             remove_if_else = true;
                         }
 
-                        // NB: done looping, since we erased everything below us
+                        // NB: done looping, since we erased everything that followed
                         break;
 
                     } else {    // condition 'false'
+                        // NB: no need to descend body
                         QL_IOUT("removing dead if-branch " << branch_idx);
                         if_else->branches.remove(branch_idx);
                         continue;   // loop, using same value for branch_idx
 
                         // NB: may remove all if_else branches (which we repair later)
                     }
+
+                // condition is not a bit_literal
+                } else {
+                    // descend body
+                    run_on_block(ir, branch->body);
                 }
                 branch_idx++;
             }
 
-            // check that we still have branches
+            // descend otherwise
+            if (!if_else->otherwise.empty()) {
+                run_on_block(ir, if_else->otherwise);
+            }
+
+            // if we no longer have branches, but do have otherwise, promote its body into statements within this block
             if (if_else->branches.empty()) {
                 if (!if_else->otherwise.empty()) {
                     QL_IOUT("turn body of final 'if_else->otherwise' into statements");
@@ -109,10 +133,6 @@ void DeadCodeEliminationPass::run_on_block(
 
                 remove_if_else = true;
             }
-
-            // descend subblocks
-            // FIXME
-
 
             // if needed, remove the complete if_else statement altogether
             if (remove_if_else) {
