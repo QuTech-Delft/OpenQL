@@ -8,6 +8,7 @@
 #include "platform_functions.h"
 
 #include "ql/ir/describe.h"
+#include "ql/ir/ops.h"
 
 namespace ql {
 namespace pass {
@@ -25,19 +26,19 @@ using FncRet = utils::One<ir::Expression>;
 // "ap_add_P_IP_I". Doesn't look great, but you never see it anyway.
 #define P_I as_int_literal()
 #define P_B as_bit_literal()
-#define R_I(x) utils::make<ir::IntLiteral>(x)   // FIXME: use make_int_lit ?
-#define R_B(x) utils::make<ir::BitLiteral>(x)
+#define R_I(ir, x) make_int_lit(ir, x)   // NB: performs checking against IR types (thus disallowing integer overflow)
+#define R_B(ir, x) make_bit_lit(ir, x)   // NB: performs checking against IR types
 
-#define X2(name, ret_type, par0, par1, operation, func)     \
-static FncRet func ## _ ## par0 ## par1(FncArgs &args) {    \
-    auto a = args[0]->par0->value;                          \
-    auto b = args[1]->par1->value;                          \
-    return ret_type(operation);                             \
+#define X2(name, ret_type, par0, par1, operation, func)                     \
+static FncRet func ## _ ## par0 ## par1(const ir::Ref &ir, FncArgs &args) { \
+    auto a = args[0]->par0->value;                                          \
+    auto b = args[1]->par1->value;                                          \
+    return ret_type(ir, operation);                                         \
 }
-#define X1(name, ret_type, par0, operation, func)           \
-static FncRet func ## _ ## par0 (FncArgs &args) {           \
-    auto a = args[0]->par0->value;                          \
-    return ret_type(operation);                             \
+#define X1(name, ret_type, par0, operation, func)                           \
+static FncRet func ## _ ## par0 (const ir::Ref &ir, FncArgs &args) {        \
+    auto a = args[0]->par0->value;                                          \
+    return ret_type(ir, operation);                                         \
 }
 
 PLATFORM_FUNCTION_LIST
@@ -56,7 +57,7 @@ public:
     /**
      * Constructs a ConstantPropagator.
      */
-    ConstantPropagator() {
+    explicit ConstantPropagator(const ir::Ref &ir) : ir(ir) {
         register_functions();
     };
 
@@ -123,12 +124,13 @@ private:  // RecursiveVisitor overrides
 private:    // types
 
     // function pointer
-    typedef FncRet (*tOpFunc)(const FncArgs &args);
+    typedef FncRet (*tOpFunc)(const ir::Ref &ir, const FncArgs &args);
 
     // map function key (see register_functions()) to function pointer
     using FuncMap = std::map<utils::Str, tOpFunc>;
 
 private:    // vars
+    const ir::Ref &ir;
     FuncMap func_map;
 
 private:    // functions
@@ -162,8 +164,7 @@ private:    // functions
                 }
             }
 
-            // FIXME: libqasm's cQASM resolver
-            //  performs type promotions, see FunctionTable::call
+            // NB: we don't perform type promotions like libqasm's cQASM resolver, see FunctionTable::call
 
             // lookup key
             auto it = func_map.find(key);
@@ -172,7 +173,7 @@ private:    // functions
 
             } else {
                 // call the function
-                FncRet ret = (*it->second)(function_call->operands);
+                FncRet ret = (*it->second)(ir, function_call->operands);
 
                 // replace node
                 QL_IOUT("replacing '" << ir::describe(*function_call) << "' by '" << ir::describe(*ret) << "'");
@@ -210,8 +211,8 @@ private:    // functions
 /**
  * Recursively perform constant propagation on an IR node.
  */
-void propagate(ir::Node &node) {
-    ConstantPropagator visitor;
+void propagate(const ir::Ref &ir, ir::Node &node) {
+    ConstantPropagator visitor(ir);
 
     node.visit(visitor);
 }

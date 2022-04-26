@@ -15,7 +15,10 @@ namespace detail {
 /**
  * Recursively perform constant propagation on an IR node.
  */
-void propagate(ir::Node &node);
+void propagate(
+    const ir::Ref &ir,
+    ir::Node &node
+);
 
 } // namespace detail
 } // namespace const_prop

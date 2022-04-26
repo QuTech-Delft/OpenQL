@@ -39,7 +39,7 @@ utils::Int ConstantPropagationPass::run(
     // perform constant propagation
     if (!ir->program.empty()) {
         for (auto &block : ir->program->blocks) {
-            detail::propagate(*block);
+            detail::propagate(ir, *block);
         }
     }
     return 0;

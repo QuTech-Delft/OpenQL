@@ -89,6 +89,11 @@ while(true) {
     }
 }
 
+.intRange
+#set i = 4294967295  # out of range for int
+set i = 2147483647
+#set i = 2147483647 + 1 # out of range
+
 .more
 #set i = 4<5
 set i = int(1+4)

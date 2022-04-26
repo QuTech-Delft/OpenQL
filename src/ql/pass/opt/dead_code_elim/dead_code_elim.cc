@@ -42,6 +42,7 @@ void DeadCodeEliminationPass::run_on_block(
         const auto &statement = block->statements[stmt_idx];
 
         // handle if_else.
+        //
         // Note that this is especially useful for 'parameterized gate decomposition', e.g. (noting that a real
         // example would feature a longer if-tree):
         //         "_rx": {
@@ -130,11 +131,11 @@ void DeadCodeEliminationPass::run_on_block(
 
         // handle loop
         } else if (auto loop = statement->as_loop()) {
-            // NB: placeholder, we currently have no real use for optimizing static loops, note that we cannot fully
-            // remove loop anyway if break or continue exists
-
-            // FIXME: descend loop body
+            // descend loop body
             run_on_block(loop->body);
+
+            // NB: we currently have no real use for optimizing static loops, note that we cannot fully
+            // remove loop anyway if break or continue exists
         }
     }
 }

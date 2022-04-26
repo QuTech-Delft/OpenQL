@@ -5,7 +5,8 @@
  *
  * We only need to implement libqasm functions which are overridden by OpenQL, and - since libqasm supports
  * polymorphism - only for the parameter types overridden (i.e. bit and int).
- * Also see the comment in codegen.h::handle_set_instruction() on how platform functions come into existence.
+ * Also see the comment in arch::cc::pass::gen::vq1asm::detail::codegen.h::handle_set_instruction() on how platform
+ * functions come into existence.
  *
  * Return types (R_*):
  * - R_B: bit
