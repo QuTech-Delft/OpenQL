@@ -8,8 +8,10 @@
 #include "ql/ir/ops.h"
 #include "ql/ir/consistency.h"
 #include "ql/ir/cqasm/read.h"
+#include "ql/arch/architecture.h"
 #include "ql/rmgr/manager.h"
 #include "ql/arch/diamond/annotations.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/options.h" // FIXME: remove when OPT_CC_USER_FUNCTIONS is no longer needed
 
 // uncomment next line to enable multi-line dumping
 // #define MULTI_LINE_LOG_DEBUG
@@ -58,7 +60,7 @@ static ExpressionRef parse_instruction_parameter(
         // Map the first num_qubits bregs to the implicit qubit measurement
         // registers.
         auto implicit_breg = false;
-        if (name == "breg") {
+        if (name == "b") {
             auto num_qubits = get_num_qubits(ir);
             if (index < num_qubits) {
                 implicit_breg = true;
@@ -229,14 +231,16 @@ static void parse_decomposition_rule(
             "expansions"
         );
     }
-    utils::UInt decomp_duration = get_duration_of_block(rule_ir->program->blocks[0]);
-    if (decomp_duration > ityp->duration) {
-        QL_USER_ERROR(
-            "in " << description.str() << ": the duration of the schedule of " <<
-            "the decomposition (" << decomp_duration << ") cannot be longer " <<
-            "than the duration of the to-be-decomposed instruction (" <<
-            ityp->duration << ")"
-        );
+    if (ityp->duration > 0) {   // 0 implies that durations are just added up, requires scheduling after decomposition
+        utils::UInt decomp_duration = get_duration_of_block(rule_ir->program->blocks[0]);
+        if (decomp_duration > ityp->duration) {
+            QL_USER_ERROR(
+                "in " << description.str() << ": the duration of the schedule of " <<
+                "the decomposition (" << decomp_duration << ") cannot be longer " <<
+                "than the duration of the to-be-decomposed instruction (" <<
+                ityp->duration << ")"
+            );
+        }
     }
     decomp->expansion = rule_ir->program->blocks[0]->statements;
 
@@ -251,6 +255,8 @@ static void parse_decomposition_rule(
  * See convert_old_to_new(const compat::ProgramRef&) for details.
  */
 Ref convert_old_to_new(const compat::PlatformRef &old) {
+    QL_DOUT("converting old platform");
+
     Ref ir;
     ir.emplace();
 
@@ -327,6 +333,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     utils::List<std::function<void()>> todo;
 
     // Now load the sorted instruction list.
+    QL_DOUT("processing instructions");
     for (const UnparsedGateType &unparsed_gate_type : unparsed_gate_types) {
         try {
 
@@ -460,17 +467,28 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
                 // Check whether the operand list matches the specializations
                 // specified in the old way.
-                if (insn->template_operands.size() > insn->operand_types.size()) {
-                    QL_ICE("need at least operands for the specialization parameters");
+                if (template_operands.size() > insn->operand_types.size()) {
+                    QL_ICE(
+                        "need at least operands for the specialization parameters, template has "
+                        << template_operands.size() << " operands, instruction has "
+                        << insn->operand_types.size() << " operands"
+                    );
+                    // NB: refers to prototype (happens e.g. when a specialised instruction is defined with an empty prototype)
                 } else {
                     for (utils::UInt i = 0; i < template_params.size(); i++) {
-                        if (insn->operand_types[i]->data_type != get_type_of(insn->template_operands[i])) {
+                        if (i >= insn->operand_types.size()) {
+                            QL_ICE("operand_types[" << i << "] does not exist");
+                        }
+                        if (i >= template_operands.size()) {
+                            QL_ICE("template_operands[" << i << "] does not exist");
+                        }
+                        if (insn->operand_types[i]->data_type != get_type_of(template_operands[i])) {
                             QL_ICE("specialization parameter operand type mismatch");
                         }
                     }
                 }
 
-            } else {
+            } else {    // no "prototype" key
 
                 // We have to infer the prototype somehow...
                 prototype_inferred = true;
@@ -700,6 +718,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 
     // Add legacy decompositions to the new system, for gates added by passes
     // (notably swap and relatives for the mapper).
+    QL_DOUT("converting legacy decompositions");
     auto it = old->platform_config.find("gate_decomposition");
     if (it != old->platform_config.end()) {
         for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
@@ -719,7 +738,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                 insn->cqasm_name = insn->name;
                 template_params.pop_front();
                 if (!std::regex_match(insn->name, IDENTIFIER_RE)) {
-                    throw utils::Exception(
+                    throw utils::Exception( // FIXME: QL_USER_ERROR??, also see below
                         "instruction name is not a valid identifier"
                     );
                 }
@@ -866,17 +885,13 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
         }
     }
 
-    // Now that we have all the instruction types, compute the decomposition
-    // expansions that we postponed.
-    for (const auto &fn : todo) {
-        fn();
-    }
+    QL_DOUT("populate default functions");
 
     // Populate the default function types.
     auto fn = add_function_type(ir, utils::make<FunctionType>("operator!"));
     fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
     fn->return_type = bit_type;
-    for (const auto &op : utils::Vec<utils::Str>({"&&", "||", "==", "!="})) {
+    for (const auto &op : utils::Vec<utils::Str>({"&&", "||", "^^", "==", "!="})) {
         fn = add_function_type(ir, utils::make<FunctionType>("operator" + op));
         fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
         fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
@@ -901,6 +916,8 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     fn->operand_types.emplace(prim::OperandMode::READ, bit_type);
     fn->return_type = int_type;
 
+    QL_DOUT("populate defaults");
+
     // Populate topology. This is a bit annoying because the old platform has
     // it contained in an Opt rather than a Ptr.
     utils::Ptr<com::Topology> top;
@@ -914,6 +931,31 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     rmgr::CRef resources;
     resources.emplace(rmgr::Manager::from_defaults(old, {}, ir));
     ir->platform->resources.populate(resources);
+
+#if OPT_CC_USER_FUNCTIONS   // FIXME: replace by more flexible mechanism, e.g. configuration based on new JSON key to be added to 'old'. Or just await cQQASM 2.0
+    // Infer (default) architecture from the rest of the platform.
+    utils::Str architecture = ir->platform->architecture->family->get_namespace_name();
+
+    if(architecture == "cc") {
+        QL_WOUT("adding hardcoded CC functions");
+        fn = add_function_type(ir, utils::make<FunctionType>("rnd_seed"));
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // seed
+        fn->return_type = int_type;
+
+        fn = add_function_type(ir, utils::make<FunctionType>("rnd"));
+        fn->operand_types.emplace(prim::OperandMode::READ, real_type);   // threshold
+        fn->return_type = bit_type;
+    }
+#endif
+
+    // Now that we have all the instruction types, compute the decomposition
+    // expansions that we postponed.
+    // Note that this must also be after populating topology and friends, otherwise check_consistency() may fail
+    // [called through parse_decomposition_rule() -> cqasm::read()].
+    QL_DOUT("expand decompositions");
+    for (const auto &fn : todo) {
+        fn();
+    }
 
     // Populate platform JSON data.
     ir->platform->data = old->platform_config;
@@ -933,6 +975,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
 #endif
     check_consistency(ir);
 
+    QL_DOUT("finished converting old platform");
     return ir;
 }
 
@@ -1259,6 +1302,7 @@ static InstructionRef convert_gate(
             operands.add(make_int_lit(ir, gate->int_operand));
         }
 
+#if 1 // OPT_DIAMOND
         // Handle the annotations for additional integer literal arguments used
         // by Diamond.
         if (auto emp = gate->get_annotation_ptr<arch::diamond::annotations::ExciteMicrowaveParameters>()) {
@@ -1286,7 +1330,7 @@ static InstructionRef convert_gate(
             operands.add(make_int_lit(ir, rp->duration));
             operands.add(make_int_lit(ir, rp->t_max));
         }
-
+#endif
         // Try to make an instruction for the name and operand list we found.
         auto insn = make_instruction(ir, name, operands, condition, true, true);
         if (!insn.empty()) {
@@ -1698,12 +1742,14 @@ Ref convert_old_to_new(const compat::ProgramRef &old) {
     }
 
     // Check the result.
+#ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Result of old->new IR program conversion:");
         ir->dump_seq();
-    } else {
-        QL_DOUT("Result of old->new IR program conversion (disabled)");
     }
+#else
+    QL_DOUT("Result of old->new IR program conversion (disabled)");
+#endif
     check_consistency(ir);
     QL_DOUT("Convert_old_to_new [DONE]");
 

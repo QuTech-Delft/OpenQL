@@ -30,6 +30,7 @@ void Datapath::programStart() {
 }
 
 void Datapath::programFinish() {
+    // FIXME: suppress output if we have no content besides .DATAPATH
     emit(".END", "");
 }
 
@@ -55,16 +56,16 @@ UInt Datapath::allocateSmBit(UInt breg_operand, UInt instrIdx) {
             smBit = lastSmBit + 1;
         }
         if (smBit >= SM_BIT_CNT) {
-            QL_FATAL("Exceeded available Shared memory space of " << SM_BIT_CNT << " bits");
+            QL_INPUT_ERROR("Exceeded available shared memory space of " << SM_BIT_CNT << " bits");
         }
 
         auto it = mapBregToSmBit.find(breg_operand);
         if (it != mapBregToSmBit.end()) {
-            QL_IOUT("Overwriting mapping of breg_operand " << it->second);
+            QL_IOUT("overwriting mapping of breg_operand " << it->second);
         }
     }
 
-    QL_IOUT("Mapping breg_operand " << breg_operand << " to smBit " << smBit);
+    QL_IOUT("mapping breg_operand " << breg_operand << " to smBit " << smBit);
     mapBregToSmBit.set(breg_operand) = smBit;    // created on demand
 
     smBitLastInstrIdx = instrIdx;
@@ -73,25 +74,25 @@ UInt Datapath::allocateSmBit(UInt breg_operand, UInt instrIdx) {
     return smBit;
 }
 
-// NB: bit_operand can be breg_operand or cond_operand, depending on context of caller
-UInt Datapath::getSmBit(UInt bit_operand, UInt instrIdx) {
+// NB: bit_operand can be breg_operand or cond_operand, depending on context of caller. FIXME: cond_operand no longer exists,update identifiers and strings
+UInt Datapath::getSmBit(UInt bit_operand) const {
     UInt smBit;
 
     auto it = mapBregToSmBit.find(bit_operand);
     if (it != mapBregToSmBit.end()) {
         smBit = it->second;
-        QL_DOUT("Found mapping: bit_operand " << bit_operand << " to smBit " << smBit);
+        QL_DOUT("found mapping: bit_operand " << bit_operand << " to smBit " << smBit);
     } else {
-        QL_FATAL("Request for DSM bit of bit_operand " << bit_operand << " that was never assigned by measurement");        // NB: message refers to user perspective (and thus calling semantics)
+        QL_INPUT_ERROR("Request for DSM bit of bit_operand " << bit_operand << " that was never assigned by measurement");        // NB: message refers to user perspective (and thus calling semantics)
     }
     return smBit;
 }
 
-UInt Datapath::getOrAssignMux(UInt instrIdx, const FeedbackMap &feedbackMap) {
+UInt Datapath::getOrAssignMux(UInt instrIdx, const MeasResultRealTimeMap &measResultRealTimeMap) {
     // We need a different MUX for every new combination of simultaneous readouts (per instrument)
     UInt mux = lastMux[instrIdx]++;    // FIXME: no reuse of identical combinations yet
     if (mux == MUX_CNT) {
-        QL_FATAL("Maximum number of available CC datapath MUXes exceeded");
+        QL_INPUT_ERROR("Maximum number of available CC datapath MUXes exceeded");
     }
 
     return mux;
@@ -102,7 +103,7 @@ UInt Datapath::getOrAssignPl(UInt instrIdx, const CondGateMap &condGateMap) {
     // We need a different PL for every new combination of simultaneous gate conditions (per instrument)
     UInt pl = lastPl[instrIdx]++;    // FIXME: no reuse of identical combinations yet
     if (pl == PL_CNT) {
-        QL_FATAL("Maximum number of available CC datapath PLs exceeded");
+        QL_INPUT_ERROR("Maximum number of available CC datapath PLs exceeded");
     }
 
     return pl;
@@ -113,7 +114,7 @@ UInt Datapath::getSizeTag(UInt numReadouts) {
     UInt sizeTag;
 
     if (numReadouts == 0) {
-        QL_FATAL("inconsistency in number of readouts");    // FIXME: message refers to caller, this assumes particular semantics for calling this function
+        QL_ICE("inconsistency in number of readouts");    // FIXME: message refers to caller, this assumes particular semantics for calling this function
     } else if (numReadouts <= 8) {
         sizeTag = 0;            // 0=byte
     } else if (numReadouts <= 16) {
@@ -121,60 +122,51 @@ UInt Datapath::getSizeTag(UInt numReadouts) {
     } else if (numReadouts <= 32) {    // NB: should currently not occur since we have a maximum of 16 inputs on UHFQA
         sizeTag = 2;
     } else {
-        QL_FATAL("inconsistency detected: too many readouts");
+        QL_ICE("inconsistency detected: too many readouts");
     }
     return sizeTag;
 }
 
 
-static Str cond_qasm(ir::compat::ConditionType condition, const Vec<UInt> &cond_operands) {
-    // FIXME: hack
-    ir::compat::gate_types::Custom g("foo");
-    g.condition = condition;
-    g.cond_operands = cond_operands;
-    return g.cond_qasm();
-}
-
-
-void Datapath::emitMux(Int mux, const FeedbackMap &feedbackMap, UInt instrIdx, Int slot) {
-    if (feedbackMap.empty()) {
-        QL_FATAL("feedbackMap must not be empty");
+void Datapath::emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeMap, Int slot) {
+    if (measResultRealTimeMap.empty()) {
+        QL_ICE("measResultRealTimeMap must not be empty");
     }
 
     emit(selString(slot) + QL_SS2S(".MUX " << mux), "");    // NB: no white space before ".MUX"
 
-    for (const auto &feedback : feedbackMap) {
-        FeedbackInfo fi = feedback.second;
+    for (const auto &measResult : measResultRealTimeMap) {
+        MeasResultRealTimeInfo info = measResult.second;
 
-        unsigned int winBit = fi.smBit % MUX_SM_WIN_SIZE;
+        unsigned int winBit = info.smBit % MUX_SM_WIN_SIZE;
 
         emit(
             slot,
-            QL_SS2S("SM[" << winBit << "] := I[" << fi.bit << "]"),
-            QL_SS2S("# cop " /*FIXME << fi.bi->creg_operands[0]*/ << " = readout(q" << fi.bi->operands[0] << ")")
+            QL_SS2S("SM[" << winBit << "] := I[" << info.bit << "]"),
+            "# " + info.describe
         );
     }
 }
 
 
-UInt Datapath::getMuxSmAddr(const FeedbackMap &feedbackMap) {
+UInt Datapath::getMuxSmAddr(const MeasResultRealTimeMap &measResultRealTimeMap) {
     UInt minSmBit = MAX;
     UInt maxSmBit = 0;
 
-    if (feedbackMap.empty()) {
-        QL_FATAL("feedbackMap must not be empty");
+    if (measResultRealTimeMap.empty()) {
+        QL_ICE("measResultRealTimeMap must not be empty");
     }
 
-    for (auto &feedback : feedbackMap) {
-        FeedbackInfo fi = feedback.second;
+    for (auto &measResult : measResultRealTimeMap) {
+        MeasResultRealTimeInfo info = measResult.second;
 
-        minSmBit = min(minSmBit, fi.smBit);
-        maxSmBit = max(maxSmBit, fi.smBit);
+        minSmBit = min(minSmBit, info.smBit);
+        maxSmBit = max(maxSmBit, info.smBit);
     }
 
     // perform checks
     if (alignSm(minSmBit, MUX_SM_WIN_SIZE) != alignSm(maxSmBit, MUX_SM_WIN_SIZE)) {
-        QL_FATAL("Cannot access DSM bits " << minSmBit << " and " << maxSmBit << " in single MUX configuration");
+        QL_USER_ERROR("Cannot access DSM bits " << minSmBit << " and " << maxSmBit << " in single MUX configuration");
     }
     return alignSm(minSmBit, MUX_SM_WIN_SIZE);
 }
@@ -187,7 +179,7 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
     UInt maxSmBit = 0;
 
     if (condGateMap.empty()) {
-        QL_FATAL("condGateMap must not be empty");
+        QL_ICE("condGateMap must not be empty");
     }
 
     emit(selString(slot) + QL_SS2S(".PL " << pl), "");    // NB: no white space before ".PL"
@@ -197,16 +189,18 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
         CondGateInfo cgi = cg.second;
 
         // emit comment for group
-        Str condition = cond_qasm(cgi.condition, cgi.cond_operands);
         emit(
             slot,
-            QL_SS2S("# group " << group << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut << ", condition='" << condition << "'")
+            QL_SS2S(
+                "# group " << group
+                << ", digOut=0x" << std::hex << std::setfill('0') << std::setw(8) << cgi.groupDigOut
+                << ", condition='" << cgi.instructionCondition.describe << "'")
         );
 
         // shorthand
-        auto winBit = [this, cgi, instrIdx, &minMaxValid, &minSmBit, &maxSmBit](int i)
+        auto winBit = [this, cgi, &minMaxValid, &minSmBit, &maxSmBit](int i)
         {
-            UInt smBit = getSmBit(cgi.cond_operands[i], instrIdx);
+            UInt smBit = getSmBit(cgi.instructionCondition.cond_operands[i]);
             minMaxValid = true;
             minSmBit = min(minSmBit, smBit);
             maxSmBit = max(maxSmBit, smBit);
@@ -216,42 +210,42 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
         // compute RHS of PL expression
         Str inv;
         StrStrm rhs;
-        switch (cgi.condition) {
+        switch (cgi.instructionCondition.cond_type) {
             // 0 operands:
-            case ir::compat::ConditionType::ALWAYS:
+            case ConditionType::ALWAYS:
                 rhs << "1";
                 break;
-            case ir::compat::ConditionType::NEVER:
+            case ConditionType::NEVER:
                 rhs << "0";
                 break;
 
             // 1 operand:
-            case ir::compat::ConditionType::NOT:
+            case ConditionType::NOT:
                 inv = "/";
                 // fall through
-            case ir::compat::ConditionType::UNARY:
+            case ConditionType::UNARY:
                 rhs << "SM[" << winBit(0) << "]";
                 break;
 
             // 2 operands
-            case ir::compat::ConditionType::NAND:
+            case ConditionType::NAND:
                 inv = "/";
                 // fall through
-            case ir::compat::ConditionType::AND:
+            case ConditionType::AND:
                 rhs << "SM[" << winBit(0) << "] & SM[" << winBit(1) << "]";
                 break;
 
-            case ir::compat::ConditionType::NOR:
+            case ConditionType::NOR:
                 inv = "/";
                 // fall through
-            case ir::compat::ConditionType::OR:
+            case ConditionType::OR:
                 rhs << "SM[" << winBit(0) << "] | SM[" << winBit(1) << "]";
                 break;
 
-            case ir::compat::ConditionType::NXOR:
+            case ConditionType::NXOR:
                 inv = "/";
                 // fall through
-            case ir::compat::ConditionType::XOR:
+            case ConditionType::XOR:
                 rhs << "SM[" << winBit(0) << "] ^ SM[" << winBit(1) << "]";
                 break;
         }
@@ -270,7 +264,7 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
     // perform checks
     if (minMaxValid) {
         if (alignSm(minSmBit, PL_SM_WIN_SIZE) != alignSm(maxSmBit, PL_SM_WIN_SIZE)) {
-            QL_FATAL("Cannot access DSM bits " << minSmBit << " and " << maxSmBit << " in single PL configuration");
+            QL_USER_ERROR("Cannot access DSM bits " << minSmBit << " and " << maxSmBit << " in single PL configuration");
         }
     }
     return alignSm(minSmBit, PL_SM_WIN_SIZE);    // NB: irrelevant if !minMaxValid since SM is not accessed in that case

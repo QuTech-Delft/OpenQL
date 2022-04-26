@@ -44,7 +44,7 @@ Json parse_json(std::istream &is) {
                 if (e.byte >= absPos && e.byte < absPos + line.size()) {
                     unsigned int relPos = e.byte - absPos;
                     line = utils::replace_all(line, "\t", " "); // make a TAB take one position
-                    QL_FATAL(
+                    QL_JSON_ERROR(
                         "in line " << lineNr
                                    << " at position " << relPos << ":" << std::endl
                                    << line << std::endl
@@ -54,13 +54,13 @@ Json parse_json(std::istream &is) {
                 lineNr++;
                 absPos += line.size();
             }
-            QL_FATAL("error position " << e.byte << " points beyond last file position " << absPos);
+            QL_ICE("error position " << e.byte << " points beyond last file position " << absPos);
         } else {
-            QL_FATAL("no information on error position");
+            QL_ICE("no information on error position");
         }
     }
     catch (Json::exception &e) {
-        QL_FATAL("malformed JSON file : \n\t" << e.what());
+        QL_JSON_ERROR("malformed JSON file : \n\t" << e.what());
     }
     return j;
 }
@@ -81,7 +81,7 @@ Json load_json(const Str &path) {
     if (fs.is_open()) {
         return parse_json(fs);
     } else {
-        QL_FATAL("failed to open file '" << path << "'");
+        QL_USER_ERROR("failed to open file '" << path << "'");
     }
 }
 
@@ -90,7 +90,7 @@ const Json &json_get(const Json &j, const Str &key, const Str &nodePath) {
     // first check existence of key
     auto it = j.find(key);
     if (it == j.end()) {
-        QL_JSON_FATAL("Key '" << key
+        QL_JSON_ERROR("Key '" << key
                               << "' not found on path '" << nodePath
                               << "', actual node contents '" << j << "'");
     }

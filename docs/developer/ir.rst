@@ -31,7 +31,7 @@ implementation, and then converts back to the new IR. This process is usually
 transparant, but there are a few gotchas:
 
  - kernel names may change in some cases due to name uniquification logic;
- - annotations places on nodes other than the program, a kernel, or a gate will
+ - annotations placed on nodes other than the program, a kernel, or a gate will
    be lost;
  - any new-to-old conversion implicitly runs all legacy gate decompositions; and
  - obviously, any features supported by the new IR but not by the old IR will

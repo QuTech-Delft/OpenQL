@@ -823,7 +823,7 @@ static void convert_block(
                             }
                         }
                     } else if (!ql_condition.empty()) {
-                        QL_USER_ERROR(
+                        QL_ICE(
                             "condition not supported for this instruction"
                         );
                     }
@@ -1235,6 +1235,8 @@ void read(
     }
 
     // Create the op(int) -> ... function for the operand list, if specified.
+    // NB: this is to support new style instruction decomposition, where op(n) refers
+    // to the actual operands of an instruction.
     if (!options.operands.empty()) {
         cqty::Types types;
         types.emplace<cqty::Int>();
@@ -1251,6 +1253,8 @@ void read(
     // otherwise be legal in cQASM won't work anymore. For example, if
     // operator+(int, int) is defined here, weird stuff like "qubits 1 + 2"
     // won't work anymore.
+    // Note: these functions are added using calls to 'add_function_type()' in
+    // 'Ref convert_old_to_new(const compat::PlatformRef &old)'
     for (const auto &fun : ir->platform->functions) {
         cqty::Types cq_types;
         for (const auto &ql_op_type : fun->operand_types) {

@@ -343,6 +343,7 @@ InstructionTypeLink find_instruction_type(
 
     // If we shouldn't generate an overload if only the name matches, stop now.
     if (!generate_overload_if_needed || !(*first)->has_annotation<PrototypeInferred>()) {
+        QL_DOUT("not generating overload for instruction '" + name + "'");  // NB: key '"prototype"' may be missing in instruction definition
         return {};
     }
 
@@ -407,6 +408,7 @@ InstructionRef make_instruction(
     utils::Bool return_empty_on_failure,
     utils::Bool generate_overload_if_needed
 ) {
+    QL_DOUT("make_instruction: name=" + name + ", condition=" + (condition.empty() ? "<empty>" : ir::describe(condition)));
     InstructionRef insn;
     if (name == "set") {
 

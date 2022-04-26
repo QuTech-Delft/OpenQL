@@ -93,12 +93,12 @@ void Vcd::kernelFinish(const Str &kernelName, UInt durationInCycles) {
 
 
 void Vcd::bundleFinishGroup(
-    UInt startCycle,
-    UInt durationInCycles,
-    Digital groupDigOut,
-    const Str &signalValue,
-    UInt instrIdx,
-    Int group
+        UInt startCycle,
+        UInt durationInCycles,
+        tDigital groupDigOut,
+        const Str &signalValue,
+        UInt instrIdx,
+        Int group
 ) {
     // generate signal output for group
     UInt startTime = kernelStartTime + startCycle * cycleTime;
@@ -110,7 +110,7 @@ void Vcd::bundleFinishGroup(
 }
 
 
-void Vcd::bundleFinish(UInt startCycle, Digital digOut, UInt maxDurationInCycles, UInt instrIdx) {
+void Vcd::bundleFinish(UInt startCycle, tDigital digOut, UInt maxDurationInCycles, UInt instrIdx) {
     // generate codeword output for instrument
     UInt startTime = kernelStartTime + startCycle * cycleTime;
     UInt durationInNs = maxDurationInCycles * cycleTime;

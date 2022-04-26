@@ -85,7 +85,7 @@ private:
                     if (!actual[i]->as_reference()) {
                         QL_ICE(
                             "operand " << i << " of " << what <<
-                            "must be a reference, but isn't"
+                            " must be a reference, but isn't"
                         );
                     }
                     break;
@@ -97,7 +97,7 @@ private:
                     if (!actual[i]->as_literal()) {
                         QL_ICE(
                             "operand " << i << " of " << what <<
-                            "must be a literal, but isn't"
+                            " must be a literal, but isn't"
                         );
                     }
                     break;
@@ -112,7 +112,7 @@ private:
                     ) {
                         QL_ICE(
                             "operand " << i << " of " << what <<
-                            "must be a qubit reference, but isn't"
+                            " must be a qubit reference, but isn't"
                         );
                     }
                     break;
@@ -125,7 +125,7 @@ private:
                 if (ref->indices.size() != ref->target->shape.size()) {
                     QL_ICE(
                         "operand " << i << " of " << what <<
-                        "does not have the correct amount of indices"
+                        " does not have the correct amount of indices"
                     );
                 }
             }

@@ -294,6 +294,7 @@ static void add_passes_from_json(
  *  just doesn't exist right now. On the other hand, there shouldn't
  *  ever be any more global options like this, so maybe this is good
  *  enough.
+ *  NB: also see the note in developer/docs/passes.rst
  */
 static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
     utils::Map<utils::Str, utils::Str> retval;
@@ -436,6 +437,7 @@ static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
         retval.set("reverse_swap_if_better") = mapreverseswap.as_str();
     }
 
+#if 0   // FIXME: removed, use pass options
     // Set options for CC backend.
     const auto &backend_cc_map_input_file = com::options::global["backend_cc_map_input_file"];
     if (backend_cc_map_input_file.is_set()) {
@@ -449,6 +451,7 @@ static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
     if (backend_cc_run_once.is_set()) {
         retval.set("run_once") = backend_cc_run_once.as_str();
     }
+#endif
 
     return retval;
 }
@@ -619,12 +622,14 @@ Manager Manager::from_defaults(const ir::compat::PlatformRef &platform) {
     // Generate the backend passes.
     platform->architecture->populate_backend_passes(manager);
 
+#if 0   // FIXME: disabled, not used anymore
     // Sweep point writing (whatever that is) was done hardcoded at the end of
     // even the initial pass manager implementation. Now it's an actual pass.
     manager.append_pass(
         "io.sweep_points.Write",
         "config"
     );
+#endif
 
     // Set the pass options using the compatibility mode option name/value
     // converter.

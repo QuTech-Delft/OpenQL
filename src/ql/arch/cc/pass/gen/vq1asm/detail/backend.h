@@ -2,17 +2,17 @@
  * @file   arch/cc/pass/gen/vq1asm/detail/backend.h
  * @date   201809xx
  * @author Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
- * @brief  eqasm backend for the Central Controller
+ * @brief  'eqasm' backend for the Central Controller
  * @remark based on cc_light_eqasm_compiler.h, commit f34c0d9
  */
 
 #pragma once
 
 #include "types.h"
-
-#include "ql/ir/compat/compat.h"
 #include "options.h"
 #include "codegen.h"
+
+#include "ql/ir/ir.h"
 
 namespace ql {
 namespace arch {
@@ -22,23 +22,32 @@ namespace gen {
 namespace vq1asm {
 namespace detail {
 
+class OperandContext;
+
 class Backend {
 public:
-    Backend() = default;
+    /**
+     * Compile for Central Controller.
+     */
+    Backend(const ir::Ref &ir, const OptionsRef &options);
 
-    void compile(const ir::compat::ProgramRef &program, const OptionsRef &options);
+    ~Backend() = default;
 
 private:
-    static Str loopLabel(const ir::compat::KernelRef &k);
-    void codegenClassicalInstruction(const ir::compat::GateRef &classical_ins);
-    void codegenKernelPrologue(const ir::compat::KernelRef &k);
-    void codegenKernelEpilogue(const ir::compat::KernelRef &k);
-    void codegenBundles(ir::compat::Bundles &bundles, const ir::compat::PlatformRef &platform);
-    void loadHwSettings(const ir::compat::PlatformRef &platform);
+    /*
+     * Generate code for a single block. Recursively calls itself where necessary.
+     *
+     * Based on NewToOldConverter::convert_block
+     * Note that a block sort of matches the concept of a Kernel in the old API
+     */
+    void codegen_block(const ir::BlockBaseRef &block, const Str &name, Int depth);
 
 private: // vars
     Codegen codegen;
-    Int bundleIdx;
+    Int bundleIdx = -1;     // effectively, numbering starts at 0 because of pre-increment
+    Int block_number = 0;   // sequential block number to keep labels unique
+    Vec<Str> loop_label;    // stack for loop labels (in conjunction with 'break'/'continue' instruction)
+
 }; // class
 
 } // namespace detail
