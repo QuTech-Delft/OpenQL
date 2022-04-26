@@ -486,10 +486,24 @@ void NewToOldConverter::convert_block(
                     // Handle the normal operands for custom instructions.
                     Operands ops;
                     for (const auto &ob : custom->instruction_type->template_operands) {
-                        ops.append(*this, ob);
+                        try {
+                            ops.append(*this, ob);
+                        } catch (utils::Exception &e) {
+                            e.add_context("name="+custom->instruction_type->name+", qubits="+ops.qubits.to_string());
+                            throw;
+                        }
                     }
                     for (utils::UInt i = 0; i < custom->operands.size() - diamond_op_count; i++) {
-                        ops.append(*this, custom->operands[i]);
+                        try {
+                            ops.append(*this, custom->operands[i]);
+                        } catch (utils::Exception &e) {
+                            e.add_context(
+                                "name=" + custom->instruction_type->name
+                                + ", qubits=" + ops.qubits.to_string()
+                                + ", operand=" + std::to_string(i)
+                                );
+                            throw;
+                        }
                     }
                     kernel->gate(
                         custom->instruction_type->name, ops.qubits, ops.cregs,
@@ -765,6 +779,9 @@ void NewToOldConverter::convert_block(
                     throw;
                 }
 
+            } else if (auto for_loop = stmt->as_for_loop()) {
+                QL_ICE("unsupported for loop encountered");
+
             } else {
                 QL_ICE("unsupported structured control-flow statement encountered");
             }
@@ -953,8 +970,9 @@ void Operands::append(const NewToOldConverter &conv, const ExpressionRef &expr) 
     } else if (auto ref = expr->as_reference()) {
         if (ref->indices.size() != 1 || !ref->indices[0]->as_int_literal()) {
             QL_ICE(
-                "encountered incompatible object reference "
-                "to " << ref->target->name
+                "encountered incompatible object reference to "
+                << ref->target->name
+                << " (size=" << ref->indices.size() << ")"
             );
         } else if (
             ref->target == conv.ir->platform->qubits &&
@@ -978,8 +996,8 @@ void Operands::append(const NewToOldConverter &conv, const ExpressionRef &expr) 
             cregs.push_back(ref->indices[0].as<IntLiteral>()->value);
         } else {
             QL_ICE(
-                "encountered incompatible object reference "
-                "to " << ref->target->name
+                "encountered unknown object reference to "
+                << ref->target->name
             );
         }
     } else if (expr->as_function_call()) {

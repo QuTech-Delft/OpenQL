@@ -1,0 +1,96 @@
+# File:         test_cond_gate.cq
+# Purpose:      test cQasm conditional gates with CC backend
+# Notes:
+
+version 1.2
+qubits 17
+
+pragma @ql.name("test_cond_gate")
+pragma @ql.platform("config_cc_s17_direct_iq_openql_0_10.json")
+
+
+.condGate
+measure_fb q[0:1]  # write associated bit registers
+
+#cond (false) rx180 q[0]  # FIXME: vanishes
+cond (true) rx180 q[0]
+
+
+cond (b[1]) rx180 q[0]
+cond (!b[1]) rx180 q[0]
+
+cond (b[0] && b[1]) rx180 q[0]
+cond (b[0] || b[1]) rx180 q[0]
+cond (b[0] ^^ b[1]) rx180 q[0]
+
+# FIXME: seems to break CI, see https://github.com/QuTech-Delft/OpenQL/runs/5588352276?check_suite_focus=true
+# cond (rnd(0.5)) rx180 q[0]
+
+
+.condGateWithInstrDecomposition
+#cond (false) x q[0]
+cond (true) x q[0]
+
+cond (b[1]) x q[0]
+cond (!b[1]) x q[0]
+
+cond (b[0] && b[1]) x q[0]
+cond (b[0] || b[1]) x q[0]
+cond (b[0] ^^ b[1]) x q[0]
+
+# FIXME: seems to break CI, see https://github.com/QuTech-Delft/OpenQL/runs/5588352276?check_suite_focus=true
+# cond (rnd(0.5)) x q[0]
+
+# from: deps/libqasm/src/cqasm/tests/v1-parsing/semantic/insn-condition-new-ok/input.cq
+# note; differing lengths between condition and parameters are allowed
+# cond (b[0:3]) x q[4:5] # Error: Unknown error: in pass reader, phase main: Duplicate node of type N2ql2ir10ExpressionEat address 0x7f9e8b5d9978 found in tree
+
+
+
+
+# FIXME: originally used old cQasm reader, now incompatible. Fix
+# # from test_cc.py::test_cqasm_conditions
+# .testCC
+# var qa, qb: qubit
+# var ca, cb: bool
+#
+# #{ measure_fb qa, ca | measure_fb qb, cb }
+# cond(true) x qa
+# cond(false) y qa
+# #cond(ca) z qa
+# cond(!true) x qa
+# cond(!false) y qa
+# #cond(!ca) z qa
+# cond(!!true) x qa
+# cond(!!false) y qa
+# #cond(!!ca) z qa
+# cond(ca && cb) x qa
+# cond(ca && true) y qa
+# #cond(ca && false) z qa
+# cond(true && cb) x qa
+# cond(false && cb) y qa
+# #cond(ca || cb) z qa
+# cond(ca || true) x qa
+# cond(ca || false) y qa
+# #cond(true || cb) z qa
+# cond(false || cb) x qa
+# #cond(ca ^^ cb) y qa
+# #cond(ca ^^ true) z qa
+# #cond(ca ^^ false) x qa
+# #cond(true ^^ cb) y qa
+# #cond(false ^^ cb) z qa
+# cond(!(ca && cb)) x qa
+# cond(!(ca && true)) y qa
+# #cond(!(ca && false)) z qa
+# cond(!(true && cb)) x qa
+# cond(!(false && cb)) y qa
+# #cond(!(ca || cb)) z qa
+# cond(!(ca || true)) x qa
+# cond(!(ca || false)) y qa
+# #cond(!(true || cb)) z qa
+# cond(!(false || cb)) x qa
+# #cond(!(ca ^^ cb)) y qa
+# #cond(!(ca ^^ true)) z qa
+# #cond(!(ca ^^ false)) x qa
+# #cond(!(true ^^ cb)) y qa
+# #cond(!(false ^^ cb)) z qa

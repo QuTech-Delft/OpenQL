@@ -1003,6 +1003,7 @@ void Base::handle_debugging(
         ir->dump_seq(
             utils::OutFile(context.output_prefix + "_debug_" + in_or_out + ".ir").unwrap()
         );
+
         ir::cqasm::WriteOptions write_options;
         write_options.include_statistics = true;
         ir::cqasm::write(
@@ -1120,68 +1121,79 @@ void Base::compile(
         );
     }
 
-    // Handle configured debugging actions before running the pass.
-    handle_debugging(ir, context, false);
+    std::string compile_phase = "<not defined>";
+    try {
+        // Handle configured debugging actions before running the pass.
+        compile_phase = "debugging.before";
+        handle_debugging(ir, context, false);
 
-    // Traverse our level of the pass tree based on our node type.
-    switch (node_type) {
-        case NodeType::NORMAL: {
-            run_main_pass(ir, context);
-            break;
-        }
-
-        case NodeType::GROUP: {
-            run_sub_passes(ir, context);
-            break;
-        }
-
-        case NodeType::GROUP_IF: {
-            auto retval = run_main_pass(ir, context);
-            if (condition->evaluate(retval)) {
-                QL_IOUT("pass condition returned true, running sub-passes...");
-                run_sub_passes(ir, context);
-            } else {
-                QL_IOUT("pass condition returned false, skipping " << sub_pass_order.size() << " sub-pass(es)");
+        // Traverse our level of the pass tree based on our node type.
+        compile_phase = "main";
+        switch (node_type) {
+            case NodeType::NORMAL: {
+                run_main_pass(ir, context);
+                break;
             }
-            break;
-        }
 
-        case NodeType::GROUP_WHILE: {
-            QL_IOUT("entering loop pass loop...");
-            while (true) {
+            case NodeType::GROUP: {
+                run_sub_passes(ir, context);
+                break;
+            }
+
+            case NodeType::GROUP_IF: {
                 auto retval = run_main_pass(ir, context);
-                if (!condition->evaluate(retval)) {
-                    QL_IOUT("pass condition returned false, exiting loop");
-                    break;
+                if (condition->evaluate(retval)) {
+                    QL_IOUT("pass condition returned true, running sub-passes...");
+                    run_sub_passes(ir, context);
                 } else {
-                    QL_IOUT("pass condition returned true, continuing loop...");
+                    QL_IOUT("pass condition returned false, skipping " << sub_pass_order.size() << " sub-pass(es)");
                 }
-                run_sub_passes(ir, context);
+                break;
             }
-            break;
+
+            case NodeType::GROUP_WHILE: {
+                QL_IOUT("entering loop pass loop...");
+                while (true) {
+                    auto retval = run_main_pass(ir, context);
+                    if (!condition->evaluate(retval)) {
+                        QL_IOUT("pass condition returned false, exiting loop");
+                        break;
+                    } else {
+                        QL_IOUT("pass condition returned true, continuing loop...");
+                    }
+                    run_sub_passes(ir, context);
+                }
+                break;
+            }
+
+            case NodeType::GROUP_REPEAT_UNTIL_NOT: {
+                QL_IOUT("entering loop pass loop...");
+                while (true) {
+                    run_sub_passes(ir, context);
+                    auto retval = run_main_pass(ir, context);
+                    if (!condition->evaluate(retval)) {
+                        QL_IOUT("pass condition returned false, exiting loop");
+                        break;
+                    } else {
+                        QL_IOUT("pass condition returned true, continuing loop...");
+                    }
+                }
+                break;
+            }
+
+            default: QL_ASSERT(false);
         }
 
-        case NodeType::GROUP_REPEAT_UNTIL_NOT: {
-            QL_IOUT("entering loop pass loop...");
-            while (true) {
-                run_sub_passes(ir, context);
-                auto retval = run_main_pass(ir, context);
-                if (!condition->evaluate(retval)) {
-                    QL_IOUT("pass condition returned false, exiting loop");
-                    break;
-                } else {
-                    QL_IOUT("pass condition returned true, continuing loop...");
-                }
-            }
-            break;
-        }
+        // Handle configured debugging actions after running the pass.
+        compile_phase = "debugging.after";
+        handle_debugging(ir, context, true);
 
-        default: QL_ASSERT(false);
+    } catch (utils::Exception &e) {
+        if (context.full_pass_name.size() != 0) {   // not at top level
+            e.add_context("in pass " + context.full_pass_name + ", phase " + compile_phase);
+        }
+        throw;
     }
-
-    // Handle configured debugging actions after running the pass.
-    handle_debugging(ir, context, true);
-
 }
 
 } // namespace pass_types

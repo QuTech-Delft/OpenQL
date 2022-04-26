@@ -6,13 +6,13 @@ pragma @ql.name("decompose_before_schedule")
 
 .test
     { # start at cycle 0
-        y90 q[1]
-        cz q[0], q[1]
         ym90 q[1]
+        cz q[0], q[1]
+        y90 q[1]
     }
     { # start at cycle 1
-        y90 q[2]
-        cz q[1], q[2]
         ym90 q[2]
+        cz q[1], q[2]
+        y90 q[2]
     }
     skip 1

@@ -8,11 +8,13 @@
  */
 
 #include "codegen.h"
+#include "codesection.h"
 
-#include <iosfwd>
 #include "ql/version.h"
 #include "ql/com/options.h"
-#include "ql/ir/compat/bundle.h"
+#include "ql/ir/describe.h"
+
+#include <iosfwd>
 
 namespace ql {
 namespace arch {
@@ -24,147 +26,145 @@ namespace detail {
 
 using namespace utils;
 
-/************************************************************************\
-| Generic
-\************************************************************************/
+// helpers for label generation.
+static Str to_start(const Str &base) { return base + "_start"; };
+static Str to_end(const Str &base) { return base + "_end"; };
+static Str to_ifbranch(const Str &base, Int branch) { return QL_SS2S(base << "_" << branch); }
+static Str as_label(const Str &label) { return label + ":"; }
 
-void Codegen::init(const ir::compat::PlatformRef &platform, const OptionsRef &options) {
-    // NB: a new eqasm_backend_cc is instantiated per call to compile, and
-    // as a result also a codegen_cc, so we don't need to cleanup
-    this->platform = platform;
-    this->options = options;
-    settings.loadBackendSettings(platform);
+/**
+ * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
+ * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
+ */
+// FIXME: move to datapath
+static tInstructionCondition decode_condition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
+    ConditionType cond_type;
+    utils::Vec<utils::UInt> cond_operands;
 
-    // optionally preload codewordTable
-    Str map_input_file = options->map_input_file;
-    if (!map_input_file.empty()) {
-        QL_DOUT("loading map_input_file='" << map_input_file << "'");
-        Json map = load_json(map_input_file);
-        codewordTable = map["codeword_table"];      // FIXME: use json_get
-        mapPreloaded = true;
-    }
-
-#if OPT_FEEDBACK
-    // iterate over instruments
-    for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
-        const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
-        if (QL_JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
-            QL_IOUT("instrument '" << ic.ii.instrumentName << "' (index " << instrIdx << ") is used for feedback");
+    try {
+        if (auto blit = condition->as_bit_literal()) {
+            if (blit->value) {
+                cond_type = ConditionType::ALWAYS;
+            } else {
+                cond_type = ConditionType::NEVER;
+            }
+        } else if (auto cond = condition->as_reference()) {
+            // FIXME: add is_breg_reference()
+            cond_operands.push_back(operandContext.convert_breg_reference(*cond));
+            cond_type = ConditionType::UNARY;
+        } else if (auto fn = condition->as_function_call()) {
+            if (
+                fn->function_type->name == "operator!" ||
+                fn->function_type->name == "operator~"
+            ) {
+                CHECK_COMPAT(fn->operands.size() == 1, "expected one operand");
+                if (auto op0 = fn->operands[0]->as_reference()) {
+                    cond_operands.push_back(operandContext.convert_breg_reference(*op0));
+                    cond_type = ConditionType::NOT;
+                } else if (auto fn2 = fn->operands[0]->as_function_call()) {
+                    CHECK_COMPAT(fn2->operands.size() == 2, "expected 2 operands");
+                    cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[0]));
+                    cond_operands.push_back(operandContext.convert_breg_reference(fn2->operands[1]));
+                    if (
+                        fn2->function_type->name == "operator&" ||
+                        fn2->function_type->name == "operator&&"
+                    ) {
+                        cond_type = ConditionType::NAND;
+                    } else if (
+                        fn2->function_type->name == "operator|" ||
+                        fn2->function_type->name == "operator||"
+                    ) {
+                        cond_type = ConditionType::NOR;
+                    } else if (
+                        fn2->function_type->name == "operator^" ||
+                        fn2->function_type->name == "operator^^" ||
+                        fn2->function_type->name == "operator!="
+                    ) {
+                        cond_type = ConditionType::NXOR;
+                    } else if (
+                        fn2->function_type->name == "operator=="
+                    ) {
+                        cond_type = ConditionType::XOR;
+                    } else {
+                        QL_ICE("unsupported gate condition");
+                    }
+                } else {
+                    QL_ICE("unsupported gate condition");
+                }
+#if OPT_CC_USER_FUNCTIONS
+            // FIXME: note that is only here to allow playing around with function calls as condition. Real support
+            //  requires a redesign
+            } else if (
+                fn->function_type->name == "rnd" ||
+                fn->function_type->name == "rnd_seed"
+            ) {
+                cond_type = ConditionType::ALWAYS;
+                QL_WOUT("FIXME: instruction condition function not yet handled: " + fn->function_type->name);
+#endif
+            } else {
+                CHECK_COMPAT(fn->operands.size() == 2, "expected 2 operands");
+                cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[0]));
+                cond_operands.push_back(operandContext.convert_breg_reference(fn->operands[1]));
+                if (
+                    fn->function_type->name == "operator&" ||
+                    fn->function_type->name == "operator&&"
+                ) {
+                    cond_type = ConditionType::AND;
+                } else if (
+                    fn->function_type->name == "operator|" ||
+                    fn->function_type->name == "operator||"
+                ) {
+                    cond_type = ConditionType::OR;
+                } else if (
+                    fn->function_type->name == "operator^" ||
+                    fn->function_type->name == "operator^^" ||
+                    fn->function_type->name == "operator!="
+                ) {
+                    cond_type = ConditionType::XOR;
+                } else if (
+                    fn->function_type->name == "operator=="
+                ) {
+                    cond_type = ConditionType::NXOR;
+                } else {
+                    QL_ICE("unsupported condition function");
+                }
+            }
+        } else {
+            QL_ICE("unsupported condition expression");
         }
+    } catch (utils::Exception &e) {
+        e.add_context("in gate condition '" + ir::describe(condition) + "'", true);
+        throw;
     }
-#endif
+    return {cond_type, cond_operands, ir::describe(condition)};
 }
 
-Str Codegen::getProgram() {
-#if OPT_FEEDBACK
-    return codeSection.str() + dp.getDatapathSection();
-#else
-    return codeSection.str();
-#endif
-}
-
-Str Codegen::getMap() {
-    Json map;
-
-    map["note"] = "generated by OpenQL CC backend version " CC_BACKEND_VERSION_STRING;
-    map["codeword_table"] = codewordTable;
-    return QL_SS2S(std::setw(4) << map << std::endl);
-}
-
-
-/************************************************************************\
-| 'Program' level functions
-\************************************************************************/
-
-void Codegen::programStart(const Str &progName) {
-    emitProgramStart(progName);
-
-    dp.programStart();
-
-    vcd.programStart(platform->qubit_count, platform->cycle_time, MAX_GROUPS, settings);
-}
-
-
-void Codegen::programFinish(const Str &progName) {
-    emitProgramFinish();
-
-    dp.programFinish();
-
-    vcd.programFinish(options->output_prefix + ".vcd");
-}
-
-/************************************************************************\
-| 'Kernel' level functions
-\************************************************************************/
-
-void Codegen::kernelStart() {
-    for (UInt i=0; i<ELEM_CNT(lastEndCycle); i++) lastEndCycle[i] = ir::compat::FIRST_CYCLE;
-}
-
-void Codegen::kernelFinish(const Str &kernelName, UInt durationInCycles) {
-    vcd.kernelFinish(kernelName, durationInCycles);
-}
-
-/************************************************************************\
-| 'Bundle' level functions
-\************************************************************************/
 
 /*
-    Our strategy is to first process all customGate's in a bundle, storing the
-    relevant information in bundleInfo. Then, when all work for a bundle has
-    been collected, we generate code in bundleFinish
-
-    - bundleStart():
-    clear bundleInfo, which maintains the work that needs to be performed for bundle
-
-    - customGate():
-    collect gate information in bundleInfo
-
-    - bundleFinish():
-    generate code for bundle from information collected in bundleInfo (which
-    may be empty if no custom gates are present in bundle)
-*/
-
-// bundleStart: see 'strategy' above
-void Codegen::bundleStart(const Str &cmnt) {
-    // create 'matrix' of BundleInfo with proper vector size per instrument
-    bundleInfo.clear();
-    BundleInfo empty;
-    for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
-        const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
-        bundleInfo.emplace_back(
-            ic.controlModeGroupCnt,     // one BundleInfo per group in the control mode selected for instrument
-            empty                       // empty BundleInfo
-        );
-    }
-
-    // generate source code comments
-    comment(cmnt);
-    dp.comment(cmnt, options->verbose);      // FIXME: comment is not fully appropriate, but at least allows matching with .CODE section
-}
-
-
-
-
-// Static helper function for bundleFinish()
+ * Return type for calcGroupDigOut()
+ */
 typedef struct {
-    Digital groupDigOut;    // codeword/mask fragment for this group
+    tDigital groupDigOut;   // codeword/mask fragment for this group
     Str comment;            // comment for instruction stream
 } CalcGroupDigOut;
 
+/*
+ * Calculate the digital output for a single instrument group.
+ * Static helper function for bundle_finish()
+ */
 static CalcGroupDigOut calcGroupDigOut(
-    UInt instrIdx,
-    UInt group,
-    UInt nrGroups,
-    const Settings::InstrumentControl &ic,
-    Codeword staticCodewordOverride
+        UInt instrIdx,
+        UInt group,
+        UInt nrGroups,
+        const Settings::InstrumentControl &ic,
+        tCodeword staticCodewordOverride
 ) {
     CalcGroupDigOut ret{0, ""};
 
     // determine control mode group FIXME: more explanation
     Int controlModeGroup = -1;
     if (ic.controlModeGroupCnt == 0) {
-        QL_JSON_FATAL("'control_bits' not defined or empty in 'control_modes/" << ic.refControlMode <<"'");
+        QL_JSON_ERROR("'control_bits' not defined or empty in 'control_modes/" << ic.refControlMode <<"'");
 #if OPT_VECTOR_MODE
     } else if (ic.controlModeGroupCnt == 1) {                   // vector mode: group addresses channel within vector
         controlModeGroup = 0;
@@ -173,7 +173,7 @@ static CalcGroupDigOut calcGroupDigOut(
         controlModeGroup = group;
     } else {
         // NB: this actually an error in program logic
-        QL_JSON_FATAL(
+        QL_JSON_ERROR(
             "instrument '" << ic.ii.instrumentName
             << "' uses " << nrGroups
             << " groups, but control mode '" << ic.refControlMode
@@ -192,7 +192,6 @@ static CalcGroupDigOut calcGroupDigOut(
     );
     UInt nrGroupControlBits = groupControlBits.size();
 
-
     // calculate digital output for group
     if (nrGroupControlBits == 1) {       // single bit, implying this is a mask (not code word)
         ret.groupDigOut |= 1ul << groupControlBits[0].get<Int>();     // NB: we assume the mask is active high, which is correct for VSM and UHF-QC
@@ -206,7 +205,7 @@ static CalcGroupDigOut calcGroupDigOut(
 #endif
 
         // find or assign code word
-        Codeword codeword = 0;
+        tCodeword codeword = 0;
         Bool codewordOverriden = false;
 #if OPT_SUPPORT_STATIC_CODEWORDS
         codeword = staticCodewordOverride;
@@ -232,7 +231,7 @@ static CalcGroupDigOut calcGroupDigOut(
             << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << ret.groupDigOut
         );
     } else {    // nrGroupControlBits < 1
-        QL_JSON_FATAL(
+        QL_JSON_ERROR(
             "key 'control_bits' empty for group " << controlModeGroup
             << " on instrument '" << ic.ii.instrumentName << "'"
         );
@@ -254,7 +253,7 @@ static CalcGroupDigOut calcGroupDigOut(
         ret.groupDigOut |= 1ul << ic.controlMode["trigger_bits"][group].get<Int>();
 #endif
     } else {
-        QL_JSON_FATAL(
+        QL_JSON_ERROR(
             "instrument '" << ic.ii.instrumentName
             << "' uses " << nrGroups
             << " groups, but control mode '" << ic.refControlMode
@@ -264,6 +263,134 @@ static CalcGroupDigOut calcGroupDigOut(
     }
 
     return ret;
+}
+
+/************************************************************************\
+| Class Codegen
+\************************************************************************/
+
+Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
+    : ir(ir)
+    , options(options)
+    , operandContext(ir)
+    , cs(operandContext)
+    , fncs(operandContext, dp, cs)
+{
+    // NB: a new Backend is instantiated per call to compile, and
+    // as a result also a Codegen, so we don't need to cleanup
+
+    settings.loadBackendSettings(ir->platform);
+
+    // optionally preload codewordTable
+    Str map_input_file = options->map_input_file;
+    if (!map_input_file.empty()) {
+        QL_DOUT("loading map_input_file='" << map_input_file << "'");
+        Json map = load_json(map_input_file);
+        codewordTable = map["codewords"]["data"];      // FIXME: use json_get
+        mapPreloaded = true;
+    }
+
+    // show instruments that can produce real-time measurement results
+    for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
+        const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
+        if (QL_JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
+            QL_IOUT("instrument '" << ic.ii.instrumentName << "' (index " << instrIdx << ") can produce real-time measurement results");
+        }
+    }
+}
+
+/************************************************************************\
+| Generic
+\************************************************************************/
+
+Str Codegen::get_program() {
+    return cs.getCodeSection() + dp.getDatapathSection();
+}
+
+Str Codegen::get_map() {
+    Json map;
+
+    map["openql"]["version"] = OPENQL_VERSION_STRING;
+    map["openql"]["backend"] = "cc";
+    map["openql"]["backend-version"] = CC_BACKEND_VERSION_STRING;
+
+    map["codewords"]["version"] = 1;
+    map["codewords"]["data"] = codewordTable;
+
+    map["measurements"]["version"] = 2;
+    map["measurements"]["data"] = measTable;
+    map["measurements"]["nr-shots"] = shotsTable;
+
+    return QL_SS2S(std::setw(4) << map << std::endl);
+}
+
+
+void Codegen::program_start(const Str &progName) {
+    emitProgramStart(progName);
+
+    dp.programStart();
+
+    // Determine number of qubits.
+    utils::UInt num_qubits;
+    if (ir->platform->qubits->shape.size() == 1) {
+        num_qubits = ir->platform->qubits->shape[0];
+    } else {
+        QL_USER_ERROR("main qubit register has wrong dimensionality");
+    };
+
+    // Get cycle time from old Platform (NB: in new Platform, all durations are in quantum cycles, not ns).
+    auto &json = ir->platform->data.data;
+    QL_JSON_ASSERT(json, "hardware_settings", "hardware_settings");
+    auto hardware_settings = json["hardware_settings"];
+    QL_JSON_ASSERT(hardware_settings, "cycle_time", "hardware_settings/cycle_time");
+    UInt cycle_time = hardware_settings["cycle_time"];
+
+    vcd.programStart(num_qubits, cycle_time, MAX_GROUPS, settings);
+}
+
+
+void Codegen::program_finish(const Str &progName) {
+    emitProgramFinish();
+
+    dp.programFinish();
+
+    vcd.programFinish(options->output_prefix + ".vcd");
+}
+
+
+void Codegen::block_start(const Str &block_name, Int depth) {
+    this->depth = depth;
+    if(depth == 0) {
+        comment("");    // white space before top level block
+    }
+    comment("### Block: '" + block_name + "'");
+    zero(lastEndCycle); // NB: new IR starts counting at zero
+}
+
+void Codegen::block_finish(const Str &block_name, UInt durationInCycles, Int depth) {
+    comment("### Block end: '" + block_name + "'");
+    vcd.kernelFinish(block_name, durationInCycles);
+
+    // unindent, unless at top (in which case nothing follows)
+    this->depth = depth>0 ? depth-1 : 0;
+}
+
+
+void Codegen::bundle_start(const Str &cmnt) {
+    // create ragged 'matrix' of BundleInfo with proper vector size per instrument
+    bundleInfo.clear();
+    BundleInfo empty;
+    for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
+        const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
+        bundleInfo.emplace_back(
+            ic.controlModeGroupCnt,     // one BundleInfo per group in the control mode selected for instrument
+            empty                       // empty BundleInfo
+        );
+    }
+
+    // generate source code comments
+    comment(cmnt);
+    dp.comment(cmnt, options->verbose);      // FIXME: comment is not fully appropriate, but at least allows matching with .CODE section
 }
 
 
@@ -278,14 +405,15 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
         // get control info from instrument settings
         const Settings::InstrumentControl ic = settings.getInstrumentControl(instrIdx);
         if (ic.ii.slot >= MAX_SLOTS) {
-            QL_JSON_FATAL(
+            QL_JSON_ERROR(
                 "illegal slot " << ic.ii.slot
                 << " on instrument '" << ic.ii.instrumentName
             );
         }
 
         /************************************************************************\
-        | collect code generation info from all groups within one instrument
+        | collect code generation info for an instrument, based on BundleInfo of
+        | all groups of that instrument
         \************************************************************************/
 
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
@@ -311,81 +439,66 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 CalcGroupDigOut gdo = calcGroupDigOut(instrIdx, group, nrGroups, ic, bi.staticCodewordOverride);
                 codeGenInfo.digOut |= gdo.groupDigOut;
                 comment(gdo.comment);
-#if OPT_FEEDBACK
+
+                // save codeword mapping
+                // FIXME: store JSON signal iso string, store codeword as key
+                codewordTable[ic.ii.instrumentName][group] = {bi.staticCodewordOverride, bi.signalValue};   // NB: structure created on demand
+
                 // conditional gates
                 // store condition and groupDigOut in condMap, if all groups are unconditional we use old scheme, otherwise
                 // datapath is configured to generate proper digital output
-                if (bi.condition == ir::compat::ConditionType::ALWAYS || ic.ii.forceCondGatesOn) {
+                if (bi.instructionCondition.cond_type == ConditionType::ALWAYS || ic.ii.forceCondGatesOn) {
                     // nothing to do, just use digOut
                 } else {    // other conditions, including cond_never
                     // remind mapping for setting PL
-                    codeGenInfo.condGateMap.emplace(group, CondGateInfo{bi.condition, bi.cond_operands, gdo.groupDigOut});
+                    codeGenInfo.condGateMap.emplace(group, CondGateInfo{bi.instructionCondition, gdo.groupDigOut});
                 }
-#endif
 
                 vcd.bundleFinishGroup(startCycle, bi.durationInCycles, gdo.groupDigOut, bi.signalValue, instrIdx, group);
 
                 codeGenInfo.instrHasOutput = true;
             } // if(signal defined)
 
-
-#if OPT_PRAGMA
-            // handle pragma
-            if (bi.pragma) {
-                // FIXME: enforce single pragma per bundle (currently by design)
-                // FIXME: enforce no other work
-                codeGenInfo.pragma = bi.pragma;
-
-                // FIXME: use breg_operands if present? How about qubit (operand) then?
-                UInt breg_operand = bi.operands[0];                    // implicit classic bit for qubit. FIXME: perform checks
-                // get SM bit for classic operand (allocated during readout)
-                codeGenInfo.pragmaSmBit = dp.getSmBit(breg_operand, instrIdx);
+            // handle measurements (for which we'll generate output allowing downstream software to retrieve them).
+            // Note that we do not look at the code path leading to a measurement, results are not very useful if
+            // any measurements are within conditional code paths
+            if (bi.isMeasure) {
+                codeGenInfo.measQubits.push_back(bi.measQubit);
+                // NB: the association of qubit to correlator number is up to the downstream software (both the DIO bit
+                // and the index of the qubit in the instrument definition provide no explicit clue)
             }
-#endif
 
-
-#if OPT_FEEDBACK
-            // handle readout (i.e. when necessary, create feedbackMap entry
-            // NB: we allow for instruments that perform the input side of readout only, without signal generation by the
-            // same instrument, which might be needed in the future
-            // FIXME: also generate VCD
-
-            if (bi.isMeasFeedback) {
+            // handle real-time measurement results (i.e. when necessary, create measResultRealTimeMap entry
+            // NB: we allow for instruments that only perform the input side of readout, without signal generation by the
+            // same instrument.
+            if (bi.isMeasRsltRealTime) {
                 UInt resultBit = Settings::getResultBit(ic, group);
 
-#if 0    // FIXME: partly redundant
+#if 0    // FIXME: partly redundant, but partly useful
                 // get our qubit
                 const Json qubits = json_get<const Json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const Json&> unavailable
                 UInt qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
                 if (group >= qubitGroupCnt) {    // FIXME: also tested in settings_cc::findSignalInfoForQubit
-                    QL_FATAL("group " << group << " not defined in '" << ic.ii.instrumentName << "/qubits'");
+                    QL_JSON_ERROR("group " << group << " not defined in '" << ic.ii.instrumentName << "/qubits'");
                 }
                 const Json qubitsOfGroup = qubits[group];
                 if (qubitsOfGroup.size() != 1) {    // FIXME: not tested elsewhere
-                    QL_FATAL("group " << group << " of '" << ic.ii.instrumentName << "/qubits' should define 1 qubit, not " << qubitsOfGroup.size());
+                    QL_JSON_ERROR("group " << group << " of '" << ic.ii.instrumentName << "/qubits' should define 1 qubit, not " << qubitsOfGroup.size());
                 }
                 Int qubit = qubitsOfGroup[0].get<Int>();
                 if (bi.readoutQubit != qubit) {              // this instrument group handles requested qubit. FIXME: inherently true
-                    QL_FATAL("inconsistency FIXME");
+                    QL_ICE("inconsistency FIXME");
                 };
 #endif
-                // get classic operand
-                UInt breg_operand;
-                if (bi.breg_operands.empty()) {
-                    breg_operand = bi.operands[0];                    // implicit classic bit for qubit
-                    QL_IOUT("Using implicit bit " << breg_operand << " for qubit " << bi.operands[0]);
-                } else {
-                    breg_operand = bi.breg_operands[0];
-                    QL_IOUT("Using explicit bit " << breg_operand << " for qubit " << bi.operands[0]);
-                }
-
                 // allocate SM bit for classic operand
-                UInt smBit = dp.allocateSmBit(breg_operand, instrIdx);
+                UInt smBit = dp.allocateSmBit(bi.breg_operand, instrIdx);
 
                 // remind mapping of bit -> smBit for setting MUX
-                codeGenInfo.feedbackMap.emplace(group, FeedbackInfo{smBit, resultBit, bi});
+                codeGenInfo.measResultRealTimeMap.emplace(group, MeasResultRealTimeInfo{smBit, resultBit, bi.describe});
+
+                // FIXME: also generate VCD
             }
-#endif
+
         } // for(group)
         codeGenMap.set(instrIdx) = codeGenInfo;
      } // for(instrIdx)
@@ -393,8 +506,8 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
 }
 
 
-// bundleFinish: see 'strategy' above
-void Codegen::bundleFinish(
+// bundle_finish: see 'strategy' above
+void Codegen::bundle_finish(
     UInt startCycle,
     UInt durationInCycles,
     Bool isLastBundle
@@ -403,25 +516,26 @@ void Codegen::bundleFinish(
     CodeGenMap codeGenMap = collectCodeGenInfo(startCycle, durationInCycles);
 
     // compute stuff requiring overview over all instruments:
-    // FIXME: add
+    // FIXME: add:
     // - DSM used, for seq_inv_sm
 
-    // determine whether bundle has any feedback
-    Bool bundleHasFeedback = false;
+    // determine whether bundle has any real-time measurement results
+    Bool bundleHasMeasRsltRealTime = false;
     for (const auto &codeGenInfo : codeGenMap) {
-        if (!codeGenInfo.second.feedbackMap.empty()) {
-            bundleHasFeedback = true;
+        if (!codeGenInfo.second.measResultRealTimeMap.empty()) {
+            bundleHasMeasRsltRealTime = true;
             // FIXME: calc min and max SM address used
             //  unsigned int smAddr = datapath_cc::getMuxSmAddr(feedbackMap);
         }
     }
 
     // turn code generation info collected above into actual code
+    Json measTableEntry;    // entry for measTable
     for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
         CodeGenInfo codeGenInfo = codeGenMap.at(instrIdx);
 
         if (isLastBundle && instrIdx == 0) {
-            comment(QL_SS2S(" # last bundle of kernel, will pad outputs to match durations"));
+            comment(" # last bundle of kernel, will pad outputs to match durations");
         }
 
         // generate code for instrument output
@@ -439,30 +553,37 @@ void Codegen::bundleFinish(
             // nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
         }
 
-#if OPT_PRAGMA
-        if (codeGenInfo.pragma) {    // NB: note that this will only work because we set the pragma for all instruments, and thus already encounter this for the first instrument FIXME: update comment
-            emitPragma(
-                *codeGenInfo.pragma,
-                codeGenInfo.pragmaSmBit,
-                instrIdx,
-                startCycle,
-                codeGenInfo.slot,
-                codeGenInfo.instrumentName
-            );
-        }
-#endif
+        // handle measurement
+        if(!codeGenInfo.measQubits.empty()) {
+            // save measurements
+            auto qubits = codeGenInfo.measQubits;
+            std::sort(qubits.begin(), qubits.end());    // not strictly required, but improves readability
+            measTableEntry[codeGenInfo.instrumentName] = qubits;
 
-#if OPT_FEEDBACK
-        if (bundleHasFeedback) {
-            emitFeedback(
-                codeGenInfo.feedbackMap,
+            // update shots per instrument
+            if(!QL_JSON_EXISTS(shotsTable, codeGenInfo.instrumentName)) {
+                shotsTable[codeGenInfo.instrumentName] = 1; // first shot
+            } else {
+#if 0   // FIXME: fails
+                QL_WOUT("shotsTable[" << codeGenInfo.instrumentName << "] was " << shotsTable[codeGenInfo.instrumentName]);
+                shotsTable[codeGenInfo.instrumentName] += 1;
+                QL_WOUT("shotsTable[" << codeGenInfo.instrumentName << "] is " << shotsTable[codeGenInfo.instrumentName]);
+#else
+                Int shots = shotsTable[codeGenInfo.instrumentName];
+                shotsTable[codeGenInfo.instrumentName] = shots+1;
+#endif
+            }
+        }
+
+        if (bundleHasMeasRsltRealTime) {
+            emitMeasRsltRealTime(
+                codeGenInfo.measResultRealTimeMap,
                 instrIdx,
                 startCycle,
                 codeGenInfo.slot,
                 codeGenInfo.instrumentName
             );
         }
-#endif
 
         // for last bundle, pad end of bundle to align durations
         if (isLastBundle) {
@@ -479,7 +600,13 @@ void Codegen::bundleFinish(
             codeGenInfo.instrMaxDurationInCycles,
             instrIdx
         );    // FIXME: conditional gates, etc
+
     } // for(instrIdx)
+
+    // save measurements if present
+    if(!measTableEntry.empty()) {
+        measTable.push_back(measTableEntry);
+    }
 
     comment("");    // blank line to separate bundles
 }
@@ -488,54 +615,107 @@ void Codegen::bundleFinish(
 | Quantum instructions
 \************************************************************************/
 
-// helper
-static Str qasm(const Str &iname, const Vec<UInt> &operands, const Vec<UInt> &breg_operands) {
-    // FIXME: hack
-    ir::compat::gate_types::Custom g(iname);
-    g.operands = operands;
-    g.breg_operands = breg_operands;
-    return g.qasm();
-}
+void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
+    Operands ops;
 
-// customGate: single/two/N qubit gate, including readout, see 'strategy' above
-// translates 'gate' representation to 'waveform' representation (BundleInfo) and maps qubits to instruments & group.
-// Does not deal with the control mode and digital interface of the instrument.
-void Codegen::customGate(
-    const Str &iname,
-    const Vec<UInt> &operands,
-    const Vec<UInt> &creg_operands,
-    const Vec<UInt> &breg_operands,
-    ir::compat::ConditionType condition,
-    const Vec<UInt> &cond_operands,
-    Real angle,
-    UInt startCycle, UInt durationInCycles
-) {
-#if 0   // FIXME: test for angle parameter
-    if(angle != 0.0) {
-        QL_DOUT("iname=" << iname << ", angle=" << angle);
+    // Handle the template operands for the instruction_type we got. Note that these are empty if that is a 'root'
+    // InstructionType, and only contains data if it is one of the specializations (see ir.gen.h)
+    // FIXME: check for existing decompositions (which should have been performed already by an upstream pass)
+    /*
+     FIXME: these are operands that match a specialized instruction definition, e.g. "cz q0,q10"
+     FIXME: these are not handled below, so things fail if we have such definitions
+    cQASM "cz q[0],q[10]" with JSON "cz q0,q10" results in:
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:814 found template_operands: JSON = {"cc":{"signal":[],"static_codeword_override":[0]},"duration":40}
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[0]
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[10]
+
+    cQASM "cz q[0],q[10]" with JSON "cz q0,q9" results in:
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:814 found template_operands: JSON = {"cc":{"signal":[],"static_codeword_override":[0]},"duration":40}
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:798 template operand: q[0]
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:809 operand: q[10]
+
+    cQASM "cz q[0],q[10]" with JSON "cz q1,q10" results in:
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/backend.cc:152 custom instruction: name=cz
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[0]
+    [OPENQL] /Volumes/Data/shared/GIT/OpenQL/src/ql/arch/cc/pass/gen/vq1asm/detail/codegen.cc:829 operand: q[10]
+    */
+#if 1   // FIXME
+    if(!custom.instruction_type->template_operands.empty()) {
+        QL_DOUT("found template_operands: JSON = " << custom.instruction_type->data.data );
+        QL_INPUT_ERROR(
+            "CC backend requires specialized instruction '" << ir::describe(custom) <<
+            "' to be decomposed: check gate decompositions and parameters"
+        );
+    }
+#else
+    for (const auto &ob : custom.instruction_type->template_operands) {
+        QL_DOUT("template operand: " + ir::describe(ob));
+        try {
+            ops.append(operandContext, ob);
+        } catch (utils::Exception &e) {
+            e.add_context("name=" + custom.instruction_type->name + ", qubits=" + ops.qubits.to_string());
+            throw;
+        }
     }
 #endif
 
-    vcd.customGate(iname, operands, startCycle, durationInCycles);
-
-    Bool isReadout = settings.isReadout(iname);        //  determine whether this is a readout instruction
-
-    // generate comment
-    if (isReadout) {
-        comment(Str(" # READOUT: '") + qasm(iname, operands, breg_operands) + "'");
-    } else { // handle all other instruction types than "readout"
-        // generate comment. NB: we don't have a particular limit for the number of operands
-        comment(Str(" # gate '") + qasm(iname, operands, breg_operands) + "'");
+    // Process the 'plain' operands for custom instructions.
+    for (utils::UInt i = 0; i < custom.operands.size(); i++) {
+        QL_DOUT("operand: " + ir::describe(custom.operands[i]));
+        try {
+            ops.append(operandContext, custom.operands[i]);     // append utils::One<expression>
+        } catch (utils::Exception &e) {
+            e.add_context(
+                "name=" + custom.instruction_type->name
+                + ", qubits=" + ops.qubits.to_string()
+                + ", operand=" + std::to_string(i)
+                );
+            throw;
+        }
+    }
+    if (ops.has_integer) {
+        QL_INPUT_ERROR("CC backend cannot handle integer operands yet");
+    }
+    if (ops.has_angle) {
+        QL_INPUT_ERROR("CC backend cannot handle real (angle) operands yet");
     }
 
-    // find instruction (gate definition)
-    const Json &instruction = platform->find_instruction(iname);
+    // lambda to check measurement operands
+    auto checkMeasOps = [ops]() {
+        // Note that if all instruction definitions have proper prototypes this would be guaranteed upstream.
+        if (ops.qubits.size() != 1) {
+            QL_INPUT_ERROR(
+                "Measurement instruction requires exactly 1 quantum operand, not " << ops.qubits.size()
+            );
+        }
+    };
+
+    // some shorthand for parameter fields
+    const Str iname = custom.instruction_type->name;
+    UInt durationInCycles = custom.instruction_type->duration;
+
+    // generate VCD
+    vcd.customGate(iname, ops.qubits, custom.cycle, durationInCycles);
+
+    // generate comment
+    comment(Str(" # gate '") + ir::describe(custom) + "'");
+
     // find signal vector definition for instruction
+    const Json &instruction = custom.instruction_type->data.data;
     Settings::SignalDef sd = settings.findSignalDefinition(instruction, iname);
 
-    // scatter signals defined for instruction (e.g. several operands and/or types) to instruments & groups
+    // turn signals defined for instruction into instruments & groups, and update matching BundleInfo records
     for (UInt s = 0; s < sd.signal.size(); s++) {
-        CalcSignalValue csv = calcSignalValue(sd, s, operands, iname);
+        Settings::CalcSignalValue csv = settings.calcSignalValue(sd, s, ops.qubits, iname);
+
+        comment(QL_SS2S(
+            "  # slot=" << csv.si.ic.ii.slot
+            << ", instrument='" << csv.si.ic.ii.instrumentName << "'"
+            << ", group=" << csv.si.group
+            << "': signalValue='" << csv.signalValueString << "'"
+        ));
 
         // store signal value, checking for conflicts
         BundleInfo &bi = bundleInfo[csv.si.instrIdx][csv.si.group];         // shorthand
@@ -544,30 +724,39 @@ void Codegen::customGate(
                 bi.signalValue = csv.signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
                 // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
-                bi.staticCodewordOverride = Settings::findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
+                // NB: value NO_STATIC_CODEWORD_OVERRIDE (-1) means 'no override'
+                bi.staticCodewordOverride = Settings::findStaticCodewordOverride(instruction, csv.operandIdx, iname);
 #endif
             } else if (bi.signalValue == csv.signalValueString) {           // signal unchanged
                 // do nothing
             } else {
                 showCodeSoFar();
-                QL_FATAL(
+                QL_USER_ERROR(
                     "Signal conflict on instrument='" << csv.si.ic.ii.instrumentName
                     << "', group=" << csv.si.group
                     << ", between '" << bi.signalValue
                     << "' and '" << csv.signalValueString << "'"
-                );  // FIXME: add offending instruction
+                );
             }
         }
 
-        // store signal duration
+        // store some attributes
         bi.durationInCycles = durationInCycles;
+        bi.isMeasure = csv.isMeasure;
+        bi.describe = ir::describe(custom);
 
-#if OPT_FEEDBACK
-        // FIXME: assumes that group configuration for readout input matches that of output
-        // store operands used for readout, actual work is postponed to bundleFinish()
-        if (isReadout) {
+        // handle measurement (for which we'll generate output allowing downstream software to retrieve them)
+        if (csv.isMeasure) {
+            checkMeasOps();
+            bi.measQubit = ops.qubits[0];
+        }
+
+        // store operands used for real-time measurements, actual work is postponed to bundle_finish()
+        if (settings.isMeasRsltRealTime(*custom.instruction_type)) {
+            // FIXME: move the checks to collectCodeGenInfo?
+            // FIXME: at the output side, similar checks are not performed
             /*
-             * kernel->gate allows 3 types of measurement:
+             * In the old IR, kernel->gate allows 3 types of measurement:
              *         - no explicit result. Historically this implies either:
              *             - no result, measurement results are often read offline from the readout device (mostly the raw values
              *             instead of the binary result), without the control device ever taking notice of the value
@@ -575,126 +764,340 @@ void Codegen::customGate(
              *         - creg result (old, no longer valid)
              *             note that Creg's are managed through a class, whereas bregs are just numbers
              *         - breg result (new)
+             *
+             *  In the new IR (or, better said, in the new way "prototype"s for instruction operands van be defined
+             *  using access modes as described in
+             *  https://openql.readthedocs.io/en/latest/gen/reference_configuration.html#instructions-section
+             *  it is not well possible to specify a measurement that returns its result in a different bit than
+             *  the default bit.
+             *  Since this poses no immediate problem, we only support measurements to the implicit default bit.
+             *
+             *  Also note that old_to_new.cc only uses the qubit operand, and the whole fact that any type of
+             *  operand could be specified to any gate is a quirk of the kernel.gate() functions of the API.
              */
 
-            // operand checks
-            if (operands.size() != 1) {
-                QL_FATAL(
-                    "Readout instruction '" << qasm(iname, operands, breg_operands)
-                    << "' requires exactly 1 quantum operand, not " << operands.size()
+            // operand checks.
+            checkMeasOps();
+#if 0   // FIXME
+            if (!ops.cregs.empty()) {
+                QL_INPUT_ERROR("Using Creg as measurement target is deprecated, use new breg_operands");
+            }
+            if (ops.bregs.size() > 1) {
+                QL_INPUT_ERROR(
+                    "Readout instruction requires 0 or 1 bit operands, not " << ops.bregs.size()
                 );
             }
-            if (!creg_operands.empty()) {
-                QL_FATAL("Using Creg as measurement target is deprecated, use new breg_operands");
-            }
-            if (breg_operands.size() > 1) {
-                QL_FATAL(
-                    "Readout instruction '" << qasm(iname, operands, breg_operands)
-                    << "' requires 0 or 1 bit operands, not " << breg_operands.size()
-                );
-            }
+#endif
+            // flag this bundle as performing real-time measurements, and store operands
+            bi.isMeasRsltRealTime = true;
 
-            // store operands
-            if (settings.getReadoutMode(iname)=="feedback") {
-                bi.isMeasFeedback = true;
-                bi.operands = operands;
-                //bi.creg_operands = creg_operands;    // NB: will be empty because of checks performed earlier
-                bi.breg_operands = breg_operands;
+            // handle classic operand
+            if (ops.bregs.empty()) {    // FIXME: currently always
+                bi.breg_operand = ops.qubits[0];                    // implicit classic bit for qubit
+                QL_IOUT("using implicit bit " << bi.breg_operand << " for qubit " << ops.qubits[0]);
+            } else {    // FIXME: currently impossible
+                bi.breg_operand = ops.bregs[0];
+                QL_IOUT("using explicit bit " << bi.breg_operand << " for qubit " << ops.qubits[0]);
             }
         }
 
-        // store 'expression' for conditional gates
-        bi.condition = condition;
-        bi.cond_operands = cond_operands;
-#endif
+        // Handle the condition. NB: the 'condition' field exists for all conditional_instruction sub types,
+        // but we only handle it for custom_instruction
+        tInstructionCondition instrCond = decode_condition(operandContext, custom.condition);
+        bi.instructionCondition = instrCond;
 
-        QL_DOUT("customGate(): iname='" << iname <<
+        QL_DOUT("custom_instruction(): iname='" << iname <<
              "', duration=" << durationInCycles <<
              " [cycles], instrIdx=" << csv.si.instrIdx <<
              ", group=" << csv.si.group);
 
-        // NB: code is generated in bundleFinish()
+        // NB: code is generated in bundle_finish()
     }   // for(signal)
-
-#if OPT_PRAGMA
-    RawPtr<const Json> pragma = settings.getPragma(iname);
-    if (pragma) {
-        for (Vec<BundleInfo> &vbi : bundleInfo) {
-            // FIXME: for now we just store the JSON of the pragma statement in bundleInfo[*][0]
-            if(vbi[0].pragma) {
-                QL_FATAL("Bundle contains more than one gate with 'pragma' key");    // FIXME: provide context
-            }
-            vbi[0].pragma = pragma;
-
-            // store operands
-            vbi[0].operands = operands;
-            //vbi[0].creg_operands = creg_operands;    // NB: will be empty because of checks performed earlier
-            vbi[0].breg_operands = breg_operands;
-        }
-    }
-#endif
-}
-
-void Codegen::nopGate() {
-    comment("# NOP gate");
-    QL_FATAL("FIXME: NOP gate not implemented");
 }
 
 /************************************************************************\
-| Classical operations on kernels
+| Structured control flow
 \************************************************************************/
 
-void Codegen::ifStart(UInt op0, const Str &opName, UInt op1) {
-    comment(QL_SS2S("# IF_START(R" << op0 << " " << opName << " R" << op1 << ")"));
-    QL_FATAL("FIXME: not implemented");
+void Codegen::if_elif(const ir::ExpressionRef &condition, const Str &label, Int branch) {
+    // finish previous branch
+    if (branch>0) {
+        cs.emit("", "jmp", as_target(to_end(label)));
+    }
+
+    comment(
+        "# IF_ELIF: "
+        "condition = '" + ir::describe(condition) + "'"
+        ", label = '" + label + "'"
+    );
+
+    if(branch > 0) {    // label not used if branch==0
+        Str my_label = to_ifbranch(label, branch);
+        cs.emit(as_label(my_label));
+    }
+
+    Str jmp_label = to_ifbranch(label, branch+1);
+    handle_expression(condition, jmp_label, "if.condition");
 }
 
-void Codegen::elseStart(UInt op0, const Str &opName, UInt op1) {
-    comment(QL_SS2S("# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")"));
-    QL_FATAL("FIXME: not implemented");
+
+void Codegen::if_otherwise(const Str &label, Int branch) {
+    comment(
+        "# IF_OTHERWISE: "
+        ", label = '" + label + "'"
+    );
+
+    Str my_label = to_ifbranch(label, branch);
+    cs.emit(as_label(my_label));
 }
 
-void Codegen::forStart(const Str &label, UInt iterations) {
-    comment(QL_SS2S("# FOR_START(" << iterations << ")"));
-    // FIXME: reserve register
-    emit("", "move", QL_SS2S(iterations << ",R62"), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested for loops (not supported by program.cc either)
-    emit((label+":"), "", "", "# ");
-#if OPT_PRAGMA
-    pragmaLoopLabel.push_back(label);        // remind label for pragma/break FIXME: implement properly later on
-#endif
+
+void Codegen::if_end(const Str &label) {
+    comment(
+        "# IF_END: "
+        ", label = '" + label + "'"
+    );
+
+    cs.emit(as_label(to_end(label)));
 }
 
-void Codegen::forEnd(const Str &label) {
-    comment("# FOR_END");
-    // FIXME: free register
-    emit("", "loop", QL_SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested for loops (not supported by program.cc either)
-#if OPT_PRAGMA
-    emit((label+"_end:"), "", "", "# ");    // label for 'break'
-    pragmaLoopLabel.pop_back();
-#endif
+
+void Codegen::foreach_start(const ir::Reference &lhs, const ir::IntLiteral &frm, const Str &label) {
+    comment(
+        "# FOREACH_START: "
+        "from = " + ir::describe(frm)
+        + ", label = '" + label + "'"
+    );
+
+    auto reg = as_reg(cs.creg2reg(lhs));
+    cs.emit("", "move", as_int(frm.value) + "," + reg);
+    // FIXME: if loop has no contents at all, register dependency is violated
+    cs.emit(as_label(to_start(label)));    // label for looping or 'continue'
 }
 
-void Codegen::doWhileStart(const Str &label) {
-    comment("# DO_WHILE_START");
-    emit((label+":"), "", "", "# ");
-#if OPT_PRAGMA
-    pragmaLoopLabel.push_back(label);        // remind label for pragma/break FIXME: implement properly later on
-#endif
+
+void Codegen::foreach_end(const ir::Reference &lhs, const ir::IntLiteral &frm, const ir::IntLiteral &to, const Str &label) {
+    comment(
+        "# FOREACH_END: "
+        "from = " + ir::describe(frm)
+        + ", to = " + ir::describe(to)
+        + ", label = '" + label + "'"
+    );
+
+    auto reg = as_reg(cs.creg2reg(lhs));
+
+    if(to.value >= frm.value) {     // count up
+        cs.emit("", "add", reg + ",1," + reg);
+        cs.emit("", "nop");
+        cs.emit(
+            "",
+            "jlt",
+            reg + "," + as_int(to.value, 1) + "," + as_target(to_start(label)),
+            "# loop");
+    } else {
+        if(to.value == 0) {
+            cs.emit("", "loop", reg + "," + as_target(to_start(label)), "# loop");
+        } else {
+            cs.emit("", "sub", reg + ",1," + reg);
+            cs.emit("", "nop");
+            cs.emit("", "jge", reg + "," + as_int(to.value) + "," + as_target(to_start(label)), "# loop");
+        }
+    }
+
+    cs.emit(as_label(to_end(label)));    // label for loop end or 'break'
 }
 
-void Codegen::doWhileEnd(const Str &label, UInt op0, const Str &opName, UInt op1) {
-    comment(QL_SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
-    emit("", "jmp", QL_SS2S("@" << label), "# FIXME: we don't support conditions, just an endless loop'");        // FIXME: just endless loop
-    QL_WOUT("CC backend ignores condition of do while loop");
-#if OPT_PRAGMA
-    emit((label+"_end:"), "", "", "# ");    // label for 'break'
-    pragmaLoopLabel.pop_back();
-#endif
+
+void Codegen::repeat(const Str &label) {
+    comment(
+        "# REPEAT: "
+        ", label = '" + label + "'"
+    );
+    cs.emit(as_label(to_start(label)));    // label for looping or 'continue'
 }
+
+
+void Codegen::until(const ir::ExpressionRef &condition, const Str &label) {
+    comment(
+        "# UNTIL: "
+        "condition = '" + ir::describe(condition) + "'"
+        ", label = '" + label + "'"
+    );
+    handle_expression(condition, to_end(label), "until.condition");
+    cs.emit("", "jmp", as_target(to_start(label)), "# loop");
+    cs.emit(as_label(to_end(label)));    // label for loop end or 'break'
+}
+
+// NB: also used for 'while' loops
+void Codegen::for_start(utils::Maybe<ir::SetInstruction> &initialize, const ir::ExpressionRef &condition, const Str &label) {
+    comment(
+        "# LOOP_START: "
+        + (!initialize.empty() ? "initialize = '"+ir::describe(initialize)+"', " : "")
+        + "condition = '" + ir::describe(condition) + "'"
+    );
+
+    // for loop: initialize
+    if (!initialize.empty()) {
+        handle_set_instruction(*initialize, "for.initialize");
+        cs.emit("", "nop");    // register dependency between initialize and handle_expression (if those use the same register, which is likely)
+    }
+
+    cs.emit(as_label(to_start(label)));    // label for looping or 'continue'
+    handle_expression(condition, to_end(label), "for/while.condition");
+}
+
+
+void Codegen::for_end(utils::Maybe<ir::SetInstruction> &update, const Str &label) {
+    comment(
+        "# LOOP_END: "
+        + (!update.empty() ? " update = '"+ir::describe(update)+"'" : "")
+    );
+    if (!update.empty()) {
+        handle_set_instruction(*update, "for.update");
+    }
+    cs.emit("", "jmp", as_target(to_start(label)), "# loop");
+    cs.emit(as_label(to_end(label)));    // label for loop end or 'break'
+}
+
+
+void Codegen::do_break(const Str &label) {
+    cs.emit("", "jmp", as_target(to_end(label)), "# break");
+}
+
+
+void Codegen::do_continue(const Str &label) {
+    cs.emit("", "jmp", as_target(to_start(label)), "# continue");
+}
+
 
 void Codegen::comment(const Str &c) {
-    if (options->verbose) emit(c);
+    if (options->verbose) {
+        cs.emit(Str(2*depth, ' ') + c);  // indent by depth
+    }
 }
+
+/************************************************************************\
+| new IR expressions
+\************************************************************************/
+
+// FIXME: recursion?
+// FIXME: or pass SetInstruction or Expression depending on use
+// FIXME: adopt structure of cQASM's cqasm-v1-functions-gen.cpp register_into used for constant propagation
+
+// FIXME: see expression_mapper.cc for inspiration
+// FIXME: split with next function, move to .h
+
+void Codegen::handle_set_instruction(const ir::SetInstruction &set, const Str &descr)
+{
+    Str describe = ir::describe(set);
+    QL_DOUT(descr + ": '" + describe + "'");
+
+    try {
+        // enforce set instruction is unconditional (since we don't handle conditionality)
+        CHECK_COMPAT(
+            set.condition->as_bit_literal()
+            && set.condition->as_bit_literal()->value
+            , "conditions other then 'true' are not supported for set instruction"
+        );
+
+        comment("# Expression '" + descr + "': " + describe);
+
+        if (auto ilit = set.rhs->as_int_literal()) {
+            cs.emit(
+                "",
+                "move",
+                as_int(ilit->value) + "," + as_reg(cs.dest_reg(set.lhs)),
+                "# " + ir::describe(set.rhs) //FIXME: full expression
+            );
+        } else if (auto ref = set.rhs->as_reference()) {
+            if(operandContext.is_creg_reference(*ref)) {
+                auto reg = cs.creg2reg(*ref);
+                cs.emit(
+                    "",
+                    "move",
+                    as_reg(reg) + "," + as_reg(cs.dest_reg(set.lhs)),
+                    "# " + describe
+                );
+            } else {
+                QL_ICE("expected reference to creg, but got: " << ir::describe(set.rhs));
+            }
+        } else if (auto fn = set.rhs->as_function_call()) {
+            // handle int cast
+            if (fn->function_type->name == "int") {
+                CHECK_COMPAT(
+                    fn->operands.size() == 1 &&
+                    fn->operands[0]->as_function_call(),
+                    "'int()' cast target must be a function"
+                );
+                fn = fn->operands[0]->as_function_call();   // step into. FIXME: Shouldn't we recurse to allow e.g. casting a breg??
+            }
+
+            // handle the function
+            fncs.dispatch(set.lhs, fn, describe);
+        } else {
+            QL_ICE("unsupported expression type");
+        }
+    }
+    catch (utils::Exception &e) {
+        e.add_context("in expression '" + describe + "'", true);
+        throw;
+    }
+}
+
+void Codegen::handle_expression(const ir::ExpressionRef &expression, const Str &label_if_false, const Str &descr)
+{
+    Str describe = ir::describe(expression);
+    QL_DOUT(descr + ": '" + describe + "'");
+
+    try {
+#if 0   // NB: redundant information, also provided by structured control flow comments
+        comment("# Expression '" + descr + "': " << ir::describe(expression));
+#endif
+
+        if (auto blit = expression->as_bit_literal()) {
+            if(blit->value) {
+                // do nothing (to jump out of loop). FIXME: other contexts may exist
+            } else {    // FIXME: should be handled by constant removal pass
+                QL_ICE("bit literal 'false' currently not supported in '" << ir::describe(expression) << "'");
+            }
+        } else if (auto ref = expression->as_reference()) {
+            if (operandContext.is_breg_reference(*ref)) {    // breg as condition, like in "if(b[0])"
+                // transfer single breg to REG_TMP0
+                auto breg = operandContext.convert_breg_reference(*ref);
+                utils::Vec<utils::UInt> bregs{breg};
+                UInt mask = fncs.emit_bin_cast(bregs, 1);
+
+                cs.emit(
+                    "",
+                    "and",
+                    QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1),
+                    "# mask for '" + ir::describe(expression) + "'"
+                );    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
+                cs.emit("", "nop");
+                cs.emit(
+                    "",
+                    "jlt",
+                    Str(REG_TMP1) + ",1," + as_target(label_if_false),
+                    "# skip next part if condition is false"
+                );
+            } else {
+                QL_ICE("expected reference to breg, but got: " << ir::describe(expression));
+            }
+        } else if (auto fn = expression->as_function_call()) {
+            // FIXME: handle (bit) cast?
+
+            // handle the function
+            fncs.dispatch(fn, label_if_false, describe);
+        } else {
+            QL_ICE("unsupported expression type");
+        }
+    }
+    catch (utils::Exception &e) {
+        e.add_context("in expression '" + describe + "'", true);
+        throw;
+    }
+}
+
 
 /************************************************************************\
 |
@@ -703,91 +1106,50 @@ void Codegen::comment(const Str &c) {
 \************************************************************************/
 
 /************************************************************************\
-| Some helpers to ease nice assembly formatting
-\************************************************************************/
-
-// FIXME: assure space between fields!
-// FIXME: make comment output depend on verboseCode
-
-void Codegen::emit(const Str &labelOrComment, const Str &instr) {
-    if (labelOrComment.empty()) {                       // no label
-        codeSection << "        " << instr << std::endl;
-    } else if (labelOrComment.length() < 8) {           // label fits before instr
-        codeSection << std::setw(8) << labelOrComment << instr << std::endl;
-    } else if (instr.empty()) {                         // no instr
-        codeSection << labelOrComment << std::endl;
-    } else {
-        codeSection << labelOrComment << std::endl << "        " << instr << std::endl;
-    }
-}
-
-
-// @param   labelOrSel      label must include trailing ":"
-// @param   comment         must include leading "#"
-void Codegen::emit(const Str &labelOrSel, const Str &instr, const Str &ops, const Str &comment) {
-    codeSection << std::setw(16) << labelOrSel << std::setw(16) << instr << std::setw(24) << ops << comment << std::endl;
-}
-
-void Codegen::emit(Int slot, const Str &instr, const Str &ops, const Str &comment) {
-    emit(QL_SS2S("[" << slot << "]"), instr, ops, comment);
-}
-
-/************************************************************************\
 | helpers
 \************************************************************************/
 
-void Codegen::showCodeSoFar() {
-    // provide context to help finding reason. FIXME: limit # lines
-    QL_EOUT("Code so far:\n" << codeSection.str());
-}
-
 void Codegen::emitProgramStart(const Str &progName) {
-    // emit program header
-    codeSection << std::left;    // assumed by emit()
-    codeSection << "# Program: '" << progName << "'" << std::endl;   // NB: put on top so it shows up in internal CC logging
-    codeSection << "# CC_BACKEND_VERSION " << CC_BACKEND_VERSION_STRING << std::endl;
-    codeSection << "# OPENQL_VERSION " << OPENQL_VERSION_STRING << std::endl;
-    codeSection << "# Note:    generated by OpenQL Central Controller backend" << std::endl;
-    codeSection << "#" << std::endl;
+    cs.emitProgramHeader(progName);
 
-#if OPT_FEEDBACK
-    emit(".CODE");   // start .CODE section
-#endif
+    cs.emit(".CODE");   // start .CODE section
 
     // NB: new seq_bar semantics (firmware from 20191219 onwards)
     comment("# synchronous start and latency compensation");
-    emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
-    emit("",                "seq_out",  "0x00000000,1",     "# allows monitoring actual start time using trace unit");
-    emit("__mainLoop:",     "",         "",                 "# ");    // FIXME: __mainLoop should be a forbidden kernel name
+    cs.emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
+    cs.emit("",                "seq_out",  "0x00000000,1",     "# allows monitoring actual start time using trace unit");
+    if (!options->run_once) {
+        comment("# start of main loop that runs indefinitely");
+        cs.emit("__mainLoop:",     "",         "",                 "# ");    // FIXME: __mainLoop should be a forbidden kernel name
+    }
 
-#if OPT_FEEDBACK
     // initialize state
-    emit("",                "seq_state","0",                "# clear Programmable Logic state");
-#endif
+    cs.emit("",                "seq_state","0",                "# clear Programmable Logic state");
 }
 
 
 void Codegen::emitProgramFinish() {
+    comment("# finish program");
     if (options->run_once) {   // program runs once only
-        emit("", "stop");
+        cs.emit("", "stop");
     } else {   // CC-light emulation: loop indefinitely
         // prevent real time pipeline emptying during jmp below (especially in conjunction with pragma/break
-        emit("", "seq_wait", "1", "");
+        cs.emit("", "seq_wait", "1");
 
         // loop indefinitely
-        emit("",      // no CCIO selector
+        cs.emit("",      // no CCIO selector
              "jmp",
              "@__mainLoop",
              "# loop indefinitely");
     }
 
-    emit(".END");   // end .CODE section
+    cs.emit(".END");   // end .CODE section
 }
 
 
 // generate code to input measurement results and distribute them via DSM
-void Codegen::emitFeedback(
-    const FeedbackMap &feedbackMap,
+void Codegen::emitMeasRsltRealTime(
+    const MeasResultRealTimeMap &measResultRealTimeMap,
     UInt instrIdx,
     UInt startCycle,
     Int slot,
@@ -797,27 +1159,28 @@ void Codegen::emitFeedback(
         emitPadToCycle(instrIdx, startCycle, slot, instrumentName);
     }
 
-    // code generation for participating and non-participating instruments (NB: must take equal number of sequencer cycles)
-    if (!feedbackMap.empty()) {    // this instrument performs readout for feedback now
-        UInt mux = dp.getOrAssignMux(instrIdx, feedbackMap);
-        dp.emitMux(mux, feedbackMap, instrIdx, slot);
+    // code generation for participating and non-participating instruments
+    // NB: both code paths must take equal number of sequencer cycles
+    if (!measResultRealTimeMap.empty()) {    // this instrument produces real-time measurements now
+        UInt mux = dp.getOrAssignMux(instrIdx, measResultRealTimeMap);
+        dp.emitMux(mux, measResultRealTimeMap, slot);
 
         // emit code for slot input
-        UInt sizeTag = Datapath::getSizeTag(feedbackMap.size());        // compute DSM transfer size tag (for 'seq_in_sm' instruction)
-        UInt smAddr = Datapath::getMuxSmAddr(feedbackMap);
-        emit(
+        UInt sizeTag = Datapath::getSizeTag(measResultRealTimeMap.size());        // compute DSM transfer size tag (for 'seq_in_sm' instruction)
+        UInt smAddr = Datapath::getMuxSmAddr(measResultRealTimeMap);
+        cs.emit(
             slot,
             "seq_in_sm",
             QL_SS2S("S" << smAddr << ","  << mux << "," << sizeTag),
-            QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": feedback on '" << instrumentName+"'")
+            QL_SS2S("# cycle " << lastEndCycle[instrIdx] << "-" << lastEndCycle[instrIdx]+1 << ": real-time measurement result on '" << instrumentName+"'")
         );
         lastEndCycle[instrIdx]++;
-    } else {    // this instrument does not perform readout for feedback now
+    } else {    // this instrument does not produce real-time measurements now
         // emit code for non-participating instrument
-        // FIXME: may invalidate DSM that ust arrived dependent on individual SEQBAR counts
+        // FIXME FIXME FIXME: may invalidate DSM that just arrived dependent on individual SEQBAR counts
         UInt smAddr = 0;
         UInt smTotalSize = 1;    // FIXME: inexact, but me must not invalidate memory that we will not write
-        emit(
+        cs.emit(
             slot,
             "seq_inv_sm",
             QL_SS2S("S" << smAddr << ","  << smTotalSize),
@@ -829,13 +1192,13 @@ void Codegen::emitFeedback(
 
 
 void Codegen::emitOutput(
-    const CondGateMap &condGateMap,
-    Digital digOut,
-    UInt instrMaxDurationInCycles,
-    UInt instrIdx,
-    UInt startCycle,
-    Int slot,
-    const Str &instrumentName
+        const CondGateMap &condGateMap,
+        tDigital digOut,
+        UInt instrMaxDurationInCycles,
+        UInt instrIdx,
+        UInt startCycle,
+        Int slot,
+        const Str &instrumentName
 ) {
     comment(QL_SS2S(
         "  # slot=" << slot
@@ -849,7 +1212,7 @@ void Codegen::emitOutput(
 
     // emit code for slot output
     if (condGateMap.empty()) {    // all groups unconditional
-        emit(
+        cs.emit(
             slot,
             "seq_out",
             QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec << "," << instrMaxDurationInCycles),
@@ -861,7 +1224,7 @@ void Codegen::emitOutput(
         UInt smAddr = dp.emitPl(pl, condGateMap, instrIdx, slot);
 
         // emit code for conditional gate
-        emit(
+        cs.emit(
             slot,
             "seq_out_sm",
             QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
@@ -873,56 +1236,14 @@ void Codegen::emitOutput(
     lastEndCycle[instrIdx] = startCycle + instrMaxDurationInCycles;
 }
 
-void Codegen::emitPragma(
-    const Json &pragma,
-    Int pragmaSmBit,
-    UInt instrIdx,
-    UInt startCycle,
-    Int slot,
-    const Str &instrumentName
-) {
-    if (startCycle > lastEndCycle[instrIdx]) {    // i.e. if(!instrHasOutput)
-        emitPadToCycle(instrIdx, startCycle, slot, instrumentName);
-    }
-
-    // FIXME: the only pragma possible is "break" for now
-    Int pragmaBreakVal = json_get<Int>(pragma, "break", "pragma of unknown instruction");        // FIXME: we don't know which instruction we're dealing with, so better move
-    UInt smAddr = pragmaSmBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
-    UInt mask = 1ul << (pragmaSmBit % 32);
-    std::string label = pragmaLoopLabel.back() + "_end";        // FIXME: must match label set in forEnd(), assumes we are actually inside a for loop
-
-    // emit code for pragma "break". NB: code is identical for all instruments
-    // FIXME: verify that instruction duration matches actual time
-/*
-    seq_cl_sm   S<address>          ; pass 32 bit SM-data to Q1 ...
-    seq_wait    3                   ; prevent starvation of real time part during instructions below: 4 classic instructions + 1 branch
-    move_sm     R0                  ; ... and move to register
-    nop                             ; register dependency R0
-    and         R0,<mask>,R1        ; mask depends on DSM bit location
-    nop                             ; register dependency R1
-    jlt         R1,1,@loop
-*/
-    emit(slot, "seq_cl_sm", QL_SS2S("S" << smAddr), QL_SS2S("# 'break if " << pragmaBreakVal << "' on '" << instrumentName << "'"));
-    emit(slot, "seq_wait", "3", "");
-    emit(slot, "move_sm", "R0", "");
-    emit(slot, "nop", "", "");
-    emit(slot, "and", QL_SS2S("R0," << mask << "," << "R1"), "");    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
-    emit(slot, "nop", "", "");
-    if (pragmaBreakVal == 0) {
-        emit(slot, "jlt", QL_SS2S("R1,1,@" << label), "");
-    } else {
-        emit(slot, "jge", QL_SS2S("R1,1,@" << label), "");
-    }
-}
-
 
 void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName) {
     // compute prePadding: time to bridge to align timing
-    int prePadding = startCycle - lastEndCycle[instrIdx];
+    Int prePadding = startCycle - lastEndCycle[instrIdx];
     if (prePadding < 0) {
         QL_EOUT("Inconsistency detected in bundle contents: printing code generated so far");
         showCodeSoFar();
-        QL_FATAL(
+        QL_INPUT_ERROR(
             "Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding
             << ", startCycle=" << startCycle
             << ", lastEndCycle=" << lastEndCycle[instrIdx]
@@ -932,7 +1253,7 @@ void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str
     }
 
     if (prePadding > 0) {     // we need to align
-        emit(
+        cs.emit(
             slot,
             "seq_wait",
             QL_SS2S(prePadding),
@@ -945,92 +1266,15 @@ void Codegen::emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str
 }
 
 
-// compute signalValueString, and some meta information, for sd[s] (i.e. one of the signals in the JSON definition of an instruction)
-Codegen::CalcSignalValue Codegen::calcSignalValue(
-    const Settings::SignalDef &sd,
-    UInt s,
-    const Vec<UInt> &operands,
-    const Str &iname
-) {
-    CalcSignalValue ret;
-    Str signalSPath = QL_SS2S(sd.path<<"["<<s<<"]");                   // for JSON error reporting
-
-    /************************************************************************\
-    | get signal properties, mapping operand index to qubit
-    \************************************************************************/
-
-    // get the operand index & qubit to work on
-    ret.operandIdx = json_get<UInt>(sd.signal[s], "operand_idx", signalSPath);
-    if (ret.operandIdx >= operands.size()) {
-        QL_JSON_FATAL(
-            "instruction '" << iname
-            << "': JSON file defines operand_idx " << ret.operandIdx
-            << ", but only " << operands.size()
-            << " operands were provided (correct JSON, or provide enough operands)"
-        ); // FIXME: add offending statement
-    }
-    UInt qubit = operands[ret.operandIdx];
-
-    // get signal value
-    const Json instructionSignalValue = json_get<const Json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const Json&> unavailable
-    Str sv = QL_SS2S(instructionSignalValue);   // serialize/stream instructionSignalValue into std::string
-
-    // get instruction signal type (e.g. "mw", "flux", etc)
-    // NB: instructionSignalType is different from "instruction/type" provided by find_instruction_type, although some identical strings are used). NB: that key is no longer used by the 'core' of OpenQL
-    Str instructionSignalType = json_get<Str>(sd.signal[s], "type", signalSPath);
-
-    /************************************************************************\
-    | map signal type for qubit to instrument & group
-    \************************************************************************/
-
-    // find signalInfo, i.e. perform the mapping
-    ret.si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
-
-    if (instructionSignalValue.empty()) {    // allow empty signal
-        ret.signalValueString = "";
-    } else {
-        // verify signal dimensions
-        UInt channelsPergroup = ret.si.ic.controlModeGroupSize;
-        if (instructionSignalValue.size() != channelsPergroup) {
-            QL_JSON_FATAL(
-                "signal dimension mismatch on instruction '" << iname
-                << "' : control mode '" << ret.si.ic.refControlMode
-                << "' requires " <<  channelsPergroup
-                << " signals, but signal '" << signalSPath+"/value"
-                << "' provides " << instructionSignalValue.size()
-            );
-        }
-
-        // expand macros
-        sv = replace_all(sv, "\"", "");   // get rid of quotes
-        sv = replace_all(sv, "{gateName}", iname);
-        sv = replace_all(sv, "{instrumentName}", ret.si.ic.ii.instrumentName);
-        sv = replace_all(sv, "{instrumentGroup}", to_string(ret.si.group));
-        // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
-        sv = replace_all(sv, "{qubit}", to_string(qubit));
-        ret.signalValueString = sv;
-
-        // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and provide codewordTable to downstream software to assign waveforms to the codewords
-    }
-
-    comment(QL_SS2S(
-        "  # slot=" << ret.si.ic.ii.slot
-        << ", instrument='" << ret.si.ic.ii.instrumentName << "'"
-        << ", group=" << ret.si.group
-        << "': signalValue='" << ret.signalValueString << "'"
-    ));
-
-    return ret;
-}
-
-
+// FIXME: broken, but we do want to reinstate automatic codeword generation at some point
 #if !OPT_SUPPORT_STATIC_CODEWORDS
-Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int group) {
-    Codeword codeword;
+tCodeword Codegen::assignCodeword(const Str &instrumentName, Int instrIdx, Int group) {
+    tCodeword codeword;
     Str signalValue = bi->signalValue;
 
-    if (QL_JSON_EXISTS(codewordTable, instrumentName) &&                        // instrument exists
-                    codewordTable[instrumentName].size() > group) {         // group exists
+    if (QL_JSON_EXISTS(codewordTable, instrumentName)                       // instrument exists
+        && codewordTable[instrumentName].size() > group                     // group exists
+    ) {
         Bool cwFound = false;
         // try to find signalValue
         Json &myCodewordArray = codewordTable[instrumentName][group];
@@ -1045,7 +1289,7 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
                     << "' not found in group " << group
                     << ", which contains " << myCodewordArray);
             if (mapPreloaded) {
-                QL_FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
+                QL_USER_ERROR("mismatch between preloaded 'map_input_file' and program requirements:" << msg)
             } else {
                 QL_DOUT(msg);
                 // NB: codeword already contains last used value + 1
@@ -1055,7 +1299,7 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
         }
     } else {    // new instrument or group
         if (mapPreloaded) {
-            QL_FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements: instrument '"
+            QL_USER_ERROR("mismatch between preloaded 'map_input_file' and program requirements: instrument '"
                   << instrumentName << "', group "
                   << group
                   << " not present in file");
@@ -1068,6 +1312,7 @@ Codeword codegen_cc::assignCodeword(const Str &instrumentName, Int instrIdx, Int
     return codeword;
 }
 #endif
+
 
 } // namespace detail
 } // namespace vq1asm

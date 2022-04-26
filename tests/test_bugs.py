@@ -15,6 +15,7 @@ class Test_bugs(unittest.TestCase):
         ql.set_option('output_dir', output_dir)
         ql.set_option('use_default_gates', 'yes')
         ql.set_option('log_level', 'LOG_WARNING')
+        os.chdir(curdir) # test_empty_infinite_loop uses relative paths for test_output
 
     # @unittest.expectedFailure
     # @unittest.skip
@@ -82,25 +83,22 @@ class Test_bugs(unittest.TestCase):
             p.compile()
             self.setUpClass()
             QISA_fn_i = os.path.join(output_dir, p.name+'_'+str(i)+'_last.qasm')
-            os.rename(QISA_fn,QISA_fn_i)
+            os.rename(QISA_fn, QISA_fn_i)
 
         for i in range(NCOMPILES-1):
             QISA_fn_1 = os.path.join(output_dir, p.name+'_'+str(i)+'_last.qasm')
             QISA_fn_2 = os.path.join(output_dir, p.name+'_'+str(i+1)+'_last.qasm')
             self.assertTrue( file_compare(QISA_fn_1, QISA_fn_2))
 
-# Unclear how this test works.
-# When clear, enable it again.
-# Now it fails, not clear how to repair, so it is disabled.
-#    def test_empty_infinite_loop(self):
-#        name = 'empty_infinite_loop'
-#        in_fn = 'test_' + name + '.cq'
-#        out_fn = 'test_output/' + name + '_out.cq'
-#        gold_fn = 'golden/' + name + '_out.cq'
-#        ql.initialize()
-#        #ql.set_option('log_level', 'LOG_DEBUG')
-#        ql.compile(in_fn)
-#        self.assertTrue(file_compare(out_fn, gold_fn))
+    def test_empty_infinite_loop(self):
+        name = 'empty_infinite_loop'
+        in_fn = 'test_' + name + '.cq'
+        out_fn = 'test_output/' + name + '_out.cq' # must match path set inside in_fn
+        gold_fn = 'golden/' + name + '_out.cq'
+        ql.initialize()  # note that output path is set inside file in_fn, so output_dir is not respected
+        #ql.set_option('log_level', 'LOG_DEBUG')
+        ql.compile(in_fn)
+        self.assertTrue(file_compare(out_fn, gold_fn))
 
 if __name__ == '__main__':
     unittest.main()

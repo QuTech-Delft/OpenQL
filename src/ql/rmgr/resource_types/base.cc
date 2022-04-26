@@ -5,6 +5,7 @@
 #include "ql/rmgr/resource_types/base.h"
 
 #include "ql/ir/ops.h"
+#include "ql/ir/describe.h"
 
 namespace ql {
 namespace rmgr {
@@ -169,6 +170,8 @@ utils::Bool Base::gate(
     if (!initialized) {
         throw utils::Exception("resource gate() called before initialization");
     }
+
+    QL_DOUT("processing new-IR statement " << ir::describe(statement));
 
     // Convert to GateData wrapper.
     static const utils::Json EMPTY = {};

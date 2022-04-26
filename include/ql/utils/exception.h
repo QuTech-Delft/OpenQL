@@ -55,6 +55,18 @@ enum class ExceptionType {
     USER,
 
     /**
+     * A user error resulting from errors or inconsistencies in the JSON platform
+     * definitions.
+     */
+    JSON,
+
+    /**
+     * A user error resulting from errors or inconsistencies in the input (i.e. cQASM
+     * or API calls).
+     */
+    INPUT,
+
+    /**
      * An unknown error. This class should not be used for new exceptions, and
      * should be phased out of existing code.
      */
@@ -156,6 +168,16 @@ public:
  * Shorthand for throwing a user error.
  */
 #define QL_USER_ERROR(msg) QL_THROW(USER, msg)
+
+/**
+ * Shorthand for throwing a JSON error.
+ */
+#define QL_JSON_ERROR(msg) QL_THROW(JSON, msg)
+
+/**
+ * Shorthand for throwing an INPUT error.
+ */
+#define QL_INPUT_ERROR(msg) QL_THROW(INPUT, msg)
 
 /**
  * Asserts that the given condition is true, throwing an assertion failure

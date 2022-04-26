@@ -17,19 +17,17 @@
 // check existence of JSON key within node, see PR #194
 #define QL_JSON_EXISTS(node, key)  ((node).count(key) > 0)
 
-#define QL_JSON_FATAL(s) QL_FATAL("Error in JSON definition: " << s)   // NB: FATAL prepends "Error : "
-
 #define QL_JSON_ASSERT(node, key, nodePath)     \
     do {                                        \
         if (!QL_JSON_EXISTS(node, key)) {       \
-            QL_JSON_FATAL("key '" << key << "' not found on path '" << nodePath << "', actual node contents '" << node << "'"); \
+            QL_JSON_ERROR("key '" << key << "' not found on path '" << nodePath << "', actual node contents '" << node << "'"); \
         }                                       \
     } while (false)
 
 namespace ql {
 namespace utils {
 
-#if 0
+#if 0   // FIXME: WIP
 
 using RawJson = nlohmann::json;
 
@@ -166,7 +164,7 @@ T json_get(const Json &j, const Str &key, const Str &nodePath = "") {
     // first check existence of key
     auto it = j.find(key);
     if (it == j.end()) {
-        QL_JSON_FATAL("Key '" << key
+        QL_JSON_ERROR("Key '" << key
                               << "' not found on path '" << nodePath
                               << "', actual node contents '" << j << "'");
     }
@@ -175,7 +173,7 @@ T json_get(const Json &j, const Str &key, const Str &nodePath = "") {
     try {
         return it->get<T>();
     } catch (const std::exception &e) {
-        QL_JSON_FATAL("Could not get value of key '" << key
+        QL_JSON_ERROR("Could not get value of key '" << key
                                                      << "' on path '" << nodePath
                                                      << "', exception message '"
                                                      << e.what()

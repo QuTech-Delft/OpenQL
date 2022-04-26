@@ -67,6 +67,8 @@ std::ostream &operator<<(std::ostream &os, ExceptionType etyp) {
         case ExceptionType::CONTAINER:  return os << "Container error";
         case ExceptionType::SYSTEM:     return os << "OS error";
         case ExceptionType::USER:       return os << "Usage error";
+        case ExceptionType::JSON:       return os << "JSON error";
+        case ExceptionType::INPUT:       return os << "Input error";
         default:                        return os << "Unknown error";
     }
 }
