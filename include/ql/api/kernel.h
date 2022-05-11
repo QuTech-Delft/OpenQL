@@ -197,6 +197,13 @@ public:
     void gate(const Unitary &u, const std::vector<size_t> &qubits);
 
     /**
+     * Automatic state preparation, currently requires unitary decomposition for all cases.
+     */
+    void state_prep(
+        const std::vector<std::complex<double>> &array, 
+        const std::vector<size_t> &qubits);
+
+    /**
      * Alternative function for appending normal conditional quantum gates.
      * Avoids having to specify duration, angle, and bregs.
      */

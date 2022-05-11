@@ -1055,6 +1055,22 @@ void Kernel::gate(
     gates.extend(u.get_decomposition(qubits));
 }
 
+// adding state prepration / (arbitrary) qubit initialisation to kernel
+void Kernel::state_prep(
+    const Vec<Complex> &array,
+    const Vec<UInt> &qubits
+) {
+    QL_DOUT("Preparing state with array " << array);
+    cycles_valid = false;
+    int size = array.size();
+    Vec<Complex> diagonal_matrix(size*size);
+    for(int i = 0; i < size; i++)
+    {
+        diagonal_matrix.at(size*i) = array[i];
+    }
+    gates.extend((com::dec::Unitary("State prep", diagonal_matrix)).get_decomposition(qubits));
+}
+
 /**
  * qasm output
  */
