@@ -1062,13 +1062,8 @@ void Kernel::state_prep(
 ) {
     QL_DOUT("Preparing state with array " << array);
     cycles_valid = false;
-    int size = array.size();
-    Vec<Complex> diagonal_matrix(size*size);
-    for(int i = 0; i < size; i++)
-    {
-        diagonal_matrix.at(size*i) = array[i];
-    }
-    gates.extend((com::dec::Unitary("State prep", diagonal_matrix)).get_decomposition(qubits));
+    com::dec::Unitary u("state prep", {array.begin(), array.end()});
+    gates.extend(u.prepare_state(qubits));
 }
 
 /**

@@ -100,6 +100,7 @@ public:
                   << ", containing: " << array.size() << " elements");
     }
 
+
     Real size() const {
         if (!array.empty()) {
             return (Real) array.size();
@@ -664,6 +665,14 @@ static Int recursiveRelationsForUnitaryDecomposition(
         return 3;
     }
 }
+
+/**
+ * Does state preparation, results in a circuit for which A|0> = |psi> for given state psi, stored as the array in Unitary
+ */
+ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubits){
+    QL_EOUT("State preparation not implemented!");
+}
+
 
 /**
  * Returns the decomposed circuit.
