@@ -77,10 +77,6 @@ public:
     Str name;
     Vec<Complex> array;
     Vec<Complex> SU;
-    Real delta;
-    Real alpha;
-    Real beta;
-    Real gamma;
     Bool decomposed;
     Vec<Real> instruction_list;
 
@@ -156,17 +152,13 @@ public:
         return ss.str();
     }
 
-    // std::chrono::duration<Real> CSD_time;
-    // std::chrono::duration<Real> CSD_time2;
-    // std::chrono::duration<Real> CSD_time3;
-    // std::chrono::duration<Real> zyz_time;
-    // std::chrono::duration<Real> multiplexing_time;
-    // std::chrono::duration<Real> demultiplexing_time;
-
     void decomp_function(const Eigen::Ref<const complex_matrix>& matrix, Int numberofbits) {
         QL_DOUT("decomp_function: \n" << to_string(matrix));
         if(numberofbits == 1) {
-            zyz_decomp(matrix);
+            Vec<Real> zyz_angles = zyz_decomp(matrix);
+            instruction_list.push_back(-zyz_angles[0]);
+            instruction_list.push_back(-zyz_angles[1]);
+            instruction_list.push_back(-zyz_angles[2]);
         } else {
             Int n = matrix.rows()/2;
 
@@ -238,8 +230,6 @@ public:
         // U = [q1, U01] = [u1    ][c  s][v1  ]
         //     [q2, U11] = [    u2][-s c][   v2]
         Int n = U.rows();
-        // complex_matrix c(n,n); // c matrix is not needed for the higher level
-        // complex_matrix q1 = U.topLeftCorner(n/2,m/2);
 
         Eigen::BDCSVD<complex_matrix> svd(n/2,n/2);
         svd.compute(U.topLeftCorner(n/2,n/2), Eigen::ComputeThinU | Eigen::ComputeThinV); // possible because it's square anyway
@@ -248,7 +238,6 @@ public:
         // thinCSD: q1 = u1*c*v1.adjoint()
         //          q2 = u2*s*v1.adjoint()
         Int p = n/2;
-        // complex_matrix z = Eigen::MatrixXd::Identity(p, p).colwise().reverse();
         complex_matrix c(svd.singularValues().reverse().asDiagonal());
         u1.noalias() = svd.matrixU().rowwise().reverse();
         v1.noalias() = svd.matrixV().rowwise().reverse(); // Same v as in matlab: u*s*v.adjoint() = q1
@@ -261,8 +250,6 @@ public:
                 k = j;
             }
         }
-        //complex_matrix b = q2.block( 0,0, p, k+1);
-
         Eigen::HouseholderQR<complex_matrix> qr(p,k+1);
         qr.compute(q2.block( 0,0, p, k+1));
         u2 = qr.householderQ();
@@ -283,12 +270,6 @@ public:
             c.block(k,k,p-k,p-k) = qr2.matrixQR().triangularView<Eigen::Upper>();
             u1.block(0,k, p,p-k) = u1.block(0,k, p,p-k)*qr2.householderQ();
         }
-        // CSD_time2 += (std::chrono::steady_clock::now() - start);
-
-        // auto start2 = std::chrono::steady_clock::now();
-
-
-
         Vec<Int> c_ind;
         Vec<Int> s_ind;
         for (Int j = 0; j < p; j++) {
@@ -303,7 +284,6 @@ public:
         c(c_ind,c_ind) = -c(c_ind,c_ind);
         u1(Eigen::all, c_ind) = -u1(Eigen::all, c_ind);
 
-        //s.diagonal()(s_ind) = -s.diagonal()(s_ind);
         s(s_ind,s_ind) = -s(s_ind,s_ind);
         u2(Eigen::all, s_ind) = -u2(Eigen::all, s_ind);
 
@@ -329,8 +309,6 @@ public:
         complex_matrix tmp_s = u1.adjoint()*U.topRightCorner(p,p);
         complex_matrix tmp_c = u2.adjoint()*U.bottomRightCorner(p,p);
 
-        // Vec<Int> c_ind_row;
-        // Vec<Int> s_ind_row;
         for (Int i = 0; i < p; i++) {
             if (abs(s(i,i)) > abs(c(i,i))) {
                 // Vec<Int> s_ind_row;
@@ -341,9 +319,6 @@ public:
             }
         }
 
-
-        // v2(s_ind_row, Eigen::all) = tmp_s(s_ind_row, Eigen::all).rowwise() / s(s_ind_row, s_ind_row).array();
-        // v2(c_ind_row, Eigen::all) = tmp_c(c_ind_row, Eigen::all).rowwise() / c(c_ind_row, c_ind_row).array();
         // U = [q1, U01] = [u1    ][c  s][v1  ]
         //     [q2, U11] = [    u2][-s c][   v2]
 
@@ -356,12 +331,10 @@ public:
         if (!tmp.isApprox(U, 10e-2)) {
             throw utils::Exception("CSD of unitary '"+ name+"' is wrong! Failed at matrix: \n"+to_string(tmp) + "\nwhich should be: \n" + to_string(U));
         }
-        // CSD_time3 += (std::chrono::steady_clock::now() - start2);
-
     }
 
-    void zyz_decomp(const Eigen::Ref<const complex_matrix> &matrix) {
-        // auto start = std::chrono::steady_clock::now();
+    Vec<Real> zyz_decomp(const Eigen::Ref<const complex_matrix> &matrix) {
+        Vec<Real> zyz_angles; // gamma, beta, alpha
 
         Complex det = matrix.determinant();// matrix(0,0)*matrix(1,1)-matrix(1,0)*matrix(0,1);
 
@@ -374,6 +347,7 @@ public:
         Real wy = 0;
         Real wz = 0;
 
+
         if (sw > 0) {
             wx = B.imag()/sw;
             wy = B.real()/sw;
@@ -382,13 +356,12 @@ public:
 
         Real t1 = atan2(A.imag(),A.real());
         Real t2 = atan2(B.imag(), B.real());
-        alpha = t1+t2;
-        gamma = t1-t2;
-        beta = 2*atan2(sw*sqrt(pow((Real) wx,2)+pow((Real) wy,2)),sqrt(pow((Real) A.real(),2)+pow((wz*sw),2)));
-        instruction_list.push_back(-gamma);
-        instruction_list.push_back(-beta);
-        instruction_list.push_back(-alpha);
-        // zyz_time += (std::chrono::steady_clock::now() - start);
+        zyz_angles.push_back(t1-t2); // gamma
+        zyz_angles.push_back(2*atan2(sw*sqrt(pow((Real) wx,2)+pow((Real) wy,2)),sqrt(pow((Real) A.real(),2)+pow((wz*sw),2)))); // beta
+        zyz_angles.push_back(t1+t2); // alpha
+
+
+        return zyz_angles;
     }
 
     void demultiplexing(
@@ -401,11 +374,7 @@ public:
     ) {
         // [U1 0 ]  = [V 0][D 0 ][W 0]
         // [0  U2]    [0 V][0 D*][0 W]
-        // auto start = std::chrono::steady_clock::now();
         complex_matrix check = U1*U2.adjoint();
-        // complex_matrix D;
-        // complex_matrix V;
-        // complex_matrix W;
         if (check == check.adjoint()) {
             QL_IOUT("Demultiplexing matrix is self-adjoint()");
             Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> eigslv(check);
@@ -483,7 +452,6 @@ public:
     }
 
     void multicontrolledY(const Eigen::Ref<const Eigen::VectorXcd> &ss, Int halfthesizeofthematrix) {
-        // auto start = std::chrono::steady_clock::now();
         Eigen::VectorXd temp =  2*Eigen::asin(ss.array()).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]);
         Eigen::VectorXd tr = dec.solve(temp);
@@ -494,12 +462,9 @@ public:
         }
 
         instruction_list.insert(instruction_list.end(), &tr[0], &tr[halfthesizeofthematrix]);
-        // multiplexing_time += std::chrono::steady_clock::now() - start;
     }
 
     void multicontrolledZ(const Eigen::Ref<const Eigen::VectorXcd> &D, Int halfthesizeofthematrix) {
-        // auto start = std::chrono::steady_clock::now();
-
         Eigen::VectorXd temp =  (Complex(0,-2)*Eigen::log(D.array())).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]);
         Eigen::VectorXd tr = dec.solve(temp);
@@ -508,10 +473,7 @@ public:
             QL_EOUT("Multicontrolled Z not correct!");
             throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D));
         }
-
         instruction_list.insert(instruction_list.end(), &tr[0], &tr[halfthesizeofthematrix]);
-        // multiplexing_time += std::chrono::steady_clock::now() - start;
-
     }
 
     ~UnitaryDecomposer() {
@@ -530,10 +492,6 @@ void Unitary::decompose() {
     }
     UnitaryDecomposer decomposer(name, array);
     decomposer.decompose();
-    //SU = decomposer.SU;
-    //alpha = decomposer.alpha;
-    //beta = decomposer.beta;
-    //gamma = decomposer.gamma;
     decomposed = decomposer.decomposed;
     instruction_list = decomposer.instruction_list;
 }
@@ -670,6 +628,32 @@ static Int recursiveRelationsForUnitaryDecomposition(
  * Does state preparation, results in a circuit for which A|0> = |psi> for given state psi, stored as the array in Unitary
  */
 ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubits){
+    int n = qubits.size();
+    Vec<Real> phi;
+    Vec<Real> theta;
+
+    for(int c = 0; c<n; c++){
+        Complex A = array[2*c];
+        Complex B = array[2*c+1];
+        Real sw = sqrt(pow((Real) B.imag(),2) + pow((Real) B.real(),2) + pow((Real) A.imag(),2));
+        Real wx = 0;
+        Real wy = 0;
+        Real wz = 0;
+
+        if (sw > 0) {
+            wx = B.imag()/sw;
+            wy = B.real()/sw;
+            wz = A.imag()/sw;
+        }
+
+        // Real t1 = atan2(A.imag(),A.real());
+        Real t2 = atan2(B.imag(), B.real());
+        phi.push_back(t2); // gamma
+        theta.push_back(2*atan2(sw*sqrt(pow((Real) wx,2)+pow((Real) wy,2)),sqrt(pow((Real) A.real(),2)+pow((wz*sw),2)))); // beta
+        QL_DOUT("psi_c: [" << A << ", " << B << "] phi: " << phi << " theta: " << theta);
+    }
+
+
     QL_EOUT("State preparation not implemented!");
 }
 
