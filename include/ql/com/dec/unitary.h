@@ -37,6 +37,8 @@ private:
      */
     utils::Vec<utils::Real> instruction_list;
 
+    void state_preparation_recursive(ir::compat::GateRefs &circuit, utils::Vec<utils::Complex> &statevector, utils::Vec<utils::UInt> &qubits);
+
 public:
 
     /**

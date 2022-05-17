@@ -515,7 +515,7 @@ static void multicontrolled_rz(
     UInt end_index,
     const Vec<UInt> &qubits
 ) {
-    // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << to_string(qubits, "qubits: "));
+    QL_DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << qubits << "qubits: ");
     UInt idx;
     //The first one is always controlled from the last to the first qubit.
     c.emplace<ir::compat::gate_types::RZ>(qubits.back(), -instruction_list[start_index]);
@@ -538,7 +538,7 @@ static void multicontrolled_ry(
     UInt end_index,
     const Vec<UInt> &qubits
 ) {
-    // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << to_string(qubits, "qubits: "));
+    QL_DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << qubits << "qubits: ");
     UInt idx;
 
     //The first one is always controlled from the last to the first qubit.
@@ -628,13 +628,22 @@ static Int recursiveRelationsForUnitaryDecomposition(
  * Does state preparation, results in a circuit for which A|0> = |psi> for given state psi, stored as the array in Unitary
  */
 ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubits){
-    int n = qubits.size();
+    ir::compat::GateRefs circuit;
+    Vec<Complex> statevector = array;
+    Vec<UInt> nonconstqubits(qubits.begin(), qubits.end()); // I'm sure there's nicer ways of doing this
+    state_preparation_recursive(circuit, statevector, nonconstqubits);
+    return circuit;
+    // QL_EOUT("State preparation not implemented!");
+}
+
+void Unitary::state_preparation_recursive(ir::compat::GateRefs &circuit, Vec<Complex> &statevector, utils::Vec<utils::UInt> &qubits){
+    int n = statevector.size()/2;
     Vec<Real> phi;
     Vec<Real> theta;
 
     for(int c = 0; c<n; c++){
-        Complex A = array[2*c];
-        Complex B = array[2*c+1];
+        Complex A = statevector[2*c];
+        Complex B = statevector[2*c+1];
         Real sw = sqrt(pow((Real) B.imag(),2) + pow((Real) B.real(),2) + pow((Real) A.imag(),2));
         Real wx = 0;
         Real wy = 0;
@@ -650,13 +659,29 @@ ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubit
         Real t2 = atan2(B.imag(), B.real());
         phi.push_back(t2); // gamma
         theta.push_back(2*atan2(sw*sqrt(pow((Real) wx,2)+pow((Real) wy,2)),sqrt(pow((Real) A.real(),2)+pow((wz*sw),2)))); // beta
-        QL_DOUT("psi_c: [" << A << ", " << B << "] phi: " << phi << " theta: " << theta);
+
+        statevector[c] = (cos(theta[c]/2) + sin(theta[c]/2))*exp(Complex(0,-0.5)*phi[c]);
+        statevector[c+1] = (cos(theta[c]/2) - sin(theta[c]/2))*exp(Complex(0,0.5)*phi[c]);
+
+        QL_DOUT("Qubits: " << qubits << " psi_c: [" << A << ", " << B << "] phi: " << phi << " theta: " << theta);
+        
     }
 
-
-    QL_EOUT("State preparation not implemented!");
+    if(n>1){
+        multicontrolled_ry(circuit, theta, 0, theta.size()-1, qubits);
+        multicontrolled_rz(circuit, phi, 0, theta.size()-1, qubits);
+        statevector.resize(n); // Remove last half, the statevector is reduced to half its size at each iteration
+        qubits.resize(qubits.size() -1);
+        state_preparation_recursive(circuit, statevector,qubits);
+    }
+    else
+    {
+        circuit.emplace<ir::compat::gate_types::RY>(qubits.back(), theta[0]);
+        circuit.emplace<ir::compat::gate_types::RZ>(qubits.back(), -phi[0]);
+        return;
+    }
+    
 }
-
 
 /**
  * Returns the decomposed circuit.
