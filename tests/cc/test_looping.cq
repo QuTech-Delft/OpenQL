@@ -201,13 +201,10 @@ barrier
 rx180 q[2]
 
 
-
-
-
 # FIXME: move to its own file
 .more
 # set i = true # Error: type of right-hand side (bool/bit) could not be coerced to left-hand side (int reference)
-#set b[0] = true # Internal compiler error: in pass VQ1Asm, phase main: in block 'more': unsupported LHS for set instruction encountered: expected creg reference, but got something else
+# set b[0] = true # Internal compiler error: in pass VQ1Asm, phase main: in block 'more': in set_instruction '(bit)q[0] = true': in expression '(bit)q[0] = true': unsupported expression type
 # set b[0] = 1 # Error: type of right-hand side (int) could not be coerced to left-hand side (bool/bit reference)
 # set i = i<0 ? 2 : 3 # Error: dynamic values are not supported here
 # set i = 1<2 ? 2 : 3 # Error: dynamic values are not supported here

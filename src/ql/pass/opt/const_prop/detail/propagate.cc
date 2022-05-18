@@ -140,7 +140,7 @@ private:    // functions
      *
      * Note that we cannot directly use visit_expression(), because that has a 'ir::Expression &' as parameter.
      * It is therefore not possible to change a function_call into a (say) int_literal. Here the expression is
-     * wrapped in a 'utils<One>', allowing polymorphic access. This does force us however to visit all relevant node
+     * wrapped in a 'utils::One', allowing polymorphic access. This does force us however to visit all relevant node
      * types that contain an expression (although we can skip e.g. custom_instruction.operands).
      */
     void handle_expression(utils::One<ir::Expression> &expression) {

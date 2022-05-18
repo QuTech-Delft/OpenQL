@@ -7,7 +7,7 @@
 #include "ql/pmgr/pass_types/base.h"
 #include "ql/ir/describe.h"
 
-#define DEBUG(x) QL_IOUT(x)
+#define DEBUG(x) QL_DOUT(x)
 
 namespace ql {
 namespace pass {
@@ -164,7 +164,7 @@ void DeadCodeEliminationPass::dump_docs(
     const utils::Str &line_prefix
 ) const {
     utils::dump_str(os, line_prefix, R"(
-    This pass removes dead code, currently only unreachable structured control blocks.
+    This pass removes dead code, currently only unreachable if-branches.
     )");
 }
 

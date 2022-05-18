@@ -90,8 +90,8 @@ while(true) {
 }
 
 .intRange
-#set i = 4294967295  # out of range for int
-set i = 2147483647
+#set i = 4294967295  # out of range for (signed) int
+set i = 2147483647  # max signed int
 #set i = 2147483647 + 1 # out of range
 
 .more
