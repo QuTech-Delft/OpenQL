@@ -283,6 +283,10 @@ void Functions::rnd_threshold_ir(const FncArgs &a) {
     // FIXME
 }
 
+void Functions::rnd_bit_i(const FncArgs &a) {
+    // FIXME
+}
+
 void Functions::rnd_i(const FncArgs &a) {
     // FIXME
 }
@@ -329,6 +333,7 @@ X("operator^",      iC,     op_grp_int_2op_Ci_iC,   "xor") \
 /* user functions */ \
 X("rnd_seed",       ii,     rnd_seed_ii,            "") \
 X("rnd_threshold",  ir,     rnd_threshold_ir,       "") \
+X("rnd_bit",        i,      rnd_i,                  "") \
 X("rnd",            i,      rnd_i,                  "")
 
 #define CC_FUNCTION_LIST_BIT \
@@ -428,14 +433,14 @@ void Functions::register_functions() {
         }
 
         // determine expected profiles for data_types
-        // Note that we do not expect profiles with only constant arguments, since these are to be handled by a separate pass
+        // Note that we do not expect profiles with only constant arguments, since these are handled by pass 'opt.ConstProp'
         Vec<Str> expected_profiles;
         if (data_types == "b") {
             expected_profiles = {"B"};
         } else if (data_types == "bb") {
             expected_profiles = {"BB"};
         } else if (data_types == "i") {
-            if (fnc->name == "rnd") {   // FIXME: handle exceptions is a more scalable way
+            if (fnc->name == "rnd" || fnc->name == "rnd_bit") {   // FIXME: handle exceptions is a more scalable way
                 expected_profiles = {"i"};
             } else {
                 expected_profiles = {"C"};
