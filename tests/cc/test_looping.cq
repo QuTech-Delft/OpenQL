@@ -197,10 +197,6 @@ while (b[0]) {
 #while (1 < i+3) { # Error: Input error: in pass VQ1Asm, phase main: in block 'condComplexExpr': in expression '1 < creg[0] + 3': cannot handle function call within function call 'creg[0] + 3'
 #}
 
-#.condConstExpr
-#while (4==4) {
-#}
-
 # single block, with structured control flow mid way
 # 'while' loop does not seem to be a barrier for scheduling by itself
 .multiKernel
@@ -213,17 +209,10 @@ barrier
 rx180 q[2]
 
 
-
-
-
 # FIXME: move to its own file
 .more
 # set i = true # Error: type of right-hand side (bool/bit) could not be coerced to left-hand side (int reference)
-# set i = 4<5
-# set i = int(1+4) # Error: Input error: in pass VQ1Asm, phase main: in block 'more': in expression '1 + 4': cannot handle parameter combination '1' , '4'. FIXME: no constant propagation
-# set i = 1+4
-set i = int(j+4)
-#set b[0] = true # Internal compiler error: in pass VQ1Asm, phase main: in block 'more': unsupported LHS for set instruction encountered: expected creg reference, but got something else
+# set b[0] = true # Internal compiler error: in pass VQ1Asm, phase main: in block 'more': in set_instruction '(bit)q[0] = true': in expression '(bit)q[0] = true': unsupported expression type
 # set b[0] = 1 # Error: type of right-hand side (int) could not be coerced to left-hand side (bool/bit reference)
 # set i = i<0 ? 2 : 3 # Error: dynamic values are not supported here
 # set i = 1<2 ? 2 : 3 # Error: dynamic values are not supported here
