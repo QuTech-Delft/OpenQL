@@ -283,6 +283,10 @@ void Functions::rnd_threshold_ir(const FncArgs &a) {
     // FIXME
 }
 
+void Functions::rnd_range_ii(const FncArgs &a) {
+    // FIXME
+}
+
 void Functions::rnd_bit_i(const FncArgs &a) {
     // FIXME
 }
@@ -331,8 +335,9 @@ X("operator^",      iC,     op_grp_int_2op_Ci_iC,   "xor") \
 
 #define CC_FUNCTION_LIST_INT_USER \
 /* user functions */ \
-X("rnd_seed",       ii,     rnd_seed_ii,            "") \
+X("rnd_seed",       ii,     rnd_seed_ii,            "") /* FIXME: 128 bit */ \
 X("rnd_threshold",  ir,     rnd_threshold_ir,       "") \
+X("rnd_range",      ii,     rnd_range_ii,           "") \
 X("rnd_bit",        i,      rnd_i,                  "") \
 X("rnd",            i,      rnd_i,                  "")
 

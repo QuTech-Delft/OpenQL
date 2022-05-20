@@ -130,6 +130,7 @@ private:    // operator functions
 #if OPT_CC_USER_FUNCTIONS
     void rnd_seed_ii(const FncArgs &a);
     void rnd_threshold_ir(const FncArgs &a);
+    void rnd_range_ii(const FncArgs &a);
     void rnd_bit_i(const FncArgs &a);
     void rnd_i(const FncArgs &a);
 #endif

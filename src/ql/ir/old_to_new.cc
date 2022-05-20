@@ -948,6 +948,11 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
         fn->operand_types.emplace(prim::OperandMode::READ, real_type);  // threshold, literal
         fn->return_type = int_type; // FIXME: void
 
+        fn = add_function_type(ir, utils::make<FunctionType>("rnd_range"));
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // RNG_index, literal
+        fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // range, literal
+        fn->return_type = int_type; // FIXME: void
+
         fn = add_function_type(ir, utils::make<FunctionType>("rnd_bit"));
         fn->operand_types.emplace(prim::OperandMode::READ, int_type);   // RNG_index, literal
         fn->return_type = bit_type;
