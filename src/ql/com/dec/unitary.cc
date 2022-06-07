@@ -134,7 +134,7 @@ public:
             throw utils::Exception("Error: Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!" + to_string(matmatadjoint));
         }
         // initialize the general M^k lookuptable
-        genMk();
+        genMk(numberofbits);
 
         decomp_function(_matrix, numberofbits); //needed because the matrix is read in columnmajor
 
@@ -415,8 +415,8 @@ public:
     Vec<Eigen::MatrixXd> genMk_lookuptable;
 
     // returns M^k = (-1)^(b_(i-1)*g_(i-1)), where * is bitwise inner product, g = binary gray code, b = binary code.
-    void genMk() {
-        Int numberqubits = uint64_log2(_matrix.rows());
+    void genMk(Int numberqubits) {
+        // Int numberqubits = uint64_log2(_matrix.rows());
         for (Int n = 1; n <= numberqubits; n++) {
             Int size=1<<n;
             Eigen::MatrixXd Mk(size,size);
@@ -515,7 +515,7 @@ static void multicontrolled_rz(
     UInt end_index,
     const Vec<UInt> &qubits
 ) {
-    QL_DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << qubits << "qubits: ");
+    QL_DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to qubits: " << qubits);
     UInt idx;
     //The first one is always controlled from the last to the first qubit.
     c.emplace<ir::compat::gate_types::RZ>(qubits.back(), -instruction_list[start_index]);
@@ -538,7 +538,7 @@ static void multicontrolled_ry(
     UInt end_index,
     const Vec<UInt> &qubits
 ) {
-    QL_DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << qubits << "qubits: ");
+    QL_DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to qubits: " << qubits);
     UInt idx;
 
     //The first one is always controlled from the last to the first qubit.
@@ -630,57 +630,127 @@ static Int recursiveRelationsForUnitaryDecomposition(
 ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubits){
     ir::compat::GateRefs circuit;
     Vec<Complex> statevector = array;
-    Vec<UInt> nonconstqubits(qubits.begin(), qubits.end()); // I'm sure there's nicer ways of doing this
-    state_preparation_recursive(circuit, statevector, nonconstqubits);
+    state_preparation_recursive(circuit, statevector, qubits);
     return circuit;
     // QL_EOUT("State preparation not implemented!");
 }
 
-void Unitary::state_preparation_recursive(ir::compat::GateRefs &circuit, Vec<Complex> &statevector, utils::Vec<utils::UInt> &qubits){
-    int n = statevector.size()/2;
+void Unitary::state_preparation_recursive(ir::compat::GateRefs &c, Vec<Complex> &statevector, const utils::Vec<utils::UInt> &qubits)
+{
+    UInt nqubits = qubits.size();
+    if (((UInt) 1) << nqubits != statevector.size())
+    {
+        QL_FATAL("Length of state prepatation vector does not match number of qubits! Expected vector of size " << (1 << nqubits) << " but got vector of size " << statevector.size());
+    }
+    int n = statevector.size() / 2;
     Vec<Real> phi;
     Vec<Real> theta;
-
-    for(int c = 0; c<n; c++){
-        Complex A = statevector[2*c];
-        Complex B = statevector[2*c+1];
-        Real sw = sqrt(pow((Real) B.imag(),2) + pow((Real) B.real(),2) + pow((Real) A.imag(),2));
-        Real wx = 0;
-        Real wy = 0;
-        Real wz = 0;
-
-        if (sw > 0) {
-            wx = B.imag()/sw;
-            wy = B.real()/sw;
-            wz = A.imag()/sw;
-        }
-
-        // Real t1 = atan2(A.imag(),A.real());
-        Real t2 = atan2(B.imag(), B.real());
-        phi.push_back(t2); // gamma
-        theta.push_back(2*atan2(sw*sqrt(pow((Real) wx,2)+pow((Real) wy,2)),sqrt(pow((Real) A.real(),2)+pow((wz*sw),2)))); // beta
-
-        statevector[c] = (cos(theta[c]/2) + sin(theta[c]/2))*exp(Complex(0,-0.5)*phi[c]);
-        statevector[c+1] = (cos(theta[c]/2) - sin(theta[c]/2))*exp(Complex(0,0.5)*phi[c]);
-
-        QL_DOUT("Qubits: " << qubits << " psi_c: [" << A << ", " << B << "] phi: " << phi << " theta: " << theta);
-        
-    }
-
-    if(n>1){
-        multicontrolled_ry(circuit, theta, 0, theta.size()-1, qubits);
-        multicontrolled_rz(circuit, phi, 0, theta.size()-1, qubits);
-        statevector.resize(n); // Remove last half, the statevector is reduced to half its size at each iteration
-        qubits.resize(qubits.size() -1);
-        state_preparation_recursive(circuit, statevector,qubits);
-    }
-    else
+    QL_DOUT("Preparing state with state vector " << statevector);
+    while (n > 0)
     {
-        circuit.emplace<ir::compat::gate_types::RY>(qubits.back(), theta[0]);
-        circuit.emplace<ir::compat::gate_types::RZ>(qubits.back(), -phi[0]);
-        return;
+        for (int c = 0; c < n; c++)
+        {
+            Complex A = statevector[2 * c];
+            Complex B = statevector[2 * c + 1];
+            Real sw = sqrt(pow((Real)B.imag(), 2) + pow((Real)B.real(), 2) + pow((Real)A.imag(), 2));
+            Real wx = 0;
+            Real wy = 0;
+            Real wz = 0;
+            if (sw > 0)
+            {
+                wx = B.imag() / sw;
+                wy = B.real() / sw;
+                wz = A.imag() / sw;
+            }
+            Real t1 = atan2(A.imag(), A.real());
+            Real t2 = atan2(B.imag(), B.real());
+
+            phi.push_back(t1 - t2);                                                                                                        // gamma
+            theta.push_back(-2 * atan2(sw * sqrt(pow((Real)wx, 2) + pow((Real)wy, 2)), sqrt(pow((Real)A.real(), 2) + pow((wz * sw), 2)))); // beta
+            statevector[c] = cos(0.5 * theta.back()) * exp(Complex(0, -0.5) * phi.back()) * A - sin(0.5 * theta.back()) * exp(Complex(0, 0.5) * phi.back()) * B;
+        }
+        statevector.resize(n);
+        QL_DOUT("New statevector: " << statevector);
+        n = n >> 1; // n = n/2
     }
-    
+    QL_DOUT("Qubits: " << qubits << " qubits.size(): " << qubits.size() << " phi: " << phi << " theta: " << theta);
+    c.emplace<ir::compat::gate_types::RY>(qubits[0], theta.back());
+    c.emplace<ir::compat::gate_types::RZ>(qubits[0], phi.back());
+    if (phi.size() > 2)
+    {
+        UInt start_i = phi.size() - 3;
+        UInt end_i = phi.size() - 2;
+        QL_DOUT("start_i: " << start_i << " end_i: " << end_i);
+        UnitaryDecomposer decomposer;
+        decomposer.genMk(qubits.size());
+
+        // Vec<Real> subvector_theta;
+        Eigen::VectorXd temp;
+        Eigen::VectorXd tr;
+        Vec<Real> vec_tr;
+        for (UInt i = 1; i < nqubits; i++)
+        {
+            QL_DOUT("Sending indices " << start_i << " until " << end_i << " to multicontrolled z and y. i=" << i);
+
+            // subvector_theta = {theta.begin() + start_i, theta.begin() + end_i + 1};
+
+            Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(decomposer.genMk_lookuptable[i - 1]);
+            temp = Eigen::Map<Eigen::VectorXd>(theta.data() + start_i, 1 << i);
+            tr = dec.solve(temp);
+
+            QL_DOUT("Temp for Ry: " << temp << ", size: " << temp.size());
+            // QL_DOUT("GenMK matrix: " << decomposer.genMk_lookuptable);
+
+        // Check is very approximate to account for low-precision input matrices
+            if (!temp.isApprox(decomposer.genMk_lookuptable[i - 1] * tr, 10e-2))
+            {
+                QL_EOUT("Multicontrolled Y not correct!");
+                throw utils::Exception("Demultiplexing of unitary '" + name + "' not correct!");
+            }
+            // double* X = tmp.data();
+            vec_tr = {tr.data(), tr.data() + tr.size()};
+            QL_DOUT("vec_tr for Ry: " << vec_tr);
+            // matrix_vector_multiplication(A, tmp.data(), N, N);
+            // multicontrolled_ry(c, {tr.data(), tr.data() + tr.size()}, 0, end_i - start_i, {qubits.begin(), qubits.begin() + i + 1});
+            UInt idx;
+            // The first one is always controlled from the next qubit to the last qubit
+            c.emplace<ir::compat::gate_types::RY>(qubits[i], tr[0]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[i-1], qubits[i]);
+            for (UInt j = 1; j < end_i - start_i; j++) {
+                idx = i - log2(((j)^((j)>>1))^((j+1)^((j+1)>>1)))-1;
+                c.emplace<ir::compat::gate_types::RY>(qubits[i], tr[j]);
+                c.emplace<ir::compat::gate_types::CNot>(qubits[idx], qubits[i]);
+            }
+
+            //The last one is always controlled from the first to the last qubit.
+            c.emplace<ir::compat::gate_types::RY>(qubits[i], tr[end_i-start_i]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[0], qubits[i]);
+
+            temp = Eigen::Map<Eigen::VectorXd>(phi.data() + start_i, 1 << i);
+
+            QL_DOUT("Temp for Rz: " << temp << ", size: " << temp.size());
+            tr = dec.solve(temp);
+            vec_tr = {tr.data(), tr.data() + tr.size()};
+            QL_DOUT("vec_tr for Rz: " << vec_tr);
+
+            // UInt idx;
+            // The first one is always controlled from the next qubit to the last qubit
+            c.emplace<ir::compat::gate_types::RZ>(qubits[i], tr[0]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[i-1], qubits[i]);
+            for (UInt j = 1; j < end_i - start_i; j++) {
+                idx = i - log2(((j)^((j)>>1))^((j+1)^((j+1)>>1)))-1;
+                c.emplace<ir::compat::gate_types::RZ>(qubits[i], tr[j]);
+                c.emplace<ir::compat::gate_types::CNot>(qubits[idx], qubits[i]);
+            }
+
+            //The last one is always controlled from the first to the last qubit.
+            c.emplace<ir::compat::gate_types::RZ>(qubits[i], tr[end_i-start_i]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[0], qubits[i]);
+            end_i = start_i - 1;
+            start_i -= 2 << i;
+        }
+    }
+    return;
 }
 
 /**
