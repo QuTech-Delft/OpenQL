@@ -437,6 +437,12 @@ static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
         retval.set("reverse_swap_if_better") = mapreverseswap.as_str();
     }
 
+    const auto &maprOEE = com::options::global["maprOEE"];
+    if (maprOEE.is_set()) {
+        retval.set("rOEE_routing_algorithm") = maprOEE.as_str();
+    }
+
+
 #if 0   // FIXME: removed, use pass options
     // Set options for CC backend.
     const auto &backend_cc_map_input_file = com::options::global["backend_cc_map_input_file"];

@@ -561,6 +561,7 @@ Bool Mapper::map_mappable_gates(
                 UInt d = platform->topology->get_min_hops(src, tgt);
                 UInt partitions = platform->topology->get_num_cores();
 
+                // Check if qubits are NN and they are in the same partition
                 if (d == 1 && (partitions == 1 || src/partitions == tgt/partitions)) {
 
                     // Just one hop, so gate is already nearest-neighbor and can
@@ -827,7 +828,7 @@ void Mapper::select_alter(
 
 }
 
-void Mapper::chong(
+void Mapper::rOEE(
     List<ir::compat::GateRef> &gates, 
     List<ir::compat::GateRef> &remaining_gates,
     Future &future,
@@ -1085,9 +1086,14 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
     // Handle all the gates one by one. map_mappable_gates returns false when no
     // gates remain.
     while (map_mappable_gates(future, past, gates, also_nn_two_qubit_gates)) {
-        if(platform->topology->get_num_cores() > 1 &&
+        
+        // Check if rOEE mapping option is set and architecture constraints are
+        // satisfied
+        if(options->rOEE_routing_algorithm && 
+            platform->topology->get_num_cores() > 1 &&
             platform->topology->get_connectivity() == GridConnectivity::FULL){
-            chong(gates, future.remaining_gates,future,past,base_past);
+
+            rOEE(gates, future.remaining_gates,future,past,base_past);
        
         } else {
             // All gates in the gates list are two-qubit quantum gates that cannot

@@ -507,22 +507,12 @@ private:
      */
     void map_kernel(const ir::compat::KernelRef &k);
 
-    void chong(
+    void rOEE(
         utils::List<ir::compat::GateRef> &gates,
         utils::List<ir::compat::GateRef> &remaining_gates,
         Future &future,
         Past &past,
         Past &base_past);
-
-    void chong_mapper(
-        utils::UInt q1,
-        utils::UInt q2,
-        utils::UInt n_qubits,
-        Future &future,
-        Past &past,
-        Past &base_past,
-        const ir::compat::GateRef &gate
-        );
 
 public:
 

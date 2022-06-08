@@ -383,6 +383,17 @@ MapQubitsPass::MapQubitsPass(
         false
     );
 
+    //========================================================================//
+    // Options for the routing in multi-core architectures                    //
+    //========================================================================//
+
+        options.add_bool(
+        "rOEE_routing_algorithm",
+        "Applies the rOEE routing algorithm for multi-core architecures "
+        "with an all to all connection.",
+        false
+    );
+
 }
 
 /**
@@ -491,6 +502,13 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     } else {
         parsed_options->use_move_gates = true;
         parsed_options->max_move_penalty = utils::parse_uint(use_moves);
+    }
+
+    auto map_rOEE = options["rOEE_routing_algorithm"].as_str();
+    if (map_rOEE == "no") {
+        parsed_options->rOEE_routing_algorithm = false;
+    } else {
+        parsed_options->rOEE_routing_algorithm = true;
     }
 
     parsed_options->reverse_swap_if_better = options["reverse_swap_if_better"].as_bool();
