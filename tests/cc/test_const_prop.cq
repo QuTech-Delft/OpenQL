@@ -87,6 +87,7 @@ while(true) {
     } else {
         set i = 3
     }
+    rx90 q[0]
 }
 
 .intRange
