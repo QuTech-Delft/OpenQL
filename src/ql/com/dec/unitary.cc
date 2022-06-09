@@ -155,7 +155,7 @@ public:
     void decomp_function(const Eigen::Ref<const complex_matrix>& matrix, Int numberofbits) {
         QL_DOUT("decomp_function: \n" << to_string(matrix));
         if(numberofbits == 1) {
-            Vec<Real> zyz_angles = zyz_decomp(matrix);
+            Vec<Real> zyz_angles = zyz_decomp(matrix(0,0), matrix(0,1), matrix.determinant());
             instruction_list.push_back(-zyz_angles[0]);
             instruction_list.push_back(-zyz_angles[1]);
             instruction_list.push_back(-zyz_angles[2]);
@@ -333,14 +333,16 @@ public:
         }
     }
 
-    Vec<Real> zyz_decomp(const Eigen::Ref<const complex_matrix> &matrix) {
+    // Vec<Real> zyz_decomp(const Eigen::Ref<const complex_matrix> &matrix) {
+    
+
+    //     Complex det = matrix.determinant();// matrix(0,0)*matrix(1,1)-matrix(1,0)*matrix(0,1);
+    Vec<Real> zyz_decomp(Complex A, Complex B, Complex det){
         Vec<Real> zyz_angles; // gamma, beta, alpha
 
-        Complex det = matrix.determinant();// matrix(0,0)*matrix(1,1)-matrix(1,0)*matrix(0,1);
-
-        Real delta = atan2(det.imag(), det.real())/matrix.rows();
-        Complex A = exp(Complex(0,-1)*delta)*matrix(0,0);
-        Complex B = exp(Complex(0,-1)*delta)*matrix(0,1); //to comply with the other y-gate definition
+        Real delta = 0.5*atan2(det.imag(), det.real());
+        A *= exp(Complex(0,-1)*delta);
+        B *= exp(Complex(0,-1)*delta); 
 
         Real sw = sqrt(pow((Real) B.imag(),2) + pow((Real) B.real(),2) + pow((Real) A.imag(),2));
         Real wx = 0;
@@ -359,8 +361,6 @@ public:
         zyz_angles.push_back(t1-t2); // gamma
         zyz_angles.push_back(2*atan2(sw*sqrt(pow((Real) wx,2)+pow((Real) wy,2)),sqrt(pow((Real) A.real(),2)+pow((wz*sw),2)))); // beta
         zyz_angles.push_back(t1+t2); // alpha
-
-
         return zyz_angles;
     }
 
@@ -628,15 +628,8 @@ static Int recursiveRelationsForUnitaryDecomposition(
  * Does state preparation, results in a circuit for which A|0> = |psi> for given state psi, stored as the array in Unitary
  */
 ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubits){
-    ir::compat::GateRefs circuit;
+    ir::compat::GateRefs c;
     Vec<Complex> statevector = array;
-    state_preparation_recursive(circuit, statevector, qubits);
-    return circuit;
-    // QL_EOUT("State preparation not implemented!");
-}
-
-void Unitary::state_preparation_recursive(ir::compat::GateRefs &c, Vec<Complex> &statevector, const utils::Vec<utils::UInt> &qubits)
-{
     UInt nqubits = qubits.size();
     if (((UInt) 1) << nqubits != statevector.size())
     {
@@ -646,27 +639,17 @@ void Unitary::state_preparation_recursive(ir::compat::GateRefs &c, Vec<Complex> 
     Vec<Real> phi;
     Vec<Real> theta;
     QL_DOUT("Preparing state with state vector " << statevector);
+    UnitaryDecomposer decomposer;
     while (n > 0)
     {
         for (int c = 0; c < n; c++)
         {
             Complex A = statevector[2 * c];
             Complex B = statevector[2 * c + 1];
-            Real sw = sqrt(pow((Real)B.imag(), 2) + pow((Real)B.real(), 2) + pow((Real)A.imag(), 2));
-            Real wx = 0;
-            Real wy = 0;
-            Real wz = 0;
-            if (sw > 0)
-            {
-                wx = B.imag() / sw;
-                wy = B.real() / sw;
-                wz = A.imag() / sw;
-            }
-            Real t1 = atan2(A.imag(), A.real());
-            Real t2 = atan2(B.imag(), B.real());
+            Vec<Real> abg = decomposer.zyz_decomp(A, B, 1);
+            theta.push_back(-abg[1]); // beta
+            phi.push_back(abg[0]);  // gamma
 
-            phi.push_back(t1 - t2);                                                                                                        // gamma
-            theta.push_back(-2 * atan2(sw * sqrt(pow((Real)wx, 2) + pow((Real)wy, 2)), sqrt(pow((Real)A.real(), 2) + pow((wz * sw), 2)))); // beta
             statevector[c] = cos(0.5 * theta.back()) * exp(Complex(0, -0.5) * phi.back()) * A - sin(0.5 * theta.back()) * exp(Complex(0, 0.5) * phi.back()) * B;
         }
         statevector.resize(n);
@@ -681,7 +664,6 @@ void Unitary::state_preparation_recursive(ir::compat::GateRefs &c, Vec<Complex> 
         UInt start_i = phi.size() - 3;
         UInt end_i = phi.size() - 2;
         QL_DOUT("start_i: " << start_i << " end_i: " << end_i);
-        UnitaryDecomposer decomposer;
         decomposer.genMk(qubits.size());
 
         // Vec<Real> subvector_theta;
@@ -750,7 +732,7 @@ void Unitary::state_preparation_recursive(ir::compat::GateRefs &c, Vec<Complex> 
             start_i -= 2 << i;
         }
     }
-    return;
+    return c;
 }
 
 /**
