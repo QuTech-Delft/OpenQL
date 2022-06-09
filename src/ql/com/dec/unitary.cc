@@ -656,8 +656,8 @@ ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubit
         n = n >> 1; // n = n/2
     }
     QL_DOUT("Qubits: " << qubits << " qubits.size(): " << qubits.size() << " phi: " << phi << " theta: " << theta);
-    c.emplace<ir::compat::gate_types::RY>(qubits[0], theta.back());
-    c.emplace<ir::compat::gate_types::RZ>(qubits[0], phi.back());
+    c.emplace<ir::compat::gate_types::RY>(qubits.back(), theta.back());
+    c.emplace<ir::compat::gate_types::RZ>(qubits.back(), phi.back());
     if (nqubits > 1){
         UInt start_i = phi.size() - 3;
         UInt ngates;
@@ -674,31 +674,31 @@ ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubit
             tr = dec.solve(temp);
 
             // The first one is always controlled from the next qubit to the last qubit
-            c.emplace<ir::compat::gate_types::RY>(qubits[i], tr[0]);
-            c.emplace<ir::compat::gate_types::CNot>(qubits[i - 1], qubits[i]);
+            c.emplace<ir::compat::gate_types::RY>(qubits[nqubits-i-1], tr[0]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-i], qubits[nqubits-i-1]);
             for (UInt j = 1; j < (ngates - 1); j++){
-                idx = i - log2(((j)^((j)>>1))^((j+1)^((j+1)>>1)))-1;
-                c.emplace<ir::compat::gate_types::RY>(qubits[i], tr[j]);
-                c.emplace<ir::compat::gate_types::CNot>(qubits[idx], qubits[i]);
+                idx = i - log2(((j)^((j)>>1))^((j+1)^((j+1)>>1)));
+                c.emplace<ir::compat::gate_types::RY>(qubits[nqubits-i-1], tr[j]);
+                c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-idx], qubits[nqubits-i-1]);
             }
             //The last one is always controlled from the first to the last qubit.
-            c.emplace<ir::compat::gate_types::RY>(qubits[i], tr[ngates-1]);
-            c.emplace<ir::compat::gate_types::CNot>(qubits[0], qubits[i]);
+            c.emplace<ir::compat::gate_types::RY>(qubits[nqubits-i-1], tr[ngates-1]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-1], qubits[nqubits-i-1]);
 
             temp = Eigen::Map<Eigen::VectorXd>(phi.data() + start_i, ngates);
             tr = dec.solve(temp);
 
             // The first one is always controlled from the next qubit to the last qubit
-            c.emplace<ir::compat::gate_types::RZ>(qubits[i], tr[0]);
-            c.emplace<ir::compat::gate_types::CNot>(qubits[i-1], qubits[i]);
+            c.emplace<ir::compat::gate_types::RZ>(qubits[nqubits-i-1], tr[0]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-i], qubits[nqubits-i-1]);
             for (UInt j = 1; j < (ngates-1); j++) {
-                idx = i - log2(((j)^((j)>>1))^((j+1)^((j+1)>>1)))-1;
-                c.emplace<ir::compat::gate_types::RZ>(qubits[i], tr[j]);
-                c.emplace<ir::compat::gate_types::CNot>(qubits[idx], qubits[i]);
+                idx = i - log2(((j)^((j)>>1))^((j+1)^((j+1)>>1)));
+                c.emplace<ir::compat::gate_types::RZ>(qubits[nqubits-i-1], tr[j]);
+                c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-idx], qubits[nqubits-i-1]);
             }
             //The last one is always controlled from the first to the last qubit.
-            c.emplace<ir::compat::gate_types::RZ>(qubits[i], tr[ngates-1]);
-            c.emplace<ir::compat::gate_types::CNot>(qubits[0], qubits[i]);
+            c.emplace<ir::compat::gate_types::RZ>(qubits[nqubits-i-1], tr[ngates-1]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-1], qubits[nqubits-i-1]);
 
             start_i -= 2 << i;
         }
