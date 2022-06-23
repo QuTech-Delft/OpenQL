@@ -35,9 +35,11 @@ utils::Str DeadCodeEliminationPass::get_friendly_type() const {
  * Runs the dead code elimination pass on the given block.
  */
 void DeadCodeEliminationPass::run_on_block(
-    const ir::BlockBaseRef &block
+    const ir::BlockBaseRef &block,
+    utils::UInt level
 ) {
-    DEBUG("running dead code elimination on block");
+    utils::Str block_name = block->as_block() ? block->as_block()->name : QL_SS2S("(anon[" << level << "]");
+    DEBUG(block_name << ": running dead code elimination");
     for (utils::UInt stmt_idx = 0; stmt_idx < block->statements.size(); stmt_idx++) {    // NB: we need index for add() below
         const auto &statement = block->statements[stmt_idx];
 
@@ -65,10 +67,10 @@ void DeadCodeEliminationPass::run_on_block(
                 if (auto condition = branch->condition->as_bit_literal()) {
                     if (condition->value) {   // condition 'true'
                         // descend body
-                        run_on_block(branch->body);
+                        run_on_block(branch->body, level+1);
 
                         // delete subsequent if_else branches and if_else->otherwise, since these are unreachable
-                        QL_IOUT("found 'if_else(true)': removing unreachable if_else-branches and if_else->otherwise");
+                        DEBUG(block_name << ": found 'if_else(true)': removing unreachable if_else-branches and if_else->otherwise");
                         for (utils::UInt i = branch_idx + 1; i < if_else->branches.size(); i++) {
                             if_else->branches.remove(i);
                         }
@@ -76,9 +78,9 @@ void DeadCodeEliminationPass::run_on_block(
 
                         // if we're the sole if_else-branch (remaining), turn body (sub_block) into statements
                         if(branch_idx == 0) {
-                            QL_IOUT("turn body of sole 'if(true)' branch into statements");
+                            DEBUG(block_name << ": turn body of sole 'if(true)' branch into statements");
                             for (auto &st : branch->body->statements) {
-                                block->statements.add(st, stmt_idx++);  // NB: increment affects both this add and statement loop
+                                block->statements.add(st, ++stmt_idx);  // NB: increment affects both this add and statement loop
                             }
 
                             // mark complete if_else statement for removal
@@ -90,7 +92,7 @@ void DeadCodeEliminationPass::run_on_block(
 
                     } else {    // condition 'false'
                         // NB: no need to descend body, since we'll discard it
-                        QL_IOUT("removing dead if-branch " << branch_idx);
+                        DEBUG(block_name << ": removing dead if-branch " << branch_idx);
                         if_else->branches.remove(branch_idx);
                         continue;   // loop, using same value for branch_idx
 
@@ -100,24 +102,24 @@ void DeadCodeEliminationPass::run_on_block(
                 // condition is not a bit_literal
                 } else {
                     // descend body
-                    run_on_block(branch->body);
+                    run_on_block(branch->body, level+1);
                 }
                 branch_idx++;
             }
 
             // descend otherwise
             if (!if_else->otherwise.empty()) {
-                run_on_block(if_else->otherwise);
+                run_on_block(if_else->otherwise, level+1);
             }
 
             // if we no longer have branches, but do have otherwise, promote its body into statements within this block
             if (if_else->branches.empty()) {
                 if (!if_else->otherwise.empty()) {
-                    QL_IOUT("turn body of final 'if_else->otherwise' into statements");
+                    DEBUG(block_name << ": turn body of final 'if_else->otherwise' into statements");
 
                     // move if_else->otherwise statements
                     for (auto &st : if_else->otherwise->statements) {
-                        block->statements.add(st, stmt_idx++);  // NB: increment affects both this add and statement loop
+                        block->statements.add(st, ++stmt_idx);  // NB: increment affects both this add and statement loop
                     }
                 }
 
@@ -126,18 +128,20 @@ void DeadCodeEliminationPass::run_on_block(
 
             // if needed, remove the complete if_else statement altogether
             if (remove_if_else) {
-                block->statements.remove(if_else_idx-1);    // FIXME: why is -1 necessary?
+                DEBUG(block_name << ": removing if_else (if_else_idx=" << if_else_idx << ", block->statements.size()=" << block->statements.size() << ")");
+                block->statements.remove(if_else_idx);
             }
 
         // handle loop
         } else if (auto loop = statement->as_loop()) {
             // descend loop body
-            run_on_block(loop->body);
+            run_on_block(loop->body, level+1);
 
             // NB: we currently have no real use for optimizing static loops, note that we cannot fully
             // remove loop anyway if break or continue exists
         }
     }
+    DEBUG(block_name << ": done running dead code elimination");
 }
 
 /**
