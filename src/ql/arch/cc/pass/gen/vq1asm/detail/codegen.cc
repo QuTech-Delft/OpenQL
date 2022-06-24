@@ -96,8 +96,7 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
             // FIXME: note that is only here to allow playing around with function calls as condition. Real support
             //  requires a redesign
             } else if (
-                fn->function_type->name == "rnd" ||
-                fn->function_type->name == "rnd_seed"
+                fn->function_type->name == "rnd_bit"
             ) {
                 cond_type = ConditionType::ALWAYS;
                 QL_WOUT("FIXME: instruction condition function not yet handled: " + fn->function_type->name);

@@ -338,7 +338,7 @@ X("operator^",      iC,     op_grp_int_2op_Ci_iC,   "xor") \
 X("rnd_seed",       ii,     rnd_seed_ii,            "") /* FIXME: 128 bit */ \
 X("rnd_threshold",  ir,     rnd_threshold_ir,       "") \
 X("rnd_range",      ii,     rnd_range_ii,           "") \
-X("rnd_bit",        i,      rnd_i,                  "") \
+X("rnd_bit",        i,      rnd_bit_i,              "") \
 X("rnd",            i,      rnd_i,                  "")
 
 #define CC_FUNCTION_LIST_BIT \
@@ -459,7 +459,7 @@ void Functions::register_functions() {
         } else if (data_types == "ir") {
             expected_profiles = {"ir"};
         } else {
-            QL_WOUT("Platform function '" << fnc->name << "' with data_types '" << data_types << "' not supported by CC backend");
+            QL_IOUT("Platform function '" << fnc->name << "' with data_types '" << data_types << "' not supported by CC backend");
         }
 
         // check whether we implement the expected function variants
@@ -468,7 +468,7 @@ void Functions::register_functions() {
             if (fnc->name == "int" && profile == "B") continue;
 
             if (fm->find(fnc->name + "_" + profile) == fm->end()) {
-                QL_WOUT("Platform function '" << fnc->name << "' with profile '" << profile << "' not supported by CC backend");
+                QL_IOUT("Platform function '" << fnc->name << "' with profile '" << profile << "' not supported by CC backend");
             }
         }
 

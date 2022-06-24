@@ -293,6 +293,12 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
     // Add type for angle operands.
     auto real_type = add_type<RealType>(ir, "real");
 
+#if OPT_CC_USER_FUNCTIONS
+    // Add extra types.
+    add_type<JsonType>(ir, "json");
+    add_type<StringType>(ir, "string");
+#endif
+
     // Add the instruction set. We load this from the JSON data rather than
     // trying to use instruction_map, because the latter has some pretty ****ed
     // up stuff going on in it to make the legacy decompositions work.
