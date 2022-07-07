@@ -66,15 +66,14 @@ jobs:
     container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
     env:
       FLEX_VERSION: '2.6.4'
-      BISON_VERSION: '3.0.4-2.el7'
-      SWIG_VERSION: '3.0.12-17.el7'
+      BISON_VERSION: ${{ matrix.bison_version }}
+      SWIG_VERSION: ${{ matrix.swig_version }}
       CMAKE_VERSION: '3.1.3'
     strategy:
       fail-fast: false
       matrix:
         manylinux:
         - 2014
-        - _2_24
         - _2_28
         cpython_version:
         - 'cp36-cp36m'
@@ -82,13 +81,21 @@ jobs:
         - 'cp38-cp38'
         - 'cp39-cp39'
         - 'cp310-cp310'
+        include:
+          - manylinux: 2014
+            bison_version: 'bison-3.0.4-2.el7'
+            swig_version: 'swig3-3.0.12-17.el7'
+          - manylinux: _2_28
+            bison_version: 'bison-3.0.4-10.el8'
+            swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
+
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
     - name: Install dependencies
       run: |
-        yum install -y bison-$BISON_VERSION swig3-$SWIG_VERSION
+        yum install -y $BISON_VERSION $SWIG_VERSION
         /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel
     - name: Install flex
       run: |
