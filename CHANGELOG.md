@@ -11,6 +11,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
       - integer values must be non-negative
   - support for resource constrained scheduler
   - creates .map file reporting measurement statements present in input, to allow retrieving measurements downstream 
+  - support for Error Injection
+- pass opt.ConstProp: constant propagator, replaces constant expressions by their result
+- pass opt.DeadCodeElim: dead code eliminator, removes dead code, currently only unreachable if-branches
 
 ### Changed
 - pass dec.Instructions: duration=0 in new-style decomposition rules now disables checking whether expansion fits, allowing automatic calculation of duration (and requiring scheduling after decomposition of such rules)
