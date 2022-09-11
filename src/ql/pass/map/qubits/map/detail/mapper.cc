@@ -562,7 +562,7 @@ Bool Mapper::map_mappable_gates(
                 UInt partitions = platform->topology->get_num_cores();
 
                 if (d == 1) {
-                    
+
                     // Just one hop, so gate is already nearest-neighbor and can
                     // be mapped.
                     QL_DOUT(". NN gate, to be mapped: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ")");
