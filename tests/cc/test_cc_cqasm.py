@@ -31,41 +31,44 @@ class Test_cQASM(unittest.TestCase):
             # ql.set_option('log_level', 'LOG_DEBUG')
             # ql.set_option('log_level', 'LOG_WARNING')
 
-            if 0:
-                # use compatibility
-                # fails in new-to-old IR conversion for CC backend
-                ql.set_option('write_qasm_files', 'yes')
-                ql.set_option('write_report_files', 'yes')
-                ql.compile(in_fn)
-
-            if 0:
-                # use compatibility
-                # fails in outputting debug info
-                ql.compile(
-                    in_fn,
-                    {
-                        # 'cqasm_file': in_fn,
-                        'output_prefix': 'test_output/%N.%P',
-                        'debug': 'yes'
-                    }
-                )
-
             if 1:
                 # use pass manager
                 pl = ql.Platform("cc", "config_cc_s17_direct_iq_openql_0_10.json")
                 c = pl.get_compiler()
 
+                # insert passes at front (in reverse run order)
                 if 1:
-                    # insert decomposer for legacy decompositions
-                    # See: see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
+                    # insert dead code elimination pass
                     c.prefix_pass(
-                        'dec.Instructions',
-                        'legacy',  # sets predicate key to use legacy decompositions (FIXME: TBC)
+                        'opt.DeadCodeElim',
+                        'dead_code_elim',
                         {
                             'output_prefix': 'test_output/%N.%P',
                             'debug': 'yes'
                         }
                     )
+
+                    # insert constant propagation pass
+                    c.prefix_pass(
+                        'opt.ConstProp',
+                        'const_prop',
+                        {
+                            'output_prefix': 'test_output/%N.%P',
+                            'debug': 'yes'
+                        }
+                    )
+
+
+                # insert decomposer for legacy decompositions (FIXME: and new style decompositions)
+                # See: see https://openql.readthedocs.io/en/latest/gen/reference_passes.html#instruction-decomposer
+                c.prefix_pass(
+                    'dec.Instructions',
+                    'legacy',  # sets predicate key to use legacy decompositions (FIXME: TBC)
+                    {
+                        'output_prefix': 'test_output/%N.%P',
+                        'debug': 'yes'
+                    }
+                )
 
                 # insert cQASM reader (as very first step)
                 c.prefix_pass(
@@ -77,8 +80,6 @@ class Test_cQASM(unittest.TestCase):
                         'debug': 'yes'
                     }
                 )
-
-
 
                 # set scheduler options
                 # sch = c.get_pass('scheduler')
@@ -108,6 +109,9 @@ class Test_cQASM(unittest.TestCase):
 
     def test_cond_gate(self):
         self.run_test_case('cond_gate')
+
+    def test_const_prop(self):
+        self.run_test_case('const_prop')
 
     # def test_from_string(self):
     #     pl = ql.Platform("cc", "config_cc_s17_direct_iq_openql_0_10.json")
