@@ -561,8 +561,8 @@ Bool Mapper::map_mappable_gates(
                 UInt d = platform->topology->get_min_hops(src, tgt);
                 UInt partitions = platform->topology->get_num_cores();
 
-                // Check if qubits are NN and they are in the same partition
                 if (d == 1) {
+                    
                     // Just one hop, so gate is already nearest-neighbor and can
                     // be mapped.
                     QL_DOUT(". NN gate, to be mapped: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ")");
