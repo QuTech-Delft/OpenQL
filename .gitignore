@@ -39,6 +39,3 @@ docs/_templates
 
 /.idea
 /cmake-build-*
-qiskit-vscode-log.test_output
-qiskit-vscode-log.out
-.vscode/settings.json

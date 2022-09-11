@@ -714,10 +714,11 @@ utils::UInt Topology::get_min_hops(Qubit source, Qubit target) const {
     utils::UInt d = get_distance(source, target);
     utils::UInt cd = get_core_distance(source, target);
     QL_ASSERT(cd <= d);
-    if (connectivity == GridConnectivity::FULL || cd != d){
-        return d;
-    } else {
+
+    if (cd == d) {
         return d+2;
+    } else {
+        return d;
     }
 }
 
