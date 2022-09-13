@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 
     int    num_randomizations = 3;
     int    num_circuits       = 13;
-    std::vector<double> sweep_points = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
+    std::vector<double> sizes = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
 
     for (int r=0; r<num_randomizations; r++)
     {
@@ -64,11 +64,9 @@ int main(int argc, char **argv) {
         std::stringstream prog_name;
         prog_name << "rb_" << r;
         auto rb = ql::Program(prog_name.str(), qx_platform, 1);
-        rb.set_sweep_points(sweep_points);
-        rb.set_config_file("rb_config.json");
 
         for (int j=0; j<num_circuits-4; j++) {
-            int c_size = sweep_points[j];
+            int c_size = sizes[j];
             // create subcircuit
             std::stringstream name;
             name << "rb" << c_size;

@@ -25,10 +25,8 @@ class Test_basic(unittest.TestCase):
     def test_smis(self):
         # You can specify a config location, here we use a default config
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_smis', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -61,10 +59,8 @@ class Test_basic(unittest.TestCase):
 
         # You can specify a config location, here we use a default config
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = 7
         p = ql.Program('test_smis_with_custom_gates', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate the second kernel using both custom and default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -94,10 +90,8 @@ class Test_basic(unittest.TestCase):
 
         # You can specify a config location, here we use a default config
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = 7
         p = ql.Program('test_smis_multi_kernel', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate the first kernel using default gates
         k = ql.Kernel('aKernel01', platform, num_qubits)
@@ -141,10 +135,8 @@ class Test_basic(unittest.TestCase):
 
         # You can specify a config location, here we use a default config
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_smis_all_bundled', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -171,10 +163,8 @@ class Test_basic(unittest.TestCase):
 
         # You can specify a config location, here we use a default config
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = 7
         p = ql.Program('test_smit', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -210,10 +200,8 @@ class Test_basic(unittest.TestCase):
 
         # You can specify a config location, here we use a default config
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_smit_all_bundled', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -248,10 +236,8 @@ class Test_advance(unittest.TestCase):
     def test_qubit_busy(self):
         ql.set_option('output_dir', output_dir)
         platform  = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1,2]
         num_qubits = 7
         p = ql.Program('test_qubit_busy', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -274,10 +260,8 @@ class Test_advance(unittest.TestCase):
     def test_qwg_available_01(self):
         ql.set_option('output_dir', output_dir)
         platform  = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1,2]
         num_qubits = 7
         p = ql.Program('test_qwg_available_01', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -300,10 +284,8 @@ class Test_advance(unittest.TestCase):
     def test_qwg_available_02(self):
         ql.set_option('output_dir', output_dir)
         platform  = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1,2]
         num_qubits = 7
         p = ql.Program('test_qwg_available_02', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -326,10 +308,8 @@ class Test_advance(unittest.TestCase):
     def test_qwg_busy(self):
         ql.set_option('output_dir', output_dir)
         platform  = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1,2]
         num_qubits = 7
         p = ql.Program('test_qwg_busy', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -352,10 +332,8 @@ class Test_advance(unittest.TestCase):
     def test_measure_available01(self):
         ql.set_option('output_dir', output_dir)
         platform  = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1,2]
         num_qubits = 7
         p = ql.Program('test_measure_available01', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -379,10 +357,8 @@ class Test_advance(unittest.TestCase):
     def test_measure_available02(self):
         ql.set_option('output_dir', output_dir)
         platform  = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1,2]
         num_qubits = 7
         p = ql.Program('test_measure_available02', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -407,10 +383,8 @@ class Test_advance(unittest.TestCase):
     def test_measure_busy(self):
         ql.set_option('output_dir', output_dir)
         platform  = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1,2]
         num_qubits = 7
         p = ql.Program('test_measure_busy', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -436,10 +410,8 @@ class Test_advance(unittest.TestCase):
     def test_edge_available(self):
         ql.set_option('output_dir', output_dir)
         platform  = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1,2]
         num_qubits = 7
         p = ql.Program('test_edge_available', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -462,10 +434,8 @@ class Test_advance(unittest.TestCase):
     def test_edge_busy(self):
         ql.set_option('output_dir', output_dir)
         platform  = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1,2]
         num_qubits = 7
         p = ql.Program('test_edge_busy', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -488,10 +458,8 @@ class Test_advance(unittest.TestCase):
     def test_edge_illegal(self):
         ql.set_option('output_dir', output_dir)
         platform  = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1,2]
         num_qubits = 7
         p = ql.Program('test_edge_illegal', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -516,10 +484,8 @@ class Test_advance(unittest.TestCase):
         # You can specify a config location, here we use a default config
         ql.set_option('output_dir', output_dir)
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_fast_feedback', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -572,10 +538,8 @@ class Test_advance(unittest.TestCase):
             print('Running test_ccl_buffers No: {}'.format(testNo))
             config_fn = os.path.join(curdir, 'test_cfg_cc_light_buffers_latencies.json')
             platform  = ql.Platform('seven_qubits_chip', config_fn)
-            sweep_points = [1,2]
             num_qubits = 7
             p = ql.Program('test_ccl_buffers'+str(testNo), platform, num_qubits)
-            p.set_sweep_points(sweep_points)
             k = ql.Kernel('aKernel', platform, num_qubits)
 
             for gate, qubits in testKernel:

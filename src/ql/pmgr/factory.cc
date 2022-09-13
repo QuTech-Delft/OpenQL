@@ -15,7 +15,6 @@
 #include "ql/pass/ana/statistics/report.h"
 #include "ql/pass/io/cqasm/read.h"
 #include "ql/pass/io/cqasm/report.h"
-#include "ql/pass/io/sweep_points/write.h"
 #include "ql/pass/dec/instructions/instructions.h"
 #include "ql/pass/dec/generalize/generalize.h"
 #include "ql/pass/dec/specialize/specialize.h"
@@ -46,7 +45,6 @@ Factory::Factory() {
     register_pass<::ql::pass::ana::statistics::report::Pass>("ana.statistics.Report");
     register_pass<::ql::pass::io::cqasm::read::Pass>("io.cqasm.Read");
     register_pass<::ql::pass::io::cqasm::report::Pass>("io.cqasm.Report");
-    register_pass<::ql::pass::io::sweep_points::write::Pass>("io.sweep_points.Write");
     register_pass<::ql::pass::dec::instructions::Pass>("dec.Instructions");
     register_pass<::ql::pass::dec::generalize::Pass>("dec.Generalize");
     register_pass<::ql::pass::dec::specialize::Pass>("dec.Specialize");

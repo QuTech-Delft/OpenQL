@@ -5,7 +5,6 @@
 #include "ql/api/program.h"
 
 #include "ql/com/ana/interaction_matrix.h"
-#include "ql/pass/io/sweep_points/annotation.h"
 #include "ql/ir/old_to_new.h"
 #include "ql/api/kernel.h"
 #include "ql/api/operation.h"
@@ -129,45 +128,6 @@ void Program::add_for(const Kernel &k, size_t iterations) {
  */
 void Program::add_for(const Program &p, size_t iterations) {
     program->add_for(p.program, iterations);
-}
-
-/**
- * Sets sweep point information for the program.
- */
-void Program::set_sweep_points(const std::vector<double> &sweep_points) {
-    QL_WOUT("The sweep points system is deprecated and may be removed at any time");
-    using Annotation = ql::pass::io::sweep_points::Annotation;
-    if (!program->has_annotation<Annotation>()) {
-        program->set_annotation<Annotation>({});
-    }
-    program->get_annotation<Annotation>().data = sweep_points;
-}
-
-/**
- * Returns the configured sweep point information for the program.
- */
-std::vector<double> Program::get_sweep_points() const {
-    QL_WOUT("The sweep points system is deprecated and may be removed at any time");
-    using Annotation = ql::pass::io::sweep_points::Annotation;
-    auto annot = program->get_annotation_ptr<Annotation>();
-    if (annot == nullptr) {
-        return {};
-    } else {
-        return {annot->data.begin(), annot->data.end()};
-    }
-}
-
-/**
- * Sets the name of the file that the sweep points will be written to.
- */
-void Program::set_config_file(const std::string &config_file_name) {
-    QL_WOUT("The sweep points system is deprecated and may be removed at any time");
-    using Annotation = ql::pass::io::sweep_points::Annotation;
-    if (!program->has_annotation<Annotation>()) {
-        program->set_annotation<Annotation>({});
-    }
-    program->get_annotation<Annotation>().config_file_name
-        = get_option("output_dir") + "/" + config_file_name;
 }
 
 /**

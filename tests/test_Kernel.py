@@ -80,7 +80,6 @@ class Test_kernel(unittest.TestCase):
         # to the qubits. However, it is not clear how to view this
 
     def test_multi_kernel(self):
-        sweep_points = [2]
         nqubits = 3
 
         k1 = ql.Kernel("kernel1", platf, nqubits)
@@ -106,7 +105,6 @@ class Test_kernel(unittest.TestCase):
         k2.measure(2)
 
         p = ql.Program("test_multi_kernel", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k1)
         p.add_kernel(k2)
 

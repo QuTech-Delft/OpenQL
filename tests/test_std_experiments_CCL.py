@@ -47,8 +47,6 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
                  ['rx180', 'rx90'], ['ry90', 'ry180'], ['ry180', 'ry90'],
                  ['rx180', 'i'], ['ry180', 'i'], ['rx90', 'rx90'],
                  ['ry90', 'ry90']]
-         # this should be implicit
-        p.set_sweep_points(np.arange(len(allXY), dtype=float))
 
         for i, xy in enumerate(allXY):
             k = Kernel("allXY"+str(i), platf, 1)
@@ -72,7 +70,6 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         # To prevent superslow workaround
         times = np.linspace(0, 60, 61)  # in ns
         # this should be implicit
-        p.set_sweep_points(times)
         for tau in times:
             # this is an invalid kernel name (contains '.')
             # and will produce and invalid qasm

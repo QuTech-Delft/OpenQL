@@ -303,7 +303,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/mapping.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/read.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/report.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/sweep_points/write.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/instructions/instructions.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/generalize/generalize.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/specialize/specialize.cc"

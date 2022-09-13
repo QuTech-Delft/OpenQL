@@ -12,14 +12,12 @@
 
 int main(int argc, char **argv) {
    size_t nqubits = 5;
-   std::vector<double> sweep_points = {1};
 
    // create platform
    auto qplatform = ql::Platform("target_platform", "cc_light");
 
    // create program
    auto prog = ql::Program("prog", qplatform, nqubits);
-   prog.set_sweep_points(sweep_points);
 
    // create a kernel
    auto kernel = ql::Kernel("my_kernel", qplatform, nqubits);

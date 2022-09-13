@@ -171,61 +171,6 @@ None
 """
 
 
-%feature("docstring") ql::api::Program::set_sweep_points
-"""
-Sets sweep point information for the program.
-
-NOTE: sweep points functionality is deprecated and may be removed at any time.
-Do not use it in new programs.
-
-Parameters
-----------
-sweep_points : List[float]
-    The list of sweep points.
-
-Returns
--------
-None
-"""
-
-
-%feature("docstring") ql::api::Program::get_sweep_points
-"""
-Returns the configured sweep point information for the program.
-
-NOTE: sweep points functionality is deprecated and may be removed at any time.
-Do not use it in new programs.
-
-Parameters
-----------
-None
-
-Returns
--------
-List[float]
-    The previously configured sweep point information for the program, or an
-    empty list if none were configured.
-"""
-
-
-%feature("docstring") ql::api::Program::set_config_file
-"""
-Sets the name of the file that the sweep points will be written to.
-
-NOTE: sweep points functionality is deprecated and may be removed at any time.
-Do not use it in new programs.
-
-Parameters
-----------
-config_file_name : str
-    The name of the file that the sweep points are to be written to.
-
-Returns
--------
-None
-"""
-
-
 %feature("docstring") ql::api::Program::has_compiler
 """
 Whether a custom compiler configuration has been attached to this

@@ -98,7 +98,6 @@ int main(int argc, char **argv) {
     }
 
     int    num_circuits       = 1;
-    double sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };  // sizes of the clifford circuits per randomization
 
     std::cout << "[+] num_qubits    : " << num_qubits << std::endl;
     std::cout << "[+] num_cliffords : " << num_cliffords<< std::endl;
@@ -108,8 +107,6 @@ int main(int argc, char **argv) {
     std::stringstream prog_name;
     prog_name << "rb_" << num_qubits << "_" << (different ? "diff" : "same");
     auto rb = ql::Program(prog_name.str(), starmon, num_qubits);
-    //rb->set_sweep_points(sweep_points, num_circuits);
-    //rb->set_config_file("rb_config.json");
 
     // create subcircuit
     std::stringstream name;
