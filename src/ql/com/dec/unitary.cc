@@ -624,6 +624,21 @@ static Int recursiveRelationsForUnitaryDecomposition(
     }
 }
 
+
+#ifdef WITHOUT_UNITARY_DECOMPOSITION
+
+/**
+ * Explicitly runs the matrix decomposition algorithm. Used to be required,
+ * nowadays is called implicitly by get_decomposition() if not done explicitly.
+ */
+ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubits) {
+    throw Exception("unitary decomposition, including state preparation, was explicitly disabled in this build!");
+}
+ir::compat::GateRefs Unitary::get_decomposition(const utils::Vec<utils::UInt> &qubits) {
+throw Exception("unitary decomposition, including state preparation, was explicitly disabled in this build!");
+}
+#else
+
 /**
  * Does state preparation, results in a circuit for which A|0> = |psi> for given state psi, stored as the array in Unitary
  */
@@ -706,6 +721,7 @@ ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubit
     return c;
 }
 
+
 /**
  * Returns the decomposed circuit.
  */
@@ -745,6 +761,7 @@ ir::compat::GateRefs Unitary::get_decomposition(const utils::Vec<utils::UInt> &q
     return c;
 }
 
+#endif
 } // namespace dec
 } // namespace com
 } // namespace ql
