@@ -151,6 +151,17 @@ void Kernel::gate(const Unitary &u, const std::vector<size_t> &qubits) {
 }
 
 /**
+ * Automatic state preparation, currently requires unitary decomposition for all cases.
+ */
+void Kernel::state_prep(
+    const std::vector<std::complex<double>> &states, 
+    const std::vector<size_t> &qubits
+) {
+    kernel->state_prep({states.begin(), states.end()}, {qubits.begin(), qubits.end()});
+}
+
+
+/**
  * Alternative function for appending normal conditional quantum gates.
  * Avoids having to specify duration, angle, and bregs.
  */
