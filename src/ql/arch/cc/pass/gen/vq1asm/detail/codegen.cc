@@ -93,12 +93,11 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
                     QL_ICE("unsupported gate condition");
                 }
 #if OPT_CC_USER_FUNCTIONS
-            // FIXME: note that is only here to allow playing around with function calls as condition. Real support
-            //  requires a redesign
             } else if (
                 fn->function_type->name == "rnd_bit"
             ) {
-                cond_type = ConditionType::ALWAYS;
+                cond_type = ConditionType::RND_BIT;
+                cond_operands.push_back(fn->operands[0]->as_int_literal()->value); // FIXME: check.
                 QL_WOUT("FIXME: instruction condition function not yet handled: " + fn->function_type->name);
                 // FIXME: check profile
 #endif
@@ -517,8 +516,13 @@ void Codegen::bundle_finish(
     CodeGenMap codeGenMap = collectCodeGenInfo(startCycle, durationInCycles);
 
     // compute stuff requiring overview over all instruments:
-    // FIXME: add:
-    // - DSM used, for seq_inv_sm
+    UInt rnd_adv_all = 0; // mask of all PRNGs used (which need to advance to the next value)
+    for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
+        CodeGenInfo codeGenInfo = codeGenMap.at(instrIdx);
+        rnd_adv_all |= dp.getRndAdv(codeGenInfo.condGateMap);
+
+        // FIXME: add DSM used, for seq_inv_sm
+    }
 
     // determine whether bundle has any real-time measurement results
     Bool bundleHasMeasRsltRealTime = false;
@@ -543,6 +547,7 @@ void Codegen::bundle_finish(
         if (codeGenInfo.instrHasOutput) {
             emitOutput(
                 codeGenInfo.condGateMap,
+                rnd_adv_all,
                 codeGenInfo.digOut,
                 codeGenInfo.instrMaxDurationInCycles,
                 instrIdx,
@@ -1194,6 +1199,7 @@ void Codegen::emitMeasRsltRealTime(
 
 void Codegen::emitOutput(
         const CondGateMap &condGateMap,
+        UInt rnd_adv_all,
         tDigital digOut,
         UInt instrMaxDurationInCycles,
         UInt instrIdx,
@@ -1225,10 +1231,14 @@ void Codegen::emitOutput(
         UInt smAddr = dp.emitPl(pl, condGateMap, instrIdx, slot);
 
         // emit code for conditional gate
+        Str arg = QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles);
+        if (rnd_adv_all != 0) {
+            arg += QL_SS2S(",0x" << std::hex << rnd_adv_all);
+        }
         cs.emit(
             slot,
             "seq_out_sm",
-            QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
+            arg,
             QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": conditional code word/mask on '" << instrumentName << "'")
         );
     }

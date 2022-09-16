@@ -11,7 +11,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
       - integer values must be non-negative
   - support for resource constrained scheduler
   - creates .map file reporting measurement statements present in input, to allow retrieving measurements downstream 
-  - support for Error Injection
+  - support for Error Injection (conditional gates based on thresholded Pseudo Random Number Generator result)
 - pass opt.ConstProp: constant propagator, replaces constant expressions by their result
 - pass opt.DeadCodeElim: dead code eliminator, removes dead code, currently only unreachable if-branches
 

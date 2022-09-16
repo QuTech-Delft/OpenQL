@@ -171,11 +171,30 @@ UInt Datapath::getMuxSmAddr(const MeasResultRealTimeMap &measResultRealTimeMap) 
 }
 
 
+UInt Datapath::getRndAdv(const CondGateMap &condGateMap) {
+    UInt rnd_adv = 0;   // mask of PRNGs used
+
+    for (auto &cg : condGateMap) {
+        Int group = cg.first;
+        CondGateInfo cgi = cg.second;
+
+        if (cgi.instructionCondition.cond_type == ConditionType::RND_BIT) {
+            UInt prng = cgi.instructionCondition.cond_operands[0];
+            rnd_adv |= 1UL<<prng;   // FIXME: rnd_adv must be identical on all instruments, irrespective of local use
+        }
+    }
+
+    return rnd_adv;
+}
+
+
 // FIXME: split like emitMux/getMuxSmAddr
+// returns: SM address
 UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Int slot) {
     Bool minMaxValid = false;    // we might not access SM
     UInt minSmBit = MAX;
     UInt maxSmBit = 0;
+    UInt rnd_adv = 0;   // mask of PRNGs used
 
     if (condGateMap.empty()) {
         QL_ICE("condGateMap must not be empty");
@@ -196,7 +215,7 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
                 << ", condition='" << cgi.instructionCondition.describe << "'")
         );
 
-        // shorthand
+        // helper lambda
         auto winBit = [this, cgi, &minMaxValid, &minSmBit, &maxSmBit](int i)
         {
             UInt smBit = getSmBit(cgi.instructionCondition.cond_operands[i]);
@@ -246,6 +265,11 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
                 // fall through
             case ConditionType::XOR:
                 rhs << "SM[" << winBit(0) << "] ^ SM[" << winBit(1) << "]";
+                break;
+
+            case ConditionType::RND_BIT:
+                UInt prng = cgi.instructionCondition.cond_operands[0];
+                rhs << "RND[" << prng << "]";
                 break;
         }
 

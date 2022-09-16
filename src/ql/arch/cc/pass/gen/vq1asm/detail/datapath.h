@@ -61,6 +61,7 @@ public: // functions
     static UInt getSizeTag(UInt numReadouts);
     void emitMux(Int mux, const MeasResultRealTimeMap &measResultRealTimeMap, Int slot);
     static UInt getMuxSmAddr(const MeasResultRealTimeMap &measResultRealTimeMap);
+    UInt getRndAdv(const CondGateMap &condGateMap);
     UInt emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Int slot);
 
     Str getDatapathSection() const { return datapathSection.str(); }

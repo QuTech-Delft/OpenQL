@@ -190,7 +190,7 @@ private:    // funcs
     void emitProgramStart(const Str &progName);
     void emitProgramFinish();
     void emitMeasRsltRealTime(const MeasResultRealTimeMap &measResultRealTimeMap, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
-    void emitOutput(const CondGateMap &condGateMap, tDigital digOut, UInt instrMaxDurationInCycles, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
+    void emitOutput(const CondGateMap &condGateMap, UInt rnd_adv_all, tDigital digOut, UInt instrMaxDurationInCycles, UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
     void emitPadToCycle(UInt instrIdx, UInt startCycle, Int slot, const Str &instrumentName);
 
     // generic helpers

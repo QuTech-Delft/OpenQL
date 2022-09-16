@@ -27,7 +27,9 @@ enum class ConditionType {
     // 1 operand:
     UNARY, NOT,
     // 2 operands
-    AND, NAND, OR, NOR, XOR, NXOR
+    AND, NAND, OR, NOR, XOR, NXOR,
+    // rnd_bit()
+    RND_BIT
 };
 
 
