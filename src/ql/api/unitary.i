@@ -28,7 +28,6 @@ Returns
 None
 """
 
-
 %feature("docstring") ql::api::Unitary::is_decompose_support_enabled
 """
 Returns whether OpenQL was built with unitary decomposition support enabled.
