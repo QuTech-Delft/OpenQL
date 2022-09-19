@@ -1120,6 +1120,17 @@ void Codegen::emitProgramStart(const Str &progName) {
 
     cs.emit(".CODE");   // start .CODE section
 
+#if OPT_CC_USER_FUNCTIONS
+    cs.emit("# random processor constants");
+    cs.emit(".DEF RND_REG_SEED_3      0    # Random number generator register: seed[127:96]");
+    cs.emit(".DEF RND_REG_SEED_2      1    # Random number generator register: seed[95:64]");
+    cs.emit(".DEF RND_REG_SEED_1      2    # Random number generator register: seed[63:32]");
+    cs.emit(".DEF RND_REG_SEED_0      3    # Random number generator register: seed[31:0]");
+    cs.emit(".DEF RND_REG_THRESHOLD   4    # Random number generator register: threshold");
+    cs.emit(".DEF RND_REG_RANGE       5    # Random number generator register: range");
+    cs.emit(".DEF RND_REG_VALUE       6    # Random number generator register: value");
+#endif
+
     // NB: new seq_bar semantics (firmware from 20191219 onwards)
     comment("# synchronous start and latency compensation");
     cs.emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
@@ -1239,8 +1250,9 @@ void Codegen::emitOutput(
             slot,
             "seq_out_sm",
             arg,
-            QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": conditional code word/mask on '" << instrumentName << "'")
+            QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": conditional code word/mask on '" << instrumentName << "'")   // FIXME: upfate comment for rnd_adv
         );
+        // FIXME: also make this happen on instruments not involved now
     }
 
     // update lastEndCycle

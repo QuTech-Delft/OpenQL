@@ -276,23 +276,61 @@ void Functions::op_sub_iC(const FncArgs &a) {
 
 #if OPT_CC_USER_FUNCTIONS
 void Functions::rnd_seed_ii(const FncArgs &a) {
+    Int idx = a.ops.integers[0];
+    if(idx<0 || idx>=NUM_RND) QL_INPUT_ERROR("Illegal RND index");
+    Int seed = a.ops.integers[1];
+    if(seed<0 || seed>0xFFFFFFFF) QL_INPUT_ERROR("Illegal seed");   // FIXME: 128 bit
+
+    // FIXME: 128 different bits
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_SEED_3," << seed));
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_SEED_2," << seed));
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_SEED_1," << seed));
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_SEED_0," << seed));
+
+/*
     // FIXME
+        rnd_get         0,$RND_REG_VALUE,R0
+        rnd_get         7,$RND_REG_SEED_3,R1
+
+        rnd_set
+        rnd_set         0,$RND_REG_SEED_2,0xA5A5A5A5
+        rnd_set         0,$RND_REG_SEED_1,0x5A5A5A5A
+        rnd_set         0,$RND_REG_SEED_0,0xFFFFFFFF # FIXME: order for real applications?
+
+        rnd_set         6,,0x0000FFFF
+
+        rnd_set         5,$RND_REG_THRESHOLD,R0
+*/
 }
 
 void Functions::rnd_threshold_ir(const FncArgs &a) {
-    // FIXME
+    Int idx = a.ops.integers[0];
+    if(idx<0 || idx>=NUM_RND) QL_INPUT_ERROR("Illegal RND index");
+    Real threshold = a.ops.angles[0];  // NB: floating point parameters are collected in 'angles'. The naming is a historic artefact
+    if(threshold<0 || threshold>1.0) QL_INPUT_ERROR("Illegal threshold");
+    UInt thresholdVal = threshold * 0xFFFFFFFF;
+
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_THRESHOLD," << thresholdVal), QL_SS2S("# threshold = " << threshold));
 }
 
 void Functions::rnd_range_ii(const FncArgs &a) {
-    // FIXME
+    Int idx = a.ops.integers[0];
+    if(idx<0 || idx>=NUM_RND) QL_INPUT_ERROR("Illegal RND index");
+    Int range = a.ops.integers[1];
+    if(range<0 || range>0xFFFFFFFF) QL_INPUT_ERROR("Illegal range");
+
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_RANGE," << range));
 }
 
 void Functions::rnd_bit_i(const FncArgs &a) {
-    // FIXME
+    QL_INPUT_ERROR("rnd_bit_i can only be used in 'cond' context");
 }
 
 void Functions::rnd_i(const FncArgs &a) {
-    // FIXME
+    Int idx = a.ops.integers[0];
+    if(idx<0 || idx>=NUM_RND) QL_INPUT_ERROR("Illegal RND index");
+
+    cs.emit("", "rnd_get", QL_SS2S(idx << ",$RND_REG_VALUE," << as_reg(a.dest_reg)));
 }
 #endif
 

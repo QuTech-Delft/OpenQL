@@ -23,16 +23,6 @@ cond (b[0] && b[1]) rx180 q[0]
 cond (b[0] || b[1]) rx180 q[0]
 cond (b[0] ^^ b[1]) rx180 q[0]
 
-# initial support for error injection
-map i = creg(0)
-set i = rnd_seed(0, 12345678)
-# set i = rnd_seed(0, 0x12345678)  # FIXME: test_cond_gate.cq:29:21: syntax error, unexpected BAD_NUMBER
-# rnd_seed(0, 12345678)  # FIXME:  Error: test_cond_gate.cq:31:11: syntax error, unexpected ','
-
-set i = rnd_threshold(0, 0.5)
-cond (rnd(0)) rx180 q[0]
-
-
 .condGateWithInstrDecomposition
 #cond (false) x q[0]
 cond (true) x q[0]
@@ -43,9 +33,6 @@ cond (!b[1]) x q[0]
 cond (b[0] && b[1]) x q[0]
 cond (b[0] || b[1]) x q[0]
 cond (b[0] ^^ b[1]) x q[0]
-
-# FIXME: seems to break CI, see https://github.com/QuTech-Delft/OpenQL/runs/5588352276?check_suite_focus=true
-cond (rnd(0)) x q[0]
 
 # from: deps/libqasm/src/cqasm/tests/v1-parsing/semantic/insn-condition-new-ok/input.cq
 # note; differing lengths between condition and parameters are allowed
