@@ -2,7 +2,7 @@
  * cQASM 1.2 reader logic as human-readable complement of the IR.
  */
 
-#define OPT_ANNOTATE_SOURCE_LOCATION    1   // FIXME: WIP on annotation
+#define OPT_ANNOTATE_SOURCE_LOCATION    0   // FIXME: WIP on annotation
 
 #include "ql/ir/cqasm/read.h"
 
