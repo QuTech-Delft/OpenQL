@@ -190,8 +190,8 @@ class Test_cQASM(unittest.TestCase):
                     'reader',
                     {
                         'cqasm_file': in_fn,
-                        'output_prefix': 'test_output/%N.%P',
-                        'debug': 'yes'
+                        'output_prefix': 'test_output/%N.%P',   # FIXME: %N.%P does not work correctly for reader
+                        # 'debug': 'yes'
                     }
                 )
 
