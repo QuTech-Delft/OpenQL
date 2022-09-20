@@ -16,4 +16,4 @@ map foo = creg(0)
 # rnd_seed(0, 12345678)  # FIXME:  Error: test_cond_gate.cq:31:11: syntax error, unexpected ','
 
 # set foo = rnd_threshold(0, 0.5)
-cond (rnd_bit(0)) rx180 q[0]
+# cond (rnd_bit(0)) rx180 q[0]
