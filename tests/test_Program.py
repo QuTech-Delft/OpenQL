@@ -48,13 +48,6 @@ class Test_program(unittest.TestCase):
         # there should be a check here to see if k was indeed added
         # p.kernel_list ==??
 
-    def test_sweep_points(self):
-        p = ql.Program("prog_name", platf, 1, 1)
-        lst = [2.0, 3.0, 4.0]
-        p.set_sweep_points(lst)
-        print(p.get_sweep_points())
-        self.assertEqual(p.get_sweep_points(), tuple(lst))
-
     def test_program_methods(self):
         # This tests for the existence of the right methods in the wrapping
         nqubits=5
@@ -68,9 +61,7 @@ class Test_program(unittest.TestCase):
             'add_for',
             'print_interaction_matrix',
             'write_interaction_matrix',
-            'compile',
-            'set_sweep_points',
-            'get_sweep_points']
+            'compile']
         self.assertTrue(set(program_methods).issubset(dir(p)))
 
     def test_simple_program(self):
@@ -84,9 +75,7 @@ class Test_program(unittest.TestCase):
         k.clifford(1, 0)
         k.measure(0)
 
-        sweep_points = [2]
         p = ql.Program("rb_program", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         # print( p.qasm() )
         p.compile()
@@ -106,9 +95,6 @@ class Test_program(unittest.TestCase):
         k.gate('cnot', [0, 1])
         k.gate('cz', [0, 1])
 
-        # sweep points is not specified the program does not work but don't
-        # know what it does...
-        p.set_sweep_points([10])
         p.add_kernel(k)  # add kernel to program
         p.compile()
 
@@ -131,7 +117,6 @@ class Test_program(unittest.TestCase):
             ['rx180', 'I'], ['ry180', 'I'], ['rx90', 'rx90'],
             ['ry90', 'ry90']]
 
-        nr_sweep_pts = len(pulse_combinations)
 
         for pulse_comb in pulse_combinations:
             k.prepz(q)
@@ -141,7 +126,6 @@ class Test_program(unittest.TestCase):
             k.measure(q)
 
         p.add_kernel(k)
-        p.set_sweep_points( [nr_sweep_pts])
 
         p.compile()
 

@@ -24,10 +24,8 @@ class Test_barrier(unittest.TestCase):
     # barrier on specified qubits
     def test_barrier(self):
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_barrier', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -52,10 +50,8 @@ class Test_barrier(unittest.TestCase):
     # barrier on specified qubits with 'wait' and duration = 0
     def test_wait_barrier(self):
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_wait_barrier', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -78,10 +74,8 @@ class Test_barrier(unittest.TestCase):
     # barrier on all qubits with barrier
     def test_barrier_all_1(self):
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_barrier_all', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -122,10 +116,8 @@ class Test_barrier(unittest.TestCase):
     # barrier on all qubits with generalized gate API using 'barrier'
     def test_barrier_all_2(self):
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_barrier_all', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -165,10 +157,8 @@ class Test_barrier(unittest.TestCase):
     # barrier on all qubits with generalized gate API using wait with duration 0
     def test_barrier_all_3(self):
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
-        sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_barrier_all', platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 

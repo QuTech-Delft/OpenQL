@@ -18,12 +18,10 @@ void test_cnot_mixedcommute(std::string v, std::string schedopt, std::string sch
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    std::vector<double> sweep_points = { 1 };
 
     auto starmon = ql::Platform("starmon", "test_179.json");
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points);
 
     for (int j=0; j<7; j++) { k.gate("x", j); }
 
@@ -60,12 +58,10 @@ void test_cnot_controlcommute(std::string v, std::string schedopt, std::string s
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    std::vector<double> sweep_points = { 1 };
 
     auto starmon = ql::Platform("starmon", "test_179.json");
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points);
 
     k.gate("cnot", 3,0);
     k.gate("cnot", 3,6);
@@ -97,12 +93,10 @@ void test_cnot_targetcommute(std::string v, std::string schedopt, std::string sc
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    std::vector<double> sweep_points = { 1 };
 
     auto starmon = ql::Platform("starmon", "test_179.json");
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points);
 
     k.gate("cnot", 0,3);
     k.gate("cnot", 6,3);
@@ -134,12 +128,10 @@ void test_cz_anycommute(std::string v, std::string schedopt, std::string sched_p
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    std::vector<double> sweep_points = { 1 };
 
     auto starmon = ql::Platform("starmon", "test_179.json");
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points);
 
     k.gate("cz", 0,3);
     k.gate("cz", 3,6);

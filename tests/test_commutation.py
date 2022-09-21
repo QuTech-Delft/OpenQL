@@ -50,10 +50,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [3]);
         k.gate("z", [3]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_z_NN_commute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -84,10 +82,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [3]);
         k.gate("z", [3]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_z_2N_commute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -118,10 +114,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [3]);
         k.gate("z", [3]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_z_2R_commute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -153,10 +147,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("x", [0]);
         k.gate("x45", [0]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_x_NN_commute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -187,10 +179,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("x", [0]);
         k.gate("x45", [0]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_x_2N_commute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -221,10 +211,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("x", [0]);
         k.gate("x45", [0]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_x_2R_commute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -257,10 +245,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [5]);
         k.gate("z", [5]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_NN_noncommute_RAD", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -292,10 +278,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [5]);
         k.gate("z", [5]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_2R_noncommute_RAD", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -328,10 +312,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("x", [0]);
         k.gate("x45", [0]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_NN_noncommute_DAR", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -364,10 +346,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("x", [0]);
         k.gate("x45", [0]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_2R_noncommute_DAR", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -396,10 +376,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("x45", [1]);
         k.gate("x", [1]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_NN_controlcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -428,10 +406,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("x45", [1]);
         k.gate("x", [1]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_2N_controlcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -460,10 +436,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("x45", [1]);
         k.gate("x", [1]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_2R_controlcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -492,10 +466,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [1]);
         k.gate("z", [1]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_NN_targetcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -524,10 +496,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [1]);
         k.gate("z", [1]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_2N_targetcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -556,10 +526,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [1]);
         k.gate("z", [1]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_2R_targetcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -588,10 +556,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [1]);
         k.gate("z", [1]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cz_NN_anycommute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -620,10 +586,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [1]);
         k.gate("z", [1]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cz_2N_anycommute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -652,10 +616,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("t", [1]);
         k.gate("z", [1]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cz_2R_anycommute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -700,10 +662,8 @@ class Test_commutation(unittest.TestCase):
         k.gate("cnot", [6,3]);
         k.gate("cnot", [6,4]);
 
-        sweep_points = [2]
 
         p = ql.Program("test_cnot_mixedcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -745,10 +705,8 @@ class Test_commutation(unittest.TestCase):
 #        for j in range(7):
 #            k.gate("x", [j])
 #
-#        sweep_points = [2]
 #
 #        p = ql.Program("test_cnot_variations", platf, nqubits)
-#        p.set_sweep_points(sweep_points)
 #        p.add_kernel(k)
 #        p.compile()
 #

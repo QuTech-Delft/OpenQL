@@ -26,10 +26,8 @@ class Test_basic(unittest.TestCase):
 
         print('output dir : {}'.format( ql.get_option('output_dir') ) )
         platf = ql.Platform("starmon", 'none')
-        sweep_points = [1]
         nqubits = 2
         p = ql.Program("basic", platf, nqubits, nqubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel
         k = ql.Kernel("first_kernel", platf, nqubits, nqubits)

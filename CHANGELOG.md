@@ -25,7 +25,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Removed
 - CC backend:
   - support for JSON key "pragma/break" for instruction definitions
-  - macro expansion for JSON key instruction/signal/value (unused anyway) 
+  - macro expansion for JSON key instruction/signal/value (unused anyway)
+- support for sweep points in API and the WriteSweepPointsPass
 
 ### Fixed
 - pass dec.Instructions

@@ -49,8 +49,6 @@ void build_rb(int num_cliffords, ql::Kernel &k) {
 int main(int argc, char **argv) {
     srand(0);
 
-    std::vector<double> sweep_points = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
-
     // create platform
     auto qx_platform = ql::Platform("qx_simulator", "none");
 
@@ -58,8 +56,6 @@ int main(int argc, char **argv) {
     qx_platform.get_info();
 
     auto rb = ql::Program("rb", qx_platform, 1);
-
-    rb.set_sweep_points(sweep_points);
 
     auto kernel = ql::Kernel("rb1024", qx_platform, 1);
 

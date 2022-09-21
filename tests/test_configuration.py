@@ -21,8 +21,6 @@ class Test_Configuration(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         p = ql.Program("test_case_insensitivity", platform, platform.get_qubit_number())
-        sweep_points = [1,2]
-        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, platform.get_qubit_number())
         k.gate('Rx180', [0])  # in the configuartion its name is rx180 q0
@@ -51,8 +49,6 @@ class Test_Configuration(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         p = ql.Program("test_missing_instr", platform, platform.get_qubit_number())
-        sweep_points = [1,2]
-        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, platform.get_qubit_number())
         k.gate('rx180', [0])  # available

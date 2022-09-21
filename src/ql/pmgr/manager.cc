@@ -622,15 +622,6 @@ Manager Manager::from_defaults(const ir::compat::PlatformRef &platform) {
     // Generate the backend passes.
     platform->architecture->populate_backend_passes(manager);
 
-#if 0   // FIXME: disabled, not used anymore
-    // Sweep point writing (whatever that is) was done hardcoded at the end of
-    // even the initial pass manager implementation. Now it's an actual pass.
-    manager.append_pass(
-        "io.sweep_points.Write",
-        "config"
-    );
-#endif
-
     // Set the pass options using the compatibility mode option name/value
     // converter.
     auto options = convert_global_to_pass_options();
