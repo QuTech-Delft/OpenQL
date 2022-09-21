@@ -289,6 +289,8 @@ public:
     // to add unitary to kernel
     void gate(com::dec::Unitary &u, const utils::Vec<utils::UInt> &qubits);
 
+    void state_prep(const utils::Vec<utils::Complex> &states, const utils::Vec<utils::UInt> &qubits);
+
     // terminology:
     // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):
     //      - composite gate: a gate definition with subinstructions; when matched, decompose and add the subinstructions

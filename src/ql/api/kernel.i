@@ -240,6 +240,19 @@ Returns
 None
 """
 
+%feature("doctring") ql::api::Kernel::state_prep
+"""
+Automatic state preparation, currently requires unitary decomposition for all cases.
+
+Parameters
+----------
+states : Complex Vector
+    Specifies the state (change) of the qubits after the state preparation
+
+qubits : List[int]
+    The full list of qubit indices to apply the state preparation to.
+
+"""  
 
 %feature("docstring") ql::api::Kernel::condgate
 """

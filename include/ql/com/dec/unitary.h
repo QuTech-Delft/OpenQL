@@ -76,6 +76,11 @@ public:
      */
     ir::compat::GateRefs get_decomposition(const utils::Vec<utils::UInt> &qubits);
 
+    /**
+     * Does state preparation, results in a circuit for which A|0> = |psi> for given state psi, stored as the array in Unitary
+     */
+    ir::compat::GateRefs prepare_state(const utils::Vec<utils::UInt> &qubits);
+
 };
 
 } // namespace dec
