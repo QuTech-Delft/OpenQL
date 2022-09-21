@@ -37,4 +37,5 @@ docs/_templates
 docs/_templates
 
 /.idea
+.vscode
 /cmake-build-*
