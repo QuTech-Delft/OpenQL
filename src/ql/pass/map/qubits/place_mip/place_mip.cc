@@ -4,14 +4,17 @@
 
 #include "ql/pass/map/qubits/place_mip/place_mip.h"
 
-#include "ql/pass/ana/statistics/annotations.h"
-#include "detail/algorithm.h"
+#include "ql/ir/annotations.h"
+#include "ql/pass/map/qubits/initial_placement_algo.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
 namespace place_mip {
+
+bool PlaceQubitsPass::is_pass_registered = pmgr::Factory::register_pass<PlaceQubitsPass>("map.qubits.PlaceMIP");
 
 /**
  * Dumps docs for the initial qubit placer.
@@ -118,7 +121,7 @@ utils::Int PlaceQubitsPass::run(
 
     // Run the algorithm.
     com::map::QubitMapping mapping(kernel->platform->qubit_count, true);
-    detail::Algorithm algorithm;
+    InitialPlacementAlgo algorithm;
     auto result = algorithm.run(kernel, opts, mapping);
 
     // Save the results as statistics.

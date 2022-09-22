@@ -1,0 +1,11 @@
+add_pass_library(pass_map_qubits_place_mip
+    "place_mip.cc"
+)
+
+target_include_directories(pass_map_qubits_place_mip PUBLIC include)
+
+target_link_libraries(pass_map_qubits_place_mip PUBLIC pmgr)
+target_link_libraries(pass_map_qubits_place_mip PUBLIC ir)
+target_link_libraries(pass_map_qubits_place_mip PUBLIC utils)
+target_link_libraries(pass_map_qubits_place_mip PUBLIC com)
+target_link_libraries(pass_map_qubits_place_mip PUBLIC pass_map_qubits)

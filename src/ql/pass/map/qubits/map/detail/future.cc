@@ -2,7 +2,7 @@
  * Future implementation.
  */
 
-#include "future.h"
+#include "ql/pass/map/qubits/map/detail/future.h"
 
 #include "ql/utils/filesystem.h"
 

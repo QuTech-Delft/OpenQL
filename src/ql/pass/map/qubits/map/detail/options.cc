@@ -2,7 +2,7 @@
  * Defines the parsed options structures for the mapper.
  */
 
-#include "options.h"
+#include "ql/pass/map/qubits/map/detail/options.h"
 
 namespace ql {
 namespace pass {

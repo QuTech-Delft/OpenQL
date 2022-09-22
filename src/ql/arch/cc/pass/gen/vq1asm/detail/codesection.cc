@@ -1,5 +1,5 @@
-#include "codesection.h"
-#include "options.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/codesection.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
 
 #include "ql/version.h"
 

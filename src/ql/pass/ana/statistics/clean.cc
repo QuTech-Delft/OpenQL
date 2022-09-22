@@ -3,12 +3,17 @@
  */
 
 #include "ql/pass/ana/statistics/clean.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace ana {
 namespace statistics {
 namespace clean {
+
+using AdditionalStats = ir::AdditionalStats;
+
+bool CleanStatisticsPass::is_pass_registered = pmgr::Factory::register_pass<CleanStatisticsPass>("ana.statistics.Clean");
 
 /**
  * Dumps docs for the statistics cleaner.

@@ -1,5 +1,5 @@
-#include "functions.h"
-#include "codegen.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/functions.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/codegen.h"
 
 #include "ql/ir/describe.h"
 

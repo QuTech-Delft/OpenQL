@@ -16,7 +16,7 @@ from setuptools.command.egg_info    import egg_info     as _egg_info
 
 root_dir   = os.getcwd()                        # root of the repository
 src_dir    = root_dir   + os.sep + 'src'        # C++ source directory
-inc_dir    = root_dir   + os.sep + 'include'    # C++ include directory
+inc_dir = root_dir + os.sep + 'src' + os.sep + 'ql' + os.sep + 'include'    # C++ include directory
 pysrc_dir  = root_dir   + os.sep + 'python'     # Python source files
 target_dir = root_dir   + os.sep + 'pybuild'    # python-specific build directory
 build_dir  = target_dir + os.sep + 'build'      # directory for setuptools to dump various files into

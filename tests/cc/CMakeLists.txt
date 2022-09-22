@@ -1,0 +1,3 @@
+add_openql_unit_test(test_cc test_cc.cc)
+target_link_libraries(test_cc PRIVATE ql_bare)
+target_link_libraries(test_cc PRIVATE arch_cc pass_io_cqasm pass_sch_list_schedule)

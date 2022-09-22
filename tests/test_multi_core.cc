@@ -1,4 +1,4 @@
-#include <openql>
+#include "openql.h"
 
 void test_mc(std::string v, std::string param1, std::string param2, std::string param3, std::string param4) {
     int n = 16;

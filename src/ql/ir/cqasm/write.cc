@@ -8,7 +8,7 @@
 #include "ql/ir/ops.h"
 #include "ql/ir/describe.h"
 #include "ql/ir/operator_info.h"
-#include "ql/pass/ana/statistics/report.h"
+#include "ql/ir/dump.h"
 
 namespace ql {
 namespace ir {
@@ -228,7 +228,7 @@ public:
             // Print program-wide statistics as comments at the end if requested.
             if (options.include_statistics) {
                 os << el();
-                pass::ana::statistics::report::dump(ir, node.program, os, line_prefix + "# ");
+                dump(ir, node.program, os, line_prefix + "# ");
             }
         }
 
@@ -470,7 +470,7 @@ public:
             // Print block-wide statistics as comments at the end if requested.
             if (options.include_statistics) {
                 os << el();
-                pass::ana::statistics::report::dump(ir, block, os, line_prefix + "    # ");
+                dump(ir, block, os, line_prefix + "    # ");
             }
 
         }

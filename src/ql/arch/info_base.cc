@@ -3,6 +3,7 @@
  */
 
 #include "ql/arch/info_base.h"
+#include "ql/ir/compat/platform.h"
 
 namespace ql {
 namespace arch {

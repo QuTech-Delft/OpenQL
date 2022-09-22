@@ -2,12 +2,12 @@
  * OpenQL virtual to real qubit mapping and routing.
  */
 
-#include "mapper.h"
+#include "ql/pass/map/qubits/map/detail/mapper.h"
 
 #include <chrono>
 #include "ql/utils/filesystem.h"
-#include "ql/pass/ana/statistics/annotations.h"
-#include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
+#include "ql/ir/annotations.h"
+#include "ql/pass/map/qubits/initial_placement_algo.h"
 
 // uncomment next line to enable multi-line dumping
 // #define MULTI_LINE_LOG_DEBUG
@@ -891,7 +891,7 @@ void Mapper::place(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r) 
         ipopt.horizon = options->mip_horizon;
         ipopt.timeout = options->mip_timeout;
 
-        place_mip::detail::Algorithm ip;
+        InitialPlacementAlgo ip;
         auto ipok = ip.run(k, ipopt, v2r); // compute mapping (in v2r) using ip model, may fail
         QL_DOUT("InitialPlace: kernel=" << k->name << " timeout=" << options->mip_timeout << " horizon=" << options->mip_horizon << " result=" << ipok << " iptimetaken=" << ip.get_time_taken() << " seconds [DONE]");
 #else // ifdef INITIALPLACE
@@ -1107,7 +1107,7 @@ void Mapper::map_kernel(const ir::compat::KernelRef &k) {
 void Mapper::map(const ir::compat::ProgramRef &prog, const OptionsRef &opt) {
 
     // Shorthand.
-    using pass::ana::statistics::AdditionalStats;
+    using AdditionalStats = ir::AdditionalStats;
 
     // Perform program-wide initialization.
     initialize(prog->platform, opt);

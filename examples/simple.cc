@@ -1,5 +1,5 @@
 #include <iostream>
-#include <openql>
+#include "openql.h"
 
 int main(int argc, char **argv) {
     // create platform

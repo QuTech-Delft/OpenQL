@@ -2,7 +2,7 @@
  * Alter implementation.
  */
 
-#include "alter.h"
+#include "ql/pass/map/qubits/map/detail/alter.h"
 
 // uncomment next line to enable multi-line dumping
 // #define MULTI_LINE_LOG_DEBUG

@@ -5,10 +5,13 @@
 #include "ql/arch/diamond/info.h"
 
 #include "ql/arch/diamond/resources/hwconf_default.inc"
+#include "ql/arch/factory.h"
 
 namespace ql {
 namespace arch {
 namespace diamond {
+
+bool Info::is_architecture_registered = Factory::register_architecture<Info>();
 
 /**
  * Writes the documentation for this architecture to the given output

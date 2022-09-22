@@ -8,9 +8,7 @@
 
 #include <time.h>
 
-#include <openql>
-
-
+#include "openql.h"
 
 // all cnots with operands that are neighbors in s7
 // no or hardly any significant difference between pre179 and post179 scheduling

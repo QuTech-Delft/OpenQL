@@ -129,14 +129,14 @@ def get_version(verbose=0):
     """ Extract version information from source code """
 
     matcher = re.compile('[\t ]*#define[\t ]+OPENQL_VERSION_STRING[\t ]+"(.*)"')
-    with open(os.path.join('..', 'include', 'ql', 'version.h'), 'r') as f:
+    with open(os.path.join('..', 'src', 'ql', 'include', 'ql', 'version.h'), 'r') as f:
         for ln in f:
             m = matcher.match(ln)
             if m:
                 version = m.group(1)
                 break
         else:
-            raise Exception('failed to parse version string from include/ql/version.h')
+            raise Exception('failed to parse version string from src/ql/include/ql/version.h')
 
     return version
 

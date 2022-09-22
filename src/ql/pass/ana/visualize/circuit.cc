@@ -4,13 +4,16 @@
 
 #include "ql/pass/ana/visualize/circuit.h"
 
-#include "detail/circuit.h"
+#include "ql/pass/ana/visualize/detail/circuit.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace ana {
 namespace visualize {
 namespace circuit {
+
+bool VisualizeCircuitPass::is_pass_registered = pmgr::Factory::register_pass<VisualizeCircuitPass>("ana.visualize.Circuit");
 
 /**
  * Dumps docs for the circuit visualizer.

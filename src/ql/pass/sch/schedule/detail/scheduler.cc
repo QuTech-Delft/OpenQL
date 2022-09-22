@@ -84,7 +84,7 @@
  * "scheduler_commute".
  */
 
-#include "scheduler.h"
+#include "ql/pass/sch/schedule/detail/scheduler.h"
 
 #include "ql/utils/vec.h"
 #include "ql/utils/filesystem.h"

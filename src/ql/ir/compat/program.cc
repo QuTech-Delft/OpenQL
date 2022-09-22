@@ -2,7 +2,6 @@
  * Quantum program abstraction implementation.
  */
 
-#include <ql/pmgr/manager.h>
 #include "ql/ir/compat/program.h"
 
 #include "ql/utils/filesystem.h"

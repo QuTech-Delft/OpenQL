@@ -6,7 +6,7 @@
  * @note
  */
 
-#include "settings.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/settings.h"
 
 namespace ql {
 namespace arch {

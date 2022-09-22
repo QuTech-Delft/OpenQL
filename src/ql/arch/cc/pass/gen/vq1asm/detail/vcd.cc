@@ -6,7 +6,7 @@
  * @note
  */
 
-#include "vcd.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/vcd.h"
 
 #include <iomanip>
 #include "ql/com/options.h"

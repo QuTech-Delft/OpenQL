@@ -6,7 +6,7 @@
                 - ../test_hybrid.py
 */
 
-#include <openql>
+#include "openql.h"
 
 #include <string>
 #include <algorithm>
@@ -14,7 +14,6 @@
 using namespace ql::utils;
 
 #define CFG_FILE_JSON   "test_cfg_cc.json"
-
 
 // based on tests/test_hybrid.py
 void test_classical() {
