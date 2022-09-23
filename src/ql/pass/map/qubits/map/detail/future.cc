@@ -3,7 +3,7 @@
  */
 
 #include "future.h"
-
+#include <vector>
 #include "ql/utils/filesystem.h"
 
 namespace ql {
@@ -46,6 +46,7 @@ void Future::set_kernel(const ir::compat::KernelRef &kernel, const utils::Ptr<Sc
         // and so also the original circuit can be output to after this
         for (auto &gp : kernel->gates) {
             scheduled.set(gp) = false;   // none were scheduled
+            remaining_gates.push_back(gp);
         }
         scheduled.set(scheduler->instruction[scheduler->s]) = false;      // also the dummy nodes not
         scheduled.set(scheduler->instruction[scheduler->t]) = false;
@@ -137,6 +138,15 @@ void Future::completed_gate(const ir::compat::GateRef &gate) {
         input_gatepp = std::next(input_gatepp);
     } else {
         scheduler->take_available(scheduler->node.at(gate), avlist, scheduled, rmgr::Direction::FORWARD);
+        
+        std::list<ql::ir::compat::GateRef>::iterator it = remaining_gates.begin();
+        for(auto &i : remaining_gates){
+                if(i==gate){
+                   remaining_gates.erase(it);
+                   break;
+                }
+                it++;
+            }
     }
 }
 

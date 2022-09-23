@@ -315,6 +315,11 @@ struct Options {
      */
     utils::Bool write_dot_graphs = false;
 
+    /**
+     * Use the rOEE routing algorithm algorithm for multi-core architectures.
+     */
+    utils::Bool rOEE_routing_algorithm = false;
+
 };
 
 /**

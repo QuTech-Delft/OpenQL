@@ -399,6 +399,13 @@ Options make_ql_options() {
         true
     );
 
+    options.add_bool(
+        "maprOEE",
+        "Applies the rOEE routing algorithm for multi-core architecures "
+        "with an all to all connection.",
+        false
+    );
+
 #if 0 // FIXME: removed, use pass options
     //========================================================================//
     // Default-inserted CC code generation pass behavior                      //

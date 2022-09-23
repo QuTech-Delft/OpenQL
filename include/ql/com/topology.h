@@ -196,6 +196,11 @@ private:
 public:
 
     /**
+     * Get the conectivity
+     */
+    GridConnectivity get_connectivity();
+    
+    /**
      * Constructs the grid for the given number of qubits from the given JSON
      * object. Refer to dump_docs() for details.
      */

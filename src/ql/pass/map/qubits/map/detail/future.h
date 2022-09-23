@@ -15,6 +15,7 @@
 #include "options.h"
 #include "past.h"
 #include "alter.h"
+#include <vector>
 
 namespace ql {
 namespace pass {
@@ -110,6 +111,11 @@ public:
      * Approximate total number of gates remaining.
      */
     utils::UInt approx_gates_remaining;
+
+    /**
+     * List of total number of gates remaining.
+     */
+    utils::List<ir::compat::GateRef> remaining_gates;
 
     /**
      * Program-wide initialization function.
