@@ -2,10 +2,9 @@
  * Past implementation.
  */
 
-#include "past.h"
+#include "ql/pass/map/qubits/map/detail/past.h"
 
 #include "ql/utils/filesystem.h"
-#include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
 
 // uncomment next line to enable multi-line dumping
 // #define MULTI_LINE_LOG_DEBUG

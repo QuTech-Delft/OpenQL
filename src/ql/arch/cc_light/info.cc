@@ -9,10 +9,13 @@
 #include "ql/arch/cc_light/resources/hwconf_s5.inc"
 #include "ql/arch/cc_light/resources/hwconf_s7.inc"
 #include "ql/arch/cc_light/resources/hwconf_s17.inc"
+#include "ql/arch/factory.h"
 
 namespace ql {
 namespace arch {
 namespace cc_light {
+
+bool Info::is_architecture_registered = Factory::register_architecture<Info>();
 
 /**
  * Writes the documentation for this architecture to the given output

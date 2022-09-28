@@ -11,7 +11,7 @@
 #include "ql/arch/architecture.h"
 #include "ql/rmgr/manager.h"
 #include "ql/arch/diamond/annotations.h"
-#include "ql/arch/cc/pass/gen/vq1asm/detail/options.h" // FIXME: remove when OPT_CC_USER_FUNCTIONS is no longer needed
+#include "ql/config.h"
 
 // uncomment next line to enable multi-line dumping
 // #define MULTI_LINE_LOG_DEBUG

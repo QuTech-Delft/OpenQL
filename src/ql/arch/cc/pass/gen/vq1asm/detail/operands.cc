@@ -3,7 +3,7 @@
  * FIXME: could be useful for other backends and should be moved if this becomes appropriate
  */
 
-#include "operands.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/operands.h"
 
 #include "ql/ir/ops.h"
 #include "ql/ir/describe.h"

@@ -10,7 +10,7 @@ secrets are configured correctly.
    is to be released. For example, `release-0.0.1`, but the suffix doesn't
    matter.
 
- - Change the version in `include/ql/version.h` (this is the only functional
+ - Change the version in `src/ql/include/ql/version.h` (this is the only functional
    place where the version is hardcoded) and change any other files where
    applicable (changelog, etc) and update `CHANGELOG.md` accordingly, then
    commit and make a PR for it.
@@ -35,7 +35,7 @@ secrets are configured correctly.
  - If needed, also merge to `master`.
 
  - Draft a new release through the GitHub interface. Set the "tag version"
-   to the same version you put in `include/ql/version.h`, the title to
+   to the same version you put in `src/ql/include/ql/version.h`, the title to
    "Release `version`: `name`", and write release notes in the body. The
    release notes should include at least:
 

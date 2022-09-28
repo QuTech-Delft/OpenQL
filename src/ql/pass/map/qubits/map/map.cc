@@ -4,13 +4,16 @@
 
 #include "ql/pass/map/qubits/map/map.h"
 
-#include "detail/mapper.h"
+#include "ql/pass/map/qubits/map/detail/mapper.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
 namespace map {
+
+bool MapQubitsPass::is_pass_registered = pmgr::Factory::register_pass<MapQubitsPass>("map.qubits.Map");
 
 /**
  * Dumps docs for the qubit mapper.

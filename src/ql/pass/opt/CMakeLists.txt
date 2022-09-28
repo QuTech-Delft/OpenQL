@@ -1,0 +1,3 @@
+add_subdirectory(clifford)
+add_subdirectory(const_prop)
+add_subdirectory(dead_code_elim)

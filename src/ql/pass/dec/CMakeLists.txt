@@ -1,0 +1,4 @@
+add_subdirectory(generalize)
+add_subdirectory(specialize)
+add_subdirectory(structure)
+add_subdirectory(instructions)

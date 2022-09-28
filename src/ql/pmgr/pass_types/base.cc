@@ -8,8 +8,8 @@
 #include <regex>
 #include "ql/utils/filesystem.h"
 #include "ql/ir/cqasm/write.h"
-#include "ql/pmgr/manager.h"
-#include "ql/pass/ana/statistics/report.h"
+#include "ql/ir/dump.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pmgr {
@@ -1012,7 +1012,7 @@ void Base::handle_debugging(
         );
     }
     if (debug_opt == "stats" || debug_opt == "both") {
-        pass::ana::statistics::report::dump_all(
+        ir::dump_all(
             ir,
             utils::OutFile(context.output_prefix + "_" + in_or_out + ".report").unwrap()
         );

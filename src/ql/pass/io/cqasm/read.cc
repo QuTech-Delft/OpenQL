@@ -6,12 +6,15 @@
 
 #include "ql/utils/filesystem.h"
 #include "ql/ir/cqasm/read.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace io {
 namespace cqasm {
 namespace read {
+
+bool ReadCQasmPass::is_pass_registered = pmgr::Factory::register_pass<ReadCQasmPass>("io.cqasm.Read");
 
 /**
  * Dumps docs for the cQASM reader.

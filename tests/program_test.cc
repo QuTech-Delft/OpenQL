@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include <openql>
+#include "openql.h"
 
 int main(int argc, char **argv) {
    size_t nqubits = 5;

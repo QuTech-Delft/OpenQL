@@ -5,14 +5,17 @@
 #include "ql/pass/opt/clifford/optimize.h"
 
 #include "ql/pmgr/pass_types/base.h"
-#include "ql/pass/ana/statistics/annotations.h"
-#include "detail/clifford.h"
+#include "ql/ir/annotations.h"
+#include "ql/pass/opt/clifford/detail/clifford.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace opt {
 namespace clifford {
 namespace optimize {
+
+bool CliffordOptimizePass::is_pass_registered = pmgr::Factory::register_pass<CliffordOptimizePass>("opt.clifford.Optimize");
 
 /**
  * Dumps docs for the Clifford optimizer.
@@ -58,7 +61,7 @@ utils::Int CliffordOptimizePass::run(
     const pmgr::pass_types::Context &context
 ) const {
     auto cycles_saved = detail::Clifford().optimize_kernel(kernel);
-    ana::statistics::AdditionalStats::push(
+    ir::AdditionalStats::push(
         kernel,
         utils::to_string(cycles_saved) + " cycles saved by " + context.full_pass_name
     );

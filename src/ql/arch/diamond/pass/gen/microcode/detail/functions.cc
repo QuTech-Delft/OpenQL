@@ -2,8 +2,7 @@
 #include "ql/utils/filesystem.h"
 #include "ql/ir/compat/platform.h"
 #include "ql/com/options.h"
-#include "functions.h"
-
+#include "ql/arch/diamond/pass/gen/microcode/detail/functions.h"
 
 namespace ql {
 namespace arch {

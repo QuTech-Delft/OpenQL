@@ -1,4 +1,4 @@
-#include <openql>
+#include "openql.h"
 
 void test_dpt(
     std::string v,

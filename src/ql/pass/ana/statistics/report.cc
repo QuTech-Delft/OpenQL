@@ -6,12 +6,15 @@
 
 #include "ql/utils/filesystem.h"
 #include "ql/com/ana/metrics.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace ana {
 namespace statistics {
 namespace report {
+
+using AdditionalStats = ir::AdditionalStats;
 
 /**
  * Dumps basic statistics for the given kernel to the given output stream.
@@ -82,6 +85,8 @@ void dump_all(
         dump(ir, ir->program, os, line_prefix);
     }
 }
+
+bool ReportStatisticsPass::is_pass_registered = pmgr::Factory::register_pass<ReportStatisticsPass>("ana.statistics.Report");
 
 /**
  * Dumps docs for the statistics reporter.

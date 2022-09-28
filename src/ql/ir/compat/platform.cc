@@ -7,8 +7,8 @@
 #include <regex>
 #include "ql/config.h"
 #include "ql/utils/filesystem.h"
-#include "ql/rmgr/manager.h"
 #include "ql/arch/factory.h"
+#include "ql/com/topology.h"
 
 namespace ql {
 namespace ir {
@@ -116,7 +116,7 @@ void Platform::dump_docs(std::ostream &os, const utils::Str &line_prefix) {
     * `"resources"` section *
 
     )");
-    rmgr::Manager::dump_docs(os, line_prefix + "  ");
+    // rmgr::Manager::dump_docs(os, line_prefix + "  "); // FIXME? Or obsolete
     os << line_prefix << std::endl;
     utils::dump_str(os, line_prefix, R"(
     * `"instructions"` section *

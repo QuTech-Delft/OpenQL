@@ -4,13 +4,16 @@
 
 #include "ql/pass/ana/visualize/interaction.h"
 
-#include "detail/interaction.h"
+#include "ql/pass/ana/visualize/detail/interaction.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace ana {
 namespace visualize {
 namespace interaction {
+
+bool VisualizeInteractionPass::is_pass_registered = pmgr::Factory::register_pass<VisualizeInteractionPass>("ana.visualize.Interaction");
 
 /**
  * Dumps docs for the interaction graph visualizer.

@@ -4,8 +4,8 @@
 
 #define DEBUG(x) QL_DOUT(x)
 
-#include "propagate.h"
-#include "platform_functions.h"
+#include "ql/pass/opt/const_prop/detail/propagate.h"
+#include "ql/pass/opt/const_prop/detail/platform_functions.h"
 
 #include "ql/ir/describe.h"
 #include "ql/ir/ops.h"

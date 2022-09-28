@@ -1,0 +1,1 @@
+add_openql_test(ddg ddc.cc)

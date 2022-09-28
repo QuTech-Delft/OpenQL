@@ -2,7 +2,7 @@
  * FreeCycle implementation.
  */
 
-#include "free_cycle.h"
+#include "ql/pass/map/qubits/map/detail/free_cycle.h"
 
 // uncomment next line to enable multi-line dumping
 // #define MULTI_LINE_LOG_DEBUG

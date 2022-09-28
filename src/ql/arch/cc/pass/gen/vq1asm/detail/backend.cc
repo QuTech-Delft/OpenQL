@@ -5,8 +5,8 @@
  * @brief  backend for the Central Controller
  */
 
-#include "backend.h"
-#include "operands.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/backend.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/operands.h"
 
 #include "ql/utils/str.h"
 #include "ql/utils/filesystem.h"

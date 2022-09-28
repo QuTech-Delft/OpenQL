@@ -4,6 +4,8 @@
  */
 
 #include "ql/arch/architecture.h"
+#include "ql/pmgr/declarations.h"
+#include "ql/ir/compat/platform.h"
 
 namespace ql {
 namespace arch {

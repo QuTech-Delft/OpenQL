@@ -2,7 +2,7 @@
  * Clifford sequence optimizer.
  */
 
-#include "clifford.h"
+#include "ql/pass/opt/clifford/detail/clifford.h"
 
 #include "ql/utils/num.h"
 #include "ql/com/options.h"

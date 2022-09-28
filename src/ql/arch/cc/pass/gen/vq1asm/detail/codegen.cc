@@ -7,8 +7,8 @@
  *          functions is correct
  */
 
-#include "codegen.h"
-#include "codesection.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/codegen.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/codesection.h"
 
 #include "ql/version.h"
 #include "ql/com/options.h"

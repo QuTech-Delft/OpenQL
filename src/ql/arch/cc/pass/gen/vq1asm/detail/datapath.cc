@@ -6,7 +6,7 @@
  * @note
  */
 
-#include "datapath.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/datapath.h"
 
 #include <iomanip>
 

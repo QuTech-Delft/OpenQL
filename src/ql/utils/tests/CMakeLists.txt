@@ -1,0 +1,3 @@
+add_openql_unit_test(rangemap_test rangemap.cc)
+
+target_link_libraries(rangemap_test PRIVATE utils)

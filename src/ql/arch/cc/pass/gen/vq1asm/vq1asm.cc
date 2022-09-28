@@ -5,7 +5,8 @@
 #include "ql/arch/cc/pass/gen/vq1asm/vq1asm.h"
 
 #include "ql/pmgr/pass_types/base.h"
-#include "detail/backend.h"
+#include "ql/arch/cc/pass/gen/vq1asm/detail/backend.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace arch {
@@ -13,6 +14,8 @@ namespace cc {
 namespace pass {
 namespace gen {
 namespace vq1asm {
+
+bool GenerateVQ1AsmPass::is_pass_registered = pmgr::Factory::register_pass<GenerateVQ1AsmPass>("arch.cc.gen.VQ1Asm");
 
 /**
  * Dumps docs for the code generator.
