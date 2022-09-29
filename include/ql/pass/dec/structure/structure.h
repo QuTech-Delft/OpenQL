@@ -16,6 +16,8 @@ namespace structure {
  * Structure decomposition pass.
  */
 class DecomposeStructurePass : public pmgr::pass_types::Transformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**

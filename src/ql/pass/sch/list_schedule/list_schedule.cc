@@ -11,6 +11,7 @@
 #include "ql/com/ddg/dot.h"
 #include "ql/com/sch/scheduler.h"
 #include "ql/pmgr/pass_types/base.h"
+#include "ql/pmgr/factory.h"
 
 // uncomment next line to enable multi-line dumping
 // #define MULTI_LINE_LOG_DEBUG
@@ -19,6 +20,8 @@ namespace ql {
 namespace pass {
 namespace sch {
 namespace list_schedule {
+
+bool ListSchedulePass::is_pass_registered = pmgr::Factory::register_pass<ListSchedulePass>("sch.ListSchedule");
 
 /**
  * Dumps docs for the scheduler.

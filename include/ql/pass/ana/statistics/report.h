@@ -49,6 +49,8 @@ void dump_all(
  * Statistics reporting pass.
  */
 class ReportStatisticsPass : public pmgr::pass_types::Analysis {
+    static bool is_pass_registered;
+
 protected:
 
     /**

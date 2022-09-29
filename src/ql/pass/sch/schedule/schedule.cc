@@ -7,11 +7,14 @@
 #include "ql/utils/filesystem.h"
 #include "ql/pmgr/pass_types/base.h"
 #include "detail/scheduler.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace sch {
 namespace schedule {
+
+bool SchedulePass::is_pass_registered = pmgr::Factory::register_pass<SchedulePass>("sch.Schedule");
 
 /**
  * Dumps docs for the scheduler.

@@ -16,6 +16,8 @@ namespace specialize {
  * Instruction specialization pass.
  */
 class SpecializeInstructionsPass : public pmgr::pass_types::Transformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**

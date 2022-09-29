@@ -7,12 +7,15 @@
 #include "ql/utils/filesystem.h"
 #include "ql/ir/cqasm/write.h"
 #include "ql/pass/ana/statistics/report.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace io {
 namespace cqasm {
 namespace report {
+
+bool ReportCQasmPass::is_pass_registered = pmgr::Factory::register_pass<ReportCQasmPass>("io.cqasm.Report");
 
 /**
  * Dumps docs for the cQASM writer.

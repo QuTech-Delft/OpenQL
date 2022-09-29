@@ -16,6 +16,9 @@ namespace circuit {
  * Circuit visualizer pass.
  */
 class VisualizeCircuitPass : public pmgr::pass_types::Analysis {
+private:
+    static bool is_pass_registered;
+    
 protected:
 
     /**

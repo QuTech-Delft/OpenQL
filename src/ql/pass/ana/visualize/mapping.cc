@@ -5,12 +5,15 @@
 #include "ql/pass/ana/visualize/mapping.h"
 
 #include "detail/mapping.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace ana {
 namespace visualize {
 namespace mapping {
+
+bool VisualizeMappingPass::is_pass_registered = pmgr::Factory::register_pass<VisualizeMappingPass>("ana.visualize.Mapping");
 
 /**
  * Dumps docs for the mapping graph visualizer.

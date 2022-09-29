@@ -16,6 +16,8 @@ namespace generalize {
  * Instruction generalization pass.
  */
 class GeneralizeInstructionsPass : public pmgr::pass_types::Transformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**

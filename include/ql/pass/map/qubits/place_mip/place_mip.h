@@ -17,6 +17,8 @@ namespace place_mip {
  * Initial qubit placer pass.
  */
 class PlaceQubitsPass : public pmgr::pass_types::KernelTransformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**
