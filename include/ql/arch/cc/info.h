@@ -21,6 +21,8 @@ namespace cc {
  * Architecture-specific information class for CC.
  */
 class Info : public InfoBase {
+    static bool is_architecture_registered;
+
 public:
 
     /**

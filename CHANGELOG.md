@@ -21,6 +21,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - classification of gates as measurement - which is used for the resource constrained scheduler, and to output a map of measurements - now based on signal definition ("signal/type" equals "measure" and "signal/value" non-empty)
     - classification of gates as *real-time* measurement now based on signal definition ("signal/type" equals "measure" and "signal/value" empty)
   - absence of key "cc" now implies empty "signal", so `"cc": { "signal": [] }` is no longer necessary
+- passes and architectures self-register statically to their respective factories
 
 ### Removed
 - CC backend:

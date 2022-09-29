@@ -6,6 +6,7 @@
 
 #include "ql/pmgr/pass_types/base.h"
 #include "ql/ir/describe.h"
+#include "ql/pmgr/factory.h"
 
 #define DEBUG(x) QL_DOUT(x)
 
@@ -159,6 +160,8 @@ utils::Int DeadCodeEliminationPass::run(
     }
     return 0;
 }
+
+bool DeadCodeEliminationPass::is_pass_registered = pmgr::Factory::register_pass<DeadCodeEliminationPass>("opt.DeadCodeElim");
 
 /**
  * Dumps docs for dead code elimination pass.

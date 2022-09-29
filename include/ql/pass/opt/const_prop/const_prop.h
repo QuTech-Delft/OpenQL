@@ -15,6 +15,8 @@ namespace const_prop {
  * Constant propagation pass.
  */
 class ConstantPropagationPass : public pmgr::pass_types::Transformation {
+    static bool is_pass_registered;
+
 public:
 
     /**

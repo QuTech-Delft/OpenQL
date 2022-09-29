@@ -9,10 +9,13 @@
 #include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
 #include "ql/arch/cc/pass/gen/vq1asm/detail/settings.h"
 #include "ql/arch/cc/resources/hwconf_default.inc"
+#include "ql/arch/factory.h"
 
 namespace ql {
 namespace arch {
 namespace cc {
+
+bool Info::is_architecture_registered = Factory::register_architecture<Info>();
 
 // local constants
 const utils::Str predicateKeyInstructionType = "cc-desugar-instruction-type";
@@ -655,7 +658,6 @@ void Info::post_process_platform(
  * is considered a backend pass.
  */
 void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
-
     // Remove prescheduler if enabled implicitly (pointless since we add our own scheduling).
     // FIXME: bit of a hack, and invalidates https://openql.readthedocs.io/en/latest/gen/reference_architectures.html#default-pass-list
     utils::Str ps_name = "prescheduler";

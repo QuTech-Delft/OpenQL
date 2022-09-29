@@ -16,6 +16,8 @@ namespace instructions {
  * Instruction decomposition pass.
  */
 class DecomposeInstructionsPass : public pmgr::pass_types::Transformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**

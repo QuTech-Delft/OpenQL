@@ -19,6 +19,8 @@ namespace read {
  * cQASM reader pass.
  */
 class ReadCQasmPass : public pmgr::pass_types::Transformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**

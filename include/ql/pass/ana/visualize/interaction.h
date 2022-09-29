@@ -16,6 +16,9 @@ namespace interaction {
  * Interaction graph visualizer pass.
  */
 class VisualizeInteractionPass : public pmgr::pass_types::Analysis {
+private:
+    static bool is_pass_registered;
+    
 protected:
 
     /**

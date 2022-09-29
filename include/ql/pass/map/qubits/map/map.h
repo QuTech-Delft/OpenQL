@@ -22,6 +22,8 @@ struct Options;
  * Qubit mapper pass.
  */
 class MapQubitsPass : public pmgr::pass_types::ProgramTransformation {
+    static bool is_pass_registered;
+
 private:
 
     /**

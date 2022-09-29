@@ -6,6 +6,7 @@
 #include "detail/propagate.h"
 
 #include "ql/pmgr/pass_types/base.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
@@ -44,6 +45,8 @@ utils::Int ConstantPropagationPass::run(
     }
     return 0;
 }
+
+bool ConstantPropagationPass::is_pass_registered = pmgr::Factory::register_pass<ConstantPropagationPass>("opt.ConstProp");
 
 /**
  * Dumps docs for constant propagation pass.

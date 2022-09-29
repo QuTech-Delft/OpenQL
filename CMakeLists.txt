@@ -226,6 +226,7 @@ generate_tree(
 # or as a static library based on BUILD_SHARED_LIBS; add_library switches
 # automatically.
 add_library(ql
+    OBJECT
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/num.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/str.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/rangemap.cc"

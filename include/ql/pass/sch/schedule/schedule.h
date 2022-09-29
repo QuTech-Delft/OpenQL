@@ -16,6 +16,8 @@ namespace schedule {
  * Scheduler pass.
  */
 class SchedulePass : public pmgr::pass_types::KernelTransformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**

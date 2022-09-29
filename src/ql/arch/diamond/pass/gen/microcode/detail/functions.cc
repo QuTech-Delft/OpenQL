@@ -4,7 +4,6 @@
 #include "ql/com/options.h"
 #include "functions.h"
 
-
 namespace ql {
 namespace arch {
 namespace diamond {

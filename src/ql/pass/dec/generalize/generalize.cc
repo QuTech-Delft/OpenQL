@@ -6,11 +6,14 @@
 
 #include "ql/ir/ops.h"
 #include "ql/pmgr/pass_types/base.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace dec {
 namespace generalize {
+
+bool GeneralizeInstructionsPass::is_pass_registered = pmgr::Factory::register_pass<GeneralizeInstructionsPass>("dec.Generalize");
 
 /**
  * Dumps docs for the instruction generalizer.

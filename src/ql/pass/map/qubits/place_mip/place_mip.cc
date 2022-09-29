@@ -6,12 +6,15 @@
 
 #include "ql/pass/ana/statistics/annotations.h"
 #include "detail/algorithm.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
 namespace place_mip {
+
+bool PlaceQubitsPass::is_pass_registered = pmgr::Factory::register_pass<PlaceQubitsPass>("map.qubits.PlaceMIP");
 
 /**
  * Dumps docs for the initial qubit placer.

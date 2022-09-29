@@ -3,24 +3,10 @@
  */
 
 #include "ql/arch/factory.h"
-
-#include "ql/arch/cc/info.h"
-#include "ql/arch/cc_light/info.h"
-#include "ql/arch/none/info.h"
-#include "ql/arch/diamond/info.h"
+#include "ql/pmgr/manager.h"
 
 namespace ql {
 namespace arch {
-
-/**
- * Constructs a default architecture factory for OpenQL.
- */
-Factory::Factory() {
-    register_architecture<cc::Info>();
-    register_architecture<cc_light::Info>();
-    register_architecture<none::Info>();
-    register_architecture<diamond::Info>();
-}
 
 /**
  * Implementation of build_from_namespace() and build_from_eqasm_compiler(),
@@ -66,7 +52,7 @@ CArchitectureRef Factory::build_from_map(
 CArchitectureRef Factory::build_from_namespace(
     const utils::Str &namspace
 ) const {
-    return build_from_map(namespace_names, namspace);
+    return build_from_map(namespace_names(), namspace);
 }
 
 /**
@@ -77,7 +63,7 @@ CArchitectureRef Factory::build_from_namespace(
 CArchitectureRef Factory::build_from_eqasm_compiler(
     const utils::Str &eqasm_compiler
 ) const {
-    return build_from_map(eqasm_compiler_names, eqasm_compiler);
+    return build_from_map(eqasm_compiler_names(), eqasm_compiler);
 }
 
 /**
@@ -85,7 +71,7 @@ CArchitectureRef Factory::build_from_eqasm_compiler(
  */
 void Factory::dump_architectures(std::ostream &os, const utils::Str &line_prefix) const {
 
-    for (const auto &it : namespace_names) {
+    for (const auto &it : namespace_names()) {
         const auto arch = it.second.as_const();
 
         os << line_prefix << "* " << arch->get_friendly_name() << " *\n";

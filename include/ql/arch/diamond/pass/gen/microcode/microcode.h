@@ -19,6 +19,8 @@ namespace microcode {
  * QuTech Central Controller Q1 processor assembly generator pass.
  */
 class GenerateMicrocodePass : public pmgr::pass_types::ProgramTransformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**

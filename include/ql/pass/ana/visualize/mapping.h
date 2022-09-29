@@ -16,6 +16,9 @@ namespace mapping {
  * Mapping graph visualizer pass.
  */
 class VisualizeMappingPass : public pmgr::pass_types::Analysis {
+private:
+    static bool is_pass_registered;
+    
 protected:
 
     /**
