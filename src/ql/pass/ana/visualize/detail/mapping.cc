@@ -18,16 +18,16 @@ namespace detail {
 
 using namespace utils;
 
-void visualizeMappingGraph(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration) {
+void visualizeMappingGraph(const ir::Ref &ir, const VisualizerConfiguration &configuration) {
     QL_IOUT("Visualizing mapping graph...");
 
     // Parse the layout and gate vector.
     const MappingGraphLayout layout = parseMappingGraphLayout(configuration.visualizerConfigPath);
-    Vec<GateProperties> gates = parseGates(program);
+    Vec<GateProperties> gates = parseGates(ir);
 
     // Parse the topology if it exists in the platform configuration file.
     Topology topology;
-    const Bool parsedTopology = layout.getUseTopology() ? parseTopology(program->platform, topology) : false;
+    const Bool parsedTopology = layout.getUseTopology() ? parseTopology(ir->platform, topology) : false;
     if (parsedTopology) {
         QL_DOUT("Succesfully parsed topology.");
         QL_DOUT("xSize: " << topology.xSize);
@@ -57,19 +57,9 @@ void visualizeMappingGraph(const ir::compat::ProgramRef &program, const Visualiz
     const Int rowHeight = qubitDiameter + (layout.getShowRealIndices() ? layout.getFontHeightReal() + layout.getRealIndexSpacing() * 2 : 0);
 
     // Calculate the virtual qubits mapping for each cycle.
-    const Int cycleDuration = utoi(program->platform->cycle_time);
-    Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    Int amountOfCycles = calculateAmountOfCycles(gates);
     if (amountOfCycles <= 0) {
         QL_FATAL("Circuit contains no cycles! Cannot visualize mapping graph.");
-    }
-    // Visualize the circuit sequentially if one or more gates were not scheduled yet.
-    if (amountOfCycles == ir::compat::MAX_CYCLE) {
-        // Add a sequential cycle to each gate.
-        amountOfCycles = 0;
-        for (GateProperties &gate : gates) {
-            gate.cycle = amountOfCycles;
-            amountOfCycles += gate.duration / cycleDuration;
-        }
     }
 
     // This vector stores the qubit mapping per cycle.
@@ -104,7 +94,7 @@ void visualizeMappingGraph(const ir::compat::ProgramRef &program, const Visualiz
 
     // Generate the image.
     const Int extendedImageHeight = amountOfRows * rowHeight + (amountOfRows + 1) * layout.getQubitSpacing() + layout.getBorderSize();
-    ImageOutput imageOutput = generateImage(program, configuration, minCycleWidths, extendedImageHeight);
+    ImageOutput imageOutput = generateImage(ir, configuration, minCycleWidths, extendedImageHeight);
 
     // Fill in cycle spaces beneath the circuit with the mapping graph.
     const Int yStart = imageOutput.structure.getImageHeight() - extendedImageHeight;
@@ -275,7 +265,7 @@ void computeMappingPerCycle(const MappingGraphLayout &layout,
     }
 }
 
-Bool parseTopology(const ir::compat::PlatformRef &platform, Topology &topology) {
+Bool parseTopology(const ir::PlatformRef &platform, Topology &topology) {
     auto size = platform->topology->get_grid_size();
     if (size.x == 0 || size.y == 0) {
         QL_IOUT("Falling back on basic visualization; missing qubit coordinates in topology section");
@@ -283,8 +273,8 @@ Bool parseTopology(const ir::compat::PlatformRef &platform, Topology &topology) 
     }
     topology.xSize = size.x;
     topology.ySize = size.y;
-    topology.vertices.resize(platform->qubit_count, { 0, 0 });
-    for (utils::UInt q = 0; q < platform->qubit_count; q++) {
+    topology.vertices.resize(platform->qubits->shape[0], { 0, 0 });
+    for (utils::UInt q = 0; q < platform->qubits->shape[0]; q++) {
         auto coord = platform->topology->get_qubit_coordinate(q);
         topology.vertices[q].x = coord.x;
         topology.vertices[q].y = coord.y;

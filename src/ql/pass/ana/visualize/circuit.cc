@@ -344,7 +344,7 @@ VisualizeCircuitPass::VisualizeCircuitPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : ProgramAnalysis(pass_factory, instance_name, type_name) {
+) : Analysis(pass_factory, instance_name, type_name) {
     options.add_str(
         "config",
         "Path to the visualizer configuration file.",
@@ -366,12 +366,13 @@ VisualizeCircuitPass::VisualizeCircuitPass(
  * Runs the circuit visualizer.
  */
 utils::Int VisualizeCircuitPass::run(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
+
 #ifdef WITH_VISUALIZER
     detail::visualizeCircuit(
-        program, {
+        ir, {
             "CIRCUIT",
             options["config"].as_str(),
             options["waveform_mapping"].as_str(),

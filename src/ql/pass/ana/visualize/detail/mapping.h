@@ -9,6 +9,7 @@
 #include "ql/utils/num.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/json.h"
+#include "ql/ir/ir.h"
 #include "types.h"
 
 namespace ql {
@@ -31,7 +32,7 @@ struct Topology {
     utils::Vec<Edge> edges;
 };
 
-void visualizeMappingGraph(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration);
+void visualizeMappingGraph(const ir::Ref &ir, const VisualizerConfiguration &configuration);
 
 void computeMappingPerCycle(const MappingGraphLayout &layout,
                             utils::Vec<utils::Vec<utils::Int>> &virtualQubits,
@@ -40,7 +41,7 @@ void computeMappingPerCycle(const MappingGraphLayout &layout,
                             utils::Int amountOfCycles,
                             utils::Int amountOfQubits);
 
-utils::Bool parseTopology(const ir::compat::PlatformRef &platform, Topology &topology);
+utils::Bool parseTopology(const ir::PlatformRef &platform, Topology &topology);
 MappingGraphLayout parseMappingGraphLayout(const utils::Str &configPath);
 
 } // namespace detail

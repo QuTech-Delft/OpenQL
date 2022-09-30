@@ -602,8 +602,8 @@ void Past::make_real(const ir::compat::GateRef &gate, ir::compat::GateRefs &circ
 
     if (gate->swap_params.part_of_swap) {
         QL_DOUT("original gate was swap/move, adding swap/move parameters for gates in decomposed circuit");
-        for (ir::compat::GateRef &gate : circuit) {
-            gate->swap_params = gate->swap_params;
+        for (ir::compat::GateRef &it : circuit) {
+            it->swap_params = gate->swap_params;
         }
     }
 }

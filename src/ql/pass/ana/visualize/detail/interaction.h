@@ -10,6 +10,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/pair.h"
 #include "ql/utils/vec.h"
+#include "ql/ir/ir.h"
 #include "types.h"
 
 namespace ql {
@@ -30,7 +31,7 @@ struct Qubit {
     utils::Vec<InteractionsWithQubit> interactions;
 };
 
-void visualizeInteractionGraph(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration);
+void visualizeInteractionGraph(const ir::Ref &ir, const VisualizerConfiguration &configuration);
 
 void generateAndSaveDOTFile(const utils::Str &output_prefix, const utils::Vec<Qubit> &qubits);
 
