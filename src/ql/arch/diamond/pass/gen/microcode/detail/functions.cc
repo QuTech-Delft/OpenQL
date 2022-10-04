@@ -63,7 +63,7 @@ Str excite_mw(Str envelope, Str duration, Str frequency, Str phase, Str amp, UIn
  */
 Str branch(Str name_1, Str value_1, Str comparison, Str name_2, Str value_2, Str target_name, Str target_value) {
     Str compare = name_1 + to_string(value_1) + comparison + name_2 + to_string(value_2);
-    Str body = "BR " + compare +", " + target_name + to_string(target_value);
+    Str body = "BR " + compare + ", " + target_name + to_string(target_value);
     return body;
 }
 

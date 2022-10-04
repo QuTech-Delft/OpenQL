@@ -18,7 +18,7 @@ namespace microcode {
 /**
  * QuTech Central Controller Q1 processor assembly generator pass.
  */
-class GenerateMicrocodePass : public pmgr::pass_types::ProgramTransformation {
+class GenerateMicrocodePass : public pmgr::pass_types::Transformation {
 protected:
 
     /**
@@ -49,7 +49,7 @@ public:
      * Runs the code generator.
      */
     utils::Int run(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const pmgr::pass_types::Context &context
     ) const override;
 

@@ -202,6 +202,70 @@ InstructionTypeLink get_generalization(const InstructionTypeLink &spec);
  */
 Any<Expression> get_operands(const InstructionRef &instruction);
 
+class OperandsHelper {
+    public:
+    OperandsHelper(const Ref ir, const CustomInstruction &instruction) : ir(ir), instr(instruction) {};
+
+    UInt getQubit(UInt operandIndex) {
+        const auto& op = getOperand(operandIndex);
+
+        const auto& ref = op.as_reference();
+        if (!ref) {
+            QL_FATAL("Operand #" << operandIndex << " of instruction " instr.name << " is not a reference.");
+        }
+
+        if (ref->target != ir->platform->qubits) {
+            QL_FATAL("Operand #" << operandIndex << " of instruction " instr.name << " is not a qubit.");
+        }
+
+        return ref->indices[0].as<IntLiteral>()->value;
+    }
+
+    UInt getFloat(UInt operandIndex) {
+        const auto& op = getOperand(operandIndex);
+
+        const auto real = op->as_real_literal();
+
+        if (!real) {
+            QL_FATAL("Operand #" << operandIndex << " of instruction " instr.name << " is not a float.");
+        }
+
+        return real->value;
+    }
+
+    UInt getInt(UInt operandIndex) {
+        const auto& op = getOperand(operandIndex);
+
+        const auto integer = op->as_int_literal();
+
+        if (!integer) {
+            QL_FATAL("Operand #" << operandIndex << " of instruction " instr.name << " is not an integer.");
+        }
+
+        return integer->value;
+    }
+
+    private:
+    const Expression& getOperand(UInt operandIndex) {
+        const auto& templateOperands = instr.instruction_type->template_operands;
+        const auto nTemplateOperands = templateOperands.size();
+
+        if (operandIndex < nTemplateOperands) {
+            return templateOperands[operandIndex];
+        }
+
+        const auto nTotalOperands = nTemplateOperands + instr.operands.size();
+        if (operandIndex >= nTotalOperands) {
+            QL_FATAL("Tried to access operand #" << operandIndex << " of instruction " instr.name << " which has only " << nTotalOperands << " operands.");
+        }
+
+        return instr.operands[operandIndex - nTemplateOperands];
+    }
+
+    const Ref ir;
+    const CustomInstruction &instr;
+}
+
 /**
  * Adds a decomposition rule. An instruction is generated for the decomposition
  * rule based on instruction_type and template_operands if one didn't already
