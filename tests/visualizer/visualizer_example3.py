@@ -13,7 +13,7 @@ ql.set_option('unique_output', 'yes')
 ql.set_option('write_qasm_files', 'no')
 ql.set_option('write_report_files', 'no')
 
-platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'hardware_config_cc_light_visualizer2.json'))
+platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'hardware_config_cc_light_visualizer.json'))
 nqubits = 4
 p = ql.Program("testProgram1", platformCustomGates, nqubits, 0)
 k = ql.Kernel("aKernel1", platformCustomGates, nqubits, 0)

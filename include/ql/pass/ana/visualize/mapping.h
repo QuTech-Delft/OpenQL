@@ -15,7 +15,7 @@ namespace mapping {
 /**
  * Mapping graph visualizer pass.
  */
-class VisualizeMappingPass : public pmgr::pass_types::ProgramAnalysis {
+class VisualizeMappingPass : public pmgr::pass_types::Analysis {
 protected:
 
     /**
@@ -46,7 +46,7 @@ public:
      * Runs the mapping graph visualizer.
      */
     utils::Int run(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const pmgr::pass_types::Context &context
     ) const override;
 

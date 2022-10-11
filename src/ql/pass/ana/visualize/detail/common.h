@@ -73,7 +73,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/pair.h"
 #include "ql/utils/vec.h"
-#include "ql/ir/compat/compat.h"
+#include "ql/ir/ir.h"
 #include "types.h"
 
 namespace ql {
@@ -82,9 +82,9 @@ namespace ana {
 namespace visualize {
 namespace detail {
 
-utils::Vec<GateProperties> parseGates(const ir::compat::ProgramRef &program);
+utils::Vec<GateProperties> parseGates(const ir::Ref &ir);
 
-utils::Int calculateAmountOfCycles(const utils::Vec<GateProperties> &gates, utils::Int cycleDuration);
+utils::Int calculateAmountOfCycles(const utils::Vec<GateProperties> &gates);
 utils::Int calculateAmountOfBits(const utils::Vec<GateProperties> &gates, const utils::Vec<utils::Int> GateProperties::* operandType);
 
 utils::Int calculateAmountOfGateOperands(const GateProperties &gate);

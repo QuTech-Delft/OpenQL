@@ -114,10 +114,9 @@ struct GateProperties {
     utils::Str name;
     utils::Vec<utils::Int> operands;
     utils::Vec<utils::Int> creg_operands;
-    ir::compat::SwapParamaters swap_params;
-    utils::Int duration;
+    ir::compat::SwapParamaters swap_params; // FIXME: change once mapper is moved to new IR.
+    utils::Int durationInCycles;
     utils::Int cycle;
-    ir::compat::GateType type;
     utils::Vec<utils::Int> codewords; // std::vector<size_t> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
     utils::Str visual_type;
 
@@ -230,13 +229,11 @@ private:
 
 public:
     utils::Bool areEnabled() const { return enabled; }
-    utils::Bool areInNanoSeconds() const { return inNanoSeconds; }
     utils::Int getRowHeight() const { return rowHeight; }
     utils::Int getFontHeight() const { return fontHeight; }
     Color getFontColor() const { return fontColor; }
     
     void setEnabled(const utils::Bool argument) { enabled = argument; }
-    void setInNanoSeconds(const utils::Bool argument) { inNanoSeconds = argument; }
     void setRowHeight(const utils::Int argument) { assertPositive(argument, "cycles.labels.rowHeight"); rowHeight = argument; }
     void setFontHeight(const utils::Int argument) { assertPositive(argument, "cycles.labels.fontHeight"); fontHeight = argument; }
     void setFontColor(const Color argument) { fontColor = argument; }
@@ -479,97 +476,7 @@ struct CircuitLayout {
     Measurements measurements;
     Pulses pulses;
 
-    utils::Map<utils::Str, GateVisual> customGateVisuals;
-
-    const utils::Map<ir::compat::GateType, GateVisual> defaultGateVisuals {
-        // TODO: use the proper symbol for dagger gates
-        // TODO: use the proper symbol for measurement gates
-
-        {ir::compat::GateType::IDENTITY, { black, {
-            { GATE, 13, "I", 13, white, lightblue, lightblue }}}},
-
-        {ir::compat::GateType::HADAMARD, { black, {
-            { GATE, 13, "H", 13, white, lightblue, lightblue }}}},
-
-        {ir::compat::GateType::PAULI_X, { black, {
-            { GATE, 13, "X", 13, white, green, green }}}},
-
-        {ir::compat::GateType::PAULI_Y, { black, {
-            { GATE, 13, "Y", 13, white, green, green }}}},
-
-        {ir::compat::GateType::PAULI_Z, { black, {
-            { GATE, 13, "Z", 13, white, green, green }}}},
-
-        {ir::compat::GateType::PHASE, { black, {
-            { GATE, 13, "S", 13, white, yellow, yellow }}}},
-
-        {ir::compat::GateType::PHASE_DAG, { black, {
-            { GATE, 13, "S\u2020", 13, white, yellow, yellow }}}},
-
-        {ir::compat::GateType::T, { black, {
-            { GATE, 13, "T", 13, white, red, red }}}},
-
-        {ir::compat::GateType::T_DAG, { black, {
-            { GATE, 13, "T\u2020", 13, white, red, red }}}},
-
-        {ir::compat::GateType::RX90, { black, {
-            {}}}},
-        {ir::compat::GateType::MRX90, {black, {
-            {}}}},
-        {ir::compat::GateType::RX180, { black, {
-            {}}}},
-        {ir::compat::GateType::RY90, { black, {
-            {}}}},
-        {ir::compat::GateType::MRY90, {black, {
-            {}}}},
-        {ir::compat::GateType::RY180, { black, {
-            {}}}},
-        {ir::compat::GateType::RX, { black, {
-            {}}}},
-        {ir::compat::GateType::RY, { black, {
-            {}}}},
-        {ir::compat::GateType::RZ, { black, {
-            {}}}},
-        {ir::compat::GateType::PREP_Z, { black, {
-            {}}}},
-
-        {ir::compat::GateType::CNOT, { black, {
-            { CONTROL, 3, "", 0, black, black, black },
-            { NOT, 8, "", 0, black, black, black }}}},
-
-        {ir::compat::GateType::CPHASE, { lightblue, {
-            { CONTROL, 3, "", 0, black, lightblue, lightblue },
-            { CONTROL, 3, "", 0, black, lightblue, lightblue }}}},
-
-        {ir::compat::GateType::TOFFOLI, { black, {
-            {}}}},
-        {ir::compat::GateType::CUSTOM, { black, {
-            {}}}},
-        {ir::compat::GateType::COMPOSITE, { black, {
-            {}}}},
-
-        {ir::compat::GateType::MEASURE, { gray, {
-            { GATE, 13, "M", 13, white, purple, purple },
-            { NONE, 3, "", 0, black, black, black }}}},
-
-        {ir::compat::GateType::DISPLAY, { black, {
-            {}}}},
-        {ir::compat::GateType::DISPLAY_BINARY, { black, {
-            {}}}},
-        {ir::compat::GateType::NOP, { black, {
-            {}}}},
-        {ir::compat::GateType::DUMMY, { black, {
-            {}}}},
-
-        {ir::compat::GateType::SWAP, { black, {
-            { CROSS, 6, "", 0, black, black, black },
-            { CROSS, 6, "", 0, black, black, black }}}},
-
-        {ir::compat::GateType::WAIT, { black, {
-            {}}}},
-        {ir::compat::GateType::CLASSICAL, { black, {
-            {}}}}
-    };
+    utils::Map<utils::Str, GateVisual> gateVisuals;
 };
 
 } // namespace detail

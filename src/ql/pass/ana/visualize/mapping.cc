@@ -104,7 +104,7 @@ VisualizeMappingPass::VisualizeMappingPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : ProgramAnalysis(pass_factory, instance_name, type_name) {
+) : Analysis(pass_factory, instance_name, type_name) {
     options.add_str(
         "config",
         "Path to the visualizer configuration file.",
@@ -121,12 +121,13 @@ VisualizeMappingPass::VisualizeMappingPass(
  * Runs the mapping graph visualizer.
  */
 utils::Int VisualizeMappingPass::run(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
+
 #ifdef WITH_VISUALIZER
     detail::visualizeMappingGraph(
-        program, {
+        ir, {
             "MAPPING_GRAPH",
             options["config"].as_str(),
             "", // unused

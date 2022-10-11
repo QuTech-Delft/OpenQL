@@ -84,11 +84,9 @@ Instead, they may use:
  - ``ql::pmgr::pass_types::ProgramTransformation`` for old-IR passes that
    transform the complete program in one go;
  - ``ql::pmgr::pass_types::KernelTransformation`` for old-IR passes that
-   transform one kernel at a time;
+   transform one kernel at a time; or
  - ``ql::pmgr::pass_types::ProgramAnalysis`` for old-IR passes that analyze
-   the complete program in one go; or
- - ``ql::pmgr::pass_types::KernelAnalysis`` for old-IR passes that analyze one
-   kernel at a time.
+   the complete program in one go.
 
 Note that there is currently no difference between the ``*Transformation`` and
 ``*Analysis`` passes, because there is currently no good way to guarantee
