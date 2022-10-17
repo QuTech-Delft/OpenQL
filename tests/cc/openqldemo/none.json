@@ -1,0 +1,197 @@
+{
+    "eqasm_compiler": "none",
+
+    "hardware_settings": {
+        "qubit_number": 10,
+        "creg_number": 999,
+        "cycle_time": 20
+    },
+
+    "instructions": {
+
+        "prep_x": {
+            "prototype": ["W:qubit"],
+            "duration": 40
+        },
+
+        "prep_y": {
+            "prototype": ["W:qubit"],
+            "duration": 40
+        },
+
+        "prep_z": {
+            "prototype": ["W:qubit"],
+            "duration": 40
+        },
+
+        "i": {
+            "prototype": ["U:qubit"],
+            "duration": 40
+        },
+
+        "h": {
+            "prototype": ["U:qubit"],
+            "duration": 40
+        },
+
+        "x": {
+            "prototype": ["X:qubit"],
+            "duration": 40
+        },
+
+        "y": {
+            "prototype": ["Y:qubit"],
+            "duration": 40
+        },
+
+        "z": {
+            "prototype": ["Z:qubit"],
+            "duration": 40
+        },
+
+        "x90": {
+            "prototype": ["X:qubit"],
+            "duration": 40
+        },
+
+        "y90": {
+            "prototype": ["Y:qubit"],
+            "duration": 20
+        },
+
+        "x180": {
+            "prototype": ["X:qubit"],
+            "duration": 40
+        },
+
+        "y180": {
+            "prototype": ["Y:qubit"],
+            "duration": 40
+        },
+
+        "mx90": {
+            "prototype": ["X:qubit"],
+            "duration": 40
+        },
+
+        "my90": {
+            "prototype": ["Y:qubit"],
+            "duration": 20
+        },
+
+        "rx": {
+            "prototype": ["X:qubit", "L:real"],
+            "duration": 40
+        },
+
+        "ry": {
+            "prototype": ["Y:qubit", "L:real"],
+            "duration": 40
+        },
+
+        "rz": {
+            "prototype": ["Z:qubit", "L:real"],
+            "duration": 40
+        },
+
+        "s": {
+            "prototype": ["Z:qubit"],
+            "duration": 40
+        },
+
+        "sdag": {
+            "prototype": ["Z:qubit"],
+            "duration": 40
+        },
+
+        "t": {
+            "prototype": ["Z:qubit"],
+            "duration": 40
+        },
+
+        "tdag": {
+            "prototype": ["Z:qubit"],
+            "duration": 40
+        },
+
+        "cnot": {
+            "prototype": ["Z:qubit", "X:qubit"],
+            "duration": 80
+        },
+
+        "toffoli": {
+            "prototype": ["Z:qubit", "Z:qubit", "X:qubit"],
+            "duration": 80
+        },
+
+        "cz": {
+            "prototype": ["Z:qubit", "Z:qubit"],
+            "duration": 80
+        },
+
+        "swap": {
+            "prototype": ["U:qubit", "U:qubit"],
+            "duration": 80
+        },
+
+        "measure": {
+            "prototype": ["M:qubit"],
+            "duration": 300,
+            "decomposition": {
+                "name": "desugar",
+                "into": "measure op(0), bit(op(0))"
+            }
+        },
+
+        "measure ": {
+            "prototype": ["U:qubit", "W:bit"],
+            "duration": 300
+        },
+
+        "measure_x": {
+            "prototype": ["M:qubit"],
+            "duration": 300
+        },
+
+        "measure_x ": {
+            "prototype": ["U:qubit", "W:bit"],
+            "duration": 300
+        },
+
+        "measure_y": {
+            "prototype": ["M:qubit"],
+            "duration": 300
+        },
+
+        "measure_y ": {
+            "prototype": ["U:qubit", "W:bit"],
+            "duration": 300
+        },
+
+        "measure_z": {
+            "prototype": ["M:qubit"],
+            "duration": 300
+        },
+
+        "measure_z ": {
+            "prototype": ["U:qubit", "W:bit"],
+            "duration": 300
+        },
+
+        "display": {
+            "prototype": [],
+            "barrier": true,
+            "duration": 20
+        },
+
+        "display_binary": {
+            "prototype": [],
+            "barrier": true,
+            "duration": 20
+        }
+    },
+
+    "gate_decomposition": {
+        "mycomplicatedgate %0": ["h %0", "x %0"]
+    }
+}

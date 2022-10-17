@@ -1,0 +1,11 @@
+version 1.2
+
+pragma @ql.name("initialplacerdemo")
+pragma @ql.platform("myplat", "mapperplatform.json", "initialplacer.json")
+
+.test
+    h q[0]
+    cnot q[0],q[3]
+    cnot q[0],q[3]
+    cnot q[0],q[3]
+    cnot q[0],q[3]

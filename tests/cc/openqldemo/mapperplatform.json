@@ -1,0 +1,60 @@
+{
+    "eqasm_compiler": "none",
+
+    "hardware_settings": {
+        "qubit_number": 4,
+        "cycle_time": 20
+    },
+    
+    "topology": {
+        "form": "irregular",
+        "edges": [
+            {"id": 0, "src": 0, "dst": 1},
+            {"id": 1, "src": 1, "dst": 0},
+            {"id": 2, "src": 1, "dst": 2},
+            {"id": 3, "src": 2, "dst": 1},
+            {"id": 4, "src": 2, "dst": 3},
+            {"id": 5, "src": 3, "dst": 2}
+        ]
+    },
+
+    "instructions": {
+
+        "h": {
+            "prototype": ["Z:qubit"],
+            "duration": 40
+        },
+
+        "cnot": {
+            "prototype": ["Z:qubit", "X:qubit"],
+            "duration": 80
+        },
+        
+        "swap": {
+            "prototype": ["U:qubit", "U:qubit"],
+            "duration": 80
+        },
+
+        "move": {
+            "prototype": ["U:qubit", "U:qubit"],
+            "duration": 80
+        },
+
+        
+        "prep_x": {
+            "prototype": ["W:qubit"],
+            "duration": 40
+        },
+
+        "prep_y": {
+            "prototype": ["W:qubit"],
+            "duration": 40
+        },
+
+        "prep_z": {
+            "prototype": ["W:qubit"],
+            "duration": 40
+        }
+
+    }
+}

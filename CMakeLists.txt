@@ -509,6 +509,7 @@ if(OPENQL_BUILD_TESTS)
     function(add_openql_test name source workdir)
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
         target_link_libraries("${name}" ql)
+        target_compile_options("${name}" PUBLIC -Wall -Wfatal-errors -ggdb)
         add_test(
             NAME "${name}"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${workdir}"

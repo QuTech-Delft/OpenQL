@@ -1,0 +1,23 @@
+{
+    "passes": [
+        {
+            "type": "dec.Instructions",
+            "options": {
+            }
+        },
+        {
+            "type": "io.cqasm.Report",
+            "options":
+            {
+                "output_prefix": "test_output/%N",
+                "output_suffix": "_afterdec.cq"
+            }
+        },
+        {
+            "type": "arch.cc.gen.VQ1Asm",
+            "options":
+            {
+            }
+        }
+    ]
+}

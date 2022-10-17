@@ -1,0 +1,56 @@
+{
+    "passes": [
+        {
+            "type": "dec.Instructions",
+            "options": {
+            }
+        },
+        {
+            "type": "io.cqasm.Report",
+            "options":
+            {
+                "output_prefix": "test_output/%N",
+                "output_suffix": "_afterinstructiondecomposition.cq"
+            }
+        },
+        {
+            "type": "opt.ConstProp",
+            "options": {
+            }
+        },
+        {
+            "type": "io.cqasm.Report",
+            "options":
+            {
+                "output_prefix": "test_output/%N",
+                "output_suffix": "_afterconstprop.cq"
+            }
+        },
+        {
+            "type": "opt.DeadCodeElim",
+            "options": {
+            }
+        },
+        {
+            "type": "io.cqasm.Report",
+            "options":
+            {
+                "output_prefix": "test_output/%N",
+                "output_suffix": "_afterdeadcodeelim.cq"
+            }
+        },
+        {
+            "type": "opt.clifford.Optimize",
+            "options": {
+            }
+        },
+        {
+            "type": "io.cqasm.Report",
+            "options":
+            {
+                "output_prefix": "test_output/%N",
+                "output_suffix": "_afterclifford.qasm"
+            }
+        }
+    ]
+}

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
+add_subdirectory(cc/openqldemo)
 add_openql_test(test_cc cc/test_cc.cc cc)
 add_openql_test(test_mapper test_mapper.cc .)
 add_openql_test(test_multi_core test_multi_core.cc .)
