@@ -18,7 +18,7 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
     utils::dump_str(os, line_prefix, R"(
     This architecture is aimed towards computing with qubits made in color
     centers in diamond. It is part of the Fujitsu project and is a work in
-    progress. The backend will, for now as it is in it's early stages, work as a
+    progress. The backend will, for now as it is in its early stages, work as a
     translation tool from a high-level algorithm to our own defined microcode.
     It is mostly a proof of concept at this time.
     )");

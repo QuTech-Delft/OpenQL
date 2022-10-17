@@ -191,17 +191,12 @@ void VisualizeCircuitPass::dump_docs(
 )" R"(
     * Gate visualization *
 
-      When using default gates, the visualizations for each gate are built in.
-      However, default gates are mostly deprecated (aside from a few exceptions
-      such as barrier), and will likely be removed in the future.
-
-      When using custom gates, the default gate visualizations are not used, so
-      the visualization needs to be defined by the user. In the instructions
-      section of the visualizer configuration file, each instruction "type" has
-      its own corresponding description of gate visualization parameters. These
-      instruction types are mapped to actual custom instructions from the
-      hardware configuration file by adding a `"visual_type"` key to the
-      instructions. For example:
+      A visualization needs to be defined by the user for each gate type used in the circuit.
+      In the instructions section of the visualizer configuration file, each instruction
+      "type" has its own corresponding description of gate visualization parameters.
+      These instruction types are mapped to actual custom instructions from the
+      hardware configuration file by adding a `"visual_type"` key to the instructions.
+      For example:
 
       ```
       {
@@ -357,8 +352,8 @@ VisualizeCircuitPass::VisualizeCircuitPass(
     );
     options.add_bool(
         "interactive",
-        "When yes, the visualizer will open a window when the pass is run. "
-        "When no, an image will be saved as <output_prefix>.bmp instead."
+        "When `yes`, the visualizer will open a window when the pass is run. "
+        "When `no`, an image will be saved as `<output_prefix>.bmp` instead."
     );
 }
 
