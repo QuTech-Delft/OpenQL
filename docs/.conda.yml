@@ -8,5 +8,6 @@ dependencies:
     - glpk
     - pip
     - pip:
-        - -r file:requirements-docs.txt
+        - sphinx==3.5.4
+        - m2r2
 
