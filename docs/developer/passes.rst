@@ -108,7 +108,7 @@ The pass class itself is not the correct place to store variables/fields for
 the actual algorithm that ``run()`` implements. Instead, if the implementation
 of a pass is complex, it's better to make a ``detail`` namespace for the
 pass-specific types and functions, and leave the pass class as a thin wrapper
-around it. Ideally, these wrappers (and pass registration) can then ultimately
+around it. Ideally, these wrappers can then ultimately
 be generated, preventing a lot of boilerplate code. Even without the generator,
 it's good to have the boilerplate and documentation generation stuff separate
 from the actual implementation; the implementation will probably be complex
@@ -119,20 +119,22 @@ The pass factory
 
 For a pass type to be usable within a compilation strategy, its class must be
 registered with the pass factory (``ql::pmgr::Factory``) used to build the
-strategy with. While the code is written such that it's possible for a user
-program to eventually make its own pass factory (which would probably be
-necessary to let them define their own passes), currently everything just uses
-a default-constructed ``Factory`` object initially.
+strategy with.
 
 Passes self-register statically to the pass factory using the static `register_pass`
 function. This allows the pass factory to not have to depend on and include pass headers.
 To do that, the pass class needs to declare a static boolean member called (for example)
 `is_pass_registered` and defined in a similar way as:
+
 .. code-block:: c++
+
     bool ReadCQasmPass::is_pass_registered = pmgr::Factory::register_pass<ReadCQasmPass>("io.cqasm.Read");
 
 The template argument (typedefs to) the pass class, while the string argument
-defines its externally-usable type name.
+defines its externally-usable type name. With a bit of C++ magic, it would be possible
+to place this static registration in the base pass class, so that passes don't even have
+to register themselves explicitely, and any class inheriting from the base pass class would
+automatically be statically registered to the factory, but currently we're not there yet.
 
 .. note::
 
