@@ -26,16 +26,6 @@ RUN mkdir -p bison      && \
     cd ..               && \
     rm -rf bison
 
-# Install glpk from source (dependency for lemon, which is itself a submodule).
-RUN mkdir -p glpk       && \
-    curl -L https://ftp.gnu.org/gnu/glpk/glpk-4.35.tar.gz | tar xz -C /glpk/ --strip-components=1 && \
-    cd glpk             && \
-    ./configure         && \
-    make -j $NPROCS     && \
-    make install        && \
-    cd ..               && \
-    rm -rf glpk
-
 # Install pcre from source (dependency for swig).
 RUN mkdir -p pcre       && \
     curl -L ftp://ftp.pcre.org/pub/pcre/pcre-8.41.tar.bz2 | tar xj -C /pcre/ --strip-components=1 && \

@@ -35,7 +35,6 @@ The following packages are required to compile OpenQL from sources:
 - [Optional] Doxygen (for documentation generation)
 - [Optional] Graphviz Dot utility (to convert graphs from dot to pdf, png etc)
 - [Optional] XDot (to visualize generated graphs in dot format)
-- [Optional] GLPK (if you want initial placement support)
 - [Optional] make (required for documentation generation; other CMake backends can be used for everything else)
 - [Optional, MacOS only] XQuartz (only if you want to use the visualizer)
 
@@ -60,12 +59,6 @@ Dependencies can be installed with:
 - `swigwin 4.0.0 <https://sourceforge.net/projects/swig/files/swigwin/swigwin-4.0.0/swigwin-4.0.0.zip/download>`_
 
 Make sure the above mentioned binaries are added to the system path.
-
-For initial placement support, you'll also need
-`winglpk 4.6.5 <https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-4.65/winglpk-4.65.zip/download>`_.
-But just adding this directory to the system path is not enough for CMake to find it. Instead, the toplevel
-CMake script listens to the ``WINGLPK_ROOT_DIR`` environment variable. Set that to the root directory of what's
-in that zip file instead.
 
 Alternatively, you can use Chocolatey to install packages. This is how CI currently does it. They just chain to
 sourceforge downloads, though.
@@ -134,7 +127,7 @@ All dependencies can be installed using `Homebrew <https://brew.sh>`_ and pip:
 ::
 
     brew update
-    brew install llvm flex bison cmake swig python3 doxygen graphviz glpk xquartz
+    brew install llvm flex bison cmake swig python3 doxygen graphviz xquartz
     pip3 install wheel plumbum pytest numpy sphinx==3.5.4 sphinx-rtd-theme m2r2
 
 Make sure the above mentioned binaries are added to the system path in front of ``/usr/bin``, otherwise CMake finds the default versions.
@@ -152,8 +145,7 @@ on this; while ``cmake3`` is in the package manager, you actually need to call `
 ``cmake``, which ``setup.py`` is not smart enough for. On CentOS or other batteries-not-included systems
 you might also have to compile some dependencies manually (``swig``, ``flex``, ``bison``, and their
 dependencies ``m4`` and possibly ``gettext``), but they shouldn't give you too much drama. ``cmake`` has
-distro-agnostic binary distributions on github that are a only ``wget`` and ``tar xzv`` away. ``glpk``
-might be a bigger issue; I haven't tried.
+distro-agnostic binary distributions on github that are a only ``wget`` and ``tar xzv`` away.
 
 
 Obtaining OpenQL
@@ -206,7 +198,6 @@ to remember to uninstall if you ever end up moving it.
    The ``setup.py`` script (as invoked by pip in the above commands, again, do not invoke it directly!) listens to a number
    of environment variables to configure the installation and the compilation process. The most important ones are:
 
-   - ``OPENQL_ENABLE_INITIAL_PLACEMENT``: if defined (value doesn't metter), initial placement support will be enabled.
    - ``OPENQL_DISABLE_UNITARY``: if defined (value doesn't matter), unitary decomposition is disabled. This speeds up
      compile time if you don't need it.
    - ``NPROCS``: sets the number of parallel processes to use when compiling (must be a number if defined). Without
@@ -292,7 +283,6 @@ Other CMake flags
 CMake accepts a number of flags in addition to the ``-DOPENQL_BUILD_TESTS=ON``
 flag used above:
 
- - ``-DWITH_INITIAL_PLACEMENT=ON``: enables initial placement.
  - ``-DWITH_UNITARY_DECOMPOSITION=OFF``: disables unitary composition (vastly
    speeds up compile time if you don't need it).
  - ``-DCMAKE_BUILD_TYPE=Debug``: builds in debug rather than release mode

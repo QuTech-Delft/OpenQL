@@ -11,7 +11,6 @@ build:
     - NPROCS
     - OPENQL_BUILD_TYPE
     - OPENQL_DISABLE_UNITARY
-    - OPENQL_ENABLE_INITIAL_PLACEMENT
 
 requirements:
   build:

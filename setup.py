@@ -169,11 +169,6 @@ class build_ext(_build_ext):
             if 'OPENQL_DISABLE_UNITARY' in os.environ:
                 cmd = cmd['-DWITH_UNITARY_DECOMPOSITION=OFF']
 
-            # Initial placement support can be enabled using an environment
-            # variable.
-            if 'OPENQL_ENABLE_INITIAL_PLACEMENT' in os.environ:
-                cmd = cmd['-DWITH_INITIAL_PLACEMENT=ON']
-
             # C++ tests can be enabled using an environment variable. They'll
             # be run before the install.
             if 'OPENQL_BUILD_TESTS' in os.environ:

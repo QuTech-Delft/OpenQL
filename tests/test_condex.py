@@ -129,7 +129,6 @@ class Test_condex(unittest.TestCase):
 
         ql.set_option('mapper', 'minextend')
         ql.set_option('mapassumezeroinitstate', 'no')
-        ql.set_option('mapinitone2one', 'yes')
         ql.set_option('mapusemoves', 'yes')
         ql.set_option('maplookahead', 'noroutingfirst')
         ql.set_option('mappathselect', 'all')
@@ -173,7 +172,6 @@ class Test_condex(unittest.TestCase):
 
         ql.set_option('mapper', 'minextend')
         ql.set_option('mapassumezeroinitstate', 'no')
-        ql.set_option('mapinitone2one', 'yes')
         ql.set_option('mapusemoves', 'yes')
         ql.set_option('maplookahead', 'noroutingfirst')
         ql.set_option('mappathselect', 'all')

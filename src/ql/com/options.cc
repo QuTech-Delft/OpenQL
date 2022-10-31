@@ -204,34 +204,6 @@ Options make_ql_options() {
     );
 
     //========================================================================//
-    // Default-inserted initial/MIP placement pass behavior                   //
-    //========================================================================//
-
-    // NOTE: actually still part of the router (i.e. the complete mapper
-    // implementation right now)
-
-    options.add_enum(
-        "initialplace",
-        "When no compiler configuration file is specified, this controls "
-        "whether the MIP-based initial placement algorithm should be run "
-        "before running the heuristic mapper. A timeout can be specified, as "
-        "listed in the allowable values. If the timeout value ends in an 'x', "
-        "compilation fails if the timeout is hit; otherwise, heuristic mapping "
-        "is performed instead.",
-        "no",
-        {"no", "yes", "1s", "10s", "1m", "10m", "1h", "1sx", "10sx", "1mx", "10mx", "1hx"}
-    );
-
-    options.add_int(
-        "initialplace2qhorizon",
-        "When no compiler configuration file is specified, this controls "
-        "how many two-qubit gates the MIP-based initial placement pass (if any) "
-        "considers for each kernel. If 0 or unspecified, all gates are "
-        "considered.",
-        "0", 0, 100
-    );
-
-    //========================================================================//
     // Default-inserted heuristic router pass behavior                        //
     //========================================================================//
 
@@ -252,15 +224,6 @@ Options make_ql_options() {
         "via the heuristic or tie-breaking method. 0 means unlimited.",
         "0",
         0, utils::MAX
-    );
-
-    options.add_bool(
-        "mapinitone2one",
-        "When no compiler configuration file is specified, and the mapper is "
-        "enabled, this controls whether the mapper should assume that each "
-        "kernel starts with a one-to-one mapping between virtual and real "
-        "qubits. When disabled, the initial mapping is treated as undefined.",
-        true
     );
 
     options.add_bool(

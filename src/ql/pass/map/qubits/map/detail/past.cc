@@ -5,7 +5,6 @@
 #include "past.h"
 
 #include "ql/utils/filesystem.h"
-#include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
 
 // uncomment next line to enable multi-line dumping
 // #define MULTI_LINE_LOG_DEBUG
@@ -33,7 +32,7 @@ void Past::initialize(const ir::compat::KernelRef &k, const OptionsRef &opt) {
     QL_ASSERT(kernel->gates.empty());     // kernelp->c will be used by new_gate to return newly created gates into
     v2r.resize(                       // v2r initializtion until v2r is imported from context
         nq,
-        options->initialize_one_to_one,
+        true,
         options->assume_initialized ? com::map::QubitState::INITIALIZED : com::map::QubitState::NONE
     );
     fc.initialize(platform, options); // fc starts off with all qubits free, is updated after schedule of each gate
@@ -515,18 +514,12 @@ void Past::add_and_schedule(const ir::compat::GateRef &gate) {
 }
 
 /**
- * Returns the real qubit index implementing virtual qubit index. If the
- * virtual qubit is not yet mapped, allocate a new real qubit index and
- * map to it.
+ * Returns the real qubit index implementing virtual qubit index.
  */
-utils::UInt Past::map_qubit(utils::UInt virt) {
-    QL_DOUT("map_qubit(virt=" << virt);
+utils::UInt Past::get_real_qubit(utils::UInt virt) {
     utils::UInt r = v2r[virt];
-    if (r == com::map::UNDEFINED_QUBIT) {
-        QL_DOUT("... map_qubit, virt qubit maps to undefined real qubit, so allocate it");
-        r = v2r.allocate(virt);
-    }
-    QL_DOUT("-> map_qubit(virt=" << virt << " mapped to real=" << r);
+    QL_ASSERT(r != com::map::UNDEFINED_QUBIT);
+    QL_DOUT("get_real_qubit(virt=" << virt << " mapped to real=" << r);
     return r;
 }
 
@@ -553,9 +546,9 @@ void Past::make_real(const ir::compat::GateRef &gate, ir::compat::GateRefs &circ
     utils::Str gname = gate->name;
     strip_name(gname);
 
-    utils::Vec<utils::UInt> real_qubits = gate->operands;// starts off as copy of virtual qubits!
+    utils::Vec<utils::UInt> real_qubits = gate->operands; // starts off as copy of virtual qubits!
     for (auto &qi : real_qubits) {
-        qi = map_qubit(qi);          // and now they are real
+        qi = get_real_qubit(qi);          // and now they are real
         if (options->assume_prep_only_initializes && (gname == "prepz" || gname == "Prepz")) {
             v2r.set_state(qi, com::map::QubitState::INITIALIZED);
         } else {
