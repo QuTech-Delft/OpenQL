@@ -113,16 +113,11 @@ std::ostream &operator<<(std::ostream &os, PathStrategy p);
  * While mapping, the relationship between virtual and real qubits is tracked by
  * a QubitMapping object. This tracks two things.
  *
- *  - The actual virtual to real qubit map. It's possible for virtual qubits to
- *    not be mapped to a real qubit yet, and it's possible for real qubits to
- *    be unused. Virtual qubits are in use as soon as they have been encountered
- *    as operands in the program, at which point they are allocated, unless the
- *    map is initialized one to one before mapping, or initial placement has
- *    already determined a mapping. When a virtual qubit is not in use, it maps
- *    to UNDEFINED_QUBIT. The reverse operation also exists (get_virtual());
- *    when there is no virtual qubit that maps to a particular real qubit, it
- *    also returns UNDEFINED_QUBIT. At any time, the virtual to real and reverse
- *    maps are 1-1 for qubits that are in use.
+ *  - The actual virtual to real qubit map `v2r`. The
+ *    map is initialized one to one (virtual qubit index i maps to real qubit index i)
+ *    before routing. Which real qubit a virtual qubit maps to is accessed with operator[].
+ *    The reverse operation also exists (get_virtual()).
+ *    At any time, the virtual to real and reverse maps are 1-1 for all qubits.
  *
  *  - The liveness/state of each real qubit. This can be none (the state is
  *    garbage), initialized (the state is |0>), or live (the state is anything
@@ -144,12 +139,6 @@ std::ostream &operator<<(std::ostream &os, PathStrategy p);
  * The mapping is done in the context of a grid of qubits defined by the given
  * platform. The information about this grid lives in platform.topology.
  *
- * For each kernel there are two methods: initial placement and a heuristic,
- * of which initial placement may do a half-hearted job, while heuristic will
- * always be successful in finding a map; but what initial placement may find,
- * it will be used by the heuristic as an initial mapping; they are in this
- * order.
- *
  * Each kernel in the program is independently mapped (see the map_kernel
  * method), ignoring inter-kernel control flow and thereby the requirement to
  * pass on the current mapping.
@@ -162,10 +151,7 @@ std::ostream &operator<<(std::ostream &os, PathStrategy p);
  *  - Mapping starts from a 1 to 1 mapping of virtual to real qubits (the kernel
  *    input mapping), in which all virtual qubits are initialized to a fixed
  *    constant state (|0>/inited), suitable for replacing swap by move.
- *  - Optionally attempt an initial placement of the circuit, starting from the
- *    kernel input mapping and thus optionally updating the virtual to real map
- *    and the state of used virtuals (from initialized to live).
- *  - Use heuristics to map the input (or what initial placement left to do),
+ *  - Use heuristics to map the input,
  *    mapping the virtual gates to (sets of) real gates, and outputing the new
  *    map and the new virtuals' state
  *  - Optionally decompose swap and/or cnot gates in the real circuit to
@@ -187,8 +173,6 @@ std::ostream &operator<<(std::ostream &os, PathStrategy p);
  *  - Unify these multiple input mappings to a single one; this may introduce
  *    swaps on the control flow edges. The result is the input mapping of the
  *    current kernel; keep it for later reference.
- *  - Attempt an initial placement of the circuit, starting from the kernel
- *    input mapping.
  *  - Use heuristics to map the input (or what initial placement left to do).
  *  - When done, keep the output mapping as the kernel's output mapping. For all
  *    mapped successor kernels, compute a transition from output to their input,
@@ -204,8 +188,7 @@ std::ostream &operator<<(std::ostream &os, PathStrategy p);
  * THE ABOVE INTER-KERNEL MAPPING IS NOT IMPLEMENTED.
  *
  * The Mapper's main entry is map_kernel which manages the input and output
- * streams of QASM instructions, and does the logic between (global) initial
- * placement mapper and the (more local) heuristic mapper. It selects the
+ * streams of QASM instructions. It selects the
  * quantum gates from it, and maps these in the context of what was mapped
  * before (the Past). Each gate is separately mapped in MapGate in the main
  * Past's context.
@@ -277,11 +260,6 @@ private:
      * Qubit mapping before mapping, set by map_kernel().
      */
     com::map::QubitMapping v2r_in;
-
-    /**
-     * Qubit mapping after initial placement, set by map_kernel().
-     */
-    com::map::QubitMapping v2r_ip;
 
     /**
      * Qubit mapping after mapping, set by map_kernel().
@@ -464,12 +442,7 @@ private:
      * which the mapping is done.
      */
     void map_gates(Future &future, Past &past, Past &base_past);
-
-    /**
-     * Performs (initial) placement of the qubits.
-     */
-    void place(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r);
-
+    
     /**
      * Map the kernel's circuit's gates in the provided context (v2r maps),
      * updating circuit and v2r maps.
@@ -489,21 +462,10 @@ private:
     void initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt);
 
     /**
-     * Runs initial placement, routing, and decomposition to primitives for
+     * Runs routing and decomposition to primitives for
      * the given kernel.
      *
-     * TODO: this should be split up into multiple passes, but this is difficult
-     *  right now because:
-     *   - place() does not actually modify the kernel, it just outputs a map.
-     *     There is no place for that in the IR (at least not right now), so
-     *     at best it could add an annotation, which would be weird. It should
-     *     just update the gates immediately, but this is also problematic right
-     *     now, because merely making a gate triggers decompositions.
-     *   - decompose_to_primitives() could be split off relatively easily, but
-     *     there's no point in doing that now, because we want a generic
-     *     decomposition pass anyway, and it needs the same kludges for adding
-     *     gates as the mapper does, so it (ab)uses those and is thus linked to
-     *     the mapper code.
+     * TODO: split off the decomposition to primitives.
      */
     void map_kernel(const ir::compat::KernelRef &k);
 

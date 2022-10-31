@@ -5,7 +5,7 @@
 #include "ql/pass/map/qubits/place_mip/place_mip.h"
 
 #include "ql/pass/ana/statistics/annotations.h"
-#include "detail/algorithm.h"
+#include "detail/impl.h"
 #include "ql/pmgr/factory.h"
 
 namespace ql {
@@ -23,22 +23,23 @@ void PlaceQubitsPass::dump_docs(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
-#ifdef INITIALPLACE
     utils::dump_str(os, line_prefix, R"asdf(
-    This pass tries to map the two-qubit gate interaction graph onto the target
-    device topology without adding swaps or moves by means of an exhaustive
-    search.
+    This step attempts to find a single mapping of the virtual qubits of a
+    circuit to the real qubits of the platform's qubit topology that minimizes
+    the sum of the distances between the two mapped operands of all
+    two-qubit gates in the circuit. The distance between two real qubits is
+    the minimum number of swaps that is required to move the state of one of
+    the two qubits to the other. It employs a Mixed Integer Linear Programming
+    (MIP) algorithm to solve this, modelled as a Quadratic Assignment Problem.
+    Because the time-complexity of the MIP solving is exponential with respect to
+    the number of pairs of 2 virtual qubits that interact, this may take quite some computer time.
+    That is why a timeout option is provided that controls how long the solving can take.
 
-    NOTE: this pass currently operates purely on a per-kernel basis. Because it
-    may adjust the qubit mapping of each kernel, a program consisting of
-    multiple kernels that maintains a quantum state between the kernels may be
-    silently destroyed.
-
-    The program is modelled as a Quadratic Assignment Problem by Lingling Lao in
-    her mapping paper:
+    This initial mapping program is modelled as a Quadratic Assignment Problem by Lingling Lao in
+    her 2018 mapping paper "Mapping of lattice surgery-based quantum circuits on surface code architectures":
 
     variables:
-        forall i: forall k: x[i][k], x[i][k] is integral and 0 or 1, meaning qubit i is in location k
+        forall i: forall k: x[i][k], x[i][k] is integral and 0 or 1, meaning facility i is in location k
     objective:
         min z = sum i: sum j: sum k: sum l: refcount[i][j] * distance(k,l) * x[i][k] * x[j][l]
     subject to:
@@ -66,14 +67,16 @@ void PlaceQubitsPass::dump_docs(
         forall i: ( sum k: x[i][k] == 1 )
         forall i: forall k: costmax[i][k] * x[i][k]
             + ( sum j: sum l: refcount[i][j]*distance(k,l)*x[j][l] ) - w[i][k] <= costmax[i][k]
+
+    This model is resolved with the HiGHS solver (see www.highs.dev), licensed under the MIT license.
+
+    Since solving might take some time, two options are offered to deal with this (and
+    these can be combined):
+    - the initial placement "horizon" may be used to limit the number of
+    different two-qubit gates considered by the solver to the first N for each kernel;
+    - a timeout may be specified.
+
     )asdf");
-#else
-    utils::dump_str(os, line_prefix, R"(
-    This pass was disabled due to configuration options when building the
-    compiler. Therefore, this pass will simply fail when run. If you compiled
-    OpenQL yourself and intend to use this pass, you're probably missing GLPK.
-    )");
-#endif
 }
 
 /**
@@ -90,81 +93,88 @@ PlaceQubitsPass::PlaceQubitsPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : pmgr::pass_types::KernelTransformation(pass_factory, instance_name, type_name) {
+) : pmgr::pass_types::Transformation(pass_factory, instance_name, type_name) {
     options.add_int(
         "horizon",
         "When specified, the placement algorithm will only consider the "
-        "connectivity required to perform the first N two-qubit gates of each "
-        "kernel. When not specified or zero, all two-qubit gates are "
+        "connectivity required to perform the first N most frequent two-qubit gate types. "
+        "When not specified or zero, all two-qubit gate types are "
         "considered.",
-        "0", 0, 100
+        "0", 0, utils::MAX
+    );
+    options.add_real(
+        "timeout",
+        "A float duration in seconds after which the MIP problem resolution by HiGHS will terminate. "
+        "If this happens, the pass will emit a warning and will not update the qubit indices. "
+        "When set to 0, there is no time limit.",
+        "0.", 0., utils::INF
+    );
+    options.add_bool(
+        "write_model_to_file",
+        "Whether to write the model as MPS format to a file, as well as a pixel array representing the "
+        "matrice of the linear optimization problem.",
+        true
+    );
+    options.add_str(
+        "model_filename",
+        "Filename where to write the MPS optimization model.",
+        "highs_model.mps"
+    );
+    options.add_bool(
+        "fail_on_timeout",
+        "Whether to exit compilation with an error when the MIP solving times out.",
+        true
     );
 }
+
+class ReferenceUpdater : public ir::RecursiveVisitor {
+public:
+    ReferenceUpdater(ir::Ref aIr, const utils::Vec<utils::UInt> &aMapping) : ir(aIr), mapping(aMapping) {}
+
+    void visit_node(ir::Node &node) override {}
+
+    void visit_reference(ir::Reference &ref) override {
+        if (ref.target == ir->platform->qubits && ref.data_type == ir->platform->qubits->data_type) {
+            QL_ASSERT(ref.indices.size() == 1);
+            ref.indices[0].as<ir::IntLiteral>()->value = mapping[ref.indices[0].as<ir::IntLiteral>()->value];
+        }
+    }
+
+private:
+    ir::Ref ir;
+    const utils::Vec<utils::UInt> &mapping;
+};
 
 /**
  * Runs initial qubit placement.
  */
 utils::Int PlaceQubitsPass::run(
-    const ir::compat::ProgramRef &program,
-    const ir::compat::KernelRef &kernel,
+    const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
-#ifdef INITIALPLACE
-
-    // Parse the options.
-    // NOTE: timeout is not mapped to a user-visible option because the
-    //  implementation is broken.
     detail::Options opts;
-    opts.timeout = 0.0;
+    opts.timeout = options["timeout"].as_real();
     opts.horizon = options["horizon"].as_uint();
-    opts.map_all = true;
+    opts.write_model_to_file = options["write_model_to_file"].as_bool();
+    opts.model_filename = options["model_filename"].as_str();
+    opts.fail_on_timeout = options["fail_on_timeout"].as_bool();
 
-    // Run the algorithm.
-    com::map::QubitMapping mapping(kernel->platform->qubit_count, true);
-    detail::Algorithm algorithm;
-    auto result = algorithm.run(kernel, opts, mapping);
+    auto qubit_count = ir->platform->qubits->shape[0];
+    
+    utils::Vec<utils::UInt> mapping(qubit_count, detail::UNDEFINED_QUBIT);
+    auto result = detail::performInitialPlacement(ir, opts, mapping);
 
-    // Save the results as statistics.
-    ana::statistics::AdditionalStats::push(
-        kernel,
-        context.full_pass_name + " result: " + utils::to_string(result)
-    );
-    ana::statistics::AdditionalStats::push(
-        kernel,
-        context.full_pass_name + " time taken: " + utils::to_string(algorithm.get_time_taken()) + "s"
-    );
-
-    // If the algorithm gave us a new mapping, apply it to all gates in the
-    // kernel.
-    if (result == detail::Result::NEW_MAP) {
-
-        // FIXME JvS: One Does Not Simply change qubit operands. In general
-        //  this just wouldn't work at all. Hence this pass isn't registered
-        //  with the pass manager (it's commented out), and is for now still
-        //  part of map.qubits.Route.
+    if (result == detail::Result::TIMED_OUT && opts.fail_on_timeout) {
+        QL_FATAL("Initial placement pass timed out. You can disable this error by setting pass option fail_on_timeout to false.");
         QL_ASSERT(false);
-        for (const auto &gate : kernel->gates) {
-            for (auto &qubit : gate->operands) {
-                qubit = mapping[qubit];
-            }
-        }
-        ana::statistics::AdditionalStats::push(
-            kernel,
-            context.full_pass_name + " mapping applied: " + utils::to_string(mapping.get_virt_to_real())
-        );
+    }
+
+    if (result == detail::Result::NEW_MAP) {
+        ReferenceUpdater referenceUpdater(ir, mapping);
+        ir->program->visit(referenceUpdater);
     }
 
     return 0;
-
-#else
-
-    throw utils::Exception(
-        "The " + get_type() + " pass type was disabled due to configuration " +
-        "options when building the compiler. If you compiled OpenQL yourself, " +
-        "you're probably missing GLPK."
-    );
-
-#endif
 }
 
 } // namespace place

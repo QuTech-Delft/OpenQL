@@ -56,7 +56,7 @@ private:
     /**
      * Size of the map.
      */
-    utils::UInt nq;
+    utils::UInt nq = 0;
 
     /**
      * Maps virtual qubit indices to real qubit indices or UNDEFINED_QUBIT.

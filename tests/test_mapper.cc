@@ -1442,11 +1442,8 @@ int main(int argc, char ** argv) {
 
     ql::set_option("clifford_premapper", "yes");
     ql::set_option("mapper", "minextendrc");
-    ql::set_option("mapinitone2one", "yes");
 //parameter1  ql::set_option("maplookahead", "noroutingfirst");
     ql::set_option("mapselectswaps", "all");
-    ql::set_option("initialplace", "yes");
-    ql::set_option("initialplace2qhorizon", "0");
     ql::set_option("mappathselect", "all");
     ql::set_option("mapusemoves", "yes");
     ql::set_option("mapreverseswap", "yes");

@@ -287,11 +287,9 @@ public:
     void add_and_schedule(const ir::compat::GateRef &gate);
 
     /**
-     * Returns the real qubit index implementing virtual qubit index. If the
-     * virtual qubit is not yet mapped, allocate a new real qubit index and
-     * map to it.
+     * Returns the real qubit index implementing virtual qubit index.
      */
-    utils::UInt map_qubit(utils::UInt virt);
+    utils::UInt get_real_qubit(utils::UInt virt);
 
     /**
      * Turns the given gate into a "real" gate.
