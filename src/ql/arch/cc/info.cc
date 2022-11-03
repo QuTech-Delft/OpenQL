@@ -9,13 +9,10 @@
 #include "ql/arch/cc/pass/gen/vq1asm/detail/options.h"
 #include "ql/arch/cc/pass/gen/vq1asm/detail/settings.h"
 #include "ql/arch/cc/resources/hwconf_default.inc"
-#include "ql/arch/factory.h"
 
 namespace ql {
 namespace arch {
 namespace cc {
-
-bool Info::is_architecture_registered = Factory::register_architecture<Info>();
 
 // local constants
 const utils::Str predicateKeyInstructionType = "cc-desugar-instruction-type";
@@ -34,7 +31,6 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
     // in the Sphinx/ReadTheDocs documentation (generated from it) before
     // modifying this.
 
-    // FIXME: contents are outdated
     utils::dump_str(os, line_prefix, R"(
     This architecture allows compilation for the QuTech Central Controller, as
     currently in use in DiCarloLab for the Starmon chip.
@@ -182,7 +178,7 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
                 {   "type": "mw",
                     "operand_idx": 0,
                     "value": [
-                        "{gateName}-{instrumentName}:{instrumentGroup}-gi",  // FIXME: outdated
+                        "{gateName}-{instrumentName}:{instrumentGroup}-gi",
                         "{gateName}-{instrumentName}:{instrumentGroup}-gq",
                         "{gateName}-{instrumentName}:{instrumentGroup}-di",
                         "{gateName}-{instrumentName}:{instrumentGroup}-dq"
@@ -220,9 +216,12 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
            Several signals with the same operand_idx can be defined to select
            several signal types, as shown in "single-qubit-mw" which has both
            "mw" (provided by an AWG) and "switch" (provided by a VSM).
-         - `"value"` defines the signal name. The CC backend itself makes no
-           assumptions on this other that different instructions have different
-           signal names.
+         - `"value"` defines a vector of signal names. Supports the following
+           macro expansions:
+            - `{gateName}`
+            - `{instrumentName}`
+            - `{instrumentGroup}`
+            - `{qubit}`
     )"
 
     // FIXME:
@@ -341,6 +340,7 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
         ```javascript
         "ry180": {
             "duration": 20,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "ref_signal": "single-qubit-mw",
                 "static_codeword_override": [2]
@@ -348,6 +348,7 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
         },
         "cz_park": {
             "duration": 40,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "signal": [
                     {   "type": "flux",
@@ -368,12 +369,14 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
         }
         "_wait_uhfqa": {
             "duration": 220,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "signal": []
             }
         },)" R"(
         "_dist_dsm": {
             "duration": 20,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "readout_mode": "feedback",
                 "signal": [
@@ -386,8 +389,19 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
         },
         "_wait_dsm": {
             "duration": 80,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "cc": {
                 "signal": []
+            }
+        },
+        "if_1_break": {
+            "duration": 60,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "cc": {
+                "signal": [],
+                "pragma": {
+                    "break": 1
+                }
             }
         }
         ```
@@ -405,18 +419,25 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
            this key is compulsory (if signal is non-empty), but in the future,
            codewords will be assigned automatically to make better use of the
            limited codeword space.
-         - if `"readout_mode"` with value "feedback" is used, code is generated to
+         - `"readout_mode"` defines an instruction to perform readout if
+           non-empty. If the value "feedback" is used, code is generated to
            read and distribute the instrument result.
+         - `"pragma/break"` enables special functionality which makes the gate
+           break out of a for loop if the associated qubit was measured as 1
+           (`"pragma" { "break": 1 }`) or 0 (`"pragma" { "break": 0 }`).
 )" R"(
     * Program flow feedback *
 
-      To support Repeat Until Success type experiments, a special field
+      To support Repeat Until Success type experiments, two special fields
       were added to the gate definition for the CC, as shown in the previous
       section:
 
        - the `"readout_mode": "feedback"` clause in the `"_dist_dsm"` gate
          causes the backend to generate code to retrieve the measurement result
-         from the DIO interface and distribute it across the CC.
+         from the DIO interface and distribute it across the CC;
+       - the `"pragma": { "break": 1 }` clause  in the `"if_1_break"` gate
+         causes the backend to generate code to break out of a OpenQL loop if
+         the associated qubit is read as 1 (or similarly if 0).
 
       For convenience, the gate decomposition section can be extended with
       `"measure_fb %0": ["measure %0", "_wait_uhfqa %0", "_dist_dsm %0", "_wait_dsm %0"]`
@@ -426,9 +447,46 @@ void Info::dump_docs(std::ostream &os, const utils::Str &line_prefix) const {
        - triggering a measurement (on the UHFQA);
        - waiting for the internal processing time of the UHFQA;
        - retrieve the measurement result, and distribute it across the CC; and
-       - wait for the data distribution to finish.
-)"
-R"(
+       - wait fot the data distribution to finish.
+
+      The following example code contains a real RUS experiment using PycQED:
+)" R"(
+      ```python
+      from pycqed.measurement.openql_experiments import openql_helpers as oqh
+      for i, angle in enumerate(angles):
+          oqh.ql.set_option('output_dir', 'd:\\githubrepos\\pycqed_py3\\pycqed\\measurement\\openql_experiments\\output')
+          p = oqh.create_program('feedback_{}'.format(angle), config_fn)
+          k = oqh.create_kernel("initialize_block_{}".format(angle), p)
+
+          # Initialize
+          k.prepz(qidx)
+
+          # Block do once (prepare |1>)
+          k.gate("rx180", [qidx])
+          p.add_kernel(k)
+
+          # Begin conditional block
+          q = oqh.create_kernel("conditional_block_{}".format(angle), p)
+          # Repeat until success 0
+          q.gate("measure_fb", [qidx])
+          q.gate("if_0_break", [qidx])
+
+          # Correction for result 1
+          q.gate("rx180", [qidx])
+          p.add_for(q, 1000000)
+
+          # Block finalize
+          r = oqh.create_kernel("finalize_block_{}".format(angle), p)
+          cw_idx = angle // 20 + 9
+          r.gate('cw_{:02}'.format(cw_idx), [qidx])
+
+          # Final measurement
+          r.gate("measure_fb", [qidx])
+          p.add_kernel(r)
+
+          oqh.compile(p, extra_openql_options=[('backend_cc_run_once', 'yes')])
+      ```
+)" R"(
       Caveats:
 
        - It is not possible to mix `measure_fb` and `measure` in a single
@@ -438,6 +496,10 @@ R"(
          only popped by a `measure_fb` instruction. If the two types are mixed,
          misalignment occurs between what is written and read. No check is
          currently performed by the backend.
+       - `break` statements may only occur inside a `for` loop. No check is
+         currently performed by the backend.
+       - `break` statements implicitly refer to the last `measure_fb` earlier
+         in code as a result of implicit allocation of variables.
 
       These limitations will vanish when integration with cQASM 2.0 is
       completed.
@@ -504,29 +566,27 @@ void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) con
 
     QL_IOUT("desugaring CC instructions");
 
-    // load CC settings
-    pass::gen::vq1asm::detail::Settings settings;
-    settings.loadBackendSettings(data);
-
-    // get instruction section, since we don't have Platform yet at this stage
+    // get some data sections, since we don't have Platform yet at this stage
     QL_JSON_ASSERT(data, "instructions", "/");
     utils::Json &instructions = data["instructions"];
 
-    // add predicates to instructions (for instrument resources created in post_process_platform())
-    for (auto &it : instructions.items()) {
-        if (settings.isMeasure(it.value(), it.key())) {
-            QL_IOUT("desugaring measure instruction: '" << it.key() << "'");
-            instructions[it.key()][predicateKeyInstructionType] = predicateValueMeas;
-        }
+    // FIXME: similar to Settings::loadBackendSettings()
+    QL_JSON_ASSERT(data, "hardware_settings", "/");
+    const utils::Json &hardware_settings = data["hardware_settings"];
+    QL_JSON_ASSERT(hardware_settings, "eqasm_backend_cc", "hardware_settings");
+    const utils::Json &jsonBackendSettings = hardware_settings["eqasm_backend_cc"];
+    QL_JSON_ASSERT(jsonBackendSettings, "signals", "eqasm_backend_cc");
+    utils::RawPtr<const utils::Json> signals = &jsonBackendSettings["signals"];
 
-        // (note that both isMeasure() and isFlux() can be true)
-        if (settings.isFlux(it.value(), it.key())) {
+    for (auto &it : instructions.items()) {
+        if (pass::gen::vq1asm::detail::Settings::isReadout(it.value(), it.key())) {
+            QL_IOUT("desugaring readout instruction: '" << it.key() << "'");
+            instructions[it.key()][predicateKeyInstructionType] = predicateValueMeas;
+        } else if (pass::gen::vq1asm::detail::Settings::isFlux(it.value(), signals, it.key())) {
             QL_IOUT("desugaring flux instruction: '" << it.key() << "'");
             instructions[it.key()][predicateKeyInstructionType] = predicateValueFlux;
         }
     }
-
-    QL_IOUT("finished desugaring CC instructions");
 }
 
 
@@ -568,7 +628,7 @@ static utils::Json buildInstrumentResource(
 }
 
 /*
- * FIXME: add doc
+ * FIXME
  */
 static Qubits ccInstrument2qubits(const utils::Json &instrument) {
     Qubits ret;
@@ -577,6 +637,13 @@ static Qubits ccInstrument2qubits(const utils::Json &instrument) {
     utils::UInt qubitGroupCnt = qubits.size();  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
     for (utils::UInt group=0; group<qubitGroupCnt; group++) {
         const utils::Json &qubitsOfGroup = qubits[group];
+#if 0   // FIXME: old
+        if (qubitsOfGroup.size() == 1) {    // FIXME: specific for measurements
+            utils::Int qubit = qubitsOfGroup[0].get<utils::Int>();
+            QL_IOUT("instrument " << unit << "/" << instrument["name"] << ": adding qubit " << qubit);
+            ret.set(qubit) = unit;
+        }
+#endif
         for (utils::UInt i=0; i<qubitsOfGroup.size(); i++) {
             ret.push_back(qubitsOfGroup[0].get<utils::UInt>());
         }
@@ -593,38 +660,31 @@ void Info::post_process_platform(
     const utils::Str &variant
 ) const {
 
-    QL_IOUT("post_process_platform, variant='" << variant << "'");
-
-    // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
-    QL_IOUT("desugaring CC instrument resource");
-
-    // load CC settings
-    pass::gen::vq1asm::detail::Settings settings;
-    settings.loadBackendSettings(platform);
-
-#if 0   // FIXME: untested, counterpart in Codegen::init does not seem to work
     // TODO Wouter: something with vq1asm::detail::Settings, I guess. Note: to
     //  keep track of the structure alongside the platform, you can add it as
     //  an annotation like so:
     //  platform->set_annotation(pass::gen::vq1asm::detail::Settings());
     //  platform->get_annotation<pass::gen::vq1asm::detail::Settings>().loadBackendSettings(platform);
 
-    platform->set_annotation(pass::gen::vq1asm::detail::Settings());
-    platform->get_annotation<pass::gen::vq1asm::detail::Settings>().loadBackendSettings(platform);
-#endif
+    QL_IOUT("CC Info::post_process_platform, variant='" << variant << "'");
+
+    // Desugaring similar to ql/resource/instrument.cc, but independent of resource keys being present
+    QL_IOUT("desugaring CC instrument resource");
+    // load CC settings
+    pass::gen::vq1asm::detail::Settings settings;
+    settings.loadBackendSettings(platform);
 
     // Gather qubit information from CC instrument definitions.
-    const utils::Str instrumentSignalTypeMeasure = settings.getInstrumentSignalTypeMeasure();
-    const utils::Str instrumentSignalTypeFlux = settings.getInstrumentSignalTypeFlux();
     InstrVsQubits measQubits;
     InstrVsQubits fluxQubits{Qubits{}};     // one empty vector
     for (utils::UInt i=0; i<settings.getInstrumentsSize(); i++) {
         const utils::Json &instrument = settings.getInstrumentAtIdx(i);
-        utils::Str instrumentSignalType = utils::json_get<utils::Str>(instrument, "signal_type");    // FIXME: nodePath
-        if (instrumentSignalType == instrumentSignalTypeMeasure) {
+        utils::Str signal_type = utils::json_get<utils::Str>(instrument, "signal_type");    // FIXME: nodePath
+        // FIXME: this adds semantics to "signal_type", whereas the names are otherwise fully up to the user
+        if ("measure" == signal_type) { // FIXME: define constant use throughout
             Qubits qubits = ccInstrument2qubits(instrument);
             measQubits.push_back(qubits);
-        } else if (instrumentSignalType == instrumentSignalTypeFlux) {
+        } else if ("flux" == signal_type) { // FIXME: define constant use throughout
             /*  we map all fluxing on a single instrument resource: the actual resource we'd like to manage is a *signal* that connects
                 to a flux line of a qubit. On a single instrument (e.g. ZI HDAWG) these signals cannot be triggered
                 during playback of other signals.
@@ -645,7 +705,7 @@ void Info::post_process_platform(
     // Create Instrument resources from gathered information
     platform->resources["resources"]["meas"] = buildInstrumentResource("meas", measQubits, predicateValueMeas);
     platform->resources["resources"]["flux"] = buildInstrumentResource("flux", fluxQubits, predicateValueFlux);
-    QL_DOUT("created resources:\n" << std::setw(4) << platform->resources);
+    QL_IOUT("CC: created resources:\n" << std::setw(4) << platform->resources);
 
     // NB: we get the Qubit resource for free, independent of JSON contents (see ql/rmgr/factory.cc and QubitResource::on_initialize)
 }
@@ -658,6 +718,7 @@ void Info::post_process_platform(
  * is considered a backend pass.
  */
 void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
+
     // Remove prescheduler if enabled implicitly (pointless since we add our own scheduling).
     // FIXME: bit of a hack, and invalidates https://openql.readthedocs.io/en/latest/gen/reference_architectures.html#default-pass-list
     utils::Str ps_name = "prescheduler";
@@ -687,7 +748,7 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
     }
     manager.append_pass(
         "arch.cc.gen.VQ1Asm",
-        "VQ1Asm",
+        "codegen",
         {
             {"output_prefix", com::options::global["output_dir"].as_str() + "/%N"}
         }

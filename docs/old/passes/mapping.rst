@@ -370,7 +370,7 @@ its availability list is used just as in the scheduler:
 This dependence graph is used to look-ahead,
 to find which two-qubit to map next, to make a selection from all that are available
 or take just the most critical one,
-to try multiple ones and evaluate each alternative to map it, comparing those alternatives against
+to try multiple ones and qubit_nr each alternative to map it, comparing those alternatives against
 one of the metrics (see later), and even go into recursion (see later as well),
 i.e. looking farther ahead to see what the effects on subsequent two-qubit gates are when mapping the current one.
 

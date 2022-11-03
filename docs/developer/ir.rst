@@ -21,17 +21,25 @@ we'll get back to in a few paragraphs.
 The old IR
 ----------
 
-Despite only having a single logical IR, OpenQL is currently schizophrenic
-about its IR in its own way: at some point a new IR (``ql::ir``) was developed
-to replace the old one (now in ``ql::ir::compat``, previously ``ql::ir`` and
-``ql::plat``), but not all passes have been converted to use the new IR yet.
-Thus, for any pass that hasn't been converted yet, the pass management logic
-first converts the new IR to the old one, then runs the legacy pass
-implementation, and then converts back to the new IR. This process is usually
+Despite only having a single logical IR, OpenQL is currently 
+schizophrenic about its IR in its own way: at some point a new IR 
+(``ql::ir``) was developed to replace the old one (now in 
+``ql::ir::compat``, previously ``ql::ir`` and ``ql::plat``), but not 
+all passes have been converted to use the new IR yet. The following 
+list indicates which passes have not been converted to the new IR, yet:
+
+ - all the passes for visualisation: circuit, interaction and mapping;
+ - the initial placement pass and the map pass;
+ - the ASAP/ALAP scheduler pass.
+ 
+ 
+Thus, for all these passes, the pass management logic first converts 
+the new IR to the old one, then runs the legacy pass implementation, 
+and then converts back to the new IR. This process is usually 
 transparant, but there are a few gotchas:
 
  - kernel names may change in some cases due to name uniquification logic;
- - annotations placed on nodes other than the program, a kernel, or a gate will
+ - annotations places on nodes other than the program, a kernel, or a gate will
    be lost;
  - any new-to-old conversion implicitly runs all legacy gate decompositions; and
  - obviously, any features supported by the new IR but not by the old IR will
@@ -63,7 +71,9 @@ IR, you can:
 
  - try to make sense of the classes and functions in ``ql::ir::compat``;
  - try to make sense of the "old pages" section in these docs, if it still
-   exists when you're reading this; or
+   exists when you're reading this;
+ - try to make sense of the conversions proper that can be found in 
+   ``ql/ir/old_to_new.cc`` and ``ql/ir/old_to_new.cc``;
  - read the documentation of an older version of OpenQL (prior to PR #405, so
    commit ``7f2e2bb`` or earlier).
 
@@ -85,15 +95,19 @@ to jump back and forth *too* much, here are a few things that might not be
 immediately apparent.
 
  - The tree definition file format was a bit rushed, and in part because of
-   that its structure might be unintuitive when you're not used to it yet.
-   Most importantly, the ``{}``-based structure of the tree definition file
-   does *not* correspond to the tree structure being described, but rather to
-   the class inheritance tree of the nodes that can be used *within* the
-   described tree. Also, while the node names are written in lower_case in
-   the tree description file, they are converted to TitleCase for the C++
-   class names (this is simply because ``tree-gen`` needs both forms, and
-   it's easier to convert from lower_case to TitleCase than the other way
-   around).
+   that its structure might be unintuitive when you're not used to it 
+   yet. In fact, the tree definition file is a mix of a class hierarchy 
+   description, and a tree description. Most importantly, the 
+   ``{}``-based structure of the tree definition file does *not* 
+   correspond to the tree structure being described, but rather to the 
+   class inheritance tree of the nodes that can be used *within* the 
+   described tree.
+   
+ - Also, while the node names are written in lower_case in the tree 
+   description file, they are converted to TitleCase for the C++ class 
+   names (this is simply because ``tree-gen`` needs both forms, and 
+   it's easier to convert from lower_case to TitleCase than the other 
+   way around).
 
  - There is no well-defined root node in a ``tree-gen`` tree, and (somewhat
    equivalently) ``tree-gen`` nodes do not know who their parent is. For this
@@ -143,9 +157,35 @@ immediately apparent.
    ``copy_annotation<AnnotationType>()``.
 
 With ``tree-gen``-specific stuff out of the way, the IR definition itself
-should be rather straight-forward based on its tree definition file. So,
-instead of duplicating documentation in a way that will inevitably desync with
-the implementation, here's the contents of that file (``src/ql/ir/ir.tree``).
+should be rather straight-forward based on its tree definition file.
+
+Before diving into the intermediate tree definition file, some 
+explanatory remarks follow, also linking the old IR to the new IR:
+
+ - A quantum algorithm is divided in a number of kernels in the old IR. 
+   These kernels are called blocks in the new IR. However, the Python 
+   API uses kernels, not blocks.
+   
+ - What used to be called instructions in the old IR are called 
+   statements in the new IR. Statements are the top of class hierarchy, 
+   which further contains instructions, and other statement subclasses. 
+   Instructions are subclassed into conditional instructions, and two 
+   other types which are not important here. Conditional instructions 
+   have a subclass called custom_instruction: in fact, these 
+   custom_instructions are quantum instructions;
+   
+ - So, quantum instructions are always conditional instructions. 
+   However, you can check the condition of conditional instruction, 
+   which is always there, and is of type ``expression``. And if it is 
+   of type ``bit_literal``, a subclass of ``literal``, which itself is  
+   subclass of ``expression``, and its value is true, then you have, in 
+   effect, an unconditional statement;
+   
+ - The platform part in the new IR does not directly contain the number of qubits as 
+   the old IR does in qubit_count. Instead, it contains a qubit register called 
+   ``qubits``, and the size of that register is the number of qubits.
+
+Here's the contents of the file (``src/ql/ir/ir.tree``). 
 
 .. literalinclude:: ../../src/ql/ir/ir.tree
    :language: text

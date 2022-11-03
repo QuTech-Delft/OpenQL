@@ -19,9 +19,6 @@
 #include "ql/com/options.h"
 #include "ql/com/dec/unitary.h"
 
-// uncomment next line to enable multi-line dumping
-// #define MULTI_LINE_LOG_DEBUG
-
 namespace ql {
 namespace ir {
 namespace compat {
@@ -254,102 +251,102 @@ void Kernel::display() {
 }
 
 void Kernel::clifford(Int id, UInt qubit) {
-    switch (id) {
-        case 0 :
-            break;              //  ['I']
-        case 1 :
-            ry90(qubit);
-            rx90(qubit);
-            break;              //  ['Y90', 'X90']
-        case 2 :
-            mrx90(qubit);
-            mry90(qubit);
-            break;              //  ['mX90', 'mY90']
-        case 3 :
-            rx180(qubit);
-            break;              //  ['X180']
-        case 4 :
-            mry90(qubit);
-            mrx90(qubit);
-            break;              //  ['mY90', 'mX90']
-        case 5 :
-            rx90(qubit);
-            mry90(qubit);
-            break;              //  ['X90', 'mY90']
-        case 6 :
-            ry180(qubit);
-            break;              //  ['Y180']
-        case 7 :
-            mry90(qubit);
-            rx90(qubit);
-            break;              //  ['mY90', 'X90']
-        case 8 :
-            rx90(qubit);
-            ry90(qubit);
-            break;              //  ['X90', 'Y90']
-        case 9 :
-            rx180(qubit);
-            ry180(qubit);
-            break;              //  ['X180', 'Y180']
-        case 10:
-            ry90(qubit);
-            mrx90(qubit);
-            break;              //  ['Y90', 'mX90']
-        case 11:
-            mrx90(qubit);
-            ry90(qubit);
-            break;              //  ['mX90', 'Y90']
-        case 12:
-            ry90(qubit);
-            rx180(qubit);
-            break;              //  ['Y90', 'X180']
-        case 13:
-            mrx90(qubit);
-            break;              //  ['mX90']
-        case 14:
-            rx90(qubit);
-            mry90(qubit);
-            mrx90(qubit);
-            break;              //  ['X90', 'mY90', 'mX90']
-        case 15:
-            mry90(qubit);
-            break;              //  ['mY90']
-        case 16:
-            rx90(qubit);
-            break;              //  ['X90']
-        case 17:
-            rx90(qubit);
-            ry90(qubit);
-            rx90(qubit);
-            break;              //  ['X90', 'Y90', 'X90']
-        case 18:
-            mry90(qubit);
-            rx180(qubit);
-            break;              //  ['mY90', 'X180']
-        case 19:
-            rx90(qubit);
-            ry180(qubit);
-            break;              //  ['X90', 'Y180']
-        case 20:
-            rx90(qubit);
-            mry90(qubit);
-            rx90(qubit);
-            break;              //  ['X90', 'mY90', 'X90']
-        case 21:
-            ry90(qubit);
-            break;              //  ['Y90']
-        case 22:
-            mrx90(qubit);
-            ry180(qubit);
-            break;              //  ['mX90', 'Y180']
-        case 23:
-            rx90(qubit);
-            ry90(qubit);
-            mrx90(qubit);
-            break;              //  ['X90', 'Y90', 'mX90']
-        default:
-            break;
-    }
+switch (id) {
+    case 0 :
+        break;              //  ['I']
+    case 1 :
+        ry90(qubit);
+        rx90(qubit);
+        break;              //  ['Y90', 'X90']
+    case 2 :
+        mrx90(qubit);
+        mry90(qubit);
+        break;              //  ['mX90', 'mY90']
+    case 3 :
+        rx180(qubit);
+        break;              //  ['X180']
+    case 4 :
+        mry90(qubit);
+        mrx90(qubit);
+        break;              //  ['mY90', 'mX90']
+    case 5 :
+        rx90(qubit);
+        mry90(qubit);
+        break;              //  ['X90', 'mY90']
+    case 6 :
+        ry180(qubit);
+        break;              //  ['Y180']
+    case 7 :
+        mry90(qubit);
+        rx90(qubit);
+        break;              //  ['mY90', 'X90']
+    case 8 :
+        rx90(qubit);
+        ry90(qubit);
+        break;              //  ['X90', 'Y90']
+    case 9 :
+        rx180(qubit);
+        ry180(qubit);
+        break;              //  ['X180', 'Y180']
+    case 10:
+        ry90(qubit);
+        mrx90(qubit);
+        break;              //  ['Y90', 'mX90']
+    case 11:
+        mrx90(qubit);
+        ry90(qubit);
+        break;              //  ['mX90', 'Y90']
+    case 12:
+        ry90(qubit);
+        rx180(qubit);
+        break;              //  ['Y90', 'X180']
+    case 13:
+        mrx90(qubit);
+        break;              //  ['mX90']
+    case 14:
+        rx90(qubit);
+        mry90(qubit);
+        mrx90(qubit);
+        break;              //  ['X90', 'mY90', 'mX90']
+    case 15:
+        mry90(qubit);
+        break;              //  ['mY90']
+    case 16:
+        rx90(qubit);
+        break;              //  ['X90']
+    case 17:
+        rx90(qubit);
+        ry90(qubit);
+        rx90(qubit);
+        break;              //  ['X90', 'Y90', 'X90']
+    case 18:
+        mry90(qubit);
+        rx180(qubit);
+        break;              //  ['mY90', 'X180']
+    case 19:
+        rx90(qubit);
+        ry180(qubit);
+        break;              //  ['X90', 'Y180']
+    case 20:
+        rx90(qubit);
+        mry90(qubit);
+        rx90(qubit);
+        break;              //  ['X90', 'mY90', 'X90']
+    case 21:
+        ry90(qubit);
+        break;              //  ['Y90']
+    case 22:
+        mrx90(qubit);
+        ry180(qubit);
+        break;              //  ['mX90', 'Y180']
+    case 23:
+        rx90(qubit);
+        ry90(qubit);
+        mrx90(qubit);
+        break;              //  ['X90', 'Y90', 'mX90']
+    default:
+        break;
+}
 }
 
 Bool Kernel::add_default_gate_if_available(
@@ -556,10 +553,8 @@ Bool Kernel::add_custom_gate_if_available(
 
     // first check if a specialized custom gate is available
     // a specialized custom gate is of the form: "cz q0 q3"
-    // QL_DOUT("is specialized custom gate available for for instr " << instr);
     auto it = platform->instruction_map.find(instr);
     if (it == platform->instruction_map.end()) {
-        // QL_DOUT("is parameterized custom gate available for gate " << gname);
         it = platform->instruction_map.find(gname);
     }
     if (it == platform->instruction_map.end()) {
@@ -607,7 +602,6 @@ void Kernel::get_decomposed_ins(
         QL_DOUT("  sub ins: " << sub_ins);
         auto it = platform->instruction_map.find(sub_ins);
         if (it != platform->instruction_map.end()) {
-            // QL_DOUT("  sub ins found in instruction_map: " << sub_ins);
             sub_instructions.push_back(sub_ins);
         } else {
             QL_ICE("gate decomposition not available for '" << sub_ins << "' in the target platform");
@@ -649,14 +643,14 @@ Bool Kernel::add_spec_decomposed_gate_if_available(
         // check gate type
         QL_DOUT("specialized composite gate found for " << instr_parameterized);
         if (it->second->type() == GateType::COMPOSITE) {
-            QL_DOUT("gate type is composite gate type " << instr_parameterized);
+            QL_DOUT("composite gate type");
         } else {
-            QL_DOUT("not a composite gate type " << instr_parameterized);
+            QL_DOUT("not a composite gate type");
             return false;
         }
         auto gptr = it->second.as<gate_types::Composite>();
         if (gptr.empty()) {
-            QL_DOUT("but its gate pointer is empty, not a composite gate type");
+            QL_DOUT("not a composite gate type");
             return false;
         }
 
@@ -665,7 +659,7 @@ Bool Kernel::add_spec_decomposed_gate_if_available(
         get_decomposed_ins(*gptr, sub_instructions);
         for (auto &sub_ins : sub_instructions) {
             // extract name and qubits
-            QL_DOUT("Adding sub ins: " << sub_ins << " of composite " << instr_parameterized);
+            QL_DOUT("Adding sub ins: " << sub_ins);
             std::replace(sub_ins.begin(), sub_ins.end(), ',', ' ');    // FIXME: perform all conversions in sanitize_instruction_name()
             QL_DOUT(" after comma removal, sub ins: " << sub_ins);
             std::istringstream iss(sub_ins);
@@ -746,14 +740,14 @@ Bool Kernel::add_param_decomposed_gate_if_available(
     if (it != platform->instruction_map.end()) {
         QL_DOUT("parameterized gate found for " << instr_parameterized);
         if (it->second->type() == GateType::COMPOSITE) {
-            QL_DOUT("gate type is COMPOSITE for " << instr_parameterized);
+            QL_DOUT("composite gate type");
         } else {
-            QL_DOUT("not a composite gate type " << instr_parameterized);
+            QL_DOUT("not a composite gate type");
             return false;
         }
         auto gptr = it->second.as<gate_types::Composite>();
         if (gptr.empty()) {
-            QL_DOUT("is composite but gate pointer is empty, so not a composite gate type");
+            QL_DOUT("not a composite gate type");
             return false;
         }
 
@@ -806,18 +800,8 @@ Bool Kernel::add_param_decomposed_gate_if_available(
             }
         }
         added = true;
-        QL_DOUT("added composite gate and subinstrs for " << instr_parameterized);
     } else {
-#ifdef MULTI_LINE_LOG_DEBUG
-        QL_IF_LOG_DEBUG {
-            QL_DOUT("composite gate not found for " << instr_parameterized << " in instruction_map:");
-            for (const auto &i : platform->instruction_map) {
-                QL_DOUT("add_param_decomposed_gate_if_available: platform->instruction_map[]" << i.first);
-            }
-        }
-#else
-        QL_DOUT("composite gate not found for " << instr_parameterized << " in instruction_map (disabled)");
-#endif
+        QL_DOUT("composite gate not found for " << instr_parameterized);
     }
     return added;
 }
@@ -1053,17 +1037,6 @@ void Kernel::gate(
     QL_DOUT("Adding decomposed unitary to kernel ...");
     cycles_valid = false;
     gates.extend(u.get_decomposition(qubits));
-}
-
-// adding state prepration / (arbitrary) qubit initialisation to kernel
-void Kernel::state_prep(
-    const Vec<Complex> &array,
-    const Vec<UInt> &qubits
-) {
-    QL_DOUT("Preparing state with array " << array);
-    cycles_valid = false;
-    com::dec::Unitary u("state prep", {array.begin(), array.end()});
-    gates.extend(u.prepare_state(qubits));
 }
 
 /**

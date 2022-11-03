@@ -9,13 +9,10 @@
 #include "ql/arch/cc_light/resources/hwconf_s5.inc"
 #include "ql/arch/cc_light/resources/hwconf_s7.inc"
 #include "ql/arch/cc_light/resources/hwconf_s17.inc"
-#include "ql/arch/factory.h"
 
 namespace ql {
 namespace arch {
 namespace cc_light {
-
-bool Info::is_architecture_registered = Factory::register_architecture<Info>();
 
 /**
  * Writes the documentation for this architecture to the given output
@@ -155,8 +152,8 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
     // Mapping.
     if (com::options::global["clifford_premapper"].as_bool()) {
         manager.append_pass(
-            "opt.clifford.Optimize",
-            "clifford_premapper"
+            "opt.new_clifford.Optimize",
+            "new_clifford_premapper"
         );
     }
     if (com::options::global["mapper"].as_str() != "no") {
@@ -167,8 +164,8 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
     }
     if (com::options::global["clifford_postmapper"].as_bool()) {
         manager.append_pass(
-            "opt.clifford.Optimize",
-            "clifford_postmapper"
+            "opt.new_clifford.Optimize",
+            "new_clifford_postmapper"
         );
     }
 

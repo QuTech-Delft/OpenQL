@@ -8,12 +8,16 @@ current IR in some way. For example, a scheduler pass will change the cycle
 numbers of instructions and possibly reorder them accordingly.
 
 Conceptually, OpenQL's passes can get a bit more complicated than that, at
-least internally. Instead of a linear pass list, OpenQL's pass manager supports
-a tree of passes (useful for instance to set options for a whole group of
-passes at once, for establishing logging or performance monitoring regions if
-that's ever implemented, or otherwise manipulate a group of passes as if it's
-a single pass), and even has basic support for conditional passes, or repeating
-a group of passes until a condition is true. To support all of this without
+least internally. Instead of a linear pass list, OpenQL's pass manager:
+
+ - supports a tree of passes. This is useful for instance to set options 
+   for a whole group of passes at once, for establishing logging or 
+   performance monitoring regions (if that's ever implemented), or 
+   otherwise manipulate a group of passes as if it's a single pass);
+ - has basic support for conditional passes, or repeating a group of 
+   passes until a condition is true.
+
+To support all of this without
 making simple cases needlessly complex for users, the lifecycle of a pass is
 nontrivial.
 
@@ -21,7 +25,7 @@ nontrivial.
    equivalent).
  - Options may then be set on the pass via ``set_option()`` API calls (or
    equivalent).
- - At some point, the pass is "constructed". This doesn't imply C++
+ - At some point, the pass is "constructed." This doesn't imply C++
    construction of the pass class (this happens at the start of this list);
    rather, this is about the ``construct()`` method. The user can either call
    this directly, or the pass manager will do it automatically when needed.
@@ -84,9 +88,11 @@ Instead, they may use:
  - ``ql::pmgr::pass_types::ProgramTransformation`` for old-IR passes that
    transform the complete program in one go;
  - ``ql::pmgr::pass_types::KernelTransformation`` for old-IR passes that
-   transform one kernel at a time; or
+   transform one kernel at a time;
  - ``ql::pmgr::pass_types::ProgramAnalysis`` for old-IR passes that analyze
-   the complete program in one go.
+   the complete program in one go; or
+ - ``ql::pmgr::pass_types::KernelAnalysis`` for old-IR passes that analyze one
+   kernel at a time.
 
 Note that there is currently no difference between the ``*Transformation`` and
 ``*Analysis`` passes, because there is currently no good way to guarantee
@@ -122,14 +128,13 @@ registered with the pass factory (``ql::pmgr::Factory``) used to build the
 strategy with. While the code is written such that it's possible for a user
 program to eventually make its own pass factory (which would probably be
 necessary to let them define their own passes), currently everything just uses
-a default-constructed ``Factory`` object initially.
+a default-constructed ``Factory`` object initially, and its default constructor
+is where the pass types are registered. For example, this constructor currently
+contains the following line, among others like it:
 
-Passes self-register statically to the pass factory using the static `register_pass`
-function. This allows the pass factory to not have to depend on and include pass headers.
-To do that, the pass class needs to declare a static boolean member called (for example)
-`is_pass_registered` and defined in a similar way as:
 .. code-block:: c++
-    bool ReadCQasmPass::is_pass_registered = pmgr::Factory::register_pass<ReadCQasmPass>("io.cqasm.Read");
+
+    register_pass<::ql::pass::io::cqasm::read::Pass>("io.cqasm.Read");
 
 The template argument (typedefs to) the pass class, while the string argument
 defines its externally-usable type name.
@@ -212,8 +217,8 @@ process. Nevertheless, here's a checklist that should handle the common cases.
  - Put an appropriate placeholder in ``run()``, such as
    ``QL_ICE("not yet implemented")``.
 
- - Register your pass with the pass factory by calling the factory's static method
-   `register_pass` and storing its result.
+ - Register your pass with the pass factory by adding it to its default
+   constructor.
 
  - At this point, you should have everything needed for the user to be able to
    create the pass, and for the documentation generation system to detect and

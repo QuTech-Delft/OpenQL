@@ -458,7 +458,7 @@ private:
 
     /**
      * Given the states of past and future, map all mappable gates and find the
-     * non-mappable ones. For those, evaluate what to do next and do it. During
+     * non-mappable ones. For those, qubit_nr what to do next and do it. During
      * recursion, comparison is done with the base past (bottom of recursion
      * stack), and past is the last past (top of recursion stack) relative to
      * which the mapping is done.

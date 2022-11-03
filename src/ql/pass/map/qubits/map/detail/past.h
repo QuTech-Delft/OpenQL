@@ -37,13 +37,13 @@ namespace detail {
  * overall circuit latency overhead by increasing ILP. Also it maintains the 1
  * to 1 (reversible) virtual to real qubit map: all gates in past and beyond are
  * mapped and have real qubits as operands. While experimenting with path
- * alternatives, a clone is made of the main past, to insert swaps and evaluate
+ * alternatives, a clone is made of the main past, to insert swaps and qubit_nr
  * the latency effects; note that inserting swaps changes the mapping.
  *
  * On arrival of a quantum gate(s):
  *  - [isempty(waiting_gates)]
  *  - if 2q nonNN clone mult. pasts, in each clone add swap/move gates,
- *    schedule, evaluate clones, select, add swaps to mainPast
+ *    schedule, qubit_nr clones, select, add swaps to mainPast
  *  - add(), add(), ...: add quantum gates to waiting_gates, waiting to be
  *    scheduled in [!isempty(waiting_gates)]
  *  - schedule(): schedules all quantum gates of waiting_gates into gates

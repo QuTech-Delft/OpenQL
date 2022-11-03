@@ -20,13 +20,13 @@ a user needs to access as well (the vast majority) go in `include`.
 
 All definitions must go into source files; header files should only declare
 things. Therefore, almost all header files need a corresponding source file.
-This file must have the same name and path relative to the src/include
+This file must have the same name and path relative to the src or include
 directory as the corresponding header file.
 
 All filenames are lowercase, separated by `_` when composed of multiple words.
 
 The filename and directory structure (loosely) follows the namespace structure
-of OpenQL and vice versa. When a namespace is comprised of only a single
+of OpenQL and vice versa. When a namespace is only comprised of only a single
 file, the filename will be the name of the namespace, and the directory it's
 placed in is the name of the parent namespace (and so on). When a namespace
 consists of multiple files, the entire namespace path is represented as
