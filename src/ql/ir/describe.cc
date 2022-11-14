@@ -155,7 +155,7 @@ public:
             case prim::OperandMode::COMMUTE_Y: ss << "Y:"; break;
             case prim::OperandMode::COMMUTE_Z: ss << "Z:"; break;
             case prim::OperandMode::MEASURE:   ss << "M:"; break;
-            case prim::OperandMode::IGNORE:    ss << "I:"; break;
+            case prim::OperandMode::IGNORED:    ss << "I:"; break;
         }
         operand_type.data_type.visit(*this);
     }

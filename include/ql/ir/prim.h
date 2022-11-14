@@ -399,7 +399,7 @@ enum class OperandMode {
      * Used for operands which should be ignored by data dependency graph
      * construction, such as the third qubit operand of cz_park.
      */
-    IGNORE
+    IGNORED
 
 };
 template <>
