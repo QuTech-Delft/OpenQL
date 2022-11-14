@@ -117,7 +117,7 @@ private:
                     }
                     break;
 
-                case prim::OperandMode::IGNORE:
+                case prim::OperandMode::IGNORED:
                     break;
 
             }
@@ -548,7 +548,7 @@ public:
                 }
                 break;
 
-            case prim::OperandMode::IGNORE:
+            case prim::OperandMode::IGNORED:
                 break;
         }
 

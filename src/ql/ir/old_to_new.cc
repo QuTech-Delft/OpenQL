@@ -206,7 +206,7 @@ static void parse_decomposition_rule(
                 break;
             case prim::OperandMode::READ:
             case prim::OperandMode::LITERAL:
-            case prim::OperandMode::IGNORE:
+            case prim::OperandMode::IGNORED:
                 assignable = false;
                 break;
         }
@@ -455,7 +455,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                             QL_USER_ERROR("invalid parameter mode M for classical type");
                         }
                     } else if (mode_s == "I") {
-                        mode = prim::OperandMode::IGNORE;
+                        mode = prim::OperandMode::IGNORED;
                     } else {
                         QL_USER_ERROR(
                             "invalid parameter mode " << mode_s << ": "
@@ -580,7 +580,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                     // Parking cz (assume only one parked qubit at the end).
                     insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
                     insn->operand_types.emplace(prim::OperandMode::COMMUTE_Z, qubit_type);
-                    insn->operand_types.emplace(prim::OperandMode::IGNORE, qubit_type);
+                    insn->operand_types.emplace(prim::OperandMode::IGNORED, qubit_type);
 
                 } else if (insn->name == "toffoli") {
 
