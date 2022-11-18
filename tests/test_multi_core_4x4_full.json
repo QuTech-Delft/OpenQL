@@ -264,8 +264,8 @@
     },
 
     "gate_decomposition": {
-        "tswap_real %0,%1": ["preswap %0","teleportswap %0,%1","postswap %1"],
-        "tmove_real %0,%1": ["premove %0","teleportmove %0,%1","postmove %1"],
+        "tswap %0,%1": ["preswap %0","teleportswap %0,%1","postswap %1"],
+        "tmove %0,%1": ["premove %0","teleportmove %0,%1","postmove %1"],
         "rx180 %0" : ["x %0"],
         "ry180 %0" : ["y %0"],
         "rx90 %0" : ["x90 %0"],

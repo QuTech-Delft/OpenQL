@@ -6,12 +6,8 @@ pragma @ql.name("test_mc_comms")
 
 .kernel_comms
     x q[4]
-    premove q[4]
-    skip 4
-    teleportmove q[4], q[1]
-    skip 29
-    postmove q[1]
-    skip 3
+    tmove q[4], q[1]
+    skip 38
     x q[0]
     cnot q[0], q[1]
     skip 4

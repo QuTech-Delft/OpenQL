@@ -211,7 +211,7 @@ public:
      * gate is schedulable for the given cycle and commit is set.
      */
     utils::Bool gate(
-        utils::UInt cycle,
+        utils::Int cycle,
         const ir::compat::GateRef &gate,
         utils::Bool commit
     );

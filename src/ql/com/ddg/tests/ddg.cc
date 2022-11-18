@@ -28,7 +28,7 @@ int main() {
 
     auto ir = ir::convert_old_to_new(program);
 
-    com::ddg::build(ir, ir->program->blocks[0]);
+    com::ddg::build(ir->platform, ir->program->blocks[0]);
     com::ddg::check_consistency(ir->program->blocks[0]);
     com::ddg::dump_dot(ir->program->blocks[0]);
     com::ddg::reverse(ir->program->blocks[0]);

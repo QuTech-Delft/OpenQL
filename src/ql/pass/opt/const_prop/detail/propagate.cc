@@ -27,7 +27,7 @@ using FncRet = utils::One<ir::Expression>;
 #define P_I as_int_literal()
 #define P_B as_bit_literal()
 #define R_I(ir, x) make_int_lit(ir, x)   // NB: performs checking against IR types (thus disallowing integer overflow)
-#define R_B(ir, x) make_bit_lit(ir, x)   // NB: performs checking against IR types
+#define R_B(ir, x) make_bit_lit(ir->platform, x)   // NB: performs checking against IR types
 
 #define X2(name, ret_type, par0, par1, operation, func)                     \
 static FncRet func ## _ ## par0 ## par1(const ir::Ref &ir, FncArgs &args) { \

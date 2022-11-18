@@ -42,7 +42,7 @@ class Test_mapper(unittest.TestCase):
         
         ql.set_option('clifford_premapper', 'yes')
         ql.set_option('clifford_postmapper', 'yes')
-        ql.set_option('mapper', 'minextendrc')
+        ql.set_option('mapper', 'minextend')
         ql.set_option('mapusemoves', 'yes')
         ql.set_option('mapreverseswap', 'yes')
         ql.set_option('mappathselect', 'all')
@@ -394,7 +394,7 @@ class Test_mapper(unittest.TestCase):
         # 'realistic' circuit
         v = 'lingling5'
         config = "cc_light.s17"
-        num_qubits = 7
+        num_qubits = 17
 
         # create and set platform
         prog_name = "test_mapper_" + v
@@ -548,7 +548,7 @@ class Test_mapper(unittest.TestCase):
         # parameters
         v = 'lingling7'
         config = "cc_light.s17"
-        num_qubits = 9
+        num_qubits = 17
 
         # create and set platform
         prog_name = "test_mapper_" + v

@@ -27,7 +27,6 @@ using RulePredicate = std::function<utils::Bool(const ir::DecompositionRef&)>;
  * reordered.
  */
 utils::UInt apply_decomposition_rules(
-    const ir::Ref &ir,
     const ir::BlockBaseRef &block,
     utils::Bool ignore_schedule = true,
     const RulePredicate &predicate = [](const ir::DecompositionRef&){ return true; }

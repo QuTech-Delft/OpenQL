@@ -1,7 +1,3 @@
-/** \file
- * Defines the parsed options structures for the mapper.
- */
-
 #include "options.h"
 
 namespace ql {
@@ -11,23 +7,14 @@ namespace qubits {
 namespace map {
 namespace detail {
 
-/**
- * String conversion for Heuristic.
- */
 std::ostream &operator<<(std::ostream &os, Heuristic h) {
     switch (h) {
-        case Heuristic::BASE:          os << "base";          break;
-        case Heuristic::BASE_RC:       os << "base_rc";       break;
-        case Heuristic::MIN_EXTEND:    os << "min_extend";    break;
-        case Heuristic::MIN_EXTEND_RC: os << "min_extend_rc"; break;
-        case Heuristic::MAX_FIDELITY:  os << "max_fidelity";  break;
+        case Heuristic::BASE:               os << "base";          break;
+        case Heuristic::MIN_EXTEND:         os << "min_extend";    break;
     }
     return os;
 }
 
-/**
- * String conversion for LookaheadMode.
- */
 std::ostream &operator<<(std::ostream &os, LookaheadMode lm) {
     switch (lm) {
         case LookaheadMode::DISABLED:             os << "disabled";             break;
@@ -38,9 +25,6 @@ std::ostream &operator<<(std::ostream &os, LookaheadMode lm) {
     return os;
 }
 
-/**
- * String conversion for PathSelectionMode.
- */
 std::ostream &operator<<(std::ostream &os, PathSelectionMode psm) {
     switch (psm) {
         case PathSelectionMode::ALL:     os << "all";     break;
@@ -50,9 +34,6 @@ std::ostream &operator<<(std::ostream &os, PathSelectionMode psm) {
     return os;
 }
 
-/**
- * String conversion for SwapSelectionMode.
- */
 std::ostream &operator<<(std::ostream &os, SwapSelectionMode ssm) {
     switch (ssm) {
         case SwapSelectionMode::ONE:      os << "one";      break;
@@ -62,9 +43,6 @@ std::ostream &operator<<(std::ostream &os, SwapSelectionMode ssm) {
     return os;
 }
 
-/**
- * String conversion for TieBreakMethod.
- */
 std::ostream &operator<<(std::ostream &os, TieBreakMethod tbm) {
     switch (tbm) {
         case TieBreakMethod::FIRST:    os << "first";    break;

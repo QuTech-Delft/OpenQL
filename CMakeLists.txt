@@ -253,6 +253,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/sch/scheduler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/map/expression_mapper.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/map/qubit_mapping.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/map/reference_updater.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/dec/unitary.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/dec/rules.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/dec/structure.cc"

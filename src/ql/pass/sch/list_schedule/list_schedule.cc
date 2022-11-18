@@ -141,7 +141,7 @@ void ListSchedulePass::run_on_block(
 
     // Build a data dependency graph for the block.
     com::ddg::build(
-        ir,
+        ir->platform,
         block,
         context.options["commute_multi_qubit"].as_bool(),
         context.options["commute_single_qubit"].as_bool()

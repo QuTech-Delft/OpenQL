@@ -59,7 +59,13 @@ void dump_dot(
     // Write the graph nodes.
     for (const auto &it : statements) {
         os << line_prefix << "  n" << it.first;
-        os << " [ label=<n" << it.first << ", cycle " << it.second->cycle << "<br/>";
+
+        std::string remaining = "";
+        if (it.second->has_annotation<Remaining>()) {
+            remaining = ", remaining " + std::to_string(it.second->get_annotation<Remaining>().remaining);
+        }
+
+        os << " [ label=<n" << it.first << ", cycle " << it.second->cycle << remaining << "<br/>";
         auto desc = ir::describe(it.second);
         desc = utils::replace_all(desc, "<", "&lt;");
         desc = utils::replace_all(desc, ">", "&gt;");

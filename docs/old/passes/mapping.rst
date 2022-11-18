@@ -522,10 +522,6 @@ What needs to be done when multiple alternatives compare equal, is specified lat
     and just subtracting the depths before and after doing that;
     the various options controlling this scheduling-in, will be specified later below.
 
-  - ``minextendrc``:
-    map the circuit:
-    as in ``minextend``, but taking resource constraints into account when scheduling-in the ``swap``\ s and ``move``\ s.
-
 .. _mapping_look_back:
 
 Look-Back, Maximize Instruction-Level Parallelism By Scheduling
@@ -534,8 +530,7 @@ Look-Back, Maximize Instruction-Level Parallelism By Scheduling
 To know the circuit's latency extension of an alternative,
 the mapped gates are represented as a scheduled circuit, i.e. with gates with a defined ``cycle`` attribute,
 and the gates ordered in the circuit with non-decreasing ``cycle`` value.
-In case the ``mapper`` option has the ``minextendrc`` value, also the state of all resources is maintained.
-When a ``swap`` or ``move`` gate is added, it is ASAP scheduled (optionally taking the resource constraints into account)
+When a ``swap`` or ``move`` gate is added, it is ASAP scheduled
 into the circuit and the corresponding cycle value is assigned to the ``cycle`` attribute of the added gate.
 Note that when ``swap`` or ``move`` is defined by a composite gate, the decomposed sequence is scheduled-in instead.
 
@@ -644,7 +639,7 @@ Looking farther ahead beyond the mapping of the current two-qubit gate,
 the router recurses considering the effects of its mapping on subsequent two-qubit gates.
 
 After having evaluated the metric for each alternative, multiple alternatives may remain, all with the best value.
-For the ``minextend`` and ``minextendrc`` strategies, there are options to select from these by looking ahead farther,
+For the ``minextend`` strategy, there are options to select from these by looking ahead farther,
 i.e. beyond the metric evaluation of this alternative for mapping one two-qubit gate.
 This *recursion* assumes that the current alternative is selected, its ``swap``\ s
 and ``move``\ s are added to the circuit
@@ -725,7 +720,7 @@ The following options control this recursion:
 Deciding For The Best, Committing To The Best
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-With or without recursion, for the ``base`` strategy as well as for the ``minextend`` and ``minextendrc`` strategies,
+With or without recursion, for the ``base`` strategy as well as for the ``minextend`` strategy,
 when at the end multiple alternatives still compare equally well, a decision has to be taken which two-qubit gate
 to route and map.
 This selection is made based on the value of the following option:

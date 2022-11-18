@@ -213,7 +213,7 @@ Options make_ql_options() {
         "whether the heuristic mapper will be run, and if so, which heuristic "
         "it should use. When `no`, MIP-based placement is also disabled.",
         "no",
-        {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"}
+        {"no", "base", "minextend", "maxfidelity"}
     );
 
     options.add_int(
@@ -360,6 +360,13 @@ Options make_ql_options() {
         "the first operand; if this is not the case, enabling this will worsen "
         "the routing result rather than improve it.",
         true
+    );
+
+    options.add_str(
+        "mapdecompositionrulepattern",
+        "A regex pattern to select by name which decomposition rule should be applied "
+        "to mapped instruction before scheduling them when using the minextend route heuristic.",
+        ""
     );
 
 #if 0 // FIXME: removed, use pass options

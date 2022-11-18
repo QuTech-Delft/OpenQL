@@ -1,7 +1,3 @@
-/** \file
- * Defines the parsed options structures for the mapper.
- */
-
 #pragma once
 
 #include "ql/utils/num.h"
@@ -24,15 +20,11 @@ enum class Heuristic {
     /**
      * Consider all alternatives as equivalent, unintelligently applying the
      * tie-breaking strategy to all options. No recursion is performed. Internal
-     * gate scheduling (and thus criticality) is determined without resource
-     * constraints.
+     * gate scheduling is determined without resource
+     * constraints. Gate scheduling is only used for choosing move vs swap, and
+     * reversing swap operands.
      */
     BASE,
-
-    /**
-     * Same as BASE, but with resource constraints.
-     */
-    BASE_RC,
 
     /**
      * Favor alternatives with minimal cycle time extension when using
@@ -42,23 +34,10 @@ enum class Heuristic {
      * recursion_width_limit. When the limit is reached, the tie-breaking method
      * is applied to the best-scoring alternatives.
      */
-    MIN_EXTEND,
-
-    /**
-     * Same as MIN_EXTEND, but using resource-constrained scheduling.
-     */
-    MIN_EXTEND_RC,
-
-    /**
-     * No longer supported?
-     */
-    MAX_FIDELITY
+    MIN_EXTEND
 
 };
 
-/**
- * String conversion for Heuristic.
- */
 std::ostream &operator<<(std::ostream &os, Heuristic h);
 
 /**
@@ -73,9 +52,6 @@ enum class LookaheadMode {
     ALL
 };
 
-/**
- * String conversion for LookaheadMode.
- */
 std::ostream &operator<<(std::ostream &os, LookaheadMode lm);
 
 /**
@@ -86,8 +62,8 @@ enum class PathSelectionMode {
     /**
      * Consider all possible paths.
      */
-    ALL,
 
+    ALL,
     /**
      * Favor routing along the borders of the rectangle defined by the source
      * and target qubit. Only supported when the qubits are given coordinates in
@@ -104,9 +80,6 @@ enum class PathSelectionMode {
 
 };
 
-/**
- * String conversion for PathSelectionMode.
- */
 std::ostream &operator<<(std::ostream &os, PathSelectionMode psm);
 
 /**
@@ -133,9 +106,6 @@ enum class SwapSelectionMode {
 
 };
 
-/**
- * String conversion for SwapSelectionMode.
- */
 std::ostream &operator<<(std::ostream &os, SwapSelectionMode ssm);
 
 /**
@@ -166,9 +136,6 @@ enum class TieBreakMethod {
 
 };
 
-/**
- * String conversion for TieBreakMethod.
- */
 std::ostream &operator<<(std::ostream &os, TieBreakMethod tbm);
 
 /**
@@ -183,7 +150,7 @@ struct Options {
 
     /**
      * Controls whether the mapper should assume that each qubit starts out
-     * as zero at the start of each kernel, rather than with an undefined
+     * as zero at the start of the block, rather than with an undefined
      * state.
      */
     utils::Bool assume_initialized = false;
@@ -279,16 +246,12 @@ struct Options {
     utils::Bool commute_single_qubit = false;
 
     /**
-     * Whether the critical path selection logic of the embedded scheduler is
-     * enabled.
-     */
-    utils::Bool enable_criticality = true;
-
-    /**
      * Whether to print dot graphs of the schedules created using the embedded
      * scheduler.
      */
     utils::Bool write_dot_graphs = false;
+
+    std::string decomposition_rule_name_pattern = "";
 
 };
 
