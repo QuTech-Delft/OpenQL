@@ -30,11 +30,6 @@ enum class Heuristic {
     BASE,
 
     /**
-     * Same as BASE, but with resource constraints.
-     */
-    BASE_RC,
-
-    /**
      * Favor alternatives with minimal cycle time extension when using
      * non-resource-constrained scheduling. When multiple (good) alternatives
      * exist, recursion/speculation is used to see which is best. The limits for
@@ -43,16 +38,6 @@ enum class Heuristic {
      * is applied to the best-scoring alternatives.
      */
     MIN_EXTEND,
-
-    /**
-     * Same as MIN_EXTEND, but using resource-constrained scheduling.
-     */
-    MIN_EXTEND_RC,
-
-    /**
-     * No longer supported?
-     */
-    MAX_FIDELITY
 
 };
 
@@ -86,8 +71,8 @@ enum class PathSelectionMode {
     /**
      * Consider all possible paths.
      */
-    ALL,
 
+    ALL,
     /**
      * Favor routing along the borders of the rectangle defined by the source
      * and target qubit. Only supported when the qubits are given coordinates in
@@ -277,12 +262,6 @@ struct Options {
      * Z rotations.
      */
     utils::Bool commute_single_qubit = false;
-
-    /**
-     * Whether the critical path selection logic of the embedded scheduler is
-     * enabled.
-     */
-    utils::Bool enable_criticality = true;
 
     /**
      * Whether to print dot graphs of the schedules created using the embedded

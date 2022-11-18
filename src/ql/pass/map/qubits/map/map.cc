@@ -118,7 +118,7 @@ MapQubitsPass::MapQubitsPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : pmgr::pass_types::ProgramTransformation(pass_factory, instance_name, type_name) {
+) : pmgr::pass_types::Transformation(pass_factory, instance_name, type_name) {
 
     //========================================================================//
     // Options for the initial virtual to real qubit map                      //
@@ -145,19 +145,16 @@ MapQubitsPass::MapQubitsPass(
     options.add_enum(
         "route_heuristic",
         "Controls which heuristic the router should use when selecting between "
-        "possible routing operations. `base` and `base_rc` are the simplest "
+        "possible routing operations. `base` is the simplest "
         "forms: all routes are considered equally `good`, so the tie-breaking "
-        "strategy is just applied immediately. `minextend` and "
-        "`minextendrc` are way more involved (but also take longer to compute): "
-        "these options will speculate what each option will do in terms of "
+        "strategy is just applied immediately. `minextend` "
+        "is way more involved (but also take longer to compute): "
+        "this option will speculate what each option will do in terms of "
         "extending the duration of the circuit, optionally recursively, to find "
         "the best alternatives in terms of circuit duration within some"
-        "lookahead window. The existence of the `rc` suffix specifies whether "
-        "the internal scheduling for fitness determination should be done with "
-        "or without resource constraints. `maxfidelity` is not supported "
-        "in this build of OpenQL.",
+        "lookahead window. Currently resource constraints are not implemented.",
         "base",
-        {"base", "baserc", "minextend", "minextendrc", "maxfidelity"}
+        {"base", "minextend"}
     );
 
     options.add_int(
@@ -301,10 +298,6 @@ MapQubitsPass::MapQubitsPass(
         true
     );
 
-    //========================================================================//
-    // Options for the embedded schedulers                                    //
-    //========================================================================//
-
     options.add_bool(
         "commute_multi_qubit",
         "Whether to consider commutation rules for the CZ and CNOT quantum "
@@ -319,18 +312,10 @@ MapQubitsPass::MapQubitsPass(
         false
     );
 
-    options.add_enum(
-        "scheduler_heuristic",
-        "This controls what scheduling heuristic should be used for ordering "
-        "the list of available gates by criticality.",
-        "path_length",
-        {"path_length", "random"}
-    );
-
     options.add_bool(
         "write_dot_graphs",
-        "Whether to print dot graphs of the schedules created using the "
-        "embedded scheduler.",
+        "Whether to print the data dependency graph as dot format, when "
+        "using .",
         false
     );
 
@@ -357,14 +342,8 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     auto route_heuristic = options["route_heuristic"].as_str();
     if (route_heuristic == "base") {
         parsed_options->heuristic = detail::Heuristic::BASE;
-    } else if (route_heuristic == "baserc") {
-        parsed_options->heuristic = detail::Heuristic::BASE_RC;
     } else if (route_heuristic == "minextend") {
         parsed_options->heuristic = detail::Heuristic::MIN_EXTEND;
-    } else if (route_heuristic == "minextendrc") {
-        parsed_options->heuristic = detail::Heuristic::MIN_EXTEND_RC;
-    } else if (route_heuristic == "maxfidelity") {
-        parsed_options->heuristic = detail::Heuristic::MAX_FIDELITY;
     } else {
         QL_ASSERT(false);
     }
@@ -444,7 +423,6 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     parsed_options->reverse_swap_if_better = options["reverse_swap_if_better"].as_bool();
     parsed_options->commute_multi_qubit = options["commute_multi_qubit"].as_bool();
     parsed_options->commute_single_qubit = options["commute_single_qubit"].as_bool();
-    parsed_options->enable_criticality = options["scheduler_heuristic"].as_str() == "path_length";
     parsed_options->write_dot_graphs = options["write_dot_graphs"].as_bool();
 
     return pmgr::pass_types::NodeType::NORMAL;
@@ -454,7 +432,7 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
  * Runs the qubit mapper.
  */
 utils::Int MapQubitsPass::run(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
 
@@ -462,7 +440,7 @@ utils::Int MapQubitsPass::run(
     parsed_options->output_prefix = context.output_prefix;
 
     // Run mapping.
-    detail::Mapper().map(program, parsed_options.as_const());
+    detail::Mapper().map(ir, parsed_options.as_const());
 
     return 0;
 }

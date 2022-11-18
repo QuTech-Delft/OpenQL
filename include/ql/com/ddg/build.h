@@ -21,7 +21,7 @@ private:
     /**
      * Reference to the root of the IR.
      */
-    ir::Ref ir;
+    ir::PlatformRef platform;
 
     /**
      * The actual event list.
@@ -49,7 +49,7 @@ public:
     /**
      * Constructs an object reference gatherer.
      */
-    explicit EventGatherer(const ir::Ref &ir);
+    explicit EventGatherer(const ir::PlatformRef &p);
 
     /**
      * Returns the contained list of object accesses.
@@ -116,7 +116,7 @@ public:
  * node in the final schedule, and such that the sign indicates the direction
  */
 void build(
-    const ir::Ref &ir,
+    const ir::PlatformRef &platform,
     const ir::BlockBaseRef &block,
     utils::Bool commute_multi_qubit = true,
     utils::Bool commute_single_qubit = true

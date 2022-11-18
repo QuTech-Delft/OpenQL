@@ -1,0 +1,30 @@
+{
+    "passes": [
+        {
+            "type": "map.qubits.PlaceMIP",
+            "options": {
+            }
+        },
+        {
+            "type": "io.cqasm.Report",
+            "options":
+            {
+                "output_prefix": "test_output/%N",
+                "output_suffix": "_afterintialplacement.cq"
+            }
+        },
+        {
+            "type": "map.qubits.Map",
+            "options": {
+            }
+        },
+        {
+            "type": "io.cqasm.Report",
+            "options":
+            {
+                "output_prefix": "test_output/%N",
+                "output_suffix": "_aftermap.cq"
+            }
+        }
+    ]
+}

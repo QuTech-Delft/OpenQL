@@ -1,0 +1,9 @@
+version 1.2
+
+pragma @ql.name("microcodegenerationdemo")
+pragma @ql.platform("cc", "cc", "microcode_generation.json")
+
+.introduction
+    rx180 q[0]
+    ry180 q[0]
+    measure q[0]

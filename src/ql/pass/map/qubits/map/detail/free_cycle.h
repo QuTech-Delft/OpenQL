@@ -8,6 +8,7 @@
 #include "ql/utils/str.h"
 #include "ql/utils/vec.h"
 #include "ql/utils/opt.h"
+#include "ql/ir/ops.h"
 #include "ql/ir/compat/compat.h"
 #include "ql/rmgr/manager.h"
 #include "ql/com/map/qubit_mapping.h"
@@ -43,51 +44,8 @@ namespace detail {
  * when computing the added latency.
  */
 class FreeCycle {
-private:
-
-    /**
-     * Platform description.
-     */
-    ir::compat::PlatformRef platform;
-
-    /**
-     * Parsed mapper pass options.
-     */
-    OptionsRef options;
-
-    /**
-     * Map is (nq+nb) long; after initialization, will always be the same.
-     */
-    utils::UInt nq;
-
-    /**
-     * Bregs are in map (behind qubits) to track dependences around conditions.
-     *
-     * FIXME JvS: why qubits and bregs, but not cregs?
-     */
-    utils::UInt nb;
-
-    /**
-     * Multiplication factor from cycles to nano-seconds (unit of duration).
-     */
-    utils::UInt ct;
-
-    /**
-     * fcv[real qubit index i]: qubit i is free from this cycle on.
-     */
-    utils::Vec<utils::UInt> fcv;
-
-    /**
-     * Actual resources occupied by scheduled gates, if resource-aware.
-     */
-    utils::Opt<rmgr::State> rs;
-
 public:
-
-    /**
-     * Initializes this FreeCycle object.
-     */
-    void initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt);
+    void initialize(const ir::PlatformRef &p, const OptionsRef &opt);
 
     /**
      * Returns the depth of the FreeCycle map. Equals the max of all entries
@@ -133,39 +91,87 @@ public:
         utils::UInt fr0,
         utils::UInt fr1,
         utils::UInt sr0,
-        utils::UInt sr1
-    ) const;
+        utils::UInt sr1) const;
 
     /**
      * Returns what the start cycle would be when we would schedule the given
-     * gate, ignoring resource constraints. gate operands are real qubit indices
-     * and breg indices. Purely functional, doesn't affect state.
-     */
-    utils::UInt get_start_cycle_no_rc(const ir::compat::GateRef &g) const;
-
-    /**
-     * Returns what the start cycle would be when we would schedule the given
-     * gate. gate operands are real qubit indices and breg indices. Purely
+     * gate. Purely
      * functional, doesn't affect state.
      */
-    utils::UInt get_start_cycle(const ir::compat::GateRef &g) const;
+    utils::UInt get_start_cycle(const ir::CustomInstructionRef &g) const;
 
     /**
-     * Schedules the given gate in the FreeCycle map. The gate operands are real
-     * qubit indices and breg indices. The FreeCycle map is updated, but not the
-     * resource map. This is done because add_no_rc is used to represent just gate
-     * dependencies, avoiding a build of a dep graph.
-     */
-    void add_no_rc(const ir::compat::GateRef &g, utils::UInt startCycle);
-
-    /**
-     * Schedules the given gate in the FreeCycle and resource maps. The gate
-     * operands are real qubit indices and breg indices. Both the FreeCycle map
-     * and the resource map are updated. startcycle must be the result of an
+     * Schedules the given gate in the FreeCycle map. The FreeCycle map
+     * is updated. startcycle must be the result of an
      * earlier StartCycle call (with rc!)
      */
-    void add(const ir::compat::GateRef &g, utils::UInt start_cycle);
+    void add(const ir::CustomInstructionRef &g, utils::UInt start_cycle);
 
+private:
+    static std::array<utils::UInt, 5> get_indices(const ir::Reference &ref) {
+        std::array<utils::UInt, 5> result;
+
+        for (utils::UInt i = 0; i < ref.indices.size(); ++i) {
+            if (i >= result.size()) {
+                QL_FATAL("Cannot handle more than 5 dimensions");
+            }
+
+            auto* int_lit = ref.indices[i]->as_int_literal();
+
+            if (!int_lit) {
+                QL_FATAL("Indices must be int lit");
+            }
+
+            result[i] = int_lit->value;
+        }
+
+        return result;
+    }
+
+    utils::UInt& get_for_qubit(utils::UInt i) {
+        return get_for_reference(*make_qubit_ref(platform, i));
+    }
+
+    utils::UInt get_for_qubit(utils::UInt i) const {
+        return get_for_reference(*make_qubit_ref(platform, i));
+    }
+
+    utils::UInt& get_for_reference(const ir::Reference &ref) {
+        auto it = std::find_if(fcv.begin(), fcv.end(), [&ref](std::pair<ir::Reference, utils::UInt> p) {
+            return p.first.equals(ref);
+        });
+
+        if (it == fcv.end()) {
+            fcv.push_back(std::make_pair(ref, 1));
+            // It's important that fcv is a list so that references are not invalidated.
+            return fcv.back().second;
+        }
+
+        return it->second;
+    }
+
+    utils::UInt get_for_reference(const ir::Reference &ref) const {
+        auto it = std::find_if(fcv.begin(), fcv.end(), [&ref](std::pair<ir::Reference, utils::UInt> p) {
+            return p.first.equals(ref);
+        });
+
+        if (it == fcv.end()) {
+            return 0;
+        }
+
+        return it->second;
+    }
+
+    ir::PlatformRef platform;
+
+    OptionsRef options;
+
+    std::list<std::pair<ir::Reference, utils::UInt>> fcv;
+
+    /**
+     * Actual resources occupied by scheduled gates, if resource-aware.
+     */
+    utils::Opt<rmgr::State> rs;
 };
 
 } // namespace detail

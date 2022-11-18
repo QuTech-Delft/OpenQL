@@ -7,9 +7,8 @@
 #include <chrono>
 #include "ql/utils/filesystem.h"
 #include "ql/pass/ana/statistics/annotations.h"
-
-// uncomment next line to enable multi-line dumping
-// #define MULTI_LINE_LOG_DEBUG
+#include "ql/com/ddg/dot.h"
+#include "ql/ir/ops.h"
 
 namespace ql {
 namespace pass {
@@ -18,9 +17,6 @@ namespace qubits {
 namespace map {
 namespace detail {
 
-/**
- * String conversion for PathStrategy.
- */
 std::ostream &operator<<(std::ostream &os, PathStrategy p) {
     switch (p) {
         case PathStrategy::ALL:        os << "all";        break;
@@ -39,7 +35,7 @@ using namespace com;
 /**
  * Find shortest paths between src and tgt in the grid, bounded by a
  * particular strategy. path is a linked-list node representing the complete
- * path from the initial src qubit to src in reverse order, not including src;
+ * path from the initial src qubit to src in reverse order;
  * it will be null for the initial call. budget is the maximum number of hops
  * allowed in the path from src and is at least distance to tgt, but can be
  * higher when not all hops qualify for doing a two-qubit gate or to find
@@ -52,46 +48,26 @@ using namespace com;
  * total number of entries in alters reaches or surpasses the limit (it may
  * surpass due to the checks only happening before splitting).
  */
-void Mapper::gen_shortest_paths(
-    const ir::compat::GateRef &gate,
+List<Alter> Mapper::gen_shortest_paths(
+    const ir::CustomInstructionRef &gate,
     RawPtr<Path> path,
     UInt src,
     UInt tgt,
     UInt budget,
-    List<Alter> &alters,
     UInt max_alters,
     PathStrategy strategy
 ) {
-
-    // List that will get the result of a recursive gen_shortest_paths() call.
-    List<Alter> sub_alters;
-
-    QL_DOUT("gen_shortest_paths: src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << strategy);
-    QL_ASSERT(alters.empty());
-
     if (src == tgt) {
-
         // Found target qubit. Create a virgin Alter and initialize it to become
         // an empty path, then add src to this path (so that it becomes a
         // distance 0 path with one qubit, src) and add the Alter to the result
         // list.
-        Alter a;
-        a.initialize(kernel, options);
-        a.target_gate = gate;
-        a.add_to_front(src);
-        while (path) {
-            a.add_to_front(path->qubit);
-            path = path->prev;
-        }
-        a.split(alters);
-        a.debug_print("... empty path after adding to result list");
-        Alter::debug_print("... result list after adding empty path", alters);
-        QL_DOUT("... will return now");
-        return;
+        Path total_path = {src, path};
+        return Alter::create_from_path(platform, block, options, gate, total_path);
     }
 
     Path sub_path_node = {src, path};
-    RawPtr<Path> sub_path = &sub_path_node;
+    RawPtr<Path> sub_path = &sub_path_node; // casse-gueule
 
     // Start looking around at neighbors for serious paths.
     UInt d = platform->topology->get_distance(src, tgt);
@@ -127,14 +103,12 @@ void Mapper::gen_shortest_paths(
 
     // Update the neighbor list according to the path strategy.
     if (strategy == PathStrategy::RANDOM) {
-
         // Shuffle the neighbor list. We have to go through a vector to do that,
         // otherwise std::shuffle doesn't work.
         utils::Vec<utils::UInt> neighbors_vec{neighbors.begin(), neighbors.end()};
         std::shuffle(neighbors_vec.begin(), neighbors_vec.end(), rng);
         neighbors.clear();
         neighbors.insert(neighbors.begin(), neighbors_vec.begin(), neighbors_vec.end());
-
     } else {
 
         // Rotate neighbor list nbl such that largest difference between angles
@@ -169,6 +143,7 @@ void Mapper::gen_shortest_paths(
 
     // For all resulting neighbors, find all continuations of a shortest path by
     // recursively calling ourselves.
+    List<Alter> result;
     for (auto &n : neighbors) {
         PathStrategy new_strategy = strategy;
 
@@ -187,147 +162,74 @@ void Mapper::gen_shortest_paths(
         // max_alters is 0 there is no limit.
         UInt max_sub_alters = 0;
         if (max_alters > 0) {
-            QL_ASSERT(max_alters > alters.size());
-            max_sub_alters = max_alters - alters.size();
+            QL_ASSERT(max_alters > result.size());
+            max_sub_alters = max_alters - result.size();
         }
 
         // Get list of possible paths in budget-1 from n to tgt in sub_alters.
-        gen_shortest_paths(gate, sub_path, n, tgt, budget - 1, sub_alters, max_sub_alters, new_strategy);
-
-        // Move all of sub_alters to alters, and make sub_alters empty.
-        alters.splice(alters.end(), sub_alters);
+        auto rec = gen_shortest_paths(gate, sub_path, n, tgt, budget - 1, max_sub_alters, new_strategy);
+        result.splice(result.end(), rec);
 
         // Check whether we've found enough alternatives already.
-        if (max_alters && alters.size() >= max_alters) {
+        if (max_alters && result.size() >= max_alters) {
             break;
         }
 
     }
 
-    QL_DOUT("... gen_shortest_paths: returning from call of: " << "src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << strategy);
+    return result;
 }
 
-/**
- * Find shortest paths in the grid for making the given gate
- * nearest-neighbor, from qubit src to qubit tgt, with an alternative for
- * each one. This starts off the recursion done by the above overload of
- * gen_shortest_paths(), and then generates new alternatives for each
- * possible "split" of each path.
- *
- * Steps:
- *  - Compute budget. Usually it is distance but it can be higher such as
- *    for multi-core.
- *  - Reduce the number of paths depending on the path selection option.
- *  - When not all shortest paths found are valid, take these out.
- *  - Paths are further split because each split may give rise to a separate
- *    alternative. A split is a hop where the two-qubit gate is assumed to
- *    be done. After splitting each alternative contains two lists, one
- *    before and one after (reversed) the envisioned two-qubit gate; all
- *    result alternatives are such that a two-qubit gate can be placed at
- *    the split
- *
- * The end result is a list of alternatives (in alters) suitable for being
- * evaluated for any routing metric.
- */
-void Mapper::gen_shortest_paths(const ir::compat::GateRef &gate, UInt src, UInt tgt, List<Alter> &alters) {
-
-    // Compute budget.
+List<Alter> Mapper::gen_shortest_paths(const ir::CustomInstructionRef &gate, UInt src, UInt tgt) {
     UInt budget = platform->topology->get_min_hops(src, tgt);
+    auto compute = [&gate, src, tgt, budget, this](PathStrategy s) {
+        return gen_shortest_paths(gate, nullptr, src, tgt, budget, options->max_alters, s);
+    };
 
-    // Generate paths using the configured path selection strategy.
     if (options->path_selection_mode == PathSelectionMode::ALL) {
-        gen_shortest_paths(gate, nullptr, src, tgt, budget, alters, options->max_alters, PathStrategy::ALL);
-    } else if (options->path_selection_mode == PathSelectionMode::BORDERS) {
-        gen_shortest_paths(gate, nullptr, src, tgt, budget, alters, options->max_alters, PathStrategy::LEFT_RIGHT);
-    } else if (options->path_selection_mode == PathSelectionMode::RANDOM) {
-        gen_shortest_paths(gate, nullptr, src, tgt, budget, alters, options->max_alters, PathStrategy::RANDOM);
-    } else {
-        QL_FATAL("Unknown value of path selection mode option " << options->path_selection_mode);
+        return compute(PathStrategy::ALL);
+    }
+    
+    if (options->path_selection_mode == PathSelectionMode::BORDERS) {
+        return compute(PathStrategy::LEFT_RIGHT);
+    }
+    
+    if (options->path_selection_mode == PathSelectionMode::RANDOM) {
+        return compute(PathStrategy::RANDOM);
     }
 
-    // Note: path split used to be here. Now it's done greedily by
-    // gen_shortest_paths().
-
+    QL_FATAL("Unknown value of path selection mode option " << options->path_selection_mode);
 }
 
-/**
- * Generates all possible variations of making the given gate
- * nearest-neighbor, starting from given past (with its mappings), and
- * return the found variations by appending them to the given list of
- * Alters.
- */
-void Mapper::gen_alters_gate(const ir::compat::GateRef &gate, List<Alter> &alters, Past &past) {
+List<Alter> Mapper::gen_alters_gate(const ir::CustomInstructionRef &gate, Past &past) {
+    auto qubits = ir::OperandsHelper(platform, *gate).get2QGateOperands();
 
-    // Interpret virtual operands in past's current map.
-    auto &q = gate->operands;
-    QL_ASSERT (q.size() == 2);
-    UInt src = past.get_real_qubit(q[0]);
-    UInt tgt = past.get_real_qubit(q[1]);
+    UInt src = past.get_real_qubit(qubits.first);
+    UInt tgt = past.get_real_qubit(qubits.second);
 
-    QL_DOUT("gen_alters_gate: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ") at get_min_hops=" << platform->topology->get_min_hops(src, tgt));
-    past.debug_print_fc();
-
-    // Find shortest paths from src to tgt, and split these.
-    gen_shortest_paths(gate, src, tgt, alters);
-    QL_ASSERT(!alters.empty());
-    // Alter::DPRINT("... after GenShortestPaths", la);
-
+    return gen_shortest_paths(gate, src, tgt);
 }
 
-/**
- * Generates all possible variations of making the given gates
- * nearest-neighbor, starting from given past (with its mappings), and
- * return the found variations by appending them to the given list of
- * Alters. Depending on the lookahead option, only take the first (most
- * critical) gate, or take all gates.
- */
-void Mapper::gen_alters(
-    const utils::List<ir::compat::GateRef> &gates,
-    List<Alter> &alters,
-    Past &past
-) {
-    if (options->lookahead_mode == LookaheadMode::ALL) {
-
-        // Create alternatives for each gate.
-        QL_DOUT("gen_alters, " << gates.size() << " 2q gates; create an alternative for each");
-        for (const auto &gate : gates) {
-
-            // Generate all possible variations to make gate nearest-neighbor
-            // in current v2r mapping ("past").
-            QL_DOUT("gen_alters: create alternatives for: " << gate->qasm());
-            gen_alters_gate(gate, alters, past);
-
-        }
-
-    } else {
-
-        // Only take the first gate in in the list, the most critical one, and
-        // generate alternatives for it.
-        ir::compat::GateRef gate = gates.front();
-
-        // Generate all possible variations to make gate nearest-neighbor, in
-        // current v2r mapping ("past").
-        QL_DOUT("gen_alters, " << gates.size() << " 2q gates; take first: " << gate->qasm());
-        gen_alters_gate(gate, alters, past);
-
+List<Alter> Mapper::gen_alters(const utils::List<ir::CustomInstructionRef> &gates, Past &past) {
+    if (options->lookahead_mode != LookaheadMode::ALL) {
+        return gen_alters_gate(gates.front(), past);
     }
+
+    List<Alter> result;
+    for (const auto &gate : gates) {
+        auto gate_alters = gen_alters_gate(gate, past);
+        result.splice(result.end(), gate_alters);
+    }
+    return result;
 }
 
-/**
- * Seeds the random number generator with the current time in microseconds.
- */
 void Mapper::random_init() {
     auto ts = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count();
-    // QL_DOUT("Seeding random generator with " << ts );
     rng.seed(ts);
 }
 
-/**
- * Chooses an Alter from the list based on the configured tie-breaking
- * strategy.
- */
 Alter Mapper::tie_break_alter(List<Alter> &alters, Future &future) {
     QL_ASSERT(!alters.empty());
 
@@ -337,35 +239,26 @@ Alter Mapper::tie_break_alter(List<Alter> &alters, Future &future) {
 
     switch (options->tie_break_method) {
         case TieBreakMethod::CRITICAL: {
-            List<ir::compat::GateRef> lag;
+            std::vector<ir::CustomInstructionRef> lag;
+            lag.reserve(alters.size());
             for (auto &a : alters) {
-                lag.push_back(a.target_gate);
+                lag.push_back(a.get_target_gate());
             }
-            ir::compat::GateRef gate = future.get_most_critical(lag);
-            QL_ASSERT(!gate.empty());
+            ir::CustomInstructionRef gate = future.get_most_critical(lag);
+
             for (auto &a : alters) {
-                if (a.target_gate.get_ptr() == gate.get_ptr()) {
-                    // QL_DOUT(" ... took first alternative with most critical target gate");
+                if (a.get_target_gate().get_ptr() == gate.get_ptr()) {
                     return a;
                 }
             }
-            return alters.front();
+            
+            QL_FATAL("This should not happen");
         }
 
         case TieBreakMethod::RANDOM: {
-            Alter res;
             std::uniform_int_distribution<> dis(0, (alters.size() - 1));
             UInt choice = dis(rng);
-            UInt i = 0;
-            for (auto &a : alters) {
-                if (i == choice) {
-                    res = a;
-                    break;
-                }
-                i++;
-            }
-            // QL_DOUT(" ... took random draw " << choice << " from 0.." << (la.size()-1));
-            return res;
+            return *(std::next(alters.begin(), choice));
         }
 
         case TieBreakMethod::LAST:
@@ -374,468 +267,134 @@ Alter Mapper::tie_break_alter(List<Alter> &alters, Future &future) {
         case TieBreakMethod::FIRST:
         default:
             return alters.front();
-
     }
 }
 
-/**
- * Map the gate/operands of a gate that has been routed or doesn't require
- * routing.
- */
-void Mapper::map_routed_gate(const ir::compat::GateRef &gate, Past &past) {
-    QL_DOUT("map_routed_gate on virtual: " << gate->qasm());
-
-    // make_real() maps the qubit operands of the gate and optionally updates
-    // its gate name. When the gate name was updated, a new gate with that name
-    // is created; when that new gate is a composite gate, it is immediately
-    // decomposed (by gate creation). The resulting gate/expansion (anyhow a
-    // sequence of gates) is collected in circuit.
-    ir::compat::GateRefs gates;
-    past.make_real(gate, gates);
-    for (const auto &new_gate : gates) {
-        QL_DOUT(" ... new mapped real gate, about to be added to past: " << new_gate->qasm());
-        past.add_and_schedule(new_gate);
-    }
-
+void Mapper::map_routed_gate(const ir::CustomInstructionRef &gate, Past &past) {
+    past.make_real(gate);
+    past.add_and_schedule(gate);
 }
 
-/**
- * Commit the given Alter, generating swaps in the past and taking it out
- * of future when done with it. Depending on configuration, this might not
- * actually place the target gate for the given alternative yet, because
- * only part of the swap chain is generated; in this case, swaps are added
- * to past, but future is not updated.
- */
 void Mapper::commit_alter(Alter &alter, Future &future, Past &past) {
+    const auto& target = alter.get_target_gate();
 
-    // The target two-qubit-gate, now not yet nearest-neighbor.
-    ir::compat::GateRef target = alter.target_gate;
-    alter.debug_print("... commit_alter, alternative to commit, will add swaps and then map target 2q gate");
-
-    // Add swaps to the past to make the target gate nearest-neighbor.
-    alter.add_swaps(past, options->swap_selection_mode);
+    alter.add_swaps(past);
 
     // When only some swaps were added (based on configuration), the target
     // might not yet be nearest-neighbor, so recheck.
-    auto &q = target->operands;
-    if (platform->topology->get_min_hops(past.get_real_qubit(q[0]), past.get_real_qubit(q[1])) == 1) {
-
-        // Target is nearest-neighbor, so we;re done with this gate.
-        // QL_DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
+    auto ops = ir::OperandsHelper(platform, *target);
+    QL_ASSERT(ops.numberOfQubitOperands() == 2);
+    if (ops.isNN2QGate([&past](utils::UInt q) { return past.get_real_qubit(q); })) {
         map_routed_gate(target, past);
         future.completed_gate(target);
-
-    } else {
-        // QL_DOUT("... CommitAlter, target 2q is not NN yet, keep it: " << resgp->qasm());
     }
-
 }
 
-/**
- * Find gates available for scheduling that do not require routing, take
- * them out, and map them. Ultimately, either no available gates remain, or
- * only gates that require routing remain. Return false when no gates remain
- * at all, and true when any gates remain; those gates are returned in
- * the gates list.
- *
- * Behavior depends on the value of the lookahead_mode option and on
- * also_nn_two_qubit_gate. When the latter is true, and lookahead_mode is...
- *  - DISABLED: while next in circuit is non-quantum or single-qubit, map
- *    that gate. Return when we find a two-qubit gate (nearest-neighbor or
- *    not). In this case, get_non_quantum_gates only returns a non-quantum
- *    gate when it is next in circuit.
- *  - ONE_QUBIT_GATE_FIRST: while next in circuit is non-quantum or
- *    single-qubit, map that gate. Return the most critical two-qubit gate
- *    (nearest-neighbor or not).
- *  - NO_ROUTING_FIRST: while next in circuit is non-quantum, single-qubit,
- *    or nearest-neighbor two-qubit, map that gate. Return the most critical
- *    non-nearest-neighbor two-qubit gate.
- *  - ALL: while next in circuit is non-quantum, single-qubit, or
- *    nearest-neighbor two-qubit, map that gate. Return ALL
- *    non-nearest-neighbor two-qubit gates.
- *
- * When also_nn_two_qubit_gate is false, behavior is the same, except
- * nearest-neighbor two-qubit gates behave as if they're not
- * nearest-neighbor.
- */
-Bool Mapper::map_mappable_gates(
+List<ir::CustomInstructionRef> Mapper::map_mappable_gates(
     Future &future,
     Past &past,
-    List<ir::compat::GateRef> &gates,
     Bool also_nn_two_qubit_gates
 ) {
+    utils::List<ir::CustomInstructionRef> available_gates;
+    while (!(available_gates = future.get_schedulable_gates()).empty()) {
+        routing_progress.feed(future.get_progress());
 
-    // List of non-quantum gates in avlist.
-    List<ir::compat::GateRef> av_non_quantum_gates;
+        bool hasMappedGate = false;
+        for (const auto &gate : available_gates) {
+            ir::OperandsHelper ops(platform, *gate);
 
-    // List of (remaining) gates in avlist.
-    List<ir::compat::GateRef> av_gates;
+            // FIXME: wait gates as well.
+            hasMappedGate = ops.numberOfQubitOperands() < 2 || (
+                also_nn_two_qubit_gates && ops.isNN2QGate([&past](utils::UInt q) { return past.get_real_qubit(q); }));
 
-    QL_DOUT("map_mappable_gates entry");
-    while (true) {
-
-        // Print progress every once in a while if we're taking long.
-        Real progress = 1.0;
-        if (future.approx_gates_total) {
-            progress -= ((Real)future.approx_gates_remaining / (Real)future.approx_gates_total);
-        }
-        routing_progress.feed(progress);
-
-        // Handle non-quantum gates that need to be done first.
-        if (future.get_non_quantum_gates(av_non_quantum_gates)) {
-
-            // List of gates available for scheduling contains non-quantum
-            // gates, and get_non_quantum_gates() indicates these (in
-            // av_non_quantum_gates) must be done first.
-            QL_DOUT("map_mappable_gates, there is a set of non-quantum gates");
-            for (const auto &gate : av_non_quantum_gates) {
-                QL_DOUT(". non-quantum gate: " << gate->qasm());
-
-                // here add code to map qubit use of any non-quantum instruction????
-                // dummy gates are nonq gates internal to OpenQL such as SOURCE/SINK; don't output them
-                if (gate->type() != ir::compat::GateType::DUMMY) {
-                    // past only can contain quantum gates, so non-quantum gates must by-pass Past
-                    QL_DOUT(".. non-quantum gate (not a dummy) to be flushed to outlist: " << gate->qasm());
-                    past.bypass(gate);    // this flushes past.lg first to outlg
-                }
-                QL_DOUT(".. non-quantum gate to be set to completed: " << gate->qasm());
-                future.completed_gate(gate); // so on avlist= nonNN2q -> NN2q -> 1q -> nonq: the nonq is done first
-                QL_DOUT(". non-quantum gate: " << gate->qasm() << " [DONE]");
-
-            }
-            QL_DOUT("map_mappable_gates, there is a set of non-quantum gates [DONE]");
-            continue;
-
-        }
-
-        // Get available gates.
-        if (!future.get_gates(av_gates)) {
-
-            // No more gates available for scheduling.
-            QL_DOUT("map_mappable_gates, no gates anymore, return");
-            gates.clear();
-            return false;
-
-        }
-
-        // Quantum gates are available for scheduling, and
-        // get_non_quantum_gates/get_gates indicate these (in av_gates) must be
-        // done now. Look for gates that never require routing (single-qubit and
-        // wait gates).
-        Bool found = false;
-        for (const auto &gate : av_gates) {
-            if (gate->type() == ir::compat::GateType::WAIT || gate->operands.size() == 1) {
-
-                // A quantum gate that never requires routing was found.
-                QL_DOUT(". never-requiring mapping quantum gate to be mapped: " << gate->qasm());
+            if (hasMappedGate) {
                 map_routed_gate(gate, past);
-                QL_DOUT(". never-requiring mapping quantum gate to be set to completed: " << gate->qasm());
                 future.completed_gate(gate);
-                found = true;
-                // so on avlist= nonNN2q -> NN2q -> 1q: the 1q is done first
                 break;
-
             }
         }
-        if (found) {
-            continue;
+
+        if (!hasMappedGate) {
+            // Remaining gates require actual routing.
+            return available_gates;
         }
-
-        // av_gates only contains 2q gates, that may require routing.
-        if (also_nn_two_qubit_gates) {
-
-            // When there is a 2q in qlg that is mappable already, map it.
-            // When there is more than one, take most critical one first
-            // (because qlg is ordered, most critical first).
-            for (const auto &gate : av_gates) {
-
-                // Interpret virtual operands in current map.
-                auto &q = gate->operands;
-                UInt src = past.get_real_qubit(q[0]);
-                UInt tgt = past.get_real_qubit(q[1]);
-
-                // Find minimum number of hops between real counterparts.
-                UInt d = platform->topology->get_min_hops(src, tgt);
-
-                if (d == 1) {
-
-                    // Just one hop, so gate is already nearest-neighbor and can
-                    // be mapped.
-                    QL_DOUT(". NN gate, to be mapped: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ")");
-                    map_routed_gate(gate, past);
-                    QL_DOUT(". NN gate, to be set to completed: " << gate->qasm() );
-                    future.completed_gate(gate);
-                    found = true;    // a 2q quantum gate was found that was mappable
-                    // so on avlist= nonNN2q -> NN2q: the NN2q is done first
-                    break;
-
-                }
-            }
-            if (found) {
-
-                // Found a mappable two-qubit gate and mapped it. Don't map more
-                // mappable two-qubit gates (they might not be critical, the now
-                // available single-qubit gates may hide a more critical
-                // two-qubit gate), but deal with all available non-quantum and
-                // single-qubit gates first, and only when non of those remain,
-                // map a next mappable two-qubit (now most critical) gate.
-                QL_DOUT(". map_mappable_gates, found and mapped an easy quantum gate, continuing ...");
-                continue;
-
-            }
-            QL_DOUT(". map_mappable_gates, only nonNN 2q gates remain: ...");
-        } else {
-            QL_DOUT(". map_mappable_gates, only 2q gates remain (nonNN and NN): ...");
-        }
-
-        // Only two-qubit gates remain in the available gate list (when
-        // also_nn_two_qubit_gate these are furthermore necessarily
-        // non-nearest-neighbor, otherwise they might also be nearest-neighbor).
-        gates = av_gates;
-
-#ifdef MULTI_LINE_LOG_DEBUG
-        QL_IF_LOG_DEBUG {
-            for (const auto &gate : gates) {
-                QL_DOUT(". map_mappable gates, 2q gates returned: " << gate->qasm());
-            }
-        }
-#else
-        QL_DOUT("map_mappable gates, 2q gates returned (disabled)");
-#endif
-
-        return true;
     }
+    
+    return {};
 }
 
-/**
- * Select an Alter based on the selected heuristic.
- *
- *  - If BASE[_RC], consider all Alters as equivalent, and thus apply the
- *    tie-breaking strategy to all.
- *  - If MIN_EXTEND[_RC], consider Alters with the minimal cycle extension
- *    of the given past (or some factor of that amount, ordered by
- *    increasing cycle extension) and recurse. When the recursion depth
- *    limit is reached, apply the tie-breaking strategy.
- *
- * For recursion, past is the speculative past, and base_past is the past
- * we've already committed to, and should thus measure fitness against.
- */
-void Mapper::select_alter(
+
+Alter Mapper::select_alter(
     List<Alter> &alters,
-    Alter &result,
     Future &future,
     Past &past,
     Past &base_past,
     UInt recursion_depth
 ) {
-    // alters are all alternatives we enter with. There must be at least one.
     QL_ASSERT(!alters.empty());
 
-    QL_DOUT("select_alter ENTRY level=" << recursion_depth << " from " << alters.size() << " alternatives");
-
-    // Handle the basic strategy, where we just tie-break on all alters without
-    // recusing.
-    if (options->heuristic == Heuristic::BASE || options->heuristic == Heuristic::BASE_RC) {
-        Alter::debug_print(
-            "... select_alter base (equally good/best) alternatives:", alters);
-        result = tie_break_alter(alters, future);
-        result.debug_print("... the selected Alter is");
-        // QL_DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
-        return;
+    if (options->heuristic == Heuristic::BASE) {
+        return tie_break_alter(alters, future);
     }
 
-    QL_ASSERT(
-        options->heuristic == Heuristic::MIN_EXTEND ||
-        options->heuristic == Heuristic::MIN_EXTEND_RC ||
-        options->heuristic == Heuristic::MAX_FIDELITY
-    );
+    QL_ASSERT(options->heuristic == Heuristic::MIN_EXTEND);
 
-    // Compute a score for each alternative relative to base_past, and sort the
-    // alternatives based on it, minimum first.
     for (auto &a : alters) {
-        a.debug_print("Considering extension by alternative: ...");
-        a.extend(past, base_past);           // locally here, past will be cloned and kept in alter
-        // and the extension stored into the a.score
+        a.extend(past, base_past); // This fills a.score.
     }
-    alters.sort([this](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
-    Alter::debug_print(
-        "... select_alter sorted all entry alternatives after extension:", alters);
+    alters.sort([this](const Alter &a1, const Alter &a2) { return a1.get_score() < a2.get_score(); });
 
-    // Reduce sorted list of alternatives to list of good alternatives, suitable
-    // to find in recursion which is/are really best. This need not be only
-    // those with minimum cycle extension; it can be more, based on the
-    // recursion_width_factor option. However, this easily, as each level
-    // exponentially builds more alternatives. To curb this,
-    // recursion_width_exponent can be set to a value less than one, to
-    // multiplicatively reduce the width for each recursion level.
-    List<Alter> good_alters = alters;
-    good_alters.remove_if([this,alters](const Alter& a) { return a.score != alters.front().score; });
-    Real factor = options->recursion_width_factor * utils::pow(options->recursion_width_exponent, recursion_depth);
-    Real keep_real = utils::max(1.0, utils::ceil(factor * good_alters.size()));
-    UInt keep = (keep_real < static_cast<utils::Real>(utils::MAX)) ? static_cast<utils::UInt>(keep_real) : utils::MAX;
-    if (keep != good_alters.size()) {
-        if (keep < alters.size()) {
-            good_alters = alters;
-            List<Alter>::iterator ia;
-            ia = good_alters.begin();
-            advance(ia, keep);
-            good_alters.erase(ia, good_alters.end());
-        } else {
-            good_alters = alters;
-        }
+    auto factor = options->recursion_width_factor * utils::pow(options->recursion_width_exponent, recursion_depth);
+    auto keep_real = utils::max(1.0, utils::ceil(factor * alters.size()));
+    auto keep = (keep_real < static_cast<utils::Real>(utils::MAX)) ? static_cast<utils::UInt>(keep_real) : utils::MAX;
+
+    while (alters.size() > keep) {
+        alters.pop_back();
     }
-    // QL_DOUT("SelectAlter mapselectmaxwidth=" << mapselectmaxwidthopt << " level=" << level << " reduced la to gla");
-    Alter::debug_print("... select_alter good alternatives before recursion:", good_alters);
 
-    // When maxlevel has been reached, stop the recursion, and choose from the
-    // best minextend/maxfidelity alternatives.
     if (recursion_depth >= options->recursion_depth_limit) {
+        while (alters.back().get_score() > alters.front().get_score()) {
+            alters.pop_back();
+        }
 
-        // Reduce list of good alternatives to list of minextend/maxfidelity
-        // best alternatives (bla), and make a choice from that list to return
-        // as result.
-        List<Alter> best_alters = good_alters;
-        best_alters.remove_if([this,good_alters](const Alter& a) { return a.score != good_alters.front().score; });
-        Alter::debug_print(
-            "... select_alter reduced to best alternatives to choose result from:",
-            best_alters);
-        result = tie_break_alter(best_alters, future);
-        result.debug_print("... the selected Alter (STOPPING RECURSION) is");
-        // QL_DOUT("SelectAlter DONE level=" << level << " from " << bla.size() << " best alternatives");
-        return;
-
+        return tie_break_alter(alters, future);
     }
 
-    // Otherwise, prepare using recursion to choose from the good alternatives,
-    // i.e. make a recursion step looking ahead to decide which alternative is
-    // best.
-    //
-    // For each good alternative, lookahead for next non-nearest-neighbor
-    // two-qubit gates, and compare them for their alternative mappings; the
-    // lookahead alternative with the least overall extension (i.e. relative to
-    // base_past) is chosen, and the current alternative on top of which it was
-    // built is chosen at the current level, unwinding the recursion.
-    //
-    // Recursion could stop above because the maximum depth was reached, but it
-    // can also stop because the end of the circuit has been reached (i.e. no
-    // non-nearest-neighbor two-qubit gates remain.
-    //
-    // When there is only one good alternative, we still want to know its
-    // minimum extension to compare with competitors, since that is not just a
-    // local figure but the extension from base_past. So with only one
-    // alternative we may still go into recursion below. This means that
-    // recursion always goes to the maximum depth or to the end of the circuit.
-    // This anomaly may need correction.
-    // QL_DOUT("... SelectAlter level=" << level << " entering recursion with " << gla.size() << " good alternatives");
-    for (auto &a : good_alters) {
-        a.debug_print("... ... considering alternative:");
-        Future sub_future = future; // copy!
-        Past sub_past = past;       // copy!
+    for (auto &a : alters) {
+        // Copy of current state for recursion.
+        Future sub_future = future;
+        Past sub_past = past;
+        
         commit_alter(a, sub_future, sub_past);
-        a.debug_print(
-            "... ... committed this alternative first before recursion:");
 
-        // Whether there are still non-nearest-neighbor two-qubit gates to map.
-        Bool gates_remain;
-
-        // List of non-nearest-neighbor two-qubit gates taken from the available
-        // gate list, as returned from map_mappable_gates.
-        List<ir::compat::GateRef> gates;
-
-        // In recursion, look at recurse_on_nn_two_qubit option:
-        // - map_mappable_gates with recurse_on_nn_two_qubit==true is greedy and
-        //   immediately maps each single-qubit and nearest-neighbor two-qubit
-        //   gate;
-        // - map_mappable_gates with recurse_on_nn_two_qubit==false is not
-        //   greedy, mapping only the single-qubit gates.
-        //
-        // When true and when the lookahead mode is NO_ROUTING_FIRST or ALL, let
-        // map_mappable_gates stop mapping only on finding a non-nearest
-        // two-qubit gate. Otherwise, let map_mappable_gates stop mapping on any
-        // two-qubit gate. This creates more clear recursion: one two-qubit gate
-        // at a time, instead of a possible empty set of nearest-neighbor
-        // two-qubit gates followed by a non-nearest neighbor two-qubit gate.
-        // When a nearest-neighbor gate is found, this is perfect; this is not
-        // seen when immediately mapping all non-nearest two-qubit gates. So the
-        // goal is to prove that recurse_on_nn_two_qubit should be no at this
-        // place, in the recursion step, but not at level 0!
         Bool also_nn_two_qubit_gates = options->recurse_on_nn_two_qubit
                      && (
                          options->lookahead_mode == LookaheadMode::NO_ROUTING_FIRST
                          || options->lookahead_mode == LookaheadMode::ALL
                      );
 
-        // Map all easy gates. Remainder is returned in gates.
-        gates_remain = map_mappable_gates(sub_future, sub_past, gates, also_nn_two_qubit_gates);
+        auto gates = map_mappable_gates(sub_future, sub_past, also_nn_two_qubit_gates);
 
-        if (gates_remain) {
+        if (!gates.empty()) {
+            auto sub_alters = gen_alters(gates, sub_past);
+            auto sub_result = select_alter(sub_alters, sub_future, sub_past, base_past, recursion_depth + 1);
 
-            // End of circuit not yet reached, recurse.
-            QL_DOUT("... ... select_alter level=" << recursion_depth << ", committed + mapped easy gates, now facing " << gates.size() << " 2q gates to evaluate next");
-
-            // Generate the next set of alternative routing actions.
-            List<Alter> sub_alters;
-            gen_alters(gates, sub_alters, sub_past);
-            QL_DOUT("... ... select_alter level=" << recursion_depth << ", generated for these 2q gates " << sub_alters.size() << " alternatives; RECURSE ... ");
-
-            // Select the best alternative from the list by recursion.
-            Alter sub_result;
-            select_alter(sub_alters, sub_result, sub_future, sub_past, base_past, recursion_depth + 1);
-            sub_result.debug_print("... ... select_alter, generated for these 2q gates ... ; RECURSE DONE; resulting alternative ");
-
-            // The extension of deep recursion is treated as extension at the
-            // current level; by this an alternative that started bad may be
-            // compensated by deeper alters.
-            a.score = sub_result.score;
-
+            a.set_score(sub_result.get_score());
         } else {
-
-            // Reached end of circuit while speculating.
-            QL_DOUT("... ... select_alter level=" << recursion_depth << ", no gates to evaluate next; RECURSION BOTTOM");
-            if (options->heuristic == Heuristic::MAX_FIDELITY) {
-                QL_FATAL("Mapper option maxfidelity has been disabled");
-                // a.score = quick_fidelity(past_copy.lg);
-            } else {
-                a.score = sub_past.get_max_free_cycle() -
-                          base_past.get_max_free_cycle();
-            }
-            a.debug_print(
-                "... ... select_alter, after committing this alternative, mapped easy gates, no gates to evaluate next; RECURSION BOTTOM");
-
+            a.set_score(sub_past.get_max_free_cycle() - base_past.get_max_free_cycle());
         }
-        a.debug_print("... ... DONE considering alternative:");
     }
 
-    // Sort list of good alternatives on score resulting after recursion.
-    good_alters.sort([this](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
-    Alter::debug_print("... select_alter sorted alternatives after recursion:", good_alters);
+    alters.sort([this](const Alter &a1, const Alter &a2) { return a1.get_score() < a2.get_score(); });
 
-    // Reduce list of good alternatives of before recursion to list of equally
-    // minimal best alternatives now, and make a choice from that list to return
-    // as result.
-    List<Alter> best_alters = good_alters;
-    best_alters.remove_if([this,good_alters](const Alter& a) { return a.score != good_alters.front().score; });
-    Alter::debug_print("... select_alter equally best alternatives on return of RECURSION:", best_alters);
-    result = tie_break_alter(best_alters, future);
-    result.debug_print("... the selected Alter is");
-    // QL_DOUT("... SelectAlter level=" << level << " selecting from " << bla.size() << " equally good alternatives above DONE");
-    QL_DOUT("select_alter DONE level=" << recursion_depth << " from " << alters.size() << " alternatives");
+    while (alters.back().get_score() > alters.front().get_score()) {
+        alters.pop_back();
+    }
 
+    return tie_break_alter(alters, future);
 }
 
-/**
- * Given the states of past and future, map all mappable gates and find the
- * non-mappable ones. For those, evaluate what to do next and do it. During
- * recursion, comparison is done with the base past (bottom of recursion
- * stack), and past is the last past (top of recursion stack) relative to
- * which the mapping is done.
- */
-void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
-
-    // List of non-mappable gates taken from avlist, as returned by
-    // map_mappable_gates.
-    List<ir::compat::GateRef> gates;
-
+utils::Any<ir::Statement> Mapper::route_gates(Future &future, Past &past) {
     Bool also_nn_two_qubit_gates = (
         options->lookahead_mode == LookaheadMode::NO_ROUTING_FIRST
         || options->lookahead_mode == LookaheadMode::ALL
@@ -843,207 +402,51 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
 
     routing_progress = Progress("router", 1000);
 
-    // Handle all the gates one by one. map_mappable_gates returns false when no
-    // gates remain.
-    while (map_mappable_gates(future, past, gates, also_nn_two_qubit_gates)) {
+    List<ir::CustomInstructionRef> gates;
+    while (!(gates = map_mappable_gates(future, past, also_nn_two_qubit_gates)).empty()) {
+        auto alters = gen_alters(gates, past);
 
-        // All gates in the gates list are two-qubit quantum gates that cannot
-        // be mapped yet. Select which one(s) to (partially) route, according to
-        // one of the known strategies. The only requirement on the code below
-        // is that at least something is done that decreases the problem.
+        auto selected_alter = select_alter(alters, future, past, past, 0);
 
-        // Generate all alternative routes.
-        List<Alter> alters;
-        gen_alters(gates, alters, past);
+        commit_alter(selected_alter, future, past);
 
-        // Select the best one based on the configured strategy.
-        Alter alter;
-        select_alter(alters, alter, future, past, base_past, 0);
-
-        // Commit to selected alternative. This adds all or just one swap
-        // (depending on configuration) to THIS past, and schedules them/it in.
-        commit_alter(alter, future, past);
-
-        // Print progress every once in a while if we're taking long.
-        Real progress = 1.0;
-        if (future.approx_gates_total) {
-            progress -= ((Real)future.approx_gates_remaining / (Real)future.approx_gates_total);
-        }
-        routing_progress.feed(progress);
-
+        routing_progress.feed(future.get_progress());
     }
 
     routing_progress.complete();
+
+    return past.flush_to_circuit();
 }
 
-/**
- * Map the kernel's circuit's gates in the provided context (v2r maps),
- * updating circuit and v2r maps.
- */
-void Mapper::route(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r) {
+void Mapper::route(ir::BlockBaseRef block, com::map::QubitMapping &v2r) {
+    Future future(platform, options, block);
 
-    // Future window, presents input in available list.
-    Future future;
-
-    // Past window, contains output schedule, storing all gates until taken out.
-    Past past;
-
-    // Scheduler instance (from src/scheduler.h) used for its dependency graph.
-    utils::Ptr<Scheduler> sched;
-    sched.emplace();
-
-    // Initialize the future window with the incoming circuit.
-    future.initialize(platform, options);
-    future.set_kernel(k, sched);
-
-    // Future has now copied kernel->c to private data, making kernel->c ready
-    // for use by Past::new_gate(), for the kludge we need because gates can
-    // only be constructed in the context of and at the end of a kernel.
-    k->gates.reset();
-    kernel = k;
-    past.initialize(kernel, options);
+    Past past(platform, options);
     past.import_mapping(v2r);
 
-    // Perform the actual mapping.
-    map_gates(future, past, past);
+    block->statements = route_gates(future, past);
 
-    // Flush all gates to the output window.
-    past.flush_all();
-
-    // Copy the gates into the kernel's circuit.
-    // mainPast.DPRINT("end mapping");
-    QL_DOUT("... retrieving outCirc from mainPast.outlg; swapping outCirc with kernel.c, kernel.c contains output circuit");
-    k->gates.reset();
-    past.flush_to_circuit(k->gates);
-
-    // The mapper also schedules internally, including any decompositions it
-    // does to make things primitive. Thus, cycle numbers are now valid.
-    k->cycles_valid = true;
-
-    // Update the virtual to real qubit mapping to what it is after all the
-    // kernel's routing actions.
     past.export_mapping(v2r);
 
-    // Store statistics gathered by the past before it goes out of scope.
     num_swaps_added = past.get_num_swaps_added();
     num_moves_added = past.get_num_moves_added();
-
 }
 
-/**
- * Decomposes all gates in the circuit that have a definition with _prim
- * appended to its name. The mapper does this after routing.
- */
-void Mapper::decompose_to_primitives(const ir::compat::KernelRef &k) {
-    QL_DOUT("decompose_to_primitives circuit ...");
-
-    // Copy to allow kernel.c use by Past.new_gate.
-    ir::compat::GateRefs circuit = k->gates;
-    k->gates.reset();
-
-    // Output window in which gates are scheduled.
-    Past past;
-    past.initialize(k, options);
-
-    for (const auto &gate : circuit) {
-
-        // Decompose gate into prim_circuit. On failure, this copies the
-        // original gate directly into it.
-        ir::compat::GateRefs prim_gates;
-        past.make_primitive(gate, prim_gates);
-
-        // Schedule the potentially decomposed gates.
-        for (const auto &prim_gate : prim_gates) {
-            past.add_and_schedule(prim_gate);
-        }
-
-    }
-
-    // Update the output circuit based on the scheduling result.
-    past.flush_all();
-    past.flush_to_circuit(k->gates);
-    k->cycles_valid = true;
-
-    QL_DOUT("decompose_to_primitives circuit [DONE]");
-}
-
-/**
- * Initialize the data structures in this class that don't change from
- * kernel to kernel.
- */
-void Mapper::initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt) {
-    // QL_DOUT("Mapping initialization ...");
-    // QL_DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
+void Mapper::initialize(const ir::PlatformRef &p, const OptionsRef &opt) {
     platform = p;
     options = opt;
-    nq = p->qubit_count;
-    nc = p->creg_count;
-    nb = p->breg_count;
     random_init();
-    // QL_DOUT("... platform/real number of qubits=" << nq << ");
-    cycle_time = p->cycle_time;
-
-    // QL_DOUT("Mapping initialization [DONE]");
 }
 
-/**
- * Runs routing and decomposition to primitives for
- * the given kernel.
- *
- * TODO: split off the decomposition to primitives.
- */
-void Mapper::map_kernel(const ir::compat::KernelRef &k) {
-    QL_DOUT("Mapping kernel " << k->name << " [START]");
-    QL_DOUT("... kernel original virtual number of qubits=" << k->qubit_count);
-    kernel.reset();            // no new_gates until kernel.c has been copied
-
-    QL_DOUT("Mapper::Map before v2r.initialize: assume_initialized=" << options->assume_initialized);
-
-    // TODO: unify all incoming v2rs into v2r to compute kernel input mapping.
-    //  Right now there is no inter-kernel mapping yet, so just take the
-    //  program's initial mapping for each kernel.
-    
+void Mapper::map_block(ir::BlockBaseRef block) {
     com::map::QubitMapping v2r{
-        nq,
+        get_num_qubits(platform),
         true,
         options->assume_initialized ? com::map::QubitState::INITIALIZED : com::map::QubitState::NONE
     };
-#ifdef MULTI_LINE_LOG_DEBUG
-    QL_IF_LOG_DEBUG {
-        QL_DOUT("v2r dump after initialization:");
-        v2r.dump_state();
-    }
-#else
-    QL_DOUT("v2r dump after initialization (disabled)");
-#endif
 
-    // Save the input qubit map for reporting.
     v2r_in = v2r;
-
-    // Perform heuristic routing.
-    QL_DOUT("Mapper::Map before route: assume_initialized=" << options->assume_initialized);
-    route(k, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
-#ifdef MULTI_LINE_LOG_DEBUG
-    QL_IF_LOG_DEBUG {
-        QL_DOUT("v2r dump after heuristics");
-        v2r.dump_state();
-    }
-#else
-    QL_DOUT("v2r dump after heuristics (disabled)");
-#endif
-
-    // Save the routed qubit map for reporting. This is the resulting qubit map
-    // at the *end* of the kernel.
-    v2r_out = v2r;
-
-    // Decompose to primitive instructions as specified in the config file.
-    decompose_to_primitives(k);
-
-    k->qubit_count = nq;       // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
-    k->creg_count = nc;        // same for number of cregs and bregs, although we don't really map those
-    k->breg_count = nb;
-
-    QL_DOUT("Mapping kernel " << k->name << " [DONE]");
+    route(block, v2r);
 }
 
 /**
@@ -1053,61 +456,42 @@ void Mapper::map_kernel(const ir::compat::KernelRef &k) {
  *  individually. That means that the resulting program is garbage if any
  *  quantum state was originally maintained from kernel to kernel!
  */
-void Mapper::map(const ir::compat::ProgramRef &prog, const OptionsRef &opt) {
-
-    // Shorthand.
+void Mapper::map(const ir::Ref &ir, const OptionsRef &opt) {
     using pass::ana::statistics::AdditionalStats;
 
-    // Perform program-wide initialization.
-    initialize(prog->platform, opt);
+    initialize(ir->platform, opt);
 
-    // Map kernel by kernel, adding statistics all the while.
     UInt total_swaps = 0;
     UInt total_moves = 0;
     Real total_time_taken = 0.0;
-    for (const auto &k : prog->kernels) {
-        QL_IOUT("Mapping kernel: " << k->name);
 
-        // Start interval timer for measuring time taken for this kernel.
+    for (auto &block : ir->program->blocks) {
         Real time_taken = 0.0;
-        using namespace std::chrono;
-        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+        using clock = std::chrono::high_resolution_clock;
+        auto t1 = clock::now();
 
-        // Actually do the mapping.
-        map_kernel(k);
+        map_block(block.as<ir::BlockBase>());
 
-        // Stop the interval timer.
-        high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        duration<Real> time_span = t2 - t1;
+        auto t2 = clock::now();
+        std::chrono::duration<Real> time_span = t2 - t1;
         time_taken = time_span.count();
 
-        // Push mapping statistics into the kernel.
-        AdditionalStats::push(k, "swaps added: " + to_string(num_swaps_added));
-        AdditionalStats::push(k, "of which moves added: " + to_string(num_moves_added));
-        AdditionalStats::push(k, "virt2real map before mapper:" + to_string(v2r_in.get_virt_to_real()));
-        AdditionalStats::push(k, "virt2real map after mapper:" + to_string(v2r_out.get_virt_to_real()));
-        AdditionalStats::push(k, "realqubit states before mapper:" + to_string(v2r_in.get_state()));
-        AdditionalStats::push(k, "realqubit states after mapper:" + to_string(v2r_out.get_state()));
-        AdditionalStats::push(k, "time taken: " + to_string(time_taken));
+        AdditionalStats::push(block, "swaps added: " + to_string(num_swaps_added));
+        AdditionalStats::push(block, "of which moves added: " + to_string(num_moves_added));
+        AdditionalStats::push(block, "virt2real map before mapper:" + to_string(v2r_in.get_virt_to_real()));
+        AdditionalStats::push(block, "virt2real map after mapper:" + to_string(v2r_out.get_virt_to_real()));
+        AdditionalStats::push(block, "realqubit states before mapper:" + to_string(v2r_in.get_state()));
+        AdditionalStats::push(block, "realqubit states after mapper:" + to_string(v2r_out.get_state()));
+        AdditionalStats::push(block, "time taken: " + to_string(time_taken));
 
-        // Update total statistical counters.
         total_swaps += num_swaps_added;
         total_moves += num_moves_added;
         total_time_taken += time_taken;
-
     }
 
-    // Push mapping statistics into the program.
-    AdditionalStats::push(prog, "Total no. of swaps: " + to_string(total_swaps));
-    AdditionalStats::push(prog, "Total no. of moves of swaps: " + to_string(total_moves));
-    AdditionalStats::push(prog, "Total time taken: " + to_string(total_time_taken));
-
-    // Kernel qubit/creg/breg counts will have been updated to the platform
-    // counts, so we need to do the same for the program.
-    prog->qubit_count = platform->qubit_count;
-    prog->creg_count = platform->creg_count;
-    prog->breg_count = platform->breg_count;
-
+    AdditionalStats::push(ir->program, "Total no. of swaps added by router pass: " + to_string(total_swaps));
+    AdditionalStats::push(ir->program, "Total no. of moves added by router pass: " + to_string(total_moves));
+    AdditionalStats::push(ir->program, "Total time taken by router pass: " + to_string(total_time_taken));
 }
 
 } // namespace detail

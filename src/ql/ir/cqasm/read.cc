@@ -438,7 +438,7 @@ static ExpressionRef convert_expression(
     }
 
     if (auto cb = cq_expr->as_const_bool()) {
-        return make_bit_lit(ir, cb->value, as_type);
+        return make_bit_lit(ir->platform, cb->value, as_type);
     } else if (cq_expr->as_const_axis()) {
         QL_USER_ERROR("OpenQL does not support cQASM's axis data type");
     } else if (auto ci = cq_expr->as_const_int()) {
@@ -514,7 +514,7 @@ static ExpressionRef convert_expression(
             );
         }
         if (as_type.empty() || as_type == ir->platform->qubits->data_type) {
-            return make_qubit_ref(ir, convert_index(qr->index[sgmq_index]));
+            return make_qubit_ref(ir->platform, convert_index(qr->index[sgmq_index]));
         } else if (as_type == ir->platform->default_bit_type) {
             return make_bit_ref(ir, convert_index(qr->index[sgmq_index]));
         } else {
@@ -550,7 +550,7 @@ static ExpressionRef convert_expression(
                 "' to type " << as_type->name
             );
         }
-        return make_reference(ir, ql_object, {});
+        return make_reference(ir->platform, ql_object, {});
     } else if (auto fn = cq_expr->as_function()) {
         if (auto ql_object = fn->get_annotation_ptr<ObjectLink>()) {
 
@@ -559,7 +559,7 @@ static ExpressionRef convert_expression(
             for (const auto &cq_operand : fn->operands) {
                 ql_indices.push_back(convert_index(cq_operand));
             }
-            auto ref = make_reference(ir, *ql_object, ql_indices);
+            auto ref = make_reference(ir->platform, *ql_object, ql_indices);
             if (auto ql_type = fn->get_annotation_ptr<DataTypeLink>()) {
                 ref->data_type = *ql_type;
             }
@@ -607,7 +607,7 @@ static utils::One<SetInstruction> convert_set_instruction(
             "does not match type of right-hand side (" << ql_rhs_type->name << ")"
         );
     }
-    return utils::make<SetInstruction>(ql_lhs, ql_rhs, ir::make_bit_lit(ir, true));
+    return utils::make<SetInstruction>(ql_lhs, ql_rhs, ir::make_bit_lit(ir->platform, true));
 }
 
 /**
@@ -734,7 +734,7 @@ static void convert_block(
                                 ql_operands.add(convert_expression(ir, cq_operand, sgmq_size, sgmq_index));
                             }
                         }
-                        ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
+                        ql_insns.push_back(make_instruction(ir->platform, cq_insn->name, ql_operands, ql_condition));
 
                     } else if (
                         !options.measure_all_target.empty() &&
@@ -746,9 +746,9 @@ static void convert_block(
                         QL_ASSERT(ir->platform->qubits->shape.size() == 1);
                         for (utils::UInt q = 0; q < ir->platform->qubits->shape[0]; q++) {
                             ql_insns.push_back(make_instruction(
-                                ir,
+                                ir->platform,
                                 options.measure_all_target,
-                                {make_qubit_ref(ir, q)},
+                                {make_qubit_ref(ir->platform, q)},
                                 ql_condition.clone()
                             ));
                         }
@@ -789,7 +789,7 @@ static void convert_block(
                                 ql_operands[1] = x;
                             }
 
-                            ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
+                            ql_insns.push_back(make_instruction(ir->platform, cq_insn->name, ql_operands, ql_condition));
                         }
 
                     }
@@ -819,7 +819,7 @@ static void convert_block(
                             if (!ql_condition.empty()) {
                                 ql_cond_insn->condition = ql_condition.clone();
                             } else {
-                                ql_cond_insn->condition = make_bit_lit(ir, true);
+                                ql_cond_insn->condition = make_bit_lit(ir->platform, true);
                             }
                         }
                     } else if (!ql_condition.empty()) {
@@ -848,7 +848,7 @@ static void convert_block(
             ) {
 
                 // Figure out which objects are being used by this bundle.
-                com::ddg::EventGatherer eg{ir};
+                com::ddg::EventGatherer eg{ir->platform};
                 for (const auto &ql_insn : ql_bundle) {
                     eg.add_statement(ql_insn);
                 }
@@ -872,7 +872,7 @@ static void convert_block(
 
                 // Construct barriers sensitive to all used objects and add them
                 // to the front and back of the "bundle".
-                auto ql_barrier_begin = make_instruction(ir, "barrier", ql_operands);
+                auto ql_barrier_begin = make_instruction(ir->platform, "barrier", ql_operands);
                 auto ql_barrier_end = ql_barrier_begin.clone();
                 ql_barrier_begin->cycle = ql_bundle.front()->cycle;
                 ql_barrier_end->cycle = ql_bundle.back()->cycle;

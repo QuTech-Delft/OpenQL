@@ -11,7 +11,7 @@
 #include "ql/utils/list.h"
 #include "ql/utils/map.h"
 #include "ql/utils/progress.h"
-#include "ql/ir/compat/compat.h"
+#include "ql/ir/ir.h"
 #include "ql/com/map/qubit_mapping.h"
 #include "options.h"
 #include "free_cycle.h"
@@ -154,8 +154,6 @@ std::ostream &operator<<(std::ostream &os, PathStrategy p);
  *  - Use heuristics to map the input,
  *    mapping the virtual gates to (sets of) real gates, and outputing the new
  *    map and the new virtuals' state
- *  - Optionally decompose swap and/or cnot gates in the real circuit to
- *    primitives (make_primitive).
  *
  * Inter-kernel control flow and consequent mapping dependence between kernels
  * is not implemented. TO BE DONE. The design of mapping multiple kernels is as
@@ -199,40 +197,19 @@ private:
     /**
      * Current platform: topology and gate definitions.
      */
-    ir::compat::PlatformRef platform;
+    ir::PlatformRef platform;
 
     /**
      * (copy of) current kernel (class) with free private circuit and methods.
      * Primarily used to create gates in Past; Past is part of Mapper and of
      * each Alter.
      */
-    ir::compat::KernelRef kernel;
+    ir::BlockBaseRef block;
 
     /**
      * Parsed mapper pass options structure.
      */
     OptionsRef options;
-
-    /**
-     * Number of qubits in the platform, i.e. the number of real qubits.
-     */
-    utils::UInt nq;
-
-    /**
-     * Number of cregs in the platform (classical registers).
-     */
-    utils::UInt nc;
-
-    /**
-     * Number of bregs in the platform (number of bit registers).
-     */
-    utils::UInt nb;
-
-    /**
-     * Length in ns of a single cycle of the platform. This is the divisor of
-     * duration in ns to convert it to cycles.
-     */
-    utils::UInt cycle_time;
 
     /**
      * Random-number generator for the "random" tie-breaking option.
@@ -266,11 +243,6 @@ private:
      */
     com::map::QubitMapping v2r_out;
 
-    struct Path {
-        utils::UInt qubit;
-        utils::RawPtr<Path> prev;
-    };
-
     /**
      * Find shortest paths between src and tgt in the grid, bounded by a
      * particular strategy. path is a linked-list node representing the complete
@@ -287,13 +259,12 @@ private:
      * total number of entries in alters reaches or surpasses the limit (it may
      * surpass due to the checks only happening before splitting).
      */
-    void gen_shortest_paths(
-        const ir::compat::GateRef &gate,
+    utils::List<Alter> gen_shortest_paths(
+        const ir::CustomInstructionRef &gate,
         utils::RawPtr<Path> path,
         utils::UInt src,
         utils::UInt tgt,
         utils::UInt budget,
-        utils::List<Alter> &alters,
         utils::UInt max_alters,
         PathStrategy strategy
     );
@@ -320,11 +291,10 @@ private:
      * The end result is a list of alternatives (in alters) suitable for being
      * evaluated for any routing metric.
      */
-    void gen_shortest_paths(
-        const ir::compat::GateRef &gate,
+    utils::List<Alter> gen_shortest_paths(
+        const ir::CustomInstructionRef &gate,
         utils::UInt src,
-        utils::UInt tgt,
-        utils::List<Alter> &alters
+        utils::UInt tgt
     );
 
     /**
@@ -333,9 +303,8 @@ private:
      * return the found variations by appending them to the given list of
      * Alters.
      */
-    void gen_alters_gate(
-        const ir::compat::GateRef &gate,
-        utils::List<Alter> &alters,
+    utils::List<Alter> gen_alters_gate(
+        const ir::CustomInstructionRef &gate,
         Past &past
     );
 
@@ -346,11 +315,7 @@ private:
      * Alters. Depending on the lookahead option, only take the first (most
      * critical) gate, or take all gates.
      */
-    void gen_alters(
-        const utils::List<ir::compat::GateRef> &gates,
-        utils::List<Alter> &alters,
-        Past &past
-    );
+    utils::List<Alter> gen_alters(const utils::List<ir::CustomInstructionRef> &gates, Past &past);
 
     /**
      * Seeds the random number generator with the current time in microseconds.
@@ -367,7 +332,7 @@ private:
      * Map the gate/operands of a gate that has been routed or doesn't require
      * routing.
      */
-    void map_routed_gate(const ir::compat::GateRef &gate, Past &past);
+    void map_routed_gate(const ir::CustomInstructionRef &gate, Past &past);
 
     /**
      * Commit the given Alter, generating swaps in the past and taking it out
@@ -387,10 +352,9 @@ private:
      *
      * Behavior depends on the value of the lookahead_mode option and on
      * also_nn_two_qubit_gate. When the latter is true, and lookahead_mode is...
-     *  - DISABLED: while next in circuit is non-quantum or single-qubit, map
-     *    that gate. Return when we find a two-qubit gate (nearest-neighbor or
-     *    not). In this case, get_non_quantum_gates only returns a non-quantum
-     *    gate when it is next in circuit.
+     *  - DISABLED: while next instruction in circuit has strictly less than 2 qubit
+     *    operands, output that gate.
+     *    Return when we find a two-qubit gate (nearest-neighbor or not).
      *  - ONE_QUBIT_GATE_FIRST: while next in circuit is non-quantum or
      *    single-qubit, map that gate. Return the most critical two-qubit gate
      *    (nearest-neighbor or not).
@@ -405,10 +369,9 @@ private:
      * nearest-neighbor two-qubit gates behave as if they're not
      * nearest-neighbor.
      */
-    utils::Bool map_mappable_gates(
+    utils::List<ir::CustomInstructionRef> map_mappable_gates(
         Future &future,
         Past &past,
-        utils::List<ir::compat::GateRef> &gates,
         utils::Bool also_nn_two_qubit_gates
     );
 
@@ -425,9 +388,8 @@ private:
      * For recursion, past is the speculative past, and base_past is the past
      * we've already committed to, and should thus measure fitness against.
      */
-    void select_alter(
+    Alter select_alter(
         utils::List<Alter> &alters,
-        Alter &result,
         Future &future,
         Past &past,
         Past &base_past,
@@ -441,33 +403,25 @@ private:
      * stack), and past is the last past (top of recursion stack) relative to
      * which the mapping is done.
      */
-    void map_gates(Future &future, Past &past, Past &base_past);
+    utils::Any<ir::Statement> route_gates(Future &future, Past &past);
     
     /**
      * Map the kernel's circuit's gates in the provided context (v2r maps),
      * updating circuit and v2r maps.
      */
-    void route(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r);
-
-    /**
-     * Decomposes all gates in the circuit that have a definition with _prim
-     * appended to its name. The mapper does this after routing.
-     */
-    void decompose_to_primitives(const ir::compat::KernelRef &k);
+    void route(ir::BlockBaseRef block, com::map::QubitMapping &v2r);
 
     /**
      * Initialize the data structures in this class that don't change from
      * kernel to kernel.
      */
-    void initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt);
+    void initialize(const ir::PlatformRef &p, const OptionsRef &opt);
 
     /**
      * Runs routing and decomposition to primitives for
      * the given kernel.
-     *
-     * TODO: split off the decomposition to primitives.
      */
-    void map_kernel(const ir::compat::KernelRef &k);
+    void map_block(ir::BlockBaseRef block);
 
 public:
 
@@ -478,8 +432,7 @@ public:
      *  individually. That means that the resulting program is garbage if any
      *  quantum state was originally maintained from kernel to kernel!
      */
-    void map(const ir::compat::ProgramRef &prog, const OptionsRef &opt);
-
+    void map(const ir::Ref &ir, const OptionsRef &opt);
 };
 
 } // namespace detail

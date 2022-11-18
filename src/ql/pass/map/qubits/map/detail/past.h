@@ -65,97 +65,8 @@ namespace detail {
  *    [isempty(waiting_gates) && isempty(gates) && isempty(output_gates)]
  */
 class Past {
-private:
-
-    /**
-     * Number of qubits.
-     */
-    utils::UInt nq;
-
-    /**
-     * Number of bregs.
-     */
-    utils::UInt nb;
-
-    /**
-     * Cycle time, multiplier from cycles to nanoseconds.
-     */
-    utils::UInt ct;
-
-    /**
-     * Platform describing resources for scheduling.
-     */
-    ir::compat::PlatformRef platform;
-
-    /**
-     * Current kernel for creating gates.
-     */
-    ir::compat::KernelRef kernel;
-
-    /**
-     * Parsed options record for the whole mapper pass.
-     */
-    OptionsRef options;
-
-    /**
-     * State: current virtual to real qubit map, imported/exported to kernel.
-     */
-    com::map::QubitMapping v2r;
-
-    /**
-     * State: FreeCycle map (including resource_manager) of this Past.
-     */
-    FreeCycle fc;
-
-    /**
-     * List of quantum gates in this Past, topological order, waiting to be
-     * scheduled. This only contains gates from add() and the final schedule()
-     * call. When evaluating alternatives, it is empty when Past is cloned; so
-     * no state.
-     */
-    utils::List<ir::compat::GateRef> waiting_gates;
-
 public:
-
-    /**
-     * State: list of q gates in this Past, scheduled by their (start) cycle
-     * values. So this is the result list of this Past, to compare with other
-     * Alters.
-     */
-    utils::List<ir::compat::GateRef> gates;
-
-private:
-
-    /**
-     * List of gates flushed out of this Past, not yet put in outCirc when
-     * evaluating alternatives. output_gates stays constant; so no state.
-     */
-    utils::List<ir::compat::GateRef> output_gates;
-
-    /**
-     * State: gate to cycle map, startCycle value of each past gatecycle[gp].
-     * cycle[gp] can be different for each gp for each past. gp->cycle is not
-     * used by map_gates, although updated by set_cycle called from
-     * MakeAvailable/TakeAvailable.
-     */
-    utils::Map<ir::compat::GateRef, utils::UInt> cycle;
-
-    /**
-     * Number of swaps (including moves) added to this past.
-     */
-    utils::UInt num_swaps_added;
-
-    /**
-     * Number of moves added to this past.
-     */
-    utils::UInt num_moves_added;
-
-public:
-
-    /**
-     * Past initializer.
-     */
-    void initialize(const ir::compat::KernelRef &k, const OptionsRef &opt);
+    Past(ir::PlatformRef p, const OptionsRef &opt);
 
     /**
      * Copies the given qubit mapping into our mapping.
@@ -193,19 +104,10 @@ public:
     void schedule();
 
     /**
-     * Computes the costs in cycle extension of optionally scheduling
-     * init_circuit before the inevitable circuit.
-     */
-    utils::Int get_insertion_cost(
-        const ir::compat::GateRefs &init_circuit,
-        const ir::compat::GateRefs &circuit
-    ) const;
-
-    /**
      * Adds the given mapped gate to the current past. This means adding it to
      * the current past's waiting list, waiting for it to be scheduled later.
      */
-    void add(const ir::compat::GateRef &gate);
+    void add(const ir::CustomInstructionRef &gate);
 
     /**
      * Creates a new gate with given name and qubits, returning whether this was
@@ -221,16 +123,9 @@ public:
      * Mapper::route, a temporary local output circuit is used, which is
      * written to kernel.c only at the very end.
      */
-    utils::Bool new_gate(
-        ir::compat::GateRefs &circ,
+    ir::Maybe<ir::CustomInstruction> new_gate(
         const utils::Str &gname,
-        const utils::Vec<utils::UInt> &qubits,
-        const utils::Vec<utils::UInt> &cregs = {},
-        utils::UInt duration = 0,
-        utils::Real angle = 0.0,
-        const utils::Vec<utils::UInt> &bregs = {},
-        ir::compat::ConditionType gcond = ir::compat::ConditionType::ALWAYS,
-        const utils::Vec<utils::UInt> &gcondregs = {}
+        const utils::Vec<utils::UInt> &qubits
     ) const;
 
     /**
@@ -261,7 +156,7 @@ public:
      * seen from whether circ was extended. Please note that the reversal of
      * operands may have been done also when generate_move() was not successful.
      */
-    void generate_move(ir::compat::GateRefs &circuit, utils::UInt &r0, utils::UInt &r1);
+    void add_move(utils::UInt &r0, utils::UInt &r1);
 
     /**
      * Generates a single swap/move with real operands and adds it to the
@@ -284,7 +179,7 @@ public:
      * Adds the mapped gate (with real qubit indices as operands) to the past
      * by adding it to the waiting list and scheduling it into the past.
      */
-    void add_and_schedule(const ir::compat::GateRef &gate);
+    void add_and_schedule(const ir::CustomInstructionRef &gate);
 
     /**
      * Returns the real qubit index implementing virtual qubit index.
@@ -333,14 +228,7 @@ public:
      *   4. Final schedule: the resulting gates are subject to final scheduling
      *      (the original resource-constrained scheduler).
      */
-    void make_real(const ir::compat::GateRef &gate, ir::compat::GateRefs &circuit);
-
-    /**
-     * Mapper after-burner. Used to make primitives of all gates that also have
-     * a config file entry with _prim appended to their name, decomposing it
-     * according to the config file gate decomposition.
-     */
-    void make_primitive(const ir::compat::GateRef &gate, ir::compat::GateRefs &circuit) const;
+    void make_real(const ir::CustomInstructionRef &gate);
 
     /**
      * Returns the first completely free cycle.
@@ -348,31 +236,47 @@ public:
     utils::UInt get_max_free_cycle() const;
 
     /**
-     * Non-quantum and quantum gates follow separate flows through Past:
-     *
-     *  - Quantum gates are put in the waiting gate list when added, are then
-     *    scheduled, and are finally ordered by cycle into the main gate list.
-     *    They wait there to be inspected and scheduled, until there are too
-     *    many, a non-quantum gate comes by, or the end of the circuit is
-     *    reached.
-     *  - Non-quantum nonq gates first cause the main gate list to be
-     *    flushed/cleared to output before the non-quantum gate is output.
-     *
-     * All gates in the output gate list are out of view for scheduling/mapping
-     * optimization and can be taken out to someplace else.
-     */
-    void flush_all();
-
-    /**
      * Add the given non-qubit gate directly to the output list.
      */
-    void bypass(const ir::compat::GateRef &gate);
+    void bypass(const ir::CustomInstructionRef &gate);
 
     /**
      * Flushes the output gate list to the given circuit.
      */
-    void flush_to_circuit(ir::compat::GateRefs &output_circuit);
+    utils::Any<ir::Statement> flush_to_circuit();
 
+private:
+    ir::PlatformRef platform;
+    OptionsRef options;
+
+    /**
+     * State: current virtual to real qubit map, imported/exported to kernel.
+     */
+    com::map::QubitMapping v2r;
+
+    /**
+     * State: FreeCycle map (including resource_manager) of this Past.
+     */
+    FreeCycle fc;
+
+    /**
+     * List of quantum gates in this Past, topological order, waiting to be
+     * scheduled. This only contains gates from add() and the final schedule()
+     * call. When evaluating alternatives, it is empty when Past is cloned; so
+     * no state.
+     */
+    utils::List<ir::CustomInstructionRef> waiting_gates;
+
+    /**
+     * List of gates flushed out of this Past, not yet put in outCirc when
+     * evaluating alternatives. output_gates stays constant; so no state.
+     */
+    utils::List<ir::CustomInstructionRef> output_gates;
+
+    utils::Map<ir::CustomInstructionRef, utils::UInt> cycle;
+
+    utils::UInt num_swaps_added = 0;
+    utils::UInt num_moves_added = 0;
 };
 
 } // namespace detail

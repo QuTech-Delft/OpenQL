@@ -16,7 +16,7 @@ namespace ddg {
 /**
  * Constructs an object reference gatherer.
  */
-EventGatherer::EventGatherer(const ir::Ref &ir) : ir(ir) {}
+EventGatherer::EventGatherer(const ir::PlatformRef &p) : platform(p) {}
 
 /**
  * Returns the contained dependency list.
@@ -55,7 +55,7 @@ void EventGatherer::add_reference(
         case ir::prim::OperandMode::MEASURE: {
             QL_ASSERT(reference->data_type->as_qubit_type());
             auto copy = reference->copy().as<ir::Reference>();
-            copy->data_type = ir->platform->implicit_bit_type;
+            copy->data_type = platform->implicit_bit_type;
             add_reference(ir::prim::OperandMode::WRITE, copy);
             mode = ir::prim::OperandMode::WRITE;
             break;
@@ -480,13 +480,13 @@ public:
      * Creates a new builder.
      */
     Builder(
-        const ir::Ref &ir,
+        const ir::PlatformRef &platform,
         const ir::BlockBaseRef &block,
         utils::Bool commute_multi_qubit,
         utils::Bool commute_single_qubit
     ) :
         block(block),
-        gatherer(ir),
+        gatherer(platform),
         order_accumulator(0)
     {
         gatherer.disable_multi_qubit_commutation = !commute_multi_qubit;
@@ -531,12 +531,12 @@ public:
  * node in the final schedule, and such that the sign indicates the direction
  */
 void build(
-    const ir::Ref &ir,
+    const ir::PlatformRef &platform,
     const ir::BlockBaseRef &block,
     utils::Bool commute_multi_qubit,
     utils::Bool commute_single_qubit
 ) {
-    Builder(ir, block, commute_multi_qubit, commute_single_qubit).build();
+    Builder(platform, block, commute_multi_qubit, commute_single_qubit).build();
 }
 
 } // namespace ddg

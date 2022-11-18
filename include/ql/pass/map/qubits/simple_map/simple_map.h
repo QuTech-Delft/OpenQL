@@ -12,24 +12,10 @@ namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
-namespace map {
+namespace simple_map {
 
-namespace detail {
-struct Options;
-} // namespace detail
-
-/**
- * Qubit mapper pass.
- */
-class MapQubitsPass : public pmgr::pass_types::Transformation {
+class SimpleMapQubitsPass : public pmgr::pass_types::Transformation {
     static bool is_pass_registered;
-
-private:
-
-    /**
-     * Parsed options structure.
-     */
-    utils::Ptr<detail::Options> parsed_options;
 
 protected:
 
@@ -51,26 +37,17 @@ public:
     /**
      * Constructs a qubit mapper.
      */
-    MapQubitsPass(
+    SimpleMapQubitsPass(
         const utils::Ptr<const pmgr::Factory> &pass_factory,
         const utils::Str &instance_name,
         const utils::Str &type_name
     );
 
     /**
-     * Builds the options structure for the mapper.
-     */
-    pmgr::pass_types::NodeType on_construct(
-        const utils::Ptr<const pmgr::Factory> &factory,
-        utils::List<pmgr::PassRef> &passes,
-        pmgr::condition::Ref &condition
-    ) override;
-
-    /**
      * Runs the qubit mapper.
      */
     utils::Int run(
-        const ir::Ref &ir,
+        const ir::Ref &program,
         const pmgr::pass_types::Context &context
     ) const override;
 
@@ -79,7 +56,7 @@ public:
 /**
  * Shorthand for referring to the pass using namespace notation.
  */
-using Pass = MapQubitsPass;
+using Pass = SimpleMapQubitsPass;
 
 } // namespace map
 } // namespace qubits

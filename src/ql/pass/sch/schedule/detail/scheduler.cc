@@ -824,7 +824,6 @@ void Scheduler::set_remaining(rmgr::Direction dir) {
     // note when iterating that graph contains SOURCE and SINK whereas the circuit doesn't;
     // regretfully, the order of visiting the nodes while iterating over the graph, is undefined
     // and in set_remaining (and set_cycle) the order matters (i.e. in circuit order or reversed circuit order)
-//    QL_DOUT("set_remaining start");
     for (ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
         remaining.set(n) = ir::compat::MAX_CYCLE;               // not yet visited successfully by set_remaining_gate
     }
@@ -847,7 +846,6 @@ void Scheduler::set_remaining(rmgr::Direction dir) {
         }
         set_remaining_gate(instruction[t], dir);
     }
-//    QL_DOUT("set_remaining [DONE]");
 }
 
 ir::compat::GateRef Scheduler::find_mostcritical(const List<ir::compat::GateRef> &lg) {

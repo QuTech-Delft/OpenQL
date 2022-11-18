@@ -7,6 +7,7 @@
 #include "ql/pass/ana/statistics/annotations.h"
 #include "detail/impl.h"
 #include "ql/pmgr/factory.h"
+#include "ql/com/map/reference_updater.h"
 
 namespace ql {
 namespace pass {
@@ -127,24 +128,6 @@ PlaceQubitsPass::PlaceQubitsPass(
     );
 }
 
-class ReferenceUpdater : public ir::RecursiveVisitor {
-public:
-    ReferenceUpdater(ir::Ref aIr, const utils::Vec<utils::UInt> &aMapping) : ir(aIr), mapping(aMapping) {}
-
-    void visit_node(ir::Node &node) override {}
-
-    void visit_reference(ir::Reference &ref) override {
-        if (ref.target == ir->platform->qubits && ref.data_type == ir->platform->qubits->data_type) {
-            QL_ASSERT(ref.indices.size() == 1);
-            ref.indices[0].as<ir::IntLiteral>()->value = mapping[ref.indices[0].as<ir::IntLiteral>()->value];
-        }
-    }
-
-private:
-    ir::Ref ir;
-    const utils::Vec<utils::UInt> &mapping;
-};
-
 /**
  * Runs initial qubit placement.
  */
@@ -170,7 +153,7 @@ utils::Int PlaceQubitsPass::run(
     }
 
     if (result == detail::Result::NEW_MAP) {
-        ReferenceUpdater referenceUpdater(ir, mapping);
+        com::map::ReferenceUpdater referenceUpdater(ir->platform, mapping);
         ir->program->visit(referenceUpdater);
     }
 

@@ -237,7 +237,7 @@ public:
      * Creates a scheduler for the given block and initializes it.
      */
     Scheduler(
-        const ir::BlockBaseRef &block,
+        ir::BlockBaseRef block,
         const rmgr::CRef &resources = {}
     ) : block(block) {
 

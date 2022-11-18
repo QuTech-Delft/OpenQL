@@ -1,0 +1,20 @@
+{
+    "passes": [
+        {
+            "type": "sch.ListSchedule",
+            "options": {
+                "scheduler_target": "alap",
+                "write_dot_graphs": true,
+                "commute_single_qubit": false
+            }
+        },
+        {
+            "type": "io.cqasm.Report",
+            "options":
+            {
+                "output_prefix": "test_output/%N",
+                "output_suffix": "_afterschedule.cq"
+            }
+        }
+    ]
+}
