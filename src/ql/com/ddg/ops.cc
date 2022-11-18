@@ -135,6 +135,34 @@ void reverse(const ir::BlockBaseRef &block) {
     reverse_statement(graph.sink);
 }
 
+void add_remaining(const ir::BlockBaseRef &block) {
+    get_sink(block)->set_annotation<Remaining>({ 0 });
+
+    std::set<ir::StatementRef> toVisit;
+    toVisit.insert(get_sink(block));
+
+    while(!toVisit.empty()) {
+        auto current = *toVisit.begin();
+        toVisit.erase(toVisit.begin());
+
+        auto currentRemaining = current->get_annotation<Remaining>().remaining;
+
+        for (const auto &node_edge: get_node(current)->predecessors) {
+            QL_ASSERT(node_edge.second->weight >= 0 && "Cannot compute remaining on reversed DDG");
+            auto remaining = (utils::UInt) node_edge.second->weight + currentRemaining;
+
+            if (node_edge.first->has_annotation<Remaining>()) {
+                auto& annot = node_edge.first->get_annotation<Remaining>().remaining;
+                annot = std::max(remaining, annot);
+            } else {
+                node_edge.first->set_annotation<Remaining>({ remaining });
+            }
+
+            toVisit.insert(node_edge.first);
+        }
+    }
+}
+
 } // namespace ddg
 } // namespace com
 } // namespace ql

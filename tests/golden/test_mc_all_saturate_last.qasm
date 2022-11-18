@@ -5,188 +5,108 @@ pragma @ql.name("test_mc_all_saturate")
 
 
 .kernel_all_saturate
+    x q[12]
+    { # start at cycle 1
+        x q[8]
+        cnot q[12], q[13]
+    }
+    cnot q[8], q[9]
+    skip 3
+    x q[13]
+    tswap q[13], q[8]
+    skip 52
+    x q[0]
+    cnot q[0], q[1]
+    skip 4
+    x q[1]
+    tswap q[8], q[1]
+    skip 7
     x q[4]
     cnot q[4], q[5]
     skip 4
-    premove q[4]
-    skip 4
-    teleportmove q[4], q[2]
-    skip 4
     x q[5]
-    premove q[5]
-    skip 4
-    teleportmove q[5], q[3]
-    skip 18
-    postmove q[2]
-    skip 3
-    x q[0]
-    cnot q[0], q[2]
-    skip 4
-    cnot q[0], q[1]
-    postmove q[3]
-    { # start at cycle 53
-        cnot q[4], q[6]
-        preswap q[2]
-    }
-    skip 2
-    x q[1]
-    cnot q[1], q[3]
-    teleportswap q[2], q[4]
-    skip 3
-    { # start at cycle 62
-        cnot q[5], q[7]
-        preswap q[3]
+    { # start at cycle 82
+        cnot q[2], q[3]
+        tmove q[4], q[11]
+        tmove q[5], q[15]
     }
     skip 4
-    teleportswap q[3], q[5]
-    skip 35
-    premove q[0]
-    skip 4
-    teleportmove q[0], q[10]
-    skip 3
-    premove q[1]
-    skip 4
-    teleportmove q[1], q[11]
-    skip 19
-    x q[8]
-    { # start at cycle 138
-        cnot q[8], q[9]
-        postmove q[10]
-    }
-    skip 4
-    cnot q[10], q[8]
-    skip 3
-    postmove q[11]
-    preswap q[8]
-    skip 3
-    cnot q[11], q[9]
-    teleportswap q[8], q[6]
-    skip 3
-    x q[9]
-    preswap q[9]
-    skip 4
-    teleportswap q[9], q[7]
+    tmove q[3], q[10]
     skip 34
-    premove q[10]
+    tswap q[15], q[11]
     skip 4
-    teleportmove q[10], q[14]
-    skip 4
-    premove q[11]
-    skip 4
-    teleportmove q[11], q[15]
-    skip 9
-    cnot q[2], q[0]
-    skip 4
-    premove q[0]
-    skip 4
-    { # start at cycle 233
-        cnot q[3], q[1]
-        teleportmove q[0], q[10]
-    }
-    skip 4
-    premove q[1]
-    skip 4
-    teleportmove q[1], q[11]
-    skip 18
-    { # start at cycle 262
-        postswap q[5]
-        postswap q[7]
-    }
-    postmove q[10]
-    skip 2
-    x q[12]
-    { # start at cycle 267
-        cnot q[12], q[13]
-        postmove q[14]
-        cnot q[5], q[7]
-    }
-    cnot q[8], q[10]
-    skip 3
-    { # start at cycle 272
-        cnot q[14], q[12]
-        preswap q[5]
-    }
-    { # start at cycle 273
-        cnot q[3], q[1]
-        preswap q[8]
-    }
-    skip 3
-    teleportswap q[5], q[12]
-    teleportswap q[8], q[1]
-    skip 43
-    preswap q[7]
-    preswap q[10]
-    skip 3
-    teleportswap q[7], q[14]
-    teleportswap q[10], q[3]
+    tswap q[1], q[10]
+    skip 15
+    tmove q[0], q[14]
     skip 38
-    postmove q[15]
-    { # start at cycle 368
-        postswap q[4]
-        postswap q[6]
-        postmove q[11]
+    cnot q[8], q[11]
+    { # start at cycle 183
+        cnot q[6], q[7]
+        cnot q[14], q[15]
     }
     skip 3
-    { # start at cycle 372
-        cnot q[15], q[13]
-        postswap q[12]
-    }
-    { # start at cycle 373
-        cnot q[4], q[6]
-        cnot q[2], q[0]
-        cnot q[9], q[11]
-        postswap q[1]
-    }
-    skip 3
-    { # start at cycle 377
-        postswap q[14]
-        cnot q[12], q[13]
-    }
-    { # start at cycle 378
-        cnot q[4], q[5]
-        cnot q[9], q[8]
-        postswap q[3]
-        cnot q[1], q[0]
-    }
-    skip 3
-    cnot q[14], q[13]
-    { # start at cycle 383
-        cnot q[6], q[5]
-        cnot q[4], q[7]
-        cnot q[12], q[15]
-        cnot q[11], q[8]
-        cnot q[9], q[10]
-        cnot q[1], q[2]
-        cnot q[3], q[0]
-    }
-    skip 3
-    x q[13]
-    { # start at cycle 388
-        cnot q[6], q[4]
-        cnot q[5], q[7]
-        cnot q[14], q[12]
-        cnot q[13], q[15]
+    { # start at cycle 187
         cnot q[11], q[9]
         cnot q[8], q[10]
+    }
+    { # start at cycle 188
+        cnot q[7], q[4]
+        cnot q[2], q[0]
+        cnot q[14], q[12]
+        cnot q[6], q[5]
+        cnot q[15], q[13]
+        cnot q[1], q[3]
+    }
+    skip 3
+    cnot q[8], q[9]
+    { # start at cycle 193
+        cnot q[2], q[3]
+        cnot q[6], q[4]
+        cnot q[7], q[5]
+        cnot q[14], q[13]
+        cnot q[15], q[12]
+        cnot q[1], q[0]
+        cnot q[11], q[10]
+    }
+    skip 3
+    x q[9]
+    { # start at cycle 198
+        cnot q[7], q[6]
+        cnot q[4], q[5]
+        cnot q[15], q[14]
+        cnot q[13], q[12]
+        cnot q[1], q[2]
+        cnot q[11], q[8]
+        cnot q[9], q[10]
+        cnot q[3], q[0]
+    }
+    skip 4
+    { # start at cycle 203
+        cnot q[4], q[7]
+        cnot q[5], q[6]
+        cnot q[13], q[15]
+        cnot q[12], q[14]
         cnot q[3], q[1]
+        cnot q[9], q[11]
+        cnot q[10], q[8]
         cnot q[0], q[2]
     }
     skip 4
-    { # start at cycle 393
-        cnot q[6], q[7]
-        cnot q[14], q[15]
-        cnot q[5], q[4]
-        cnot q[11], q[10]
-        cnot q[13], q[12]
+    { # start at cycle 208
+        cnot q[4], q[6]
+        cnot q[5], q[7]
+        cnot q[13], q[14]
+        cnot q[12], q[15]
+        cnot q[9], q[8]
         cnot q[3], q[2]
-        cnot q[8], q[9]
+        cnot q[10], q[11]
         cnot q[0], q[1]
     }
     skip 4
-    { # start at cycle 398
-        cnot q[5], q[6]
-        cnot q[13], q[14]
-        cnot q[8], q[11]
+    { # start at cycle 213
+        cnot q[5], q[4]
+        cnot q[12], q[13]
         cnot q[0], q[3]
+        cnot q[10], q[9]
     }
     skip 4

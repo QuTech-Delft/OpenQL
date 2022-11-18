@@ -1,7 +1,3 @@
-/** \file
- * Defines the qubit router pass.
- */
-
 #include "ql/pass/map/qubits/map/map.h"
 
 #include "detail/mapper.h"
@@ -15,72 +11,39 @@ namespace map {
 
 bool MapQubitsPass::is_pass_registered = pmgr::Factory::register_pass<MapQubitsPass>("map.qubits.Map");
 
-/**
- * Dumps docs for the qubit mapper.
- */
 void MapQubitsPass::dump_docs(
     std::ostream &os,
     const utils::Str &line_prefix
 ) const {
     utils::dump_str(os, line_prefix, R"(
     The purpose of this pass is to ensure that the qubit connectivity
-    constraints are met for all multi-qubit gates in each kernel. This is done
+    constraints are met for all multi-qubit gates in a block. This is done
     by heuristically inserting swap/move gates to route gates as needed.
-    Then, it decomposes all gates in the circuit to primitive gates.
 
-    NOTE: the substeps of this pass will probably be subdivided into individual
-    passes in the future.
-
-    WARNING: this pass currently operates purely on a per-kernel basis. Because
-    it may adjust the qubit mapping from input to output, a program consisting
-    of multiple kernels that maintains a quantum state between the kernels may
-    be silently destroyed.
+    WARNING: this pass will currently succeed only on programs consisting of a single block.
 )" R"(
-    * Heuristic routing *
-
-      This step essentially transforms the program by iterating over its gates
-      from front to back and inserting `swap` or `move` gates when needed.
+      This pass iterates over the program and inserts `swap` or `move` gates when needed.
       Whenever it does this, it updates its internal virtual to real qubit
       mapping. While iterating, the virtual qubit indices of the incoming gates
       are replaced with real qubit indices, i.e. those defined in the topology
       section of the platform.
 
-      Some platforms have gates for which parameters differ based on the qubits
-      they operate on. For example, `cz q0, q1` may have a different duration
-      than `cz q2, q3`, and `cz q0, q2` may not even exist because of
-      topological constraints. However, rules like this make no sense when the
-      cz gate is still using virtual qubit indices: it's perfectly fine for the
-      user to do `cz q0, q2` at the input if the mapper is enabled.
-
-      To account for this, the mapper will look for an alternative gate
-      definition when it converts the virtual qubit indices to real qubit
-      indices: specifically, it will look for a gate with `_real` or `_prim`
-      (see also the primitive decomposition step) appended to the original gate
-      name. For example, `cz q0, q2` may, after routing, be transformed to
-      `cz_real q2, q3`. This allows you to define `cz` using a generalized gate
-      definition (i.e. independent on qubit operands), and `cz_real` as a set of
-      specialized gates as required by the platform.
-
-      NOTE: the resolution order is `*_prim`, `*_real`, and finally just the
-      original gate name. Thus, if you don't need this functionality, you don't
-      need to define any `*_real` gates.
-
       Because the mapper inserts swap and/or move gates, it is important that
       these gates are actually defined in the configuration file (usually by
       means of a decomposition rule). The semantics for them must be as follows.
 
-       - `swap x, y` or `swap_real x, y`: must apply a complete swap gate to the
+       - `swap x, y`: must apply a complete swap gate to the
          given qubits to exchange their state. If in the final decomposition one
          of the operands is used before the other, the second operand (`y`) is
          expected to be used first for the `reverse_swap_if_better` option to
          work right.
 
-       - `move x, y` or `move_real x, y`: if `use_moves` is enabled, the mapper
-         will attempt to use these gates instead of `swap`/`swap_real` if it
+       - `move x, y`: if `use_moves` is enabled, the mapper
+         will attempt to use these gates instead of `swap` if it
          knows that the `y` qubit is in the `|0>` state (or it can initialize
-         it as such) and the result is better (or not sufficiently worse) than
-         using a normal swap. Such a move gate can be implemented with two CNOTs
-         instead of three.
+         it as such with a `prepz` gate) and the result is better
+         (or not sufficiently worse) than using a normal swap.
+         Such a move gate can be implemented with two CNOTs instead of three.
 
       The order in which non-nearest-neighbor two-qubit gates are routed, the
       route taken for them, and where along the route the actual two-qubit gate
@@ -91,34 +54,18 @@ void MapQubitsPass::dump_docs(
       intelligent methods can be used at the cost of execution time and memory
       usage (the latter especially when a lot of alternative solutions are
       generated before a choice is made). Based on these options, time and space
-      complexity can be anywhere from linear to exponential!
-)" R"(
-    * Decomposition into primitives *
-
-      As a final step, the mapper will try to decompose the "real" gates (i.e.
-      gates with qubit operands referring to real qubits) generated by the
-      previous step into primitive gates, as actually executable by the
-      target architecture. It does this by attempting to suffix the name of
-      each gate with `_prim`. Thus, if you define a decomposition rule named
-      `cz_prim` rather than `cz`, this rule will only be applied after mapping.
-    )");
+      complexity can be anywhere from linear to exponential!)");
 }
 
-/**
- * Returns a user-friendly type name for this pass.
- */
 utils::Str MapQubitsPass::get_friendly_type() const {
     return "Mapper";
 }
 
-/**
- * Constructs a qubit mapper.
- */
 MapQubitsPass::MapQubitsPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : pmgr::pass_types::ProgramTransformation(pass_factory, instance_name, type_name) {
+) : pmgr::pass_types::Transformation(pass_factory, instance_name, type_name) {
 
     //========================================================================//
     // Options for the initial virtual to real qubit map                      //
@@ -127,15 +74,17 @@ MapQubitsPass::MapQubitsPass(
     options.add_bool(
         "assume_initialized",
         "Controls whether the mapper should assume that each qubit starts out "
-        "as zero at the start of each kernel, rather than with an undefined "
-        "state."
+        "as zero at the start of the block, rather than with an undefined "
+        "state. If so, it does not need to use prepz to initialize qubits before "
+        "attempting a move instead of swap."
     );
 
     options.add_bool(
         "assume_prep_only_initializes",
         "Controls whether the mapper may assume that a user-written prepz gate "
         "actually leaves the qubit in the zero state, rather than any other "
-        "quantum state. This allows it to make some optimizations."
+        "quantum state. This allows it to make some optimizations, namely to use move "
+        "instead of swap."
     );
 
     //========================================================================//
@@ -145,19 +94,16 @@ MapQubitsPass::MapQubitsPass(
     options.add_enum(
         "route_heuristic",
         "Controls which heuristic the router should use when selecting between "
-        "possible routing operations. `base` and `base_rc` are the simplest "
+        "possible routing operations. `base` is the simplest "
         "forms: all routes are considered equally `good`, so the tie-breaking "
-        "strategy is just applied immediately. `minextend` and "
-        "`minextendrc` are way more involved (but also take longer to compute): "
-        "these options will speculate what each option will do in terms of "
+        "strategy is just applied immediately. `minextend` "
+        "is way more involved (but also take longer to compute): "
+        "this option will speculate what each option will do in terms of "
         "extending the duration of the circuit, optionally recursively, to find "
-        "the best alternatives in terms of circuit duration within some"
-        "lookahead window. The existence of the `rc` suffix specifies whether "
-        "the internal scheduling for fitness determination should be done with "
-        "or without resource constraints. `maxfidelity` is not supported "
-        "in this build of OpenQL.",
+        "the best alternatives in terms of circuit duration within some "
+        "lookahead window.",
         "base",
-        {"base", "baserc", "minextend", "minextendrc", "maxfidelity"}
+        {"base", "minextend"}
     );
 
     options.add_int(
@@ -193,13 +139,10 @@ MapQubitsPass::MapQubitsPass(
         "and nearest-neighbor two-qubit gates are mapped trivially; "
         "non-nearest-neighbor gates are mapped when encountered by generating "
         "alternative routing solutions and picking the best one via "
-        "`route_heuristic`. For `1qfirst`, the dependency graph is used to "
-        "greedily map all single-qubit gates, before proceeding with mapping "
-        "the most critical two-qubit gate. If this gate is not nearest-neighbor, "
-        "it is routed the same way as for `no`. `noroutingfirst` works the same, "
-        "but also greedily maps two-qubit gates that don't require any routing "
-        "regardless of criticality, before routing the most critical "
-        "non-nearest-neighbor two-qubit gate. Finally, `all` works the same as "
+        "`route_heuristic`. For `noroutingfirst`, the dependency graph is used to "
+        "greedily map all available single-qubit gates, before proceeding with mapping "
+        "two-qubit gates that don't require any routing. If such gate is not nearest-neighbor, "
+        "it is routed the same way as for `no`. Finally, `all` works the same as "
         "`noroutingfirst`, but instead of considering only routing alternatives "
         "for the most critical non-nearest-neighbor two-qubit gate, alternatives "
         "are generated for *all* available non-nearest-neighbor two-qubit gates, "
@@ -225,7 +168,7 @@ MapQubitsPass::MapQubitsPass(
 
     options.add_enum(
         "swap_selection_mode",
-        "This controls how routing interacts with speculation. When `all`, all"
+        "This controls how routing interacts with speculation. When `all`, all "
         "swaps for a particular routing option are committed immediately, before "
         "trying anything else. When `one`, only the first swap in the route "
         "from source to target qubit is committed. When `earliest`, the swap "
@@ -240,6 +183,7 @@ MapQubitsPass::MapQubitsPass(
         "When a nearest-neighbor two-qubit gate is the next gate to be "
         "mapped, this controls whether the mapper will speculate on adding it "
         "now or later, or if it will add it immediately without speculation. "
+        "This option has no effect when `route_heuristic` is `base`. "
         "NOTE: this is an advanced/unstable option that influences "
         "`lookahead_mode` in a complex way; don't use it unless you know what "
         "you're doing. May be removed or changed in a later version of OpenQL."
@@ -249,6 +193,7 @@ MapQubitsPass::MapQubitsPass(
         "recursion_depth_limit",
         "Controls the maximum recursion depth while searching for alternative "
         "mapping solutions. "
+        "This option has no effect when `route_heuristic` is `base`. "
         "NOTE: this is an advanced/unstable option; don't use it unless you "
         "know what you're doing. May be removed or changed in a later version "
         "of OpenQL.",
@@ -260,6 +205,7 @@ MapQubitsPass::MapQubitsPass(
         "recursion_width_factor",
         "Limits how many alternative mapping solutions are considered as a "
         "factor of the number of best-scoring alternatives, rounded up. "
+        "This option has no effect when `route_heuristic` is `base`. "
         "NOTE: this is an advanced/unstable option; don't use it unless you "
         "know what you're doing. May be removed or changed in a later version "
         "of OpenQL.",
@@ -272,6 +218,7 @@ MapQubitsPass::MapQubitsPass(
         "Adjustment for recursion_width_factor based on the current recursion "
         "depth. For each additional level of recursion, the effective width "
         "factor is multiplied by this number. "
+        "This option has no effect when `route_heuristic` is `base`. "
         "NOTE: this is an advanced/unstable option; don't use it unless you "
         "know what you're doing. May be removed or changed in a later version "
         "of OpenQL.",
@@ -301,10 +248,6 @@ MapQubitsPass::MapQubitsPass(
         true
     );
 
-    //========================================================================//
-    // Options for the embedded schedulers                                    //
-    //========================================================================//
-
     options.add_bool(
         "commute_multi_qubit",
         "Whether to consider commutation rules for the CZ and CNOT quantum "
@@ -319,26 +262,21 @@ MapQubitsPass::MapQubitsPass(
         false
     );
 
-    options.add_enum(
-        "scheduler_heuristic",
-        "This controls what scheduling heuristic should be used for ordering "
-        "the list of available gates by criticality.",
-        "path_length",
-        {"path_length", "random"}
-    );
-
     options.add_bool(
         "write_dot_graphs",
-        "Whether to print dot graphs of the schedules created using the "
-        "embedded scheduler.",
+        "Whether to print the data dependency graph as dot format, when "
+        "using the `noroutingfirst` or `all` lookahead modes.",
         false
     );
-
+    
+    options.add_str(
+        "decomposition_rule_name_pattern",
+        "A regex pattern to select by name which decomposition rule should be applied "
+        "to mapped instruction before scheduling them.",
+        ""
+    );
 }
 
-/**
- * Builds the options structure for the mapper.
- */
 pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     const utils::Ptr<const pmgr::Factory> &factory,
     utils::List<pmgr::PassRef> &passes,
@@ -348,7 +286,6 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     (void)passes;
     (void)condition;
 
-    // Build the options structure for the mapper.
     parsed_options.emplace();
 
     parsed_options->assume_initialized = options["assume_initialized"].as_bool();
@@ -357,14 +294,8 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     auto route_heuristic = options["route_heuristic"].as_str();
     if (route_heuristic == "base") {
         parsed_options->heuristic = detail::Heuristic::BASE;
-    } else if (route_heuristic == "baserc") {
-        parsed_options->heuristic = detail::Heuristic::BASE_RC;
     } else if (route_heuristic == "minextend") {
         parsed_options->heuristic = detail::Heuristic::MIN_EXTEND;
-    } else if (route_heuristic == "minextendrc") {
-        parsed_options->heuristic = detail::Heuristic::MIN_EXTEND_RC;
-    } else if (route_heuristic == "maxfidelity") {
-        parsed_options->heuristic = detail::Heuristic::MAX_FIDELITY;
     } else {
         QL_ASSERT(false);
     }
@@ -444,26 +375,19 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     parsed_options->reverse_swap_if_better = options["reverse_swap_if_better"].as_bool();
     parsed_options->commute_multi_qubit = options["commute_multi_qubit"].as_bool();
     parsed_options->commute_single_qubit = options["commute_single_qubit"].as_bool();
-    parsed_options->enable_criticality = options["scheduler_heuristic"].as_str() == "path_length";
     parsed_options->write_dot_graphs = options["write_dot_graphs"].as_bool();
+
+    parsed_options->decomposition_rule_name_pattern = options["decomposition_rule_name_pattern"].as_str();
 
     return pmgr::pass_types::NodeType::NORMAL;
 }
 
-/**
- * Runs the qubit mapper.
- */
 utils::Int MapQubitsPass::run(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
-
-    // Update options from context.
     parsed_options->output_prefix = context.output_prefix;
-
-    // Run mapping.
-    detail::Mapper().map(program, parsed_options.as_const());
-
+    detail::Mapper(ir->platform, parsed_options.as_const()).map(ir->program);
     return 0;
 }
 

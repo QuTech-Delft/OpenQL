@@ -239,6 +239,8 @@
 		"cz_prim q5,q3": [ "red q5,q3"],
 		"cz_prim q7,q4": [ "blue q7,q4"],
 		"cz_prim q6,q5": [ "red q6,q5"],
-		"cz_prim q7,q6": [ "blue q7,q6"]
+		"cz_prim q7,q6": [ "blue q7,q6"],
+
+        "prepz %0": [ "move_init %0" ]
     }
 }

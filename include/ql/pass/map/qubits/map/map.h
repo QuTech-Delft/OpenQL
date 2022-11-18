@@ -21,7 +21,7 @@ struct Options;
 /**
  * Qubit mapper pass.
  */
-class MapQubitsPass : public pmgr::pass_types::ProgramTransformation {
+class MapQubitsPass : public pmgr::pass_types::Transformation {
     static bool is_pass_registered;
 
 private:
@@ -70,7 +70,7 @@ public:
      * Runs the qubit mapper.
      */
     utils::Int run(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const pmgr::pass_types::Context &context
     ) const override;
 

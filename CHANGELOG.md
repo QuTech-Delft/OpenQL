@@ -34,6 +34,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   - support for resource constrained scheduler
   - creates .map file reporting measurement statements present in input, to allow retrieving measurements downstream
 - support for Python up to 3.11
+- OperandsHelper class in ir/ops.h for easily grabbing qubit operand indices in new IR
 
 ### Changed
 - pass dec.Instructions: duration=0 in new-style decomposition rules now disables checking whether expansion fits, allowing automatic calculation of duration (and requiring scheduling after decomposition of such rules)
@@ -45,14 +46,27 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - classification of gates as *real-time* measurement now based on signal definition ("signal/type" equals "measure" and "signal/value" empty)
   - absence of key "cc" now implies empty "signal", so `"cc": { "signal": [] }` is no longer necessary
 - passes and architectures self-register statically to their respective factories
+<<<<<<< HEAD
 - initial placer uses new IR and new MIP solver called HiGHS
+=======
+- Mapper/Router:
+  - uses new IR in place of old IR and com::ddg in place of Scheduler
+  - no longer assigns cycle numbers to output circuit
+  - no longer decomposes instructions into primitives in the output circuit (it still does internally for accurate scheduling)
+>>>>>>> a3e93559 (Upgrade mapper/router to new IR)
 
 ### Removed
 - CC backend:
   - support for JSON key "pragma/break" for instruction definitions
   - macro expansion for JSON key instruction/signal/value (unused anyway)
 - support for sweep points in API and the WriteSweepPointsPass
+<<<<<<< HEAD
 - support for Python up to and including 3.6
+=======
+- Mapper/Router:
+  - Deprecated maxfidelity route heuristic
+  - 1qfirst lookahead mode
+>>>>>>> a3e93559 (Upgrade mapper/router to new IR)
 
 ### Fixed
 - pass dec.Instructions

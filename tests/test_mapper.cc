@@ -7,7 +7,7 @@ void test_dpt(
     std::string param3,
     std::string param4
 ) {
-    int n = 5;
+    int n = 7;
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
 
@@ -1441,7 +1441,7 @@ int main(int argc, char ** argv) {
     ql::set_option("clifford_postscheduler", "no");
 
     ql::set_option("clifford_premapper", "yes");
-    ql::set_option("mapper", "minextendrc");
+    ql::set_option("mapper", "minextend");
 //parameter1  ql::set_option("maplookahead", "noroutingfirst");
     ql::set_option("mapselectswaps", "all");
     ql::set_option("mappathselect", "all");

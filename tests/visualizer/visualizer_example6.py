@@ -10,7 +10,7 @@ ql.set_option('scheduler', 'ASAP')
 
 ql.set_option('clifford_premapper', 'yes')
 ql.set_option('clifford_postmapper', 'yes')
-ql.set_option('mapper', 'minextendrc')
+ql.set_option('mapper', 'minextend')
 ql.set_option('mapusemoves', 'yes')
 ql.set_option('mapreverseswap', 'yes')
 ql.set_option('mappathselect', 'all')

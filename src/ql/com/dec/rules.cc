@@ -21,11 +21,6 @@ class DecompositionRuleExpressionMapper : public map::ExpressionMapper {
 public:
 
     /**
-     * Map of variable references that need to be updated.
-     */
-    utils::Map<ir::ObjectLink, ir::ObjectLink> variable_map;
-
-    /**
      * Map of operand references/parameters that need to be updated.
      */
     utils::Map<ir::ObjectLink, ir::ExpressionRef> operand_map;
@@ -46,14 +41,6 @@ protected:
         auto ref = expr->as_reference();
         if (!ref) {
             return false;
-        }
-
-        // Handle variables.
-        auto it1 = variable_map.find(ref->target);
-        if (it1 != variable_map.end()) {
-            QL_ASSERT(ref->target->data_type == it1->second->data_type);
-            ref->target = it1->second;
-            return true;
         }
 
         // Handle parameters.
@@ -109,7 +96,6 @@ public:
  * FIXME: Note that loops in decomposition rules are not handled gracefully.
  */
 utils::UInt apply_decomposition_rules(
-    const ir::Ref &ir,
     const ir::BlockBaseRef &block,
     utils::Bool ignore_schedule,
     const RulePredicate &predicate
@@ -141,18 +127,10 @@ utils::UInt apply_decomposition_rules(
                 }
 
                 DEBUG("   applying rule '" << rule->name << "'");
-                // Expression mapper for updating variable and parameter
-                // references in the expansion.
+
                 DecompositionRuleExpressionMapper mapper;
 
-                // Add any variables declared in the decomposition rule as
-                // temporary objects, and remember that we have to remap them.
-                for (const auto &var : rule->objects) {
-                    mapper.variable_map.insert({
-                        var,
-                        make_temporary(ir, var->data_type, var->shape)
-                    });
-                }
+                QL_ASSERT(rule->objects.empty() && "Currently using variables in decomposition rules is not supported");
 
                 // Figure out how to map the operand placeholders.
                 QL_ASSERT(rule->parameters.size() == insn->operands.size());

@@ -423,6 +423,12 @@ struct Graph {
 
 };
 
+struct Remaining {
+    utils::UInt remaining = 0;
+
+    Remaining(utils::UInt r) : remaining(r) {};
+};
+
 } // namespace ddg
 } // namespace com
 } // namespace ql

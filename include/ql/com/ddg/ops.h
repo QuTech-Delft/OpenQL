@@ -68,6 +68,13 @@ void clear(const ir::BlockBaseRef &block);
  */
 void reverse(const ir::BlockBaseRef &block);
 
+/**
+ * Add the Remaining annotation to nodes in the graph.
+ * Remaining gives the remaining length of the critical path.
+ * Can be used to e.g. compare which gate is most critical.
+ */
+void add_remaining(const ir::BlockBaseRef &block);
+
 } // namespace ddg
 } // namespace com
 } // namespace ql
