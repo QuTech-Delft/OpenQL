@@ -140,8 +140,16 @@ if (i==0) {
 while (i<10000) {
 }
 
+.condLe
+while (i<=10000) {
+}
+
 .condGt
 while (i>10000) {
+}
+
+.condGe
+while (i>=10000) {
 }
 
 .condEq

@@ -36,7 +36,8 @@ static Str as_label(const Str &label) { return label + ":"; }
  * Decode the expression for a conditional instruction into the old format as used for the API. Eventually this will have
  * to be changed, but as long as the CC can handle expressions with 2 variables only this covers all we need.
  */
-// FIXME: move to datapath
+// FIXME: move to datapath?
+// FIXME: redesign like handle_expression()
 static tInstructionCondition decode_condition(const OperandContext &operandContext, const ir::ExpressionRef &condition) {
     ConditionType cond_type;
     utils::Vec<utils::UInt> cond_operands;
@@ -92,14 +93,13 @@ static tInstructionCondition decode_condition(const OperandContext &operandConte
                     QL_ICE("unsupported gate condition");
                 }
 #if OPT_CC_USER_FUNCTIONS
-            // FIXME: note that is only here to allow playing around with function calls as condition. Real support
-            //  requires a redesign
             } else if (
-                fn->function_type->name == "rnd" ||
-                fn->function_type->name == "rnd_seed"
+                fn->function_type->name == "rnd_bit"
             ) {
-                cond_type = ConditionType::ALWAYS;
+                cond_type = ConditionType::RND_BIT;
+                cond_operands.push_back(fn->operands[0]->as_int_literal()->value); // FIXME: check.
                 QL_WOUT("FIXME: instruction condition function not yet handled: " + fn->function_type->name);
+                // FIXME: check profile
 #endif
             } else {
                 CHECK_COMPAT(fn->operands.size() == 2, "expected 2 operands");
@@ -274,7 +274,7 @@ Codegen::Codegen(const ir::Ref &ir, const OptionsRef &options)
     , options(options)
     , operandContext(ir)
     , cs(operandContext)
-    , fncs(operandContext, dp, cs)
+    , fncs(*ir->platform, operandContext, dp, cs)
 {
     // NB: a new Backend is instantiated per call to compile, and
     // as a result also a Codegen, so we don't need to cleanup
@@ -491,7 +491,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
                 };
 #endif
                 // allocate SM bit for classic operand
-                UInt smBit = dp.allocateSmBit(bi.breg_operand, instrIdx);
+                UInt smBit = dp.allocateSmBit(bi.bregTargetMeasRsltRealTime, instrIdx);
 
                 // remind mapping of bit -> smBit for setting MUX
                 codeGenInfo.measResultRealTimeMap.emplace(group, MeasResultRealTimeInfo{smBit, resultBit, bi.describe});
@@ -516,8 +516,13 @@ void Codegen::bundle_finish(
     CodeGenMap codeGenMap = collectCodeGenInfo(startCycle, durationInCycles);
 
     // compute stuff requiring overview over all instruments:
-    // FIXME: add:
-    // - DSM used, for seq_inv_sm
+    UInt rnd_adv_all = 0; // mask of all PRNGs used (which need to advance to the next value)
+    for (UInt instrIdx = 0; instrIdx < settings.getInstrumentsSize(); instrIdx++) {
+        CodeGenInfo codeGenInfo = codeGenMap.at(instrIdx);
+        rnd_adv_all |= dp.getRndAdv(codeGenInfo.condGateMap);
+
+        // FIXME: add DSM used, for seq_inv_sm
+    }
 
     // determine whether bundle has any real-time measurement results
     Bool bundleHasMeasRsltRealTime = false;
@@ -542,6 +547,7 @@ void Codegen::bundle_finish(
         if (codeGenInfo.instrHasOutput) {
             emitOutput(
                 codeGenInfo.condGateMap,
+                rnd_adv_all,
                 codeGenInfo.digOut,
                 codeGenInfo.instrMaxDurationInCycles,
                 instrIdx,
@@ -675,10 +681,10 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
             throw;
         }
     }
-    if (ops.has_integer) {
+    if (ops.integers.size() > 0) {
         QL_INPUT_ERROR("CC backend cannot handle integer operands yet");
     }
-    if (ops.has_angle) {
+    if (ops.angles.size() > 0) {
         QL_INPUT_ERROR("CC backend cannot handle real (angle) operands yet");
     }
 
@@ -765,7 +771,7 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
              *             note that Creg's are managed through a class, whereas bregs are just numbers
              *         - breg result (new)
              *
-             *  In the new IR (or, better said, in the new way "prototype"s for instruction operands van be defined
+             *  In the new IR (or, better said, in the new way "prototype"s for instruction operands can be defined
              *  using access modes as described in
              *  https://openql.readthedocs.io/en/latest/gen/reference_configuration.html#instructions-section
              *  it is not well possible to specify a measurement that returns its result in a different bit than
@@ -793,11 +799,11 @@ void Codegen::custom_instruction(const ir::CustomInstruction &custom) {
 
             // handle classic operand
             if (ops.bregs.empty()) {    // FIXME: currently always
-                bi.breg_operand = ops.qubits[0];                    // implicit classic bit for qubit
-                QL_IOUT("using implicit bit " << bi.breg_operand << " for qubit " << ops.qubits[0]);
+                bi.bregTargetMeasRsltRealTime = ops.qubits[0];                    // implicit classic bit for qubit
+                QL_IOUT("using implicit bit " << bi.bregTargetMeasRsltRealTime << " for qubit " << ops.qubits[0]);
             } else {    // FIXME: currently impossible
-                bi.breg_operand = ops.bregs[0];
-                QL_IOUT("using explicit bit " << bi.breg_operand << " for qubit " << ops.qubits[0]);
+                bi.bregTargetMeasRsltRealTime = ops.bregs[0];
+                QL_IOUT("using explicit bit " << bi.bregTargetMeasRsltRealTime << " for qubit " << ops.qubits[0]);
             }
         }
 
@@ -1084,7 +1090,7 @@ void Codegen::handle_expression(const ir::ExpressionRef &expression, const Str &
                 QL_ICE("expected reference to breg, but got: " << ir::describe(expression));
             }
         } else if (auto fn = expression->as_function_call()) {
-            // FIXME: handle (bit) cast?
+            // Note that the platform doesn't define a bit cast function
 
             // handle the function
             fncs.dispatch(fn, label_if_false, describe);
@@ -1113,6 +1119,17 @@ void Codegen::emitProgramStart(const Str &progName) {
     cs.emitProgramHeader(progName);
 
     cs.emit(".CODE");   // start .CODE section
+
+#if OPT_CC_USER_FUNCTIONS
+    cs.emit("# random processor constants");
+    cs.emit(".DEF RND_REG_SEED_3      0    # Random number generator register: seed[127:96]");
+    cs.emit(".DEF RND_REG_SEED_2      1    # Random number generator register: seed[95:64]");
+    cs.emit(".DEF RND_REG_SEED_1      2    # Random number generator register: seed[63:32]");
+    cs.emit(".DEF RND_REG_SEED_0      3    # Random number generator register: seed[31:0]");
+    cs.emit(".DEF RND_REG_THRESHOLD   4    # Random number generator register: threshold");
+    cs.emit(".DEF RND_REG_RANGE       5    # Random number generator register: range");
+    cs.emit(".DEF RND_REG_VALUE       6    # Random number generator register: value");
+#endif
 
     // NB: new seq_bar semantics (firmware from 20191219 onwards)
     comment("# synchronous start and latency compensation");
@@ -1193,6 +1210,7 @@ void Codegen::emitMeasRsltRealTime(
 
 void Codegen::emitOutput(
         const CondGateMap &condGateMap,
+        UInt rnd_adv_all,
         tDigital digOut,
         UInt instrMaxDurationInCycles,
         UInt instrIdx,
@@ -1224,12 +1242,17 @@ void Codegen::emitOutput(
         UInt smAddr = dp.emitPl(pl, condGateMap, instrIdx, slot);
 
         // emit code for conditional gate
+        Str arg = QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles);
+        if (rnd_adv_all != 0) {
+            arg += QL_SS2S(",0x" << std::hex << rnd_adv_all);
+        }
         cs.emit(
             slot,
             "seq_out_sm",
-            QL_SS2S("S" << smAddr << "," << pl << "," << instrMaxDurationInCycles),
-            QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": conditional code word/mask on '" << instrumentName << "'")
+            arg,
+            QL_SS2S("# cycle " << startCycle << "-" << startCycle + instrMaxDurationInCycles << ": conditional code word/mask on '" << instrumentName << "'")   // FIXME: upfate comment for rnd_adv
         );
+        // FIXME: also make this happen on instruments not involved now
     }
 
     // update lastEndCycle

@@ -1,0 +1,24 @@
+# File:         test_rnd_proc.cq
+# Purpose:      test random processor with CC backend
+# Notes:
+
+version 1.2
+qubits 17
+
+pragma @ql.name("test_rnd_proc")
+# pragma @ql.platform("config_cc_s17_direct_iq_openql_0_10.json")
+
+
+# initial support for error injection
+# all the lines containing "rnd_*" make CI fail on Ubuntu if "debug" is enabled in any pass, because generating debug
+# output results in "RuntimeError: Container error: in pass reader, phase debugging.after: dereferencing past-the-end iterator", see:
+# - https://github.com/QuTech-Delft/OpenQL/pull/457/commits/d8a1953864a8dc9fdddcb84aa77c282fe77b8b24
+# - https://github.com/QuTech-Delft/OpenQL/actions/runs/3090616085/jobs/4999645433 (if still available)
+map foo = creg(0)
+set foo = rnd_seed(0, 12345678)
+set foo = rnd_threshold(0, 0.5)
+cond (rnd_bit(0)) rx180 q[0]
+
+# Impossible:
+# set foo = rnd_seed(0, 0x12345678)  # FIXME: test_cond_gate.cq:29:21: syntax error, unexpected BAD_NUMBER
+# rnd_seed(0, 12345678)  # FIXME:  Error: test_cond_gate.cq:31:11: syntax error, unexpected ','

@@ -2,6 +2,7 @@
 #include "codegen.h"
 
 #include "ql/ir/describe.h"
+#include "ql/ir/ops.h"
 
 namespace ql {
 namespace arch {
@@ -14,8 +15,9 @@ namespace detail {
 using namespace utils;
 
 
-Functions::Functions(const OperandContext &operandContext, const Datapath &dp, CodeSection &cs)
-    : operandContext(operandContext)
+Functions::Functions(const ir::Platform &platform, const OperandContext &operandContext, const Datapath &dp, CodeSection &cs)
+    : platform(platform)
+    , operandContext(operandContext)
     , dp(dp)
     , cs(cs) {
     register_functions();
@@ -179,7 +181,7 @@ void Functions::op_grp_rel1_Ci_iC(const FncArgs &a) {
     cs.emit(
         "",
         "xor",
-        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integer),
+        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integers[0]),
         "# " + a.describe
     );
     op_grp_rel1_tail(a);
@@ -193,7 +195,7 @@ void Functions::op_grp_rel2_CC(const FncArgs &a) {
 void Functions::op_grp_rel2_Ci_iC(const FncArgs &a) {
     // NB: for profile "iC" we 'reverse' operands to match Q1 instruction set; this is for free because the operands
     // are split based on their type
-    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_target(a.label_if_false));
+    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integers[0]), as_target(a.label_if_false));
 }
 
 
@@ -222,7 +224,7 @@ void Functions::op_gt_Ci(const FncArgs &a) {
     cs.emit(
         "",
         a.operation,
-        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integer, 1) + as_target(a.label_if_false),
+        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integers[0], 1) + as_target(a.label_if_false),
         "# skip next part if condition is false"
     );
 }
@@ -232,7 +234,7 @@ void Functions::op_gt_iC(const FncArgs &a) {
     cs.emit(
         "",
         a.operation,
-        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integer, -1) + as_target(a.label_if_false),
+        as_reg(a.ops.cregs[0]) + "," + as_int(a.ops.integers[0], -1) + as_target(a.label_if_false),
         "# skip next part if condition is false"
     );
 }
@@ -258,12 +260,12 @@ void Functions::op_grp_int_2op_CC(const FncArgs &a) {
 void Functions::op_grp_int_2op_Ci_iC(const FncArgs &a) {
     // NB: for profile "iC" we 'reverse' operands to match Q1 instruction set; this is for free because the operands
     // are split based on their type
-    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
+    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integers[0]), as_reg(a.dest_reg));
 }
 
 void Functions::op_sub_iC(const FncArgs &a) {
     // NB: 'reverse' operands to match Q1 instruction set
-    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integer), as_reg(a.dest_reg));
+    emit_mnem2args(a, as_reg(a.ops.cregs[0]), as_int(a.ops.integers[0]), as_reg(a.dest_reg));
 
     // Negate result in 2's complement to correct for changed op order
     Str reg = as_reg(a.dest_reg);
@@ -273,20 +275,62 @@ void Functions::op_sub_iC(const FncArgs &a) {
 }
 
 #if OPT_CC_USER_FUNCTIONS
-void Functions::rnd_seed_C(const FncArgs &a) {
+void Functions::rnd_seed_ii(const FncArgs &a) {
+    Int idx = a.ops.integers[0];
+    if(idx<0 || idx>=NUM_RND) QL_INPUT_ERROR("Illegal RND index");
+    Int seed = a.ops.integers[1];
+    if(seed<0 || seed>0xFFFFFFFF) QL_INPUT_ERROR("Illegal seed");   // FIXME: 128 bit
+
+    // FIXME: 128 different bits
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_SEED_3," << seed));
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_SEED_2," << seed));
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_SEED_1," << seed));
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_SEED_0," << seed));
+
+/*
     // FIXME
+        rnd_get         0,$RND_REG_VALUE,R0
+        rnd_get         7,$RND_REG_SEED_3,R1
+
+        rnd_set
+        rnd_set         0,$RND_REG_SEED_2,0xA5A5A5A5
+        rnd_set         0,$RND_REG_SEED_1,0x5A5A5A5A
+        rnd_set         0,$RND_REG_SEED_0,0xFFFFFFFF # FIXME: order for real applications?
+
+        rnd_set         6,,0x0000FFFF
+
+        rnd_set         5,$RND_REG_THRESHOLD,R0
+*/
 }
 
-void Functions::rnd_seed_i(const FncArgs &a) {
-    // FIXME
+void Functions::rnd_threshold_ir(const FncArgs &a) {
+    Int idx = a.ops.integers[0];
+    if(idx<0 || idx>=NUM_RND) QL_INPUT_ERROR("Illegal RND index");
+    Real threshold = a.ops.angles[0];  // NB: floating point parameters are collected in 'angles'. The naming is a historic artefact
+    if(threshold<0 || threshold>1.0) QL_INPUT_ERROR("Illegal threshold");
+    UInt thresholdVal = threshold * 0xFFFFFFFF;
+
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_THRESHOLD," << thresholdVal), QL_SS2S("# threshold = " << threshold));
 }
 
-void Functions::rnd_C(const FncArgs &a) {
-    // FIXME
+void Functions::rnd_range_ii(const FncArgs &a) {
+    Int idx = a.ops.integers[0];
+    if(idx<0 || idx>=NUM_RND) QL_INPUT_ERROR("Illegal RND index");
+    Int range = a.ops.integers[1];
+    if(range<0 || range>0xFFFFFFFF) QL_INPUT_ERROR("Illegal range");
+
+    cs.emit("", "rnd_set", QL_SS2S(idx << ",$RND_REG_RANGE," << range));
+}
+
+void Functions::rnd_bit_i(const FncArgs &a) {
+    QL_INPUT_ERROR("rnd_bit_i can only be used in 'cond' context");
 }
 
 void Functions::rnd_i(const FncArgs &a) {
-    // FIXME
+    Int idx = a.ops.integers[0];
+    if(idx<0 || idx>=NUM_RND) QL_INPUT_ERROR("Illegal RND index");
+
+    cs.emit("", "rnd_get", QL_SS2S(idx << ",$RND_REG_VALUE," << as_reg(a.dest_reg)));
 }
 #endif
 
@@ -296,8 +340,7 @@ void Functions::rnd_i(const FncArgs &a) {
  *
  * The set of functions available here should match that in the platform as set by
  * 'convert_old_to_new(const compat::PlatformRef &old)'.
- * Unfortunately, consistency must currently be maintained manually.
- * FIXME: we might check against ir->platform->functions
+ * Unfortunately, consistency must currently be maintained manually; we perform a runtime check in register_functions()
  *
  * We maintain separate tables for functions returning an
  * - int (in the context of a SetInstruction); the result is passed to the LHS register
@@ -330,9 +373,10 @@ X("operator^",      iC,     op_grp_int_2op_Ci_iC,   "xor") \
 
 #define CC_FUNCTION_LIST_INT_USER \
 /* user functions */ \
-X("rnd_seed",       C,      rnd_seed_C,             "") \
-X("rnd_seed",       i,      rnd_seed_i,             "") \
-X("rnd",            C,      rnd_C,                  "") \
+X("rnd_seed",       ii,     rnd_seed_ii,            "") /* FIXME: 128 bit */ \
+X("rnd_threshold",  ir,     rnd_threshold_ir,       "") \
+X("rnd_range",      ii,     rnd_range_ii,           "") \
+X("rnd_bit",        i,      rnd_bit_i,              "") \
 X("rnd",            i,      rnd_i,                  "")
 
 #define CC_FUNCTION_LIST_BIT \
@@ -340,10 +384,12 @@ X("rnd",            i,      rnd_i,                  "")
 /* bit arithmetic, 1 operand: "!" */ \
 X("operator!",      B,      op_linv_B,              "") \
 \
-/* bit arithmetic, 2 operands: "&&", "||", "^^" */ \
+/* bit arithmetic, 2 operands: "&&", "||", "^^", "==", "!=" */ \
 X("operator&&",     BB,     op_grp_bit_2op_BB,      "") \
 X("operator||",     BB,     op_grp_bit_2op_BB,      "") \
 X("operator^^",     BB,     op_grp_bit_2op_BB,      "") \
+X("operator==",     BB,     op_grp_bit_2op_BB,      "") \
+X("operator!=",     BB,     op_grp_bit_2op_BB,      "") \
 \
 /* relop, group 1: "==", "!=" */ \
 X("operator==",     CC,     op_grp_rel1_CC,         "jge") \
@@ -389,6 +435,83 @@ void Functions::register_functions() {
         CC_FUNCTION_LIST_BIT
     };
     #undef X
+
+#if 1   // FIXME: WIP
+    // check consistency of our function set against platform
+
+    // get the types we expect
+    // NB: these are created in convert_old_to_new(const compat::PlatformRef &old)
+    auto bit_type = platform.default_bit_type;
+    auto int_type = platform.default_int_type;
+    auto real_type = find_type(platform, "real");
+
+    for (const auto &fnc : platform.functions) {
+
+        // determine operand data_types
+        // NB: the data_types encoding is similar to func_gen::Function::generate_impl_footer, and also Operands::profile,
+        // but note that all have different semantics
+        Str data_types;
+        for (const auto &ot : fnc->operand_types) {
+            if(ot->data_type == bit_type) {
+                data_types += "b";
+            } else if (ot->data_type == int_type) {
+                data_types += "i";
+            } else if (ot->data_type == real_type) {
+                data_types += "r";
+            } else {
+                QL_WOUT("Platform function '" << fnc->name << "' has operand of unknown type");
+            }
+
+            // FIXME: also check .mode?
+        }
+
+        // determine function map, based on return type
+        FuncMap *fm;
+        if (fnc->return_type == bit_type) {
+            fm = &func_map_bit;
+        } else if (fnc->return_type == int_type) {
+            fm = &func_map_int;
+        } else {
+            QL_WOUT("Platform function '" << fnc->name << "' has unknown return type");
+        }
+
+        // determine expected profiles for data_types
+        // Note that we do not expect profiles with only constant arguments, since these are handled by pass 'opt.ConstProp'
+        Vec<Str> expected_profiles;
+        if (data_types == "b") {
+            expected_profiles = {"B"};
+        } else if (data_types == "bb") {
+            expected_profiles = {"BB"};
+        } else if (data_types == "i") {
+            if (fnc->name == "rnd" || fnc->name == "rnd_bit") {   // FIXME: handle exceptions is a more scalable way
+                expected_profiles = {"i"};
+            } else {
+                expected_profiles = {"C"};
+            }
+        } else if (data_types == "ii") {
+            if (fnc->name == "rnd_seed") {   // FIXME: handle exceptions is a more scalable way
+                expected_profiles = {"ii"};
+            } else {
+                expected_profiles = {"CC", "Ci", "iC"};
+            }
+        } else if (data_types == "ir") {
+            expected_profiles = {"ir"};
+        } else {
+            QL_IOUT("Platform function '" << fnc->name << "' with data_types '" << data_types << "' not supported by CC backend");
+        }
+
+        // check whether we implement the expected function variants
+        for (const auto &profile : expected_profiles) {
+            // make an exception for 'int cast' function that we handle elsewhere (in Codegen::handle_set_instruction)
+            if (fnc->name == "int" && profile == "B") continue;
+
+            if (fm->find(fnc->name + "_" + profile) == fm->end()) {
+                QL_IOUT("Platform function '" << fnc->name << "' with profile '" << profile << "' not supported by CC backend");
+            }
+        }
+
+    }
+#endif
 }
 
 

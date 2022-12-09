@@ -27,7 +27,9 @@ enum class ConditionType {
     // 1 operand:
     UNARY, NOT,
     // 2 operands
-    AND, NAND, OR, NOR, XOR, NXOR
+    AND, NAND, OR, NOR, XOR, NXOR,
+    // rnd_bit()
+    RND_BIT
 };
 
 
@@ -35,7 +37,7 @@ struct tInstructionCondition {
 public:
     ConditionType cond_type;
     utils::Vec<utils::UInt> cond_operands;
-    Str describe;   // for annotation purposes
+    Str describe;   // the original condition, for logging purposes
 };
 
 
@@ -62,7 +64,7 @@ public: // vars
 
     // real-time measurement results: flag and operands
     Bool isMeasRsltRealTime = false;
-    UInt breg_operand = 0;  // the breg where the result is to be stored
+    UInt bregTargetMeasRsltRealTime = 0;  // the breg where the result is to be stored
 
     // original instruction, for logging purposes
     Str describe;

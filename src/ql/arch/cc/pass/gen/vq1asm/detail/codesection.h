@@ -12,6 +12,7 @@
 #define NUM_RSRVD_CREGS 2                       // must match number of REG_TMP*
 #define NUM_CREGS (64-NUM_RSRVD_CREGS)          // starting from R0
 #define NUM_BREGS 1024                          // bregs require mapping to DSM, which introduces holes, so we probably fail before we reach this limit
+#define NUM_RND 8                               // must match HDL
 
 namespace ql {
 namespace arch {

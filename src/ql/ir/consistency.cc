@@ -950,6 +950,7 @@ void check_consistency(const Ref &ir) {
         ir->visit(consistency_checker);
 
     } catch (utils::Exception &e) {
+        // FIXME: we can also get a '::tree::base::NotWellFormed'
 
         // If the check fails, dump the tree.
         QL_EOUT(

@@ -14,9 +14,9 @@ namespace ir {
  * Returns the data type with the given name, or returns an empty link if the
  * type does not exist.
  */
-DataTypeLink find_type(const Ref &ir, const utils::Str &name) {
-    auto begin = ir->platform->data_types.get_vec().begin();
-    auto end = ir->platform->data_types.get_vec().end();
+DataTypeLink find_type(const ir::Platform &platform, const utils::Str &name) {
+    auto begin = platform.data_types.get_vec().begin();
+    auto end = platform.data_types.get_vec().end();
     auto pos = std::lower_bound(
         begin, end,
         utils::make<QubitType>(name),
@@ -27,6 +27,14 @@ DataTypeLink find_type(const Ref &ir, const utils::Str &name) {
     } else {
         return *pos;
     }
+}
+
+/**
+ * Returns the data type with the given name, or returns an empty link if the
+ * type does not exist.
+ */
+DataTypeLink find_type(const Ref &ir, const utils::Str &name) {
+    return find_type(*ir->platform, name);
 }
 
 /**

@@ -20,7 +20,7 @@ class Codegen;  // to prevent recursive include loop
 
 class Functions {
 public:
-    explicit Functions(const OperandContext &operandContext, const Datapath &dp, CodeSection &cs);
+    explicit Functions(const ir::Platform &platform, const OperandContext &operandContext, const Datapath &dp, CodeSection &cs);
     ~Functions() = default;
 
     /*
@@ -69,10 +69,12 @@ private:  // types
 
 private:    // vars
     // references to object instances needed
+    const ir::Platform &platform;                               // platform info, specifically the set of functions available
     const OperandContext &operandContext;                       // context for Operand processing
     const Datapath &dp;                                         // handling of CC datapath
     CodeSection &cs;                                            // handling of code section
 
+    // maps to access functions
     FuncMap func_map_int;                                       // map name to function info, see register_functions()
     FuncMap func_map_bit;                                       // idem, for functions returning a bit
 
@@ -126,9 +128,10 @@ private:    // operator functions
      * other functions returning an int, for code generation in expressions
      */
 #if OPT_CC_USER_FUNCTIONS
-    void rnd_seed_C(const FncArgs &a);
-    void rnd_seed_i(const FncArgs &a);
-    void rnd_C(const FncArgs &a);
+    void rnd_seed_ii(const FncArgs &a);
+    void rnd_threshold_ir(const FncArgs &a);
+    void rnd_range_ii(const FncArgs &a);
+    void rnd_bit_i(const FncArgs &a);
     void rnd_i(const FncArgs &a);
 #endif
 

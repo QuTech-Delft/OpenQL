@@ -101,31 +101,22 @@ public:
     utils::Vec<utils::UInt> bregs;
 
     /**
-     * Angle operand existence.
-     */
-    utils::Bool has_angle = false;
-
-    /**
      * Angle operand value.
      */
-    utils::Real angle = 0.0;
-
-    /**
-     * Integer operand existence.
-     */
-    utils::Bool has_integer = false;
+    utils::Vec<utils::Real> angles;
 
     /**
      * Integer operand value.
      */
-    utils::Int integer = 0;
+    utils::Vec<utils::Int> integers;
 
     /**
      * The profile for the operands provided. Encoding:
      * - 'b': bit literal
-     * - 'i': int literal
      * - 'B': breg reference
+     * - 'i': int literal
      * - 'C': creg reference
+     * - 'r': real literal (NB: we don't have registers supporting reals)
      * - '?': anything else
      *
      * Inspired by func_gen::Function::generate_impl_footer and cqasm::types::from_spec, but notice that we add 'C' and
@@ -134,7 +125,7 @@ public:
     Str profile;
 
     /**
-     * Appends an operand.
+     * Appends an operand (for an IR custom_instruction or function_call)
      */
     void append(const OperandContext &operandContext, const ir::ExpressionRef &expr);
 

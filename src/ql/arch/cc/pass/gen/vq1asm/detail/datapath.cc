@@ -44,7 +44,7 @@ UInt Datapath::allocateSmBit(UInt breg_operand, UInt instrIdx) {
     // - DSM size is 1024 bits (128 bytes)
     // Other notes:
     // - we don't attempt to be smart about DSM transfer size allocation
-    // - new allocations to the same breg_operand overwrite the old mapping
+    // - new allocations to the same breg overwrite the old mapping
     // - we don't reuse SM bits (thus wasting space)
 
     UInt smBit = 0;
@@ -61,11 +61,11 @@ UInt Datapath::allocateSmBit(UInt breg_operand, UInt instrIdx) {
 
         auto it = mapBregToSmBit.find(breg_operand);
         if (it != mapBregToSmBit.end()) {
-            QL_IOUT("overwriting mapping of breg_operand " << it->second);
+            QL_IOUT("overwriting mapping of breg " << it->second);
         }
     }
 
-    QL_IOUT("mapping breg_operand " << breg_operand << " to smBit " << smBit);
+    QL_IOUT("mapping breg " << breg_operand << " to smBit " << smBit);
     mapBregToSmBit.set(breg_operand) = smBit;    // created on demand
 
     smBitLastInstrIdx = instrIdx;
@@ -74,16 +74,15 @@ UInt Datapath::allocateSmBit(UInt breg_operand, UInt instrIdx) {
     return smBit;
 }
 
-// NB: bit_operand can be breg_operand or cond_operand, depending on context of caller. FIXME: cond_operand no longer exists,update identifiers and strings
-UInt Datapath::getSmBit(UInt bit_operand) const {
+UInt Datapath::getSmBit(UInt breg) const {
     UInt smBit;
 
-    auto it = mapBregToSmBit.find(bit_operand);
+    auto it = mapBregToSmBit.find(breg);
     if (it != mapBregToSmBit.end()) {
         smBit = it->second;
-        QL_DOUT("found mapping: bit_operand " << bit_operand << " to smBit " << smBit);
+        QL_DOUT("found mapping: breg " << breg << " to smBit " << smBit);
     } else {
-        QL_INPUT_ERROR("Request for DSM bit of bit_operand " << bit_operand << " that was never assigned by measurement");        // NB: message refers to user perspective (and thus calling semantics)
+        QL_INPUT_ERROR("Request for DSM bit of breg " << breg << " that was never assigned by measurement");        // NB: message refers to user perspective (and thus calling semantics)
     }
     return smBit;
 }
@@ -172,11 +171,30 @@ UInt Datapath::getMuxSmAddr(const MeasResultRealTimeMap &measResultRealTimeMap) 
 }
 
 
+UInt Datapath::getRndAdv(const CondGateMap &condGateMap) {
+    UInt rnd_adv = 0;   // mask of PRNGs used
+
+    for (auto &cg : condGateMap) {
+        Int group = cg.first;
+        CondGateInfo cgi = cg.second;
+
+        if (cgi.instructionCondition.cond_type == ConditionType::RND_BIT) {
+            UInt prng = cgi.instructionCondition.cond_operands[0];
+            rnd_adv |= 1UL<<prng;   // FIXME: rnd_adv must be identical on all instruments, irrespective of local use
+        }
+    }
+
+    return rnd_adv;
+}
+
+
 // FIXME: split like emitMux/getMuxSmAddr
+// returns: SM address
 UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Int slot) {
     Bool minMaxValid = false;    // we might not access SM
     UInt minSmBit = MAX;
     UInt maxSmBit = 0;
+    UInt rnd_adv = 0;   // mask of PRNGs used
 
     if (condGateMap.empty()) {
         QL_ICE("condGateMap must not be empty");
@@ -197,7 +215,7 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
                 << ", condition='" << cgi.instructionCondition.describe << "'")
         );
 
-        // shorthand
+        // helper lambda
         auto winBit = [this, cgi, &minMaxValid, &minSmBit, &maxSmBit](int i)
         {
             UInt smBit = getSmBit(cgi.instructionCondition.cond_operands[i]);
@@ -247,6 +265,11 @@ UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, In
                 // fall through
             case ConditionType::XOR:
                 rhs << "SM[" << winBit(0) << "] ^ SM[" << winBit(1) << "]";
+                break;
+
+            case ConditionType::RND_BIT:
+                UInt prng = cgi.instructionCondition.cond_operands[0];
+                rhs << "RND[" << prng << "]";
                 break;
         }
 
