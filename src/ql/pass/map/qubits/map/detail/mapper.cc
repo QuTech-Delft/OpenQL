@@ -7,7 +7,6 @@
 #include <chrono>
 #include "ql/utils/filesystem.h"
 #include "ql/pass/ana/statistics/annotations.h"
-#include "ql/pass/map/qubits/place_mip/detail/algorithm.h"
 
 // uncomment next line to enable multi-line dumping
 // #define MULTI_LINE_LOG_DEBUG
@@ -262,8 +261,8 @@ void Mapper::gen_alters_gate(const ir::compat::GateRef &gate, List<Alter> &alter
     // Interpret virtual operands in past's current map.
     auto &q = gate->operands;
     QL_ASSERT (q.size() == 2);
-    UInt src = past.map_qubit(q[0]);
-    UInt tgt = past.map_qubit(q[1]);
+    UInt src = past.get_real_qubit(q[0]);
+    UInt tgt = past.get_real_qubit(q[1]);
 
     QL_DOUT("gen_alters_gate: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ") at get_min_hops=" << platform->topology->get_min_hops(src, tgt));
     past.debug_print_fc();
@@ -419,7 +418,7 @@ void Mapper::commit_alter(Alter &alter, Future &future, Past &past) {
     // When only some swaps were added (based on configuration), the target
     // might not yet be nearest-neighbor, so recheck.
     auto &q = target->operands;
-    if (platform->topology->get_min_hops(past.map_qubit(q[0]), past.map_qubit(q[1])) == 1) {
+    if (platform->topology->get_min_hops(past.get_real_qubit(q[0]), past.get_real_qubit(q[1])) == 1) {
 
         // Target is nearest-neighbor, so we;re done with this gate.
         // QL_DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
@@ -552,8 +551,8 @@ Bool Mapper::map_mappable_gates(
 
                 // Interpret virtual operands in current map.
                 auto &q = gate->operands;
-                UInt src = past.map_qubit(q[0]);
-                UInt tgt = past.map_qubit(q[1]);
+                UInt src = past.get_real_qubit(q[0]);
+                UInt tgt = past.get_real_qubit(q[1]);
 
                 // Find minimum number of hops between real counterparts.
                 UInt d = platform->topology->get_min_hops(src, tgt);
@@ -878,39 +877,6 @@ void Mapper::map_gates(Future &future, Past &past, Past &base_past) {
 }
 
 /**
- * Performs (initial) placement of the qubits.
- */
-void Mapper::place(const ir::compat::KernelRef &k, com::map::QubitMapping &v2r) {
-
-    if (options->enable_mip_placer) {
-#ifdef INITIALPLACE
-        QL_DOUT("InitialPlace: kernel=" << k->name << " timeout=" << options->mip_timeout << " horizon=" << options->mip_horizon << " [START]");
-
-        place_mip::detail::Options ipopt;
-        ipopt.map_all = options->initialize_one_to_one;
-        ipopt.horizon = options->mip_horizon;
-        ipopt.timeout = options->mip_timeout;
-
-        place_mip::detail::Algorithm ip;
-        auto ipok = ip.run(k, ipopt, v2r); // compute mapping (in v2r) using ip model, may fail
-        QL_DOUT("InitialPlace: kernel=" << k->name << " timeout=" << options->mip_timeout << " horizon=" << options->mip_horizon << " result=" << ipok << " iptimetaken=" << ip.get_time_taken() << " seconds [DONE]");
-#else // ifdef INITIALPLACE
-        QL_DOUT("InitialPlace support disabled during OpenQL build [DONE]");
-        QL_WOUT("InitialPlace support disabled during OpenQL build [DONE]");
-#endif // ifdef INITIALPLACE
-    }
-#ifdef MULTI_LINE_LOG_DEBUG
-    QL_IF_LOG_DEBUG {
-        QL_DOUT("v2r dump after InitialPlace");
-        v2r.dump_state();
-    }
-#else
-    QL_DOUT("v2r dump after InitialPlace (disabled)");
-#endif
-
-}
-
-/**
  * Map the kernel's circuit's gates in the provided context (v2r maps),
  * updating circuit and v2r maps.
  */
@@ -1021,21 +987,10 @@ void Mapper::initialize(const ir::compat::PlatformRef &p, const OptionsRef &opt)
 }
 
 /**
- * Runs initial placement, routing, and decomposition to primitives for
+ * Runs routing and decomposition to primitives for
  * the given kernel.
  *
- * TODO: this should be split up into multiple passes, but this is difficult
- *  right now because:
- *   - place() does not actually modify the kernel, it just outputs a map.
- *     There is no place for that in the IR (at least not right now), so
- *     at best it could add an annotation, which would be weird. It should
- *     just update the gates immediately, but this is also problematic right
- *     now, because merely making a gate triggers decompositions.
- *   - decompose_to_primitives() could be split off relatively easily, but
- *     there's no point in doing that now, because we want a generic
- *     decomposition pass anyway, and it needs the same kludges for adding gates
- *     as the mapper does, so it (ab)uses those and is thus linked to the mapper
- *     code.
+ * TODO: split off the decomposition to primitives.
  */
 void Mapper::map_kernel(const ir::compat::KernelRef &k) {
     QL_DOUT("Mapping kernel " << k->name << " [START]");
@@ -1047,9 +1002,10 @@ void Mapper::map_kernel(const ir::compat::KernelRef &k) {
     // TODO: unify all incoming v2rs into v2r to compute kernel input mapping.
     //  Right now there is no inter-kernel mapping yet, so just take the
     //  program's initial mapping for each kernel.
+    
     com::map::QubitMapping v2r{
         nq,
-        options->initialize_one_to_one,
+        true,
         options->assume_initialized ? com::map::QubitState::INITIALIZED : com::map::QubitState::NONE
     };
 #ifdef MULTI_LINE_LOG_DEBUG
@@ -1063,13 +1019,6 @@ void Mapper::map_kernel(const ir::compat::KernelRef &k) {
 
     // Save the input qubit map for reporting.
     v2r_in = v2r;
-
-    // Perform placement.
-    place(k, v2r);
-
-    // Save the placed qubit map for reporting. This is the resulting qubit map
-    // at the *start* of the kernel.
-    v2r_ip = v2r;
 
     // Perform heuristic routing.
     QL_DOUT("Mapper::Map before route: assume_initialized=" << options->assume_initialized);
@@ -1136,7 +1085,6 @@ void Mapper::map(const ir::compat::ProgramRef &prog, const OptionsRef &opt) {
         AdditionalStats::push(k, "swaps added: " + to_string(num_swaps_added));
         AdditionalStats::push(k, "of which moves added: " + to_string(num_moves_added));
         AdditionalStats::push(k, "virt2real map before mapper:" + to_string(v2r_in.get_virt_to_real()));
-        AdditionalStats::push(k, "virt2real map after initial placement:" + to_string(v2r_ip.get_virt_to_real()));
         AdditionalStats::push(k, "virt2real map after mapper:" + to_string(v2r_out.get_virt_to_real()));
         AdditionalStats::push(k, "realqubit states before mapper:" + to_string(v2r_in.get_state()));
         AdditionalStats::push(k, "realqubit states after mapper:" + to_string(v2r_out.get_state()));

@@ -149,21 +149,6 @@ public:
     void add_for(const Program &p, size_t iterations);
 
     /**
-     * Sets sweep point information for the program.
-     */
-    void set_sweep_points(const std::vector<double> &sweep_points);
-
-    /**
-     * Returns the configured sweep point information for the program.
-     */
-    std::vector<double> get_sweep_points() const;
-
-    /**
-     * Sets the name of the file that the sweep points will be written to.
-     */
-    void set_config_file(const std::string &config_file_name);
-
-    /**
      * Whether a custom compiler configuration has been attached to this
      * program. When this is the case, it will be used to implement compile(),
      * rather than generating the compiler in-place from defaults and global

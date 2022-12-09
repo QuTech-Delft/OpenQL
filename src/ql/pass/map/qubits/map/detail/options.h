@@ -182,13 +182,6 @@ struct Options {
     utils::Str output_prefix;
 
     /**
-     * Controls whether the mapper should assume that each kernel starts with
-     * a one-to-one mapping between virtual and real qubits. When disabled,
-     * the initial mapping is treated as undefined.
-     */
-    utils::Bool initialize_one_to_one = true;
-
-    /**
      * Controls whether the mapper should assume that each qubit starts out
      * as zero at the start of each kernel, rather than with an undefined
      * state.
@@ -201,24 +194,6 @@ struct Options {
      * quantum state. This allows it to make some optimizations.
      */
     utils::Bool assume_prep_only_initializes = false;
-
-    /**
-     * Controls whether MIP-based placement should be attempted before resorting
-     * to heuristics.
-     */
-    utils::Bool enable_mip_placer = false;
-
-    /**
-     * Timeout for the MIP algorithm in seconds, or 0 to disable timeout.
-     */
-    utils::Real mip_timeout = 0.0;
-
-    /**
-     * The placement algorithm will only consider the connectivity required to
-     * perform the first horizon two-qubit gates of a kernel. 0 means that all
-     * gates should be considered.
-     */
-    utils::UInt mip_horizon = 0;
 
     /**
      * Controls which heuristic the heuristic mapper is to use.

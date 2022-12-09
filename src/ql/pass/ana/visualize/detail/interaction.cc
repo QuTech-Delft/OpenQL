@@ -19,12 +19,12 @@ namespace detail {
 
 using namespace utils;
 
-void visualizeInteractionGraph(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration) {
+void visualizeInteractionGraph(const ir::Ref &ir, const VisualizerConfiguration &configuration) {
     QL_IOUT("Visualizing qubit interaction graph...");
 
     // Get the gate list from the program.
     QL_DOUT("Getting gate list...");
-    const Vec<GateProperties> gates = parseGates(program);
+    const Vec<GateProperties> gates = parseGates(ir);
     if (gates.size() == 0) {
         QL_FATAL("Quantum program contains no gates!");
     }

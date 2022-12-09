@@ -26,20 +26,19 @@ private:
      * Map from architecture namespace name to a constructor function for that
      * particular architecture type.
      */
-    utils::Map<utils::Str, InfoRef> namespace_names = {};
+    static utils::Map<utils::Str, InfoRef>& namespace_names() {
+        static utils::Map<utils::Str, InfoRef> namespace_names{};
+        return namespace_names;
+    }
 
     /**
      * Map from "eqasm_compiler" key value to a constructor function for that
      * particular architecture type.
      */
-    utils::Map<utils::Str, InfoRef> eqasm_compiler_names = {};
-
-public:
-
-    /**
-     * Constructs a default architecture factory for OpenQL.
-     */
-    Factory();
+    static utils::Map<utils::Str, InfoRef>& eqasm_compiler_names() {
+        static utils::Map<utils::Str, InfoRef> eqasm_compiler_names{};
+        return eqasm_compiler_names;
+    }
 
 private:
 
@@ -58,13 +57,14 @@ public:
      * Registers an architecture class with the given type name.
      */
     template <class ArchitectureType>
-    void register_architecture() {
+    static bool register_architecture() {
         InfoRef architecture;
         architecture.emplace<ArchitectureType>();
-        namespace_names.set(architecture->get_namespace_name()) = architecture;
+        namespace_names().set(architecture->get_namespace_name()) = architecture;
         for (const auto &name : architecture->get_eqasm_compiler_names()) {
-            eqasm_compiler_names.set(name) = architecture;
+            eqasm_compiler_names().set(name) = architecture;
         }
+        return true;
     }
 
     /**

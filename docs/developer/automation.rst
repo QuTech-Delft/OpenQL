@@ -6,8 +6,8 @@ Build automation
 OpenQL employs continuous integration based on GitHub Actions, to ensure that new features or modifications actually
 work on all supported systems. The files to this end are in the ``.github`` directory of the repository. Furthermore,
 ReadTheDocs can build and publish documentation for OpenQL automatically, for which the files are in the ``docs``
-folder (specifically, it uses the ``docs/requirements-docs.txt`` for a pip package dependency list and then just runs
-the makefile in ``docs``.
+folder (specifically, it uses the ``docs/.conda.yml`` file for the Conda environment and then just runs
+the makefile in ``docs``).
 
 
 Integration tests

@@ -7,12 +7,15 @@
 #include "ql/pmgr/pass_types/base.h"
 #include "ql/pass/ana/statistics/annotations.h"
 #include "detail/clifford.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace opt {
 namespace clifford {
 namespace optimize {
+
+bool CliffordOptimizePass::is_pass_registered = pmgr::Factory::register_pass<CliffordOptimizePass>("opt.clifford.Optimize");
 
 /**
  * Dumps docs for the Clifford optimizer.

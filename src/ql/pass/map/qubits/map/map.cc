@@ -5,12 +5,15 @@
 #include "ql/pass/map/qubits/map/map.h"
 
 #include "detail/mapper.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace map {
 namespace qubits {
 namespace map {
+
+bool MapQubitsPass::is_pass_registered = pmgr::Factory::register_pass<MapQubitsPass>("map.qubits.Map");
 
 /**
  * Dumps docs for the qubit mapper.
@@ -22,11 +25,8 @@ void MapQubitsPass::dump_docs(
     utils::dump_str(os, line_prefix, R"(
     The purpose of this pass is to ensure that the qubit connectivity
     constraints are met for all multi-qubit gates in each kernel. This is done
-    by optionally applying a mixed integer linear programming algorithm to look
-    for a perfect solution that does not require routing or figure out a good
-    initial qubit placement, and then by heuristically inserting swap/move gates
-    to change the mapping on the fly as needed. Finally, it decomposes all gates
-    in the circuit to primitive gates.
+    by heuristically inserting swap/move gates to route gates as needed.
+    Then, it decomposes all gates in the circuit to primitive gates.
 
     NOTE: the substeps of this pass will probably be subdivided into individual
     passes in the future.
@@ -35,28 +35,6 @@ void MapQubitsPass::dump_docs(
     it may adjust the qubit mapping from input to output, a program consisting
     of multiple kernels that maintains a quantum state between the kernels may
     be silently destroyed.
-
-    * Initial placement *
-
-      This step attempts to find a single mapping of the virtual qubits of a
-      circuit to the real qubits of the platform's qubit topology that minimizes
-      the sum of the distances between the two mapped operands of all
-      two-qubit gates in the circuit. The distance between two real qubits is
-      the minimum number of swaps that is required to move the state of one of
-      the two qubits to the other. It employs a Mixed Integer Linear Programming
-      (MIP) algorithm to solve this, modelled as a Quadratic Assignment Problem.
-      If enabled, this step may find a mapping that is optimal for the whole
-      circuit, but because its time-complexity is exponential with respect to
-      the size of the circuit, this may take quite some computer time. Also, the
-      result is only really useful when in the mapping found all mapped operands
-      of two-qubit gates are nearest-neighbor (i.e. distance 1). So, there is no
-      guarantee for success: it may take too long and the result may not be
-      optimal.
-
-      NOTE: availability of this step depends on the build configuration of
-      OpenQL due to license conflicts with the library used for solving the
-      MIP problem. If it is not included, the step is effectively no-op, and
-      a warning message will be printed.
 )" R"(
     * Heuristic routing *
 
@@ -147,14 +125,6 @@ MapQubitsPass::MapQubitsPass(
     //========================================================================//
 
     options.add_bool(
-        "initialize_one_to_one",
-        "Controls whether the mapper should assume that each kernel starts with "
-        "a one-to-one mapping between virtual and real qubits. When disabled, "
-        "the initial mapping is treated as undefined.",
-        true
-    );
-
-    options.add_bool(
         "assume_initialized",
         "Controls whether the mapper should assume that each qubit starts out "
         "as zero at the start of each kernel, rather than with an undefined "
@@ -166,25 +136,6 @@ MapQubitsPass::MapQubitsPass(
         "Controls whether the mapper may assume that a user-written prepz gate "
         "actually leaves the qubit in the zero state, rather than any other "
         "quantum state. This allows it to make some optimizations."
-    );
-
-    //========================================================================//
-    // Options for the MIP initial placement engine                           //
-    //========================================================================//
-
-    options.add_bool(
-        "enable_mip_placer",
-        "Controls whether the MIP-based initial placement algorithm should be "
-        "run before resorting to heuristic mapping.",
-        false
-    );
-
-    options.add_int(
-        "mip_horizon",
-        "This controls how many two-qubit gates the MIP-based initial placement "
-        "algorithm considers for each kernel (if enabled). If 0 or unspecified, "
-        "all gates are considered.",
-        "0", 0, utils::MAX
     );
 
     //========================================================================//
@@ -400,11 +351,8 @@ pmgr::pass_types::NodeType MapQubitsPass::on_construct(
     // Build the options structure for the mapper.
     parsed_options.emplace();
 
-    parsed_options->initialize_one_to_one = options["initialize_one_to_one"].as_bool();
     parsed_options->assume_initialized = options["assume_initialized"].as_bool();
     parsed_options->assume_prep_only_initializes = options["assume_prep_only_initializes"].as_bool();
-    parsed_options->enable_mip_placer = options["enable_mip_placer"].as_bool();
-    parsed_options->mip_horizon = options["mip_horizon"].as_uint();
 
     auto route_heuristic = options["route_heuristic"].as_str();
     if (route_heuristic == "base") {

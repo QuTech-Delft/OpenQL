@@ -110,7 +110,6 @@ enum class NodeType {
  */
 class Base {
 private:
-
     /**
      * Reference to the pass factory that was used to construct this pass,
      * allowing this pass to construct sub-passes.

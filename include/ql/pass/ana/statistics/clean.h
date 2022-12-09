@@ -17,6 +17,8 @@ namespace clean {
  * Statistics cleaning pass.
  */
 class CleanStatisticsPass : public pmgr::pass_types::Analysis {
+    static bool is_pass_registered;
+
 protected:
 
     /**

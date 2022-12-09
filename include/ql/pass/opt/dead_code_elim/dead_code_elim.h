@@ -15,6 +15,8 @@ namespace dead_code_elim {
  * Dead code elimination pass.
  */
 class DeadCodeEliminationPass : public pmgr::pass_types::Transformation {
+    static bool is_pass_registered;
+
 public:
 
     /**

@@ -332,7 +332,7 @@ InstructionTypeLink find_instruction_type(
                         break;
                     case prim::OperandMode::READ:
                     case prim::OperandMode::LITERAL:
-                    case prim::OperandMode::IGNORE:
+                    case prim::OperandMode::IGNORED:
                         break;
                 }
                 if (!match) break;

@@ -18,6 +18,8 @@ namespace report {
  * cQASM writer pass.
  */
 class ReportCQasmPass : public pmgr::pass_types::Analysis {
+    static bool is_pass_registered;
+
 protected:
 
     /**

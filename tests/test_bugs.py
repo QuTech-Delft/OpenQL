@@ -20,12 +20,10 @@ class Test_bugs(unittest.TestCase):
     # @unittest.expectedFailure
     # @unittest.skip
     def test_typecast(self):
-        sweep_points = [1,2]
         num_circuits = 1
         num_qubits = 2
         platf = ql.Platform("starmon", 'cc_light')
         p = ql.Program('test_bug', platf, num_qubits)
-        p.set_sweep_points(sweep_points)
         k = ql.Kernel('kernel1', platf, num_qubits)
 
         qubit = 1
@@ -55,12 +53,10 @@ class Test_bugs(unittest.TestCase):
 
         platform = ql.Platform("myPlatform", 'cc_light')
 
-        sweep_points = [1]
         nqubits = 3
         nregs = 3
 
         p = ql.Program("statelessProgram", platform, nqubits, nregs)
-        p.set_sweep_points(sweep_points)
         k = ql.Kernel("aKernel", platform, nqubits, nregs)
 
         k.prepz(0)

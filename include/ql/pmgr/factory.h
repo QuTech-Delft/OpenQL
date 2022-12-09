@@ -52,20 +52,20 @@ private:
      * Map from (desugared) pass type name to a constructor function for that
      * particular pass type.
      */
-    utils::Map<utils::Str, ConstructorFn> pass_types;
+
+    static utils::Map<utils::Str, ConstructorFn>& pass_types() {
+        static utils::Map<utils::Str, ConstructorFn> pass_types{};
+
+        return pass_types;
+    }
 
 public:
-
-    /**
-     * Constructs a default pass factory for OpenQL.
-     */
-    Factory();
 
     /**
      * Registers a pass class with the given type name.
      */
     template <class PassType>
-    void register_pass(const utils::Str &type_name) {
+    static bool register_pass(const utils::Str &type_name) {
         ConstructorFn fn;
         fn.emplace([type_name](
             const CFactoryRef &pass_factory,
@@ -75,7 +75,8 @@ public:
             pass.emplace<PassType>(pass_factory, type_name, instance_name);
             return pass;
         });
-        pass_types.set(type_name) = fn;
+        pass_types().set(type_name) = fn;
+        return true;
     }
 
     /**

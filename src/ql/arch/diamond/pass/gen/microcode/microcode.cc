@@ -13,6 +13,7 @@
 #include "ql/utils/filesystem.h"
 #include "ql/ir/compat/platform.h"
 #include "ql/com/options.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace arch {
@@ -22,6 +23,8 @@ namespace gen {
 namespace microcode {
 
 using namespace utils;
+
+bool GenerateMicrocodePass::is_pass_registered = pmgr::Factory::register_pass<GenerateMicrocodePass>("arch.diamond.gen.Microcode");
 
 /**
  * Dumps docs for the code generator

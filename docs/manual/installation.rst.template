@@ -38,11 +38,6 @@ to see if it works.
 If you're on MacOS and want to use the visualizer, you'll need XQuartz in
 addition. You can install this using `Brew <https://formulae.brew.sh/cask/xquartz>`_.
 
-Some of OpenQL's components are optional when OpenQL itself is compiled. In
-general, the pre-built package includes everything, *except* for initial
-placement due to a license conflict. If you need initial placement, you'll
-need to :ref:`compile manually<dev_build>`.
-
 OpenQL used to support Conda in addition to PyPI/pip for Python package
 management, but ultimately this was disabled due to excessive time spent on
 dependency resolution. Nevertheless, the Conda recipe is still available, so

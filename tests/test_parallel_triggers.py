@@ -22,10 +22,8 @@ class Test_parallel_trigger(unittest.TestCase):
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'spin_demo_2811.json')
         platform = ql.Platform("spin_qubit_demo", config_fn)
-        sweep_points = [1, 2]
         num_qubits = 2
         p = ql.Program("program", platform, num_qubits)
-        p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
         k = ql.Kernel("kernel", platform, num_qubits)

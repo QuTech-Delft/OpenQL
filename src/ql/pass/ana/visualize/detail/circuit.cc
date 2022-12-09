@@ -9,6 +9,7 @@
 #include <regex>
 #include "ql/utils/exception.h"
 #include "common.h"
+#include "ql/ir/ir.h"
 
 namespace ql {
 namespace pass {
@@ -22,59 +23,23 @@ using namespace utils;
 // =                     CircuitData                     = //
 // ======================================================= //
 
-CircuitData::CircuitData(Vec<GateProperties> &gates, const CircuitLayout &layout, const Int cycleDuration) :
-    cycles(generateCycles(gates, cycleDuration)),
+CircuitData::CircuitData(Vec<GateProperties> &gates, const CircuitLayout &layout) :
+    cycles(generateCycles(gates)),
     amountOfQubits(calculateAmountOfBits(gates, &GateProperties::operands)),
-    amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands)),
-    cycleDuration(cycleDuration)
+    amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands))
 {
     if (layout.cycles.areCompressed())      compressCycles();
     if (layout.cycles.arePartitioned())     partitionCyclesWithOverlap();
     if (layout.cycles.cutting.isEnabled())  cutEmptyCycles(layout);
 }
 
-// Int CircuitData::calculateAmountOfCycles(const Vec<GateProperties> &gates, const Int cycleDuration) const {
-//     QL_DOUT("Calculating amount of cycles...");
-
-//     // Find the highest cycle in the gate vector.
-//     Int amountOfCycles = 0;
-//     for (const GateProperties &gate : gates) {
-//         if (gate.cycle == MAX_CYCLE) {
-//             QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
-//             return MAX_CYCLE;
-//         }
-
-//         if (gate.cycle > amountOfCycles)
-//             amountOfCycles = gate.cycle;
-//     }
-
-//     // The last gate requires a different approach, because it might have a
-//     // duration of multiple cycles. None of those cycles will show up as cycle
-//     // index on any other gate, so we need to calculate them seperately.
-//     const Int lastGateDuration = gates.at(gates.size() - 1).duration;
-//     const Int lastGateDurationInCycles = lastGateDuration / cycleDuration;
-//     if (lastGateDurationInCycles > 1)
-//         amountOfCycles += lastGateDurationInCycles - 1;
-
-//     // Cycles start at zero, so we add 1 to get the true amount of cycles.
-//     return amountOfCycles + 1; 
-// }
-
-Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates, const Int cycleDuration) const {
+Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates) const {
     QL_DOUT("Generating cycles...");
 
     // Calculate the amount of cycles. If there are gates with undefined cycle
     // indices, visualize the circuit sequentially.
     Vec<Cycle> cycles;
-    Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
-    if (amountOfCycles == ir::compat::MAX_CYCLE) {
-        // Add a sequential cycle to each gate.
-        amountOfCycles = 0;
-        for (GateProperties &gate : gates) {
-            gate.cycle = amountOfCycles;
-            amountOfCycles += gate.duration / cycleDuration;
-        }
-    }
+    Int amountOfCycles = calculateAmountOfCycles(gates);
 
     // Generate the cycles.
     for (Int i = 0; i < amountOfCycles; i++) {
@@ -286,7 +251,6 @@ void CircuitData::printProperties() const {
 
     QL_DOUT("amountOfQubits: " << amountOfQubits);
     QL_DOUT("amountOfClassicalBits: " << amountOfClassicalBits);
-    QL_DOUT("cycleDuration: " << cycleDuration);
 
     QL_DOUT("cycles:");
     for (UInt cycle = 0; cycle < cycles.size(); cycle++) {
@@ -540,14 +504,13 @@ void Structure::printProperties() const {
     }
 }
 
-void visualizeCircuit(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration) {
-    const Vec<GateProperties> gates = parseGates(program);
-    const Int cycleDuration = utoi(program->platform->cycle_time);
-    const Int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+void visualizeCircuit(const ir::Ref &ir, const VisualizerConfiguration &configuration) {
+    const Vec<GateProperties> gates = parseGates(ir);
+    const Int amountOfCycles = calculateAmountOfCycles(gates);
     const Vec<Int> minCycleWidths(amountOfCycles, 0);
 
     // Generate the image.
-    ImageOutput imageOutput = generateImage(program, configuration, minCycleWidths, 0);
+    ImageOutput imageOutput = generateImage(ir, configuration, minCycleWidths, 0);
 
     // Save the image if enabled.
     if (imageOutput.circuitLayout.saveImage || !configuration.interactive) {
@@ -561,27 +524,25 @@ void visualizeCircuit(const ir::compat::ProgramRef &program, const VisualizerCon
     }
 }
 
-ImageOutput generateImage(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration, const Vec<Int> &minCycleWidths, const utils::Int extendedImageHeight) {
+ImageOutput generateImage(const ir::Ref &ir, const VisualizerConfiguration &configuration, const Vec<Int> &minCycleWidths, const utils::Int extendedImageHeight) {
     // Get the gate list from the program.
     QL_DOUT("Getting gate list...");
-    Vec<GateProperties> gates = parseGates(program);
+    Vec<GateProperties> gates = parseGates(ir);
     if (gates.size() == 0) {
         QL_FATAL("Quantum program contains no gates!");
     }
 
     // Parse and validate the layout and instruction configuration file.
-    CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, program->platform->get_instructions());
+    CircuitLayout layout = parseCircuitConfiguration(gates, configuration.visualizerConfigPath, *ir->platform);
     validateCircuitLayout(layout, configuration.visualizationType);
 
     // Calculate circuit properties.
     QL_DOUT("Calculating circuit properties...");
-    const Int cycleDuration = utoi(program->platform->cycle_time);
-    QL_DOUT("Cycle duration is: " + to_string(cycleDuration) + " ns.");
     // Fix measurement gates without classical operands.
     fixMeasurementOperands(gates);
 
     // Initialize the circuit properties.
-    CircuitData circuitData(gates, layout, cycleDuration);
+    CircuitData circuitData(gates, layout);
     circuitData.printProperties();
 
     // Initialize the structure of the visualization.
@@ -624,17 +585,17 @@ ImageOutput generateImage(const ir::compat::ProgramRef &program, const Visualize
         for (Int qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++) {
             const Int yBase = structure.getCellPosition(0, qubitIndex, QUANTUM).y0;
 
-            drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].microwave, qubitIndex,
+            drawLine(image, structure, linesPerQubit[qubitIndex].microwave, qubitIndex,
                 yBase,
                 layout.pulses.getPulseRowHeightMicrowave(),
                 layout.pulses.getPulseColorMicrowave());
 
-            drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].flux, qubitIndex,
+            drawLine(image, structure, linesPerQubit[qubitIndex].flux, qubitIndex,
                 yBase + layout.pulses.getPulseRowHeightMicrowave(),
                 layout.pulses.getPulseRowHeightFlux(),
                 layout.pulses.getPulseColorFlux());
 
-            drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].readout, qubitIndex,
+            drawLine(image, structure, linesPerQubit[qubitIndex].readout, qubitIndex,
                 yBase + layout.pulses.getPulseRowHeightMicrowave() + layout.pulses.getPulseRowHeightFlux(),
                 layout.pulses.getPulseRowHeightReadout(),
                 layout.pulses.getPulseColorReadout());
@@ -723,7 +684,7 @@ ImageOutput generateImage(const ir::compat::ProgramRef &program, const Visualize
 
 CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
                                         const Str &visualizerConfigPath,
-                                        const Json &platformInstructions) {
+                                        const ir::Platform &platform) {
     QL_DOUT("Parsing visualizer configuration file for circuit visualization...");
 
     // Load the relevant instruction parameters.
@@ -756,9 +717,13 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
     };
 
     Map<Str, VisualParameters> parameterMapping;
-    for (auto it = platformInstructions.begin(); it != platformInstructions.end(); ++it) {
-        Str gateName = it.key();
-        Json instruction = *it; //.value();
+    for (const auto& instruction: platform.instructions) {
+        Str gateName = instruction->name;
+
+        auto isGateUsed = std::find_if(gates.begin(), gates.end(), [gateName](const GateProperties& g) { return g.name == gateName; }) != gates.end();
+        if (!isGateUsed) {
+            continue;
+        }
 
         gateName = utils::to_lower(gateName);
         gateName = std::regex_replace(gateName, trim_pattern, "");
@@ -767,8 +732,8 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
 
         // Load the visual type of the instruction if provided.
         Str visual_type;
-        if (instruction.count("visual_type") == 1) {
-            visual_type = instruction["visual_type"].get<Str>();
+        if ((*instruction->data).count("visual_type") == 1) {
+            visual_type = (*instruction->data)["visual_type"].get<Str>();
             QL_DOUT("visual_type: '" << visual_type);
         } else {
             QL_WOUT("Did not find 'visual_type' attribute for instruction: '" << gateName << "'!");
@@ -776,13 +741,13 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
 
         Vec<Int> codewords;
         // Load the codewords of the instruction if provided.
-        if (instruction.count("visual_codeword") == 1) {
-            codewords.push_back(instruction["visual_codeword"]);
+        if ((*instruction->data).count("visual_codeword") == 1) {
+            codewords.push_back((*instruction->data)["visual_codeword"]);
             QL_DOUT("codewords: " << codewords[0]);
         } else {
-            if (instruction.count("visual_right_codeword") == 1 && instruction.count("visual_left_codeword") == 1) {
-                codewords.push_back(instruction["visual_right_codeword"]);
-                codewords.push_back(instruction["visual_left_codeword"]);
+            if ((*instruction->data).count("visual_right_codeword") == 1 && (*instruction->data).count("visual_left_codeword") == 1) {
+                codewords.push_back((*instruction->data)["visual_right_codeword"]);
+                codewords.push_back((*instruction->data)["visual_left_codeword"]);
                 QL_DOUT("codewords: " << codewords[0] << "," << codewords[1]);
             } else {
                 if (circuitConfig.count("pulses") == 1) {
@@ -801,7 +766,7 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
     // Match the visualization parameters from the hardware configuration with the existing gates.
     for (GateProperties &gate : gates) {
         bool found = false;
-        for (const Pair<Str, VisualParameters> &mapping : parameterMapping) {
+        for (const auto &mapping : parameterMapping) {
             if (mapping.first == gate.name) {
                 found = true;
                 gate.visual_type = mapping.second.visual_type;
@@ -834,7 +799,6 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
             Json labels = cycles["labels"];
 
             if (labels.count("show") == 1)          layout.cycles.labels.setEnabled(labels["show"]);
-            if (labels.count("inNanoSeconds") == 1) layout.cycles.labels.setInNanoSeconds(labels["inNanoSeconds"]);
             if (labels.count("rowHeight") == 1)     layout.cycles.labels.setRowHeight(labels["rowHeight"]);
             if (labels.count("fontHeight") == 1)    layout.cycles.labels.setFontHeight(labels["fontHeight"]);
             if (labels.count("fontColor") == 1)     layout.cycles.labels.setFontColor(labels["fontColor"]);
@@ -1030,7 +994,7 @@ CircuitLayout parseCircuitConfiguration(Vec<GateProperties> &gates,
                             << (int)gateVisual.nodes.at(i).outlineColor[2] << "]");
                 }
 
-                layout.customGateVisuals.insert({instruction.key(), gateVisual});
+                layout.gateVisuals.insert({instruction.key(), gateVisual});
             } catch (Json::exception &e) {
                 QL_WOUT("Failed to load visualization parameters for instruction: '" << instruction.key()
                     << "' \n\t" << Str(e.what()));
@@ -1231,7 +1195,7 @@ Vec<QubitLines> generateQubitLines(const Vec<GateProperties> &gates,
         Line readoutLine;
 
         for (const GateProperties &gate : gatesPerQubit[qubitIndex]) {
-            const EndPoints gateCycles {gate.cycle, gate.cycle + (gate.duration / circuitData.cycleDuration) - 1};
+            const EndPoints gateCycles {gate.cycle, gate.cycle + gate.durationInCycles - 1};
             if (!gate.codewords.empty()) {
                 const Int codeword = gate.codewords[0];
                 try {
@@ -1247,7 +1211,7 @@ Vec<QubitLines> generateQubitLines(const Vec<GateProperties> &gates,
                         readoutLine.segments.push_back({PULSE, gateCycles, {gatePulses.readout, pulseVisualization.sampleRateReadout}});
                 } catch (const Exception &e) {
                     QL_WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
-                         "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex << "\n\texception: " << e.what());
+                         "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex);
                 }
             }
         }
@@ -1379,11 +1343,7 @@ void drawCycleLabels(Image &image,
             // cellWidth = structure.getCellDimensions().width;
             const Position4 cellPosition = structure.getCellPosition(i, 0, QUANTUM);
             cellWidth = cellPosition.x1 - cellPosition.x0;
-            if (layout.cycles.labels.areInNanoSeconds()) {
-                cycleLabel = to_string(i * circuitData.cycleDuration);
-            } else {
-                cycleLabel = to_string(i);
-            }
+            cycleLabel = to_string(i);
         }
 
         Dimensions textDimensions = calculateTextDimensions(cycleLabel, layout.cycles.labels.getFontHeight());
@@ -1589,7 +1549,6 @@ void drawWiggle(Image &image,
 
 void drawLine(Image &image,
               const Structure &structure,
-              const Int cycleDuration,
               const Line &line,
               const Int qubitIndex,
               const Int y,
@@ -1614,7 +1573,8 @@ void drawLine(Image &image,
 
                 const Int segmentWidth = x1 - x0; // pixels
                 const Int segmentLengthInCycles = segment.range.end - segment.range.start + 1; // cycles
-                const Int segmentLengthInNanoSeconds = cycleDuration * segmentLengthInCycles; // nanoseconds
+                static constexpr Int CYCLE_DURATION = 40;
+                const Int segmentLengthInNanoSeconds = CYCLE_DURATION * segmentLengthInCycles; // nanoseconds
                 QL_DOUT("\tsegment width: " << segmentWidth);
                 QL_DOUT("\tsegment length in cycles: " << segmentLengthInCycles);
                 QL_DOUT("\tsegment length in nanoseconds: " << segmentLengthInNanoSeconds);
@@ -1701,23 +1661,16 @@ void drawGate(Image &image,
               const Int chunkOffset) {
     // Get the gate visualization parameters.
     GateVisual gateVisual;
-    if (gate.type == ir::compat::GateType::CUSTOM) {
-        if (layout.customGateVisuals.count(gate.visual_type) == 1) {
-            QL_DOUT("Found visual for custom gate: '" << gate.name << "'");
-            gateVisual = layout.customGateVisuals.at(gate.visual_type);
-        } else {
-            // TODO: try to recover by matching gate name with a default visual name
-            // TODO: if the above fails, display a dummy gate
-            QL_WOUT("Did not find visual for custom gate: '" << gate.name << "', skipping gate!");
-            return;
-        }
+    if (layout.gateVisuals.count(gate.visual_type) == 1) {
+        QL_DOUT("Found visual for gate: '" << gate.name << "'");
+        gateVisual = layout.gateVisuals.at(gate.visual_type);
     } else {
-        QL_DOUT("Default gate found. Using default visualization!");
-        gateVisual = layout.defaultGateVisuals.at(gate.type);
+        // TODO: if the above fails, display a dummy gate
+        QL_WOUT("Did not find visual for gate: '" << gate.name << "' with visual_type " << gate.visual_type << ", skipping gate!");
+        return;
     }
 
     // Fetch the operands used by this gate.
-    QL_DOUT(gate.name);
     Vec<GateOperand> operands = getGateOperands(gate);
     for (const GateOperand &operand : operands) {
         QL_DOUT("bitType: " << operand.bitType << " value: " << operand.index);
@@ -1789,12 +1742,11 @@ void drawGate(Image &image,
     // Draw the gate duration outline if the option has been set.
     if (!layout.cycles.areCompressed() && layout.gateDurationOutlines.areEnabled()) {
         QL_DOUT("Drawing gate duration outline...");
-        const Int gateDurationInCycles = gate.duration / circuitData.cycleDuration;
         // Only draw the gate outline if the gate takes more than one cycle.
-        if (gateDurationInCycles > 1) {
+        if (gate.durationInCycles > 1) {
             for (UInt i = 0; i < operands.size(); i++) {
                 const Int columnStart = gate.cycle;
-                const Int columnEnd = columnStart + gateDurationInCycles - 1;
+                const Int columnEnd = columnStart + gate.durationInCycles - 1;
                 const Int row = (i >= gate.operands.size()) ? gate.creg_operands[i - gate.operands.size()] : gate.operands[i];
                 QL_DOUT("i: " << i << " size: " << gate.operands.size() << " value: " << gate.operands[i]);
 

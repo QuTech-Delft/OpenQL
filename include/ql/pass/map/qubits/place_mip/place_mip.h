@@ -16,7 +16,9 @@ namespace place_mip {
 /**
  * Initial qubit placer pass.
  */
-class PlaceQubitsPass : public pmgr::pass_types::KernelTransformation {
+class PlaceQubitsPass : public pmgr::pass_types::Transformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**
@@ -47,8 +49,7 @@ public:
      * Runs initial qubit placement.
      */
     utils::Int run(
-        const ir::compat::ProgramRef &program,
-        const ir::compat::KernelRef &kernel,
+        const ir::Ref &ir,
         const pmgr::pass_types::Context &context
     ) const override;
 

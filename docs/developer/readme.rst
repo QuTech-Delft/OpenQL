@@ -52,7 +52,7 @@ they can't be built, but the rest of OpenQL can. You can do this via
 preprocessor macros, but be aware that you can only use those in ``src``! Files
 in ``include`` are public, and can thus be built with any preprocessor macro
 set when included by user C++ code. You can look at the code for unitary
-decomposition, MIP-based placement, or the visualizer if you're not sure how to
+decomposition, or the visualizer if you're not sure how to
 work with these constraints; those pieces of code all do this.
 
 When you've added something, don't forget to add yourself to

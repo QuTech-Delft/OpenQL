@@ -6,13 +6,11 @@ void test_mc(std::string v, std::string param1, std::string param2, std::string 
     std::string prog_name = "test_" + v;
     // std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v;
-    std::vector<double> sweep_points = { 1 };
 
     auto starmon = ql::Platform("mc4x4full", "test_multi_core_4x4_full.json");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points);
 
     int i, j;
 
@@ -57,12 +55,9 @@ int main(int argc, char **argv) {
 
     // ql::set_option("clifford_premapper", "yes");
     ql::set_option("mapper", "minextend");
-    ql::set_option("mapinitone2one", "yes");
     ql::set_option("mapassumezeroinitstate", "yes");
 //parameter1  ql::set_option("maplookahead", "noroutingfirst");
     ql::set_option("mapselectswaps", "all");
-    ql::set_option("initialplace", "no");
-    ql::set_option("initialplace2qhorizon", "0");
     ql::set_option("mappathselect", "all");
     ql::set_option("mapusemoves", "yes");
     ql::set_option("mapreverseswap", "yes");

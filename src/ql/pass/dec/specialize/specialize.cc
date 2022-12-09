@@ -6,11 +6,14 @@
 
 #include "ql/ir/ops.h"
 #include "ql/pmgr/pass_types/base.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace dec {
 namespace specialize {
+
+bool SpecializeInstructionsPass::is_pass_registered = pmgr::Factory::register_pass<SpecializeInstructionsPass>("dec.Specialize");
 
 /**
  * Dumps docs for the instruction specializer.
@@ -23,7 +26,7 @@ void SpecializeInstructionsPass::dump_docs(
     This pass converts the format of all instructions in the program to their
     most specialized form. For example, if a generalized CNOT gate exists for
     qubits 1 and 2, and a specialization exists for this qubit pair as well,
-    the instruction is changed to the specialized version This implements the
+    the instruction is changed to the specialized version. This implements the
     reverse operation of `dec.Generalize`.
     )");
 }

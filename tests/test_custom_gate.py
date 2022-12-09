@@ -36,11 +36,8 @@ class Test_kernel(unittest.TestCase):
         # or
         k.gate("rx180", 0)
 
-        sweep_points = [1, 1.25, 1.75, 2.25, 2.75 ]
-
         # create a program
         p = ql.Program("custom_gate_test", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # add kernel to program
         p.add_kernel(k)

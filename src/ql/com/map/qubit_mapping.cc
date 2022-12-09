@@ -36,7 +36,6 @@ QubitMapping::QubitMapping(
     utils::Bool one_to_one,
     QubitState initial_state
 ) {
-    nq = 0;
     resize(num_qubits, one_to_one, initial_state);
 }
 

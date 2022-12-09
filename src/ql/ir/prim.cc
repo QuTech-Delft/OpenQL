@@ -286,7 +286,7 @@ std::ostream &operator<<(std::ostream &os, const OperandMode &am) {
         case OperandMode::COMMUTE_Y: return os << "commute-Y";
         case OperandMode::COMMUTE_Z: return os << "commute-Z";
         case OperandMode::MEASURE:   return os << "measure";
-        case OperandMode::IGNORE:    return os << "ignore";
+        case OperandMode::IGNORED:    return os << "ignore";
     }
     return os << "unknown";
 }

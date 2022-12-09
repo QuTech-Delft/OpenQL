@@ -93,3 +93,7 @@ Note: please fill your contributions in this file
   
 - [Quinten van Wingerden](https://github.com/qvanwingerden)
     -   added support for diamond architecture
+
+- [Pablo Le Henaff](https://github.com/pablolh)
+    -   some cleanups and refactors
+    -   refactor and usage of the HiGHS MIP solver in the initial placement pass

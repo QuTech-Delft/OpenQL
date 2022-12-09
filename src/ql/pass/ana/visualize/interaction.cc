@@ -5,12 +5,15 @@
 #include "ql/pass/ana/visualize/interaction.h"
 
 #include "detail/interaction.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
 namespace ana {
 namespace visualize {
 namespace interaction {
+
+bool VisualizeInteractionPass::is_pass_registered = pmgr::Factory::register_pass<VisualizeInteractionPass>("ana.visualize.Interaction");
 
 /**
  * Dumps docs for the interaction graph visualizer.
@@ -93,7 +96,7 @@ VisualizeInteractionPass::VisualizeInteractionPass(
     const utils::Ptr<const pmgr::Factory> &pass_factory,
     const utils::Str &instance_name,
     const utils::Str &type_name
-) : ProgramAnalysis(pass_factory, instance_name, type_name) {
+) : Analysis(pass_factory, instance_name, type_name) {
     options.add_str(
         "config",
         "Path to the visualizer configuration file.",
@@ -110,12 +113,13 @@ VisualizeInteractionPass::VisualizeInteractionPass(
  * Runs the interaction graph visualizer.
  */
 utils::Int VisualizeInteractionPass::run(
-    const ir::compat::ProgramRef &program,
+    const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
+
 #ifdef WITH_VISUALIZER
     detail::visualizeInteractionGraph(
-        program, {
+        ir, {
             "INTERACTION_GRAPH",
             options["config"].as_str(),
             "", // unused

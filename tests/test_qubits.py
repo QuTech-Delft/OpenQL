@@ -23,7 +23,6 @@ class Test_qubits(unittest.TestCase):
 
     def test_1_qubit(self):
         nqubits = 1
-        sweep_points = [2]
 
         k = ql.Kernel("aKernel", platf, nqubits)
 
@@ -35,7 +34,6 @@ class Test_qubits(unittest.TestCase):
         k.measure(0)
 
         p = ql.Program("1_qubit_program", platf, nqubits)
-        p.set_sweep_points(sweep_points)
 
         p.add_kernel(k)  # add kernel to program
         p.compile()
@@ -46,7 +44,6 @@ class Test_qubits(unittest.TestCase):
 
     def test_2_qubit(self):
         nqubits = 3
-        sweep_points = [2]
         k = ql.Kernel("aKernel", platf, nqubits)
 
         # populate kernel
@@ -58,7 +55,6 @@ class Test_qubits(unittest.TestCase):
         k.measure(2)
 
         p = ql.Program("2_qubit_program", platf, nqubits)
-        p.set_sweep_points(sweep_points)
 
         p.add_kernel(k)  # add kernel to program
         p.compile()
@@ -69,7 +65,6 @@ class Test_qubits(unittest.TestCase):
 
     def test_3_qubit(self):
         nqubits = 3
-        sweep_points = [2]
 
         k = ql.Kernel("aKernel", platf, nqubits)
 
@@ -81,7 +76,6 @@ class Test_qubits(unittest.TestCase):
         k.measure(2)
 
         p = ql.Program("3_qubit_program", platf, nqubits)
-        p.set_sweep_points(sweep_points)
 
         p.add_kernel(k)  # add kernel to program
 

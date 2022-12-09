@@ -12,6 +12,7 @@
 #include "ql/utils/vec.h"
 #include "ql/utils/map.h"
 #include "ql/utils/json.h"
+#include "ql/ir/ir.h"
 #include "types.h"
 #include "image.h"
 
@@ -82,7 +83,7 @@ private:
     utils::Vec<Cycle> cycles;
     utils::Vec<EndPoints> cutCycleRangeIndices;
 
-    utils::Vec<Cycle> generateCycles(utils::Vec<GateProperties> &gates, const utils::Int cycleDuration) const;
+    utils::Vec<Cycle> generateCycles(utils::Vec<GateProperties> &gates) const;
     utils::Vec<EndPoints> findCuttableEmptyRanges(const CircuitLayout &layout) const;
 
     void compressCycles();
@@ -92,9 +93,8 @@ private:
 public:
     const utils::Int amountOfQubits;
     const utils::Int amountOfClassicalBits;
-    const utils::Int cycleDuration;
 
-    CircuitData(utils::Vec<GateProperties> &gates, const CircuitLayout &layout, const utils::Int cycleDuration);
+    CircuitData(utils::Vec<GateProperties> &gates, const CircuitLayout &layout);
 
     Cycle getCycle(const utils::UInt index) const;
     utils::Int getAmountOfCycles() const;
@@ -156,10 +156,10 @@ struct ImageOutput {
     const Structure structure;
 };
 
-void visualizeCircuit(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration);
-ImageOutput generateImage(const ir::compat::ProgramRef &program, const VisualizerConfiguration &configuration, const utils::Vec<utils::Int> &minCycleWidths, utils::Int extendedImageHeight);
+void visualizeCircuit(const ir::Ref &ir, const VisualizerConfiguration &configuration);
+ImageOutput generateImage(const ir::Ref &ir, const VisualizerConfiguration &configuration, const utils::Vec<utils::Int> &minCycleWidths, utils::Int extendedImageHeight);
 
-CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const utils::Json &platformInstructions);
+CircuitLayout parseCircuitConfiguration(utils::Vec<GateProperties> &gates, const utils::Str &configPath, const ir::Platform &platform);
 void validateCircuitLayout(CircuitLayout &layout, const utils::Str &visualizationType);
 PulseVisualization parseWaveformMapping(const utils::Str &waveformMappingPath);
 
@@ -177,7 +177,7 @@ void drawGroupedClassicalBitLine(Image &image, const CircuitLayout &layout, cons
 
 void drawWiggle(Image &image, utils::Int x0, utils::Int x1, utils::Int y, utils::Int width, utils::Int height, Color color);
 
-void drawLine(Image &image, const Structure &structure, utils::Int cycleDuration, const Line &line, utils::Int qubitIndex, utils::Int y, utils::Int maxLineHeight, Color color);
+void drawLine(Image &image, const Structure &structure, const Line &line, utils::Int qubitIndex, utils::Int y, utils::Int maxLineHeight, Color color);
 
 void drawCycle(Image &image, const CircuitLayout &layout, const CircuitData &circuitData, const Structure &structure, const Cycle &cycle);
 void drawGate(Image &image, const CircuitLayout &layout, const CircuitData &circuitData, const GateProperties &gate, const Structure &structure, utils::Int chunkOffset);

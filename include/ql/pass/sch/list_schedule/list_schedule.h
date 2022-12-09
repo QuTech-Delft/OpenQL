@@ -15,6 +15,8 @@ namespace list_schedule {
  * Scheduler pass.
  */
 class ListSchedulePass : public pmgr::pass_types::Transformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**

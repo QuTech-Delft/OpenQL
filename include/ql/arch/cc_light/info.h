@@ -21,6 +21,8 @@ namespace cc_light {
  * Architecture-specific information class for CC-light.
  */
 class Info : public InfoBase {
+    static bool is_architecture_registered;
+
 public:
 
     /**

@@ -37,10 +37,8 @@ class Test_dependence(unittest.TestCase):
         k.measure(0)
         k.measure(1)
 
-        sweep_points = [2]
 
         p = ql.Program("independent", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -65,10 +63,8 @@ class Test_dependence(unittest.TestCase):
         k.measure(0)
         k.measure(1)
 
-        sweep_points = [2]
 
         p = ql.Program("WAW", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -95,10 +91,8 @@ class Test_dependence(unittest.TestCase):
         k.measure(0)
         k.measure(1)
 
-        sweep_points = [2]
 
         p = ql.Program("RAR", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -125,10 +119,8 @@ class Test_dependence(unittest.TestCase):
         k.measure(0)
         k.measure(1)
 
-        sweep_points = [2]
 
         p = ql.Program("RAW", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -156,10 +148,8 @@ class Test_dependence(unittest.TestCase):
         k.measure(0)
         k.measure(1)
 
-        sweep_points = [2]
 
         p = ql.Program("WAR", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -181,10 +171,8 @@ class Test_dependence(unittest.TestCase):
         k.gate("swap", [0, 1])
         k.gate("x", [0])
 
-        sweep_points = [2]
 
         p = ql.Program("swap_single", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -208,10 +196,8 @@ class Test_dependence(unittest.TestCase):
         k.gate("cz", [0, 2])
         k.gate("cz", [1, 4])
 
-        sweep_points = [2]
 
         p = ql.Program("swap_multi", platf, nqubits)
-        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 

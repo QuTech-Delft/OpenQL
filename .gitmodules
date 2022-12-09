@@ -14,3 +14,9 @@
 	path = deps/json
 	url = https://github.com/nlohmann/json.git
 	shallow = true
+[submodule "deps/doctest"]
+	path = deps/doctest
+	url = https://github.com/doctest/doctest.git
+[submodule "deps/highs"]
+	path = deps/highs
+	url = https://github.com/ERGO-Code/HiGHS.git

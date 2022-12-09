@@ -297,57 +297,6 @@ protected:
 
 };
 
-/**
- * A pass type for passes that analyze individual kernels using the old IR.
- */
-class KernelAnalysis : public Normal {
-protected:
-
-    /**
-     * Constructs the pass. No error checking here; this is up to the parent
-     * pass group.
-     */
-    KernelAnalysis(
-        const utils::Ptr<const Factory> &pass_factory,
-        const utils::Str &instance_name,
-        const utils::Str &type_name
-    );
-
-    /**
-     * Implementation for on_compile() that calls run() appropriately.
-     */
-    utils::Int run_internal(
-        const ir::Ref &ir,
-        const Context &context
-    ) const final;
-
-    /**
-     * Initial accumulator value for the return value. Defaults to zero.
-     */
-    virtual utils::Int retval_initialize() const;
-
-    /**
-     * Return value reduction operator. Defaults to addition.
-     */
-    virtual utils::Int retval_accumulate(utils::Int state, utils::Int kernel) const;
-
-    /**
-     * The virtual implementation for this pass. The contents of program and
-     * kernel must not be modified.
-     */
-    virtual utils::Int run(
-        const ir::compat::ProgramRef &program,
-        const ir::compat::KernelRef &kernel,
-        const Context &context
-    ) const = 0;
-
-    /**
-     * Returns that this is a legacy pass.
-     */
-    utils::Bool is_legacy() const override;
-
-};
-
 } // namespace pass_types
 } // namespace pmgr
 } // namespace ql

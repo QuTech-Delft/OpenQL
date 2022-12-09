@@ -78,35 +78,6 @@ option(
     ON
 )
 
-# Whether initial placement should be enabled. This requires one of GLPK, ILOG,
-# or COIN to be installed and findable by lemon's build system. Only GLPK seems
-# to work on present-day systems; on Linux it's probably in your package
-# manager, on Mac it's `brew install glpk`, and on Windows you can use winglpk
-# (see below). Unfortunately, GLPK is GPL-licensed, and therefore cannot be
-# distributed in an Apache project, so this option is off by default until a
-# non-GPL replacement is found.
-option(
-    WITH_INITIAL_PLACEMENT
-    "Whether initial placement support should be enabled"
-    OFF
-)
-
-# The following snippit helps finding GLPK from a Windows build package as
-# from https://sourceforge.net/projects/winglpk/files/winglpk/. Simply set
-# it to the root folder of the extracted zip file.
-if(WITH_INITIAL_PLACEMENT AND DEFINED ENV{WINGLPK_ROOT_DIR})
-    string(REPLACE "\\" "/" WINGLPK_ROOT_DIR "$ENV{WINGLPK_ROOT_DIR}")
-    set(GLPK_INCLUDE_DIR "${WINGLPK_ROOT_DIR}/src" CACHE STRING "glpk include")
-    mark_as_advanced(GLPK_INCLUDE_DIR)
-    file(GLOB GLPK_LIB "${WINGLPK_ROOT_DIR}/w64/glpk_4_??.lib")
-    set(GLPK_LIBRARY "${GLPK_LIB}" CACHE STRING "glpk library")
-    mark_as_advanced(GLPK_LIBRARY)
-    file(GLOB GLPK_DLL "${WINGLPK_ROOT_DIR}/w64/glpk_4_??.dll")
-    set(GLPK_RUNTIME_LIBRARY "${GLPK_DLL}" CACHE STRING "glpk runtime library")
-    mark_as_advanced(GLPK_RUNTIME_LIBRARY)
-    set(WITHOUT_GLPK_INSTALL YES)
-endif()
-
 # Definitions for checked vs unchecked STL containers w.r.t. iterator safety.
 # The checked versions can be considerably slower than the unchecked ones, so
 # by default they are only checked in debug builds.
@@ -115,6 +86,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
 else()
     set(OPENQL_DEBUG ON)
 endif()
+
 option(
     OPENQL_CHECKED_STL
     "Whether STL containers should be guarded against undefined behavior."
@@ -226,6 +198,7 @@ generate_tree(
 # or as a static library based on BUILD_SHARED_LIBS; add_library switches
 # automatically.
 add_library(ql
+    OBJECT
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/num.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/str.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/utils/rangemap.cc"
@@ -303,7 +276,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/ana/visualize/mapping.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/read.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/cqasm/report.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/io/sweep_points/write.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/instructions/instructions.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/generalize/generalize.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/dec/specialize/specialize.cc"
@@ -316,7 +288,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/detail/scheduler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/schedule/schedule.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/sch/list_schedule/list_schedule.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/place_mip/detail/algorithm.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/place_mip/detail/impl.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/place_mip/place_mip.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/detail/options.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/pass/map/qubits/map/detail/free_cycle.cc"
@@ -383,7 +355,7 @@ target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
 # and they'r all in the source directory. Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
@@ -412,22 +384,9 @@ if(NOT WITH_UNITARY_DECOMPOSITION)
     target_compile_definitions(ql PRIVATE WITHOUT_UNITARY_DECOMPOSITION)
 endif()
 
-# Enable GPL-based initial placement code if requested.
-if(WITH_INITIAL_PLACEMENT)
-    target_compile_definitions(ql PRIVATE INITIALPLACE)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    target_compile_definitions(ql PRIVATE NDEBUG)
 endif()
-
-
-#=============================================================================#
-# Configure, build, and link dependencies                                     #
-#=============================================================================#
-
-# pthreads --------------------------------------------------------------------
-
-# Look for thread support library (pthreads)
-find_package(Threads REQUIRED)
-target_link_libraries(ql PUBLIC ${CMAKE_THREAD_LIBS_INIT})
-
 
 # LEMON -----------------------------------------------------------------------
 
@@ -439,15 +398,6 @@ target_include_directories(lemon INTERFACE
     "${CMAKE_CURRENT_BINARY_DIR}/deps/lemon"
 )
 target_link_libraries(ql PUBLIC lemon)
-
-# Initial places uses lemon's Mip; ensure that LEMON's configuration supports
-# it. Annoyingly, LEMON's build just silently removes it when it's missing the
-# necessary dependencies. Also annoying: the variable LEMON_HAVE_MIP is a
-# local variable, so we can't use it... and have to resort to checking this
-# cache variable instead.
-if(WITH_INITIAL_PLACEMENT AND NOT LEMON_DEFAULT_MIP)
-    message(SEND_ERROR "Missing ilog/coin/glpk (-dev/-devel) library for lemon (one of the three is needed for initial placement support)")
-endif()
 
 # Even more annoying stuff: LEMON doesn't install itself in the right place on
 # multilib systems (i.e. ones where the libdir is lib64 instead of just lib).
@@ -527,6 +477,25 @@ add_backward(ql)
 # and need to be included in the final link.
 set_property(TARGET ql APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${BACKWARD_LIBRARIES})
 
+# HiGHS -----------------------------------------------------------------------
+
+# HiGHS (www.highs.dev) comes as a submodule in deps/highs. It is a linear programming solver that can
+# solve Mixed Integer Programming problems efficiently. It is used in the initial placement pass.
+
+# The build system in HiGHS currently doesn't allow to disable HiGHS tests
+# thus the following hacks are needed, instead of just add_subdirectory(deps/highs).
+set(FAST_BUILD ON)
+set(GITHASH "")
+set(TODAY "")
+set(HIGHS_VERSION_MAJOR 0)
+set(HIGHS_VERSION_MINOR 0)
+set(HIGHS_VERSION_PATCH 0)
+set(HIGHS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/deps/highs")
+set(HIGHS_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/highs")
+
+add_subdirectory(deps/highs/src)
+configure_file(deps/highs/src/HConfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/deps/highs/HConfig.h)
+target_link_libraries(ql PUBLIC libhighs)
 
 #=============================================================================#
 # Testing                                                                     #
@@ -547,6 +516,8 @@ if(OPENQL_BUILD_TESTS)
         )
     endfunction()
 
+    add_subdirectory(deps/doctest)
+    
     # Include the directories containing integration tests.
     add_subdirectory(tests)
     add_subdirectory(examples)
@@ -559,9 +530,11 @@ if(OPENQL_BUILD_TESTS)
         set(name test_${name})
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
         target_link_libraries("${name}" ql)
+        target_link_libraries("${name}" doctest)
+        get_filename_component(working_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}" DIRECTORY)
         add_test(
             NAME "${name}"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests"
+            WORKING_DIRECTORY "${working_dir}"
             COMMAND "${name}"
         )
     endfunction()
@@ -630,14 +603,5 @@ install(
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
-
-# On Windows + MSVC, install the GLPK runtime library if one was found.
-if(GLPK_RUNTIME_LIBRARY)
-    install(
-        FILES "${GLPK_RUNTIME_LIBRARY}"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    )
-endif()
-
 
 endif() # NOT TARGET ql

@@ -18,6 +18,8 @@ namespace vq1asm {
  * QuTech Central Controller Q1 processor assembly generator pass.
  */
 class GenerateVQ1AsmPass : public pmgr::pass_types::Transformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**

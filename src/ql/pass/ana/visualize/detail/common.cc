@@ -9,6 +9,7 @@
 #include <iostream>
 #include "ql/utils/json.h"
 #include "ql/com/options.h"
+#include "ql/ir/ir.h"
 
 namespace ql {
 namespace pass {
@@ -18,85 +19,95 @@ namespace detail {
 
 using namespace utils;
 
-Vec<GateProperties> parseGates(const ir::compat::ProgramRef &program) {
+class GateCollector : public ir::RecursiveVisitor {
+public:
+    GateCollector(const ir::PlatformRef& platform, Vec<GateProperties>& gates) : ir::RecursiveVisitor(), platform(platform), gates(gates) {}
+
+    void visit_node(ir::Node &node) override {}
+
+    void visit_platform(ir::Platform &platform) override {}
+
+    void visit_conditional_instruction(ir::ConditionalInstruction &cond_instr) override {
+        if (!cond_instr.condition->as_bit_literal() || !cond_instr.condition->as_bit_literal()->value) {
+            QL_FATAL("Visualizer doesn't support conditional instructions");
+            return;
+        }
+
+        ir::RecursiveVisitor::visit_conditional_instruction(cond_instr);
+    }
+
+    void visit_structured(ir::Structured &structured) override {
+        QL_FATAL("Visualizer doesn't support structured blocks (loops, if/else)");
+    }
+
+    void visit_custom_instruction(ir::CustomInstruction &custom_instr) override {
+        utils::Vec<utils::Int> qubits;
+        utils::Vec<utils::Int> cregs;
+
+        for (const auto& op: custom_instr.instruction_type->template_operands) {
+            if (auto ref = op->as_reference()) {
+                if (ref->target == platform->qubits) {
+                    qubits.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
+                }
+
+                if (ref->target->name == "creg") {
+                    cregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
+                }
+            }
+        }
+
+        for (const auto& op: custom_instr.operands) {
+            if (auto ref = op->as_reference()) {
+                if (ref->target == platform->qubits) {
+                    qubits.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
+                }
+
+                if (ref->target->name == "creg") {
+                    cregs.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
+                }
+            }
+        }
+
+        GateProperties gate {
+            custom_instr.instruction_type->name,
+            qubits,
+            cregs,
+            {},
+            utoi(custom_instr.instruction_type->duration),
+            custom_instr.cycle,
+            {},
+            "UNDEFINED"
+        };
+        QL_DOUT("Adding gate: " << custom_instr.instruction_type->name << " " << qubits << " " << cregs << " " << custom_instr.cycle);
+
+        gates.push_back(gate); // FIXME: does this preserve order? Or do we need to sort somehow afterwards?
+    }
+
+private:
+    const ir::PlatformRef& platform;
+    Vec<GateProperties>& gates;
+};
+
+Vec<GateProperties> parseGates(const ir::Ref &ir) {
     Vec<GateProperties> gates;
 
-    // Determine whether the program is scheduled or not. If not, the program
-    // will be visualized sequentially. Otherwise we compute program-wide,
-    // zero-referenced cycle numbers below (within the IR cycles start at
-    // ir::FIRST_CYCLE and are referenced to the start of the kernel rather than
-    // to the complete program).
-    Bool cycles_valid = true;
-    for (const auto &kernel : program->kernels) {
-        cycles_valid &= kernel->cycles_valid;
-        for (const auto &gate : kernel->gates) {
-            if (gate->cycle < ir::compat::FIRST_CYCLE || gate->cycle >= ir::compat::MAX_CYCLE) {
-                cycles_valid = false;
-                break;
-            }
-        }
-        if (!cycles_valid) break;
-    }
-
-    UInt kernel_cycle_offset = 0;
-    for (const auto &kernel : program->kernels) {
-        UInt kernel_duration = 0;
-        for (const auto &gate : kernel->gates) {
-            Vec<Int> operands;
-            Vec<Int> creg_operands;
-            for (const UInt operand : gate->operands) { operands.push_back(utoi(operand)); }
-            for (const UInt operand : gate->creg_operands) { creg_operands.push_back(utoi(operand)); }
-            GateProperties gateProperties {
-                gate->name,
-                operands,
-                creg_operands,
-                gate->swap_params,
-                utoi(gate->duration),
-                0,
-                gate->type(),
-                {},
-                "UNDEFINED"
-            };
-            if (cycles_valid) {
-                UInt end = program->platform->time_to_cycles(gate->duration) + gate->cycle;
-                kernel_duration = max(kernel_duration, end) - ir::compat::FIRST_CYCLE;
-                gateProperties.cycle = utoi(gate->cycle + kernel_cycle_offset - ir::compat::FIRST_CYCLE);
-            } else {
-                gateProperties.cycle = ir::compat::MAX_CYCLE;
-            }
-            gates.push_back(gateProperties);
-        }
-        kernel_cycle_offset += kernel_duration;
-    }
-
+    GateCollector gateCollector(ir->platform, gates);
+    ir->visit(gateCollector);
     return gates;
 }
 
-Int calculateAmountOfCycles(const Vec<GateProperties> &gates, const Int cycleDuration) {
+Int calculateAmountOfCycles(const Vec<GateProperties> &gates) {
     QL_DOUT("Calculating amount of cycles...");
 
     // Find the highest cycle in the gate vector.
     Int amountOfCycles = 0;
     for (const GateProperties &gate : gates) {
-        if (gate.cycle == ir::compat::MAX_CYCLE) {
-            QL_IOUT("Found gate with undefined cycle index. All cycle data will be discarded and circuit will be visualized sequentially.");
-            return ir::compat::MAX_CYCLE;
+        if (gate.cycle + gate.durationInCycles > amountOfCycles) {
+            amountOfCycles = gate.cycle + gate.durationInCycles;
         }
-
-        if (gate.cycle > amountOfCycles)
-            amountOfCycles = gate.cycle;
     }
 
-    // The last gate requires a different approach, because it might have a
-    // duration of multiple cycles. None of those cycles will show up as cycle
-    // index on any other gate, so we need to calculate them seperately.
-    const Int lastGateDuration = gates.at(gates.size() - 1).duration;
-    const Int lastGateDurationInCycles = lastGateDuration / cycleDuration;
-    if (lastGateDurationInCycles > 1)
-        amountOfCycles += lastGateDurationInCycles - 1;
-
-    // Cycles start at zero, so we add 1 to get the true amount of cycles.
-    return amountOfCycles + 1; 
+    return amountOfCycles; 
 }
 
 Int calculateAmountOfBits(const Vec<GateProperties> &gates, const Vec<Int> GateProperties::* operandType) {
@@ -195,9 +206,8 @@ void printGates(const Vec<GateProperties> &gates) {
         }
         QL_IOUT("\tcreg_operands: " << creg_operands << "]");
 
-        QL_IOUT("\tduration: " << gate.duration);
+        QL_IOUT("\tduration in cycles: " << gate.durationInCycles);
         QL_IOUT("\tcycle: " << gate.cycle);
-        QL_IOUT("\ttype: " << gate.type);
 
         Str codewords = "[";
         for (UInt i = 0; i < gate.codewords.size(); i++) {

@@ -60,7 +60,7 @@ void EventGatherer::add_reference(
             mode = ir::prim::OperandMode::WRITE;
             break;
         }
-        case ir::prim::OperandMode::IGNORE:
+        case ir::prim::OperandMode::IGNORED:
             return;
     }
     AccessMode amode{mode};

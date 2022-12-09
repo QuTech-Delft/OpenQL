@@ -5,10 +5,13 @@
 #include "ql/arch/none/info.h"
 
 #include "ql/arch/none/resources/hwconf_default.inc"
+#include "ql/arch/factory.h"
 
 namespace ql {
 namespace arch {
 namespace none {
+
+bool Info::is_architecture_registered = Factory::register_architecture<Info>();
 
 /**
  * Writes the documentation for this architecture to the given output

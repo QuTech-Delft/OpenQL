@@ -26,6 +26,8 @@ void clifford_optimize(
  * Clifford optimizer pass.
  */
 class CliffordOptimizePass : public pmgr::pass_types::KernelTransformation {
+    static bool is_pass_registered;
+
 protected:
 
     /**

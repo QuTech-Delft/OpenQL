@@ -15,7 +15,10 @@ namespace interaction {
 /**
  * Interaction graph visualizer pass.
  */
-class VisualizeInteractionPass : public pmgr::pass_types::ProgramAnalysis {
+class VisualizeInteractionPass : public pmgr::pass_types::Analysis {
+private:
+    static bool is_pass_registered;
+    
 protected:
 
     /**
@@ -46,7 +49,7 @@ public:
      * Runs the interaction graph visualizer.
      */
     utils::Int run(
-        const ir::compat::ProgramRef &program,
+        const ir::Ref &ir,
         const pmgr::pass_types::Context &context
     ) const override;
 

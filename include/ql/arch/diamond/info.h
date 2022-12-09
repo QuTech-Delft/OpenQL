@@ -21,6 +21,8 @@ namespace diamond {
  * No-op architecture-specific information class.
  */
 class Info : public InfoBase {
+    static bool is_architecture_registered;
+
 public:
 
     /**
