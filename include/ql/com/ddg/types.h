@@ -354,7 +354,7 @@ using EdgeCRef = utils::Ptr<const Edge>;
 /**
  * Shorthand for a list of endpoints for a node.
  */
-using Endpoints = utils::Map<ir::StatementRef, EdgeRef>;
+using Endpoints = std::list<std::pair<ir::StatementRef, EdgeRef>>;
 
 /**
  * A node in the DDG.
