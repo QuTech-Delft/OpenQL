@@ -283,7 +283,7 @@ class Test_conjugated_kernel(unittest.TestCase):
             add_kernel(k)
             p.compile()
 
-        self.assertEqual(str(cm.exception).split('\n\n', maxsplit=1)[0], "Unknown error: Error: Unitary 'WRONG' is not a unitary matrix. Cannot be decomposed!(0,0) (0,0)\n(0,0) (0,0)")
+        self.assertEqual(str(cm.exception).split('\n\n', maxsplit=1)[0], "Unknown error: Error: Unitary 'WRONG' is not a unitary matrix. Cannot be decomposed!(0,0) (0,0)\n(0,0) (0,0)\n")
   
   # input for the unitary decomposition needs to be an array
     def test_unitary_decompose_matrixinsteadofarray(self):
