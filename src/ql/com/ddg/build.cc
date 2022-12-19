@@ -318,26 +318,32 @@ private:
         QL_ASSERT(from.node != to.node);
 
         // Create an edge, or fetch the existing edge if there already was one.
-        auto result = from.node->successors.insert({to.statement, {}});
-        auto &edge_ref = result.first->second;
-        if (result.second) {
+        auto it = std::find_if(from.node->successors.begin(), from.node->successors.end(),
+            [&to](const std::pair<ir::StatementRef, EdgeRef> &x) { return x.first == to.statement; }); // Pointer equality is used!
 
+        if (it == from.node->successors.end()) {
+            it = from.node->successors.insert(from.node->successors.end(), {to.statement, {}});
+        }
+
+        if (!it->second.has_value()) {
             // No edge existed yet, make one.
             QL_DOUT(
                 "    add edge from " << ir::describe(from.statement) <<
                 " to " << ir::describe(to.statement)
             );
-            edge_ref.emplace();
-            edge_ref->predecessor = from.statement;
-            edge_ref->successor = to.statement;
-            edge_ref->weight = 0;
-            QL_ASSERT(to.node->predecessors.insert({from.statement, edge_ref}).second);
+            it->second.emplace();
+            it->second->predecessor = from.statement;
+            it->second->successor = to.statement;
+            it->second->weight = 0;
+            QL_ASSERT(std::find_if(to.node->predecessors.begin(), to.node->predecessors.end(),
+                [&from](const std::pair<ir::StatementRef, EdgeRef> &x) { return x.first == from.statement; }) == to.node->predecessors.end());
+            to.node->predecessors.push_back({from.statement, it->second});
 
         }
 
         // Ensure that the edge weight is high enough.
-        edge_ref->weight = utils::max<utils::Int>(
-            edge_ref->weight,
+        it->second->weight = utils::max<utils::Int>(
+            it->second->weight,
             (utils::Int)ir::get_duration_of_statement(from.statement)
         );
 
@@ -350,7 +356,7 @@ private:
             " to edge from " << ir::describe(from.statement) <<
             " to " << ir::describe(to.statement)
         );
-        edge_ref->causes.push_back(cause);
+        it->second->causes.push_back(cause);
 
     }
 

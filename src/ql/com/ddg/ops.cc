@@ -65,7 +65,8 @@ NodeCRef get_sink_node(const ir::BlockBaseRef &block) {
  */
 EdgeCRef get_edge(const ir::StatementRef &from, const ir::StatementRef &to) {
     const auto &successors = get_node(from)->successors;
-    auto it = successors.find(to);
+    auto it = std::find_if(successors.begin(), successors.end(),
+        [&to](const std::pair<ir::StatementRef, EdgeRef> &x) { return x.first == to; });
     if (it == successors.end()) {
         return {};
     } else {
