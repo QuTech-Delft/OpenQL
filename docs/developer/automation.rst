@@ -21,7 +21,7 @@ The suite runs the following things:
 - the standalone C++ test, built completely out of context.
 
 The former two are run on ``ubuntu-latest``, ``macos-latest``, and ``windows-latest`` for all active Python versions
-(currently 3.6 through 3.9). The latter is only run on ``ubuntu-latest``, as it doesn't check much except inclusion
+(currently 3.7 through 3.11). The latter is only run on ``ubuntu-latest``, as it doesn't check much except inclusion
 of the project via CMake.
 
 .. note::

@@ -20,11 +20,11 @@ jobs:
       fail-fast: false
       matrix:
         python:
-        - '3.6'
         - '3.7'
         - '3.8'
         - '3.9'
         - '3.10'
+        - '3.11'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -76,11 +76,11 @@ jobs:
         - 2014
         - _2_28
         cpython_version:
-        - 'cp36-cp36m'
         - 'cp37-cp37m'
         - 'cp38-cp38'
         - 'cp39-cp39'
         - 'cp310-cp310'
+        - 'cp311-cp311'
         include:
           - manylinux: 2014
             bison_version: 'bison-3.0.4-2.el7'
@@ -138,11 +138,11 @@ jobs:
       fail-fast: false
       matrix:
         python:
-        - '3.6'
         - '3.7'
         - '3.8'
         - '3.9'
         - '3.10'
+        - '3.11'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -203,11 +203,11 @@ jobs:
 #        - macos-latest
 #        - windows-2016
 #        python-version:
-#        - '3.6'
 #        - '3.7'
 #        - '3.8'
 #        - '3.9'
 #        - '3.10'
+#        - '3.11'
 #    steps:
 #    - uses: actions/checkout@v2
 #      with:

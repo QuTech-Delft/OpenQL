@@ -5,12 +5,24 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [ next ] - [ TBD ]
 ### Added
+-
+
+### Changed
+-
+
+### Removed
+-
+
+
+## [ 0.11.0 ] - [ 2023-01-06 ]
+### Added
 - CC backend:
   - support for cQASM 1.2 features through new IR 
     - limitations
       - integer values must be non-negative
   - support for resource constrained scheduler
-  - creates .map file reporting measurement statements present in input, to allow retrieving measurements downstream 
+  - creates .map file reporting measurement statements present in input, to allow retrieving measurements downstream
+- support for Python up to 3.11
 
 ### Changed
 - pass dec.Instructions: duration=0 in new-style decomposition rules now disables checking whether expansion fits, allowing automatic calculation of duration (and requiring scheduling after decomposition of such rules)
@@ -22,12 +34,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - classification of gates as *real-time* measurement now based on signal definition ("signal/type" equals "measure" and "signal/value" empty)
   - absence of key "cc" now implies empty "signal", so `"cc": { "signal": [] }` is no longer necessary
 - passes and architectures self-register statically to their respective factories
+- initial placer uses new IR and new MIP solver called HiGHS
 
 ### Removed
 - CC backend:
   - support for JSON key "pragma/break" for instruction definitions
   - macro expansion for JSON key instruction/signal/value (unused anyway)
 - support for sweep points in API and the WriteSweepPointsPass
+- support for Python up to and including 3.6
 
 ### Fixed
 - pass dec.Instructions
