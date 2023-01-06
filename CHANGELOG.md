@@ -14,6 +14,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 -
 
 
+## [ 0.11.1 ] - [ 2023-01-06 ]
+### Added
+- Option to enable/disable debug symbols, enabled by default
+
+### Changed
+-
+
+### Removed
+- Debug symbols in Python wheels, because of size limitation on PyPI
+
+
 ## [ 0.11.0 ] - [ 2023-01-06 ]
 ### Added
 - CC backend:
