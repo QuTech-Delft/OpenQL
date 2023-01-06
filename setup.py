@@ -116,6 +116,9 @@ class build_ext(_build_ext):
 
                 # Build type can be set using an environment variable.
                 ['-DCMAKE_BUILD_TYPE=' + build_type]
+
+                # Do not include debug symbols in the wheels.
+                ['-DOPENQL_DEBUG_SYMBOLS=OFF']
             )
 
             # If we're on Windows, we're probably building with MSVC. In that

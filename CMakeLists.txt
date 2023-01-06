@@ -108,6 +108,14 @@ option(
     ${OPENQL_CHECKED_STL}
 )
 
+# Make it possible to disable inclusion of debug symbols, in particular for PyPI wheels,
+# since there is a size limit of 100MB.
+option(
+    OPENQL_DEBUG_SYMBOLS
+    "Whether debug or release binaries should include debug symbols (it makes binaries a lot larger)."
+    ON
+)
+
 
 #=============================================================================#
 # CMake weirdness and compatibility                                           #
@@ -364,9 +372,9 @@ target_include_directories(ql
 # Configure compilation.
 set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(ql PRIVATE -Wall -Wfatal-errors -ggdb)
+    target_compile_options(ql PRIVATE -Wall -Wfatal-errors)
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    target_compile_options(ql PRIVATE -Wall -Wfatal-errors -ggdb -Wno-unused-local-typedef)
+    target_compile_options(ql PRIVATE -Wall -Wfatal-errors -Wno-unused-local-typedef)
 elseif(MSVC)
     target_compile_options(ql PRIVATE /MP /D_USE_MATH_DEFINES /EHsc /bigobj)
 else()
@@ -376,6 +384,11 @@ endif()
 # Enable optimizations only for release builds.
 if(NOT MSVC AND "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     target_compile_options(ql PRIVATE -O3)
+endif()
+
+# Add debug information only for debug builds.
+if(NOT MSVC AND OPENQL_DEBUG_SYMBOLS)
+    target_compile_options(ql PRIVATE -ggdb)
 endif()
 
 # Use a mock version of unitary.cc if WITH_UNITARY_DECOMPOSITION is false.
