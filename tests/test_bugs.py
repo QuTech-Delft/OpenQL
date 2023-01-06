@@ -28,7 +28,7 @@ class Test_bugs(unittest.TestCase):
 
         qubit = 1
 
-        k.identity(np.int(qubit))
+        k.identity(int(qubit))
         k.identity(np.int32(qubit))
         k.identity(np.int64(qubit))
 
