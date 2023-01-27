@@ -1,0 +1,542 @@
+Created by PLY (http://www.dabeaz.com/ply)
+
+Unused terminals:
+
+    BREAK
+    COND
+    CONTINUE
+    ELSE
+    FOR
+    IF
+    OPERATOR
+    SET
+    THEN
+    VAR
+    WHILE
+
+Grammar
+
+Rule 0     S' -> Program
+Rule 1     Program -> OptNewline VERSION Newline QUBITS Newline StatementList OptNewline
+Rule 2     Newline -> Newline NEWLINE
+Rule 3     Newline -> NEWLINE
+Rule 4     OptNewline -> Newline
+Rule 5     OptNewline -> Empty
+Rule 6     Empty -> <empty>
+Rule 7     StatementList -> StatementList Newline Statement
+Rule 8     StatementList -> Statement
+Rule 9     Statement -> Subcircuit
+Rule 10    Statement -> Map
+Rule 11    Statement -> Gate
+Rule 12    Subcircuit -> . IDENTIFIER
+Rule 13    Subcircuit -> . IDENTIFIER ( INT_LITERAL )
+Rule 14    Argument -> Q [ INT_LITERAL : INT_LITERAL ]
+Rule 15    Argument -> Q [ INT_LITERAL ]
+Rule 16    Argument -> INT_LITERAL
+Rule 17    Argument -> FLOAT_LITERAL
+Rule 18    Argument -> IDENTIFIER
+Rule 19    GateApplication -> GateApplication , Argument
+Rule 20    GateApplication -> IDENTIFIER Argument
+Rule 21    Gate -> GateApplication
+Rule 22    Map -> MAP Q [ INT_LITERAL ] , IDENTIFIER
+
+Terminals, with rules where they appear
+
+(                    : 13
+)                    : 13
+,                    : 19 22
+.                    : 12 13
+:                    : 14
+BREAK                : 
+COND                 : 
+CONTINUE             : 
+ELSE                 : 
+FLOAT_LITERAL        : 17
+FOR                  : 
+IDENTIFIER           : 12 13 18 20 22
+IF                   : 
+INT_LITERAL          : 13 14 14 15 16 22
+MAP                  : 22
+NEWLINE              : 2 3
+OPERATOR             : 
+Q                    : 14 15 22
+QUBITS               : 1
+SET                  : 
+THEN                 : 
+VAR                  : 
+VERSION              : 1
+WHILE                : 
+[                    : 14 15 22
+]                    : 14 15 22
+error                : 
+
+Nonterminals, with rules where they appear
+
+Argument             : 19 20
+Empty                : 5
+Gate                 : 11
+GateApplication      : 19 21
+Map                  : 10
+Newline              : 1 1 2 4 7
+OptNewline           : 1 1
+Program              : 0
+Statement            : 7 8
+StatementList        : 1 7
+Subcircuit           : 9
+
+
+state 0
+
+    (0) S' -> . Program
+    (1) Program -> . OptNewline VERSION Newline QUBITS Newline StatementList OptNewline
+    (4) OptNewline -> . Newline
+    (5) OptNewline -> . Empty
+    (2) Newline -> . Newline NEWLINE
+    (3) Newline -> . NEWLINE
+    (6) Empty -> .
+
+    NEWLINE         shift and go to state 5
+    VERSION         reduce using rule 6 (Empty -> .)
+
+    Program                        shift and go to state 1
+    OptNewline                     shift and go to state 2
+    Newline                        shift and go to state 3
+    Empty                          shift and go to state 4
+
+state 1
+
+    (0) S' -> Program .
+
+
+
+state 2
+
+    (1) Program -> OptNewline . VERSION Newline QUBITS Newline StatementList OptNewline
+
+    VERSION         shift and go to state 6
+
+
+state 3
+
+    (4) OptNewline -> Newline .
+    (2) Newline -> Newline . NEWLINE
+
+    VERSION         reduce using rule 4 (OptNewline -> Newline .)
+    NEWLINE         shift and go to state 7
+
+
+state 4
+
+    (5) OptNewline -> Empty .
+
+    VERSION         reduce using rule 5 (OptNewline -> Empty .)
+    $end            reduce using rule 5 (OptNewline -> Empty .)
+
+
+state 5
+
+    (3) Newline -> NEWLINE .
+
+    NEWLINE         reduce using rule 3 (Newline -> NEWLINE .)
+    VERSION         reduce using rule 3 (Newline -> NEWLINE .)
+    QUBITS          reduce using rule 3 (Newline -> NEWLINE .)
+    .               reduce using rule 3 (Newline -> NEWLINE .)
+    MAP             reduce using rule 3 (Newline -> NEWLINE .)
+    IDENTIFIER      reduce using rule 3 (Newline -> NEWLINE .)
+    $end            reduce using rule 3 (Newline -> NEWLINE .)
+
+
+state 6
+
+    (1) Program -> OptNewline VERSION . Newline QUBITS Newline StatementList OptNewline
+    (2) Newline -> . Newline NEWLINE
+    (3) Newline -> . NEWLINE
+
+    NEWLINE         shift and go to state 5
+
+    Newline                        shift and go to state 8
+
+state 7
+
+    (2) Newline -> Newline NEWLINE .
+
+    NEWLINE         reduce using rule 2 (Newline -> Newline NEWLINE .)
+    VERSION         reduce using rule 2 (Newline -> Newline NEWLINE .)
+    QUBITS          reduce using rule 2 (Newline -> Newline NEWLINE .)
+    .               reduce using rule 2 (Newline -> Newline NEWLINE .)
+    MAP             reduce using rule 2 (Newline -> Newline NEWLINE .)
+    IDENTIFIER      reduce using rule 2 (Newline -> Newline NEWLINE .)
+    $end            reduce using rule 2 (Newline -> Newline NEWLINE .)
+
+
+state 8
+
+    (1) Program -> OptNewline VERSION Newline . QUBITS Newline StatementList OptNewline
+    (2) Newline -> Newline . NEWLINE
+
+    QUBITS          shift and go to state 9
+    NEWLINE         shift and go to state 7
+
+
+state 9
+
+    (1) Program -> OptNewline VERSION Newline QUBITS . Newline StatementList OptNewline
+    (2) Newline -> . Newline NEWLINE
+    (3) Newline -> . NEWLINE
+
+    NEWLINE         shift and go to state 5
+
+    Newline                        shift and go to state 10
+
+state 10
+
+    (1) Program -> OptNewline VERSION Newline QUBITS Newline . StatementList OptNewline
+    (2) Newline -> Newline . NEWLINE
+    (7) StatementList -> . StatementList Newline Statement
+    (8) StatementList -> . Statement
+    (9) Statement -> . Subcircuit
+    (10) Statement -> . Map
+    (11) Statement -> . Gate
+    (12) Subcircuit -> . . IDENTIFIER
+    (13) Subcircuit -> . . IDENTIFIER ( INT_LITERAL )
+    (22) Map -> . MAP Q [ INT_LITERAL ] , IDENTIFIER
+    (21) Gate -> . GateApplication
+    (19) GateApplication -> . GateApplication , Argument
+    (20) GateApplication -> . IDENTIFIER Argument
+
+    NEWLINE         shift and go to state 7
+    .               shift and go to state 16
+    MAP             shift and go to state 18
+    IDENTIFIER      shift and go to state 17
+
+    StatementList                  shift and go to state 11
+    Statement                      shift and go to state 12
+    Subcircuit                     shift and go to state 13
+    Map                            shift and go to state 14
+    Gate                           shift and go to state 15
+    GateApplication                shift and go to state 19
+
+state 11
+
+    (1) Program -> OptNewline VERSION Newline QUBITS Newline StatementList . OptNewline
+    (7) StatementList -> StatementList . Newline Statement
+    (4) OptNewline -> . Newline
+    (5) OptNewline -> . Empty
+    (2) Newline -> . Newline NEWLINE
+    (3) Newline -> . NEWLINE
+    (6) Empty -> .
+
+    NEWLINE         shift and go to state 5
+    $end            reduce using rule 6 (Empty -> .)
+
+    OptNewline                     shift and go to state 20
+    Newline                        shift and go to state 21
+    Empty                          shift and go to state 4
+
+state 12
+
+    (8) StatementList -> Statement .
+
+    NEWLINE         reduce using rule 8 (StatementList -> Statement .)
+    $end            reduce using rule 8 (StatementList -> Statement .)
+
+
+state 13
+
+    (9) Statement -> Subcircuit .
+
+    NEWLINE         reduce using rule 9 (Statement -> Subcircuit .)
+    $end            reduce using rule 9 (Statement -> Subcircuit .)
+
+
+state 14
+
+    (10) Statement -> Map .
+
+    NEWLINE         reduce using rule 10 (Statement -> Map .)
+    $end            reduce using rule 10 (Statement -> Map .)
+
+
+state 15
+
+    (11) Statement -> Gate .
+
+    NEWLINE         reduce using rule 11 (Statement -> Gate .)
+    $end            reduce using rule 11 (Statement -> Gate .)
+
+
+state 16
+
+    (12) Subcircuit -> . . IDENTIFIER
+    (13) Subcircuit -> . . IDENTIFIER ( INT_LITERAL )
+
+    IDENTIFIER      shift and go to state 22
+
+
+state 17
+
+    (20) GateApplication -> IDENTIFIER . Argument
+    (14) Argument -> . Q [ INT_LITERAL : INT_LITERAL ]
+    (15) Argument -> . Q [ INT_LITERAL ]
+    (16) Argument -> . INT_LITERAL
+    (17) Argument -> . FLOAT_LITERAL
+    (18) Argument -> . IDENTIFIER
+
+    Q               shift and go to state 25
+    INT_LITERAL     shift and go to state 26
+    FLOAT_LITERAL   shift and go to state 27
+    IDENTIFIER      shift and go to state 23
+
+    Argument                       shift and go to state 24
+
+state 18
+
+    (22) Map -> MAP . Q [ INT_LITERAL ] , IDENTIFIER
+
+    Q               shift and go to state 28
+
+
+state 19
+
+    (21) Gate -> GateApplication .
+    (19) GateApplication -> GateApplication . , Argument
+
+    NEWLINE         reduce using rule 21 (Gate -> GateApplication .)
+    $end            reduce using rule 21 (Gate -> GateApplication .)
+    ,               shift and go to state 29
+
+
+state 20
+
+    (1) Program -> OptNewline VERSION Newline QUBITS Newline StatementList OptNewline .
+
+    $end            reduce using rule 1 (Program -> OptNewline VERSION Newline QUBITS Newline StatementList OptNewline .)
+
+
+state 21
+
+    (7) StatementList -> StatementList Newline . Statement
+    (4) OptNewline -> Newline .
+    (2) Newline -> Newline . NEWLINE
+    (9) Statement -> . Subcircuit
+    (10) Statement -> . Map
+    (11) Statement -> . Gate
+    (12) Subcircuit -> . . IDENTIFIER
+    (13) Subcircuit -> . . IDENTIFIER ( INT_LITERAL )
+    (22) Map -> . MAP Q [ INT_LITERAL ] , IDENTIFIER
+    (21) Gate -> . GateApplication
+    (19) GateApplication -> . GateApplication , Argument
+    (20) GateApplication -> . IDENTIFIER Argument
+
+    $end            reduce using rule 4 (OptNewline -> Newline .)
+    NEWLINE         shift and go to state 7
+    .               shift and go to state 16
+    MAP             shift and go to state 18
+    IDENTIFIER      shift and go to state 17
+
+    Statement                      shift and go to state 30
+    Subcircuit                     shift and go to state 13
+    Map                            shift and go to state 14
+    Gate                           shift and go to state 15
+    GateApplication                shift and go to state 19
+
+state 22
+
+    (12) Subcircuit -> . IDENTIFIER .
+    (13) Subcircuit -> . IDENTIFIER . ( INT_LITERAL )
+
+    NEWLINE         reduce using rule 12 (Subcircuit -> . IDENTIFIER .)
+    $end            reduce using rule 12 (Subcircuit -> . IDENTIFIER .)
+    (               shift and go to state 31
+
+
+state 23
+
+    (18) Argument -> IDENTIFIER .
+
+    ,               reduce using rule 18 (Argument -> IDENTIFIER .)
+    NEWLINE         reduce using rule 18 (Argument -> IDENTIFIER .)
+    $end            reduce using rule 18 (Argument -> IDENTIFIER .)
+
+
+state 24
+
+    (20) GateApplication -> IDENTIFIER Argument .
+
+    ,               reduce using rule 20 (GateApplication -> IDENTIFIER Argument .)
+    NEWLINE         reduce using rule 20 (GateApplication -> IDENTIFIER Argument .)
+    $end            reduce using rule 20 (GateApplication -> IDENTIFIER Argument .)
+
+
+state 25
+
+    (14) Argument -> Q . [ INT_LITERAL : INT_LITERAL ]
+    (15) Argument -> Q . [ INT_LITERAL ]
+
+    [               shift and go to state 32
+
+
+state 26
+
+    (16) Argument -> INT_LITERAL .
+
+    ,               reduce using rule 16 (Argument -> INT_LITERAL .)
+    NEWLINE         reduce using rule 16 (Argument -> INT_LITERAL .)
+    $end            reduce using rule 16 (Argument -> INT_LITERAL .)
+
+
+state 27
+
+    (17) Argument -> FLOAT_LITERAL .
+
+    ,               reduce using rule 17 (Argument -> FLOAT_LITERAL .)
+    NEWLINE         reduce using rule 17 (Argument -> FLOAT_LITERAL .)
+    $end            reduce using rule 17 (Argument -> FLOAT_LITERAL .)
+
+
+state 28
+
+    (22) Map -> MAP Q . [ INT_LITERAL ] , IDENTIFIER
+
+    [               shift and go to state 33
+
+
+state 29
+
+    (19) GateApplication -> GateApplication , . Argument
+    (14) Argument -> . Q [ INT_LITERAL : INT_LITERAL ]
+    (15) Argument -> . Q [ INT_LITERAL ]
+    (16) Argument -> . INT_LITERAL
+    (17) Argument -> . FLOAT_LITERAL
+    (18) Argument -> . IDENTIFIER
+
+    Q               shift and go to state 25
+    INT_LITERAL     shift and go to state 26
+    FLOAT_LITERAL   shift and go to state 27
+    IDENTIFIER      shift and go to state 23
+
+    Argument                       shift and go to state 34
+
+state 30
+
+    (7) StatementList -> StatementList Newline Statement .
+
+    NEWLINE         reduce using rule 7 (StatementList -> StatementList Newline Statement .)
+    $end            reduce using rule 7 (StatementList -> StatementList Newline Statement .)
+
+
+state 31
+
+    (13) Subcircuit -> . IDENTIFIER ( . INT_LITERAL )
+
+    INT_LITERAL     shift and go to state 35
+
+
+state 32
+
+    (14) Argument -> Q [ . INT_LITERAL : INT_LITERAL ]
+    (15) Argument -> Q [ . INT_LITERAL ]
+
+    INT_LITERAL     shift and go to state 36
+
+
+state 33
+
+    (22) Map -> MAP Q [ . INT_LITERAL ] , IDENTIFIER
+
+    INT_LITERAL     shift and go to state 37
+
+
+state 34
+
+    (19) GateApplication -> GateApplication , Argument .
+
+    ,               reduce using rule 19 (GateApplication -> GateApplication , Argument .)
+    NEWLINE         reduce using rule 19 (GateApplication -> GateApplication , Argument .)
+    $end            reduce using rule 19 (GateApplication -> GateApplication , Argument .)
+
+
+state 35
+
+    (13) Subcircuit -> . IDENTIFIER ( INT_LITERAL . )
+
+    )               shift and go to state 38
+
+
+state 36
+
+    (14) Argument -> Q [ INT_LITERAL . : INT_LITERAL ]
+    (15) Argument -> Q [ INT_LITERAL . ]
+
+    :               shift and go to state 39
+    ]               shift and go to state 40
+
+
+state 37
+
+    (22) Map -> MAP Q [ INT_LITERAL . ] , IDENTIFIER
+
+    ]               shift and go to state 41
+
+
+state 38
+
+    (13) Subcircuit -> . IDENTIFIER ( INT_LITERAL ) .
+
+    NEWLINE         reduce using rule 13 (Subcircuit -> . IDENTIFIER ( INT_LITERAL ) .)
+    $end            reduce using rule 13 (Subcircuit -> . IDENTIFIER ( INT_LITERAL ) .)
+
+
+state 39
+
+    (14) Argument -> Q [ INT_LITERAL : . INT_LITERAL ]
+
+    INT_LITERAL     shift and go to state 42
+
+
+state 40
+
+    (15) Argument -> Q [ INT_LITERAL ] .
+
+    ,               reduce using rule 15 (Argument -> Q [ INT_LITERAL ] .)
+    NEWLINE         reduce using rule 15 (Argument -> Q [ INT_LITERAL ] .)
+    $end            reduce using rule 15 (Argument -> Q [ INT_LITERAL ] .)
+
+
+state 41
+
+    (22) Map -> MAP Q [ INT_LITERAL ] . , IDENTIFIER
+
+    ,               shift and go to state 43
+
+
+state 42
+
+    (14) Argument -> Q [ INT_LITERAL : INT_LITERAL . ]
+
+    ]               shift and go to state 44
+
+
+state 43
+
+    (22) Map -> MAP Q [ INT_LITERAL ] , . IDENTIFIER
+
+    IDENTIFIER      shift and go to state 45
+
+
+state 44
+
+    (14) Argument -> Q [ INT_LITERAL : INT_LITERAL ] .
+
+    ,               reduce using rule 14 (Argument -> Q [ INT_LITERAL : INT_LITERAL ] .)
+    NEWLINE         reduce using rule 14 (Argument -> Q [ INT_LITERAL : INT_LITERAL ] .)
+    $end            reduce using rule 14 (Argument -> Q [ INT_LITERAL : INT_LITERAL ] .)
+
+
+state 45
+
+    (22) Map -> MAP Q [ INT_LITERAL ] , IDENTIFIER .
+
+    NEWLINE         reduce using rule 22 (Map -> MAP Q [ INT_LITERAL ] , IDENTIFIER .)
+    $end            reduce using rule 22 (Map -> MAP Q [ INT_LITERAL ] , IDENTIFIER .)
+
