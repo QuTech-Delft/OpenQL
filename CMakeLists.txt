@@ -532,6 +532,7 @@ if(OPENQL_BUILD_TESTS)
     add_subdirectory(deps/doctest)
     
     # Include the directories containing integration tests.
+    add_subdirectory(test)
     add_subdirectory(tests)
     add_subdirectory(examples)
 
