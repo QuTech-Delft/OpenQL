@@ -7,10 +7,13 @@
 #include "ql/utils/str.h"
 #include "ql/ir/ir.h"
 #include "ql/ir/compat/compat.h"
+#include "cqasm.hpp"
 
 namespace ql {
 namespace ir {
 namespace cqasm {
+
+namespace cq = ::cqasm::v1;
 
 /**
  * Defines how scheduling information in the incoming cQASM file is interpreted.
@@ -76,6 +79,8 @@ struct ReadOptions {
     utils::Bool load_platform = false;
 
 };
+
+cq::parser::ParseResult parse(const utils::Str &data, const utils::Str &fname);
 
 /**
  * Reads a cQASM 1.2 file into the IR. If reading is successful, ir->program is

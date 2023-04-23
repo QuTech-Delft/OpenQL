@@ -1113,6 +1113,20 @@ static ir::compat::PlatformRef load_platform(const cq::parser::ParseResult &pres
     return plat;
 }
 
+cq::parser::ParseResult parse(const utils::Str &data, const utils::Str &fname) {
+    auto pres = cq::parser::parse_string(data, fname);
+    if (!pres.errors.empty()) {
+        utils::StrStrm errors;
+        errors << "failed to parse " << fname << " for the following reasons:";
+        for (const auto &error : pres.errors) {
+            QL_EOUT(error);
+            errors << "\n  " << error;
+        }
+        QL_USER_ERROR(errors.str());
+    }
+    return pres;
+}
+
 /**
  * Reads a cQASM 1.2 file into the IR. If reading is successful, ir->program is
  * completely replaced. data represents the cQASM file contents, fname specifies
@@ -1127,16 +1141,7 @@ void read(
 ) {
 
     // Start by parsing the file without analysis.
-    auto pres = cq::parser::parse_string(data, fname);
-    if (!pres.errors.empty()) {
-        utils::StrStrm errors;
-        errors << "failed to parse " << fname << " for the following reasons:";
-        for (const auto &error : pres.errors) {
-            QL_EOUT(error);
-            errors << "\n  " << error;
-        }
-        QL_USER_ERROR(errors.str());
-    }
+    auto pres = parse(data, fname);
 
     // If the load_platform option was passed to us, look for the
     // `pragma @ql.platform(...)` annotation in the AST and build the platform
