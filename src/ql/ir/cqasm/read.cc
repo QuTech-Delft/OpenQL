@@ -11,6 +11,7 @@
 #include "ql/ir/old_to_new.h"
 #include "ql/com/ddg/build.h"
 #include "cqasm.hpp"
+#include "cqasm-version.hpp"
 
 namespace ql {
 namespace ir {
@@ -22,6 +23,7 @@ namespace cqty = ::cqasm::v1::types;
 namespace cqs = ::cqasm::semantic;
 namespace cqt = ::cqasm::tree;
 namespace cqe = ::cqasm::error;
+namespace cqver = ::cqasm::version;
 
 /**
  * Marker used on cQASM nodes when they have been successfully used by
@@ -1113,27 +1115,13 @@ static ir::compat::PlatformRef load_platform(const cq::parser::ParseResult &pres
     return plat;
 }
 
-cq::parser::ParseResult parse(const utils::Str &data, const utils::Str &fname) {
-    auto pres = cq::parser::parse_string(data, fname);
-    if (!pres.errors.empty()) {
-        utils::StrStrm errors;
-        errors << "failed to parse " << fname << " for the following reasons:";
-        for (const auto &error : pres.errors) {
-            QL_EOUT(error);
-            errors << "\n  " << error;
-        }
-        QL_USER_ERROR(errors.str());
-    }
-    return pres;
-}
-
 /**
  * Reads a cQASM 1.2 file into the IR. If reading is successful, ir->program is
  * completely replaced. data represents the cQASM file contents, fname specifies
  * the filename if one exists for the purpose of generating better error
  * messages.
  */
-void read(
+void read_v1(
     const Ref &ir,
     const utils::Str &data,
     const utils::Str &fname,
@@ -1141,7 +1129,16 @@ void read(
 ) {
 
     // Start by parsing the file without analysis.
-    auto pres = parse(data, fname);
+    auto pres = cq::parser::parse_string(data, fname);
+    if (!pres.errors.empty()) {
+        utils::StrStrm errors;
+        errors << "failed to parse '" << data << "' for the following reasons:";
+        for (const auto &error : pres.errors) {
+            QL_EOUT(error);
+            errors << "\n  " << error;
+        }
+        QL_USER_ERROR(errors.str());
+    }
 
     // If the load_platform option was passed to us, look for the
     // `pragma @ql.platform(...)` annotation in the AST and build the platform
@@ -1284,7 +1281,7 @@ void read(
     auto res = a.analyze(pres);
     if (!res.errors.empty()) {
         utils::StrStrm errors;
-        errors << "failed to analyze " << fname << " for the following reasons:";
+        errors << "failed to analyze '" << data << "' for the following reasons:";
         for (const auto &error : res.errors) {
             QL_EOUT(error);
             errors << "\n  " << error;
@@ -1517,6 +1514,37 @@ void read(
         check_consistency(ir);
     }
 
+}
+
+void read_v3(
+    const Ref &ir,
+    const utils::Str &data,
+    const utils::Str &fname,
+    const ReadOptions &options
+) {
+    auto ql_program = utils::make<Program>();
+    ql_program->name = "program";
+    ir->program = ql_program;
+}
+
+/**
+ * Reads a cQASM file into the IR.
+ * If reading is successful, ir->program is completely replaced.
+ * data represents the cQASM file contents,
+ * fname specifies the filename if one exists for the purpose of generating better error messages.
+ */
+void read(
+    const Ref &ir,
+    const utils::Str &data,
+    const utils::Str &fname,
+    const ReadOptions &options
+) {
+    auto pres = cqver::parse_string(data, fname);
+    if (auto version = cqver::parse_string(data, fname); version <= cqver::Version("1.2")) {
+        read_v1(ir, data, fname, options);
+    } else {
+        read_v3(ir, data, fname, options);
+    }
 }
 
 /**

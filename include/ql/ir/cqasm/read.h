@@ -13,8 +13,6 @@ namespace ql {
 namespace ir {
 namespace cqasm {
 
-namespace cq = ::cqasm::v1;
-
 /**
  * Defines how scheduling information in the incoming cQASM file is interpreted.
  */
@@ -80,14 +78,26 @@ struct ReadOptions {
 
 };
 
-cq::parser::ParseResult parse(const utils::Str &data, const utils::Str &fname);
-
 /**
  * Reads a cQASM 1.2 file into the IR. If reading is successful, ir->program is
  * completely replaced. data represents the cQASM file contents, fname specifies
  * the filename if one exists for the purpose of generating better error
  * messages.
  */
+void read_v1(
+    const Ref &ir,
+    const utils::Str &data,
+    const utils::Str &fname = "<unknown>",
+    const ReadOptions &options = {}
+);
+
+void read_v3(
+    const Ref &ir,
+    const utils::Str &data,
+    const utils::Str &fname = "<unknown>",
+    const ReadOptions &options = {}
+);
+
 void read(
     const Ref &ir,
     const utils::Str &data,
