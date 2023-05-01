@@ -554,13 +554,19 @@ Bool Mapper::map_mappable_gates(
                 UInt src = past.get_real_qubit(q[0]);
                 UInt tgt = past.get_real_qubit(q[1]);
 
-                // Find minimum number of hops between real counterparts.
-                UInt d = platform->topology->get_min_hops(src, tgt);
+                auto are_nearest_neighbors = [this](UInt src, UInt tgt) {
+                    return (platform->topology->get_min_hops(src, tgt) == 1);
+                };
+                auto are_comm_qubits = [this](UInt src, UInt tgt) {
+                    return platform->topology->is_comm_qubit(src) && platform->topology->is_comm_qubit(tgt);
+                };
+                auto are_in_different_cores = [this](UInt src, UInt tgt) {
+                    return platform->topology->get_core_index(src) != platform->topology->get_core_index(tgt);
+                };
 
-                if (d == 1) {
+                if (are_nearest_neighbors(src, tgt) &&
+                    !(are_comm_qubits(src, tgt) && are_in_different_cores(src, tgt))) {
 
-                    // Just one hop, so gate is already nearest-neighbor and can
-                    // be mapped.
                     QL_DOUT(". NN gate, to be mapped: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ")");
                     map_routed_gate(gate, past);
                     QL_DOUT(". NN gate, to be set to completed: " << gate->qasm() );
