@@ -132,6 +132,11 @@ private:
     utils::UInt num_cores;
 
     /**
+     * The total number of qubits per core.
+     */
+    utils::UInt num_qubits_per_core;
+
+    /**
      * Number of communication qubits per core. The first num_comm_qubits qubits
      * associated with each core is considered to be a communication qubit.
      */

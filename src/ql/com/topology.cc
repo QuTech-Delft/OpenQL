@@ -314,10 +314,13 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
         throw utils::Exception("number of qubits is not divisible by topology.number_of_cores");
     }
 
+    // Set number of qubits per core.
+    num_qubits_per_core = num_qubits / num_cores;
+
     // Handle number of communication qubits per core.
     it = topology.find("comm_qubits_per_core");
     if (it == topology.end()) {
-        num_comm_qubits = num_qubits / num_cores;
+        num_comm_qubits = num_qubits_per_core;
     } else if (it->type() != JsonType::number_unsigned) {
         throw utils::Exception("topology.comm_qubits_per_core key must be an unsigned integer if specified");
     } else {
@@ -325,7 +328,7 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
     }
     if (num_comm_qubits < 1) {
         throw utils::Exception("topology.comm_qubits_per_core must be a positive integer");
-    } else if (num_comm_qubits > num_qubits / num_cores) {
+    } else if (num_comm_qubits > num_qubits_per_core) {
         throw utils::Exception("topology.comm_qubits_per_core is larger than total number of qubits per core");
     }
 
@@ -641,8 +644,7 @@ utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
 utils::UInt Topology::get_core_index(Qubit qubit) const {
     if (num_cores == 1) return 0;
     QL_ASSERT(connectivity == GridConnectivity::FULL);
-    utils::UInt nqpc = num_qubits / num_cores;
-    return qubit / nqpc;
+    return qubit / num_qubits_per_core;
 }
 
 /**
