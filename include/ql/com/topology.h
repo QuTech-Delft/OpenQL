@@ -127,7 +127,7 @@ private:
 
     /**
      * The number of quantum cores. If greater than 1, each core is assumed to
-     * have the same number of qubits, being num_qubits/num_cores.
+     * have the same number of qubits, being num_qubits_per_core == num_qubits/num_cores.
      */
     utils::UInt num_cores;
 
@@ -210,6 +210,11 @@ public:
      * Returns the number of qubits for this topology.
      */
     utils::UInt get_num_qubits() const;
+
+    /**
+     * Returns the number of qubits per core for this topology.
+     */
+    utils::UInt get_num_qubits_per_core() const;
 
     /**
      * Returns the JSON that was used to construct this topology. This is used
