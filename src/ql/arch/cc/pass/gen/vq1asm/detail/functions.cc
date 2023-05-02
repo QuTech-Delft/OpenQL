@@ -67,7 +67,7 @@ void Functions::dispatch(const ir::FunctionCall *fn, const Str &label_if_false, 
 
 
 UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
-    if(bregs.size() != expOpCnt) {
+    if(static_cast<Int>(bregs.size()) != expOpCnt) {
         QL_ICE("Expected " << expOpCnt << " breg operands, got " << bregs.size());
     }
 
@@ -75,7 +75,7 @@ UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
     UInt smAddr = 0;
     UInt mask = 0;      // mask for used SM bits in 32 bit word transferred using move_sm
     Str descr;
-    for (Int i=0; i<bregs.size(); i++) {
+    for (UInt i=0; i<bregs.size(); i++) {
         auto breg = bregs[i];
         if(breg >= NUM_BREGS) {
             QL_INPUT_ERROR("bit register index " << breg << " exceeds maximum of " << NUM_BREGS-1);   // FIXME: cleanup "breg" vs. "bit register index"
@@ -87,7 +87,7 @@ UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
 
         // compute and check SM address
         UInt mySmAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
-        if(i==0) {
+        if(i == 0u) {
             smAddr = mySmAddr;
         } else {
             if(smAddr != mySmAddr) {
@@ -145,7 +145,10 @@ void Functions::op_linv_B(const FncArgs &a) {
 
 void Functions::op_grp_bit_2op_BB(const FncArgs &a) {
     // transfer 2 bregs to REG_TMP0
-    UInt mask = emit_bin_cast(a.ops.bregs, 2);
+#if 0
+    UInt mask =
+#endif
+    emit_bin_cast(a.ops.bregs, 2);
 
 #if 0    // FIXME: handle operation properly, this is just copy/paste from op_linv
     cs.emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
