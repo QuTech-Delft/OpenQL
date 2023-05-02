@@ -127,12 +127,12 @@ private:
 
     /**
      * The number of quantum cores. If greater than 1, each core is assumed to
-     * have the same number of qubits, being num_qubits/num_cores.
+     * have the same number of qubits, being num_qubits_per_core == num_qubits/num_cores.
      */
     utils::UInt num_cores;
 
     /**
-     * The total number of qubits per core.
+     * The number of qubits per core.
      */
     utils::UInt num_qubits_per_core;
 
@@ -212,6 +212,11 @@ public:
     utils::UInt get_num_qubits() const;
 
     /**
+     * Returns the number of qubits per core for this topology.
+     */
+    utils::UInt get_num_qubits_per_core() const;
+
+    /**
      * Returns the JSON that was used to construct this topology. This is used
      * for serialization/deserialization of the IR.
      */
@@ -287,22 +292,41 @@ public:
     utils::UInt get_core_distance(Qubit source, Qubit target) const;
 
     /**
-     * Minimum number of hops between two qubits is always >= distance(from, to).
+     * Minimum number of hops between two qubits for single-core and multi-core
+     * is the minimum number of qubit-to-qubit connections that is needed in a path of connections
+     * between physical qubits that are the operands of a 2q gate,
+     * so that each connection can either host
+     * a swap, a move gate, an inter-core-swap gate, an inter-core-move gate or the mapped 2q gate.
+     *
+     * The inter-core connections are only between communication qubits,
+     * and this connection cannot host a 2q gate, only move or swap qubits;
+     * all intra-core connections can host a 2q gate.
+     * Furthermore, it is assumed that for multi-core: inside a core all qubits are connected,
+     * and between cores, each communication qubit is connected to each other communication qubit.
+     * For single-core routing/mapping, there is no a-priori constraint on the qubit connectivity,
+     * except for those specified explicitly in the topology specification in the configuration file.
+     *
+     * The implementation below is based on a case analysis of the constraints above.
+     *
+     * The minimum number of hops is always >= distance(from, to).
      *
      * Inside one core, minimum number of hops == distance.
      *
-     * In multi-core, minimum number of hops >= distance + 1.
-     * An inter-core hop cannot execute a 2q gate, so
+     * Between qubits in different cores, the minimum number of hops >= distance + 1.
+     * This is because an inter-core hop cannot execute a 2q gate, so
      * when the minimum number of hops are all inter-core hops (i.e. distance == core_distance),
-     * and no 2q gate has been placed yet,
-     * then at least one additional inter-core hop is needed for the 2q gate
-     * (e.g. from the last comm qubit to the core where the target is).
+     * and no 2q gate has been placed yet, then at least one additional intra-core hop is needed for the 2q gate.
      *
-     * In multi-core, if there is not a valid path between source and target, minimum number of hops == distance + 2.
-     * When the minimum number of hops are all inter-core hops (i.e. distance == core_distance), but
-     * whether the source or the target are not communication qubits,
-     * then at least one additional in-core hop is needed
-     * (e.g. from the source qubit to a comm qubit in the same core).
+     * But one additional hop is not sufficient in the special case when both source and target are communication qubits,
+     * and they are the only communication qubits in each core.
+     * The only option there is adding two hops in one of the cores:
+     * one to just another qubit and one back to the single communication qubit.
+     *
+     * Notice that:
+     * - When there is only one communication qubit per core, and whether source or target are normal qubits,
+     *   then the hop between the normal qubit and the communication qubit in its core can host the 2q gate.
+     * - And when the number of communication qubits per core is at least 2, and both operands are communication qubits,
+     *   then a hop between one of the operands and another communication qubit in its core can host the 2q gate.
      */
     utils::UInt get_min_hops(Qubit source, Qubit target) const;
 

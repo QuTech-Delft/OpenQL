@@ -314,8 +314,8 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
         throw utils::Exception("number of qubits is not divisible by topology.number_of_cores");
     }
 
-    // Set number of qubits per core.
     num_qubits_per_core = num_qubits / num_cores;
+    QL_ASSERT(num_qubits == num_cores * num_qubits_per_core);
 
     // Handle number of communication qubits per core.
     it = topology.find("comm_qubits_per_core");
@@ -527,6 +527,13 @@ utils::UInt Topology::get_num_qubits() const {
 }
 
 /**
+ * Returns the number of qubits per core for this topology.
+ */
+utils::UInt Topology::get_num_qubits_per_core() const {
+    return num_qubits_per_core;
+}
+
+/**
  * Returns the JSON that was used to construct this topology. This is used
  * for serialization/deserialization of the IR.
  */
@@ -634,10 +641,12 @@ utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
     QL_ASSERT(connectivity == GridConnectivity::FULL);
 
     // Compute index of qubit local to core.
-    utils::UInt qci = qubit % num_cores;
+    utils::UInt qubit_local_index = qubit % num_qubits_per_core;
+
+    QL_ASSERT(0 <= qubit_local_index && qubit_local_index < num_qubits_per_core);
 
     // 0..ncommqpc-1 are comm qubits, ncommqpc..nq/ncores-1 are not comm qubits.
-    return qci < num_comm_qubits;
+    return qubit_local_index < num_comm_qubits;
 }
 
 /**
@@ -703,7 +712,7 @@ utils::UInt Topology::get_core_distance(Qubit source, Qubit target) const {
  * between physical qubits that are the operands of a 2q gate,
  * so that each connection can either host
  * a swap, a move gate, an inter-core-swap gate, an inter-core-move gate or the mapped 2q gate.
- * 
+ *
  * The inter-core connections are only between communication qubits,
  * and this connection cannot host a 2q gate, only move or swap qubits;
  * all intra-core connections can host a 2q gate.
@@ -722,7 +731,7 @@ utils::UInt Topology::get_core_distance(Qubit source, Qubit target) const {
  * This is because an inter-core hop cannot execute a 2q gate, so
  * when the minimum number of hops are all inter-core hops (i.e. distance == core_distance),
  * and no 2q gate has been placed yet, then at least one additional intra-core hop is needed for the 2q gate.
- * 
+ *
  * But one additional hop is not sufficient in the special case when both source and target are communication qubits,
  * and they are the only communication qubits in each core.
  * The only option there is adding two hops in one of the cores:
