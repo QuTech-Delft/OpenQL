@@ -314,10 +314,13 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
         throw utils::Exception("number of qubits is not divisible by topology.number_of_cores");
     }
 
+    num_qubits_per_core = num_qubits / num_cores;
+    QL_ASSERT(num_qubits == num_cores * num_qubits_per_core);
+
     // Handle number of communication qubits per core.
     it = topology.find("comm_qubits_per_core");
     if (it == topology.end()) {
-        num_comm_qubits = num_qubits / num_cores;
+        num_comm_qubits = num_qubits_per_core;
     } else if (it->type() != JsonType::number_unsigned) {
         throw utils::Exception("topology.comm_qubits_per_core key must be an unsigned integer if specified");
     } else {
@@ -325,7 +328,7 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
     }
     if (num_comm_qubits < 1) {
         throw utils::Exception("topology.comm_qubits_per_core must be a positive integer");
-    } else if (num_comm_qubits > num_qubits / num_cores) {
+    } else if (num_comm_qubits > num_qubits_per_core) {
         throw utils::Exception("topology.comm_qubits_per_core is larger than total number of qubits per core");
     }
 
@@ -524,6 +527,13 @@ utils::UInt Topology::get_num_qubits() const {
 }
 
 /**
+ * Returns the number of qubits per core for this topology.
+ */
+utils::UInt Topology::get_num_qubits_per_core() const {
+    return num_qubits_per_core;
+}
+
+/**
  * Returns the JSON that was used to construct this topology. This is used
  * for serialization/deserialization of the IR.
  */
@@ -629,10 +639,12 @@ utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
     QL_ASSERT(connectivity == GridConnectivity::FULL);
 
     // Compute index of qubit local to core.
-    utils::UInt qci = qubit % num_cores;
+    utils::UInt qubit_local_index = qubit % num_qubits_per_core;
+
+    QL_ASSERT(0 <= qubit_local_index && qubit_local_index < num_qubits_per_core);
 
     // 0..ncommqpc-1 are comm qubits, ncommqpc..nq/ncores-1 are not comm qubits.
-    return qci < num_comm_qubits;
+    return qubit_local_index < num_comm_qubits;
 }
 
 /**
@@ -641,8 +653,7 @@ utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
 utils::UInt Topology::get_core_index(Qubit qubit) const {
     if (num_cores == 1) return 0;
     QL_ASSERT(connectivity == GridConnectivity::FULL);
-    utils::UInt nqpc = num_qubits / num_cores;
-    return qubit / nqpc;
+    return qubit / num_qubits_per_core;
 }
 
 /**
