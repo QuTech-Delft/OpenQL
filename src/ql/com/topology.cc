@@ -628,7 +628,9 @@ Topology::Neighbors Topology::get_neighbors(Qubit qubit) const {
  * Returns whether the given qubit is a communication qubit of a core.
  */
 utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
-    if (num_cores == 1) return true;
+    if (num_cores == 1) {
+        return true;
+    }
     QL_ASSERT(connectivity == GridConnectivity::FULL);
 
     // Compute index of qubit local to core.
@@ -642,7 +644,9 @@ utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
  * Returns the core index for the given qubit in a multi-core environment.
  */
 utils::UInt Topology::get_core_index(Qubit qubit) const {
-    if (num_cores == 1) return 0;
+    if (num_cores == 1) {
+        return 0;
+    }
     QL_ASSERT(connectivity == GridConnectivity::FULL);
     return qubit / num_qubits_per_core;
 }
@@ -660,10 +664,10 @@ utils::Bool Topology::is_inter_core_hop(Qubit source, Qubit target) const {
  * Returns 0 iff source == target.
  */
 utils::UInt Topology::get_distance(Qubit source, Qubit target) const {
+    if (source == target) {
+        return 0;
+    }
     if (connectivity == GridConnectivity::FULL) {
-        if (source == target) {
-            return 0;
-        }
         utils::UInt d = 1;
         if (get_core_index(source) == get_core_index(target)) {
             return d;
@@ -676,7 +680,6 @@ utils::UInt Topology::get_distance(Qubit source, Qubit target) const {
         }
         return d;
     }
-
     return distance[source][target];
 }
 
@@ -684,34 +687,49 @@ utils::UInt Topology::get_distance(Qubit source, Qubit target) const {
  * Returns the distance between the given two qubits in terms of cores.
  */
 utils::UInt Topology::get_core_distance(Qubit source, Qubit target) const {
-    if (get_core_index(source) == get_core_index(target)) return 0;
+    if (source == target) {
+        return 0;
+    }
+    if (get_core_index(source) == get_core_index(target)) {
+        return 0;
+    }
     QL_ASSERT(connectivity == GridConnectivity::FULL);
     return 1;
 }
 
 /**
- * Minimum number of hops between two qubits is always >= distance(from, to)
- * and inside one core (or without multi-core) the minimum number of
- * hops == distance.
+ * Minimum number of hops between two qubits is always >= distance(from, to).
  *
- * However, in multi-core with inter-core hops, an inter-core hop cannot
- * execute a 2qgate so when the minimum number of hops are all inter-core
- * hops (so distance(from,to) == coredistance(from,to)) and no 2qgate has
- * been placed yet, then at least one additional inter-core hop is needed
- * for the 2qgate, the number of hops required being at least distance+1.
+ * Inside one core, minimum number of hops == distance.
  *
- * We assume below that a valid path exists with distance+1 hops; this fails
- * when not all qubits in a core support connections to all other cores.
- * See the check in initialization of neighbors.
+ * In multi-core, minimum number of hops >= distance + 1.
+ * An inter-core hop cannot execute a 2q gate, so
+ * when the minimum number of hops are all inter-core hops (i.e. distance == core_distance),
+ * and no 2q gate has been placed yet,
+ * then at least one additional inter-core hop is needed for the 2q gate
+ * (e.g. from the last comm qubit to the core where the target is).
+ *
+ * In multi-core, if there is not a valid path between source and target, minimum number of hops == distance + 2.
+ * When the minimum number of hops are all inter-core hops (i.e. distance == core_distance), but
+ * whether the source or the target are not communication qubits,
+ * then at least one additional in-core hop is needed
+ * (e.g. from the source qubit to a comm qubit in the same core).
  */
 utils::UInt Topology::get_min_hops(Qubit source, Qubit target) const {
-    utils::UInt d = get_distance(source, target);
-    utils::UInt cd = get_core_distance(source, target);
-    QL_ASSERT(cd <= d);
-    if (cd == d) {
-        return d+2;
+    if (source == target) {
+        return 0;
+    }
+    utils::UInt distance = get_distance(source, target);
+    utils::UInt core_distance = get_core_distance(source, target);
+    QL_ASSERT(core_distance <= distance);
+    if (core_distance == distance) {
+        if (is_comm_qubit(source) && is_comm_qubit(target)) {
+            return distance + 1;
+        } else {
+            return distance + 2;
+        }
     } else {
-        return d;
+        return distance;
     }
 }
 

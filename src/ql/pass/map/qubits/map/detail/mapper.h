@@ -469,6 +469,12 @@ private:
      */
     void map_kernel(const ir::compat::KernelRef &k);
 
+    /**
+     * Nearest neighbors are in the same core, and at a distance of exactly one hop.
+     * This excludes the case of two communication qubits in different cores and at a distance of exactly one hop.
+     */
+    utils::Bool are_nearest_neighbors(utils::UInt source, utils::UInt target) const;
+
 public:
 
     /**

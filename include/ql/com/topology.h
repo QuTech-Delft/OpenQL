@@ -287,19 +287,22 @@ public:
     utils::UInt get_core_distance(Qubit source, Qubit target) const;
 
     /**
-     * Minimum number of hops between two qubits is always >= distance(from, to)
-     * and inside one core (or without multi-core) the minimum number of
-     * hops == distance.
+     * Minimum number of hops between two qubits is always >= distance(from, to).
      *
-     * However, in multi-core with inter-core hops, an inter-core hop cannot
-     * execute a 2qgate so when the minimum number of hops are all inter-core
-     * hops (so distance(from,to) == coredistance(from,to)) and no 2qgate has
-     * been placed yet, then at least one additional inter-core hop is needed
-     * for the 2qgate, the number of hops required being at least distance+1.
+     * Inside one core, minimum number of hops == distance.
      *
-     * We assume below that a valid path exists with distance+1 hops; this fails
-     * when not all qubits in a core support connections to all other cores.
-     * See the check in initialization of neighbors.
+     * In multi-core, minimum number of hops >= distance + 1.
+     * An inter-core hop cannot execute a 2q gate, so
+     * when the minimum number of hops are all inter-core hops (i.e. distance == core_distance),
+     * and no 2q gate has been placed yet,
+     * then at least one additional inter-core hop is needed for the 2q gate
+     * (e.g. from the last comm qubit to the core where the target is).
+     *
+     * In multi-core, if there is not a valid path between source and target, minimum number of hops == distance + 2.
+     * When the minimum number of hops are all inter-core hops (i.e. distance == core_distance), but
+     * whether the source or the target are not communication qubits,
+     * then at least one additional in-core hop is needed
+     * (e.g. from the source qubit to a comm qubit in the same core).
      */
     utils::UInt get_min_hops(Qubit source, Qubit target) const;
 

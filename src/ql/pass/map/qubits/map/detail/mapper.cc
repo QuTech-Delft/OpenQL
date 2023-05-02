@@ -400,6 +400,14 @@ void Mapper::map_routed_gate(const ir::compat::GateRef &gate, Past &past) {
 }
 
 /**
+ * Nearest neighbors are in the same core, and at a distance of exactly one hop.
+ * This excludes the case of two communication qubits in different cores and at a distance of exactly one hop.
+ */
+utils::Bool Mapper::are_nearest_neighbors(UInt source, UInt target) const {
+    return platform->topology->get_min_hops(source, target) == 1;
+}
+
+/**
  * Commit the given Alter, generating swaps in the past and taking it out
  * of future when done with it. Depending on configuration, this might not
  * actually place the target gate for the given alternative yet, because
@@ -418,7 +426,10 @@ void Mapper::commit_alter(Alter &alter, Future &future, Past &past) {
     // When only some swaps were added (based on configuration), the target
     // might not yet be nearest-neighbor, so recheck.
     auto &q = target->operands;
-    if (platform->topology->get_min_hops(past.get_real_qubit(q[0]), past.get_real_qubit(q[1])) == 1) {
+    auto src = past.get_real_qubit(q[0]);
+    auto tgt = past.get_real_qubit(q[1]);
+
+    if (are_nearest_neighbors(src, tgt)) {
 
         // Target is nearest-neighbor, so we;re done with this gate.
         // QL_DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
@@ -551,21 +562,10 @@ Bool Mapper::map_mappable_gates(
 
                 // Interpret virtual operands in current map.
                 auto &q = gate->operands;
-                UInt src = past.get_real_qubit(q[0]);
-                UInt tgt = past.get_real_qubit(q[1]);
+                auto src = past.get_real_qubit(q[0]);
+                auto tgt = past.get_real_qubit(q[1]);
 
-                auto are_nearest_neighbors = [this](UInt src, UInt tgt) {
-                    return (platform->topology->get_min_hops(src, tgt) == 1);
-                };
-                auto are_comm_qubits = [this](UInt src, UInt tgt) {
-                    return platform->topology->is_comm_qubit(src) && platform->topology->is_comm_qubit(tgt);
-                };
-                auto are_in_different_cores = [this](UInt src, UInt tgt) {
-                    return platform->topology->get_core_index(src) != platform->topology->get_core_index(tgt);
-                };
-
-                if (are_nearest_neighbors(src, tgt) &&
-                    !(are_comm_qubits(src, tgt) && are_in_different_cores(src, tgt))) {
+                if (are_nearest_neighbors(src, tgt)) {
 
                     QL_DOUT(". NN gate, to be mapped: " << gate->qasm() << " in real (q" << src << ",q" << tgt << ")");
                     map_routed_gate(gate, past);
