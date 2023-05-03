@@ -169,7 +169,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                     QL_ICE("unsupported conditional instruction type encountered" << "'" <<ir::describe(stmt) << "'");
                 }
 
-            } else if (auto wait = stmt->as_wait_instruction()) {
+            } else if (/* auto wait = */ stmt->as_wait_instruction()) {
                 // NB: waits are already accounted for during scheduling, so backend can ignore these
                 QL_DOUT("wait (ignored by backend)");
 
