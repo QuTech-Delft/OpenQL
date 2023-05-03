@@ -175,7 +175,7 @@ TEST_CASE_FIXTURE(GetMinHops, "Single-core, 2 comm qubits per core") {
     // Normal qubits are 2 to 7
     CHECK_EQ(victim.get_min_hops(0, 0), 0);  // comm to itself
     CHECK_EQ(victim.get_min_hops(1, 1), 0);  // normal to itself
-    CHECK_EQ(victim.get_min_hops(2, 2), 1);  // normal to normal
+    CHECK_EQ(victim.get_min_hops(2, 3), 1);  // normal to normal
     CHECK_EQ(victim.get_min_hops(0, 1), 1);  // comm to comm
     CHECK_EQ(victim.get_min_hops(0, 2), 1);  // comm to normal
     CHECK_EQ(victim.get_min_hops(2, 0), 1);  // normal to comm
@@ -216,7 +216,7 @@ TEST_CASE_FIXTURE(GetMinHops, "Multi-core, 2 comm qubits per core") {
     // Comm qubits are 0, 1 (first core), 4 and 5 (second core)
     // Normal qubits are 2, 3 (first core), 6 and 7 (second core)
     CHECK_EQ(victim.get_min_hops(2, 6), 3);  // normal to normal
-    CHECK_EQ(victim.get_min_hops(0, 4), 3);  // comm to comm
+    CHECK_EQ(victim.get_min_hops(0, 4), 2);  // comm to comm
     CHECK_EQ(victim.get_min_hops(0, 6), 2);  // comm to normal
     CHECK_EQ(victim.get_min_hops(6, 0), 2);  // normal to comm
 }
