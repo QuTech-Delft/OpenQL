@@ -696,10 +696,8 @@ utils::UInt Topology::get_distance(Qubit source, Qubit target) const {
  * Returns the distance between the given two qubits in terms of cores.
  */
 utils::UInt Topology::get_core_distance(Qubit source, Qubit target) const {
-    if (source == target) {
-        return 0;
-    }
-    if (get_core_index(source) == get_core_index(target)) {
+    if (source == target ||
+        get_core_index(source) == get_core_index(target)) {
         return 0;
     }
     QL_ASSERT(connectivity == GridConnectivity::FULL);
