@@ -289,7 +289,7 @@ public:
     /**
      * Returns the distance between the given two qubits in terms of cores.
      */
-    utils::UInt get_core_distance(Qubit source, Qubit target) const;
+    utils::Bool are_in_same_core(Qubit source, Qubit target) const;
 
     /**
      * Minimum number of hops between two qubits for single-core and multi-core
