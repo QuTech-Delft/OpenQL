@@ -779,7 +779,7 @@ void NewToOldConverter::convert_block(
                     throw;
                 }
 
-            } else if (auto for_loop = stmt->as_for_loop()) {
+            } else if (/* auto for_loop = */ stmt->as_for_loop()) {
                 QL_ICE("unsupported for loop encountered");
 
             } else {
