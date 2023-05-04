@@ -270,6 +270,11 @@ public:
     utils::Bool is_comm_qubit(Qubit qubit) const;
 
     /**
+     * Returns whether the two given qubits are communication qubits.
+     */
+    utils::Bool are_comm_qubits(Qubit source, Qubit target) const;
+
+    /**
      * Returns the core index for the given qubit in a multi-core environment.
      */
     utils::UInt get_core_index(Qubit qubit) const;
@@ -285,11 +290,6 @@ public:
      * Returns 0 iff source == target.
      */
     utils::UInt get_distance(Qubit source, Qubit target) const;
-
-    /**
-     * Returns the distance between the given two qubits in terms of cores.
-     */
-    utils::Bool are_in_same_core(Qubit source, Qubit target) const;
 
     /**
      * Minimum number of hops between two qubits for single-core and multi-core
@@ -312,12 +312,12 @@ public:
      *
      * Inside one core, minimum number of hops == distance.
      *
-     * Between qubits in different cores, the minimum number of hops >= distance + 1.
+     * Normal case: between qubits in different cores, the minimum number of hops >= distance + 1.
      * This is because an inter-core hop cannot execute a 2q gate, so
      * when the minimum number of hops are all inter-core hops (i.e. distance == core_distance),
      * and no 2q gate has been placed yet, then at least one additional intra-core hop is needed for the 2q gate.
      *
-     * But one additional hop is not sufficient in the special case when both source and target are communication qubits,
+     * Special case: but one additional hop is not sufficient in the case when both source and target are communication qubits,
      * and they are the only communication qubits in each core.
      * The only option there is adding two hops in one of the cores:
      * one to just another qubit and one back to the single communication qubit.

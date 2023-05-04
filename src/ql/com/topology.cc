@@ -653,6 +653,13 @@ utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
 }
 
 /**
+ * Returns whether the two given qubits are communication qubits.
+ */
+utils::Bool Topology::are_comm_qubits(Qubit source, Qubit target) const {
+    return is_comm_qubit(source) && is_comm_qubit(target);
+}
+
+/**
  * Returns the core index for the given qubit in a multi-core environment.
  */
 utils::UInt Topology::get_core_index(Qubit qubit) const {
@@ -696,13 +703,6 @@ utils::UInt Topology::get_distance(Qubit source, Qubit target) const {
 }
 
 /**
- * Returns the distance between the given two qubits in terms of cores.
- */
-utils::Bool Topology::are_in_same_core(Qubit source, Qubit target) const {
-    return get_core_index(source) == get_core_index(target);
-}
-
-/**
  * Minimum number of hops between two qubits for single-core and multi-core
  * is the minimum number of qubit-to-qubit connections that is needed in a path of connections
  * between physical qubits that are the operands of a 2q gate,
@@ -743,18 +743,17 @@ utils::UInt Topology::get_min_hops(Qubit source, Qubit target) const {
     if (source == target) {
         return 0;
     }
-    utils::UInt distance = get_distance(source, target);
-    if (!are_in_same_core(source, target) && is_comm_qubit(source) && is_comm_qubit(target)) {
+    utils::UInt min_hops = get_distance(source, target);
+    if (are_comm_qubits(source, target) && is_inter_core_hop(source, target)) {
         // Notice that, as stated in the comments above, for multi-core, between cores,
         // each communication qubit is connected to each other communication qubit
         // So inter-core distance is always 1
-        QL_ASSERT(distance == 1);
-        return (num_comm_qubits == 1)
-            ? distance + 2  // special case
-            : distance + 1;  // normal case
-    } else {
-        return distance;
+        QL_ASSERT(min_hops == 1);
+        min_hops += (num_comm_qubits == 1)
+            ? 2  // special case
+            : 1;  // normal case
     }
+    return min_hops;
 }
 
 /**
