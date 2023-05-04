@@ -155,7 +155,7 @@ void Topology::generate_neighbors_list(utils::UInt qs, Neighbors &qubits) const 
         if (qs == qd) {
             continue;
         }
-        if (is_inter_core_hop(qs, qd) && (!is_comm_qubit(qs) || !is_comm_qubit(qd))) {
+        if (!are_comm_qubits(qs, qd) && is_inter_core_hop(qs, qd)) {
             continue;
         }
         qubits.push_back(qd);
