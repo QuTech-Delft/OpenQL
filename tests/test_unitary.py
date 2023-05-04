@@ -4,28 +4,24 @@ from openql import openql as ql
 from utils import file_compare
 import re
 import numpy as np
-
-try:
-    from qxelarator import qxelarator
-    qx = qxelarator.QX()
-except ImportError:
-    qx = None
+from qxelarator import qxelarator
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
 platform = ql.Platform('platform_none', config_fn)
+platform_qubits = 17
 output_dir = os.path.join(curdir, 'test_output')
 
-c0 = ""
-
-def helper_regex(measurementstring):
-    regex = re.findall('[-0-9.e]+',measurementstring)
-    i = 0
-    array = []
-    while i < len(regex):
-        array.append(float(regex[i])**2+float(regex[i+1])**2)
-        i +=3 # so we skip every third occurence, which is the bit string representing the qubit combi
-    return array
+def to_bitstring(n, size=None):
+    small_bitstring = bin(n)[2:]
+    if size is None:
+        return small_bitstring
+    
+    assert(isinstance(size, int))
+    assert((1 << size) > n)
+    assert(len(small_bitstring) <= size)
+    zeros = ''.join(['0' for _ in range(size - len(small_bitstring))])
+    return zeros + small_bitstring
 
 def helper_prob(qubitstate):
     return qubitstate.real**2+qubitstate.imag**2
@@ -41,6 +37,13 @@ class Test_conjugated_kernel(unittest.TestCase):
         ql.set_option('scheduler', 'ASAP')
         ql.set_option('log_level', 'LOG_NOTHING')
         # ql.set_option('write_qasm_files', 'yes')
+
+    def test_bitstring(self):
+        self.assertEqual(to_bitstring(5), "101")
+        self.assertEqual(to_bitstring(5, size=6), "000101")
+        
+        with self.assertRaises(Exception):
+            res = to_bitstring(10, size=2)
 
     def test_unitary_basic(self):
         num_qubits = 3
@@ -103,7 +106,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 #
 #        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Unknown error: Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 1 and not 2')
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_I(self):
         num_qubits = 1
         p = ql.Program('test_unitary_I', platform, num_qubits)
@@ -120,13 +122,10 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
 
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
-        self.assertAlmostEqual(0.5*(helper_prob(matrix[0])+helper_prob(matrix[1])), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.5*(helper_prob(matrix[2])+helper_prob(matrix[3])), helper_regex(c0)[0], 5)
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
+        self.assertAlmostEqual(0.5*(helper_prob(matrix[0])+helper_prob(matrix[1])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.5*(helper_prob(matrix[2])+helper_prob(matrix[3])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_X(self):
         num_qubits = 1
         p = ql.Program('test_unitary_X', platform, num_qubits)
@@ -143,13 +142,10 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
-        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[2]), helper_regex(c0)[1], 5)
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[2]), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_Y(self):
         num_qubits = 1
         p = ql.Program('test_unitary_Y', platform, num_qubits)
@@ -166,13 +162,10 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
-        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[2]), helper_regex(c0)[1], 5)
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[2]), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
  
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_Z(self):
         num_qubits = 1
         p = ql.Program('test_unitary_Z', platform, num_qubits)
@@ -191,15 +184,12 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 		#HZH = X, so the result should be |0> + |1>
-        self.assertAlmostEqual(0, helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(1, helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(0, helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(1, helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
    
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_IYZ(self):
         num_qubits = 1
         p = ql.Program('test_unitary_IYZ', platform, num_qubits)
@@ -224,15 +214,12 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
         #jXYZ = I, so this should change nothing about the state.
-        self.assertAlmostEqual(0.5, helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.5, helper_regex(c0)[1], 5)  
+        self.assertAlmostEqual(0.5, helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.5, helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)  
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_IYZ_differentorder(self):
         num_qubits = 1
         p = ql.Program('test_unitary_IYZ', platform, num_qubits)
@@ -260,13 +247,11 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
         #jXYZ = I, so this should change nothing about the state.
-        self.assertAlmostEqual(0.5, helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.5, helper_regex(c0)[1], 5)  
+        self.assertAlmostEqual(0.5, helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.5, helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)  
 
     def test_unitary_decompose_nonunitary(self):
         num_qubits = 1
@@ -283,7 +268,7 @@ class Test_conjugated_kernel(unittest.TestCase):
             add_kernel(k)
             p.compile()
 
-        self.assertEqual(str(cm.exception).split('\n\n', maxsplit=1)[0], "Unknown error: Error: Unitary 'WRONG' is not a unitary matrix. Cannot be decomposed!(0,0) (0,0)\n(0,0) (0,0)\n")
+        self.assertEqual(str(cm.exception).split('\n\n', maxsplit=1)[0], "Unknown error: Error: Unitary 'WRONG' is not a unitary matrix. Cannot be decomposed!(0,0) (0,0)\n(0,0) (0,0)")
   
   # input for the unitary decomposition needs to be an array
     def test_unitary_decompose_matrixinsteadofarray(self):
@@ -296,7 +281,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_2qubit_CNOT(self):
         num_qubits = 2
         p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
@@ -315,24 +299,21 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.compile()
 
 
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
         #only two states are nonzero
-        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[4]), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[4]), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_2qubit_CNOT_2(self):
         num_qubits = 2
         p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
-        matrix = [  complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
-                               complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
-                               complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0),
-                               complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0)]
+        matrix = [1, 0, 0, 0,
+                  0, 1, 0, 0,
+                  0, 0, 0, 1,
+                  0, 0, 1, 0]
         u = ql.Unitary('cnot2',matrix)
         u.decompose()
         k.x(1)
@@ -343,16 +324,11 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.compile()
 
 
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
-        #only two states are nonzero
-        self.assertAlmostEqual(0.0, helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(1.0, helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(1.0, helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
 
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_non_90_degree_angle(self):
         num_qubits = 2
         p = ql.Program('test_unitary_non_90_degree_angle', platform, num_qubits)
@@ -372,15 +348,12 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
-        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[4]), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(helper_prob(matrix[12]), helper_regex(c0)[3], 5)   
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[4]), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[8]), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[12]), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)   
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_00(self):
         num_qubits = 2
         p = ql.Program('test_usingqx00', platform, num_qubits)
@@ -403,17 +376,14 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
 
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
-        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[4]), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(helper_prob(matrix[12]), helper_regex(c0)[3], 5)
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[4]), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[8]), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[12]), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
         
 
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_01(self):
         num_qubits = 2
         p = ql.Program('test_usingqx01', platform, num_qubits)
@@ -439,19 +409,16 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
 
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
         
         
-        self.assertAlmostEqual(helper_prob(matrix[1]), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[5]), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(helper_prob(matrix[9]), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(helper_prob(matrix[13]), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(helper_prob(matrix[1]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[5]), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[9]), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[13]), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
 
 
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_10(self):
         num_qubits = 2
         p = ql.Program('test_usingqx10', platform, num_qubits)
@@ -478,18 +445,15 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
 
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
         
-        self.assertAlmostEqual(helper_prob(matrix[2]), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[6]), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(helper_prob(matrix[10]), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(helper_prob(matrix[14]), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(helper_prob(matrix[2]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[6]), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[10]), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[14]), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
  
 
     
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_11(self):
         num_qubits = 2
         p = ql.Program('test_usingqx11', platform, num_qubits)
@@ -516,16 +480,13 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
         
-        self.assertAlmostEqual(helper_prob(matrix[3]), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[7]), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(helper_prob(matrix[11]), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(helper_prob(matrix[15]), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(helper_prob(matrix[3]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[7]), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[11]), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[15]), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
     
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_bellstate(self):
         num_qubits = 2
         p = ql.Program('test_usingqxbellstate', platform, num_qubits)
@@ -553,17 +514,14 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
         
-        self.assertAlmostEqual(0.5*helper_prob((matrix[0]+ matrix[3])), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.5*helper_prob((matrix[4]+matrix[7])), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.5*helper_prob((matrix[8]+ matrix[11])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.5*helper_prob((matrix[12]+ matrix[15])), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(0.5*helper_prob((matrix[0]+ matrix[3])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.5*helper_prob((matrix[4]+matrix[7])), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.5*helper_prob((matrix[8]+ matrix[11])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.5*helper_prob((matrix[12]+ matrix[15])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
 
     
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_fullyentangled(self):
         num_qubits = 2
         p = ql.Program('test_usingqxfullentangled', platform, num_qubits)
@@ -592,16 +550,13 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
         
-        self.assertAlmostEqual(0.25*helper_prob((matrix[0] + matrix[1] + matrix[2] + matrix[3] )), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.25*helper_prob((matrix[4] + matrix[5] + matrix[6] + matrix[7] )), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.25*helper_prob((matrix[8] + matrix[9] + matrix[10]+ matrix[11])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.25*helper_prob((matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[0] + matrix[1] + matrix[2] + matrix[3] )), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[4] + matrix[5] + matrix[6] + matrix[7] )), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[8] + matrix[9] + matrix[10]+ matrix[11])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_fullyentangled_3qubit(self):
         num_qubits = 3
         p = ql.Program('test_usingqxfullentangled_3qubit', platform, num_qubits)
@@ -655,20 +610,17 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
         
-        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_prob(state.get(to_bitstring(4, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_prob(state.get(to_bitstring(5, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_prob(state.get(to_bitstring(6, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_prob(state.get(to_bitstring(7, size=platform_qubits), 0.)), 5)
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_fullyentangled_4qubit(self):
         num_qubits = 4
         p = ql.Program('test_usingqxfullentangled_4qubit', platform, num_qubits)
@@ -726,30 +678,27 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
         
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_regex(c0)[3], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_regex(c0)[4], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_regex(c0)[5], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_regex(c0)[6], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_regex(c0)[7], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_regex(c0)[8], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_regex(c0)[9], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_regex(c0)[10], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_regex(c0)[11], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_regex(c0)[12], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_regex(c0)[13], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_regex(c0)[14], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_prob(state.get(to_bitstring(4, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_prob(state.get(to_bitstring(5, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_prob(state.get(to_bitstring(6, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_prob(state.get(to_bitstring(7, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_prob(state.get(to_bitstring(8, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_prob(state.get(to_bitstring(9, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_prob(state.get(to_bitstring(10, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_prob(state.get(to_bitstring(11, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_prob(state.get(to_bitstring(12, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_prob(state.get(to_bitstring(13, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_prob(state.get(to_bitstring(14, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_prob(state.get(to_bitstring(15, size=platform_qubits), 0.)), 5)
 
 
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_fullyentangled_5qubit(self):
         num_qubits = 5
         p = ql.Program('test_usingqxfullentangled_5qubit', platform, num_qubits)
@@ -795,46 +744,43 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
 
-        self.assertAlmostEqual(helper_prob(matrix[0]),   helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[32]),  helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(helper_prob(matrix[64]),  helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(helper_prob(matrix[96]),  helper_regex(c0)[3], 5)
-        self.assertAlmostEqual(helper_prob(matrix[128]), helper_regex(c0)[4], 5)
-        self.assertAlmostEqual(helper_prob(matrix[160]), helper_regex(c0)[5], 5)
-        self.assertAlmostEqual(helper_prob(matrix[192]), helper_regex(c0)[6], 5)
-        self.assertAlmostEqual(helper_prob(matrix[224]), helper_regex(c0)[7], 5)
-        self.assertAlmostEqual(helper_prob(matrix[256]), helper_regex(c0)[8], 5)
-        self.assertAlmostEqual(helper_prob(matrix[288]), helper_regex(c0)[9], 5)
-        self.assertAlmostEqual(helper_prob(matrix[320]), helper_regex(c0)[10], 5)
-        self.assertAlmostEqual(helper_prob(matrix[352]), helper_regex(c0)[11], 5)
-        self.assertAlmostEqual(helper_prob(matrix[384]), helper_regex(c0)[12], 5)
-        self.assertAlmostEqual(helper_prob(matrix[416]), helper_regex(c0)[13], 5)
-        self.assertAlmostEqual(helper_prob(matrix[448]), helper_regex(c0)[14], 5)
-        self.assertAlmostEqual(helper_prob(matrix[480]), helper_regex(c0)[15], 5)
-        self.assertAlmostEqual(helper_prob(matrix[512]), helper_regex(c0)[16], 5)
-        self.assertAlmostEqual(helper_prob(matrix[544]), helper_regex(c0)[17], 5)
-        self.assertAlmostEqual(helper_prob(matrix[576]), helper_regex(c0)[18], 5)
-        self.assertAlmostEqual(helper_prob(matrix[608]), helper_regex(c0)[19], 5)
-        self.assertAlmostEqual(helper_prob(matrix[640]), helper_regex(c0)[20], 5)
-        self.assertAlmostEqual(helper_prob(matrix[672]), helper_regex(c0)[21], 5)
-        self.assertAlmostEqual(helper_prob(matrix[704]), helper_regex(c0)[22], 5)
-        self.assertAlmostEqual(helper_prob(matrix[736]), helper_regex(c0)[23], 5)
-        self.assertAlmostEqual(helper_prob(matrix[768]), helper_regex(c0)[24], 5)
-        self.assertAlmostEqual(helper_prob(matrix[800]), helper_regex(c0)[25], 5)
-        self.assertAlmostEqual(helper_prob(matrix[832]), helper_regex(c0)[26], 5)
-        self.assertAlmostEqual(helper_prob(matrix[864]), helper_regex(c0)[27], 5)
-        self.assertAlmostEqual(helper_prob(matrix[896]), helper_regex(c0)[28], 5)
-        self.assertAlmostEqual(helper_prob(matrix[928]), helper_regex(c0)[29], 5)
-        self.assertAlmostEqual(helper_prob(matrix[960]), helper_regex(c0)[30], 5)
-        self.assertAlmostEqual(helper_prob(matrix[992]), helper_regex(c0)[31], 5)
+        self.assertAlmostEqual(helper_prob(matrix[0]),   helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[32]),  helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[64]),  helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[96]),  helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[128]), helper_prob(state.get(to_bitstring(4, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[160]), helper_prob(state.get(to_bitstring(5, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[192]), helper_prob(state.get(to_bitstring(6, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[224]), helper_prob(state.get(to_bitstring(7, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[256]), helper_prob(state.get(to_bitstring(8, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[288]), helper_prob(state.get(to_bitstring(9, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[320]), helper_prob(state.get(to_bitstring(10, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[352]), helper_prob(state.get(to_bitstring(11, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[384]), helper_prob(state.get(to_bitstring(12, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[416]), helper_prob(state.get(to_bitstring(13, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[448]), helper_prob(state.get(to_bitstring(14, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[480]), helper_prob(state.get(to_bitstring(15, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[512]), helper_prob(state.get(to_bitstring(16, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[544]), helper_prob(state.get(to_bitstring(17, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[576]), helper_prob(state.get(to_bitstring(18, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[608]), helper_prob(state.get(to_bitstring(19, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[640]), helper_prob(state.get(to_bitstring(20, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[672]), helper_prob(state.get(to_bitstring(21, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[704]), helper_prob(state.get(to_bitstring(22, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[736]), helper_prob(state.get(to_bitstring(23, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[768]), helper_prob(state.get(to_bitstring(24, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[800]), helper_prob(state.get(to_bitstring(25, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[832]), helper_prob(state.get(to_bitstring(26, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[864]), helper_prob(state.get(to_bitstring(27, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[896]), helper_prob(state.get(to_bitstring(28, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[928]), helper_prob(state.get(to_bitstring(29, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[960]), helper_prob(state.get(to_bitstring(30, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[992]), helper_prob(state.get(to_bitstring(31, size=platform_qubits), 0.)), 5)
 
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_fullyentangled_5qubit_10011(self):
         num_qubits = 5
         p = ql.Program('test_usingqxfullentangled_5qubit_10011', platform, num_qubits)
@@ -884,43 +830,41 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
 
-        self.assertAlmostEqual(helper_prob(matrix[19+0]),   helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+32]),  helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+64]),  helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+96]),  helper_regex(c0)[3], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+128]), helper_regex(c0)[4], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+160]), helper_regex(c0)[5], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+192]), helper_regex(c0)[6], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+224]), helper_regex(c0)[7], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+256]), helper_regex(c0)[8], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+288]), helper_regex(c0)[9], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+320]), helper_regex(c0)[10], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+352]), helper_regex(c0)[11], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+384]), helper_regex(c0)[12], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+416]), helper_regex(c0)[13], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+448]), helper_regex(c0)[14], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+480]), helper_regex(c0)[15], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+512]), helper_regex(c0)[16], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+544]), helper_regex(c0)[17], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+576]), helper_regex(c0)[18], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+608]), helper_regex(c0)[19], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+640]), helper_regex(c0)[20], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+672]), helper_regex(c0)[21], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+704]), helper_regex(c0)[22], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+736]), helper_regex(c0)[23], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+768]), helper_regex(c0)[24], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+800]), helper_regex(c0)[25], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+832]), helper_regex(c0)[26], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+864]), helper_regex(c0)[27], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+896]), helper_regex(c0)[28], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+928]), helper_regex(c0)[29], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+960]), helper_regex(c0)[30], 5)
-        self.assertAlmostEqual(helper_prob(matrix[19+992]), helper_regex(c0)[31], 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+0]),   helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+32]),  helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+64]),  helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+96]),  helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+128]), helper_prob(state.get(to_bitstring(4, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+160]), helper_prob(state.get(to_bitstring(5, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+192]), helper_prob(state.get(to_bitstring(6, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+224]), helper_prob(state.get(to_bitstring(7, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+256]), helper_prob(state.get(to_bitstring(8, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+288]), helper_prob(state.get(to_bitstring(9, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+320]), helper_prob(state.get(to_bitstring(10, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+352]), helper_prob(state.get(to_bitstring(11, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+384]), helper_prob(state.get(to_bitstring(12, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+416]), helper_prob(state.get(to_bitstring(13, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+448]), helper_prob(state.get(to_bitstring(14, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+480]), helper_prob(state.get(to_bitstring(15, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+512]), helper_prob(state.get(to_bitstring(16, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+544]), helper_prob(state.get(to_bitstring(17, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+576]), helper_prob(state.get(to_bitstring(18, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+608]), helper_prob(state.get(to_bitstring(19, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+640]), helper_prob(state.get(to_bitstring(20, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+672]), helper_prob(state.get(to_bitstring(21, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+704]), helper_prob(state.get(to_bitstring(22, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+736]), helper_prob(state.get(to_bitstring(23, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+768]), helper_prob(state.get(to_bitstring(24, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+800]), helper_prob(state.get(to_bitstring(25, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+832]), helper_prob(state.get(to_bitstring(26, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+864]), helper_prob(state.get(to_bitstring(27, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+896]), helper_prob(state.get(to_bitstring(28, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+928]), helper_prob(state.get(to_bitstring(29, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+960]), helper_prob(state.get(to_bitstring(30, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[19+992]), helper_prob(state.get(to_bitstring(31, size=platform_qubits), 0.)), 5)
 
     def test_adding2tothepower6unitary(self):
         num_qubits = 6
@@ -1069,7 +1013,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
     
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_sparseunitary(self):
         num_qubits = 5
         p = ql.Program('test_usingqxsparseunitary', platform, num_qubits)
@@ -1127,29 +1070,26 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
         
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_regex(c0)[3], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_regex(c0)[4], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_regex(c0)[5], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_regex(c0)[6], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_regex(c0)[7], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_regex(c0)[8], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_regex(c0)[9], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_regex(c0)[10], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_regex(c0)[11], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_regex(c0)[12], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_regex(c0)[13], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_regex(c0)[14], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_prob(state.get(to_bitstring(4, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_prob(state.get(to_bitstring(5, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_prob(state.get(to_bitstring(6, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_prob(state.get(to_bitstring(7, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_prob(state.get(to_bitstring(8, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_prob(state.get(to_bitstring(9, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_prob(state.get(to_bitstring(10, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_prob(state.get(to_bitstring(11, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_prob(state.get(to_bitstring(12, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_prob(state.get(to_bitstring(13, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_prob(state.get(to_bitstring(14, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_prob(state.get(to_bitstring(15, size=platform_qubits), 0.)), 5)
 
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_extremelysparseunitary(self):
         num_qubits = 4
         p = ql.Program('test_usingqx_extremelysparseunitary_newname', platform, num_qubits)
@@ -1192,28 +1132,25 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
         
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_regex(c0)[3], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_regex(c0)[4], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_regex(c0)[5], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_regex(c0)[6], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_regex(c0)[7], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_regex(c0)[8], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_regex(c0)[9], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_regex(c0)[10], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_regex(c0)[11], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_regex(c0)[12], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_regex(c0)[13], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_regex(c0)[14], 5)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_prob(state.get(to_bitstring(4, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_prob(state.get(to_bitstring(5, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_prob(state.get(to_bitstring(6, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_prob(state.get(to_bitstring(7, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_prob(state.get(to_bitstring(8, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_prob(state.get(to_bitstring(9, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_prob(state.get(to_bitstring(10, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_prob(state.get(to_bitstring(11, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_prob(state.get(to_bitstring(12, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_prob(state.get(to_bitstring(13, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_prob(state.get(to_bitstring(14, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_prob(state.get(to_bitstring(15, size=platform_qubits), 0.)), 5)
   
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_sparse2qubitunitary(self):
         num_qubits = 2
         p = ql.Program('test_usingqx_sparse2qubit', platform, num_qubits)
@@ -1233,18 +1170,15 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
-        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[4]), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[4]), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
         self.assertAlmostEqual(helper_prob(matrix[8]), 0, 5) # Zero probabilities do not show up in the output list
         self.assertAlmostEqual(helper_prob(matrix[12]), 0, 5)
 
 
   
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_sparse2qubitunitaryotherqubit(self):
         num_qubits = 2
         p = ql.Program('test_usingqx_sparse2qubitotherqubit', platform, num_qubits)
@@ -1264,17 +1198,14 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
-        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
         self.assertAlmostEqual(helper_prob(matrix[4]), 0, 5) # Zero probabilities do not show up in the output list
-        self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(helper_prob(matrix[8]), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
         self.assertAlmostEqual(helper_prob(matrix[12]), 0, 5)
 
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_sparse2qubitunitaryotherqubitcheck(self):
         num_qubits = 1
         p = ql.Program('test_usingqx_sparse2qubitotherqubit_test', platform, num_qubits)
@@ -1291,15 +1222,12 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
-        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(helper_prob(matrix[1]), helper_regex(c0)[1], 5) # Zero probabilities do not show up in the output list
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(helper_prob(matrix[1]), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5) # Zero probabilities do not show up in the output list
 
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_sparse2qubit_multiplexor(self):
         num_qubits = 2
         p = ql.Program('test_usingqx_sparse2qubit_multiplexor', platform, num_qubits)
@@ -1319,17 +1247,14 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
 
-        self.assertAlmostEqual(0.25*helper_prob((matrix[0] + matrix[1] + matrix[2] + matrix[3] )), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.25*helper_prob((matrix[4] + matrix[5] + matrix[6] + matrix[7] )), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.25*helper_prob((matrix[8] + matrix[9] + matrix[10]+ matrix[11])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.25*helper_prob((matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[0] + matrix[1] + matrix[2] + matrix[3] )), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[4] + matrix[5] + matrix[6] + matrix[7] )), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[8] + matrix[9] + matrix[10]+ matrix[11])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_decomposition_rotatedtoffoli(self):
         num_qubits = 3
         p = ql.Program('test_usingqx_rotatedtoffoli', platform, num_qubits)
@@ -1357,20 +1282,17 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
-        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_prob(state.get(to_bitstring(4, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_prob(state.get(to_bitstring(5, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_prob(state.get(to_bitstring(6, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_prob(state.get(to_bitstring(7, size=platform_qubits), 0.)), 5)
 
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_decomposition_toffoli(self):
         num_qubits = 3
         p = ql.Program('test_usingqx_toffoli', platform, num_qubits)
@@ -1396,21 +1318,17 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
-        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_prob(state.get(to_bitstring(4, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_prob(state.get(to_bitstring(5, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_prob(state.get(to_bitstring(6, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_prob(state.get(to_bitstring(7, size=platform_qubits), 0.)), 5)
 
-
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_decomposition_controlled_U(self):
         num_qubits = 3
         p = ql.Program('test_usingqx_toffoli', platform, num_qubits)
@@ -1437,20 +1355,17 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
-
-        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
+        print(state)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_prob(state.get(to_bitstring(4, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_prob(state.get(to_bitstring(5, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_prob(state.get(to_bitstring(6, size=platform_qubits), 0.)), 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_prob(state.get(to_bitstring(7, size=platform_qubits), 0.)), 5)
    
-    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_decomposition_mscthesisaritra(self):
         num_qubits = 4
         p = ql.Program('test_usingqx_mscthesisaritra', platform, num_qubits)
@@ -1486,27 +1401,25 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.get_compiler().set_option('initialqasmwriter.cqasm_version', '1.0')
         p.get_compiler().set_option('initialqasmwriter.with_metadata', 'no')
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'.qasm'))
-        qx.execute()
-        c0 = qx.get_state()
+        state = qxelarator.execute_file(os.path.join(output_dir, p.name+'.qasm')).state
 
         # less accuracy because of less accurate input
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_regex(c0)[0], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_regex(c0)[1], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_regex(c0)[2], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_regex(c0)[3], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_regex(c0)[4], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_regex(c0)[5], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_regex(c0)[6], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_regex(c0)[7], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_regex(c0)[8], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_regex(c0)[9], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_regex(c0)[10], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_regex(c0)[11], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_regex(c0)[12], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_regex(c0)[13], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_regex(c0)[14], 2)
-        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_prob(state.get(to_bitstring(0, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_prob(state.get(to_bitstring(1, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_prob(state.get(to_bitstring(2, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_prob(state.get(to_bitstring(3, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_prob(state.get(to_bitstring(4, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_prob(state.get(to_bitstring(5, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_prob(state.get(to_bitstring(6, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_prob(state.get(to_bitstring(7, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_prob(state.get(to_bitstring(8, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_prob(state.get(to_bitstring(9, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_prob(state.get(to_bitstring(10, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_prob(state.get(to_bitstring(11, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_prob(state.get(to_bitstring(12, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_prob(state.get(to_bitstring(13, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_prob(state.get(to_bitstring(14, size=platform_qubits), 0.)), 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_prob(state.get(to_bitstring(15, size=platform_qubits), 0.)), 2)
   
 if __name__ == '__main__':
     unittest.main()

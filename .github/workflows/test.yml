@@ -39,7 +39,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: choco install winflexbison3 --version 2.5.18.20190508
     - name: Configure
-      run: cmake . -DCMAKE_BUILD_TYPE=Debug -DOPENQL_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF
+      run: cmake . -DCMAKE_BUILD_TYPE=Debug -DOPENQL_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF -DWITH_UNITARY_DECOMPOSITION=OFF
     - name: Build
       run: cmake --build . --parallel 5
     - name: Test
@@ -85,7 +85,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: Install dependencies
-      run: python -m pip install --upgrade pip setuptools wheel pytest numpy
+      run: python -m pip install --upgrade pip setuptools wheel pytest numpy qxelarator
     - name: Install dependencies
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get install -y swig
@@ -115,6 +115,12 @@ jobs:
     - name: Select build type
       if: matrix.os != 'windows-latest'
       run: echo "OPENQL_BUILD_TYPE=Debug" >> $GITHUB_ENV
+    - name: Disable unitary decomposition
+      if: matrix.os != 'windows-latest'
+      run: echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
+    - name: Disable unitary decomposition
+      if: matrix.os == 'windows-latest'
+      run: echo "OPENQL_DISABLE_UNITARY=true" >> $env:GITHUB_ENV
     - name: Build
       env:
         NPROCS: 5
