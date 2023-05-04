@@ -1,0 +1,82 @@
+{
+    "codewords": {
+        "data": {
+            "flux_0": [
+                [
+                    3,
+                    "{type:cz,which:SW}"
+                ],
+                null,
+                [
+                    1,
+                    "{type:idle_z,which:NE}"
+                ],
+                [
+                    5,
+                    "{type:park}"
+                ]
+            ],
+            "mw_2": [
+                [
+                    2,
+                    "{phi:90,theta:180,type:ge}"
+                ],
+                null,
+                [
+                    4,
+                    "{phi:90,theta:90,type:ge}"
+                ]
+            ],
+            "ro_0": [
+                [
+                    0,
+                    "[dummy]"
+                ],
+                [
+                    0,
+                    "[dummy]"
+                ]
+            ],
+            "ro_1": [
+                [
+                    0,
+                    "[dummy]"
+                ],
+                [
+                    0,
+                    "[dummy]"
+                ],
+                [
+                    0,
+                    "[dummy]"
+                ]
+            ]
+        },
+        "version": 1
+    },
+    "measurements": {
+        "data": [
+            {
+                "ro_0": [
+                    1,
+                    4
+                ],
+                "ro_1": [
+                    0,
+                    2,
+                    3
+                ]
+            }
+        ],
+        "nr-shots": {
+            "ro_0": 1,
+            "ro_1": 1
+        },
+        "version": 2
+    },
+    "openql": {
+        "backend": "cc",
+        "backend-version": "0.4.0",
+        "version": "0.11.1"
+    }
+}
