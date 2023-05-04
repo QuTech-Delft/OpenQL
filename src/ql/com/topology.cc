@@ -155,7 +155,7 @@ void Topology::generate_neighbors_list(utils::UInt qs, Neighbors &qubits) const 
         if (qs == qd) {
             continue;
         }
-        if (is_inter_core_hop(qs, qd) && (!is_comm_qubit(qs) || !is_comm_qubit(qd))) {
+        if (!are_comm_qubits(qs, qd) && is_inter_core_hop(qs, qd)) {
             continue;
         }
         qubits.push_back(qd);
@@ -348,6 +348,9 @@ Topology::Topology(utils::UInt num_qubits, const utils::Json &topology) {
         connectivity = GridConnectivity::FULL;
     } else {
         throw utils::Exception("topology.connectivity key must be either \"specified\" or \"full\" if specified");
+    }
+    if (connectivity == GridConnectivity::SPECIFIED && num_cores >= 2) {
+        throw utils::Exception("topology.connectivity SPECIFIED is not allowed for multi-core");
     }
 
     // Handle edges.
@@ -635,7 +638,9 @@ Topology::Neighbors Topology::get_neighbors(Qubit qubit) const {
  * Returns whether the given qubit is a communication qubit of a core.
  */
 utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
-    if (num_cores == 1) return true;
+    if (num_cores == 1) {
+        return true;
+    }
     QL_ASSERT(connectivity == GridConnectivity::FULL);
 
     // Compute index of qubit local to core.
@@ -648,10 +653,19 @@ utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
 }
 
 /**
+ * Returns whether the two given qubits are communication qubits.
+ */
+utils::Bool Topology::are_comm_qubits(Qubit source, Qubit target) const {
+    return is_comm_qubit(source) && is_comm_qubit(target);
+}
+
+/**
  * Returns the core index for the given qubit in a multi-core environment.
  */
 utils::UInt Topology::get_core_index(Qubit qubit) const {
-    if (num_cores == 1) return 0;
+    if (num_cores == 1) {
+        return 0;
+    }
     QL_ASSERT(connectivity == GridConnectivity::FULL);
     return qubit / num_qubits_per_core;
 }
@@ -669,10 +683,10 @@ utils::Bool Topology::is_inter_core_hop(Qubit source, Qubit target) const {
  * Returns 0 iff source == target.
  */
 utils::UInt Topology::get_distance(Qubit source, Qubit target) const {
+    if (source == target) {
+        return 0;
+    }
     if (connectivity == GridConnectivity::FULL) {
-        if (source == target) {
-            return 0;
-        }
         utils::UInt d = 1;
         if (get_core_index(source) == get_core_index(target)) {
             return d;
@@ -685,43 +699,61 @@ utils::UInt Topology::get_distance(Qubit source, Qubit target) const {
         }
         return d;
     }
-
     return distance[source][target];
 }
 
 /**
- * Returns the distance between the given two qubits in terms of cores.
- */
-utils::UInt Topology::get_core_distance(Qubit source, Qubit target) const {
-    if (get_core_index(source) == get_core_index(target)) return 0;
-    QL_ASSERT(connectivity == GridConnectivity::FULL);
-    return 1;
-}
-
-/**
- * Minimum number of hops between two qubits is always >= distance(from, to)
- * and inside one core (or without multi-core) the minimum number of
- * hops == distance.
+ * Minimum number of hops between two qubits for single-core and multi-core
+ * is the minimum number of qubit-to-qubit connections that is needed in a path of connections
+ * between physical qubits that are the operands of a 2q gate,
+ * so that each connection can either host
+ * a swap, a move gate, an inter-core-swap gate, an inter-core-move gate or the mapped 2q gate.
  *
- * However, in multi-core with inter-core hops, an inter-core hop cannot
- * execute a 2qgate so when the minimum number of hops are all inter-core
- * hops (so distance(from,to) == coredistance(from,to)) and no 2qgate has
- * been placed yet, then at least one additional inter-core hop is needed
- * for the 2qgate, the number of hops required being at least distance+1.
+ * The inter-core connections are only between communication qubits,
+ * and this connection cannot host a 2q gate, only move or swap qubits;
+ * all intra-core connections can host a 2q gate.
+ * Furthermore, it is assumed that for multi-core: inside a core all qubits are connected,
+ * and between cores, each communication qubit is connected to each other communication qubit.
+ * For single-core routing/mapping, there is no a-priori constraint on the qubit connectivity,
+ * except for those specified explicitly in the topology specification in the configuration file.
  *
- * We assume below that a valid path exists with distance+1 hops; this fails
- * when not all qubits in a core support connections to all other cores.
- * See the check in initialization of neighbors.
+ * The implementation below is based on a case analysis of the constraints above.
+ *
+ * The minimum number of hops is always >= distance(from, to).
+ *
+ * Inside one core, minimum number of hops == distance.
+ *
+ * Normal case: between qubits in different cores, the minimum number of hops >= distance + 1.
+ * This is because an inter-core hop cannot execute a 2q gate, so
+ * when the minimum number of hops are all inter-core hops (i.e. distance == core_distance),
+ * and no 2q gate has been placed yet, then at least one additional intra-core hop is needed for the 2q gate.
+ *
+ * Special case: but one additional hop is not sufficient in the case when both source and target are communication qubits,
+ * and they are the only communication qubits in each core.
+ * The only option there is adding two hops in one of the cores:
+ * one to just another qubit and one back to the single communication qubit.
+ *
+ * Notice that:
+ * - When there is only one communication qubit per core, and whether source or target are normal qubits,
+ *   then the hop between the normal qubit and the communication qubit in its core can host the 2q gate.
+ * - And when the number of communication qubits per core is at least 2, and both operands are communication qubits,
+ *   then a hop between one of the operands and another communication qubit in its core can host the 2q gate.
  */
 utils::UInt Topology::get_min_hops(Qubit source, Qubit target) const {
-    utils::UInt d = get_distance(source, target);
-    utils::UInt cd = get_core_distance(source, target);
-    QL_ASSERT(cd <= d);
-    if (cd == d) {
-        return d+2;
-    } else {
-        return d;
+    if (source == target) {
+        return 0;
     }
+    utils::UInt min_hops = get_distance(source, target);
+    if (are_comm_qubits(source, target) && is_inter_core_hop(source, target)) {
+        // Notice that, as stated in the comments above, for multi-core, between cores,
+        // each communication qubit is connected to each other communication qubit
+        // So inter-core distance is always 1
+        QL_ASSERT(min_hops == 1);
+        min_hops += (num_comm_qubits == 1)
+            ? 2  // special case
+            : 1;  // normal case
+    }
+    return min_hops;
 }
 
 /**
