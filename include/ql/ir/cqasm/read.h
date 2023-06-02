@@ -93,9 +93,7 @@ void read_v1(
 
 void read_v3(
     const Ref &ir,
-    const utils::Str &data,
-    const utils::Str &fname = "<unknown>",
-    const ReadOptions &options = {}
+    const utils::Str &data
 );
 
 void read(

@@ -19,12 +19,12 @@ namespace detail {
 
 // Shorthands for namespaces.
 namespace lqt { using namespace ::cqasm::tree; }
-namespace lqs { using namespace ::cqasm::semantic; }
-namespace lqv { using namespace ::cqasm::values; }
-namespace lqtyp { using namespace ::cqasm::types; }
-namespace lqi { using namespace ::cqasm::instruction; }
-namespace lqa { using namespace ::cqasm::analyzer; }
-namespace lqp { using namespace ::cqasm::parser; }
+namespace lqs { using namespace ::cqasm::v1::semantic; }
+namespace lqv { using namespace ::cqasm::v1::values; }
+namespace lqtyp { using namespace ::cqasm::v1::types; }
+namespace lqi { using namespace ::cqasm::v1::instruction; }
+namespace lqa { using namespace ::cqasm::v1::analyzer; }
+namespace lqp { using namespace ::cqasm::v1::parser; }
 
 using namespace utils;
 

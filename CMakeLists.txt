@@ -9,6 +9,14 @@ if(NOT TARGET ql)
 # Loads up the appropriate directories for installing stuff.
 include(GNUInstallDirs)
 
+# Packages
+include(FetchContent)
+FetchContent_Declare(cqasm
+    GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
+    GIT_TAG "d3829ba0dbe7473939cd6dc821bd6d74ee9678be"
+)
+FetchContent_MakeAvailable(cqasm)
+
 
 #=============================================================================#
 # Configuration options                                                       #
@@ -184,11 +192,6 @@ function(create_resource fname)
     )
     add_dependencies(ql ${target_name})
 endfunction()
-
-# Add tree-gen. We need to do this *only* to get access to the generate_tree
-# CMake function; everything else is handled implicitly because tree-gen is a
-# transitive dependency of libqasm.
-add_subdirectory(deps/libqasm/src/cqasm/tree-gen deps/tree-gen)
 
 
 #=============================================================================#
@@ -451,8 +454,6 @@ target_link_libraries(ql PUBLIC nlohmann_json::nlohmann_json)
 
 # libqasm ---------------------------------------------------------------------
 
-# Load libqasm. libqasm's CMakeLists expose the "cqasm" target to link against.
-add_subdirectory(deps/libqasm)
 target_link_libraries(ql PUBLIC cqasm)
 
 
