@@ -1533,6 +1533,9 @@ void read_v3(
         }
         QL_USER_ERROR(errors.str());
     }
+    auto ql_program = utils::make<Program>();
+    ql_program->name = "program";
+    ir->program = ql_program;
 }
 
 /**
