@@ -363,7 +363,7 @@ configure_file(
 target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
 
 # There is no distinction between public and private header files right now,
-# and they'r all in the source directory. Note the / at the end of the path;
+# and they're all in the source directory. Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
