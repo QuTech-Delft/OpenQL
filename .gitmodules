@@ -1,3 +1,0 @@
-[submodule "deps/highs"]
-	path = deps/highs
-	url = https://github.com/ERGO-Code/HiGHS.git

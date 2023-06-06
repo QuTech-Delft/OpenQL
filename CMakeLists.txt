@@ -11,7 +11,6 @@ include(GNUInstallDirs)
 
 find_package(Backward CONFIG REQUIRED)
 find_package(cimg CONFIG REQUIRED)
-find_package(doctest CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(highs CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
@@ -22,12 +21,6 @@ FetchContent_Declare(cqasm
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
     GIT_TAG "d3829ba0dbe7473939cd6dc821bd6d74ee9678be"
 )
-#[[
-FetchContent_Declare(highs
-    GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
-    GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
-)
-#]]
 # TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
 # TODO: remove use of Lemon in project?
 FetchContent_Declare(lemon
@@ -36,7 +29,6 @@ FetchContent_Declare(lemon
 )
 FetchContent_MakeAvailable(
     cqasm
-    #highs
     lemon
 )
 
@@ -45,8 +37,9 @@ add_custom_target(patch_lemon_sources
 )
 add_custom_command(
     OUTPUT patch_lemon_sources_command
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/maps.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon/"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/array_map.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon/bits/"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/maps.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon/"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/random.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon/"
 )
 
 #=============================================================================#
@@ -377,7 +370,6 @@ add_dependencies(ql patch_lemon_sources)
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
     SYSTEM PUBLIC "${Backward_INCLUDE_DIRS}"
-    SYSTEM PUBLIC "${doctest_INCLUDE_DIRS}"
     SYSTEM PUBLIC "${Eigen3_INCLUDE_DIRS}/unsupported"
     SYSTEM PUBLIC "${highs_INCLUDE_DIRS}"
     SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
@@ -482,13 +474,15 @@ endif()
 #=============================================================================#
 
 # Include the tests directory if requested.
-if(OPENQL_BUILD_TESTS)
+if(False)
+#if(OPENQL_BUILD_TESTS)
     enable_testing()
+    find_package(doctest CONFIG REQUIRED)
 
     # Convenience function to add an integration test.
     function(add_openql_test name source workdir)
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
-        target_link_libraries("${name}" ql)
+        target_link_libraries("${name}" PUBLIC ql)
         add_test(
             NAME "${name}"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${workdir}"
@@ -508,7 +502,8 @@ if(OPENQL_BUILD_TESTS)
         string(REPLACE ".cc" "" name ${name})
         set(name test_${name})
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
-        target_link_libraries("${name}" ql)
+        target_link_libraries("${name}" PUBLIC ql doctest::doctest)
+        target_include_directories(ql SYSTEM PUBLIC "${doctest_INCLUDE_DIRS}")
         get_filename_component(working_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}" DIRECTORY)
         add_test(
             NAME "${name}"

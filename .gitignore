@@ -41,3 +41,6 @@ docs/_templates
 /cmake-build-*
 
 *.pbm
+
+# conan
+CMakeUserPresets.json
