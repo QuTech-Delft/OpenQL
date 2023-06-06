@@ -1,22 +1,3 @@
-[submodule "deps/libqasm"]
-	path = deps/libqasm
-	url = https://github.com/QuTech-Delft/libqasm.git
-	branch = develop
-[submodule "deps/eigen"]
-	path = deps/eigen
-	url = https://gitlab.com/libeigen/eigen.git
-	shallow = true
-[submodule "deps/backward-cpp"]
-	path = deps/backward-cpp
-	url = https://github.com/bombela/backward-cpp.git
-	shallow = true
-[submodule "deps/json"]
-	path = deps/json
-	url = https://github.com/nlohmann/json.git
-	shallow = true
-[submodule "deps/doctest"]
-	path = deps/doctest
-	url = https://github.com/doctest/doctest.git
 [submodule "deps/highs"]
 	path = deps/highs
 	url = https://github.com/ERGO-Code/HiGHS.git

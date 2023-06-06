@@ -70,7 +70,7 @@ std::ostream &operator<<(std::ostream &os, ConditionType condition_type);
 
 const utils::UInt MAX_CYCLE = utils::MAX;
 
-struct SwapParamaters {
+struct SwapParameters {
     utils::Bool part_of_swap = false;
     // at the end of the swap r0 stores v0 and r1 stores v1
     utils::Int r0 = -1;
@@ -79,10 +79,10 @@ struct SwapParamaters {
     utils::Int v1 = -1;
 
     // default constructor
-    SwapParamaters() {}
+    SwapParameters() {}
 
     // initializer list
-    SwapParamaters(utils::Bool _part_of_swap, utils::Int _r0, utils::Int _r1, utils::Int _v0, utils::Int _v1)
+    SwapParameters(utils::Bool _part_of_swap, utils::Int _r0, utils::Int _r1, utils::Int _v0, utils::Int _v1)
         : part_of_swap(_part_of_swap), r0(_r0), r1(_r1), v0(_v0), v1(_v1)
     {}
 };
@@ -98,7 +98,7 @@ public:
     utils::Vec<utils::UInt> breg_operands;        // bit operands e.g. assigned to by measure; cond_operands are separate
     utils::Vec<utils::UInt> cond_operands;        // 0, 1 or 2 bit operands of condition
     ConditionType condition = ConditionType::ALWAYS; // defines condition and by that number of bit operands of condition
-    SwapParamaters swap_params;                  // if the gate is part of a swap/move, this will contain the real and virtual qubits involved
+    SwapParameters swap_params;                  // if the gate is part of a swap/move, this will contain the real and virtual qubits involved
     utils::Int int_operand = 0;                   // FIXME: move to class 'classical'
     utils::UInt duration = 0;
     utils::Real angle = 0.0;                      // for arbitrary rotations

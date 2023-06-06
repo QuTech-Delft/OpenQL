@@ -23,12 +23,16 @@ namespace visualize {
 namespace detail {
 
 struct Cycle {
+    using GatePropertiesMatrix = utils::Vec<utils::Vec<std::reference_wrapper<GateProperties>>>;
+
     utils::Int index;
     utils::Bool empty;
     utils::Bool cut;
-    utils::Vec<utils::Vec<std::reference_wrapper<GateProperties>>> gates;
+    GatePropertiesMatrix gates;
 
-    Cycle() = delete;
+    Cycle(utils::Int i, utils::Bool e, utils::Bool c, GatePropertiesMatrix g)
+        : index{ i }, empty{ e }, cut{ c }, gates{ std::move(g) }
+    {}
 };
 
 struct Cell {
@@ -67,7 +71,9 @@ struct GatePulses {
     utils::Vec<utils::Real> flux;
     utils::Vec<utils::Real> readout;
 
-    GatePulses() = delete;
+    GatePulses(utils::Vec<utils::Real> m, utils::Vec<utils::Real> f, utils::Vec<utils::Real> r)
+        : microwave{ std::move(m) }, flux{ std::move(f) }, readout{ std::move(r) }
+    {}
 };
 
 struct PulseVisualization {

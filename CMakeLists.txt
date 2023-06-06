@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 project(OpenQL C CXX)
 
@@ -9,14 +9,45 @@ if(NOT TARGET ql)
 # Loads up the appropriate directories for installing stuff.
 include(GNUInstallDirs)
 
+find_package(Backward CONFIG REQUIRED)
+find_package(cimg CONFIG REQUIRED)
+find_package(doctest CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
+find_package(highs CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+
 # Packages
 include(FetchContent)
 FetchContent_Declare(cqasm
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
     GIT_TAG "d3829ba0dbe7473939cd6dc821bd6d74ee9678be"
 )
-FetchContent_MakeAvailable(cqasm)
+#[[
+FetchContent_Declare(highs
+    GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
+    GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
+)
+#]]
+# TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
+# TODO: remove use of Lemon in project?
+FetchContent_Declare(lemon
+    URL "http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz"
+    URL_HASH SHA256=71b7c725f4c0b4a8ccb92eb87b208701586cf7a96156ebd821ca3ed855bad3c8
+)
+FetchContent_MakeAvailable(
+    cqasm
+    #highs
+    lemon
+)
 
+add_custom_target(patch_lemon_sources
+    DEPENDS patch_lemon_sources_command
+)
+add_custom_command(
+    OUTPUT patch_lemon_sources_command
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/maps.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon/"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/array_map.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon/bits/"
+)
 
 #=============================================================================#
 # Configuration options                                                       #
@@ -156,8 +187,8 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Everything needs C++11 support.
-set(CMAKE_CXX_STANDARD 11)
+# Everything needs C++20 support.
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -338,6 +369,34 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
 )
 
+add_dependencies(ql patch_lemon_sources)
+
+# There is no distinction between public and private header files right now,
+# and they're all in the source directory.
+# Note the / at the end of the path;
+# this is necessary for the header files to be installed in the right location.
+target_include_directories(ql
+    SYSTEM PUBLIC "${Backward_INCLUDE_DIRS}"
+    SYSTEM PUBLIC "${doctest_INCLUDE_DIRS}"
+    SYSTEM PUBLIC "${Eigen3_INCLUDE_DIRS}/unsupported"
+    SYSTEM PUBLIC "${highs_INCLUDE_DIRS}"
+    SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
+    SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
+    SYSTEM PUBLIC "${libqasm_INCLUDE_DIRS}"
+    SYSTEM PUBLIC "${nlohmann_json_INCLUDE_DIRS}"
+    SYSTEM PUBLIC ${TREE_LIB_PRIVATE_INCLUDE}
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
+)
+
+target_link_libraries(ql PUBLIC
+    ${CONAN_LIBS}
+    cqasm
+    lemon
+)
+
 # Specify resources.
 create_resource("src/ql/arch/cc/resources/hwconf_default.json")
 create_resource("src/ql/arch/cc_light/resources/hwconf_default.json")
@@ -361,16 +420,6 @@ configure_file(
 # This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
 # https://docs.microsoft.com/en-us/cpp/cpp/declspec?view=vs-2019
 target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
-
-# There is no distinction between public and private header files right now,
-# and they're all in the source directory. Note the / at the end of the path;
-# this is necessary for the header files to be installed in the right location.
-target_include_directories(ql
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
-    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
-    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
-)
 
 # Configure compilation.
 set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -404,58 +453,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     target_compile_definitions(ql PRIVATE NDEBUG)
 endif()
 
-# LEMON -----------------------------------------------------------------------
-
-# Configure LEMON. LEMON by itself exposes the "lemon" target to link against,
-# but it doesn't use target_include_directories(), so we have to do that here.
-add_subdirectory(deps/lemon)
-target_include_directories(lemon INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/lemon"
-    "${CMAKE_CURRENT_BINARY_DIR}/deps/lemon"
-)
-target_link_libraries(ql PUBLIC lemon)
-
-# Even more annoying stuff: LEMON doesn't install itself in the right place on
-# multilib systems (i.e. ones where the libdir is lib64 instead of just lib).
-# So to make sure it is found in the install tree, we have to install it in the
-# proper place ourselves. That would go something like this,
-#
-#     install(
-#         TARGETS lemon
-#         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-#         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-#         COMPONENT library
-#     )
-#
-# but until CMake 3.13 the install directive MUST be in the directory where the
-# target is created, so we have to insert that piece of code into LEMON's own
-# CMakeLists.txt.
-
-
-# Eigen -----------------------------------------------------------------------
-
-# Wrap Eigen in an interface library to link against. Note that Eigen is only
-# used internally; its headers need not be installed or exposed to programs
-# linking against OpenQL.
-add_library(eigen INTERFACE)
-target_include_directories(eigen INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/eigen/Eigen"
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/eigen/unsupported"
-)
-target_link_libraries(ql PRIVATE eigen)
-
-
-# nlohmann::json --------------------------------------------------------------
-
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-add_subdirectory(deps/json)
-target_link_libraries(ql PUBLIC nlohmann_json::nlohmann_json)
-
-
-# libqasm ---------------------------------------------------------------------
-
-target_link_libraries(ql PUBLIC cqasm)
-
 
 # X11/CImg ---------------------------------------------------------------------
 
@@ -477,39 +474,8 @@ endif()
 
 if(QL_VISUALIZER)
     target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
-    target_include_directories(ql PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/deps/cimg/include/")
+    target_include_directories(ql SYSTEM PRIVATE "${cimg_INCLUDE_DIRS}")
 endif()
-
-# backward-cpp ----------------------------------------------------------------
-
-# Stack trace helper library, nothing functional here.
-add_subdirectory(deps/backward-cpp)
-add_backward(ql)
-
-# add_backward doesn't set INTERFACE_LINK_LIBRARIES, only LINK_LIBRARIES. That
-# goes wrong when we're compiling statically, because said libraries are shared
-# and need to be included in the final link.
-set_property(TARGET ql APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${BACKWARD_LIBRARIES})
-
-# HiGHS -----------------------------------------------------------------------
-
-# HiGHS (www.highs.dev) comes as a submodule in deps/highs. It is a linear programming solver that can
-# solve Mixed Integer Programming problems efficiently. It is used in the initial placement pass.
-
-# The build system in HiGHS currently doesn't allow to disable HiGHS tests
-# thus the following hacks are needed, instead of just add_subdirectory(deps/highs).
-set(FAST_BUILD ON)
-set(GITHASH "")
-set(TODAY "")
-set(HIGHS_VERSION_MAJOR 0)
-set(HIGHS_VERSION_MINOR 0)
-set(HIGHS_VERSION_PATCH 0)
-set(HIGHS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/deps/highs")
-set(HIGHS_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/highs")
-
-add_subdirectory(deps/highs/src)
-configure_file(deps/highs/src/HConfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/deps/highs/HConfig.h)
-target_link_libraries(ql PUBLIC libhighs)
 
 #=============================================================================#
 # Testing                                                                     #
@@ -530,8 +496,6 @@ if(OPENQL_BUILD_TESTS)
         )
     endfunction()
 
-    add_subdirectory(deps/doctest)
-    
     # Include the directories containing integration tests.
     add_subdirectory(test)
     add_subdirectory(tests)
@@ -545,7 +509,6 @@ if(OPENQL_BUILD_TESTS)
         set(name test_${name})
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
         target_link_libraries("${name}" ql)
-        target_link_libraries("${name}" doctest)
         get_filename_component(working_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}" DIRECTORY)
         add_test(
             NAME "${name}"

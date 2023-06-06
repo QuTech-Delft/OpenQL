@@ -9,7 +9,7 @@ on:
 
 jobs:
   cpp:
-    name: 'C++ tests'
+    name: 'C++ tests (Conan builds)'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -19,32 +19,23 @@ jobs:
         - macos-latest
         - windows-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: Install dependencies
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install bison flex
-        echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
-        echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
-    - uses: actions/cache@v2
-      if: matrix.os == 'windows-latest'
-      with:
-        path: C:\Users\runneradmin\AppData\Local\Temp\chocolatey
-        key: ${{ runner.os }}-chocolatey-cpp-0
-        restore-keys: |
-          ${{ runner.os }}-chocolatey-cpp-
-          ${{ runner.os }}-chocolatey-
-    - name: Install dependencies
-      if: matrix.os == 'windows-latest'
-      run: choco install winflexbison3 --version 2.5.18.20190508
-    - name: Configure
-      run: cmake . -DCMAKE_BUILD_TYPE=Debug -DOPENQL_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF
-    - name: Build
-      run: cmake --build . --parallel 5
-    - name: Test
-      run: ctest -C Debug --output-on-failure
+      - name: Get latest CMake
+        uses: lukka/get-cmake@latest
+      - name: Install Conan
+        id: conan
+        uses: turtlebrowser/get-conan@main
+      - name: Conan version
+        run: echo "${{ steps.conan.outputs.version }}"
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Conan install and build
+        run: |
+          conan profile detect
+          conan build . -s:h compiler.cppstd=20 -s:h ql/*:build_type=Debug -o ql/*:build_tests=True -b missing
+      - name: Run tests
+        run: ctest -C Debug --output-on-failure
 
   cpp-standalone:
     name: 'C++ standalone program'

@@ -38,7 +38,7 @@ Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates) const {
 
     // Calculate the amount of cycles. If there are gates with undefined cycle
     // indices, visualize the circuit sequentially.
-    Vec<Cycle> cycles;
+    Vec<Cycle> cycles{};
     Int amountOfCycles = calculateAmountOfCycles(gates);
 
     // Generate the cycles.
@@ -50,7 +50,7 @@ Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates) const {
         const Vec<std::reference_wrapper<GateProperties>> firstChunk;
         partition.push_back(firstChunk);
 
-        cycles.push_back({i, true, false, partition});
+        cycles.emplace_back(i, true, false, partition);
     }
     // Mark non-empty cycles and add gates to their corresponding cycles.
     for (GateProperties &gate : gates) {

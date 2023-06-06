@@ -66,8 +66,8 @@ void Functions::dispatch(const ir::FunctionCall *fn, const Str &label_if_false, 
 }
 
 
-UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
-    if(bregs.size() != static_cast<utils::UInt>(expOpCnt)) {
+UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, UInt expOpCnt) {
+    if(bregs.size() != expOpCnt) {
         QL_ICE("Expected " << expOpCnt << " breg operands, got " << bregs.size());
     }
 
@@ -75,7 +75,7 @@ UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
     UInt smAddr = 0;
     UInt mask = 0;      // mask for used SM bits in 32 bit word transferred using move_sm
     Str descr;
-    for (utils::UInt i=0; i<bregs.size(); i++) {
+    for (UInt i=0; i<bregs.size(); i++) {
         auto breg = bregs[i];
         if(breg >= NUM_BREGS) {
             QL_INPUT_ERROR("bit register index " << breg << " exceeds maximum of " << NUM_BREGS-1);   // FIXME: cleanup "breg" vs. "bit register index"

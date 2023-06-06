@@ -495,7 +495,7 @@ void Past::add_swap(utils::UInt r0, utils::UInt r1) {
         add(gp);
         // each gate in circ is part of a swap or move, so add the parameters
         //TODO: uint to int conversion
-        const ir::compat::SwapParamaters swap_params {true, (utils::Int) r0, (utils::Int) r1, (utils::Int) v1, (utils::Int) v0};
+        const ir::compat::SwapParameters swap_params {true, (utils::Int) r0, (utils::Int) r1, (utils::Int) v1, (utils::Int) v0};
         gp->swap_params = swap_params;
     }
 

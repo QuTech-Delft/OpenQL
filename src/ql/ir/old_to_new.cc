@@ -193,7 +193,7 @@ static void parse_decomposition_rule(
     cqasm::ReadOptions read_options;
     read_options.schedule_mode = cqasm::ScheduleMode::KEEP;
     for (const auto &operand_type : ityp->operand_types) {
-        utils::Bool assignable;
+        utils::Bool assignable{ false };
         switch (operand_type->mode) {
             case prim::OperandMode::BARRIER:
             case prim::OperandMode::WRITE:
