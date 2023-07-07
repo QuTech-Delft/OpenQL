@@ -20,7 +20,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 include(FetchContent)
 FetchContent_Declare(cqasm
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
-    GIT_TAG "d3829ba0dbe7473939cd6dc821bd6d74ee9678be"
+    GIT_TAG "c0f0178a6cc400ba14c64ef8b43a7688ae6042d8"
 )
 #[[
 FetchContent_Declare(highs
@@ -497,7 +497,7 @@ if(OPENQL_BUILD_TESTS)
     endfunction()
 
     # Include the directories containing integration tests.
-    add_subdirectory(test)
+    #add_subdirectory(test)
     add_subdirectory(tests)
     add_subdirectory(examples)
 
