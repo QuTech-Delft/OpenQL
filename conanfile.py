@@ -21,7 +21,13 @@ class OpenQLConan(ConanFile):
         self.requires("cimg/3.2.0")
         self.requires("eigen/3.4.0")
         self.requires("highs/1.4.2")
+        self.tool_requires("m4/1.4.19")
         self.requires("nlohmann_json/3.11.2")
+        if self.settings.os == "Windows":
+            self.tool_requires("winflexbison/2.5.24")
+        else:
+            self.tool_requires("flex/2.6.4")
+            self.tool_requires("bison/3.8.2")
         if self.options.build_tests:
             self.requires("doctest/2.4.9")
             self.requires("gtest/1.12.1")

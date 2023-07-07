@@ -19,7 +19,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 include(FetchContent)
 FetchContent_Declare(cqasm
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
-    GIT_TAG "c0f0178a6cc400ba14c64ef8b43a7688ae6042d8"
+    GIT_TAG "d3829ba0dbe7473939cd6dc821bd6d74ee9678be"
 )
 # TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
 # TODO: remove use of Lemon in project?
