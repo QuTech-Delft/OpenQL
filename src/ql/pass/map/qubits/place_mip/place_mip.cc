@@ -134,7 +134,8 @@ public:
     void visit_node(ir::Node &node) override {}
 
     void visit_reference(ir::Reference &ref) override {
-        if (ref.target == ir->platform->qubits && ref.data_type == ir->platform->qubits->data_type) {
+        if (*(ref.target->as_object()) == *(ir->platform->qubits->as_object()) &&
+            ref.data_type == ir->platform->qubits->data_type) {
             QL_ASSERT(ref.indices.size() == 1);
             ref.indices[0].as<ir::IntLiteral>()->value = mapping[ref.indices[0].as<ir::IntLiteral>()->value];
         }
