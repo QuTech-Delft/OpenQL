@@ -13,8 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        #- ubuntu-latest
-        #- macos-latest
+        - ubuntu-latest
+        - macos-latest
         - windows-latest
     steps:
       - name: Get latest CMake
@@ -31,7 +31,7 @@ jobs:
       - name: Conan install and build
         run: |
           conan profile detect
-          conan build . -s:h compiler.cppstd=20 -s:h ql/*:build_type=Debug -o ql/*:build_tests=True -b missing
+          conan build . -s:h compiler.cppstd=23 -s:h ql/*:build_type=Debug -o ql/*:build_tests=True -b missing
       - name: Run tests
         run: ctest -C Debug --output-on-failure
 
