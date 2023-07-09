@@ -57,7 +57,7 @@ void QubitUsageCount::process_instruction(
     for (auto &op : ir::get_operands(instruction)) {
         if (auto ref = op->as_reference()) {
             if (
-                ref->target.operator==(ir->platform->qubits) &&
+                ref->target == ir->platform->qubits &&
                 ref->data_type == ir->platform->qubits->data_type &&
                 ref->indices.size() == 1 &&
                 ref->indices[0]->as_int_literal()
@@ -79,7 +79,7 @@ void QubitUsedCycleCount::process_instruction(
     for (auto &op : ir::get_operands(instruction)) {
         if (auto ref = op->as_reference()) {
             if (
-                ref->target.operator==(ir->platform->qubits) &&
+                ref->target == ir->platform->qubits &&
                 ref->data_type == ir->platform->qubits->data_type &&
                 ref->indices.size() == 1 &&
                 ref->indices[0]->as_int_literal()

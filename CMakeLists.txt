@@ -19,7 +19,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 include(FetchContent)
 FetchContent_Declare(cqasm
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
-    GIT_TAG "d3829ba0dbe7473939cd6dc821bd6d74ee9678be"
+    GIT_TAG "a84b618cca982847b1b4435774231dc6dc8255c5"
 )
 # TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
 # TODO: remove use of Lemon in project?
@@ -256,6 +256,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/detail/cqasm_reader.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/prim.cc"
     "${CMAKE_CURRENT_BINARY_DIR}/src/ql/ir/ir.gen.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/ir_gen_ex.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/ops.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/operator_info.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/describe.cc"

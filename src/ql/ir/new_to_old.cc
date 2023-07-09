@@ -975,22 +975,22 @@ void Operands::append(const NewToOldConverter &conv, const ExpressionRef &expr) 
                 << " (size=" << ref->indices.size() << ")"
             );
         } else if (
-            ref->target.operator==(conv.ir->platform->qubits) &&
+            ref->target == conv.ir->platform->qubits &&
             ref->data_type == conv.ir->platform->qubits->data_type
         ) {
             qubits.push_back(ref->indices[0].as<IntLiteral>()->value);
         } else if (
-            ref->target.operator==(conv.ir->platform->qubits) &&
+            ref->target == conv.ir->platform->qubits &&
             ref->data_type == conv.ir->platform->default_bit_type
         ) {
             bregs.push_back(ref->indices[0].as<IntLiteral>()->value);
         } else if (
-            ref->target.operator==(conv.breg_ob) &&
+            ref->target == conv.breg_ob &&
             ref->data_type == conv.breg_ob->data_type
         ) {
             bregs.push_back(ref->indices[0].as<IntLiteral>()->value + conv.num_qubits);
         } else if (
-            ref->target.operator==(conv.creg_ob) &&
+            ref->target == conv.creg_ob &&
             ref->data_type == conv.creg_ob->data_type
         ) {
             cregs.push_back(ref->indices[0].as<IntLiteral>()->value);

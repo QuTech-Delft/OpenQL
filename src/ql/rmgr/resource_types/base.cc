@@ -209,7 +209,7 @@ utils::Bool Base::gate(
         for (const auto &oper : ir::get_operands(statement.as<ir::Instruction>())) {
             if (auto ref = oper->as_reference()) {
                 if (
-                    ref->target.operator==(context->ir->platform->qubits) &&
+                    ref->target == context->ir->platform->qubits &&
                     ref->data_type == context->ir->platform->qubits->data_type &&
                     ref->indices.size() == 1 &&
                     ref->indices[0]->as_int_literal()
