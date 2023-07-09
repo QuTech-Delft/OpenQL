@@ -655,7 +655,7 @@ public:
                     utils::Set<utils::UInt> qubits;
                     for (const auto &op : node.objects) {
                         if (
-                            *(op->target->as_object()) == *(ir->platform->qubits->as_object()) &&
+                            op->target.operator==(ir->platform->qubits) &&
                             op->data_type == ir->platform->qubits->data_type &&
                             op->indices.size() == 1 &&
                             op->indices[0]->as_int_literal()
@@ -959,7 +959,7 @@ public:
         // Figure out the name and the way to print.
         utils::Str name;
         auto typecast = node.data_type != node.target->data_type;
-        if (*(node.target->as_object()) == *(ir->platform->qubits)->as_object()) {
+        if (node.target.operator==(ir->platform->qubits)) {
             if (node.data_type->as_bit_type()) {
                 typecast = false;
                 name = "b";
@@ -983,7 +983,7 @@ public:
         // Handle indices.
         if (!node.indices.empty()) {
 
-            if (*(node.target->as_object()) == *(ir->platform->qubits)->as_object()) {
+            if (node.target.operator==(ir->platform->qubits)) {
 
                 // For the main qubit register (and implicit bit register),
                 // index using [].

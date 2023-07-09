@@ -75,7 +75,7 @@ OperandContext::OperandContext(const ir::Ref &ir) : ir(ir) {
 
 Bool OperandContext::is_qubit_reference(const ir::Reference &ref) const {
     return
-        *(ref.target->as_object()) == *(ir->platform->qubits->as_object())
+        ref.target.operator==(ir->platform->qubits)
         && ref.data_type == ir->platform->qubits->data_type
         && ref.indices.size() == 1
         && ref.indices[0]->as_int_literal();
@@ -83,7 +83,7 @@ Bool OperandContext::is_qubit_reference(const ir::Reference &ref) const {
 
 Bool OperandContext::is_implicit_breg_reference(const ir::Reference &ref) const {
     return
-        *(ref.target->as_object()) == *(ir->platform->qubits->as_object())
+        ref.target.operator==(ir->platform->qubits)
         && ref.data_type == ir->platform->default_bit_type
         && ref.indices.size() == 1
         && ref.indices[0]->as_int_literal();
@@ -91,7 +91,7 @@ Bool OperandContext::is_implicit_breg_reference(const ir::Reference &ref) const 
 
 Bool OperandContext::is_explicit_breg_reference(const ir::Reference &ref) const {
     return
-        *(ref.target->as_object()) == *(breg_ob->as_object())   // NB: breg_ob is the object used by the new IR to refer to bregs from num_qubits onwards
+        ref.target.operator==(breg_ob)   // NB: breg_ob is the object used by the new IR to refer to bregs from num_qubits onwards
         && ref.data_type == breg_ob->data_type
         && ref.indices.size() == 1
         && ref.indices[0]->as_int_literal();
@@ -103,7 +103,7 @@ Bool OperandContext::is_breg_reference(const ir::Reference &ref) const {
 
 Bool OperandContext::is_creg_reference(const ir::Reference &ref) const {
     return
-        *(ref.target->as_object()) == *(creg_ob->as_object())
+        ref.target.operator==(creg_ob)
         && ref.data_type == creg_ob->data_type
         && ref.indices.size() == 1
         && ref.indices[0]->as_int_literal();

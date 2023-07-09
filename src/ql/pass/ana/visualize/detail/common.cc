@@ -46,7 +46,7 @@ public:
 
         for (const auto& op: custom_instr.instruction_type->template_operands) {
             if (auto ref = op->as_reference()) {
-                if (*(ref->target->as_object()) == *(platform->qubits)->as_object()) {
+                if (ref->target.operator==(platform->qubits)) {
                     qubits.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
                 }
 
@@ -58,7 +58,7 @@ public:
 
         for (const auto& op: custom_instr.operands) {
             if (auto ref = op->as_reference()) {
-                if (*(ref->target->as_object()) == *(platform->qubits)->as_object()) {
+                if (ref->target.operator==(platform->qubits)) {
                     qubits.push_back(ref->indices[0].as<ir::IntLiteral>()->value);
                 }
 
