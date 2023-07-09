@@ -4,8 +4,9 @@
 
 #include "ql/pass/map/qubits/place_mip/place_mip.h"
 
-#include "ql/pass/ana/statistics/annotations.h"
 #include "detail/impl.h"
+#include "ql/ir/ir_gen_ex.h"
+#include "ql/pass/ana/statistics/annotations.h"
 #include "ql/pmgr/factory.h"
 
 namespace ql {

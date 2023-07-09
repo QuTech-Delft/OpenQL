@@ -4,11 +4,12 @@
 
 #include "ql/ir/cqasm/write.h"
 
-#include "ql/version.h"
-#include "ql/ir/ops.h"
 #include "ql/ir/describe.h"
+#include "ql/ir/ir_gen_ex.h"
 #include "ql/ir/operator_info.h"
+#include "ql/ir/ops.h"
 #include "ql/pass/ana/statistics/report.h"
+#include "ql/version.h"
 
 namespace ql {
 namespace ir {

@@ -6,10 +6,12 @@
 
 #include "common.h"
 
-#include <iostream>
-#include "ql/utils/json.h"
 #include "ql/com/options.h"
 #include "ql/ir/ir.h"
+#include "ql/ir/ir_gen_ex.h"
+#include "ql/utils/json.h"
+
+#include <iostream>
 
 namespace ql {
 namespace pass {

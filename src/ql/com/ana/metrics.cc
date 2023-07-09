@@ -5,6 +5,7 @@
 
 #include "ql/com/ana/metrics.h"
 
+#include "ql/ir/ir_gen_ex.h"
 #include "ql/ir/ops.h"
 
 namespace ql {

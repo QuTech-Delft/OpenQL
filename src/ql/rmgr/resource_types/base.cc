@@ -4,8 +4,9 @@
 
 #include "ql/rmgr/resource_types/base.h"
 
-#include "ql/ir/ops.h"
 #include "ql/ir/describe.h"
+#include "ql/ir/ir_gen_ex.h"
+#include "ql/ir/ops.h"
 
 namespace ql {
 namespace rmgr {

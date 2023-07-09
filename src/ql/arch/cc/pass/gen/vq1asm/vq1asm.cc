@@ -4,9 +4,10 @@
 
 #include "ql/arch/cc/pass/gen/vq1asm/vq1asm.h"
 
-#include "ql/pmgr/pass_types/base.h"
 #include "detail/backend.h"
+#include "ql/ir/ir_gen_ex.h"
 #include "ql/pmgr/factory.h"
+#include "ql/pmgr/pass_types/base.h"
 
 namespace ql {
 namespace arch {
