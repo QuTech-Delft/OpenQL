@@ -38,6 +38,7 @@ add_custom_target(patch_lemon_sources
 add_custom_command(
     OUTPUT patch_lemon_sources_command
     COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon" "${CMAKE_CURRENT_LIST_DIR}/patches/adaptors.h"
+    COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon" "${CMAKE_CURRENT_LIST_DIR}/patches/lgf_reader.h"
     COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon" "${CMAKE_CURRENT_LIST_DIR}/patches/lgf_writer.h"
     COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon" "${CMAKE_CURRENT_LIST_DIR}/patches/maps.h"
     COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon" "${CMAKE_CURRENT_LIST_DIR}/patches/random.h"
