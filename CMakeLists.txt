@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
+# CMake policies
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 project(OpenQL C CXX)
 
 # If OpenQL was already included elsewhere in the project, don't include it
@@ -9,14 +14,47 @@ if(NOT TARGET ql)
 # Loads up the appropriate directories for installing stuff.
 include(GNUInstallDirs)
 
-find_package(Backward CONFIG REQUIRED)
-find_package(cimg CONFIG REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(highs CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-
 # Packages
 include(FetchContent)
+find_package(Backward CONFIG)
+if(NOT Backward_FOUND)
+    message(STATUS "Fetching Backward")
+    FetchContent_Declare(Backward
+        GIT_REPOSITORY https://github.com/bombela/backward-cpp.git
+        GIT_TAG "3bb9240cb15459768adb3e7d963a20e1523a6294"
+    )
+endif()
+find_package(cimg CONFIG)
+if(NOT cimg_FOUND)
+    message(STATUS "Fetching cimg")
+    FetchContent_Declare(cimg
+        GIT_REPOSITORY https://github.com/GreycLab/CImg.git
+        GIT_TAG "049267da171c50ab48f93c7285f096d7d686e8f3"
+    )
+endif()
+find_package(eigen CONFIG)
+if(NOT eigen_FOUND)
+    message(STATUS "Fetching eigen")
+    FetchContent_Declare(eigen
+        GIT_REPOSITORY https://github.com/libigl/eigen.git
+        GIT_TAG "1f05f51517ec4fd91eed711e0f89e97a7c028c0e"
+    )
+endif()
+find_package(highs CONFIG)
+if(NOT highs_FOUND)
+    message(STATUS "Fetching highs")
+    FetchContent_Declare(highs
+        GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
+        GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
+    )
+endif()
+find_package(nlohmann_json CONFIG)
+if(NOT nlohmann_json_FOUND)
+    message(STATUS "Fetching nlohmann_json")
+    FetchContent_Declare(nlohmann_json
+        URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
+    )
+endif()
 FetchContent_Declare(cqasm
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
     GIT_TAG "a84b618cca982847b1b4435774231dc6dc8255c5"
@@ -28,8 +66,13 @@ FetchContent_Declare(lemon
     URL_HASH SHA256=71b7c725f4c0b4a8ccb92eb87b208701586cf7a96156ebd821ca3ed855bad3c8
 )
 FetchContent_MakeAvailable(
+    Backward
+    cimg
     cqasm
+    eigen
+    highs
     lemon
+    nlohmann_json
 )
 
 add_custom_target(patch_lemon_sources
@@ -375,7 +418,7 @@ add_dependencies(ql patch_lemon_sources)
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
     SYSTEM PUBLIC "${Backward_INCLUDE_DIRS}"
-    SYSTEM PUBLIC "${Eigen3_INCLUDE_DIRS}/unsupported"
+    SYSTEM PUBLIC "${eigen_INCLUDE_DIRS}/unsupported"
     SYSTEM PUBLIC "${highs_INCLUDE_DIRS}"
     SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
     SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
@@ -388,10 +431,9 @@ target_include_directories(ql
     PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
 )
 
-target_link_libraries(ql PUBLIC
-    ${CONAN_LIBS}
-    cqasm
-    lemon
+target_link_libraries(ql
+    PUBLIC cqasm lemon libhighs nlohmann_json::nlohmann_json
+    PRIVATE eigen
 )
 
 # Specify resources.
