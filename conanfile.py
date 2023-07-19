@@ -7,9 +7,11 @@ class OpenQLConan(ConanFile):
 
     settings = "os", "compiler", "build_type", "arch"
     options = {
+        "build_cpp_standalone_example": [True, False],
         "build_tests": [True, False]
     }
     default_options = {
+        "build_cpp_standalone_example": False,
         "build_tests": False
     }
 
@@ -36,6 +38,7 @@ class OpenQLConan(ConanFile):
         deps = CMakeDeps(self)
         deps.generate()
         tc = CMakeToolchain(self)
+        tc.variables["OPENQL_BUILD_CPP_STANDALONE_EXAMPLE"] = self.options.build_cpp_standalone_example
         tc.variables["OPENQL_BUILD_TESTS"] = self.options.build_tests
         tc.generate()
 

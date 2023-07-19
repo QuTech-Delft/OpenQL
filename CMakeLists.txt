@@ -46,6 +46,7 @@ add_custom_command(
     COMMENT "-- Copying patch/* files to _deps/lemon-src"
 )
 
+
 #=============================================================================#
 # Configuration options                                                       #
 #=============================================================================#
@@ -381,17 +382,21 @@ target_include_directories(ql
     SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
     SYSTEM PUBLIC "${libqasm_INCLUDE_DIRS}"
     SYSTEM PUBLIC "${nlohmann_json_INCLUDE_DIRS}"
-    SYSTEM PUBLIC ${TREE_LIB_PRIVATE_INCLUDE}
+    SYSTEM PUBLIC ${TREE_LIB_PUBLIC_INCLUDE}
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
 )
 
-target_link_libraries(ql PUBLIC
-    ${CONAN_LIBS}
-    cqasm
-    lemon
+target_link_libraries(ql
+    PRIVATE Backward::Backward
+    PRIVATE cimg::cimg
+    PRIVATE Eigen3::Eigen
+    PRIVATE lemon
+    PRIVATE nlohmann_json::nlohmann_json
+    PUBLIC cqasm
+    PUBLIC highs::highs
 )
 
 # Specify resources.
@@ -474,13 +479,13 @@ if(QL_VISUALIZER)
     target_include_directories(ql SYSTEM PRIVATE "${cimg_INCLUDE_DIRS}")
 endif()
 
+
 #=============================================================================#
 # Testing                                                                     #
 #=============================================================================#
 
 # Include the tests directory if requested.
-if(False)
-#if(OPENQL_BUILD_TESTS)
+if(OPENQL_BUILD_TESTS)
     enable_testing()
     find_package(doctest CONFIG REQUIRED)
 
@@ -526,8 +531,6 @@ if(False)
     foreach(unit_test ${unit_tests})
         add_openql_unit_test(${unit_test})
     endforeach()
-
-    # I hate CMake.
     file(
         GLOB_RECURSE unit_tests
         RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
@@ -553,6 +556,19 @@ if(False)
         add_openql_unit_test(${unit_test})
     endforeach()
 
+endif()
+
+
+#=============================================================================#
+# Cpp standalone example                                                      #
+#=============================================================================#
+
+if(OPENQL_BUILD_CPP_STANDALONE_EXAMPLE)
+    # Use whatever CMake magic you need to build your program, but linking
+    # something against OpenQL should be as easy as the second line. This should
+    # take care of both the libraries and header file include directories.
+    add_executable(example examples/cpp-standalone-example/example.cc)
+    target_link_libraries(example PRIVATE ql)
 endif()
 
 
