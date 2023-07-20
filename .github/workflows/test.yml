@@ -37,6 +37,7 @@ jobs:
           ctest -C Debug --output-on-failure
           ./example
         shell: bash
+        working-directory: build/Debug
 
   python:
     name: Python
@@ -62,7 +63,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: Install dependencies
-      run: python -m pip install --upgrade pip setuptools wheel pytest numpy
+      run: python -m pip install --upgrade pip setuptools wheel pytest numpy conan
     - name: Install dependencies
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get install -y swig
