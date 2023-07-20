@@ -99,6 +99,7 @@ class build_ext(_build_ext):
         with local.cwd(cbuild_dir):
             build_type = os.environ.get('OPENQL_BUILD_TYPE', 'Release')
 
+            '''
             cmd = (local['cmake'][root_dir]
                 ['-DOPENQL_BUILD_PYTHON=YES']
                 ['-DCMAKE_INSTALL_PREFIX=' + prefix_dir]
@@ -178,7 +179,7 @@ class build_ext(_build_ext):
                 cmd = cmd['-DOPENQL_BUILD_TESTS=ON']
 
             # Run cmake configuration.
-            #cmd & FG
+            cmd & FG
 
             # Do the build with the given number of parallel threads.
             build_cmd = local['cmake']['--build']['.']['--config'][build_type]
@@ -192,6 +193,7 @@ class build_ext(_build_ext):
                     cmd = cmd['--parallel'][nprocs]
                 elif not sys.platform.startswith('win'):
                     cmd = cmd['--']['-j'][nprocs]
+            '''
             cmd = local['conan']['build'][root_dir]['-s:h compiler.cppstd=20']['-s:h ql/*:build_type=' + build_type]['-b missing']
             #cmd & FG
 
@@ -203,7 +205,6 @@ class build_ext(_build_ext):
             # Run the CPP standalone example if requested.
             if 'OPENQL_BUILD_CPP_STANDALONE_EXAMPLE' in os.environ:
                 cmd = cmd['-s:h ql/*:build_cpp_standalone_example=True']
-                #cmd = build_cmd['--target']['test'] & FG
 
             '''
             # Do the install.
