@@ -96,7 +96,9 @@ jobs:
     - name: Build
       env:
         NPROCS: 5
-      run: python -m pip install --verbose .
+      run: |
+        conan profile detect
+        python -m pip install --verbose .
     - name: Test
       run: python -m pytest
 
