@@ -193,13 +193,19 @@ class build_ext(_build_ext):
                 elif not sys.platform.startswith('win'):
                     cmd = cmd['--']['-j'][nprocs]
             cmd = local['conan']['build'][root_dir]['-s:h compiler.cppstd=20']['-s:h ql/*:build_type=' + build_type]['-b missing']
-            cmd & FG
+            #cmd & FG
 
-            '''
             # Run the C++ tests if requested.
             if 'OPENQL_BUILD_TESTS' in os.environ:
-                cmd = build_cmd['--target']['test'] & FG
+                cmd = cmd['-s:h ql/*:build_tests=True']
+                #cmd = build_cmd['--target']['test'] & FG
 
+            # Run the CPP standalone example if requested.
+            if 'OPENQL_BUILD_CPP_STANDALONE_EXAMPLE' in os.environ:
+                cmd = cmd['-s:h ql/*:build_cpp_standalone_example=True']
+                #cmd = build_cmd['--target']['test'] & FG
+
+            '''
             # Do the install.
             try:
                 # install target for makefiles
@@ -208,6 +214,8 @@ class build_ext(_build_ext):
                 # install target for MSVC
                 build_cmd['--target']['INSTALL'] & FG
             '''
+
+            cmd & FG
 
 class build(_build):
     def initialize_options(self):

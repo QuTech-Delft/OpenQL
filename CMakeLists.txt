@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
+if(POLICY CMP0048)
+    cmake_policy(SET CMP0048 NEW)
+endif()
+
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 project(OpenQL C CXX)
 
 # If OpenQL was already included elsewhere in the project, don't include it
