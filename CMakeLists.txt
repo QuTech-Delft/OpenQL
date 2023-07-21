@@ -36,8 +36,8 @@ find_package(eigen CONFIG)
 if(NOT eigen_FOUND)
     message(STATUS "Fetching eigen")
     FetchContent_Declare(eigen
-        GIT_REPOSITORY https://github.com/libigl/eigen.git
-        GIT_TAG "1f05f51517ec4fd91eed711e0f89e97a7c028c0e"
+        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+        GIT_TAG "3147391d946bb4b6c68edd901f2add6ac1f31f8c"
     )
 endif()
 find_package(highs CONFIG)
@@ -62,8 +62,8 @@ FetchContent_Declare(cqasm
 # TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
 # TODO: remove use of Lemon in project?
 FetchContent_Declare(lemon
-    URL "http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz"
-    URL_HASH SHA256=71b7c725f4c0b4a8ccb92eb87b208701586cf7a96156ebd821ca3ed855bad3c8
+    GIT_REPOSITORY https://github.com/rturrado/lemon.git
+    GIT_TAG "046fbdd0efad1b0619cc252e637c5d5677f5da5b"
 )
 FetchContent_MakeAvailable(
     Backward
@@ -74,20 +74,7 @@ FetchContent_MakeAvailable(
     lemon
     nlohmann_json
 )
-
-add_custom_target(patch_lemon_sources
-    DEPENDS patch_lemon_sources_command
-)
-add_custom_command(
-    OUTPUT patch_lemon_sources_command
-    COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon" "${CMAKE_CURRENT_LIST_DIR}/patches/adaptors.h"
-    COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon" "${CMAKE_CURRENT_LIST_DIR}/patches/lgf_reader.h"
-    COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon" "${CMAKE_CURRENT_LIST_DIR}/patches/lgf_writer.h"
-    COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon" "${CMAKE_CURRENT_LIST_DIR}/patches/maps.h"
-    COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon" "${CMAKE_CURRENT_LIST_DIR}/patches/random.h"
-    COMMAND ${CMAKE_COMMAND} -E copy -t "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon/bits" "${CMAKE_CURRENT_LIST_DIR}/patches/array_map.h"
-    COMMENT "-- Copying patch/* files to _deps/lemon-src"
-)
+configure_file(${highs_SOURCE_DIR}/src/HConfig.h.in ${highs_SOURCE_DIR}/HConfig.h)
 
 #=============================================================================#
 # Configuration options                                                       #
@@ -410,30 +397,48 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
 )
 
-add_dependencies(ql patch_lemon_sources)
-
 # There is no distinction between public and private header files right now,
 # and they're all in the source directory.
 # Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
-    SYSTEM PUBLIC "${Backward_INCLUDE_DIRS}"
-    SYSTEM PUBLIC "${eigen_INCLUDE_DIRS}/unsupported"
-    SYSTEM PUBLIC "${highs_INCLUDE_DIRS}"
+    SYSTEM PUBLIC "${backward_SOURCE_DIR}"
+    SYSTEM PUBLIC "${cqasm_SOURCE_DIR}/include"
+    SYSTEM PUBLIC "${eigen_SOURCE_DIR}"
+    SYSTEM PUBLIC "${eigen_SOURCE_DIR}/Eigen"
+    SYSTEM PUBLIC "${eigen_SOURCE_DIR}/unsupported"
+    SYSTEM PUBLIC "${highs_SOURCE_DIR}"
+    SYSTEM PUBLIC "${highs_SOURCE_DIR}/src"
     SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
     SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
-    SYSTEM PUBLIC "${libqasm_INCLUDE_DIRS}"
-    SYSTEM PUBLIC "${nlohmann_json_INCLUDE_DIRS}"
-    SYSTEM PUBLIC ${TREE_LIB_PRIVATE_INCLUDE}
+    SYSTEM PUBLIC "${nlohmann_json_SOURCE_DIR}/include"
+    SYSTEM PUBLIC "${TREE_LIB_PRIVATE_INCLUDE}"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
 )
 
+message(STATUS
+    "[${PROJECT_NAME}] Target include directories:\n"
+    "      backward: ${backward_SOURCE_DIR}\n"
+    "      cqasm/include: ${cqasm_SOURCE_DIR}/include\n"
+    "      eigen: ${eigen_SOURCE_DIR}\n"
+    "      eigen/Eigen: ${eigen_SOURCE_DIR}/Eigen\n"
+    "      eigen/unsupported: ${eigen_SOURCE_DIR}/unsupported\n"
+    "      highs: ${highs_SOURCE_DIR}\n"
+    "      highs/src: ${highs_SOURCE_DIR}/src\n"
+    "      lemon-src: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/\n"
+    "      lemon-build: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/\n"
+    "      nlohmann_json/include: ${nlohmann_json_SOURCE_DIR}/include\n"
+)
+
 target_link_libraries(ql
-    PUBLIC cqasm lemon libhighs nlohmann_json::nlohmann_json
-    PRIVATE eigen
+    PRIVATE Eigen3
+    PRIVATE lemon
+    PRIVATE nlohmann_json
+    PUBLIC cqasm
+    PUBLIC lighighs
 )
 
 # Specify resources.
@@ -513,7 +518,7 @@ endif()
 
 if(QL_VISUALIZER)
     target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
-    target_include_directories(ql SYSTEM PRIVATE "${cimg_INCLUDE_DIRS}")
+    target_include_directories(ql SYSTEM PRIVATE "${cimg_SOURCE_DIR}")
 endif()
 
 #=============================================================================#
