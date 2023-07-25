@@ -17,7 +17,7 @@ jobs:
         - macos-latest
         - windows-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Install dependencies
@@ -26,7 +26,7 @@ jobs:
         brew install bison flex
         echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
         echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       if: matrix.os == 'windows-latest'
       with:
         path: C:\Users\runneradmin\AppData\Local\Temp\chocolatey
@@ -38,9 +38,12 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: choco install winflexbison3 --version 2.5.18.20190508
     - name: Configure
-      run: cmake . -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DOPENQL_BUILD_CPP_STANDALONE_EXAMPLE=ON -DWITH_UNITARY_DECOMPOSITION=OFF
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DOPENQL_BUILD_CPP_STANDALONE_EXAMPLE=ON -DWITH_UNITARY_DECOMPOSITION=OFF
     - name: Build
       run: cmake --build . --parallel 5
+      working-directory: build
     - name: Test
       run: |
         ctest -C Debug --output-on-failure
@@ -66,10 +69,10 @@ jobs:
         - '3.10'
         - '3.11'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python }}
     - name: Install dependencies
@@ -83,7 +86,7 @@ jobs:
         brew install bison flex swig xquartz
         echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
         echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       if: matrix.os == 'windows-latest'
       with:
         path: C:\Users\runneradmin\AppData\Local\Temp\chocolatey
