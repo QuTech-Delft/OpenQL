@@ -178,7 +178,7 @@ class build_ext(_build_ext):
                 cmd = cmd['-DOPENQL_BUILD_TESTS=ON']
 
             # Run cmake configuration.
-            #cmd & FG
+            cmd & FG
 
             # Do the build with the given number of parallel threads.
             build_cmd = local['cmake']['--build']['.']['--config'][build_type]
@@ -192,10 +192,7 @@ class build_ext(_build_ext):
                     cmd = cmd['--parallel'][nprocs]
                 elif not sys.platform.startswith('win'):
                     cmd = cmd['--']['-j'][nprocs]
-            cmd = local['conan']['build'][root_dir]['-s:h compiler.cppstd=20']['-s:h ql/*:build_type=' + build_type]['-b missing']
-            cmd & FG
 
-            '''
             # Run the C++ tests if requested.
             if 'OPENQL_BUILD_TESTS' in os.environ:
                 cmd = build_cmd['--target']['test'] & FG
@@ -207,7 +204,6 @@ class build_ext(_build_ext):
             except ProcessExecutionError:
                 # install target for MSVC
                 build_cmd['--target']['INSTALL'] & FG
-            '''
 
 class build(_build):
     def initialize_options(self):

@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # CMake policies
+if(POLICY CMP0048)
+    cmake_policy(SET CMP0048 NEW)
+endif()
+cmake_policy(SET CMP0077 NEW)
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
@@ -16,65 +20,53 @@ include(GNUInstallDirs)
 
 # Packages
 include(FetchContent)
-find_package(Backward CONFIG)
-if(NOT Backward_FOUND)
-    message(STATUS "Fetching Backward")
-    FetchContent_Declare(Backward
-        GIT_REPOSITORY https://github.com/bombela/backward-cpp.git
-        GIT_TAG "3bb9240cb15459768adb3e7d963a20e1523a6294"
-    )
-endif()
-find_package(cimg CONFIG)
-if(NOT cimg_FOUND)
-    message(STATUS "Fetching cimg")
-    FetchContent_Declare(cimg
-        GIT_REPOSITORY https://github.com/GreycLab/CImg.git
-        GIT_TAG "049267da171c50ab48f93c7285f096d7d686e8f3"
-    )
-endif()
-find_package(eigen CONFIG)
-if(NOT eigen_FOUND)
-    message(STATUS "Fetching eigen")
-    FetchContent_Declare(eigen
-        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-        GIT_TAG "3147391d946bb4b6c68edd901f2add6ac1f31f8c"
-    )
-endif()
-find_package(highs CONFIG)
-if(NOT highs_FOUND)
-    message(STATUS "Fetching highs")
-    FetchContent_Declare(highs
-        GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
-        GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
-    )
-endif()
-find_package(nlohmann_json CONFIG)
-if(NOT nlohmann_json_FOUND)
-    message(STATUS "Fetching nlohmann_json")
-    FetchContent_Declare(nlohmann_json
-        URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
-    )
-endif()
-FetchContent_Declare(cqasm
-    GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
-    GIT_TAG "a84b618cca982847b1b4435774231dc6dc8255c5"
+
+message(STATUS "Fetching Backward")
+FetchContent_Declare(Backward
+    GIT_REPOSITORY https://github.com/bombela/backward-cpp.git
+    GIT_TAG "3bb9240cb15459768adb3e7d963a20e1523a6294"
 )
+FetchContent_MakeAvailable(Backward)
+
+message(STATUS "Fetching CImg")
+FetchContent_Declare(CImg
+    GIT_REPOSITORY https://github.com/GreycLab/CImg.git
+    GIT_TAG "049267da171c50ab48f93c7285f096d7d686e8f3"
+)
+FetchContent_MakeAvailable(CImg)
+
+FetchContent_Declare(cqasm
+    message(STATUS "Fetching cqasm")
+    GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
+    GIT_TAG "fb0596d46a861b6c83834c4bdd08785c10990d89"
+)
+FetchContent_MakeAvailable(cqasm)
+
+FetchContent_Declare(Eigen3
+    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+    GIT_TAG "4e9e493b4abc57dba377fc326082b40d08193619"
+)
+FetchContent_MakeAvailable(Eigen3)
+
+FetchContent_Declare(highs
+    GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
+    GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
+)
+FetchContent_MakeAvailable(highs)
+configure_file(${HIGHS_SOURCE_DIR}/src/HConfig.h.in ${HIGHS_SOURCE_DIR}/HConfig.h)
+
 # TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
 # TODO: remove use of Lemon in project?
 FetchContent_Declare(lemon
     GIT_REPOSITORY https://github.com/rturrado/lemon.git
-    GIT_TAG "046fbdd0efad1b0619cc252e637c5d5677f5da5b"
+    GIT_TAG "61379e365a1f96361781dfa71934e45099542ca0"
 )
-FetchContent_MakeAvailable(
-    Backward
-    cimg
-    cqasm
-    eigen
-    highs
-    lemon
-    nlohmann_json
+FetchContent_MakeAvailable(lemon)
+
+FetchContent_Declare(nlohmann_json
+    URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
 )
-configure_file(${highs_SOURCE_DIR}/src/HConfig.h.in ${highs_SOURCE_DIR}/HConfig.h)
+FetchContent_MakeAvailable(nlohmann_json)
 
 #=============================================================================#
 # Configuration options                                                       #
@@ -109,6 +101,13 @@ endif()
 option(
     OPENQL_BUILD_TESTS
     "Whether the tests should be built and added to `make test`"
+    OFF
+)
+
+# Whether the CPP standalone example should be built.
+option(
+    OPENQL_BUILD_CPP_STANDALONE_EXAMPLE
+    "Whether the CPP standalone example should be built"
     OFF
 )
 
@@ -395,24 +394,24 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/program.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
+    ${BACKWARD_ENABLE}
 )
+add_backward(ql)
 
 # There is no distinction between public and private header files right now,
 # and they're all in the source directory.
 # Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
-    SYSTEM PUBLIC "${backward_SOURCE_DIR}"
-    SYSTEM PUBLIC "${cqasm_SOURCE_DIR}/include"
-    SYSTEM PUBLIC "${eigen_SOURCE_DIR}"
-    SYSTEM PUBLIC "${eigen_SOURCE_DIR}/Eigen"
-    SYSTEM PUBLIC "${eigen_SOURCE_DIR}/unsupported"
-    SYSTEM PUBLIC "${highs_SOURCE_DIR}"
-    SYSTEM PUBLIC "${highs_SOURCE_DIR}/src"
-    SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
-    SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
+    SYSTEM PRIVATE "${cqasm_SOURCE_DIR}/include"
+    SYSTEM PRIVATE "${Eigen3_SOURCE_DIR}/Eigen"
+    SYSTEM PRIVATE "${Eigen3_SOURCE_DIR}/unsupported"
+    SYSTEM PRIVATE "${highs_SOURCE_DIR}"
+    SYSTEM PRIVATE "${highs_SOURCE_DIR}/src"
+    SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
+    SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
     SYSTEM PUBLIC "${nlohmann_json_SOURCE_DIR}/include"
-    SYSTEM PUBLIC "${TREE_LIB_PRIVATE_INCLUDE}"
+    SYSTEM PRIVATE "${TREE_LIB_PRIVATE_INCLUDE}"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
@@ -421,11 +420,9 @@ target_include_directories(ql
 
 message(STATUS
     "[${PROJECT_NAME}] Target include directories:\n"
-    "      backward: ${backward_SOURCE_DIR}\n"
     "      cqasm/include: ${cqasm_SOURCE_DIR}/include\n"
-    "      eigen: ${eigen_SOURCE_DIR}\n"
-    "      eigen/Eigen: ${eigen_SOURCE_DIR}/Eigen\n"
-    "      eigen/unsupported: ${eigen_SOURCE_DIR}/unsupported\n"
+    "      Eigen3/Eigen: ${Eigen3_SOURCE_DIR}/Eigen\n"
+    "      Eigen3/unsupported: ${Eigen3_SOURCE_DIR}/unsupported\n"
     "      highs: ${highs_SOURCE_DIR}\n"
     "      highs/src: ${highs_SOURCE_DIR}/src\n"
     "      lemon-src: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/\n"
@@ -434,11 +431,11 @@ message(STATUS
 )
 
 target_link_libraries(ql
-    PRIVATE Eigen3
-    PRIVATE lemon
-    PRIVATE nlohmann_json
     PUBLIC cqasm
-    PUBLIC lighighs
+    PRIVATE Eigen3::Eigen
+    PUBLIC highs::highs
+    PRIVATE lemon
+    PRIVATE nlohmann_json::nlohmann_json
 )
 
 # Specify resources.
@@ -526,15 +523,19 @@ endif()
 #=============================================================================#
 
 # Include the tests directory if requested.
-if(False)
-#if(OPENQL_BUILD_TESTS)
+if(OPENQL_BUILD_TESTS)
     enable_testing()
-    find_package(doctest CONFIG REQUIRED)
+    message(STATUS "Fetching doctest")
+    FetchContent_Declare(doctest
+        GIT_REPOSITORY https://github.com/doctest/doctest.git
+        GIT_TAG "ae7a13539fb71f270b87eb2e874fbac80bc8dda2"
+    )
+    FetchContent_MakeAvailable(doctest)
 
     # Convenience function to add an integration test.
     function(add_openql_test name source workdir)
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
-        target_link_libraries("${name}" PUBLIC ql)
+        target_link_libraries("${name}" PRIVATE ql)
         add_test(
             NAME "${name}"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${workdir}"
@@ -543,7 +544,7 @@ if(False)
     endfunction()
 
     # Include the directories containing integration tests.
-    #add_subdirectory(test)
+    add_subdirectory(test)
     add_subdirectory(tests)
     add_subdirectory(examples)
 
@@ -554,8 +555,8 @@ if(False)
         string(REPLACE ".cc" "" name ${name})
         set(name test_${name})
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
-        target_link_libraries("${name}" PUBLIC ql doctest::doctest)
-        target_include_directories(ql SYSTEM PUBLIC "${doctest_INCLUDE_DIRS}")
+        target_link_libraries("${name}" PRIVATE ql doctest::doctest)
+        target_include_directories(ql SYSTEM PRIVATE "${doctest_SOURCE_DIR}")
         get_filename_component(working_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}" DIRECTORY)
         add_test(
             NAME "${name}"
@@ -573,8 +574,6 @@ if(False)
     foreach(unit_test ${unit_tests})
         add_openql_unit_test(${unit_test})
     endforeach()
-
-    # I hate CMake.
     file(
         GLOB_RECURSE unit_tests
         RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
@@ -600,6 +599,19 @@ if(False)
         add_openql_unit_test(${unit_test})
     endforeach()
 
+endif()
+
+
+#=============================================================================#
+# Cpp standalone example                                                      #
+#=============================================================================#
+
+if(OPENQL_BUILD_CPP_STANDALONE_EXAMPLE)
+    # Use whatever CMake magic you need to build your program, but linking
+    # something against OpenQL should be as easy as the second line. This should
+    # take care of both the libraries and header file include directories.
+    add_executable(example examples/cpp-standalone-example/example.cc)
+    target_link_libraries(example PRIVATE ql)
 endif()
 
 

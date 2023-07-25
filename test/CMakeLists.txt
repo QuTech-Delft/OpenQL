@@ -1,13 +1,17 @@
 # Packages
 include(FetchContent)
-FetchContent_Declare(googletest
+
+message(STATUS "Fetching GTest")
+FetchContent_Declare(GTest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG "61720589cbef9707b3c5247d02141a7c31e2876f"
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(
-    googletest
-)
+FetchContent_MakeAvailable(GTest)
+
+
+# Test executable
+add_executable(${PROJECT_NAME}_test)
 
 
 # Subdirectories
@@ -15,17 +19,10 @@ add_subdirectory(ql)
 
 
 # Test sources
-set(test_sources
-    ${ql_test_sources}
-)
-set(app_sources
-    "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
-)
-list(APPEND app_sources ${test_sources})
+target_sources(${PROJECT_NAME}_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
 
 
-# Test executable
-add_executable(${PROJECT_NAME}_test ${app_sources})
+# Target options
 target_link_libraries(${PROJECT_NAME}_test PRIVATE
     ql
     gmock

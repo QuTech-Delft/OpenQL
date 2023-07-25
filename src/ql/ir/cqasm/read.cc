@@ -18,7 +18,6 @@ namespace ir {
 namespace cqasm {
 
 namespace cq1 = ::cqasm::v1;
-namespace cq3 = ::cqasm::v3;
 namespace cqv1 = ::cqasm::v1::values;
 namespace cqty1 = ::cqasm::v1::types;
 namespace cqs = ::cqasm::v1::semantic;
@@ -1517,27 +1516,6 @@ void read_v1(
 
 }
 
-void read_v3(
-    const Ref &ir,
-    const utils::Str &data
-) {
-
-    // Start by parsing the file without analysis.
-    auto pres = cq3::parser::parse_string(data);
-    if (!pres.errors.empty()) {
-        utils::StrStrm errors;
-        errors << "failed to parse '" << data << "' for the following reasons:";
-        for (const auto &error : pres.errors) {
-            QL_EOUT(error);
-            errors << "\n  " << error;
-        }
-        QL_USER_ERROR(errors.str());
-    }
-    auto ql_program = utils::make<Program>();
-    ql_program->name = "program";
-    ir->program = ql_program;
-}
-
 /**
  * Reads a cQASM file into the IR.
  * If reading is successful, ir->program is completely replaced.
@@ -1553,8 +1531,6 @@ void read(
     auto pres = cqver::parse_string(data, fname);
     if (auto version = cqver::parse_string(data, fname); version <= cqver::Version("1.2")) {
         read_v1(ir, data, fname, options);
-    } else {
-        read_v3(ir, data);
     }
 }
 
