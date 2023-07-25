@@ -49,7 +49,7 @@ jobs:
       working-directory: build
     - name: Run cpp standalone example
       if: matrix.os != 'windows-latest'
-      run: ./example.exe
+      run: ./example
       working-directory: build
     - name: Run cpp standalone example
       if: matrix.os == 'windows-latest'
