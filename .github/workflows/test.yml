@@ -45,10 +45,15 @@ jobs:
       run: cmake --build . --parallel 5
       working-directory: build
     - name: Test
-      run: |
-        ctest -C Debug --output-on-failure
-        ./example
-      shell: bash
+      run: ctest -C Debug --output-on-failure
+      working-directory: build
+    - name: Run cpp standalone example
+      if: matrix.os != 'windows-latest'
+      run: ./example.exe
+      working-directory: build
+    - name: Run cpp standalone example
+      if: matrix.os == 'windows-latest'
+      run: example.exe
       working-directory: build
 
   python:
