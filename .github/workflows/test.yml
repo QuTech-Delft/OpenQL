@@ -47,7 +47,6 @@ jobs:
     - name: Test
       run: |
         ctest -C Debug --output-on-failure
-        ./test/OpenQL_test
         ./example
       shell: bash
       working-directory: build
