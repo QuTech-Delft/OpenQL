@@ -141,8 +141,8 @@ public:
 
     Str to_string(
         const complex_matrix &m,
-        const Str &vector_prefix = "",
-        const Str &elem_sep = ", "
+        const Str &,
+        const Str &
     ) {
         StrStrm ss;
         ss << m << "\n";

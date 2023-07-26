@@ -454,8 +454,9 @@ if(CMAKE_COMPILER_IS_GNUCXX)
         -Wall -Wextra -Werror -Wfatal-errors
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    target_compile_options(ql PUBLIC
+    target_compile_options(ql PRIVATE
         -Wall -Wextra -Werror -Wfatal-errors
+        -Wno-error=unused-private-field
         -Wno-error=unused-but-set-variable
     )
 elseif(MSVC)
