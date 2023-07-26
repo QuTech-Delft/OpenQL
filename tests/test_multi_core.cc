@@ -1,6 +1,6 @@
 #include <openql>
 
-void test_mc(std::string v, std::string param1, std::string param2, std::string param3, std::string param4) {
+void test_mc(std::string v, std::string, std::string, std::string, std::string) {
     int n = 16;
     // std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string prog_name = "test_" + v;
@@ -37,9 +37,7 @@ void test_mc(std::string v, std::string param1, std::string param2, std::string 
     prog.compile();
 }
 
-
-
-int main(int argc, char **argv) {
+int main() {
     ql::utils::logger::set_log_level("LOG_DEBUG");
     // ql::utils::logger::set_log_level("LOG_NOTHING");
     ql::set_option("unique_output", "no");

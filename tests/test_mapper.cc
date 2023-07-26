@@ -1427,7 +1427,7 @@ void test_maxcut(
 }
 
 
-int main(int argc, char ** argv) {
+int main() {
     ql::utils::logger::set_log_level("LOG_DEBUG");
     // ql::utils::logger::set_log_level("LOG_NOTHING");
     ql::set_option("unique_output", "no");

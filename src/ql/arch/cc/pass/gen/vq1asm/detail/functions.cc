@@ -276,19 +276,19 @@ void Functions::op_sub_iC(const FncArgs &a) {
 }
 
 #if OPT_CC_USER_FUNCTIONS
-void Functions::rnd_seed_C(const FncArgs &a) {
+void Functions::rnd_seed_C(const FncArgs &) {
     // FIXME
 }
 
-void Functions::rnd_seed_i(const FncArgs &a) {
+void Functions::rnd_seed_i(const FncArgs &) {
     // FIXME
 }
 
-void Functions::rnd_C(const FncArgs &a) {
+void Functions::rnd_C(const FncArgs &) {
     // FIXME
 }
 
-void Functions::rnd_i(const FncArgs &a) {
+void Functions::rnd_i(const FncArgs &) {
     // FIXME
 }
 #endif

@@ -97,7 +97,7 @@ void FreeCycle::print(const utils::Str &s) const {
 /**
  * Calls print only if the loglevel is debug or more verbose.
  */
-void FreeCycle::debug_print(const utils::Str &s) const {
+void FreeCycle::debug_print(const utils::Str &) const {
 #ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Print FreeCycle state: ");

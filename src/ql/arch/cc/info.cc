@@ -487,7 +487,7 @@ utils::List<utils::Str> Info::get_eqasm_compiler_names() const {
  * of this architecture. This JSON data will still be preprocessed by
  * preprocess_platform().
  */
-utils::Str Info::get_default_platform(const utils::Str &variant) const {
+utils::Str Info::get_default_platform(const utils::Str &) const {
 
     // NOTE: based on tests/cc/cc_s5_direct_iq.json at the time of writing.
     return HWCONF_DEFAULT_DATA;
@@ -500,7 +500,7 @@ utils::Str Info::get_default_platform(const utils::Str &variant) const {
  * platform, to save typing in the configuration file (and reduce the amount
  * of mistakes made).
  */
-void Info::preprocess_platform(utils::Json &data, const utils::Str &variant) const {
+void Info::preprocess_platform(utils::Json &data, const utils::Str &) const {
 
     QL_IOUT("desugaring CC instructions");
 
@@ -657,7 +657,7 @@ void Info::post_process_platform(
  * code generation pass, but anything after prescheduling and optimization
  * is considered a backend pass.
  */
-void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
+void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &) const {
     // Remove prescheduler if enabled implicitly (pointless since we add our own scheduling).
     // FIXME: bit of a hack, and invalidates https://openql.readthedocs.io/en/latest/gen/reference_architectures.html#default-pass-list
     utils::Str ps_name = "prescheduler";

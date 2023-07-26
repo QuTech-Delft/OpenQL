@@ -105,7 +105,7 @@ SchedulePass::SchedulePass(
  * Runs the scheduler.
  */
 utils::Int SchedulePass::run(
-    const ir::compat::ProgramRef &program,
+    const ir::compat::ProgramRef &,
     const ir::compat::KernelRef &kernel,
     const pmgr::pass_types::Context &context
 ) const {

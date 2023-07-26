@@ -364,8 +364,8 @@ VisualizeCircuitPass::VisualizeCircuitPass(
  * Runs the circuit visualizer.
  */
 utils::Int VisualizeCircuitPass::run(
-    const ir::Ref &ir,
-    const pmgr::pass_types::Context &context
+    const ir::Ref &,
+    const pmgr::pass_types::Context &
 ) const {
 
 #ifdef WITH_VISUALIZER

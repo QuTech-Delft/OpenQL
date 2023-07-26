@@ -132,7 +132,7 @@ class ReferenceUpdater : public ir::RecursiveVisitor {
 public:
     ReferenceUpdater(ir::Ref aIr, const utils::Vec<utils::UInt> &aMapping) : ir(aIr), mapping(aMapping) {}
 
-    void visit_node(ir::Node &node) override {}
+    void visit_node(ir::Node &) override {}
 
     void visit_reference(ir::Reference &ref) override {
         if (ref.target == ir->platform->qubits &&
@@ -152,7 +152,7 @@ private:
  */
 utils::Int PlaceQubitsPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &context
+    const pmgr::pass_types::Context &
 ) const {
     detail::Options opts;
     opts.timeout = options["timeout"].as_real();

@@ -49,7 +49,7 @@ CleanStatisticsPass::CleanStatisticsPass(
  */
 utils::Int CleanStatisticsPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &context
+    const pmgr::pass_types::Context &
 ) const {
     if (!ir->program.empty()) {
         for (const auto &kernel : ir->program->blocks) {

@@ -157,7 +157,7 @@ void test_cz_anycommute(std::string v, std::string schedopt, std::string sched_p
     prog.compile( );
 }
 
-int main(int argc, char **argv) {
+int main() {
     ql::utils::logger::set_log_level("LOG_DEBUG");
 
     test_cnot_controlcommute("cnot_controlcommute", "ASAP", "no");

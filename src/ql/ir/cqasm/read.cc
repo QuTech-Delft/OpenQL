@@ -150,7 +150,7 @@ static cqt::Maybe<cqs::AnnotationData> find_pragma(
     public:
         utils::Str operation;
         cqt::Maybe<cqs::AnnotationData> data;
-        void visit_node(cqs::Node &node) override {
+        void visit_node(cqs::Node &) override {
         }
         void visit_instruction(cqs::Instruction &node) override {
             if (!data.empty()) return;
@@ -175,13 +175,13 @@ static cqt::Maybe<cqs::AnnotationData> find_pragma(
  */
 static utils::RawPtr<cqs::AnnotationData> find_annotation(
     const cqt::One<cqs::Node> &node,
-    const utils::Str &operation
+    const utils::Str &
 ) {
     class FindAnnotation : public cqs::RecursiveVisitor {
     public:
         utils::Str operation;
         utils::RawPtr<cqs::AnnotationData> data;
-        void visit_node(cqs::Node &node) override {
+        void visit_node(cqs::Node &) override {
         }
         void visit_annotation_data(cqs::AnnotationData &node) override {
             if (data) return;
@@ -218,7 +218,7 @@ static utils::RawPtr<cqs::AnnotationData> find_annotation(
 static void check_all_annotations_used(const cqt::One<cqs::Node> &node) {
     class FindAnnotation : public cqs::RecursiveVisitor {
     public:
-        void visit_node(cqs::Node &node) override {
+        void visit_node(cqs::Node &) override {
         }
         void visit_annotation_data(cqs::AnnotationData &node) override {
             if (node.interface == "ql") {
@@ -361,7 +361,7 @@ find_last_goto_instruction(const cqt::One<cqs::Subcircuit> &subcircuit) {
     public:
         utils::RawPtr<cqs::GotoInstruction> goto_insn;
         utils::Bool only_insn = true;
-        void visit_node(cqs::Node &node) override {
+        void visit_node(cqs::Node &) override {
         }
         void visit_instruction_base(cqs::InstructionBase &node) override {
             if (auto insn = node.as_instruction()) {
@@ -379,7 +379,7 @@ find_last_goto_instruction(const cqt::One<cqs::Subcircuit> &subcircuit) {
             only_insn = false;
             goto_insn.reset();
         }
-        void visit_structured(cqs::Structured &node) override {
+        void visit_structured(cqs::Structured &) override {
             only_insn = false;
             goto_insn.reset();
         }

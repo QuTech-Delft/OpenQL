@@ -10,7 +10,7 @@
 
 #include <openql>
 
-int main(int argc, char **argv) {
+int main() {
    size_t nqubits = 5;
 
    // create platform
@@ -23,14 +23,14 @@ int main(int argc, char **argv) {
    auto kernel = ql::Kernel("my_kernel", qplatform, nqubits);
 
    // add gates to kernel
-   kernel.gate("prepz", {0});
-   kernel.gate("prepz", {1});
-   kernel.gate("x", {0});
-   kernel.gate("y", {2});
-   kernel.gate("cnot", {0,2});
-   kernel.gate("measure", {0});
-   kernel.gate("measure", {1});
-   kernel.gate("measure", {2});
+   kernel.gate("prepz", std::vector<size_t>{0});
+   kernel.gate("prepz", std::vector<size_t>{1});
+   kernel.gate("x", std::vector<size_t>{0});
+   kernel.gate("y", std::vector<size_t>{2});
+   kernel.gate("cnot", std::vector<size_t>{0, 2});
+   kernel.gate("measure", std::vector<size_t>{0});
+   kernel.gate("measure", std::vector<size_t>{1});
+   kernel.gate("measure", std::vector<size_t>{2});
 
    // add kernel to prog
    prog.add_kernel(kernel);

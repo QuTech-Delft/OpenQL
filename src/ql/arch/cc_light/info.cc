@@ -150,8 +150,7 @@ utils::Str Info::get_default_platform(const utils::Str &variant) const {
  * code generation pass, but anything after prescheduling and optimization
  * is considered a backend pass.
  */
-void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
-
+void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &) const {
     // Mapping.
     if (com::options::global["clifford_premapper"].as_bool()) {
         manager.append_pass(
@@ -199,8 +198,7 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
         }
     );
 
-    // R.I.P. CC-light code generation.
-
+    // CC-light code generation.
 }
 
 } // namespace cc_light

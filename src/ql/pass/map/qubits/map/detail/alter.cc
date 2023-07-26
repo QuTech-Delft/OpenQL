@@ -66,7 +66,7 @@ void Alter::print(const utils::Str &s) const {
  * Prints the state of this Alter, prefixed by s, only when the logging
  * verbosity is at least debug.
  */
-void Alter::debug_print(const utils::Str &s) const {
+void Alter::debug_print(const utils::Str &) const {
 #ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Printing current Alter's state: ");
@@ -98,7 +98,7 @@ void Alter::print(const utils::Str &s, const utils::List<Alter> &la) {
  * Prints a state of a whole list of Alters, prefixed by s, only when the
  * logging verbosity is at least debug.
  */
-void Alter::debug_print(const utils::Str &s, const utils::List<Alter> &la) {
+void Alter::debug_print(const utils::Str &, const utils::List<Alter> &) {
 #ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("Print list of Alters: ");

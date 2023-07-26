@@ -124,7 +124,7 @@ int main() {
     QL_ASSERT_EQ(map.to_string(), "{[10..12): 10, [12..14): 6, [14..16): 2, [16..18): 6, [18..20): 10}");
 
     QL_ASSERT_RAISES(map.at({10, 11}));
-    QL_ASSERT_EQ(map.at({10, 12}), 10);
+    QL_ASSERT_EQ(map.at({10, 12}), 10ul);
 
     QL_ASSERT_EQ(map.find(9), map.end());
     QL_ASSERT_EQ(map.find(10), map.begin());
@@ -153,7 +153,7 @@ int main() {
     map.set({8, 10}, 10);
     map.check_consistency();
     QL_ASSERT_EQ(map.to_string(), "{[8..21): 10}");
-    map.set({10, 15}, 10, [](const UInt &a, const UInt &b) { return false; });
+    map.set({10, 15}, 10, [](const UInt &, const UInt &) { return false; });
     map.check_consistency();
     QL_ASSERT_EQ(map.to_string(), "{[8..10): 10, [10..15): 10, [15..21): 10}");
     QL_ASSERT_RAISES(map.set({20, 10}, 3));

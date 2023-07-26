@@ -406,7 +406,7 @@ void test_cqasm_condex() {
     program.compile();
 }
 
-int main(int argc, char **argv) {
+int main() {
     ql::initialize();
     ql::utils::logger::set_log_level("LOG_INFO");      // LOG_DEBUG, LOG_INFO
 

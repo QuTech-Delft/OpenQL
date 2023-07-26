@@ -113,8 +113,8 @@ VisualizeInteractionPass::VisualizeInteractionPass(
  * Runs the interaction graph visualizer.
  */
 utils::Int VisualizeInteractionPass::run(
-    const ir::Ref &ir,
-    const pmgr::pass_types::Context &context
+    const ir::Ref &,
+    const pmgr::pass_types::Context &
 ) const {
 
 #ifdef WITH_VISUALIZER

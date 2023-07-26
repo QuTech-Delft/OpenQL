@@ -124,8 +124,8 @@ VisualizeMappingPass::VisualizeMappingPass(
  * Runs the mapping graph visualizer.
  */
 utils::Int VisualizeMappingPass::run(
-    const ir::Ref &ir,
-    const pmgr::pass_types::Context &context
+    const ir::Ref &,
+    const pmgr::pass_types::Context &
 ) const {
 
 #ifdef WITH_VISUALIZER

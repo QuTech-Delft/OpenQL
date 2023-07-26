@@ -1,7 +1,7 @@
 #include <iostream>
 #include <openql>
 
-int main(int argc, char **argv) {
+int main() {
     // create platform
     auto platf = ql::Platform("seven_qubits_chip", "cc_light");
 

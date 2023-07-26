@@ -657,7 +657,7 @@ void Mapper::select_alter(
         a.extend(past, base_past);           // locally here, past will be cloned and kept in alter
         // and the extension stored into the a.score
     }
-    alters.sort([this](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
+    alters.sort([](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
     Alter::debug_print(
         "... select_alter sorted all entry alternatives after extension:", alters);
 
@@ -669,7 +669,7 @@ void Mapper::select_alter(
     // recursion_width_exponent can be set to a value less than one, to
     // multiplicatively reduce the width for each recursion level.
     List<Alter> good_alters = alters;
-    good_alters.remove_if([this,alters](const Alter& a) { return a.score != alters.front().score; });
+    good_alters.remove_if([alters](const Alter& a) { return a.score != alters.front().score; });
     Real factor = options->recursion_width_factor * utils::pow(options->recursion_width_exponent, recursion_depth);
     Real keep_real = utils::max(1.0, utils::ceil(factor * good_alters.size()));
     UInt keep = (keep_real < static_cast<utils::Real>(utils::MAX)) ? static_cast<utils::UInt>(keep_real) : utils::MAX;
@@ -695,7 +695,7 @@ void Mapper::select_alter(
         // best alternatives (bla), and make a choice from that list to return
         // as result.
         List<Alter> best_alters = good_alters;
-        best_alters.remove_if([this,good_alters](const Alter& a) { return a.score != good_alters.front().score; });
+        best_alters.remove_if([good_alters](const Alter& a) { return a.score != good_alters.front().score; });
         Alter::debug_print(
             "... select_alter reduced to best alternatives to choose result from:",
             best_alters);
@@ -807,14 +807,14 @@ void Mapper::select_alter(
     }
 
     // Sort list of good alternatives on score resulting after recursion.
-    good_alters.sort([this](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
+    good_alters.sort([](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
     Alter::debug_print("... select_alter sorted alternatives after recursion:", good_alters);
 
     // Reduce list of good alternatives of before recursion to list of equally
     // minimal best alternatives now, and make a choice from that list to return
     // as result.
     List<Alter> best_alters = good_alters;
-    best_alters.remove_if([this,good_alters](const Alter& a) { return a.score != good_alters.front().score; });
+    best_alters.remove_if([good_alters](const Alter& a) { return a.score != good_alters.front().score; });
     Alter::debug_print("... select_alter equally best alternatives on return of RECURSION:", best_alters);
     result = tie_break_alter(best_alters, future);
     result.debug_print("... the selected Alter is");

@@ -46,7 +46,7 @@ void build_rb(int num_cliffords, ql::Kernel &k) {
 }
 
 
-int main(int argc, char **argv) {
+int main() {
     srand(0);
 
     // create platform

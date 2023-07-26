@@ -97,8 +97,6 @@ int main(int argc, char **argv) {
         different  = (argv[2][0] == 'd');
     }
 
-    int    num_circuits       = 1;
-
     std::cout << "[+] num_qubits    : " << num_qubits << std::endl;
     std::cout << "[+] num_cliffords : " << num_cliffords<< std::endl;
     std::cout << "[+] different     : " << (different ? "yes" : "no") << std::endl;

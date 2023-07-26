@@ -35,19 +35,22 @@ FetchContent_Declare(CImg
 )
 FetchContent_MakeAvailable(CImg)
 
+message(STATUS "Fetching cqasm")
 FetchContent_Declare(cqasm
     message(STATUS "Fetching cqasm")
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
-    GIT_TAG "fb0596d46a861b6c83834c4bdd08785c10990d89"
+    GIT_TAG "f739a8fcf2b927a0f112b7e16b71323722eaf4f8"
 )
 FetchContent_MakeAvailable(cqasm)
 
+message(STATUS "Fetching Eigen3")
 FetchContent_Declare(Eigen3
     GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
     GIT_TAG "4e9e493b4abc57dba377fc326082b40d08193619"
 )
 FetchContent_MakeAvailable(Eigen3)
 
+message(STATUS "Fetching highs")
 FetchContent_Declare(highs
     GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
     GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
@@ -57,12 +60,14 @@ configure_file(${HIGHS_SOURCE_DIR}/src/HConfig.h.in ${HIGHS_SOURCE_DIR}/HConfig.
 
 # TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
 # TODO: remove use of Lemon in project?
+message(STATUS "Fetching lemon")
 FetchContent_Declare(lemon
     GIT_REPOSITORY https://github.com/rturrado/lemon.git
     GIT_TAG "61379e365a1f96361781dfa71934e45099542ca0"
 )
 FetchContent_MakeAvailable(lemon)
 
+message(STATUS "Fetching nlohmann_json")
 FetchContent_Declare(nlohmann_json
     URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
 )
@@ -411,7 +416,6 @@ target_include_directories(ql
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
     SYSTEM PUBLIC "${nlohmann_json_SOURCE_DIR}/include"
-    SYSTEM PRIVATE "${TREE_LIB_PRIVATE_INCLUDE}"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
@@ -433,7 +437,7 @@ message(STATUS
 target_link_libraries(ql
     PUBLIC cqasm
     PRIVATE Eigen3::Eigen
-    PUBLIC highs::highs
+    PRIVATE highs::highs
     PRIVATE lemon
     PRIVATE nlohmann_json::nlohmann_json
 )
@@ -467,9 +471,15 @@ set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ql PRIVATE -Wall -Wfatal-errors)
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    target_compile_options(ql PRIVATE -Wall -Wfatal-errors -Wno-unused-local-typedef)
+    target_compile_options(ql PUBLIC
+        -Wall -Wextra -Werror
+        -Wno-error=unused-variable
+        -Wno-error=unused-but-set-variable
+    )
 elseif(MSVC)
-    target_compile_options(ql PRIVATE /MP /D_USE_MATH_DEFINES /EHsc /bigobj)
+    target_compile_options(ql PRIVATE
+        /MP /D_USE_MATH_DEFINES /EHsc /bigobj
+    )
 else()
     message(SEND_ERROR "Unknown compiler!")
 endif()
@@ -515,7 +525,7 @@ endif()
 
 if(QL_VISUALIZER)
     target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
-    target_include_directories(ql SYSTEM PRIVATE "${cimg_SOURCE_DIR}")
+    target_include_directories(ql SYSTEM PRIVATE "${CImg_SOURCE_DIR}")
 endif()
 
 #=============================================================================#
