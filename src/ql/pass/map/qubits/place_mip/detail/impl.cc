@@ -22,7 +22,7 @@ bool isPermutation(const utils::Vec<utils::UInt> &v2r) {
     std::set<utils::UInt> image;
 
     for(auto x: v2r) {
-        if (x < 0 || x >= v2r.size() || image.count(x) > 0) {
+        if (x >= v2r.size() || image.count(x) > 0) {
             return false;
         }
         image.insert(x);

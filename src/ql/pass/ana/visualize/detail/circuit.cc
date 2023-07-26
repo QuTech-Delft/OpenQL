@@ -294,7 +294,7 @@ Int Structure::calculateCellHeight(const CircuitLayout &layout) const {
     }
 }
 
-Int Structure::calculateImageWidth(const CircuitData &circuitData) const {
+Int Structure::calculateImageWidth(const CircuitData &) const {
     QL_DOUT("Calculating image width...");
 
     const Int amountOfCells = utoi(qbitCellPositions.size());
@@ -1466,7 +1466,7 @@ void drawBitLine(Image &image,
                  const CircuitLayout &layout,
                  const BitType bitType,
                  const Int row,
-                 const CircuitData &circuitData,
+                 const CircuitData &,
                  const Structure &structure) {
     Color bitLineColor;
     Color bitLabelColor;
@@ -1801,7 +1801,7 @@ void drawGate(Image &image,
 }
 
 void drawGateNode(Image &image,
-                  const CircuitLayout &layout,
+                  const CircuitLayout &,
                   const Structure &structure,
                   const Node &node,
                   const Cell &cell) {
@@ -1827,7 +1827,7 @@ void drawGateNode(Image &image,
 }
 
 void drawControlNode(Image &image,
-                     const CircuitLayout &layout,
+                     const CircuitLayout &,
                      const Structure &structure,
                      const Node &node,
                      const Cell &cell) {
@@ -1841,7 +1841,7 @@ void drawControlNode(Image &image,
 }
 
 void drawNotNode(Image &image,
-                 const CircuitLayout &layout,
+                 const CircuitLayout &,
                  const Structure &structure,
                  const Node &node,
                  const Cell &cell) {
@@ -1870,7 +1870,7 @@ void drawNotNode(Image &image,
 }
 
 void drawCrossNode(Image &image,
-                   const CircuitLayout &layout,
+                   const CircuitLayout &,
                    const Structure &structure,
                    const Node &node,
                    const Cell &cell) {

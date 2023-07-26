@@ -220,7 +220,6 @@ void Alter::split(utils::List<Alter> &result) const {
     QL_ASSERT (length >= 2);   // distance >= 1 so path at least: source -> target
     for (utils::UInt rightopi = length - 1; rightopi >= 1; rightopi--) {
         utils::UInt leftopi = rightopi - 1;
-        QL_ASSERT (leftopi >= 0);
         // QL_DOUT("... leftopi=" << leftopi);
         // leftopi is the index in total that holds the qubit that becomes the left operand of the gate
         // rightopi is the index in total that holds the qubit that becomes the right operand of the gate

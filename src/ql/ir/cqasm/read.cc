@@ -565,7 +565,7 @@ static ExpressionRef convert_expression(
             if (auto ql_type = fn->get_annotation_ptr<DataTypeLink>()) {
                 ref->data_type = *ql_type;
             }
-            return std::move(ref);
+            return ref;
 
         } else {
 
@@ -1182,7 +1182,7 @@ void read_v1(
                 auto brefs = cqt::make<cqv1::BitRefs>();
                 brefs->index = qrefs->index;
                 brefs->set_annotation<DataTypeLink>(ir->platform->default_bit_type);
-                return std::move(brefs);
+                return brefs;
             } else if (auto fun = ops[0]->as_function()) {
                 fun->return_type = make_cq_type(ir->platform->default_bit_type);
                 ops[0]->set_annotation<DataTypeLink>(ir->platform->default_bit_type);

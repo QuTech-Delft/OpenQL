@@ -28,13 +28,6 @@ FetchContent_Declare(Backward
 )
 FetchContent_MakeAvailable(Backward)
 
-message(STATUS "Fetching CImg")
-FetchContent_Declare(CImg
-    GIT_REPOSITORY https://github.com/GreycLab/CImg.git
-    GIT_TAG "049267da171c50ab48f93c7285f096d7d686e8f3"
-)
-FetchContent_MakeAvailable(CImg)
-
 message(STATUS "Fetching cqasm")
 FetchContent_Declare(cqasm
     message(STATUS "Fetching cqasm")
@@ -409,8 +402,8 @@ add_backward(ql)
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
     SYSTEM PRIVATE "${cqasm_SOURCE_DIR}/include"
-    SYSTEM PRIVATE "${Eigen3_SOURCE_DIR}/Eigen"
-    SYSTEM PRIVATE "${Eigen3_SOURCE_DIR}/unsupported"
+    SYSTEM PRIVATE "${eigen3_SOURCE_DIR}/Eigen"
+    SYSTEM PRIVATE "${eigen3_SOURCE_DIR}/unsupported"
     SYSTEM PRIVATE "${highs_SOURCE_DIR}"
     SYSTEM PRIVATE "${highs_SOURCE_DIR}/src"
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
@@ -420,18 +413,6 @@ target_include_directories(ql
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
-)
-
-message(STATUS
-    "[${PROJECT_NAME}] Target include directories:\n"
-    "      cqasm/include: ${cqasm_SOURCE_DIR}/include\n"
-    "      Eigen3/Eigen: ${Eigen3_SOURCE_DIR}/Eigen\n"
-    "      Eigen3/unsupported: ${Eigen3_SOURCE_DIR}/unsupported\n"
-    "      highs: ${highs_SOURCE_DIR}\n"
-    "      highs/src: ${highs_SOURCE_DIR}/src\n"
-    "      lemon-src: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/\n"
-    "      lemon-build: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/\n"
-    "      nlohmann_json/include: ${nlohmann_json_SOURCE_DIR}/include\n"
 )
 
 target_link_libraries(ql
@@ -469,11 +450,12 @@ target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
 # Configure compilation.
 set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(ql PRIVATE -Wall -Wfatal-errors)
+    target_compile_options(ql PRIVATE
+        -Wall -Wextra -Werror -Wfatal-errors
+    )
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     target_compile_options(ql PUBLIC
-        -Wall -Wextra -Werror
-        -Wno-error=unused-variable
+        -Wall -Wextra -Werror -Wfatal-errors
         -Wno-error=unused-but-set-variable
     )
 elseif(MSVC)
@@ -524,8 +506,15 @@ else()
 endif()
 
 if(QL_VISUALIZER)
+    message(STATUS "Fetching CImg")
+    FetchContent_Declare(CImg
+        GIT_REPOSITORY https://github.com/GreycLab/CImg.git
+        GIT_TAG "049267da171c50ab48f93c7285f096d7d686e8f3"
+    )
+    FetchContent_MakeAvailable(CImg)
+
     target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
-    target_include_directories(ql SYSTEM PRIVATE "${CImg_SOURCE_DIR}")
+    target_include_directories(ql SYSTEM PRIVATE "${cimg_SOURCE_DIR}")
 endif()
 
 #=============================================================================#
@@ -610,6 +599,21 @@ if(OPENQL_BUILD_TESTS)
     endforeach()
 
 endif()
+
+
+message(STATUS
+    "[${PROJECT_NAME}] Target include directories:\n"
+    "      CImg: ${cimg_SOURCE_DIR}\n"
+    "      cqasm/include: ${cqasm_SOURCE_DIR}/include\n"
+    "      doctest: ${doctest_SOURCE_DIR}\n"
+    "      Eigen3/Eigen: ${eigen3_SOURCE_DIR}/Eigen\n"
+    "      Eigen3/unsupported: ${eigen3_SOURCE_DIR}/unsupported\n"
+    "      highs: ${highs_SOURCE_DIR}\n"
+    "      highs/src: ${highs_SOURCE_DIR}/src\n"
+    "      lemon-src: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/\n"
+    "      lemon-build: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/\n"
+    "      nlohmann_json/include: ${nlohmann_json_SOURCE_DIR}/include\n"
+)
 
 
 #=============================================================================#

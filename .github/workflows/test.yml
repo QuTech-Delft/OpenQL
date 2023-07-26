@@ -136,7 +136,7 @@ jobs:
         run: mkdir -p build
       - name: Configure
         working-directory: build
-        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=build -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DOPENQL_BUILD_CPP_STANDALONE_EXAMPLE=ON -DWITH_UNITARY_DECOMPOSITION=OFF
+        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DOPENQL_BUILD_CPP_STANDALONE_EXAMPLE=ON -DWITH_UNITARY_DECOMPOSITION=OFF
       - name: Build
         working-directory: build
         run: cmake --build . --parallel 5
@@ -144,7 +144,7 @@ jobs:
         working-directory: build
         run: ctest -C Debug --output-on-failure
       - name: Run CPP standalone example
-        working-directory: build-${{ matrix.build_type }}
+        working-directory: build
         run: ./example
 
   python:
