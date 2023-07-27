@@ -551,7 +551,7 @@ Bool Kernel::add_custom_gate_if_available(
         if (!instr.empty()) {
             instr += ",";
         }
-        instr += std::string{"q"} + std::to_string(qubit);
+        instr += std::string{"q"} + to_string(qubit);
     }
     instr = gname + " " + instr;
 
@@ -639,7 +639,7 @@ Bool Kernel::add_spec_decomposed_gate_if_available(
         if (!instr_parameterized.empty()) {
             instr_parameterized += ",";
         }
-        instr_parameterized += std::string{"q"} + std::to_string(qubit);
+        instr_parameterized += std::string{"q"} + to_string(qubit);
     }
     instr_parameterized = gate_name + " " + instr_parameterized;
     QL_DOUT("specialized instruction name: " << instr_parameterized);
@@ -737,7 +737,7 @@ Bool Kernel::add_param_decomposed_gate_if_available(
         if (!instr_parameterized.empty()) {
             instr_parameterized += ",";
         }
-        instr_parameterized += std::string{"%"} + std::to_string(i);
+        instr_parameterized += std::string{"%"} + to_string(i);
     }
     instr_parameterized = gate_name + " " + instr_parameterized;
     QL_DOUT("parameterized instruction name: " << instr_parameterized);

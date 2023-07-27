@@ -59,7 +59,7 @@ set(HIGHS_VERSION_MINOR 0)
 set(HIGHS_VERSION_PATCH 0)
 set(HIGHS_SOURCE_DIR "${highs_SOURCE_DIR}")
 set(HIGHS_BINARY_DIR "${highs_BINARY_DIR}")
-add_subdirectory("${highs_SOURCE_DIR}/src" "${highs_BINARY_DIR}/src")
+add_subdirectory("${highs_SOURCE_DIR}/src" "${highs_BINARY_DIR}/src" SYSTEM)
 configure_file(${highs_SOURCE_DIR}/src/HConfig.h.in ${highs_BINARY_DIR}/HConfig.h)
 
 # TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
@@ -415,9 +415,6 @@ target_include_directories(ql
     SYSTEM PRIVATE "${cqasm_SOURCE_DIR}/include"
     SYSTEM PRIVATE "${eigen3_SOURCE_DIR}/Eigen"
     SYSTEM PRIVATE "${eigen3_SOURCE_DIR}/unsupported"
-    SYSTEM PRIVATE "${highs_SOURCE_DIR}"
-    SYSTEM PRIVATE "${highs_BINARY_DIR}"
-    SYSTEM PRIVATE "${highs_SOURCE_DIR}/src"
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
     SYSTEM PUBLIC "${nlohmann_json_SOURCE_DIR}/include"
