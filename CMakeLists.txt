@@ -466,19 +466,19 @@ target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
 # Configure compilation.
 set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(ql PUBLIC
+    target_compile_options(ql PRIVATE
         -Wall -Wextra -Werror -Wfatal-errors
         -Wno-error=restrict
         -Wno-error=deprecated-declarations
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    target_compile_options(ql PUBLIC
+    target_compile_options(ql PRIVATE
         -Wall -Wextra -Werror -Wfatal-errors
         -Wno-error=unused-private-field
         -Wno-error=unused-but-set-variable
     )
 elseif(MSVC)
-    target_compile_options(ql PUBLIC
+    target_compile_options(ql PRIVATE
         /MP /D_USE_MATH_DEFINES /EHsc /bigobj
     )
 else()
@@ -553,6 +553,9 @@ if(OPENQL_BUILD_TESTS)
     # Convenience function to add an integration test.
     function(add_openql_test name source workdir)
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
+        if(CMAKE_COMPILER_IS_GNUCXX)
+            target_compile_options("${name}" PRIVATE -Wno-error=restrict)
+        endif()
         target_link_libraries("${name}" PRIVATE ql)
         add_test(
             NAME "${name}"
@@ -573,6 +576,9 @@ if(OPENQL_BUILD_TESTS)
         string(REPLACE ".cc" "" name ${name})
         set(name test_${name})
         add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
+        if(CMAKE_COMPILER_IS_GNUCXX)
+            target_compile_options("${name}" PRIVATE -Wno-error=restrict)
+        endif()
         target_link_libraries("${name}" PRIVATE ql doctest::doctest)
         target_include_directories(ql SYSTEM PRIVATE "${doctest_SOURCE_DIR}")
         get_filename_component(working_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}" DIRECTORY)

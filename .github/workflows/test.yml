@@ -106,7 +106,7 @@ jobs:
         working-directory: build
         run: ctest -C ${{ matrix.build_type }} --output-on-failure
       - name: Run CPP standalone example
-        working-directory: build\Debug
+        working-directory: build\${{ matrix.build_type }}
         run: .\example.exe
 
   cpp-arm64:
@@ -148,7 +148,7 @@ jobs:
         run: cmake --build . --parallel 5
       - name: Test
         working-directory: build
-        run: ctest -C Debug --output-on-failure
+        run: ctest -C Release --output-on-failure
       - name: Run CPP standalone example
         working-directory: build
         run: ./example
