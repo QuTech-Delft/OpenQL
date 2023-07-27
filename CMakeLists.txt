@@ -48,15 +48,26 @@ FetchContent_Declare(highs
     GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
     GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
 )
-FetchContent_MakeAvailable(highs)
-configure_file(${HIGHS_SOURCE_DIR}/src/HConfig.h.in ${HIGHS_SOURCE_DIR}/HConfig.h)
+FetchContent_Populate(highs)
+# The build system in HiGHS currently doesn't allow to disable HiGHS tests
+# thus the following hacks are needed, instead of just add_subdirectory(deps/highs).
+set(FAST_BUILD ON)
+set(GITHASH "")
+set(TODAY "")
+set(HIGHS_VERSION_MAJOR 0)
+set(HIGHS_VERSION_MINOR 0)
+set(HIGHS_VERSION_PATCH 0)
+set(HIGHS_SOURCE_DIR "${highs_SOURCE_DIR}")
+set(HIGHS_BINARY_DIR "${highs_BINARY_DIR}")
+add_subdirectory("${highs_SOURCE_DIR}/src" "${highs_BINARY_DIR}/src")
+configure_file(${highs_SOURCE_DIR}/src/HConfig.h.in ${highs_BINARY_DIR}/HConfig.h)
 
 # TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
 # TODO: remove use of Lemon in project?
 message(STATUS "Fetching lemon")
 FetchContent_Declare(lemon
     GIT_REPOSITORY https://github.com/rturrado/lemon.git
-    GIT_TAG "61379e365a1f96361781dfa71934e45099542ca0"
+    GIT_TAG "e70acea5764a97ab3b6d31b883300f3ce1587cde"
 )
 FetchContent_MakeAvailable(lemon)
 
@@ -405,6 +416,7 @@ target_include_directories(ql
     SYSTEM PRIVATE "${eigen3_SOURCE_DIR}/Eigen"
     SYSTEM PRIVATE "${eigen3_SOURCE_DIR}/unsupported"
     SYSTEM PRIVATE "${highs_SOURCE_DIR}"
+    SYSTEM PRIVATE "${highs_BINARY_DIR}"
     SYSTEM PRIVATE "${highs_SOURCE_DIR}/src"
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
@@ -418,7 +430,7 @@ target_include_directories(ql
 target_link_libraries(ql
     PUBLIC cqasm
     PRIVATE Eigen3::Eigen
-    PRIVATE highs::highs
+    PUBLIC highs
     PRIVATE lemon
     PRIVATE nlohmann_json::nlohmann_json
 )
@@ -452,6 +464,7 @@ set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ql PRIVATE
         -Wall -Wextra -Werror -Wfatal-errors
+        -Wno-error=deprecated-declarations
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     target_compile_options(ql PRIVATE
@@ -544,7 +557,7 @@ if(OPENQL_BUILD_TESTS)
     endfunction()
 
     # Include the directories containing integration tests.
-    #add_subdirectory(test)
+    add_subdirectory(test)
     add_subdirectory(tests)
     add_subdirectory(examples)
 

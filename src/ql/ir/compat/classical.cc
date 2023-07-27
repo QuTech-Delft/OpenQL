@@ -192,14 +192,14 @@ Instruction Classical::qasm() const {
     Int sz = creg_operands.size();
     for (Int i = 0; i < sz; ++i) {
         if (i == sz - 1) {
-            iopers += " r" + to_string(creg_operands[i]);
+            iopers += std::string{" r"} + to_string(creg_operands[i]);
         } else {
-            iopers += " r" + to_string(creg_operands[i]) + ",";
+            iopers += std::string{" r"} + to_string(creg_operands[i]) + std::string{","};
         }
     }
 
     if (name == "ldi") {
-        return "ldi" + iopers + ", " + to_string(int_operand);
+        return std::string{"ldi"} + iopers + std::string{", "} + to_string(int_operand);
     } else {
         return name + iopers;
     }

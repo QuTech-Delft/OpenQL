@@ -253,7 +253,7 @@ Str EnumerationOption::validate_(const Str &val) const {
  * Returns a description of the syntax for allowable values.
  */
 Str EnumerationOption::syntax() const {
-    return "one of " + options.to_string("`", "`, `", "`", "`, or `", "` or `");
+    return std::string{"one of "} + options.to_string("`", "`, `", "`", "`, or `", "` or `");
 }
 
 /**

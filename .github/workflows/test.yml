@@ -97,10 +97,10 @@ jobs:
         working-directory: build
         run: cmake --build . --parallel 10 --config ${{ matrix.build_type }}
       - name: Test
-        working-directory: build/${{ matrix.build_type }}
+        working-directory: build
         run: ctest -C ${{ matrix.build_type }} --output-on-failure
       - name: Run CPP standalone example
-        working-directory: build/${{ matrix.build_type }}
+        working-directory: build\Debug
         run: example.exe
 
   cpp-arm64:
@@ -183,8 +183,8 @@ jobs:
         shell: powershell
         run: |
           choco install winflexbison3 --version 2.5.24.20210105
-          echo "OPENQL_BUILD_TYPE=Release" >> $GITHUB_ENV
-          echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
+          echo "OPENQL_BUILD_TYPE=Release" >> $env:$GITHUB_ENV
+          echo "OPENQL_DISABLE_UNITARY=true" >> $env:$GITHUB_ENV
       - name: Build
         env:
           NPROCS: 5
