@@ -466,19 +466,19 @@ target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
 # Configure compilation.
 set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(ql PRIVATE
+    target_compile_options(ql PUBLIC
         -Wall -Wextra -Werror -Wfatal-errors
         -Wno-error=restrict
         -Wno-error=deprecated-declarations
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    target_compile_options(ql PRIVATE
+    target_compile_options(ql PUBLIC
         -Wall -Wextra -Werror -Wfatal-errors
         -Wno-error=unused-private-field
         -Wno-error=unused-but-set-variable
     )
 elseif(MSVC)
-    target_compile_options(ql PRIVATE
+    target_compile_options(ql PUBLIC
         /MP /D_USE_MATH_DEFINES /EHsc /bigobj
     )
 else()
