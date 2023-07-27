@@ -4,9 +4,10 @@
 
 #include "ql/ir/compat/kernel.h"
 
-#include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <sstream>
+#include <string>
 
 #include "ql/config.h"
 #include "ql/utils/json.h"
@@ -550,7 +551,7 @@ Bool Kernel::add_custom_gate_if_available(
         if (!instr.empty()) {
             instr += ",";
         }
-        instr += "q" + to_string(qubit);
+        instr += std::string{"q"} + std::to_string(qubit);
     }
     instr = gname + " " + instr;
 

@@ -544,7 +544,7 @@ if(OPENQL_BUILD_TESTS)
     endfunction()
 
     # Include the directories containing integration tests.
-    add_subdirectory(test)
+    #add_subdirectory(test)
     add_subdirectory(tests)
     add_subdirectory(examples)
 

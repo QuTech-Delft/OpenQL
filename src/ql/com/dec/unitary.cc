@@ -112,6 +112,16 @@ public:
         return _matrix;
     }
 
+    Str to_string(
+        const complex_matrix &m,
+        [[maybe_unused]] const Str &vector_prefix = "",
+        [[maybe_unused]] const Str &elem_sep = ", "
+    ) {
+        StrStrm ss;
+        ss << m << "\n";
+        return ss.str();
+    }
+
     void decompose() {
         QL_DOUT("decomposing Unitary: " << name);
 
@@ -137,16 +147,6 @@ public:
 
         QL_DOUT("Done decomposing");
         decomposed = true;
-    }
-
-    Str to_string(
-        const complex_matrix &m,
-        const Str &,
-        const Str &
-    ) {
-        StrStrm ss;
-        ss << m << "\n";
-        return ss.str();
     }
 
     void decomp_function(const Eigen::Ref<const complex_matrix>& matrix, Int numberofbits) {
@@ -326,7 +326,7 @@ public:
         tmp.bottomRightCorner(p,p) = u2*c*v2;
         // Just to see if it kinda matches
         if (!tmp.isApprox(U, 10e-2)) {
-            throw utils::Exception("CSD of unitary '"+ name+"' is wrong! Failed at matrix: \n"+to_string(tmp) + "\nwhich should be: \n" + to_string(U));
+            throw utils::Exception("CSD of unitary '" + name + "' is wrong! Failed at matrix: \n" + to_string(tmp) + "\nwhich should be: \n" + to_string(U));
         }
     }
 
@@ -404,7 +404,7 @@ public:
         complex_matrix Dtemp = D.asDiagonal();
         if (!U1.isApprox(V*Dtemp*W, 10e-2) || !U2.isApprox(V*Dtemp.adjoint()*W, 10e-2)) {
             QL_EOUT("Demultiplexing not correct!");
-            throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2) + "\nwhile they are: \n" + to_string(V*D.asDiagonal()*W) + "\nand \n" + to_string(V*D.conjugate().asDiagonal()*W));
+            throw utils::Exception("Demultiplexing of unitary '" + name + "' not correct! Failed at matrix U1: \n" + to_string(U1) + "and matrix U2: \n" + to_string(U2) + "\nwhile they are: \n" + to_string(V*D.asDiagonal()*W) + "\nand \n" + to_string(V*D.conjugate().asDiagonal()*W));
         }
 
     }
@@ -455,7 +455,7 @@ public:
         // Check is very approximate to account for low-precision input matrices
         if (!temp.isApprox(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]*tr, 10e-2)) {
             QL_EOUT("Multicontrolled Y not correct!");
-            throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss));
+            throw utils::Exception("Demultiplexing of unitary '" + name + "' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss));
         }
 
         instruction_list.insert(instruction_list.end(), &tr[0], &tr[halfthesizeofthematrix]);
@@ -468,7 +468,7 @@ public:
         // Check is very approximate to account for low-precision input matrices
         if (!temp.isApprox(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]*tr, 10e-2)) {
             QL_EOUT("Multicontrolled Z not correct!");
-            throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D));
+            throw utils::Exception("Demultiplexing of unitary '" + name + "' not correct! Failed at demultiplexing of matrix D: \n" + to_string(D));
         }
         instruction_list.insert(instruction_list.end(), &tr[0], &tr[halfthesizeofthematrix]);
     }
