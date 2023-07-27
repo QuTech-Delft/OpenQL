@@ -468,12 +468,12 @@ set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ql PRIVATE
         -Wall -Wextra -Werror -Wfatal-errors
+        -Wno-error=restrict
         -Wno-error=deprecated-declarations
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     target_compile_options(ql PRIVATE
         -Wall -Wextra -Werror -Wfatal-errors
-        -Wno-error=restrict
         -Wno-error=unused-private-field
         -Wno-error=unused-but-set-variable
     )
