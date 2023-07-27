@@ -22,6 +22,8 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Get latest CMake
+        uses: lukka/get-cmake@latest
       - name: Create build directory
         run: mkdir -p build-${{ matrix.compiler }}-${{ matrix.build_type }}
       - name: Configure
@@ -57,6 +59,8 @@ jobs:
           brew install flex bison
           echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
           echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
+      - name: Get latest CMake
+        uses: lukka/get-cmake@latest
       - name: Create build directory
         run: mkdir -p build-${{ matrix.build_type }}
       - name: Configure
@@ -88,6 +92,8 @@ jobs:
       - name: Install Winflexbison3
         shell: powershell
         run: choco install winflexbison3 --version 2.5.24.20210105
+      - name: Get latest CMake
+        uses: lukka/get-cmake@latest
       - name: Create build directory
         run: mkdir -p build
       - name: Configure
@@ -185,6 +191,8 @@ jobs:
           choco install winflexbison3 --version 2.5.24.20210105
           echo "OPENQL_BUILD_TYPE=Release" >> $env:GITHUB_ENV
           echo "OPENQL_DISABLE_UNITARY=true" >> $env:GITHUB_ENV
+      - name: Get latest CMake
+        uses: lukka/get-cmake@latest
       - name: Build
         env:
           NPROCS: 5

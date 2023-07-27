@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.25 FATAL_ERROR)  # 3.25 needed for add_subdirectory(... SYSTEM)
 
 # CMake policies
 if(POLICY CMP0048)
@@ -21,61 +21,6 @@ include(GNUInstallDirs)
 # Packages
 include(FetchContent)
 
-message(STATUS "Fetching Backward")
-FetchContent_Declare(Backward
-    GIT_REPOSITORY https://github.com/bombela/backward-cpp.git
-    GIT_TAG "3bb9240cb15459768adb3e7d963a20e1523a6294"
-)
-FetchContent_MakeAvailable(Backward)
-
-message(STATUS "Fetching cqasm")
-FetchContent_Declare(cqasm
-    message(STATUS "Fetching cqasm")
-    GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
-    GIT_TAG "f739a8fcf2b927a0f112b7e16b71323722eaf4f8"
-)
-FetchContent_MakeAvailable(cqasm)
-
-message(STATUS "Fetching Eigen3")
-FetchContent_Declare(Eigen3
-    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-    GIT_TAG "4e9e493b4abc57dba377fc326082b40d08193619"
-)
-FetchContent_MakeAvailable(Eigen3)
-
-message(STATUS "Fetching highs")
-FetchContent_Declare(highs
-    GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
-    GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
-)
-FetchContent_Populate(highs)
-# The build system in HiGHS currently doesn't allow to disable HiGHS tests
-# thus the following hacks are needed, instead of just add_subdirectory(deps/highs).
-set(FAST_BUILD ON)
-set(GITHASH "")
-set(TODAY "")
-set(HIGHS_VERSION_MAJOR 0)
-set(HIGHS_VERSION_MINOR 0)
-set(HIGHS_VERSION_PATCH 0)
-set(HIGHS_SOURCE_DIR "${highs_SOURCE_DIR}")
-set(HIGHS_BINARY_DIR "${highs_BINARY_DIR}")
-add_subdirectory("${highs_SOURCE_DIR}/src" "${highs_BINARY_DIR}/src" SYSTEM)
-configure_file(${highs_SOURCE_DIR}/src/HConfig.h.in ${highs_BINARY_DIR}/HConfig.h)
-
-# TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
-# TODO: remove use of Lemon in project?
-message(STATUS "Fetching lemon")
-FetchContent_Declare(lemon
-    GIT_REPOSITORY https://github.com/rturrado/lemon.git
-    GIT_TAG "e70acea5764a97ab3b6d31b883300f3ce1587cde"
-)
-FetchContent_MakeAvailable(lemon)
-
-message(STATUS "Fetching nlohmann_json")
-FetchContent_Declare(nlohmann_json
-    URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
-)
-FetchContent_MakeAvailable(nlohmann_json)
 
 #=============================================================================#
 # Configuration options                                                       #
@@ -231,6 +176,68 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # (I think), but only the .dll is generated when there are no exported symbols.
 # This sort of fixes that (https://stackoverflow.com/questions/1941443)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+
+#=============================================================================#
+# Dependencies                                                                #
+#=============================================================================#
+
+
+message(STATUS "Fetching Backward")
+FetchContent_Declare(Backward
+    GIT_REPOSITORY https://github.com/bombela/backward-cpp.git
+    GIT_TAG "3bb9240cb15459768adb3e7d963a20e1523a6294"
+    )
+FetchContent_MakeAvailable(Backward)
+
+message(STATUS "Fetching cqasm")
+FetchContent_Declare(cqasm
+    message(STATUS "Fetching cqasm")
+    GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
+    GIT_TAG "f739a8fcf2b927a0f112b7e16b71323722eaf4f8"
+    )
+FetchContent_MakeAvailable(cqasm)
+
+message(STATUS "Fetching Eigen3")
+FetchContent_Declare(Eigen3
+    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+    GIT_TAG "4e9e493b4abc57dba377fc326082b40d08193619"
+    )
+FetchContent_MakeAvailable(Eigen3)
+
+message(STATUS "Fetching highs")
+FetchContent_Declare(highs
+    GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
+    GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
+    )
+FetchContent_Populate(highs)
+# The build system in HiGHS currently doesn't allow to disable HiGHS tests
+# thus the following hacks are needed, instead of just add_subdirectory(deps/highs).
+set(FAST_BUILD ON)
+set(GITHASH "")
+set(TODAY "")
+set(HIGHS_VERSION_MAJOR 0)
+set(HIGHS_VERSION_MINOR 0)
+set(HIGHS_VERSION_PATCH 0)
+set(HIGHS_SOURCE_DIR "${highs_SOURCE_DIR}")
+set(HIGHS_BINARY_DIR "${highs_BINARY_DIR}")
+add_subdirectory("${highs_SOURCE_DIR}/src" "${highs_BINARY_DIR}/src" SYSTEM)
+configure_file(${highs_SOURCE_DIR}/src/HConfig.h.in ${highs_BINARY_DIR}/HConfig.h)
+
+# TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
+# TODO: remove use of Lemon in project?
+message(STATUS "Fetching lemon")
+FetchContent_Declare(lemon
+    GIT_REPOSITORY https://github.com/rturrado/lemon.git
+    GIT_TAG "e70acea5764a97ab3b6d31b883300f3ce1587cde"
+    )
+FetchContent_MakeAvailable(lemon)
+
+message(STATUS "Fetching nlohmann_json")
+FetchContent_Declare(nlohmann_json
+    URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
+    )
+FetchContent_MakeAvailable(nlohmann_json)
 
 
 #=============================================================================#
