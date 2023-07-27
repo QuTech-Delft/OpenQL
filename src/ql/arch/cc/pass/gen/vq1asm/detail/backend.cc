@@ -73,7 +73,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
     // Return the name for a child of this block. We use "__" to prevent clashes with names assigned by user (assuming
     // they won't use names with "__", similar to the C rule for identifiers), and give some sense of hierarchy
     // level.
-    auto block_child_name = [name](const Str &child_name) { return std::string{"__"} + name + std::string{"__"} + child_name; };
+    auto block_child_name = [name](const Str &child_name) { return "__" + name + "__" + child_name; };
 
     // Return the label (-stem) for this block. Note that this is used as q1asm label and must adhere to
     // the allowed structure of that. The appending of block_number is to uniquify anonymous blocks like 'for loops'.

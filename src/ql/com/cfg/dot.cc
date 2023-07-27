@@ -54,7 +54,7 @@ void dump_dot(
             if (block->next.empty()) {
                 desc += "exit\n";
             } else {
-                desc += std::string{"goto "} + block->next->name + std::string{"\n"};
+                desc += "goto " + block->next->name + "\n";
             }
         }
         desc = utils::replace_all(desc, "\\", "\\\\");

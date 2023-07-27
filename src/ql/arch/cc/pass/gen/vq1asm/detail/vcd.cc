@@ -39,7 +39,7 @@ void Vcd::programStart(UInt qubitNumber, Int cycleTime, Int maxGroups, const Set
     scope(Vcd::Scope::MODULE, "qubits");
     vcdVarQubit.resize(qubitNumber);
     for (UInt q = 0; q < qubitNumber; q++) {
-        Str name = std::string{"q"} + to_string(q);
+        Str name = "q" + to_string(q);
         vcdVarQubit[q] = registerVar(name, Vcd::VarType::STRING);
     }
     upscope();

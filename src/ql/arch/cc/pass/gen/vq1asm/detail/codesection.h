@@ -22,7 +22,7 @@ namespace vq1asm {
 namespace detail {
 
 static inline Str as_target(const Str &label) {
-    return std::string{"@"} + label;
+    return "@" + label;
 }
 
 static inline Str as_reg(UInt creg) {

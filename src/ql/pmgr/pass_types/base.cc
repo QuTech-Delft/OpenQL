@@ -200,7 +200,7 @@ utils::Str Base::describe() const {
     if (is_root()) {
         return "root";
     } else {
-        return std::string{"pass \""} + instance_name + "\"";
+        return "pass \"" + instance_name + "\"";
     }
 }
 

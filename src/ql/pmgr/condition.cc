@@ -43,12 +43,12 @@ bool Compare::evaluate(utils::Int pass_return_value) const {
  */
 utils::Str Compare::to_string() const {
     switch (relation) {
-        case Relation::EQ: return std::string{"value == "} + utils::to_string(value);
-        case Relation::NE: return std::string{"value != "} + utils::to_string(value);
-        case Relation::GT: return std::string{"value > "}  + utils::to_string(value);
-        case Relation::GE: return std::string{"value >= "} + utils::to_string(value);
-        case Relation::LT: return std::string{"value < "}  + utils::to_string(value);
-        case Relation::LE: return std::string{"value <= "} + utils::to_string(value);
+        case Relation::EQ: return "value == " + utils::to_string(value);
+        case Relation::NE: return "value != " + utils::to_string(value);
+        case Relation::GT: return "value > "  + utils::to_string(value);
+        case Relation::GE: return "value >= " + utils::to_string(value);
+        case Relation::LT: return "value < "  + utils::to_string(value);
+        case Relation::LE: return "value <= " + utils::to_string(value);
         default: return "UNKNOWN";
     }
 }
