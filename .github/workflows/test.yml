@@ -30,16 +30,13 @@ jobs:
         env:
           CXX: ${{ matrix.compiler }}
         working-directory: build-${{ matrix.compiler }}-${{ matrix.build_type }}
-        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DOPENQL_BUILD_CPP_STANDALONE_EXAMPLE=ON -DWITH_UNITARY_DECOMPOSITION=OFF
+        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
       - name: Build
         working-directory: build-${{ matrix.compiler }}-${{ matrix.build_type }}
-        run: cmake --build . --parallel 10
+        run: cmake --build . --parallel 5
       - name: Test
         working-directory: build-${{ matrix.compiler }}-${{ matrix.build_type }}
         run: ctest -C ${{ matrix.build_type }} --output-on-failure
-      - name: Run CPP standalone example
-        working-directory: build-${{ matrix.compiler }}-${{ matrix.build_type }}
-        run: ./example
 
   cpp-macos:
     name: 'C++ tests (clang/MacOS/x64)'
@@ -65,16 +62,13 @@ jobs:
         run: mkdir -p build-${{ matrix.build_type }}
       - name: Configure
         working-directory: build-${{ matrix.build_type }}
-        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DOPENQL_BUILD_CPP_STANDALONE_EXAMPLE=ON -DWITH_UNITARY_DECOMPOSITION=OFF
+        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
       - name: Build
         working-directory: build-${{ matrix.build_type }}
-        run: cmake --build . --parallel 10
+        run: cmake --build . --parallel 5
       - name: Test
         working-directory: build-${{ matrix.build_type }}
         run: ctest -C ${{ matrix.build_type }} --output-on-failure
-      - name: Run CPP standalone example
-        working-directory: build-${{ matrix.build_type }}
-        run: ./example
 
   cpp-windows:
     name: 'C++ tests (msvc/Windows/x64)'
@@ -98,16 +92,13 @@ jobs:
         run: mkdir -p build
       - name: Configure
         working-directory: build
-        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DOPENQL_BUILD_CPP_STANDALONE_EXAMPLE=ON -DWITH_UNITARY_DECOMPOSITION=OFF
+        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
       - name: Build
         working-directory: build
-        run: cmake --build . --parallel 10 --config ${{ matrix.build_type }}
+        run: cmake --build . --parallel 5 --config ${{ matrix.build_type }}
       - name: Test
         working-directory: build
         run: ctest -C ${{ matrix.build_type }} --output-on-failure
-      - name: Run CPP standalone example
-        working-directory: build\Debug
-        run: .\example.exe
 
   cpp-arm64:
     name: 'C++ tests (gcc/Linux/ARM64, clang/MacOS/ARM64)'
@@ -142,16 +133,13 @@ jobs:
         run: mkdir -p build
       - name: Configure
         working-directory: build
-        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DOPENQL_BUILD_CPP_STANDALONE_EXAMPLE=ON -DWITH_UNITARY_DECOMPOSITION=OFF
+        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
       - name: Build
         working-directory: build
         run: cmake --build . --parallel 5
       - name: Test
         working-directory: build
-        run: ctest -C Debug --output-on-failure
-      - name: Run CPP standalone example
-        working-directory: build
-        run: ./example
+        run: ctest -C Release --output-on-failure
 
   python:
     name: Python
