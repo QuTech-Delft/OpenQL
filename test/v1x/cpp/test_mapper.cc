@@ -1389,7 +1389,7 @@ void test_maxcut(
     std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
 
-    auto starmon = ql::Platform("starmon",  os.path.join(json_dir, "test_mapper_rig.json"));
+    auto starmon = ql::Platform("starmon", "res/v1x/json/test_mapper_rig.json");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);

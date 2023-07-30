@@ -12,7 +12,7 @@ namespace test_cqasm_reader {
 void test_single_bit_kernel_operations() {
     QL_IOUT("test_single_bit_kernel_operations");
     // create platform
-    ql::Platform platform("seven_qubits_chip",  os.path.join(json_dir, "config_cc_light.json"));
+    ql::Platform platform("seven_qubits_chip", "res/v1x/json/config_cc_light.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::Program program("qasm_single_bit_kernel_operations", platform, num_qubits);
@@ -51,7 +51,7 @@ void test_single_bit_kernel_operations() {
 void test_parameterized_single_bit_kernel_operations() {
     QL_IOUT("test_parameterized_single_bit_kernel_operations");
     // create platform
-    ql::Platform platform("seven_qubits_chip",  os.path.join(json_dir, "config_cc_light.json"));
+    ql::Platform platform("seven_qubits_chip", "res/v1x/json/config_cc_light.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::Program program("qasm_parameterized_single_bit_kernel_operations", platform, num_qubits);
@@ -75,7 +75,7 @@ void test_parameterized_single_bit_kernel_operations() {
 void test_dual_bit_kernel_operations() {
     QL_IOUT("test_dual_bit_kernel_operations");
     // create platform
-    ql::Platform platform("seven_qubits_chip",  os.path.join(json_dir, "config_cc_light.json"));
+    ql::Platform platform("seven_qubits_chip", "res/v1x/json/config_cc_light.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::Program program("qasm_dual_bit_kernel_operations", platform, num_qubits);
@@ -99,7 +99,7 @@ void test_dual_bit_kernel_operations() {
 void test_parameterized_dual_bit_kernel_operations() {
     QL_IOUT("test_parameterized_dual_bit_kernel_operations");
     // create platform
-    ql::Platform platform("seven_qubits_chip",  os.path.join(json_dir, "config_cc_light.json"));
+    ql::Platform platform("seven_qubits_chip", "res/v1x/json/config_cc_light.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::Program program("qasm_parameterized_dual_bit_kernel_operations", platform, num_qubits);
@@ -123,7 +123,7 @@ void test_triple_bit_kernel_operations() {
 
     ql::set_option("decompose_toffoli", "AM");
     // create platform
-    ql::Platform platform("seven_qubits_chip",  os.path.join(json_dir, "config_cc_light.json"));
+    ql::Platform platform("seven_qubits_chip", "res/v1x/json/config_cc_light.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::Program program("qasm_triple_bit_kernel_operations", platform, num_qubits);
@@ -145,7 +145,7 @@ void test_triple_bit_kernel_operations() {
 void test_sub_circuit_program() {
     QL_IOUT("test_sub_circuit_program");
     // create platform
-    ql::Platform platform("seven_qubits_chip",  os.path.join(json_dir, "config_cc_light.json"));
+    ql::Platform platform("seven_qubits_chip", "res/v1x/json/config_cc_light.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::Program program("qasm_sub_circuit_program", platform, num_qubits);
@@ -170,7 +170,7 @@ void test_sub_circuit_program() {
 void test_parallel_program() {
     QL_IOUT("test_parallel_program");
     // create platform
-    ql::Platform platform("seven_qubits_chip",  os.path.join(json_dir, "config_cc_light.json"));
+    ql::Platform platform("seven_qubits_chip", "res/v1x/json/config_cc_light.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::Program program("qasm_parallel_program", platform, num_qubits);
@@ -194,7 +194,7 @@ void test_special_gates() {
     QL_IOUT("test_special_gates");
     QL_IOUT("test_parallel_programs");
     // create platform
-    ql::Platform platform("seven_qubits_chip",  os.path.join(json_dir, "config_cc_light.json"));
+    ql::Platform platform("seven_qubits_chip", "res/v1x/json/config_cc_light.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::Program program("qasm_special_gates", platform, num_qubits);
@@ -223,7 +223,7 @@ void test_special_gates() {
 void test_add_multiple_parts_of_cqasm() {
     QL_IOUT("test_add_multiple_programs");
     // create platform
-    ql::Platform platform("seven_qubits_chip",  os.path.join(json_dir, "config_cc_light.json"));
+    ql::Platform platform("seven_qubits_chip", "res/v1x/json/config_cc_light.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::Program program("qasm_add_multiple_programs", platform, num_qubits);
@@ -257,7 +257,7 @@ void test_add_multiple_parts_of_cqasm() {
 void test_qi_example() {
     QL_IOUT("test_qi_example");
     // create platform
-    ql::Platform platform("seven_qubits_chip",  os.path.join(json_dir, "config_cc_light.json"));
+    ql::Platform platform("seven_qubits_chip", "res/v1x/json/config_cc_light.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::Program program("qasm_qi_example", platform, num_qubits);

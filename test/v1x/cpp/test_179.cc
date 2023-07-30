@@ -13,12 +13,12 @@
 
 // all cnots with operands that are neighbors in s7
 // no or hardly any significant difference between pre179 and post179 scheduling
-void test_cnot_mixedcommute(std::string v, std::string schedopt, std::string sched_post179opt) {
+void test_cnot_mixed_commute(std::string v, std::string schedopt, std::string sched_post179opt) {
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
 
-    auto starmon = ql::Platform("starmon",  os.path.join(json_dir, "test_179.json"));
+    auto starmon = ql::Platform("starmon",  "res/v1x/json/test_179.json");
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
 
@@ -53,12 +53,12 @@ void test_cnot_mixedcommute(std::string v, std::string schedopt, std::string sch
 
 // test cnot control operand commutativity
 // i.e. best result is the reverse original order
-void test_cnot_controlcommute(std::string v, std::string schedopt, std::string sched_post179opt) {
+void test_cnot_control_commute(std::string v, std::string schedopt, std::string sched_post179opt) {
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
 
-    auto starmon = ql::Platform("starmon",  os.path.join(json_dir, "test_179.json"));
+    auto starmon = ql::Platform("starmon", "res/v1x/json/test_179.json");
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
 
@@ -88,12 +88,12 @@ void test_cnot_controlcommute(std::string v, std::string schedopt, std::string s
 
 // test cnot target operand commutativity
 // i.e. best result is the reverse original order
-void test_cnot_targetcommute(std::string v, std::string schedopt, std::string sched_post179opt) {
+void test_cnot_target_commute(std::string v, std::string schedopt, std::string sched_post179opt) {
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
 
-    auto starmon = ql::Platform("starmon",  os.path.join(json_dir, "test_179.json"));
+    auto starmon = ql::Platform("starmon", "res/v1x/json/test_179.json");
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
 
@@ -123,12 +123,12 @@ void test_cnot_targetcommute(std::string v, std::string schedopt, std::string sc
 
 // test cz any operand commutativity
 // i.e. best result is the reverse original order
-void test_cz_anycommute(std::string v, std::string schedopt, std::string sched_post179opt) {
+void test_cz_any_commute(std::string v, std::string schedopt, std::string sched_post179opt) {
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
 
-    auto starmon = ql::Platform("starmon",  os.path.join(json_dir, "test_179.json"));
+    auto starmon = ql::Platform("starmon", "res/v1x/json/test_179.json");
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
 
@@ -159,20 +159,20 @@ void test_cz_anycommute(std::string v, std::string schedopt, std::string sched_p
 TEST(v1x, test_179) {
     ql::utils::logger::set_log_level("LOG_DEBUG");
 
-    test_cnot_controlcommute("cnot_controlcommute", "ASAP", "no");
-    test_cnot_controlcommute("cnot_controlcommute", "ASAP", "yes");
-    test_cnot_controlcommute("cnot_controlcommute", "ALAP", "no");
-    test_cnot_controlcommute("cnot_controlcommute", "ALAP", "yes");
-    test_cnot_targetcommute("cnot_targetcommute", "ASAP", "no");
-    test_cnot_targetcommute("cnot_targetcommute", "ASAP", "yes");
-    test_cnot_targetcommute("cnot_targetcommute", "ALAP", "no");
-    test_cnot_targetcommute("cnot_targetcommute", "ALAP", "yes");
-    test_cz_anycommute("cz_anycommute", "ASAP", "no");
-    test_cz_anycommute("cz_anycommute", "ASAP", "yes");
-    test_cz_anycommute("cz_anycommute", "ALAP", "no");
-    test_cz_anycommute("cz_anycommute", "ALAP", "yes");
-    test_cnot_mixedcommute("cnot_mixedcommute", "ASAP", "no");
-    test_cnot_mixedcommute("cnot_mixedcommute", "ASAP", "yes");
-    test_cnot_mixedcommute("cnot_mixedcommute", "ALAP", "no");
-    test_cnot_mixedcommute("cnot_mixedcommute", "ALAP", "yes");
+    test_cnot_control_commute("cnot_control_commute", "ASAP", "no");
+    test_cnot_control_commute("cnot_control_commute", "ASAP", "yes");
+    test_cnot_control_commute("cnot_control_commute", "ALAP", "no");
+    test_cnot_control_commute("cnot_control_commute", "ALAP", "yes");
+    test_cnot_target_commute("cnot_target_commute", "ASAP", "no");
+    test_cnot_target_commute("cnot_target_commute", "ASAP", "yes");
+    test_cnot_target_commute("cnot_target_commute", "ALAP", "no");
+    test_cnot_target_commute("cnot_target_commute", "ALAP", "yes");
+    test_cz_any_commute("cz_any_commute", "ASAP", "no");
+    test_cz_any_commute("cz_any_commute", "ASAP", "yes");
+    test_cz_any_commute("cz_any_commute", "ALAP", "no");
+    test_cz_any_commute("cz_any_commute", "ALAP", "yes");
+    test_cnot_mixed_commute("cnot_mixed_commute", "ASAP", "no");
+    test_cnot_mixed_commute("cnot_mixed_commute", "ASAP", "yes");
+    test_cnot_mixed_commute("cnot_mixed_commute", "ALAP", "no");
+    test_cnot_mixed_commute("cnot_mixed_commute", "ALAP", "yes");
 }

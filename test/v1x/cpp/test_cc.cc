@@ -14,7 +14,7 @@
 
 using namespace ql::utils;
 
-#define CFG_FILE_JSON  os.path.join(json_dir, "test_cfg_cc.json")
+#define CFG_FILE_JSON "res/v1x/json/test_cfg_cc.json"
 
 
 namespace test_cc {
@@ -238,7 +238,7 @@ void test_do_while_nested_for() {
 
 void test_rabi() {
     // create and set platform
-    auto s17 = ql::Platform("s17",  os.path.join(json_dir, "test_cfg_cc_demo.json"));
+    auto s17 = ql::Platform("s17", "res/v1x/json/test_cfg_cc_demo.json");
 
     const int num_qubits = 17;
     const int num_cregs = 3;
@@ -287,7 +287,7 @@ void test_wait() {
 // FIXME: test to find quantum inspire problems 20200325
 void test_qi_example() {
     // create and set platform
-    auto s17 = ql::Platform("s17",  os.path.join(json_dir, "config_cc_s17_direct_iq_openql_0_10.json"));
+    auto s17 = ql::Platform("s17", "res/v1x/json/config_cc_s17_direct_iq_openql_0_10.json");
 
     const int num_qubits = 17;
     const int num_cregs = 17;
@@ -323,7 +323,7 @@ void test_qi_example() {
 #if 0   // FIXME: if_1_break deprecated in CC backend
 void test_break() {
     // create and set platform
-    auto s5 = ql::Platform("s5",  os.path.join(json_dir, "config_cc_s5_direct_iq.json"));
+    auto s5 = ql::Platform("s5", "res/v1x/json/config_cc_s5_direct_iq.json");
     ql::set_option("write_qasm_files", "yes");        // so we can see bundles
 
     const int num_qubits = 5;
@@ -345,7 +345,7 @@ void test_break() {
 
 void test_condex() {
     // create and set platform
-    auto s5 = ql::Platform("s5",  os.path.join(json_dir, "config_cc_s5_direct_iq.json"));
+    auto s5 = ql::Platform("s5", "res/v1x/json/config_cc_s5_direct_iq.json");
     ql::set_option("write_qasm_files", "yes");        // so we can see bundles
 
     const int num_qubits = 5;
@@ -388,7 +388,7 @@ void test_condex() {
 
 void test_cqasm_condex() {
     // create platform
-    auto platform = ql::Platform("s5",  os.path.join(json_dir, "config_cc_s5_direct_iq.json"));
+    auto platform = ql::Platform("s5", "res/v1x/json/config_cc_s5_direct_iq.json");
     size_t num_qubits = platform.get_qubit_number();
     // create program
     auto program = ql::Program("qasm_qi_example", platform, num_qubits);

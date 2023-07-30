@@ -12,7 +12,7 @@ void test_mc(std::string v, std::string, std::string, std::string, std::string) 
     // std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     std::string kernel_name = "test_" + v;
 
-    auto starmon = ql::Platform("mc4x4full",  os.path.join(json_dir, "test_multi_core_4x4_full.json"));
+    auto starmon = ql::Platform("mc4x4full", "res/v1x/json/test_multi_core_4x4_full.json");
     //ql::set_platform(starmon);
     auto prog = ql::Program(prog_name, starmon, n, 0);
     auto k = ql::Kernel(kernel_name, starmon, n, 0);
