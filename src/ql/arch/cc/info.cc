@@ -489,7 +489,7 @@ utils::List<utils::Str> Info::get_eqasm_compiler_names() const {
  */
 utils::Str Info::get_default_platform(const utils::Str &) const {
 
-    // NOTE: based on tests/cc/cc_s5_direct_iq.json at the time of writing.
+    // NOTE: based on res/v1x/json/config_cc_s5_direct_iq.json at the time of writing.
     return HWCONF_DEFAULT_DATA;
 
 }

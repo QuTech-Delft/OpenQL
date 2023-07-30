@@ -17,17 +17,17 @@ Here it is again but then with everything glued together:
 
 .. code:: python
 
-    from openql import openql as ql
+    import openql as ql
 
-    platform = ql.Platform("myPlatform", "hardware_config_cc_light.json")
+    platform = ql.Platform("myPlatform", "config_cc_light.json")
 
-    nqubits = 3
+    num_qubits = 3
 
-    p = ql.Program("aProgram", platform, nqubits)
+    p = ql.Program("aProgram", platform, num_qubits)
 
-    k = ql.Kernel("aKernel", platform, nqubits)
+    k = ql.Kernel("aKernel", platform, num_qubits)
 
-    for i in range(nqubits):
+    for i in range(num_qubits):
         k.gate('prepz', [i])
 
     k.gate('x', [0])

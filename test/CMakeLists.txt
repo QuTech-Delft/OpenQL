@@ -14,6 +14,7 @@ add_executable(${PROJECT_NAME}_test)
 
 # Subdirectories
 add_subdirectory(ql)
+add_subdirectory(v1x)
 
 # Test sources
 target_sources(${PROJECT_NAME}_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
@@ -39,7 +40,6 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_CXX_COMPILER_ID} STR
     )
 endif()
 
-include(GoogleTest)
-gtest_add_tests(TARGET ${PROJECT_NAME}_test
-    SOURCES ${test_sources}
+gtest_discover_tests(${PROJECT_NAME}_test
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )

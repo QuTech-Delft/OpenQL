@@ -58,13 +58,6 @@ option(
     OFF
 )
 
-# Whether the CPP standalone example should be built.
-option(
-    OPENQL_BUILD_CPP_STANDALONE_EXAMPLE
-    "Whether the CPP standalone example should be built"
-    OFF
-)
-
 # Whether the Python module should be built. This should only be enabled for
 # setup.py's builds.
 option(
@@ -187,7 +180,7 @@ message(STATUS "Fetching Backward")
 FetchContent_Declare(Backward
     GIT_REPOSITORY https://github.com/bombela/backward-cpp.git
     GIT_TAG "3bb9240cb15459768adb3e7d963a20e1523a6294"
-    )
+)
 FetchContent_MakeAvailable(Backward)
 
 message(STATUS "Fetching cqasm")
@@ -195,21 +188,21 @@ FetchContent_Declare(cqasm
     message(STATUS "Fetching cqasm")
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
     GIT_TAG "f739a8fcf2b927a0f112b7e16b71323722eaf4f8"
-    )
+)
 FetchContent_MakeAvailable(cqasm)
 
 message(STATUS "Fetching Eigen3")
 FetchContent_Declare(Eigen3
     GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
     GIT_TAG "4e9e493b4abc57dba377fc326082b40d08193619"
-    )
+)
 FetchContent_MakeAvailable(Eigen3)
 
 message(STATUS "Fetching highs")
 FetchContent_Declare(highs
     GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
     GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
-    )
+)
 FetchContent_Populate(highs)
 # The build system in HiGHS currently doesn't allow to disable HiGHS tests
 # thus the following hacks are needed, instead of just add_subdirectory(deps/highs).
@@ -230,13 +223,13 @@ message(STATUS "Fetching lemon")
 FetchContent_Declare(lemon
     GIT_REPOSITORY https://github.com/rturrado/lemon.git
     GIT_TAG "e70acea5764a97ab3b6d31b883300f3ce1587cde"
-    )
+)
 FetchContent_MakeAvailable(lemon)
 
 message(STATUS "Fetching nlohmann_json")
 FetchContent_Declare(nlohmann_json
     URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
-    )
+)
 FetchContent_MakeAvailable(nlohmann_json)
 
 
@@ -536,89 +529,23 @@ if(QL_VISUALIZER)
     target_include_directories(ql SYSTEM PRIVATE "${cimg_SOURCE_DIR}")
 endif()
 
+
 #=============================================================================#
 # Testing                                                                     #
 #=============================================================================#
 
-# Include the tests directory if requested.
 if(OPENQL_BUILD_TESTS)
     enable_testing()
-    message(STATUS "Fetching doctest")
-    FetchContent_Declare(doctest
-        GIT_REPOSITORY https://github.com/doctest/doctest.git
-        GIT_TAG "ae7a13539fb71f270b87eb2e874fbac80bc8dda2"
-    )
-    FetchContent_MakeAvailable(doctest)
-
-    # Convenience function to add an integration test.
-    function(add_openql_test name source workdir)
-        add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
-        target_link_libraries("${name}" PRIVATE ql)
-        add_test(
-            NAME "${name}"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${workdir}"
-            COMMAND "${name}"
-        )
-    endfunction()
-
-    # Include the directories containing integration tests.
+    include(CTest)
+    include(GoogleTest)
+    set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
     add_subdirectory(test)
-    add_subdirectory(tests)
-    add_subdirectory(examples)
-
-    # Convenience function to add a unit test.
-    function(add_openql_unit_test source)
-        string(REPLACE "/" "_" name ${source})
-        string(REPLACE "_tests_" "_" name ${name})
-        string(REPLACE ".cc" "" name ${name})
-        set(name test_${name})
-        add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
-        target_link_libraries("${name}" PRIVATE ql doctest::doctest)
-        target_include_directories(ql SYSTEM PRIVATE "${doctest_SOURCE_DIR}")
-        get_filename_component(working_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}" DIRECTORY)
-        add_test(
-            NAME "${name}"
-            WORKING_DIRECTORY "${working_dir}"
-            COMMAND "${name}"
-        )
-    endfunction()
-
-    # Register unit tests.
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/*/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-
 endif()
 
+
+#=============================================================================#
+# Debug info                                                                  #
+#=============================================================================#
 
 message(STATUS
     "[${PROJECT_NAME}] Target include directories:\n"
@@ -633,19 +560,6 @@ message(STATUS
     "      lemon-build: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/\n"
     "      nlohmann_json/include: ${nlohmann_json_SOURCE_DIR}/include\n"
 )
-
-
-#=============================================================================#
-# Cpp standalone example                                                      #
-#=============================================================================#
-
-if(OPENQL_BUILD_CPP_STANDALONE_EXAMPLE)
-    # Use whatever CMake magic you need to build your program, but linking
-    # something against OpenQL should be as easy as the second line. This should
-    # take care of both the libraries and header file include directories.
-    add_executable(example examples/cpp-standalone-example/example.cc)
-    target_link_libraries(example PRIVATE ql)
-endif()
 
 
 #=============================================================================#

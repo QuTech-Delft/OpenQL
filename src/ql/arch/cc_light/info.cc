@@ -95,7 +95,7 @@ void Info::dump_variant_docs(
     if (variant == "default") {
         utils::dump_str(os, line_prefix, R"(
         This is the default CC-light configuration, based on what used to be
-        ``tests/hardware_config_cc_light.json``, which in turn is a simplified
+        ``config_cc_light.json``, which in turn is a simplified
         version of the surface-7 configuration (the instruction durations are
         comparatively short and uniform).
         )");
