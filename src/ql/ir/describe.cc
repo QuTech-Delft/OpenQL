@@ -51,7 +51,7 @@ public:
      */
     explicit DescribingVisitor(std::ostream &ss) : ss(ss) {};
 
-    void visit_node(Node &node) override {
+    void visit_node(Node &) override {
         ss << "<UNKNOWN>";
     }
 
@@ -243,19 +243,19 @@ public:
         ss << ") ...";
     }
 
-    void visit_loop(Loop &loop) override {
+    void visit_loop(Loop &) override {
         ss << "loop ...";
     }
 
-    void visit_break_statement(BreakStatement &break_statement) override {
+    void visit_break_statement(BreakStatement &) override {
         ss << "break";
     }
 
-    void visit_continue_statement(ContinueStatement &continue_statementn) override {
+    void visit_continue_statement(ContinueStatement &) override {
         ss << "continue";
     }
 
-    void visit_sentinel_statement(SentinelStatement &source_instruction) override {
+    void visit_sentinel_statement(SentinelStatement &) override {
         ss << "SENTINEL";
     }
 

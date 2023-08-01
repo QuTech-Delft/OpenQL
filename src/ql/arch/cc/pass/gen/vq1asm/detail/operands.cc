@@ -5,6 +5,7 @@
 
 #include "operands.h"
 
+#include "ql/ir/ir_gen_ex.h"
 #include "ql/ir/ops.h"
 #include "ql/ir/describe.h"
 

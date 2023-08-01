@@ -665,7 +665,7 @@ ir::ProgramRef StructureDecomposer::process_program(const ir::Ref &incoming_ir) 
         new_program->blocks.add(block);
     }
 
-    return std::move(new_program);
+    return new_program;
 }
 
 /**

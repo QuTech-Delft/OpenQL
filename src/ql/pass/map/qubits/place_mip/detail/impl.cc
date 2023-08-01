@@ -22,7 +22,7 @@ bool isPermutation(const utils::Vec<utils::UInt> &v2r) {
     std::set<utils::UInt> image;
 
     for(auto x: v2r) {
-        if (x < 0 || x >= v2r.size() || image.count(x) > 0) {
+        if (x >= v2r.size() || image.count(x) > 0) {
             return false;
         }
         image.insert(x);
@@ -408,9 +408,9 @@ Impl::TwoQGatesCount inventorize2QGates(ir::Ref ir) {
     public:
         Inventorize2QGates(ir::Ref aIr, Impl::TwoQGatesCount &m) : ir(aIr), twoQGatesCount(m) {}
 
-        void visit_node(ir::Node &node) override {}
+        void visit_node(ir::Node &) override {}
 
-        void visit_instruction_decomposition(ir::InstructionDecomposition &instruction_decomposition) override {}
+        void visit_instruction_decomposition(ir::InstructionDecomposition &) override {}
 
         void visit_custom_instruction(ir::CustomInstruction &instr) override {
             std::pair<UInt, UInt> qubit_operands;

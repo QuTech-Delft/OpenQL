@@ -112,12 +112,12 @@ VisualizeInteractionPass::VisualizeInteractionPass(
 /**
  * Runs the interaction graph visualizer.
  */
+#ifdef WITH_VISUALIZER
+
 utils::Int VisualizeInteractionPass::run(
     const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
-
-#ifdef WITH_VISUALIZER
     detail::visualizeInteractionGraph(
         ir, {
             "INTERACTION_GRAPH",
@@ -129,7 +129,14 @@ utils::Int VisualizeInteractionPass::run(
         }
     );
     return 0;
-#else
+}
+
+#else  /* WITH_VISUALIZER */
+
+utils::Int VisualizeInteractionPass::run(
+    const ir::Ref &,
+    const pmgr::pass_types::Context &
+) const {
     QL_EOUT(
         "The visualizer was disabled during compilation of OpenQL. If this was "
         "not intended, and OpenQL is running on Linux or Mac, the X11 library "
@@ -137,8 +144,9 @@ utils::Int VisualizeInteractionPass::run(
         "itself."
     );
     return -1;
-#endif
 }
+
+#endif  /* WITH_VISUALIZER */
 
 } // namespace interaction
 } // namespace visualize

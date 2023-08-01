@@ -88,7 +88,7 @@ UInt Datapath::getSmBit(UInt bit_operand) const {
     return smBit;
 }
 
-UInt Datapath::getOrAssignMux(UInt instrIdx, const MeasResultRealTimeMap &measResultRealTimeMap) {
+UInt Datapath::getOrAssignMux(UInt instrIdx, const MeasResultRealTimeMap &) {
     // We need a different MUX for every new combination of simultaneous readouts (per instrument)
     UInt mux = lastMux[instrIdx]++;    // FIXME: no reuse of identical combinations yet
     if (mux == MUX_CNT) {
@@ -99,7 +99,7 @@ UInt Datapath::getOrAssignMux(UInt instrIdx, const MeasResultRealTimeMap &measRe
 }
 
 
-UInt Datapath::getOrAssignPl(UInt instrIdx, const CondGateMap &condGateMap) {
+UInt Datapath::getOrAssignPl(UInt instrIdx, const CondGateMap &) {
     // We need a different PL for every new combination of simultaneous gate conditions (per instrument)
     UInt pl = lastPl[instrIdx]++;    // FIXME: no reuse of identical combinations yet
     if (pl == PL_CNT) {
@@ -173,7 +173,7 @@ UInt Datapath::getMuxSmAddr(const MeasResultRealTimeMap &measResultRealTimeMap) 
 
 
 // FIXME: split like emitMux/getMuxSmAddr
-UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt instrIdx, Int slot) {
+UInt Datapath::emitPl(UInt pl, const CondGateMap &condGateMap, UInt, Int slot) {
     Bool minMaxValid = false;    // we might not access SM
     UInt minSmBit = MAX;
     UInt maxSmBit = 0;

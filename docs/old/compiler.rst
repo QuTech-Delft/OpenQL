@@ -49,7 +49,7 @@ Furthermore, an additional option to configure a compiler is to use the ``compil
 
 .. code:: python
 
-    from openql import openql as ql
+    import openql as ql
 
     c = ql.Compiler("testCompiler")
 

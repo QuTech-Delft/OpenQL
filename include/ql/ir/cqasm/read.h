@@ -7,6 +7,7 @@
 #include "ql/utils/str.h"
 #include "ql/ir/ir.h"
 #include "ql/ir/compat/compat.h"
+#include "cqasm.hpp"
 
 namespace ql {
 namespace ir {
@@ -83,6 +84,18 @@ struct ReadOptions {
  * the filename if one exists for the purpose of generating better error
  * messages.
  */
+void read_v1(
+    const Ref &ir,
+    const utils::Str &data,
+    const utils::Str &fname = "<unknown>",
+    const ReadOptions &options = {}
+);
+
+void read_v3(
+    const Ref &ir,
+    const utils::Str &data
+);
+
 void read(
     const Ref &ir,
     const utils::Str &data,

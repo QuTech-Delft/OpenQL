@@ -5,10 +5,11 @@
 
 #include "ql/ir/new_to_old.h"
 
+#include "ql/arch/diamond/annotations.h"
+#include "ql/ir/describe.h"
+#include "ql/ir/ir_gen_ex.h"
 #include "ql/ir/old_to_new.h"
 #include "ql/ir/ops.h"
-#include "ql/ir/describe.h"
-#include "ql/arch/diamond/annotations.h"
 
 // uncomment next line to enable multi-line dumping
 // #define MULTI_LINE_LOG_DEBUG

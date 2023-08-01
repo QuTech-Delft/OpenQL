@@ -22,13 +22,13 @@ void Vcd::start() {
 }
 
 
-void Vcd::scope(Scope type, const Str &name) {
+void Vcd::scope(Scope, const Str &name) {
     // FIXME: handle type
     vcd << "$scope " << "module" << " " << name << " $end" << std::endl;
 }
 
 
-int Vcd::registerVar(const Str &name, VarType type, Scope scope) {
+int Vcd::registerVar(const Str &name, VarType, Scope) {
     // FIXME: incomplete
     const Int width = 20;
 
@@ -83,7 +83,7 @@ void Vcd::change(Int var, Int timestamp, const Str &value)
 }
 
 
-void Vcd::change(Int var, Int timestamp, Int value) {
+void Vcd::change(Int, Int, Int) {
     throw Exception("not yet implemented");
     // FIXME
 }

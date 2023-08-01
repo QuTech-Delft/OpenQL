@@ -10,9 +10,6 @@
 #ifndef WITHOUT_UNITARY_DECOMPOSITION
 #include <Eigen/MatrixFunctions>
 #include <complex.h>
-#define lapack_complex_float    std::complex<float>
-#define lapack_complex_double   std::complex<double>
-#include <src/misc/lapacke.h>
 #endif
 
 #include <chrono>
@@ -61,7 +58,7 @@ Bool Unitary::is_decompose_support_enabled() {
     return false;
 }
 
-#else
+#else  /* WITHOUT_UNITARY_DECOMPOSITION */
 
 // JvS: this was originally the class "unitary" itself, but compile times of
 // Eigen are so excessive that I moved it into its own compile unit and
@@ -115,6 +112,16 @@ public:
         return _matrix;
     }
 
+    Str to_string(
+        const complex_matrix &m,
+        [[maybe_unused]] const Str &vector_prefix = "",
+        [[maybe_unused]] const Str &elem_sep = ", "
+    ) {
+        StrStrm ss;
+        ss << m << "\n";
+        return ss.str();
+    }
+
     void decompose() {
         QL_DOUT("decomposing Unitary: " << name);
 
@@ -140,16 +147,6 @@ public:
 
         QL_DOUT("Done decomposing");
         decomposed = true;
-    }
-
-    Str to_string(
-        const complex_matrix &m,
-        const Str &vector_prefix = "",
-        const Str &elem_sep = ", "
-    ) {
-        StrStrm ss;
-        ss << m << "\n";
-        return ss.str();
     }
 
     void decomp_function(const Eigen::Ref<const complex_matrix>& matrix, Int numberofbits) {
@@ -329,7 +326,7 @@ public:
         tmp.bottomRightCorner(p,p) = u2*c*v2;
         // Just to see if it kinda matches
         if (!tmp.isApprox(U, 10e-2)) {
-            throw utils::Exception("CSD of unitary '"+ name+"' is wrong! Failed at matrix: \n"+to_string(tmp) + "\nwhich should be: \n" + to_string(U));
+            throw utils::Exception("CSD of unitary '" + name + "' is wrong! Failed at matrix: \n" + to_string(tmp) + "\nwhich should be: \n" + to_string(U));
         }
     }
 
@@ -407,7 +404,7 @@ public:
         complex_matrix Dtemp = D.asDiagonal();
         if (!U1.isApprox(V*Dtemp*W, 10e-2) || !U2.isApprox(V*Dtemp.adjoint()*W, 10e-2)) {
             QL_EOUT("Demultiplexing not correct!");
-            throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2) + "\nwhile they are: \n" + to_string(V*D.asDiagonal()*W) + "\nand \n" + to_string(V*D.conjugate().asDiagonal()*W));
+            throw utils::Exception("Demultiplexing of unitary '" + name + "' not correct! Failed at matrix U1: \n" + to_string(U1) + "and matrix U2: \n" + to_string(U2) + "\nwhile they are: \n" + to_string(V*D.asDiagonal()*W) + "\nand \n" + to_string(V*D.conjugate().asDiagonal()*W));
         }
 
     }
@@ -458,7 +455,7 @@ public:
         // Check is very approximate to account for low-precision input matrices
         if (!temp.isApprox(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]*tr, 10e-2)) {
             QL_EOUT("Multicontrolled Y not correct!");
-            throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss));
+            throw utils::Exception("Demultiplexing of unitary '" + name + "' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss));
         }
 
         instruction_list.insert(instruction_list.end(), &tr[0], &tr[halfthesizeofthematrix]);
@@ -471,7 +468,7 @@ public:
         // Check is very approximate to account for low-precision input matrices
         if (!temp.isApprox(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]*tr, 10e-2)) {
             QL_EOUT("Multicontrolled Z not correct!");
-            throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D));
+            throw utils::Exception("Demultiplexing of unitary '" + name + "' not correct! Failed at demultiplexing of matrix D: \n" + to_string(D));
         }
         instruction_list.insert(instruction_list.end(), &tr[0], &tr[halfthesizeofthematrix]);
     }
@@ -504,8 +501,22 @@ Bool Unitary::is_decompose_support_enabled() {
     return true;
 }
 
-#endif
+#endif   /* WITHOUT_UNITARY_DECOMPOSITION */
 
+#ifdef WITHOUT_UNITARY_DECOMPOSITION
+
+/**
+ * Explicitly runs the matrix decomposition algorithm. Used to be required,
+ * nowadays is called implicitly by get_decomposition() if not done explicitly.
+ */
+ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &) {
+    throw Exception("unitary decomposition, including state preparation, was explicitly disabled in this build!");
+}
+ir::compat::GateRefs Unitary::get_decomposition(const utils::Vec<utils::UInt> &) {
+throw Exception("unitary decomposition, including state preparation, was explicitly disabled in this build!");
+}
+
+#else  /* WITHOUT_UNITARY_DECOMPOSITION */
 
 //controlled qubit is the first in the list.
 static void multicontrolled_rz(
@@ -624,28 +635,13 @@ static Int recursiveRelationsForUnitaryDecomposition(
     }
 }
 
-
-#ifdef WITHOUT_UNITARY_DECOMPOSITION
-
-/**
- * Explicitly runs the matrix decomposition algorithm. Used to be required,
- * nowadays is called implicitly by get_decomposition() if not done explicitly.
- */
-ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubits) {
-    throw Exception("unitary decomposition, including state preparation, was explicitly disabled in this build!");
-}
-ir::compat::GateRefs Unitary::get_decomposition(const utils::Vec<utils::UInt> &qubits) {
-throw Exception("unitary decomposition, including state preparation, was explicitly disabled in this build!");
-}
-#else
-
 /**
  * Does state preparation, results in a circuit for which A|0> = |psi> for given state psi, stored as the array in Unitary
  */
 ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubits){
-    UInt nqubits = qubits.size();
-    if (((UInt) 1) << nqubits != array.size()){
-        QL_FATAL("Length of state prepatation vector does not match number of qubits! Expected vector of size " << (1 << nqubits) << " but got vector of size " << array.size());
+    UInt num_qubits = qubits.size();
+    if (((UInt) 1) << num_qubits != array.size()){
+        QL_FATAL("Length of state prepatation vector does not match number of qubits! Expected vector of size " << (1 << num_qubits) << " but got vector of size " << array.size());
     }
     ir::compat::GateRefs c;
     Vec<Complex> statevector = array;
@@ -673,14 +669,14 @@ ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubit
     QL_DOUT("Qubits: " << qubits << " qubits.size(): " << qubits.size() << " phi: " << phi << " theta: " << theta);
     c.emplace<ir::compat::gate_types::RY>(qubits.back(), theta.back());
     c.emplace<ir::compat::gate_types::RZ>(qubits.back(), phi.back());
-    if (nqubits > 1){
+    if (num_qubits > 1){
         UInt start_i = phi.size() - 3;
         UInt ngates;
         decomposer.genMk(qubits.size());
         Eigen::VectorXd temp;
         Eigen::VectorXd tr;
         UInt idx;
-        for (UInt i = 1; i < nqubits; i++)
+        for (UInt i = 1; i < num_qubits; i++)
         {
             ngates = 1 << i;
             QL_DOUT("Sending indices " << start_i << " until " << (start_i + ngates) << " to multicontrolled z and y. i=" << i);
@@ -689,38 +685,37 @@ ir::compat::GateRefs Unitary::prepare_state(const utils::Vec<utils::UInt> &qubit
             tr = dec.solve(temp);
 
             // The first one is always controlled from the next qubit to the last qubit
-            c.emplace<ir::compat::gate_types::RY>(qubits[nqubits-i-1], tr[0]);
-            c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-i], qubits[nqubits-i-1]);
+            c.emplace<ir::compat::gate_types::RY>(qubits[num_qubits-i-1], tr[0]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[num_qubits-i], qubits[num_qubits-i-1]);
             for (UInt j = 1; j < (ngates - 1); j++){
                 idx = i - log2(((j)^((j)>>1))^((j+1)^((j+1)>>1)));
-                c.emplace<ir::compat::gate_types::RY>(qubits[nqubits-i-1], tr[j]);
-                c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-idx], qubits[nqubits-i-1]);
+                c.emplace<ir::compat::gate_types::RY>(qubits[num_qubits-i-1], tr[j]);
+                c.emplace<ir::compat::gate_types::CNot>(qubits[num_qubits-idx], qubits[num_qubits-i-1]);
             }
             //The last one is always controlled from the first to the last qubit.
-            c.emplace<ir::compat::gate_types::RY>(qubits[nqubits-i-1], tr[ngates-1]);
-            c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-1], qubits[nqubits-i-1]);
+            c.emplace<ir::compat::gate_types::RY>(qubits[num_qubits-i-1], tr[ngates-1]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[num_qubits-1], qubits[num_qubits-i-1]);
 
             temp = Eigen::Map<Eigen::VectorXd>(phi.data() + start_i, ngates);
             tr = dec.solve(temp);
 
             // The first one is always controlled from the next qubit to the last qubit
-            c.emplace<ir::compat::gate_types::RZ>(qubits[nqubits-i-1], tr[0]);
-            c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-i], qubits[nqubits-i-1]);
+            c.emplace<ir::compat::gate_types::RZ>(qubits[num_qubits-i-1], tr[0]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[num_qubits-i], qubits[num_qubits-i-1]);
             for (UInt j = 1; j < (ngates-1); j++) {
                 idx = i - log2(((j)^((j)>>1))^((j+1)^((j+1)>>1)));
-                c.emplace<ir::compat::gate_types::RZ>(qubits[nqubits-i-1], tr[j]);
-                c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-idx], qubits[nqubits-i-1]);
+                c.emplace<ir::compat::gate_types::RZ>(qubits[num_qubits-i-1], tr[j]);
+                c.emplace<ir::compat::gate_types::CNot>(qubits[num_qubits-idx], qubits[num_qubits-i-1]);
             }
             //The last one is always controlled from the first to the last qubit.
-            c.emplace<ir::compat::gate_types::RZ>(qubits[nqubits-i-1], tr[ngates-1]);
-            c.emplace<ir::compat::gate_types::CNot>(qubits[nqubits-1], qubits[nqubits-i-1]);
+            c.emplace<ir::compat::gate_types::RZ>(qubits[num_qubits-i-1], tr[ngates-1]);
+            c.emplace<ir::compat::gate_types::CNot>(qubits[num_qubits-1], qubits[num_qubits-i-1]);
 
             start_i -= 2 << i;
         }
     }
     return c;
 }
-
 
 /**
  * Returns the decomposed circuit.
@@ -761,7 +756,8 @@ ir::compat::GateRefs Unitary::get_decomposition(const utils::Vec<utils::UInt> &q
     return c;
 }
 
-#endif
+#endif  /* WITHOUT_UNITARY_DECOMPOSITION */
+
 } // namespace dec
 } // namespace com
 } // namespace ql

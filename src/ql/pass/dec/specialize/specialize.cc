@@ -78,7 +78,7 @@ void SpecializeInstructionsPass::run_on_block(
  */
 utils::Int SpecializeInstructionsPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &context
+    const pmgr::pass_types::Context &
 ) const {
     if (!ir->program.empty()) {
         for (const auto &block : ir->program->blocks) {

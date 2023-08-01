@@ -36,7 +36,7 @@ public:
      * FIXME: We don't have a matching quantum instruction for this cast (formerly, we had 'if_1_break' etc), but do
      *  take up 'quantum' time, so the timeline is silently shifted
      */
-    UInt emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt);
+    UInt emit_bin_cast(utils::Vec<utils::UInt> bregs, UInt expOpCnt);
 
 
 private:  // types

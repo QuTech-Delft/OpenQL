@@ -26,7 +26,7 @@ namespace prim {
  * generated tree nodes to ensure that there's no garbage in the nodes.
  */
 template <class T>
-T initialize() { return T(); };
+T initialize() { return T(); }
 
 /**
  * Serializes the given primitive object to CBOR.
@@ -201,22 +201,22 @@ public:
     /**
      * Creates a vector.
      */
-    Matrix(utils::UInt ncols)
-        : data(ncols), nrows(1), ncols(ncols)
+    explicit Matrix(utils::UInt cols)
+        : data(cols), nrows(1), ncols(cols)
     {}
 
     /**
      * Creates a zero-initialized matrix of the given size.
      */
-    Matrix(utils::UInt nrows, utils::UInt ncols)
-        : data(nrows*ncols), nrows(nrows), ncols(ncols)
+    Matrix(utils::UInt rows, utils::UInt cols)
+        : data(rows*cols), nrows(rows), ncols(cols)
     {}
 
     /**
      * Creates a column vector with the given data.
      */
-    Matrix(const utils::Vec<T> &data)
-        : data(data), nrows(data.size()), ncols(1)
+    explicit Matrix(const utils::Vec<T> &vec)
+        : data(vec), nrows(vec.size()), ncols(1)
     {}
 
     /**
@@ -224,12 +224,14 @@ public:
      * the number of data elements is not divisible by the number of columns, a
      * range error is thrown.
      */
-    Matrix(const utils::Vec<T> &data, utils::UInt ncols)
-        : data(data), nrows(data.size() / ncols), ncols(ncols)
+    Matrix(const utils::Vec<T> &vec, utils::UInt cols)
     {
-        if (data.size() % ncols != 0) {
+        if (vec.size() % cols != 0) {
             throw utils::Exception("invalid matrix shape");
         }
+        data = vec;
+        nrows = vec.size() / cols;
+        ncols = cols;
     }
 
     /**

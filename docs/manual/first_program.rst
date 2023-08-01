@@ -103,9 +103,9 @@ number of qubits used in it as parameters. We'll use 3 in this example:
 
 .. code-block:: python
 
-    nqubits = 3
-    program = ql.Program('my_program', platform, nqubits)
-    kernel = ql.Kernel('my_kernel', platform, nqubits)
+    num_qubits = 3
+    program = ql.Program('my_program', platform, num_qubits)
+    kernel = ql.Kernel('my_kernel', platform, num_qubits)
 
 When needed, the number of used CRegs (classical integer registers) and BRegs
 (bit registers) used by the program/kernel must also be specified, but we don't
@@ -120,7 +120,7 @@ Once you have a kernel, you can add gates to it:
 
 .. code:: python
 
-    for i in range(nqubits):
+    for i in range(num_qubits):
         kernel.prepz(i)
 
     kernel.x(0)

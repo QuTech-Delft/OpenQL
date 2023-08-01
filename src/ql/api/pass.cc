@@ -18,7 +18,7 @@ namespace api {
  * Constructor used internally to build a pass object that belongs to
  * a compiler.
  */
-Pass::Pass(const ql::pmgr::PassRef &pass, bool dummy) : pass(pass) {
+Pass::Pass(const ql::pmgr::PassRef &pass, bool) : pass(pass) {
 }
 
 /**

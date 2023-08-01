@@ -27,6 +27,17 @@ swig/qutechopenql.egg-info
 test_output*
 .ipynb_checkpoints
 tests/visualizer/visualizer_example_output/
+tests/test_gate_decomposition_cz.cc_backend.map
+tests/test_gate_decomposition_cz.cc_backend.vcd
+tests/test_gate_decomposition_cz.cc_backend.vq1asm
+tests/test_gate_decomposition_cz.initial.cq
+tests/test_gate_decomposition_cz.scheduled.cq
+tests/test_qi_example.cc_backend.map
+tests/test_qi_example.cc_backend.vcd
+tests/test_qi_example.cc_backend.vq1asm
+tests/test_qi_example.initial.cq
+tests/test_qi_example.scheduled.cq
+Testing/Temporary/CTestCostData.txt
 
 # Diamond Example Files
 examples/diamond/test_output
@@ -41,3 +52,6 @@ docs/_templates
 /cmake-build-*
 
 *.pbm
+
+# conan
+CMakeUserPresets.json

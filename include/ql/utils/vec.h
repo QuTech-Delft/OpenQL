@@ -1091,7 +1091,7 @@ public:
      * All iterators and references are invalidated.
      */
     void push_back(const T &value) {
-        return get_data().get_mut().push_back(value);
+        get_data().get_mut().push_back(value);
     }
 
     /**
@@ -1101,7 +1101,7 @@ public:
      * All iterators and references are invalidated.
      */
     void push_back(T &&value) {
-        return get_data().get_mut().push_back(std::move(value));
+        get_data().get_mut().push_back(std::move(value));
     }
 
     /**
@@ -1115,7 +1115,7 @@ public:
      */
     template <class... Args>
     void emplace_back(Args&&... args) {
-        return get_data().get_mut().emplace_back(std::forward<Args>(args)...);
+        get_data().get_mut().emplace_back(std::forward<Args>(args)...);
     }
 
     /**
@@ -1130,7 +1130,7 @@ public:
         if (v.empty()) {
             QL_CONTAINER_ERROR("pop_back() called on empty vector");
         }
-        return v.pop_back();
+        v.pop_back();
     }
 
     /**

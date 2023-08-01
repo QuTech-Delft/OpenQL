@@ -4,10 +4,11 @@
 
 #include "ql/pass/map/qubits/place_mip/place_mip.h"
 
-#include "ql/pass/ana/statistics/annotations.h"
 #include "detail/impl.h"
-#include "ql/pmgr/factory.h"
 #include "ql/com/map/reference_updater.h"
+#include "ql/ir/ir_gen_ex.h"
+#include "ql/pass/ana/statistics/annotations.h"
+#include "ql/pmgr/factory.h"
 
 namespace ql {
 namespace pass {
@@ -133,7 +134,7 @@ PlaceQubitsPass::PlaceQubitsPass(
  */
 utils::Int PlaceQubitsPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &context
+    const pmgr::pass_types::Context &
 ) const {
     detail::Options opts;
     opts.timeout = options["timeout"].as_real();

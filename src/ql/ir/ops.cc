@@ -927,7 +927,7 @@ ObjectLink make_temporary(
 ) {
     auto obj = utils::make<TemporaryObject>("", data_type, shape);
     ir->program->objects.add(obj);
-    return std::move(obj);
+    return obj;
 }
 
 /**

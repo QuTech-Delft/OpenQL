@@ -123,12 +123,12 @@ VisualizeMappingPass::VisualizeMappingPass(
 /**
  * Runs the mapping graph visualizer.
  */
+#ifdef WITH_VISUALIZER
+
 utils::Int VisualizeMappingPass::run(
     const ir::Ref &ir,
     const pmgr::pass_types::Context &context
 ) const {
-
-#ifdef WITH_VISUALIZER
     detail::visualizeMappingGraph(
         ir, {
             "MAPPING_GRAPH",
@@ -140,7 +140,14 @@ utils::Int VisualizeMappingPass::run(
         }
     );
     return 0;
-#else
+}
+
+#else  /* WITH_VISUALIZER */
+
+utils::Int VisualizeMappingPass::run(
+    const ir::Ref &,
+    const pmgr::pass_types::Context &
+) const {
     QL_EOUT(
         "The visualizer was disabled during compilation of OpenQL. If this was "
         "not intended, and OpenQL is running on Linux or Mac, the X11 library "
@@ -148,8 +155,9 @@ utils::Int VisualizeMappingPass::run(
         "itself."
     );
     return -1;
-#endif
 }
+
+#endif  /* WITH_VISUALIZER */
 
 } // namespace mapping
 } // namespace visualize
