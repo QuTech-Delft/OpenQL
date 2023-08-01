@@ -17,10 +17,10 @@ namespace ql {
 namespace ir {
 namespace cqasm {
 
-namespace cq1 = ::cqasm::v1;
-namespace cqv1 = ::cqasm::v1::values;
-namespace cqty1 = ::cqasm::v1::types;
-namespace cqs = ::cqasm::v1::semantic;
+namespace cq1 = ::cqasm::v1x;
+namespace cqv1 = ::cqasm ::v1x::values;
+namespace cqty1 = ::cqasm ::v1x::types;
+namespace cqs = ::cqasm ::v1x::semantic;
 namespace cqt = ::cqasm::tree;
 namespace cqe = ::cqasm::error;
 namespace cqver = ::cqasm::version;
