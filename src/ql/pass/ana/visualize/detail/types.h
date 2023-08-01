@@ -147,7 +147,7 @@ struct GateProperties {
         utils::Str name_,
         utils::Vec<utils::Int> operands_,
         utils::Vec<utils::Int> creg_operands_,
-        ir::compat::SwapParameters swap_params_,
+        ir::SwapParameters swap_params_,
         utils::Int durationInCycles_,
         utils::Int cycle_,
         utils::Vec<utils::Int> codewords_,

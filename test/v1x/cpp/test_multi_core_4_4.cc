@@ -45,7 +45,7 @@ void test_mc(std::string v, std::string, std::string, std::string, std::string) 
 }  // namespace test_multi_core
 
 
-TEST(v1x, test_multi_core) {
+TEST(v1x, test_multi_core_4_4) {
     using namespace test_multi_core;
 
     ql::utils::logger::set_log_level("LOG_DEBUG");

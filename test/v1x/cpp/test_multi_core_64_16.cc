@@ -1,6 +1,9 @@
 #include <openql>
 
-int main(int, char **) {
+#include <gtest/gtest.h>
+
+
+TEST(v1x, test_multi_core_64_16) {
     ql::initialize();
     ql::utils::logger::set_log_level("LOG_INFO");
     ql::set_option("log_level", "LOG_INFO");
@@ -34,7 +37,7 @@ int main(int, char **) {
     ql::set_option("write_qasm_files", "yes");
     ql::set_option("write_report_files", "yes");
 
-    auto platform  = ql::Platform("mctests", "test_multi_core_64x16_full.json");
+    auto platform  = ql::Platform("mctests", "res/v1x/json/test_multi_core_64x16_full.json");
     auto num_qubits = 18;
     auto p = ql::Program("qaoa_q1024", platform, num_qubits);
     auto k = ql::Kernel("qaoa_q1024", platform, num_qubits);
