@@ -3,7 +3,7 @@ name: Test
 on:
   push:
     branches:
-    - v3_without_conan
+    - develop
 
 jobs:
   cpp-linux:
