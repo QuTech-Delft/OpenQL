@@ -198,12 +198,19 @@ FetchContent_Declare(Eigen3
 )
 FetchContent_MakeAvailable(Eigen3)
 
-message(STATUS "Fetching highs")
+# FetchContent_Populate will be deprecated in the future
+# The equivalent solution with FetchContent_MakeAvailable consists of
+# setting SOURCE_SUBDIR to a non-existent subdirectory in FetchContent_Declare,
+# then letting FetchContent_MakeAvailable do the download of the dependency,
+# and still add_subdirectory manually
+# See: https://discourse.cmake.org/t/fetchcontent-a-directory-but-add-a-subdirectory/8603/13?u=rturrado
+message(STATUS "Fetching HiGHS")
 FetchContent_Declare(highs
     GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
     GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
+    SOURCE_SUBDIR this-directory-does-not-exist
 )
-FetchContent_Populate(highs)
+FetchContent_MakeAvailable(highs)
 # The build system in HiGHS currently doesn't allow to disable HiGHS tests
 # thus the following hacks are needed, instead of just add_subdirectory(deps/highs).
 set(FAST_BUILD ON)
