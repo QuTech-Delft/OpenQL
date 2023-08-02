@@ -18,37 +18,3 @@ OpenQL's source code is released under the Apache 2.0 license.
 
 For detailed user and contributor documentation, visit the
 [the ReadTheDocs](https://openql.readthedocs.io) page!
-
-## Dependencies
-* cmake (>= 3.12)
-* gcc and g++ capable of C++20 standard
-* Python3 (Tested on Python v3.6)
-* conan: 2.0
-* Swig
-    * Linux: 3.0.12
-    * Windows: 4.0.0
-
-## Installation
-
-### Using conan
-
-`conan` is a package manager that is very convenient for managing dependencies. It is installed via `pip`.
-
-```
-pip install conan
-```
-
-You'll need to create a default profile before using it:
-
-```
-conan profile detect
-```
-
-The installation of dependencies, as well as the compilation, can be done in one go.<br/>
-Notice the command below is building `OpenQL` in Debug mode with tests.
-
-```
-$ projects> git clone https://github.com/QuTech-Delft/OpenQL.git
-$ projects/OpenQL> git checkout v3
-$ projects/OpenQL> conan build . -s:h compiler.cppstd=20 -s:h ql/*:build_type=Debug -o ql/*:build_tests=True -b missing
-```
