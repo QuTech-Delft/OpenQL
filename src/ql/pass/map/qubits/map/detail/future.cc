@@ -65,7 +65,7 @@ public:
         return { asCustomInstruction };
     }
 
-    virtual std::unique_ptr<GateIterator> clone() {
+    virtual std::unique_ptr<GateIterator> clone() override {
         return std::unique_ptr<GateIterator>(new CircuitOrderGateIterator(*this));
     }
 
@@ -158,7 +158,7 @@ public:
         }
     }
 
-    virtual std::unique_ptr<GateIterator> clone() {
+    virtual std::unique_ptr<GateIterator> clone() override {
         return std::unique_ptr<GateIterator>(new TopologicalOrderGateIterator(*this));
     }
 
