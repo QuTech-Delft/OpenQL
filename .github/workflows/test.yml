@@ -34,7 +34,7 @@ jobs:
         run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
       - name: Build
         working-directory: build-${{ matrix.compiler }}-${{ matrix.build_type }}
-        run: cmake --build . --parallel 5
+        run: cmake --build . --parallel 10
       - name: Test
         working-directory: build-${{ matrix.compiler }}-${{ matrix.build_type }}
         run: ctest -C ${{ matrix.build_type }} --output-on-failure
@@ -66,7 +66,7 @@ jobs:
         run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
       - name: Build
         working-directory: build-${{ matrix.build_type }}
-        run: cmake --build . --parallel 5
+        run: cmake --build . --parallel 10
       - name: Test
         working-directory: build-${{ matrix.build_type }}
         run: ctest -C ${{ matrix.build_type }} --output-on-failure
@@ -96,7 +96,7 @@ jobs:
         run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
       - name: Build
         working-directory: build
-        run: cmake --build . --parallel 5 --config ${{ matrix.build_type }}
+        run: cmake --build . --parallel 10 --config ${{ matrix.build_type }}
       - name: Test
         working-directory: build
         run: ctest -C ${{ matrix.build_type }} --output-on-failure
@@ -137,7 +137,7 @@ jobs:
         run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
       - name: Build
         working-directory: build
-        run: cmake --build . --parallel 5
+        run: cmake --build . --parallel 10
       - name: Test
         working-directory: build
         run: ctest -C Release --output-on-failure
@@ -186,7 +186,7 @@ jobs:
         uses: lukka/get-cmake@latest
       - name: Build
         env:
-          NPROCS: 5
+          NPROCS: 10
         run: python -m pip install --verbose .
       - name: Test
         run: python -m pytest
