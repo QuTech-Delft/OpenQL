@@ -6,6 +6,7 @@
 
 #include "ql/utils/map.h"
 #include "ql/ir/ir.h"
+#include "ql/ir/ir_gen_ex.h"
 
 namespace ql {
 namespace ir {
