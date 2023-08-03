@@ -8,6 +8,8 @@
 #include "io/FilereaderMps.h"
 #include "util/HighsMatrixPic.h"
 
+#include <filesystem>
+
 namespace ql {
 namespace pass {
 namespace map {
@@ -307,7 +309,8 @@ Result Impl::run(Vec<UInt> &v2r) {
 
     if (opts.write_model_to_file) {
         FilereaderMps().writeModelToFile(HighsOptions(), opts.model_filename, *model);
-        writeLpMatrixPicToFile(HighsOptions(), "LpMatrix", model->lp_);
+        auto lp_matrix_file_path = std::filesystem::temp_directory_path() / "LpMatrix";
+        writeLpMatrixPicToFile(HighsOptions(), lp_matrix_file_path.generic_string(), model->lp_);
     }
     
     Highs highs;
