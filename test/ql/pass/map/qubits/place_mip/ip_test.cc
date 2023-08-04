@@ -67,8 +67,8 @@ protected:
         }
     }
 
-    void setupLine(utils::UInt qubitsCount = 3) {
-        init(qubitsCount);
+    void setupLine(utils::UInt qubits_count = 3) {
+        init(qubits_count);
 
         /*
 
@@ -76,8 +76,8 @@ protected:
 
         */
 
-        for (utils::UInt i = 0; i < qubitsCount; ++i) {
-            for (utils::UInt j = i + 1; j < qubitsCount; ++j) {
+        for (utils::UInt i = 0; i < qubits_count; ++i) {
+            for (utils::UInt j = i + 1; j < qubits_count; ++j) {
                 distances[i][j] = j - i;
                 distances[j][i] = j - i;
             }
@@ -151,13 +151,13 @@ protected:
         for (const auto& kv: twoQGatesCount) {
             if (distances[mapping[kv.first.first]][mapping[kv.first.second]] > 1) {
                 ++nonNNGateCount;
-            };
+            }
         }
 
         EXPECT_GE(nonNNGateCount, 1);
     }
 
-    utils::UInt getQubitsCount() {
+    utils::UInt getQubitsCount() const {
         return qubitsCount;
     }
 

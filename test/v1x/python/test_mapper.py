@@ -55,7 +55,7 @@ class TestMapper(unittest.TestCase):
 
     def test_mapper_max_cut(self):
         # rigetti test copied from Venturelli's paper
-        v = 'maxcut'
+        v = 'max_cut'
         config_fn = os.path.join(json_dir, "test_mapper_rig.json")
         num_qubits = 8
 
@@ -103,7 +103,7 @@ class TestMapper(unittest.TestCase):
     def test_mapper_one_nn(self):
         # just check whether mapper works for trivial case
         # parameters
-        v = 'oneNN'
+        v = 'one_NN'
         config_fn = "cc_light.s7"
         num_qubits = 7
 
@@ -131,7 +131,7 @@ class TestMapper(unittest.TestCase):
         # so no swaps are inserted and map is not changed
         # also tests commutation of cnots in mapper and postscheduler
         # parameters
-        v = 'allNN'
+        v = 'all_NN'
         config_fn = "cc_light.s7"
         num_qubits = 7
 
@@ -178,7 +178,7 @@ class TestMapper(unittest.TestCase):
         # in each path there are 2 alternative places to put the cnot
         # this introduces 1 swap/move and so uses an ancilla
         # parameters
-        v = 'oneD2'
+        v = 'one_D2'
         config_fn = "cc_light.s7"
         num_qubits = 7
 
@@ -210,7 +210,7 @@ class TestMapper(unittest.TestCase):
         # in each path there are 4 alternative places to put the cnot
         # this introduces 3 swaps/moves
         # parameters
-        v = 'oneD4'
+        v = 'one_D4'
         config_fn = "cc_light.s7"
         num_qubits = 7
 
@@ -239,7 +239,7 @@ class TestMapper(unittest.TestCase):
         # there is no initial mapping that maps this right so initial placement cannot find it
         # so the heuristics must act and insert swaps/moves
         # parameters
-        v = 'allD'
+        v = 'all_D'
         config_fn = "cc_light.s7"
         num_qubits = 7
 
@@ -277,7 +277,7 @@ class TestMapper(unittest.TestCase):
         # there is no initial mapping that maps this right so initial placement cannot find it
         # so the heuristics must act and insert swaps/moves
         # parameters
-        v = 'allDopt'
+        v = 'all_D_opt'
         config_fn = "cc_light.s7"
         num_qubits = 7
 
@@ -350,7 +350,7 @@ class TestMapper(unittest.TestCase):
         # otherwise ...
         # the heuristics must act and insert swaps/moves
         # parameters
-        v = 'allIP'
+        v = 'all_IP'
         config_fn = "cc_light.s7"
         num_qubits = 7
 
@@ -382,7 +382,7 @@ class TestMapper(unittest.TestCase):
     def test_mapper_ling_ling_5(self):
         # parameters
         # 'realistic' circuit
-        v = 'lingling5'
+        v = 'ling_ling_5'
         config_fn = "cc_light.s17"
         num_qubits = 17
 
@@ -534,7 +534,7 @@ class TestMapper(unittest.TestCase):
 
     def test_mapper_ling_ling_7(self):
         # parameters
-        v = 'lingling7'
+        v = 'ling_ling_7'
         config_fn = "cc_light.s17"
         num_qubits = 17
 

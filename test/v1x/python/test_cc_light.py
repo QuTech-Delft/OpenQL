@@ -314,11 +314,11 @@ class TestAdvance(unittest.TestCase):
 
         self.assertTrue(file_compare(qasm_fn, gold_fn))
 
-    def test_measure_available01(self):
+    def test_measure_available_01(self):
         ql.set_option('output_dir', output_dir)
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
         num_qubits = 7
-        p = ql.Program('test_measure_available01', platform, num_qubits)
+        p = ql.Program('test_measure_available_01', platform, num_qubits)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -338,11 +338,11 @@ class TestAdvance(unittest.TestCase):
 
         self.assertTrue(file_compare(qasm_fn, gold_fn))
 
-    def test_measure_available02(self):
+    def test_measure_available_02(self):
         ql.set_option('output_dir', output_dir)
         platform = ql.Platform('seven_qubits_chip', 'cc_light')
         num_qubits = 7
-        p = ql.Program('test_measure_available02', platform, num_qubits)
+        p = ql.Program('test_measure_available_02', platform, num_qubits)
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform, num_qubits)
