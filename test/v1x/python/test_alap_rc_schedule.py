@@ -42,7 +42,7 @@ class TestAlapRcSchedule(unittest.TestCase):
 
     def test_qwg2(self):
         # parameters
-        v = 'qwg2'
+        v = 'qwg_2'
         scheduler = self._scheduler
 
         # create and set platform
@@ -74,9 +74,9 @@ class TestAlapRcSchedule(unittest.TestCase):
 
         self.assertTrue(file_compare(qasm_fn, gold_fn))
 
-    def test_issue179(self):
+    def test_issue_179(self):
         # parameters
-        v = 'issue179'
+        v = 'issue_179'
         scheduler = self._scheduler
 
         # create and set platform
@@ -169,9 +169,9 @@ class TestAlapRcSchedule(unittest.TestCase):
 
         self.assertTrue(file_compare(qasm_fn, gold_fn))
 
-    def test_detuned2(self):
+    def test_detuned_2(self):
         # parameters
-        v = 'detuned2'
+        v = 'detuned_2'
         scheduler = self._scheduler
 
         # create and set platform
