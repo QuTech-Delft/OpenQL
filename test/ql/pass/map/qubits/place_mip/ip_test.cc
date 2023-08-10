@@ -336,8 +336,7 @@ TEST_F(IpGridTest, grid__find_complex_permutation) {
 
     computeAndCheckResultType(Result::NEW_MAP);
 
-    checkPermutation({2, 4, 3, 0, 5, 1});
-
+    // We don't check a given permutation here because there are at least two valid ones
     checkAllMappedGatesAreNearestNeighbors();
 }
 
