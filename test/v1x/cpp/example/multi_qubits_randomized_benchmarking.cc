@@ -1,13 +1,10 @@
 #include <openql>
 
-#include <algorithm>
 #include <cassert>
 #include <ctime>
-#include <fstream>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <sstream>
-#include <string>
 #include <vector>
 
 

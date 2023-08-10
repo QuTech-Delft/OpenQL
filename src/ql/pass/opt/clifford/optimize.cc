@@ -56,7 +56,7 @@ CliffordOptimizePass::CliffordOptimizePass(
  * Runs the Clifford optimizer.
  */
 utils::Int CliffordOptimizePass::run(
-    const ir::compat::ProgramRef &,
+    const ir::compat::ProgramRef &/* program */,
     const ir::compat::KernelRef &kernel,
     const pmgr::pass_types::Context &context
 ) const {

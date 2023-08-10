@@ -614,7 +614,7 @@ void Scheduler::init(
 }
 
 // print depgraph for debugging with string parameter identifying where
-void Scheduler::dprint_depgraph(const Str &) const {
+void Scheduler::dprint_depgraph(const Str &/* s */) const {
 #ifdef MULTI_LINE_LOG_DEBUG
     QL_IF_LOG_DEBUG {
         QL_DOUT("dependence graph dump: ");

@@ -1,9 +1,10 @@
 #include <openql>
 
+#include <gtest/gtest.h>
 #include <iostream>
 
 
-int main(int argc, char **argv) {
+TEST(v1x_example, cpp_standalone) {
     // create platform
     auto platform = ql::Platform("seven_qubits_chip", "cc_light");
 
@@ -27,5 +28,4 @@ int main(int argc, char **argv) {
     program.compile();
 
     std::cout << "Seems good to me!" << std::endl;
-    return 0;
 }

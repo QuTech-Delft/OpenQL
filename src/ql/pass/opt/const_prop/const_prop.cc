@@ -35,7 +35,7 @@ utils::Str ConstantPropagationPass::get_friendly_type() const {
  */
 utils::Int ConstantPropagationPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &
+    const pmgr::pass_types::Context &/* context */
 ) const {
     // perform constant propagation
     if (!ir->program.empty()) {

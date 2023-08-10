@@ -26,8 +26,8 @@ Group::Group(
  * pass group.
  */
 void Group::get_passes(
-    const utils::Ptr<const Factory> &,
-    utils::List<PassRef> &
+    const utils::Ptr<const Factory> &/* factory */,
+    utils::List<PassRef> &/* passes */
 ) {
 }
 

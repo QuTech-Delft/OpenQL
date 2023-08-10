@@ -226,7 +226,7 @@ utils::UInt DecomposeInstructionsPass::run_on_block(
  */
 utils::Int DecomposeInstructionsPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &
+    const pmgr::pass_types::Context &/* context */
 ) const {
 
     // Parse options.

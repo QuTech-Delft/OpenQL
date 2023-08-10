@@ -20,11 +20,10 @@ jobs:
           - clang++
           - g++
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Get latest CMake
         uses: lukka/get-cmake@latest
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Create build directory
         run: mkdir -p build-${{ matrix.compiler }}-${{ matrix.build_type }}
       - name: Configure
@@ -49,9 +48,6 @@ jobs:
           - Debug
           - Release
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Install flex/bison
         run: |
           brew install flex bison
@@ -59,6 +55,8 @@ jobs:
           echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
       - name: Get latest CMake
         uses: lukka/get-cmake@latest
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Create build directory
         run: mkdir -p build-${{ matrix.build_type }}
       - name: Configure
@@ -81,14 +79,13 @@ jobs:
           - Debug
           - Release
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Install Winflexbison3
         shell: powershell
         run: choco install winflexbison3 --version 2.5.24.20210105
       - name: Get latest CMake
         uses: lukka/get-cmake@latest
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Create build directory
         run: mkdir -p build
       - name: Configure
@@ -125,11 +122,10 @@ jobs:
           echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
           echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
         shell: bash
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Get latest CMake
         uses: lukka/get-cmake@latest
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Create build directory
         run: mkdir -p build
       - name: Configure
@@ -153,26 +149,25 @@ jobs:
           - macos-latest
           - windows-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
       - name: Install Python dependencies
         run: python -m pip install --upgrade pip setuptools wheel pytest numpy qxelarator
-      - name: Install SWIG
+      - name: Install flex/bison, and SWIG
         if: matrix.os == 'ubuntu-latest'
         run: |
-          sudo apt-get install -y swig
+          sudo apt-get -y update
+          sudo apt-get -y upgrade
+          sudo apt-get -y install flex bison swig
           echo "LIBQASM_BUILD_TYPE=Debug" >> $GITHUB_ENV
           echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
-      - name: Install flex/bison and SWIG
+      - name: Install flex/bison, and SWIG
         if: matrix.os == 'macos-latest'
         run: |
-          brew install bison flex swig
-          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
-          echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
+          brew install flex bison swig
+          echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
+          echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
           echo "LIBQASM_BUILD_TYPE=Debug" >> $GITHUB_ENV
           echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
       - name: Install Winflexbison3
@@ -184,6 +179,8 @@ jobs:
           echo "OPENQL_DISABLE_UNITARY=true" >> $env:GITHUB_ENV
       - name: Get latest CMake
         uses: lukka/get-cmake@latest
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Build
         env:
           NPROCS: 10

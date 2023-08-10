@@ -134,7 +134,7 @@ PlaceQubitsPass::PlaceQubitsPass(
  */
 utils::Int PlaceQubitsPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &
+    const pmgr::pass_types::Context &/* context */
 ) const {
     detail::Options opts;
     opts.timeout = options["timeout"].as_real();

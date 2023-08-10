@@ -215,7 +215,7 @@ ReadCQasmPass::ReadCQasmPass(
  */
 utils::Int ReadCQasmPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &
+    const pmgr::pass_types::Context &/* context */
 ) const {
 
     ir::cqasm::ReadOptions read_options;

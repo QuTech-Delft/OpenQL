@@ -17,4 +17,4 @@ can be simulated on the QX simulator.
 OpenQL's source code is released under the Apache 2.0 license.
 
 For detailed user and contributor documentation, visit the
-[the ReadTheDocs](https://openql.readthedocs.io) page!
+[ReadTheDocs](https://openql.readthedocs.io) page!

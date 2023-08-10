@@ -83,7 +83,7 @@ void Vcd::change(Int var, Int timestamp, const Str &value)
 }
 
 
-void Vcd::change(Int, Int, Int) {
+void Vcd::change(Int /* var */, Int /* timestamp */, Int /* value */) {
     throw Exception("not yet implemented");
     // FIXME
 }
