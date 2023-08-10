@@ -157,6 +157,10 @@ protected:
         EXPECT_GE(nonNNGateCount, 1);
     }
 
+    void checkIndividualMapping(size_t mapping_index, size_t qubit_index) {
+        EXPECT_EQ(mapping[mapping_index], qubit_index);
+    }
+
     utils::UInt getQubitsCount() const {
         return qubitsCount;
     }
@@ -280,7 +284,9 @@ TEST_F(IpStarTest, star_with_2q_gate__no_perfect_solution) {
     computeAndCheckResultType(Result::NEW_MAP);
 
     // Virtual qubit 4 maps to center.
-    checkPermutation({4, 3, 2, 1, 0});
+    checkIndividualMapping(4, 0);
+    // We don't check a given permutation here because there are at least two valid ones
+    // E.g. {4, 3, 2, 1, 0} and {4, 2, 3, 1, 0}
     checkAtLeastOneMappedGateIsNonNN();
 }
 
@@ -337,6 +343,7 @@ TEST_F(IpGridTest, grid__find_complex_permutation) {
     computeAndCheckResultType(Result::NEW_MAP);
 
     // We don't check a given permutation here because there are at least two valid ones
+    // E.g. {2, 4, 3, 0, 5, 1} and {0, 4, 5, 2, 3, 1}
     checkAllMappedGatesAreNearestNeighbors();
 }
 
