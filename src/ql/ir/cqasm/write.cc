@@ -4,11 +4,12 @@
 
 #include "ql/ir/cqasm/write.h"
 
-#include "ql/version.h"
-#include "ql/ir/ops.h"
 #include "ql/ir/describe.h"
+#include "ql/ir/ir_gen_ex.h"
 #include "ql/ir/operator_info.h"
+#include "ql/ir/ops.h"
 #include "ql/pass/ana/statistics/report.h"
+#include "ql/version.h"
 
 namespace ql {
 namespace ir {
@@ -813,7 +814,7 @@ public:
     /**
      * Visitor function for `BreakStatement` nodes.
      */
-    void visit_break_statement(BreakStatement &node) override {
+    void visit_break_statement(BreakStatement &) override {
         if (!version_at_least({1, 2})) {
             QL_USER_ERROR("control-flow is not supported until cQASM 1.2");
         }
@@ -823,7 +824,7 @@ public:
     /**
      * Visitor function for `ContinueStatement` nodes.
      */
-    void visit_continue_statement(ContinueStatement &node) override {
+    void visit_continue_statement(ContinueStatement &) override {
         if (!version_at_least({1, 2})) {
             QL_USER_ERROR("control-flow is not supported until cQASM 1.2");
         }

@@ -53,7 +53,7 @@ List<Alter> Mapper::gen_shortest_paths(
 ) {
     QL_ASSERT(path.empty() || path.back() != src);
     path.push_back(src);
-    
+
     if (src == tgt) {
         return Alter::create_from_path(platform, block, options, gate, path);
     }
@@ -148,11 +148,11 @@ List<Alter> Mapper::gen_shortest_paths(const ir::CustomInstructionRef &gate, UIn
     if (options->path_selection_mode == PathSelectionMode::ALL) {
         return compute(PathStrategy::ALL);
     }
-    
+
     if (options->path_selection_mode == PathSelectionMode::BORDERS) {
         return compute(PathStrategy::LEFT_RIGHT);
     }
-    
+
     if (options->path_selection_mode == PathSelectionMode::RANDOM) {
         return compute(PathStrategy::RANDOM);
     }
@@ -204,7 +204,7 @@ Alter Mapper::tie_break_alter(List<Alter> &alters, Future &future) {
                     return a;
                 }
             }
-            
+
             QL_FATAL("This should not happen");
         }
 
@@ -278,7 +278,7 @@ List<ir::CustomInstructionRef> Mapper::map_mappable_gates(
             return available_gates;
         }
     }
-    
+
     return {};
 }
 
@@ -301,7 +301,7 @@ Alter Mapper::select_alter(
     for (auto &a : alters) {
         a.extend(past, base_past); // This fills a.score.
     }
-    alters.sort([this](const Alter &a1, const Alter &a2) { return a1.get_score() < a2.get_score(); });
+    alters.sort([](const Alter &a1, const Alter &a2) { return a1.get_score() < a2.get_score(); });
 
     auto factor = options->recursion_width_factor * utils::pow(options->recursion_width_exponent, recursion_depth);
     auto keep_real = utils::max(1.0, utils::ceil(factor * alters.size()));
@@ -327,7 +327,7 @@ Alter Mapper::select_alter(
         // Copy of current state for recursion.
         Future sub_future = future;
         Past sub_past = past;
-        
+
         commit_alter(a, sub_future, sub_past);
 
         Bool also_nn_two_qubit_gates = options->recurse_on_nn_two_qubit
@@ -349,7 +349,7 @@ Alter Mapper::select_alter(
         }
     }
 
-    alters.sort([this](const Alter &a1, const Alter &a2) { return a1.get_score() < a2.get_score(); });
+    alters.sort([](const Alter &a1, const Alter &a2) { return a1.get_score() < a2.get_score(); });
 
     while (alters.back().get_score() > alters.front().get_score()) {
         alters.pop_back();
@@ -397,7 +397,7 @@ Mapper::RoutingStatistics Mapper::route(ir::BlockBaseRef block, com::map::QubitM
     past.export_mapping(v2r_out);
 
     Mapper::RoutingStatistics stats;
-    
+
     stats.num_swaps_added = past.get_num_swaps_added();
     stats.num_moves_added = past.get_num_moves_added();
 

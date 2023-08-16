@@ -38,7 +38,7 @@ Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates) const {
 
     // Calculate the amount of cycles. If there are gates with undefined cycle
     // indices, visualize the circuit sequentially.
-    Vec<Cycle> cycles;
+    Vec<Cycle> cycles{};
     Int amountOfCycles = calculateAmountOfCycles(gates);
 
     // Generate the cycles.
@@ -50,7 +50,7 @@ Vec<Cycle> CircuitData::generateCycles(Vec<GateProperties> &gates) const {
         const Vec<std::reference_wrapper<GateProperties>> firstChunk;
         partition.push_back(firstChunk);
 
-        cycles.push_back({i, true, false, partition});
+        cycles.emplace_back(i, true, false, partition);
     }
     // Mark non-empty cycles and add gates to their corresponding cycles.
     for (GateProperties &gate : gates) {
@@ -294,7 +294,7 @@ Int Structure::calculateCellHeight(const CircuitLayout &layout) const {
     }
 }
 
-Int Structure::calculateImageWidth(const CircuitData &circuitData) const {
+Int Structure::calculateImageWidth(const CircuitData &) const {
     QL_DOUT("Calculating image width...");
 
     const Int amountOfCells = utoi(qbitCellPositions.size());
@@ -1466,7 +1466,7 @@ void drawBitLine(Image &image,
                  const CircuitLayout &layout,
                  const BitType bitType,
                  const Int row,
-                 const CircuitData &circuitData,
+                 const CircuitData &,
                  const Structure &structure) {
     Color bitLineColor;
     Color bitLabelColor;
@@ -1801,7 +1801,7 @@ void drawGate(Image &image,
 }
 
 void drawGateNode(Image &image,
-                  const CircuitLayout &layout,
+                  const CircuitLayout &,
                   const Structure &structure,
                   const Node &node,
                   const Cell &cell) {
@@ -1827,7 +1827,7 @@ void drawGateNode(Image &image,
 }
 
 void drawControlNode(Image &image,
-                     const CircuitLayout &layout,
+                     const CircuitLayout &,
                      const Structure &structure,
                      const Node &node,
                      const Cell &cell) {
@@ -1841,7 +1841,7 @@ void drawControlNode(Image &image,
 }
 
 void drawNotNode(Image &image,
-                 const CircuitLayout &layout,
+                 const CircuitLayout &,
                  const Structure &structure,
                  const Node &node,
                  const Cell &cell) {
@@ -1870,7 +1870,7 @@ void drawNotNode(Image &image,
 }
 
 void drawCrossNode(Image &image,
-                   const CircuitLayout &layout,
+                   const CircuitLayout &,
                    const Structure &structure,
                    const Node &node,
                    const Cell &cell) {

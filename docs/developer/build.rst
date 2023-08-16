@@ -17,11 +17,9 @@ Dependencies
 
 The following packages are required to compile OpenQL from sources:
 
-- a C++ compiler with C++11 support (Linux: gcc, MacOS: LLVM/clang, Windows: MSVC 2015 with update 3 or above)
+- a C++ compiler with C++23 support (Linux: gcc, MacOS: LLVM/clang, Windows: Visual Studio 17 2022, MSVC 19.35.32217.1)
 - git
-- flex > 2.6
-- bison > 3.0
-- cmake >= 3.0
+- cmake >= 3.25
 - swig (Linux: >= 3.0.12, Windows: >= 4.0.0)
 - Python 3.x + pip, with the following packages:
    - ``plumbum``
@@ -54,19 +52,17 @@ Windows-specific instructions
 
 Dependencies can be installed with:
 
-- `win_flex_bison 2.5.20 <https://sourceforge.net/projects/winflexbison/files/win_flex_bison-2.5.20.zip/download>`_
-- `cmake 3.15.3 <https://github.com/Kitware/CMake/releases/download/v3.15.3/cmake-3.15.3-win64-x64.msi>`_
+- `cmake 3.25.0 <https://github.com/Kitware/CMake/releases/download/v3.25.0/cmake-3.25.0-windows-x86_64.msi>`_
 - `swigwin 4.0.0 <https://sourceforge.net/projects/swig/files/swigwin/swigwin-4.0.0/swigwin-4.0.0.zip/download>`_
 
 Make sure the above mentioned binaries are added to the system path.
 
-Alternatively, you can use Chocolatey to install packages. This is how CI currently does it. They just chain to
-sourceforge downloads, though.
+Alternatively, you can use Chocolatey to install packages.
 
 The actual build and install should be done with PowerShell, for which some modifications (may?) need to be made
 first.
 
-- Use Power Shell for installation
+- Use Power Shell for installation.
 - Set execution policy by:
 
 ::
@@ -79,21 +75,23 @@ first.
 
     Install-Module -AllowClobber -Name Pscx -RequiredVersion 3.2.2
 
-- MSVC 2015 should be added to the path by using the following command:
+- Visual Studio 17 2022 should be added to the path by using the following command:
 
 ::
 
-    Invoke-BatchFile "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+    Invoke-BatchFile "C:\Program Files\Microsoft Visual Studio 17.0\VC\vcvarsall.bat" amd64
 
 - but when you installed Microsoft Visual Studio Community Edition do:
 
 ::
 
-    Invoke-BatchFile "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
+    Invoke-BatchFile "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
 
-- To make your life easier, you can add this command to the profile you are using for power shell, avoiding the need to manually run this command every time you open a power shell. You can see the path of this profile by `echo $PROFILE`. Create/Edit this file to add the above command.
+- To make your life easier, you can add this command to the profile you are using for power shell,
+avoiding the need to manually run this command every time you open a power shell.
+You can see the path of this profile by `echo $PROFILE`. Create/Edit this file to add the above command.
 
-- Python.exe, win_flex.exe, win_bison.exe and swig.exe should be in the path of power shell. To test if swig.exe is the path, run:
+- Python.exe and swig.exe should be in the path of power shell. To test if swig.exe is the path, run:
 
 ::
 
@@ -127,10 +125,11 @@ All dependencies can be installed using `Homebrew <https://brew.sh>`_ and pip:
 ::
 
     brew update
-    brew install llvm flex bison cmake swig python3 doxygen graphviz xquartz
+    brew install llvm cmake swig python3 doxygen graphviz xquartz
     pip3 install wheel plumbum pytest numpy sphinx==3.5.4 sphinx-rtd-theme m2r2
 
-Make sure the above mentioned binaries are added to the system path in front of ``/usr/bin``, otherwise CMake finds the default versions.
+Make sure the above mentioned binaries are added to the system path in front of ``/usr/bin``,
+otherwise CMake finds the default versions.
 
 Linux-specific instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -143,9 +142,9 @@ If you're for some reason using CentOS, you'll need to use a ``devtoolset`` comp
 shipped with it is too old. Likewise, CentOS ships with cmake 2.9 installed in ``/usr/bin`` and depends
 on this; while ``cmake3`` is in the package manager, you actually need to call ``cmake3`` instead of
 ``cmake``, which ``setup.py`` is not smart enough for. On CentOS or other batteries-not-included systems
-you might also have to compile some dependencies manually (``swig``, ``flex``, ``bison``, and their
-dependencies ``m4`` and possibly ``gettext``), but they shouldn't give you too much drama. ``cmake`` has
-distro-agnostic binary distributions on github that are a only ``wget`` and ``tar xzv`` away.
+you might also have to compile some dependencies manually (``swig`` and possibly ``gettext``),
+but they shouldn't give you too much drama. ``cmake`` has distro-agnostic binary distributions on github that are
+only a ``wget`` and ``tar xzv`` away.
 
 
 Obtaining OpenQL
@@ -157,10 +156,7 @@ cloned by:
 
 ::
 
-    git clone https://github.com/QuTech-Delft/OpenQL.git --recursive
-
-Note the ``--recursive``: the repository depends on various submodules. If you forgot the ``--recursive``,
-you can get/synchronize them later with ``git submodule update --init --recursive``.
+    git clone https://github.com/QuTech-Delft/OpenQL.git
 
 
 Building the ``qutechopenql`` Python package
@@ -216,6 +212,7 @@ Once installed, and assuming you have the requisite optional dependencies instal
 from the root of the OpenQL repository) using
 
 ::
+
     pytest -v
 
 .. note::

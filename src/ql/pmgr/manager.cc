@@ -447,7 +447,7 @@ static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
  */
 Manager Manager::from_json(
     const utils::Json &json,
-    const Factory &factory
+    const Factory &/* factory */
 ) {
 
     // Shorthand.

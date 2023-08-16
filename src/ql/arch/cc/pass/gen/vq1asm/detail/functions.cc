@@ -66,8 +66,8 @@ void Functions::dispatch(const ir::FunctionCall *fn, const Str &label_if_false, 
 }
 
 
-UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, Int expOpCnt) {
-    if(static_cast<Int>(bregs.size()) != expOpCnt) {
+UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, UInt expOpCnt) {
+    if(bregs.size() != expOpCnt) {
         QL_ICE("Expected " << expOpCnt << " breg operands, got " << bregs.size());
     }
 
@@ -276,19 +276,19 @@ void Functions::op_sub_iC(const FncArgs &a) {
 }
 
 #if OPT_CC_USER_FUNCTIONS
-void Functions::rnd_seed_C(const FncArgs &a) {
+void Functions::rnd_seed_C(const FncArgs &) {
     // FIXME
 }
 
-void Functions::rnd_seed_i(const FncArgs &a) {
+void Functions::rnd_seed_i(const FncArgs &) {
     // FIXME
 }
 
-void Functions::rnd_C(const FncArgs &a) {
+void Functions::rnd_C(const FncArgs &) {
     // FIXME
 }
 
-void Functions::rnd_i(const FncArgs &a) {
+void Functions::rnd_i(const FncArgs &) {
     // FIXME
 }
 #endif

@@ -646,7 +646,7 @@ utils::Bool Topology::is_comm_qubit(Qubit qubit) const {
     // Compute index of qubit local to core.
     utils::UInt qubit_local_index = qubit % num_qubits_per_core;
 
-    QL_ASSERT(0 <= qubit_local_index && qubit_local_index < num_qubits_per_core);
+    QL_ASSERT(qubit_local_index < num_qubits_per_core);
 
     // 0..ncommqpc-1 are comm qubits, ncommqpc..nq/ncores-1 are not comm qubits.
     return qubit_local_index < num_comm_qubits;
@@ -787,8 +787,8 @@ void Topology::sort_neighbors_by_angle(Qubit src, Neighbors &nbl) const {
     }
 
     // find maxinx index in neighbor list before which largest angle difference occurs
-    utils::Int maxdiff = 0;                            // current maximum angle difference in loop search below
-    auto maxinx = nbl.begin(); // before which max diff occurs
+    utils::Int maxdiff = 0;  // current maximum angle difference in loop search below
+    auto maxinx = nbl.begin();  // before which max diff occurs
 
     // for all indices in and its next one inx compute angle difference and find largest of these
     for (auto in = nbl.begin(); in != nbl.end(); in++) {

@@ -192,7 +192,6 @@ class build_ext(_build_ext):
                     cmd = cmd['--parallel'][nprocs]
                 elif not sys.platform.startswith('win'):
                     cmd = cmd['--']['-j'][nprocs]
-            cmd & FG
 
             # Run the C++ tests if requested.
             if 'OPENQL_BUILD_TESTS' in os.environ:

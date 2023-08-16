@@ -150,7 +150,7 @@ void DeadCodeEliminationPass::run_on_block(
  */
 utils::Int DeadCodeEliminationPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &context
+    const pmgr::pass_types::Context &/* context */
 ) const {
     // perform dead code elimination
     if (!ir->program.empty()) {

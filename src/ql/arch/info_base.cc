@@ -52,8 +52,8 @@ void InfoBase::dump_variant_docs(
  * of mistakes made).
  */
 void InfoBase::preprocess_platform(
-    utils::Json &data,
-    const utils::Str &variant
+    utils::Json &,
+    const utils::Str &
 ) const {
 }
 
@@ -62,8 +62,8 @@ void InfoBase::preprocess_platform(
  * instance add annotations with architecture-specific configuration data.
  */
 void InfoBase::post_process_platform(
-    const ir::compat::PlatformRef &platform,
-    const utils::Str &variant
+    const ir::compat::PlatformRef &,
+    const utils::Str &
 ) const {
 }
 
@@ -74,7 +74,7 @@ void InfoBase::post_process_platform(
  * code generation pass, but anything after prescheduling and optimization
  * is considered a backend pass.
  */
-void InfoBase::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
+void InfoBase::populate_backend_passes(pmgr::Manager &, const utils::Str &) const {
 }
 
 } // namespace arch

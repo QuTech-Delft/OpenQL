@@ -21,7 +21,7 @@ void Alter::add_swaps(Past &past, utils::Any<ir::Statement> *output_circuit) con
     const auto& mode = options->swap_selection_mode;
     if (mode == SwapSelectionMode::ONE || mode == SwapSelectionMode::ALL) {
         utils::UInt max_num_to_add = (mode == SwapSelectionMode::ONE ? 1 : utils::MAX);
-        
+
         // Add a maximum of max_num_to_add swaps to "past" from the 2 paths represented by this (split) Alter.
         // So a maximum of 2 * max_num_to_add swaps are added to "past".
         // It stops when the paths are completely covered, or when the max number of swaps is reached.
@@ -71,13 +71,13 @@ utils::List<Alter> Alter::create_from_path(const ir::PlatformRef &platform, cons
     std::shared_ptr<std::list<utils::UInt>> shared_path(new std::list<utils::UInt>(path));
 
     QL_ASSERT (shared_path->size() >= 2);
-    
+
     auto leftOpIt = shared_path->begin();
     auto rightOpIt = std::prev(std::prev(shared_path->rend()));
     while (leftOpIt != std::prev(shared_path->end())) {
         QL_ASSERT(*std::next(leftOpIt) == *rightOpIt);
         QL_ASSERT(platform->topology->get_distance(*leftOpIt, *rightOpIt) == 1);
-        
+
         // An inter-core hop cannot execute a two-qubit gate, so is not a valid alternative.
         if (!platform->topology->is_inter_core_hop(*leftOpIt, *rightOpIt)) {
             result.push_back(Alter(platform, block, options, gate, shared_path, leftOpIt, rightOpIt));

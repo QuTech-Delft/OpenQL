@@ -873,7 +873,7 @@ public:
      */
     template <class... Args>
     void emplace_back(Args&&... args) {
-        return get_data().get_mut_element_only().emplace_back(std::forward<Args>(args)...);
+        get_data().get_mut_element_only().emplace_back(std::forward<Args>(args)...);
     }
 
     /**
@@ -888,7 +888,7 @@ public:
         if (v.empty()) {
             QL_CONTAINER_ERROR("pop_back() called on empty list");
         }
-        return v.pop_back();
+        v.pop_back();
     }
 
     /**
@@ -898,7 +898,7 @@ public:
      * Iterators and references remain valid.
      */
     void push_front(const T &value) {
-        return get_data().get_mut_element_only().push_front(value);
+        get_data().get_mut_element_only().push_front(value);
     }
 
     /**
@@ -908,7 +908,7 @@ public:
      * Iterators and references remain valid.
      */
     void push_front(T &&value) {
-        return get_data().get_mut_element_only().push_front(std::move(value));
+        get_data().get_mut_element_only().push_front(std::move(value));
     }
 
     /**
@@ -922,7 +922,7 @@ public:
      */
     template <class... Args>
     void emplace_front(Args&&... args) {
-        return get_data().get_mut_element_only().emplace_front(std::forward<Args>(args)...);
+        get_data().get_mut_element_only().emplace_front(std::forward<Args>(args)...);
     }
 
     /**
@@ -938,7 +938,7 @@ public:
         if (v.empty()) {
             QL_CONTAINER_ERROR("pop_back() called on empty list");
         }
-        return v.pop_front();
+        v.pop_front();
     }
 
     /**

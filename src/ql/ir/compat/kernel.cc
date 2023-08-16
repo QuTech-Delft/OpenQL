@@ -4,9 +4,10 @@
 
 #include "ql/ir/compat/kernel.h"
 
-#include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <sstream>
+#include <string>
 
 #include "ql/config.h"
 #include "ql/utils/json.h"
@@ -1199,7 +1200,7 @@ void Kernel::controlled_h(UInt tq, UInt cq) {
     sdag(tq);
 }
 
-void Kernel::controlled_i(UInt tq, UInt cq) {
+void Kernel::controlled_i(UInt, UInt) {
     // well, basically you dont need to do anything for it :‑)
 }
 
@@ -1577,11 +1578,11 @@ void Kernel::conjugate(const Kernel &k) {
         } else if (gtype == GateType::SWAP) {
             gate("swap", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == GateType::RX) {
-            gate("rx", g->operands, {}, g->duration, -(g->angle) , g->breg_operands);
+            gate("rx", g->operands, {}, g->duration, -(g->angle), g->breg_operands);
         } else if (gtype == GateType::RY) {
-            gate("ry", g->operands, {}, g->duration, -(g->angle) , g->breg_operands);
+            gate("ry", g->operands, {}, g->duration, -(g->angle), g->breg_operands);
         } else if (gtype == GateType::RZ) {
-            gate("rz", g->operands, {}, g->duration, -(g->angle) , g->breg_operands);
+            gate("rz", g->operands, {}, g->duration, -(g->angle), g->breg_operands);
         } else if (gtype == GateType::RX90) {
             gate("mrx90", g->operands, {}, g->duration, g->angle, g->breg_operands);
         } else if (gtype == GateType::MRX90) {

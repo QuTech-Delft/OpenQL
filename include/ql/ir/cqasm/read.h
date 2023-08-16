@@ -83,6 +83,13 @@ struct ReadOptions {
  * the filename if one exists for the purpose of generating better error
  * messages.
  */
+void read_v1(
+    const Ref &ir,
+    const utils::Str &data,
+    const utils::Str &fname = "<unknown>",
+    const ReadOptions &options = {}
+);
+
 void read(
     const Ref &ir,
     const utils::Str &data,

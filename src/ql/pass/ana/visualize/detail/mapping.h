@@ -23,6 +23,10 @@ struct Edge {
     utils::Int dst;
 
     Edge() = delete;
+    Edge(utils::Int src_, utils::Int dst_)
+        : src{ src_ }
+        , dst{ dst_ }
+    {}
 };
 
 struct Topology {

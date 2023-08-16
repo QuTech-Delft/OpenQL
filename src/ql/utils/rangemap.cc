@@ -10,7 +10,7 @@ namespace utils {
 /**
  * String conversion for Empty.
  */
-std::ostream &operator<<(std::ostream &os, const Nothing &e) {
+std::ostream &operator<<(std::ostream &os, const Nothing &) {
     return os;
 }
 

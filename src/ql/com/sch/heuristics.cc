@@ -14,8 +14,8 @@ namespace sch {
  * Comparator implementation for TrivialHeuristic.
  */
 utils::Bool TrivialHeuristic::operator()(
-    const ir::StatementRef &lhs,
-    const ir::StatementRef &rhs
+    const ir::StatementRef &,
+    const ir::StatementRef &
 ) const {
     return false;
 }
@@ -24,7 +24,7 @@ utils::Bool TrivialHeuristic::operator()(
  * String representation for TrivialHeuristic.
  */
 utils::Str TrivialHeuristic::operator()(
-    const ir::StatementRef &val
+    const ir::StatementRef &
 ) const {
     return "-";
 }

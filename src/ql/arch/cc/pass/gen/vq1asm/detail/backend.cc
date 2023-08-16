@@ -158,7 +158,7 @@ void Backend::codegen_block(const ir::BlockBaseRef &block, const Str &name, Int 
                     try {
                         codegen.handle_set_instruction(*set_instruction, "conditional.set");
                     } catch (utils::Exception &e) {
-                        e.add_context("in set_instruction '" + ir::describe(*set_instruction) + "'" , true);
+                        e.add_context("in set_instruction '" + ir::describe(*set_instruction) + "'", true);
                         throw;
                     }
 

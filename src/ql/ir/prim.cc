@@ -355,11 +355,11 @@ std::ostream &operator<<(std::ostream &os, const Architecture &arch) {
 //==============================================================================
 
 template <>
-void serialize(const ResourceManager &obj, utils::tree::cbor::MapWriter &map) {
+void serialize(const ResourceManager &, utils::tree::cbor::MapWriter &) {
 }
 
 template <>
-ResourceManager deserialize(const utils::tree::cbor::MapReader &map) {
+ResourceManager deserialize(const utils::tree::cbor::MapReader &) {
     return ResourceManager();
 }
 

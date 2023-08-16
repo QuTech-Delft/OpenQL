@@ -1,4 +1,13 @@
-cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.25 FATAL_ERROR)  # 3.25 needed for add_subdirectory(... SYSTEM)
+
+# CMake policies
+if(POLICY CMP0048)
+    cmake_policy(SET CMP0048 NEW)
+endif()
+cmake_policy(SET CMP0077 NEW)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 
 project(OpenQL C CXX)
 
@@ -8,6 +17,9 @@ if(NOT TARGET ql)
 
 # Loads up the appropriate directories for installing stuff.
 include(GNUInstallDirs)
+
+# Packages
+include(FetchContent)
 
 
 #=============================================================================#
@@ -148,8 +160,8 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Everything needs C++11 support.
-set(CMAKE_CXX_STANDARD 11)
+# Everything needs C++23 support.
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -157,6 +169,75 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # (I think), but only the .dll is generated when there are no exported symbols.
 # This sort of fixes that (https://stackoverflow.com/questions/1941443)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+
+#=============================================================================#
+# Dependencies                                                                #
+#=============================================================================#
+
+
+message(STATUS "Fetching Backward")
+FetchContent_Declare(Backward
+    GIT_REPOSITORY https://github.com/bombela/backward-cpp.git
+    GIT_TAG "3bb9240cb15459768adb3e7d963a20e1523a6294"
+)
+FetchContent_MakeAvailable(Backward)
+
+message(STATUS "Fetching cqasm")
+FetchContent_Declare(cqasm
+    message(STATUS "Fetching cqasm")
+    GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
+    GIT_TAG "8d0b4ed5e3a30aa6fde3b3aaf20a207b5d07876e"
+)
+FetchContent_MakeAvailable(cqasm)
+
+message(STATUS "Fetching Eigen3")
+FetchContent_Declare(Eigen3
+    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+    GIT_TAG "4e9e493b4abc57dba377fc326082b40d08193619"
+)
+FetchContent_MakeAvailable(Eigen3)
+
+# FetchContent_Populate will be deprecated in the future
+# The equivalent solution with FetchContent_MakeAvailable consists of
+# setting SOURCE_SUBDIR to a non-existent subdirectory in FetchContent_Declare,
+# then letting FetchContent_MakeAvailable do the download of the dependency,
+# and still add_subdirectory manually
+# See: https://discourse.cmake.org/t/fetchcontent-a-directory-but-add-a-subdirectory/8603/13?u=rturrado
+message(STATUS "Fetching HiGHS")
+FetchContent_Declare(highs
+    GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
+    GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
+    SOURCE_SUBDIR this-directory-does-not-exist
+)
+FetchContent_MakeAvailable(highs)
+# The build system in HiGHS currently doesn't allow to disable HiGHS tests
+# thus the following hacks are needed, instead of just add_subdirectory(deps/highs).
+set(FAST_BUILD ON)
+set(GITHASH "")
+set(TODAY "")
+set(HIGHS_VERSION_MAJOR 0)
+set(HIGHS_VERSION_MINOR 0)
+set(HIGHS_VERSION_PATCH 0)
+set(HIGHS_SOURCE_DIR "${highs_SOURCE_DIR}")
+set(HIGHS_BINARY_DIR "${highs_BINARY_DIR}")
+add_subdirectory("${highs_SOURCE_DIR}/src" "${highs_BINARY_DIR}/src" SYSTEM)
+configure_file(${highs_SOURCE_DIR}/src/HConfig.h.in ${highs_BINARY_DIR}/HConfig.h)
+
+# TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
+# TODO: remove use of Lemon in project?
+message(STATUS "Fetching lemon")
+FetchContent_Declare(lemon
+    GIT_REPOSITORY https://github.com/rturrado/lemon.git
+    GIT_TAG "e70acea5764a97ab3b6d31b883300f3ce1587cde"
+)
+FetchContent_MakeAvailable(lemon)
+
+message(STATUS "Fetching nlohmann_json")
+FetchContent_Declare(nlohmann_json
+    URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
+)
+FetchContent_MakeAvailable(nlohmann_json)
 
 
 #=============================================================================#
@@ -184,11 +265,6 @@ function(create_resource fname)
     )
     add_dependencies(ql ${target_name})
 endfunction()
-
-# Add tree-gen. We need to do this *only* to get access to the generate_tree
-# CMake function; everything else is handled implicitly because tree-gen is a
-# transitive dependency of libqasm.
-add_subdirectory(deps/libqasm/src/cqasm/tree-gen deps/tree-gen)
 
 
 #=============================================================================#
@@ -228,6 +304,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/compat/detail/cqasm_reader.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/prim.cc"
     "${CMAKE_CURRENT_BINARY_DIR}/src/ql/ir/ir.gen.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/ir_gen_ex.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/ops.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/operator_info.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/ir/describe.cc"
@@ -334,6 +411,33 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/program.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
+    ${BACKWARD_ENABLE}
+)
+add_backward(ql)
+
+# There is no distinction between public and private header files right now,
+# and they're all in the source directory.
+# Note the / at the end of the path;
+# this is necessary for the header files to be installed in the right location.
+target_include_directories(ql
+    SYSTEM PRIVATE "${cqasm_SOURCE_DIR}/include"
+    SYSTEM PRIVATE "${eigen3_SOURCE_DIR}/Eigen"
+    SYSTEM PRIVATE "${eigen3_SOURCE_DIR}/unsupported"
+    SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
+    SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
+    SYSTEM PUBLIC "${nlohmann_json_SOURCE_DIR}/include"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
+)
+
+target_link_libraries(ql
+    PUBLIC cqasm
+    PRIVATE Eigen3::Eigen
+    PUBLIC highs
+    PRIVATE lemon
+    PRIVATE nlohmann_json::nlohmann_json
 )
 
 # Specify resources.
@@ -360,24 +464,24 @@ configure_file(
 # https://docs.microsoft.com/en-us/cpp/cpp/declspec?view=vs-2019
 target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
 
-# There is no distinction between public and private header files right now,
-# and they'r all in the source directory. Note the / at the end of the path;
-# this is necessary for the header files to be installed in the right location.
-target_include_directories(ql
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
-    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
-    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include/"
-)
-
 # Configure compilation.
 set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(ql PRIVATE -Wall -Wfatal-errors)
+    target_compile_options(ql PRIVATE
+        -Wall -Wextra -Werror -Wfatal-errors
+        -Wno-error=restrict
+        -Wno-error=deprecated-declarations
+    )
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    target_compile_options(ql PRIVATE -Wall -Wfatal-errors -Wno-unused-local-typedef)
+    target_compile_options(ql PRIVATE
+        -Wall -Wextra -Werror -Wfatal-errors
+        -Wno-error=unused-private-field
+        -Wno-error=unused-but-set-variable
+    )
 elseif(MSVC)
-    target_compile_options(ql PRIVATE /MP /D_USE_MATH_DEFINES /EHsc /bigobj)
+    target_compile_options(ql PRIVATE
+        /MP /D_USE_MATH_DEFINES /EHsc /bigobj
+    )
 else()
     message(SEND_ERROR "Unknown compiler!")
 endif()
@@ -402,60 +506,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     target_compile_definitions(ql PRIVATE NDEBUG)
 endif()
 
-# LEMON -----------------------------------------------------------------------
-
-# Configure LEMON. LEMON by itself exposes the "lemon" target to link against,
-# but it doesn't use target_include_directories(), so we have to do that here.
-add_subdirectory(deps/lemon)
-target_include_directories(lemon INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/lemon"
-    "${CMAKE_CURRENT_BINARY_DIR}/deps/lemon"
-)
-target_link_libraries(ql PUBLIC lemon)
-
-# Even more annoying stuff: LEMON doesn't install itself in the right place on
-# multilib systems (i.e. ones where the libdir is lib64 instead of just lib).
-# So to make sure it is found in the install tree, we have to install it in the
-# proper place ourselves. That would go something like this,
-#
-#     install(
-#         TARGETS lemon
-#         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-#         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-#         COMPONENT library
-#     )
-#
-# but until CMake 3.13 the install directive MUST be in the directory where the
-# target is created, so we have to insert that piece of code into LEMON's own
-# CMakeLists.txt.
-
-
-# Eigen -----------------------------------------------------------------------
-
-# Wrap Eigen in an interface library to link against. Note that Eigen is only
-# used internally; its headers need not be installed or exposed to programs
-# linking against OpenQL.
-add_library(eigen INTERFACE)
-target_include_directories(eigen INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/eigen/Eigen"
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/eigen/unsupported"
-)
-target_link_libraries(ql PRIVATE eigen)
-
-
-# nlohmann::json --------------------------------------------------------------
-
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-add_subdirectory(deps/json)
-target_link_libraries(ql PUBLIC nlohmann_json::nlohmann_json)
-
-
-# libqasm ---------------------------------------------------------------------
-
-# Load libqasm. libqasm's CMakeLists expose the "cqasm" target to link against.
-add_subdirectory(deps/libqasm)
-target_link_libraries(ql PUBLIC cqasm)
-
 
 # X11/CImg ---------------------------------------------------------------------
 
@@ -476,120 +526,48 @@ else()
 endif()
 
 if(QL_VISUALIZER)
+    message(STATUS "Fetching CImg")
+    FetchContent_Declare(CImg
+        GIT_REPOSITORY https://github.com/GreycLab/CImg.git
+        GIT_TAG "049267da171c50ab48f93c7285f096d7d686e8f3"
+    )
+    FetchContent_MakeAvailable(CImg)
+
     target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
-    target_include_directories(ql PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/deps/cimg/include/")
+    target_include_directories(ql SYSTEM PRIVATE "${cimg_SOURCE_DIR}")
 endif()
 
-# backward-cpp ----------------------------------------------------------------
-
-# Stack trace helper library, nothing functional here.
-add_subdirectory(deps/backward-cpp)
-add_backward(ql)
-
-# add_backward doesn't set INTERFACE_LINK_LIBRARIES, only LINK_LIBRARIES. That
-# goes wrong when we're compiling statically, because said libraries are shared
-# and need to be included in the final link.
-set_property(TARGET ql APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${BACKWARD_LIBRARIES})
-
-# HiGHS -----------------------------------------------------------------------
-
-# HiGHS (www.highs.dev) comes as a submodule in deps/highs. It is a linear programming solver that can
-# solve Mixed Integer Programming problems efficiently. It is used in the initial placement pass.
-
-# The build system in HiGHS currently doesn't allow to disable HiGHS tests
-# thus the following hacks are needed, instead of just add_subdirectory(deps/highs).
-set(FAST_BUILD ON)
-set(GITHASH "")
-set(TODAY "")
-set(HIGHS_VERSION_MAJOR 0)
-set(HIGHS_VERSION_MINOR 0)
-set(HIGHS_VERSION_PATCH 0)
-set(HIGHS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/deps/highs")
-set(HIGHS_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/highs")
-
-add_subdirectory(deps/highs/src)
-configure_file(deps/highs/src/HConfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/deps/highs/HConfig.h)
-target_link_libraries(ql PUBLIC libhighs)
 
 #=============================================================================#
 # Testing                                                                     #
 #=============================================================================#
 
-# Include the tests directory if requested.
 if(OPENQL_BUILD_TESTS)
     enable_testing()
-
-    # Convenience function to add an integration test.
-    function(add_openql_test name source workdir)
-        add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
-        target_link_libraries("${name}" ql)
-        add_test(
-            NAME "${name}"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${workdir}"
-            COMMAND "${name}"
-        )
-    endfunction()
-
-    add_subdirectory(deps/doctest)
-    
-    # Include the directories containing integration tests.
-    add_subdirectory(tests)
-    add_subdirectory(examples)
-
-    # Convenience function to add a unit test.
-    function(add_openql_unit_test source)
-        string(REPLACE "/" "_" name ${source})
-        string(REPLACE "_tests_" "_" name ${name})
-        string(REPLACE ".cc" "" name ${name})
-        set(name test_${name})
-        add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
-        target_link_libraries("${name}" ql)
-        target_link_libraries("${name}" doctest)
-        get_filename_component(working_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}" DIRECTORY)
-        add_test(
-            NAME "${name}"
-            WORKING_DIRECTORY "${working_dir}"
-            COMMAND "${name}"
-        )
-    endfunction()
-
-    # Register unit tests.
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-
-    # I hate CMake.
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/*/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-
+    include(CTest)
+    include(GoogleTest)
+    set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+    add_subdirectory(test)
 endif()
+
+
+#=============================================================================#
+# Debug info                                                                  #
+#=============================================================================#
+
+message(STATUS
+    "[${PROJECT_NAME}] Target include directories:\n"
+    "      CImg: ${cimg_SOURCE_DIR}\n"
+    "      cqasm/include: ${cqasm_SOURCE_DIR}/include\n"
+    "      Eigen3/Eigen: ${eigen3_SOURCE_DIR}/Eigen\n"
+    "      Eigen3/unsupported: ${eigen3_SOURCE_DIR}/unsupported\n"
+    "      googletest: ${googletest_SOURCE_DIR}\n"
+    "      highs: ${highs_SOURCE_DIR}\n"
+    "      highs/src: ${highs_SOURCE_DIR}/src\n"
+    "      lemon-src: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/\n"
+    "      lemon-build: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/\n"
+    "      nlohmann_json/include: ${nlohmann_json_SOURCE_DIR}/include\n"
+)
 
 
 #=============================================================================#

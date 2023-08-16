@@ -70,6 +70,12 @@ struct Position4 {
     utils::Int y1;
 
     Position4() = delete;
+    Position4(utils::Int x0_, utils::Int y0_, utils::Int x1_, utils::Int y1_)
+        : x0{ x0_ }
+        , y0{ y0_ }
+        , x1{ x1_ }
+        , y1{ y1_ }
+    {}
 };
 
 struct Position2 {
@@ -77,6 +83,10 @@ struct Position2 {
     utils::Int y;
 
     Position2() = delete;
+    Position2(utils::Int x_, utils::Int y_)
+        : x{ x_ }
+        , y{ y_ }
+    {}
 };
 
 struct EndPoints {
@@ -84,6 +94,10 @@ struct EndPoints {
     utils::Int end;
 
     EndPoints() = delete;
+    EndPoints(utils::Int start_, utils::Int end_)
+        : start{ start_ }
+        , end{ end_ }
+    {}
 };
 
 struct Dimensions {
@@ -91,6 +105,10 @@ struct Dimensions {
     utils::Int height;
 
     Dimensions() = delete;
+    Dimensions(utils::Int width_, utils::Int height_)
+        : width{ width_ }
+        , height{ height_ }
+    {}
 };
 
 struct GateOperand {
@@ -108,6 +126,10 @@ struct GateOperand {
     friend utils::Bool operator>=(const GateOperand &lhs, const GateOperand &rhs) {return !operator<(lhs, rhs);}
 
     GateOperand() = delete;
+    GateOperand(BitType bitType_, utils::Int index_)
+        : bitType{ bitType_ }
+        , index{ index_ }
+    {}
 };
 
 struct GateProperties {
@@ -121,6 +143,25 @@ struct GateProperties {
     utils::Str visual_type;
 
     GateProperties() = delete;
+    GateProperties(
+        utils::Str name_,
+        utils::Vec<utils::Int> operands_,
+        utils::Vec<utils::Int> creg_operands_,
+        ir::SwapParameters swap_params_,
+        utils::Int durationInCycles_,
+        utils::Int cycle_,
+        utils::Vec<utils::Int> codewords_,
+        utils::Str visual_type_)
+
+        : name{ std::move(name_) }
+        , operands{ std::move(operands_) }
+        , creg_operands{ std::move(creg_operands_) }
+        , swap_params{ std::move(swap_params_) }
+        , durationInCycles{ durationInCycles_ }
+        , cycle{ cycle_ }
+        , codewords{ std::move(codewords_) }
+        , visual_type{ std::move(visual_type_) }
+    {}
 };
 
 // ------------- Layout declaration -------------- //

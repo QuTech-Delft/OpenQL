@@ -5,6 +5,7 @@
 
 #include "ql/com/ana/metrics.h"
 
+#include "ql/ir/ir_gen_ex.h"
 #include "ql/ir/ops.h"
 
 namespace ql {
@@ -15,7 +16,7 @@ namespace ana {
  * Classical operation counting metric.
  */
 void ClassicalOperationCount::process_instruction(
-    const ir::Ref &ir,
+    const ir::Ref &,
     const ir::InstructionRef &instruction
 ) {
     if (instruction->as_set_instruction() || instruction->as_goto_instruction()) {
@@ -27,7 +28,7 @@ void ClassicalOperationCount::process_instruction(
  * Quantum gate counting metric.
  */
 void QuantumGateCount::process_instruction(
-    const ir::Ref &ir,
+    const ir::Ref &,
     const ir::InstructionRef &instruction
 ) {
     if (ir::get_number_of_qubits_involved(instruction)) {
@@ -39,7 +40,7 @@ void QuantumGateCount::process_instruction(
  * Multi-qubit gate counting metric.
  */
 void MultiQubitGateCount::process_instruction(
-    const ir::Ref &ir,
+    const ir::Ref &,
     const ir::InstructionRef &instruction
 ) {
     if (ir::get_number_of_qubits_involved(instruction) > 1) {
@@ -95,7 +96,7 @@ void QubitUsedCycleCount::process_instruction(
 /**
  * Returns the duration of a scheduled block in cycles.
  */
-void Latency::process_block(const ir::Ref &ir, const ir::BlockBaseRef &block) {
+void Latency::process_block(const ir::Ref &, const ir::BlockBaseRef &block) {
     value = ir::get_duration_of_block(block);
 }
 
