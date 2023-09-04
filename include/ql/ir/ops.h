@@ -6,6 +6,7 @@
 
 #include "ql/utils/map.h"
 #include "ql/ir/ir.h"
+#include "ql/ir/ir_gen_ex.h"
 
 namespace ql {
 namespace ir {
@@ -108,7 +109,7 @@ InstructionTypeLink add_instruction_type(
  * created, an empty link is returned.
  */
 InstructionTypeLink find_instruction_type(
-    const Ref &ir,
+    const PlatformRef &platform,
     const utils::Str &name,
     const utils::Vec<DataTypeLink> &types,
     const utils::Vec<utils::Bool> &writable,
@@ -148,7 +149,7 @@ InstructionTypeLink find_instruction_type(
  * from the old to new IR. See find_instruction_type().
  */
 InstructionRef make_instruction(
-    const Ref &ir,
+    const PlatformRef &platform,
     const utils::Str &name,
     const utils::Any<Expression> &operands,
     const ExpressionRef &condition = {},
@@ -245,7 +246,7 @@ utils::One<FunctionCall> make_function_call(
 /**
  * Returns the number of qubits in the main qubit register.
  */
-utils::UInt get_num_qubits(const Ref &ir);
+utils::UInt get_num_qubits(const PlatformRef &platform);
 
 /**
  * Makes an integer literal using the given or default integer type.
@@ -255,17 +256,17 @@ utils::One<IntLiteral> make_int_lit(const Ref &ir, utils::Int i, const DataTypeL
 /**
  * Makes an integer literal using the given or default integer type.
  */
-utils::One<IntLiteral> make_uint_lit(const Ref &ir, utils::UInt i, const DataTypeLink &type = {});
+utils::One<IntLiteral> make_uint_lit(const PlatformRef &platform, utils::UInt i, const DataTypeLink &type = {});
 
 /**
  * Makes an bit literal using the given or default bit type.
  */
-utils::One<BitLiteral> make_bit_lit(const Ref &ir, utils::Bool b, const DataTypeLink &type = {});
+utils::One<BitLiteral> make_bit_lit(const PlatformRef &platform, utils::Bool b, const DataTypeLink &type = {});
 
 /**
  * Makes a qubit reference to the main qubit register.
  */
-utils::One<Reference> make_qubit_ref(const Ref &ir, utils::UInt idx);
+utils::One<Reference> make_qubit_ref(const PlatformRef &platform, utils::UInt idx);
 
 /**
  * Makes a reference to the implicit measurement bit associated with a qubit in
@@ -277,7 +278,7 @@ utils::One<Reference> make_bit_ref(const Ref &ir, utils::UInt idx);
  * Makes a reference to the specified object using literal indices.
  */
 utils::One<Reference> make_reference(
-    const Ref &ir,
+    const PlatformRef &platform,
     const ObjectLink &obj,
     utils::Vec<utils::UInt> indices = {}
 );
@@ -315,6 +316,135 @@ utils::UInt get_duration_of_block(const BlockBaseRef &block);
  * qubits in its operand list.
  */
 utils::UInt get_number_of_qubits_involved(const InstructionRef &insn);
+
+class OperandsHelper {
+public:
+    OperandsHelper(const PlatformRef p, const CustomInstruction &instruction) : platform(p), instr(instruction) {};
+
+    utils::UInt getQubit(utils::UInt operandIndex) {
+        const auto& op = getOperand(operandIndex);
+
+        const auto& ref = op.as_reference();
+        if (!ref) {
+            QL_FATAL("Operand #" << operandIndex << " of instruction " << instr.instruction_type->name << " is not a reference.");
+        }
+
+        if (ref->target != platform->qubits) {
+            QL_FATAL("Operand #" << operandIndex << " of instruction " << instr.instruction_type->name << " is not a qubit.");
+        }
+
+        return ref->indices[0].as<IntLiteral>()->value;
+    }
+
+    utils::UInt getFloat(utils::UInt operandIndex) {
+        const auto& op = getOperand(operandIndex);
+
+        const auto real = op.as_real_literal();
+
+        if (!real) {
+            QL_FATAL("Operand #" << operandIndex << " of instruction " << instr.instruction_type->name << " is not a float.");
+        }
+
+        return real->value;
+    }
+
+    utils::UInt getInt(utils::UInt operandIndex) {
+        const auto& op = getOperand(operandIndex);
+
+        const auto integer = op.as_int_literal();
+
+        if (!integer) {
+            QL_FATAL("Operand #" << operandIndex << " of instruction " << instr.instruction_type->name << " is not an integer.");
+        }
+
+        return integer->value;
+    }
+
+    utils::UInt numberOfQubitOperands() {
+        auto& instr_type = *instr.instruction_type;
+        while (!instr_type.generalization.empty()) {
+            instr_type = *instr_type.generalization;
+        }
+
+        utils::UInt nQubitOperands = 0;
+        for (const auto& op: instr_type.operand_types) {
+            if (op->data_type->type() == NodeType::QubitType) {
+                ++nQubitOperands;
+            }
+        }
+
+        return nQubitOperands;
+    }
+
+    utils::UInt get1QGateOperand() {
+        QL_ASSERT(numberOfQubitOperands() == 1);
+
+        for (utils::UInt i = 0; i < totalNumberOfOperands(); ++i) {
+            const auto& op = getOperand(i);
+
+            const auto ref = op.as_reference();
+            if (ref && ref->target == platform->qubits) {
+                return ref->indices[0].as<IntLiteral>()->value;
+            }
+        }
+
+        QL_FATAL("This is a bug");
+    }
+
+    std::pair<utils::UInt, utils::UInt> get2QGateOperands() {
+        QL_ASSERT(numberOfQubitOperands() == 2);
+
+        utils::UInt q1 = utils::MAX;
+        utils::UInt q2 = utils::MAX;
+
+        for (utils::UInt i = 0; i < totalNumberOfOperands(); ++i) {
+            const auto& op = getOperand(i);
+
+            const auto ref = op.as_reference();
+            if (ref && ref->target == platform->qubits) {
+                if (q1 == utils::MAX) {
+                    q1 = ref->indices[0].as<IntLiteral>()->value;
+                } else if (q2 == utils::MAX) {
+                    q2 = ref->indices[0].as<IntLiteral>()->value;
+                    QL_ASSERT(q1 != q2);
+                } else {
+                    QL_FATAL("Gate has more than 2 qubit operands!");
+                }
+            }
+        }
+        return std::make_pair(q1, q2);
+    }
+
+    bool isNN2QGate(std::function<utils::UInt(utils::UInt)> v2r) {
+        auto qubits = get2QGateOperands();
+
+        return platform->topology->get_min_hops(v2r(qubits.first), v2r(qubits.second)) == 1;
+    }
+
+private:
+    const utils::UInt totalNumberOfOperands() {
+        return instr.instruction_type->template_operands.size() + instr.operands.size();
+    }
+
+    const Expression& getOperand(utils::UInt operandIndex) {
+        const auto& templateOperands = instr.instruction_type->template_operands;
+        const auto nTemplateOperands = templateOperands.size();
+
+        if (operandIndex < nTemplateOperands) {
+            return *templateOperands[operandIndex];
+        }
+
+        const auto nTotalOperands = nTemplateOperands + instr.operands.size();
+        if (operandIndex >= nTotalOperands) {
+            QL_FATAL("Tried to access operand #" << operandIndex << " of instruction " << instr.instruction_type->name << " which has only " << nTotalOperands << " operands.");
+        }
+
+        return *instr.operands[operandIndex - nTemplateOperands];
+    }
+
+    const PlatformRef platform;
+    const CustomInstruction &instr;
+};
 
 } // namespace ir
 } // namespace ql

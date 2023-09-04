@@ -56,12 +56,12 @@ Str InteractionMatrix::get_string() const {
 
     ss << ALIGNMENT << " ";
     for (UInt c = 0; c < size; c++) {
-        ss << ALIGNMENT << "q" + to_string(c);
+        ss << ALIGNMENT << "q" << to_string(c);
     }
     ss << std::endl;
 
     for (UInt p = 0; p < size; p++) {
-        ss << ALIGNMENT << "q" + to_string(p);
+        ss << ALIGNMENT << "q" << to_string(p);
         for (UInt c = 0; c < size; c++) {
             ss << ALIGNMENT << matrix[p][c];
         }

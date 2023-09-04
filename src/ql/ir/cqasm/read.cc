@@ -17,11 +17,10 @@ namespace ql {
 namespace ir {
 namespace cqasm {
 
-namespace cq1 = ::cqasm::v1;
-namespace cq3 = ::cqasm::v3;
-namespace cqv1 = ::cqasm::v1::values;
-namespace cqty1 = ::cqasm::v1::types;
-namespace cqs = ::cqasm::v1::semantic;
+namespace cq1 = ::cqasm::v1x;
+namespace cqv1 = ::cqasm::v1x::values;
+namespace cqty1 = ::cqasm::v1x::types;
+namespace cqs = ::cqasm::v1x::semantic;
 namespace cqt = ::cqasm::tree;
 namespace cqe = ::cqasm::error;
 namespace cqver = ::cqasm::version;
@@ -151,7 +150,7 @@ static cqt::Maybe<cqs::AnnotationData> find_pragma(
     public:
         utils::Str operation;
         cqt::Maybe<cqs::AnnotationData> data;
-        void visit_node(cqs::Node &node) override {
+        void visit_node(cqs::Node &) override {
         }
         void visit_instruction(cqs::Instruction &node) override {
             if (!data.empty()) return;
@@ -176,13 +175,13 @@ static cqt::Maybe<cqs::AnnotationData> find_pragma(
  */
 static utils::RawPtr<cqs::AnnotationData> find_annotation(
     const cqt::One<cqs::Node> &node,
-    const utils::Str &operation
+    const utils::Str &
 ) {
     class FindAnnotation : public cqs::RecursiveVisitor {
     public:
         utils::Str operation;
         utils::RawPtr<cqs::AnnotationData> data;
-        void visit_node(cqs::Node &node) override {
+        void visit_node(cqs::Node &) override {
         }
         void visit_annotation_data(cqs::AnnotationData &node) override {
             if (data) return;
@@ -219,7 +218,7 @@ static utils::RawPtr<cqs::AnnotationData> find_annotation(
 static void check_all_annotations_used(const cqt::One<cqs::Node> &node) {
     class FindAnnotation : public cqs::RecursiveVisitor {
     public:
-        void visit_node(cqs::Node &node) override {
+        void visit_node(cqs::Node &) override {
         }
         void visit_annotation_data(cqs::AnnotationData &node) override {
             if (node.interface == "ql") {
@@ -362,7 +361,7 @@ find_last_goto_instruction(const cqt::One<cqs::Subcircuit> &subcircuit) {
     public:
         utils::RawPtr<cqs::GotoInstruction> goto_insn;
         utils::Bool only_insn = true;
-        void visit_node(cqs::Node &node) override {
+        void visit_node(cqs::Node &) override {
         }
         void visit_instruction_base(cqs::InstructionBase &node) override {
             if (auto insn = node.as_instruction()) {
@@ -380,7 +379,7 @@ find_last_goto_instruction(const cqt::One<cqs::Subcircuit> &subcircuit) {
             only_insn = false;
             goto_insn.reset();
         }
-        void visit_structured(cqs::Structured &node) override {
+        void visit_structured(cqs::Structured &) override {
             only_insn = false;
             goto_insn.reset();
         }
@@ -441,7 +440,7 @@ static ExpressionRef convert_expression(
     }
 
     if (auto cb = cq_expr->as_const_bool()) {
-        return make_bit_lit(ir, cb->value, as_type);
+        return make_bit_lit(ir->platform, cb->value, as_type);
     } else if (cq_expr->as_const_axis()) {
         QL_USER_ERROR("OpenQL does not support cQASM's axis data type");
     } else if (auto ci = cq_expr->as_const_int()) {
@@ -517,7 +516,7 @@ static ExpressionRef convert_expression(
             );
         }
         if (as_type.empty() || as_type == ir->platform->qubits->data_type) {
-            return make_qubit_ref(ir, convert_index(qr->index[sgmq_index]));
+            return make_qubit_ref(ir->platform, convert_index(qr->index[sgmq_index]));
         } else if (as_type == ir->platform->default_bit_type) {
             return make_bit_ref(ir, convert_index(qr->index[sgmq_index]));
         } else {
@@ -553,7 +552,7 @@ static ExpressionRef convert_expression(
                 "' to type " << as_type->name
             );
         }
-        return make_reference(ir, ql_object, {});
+        return make_reference(ir->platform, ql_object, {});
     } else if (auto fn = cq_expr->as_function()) {
         if (auto ql_object = fn->get_annotation_ptr<ObjectLink>()) {
 
@@ -562,11 +561,11 @@ static ExpressionRef convert_expression(
             for (const auto &cq_operand : fn->operands) {
                 ql_indices.push_back(convert_index(cq_operand));
             }
-            auto ref = make_reference(ir, *ql_object, ql_indices);
+            auto ref = make_reference(ir->platform, *ql_object, ql_indices);
             if (auto ql_type = fn->get_annotation_ptr<DataTypeLink>()) {
                 ref->data_type = *ql_type;
             }
-            return std::move(ref);
+            return ref;
 
         } else {
 
@@ -610,7 +609,7 @@ static utils::One<SetInstruction> convert_set_instruction(
             "does not match type of right-hand side (" << ql_rhs_type->name << ")"
         );
     }
-    return utils::make<SetInstruction>(ql_lhs, ql_rhs, ir::make_bit_lit(ir, true));
+    return utils::make<SetInstruction>(ql_lhs, ql_rhs, ir::make_bit_lit(ir->platform, true));
 }
 
 /**
@@ -737,7 +736,7 @@ static void convert_block(
                                 ql_operands.add(convert_expression(ir, cq_operand, sgmq_size, sgmq_index));
                             }
                         }
-                        ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
+                        ql_insns.push_back(make_instruction(ir->platform, cq_insn->name, ql_operands, ql_condition));
 
                     } else if (
                         !options.measure_all_target.empty() &&
@@ -749,9 +748,9 @@ static void convert_block(
                         QL_ASSERT(ir->platform->qubits->shape.size() == 1);
                         for (utils::UInt q = 0; q < ir->platform->qubits->shape[0]; q++) {
                             ql_insns.push_back(make_instruction(
-                                ir,
+                                ir->platform,
                                 options.measure_all_target,
-                                {make_qubit_ref(ir, q)},
+                                {make_qubit_ref(ir->platform, q)},
                                 ql_condition.clone()
                             ));
                         }
@@ -792,7 +791,7 @@ static void convert_block(
                                 ql_operands[1] = x;
                             }
 
-                            ql_insns.push_back(make_instruction(ir, cq_insn->name, ql_operands, ql_condition));
+                            ql_insns.push_back(make_instruction(ir->platform, cq_insn->name, ql_operands, ql_condition));
                         }
 
                     }
@@ -822,7 +821,7 @@ static void convert_block(
                             if (!ql_condition.empty()) {
                                 ql_cond_insn->condition = ql_condition.clone();
                             } else {
-                                ql_cond_insn->condition = make_bit_lit(ir, true);
+                                ql_cond_insn->condition = make_bit_lit(ir->platform, true);
                             }
                         }
                     } else if (!ql_condition.empty()) {
@@ -851,7 +850,7 @@ static void convert_block(
             ) {
 
                 // Figure out which objects are being used by this bundle.
-                com::ddg::EventGatherer eg{ir};
+                com::ddg::EventGatherer eg{ir->platform};
                 for (const auto &ql_insn : ql_bundle) {
                     eg.add_statement(ql_insn);
                 }
@@ -875,7 +874,7 @@ static void convert_block(
 
                 // Construct barriers sensitive to all used objects and add them
                 // to the front and back of the "bundle".
-                auto ql_barrier_begin = make_instruction(ir, "barrier", ql_operands);
+                auto ql_barrier_begin = make_instruction(ir->platform, "barrier", ql_operands);
                 auto ql_barrier_end = ql_barrier_begin.clone();
                 ql_barrier_begin->cycle = ql_bundle.front()->cycle;
                 ql_barrier_end->cycle = ql_bundle.back()->cycle;
@@ -1183,7 +1182,7 @@ void read_v1(
                 auto brefs = cqt::make<cqv1::BitRefs>();
                 brefs->index = qrefs->index;
                 brefs->set_annotation<DataTypeLink>(ir->platform->default_bit_type);
-                return std::move(brefs);
+                return brefs;
             } else if (auto fun = ops[0]->as_function()) {
                 fun->return_type = make_cq_type(ir->platform->default_bit_type);
                 ops[0]->set_annotation<DataTypeLink>(ir->platform->default_bit_type);
@@ -1517,27 +1516,6 @@ void read_v1(
 
 }
 
-void read_v3(
-    const Ref &ir,
-    const utils::Str &data
-) {
-
-    // Start by parsing the file without analysis.
-    auto pres = cq3::parser::parse_string(data);
-    if (!pres.errors.empty()) {
-        utils::StrStrm errors;
-        errors << "failed to parse '" << data << "' for the following reasons:";
-        for (const auto &error : pres.errors) {
-            QL_EOUT(error);
-            errors << "\n  " << error;
-        }
-        QL_USER_ERROR(errors.str());
-    }
-    auto ql_program = utils::make<Program>();
-    ql_program->name = "program";
-    ir->program = ql_program;
-}
-
 /**
  * Reads a cQASM file into the IR.
  * If reading is successful, ir->program is completely replaced.
@@ -1553,8 +1531,6 @@ void read(
     auto pres = cqver::parse_string(data, fname);
     if (auto version = cqver::parse_string(data, fname); version <= cqver::Version("1.2")) {
         read_v1(ir, data, fname, options);
-    } else {
-        read_v3(ir, data);
     }
 }
 

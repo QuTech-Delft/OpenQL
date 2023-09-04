@@ -153,7 +153,7 @@ typedef struct {
  * Static helper function for bundle_finish()
  */
 static CalcGroupDigOut calcGroupDigOut(
-        UInt instrIdx,
+        UInt,
         UInt group,
         UInt nrGroups,
         const Settings::InstrumentControl &ic,
@@ -349,7 +349,7 @@ void Codegen::program_start(const Str &progName) {
 }
 
 
-void Codegen::program_finish(const Str &progName) {
+void Codegen::program_finish(const Str &) {
     emitProgramFinish();
 
     dp.programFinish();
@@ -396,7 +396,7 @@ void Codegen::bundle_start(const Str &cmnt) {
 
 Codegen::CodeGenMap Codegen::collectCodeGenInfo(
     UInt startCycle,
-    UInt durationInCycles
+    UInt
 ) {
     CodeGenMap codeGenMap;
 
@@ -418,7 +418,7 @@ Codegen::CodeGenMap Codegen::collectCodeGenInfo(
 
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
 
-        CodeGenInfo codeGenInfo = {false};
+        CodeGenInfo codeGenInfo{};
 
         // remind information needed for code generation
         codeGenInfo.instrumentName = ic.ii.instrumentName;

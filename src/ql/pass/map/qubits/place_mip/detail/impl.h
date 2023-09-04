@@ -30,7 +30,7 @@ struct Options {
     /**
      * Whether to write the MPS model to a file.
      */
-    utils::Bool write_model_to_file = true;
+    utils::Bool write_model_to_file = false;
 
     /**
      * Timeout for the MIP algorithm in seconds, or 0 to disable timeout.

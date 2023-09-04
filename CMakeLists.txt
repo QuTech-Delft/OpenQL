@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
+# CMake policies
 if(POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
 endif()
-
+cmake_policy(SET CMP0077 NEW)
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
@@ -16,43 +17,6 @@ if(NOT TARGET ql)
 
 # Loads up the appropriate directories for installing stuff.
 include(GNUInstallDirs)
-
-find_package(Backward CONFIG REQUIRED)
-find_package(cimg CONFIG REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(highs CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-
-# Packages
-include(FetchContent)
-FetchContent_Declare(cqasm
-    GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
-    GIT_TAG "a84b618cca982847b1b4435774231dc6dc8255c5"
-)
-# TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
-# TODO: remove use of Lemon in project?
-FetchContent_Declare(lemon
-    URL "http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz"
-    URL_HASH SHA256=71b7c725f4c0b4a8ccb92eb87b208701586cf7a96156ebd821ca3ed855bad3c8
-)
-FetchContent_MakeAvailable(
-    cqasm
-    lemon
-)
-
-add_custom_target(patch_lemon_sources
-    DEPENDS patch_lemon_sources_command
-)
-add_custom_command(
-    OUTPUT patch_lemon_sources_command
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/adaptors.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/lgf_reader.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/lgf_writer.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/maps.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/random.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/patches/array_map.h" "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/lemon/bits"
-    COMMENT "-- Copying patch/* files to _deps/lemon-src"
-)
 
 
 #=============================================================================#
@@ -205,6 +169,37 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 
 #=============================================================================#
+# Dependencies                                                                #
+#=============================================================================#
+
+
+find_package(Backward CONFIG REQUIRED)
+find_package(cimg CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
+find_package(highs CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+
+include(FetchContent)
+
+message(STATUS "Fetching cqasm")
+FetchContent_Declare(cqasm
+    message(STATUS "Fetching cqasm")
+    GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
+    GIT_TAG "8d0b4ed5e3a30aa6fde3b3aaf20a207b5d07876e"
+)
+FetchContent_MakeAvailable(cqasm)
+
+# TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
+# TODO: remove use of Lemon in project?
+message(STATUS "Fetching lemon")
+FetchContent_Declare(lemon
+    GIT_REPOSITORY https://github.com/rturrado/lemon.git
+    GIT_TAG "e70acea5764a97ab3b6d31b883300f3ce1587cde"
+)
+FetchContent_MakeAvailable(lemon)
+
+
+#=============================================================================#
 # Compile code generators                                                     #
 #=============================================================================#
 
@@ -294,6 +289,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/sch/scheduler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/map/expression_mapper.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/map/qubit_mapping.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/map/reference_updater.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/dec/unitary.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/dec/rules.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/com/dec/structure.cc"
@@ -376,21 +372,20 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
 )
 
-add_dependencies(ql patch_lemon_sources)
 
 # There is no distinction between public and private header files right now,
 # and they're all in the source directory.
 # Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
-    SYSTEM PUBLIC "${Backward_INCLUDE_DIRS}"
-    SYSTEM PUBLIC "${Eigen3_INCLUDE_DIRS}/unsupported"
-    SYSTEM PUBLIC "${highs_INCLUDE_DIRS}"
-    SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
-    SYSTEM PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
-    SYSTEM PUBLIC "${libqasm_INCLUDE_DIRS}"
-    SYSTEM PUBLIC "${nlohmann_json_INCLUDE_DIRS}"
-    SYSTEM PUBLIC ${TREE_LIB_PUBLIC_INCLUDE}
+    SYSTEM PRIVATE "${Backward_INCLUDE_DIRS}"
+    SYSTEM PRIVATE "${Eigen3_INCLUDE_DIRS}/unsupported"
+    SYSTEM PRIVATE "${highs_INCLUDE_DIRS}"
+    SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
+    SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
+    SYSTEM PRIVATE "${libqasm_INCLUDE_DIRS}"
+    SYSTEM PRIVATE "${nlohmann_json_INCLUDE_DIRS}"
+    SYSTEM PRIVATE ${TREE_LIB_PUBLIC_INCLUDE}  # needed at all?
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
@@ -399,12 +394,11 @@ target_include_directories(ql
 
 target_link_libraries(ql
     PRIVATE Backward::Backward
-    PRIVATE cimg::cimg
+    PUBLIC cqasm
     PRIVATE Eigen3::Eigen
+    PUBLIC highs::highs
     PRIVATE lemon
     PRIVATE nlohmann_json::nlohmann_json
-    PUBLIC cqasm
-    PUBLIC highs::highs
 )
 
 # Specify resources.
@@ -434,11 +428,21 @@ target_compile_definitions(ql PRIVATE BUILDING_OPENQL)
 # Configure compilation.
 set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(ql PRIVATE -Wall -Wfatal-errors)
+    target_compile_options(ql PRIVATE
+        -Wall -Wextra -Werror -Wfatal-errors
+        -Wno-error=restrict
+        -Wno-error=deprecated-declarations
+    )
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    target_compile_options(ql PRIVATE -Wall -Wfatal-errors -Wno-unused-local-typedef)
+    target_compile_options(ql PRIVATE
+        -Wall -Wextra -Werror -Wfatal-errors
+        -Wno-error=unused-private-field
+        -Wno-error=unused-but-set-variable
+    )
 elseif(MSVC)
-    target_compile_options(ql PRIVATE /MP /D_USE_MATH_DEFINES /EHsc /bigobj)
+    target_compile_options(ql PRIVATE
+        /MP /D_USE_MATH_DEFINES /EHsc /bigobj
+    )
 else()
     message(SEND_ERROR "Unknown compiler!")
 endif()
@@ -485,6 +489,7 @@ endif()
 if(QL_VISUALIZER)
     target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
     target_include_directories(ql SYSTEM PRIVATE "${cimg_INCLUDE_DIRS}")
+    target_link_libraries(ql PRIVATE cmg::cmg)
 endif()
 
 
@@ -492,92 +497,32 @@ endif()
 # Testing                                                                     #
 #=============================================================================#
 
-# Include the tests directory if requested.
 if(OPENQL_BUILD_TESTS)
     enable_testing()
-    find_package(doctest CONFIG REQUIRED)
-
-    # Convenience function to add an integration test.
-    function(add_openql_test name source workdir)
-        add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
-        target_link_libraries("${name}" PUBLIC ql)
-        add_test(
-            NAME "${name}"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${workdir}"
-            COMMAND "${name}"
-        )
-    endfunction()
-
-    # Include the directories containing integration tests.
-    #add_subdirectory(test)
-    add_subdirectory(tests)
-    add_subdirectory(examples)
-
-    # Convenience function to add a unit test.
-    function(add_openql_unit_test source)
-        string(REPLACE "/" "_" name ${source})
-        string(REPLACE "_tests_" "_" name ${name})
-        string(REPLACE ".cc" "" name ${name})
-        set(name test_${name})
-        add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}")
-        target_link_libraries("${name}" PUBLIC ql doctest::doctest)
-        target_include_directories(ql SYSTEM PUBLIC "${doctest_INCLUDE_DIRS}")
-        get_filename_component(working_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/${source}" DIRECTORY)
-        add_test(
-            NAME "${name}"
-            WORKING_DIRECTORY "${working_dir}"
-            COMMAND "${name}"
-        )
-    endfunction()
-
-    # Register unit tests.
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-    file(
-        GLOB_RECURSE unit_tests
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/ql
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ql/*/*/*/*/tests/*.cc
-    )
-    foreach(unit_test ${unit_tests})
-        add_openql_unit_test(${unit_test})
-    endforeach()
-
+    include(CTest)
+    include(GoogleTest)
+    set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+    add_subdirectory(test)
 endif()
 
 
 #=============================================================================#
-# Cpp standalone example                                                      #
+# Debug info                                                                  #
 #=============================================================================#
 
-if(OPENQL_BUILD_CPP_STANDALONE_EXAMPLE)
-    # Use whatever CMake magic you need to build your program, but linking
-    # something against OpenQL should be as easy as the second line. This should
-    # take care of both the libraries and header file include directories.
-    add_executable(example examples/cpp-standalone-example/example.cc)
-    target_link_libraries(example PRIVATE ql)
-endif()
+message(STATUS
+    "[${PROJECT_NAME}] Target include directories:\n"
+    "      Backward: ${Backward_INCLUDE_DIRS}\n"
+    "      CImg: ${CImg_INCLUDE_DIRS}\n"
+    "      Eigen3: ${Eigen3_INCLUDE_DIRS}/Eigen\n"
+    "      Eigen3/unsupported: ${Eigen3_INCLUDE_DIRS}/unsupported\n"
+    "      googletest: ${googletest_INCLUDE_DIRS}\n"
+    "      highs: ${highs_INCLUDE_DIRS}\n"
+    "      lemon-src: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/\n"
+    "      lemon-build: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/\n"
+    "      libqasm: ${cqasm_INCLUDE_DIRS}\n"
+    "      nlohmann_json/include: ${nlohmann_json_SOURCE_DIR}/include\n"
+)
 
 
 #=============================================================================#

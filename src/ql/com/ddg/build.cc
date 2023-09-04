@@ -16,7 +16,7 @@ namespace ddg {
 /**
  * Constructs an object reference gatherer.
  */
-EventGatherer::EventGatherer(const ir::Ref &ir) : ir(ir) {}
+EventGatherer::EventGatherer(const ir::PlatformRef &p) : platform(p) {}
 
 /**
  * Returns the contained dependency list.
@@ -55,7 +55,7 @@ void EventGatherer::add_reference(
         case ir::prim::OperandMode::MEASURE: {
             QL_ASSERT(reference->data_type->as_qubit_type());
             auto copy = reference->copy().as<ir::Reference>();
-            copy->data_type = ir->platform->implicit_bit_type;
+            copy->data_type = platform->implicit_bit_type;
             add_reference(ir::prim::OperandMode::WRITE, copy);
             mode = ir::prim::OperandMode::WRITE;
             break;
@@ -318,26 +318,33 @@ private:
         QL_ASSERT(from.node != to.node);
 
         // Create an edge, or fetch the existing edge if there already was one.
-        auto result = from.node->successors.insert({to.statement, {}});
-        auto &edge_ref = result.first->second;
-        if (result.second) {
+        auto& fromSuccessors = from.node->successors;
+        auto it = std::find_if(fromSuccessors.begin(), fromSuccessors.end(),
+            [&to](const std::pair<ir::StatementRef, EdgeRef> &x) { return x.first == to.statement; }); // Pointer equality is used!
 
+        if (it == fromSuccessors.end()) {
+            it = fromSuccessors.insert(fromSuccessors.end(), {to.statement, {}});
+        }
+
+        if (!it->second.has_value()) {
             // No edge existed yet, make one.
             QL_DOUT(
                 "    add edge from " << ir::describe(from.statement) <<
                 " to " << ir::describe(to.statement)
             );
-            edge_ref.emplace();
-            edge_ref->predecessor = from.statement;
-            edge_ref->successor = to.statement;
-            edge_ref->weight = 0;
-            QL_ASSERT(to.node->predecessors.insert({from.statement, edge_ref}).second);
+            it->second.emplace();
+            it->second->predecessor = from.statement;
+            it->second->successor = to.statement;
+            it->second->weight = 0;
+            QL_ASSERT(std::find_if(to.node->predecessors.begin(), to.node->predecessors.end(),
+                [&from](const std::pair<ir::StatementRef, EdgeRef> &x) { return x.first == from.statement; }) == to.node->predecessors.end());
+            to.node->predecessors.push_back({from.statement, it->second});
 
         }
 
         // Ensure that the edge weight is high enough.
-        edge_ref->weight = utils::max<utils::Int>(
-            edge_ref->weight,
+        it->second->weight = utils::max<utils::Int>(
+            it->second->weight,
             (utils::Int)ir::get_duration_of_statement(from.statement)
         );
 
@@ -350,7 +357,7 @@ private:
             " to edge from " << ir::describe(from.statement) <<
             " to " << ir::describe(to.statement)
         );
-        edge_ref->causes.push_back(cause);
+        it->second->causes.push_back(cause);
 
     }
 
@@ -480,13 +487,13 @@ public:
      * Creates a new builder.
      */
     Builder(
-        const ir::Ref &ir,
+        const ir::PlatformRef &platform,
         const ir::BlockBaseRef &block,
         utils::Bool commute_multi_qubit,
         utils::Bool commute_single_qubit
     ) :
         block(block),
-        gatherer(ir),
+        gatherer(platform),
         order_accumulator(0)
     {
         gatherer.disable_multi_qubit_commutation = !commute_multi_qubit;
@@ -531,12 +538,12 @@ public:
  * node in the final schedule, and such that the sign indicates the direction
  */
 void build(
-    const ir::Ref &ir,
+    const ir::PlatformRef &platform,
     const ir::BlockBaseRef &block,
     utils::Bool commute_multi_qubit,
     utils::Bool commute_single_qubit
 ) {
-    Builder(ir, block, commute_multi_qubit, commute_single_qubit).build();
+    Builder(platform, block, commute_multi_qubit, commute_single_qubit).build();
 }
 
 } // namespace ddg

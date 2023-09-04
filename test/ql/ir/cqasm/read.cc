@@ -66,13 +66,12 @@ struct PlatformFake : public ql::ir::Platform {
     }
 };
 
-/*
 TEST(read, version_1_0) {
-    const ql::utils::Str data{ "version 1.0" };
+    const ql::utils::Str data{ "version 1.0; qubits 2" };
     const ql::utils::Str fname{};
     ql::ir::Ref ir{};
     ir.emplace();
-    ir->platform.emplace();
+    ir->platform = ql::utils::make<PlatformFake>();
     ql::ir::cqasm::ReadOptions options{};
     ql::ir::cqasm::read(ir, data, fname, options);
     EXPECT_THAT(ir->program->name, "program");
@@ -80,21 +79,23 @@ TEST(read, version_1_0) {
 TEST(read, version_1_1) {
     const ql::utils::Str data{ "version 1.1" };
     const ql::utils::Str fname{};
-    auto pres = ql::ir::cqasm::read(data, fname);
-    EXPECT_TRUE(pres.errors.empty());
-    auto prog = pres.root->as_program();
-    EXPECT_THAT(prog->version->items, ::testing::ElementsAre(1, 1));
+    ql::ir::Ref ir{};
+    ir.emplace();
+    ir->platform = ql::utils::make<PlatformFake>();
+    ql::ir::cqasm::ReadOptions options{};
+    ql::ir::cqasm::read(ir, data, fname, options);
+    EXPECT_THAT(ir->program->name, "program");
 }
 TEST(read, version_1_1_1) {
     const ql::utils::Str data{ "version 1.1.1" };
     const ql::utils::Str fname{};
-    auto pres = ql::ir::cqasm::read(data, fname);
-    EXPECT_TRUE(pres.errors.empty());
-    auto prog = pres.root->as_program();
-    EXPECT_THAT(prog->version->items, ::testing::ElementsAre(1, 1, 1));
+    ql::ir::Ref ir{};
+    ir.emplace();
+    ir->platform = ql::utils::make<PlatformFake>();
+    ql::ir::cqasm::ReadOptions options{};
+    ql::ir::cqasm::read(ir, data, fname, options);
+    EXPECT_THAT(ir->program->name, "program");
 }
-*/
-
 TEST(read, version_1_2) {
     const ql::utils::Str data{ "version 1.2" };
     const ql::utils::Str fname{};
@@ -105,24 +106,26 @@ TEST(read, version_1_2) {
     ql::ir::cqasm::read(ir, data, fname, options);
     EXPECT_THAT(ir->program->name, "program");
 }
-/*
 TEST(read, version_1_3) {
     const ql::utils::Str data{ "version 1.3" };
     const ql::utils::Str fname{};
-    auto pres = ql::ir::cqasm::read(data, fname);
-    EXPECT_TRUE(pres.errors.empty());
-    auto prog = pres.root->as_program();
-    EXPECT_THAT(prog->version->items, ::testing::ElementsAre(1, 3));
+    ql::ir::Ref ir{};
+    ir.emplace();
+    ir->platform = ql::utils::make<PlatformFake>();
+    ql::ir::cqasm::ReadOptions options{};
+    ql::ir::cqasm::read(ir, data, fname, options);
+    EXPECT_THROW((void) ir->program->name, std::runtime_error);
 }
 TEST(read, version_2_0) {
     const ql::utils::Str data{ "version 2.0" };
     const ql::utils::Str fname{};
-    auto pres = ql::ir::cqasm::read(data, fname);
-    EXPECT_TRUE(pres.errors.empty());
-    auto prog = pres.root->as_program();
-    EXPECT_THAT(prog->version->items, ::testing::ElementsAre(2, 0));
+    ql::ir::Ref ir{};
+    ir.emplace();
+    ir->platform = ql::utils::make<PlatformFake>();
+    ql::ir::cqasm::ReadOptions options{};
+    ql::ir::cqasm::read(ir, data, fname, options);
+    EXPECT_THROW((void) ir->program->name, std::runtime_error);
 }
-*/
 TEST(read, version_3_0) {
     const ql::utils::Str data{ "version 3.0" };
     const ql::utils::Str fname{};
@@ -131,9 +134,8 @@ TEST(read, version_3_0) {
     ir->platform = ql::utils::make<PlatformFake>();
     ql::ir::cqasm::ReadOptions options{};
     ql::ir::cqasm::read(ir, data, fname, options);
-    EXPECT_THAT(ir->program->name, "program");
+    EXPECT_THROW((void) ir->program->name, std::runtime_error);
 }
-
 TEST(read, no_version) {
     const ql::utils::Str data{};
     const ql::utils::Str fname{};

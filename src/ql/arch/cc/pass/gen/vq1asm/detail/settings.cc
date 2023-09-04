@@ -221,7 +221,7 @@ Settings::CalcSignalValue Settings::calcSignalValue(
 
 
 Settings::InstrumentInfo Settings::getInstrumentInfo(UInt instrIdx) const {
-    InstrumentInfo ret = {nullptr};
+    InstrumentInfo ret{};
 
     Str instrumentPath = QL_SS2S("instruments[" << instrIdx << "]");    // for JSON error reporting
     if (instrIdx >= jsonInstruments->size()) {

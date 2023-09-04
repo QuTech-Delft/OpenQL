@@ -5,7 +5,7 @@ Resources
 
 In OpenQL, the term "resources" is reserved for *scheduling* resources.
 Conceptually, a resource models a physical thing that prevents two instructions
-from executing simulaneously due to resource contention, but ultimately it can
+from executing simultaneously due to resource contention, but ultimately it can
 be anything that prevents an instruction from starting in a particular cycle.
 
 Implementation

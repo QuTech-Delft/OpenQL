@@ -54,12 +54,12 @@ The results we got when using QX directly are pretty easy to replicate. Here's h
         shutil.copyfile('output/dice.qasm', 'output/dice.cq')
 
         # open the simulation context and run the simulation. the cQASM frontend
-        # returns the results as a JSON object for us to parse througn run()
+        # returns the results as a JSON object for us to parse through run()
         with Simulator('output/dice.cq', 'qx') as sim:
             results = sim.run()
 
         # parse the measurement results
-        res = [results['qubits'][q]['value'] for q in range(nqubits)]
+        res = [results['qubits'][q]['value'] for q in range(num_qubits)]
 
         # convert the measurement results from 3 qubits to dice face value
         dice_face = reduce(lambda x, y: 2*x+y, res, 0) +1

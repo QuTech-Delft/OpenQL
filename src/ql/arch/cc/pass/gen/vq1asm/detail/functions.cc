@@ -87,7 +87,7 @@ UInt Functions::emit_bin_cast(utils::Vec<utils::UInt> bregs, UInt expOpCnt) {
 
         // compute and check SM address
         UInt mySmAddr = smBit / 32;    // 'seq_cl_sm' is addressable in 32 bit words
-        if(i==0) {
+        if(i == 0u) {
             smAddr = mySmAddr;
         } else {
             if(smAddr != mySmAddr) {
@@ -148,7 +148,7 @@ void Functions::op_grp_bit_2op_BB(const FncArgs &a) {
 #if 0
     UInt mask =
 #endif
-        emit_bin_cast(a.ops.bregs, 2);
+    emit_bin_cast(a.ops.bregs, 2);
 
 #if 0    // FIXME: handle operation properly, this is just copy/paste from op_linv
     cs.emit("", "and", QL_SS2S(REG_TMP0 << "," << mask << "," << REG_TMP1));    // results in '0' for 'bit==0' and 'mask' for 'bit==1'
@@ -276,19 +276,19 @@ void Functions::op_sub_iC(const FncArgs &a) {
 }
 
 #if OPT_CC_USER_FUNCTIONS
-void Functions::rnd_seed_C(const FncArgs &a) {
+void Functions::rnd_seed_C(const FncArgs &) {
     // FIXME
 }
 
-void Functions::rnd_seed_i(const FncArgs &a) {
+void Functions::rnd_seed_i(const FncArgs &) {
     // FIXME
 }
 
-void Functions::rnd_C(const FncArgs &a) {
+void Functions::rnd_C(const FncArgs &) {
     // FIXME
 }
 
-void Functions::rnd_i(const FncArgs &a) {
+void Functions::rnd_i(const FncArgs &) {
     // FIXME
 }
 #endif

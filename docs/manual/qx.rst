@@ -19,16 +19,16 @@ is done by the following code snippet:
 
 .. code:: python
 
-    from openql import openql as ql
+    import openql as ql
     import qxelarator
-    from functools import reduce
-    import os
     import matplotlib.pyplot as plt
+    import os
+    from functools import reduce
 
     ql.set_option('output_dir', 'output')
     ql.set_option('log_level', 'LOG_INFO')
 
-    nqubits = 3
+    num_qubits = 3
 
 Next, we create a platform, a program and a kernel. We populate the kernel with
 3 hadamard gates being applied on each qubits. This will put each qubit in
@@ -39,13 +39,13 @@ getting either 0 or 1. This is done by dice_compile() as shown below:
 
     def dice_compile():
         platform = ql.Platform('myPlatform', 'none')
-        p = ql.Program('dice', platform, nqubits)
-        k = ql.Kernel('aKernel', platform, nqubits)
+        p = ql.Program('dice', platform, num_qubits)
+        k = ql.Kernel('aKernel', platform, num_qubits)
 
-        for q in range(nqubits):
+        for q in range(num_qubits):
             k.gate('h', [q])
 
-        for q in range(nqubits): 
+        for q in range(num_qubits):
             k.gate('measure', [q])
 
         p.add_kernel(k)
@@ -92,7 +92,7 @@ This is done by the following code snippet:
         qx.execute()
 
         # get the measurement results
-        res = [int(qx.get_measurement_outcome(q)) for q in range(nqubits)]
+        res = [int(qx.get_measurement_outcome(q)) for q in range(num_qubits)]
 
         # convert the measurement results from 3 qubits to dice face value
         dice_face = reduce(lambda x, y: 2*x+y, res, 0) + 1
@@ -132,7 +132,7 @@ of each face by the following code snippet:
         ntests = 100
         for i in range(ntests):
             qx.execute()
-            res = [int(qx.get_measurement_outcome(q)) for q in range(nqubits)]
+            res = [int(qx.get_measurement_outcome(q)) for q in range(num_qubits)]
             dice_face = reduce(lambda x, y: 2*x+y, res, 0) +1
             dice_faces.append(dice_face)
 

@@ -64,11 +64,9 @@ utils::List<utils::Str> Info::get_eqasm_compiler_names() const {
  * be variations for surface-5, surface-7, and surface-17. This JSON data
  * will still be preprocessed by preprocess_platform().
  */
-utils::Str Info::get_default_platform(const utils::Str &variant) const {
-
+utils::Str Info::get_default_platform(const utils::Str &) const {
     // NOTE: based on tests/hardware_config_qx.json at the time of writing.
     return HWCONF_DEFAULT_DATA;
-
 }
 
 } // namespace none

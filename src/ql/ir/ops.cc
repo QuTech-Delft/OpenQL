@@ -119,7 +119,7 @@ ObjectLink find_physical_object(const Ref &ir, const utils::Str &name) {
  * be generated appropriately).
  */
 static utils::Pair<InstructionTypeLink, utils::Bool> add_or_find_instruction_type(
-    const Ref &ir,
+    const PlatformRef &platform,
     const utils::One<InstructionType> &instruction_type,
     const utils::Any<Expression> &template_operands = {}
 ) {
@@ -136,8 +136,8 @@ static utils::Pair<InstructionTypeLink, utils::Bool> add_or_find_instruction_typ
     }
 
     // Search for an existing matching instruction.
-    auto begin = ir->platform->instructions.get_vec().begin();
-    auto end = ir->platform->instructions.get_vec().end();
+    auto begin = platform->instructions.get_vec().begin();
+    auto end = platform->instructions.get_vec().end();
     auto pos = std::lower_bound(begin, end, instruction_type, compare_by_name<InstructionType>);
     auto already_exists = false;
     for (; pos != end && (*pos)->name == instruction_type->name; ++pos) {
@@ -170,7 +170,7 @@ static utils::Pair<InstructionTypeLink, utils::Bool> add_or_find_instruction_typ
         // the original from instruction_type at the end.
         clone->decompositions.reset();
 
-        pos = ir->platform->instructions.get_vec().insert(pos, clone);
+        pos = platform->instructions.get_vec().insert(pos, clone);
         added_anything = true;
     } else {
 
@@ -260,7 +260,7 @@ InstructionTypeLink add_instruction_type(
 ) {
 
     // Defer to add_or_find_instruction_type().
-    auto result = add_or_find_instruction_type(ir, instruction_type, template_operands);
+    auto result = add_or_find_instruction_type(ir->platform, instruction_type, template_operands);
 
     // If we didn't add anything because a matching specialization of a matching
     // instruction already existed, either throw an error or return the existing
@@ -284,7 +284,7 @@ InstructionTypeLink add_instruction_type(
  * empty link is returned.
  */
 InstructionTypeLink find_instruction_type(
-    const Ref &ir,
+    const PlatformRef &platform,
     const utils::Str &name,
     const utils::Vec<DataTypeLink> &types,
     const utils::Vec<utils::Bool> &writable,
@@ -293,8 +293,8 @@ InstructionTypeLink find_instruction_type(
     QL_ASSERT(types.size() == writable.size());
 
     // Search for a matching instruction.
-    auto begin = ir->platform->instructions.get_vec().begin();
-    auto end = ir->platform->instructions.get_vec().end();
+    auto begin = platform->instructions.get_vec().begin();
+    auto end = platform->instructions.get_vec().end();
     auto first = std::lower_bound(
         begin, end,
         utils::make<InstructionType>(name),
@@ -363,7 +363,7 @@ InstructionTypeLink find_instruction_type(
 
     // Insert the instruction just after all the other instructions with this
     // name, i.e. at pos, to maintain sort order.
-    ir->platform->instructions.get_vec().insert(pos, ityp);
+    platform->instructions.get_vec().insert(pos, ityp);
 
     return ityp;
 }
@@ -401,9 +401,9 @@ InstructionTypeLink find_instruction_type(
  * from the old to new IR. See find_instruction_type().
  */
 InstructionRef make_instruction(
-    const Ref &ir,
+    const PlatformRef &platform,
     const utils::Str &name,
-    const utils::Any<Expression> &operands,
+    const utils::Any<ir::Expression> &operands,
     const ExpressionRef &condition,
     utils::Bool return_empty_on_failure,
     utils::Bool generate_overload_if_needed
@@ -501,7 +501,7 @@ InstructionRef make_instruction(
             writable.push_back(operand->as_reference() != nullptr);
         }
         custom_insn->instruction_type = find_instruction_type(
-            ir,
+            platform,
             name,
             types,
             writable,
@@ -534,7 +534,7 @@ InstructionRef make_instruction(
     // Set the condition, if applicable.
     if (auto cond_insn = insn->as_conditional_instruction()) {
         if (condition.empty()) {
-            cond_insn->condition = make_bit_lit(ir, true);
+            cond_insn->condition = make_bit_lit(platform, true);
         } else {
             cond_insn->condition = condition;
         }
@@ -558,7 +558,7 @@ InstructionRef make_set_instruction(
     const ExpressionRef &rhs,
     const ExpressionRef &condition
 ) {
-    return make_instruction(ir, "set", {lhs, rhs}, condition);
+    return make_instruction(ir->platform, "set", {lhs, rhs}, condition);
 }
 
 /**
@@ -652,7 +652,7 @@ InstructionTypeLink add_decomposition_rule(
 ) {
 
     // Defer to add_or_find_instruction_type().
-    auto result = add_or_find_instruction_type(ir, instruction_type, template_operands);
+    auto result = add_or_find_instruction_type(ir->platform, instruction_type, template_operands);
 
     // If we didn't add anything because a matching specialization of a matching
     // instruction already existed, just add the incoming decomposition rules to
@@ -787,9 +787,9 @@ utils::One<FunctionCall> make_function_call(
 /**
  * Returns the number of qubits in the main qubit register.
  */
-utils::UInt get_num_qubits(const Ref &ir) {
-    QL_ASSERT(ir->platform->qubits->shape.size() == 1);
-    return ir->platform->qubits->shape[0];
+utils::UInt get_num_qubits(const PlatformRef &platform) {
+    QL_ASSERT(platform->qubits->shape.size() == 1);
+    return platform->qubits->shape[0];
 }
 
 /**
@@ -822,13 +822,13 @@ utils::One<IntLiteral> make_int_lit(
  * Makes an integer literal using the given or default integer type.
  */
 utils::One<IntLiteral> make_uint_lit(
-    const Ref &ir,
+    const PlatformRef &platorm,
     utils::UInt i,
     const DataTypeLink &type
 ) {
     auto typ = type;
     if (typ.empty()) {
-        typ = ir->platform->default_int_type;
+        typ = platorm->default_int_type;
     }
     auto int_type = typ.as<IntType>();
     if (int_type.empty()) {
@@ -848,13 +848,13 @@ utils::One<IntLiteral> make_uint_lit(
  * Makes an bit literal using the given or default bit type.
  */
 utils::One<BitLiteral> make_bit_lit(
-    const Ref &ir,
+    const PlatformRef &platform,
     utils::Bool b,
     const DataTypeLink &type
 ) {
     auto typ = type;
     if (typ.empty()) {
-        typ = ir->platform->default_bit_type;
+        typ = platform->default_bit_type;
     }
     auto bit_type = typ.as<BitType>();
     if (bit_type.empty()) {
@@ -868,8 +868,8 @@ utils::One<BitLiteral> make_bit_lit(
 /**
  * Makes a qubit reference to the main qubit register.
  */
-utils::One<Reference> make_qubit_ref(const Ref &ir, utils::UInt idx) {
-    return make_reference(ir, ir->platform->qubits, {idx});
+utils::One<Reference> make_qubit_ref(const PlatformRef &platform, utils::UInt idx) {
+    return make_reference(platform, platform->qubits, {idx});
 }
 
 /**
@@ -882,7 +882,7 @@ utils::One<Reference> make_bit_ref(const Ref &ir, utils::UInt idx) {
             "platform does not support implicit measurement bits for qubits"
         );
     }
-    auto ref = make_qubit_ref(ir, idx);
+    auto ref = make_qubit_ref(ir->platform, idx);
     ref->data_type = ir->platform->implicit_bit_type;
     return ref;
 }
@@ -891,7 +891,7 @@ utils::One<Reference> make_bit_ref(const Ref &ir, utils::UInt idx) {
  * Makes a reference to the specified object using literal indices.
  */
 utils::One<Reference> make_reference(
-    const Ref &ir,
+    const PlatformRef &platform,
     const ObjectLink &obj,
     utils::Vec<utils::UInt> indices
 ) {
@@ -912,7 +912,7 @@ utils::One<Reference> make_reference(
                 "index out of range making reference to '" + obj->name + "'"
             );
         }
-        ref->indices.add(make_uint_lit(ir, indices[i]));
+        ref->indices.add(make_uint_lit(platform, indices[i]));
     }
     return ref;
 }
@@ -927,7 +927,7 @@ ObjectLink make_temporary(
 ) {
     auto obj = utils::make<TemporaryObject>("", data_type, shape);
     ir->program->objects.add(obj);
-    return std::move(obj);
+    return obj;
 }
 
 /**

@@ -61,7 +61,7 @@ static ExpressionRef parse_instruction_parameter(
         // registers.
         auto implicit_breg = false;
         if (name == "b") {
-            auto num_qubits = get_num_qubits(ir);
+            auto num_qubits = get_num_qubits(ir->platform);
             if (index < num_qubits) {
                 implicit_breg = true;
                 name = "q";
@@ -88,7 +88,7 @@ static ExpressionRef parse_instruction_parameter(
                 "register index out of range"
             );
         }
-        auto ref = make_reference(ir, obj, {index});
+        auto ref = make_reference(ir->platform, obj, {index});
         if (implicit_breg) {
             ref->data_type = ir->platform->implicit_bit_type;
         }
@@ -101,7 +101,7 @@ static ExpressionRef parse_instruction_parameter(
                 "no register exists with that name"
             );
         }
-        return make_reference(ir, obj);
+        return make_reference(ir->platform, obj);
     }
 }
 
@@ -836,7 +836,7 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                                 target = decomp->parameters[idx];
                             } else if (utils::starts_with(sub_insn_param, "q")) {
                                 auto idx = utils::parse_uint(sub_insn_param.substr(1));
-                                if (idx >= get_num_qubits(ir)) {
+                                if (idx >= get_num_qubits(ir->platform)) {
                                     throw utils::Exception(
                                         "gate decomposition parameter " +
                                         sub_insn_param + " is out of range"
@@ -850,12 +850,12 @@ Ref convert_old_to_new(const compat::PlatformRef &old) {
                                     sub_insn_param + "; must be q<idx> or %<idx>"
                                 );
                             }
-                            sub_insn_operands.add(make_reference(ir, target, indices));
+                            sub_insn_operands.add(make_reference(ir->platform, target, indices));
                         }
 
                         // Build the instruction.
                         auto sub_insn_node = make_instruction(
-                            ir,
+                            ir->platform,
                             sub_insn_name,
                             sub_insn_operands,
                             {},
@@ -995,7 +995,7 @@ static ExpressionRef convert_operand(
 
         case compat::ClassicalOperandType::REGISTER:
             return make_reference(
-                ir,
+                ir->platform,
                 find_physical_object(ir, "creg"),
                 {op.as_register().id}
             );
@@ -1141,7 +1141,7 @@ static InstructionRef convert_gate(
         // Convert the gate's qubit operands.
         utils::Any<Expression> qubit_operands;
         for (auto idx : gate->operands) {
-            qubit_operands.add(make_qubit_ref(ir, idx));
+            qubit_operands.add(make_qubit_ref(ir->platform, idx));
         }
         
         // Convert the gate's creg operands.
@@ -1150,7 +1150,7 @@ static InstructionRef convert_gate(
             auto creg_object = find_physical_object(ir, "creg");
             QL_ASSERT(!creg_object.empty());
             for (auto idx : gate->creg_operands) {
-                creg_operands.add(make_reference(ir, creg_object, {idx}));
+                creg_operands.add(make_reference(ir->platform, creg_object, {idx}));
             }
         }
         
@@ -1160,7 +1160,7 @@ static InstructionRef convert_gate(
         utils::Any<Expression> breg_operands;
         ExpressionRef condition;
         auto breg_object = find_physical_object(ir, "breg");
-        auto num_qubits = get_num_qubits(ir);
+        auto num_qubits = get_num_qubits(ir->platform);
 
         // Convert breg operands.
         for (auto idx : gate->breg_operands) {
@@ -1168,7 +1168,7 @@ static InstructionRef convert_gate(
                 breg_operands.add(make_bit_ref(ir, idx));
             } else {
                 QL_ASSERT(!breg_object.empty());
-                breg_operands.add(make_reference(ir, breg_object, {idx - num_qubits}));
+                breg_operands.add(make_reference(ir->platform, breg_object, {idx - num_qubits}));
             }
         }
 
@@ -1179,7 +1179,7 @@ static InstructionRef convert_gate(
                 cond_operands.add(make_bit_ref(ir, idx));
             } else {
                 QL_ASSERT(!breg_object.empty());
-                cond_operands.add(make_reference(ir, breg_object, {idx - num_qubits}));
+                cond_operands.add(make_reference(ir->platform, breg_object, {idx - num_qubits}));
             }
         }
         switch (gate->condition) {
@@ -1190,7 +1190,7 @@ static InstructionRef convert_gate(
                 // made conditional.
                 break;
             case compat::ConditionType::NEVER:
-                condition = make_bit_lit(ir, false);
+                condition = make_bit_lit(ir->platform, false);
                 break;
             case compat::ConditionType::UNARY:
                 condition = cond_operands[0];
@@ -1252,11 +1252,11 @@ static InstructionRef convert_gate(
         if (name == "wait" || name == "barrier" || gate->type() == compat::GateType::WAIT) {
             auto duration = utils::div_ceil(gate->duration, old->platform->cycle_time);
             utils::Any<Expression> operands;
-            operands.add(make_uint_lit(ir, duration));
+            operands.add(make_uint_lit(ir->platform, duration));
             operands.extend(qubit_operands);
             operands.extend(creg_operands);
             operands.extend(breg_operands);
-            return make_instruction(ir, "wait", operands, condition);
+            return make_instruction(ir->platform, "wait", operands, condition);
         }
 
         // Handle the classical gates from the remnants of CC-light.
@@ -1332,7 +1332,7 @@ static InstructionRef convert_gate(
         }
 #endif
         // Try to make an instruction for the name and operand list we found.
-        auto insn = make_instruction(ir, name, operands, condition, true, true);
+        auto insn = make_instruction(ir->platform, name, operands, condition, true, true);
         if (!insn.empty()) {
             return insn;
         }
@@ -1462,7 +1462,7 @@ static InstructionRef convert_gate(
         // since the function above already returns it. However, code reuse is
         // also worth something, and execution only gets here for the first gate
         // of a particular type.
-        return make_instruction(ir, name, operands, condition);
+        return make_instruction(ir->platform, name, operands, condition);
 
     } catch (utils::Exception &e) {
         e.add_context("while converting gate " + name);
@@ -1569,9 +1569,9 @@ static utils::Str convert_kernels(
 
                 // Create a static for loop and add it to the block.
                 block->statements.emplace<StaticLoop>(
-                    make_reference(ir, make_temporary(ir, ir->platform->default_int_type)),
-                    make_uint_lit(ir, iteration_count - 1),
-                    make_uint_lit(ir, (utils::UInt) 0),
+                    make_reference(ir->platform, make_temporary(ir, ir->platform->default_int_type)),
+                    make_uint_lit(ir->platform, iteration_count - 1),
+                    make_uint_lit(ir->platform, (utils::UInt) 0),
                     sub_block,
                     cycle
                 );

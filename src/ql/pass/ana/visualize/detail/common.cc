@@ -25,9 +25,9 @@ class GateCollector : public ir::RecursiveVisitor {
 public:
     GateCollector(const ir::PlatformRef& platform, Vec<GateProperties>& gates) : ir::RecursiveVisitor(), platform(platform), gates(gates) {}
 
-    void visit_node(ir::Node &node) override {}
+    void visit_node(ir::Node &) override {}
 
-    void visit_platform(ir::Platform &platform) override {}
+    void visit_platform(ir::Platform &) override {}
 
     void visit_conditional_instruction(ir::ConditionalInstruction &cond_instr) override {
         if (!cond_instr.condition->as_bit_literal() || !cond_instr.condition->as_bit_literal()->value) {
@@ -38,7 +38,7 @@ public:
         ir::RecursiveVisitor::visit_conditional_instruction(cond_instr);
     }
 
-    void visit_structured(ir::Structured &structured) override {
+    void visit_structured(ir::Structured &) override {
         QL_FATAL("Visualizer doesn't support structured blocks (loops, if/else)");
     }
 

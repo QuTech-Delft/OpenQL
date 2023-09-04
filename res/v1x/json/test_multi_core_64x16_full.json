@@ -1,0 +1,279 @@
+{
+    "eqasm_compiler" : "cc_light_compiler",
+
+    "hardware_settings": {
+        "qubit_number": 512,
+        "cycle_time" : 20,  
+        "mw_mw_buffer": 0,
+        "mw_flux_buffer": 0,
+        "mw_readout_buffer": 0,
+        "flux_mw_buffer": 0,
+        "flux_flux_buffer": 0,
+        "flux_readout_buffer": 0,
+        "readout_mw_buffer": 0,
+        "readout_flux_buffer": 0,
+        "readout_readout_buffer": 0
+    },
+
+    "qubit_attributes":
+    {
+        "relaxation_times":
+        {
+        "0" : [3000, 1500],
+        "1" : [3000, 1500],
+        "2" : [3000, 1500],
+        "3" : [3000, 1500],
+        "4" : [3000, 1500]
+        }
+    },
+
+    "topology" : 
+    {
+        "number_of_cores":  64,
+        "connectivity": "full",
+        "form": "irregular",
+        "comm_qubits_per_core": 16
+    },
+
+    "resources":
+    {
+        "qubits":
+        {
+            "description": "Each qubit can be used by only one gate at a time. There are 'count' qubits.",
+            "count": 1024
+        },
+        "channels":
+        {
+            "description": "Each inter-core gate uses one channel in each core. There are 'count' such channels per core.",
+            "count": 1
+        }
+    },
+
+    "instructions": {
+        "prepx": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "prepx"
+        },
+        "prepz": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "prepz"
+        },
+        "measx": {
+            "duration": 340,
+            "latency": 0,
+            "type": "readout",
+            "cc_light_instr": "measx"
+        },
+        "measz": {
+            "duration": 300,
+            "latency": 0,
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measure": {
+            "duration": 300,
+            "latency": 0,
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "i": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "i"
+        },
+        "x": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "x"
+        },
+        "y": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "y"
+        },
+        "z": {
+            "duration": 40,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "z"
+        },
+        "rx": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "rx"
+        },
+        "ry": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "ry"
+        },
+        "rz": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "rz"
+        },
+        "h": {
+            "duration": 40,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "h"
+        },
+        "s": {
+            "duration": 60,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "s"
+        },
+        "sdag": {
+            "duration": 60,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "sdag"
+        },
+        "x90": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "x90"
+        },
+        "xm90": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "xm90"
+        },
+        "y90": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "y90"
+        },
+        "ym90": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "ym90"
+        },
+        "t": {
+            "duration": 60,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "t"
+        },
+        "tdag": {
+            "duration": 60,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "tdag"
+        },
+        "x45": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "x45"
+        },
+        "xm45": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "xm45"
+        },
+        "y45": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "y45"
+        },
+        "ym45": {
+            "duration": 20,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "ym45"
+        },
+        "cz": {
+            "duration": 60,
+            "latency": 0,
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cnot": {
+            "duration": 100,
+            "latency": 0,
+            "type": "flux",
+            "cc_light_instr": "cnot"
+        },
+        "swap": {
+            "duration": 260,
+            "latency": 0,
+            "type": "flux",
+            "cc_light_instr": "swap"
+        },
+        "move": {
+            "duration": 180,
+            "latency": 0,
+            "type": "flux",
+            "cc_light_instr": "move"
+        },
+        "teleportswap": {
+            "duration": 1000,
+            "latency": 0,
+            "type": "extern",
+            "cc_light_instr": "teleportswap"
+        },
+        "teleportmove": {
+            "duration": 600,
+            "latency": 0,
+            "type": "extern",
+            "cc_light_instr": "teleportmove"
+        },
+        "preswap": {
+            "duration": 100,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "preswap"
+        },
+        "premove": {
+            "duration": 100,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "premove"
+        },
+        "postswap": {
+            "duration": 100,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "postswap"
+        },
+        "postmove": {
+            "duration": 100,
+            "latency": 0,
+            "type": "mw",
+            "cc_light_instr": "postmove"
+        }
+    },
+
+    "gate_decomposition": {
+        "tswap_real %0,%1": ["preswap %0","teleportswap %0,%1","postswap %1"],
+        "tmove_real %0,%1": ["premove %0","teleportmove %0,%1","postmove %1"],
+        "rx180 %0" : ["x %0"],
+        "ry180 %0" : ["y %0"],
+        "rx90 %0" : ["x90 %0"],
+        "ry90 %0" : ["y90 %0"],
+        "mrx90 %0" : ["xm90 %0"],
+        "mry90 %0" : ["ym90 %0"],
+        "rx45 %0" : ["x45 %0"],
+        "ry45 %0" : ["y45 %0"],
+        "mrx45 %0" : ["xm45 %0"],
+        "mry45 %0" : ["ym45 %0"]
+    }
+}

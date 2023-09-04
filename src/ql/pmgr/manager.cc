@@ -417,6 +417,10 @@ static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
     if (mapreverseswap.is_set()) {
         retval.set("reverse_swap_if_better") = mapreverseswap.as_str();
     }
+    const auto &mapdecompositionrulepattern = com::options::global["mapdecompositionrulepattern"];
+    if (mapdecompositionrulepattern.is_set()) {
+        retval.set("decomposition_rule_name_pattern") = mapdecompositionrulepattern.as_str();
+    }
 
 #if 0   // FIXME: removed, use pass options
     // Set options for CC backend.
@@ -443,7 +447,7 @@ static utils::Map<utils::Str, utils::Str> convert_global_to_pass_options() {
  */
 Manager Manager::from_json(
     const utils::Json &json,
-    const Factory &factory
+    const Factory &/* factory */
 ) {
 
     // Shorthand.

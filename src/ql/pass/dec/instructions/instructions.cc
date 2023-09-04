@@ -195,7 +195,7 @@ utils::UInt DecomposeInstructionsPass::run_on_block(
 
     // Apply the decomposition rules.
     auto number_of_applications = com::dec::apply_decomposition_rules(
-        ir, block, ignore_schedule, predicate
+        block, ignore_schedule, predicate
     );
 
     // Remove the KernelCyclesValid annotation if we broke the schedule for
@@ -226,7 +226,7 @@ utils::UInt DecomposeInstructionsPass::run_on_block(
  */
 utils::Int DecomposeInstructionsPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &context
+    const pmgr::pass_types::Context &/* context */
 ) const {
 
     // Parse options.

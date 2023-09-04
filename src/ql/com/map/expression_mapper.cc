@@ -31,7 +31,7 @@ utils::Bool ExpressionMapper::on_expression(utils::Maybe<ir::Expression> &expr) 
  * reference of some kind. The default implementation is no-op and just
  * returns false.
  */
-utils::Bool ExpressionMapper::on_reference(utils::Maybe<ir::Reference> &ref) {
+utils::Bool ExpressionMapper::on_reference(utils::Maybe<ir::Reference> &) {
     return false;
 }
 

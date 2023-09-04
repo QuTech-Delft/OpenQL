@@ -7,7 +7,6 @@
 #include "ql/utils/str.h"
 #include "ql/ir/ir.h"
 #include "ql/ir/compat/compat.h"
-#include "cqasm.hpp"
 
 namespace ql {
 namespace ir {
@@ -89,11 +88,6 @@ void read_v1(
     const utils::Str &data,
     const utils::Str &fname = "<unknown>",
     const ReadOptions &options = {}
-);
-
-void read_v3(
-    const Ref &ir,
-    const utils::Str &data
 );
 
 void read(

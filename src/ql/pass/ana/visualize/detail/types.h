@@ -136,7 +136,7 @@ struct GateProperties {
     utils::Str name;
     utils::Vec<utils::Int> operands;
     utils::Vec<utils::Int> creg_operands;
-    ir::compat::SwapParameters swap_params; // FIXME: change once mapper is moved to new IR.
+    ir::SwapParameters swap_params;
     utils::Int durationInCycles;
     utils::Int cycle;
     utils::Vec<utils::Int> codewords; // std::vector<size_t> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
@@ -147,7 +147,7 @@ struct GateProperties {
         utils::Str name_,
         utils::Vec<utils::Int> operands_,
         utils::Vec<utils::Int> creg_operands_,
-        ir::compat::SwapParameters swap_params_,
+        ir::SwapParameters swap_params_,
         utils::Int durationInCycles_,
         utils::Int cycle_,
         utils::Vec<utils::Int> codewords_,

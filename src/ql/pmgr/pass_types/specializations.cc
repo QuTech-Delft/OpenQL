@@ -30,7 +30,7 @@ Group::Group(
 NodeType Group::on_construct(
     const utils::Ptr<const Factory> &factory,
     utils::List<Ref> &passes,
-    condition::Ref &condition
+    condition::Ref &/* condition */
 ) {
     get_passes(factory, passes);
     return NodeType::GROUP;
@@ -42,8 +42,8 @@ NodeType Group::on_construct(
  * exception.
  */
 utils::Int Group::run_internal(
-    const ir::Ref &ir,
-    const Context &context
+    const ir::Ref &/* ir */,
+    const Context &/* context */
 ) const {
     QL_ASSERT(false);
 }
@@ -65,9 +65,9 @@ Normal::Normal(
  * based on its options.
  */
 NodeType Normal::on_construct(
-    const utils::Ptr<const Factory> &factory,
-    utils::List<Ref> &passes,
-    condition::Ref &condition
+    const utils::Ptr<const Factory> &/* factory */,
+    utils::List<Ref> &/* passes */,
+    condition::Ref &/* condition */
 ) {
     return NodeType::NORMAL;
 }

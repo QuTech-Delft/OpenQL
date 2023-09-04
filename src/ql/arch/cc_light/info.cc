@@ -95,7 +95,7 @@ void Info::dump_variant_docs(
     if (variant == "default") {
         utils::dump_str(os, line_prefix, R"(
         This is the default CC-light configuration, based on what used to be
-        ``tests/hardware_config_cc_light.json``, which in turn is a simplified
+        ``config_cc_light.json``, which in turn is a simplified
         version of the surface-7 configuration (the instruction durations are
         comparatively short and uniform).
         )");
@@ -150,8 +150,7 @@ utils::Str Info::get_default_platform(const utils::Str &variant) const {
  * code generation pass, but anything after prescheduling and optimization
  * is considered a backend pass.
  */
-void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &variant) const {
-
+void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &) const {
     // Mapping.
     if (com::options::global["clifford_premapper"].as_bool()) {
         manager.append_pass(
@@ -199,8 +198,7 @@ void Info::populate_backend_passes(pmgr::Manager &manager, const utils::Str &var
         }
     );
 
-    // R.I.P. CC-light code generation.
-
+    // CC-light code generation.
 }
 
 } // namespace cc_light

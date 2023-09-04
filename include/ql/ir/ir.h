@@ -58,6 +58,11 @@ using StatementRef = utils::One<Statement>;
 using InstructionRef = utils::One<Instruction>;
 
 /**
+ * Reference to a custom instruction.
+ */
+using CustomInstructionRef = utils::One<CustomInstruction>;
+
+/**
  * Link to a (custom) instruction type.
  */
 using InstructionTypeLink = utils::Link<InstructionType>;

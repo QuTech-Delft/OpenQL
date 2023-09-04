@@ -5,6 +5,7 @@
 #include "ql/pass/map/qubits/place_mip/place_mip.h"
 
 #include "detail/impl.h"
+#include "ql/com/map/reference_updater.h"
 #include "ql/ir/ir_gen_ex.h"
 #include "ql/pass/ana/statistics/annotations.h"
 #include "ql/pmgr/factory.h"
@@ -128,31 +129,12 @@ PlaceQubitsPass::PlaceQubitsPass(
     );
 }
 
-class ReferenceUpdater : public ir::RecursiveVisitor {
-public:
-    ReferenceUpdater(ir::Ref aIr, const utils::Vec<utils::UInt> &aMapping) : ir(aIr), mapping(aMapping) {}
-
-    void visit_node(ir::Node &node) override {}
-
-    void visit_reference(ir::Reference &ref) override {
-        if (ref.target == ir->platform->qubits &&
-            ref.data_type == ir->platform->qubits->data_type) {
-            QL_ASSERT(ref.indices.size() == 1);
-            ref.indices[0].as<ir::IntLiteral>()->value = mapping[ref.indices[0].as<ir::IntLiteral>()->value];
-        }
-    }
-
-private:
-    ir::Ref ir;
-    const utils::Vec<utils::UInt> &mapping;
-};
-
 /**
  * Runs initial qubit placement.
  */
 utils::Int PlaceQubitsPass::run(
     const ir::Ref &ir,
-    const pmgr::pass_types::Context &context
+    const pmgr::pass_types::Context &/* context */
 ) const {
     detail::Options opts;
     opts.timeout = options["timeout"].as_real();
@@ -172,8 +154,7 @@ utils::Int PlaceQubitsPass::run(
     }
 
     if (result == detail::Result::NEW_MAP) {
-        ReferenceUpdater referenceUpdater(ir, mapping);
-        ir->program->visit(referenceUpdater);
+        com::map::mapProgram(ir->platform, mapping, ir->program);
     }
 
     return 0;
