@@ -173,11 +173,11 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 #=============================================================================#
 
 
-find_package(Backward CONFIG REQUIRED)
-find_package(cimg CONFIG REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(highs CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
+find_package(Backward REQUIRED)
+find_package(cimg REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(highs REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 include(FetchContent)
 
@@ -379,12 +379,11 @@ add_library(ql
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
     SYSTEM PRIVATE "${Backward_INCLUDE_DIRS}"
+    SYSTEM PRIVATE "${cqasm_SOURCE_DIR}/include"
     SYSTEM PRIVATE "${Eigen3_INCLUDE_DIRS}/unsupported"
     SYSTEM PRIVATE "${highs_INCLUDE_DIRS}"
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
-    SYSTEM PRIVATE "${libqasm_INCLUDE_DIRS}"
-    SYSTEM PRIVATE "${nlohmann_json_INCLUDE_DIRS}"
     SYSTEM PRIVATE ${TREE_LIB_PUBLIC_INCLUDE}  # needed at all?
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
@@ -398,7 +397,7 @@ target_link_libraries(ql
     PRIVATE Eigen3::Eigen
     PUBLIC highs::highs
     PRIVATE lemon
-    PRIVATE nlohmann_json::nlohmann_json
+    PUBLIC nlohmann_json::nlohmann_json
 )
 
 # Specify resources.
@@ -489,7 +488,7 @@ endif()
 if(QL_VISUALIZER)
     target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
     target_include_directories(ql SYSTEM PRIVATE "${cimg_INCLUDE_DIRS}")
-    target_link_libraries(ql PRIVATE cmg::cmg)
+    target_link_libraries(ql PRIVATE cimg::cimg)
 endif()
 
 
@@ -514,13 +513,13 @@ message(STATUS
     "[${PROJECT_NAME}] Target include directories:\n"
     "      Backward: ${Backward_INCLUDE_DIRS}\n"
     "      CImg: ${CImg_INCLUDE_DIRS}\n"
+    "      cqasm: ${cqasm_SOURCE_DIR}/include\n"
     "      Eigen3: ${Eigen3_INCLUDE_DIRS}/Eigen\n"
     "      Eigen3/unsupported: ${Eigen3_INCLUDE_DIRS}/unsupported\n"
     "      googletest: ${googletest_INCLUDE_DIRS}\n"
     "      highs: ${highs_INCLUDE_DIRS}\n"
     "      lemon-src: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/\n"
     "      lemon-build: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/\n"
-    "      libqasm: ${cqasm_INCLUDE_DIRS}\n"
     "      nlohmann_json/include: ${nlohmann_json_SOURCE_DIR}/include\n"
 )
 

@@ -26,11 +26,16 @@ class OpenQLConan(ConanFile):
         if self.settings.os == "Windows":
             self.tool_requires("winflexbison/2.5.24")
         else:
-            self.tool_requires("flex/2.6.4")
-            self.tool_requires("bison/3.8.2")
+            if self.settings.arch != "armv8":
+                self.tool_requires("flex/2.6.4")
+                self.tool_requires("bison/3.8.2")
+        if self.settings.arch != "armv8":
+            self.tool_requires("zulu-openjdk/11.0.19")
         if self.options.build_tests:
-            self.requires("doctest/2.4.9")
-            self.requires("gtest/1.12.1")
+            self.requires("gtest/1.14.0")
+
+    def requirements(self):
+        self.requires("antlr4-cppruntime/4.13.0")
 
     def generate(self):
         deps = CMakeDeps(self)
