@@ -107,7 +107,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install Python dependencies
-        run: python -m pip install --upgrade pip numpy pytest setuptools wheel qxelarator
+        run: python -m pip install --upgrade pip conan numpy pytest setuptools wheel qxelarator
       - name: Install SWIG, and set build type (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |

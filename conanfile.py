@@ -3,7 +3,7 @@ from conan.tools.cmake import CMakeToolchain, CMakeDeps, CMake, cmake_layout
 
 
 class OpenQLConan(ConanFile):
-    name = "ql"
+    name = "openql"
 
     settings = "os", "compiler", "build_type", "arch"
     options = {
