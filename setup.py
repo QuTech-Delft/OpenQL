@@ -96,6 +96,8 @@ class build_ext(_build_ext):
         with local.cwd(root_dir):
             # Build type can be set using an environment variable.
             build_type = os.environ.get('OPENQL_BUILD_TYPE', 'Release')
+            build_tests = 'True' if 'OPENQL_BUILD_TESTS' in os.environ else 'False'
+            disable_unitary = 'True' if 'OPENQL_DISABLE_UNITARY' in os.environ else 'False'
 
             cmd = local['conan']['profile']['detect']['--force']
             cmd & FG
@@ -107,11 +109,11 @@ class build_ext(_build_ext):
 
                 # C++ tests can be enabled using an environment variable. They'll be run before the install
                 ['-o']['openql/*:build_python=True']
-                ['-o']['openql/*:build_tests=' + 'True' if 'OPENQL_BUILD_TESTS' in os.environ else 'False']
+                ['-o']['openql/*:build_tests=' + build_tests]
                 # Do not include debug symbols in the wheels
                 ['-o']["openql/*:debug_symbols=False"]
                 # Unitary decomposition can be disabled using an environment variable
-                ['-o']['openql/*:disable_unitary=' + 'True' if 'OPENQL_DISABLE_UNITARY' in os.environ else 'False']
+                ['-o']['openql/*:disable_unitary=' + disable_unitary]
                 ['-o']['openql/*:python_dir=' + re.escape(os.path.dirname(target))]
                 ['-o']['openql/*:python_ext=' + re.escape(os.path.basename(target))]
                 # (Ab)use static libs for the intermediate libraries

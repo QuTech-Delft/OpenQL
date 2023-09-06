@@ -1,5 +1,8 @@
+import os
+
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMakeDeps, CMake, cmake_layout
+from conan.tools.files import copy
 
 
 class OpenQLConan(ConanFile):
@@ -27,6 +30,8 @@ class OpenQLConan(ConanFile):
 
     def layout(self):
         cmake_layout(self)
+
+    exports_sources = "CMakeLists.txt", "include/*", "python/*", "res/*", "src/*", "test/*"
 
     def build_requirements(self):
         self.requires("backward-cpp/1.6")
@@ -65,3 +70,11 @@ class OpenQLConan(ConanFile):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
+
+    def package(self):
+        copy(self, "LICENSE.md", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
+        cmake = CMake(self)
+        cmake.install()
+
+    def package_info(self):
+        self.cpp_info.libs = ["ql"]
