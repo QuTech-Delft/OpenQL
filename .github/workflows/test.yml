@@ -86,7 +86,7 @@ jobs:
           python3 -m venv venv
           source venv/bin/activate
           python3 -m pip install --upgrade pip conan
-          conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=Release -o openql/*:build_tests=True -o openql/*:disable_unitary=True -o -b missing
+          conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=Release -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
       - name: Test
         working-directory: build/Release
         run: ctest -C Release --output-on-failure

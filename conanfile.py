@@ -7,10 +7,22 @@ class OpenQLConan(ConanFile):
 
     settings = "os", "compiler", "build_type", "arch"
     options = {
-        "build_tests": [True, False]
+        "shared": [True, False],
+        "build_python": [True, False],
+        "build_tests": [True, False],
+        "debug_symbols": [True, False],
+        "disable_unitary": [True, False],
+        "python_dir": [None, "ANY"],
+        "python_ext": [None, "ANY"]
     }
     default_options = {
-        "build_tests": False
+        "shared": False,
+        "build_python": False,
+        "build_tests": False,
+        "debug_symbols": False,
+        "disable_unitary": True,
+        "python_dir": None,
+        "python_ext": None
     }
 
     def layout(self):
@@ -41,7 +53,12 @@ class OpenQLConan(ConanFile):
         deps = CMakeDeps(self)
         deps.generate()
         tc = CMakeToolchain(self)
+        tc.variables["OPENQL_BUILD_PYTHON"] = self.options.build_python
         tc.variables["OPENQL_BUILD_TESTS"] = self.options.build_tests
+        tc.variables["OPENQL_DEBUG_SYMBOLS"] = self.options.debug_symbols
+        tc.variables["OPENQL_PYTHON_DIR"] = self.options.python_dir
+        tc.variables["OPENQL_PYTHON_EXT"] = self.options.python_ext
+        tc.variables["OPENQL_WITH_UNITARY_DECOMPOSITION"] = not self.options.disable_unitary
         tc.generate()
 
     def build(self):

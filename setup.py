@@ -224,6 +224,7 @@ setup(
     },
 
     setup_requires=[
+        'conan',
         'plumbum',
         'delocate; platform_system == "Darwin"',
     ],
