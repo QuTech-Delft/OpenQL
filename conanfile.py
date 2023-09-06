@@ -28,9 +28,6 @@ class OpenQLConan(ConanFile):
         "python_ext": None
     }
 
-    def layout(self):
-        cmake_layout(self)
-
     exports_sources = "CMakeLists.txt", "include/*", "python/*", "res/*", "src/*", "test/*"
 
     def build_requirements(self):
@@ -54,6 +51,21 @@ class OpenQLConan(ConanFile):
     def requirements(self):
         self.requires("antlr4-cppruntime/4.13.0")
 
+    # Using the same layout code as for libqasm
+    # This also allows us to define the build directory as 'build/<build_type>'
+    # Otherwise, if we use the default layout, the build directory is just 'build' for Windows
+    def layout(self):
+        self.folders.source = "."
+        self.folders.build = os.path.join("build", str(self.settings.build_type))
+        self.folders.generators = os.path.join(self.folders.build, "generators")
+
+        self.cpp.package.libs = ["ql"]
+        self.cpp.package.includedirs = ["include"]
+        self.cpp.package.libdirs = ["lib"]
+
+        self.cpp.source.includedirs = ["include"]
+        self.cpp.build.libdirs = ["."]
+
     def generate(self):
         deps = CMakeDeps(self)
         deps.generate()
@@ -63,7 +75,7 @@ class OpenQLConan(ConanFile):
         tc.variables["OPENQL_DEBUG_SYMBOLS"] = self.options.debug_symbols
         tc.variables["OPENQL_PYTHON_DIR"] = self.options.python_dir
         tc.variables["OPENQL_PYTHON_EXT"] = self.options.python_ext
-        tc.variables["OPENQL_WITH_UNITARY_DECOMPOSITION"] = not self.options.disable_unitary
+        tc.variables["WITH_UNITARY_DECOMPOSITION"] = not self.options.disable_unitary
         tc.generate()
 
     def build(self):
