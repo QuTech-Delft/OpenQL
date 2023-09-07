@@ -13,20 +13,19 @@
 #include "cqasm.hpp"
 #include "cqasm-version.hpp"
 
-namespace ql {
-namespace ir {
-namespace cqasm {
+namespace ql::ir::cqasm {
 
-namespace cq1 = ::cqasm::v1x;
-namespace cqv1 = ::cqasm::v1x::values;
-namespace cqty1 = ::cqasm::v1x::types;
-namespace cqs = ::cqasm::v1x::semantic;
-namespace cqt = ::cqasm::tree;
 namespace cqe = ::cqasm::error;
+namespace cqt = ::cqasm::tree;
 namespace cqver = ::cqasm::version;
 
+namespace cq1 = ::cqasm::v1x;
+namespace cqs = ::cqasm::v1x::semantic;
+namespace cqty1 = ::cqasm::v1x::types;
+namespace cqv1 = ::cqasm::v1x::values;
+
 /**
- * Marker used on cQASM nodes when they have been successfully used by
+ * Marker used on ::cqasm nodes when they have been successfully used by
  * something that should be used exactly once. Used to throw an exception if any
  * ql.* annotations end up not being used in the end.
  */
@@ -1581,6 +1580,4 @@ ir::compat::PlatformRef read_platform_from_file(const utils::Str &fname) {
     return read_platform(data, fname);
 }
 
-} // namespace cqasm
-} // namespace ir
-} // namespace ql
+} // namespace ql::ir::cqasm
