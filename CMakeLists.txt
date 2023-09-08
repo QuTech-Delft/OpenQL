@@ -185,7 +185,7 @@ message(STATUS "Fetching cqasm")
 FetchContent_Declare(cqasm
     message(STATUS "Fetching cqasm")
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
-    GIT_TAG "cba4be4c4b9b43e4601ec7bece872c70cc122fba"
+    GIT_TAG "9879dcc9ce5f750f9d2110d1cc81162be63ad9d7"
 )
 FetchContent_MakeAvailable(cqasm)
 
