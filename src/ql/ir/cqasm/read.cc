@@ -13,6 +13,8 @@
 #include "cqasm.hpp"
 #include "cqasm-version.hpp"
 
+#include <stdexcept>
+
 namespace ql::ir::cqasm {
 
 namespace cqe = ::cqasm::error;
@@ -24,8 +26,10 @@ namespace cqs = ::cqasm::v1x::semantic;
 namespace cqty1 = ::cqasm::v1x::types;
 namespace cqv1 = ::cqasm::v1x::values;
 
+namespace cq3 = ::cqasm::v3x;
+
 /**
- * Marker used on ::cqasm nodes when they have been successfully used by
+ * Marker used on cQASM nodes when they have been successfully used by
  * something that should be used exactly once. Used to throw an exception if any
  * ql.* annotations end up not being used in the end.
  */
@@ -1515,6 +1519,15 @@ void read_v1(
 
 }
 
+void read_v3(
+    const Ref & /* ir */,
+    const utils::Str &data,
+    const utils::Str &fname,
+    const ReadOptions & /* options */
+) {
+    cq3::parser::parse_string(data, fname);
+}
+
 /**
  * Reads a cQASM file into the IR.
  * If reading is successful, ir->program is completely replaced.
@@ -1530,6 +1543,8 @@ void read(
     auto pres = cqver::parse_string(data, fname);
     if (auto version = cqver::parse_string(data, fname); version <= cqver::Version("1.2")) {
         read_v1(ir, data, fname, options);
+    } else {
+        read_v3(ir, data, fname, options);
     }
 }
 

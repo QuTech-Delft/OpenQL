@@ -90,6 +90,13 @@ void read_v1(
     const ReadOptions &options = {}
 );
 
+void read_v3(
+    const Ref &ir,
+    const utils::Str &data,
+    const utils::Str &fname = "<unknown>",
+    const ReadOptions &options = {}
+);
+
 void read(
     const Ref &ir,
     const utils::Str &data,

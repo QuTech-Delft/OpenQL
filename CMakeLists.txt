@@ -184,7 +184,7 @@ message(STATUS "Fetching cqasm")
 FetchContent_Declare(cqasm
     message(STATUS "Fetching cqasm")
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
-    GIT_TAG "8d0b4ed5e3a30aa6fde3b3aaf20a207b5d07876e"
+    GIT_TAG "8c2d76f7090117a7674b8a41ddf6b5e374462f53"
 )
 FetchContent_MakeAvailable(cqasm)
 
@@ -202,8 +202,8 @@ FetchContent_MakeAvailable(lemon)
 # Compile code generators                                                     #
 #=============================================================================#
 
-# Simple program that generates resource include files, to include the contents
-# of a file as a constant inside the OpenQL library.
+# Simple program that generates resource include files,
+# to include the contents of a file as a constant inside the OpenQL library.
 add_executable(resource src/resource/main.cpp)
 function(create_resource fname)
     set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${fname}")
@@ -370,7 +370,6 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/program.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
 )
-
 
 # There is no distinction between public and private header files right now,
 # and they're all in the source directory.
