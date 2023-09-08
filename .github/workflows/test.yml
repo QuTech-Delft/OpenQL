@@ -3,7 +3,8 @@ name: Test
 on:
   push:
     branches:
-    - toy-v1-OpenQL_v1_v3_reader
+    - develop
+  pull_request:
 
 jobs:
   cpp-linux-macos-windows:
