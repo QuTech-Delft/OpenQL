@@ -175,6 +175,7 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 find_package(Backward REQUIRED)
 find_package(cimg REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(fmt REQUIRED)
 find_package(highs REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
@@ -393,6 +394,7 @@ target_link_libraries(ql
     PRIVATE Backward::Backward
     PUBLIC cqasm
     PRIVATE Eigen3::Eigen
+    PRIVATE fmt::fmt
     PRIVATE highs::highs
     PRIVATE lemon
     PUBLIC nlohmann_json::nlohmann_json

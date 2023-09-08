@@ -34,6 +34,7 @@ class OpenQLConan(ConanFile):
         self.requires("backward-cpp/1.6")
         self.requires("cimg/3.2.0")
         self.requires("eigen/3.4.0")
+        self.requires("fmt/10.1.1")
         self.requires("highs/1.5.3")
         self.tool_requires("m4/1.4.19")
         self.requires("nlohmann_json/3.11.2")

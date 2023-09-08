@@ -13,6 +13,7 @@
 #include "cqasm.hpp"
 #include "cqasm-version.hpp"
 
+#include <fmt/format.h>
 #include <stdexcept>
 
 namespace ql::ir::cqasm {
@@ -1541,10 +1542,15 @@ void read(
     const ReadOptions &options
 ) {
     auto pres = cqver::parse_string(data, fname);
-    if (auto version = cqver::parse_string(data, fname); version <= cqver::Version("1.2")) {
+    auto version = cqver::parse_string(data, fname);
+    if (version <= cqver::Version("1.2")) {
         read_v1(ir, data, fname, options);
-    } else {
+    } else if (version == cqver::Version("3.0")) {
         read_v3(ir, data, fname, options);
+    } else {
+        auto error = fmt::format("'{}' is an invalid cQASM version", fmt::join(version, "."));
+        QL_EOUT(error);
+        QL_USER_ERROR(error);
     }
 }
 
