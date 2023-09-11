@@ -22,20 +22,23 @@ The following packages are required to compile OpenQL from sources:
 - conan 2.0
 - git
 - Python 3.x + pip, with the following packages:
-   - ``plumbum``
-   - ``qxelarator``
-   - ``setuptools``
-   - ``wheel``
-   - And, optionally, these:
-      - Testing: ``libqasm``, ``make``, ``numpy``, and ``pytest``.
-      - Documentation generation: ``doxygen``, ``m2r2``, ``sphinx==3.5.4``, and ``sphinx-rtd-theme``.
-      - Convert graphs from `dot` to `pdf`, `png`, etc: ``Graphviz Dot utility``.
-      - Visualize generated graphs in `dot` format: ``XDot``.
-      - Use the visualizer in MacOS: ``XQuartz``.
+
+  - ``plumbum``
+  - ``qxelarator``
+  - ``setuptools``
+  - ``wheel``
+  - And, optionally, these:
+
+    - Testing: ``libqasm``, ``make``, ``numpy``, and ``pytest``.
+    - Documentation generation: ``doxygen``, ``m2r2``, ``sphinx==7.0.0``, and ``sphinx-rtd-theme``.
+    - Convert graphs from `dot` to `pdf`, `png`, etc: ``Graphviz Dot utility``.
+    - Visualize generated graphs in `dot` format: ``XDot``.
+    - Use the visualizer in MacOS: ``XQuartz``.
+
 - SWIG (Linux: >= 3.0.12, Windows: >= 4.0.0)
 
 .. note::
-   The connection between Sphinx' and SWIG's autodoc functionalities is very iffy,
+   The connection between Sphinx and SWIG's autodoc functionalities is very iffy,
    but aside from tracking everything manually or forking SWIG there is not much that can be done about it.
    Because of this, not all Sphinx versions will build correctly,
    hence why the Sphinx version is pinned.
