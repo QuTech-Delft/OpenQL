@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25 FATAL_ERROR)  # 3.25 needed for add_subdirectory(... SYSTEM)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # CMake policies
 if(POLICY CMP0048)
@@ -17,9 +17,6 @@ if(NOT TARGET ql)
 
 # Loads up the appropriate directories for installing stuff.
 include(GNUInstallDirs)
-
-# Packages
-include(FetchContent)
 
 
 #=============================================================================#
@@ -175,54 +172,22 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 # Dependencies                                                                #
 #=============================================================================#
 
+find_package(Backward REQUIRED)
+find_package(cimg REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(fmt REQUIRED)
+find_package(highs REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
-message(STATUS "Fetching Backward")
-FetchContent_Declare(Backward
-    GIT_REPOSITORY https://github.com/bombela/backward-cpp.git
-    GIT_TAG "3bb9240cb15459768adb3e7d963a20e1523a6294"
-)
-FetchContent_MakeAvailable(Backward)
+include(FetchContent)
 
 message(STATUS "Fetching cqasm")
 FetchContent_Declare(cqasm
     message(STATUS "Fetching cqasm")
     GIT_REPOSITORY https://github.com/QuTech-Delft/libqasm.git
-    GIT_TAG "8d0b4ed5e3a30aa6fde3b3aaf20a207b5d07876e"
+    GIT_TAG "9879dcc9ce5f750f9d2110d1cc81162be63ad9d7"
 )
 FetchContent_MakeAvailable(cqasm)
-
-message(STATUS "Fetching Eigen3")
-FetchContent_Declare(Eigen3
-    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-    GIT_TAG "4e9e493b4abc57dba377fc326082b40d08193619"
-)
-FetchContent_MakeAvailable(Eigen3)
-
-# FetchContent_Populate will be deprecated in the future
-# The equivalent solution with FetchContent_MakeAvailable consists of
-# setting SOURCE_SUBDIR to a non-existent subdirectory in FetchContent_Declare,
-# then letting FetchContent_MakeAvailable do the download of the dependency,
-# and still add_subdirectory manually
-# See: https://discourse.cmake.org/t/fetchcontent-a-directory-but-add-a-subdirectory/8603/13?u=rturrado
-message(STATUS "Fetching HiGHS")
-FetchContent_Declare(highs
-    GIT_REPOSITORY https://github.com/ERGO-Code/HiGHS.git
-    GIT_TAG "45a127b78060942721f75f46a04b274c2bb963d8"
-    SOURCE_SUBDIR this-directory-does-not-exist
-)
-FetchContent_MakeAvailable(highs)
-# The build system in HiGHS currently doesn't allow to disable HiGHS tests
-# thus the following hacks are needed, instead of just add_subdirectory(deps/highs).
-set(FAST_BUILD ON)
-set(GITHASH "")
-set(TODAY "")
-set(HIGHS_VERSION_MAJOR 0)
-set(HIGHS_VERSION_MINOR 0)
-set(HIGHS_VERSION_PATCH 0)
-set(HIGHS_SOURCE_DIR "${highs_SOURCE_DIR}")
-set(HIGHS_BINARY_DIR "${highs_BINARY_DIR}")
-add_subdirectory("${highs_SOURCE_DIR}/src" "${highs_BINARY_DIR}/src" SYSTEM)
-configure_file(${highs_SOURCE_DIR}/src/HConfig.h.in ${highs_BINARY_DIR}/HConfig.h)
 
 # TODO: use Lemon Conan package when it is ready (https://github.com/conan-io/conan-center-index/pull/17338)
 # TODO: remove use of Lemon in project?
@@ -233,19 +198,13 @@ FetchContent_Declare(lemon
 )
 FetchContent_MakeAvailable(lemon)
 
-message(STATUS "Fetching nlohmann_json")
-FetchContent_Declare(nlohmann_json
-    URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
-)
-FetchContent_MakeAvailable(nlohmann_json)
-
 
 #=============================================================================#
 # Compile code generators                                                     #
 #=============================================================================#
 
-# Simple program that generates resource include files, to include the contents
-# of a file as a constant inside the OpenQL library.
+# Simple program that generates resource include files,
+# to include the contents of a file as a constant inside the OpenQL library.
 add_executable(resource src/resource/main.cpp)
 function(create_resource fname)
     set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${fname}")
@@ -411,21 +370,20 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/kernel.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/program.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ql/api/cqasm_reader.cc"
-    ${BACKWARD_ENABLE}
 )
-add_backward(ql)
 
 # There is no distinction between public and private header files right now,
 # and they're all in the source directory.
 # Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
 target_include_directories(ql
+    SYSTEM PRIVATE "${Backward_INCLUDE_DIRS}"
     SYSTEM PRIVATE "${cqasm_SOURCE_DIR}/include"
-    SYSTEM PRIVATE "${eigen3_SOURCE_DIR}/Eigen"
-    SYSTEM PRIVATE "${eigen3_SOURCE_DIR}/unsupported"
+    SYSTEM PRIVATE "${Eigen3_INCLUDE_DIRS}/unsupported"
+    SYSTEM PRIVATE "${highs_INCLUDE_DIRS}"
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/"
     SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/"
-    SYSTEM PUBLIC "${nlohmann_json_SOURCE_DIR}/include"
+    SYSTEM PRIVATE ${TREE_LIB_PUBLIC_INCLUDE}  # needed at all?
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
@@ -433,11 +391,13 @@ target_include_directories(ql
 )
 
 target_link_libraries(ql
+    PRIVATE Backward::Backward
     PUBLIC cqasm
     PRIVATE Eigen3::Eigen
-    PUBLIC highs
+    PRIVATE fmt::fmt
+    PRIVATE highs::highs
     PRIVATE lemon
-    PRIVATE nlohmann_json::nlohmann_json
+    PUBLIC nlohmann_json::nlohmann_json
 )
 
 # Specify resources.
@@ -526,15 +486,9 @@ else()
 endif()
 
 if(QL_VISUALIZER)
-    message(STATUS "Fetching CImg")
-    FetchContent_Declare(CImg
-        GIT_REPOSITORY https://github.com/GreycLab/CImg.git
-        GIT_TAG "049267da171c50ab48f93c7285f096d7d686e8f3"
-    )
-    FetchContent_MakeAvailable(CImg)
-
     target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
-    target_include_directories(ql SYSTEM PRIVATE "${cimg_SOURCE_DIR}")
+    target_include_directories(ql SYSTEM PRIVATE "${cimg_INCLUDE_DIRS}")
+    target_link_libraries(ql PRIVATE cimg::cimg)
 endif()
 
 
@@ -557,13 +511,13 @@ endif()
 
 message(STATUS
     "[${PROJECT_NAME}] Target include directories:\n"
-    "      CImg: ${cimg_SOURCE_DIR}\n"
-    "      cqasm/include: ${cqasm_SOURCE_DIR}/include\n"
-    "      Eigen3/Eigen: ${eigen3_SOURCE_DIR}/Eigen\n"
-    "      Eigen3/unsupported: ${eigen3_SOURCE_DIR}/unsupported\n"
-    "      googletest: ${googletest_SOURCE_DIR}\n"
-    "      highs: ${highs_SOURCE_DIR}\n"
-    "      highs/src: ${highs_SOURCE_DIR}/src\n"
+    "      Backward: ${Backward_INCLUDE_DIRS}\n"
+    "      CImg: ${CImg_INCLUDE_DIRS}\n"
+    "      cqasm: ${cqasm_SOURCE_DIR}/include\n"
+    "      Eigen3: ${Eigen3_INCLUDE_DIRS}/Eigen\n"
+    "      Eigen3/unsupported: ${Eigen3_INCLUDE_DIRS}/unsupported\n"
+    "      googletest: ${googletest_INCLUDE_DIRS}\n"
+    "      highs: ${highs_INCLUDE_DIRS}\n"
     "      lemon-src: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-src/\n"
     "      lemon-build: ${CMAKE_CURRENT_BINARY_DIR}/_deps/lemon-build/\n"
     "      nlohmann_json/include: ${nlohmann_json_SOURCE_DIR}/include\n"

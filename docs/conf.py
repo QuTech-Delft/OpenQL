@@ -10,14 +10,17 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
+import m2r2
+import openql as ql
 import os
+import re
+import shutil
+import sphinx_rtd_theme
+import subprocess
 import sys
 sys.path.insert(0, os.path.abspath('../swig'))
 
 # -- Doxygen build -----------------------------------------------------------
-import subprocess
-import os
-import sys
 original_workdir = os.getcwd()
 docs_dir = os.path.dirname(__file__)
 try:
@@ -30,11 +33,8 @@ finally:
 
 html_extra_path = ['doxygen']
 
-# -- Generate RST files from runtime docs ------------------------------------
-import openql as ql
-import m2r2
-import re
 
+# -- Generate RST files from runtime docs ------------------------------------
 def docs_to_rst_magic(text, header_level=1):
     """Conversion magic for converting from OpenQL runtime docs to ReadTheDocs
     RST files."""
@@ -125,12 +125,13 @@ def docs_to_rst_magic(text, header_level=1):
 
     return text
 
-def get_version(verbose=0):
+
+def get_version():
     """ Extract version information from source code """
 
     matcher = re.compile('[\t ]*#define[\t ]+OPENQL_VERSION_STRING[\t ]+"(.*)"')
-    with open(os.path.join('..', 'include', 'ql', 'version.h'), 'r') as f:
-        for ln in f:
+    with open(os.path.join('..', 'include', 'ql', 'version.h'), 'r') as file:
+        for ln in file:
             m = matcher.match(ln)
             if m:
                 version = m.group(1)
@@ -139,6 +140,7 @@ def get_version(verbose=0):
             raise Exception('failed to parse version string from include/ql/version.h')
 
     return version
+
 
 if not os.path.exists('gen'):
     os.makedirs('gen')
@@ -186,32 +188,31 @@ docs = docs.replace('{compiler}', docs_to_rst_magic(ql.dump_compiler_docs(), 3))
 with open('gen/reference_configuration.rst', 'w') as f:
     f.write(docs)
 
+
 # Output of simple.py.
-import shutil
 original_workdir = os.getcwd()
-examples_dir = os.path.join(os.path.dirname(__file__), '..', 'examples')
+examples_dir = os.path.join(os.path.dirname(__file__), '..', 'test', 'v1x', 'python', 'example')
+example_file_path = os.path.join(examples_dir, 'simple.py')
 try:
     os.chdir(examples_dir)
-    subprocess.check_call([sys.executable, os.path.join(examples_dir, 'simple.py')])
+    subprocess.check_call([sys.executable, example_file_path])
 finally:
     os.chdir(original_workdir)
-shutil.copyfile(os.path.join(examples_dir, 'output', 'my_program.qasm'), 'gen/my_program.qasm')
-shutil.copyfile(os.path.join(examples_dir, 'output', 'my_program_scheduled.qasm'), 'gen/my_program_scheduled.qasm')
+example_output_file_path = os.path.join(examples_dir, 'example_output', 'my_program.qasm')
+example_scheduled_output_file_path = os.path.join(examples_dir, 'example_output', 'my_program_scheduled.qasm')
+shutil.copyfile(example_output_file_path, 'gen/my_program.qasm')
+shutil.copyfile(example_scheduled_output_file_path, 'gen/my_program_scheduled.qasm')
 
 
 # -- Project information -----------------------------------------------------
-
 project = 'OpenQL'
 copyright = '2016-2021, QuTech, TU Delft'
 author = 'QuTech, TU Delft'
-
 master_doc = 'index'
 
 # -- General configuration ---------------------------------------------------
-
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
+# Add any Sphinx extension module names here, as strings.
+# They can be extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'm2r2',
     'sphinx.ext.todo',
@@ -234,36 +235,38 @@ templates_path = ['_templates']
 # Some or just temporary files,
 # other ones files 'include::'d by another .rst file.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 
-	'platform_*.rst', 'mapping.rst', 'scheduling.rst', 'decomposition.rst',
-	'optimization.rst', 'scheduling_ccl.rst', 'scheduling_cc.rst']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store',
+                    'platform_*.rst', 'mapping.rst', 'scheduling.rst', 'decomposition.rst',
+                    'optimization.rst', 'scheduling_ccl.rst', 'scheduling_cc.rst']
+
 
 def skip(app, what, name, obj, would_skip, options):
     if name == "__init__":
         return False
     return would_skip
 
+
 def setup(app):
     app.connect("autodoc-skip-member", skip)
 
-# -- Options for HTML output -------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-import sphinx_rtd_theme
+# -- Options for HTML output -------------------------------------------------
+# The theme to use for HTML and HTML Help pages.  See the documentation for a list of builtin themes.
 html_theme = 'sphinx_rtd_theme'
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+
+# html_static_path = ['_static']
 
 
 [extensions]
-todo_include_todos=True
+todo_include_todos = True
 
-# to enable figure numbering
+# To enable figure numbering
 numfig = True
 
 autodoc_member_order = 'bysource'

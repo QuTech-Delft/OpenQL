@@ -3,7 +3,6 @@
 import os, platform, shutil, sys, re
 from setuptools import setup, Extension
 from distutils.dir_util import copy_tree
-from distutils import log
 
 from distutils.command.clean        import clean        as _clean
 from setuptools.command.build_ext   import build_ext    as _build_ext
@@ -35,6 +34,7 @@ if not os.path.exists(target_dir):
     os.makedirs(target_dir)
 copy_tree(srcmod_dir, module_dir)
 
+
 def get_version(verbose=0):
     """ Extract version information from source code """
 
@@ -52,9 +52,11 @@ def get_version(verbose=0):
 
     return version
 
+
 def read(fname):
     with open(os.path.join(os.path.dirname(__file__), fname)) as f:
         return f.read()
+
 
 class clean(_clean):
     def run(self):
@@ -62,13 +64,14 @@ class clean(_clean):
         if os.path.exists(target_dir):
             shutil.rmtree(target_dir)
 
+
 class build_ext(_build_ext):
     def run(self):
         from plumbum import local, FG, ProcessExecutionError
 
-        # If we were previously built in a different directory, nuke the cbuild
-        # dir to prevent inane CMake errors. This happens when the user does
-        # pip install . after building locally.
+        # If we were previously built in a different directory,
+        # nuke the cbuild dir to prevent inane CMake errors.
+        # This happens when the user does 'pip install .' after building locally
         if os.path.exists(cbuild_dir + os.sep + 'CMakeCache.txt'):
             with open(cbuild_dir + os.sep + 'CMakeCache.txt', 'r') as f:
                 for line in f.read().split('\n'):
@@ -82,128 +85,48 @@ class build_ext(_build_ext):
                             shutil.rmtree(cbuild_dir)
                         break
 
-        # Figure out how many parallel processes to build with.
-        if self.parallel:
-            nprocs = str(self.parallel)
-        else:
-            nprocs = os.environ.get('NPROCS', '1')
-
-        # Figure out how setuptools wants to name the extension file and where
-        # it wants to place it.
+        # Figure out how setuptools wants to name the extension file and where it wants to place it
         target = os.path.abspath(self.get_ext_fullpath('openql._openql'))
 
-        # Build the Python extension and "install" it where setuptools expects
-        # it.
+        # Build the Python extension and install it where setuptools expects it
         if not os.path.exists(cbuild_dir):
             os.makedirs(cbuild_dir)
-        with local.cwd(cbuild_dir):
+
+        # Configure and build using Conan
+        with local.cwd(root_dir):
+            # Build type can be set using an environment variable.
             build_type = os.environ.get('OPENQL_BUILD_TYPE', 'Release')
+            build_tests = 'True' if 'OPENQL_BUILD_TESTS' in os.environ else 'False'
+            disable_unitary = 'True' if 'OPENQL_DISABLE_UNITARY' in os.environ else 'False'
 
-            cmd = (local['cmake'][root_dir]
-                ['-DOPENQL_BUILD_PYTHON=YES']
-                ['-DCMAKE_INSTALL_PREFIX=' + prefix_dir]
-                ['-DOPENQL_PYTHON_DIR=' + os.path.dirname(target)]
-                ['-DOPENQL_PYTHON_EXT=' + os.path.basename(target)]
-
-                # Make sure CMake uses the Python installation corresponding
-                # with the the Python version we're building with now.
-                ['-DPYTHON_EXECUTABLE=' + sys.executable]
-
-                # (ab)use static libs for the intermediate libraries to avoid
-                # dealing with R(UN)PATH nonsense on Linux/OSX as much as
-                # possible.
-                ['-DBUILD_SHARED_LIBS=NO']
-
-                # Build type can be set using an environment variable.
-                ['-DCMAKE_BUILD_TYPE=' + build_type]
-
-                # Do not include debug symbols in the wheels.
-                ['-DOPENQL_DEBUG_SYMBOLS=OFF']
-            )
-
-            # If we're on Windows, we're probably building with MSVC. In that
-            # case, we might have to tell CMake whether we want to build for
-            # x86 or x64, but depending on how MSVC is configured, that same
-            # command-line option could also return an error. So we need to be
-            # careful here.
-            if platform.system() == 'Windows':
-                log.info('Trying to figure out bitness...')
-
-                # Figure out what CMake is doing by default.
-                if not os.path.exists('test-cmake-config'):
-                    os.makedirs('test-cmake-config')
-                with local.cwd('test-cmake-config'):
-                    local['cmake'][pysrc_dir + os.sep + 'compat' + os.sep + 'test-cmake-config'] & FG
-                    with open('values.cfg', 'r') as f:
-                        void_ptr_size, generator, *_ = f.read().split('\n')
-                        cmake_is_64 = int(void_ptr_size.strip()) == 8
-                        cmake_is_msvc = 'Visual Studio' in generator
-                        msvc_is_fixed_to_64 = cmake_is_msvc and ('Win64' in generator or 'IA64' in generator)
-
-                # Figure out what Python needs.
-                python_is_64 = sys.maxsize > 2**32
-
-                log.info('Figured out the following things:')
-                log.info(' - Python is {}-bit'.format(64 if python_is_64 else 32))
-                log.info(' - CMake is building {}-bit by default'.format(64 if cmake_is_64 else 32))
-                log.info(' - CMake {} building using MSVC'.format('IS' if cmake_is_msvc else 'is NOT'))
-                log.info(' - MSVC {} fixed to 64-bit'.format('IS' if msvc_is_fixed_to_64 else 'is NOT'))
-
-                # If there's a mismatch, see what we can do.
-                if python_is_64 != cmake_is_64:
-                    if msvc_is_fixed_to_64 and not python_is_64:
-                        raise RuntimeError('MSVC is configured to build 64-bit binaries, but Python is 32-bit!')
-                    if not cmake_is_msvc:
-                        raise RuntimeError('Mismatch in 32-bit/64-bit between CMake defaults ({}) and Python install ({})!'.format(
-                            '64-bit' if cmake_is_64 else '32-bit',
-                            '64-bit' if python_is_64 else '32-bit'
-                        ))
-
-                    # Looks like we're compiling with MSVC, and MSVC is merely
-                    # defaulting to the wrong bitness, which means we should be
-                    # able to change it with the -A flag.
-                    if python_is_64:
-                        cmd = cmd['-A']['x64']
-                    else:
-                        cmd = cmd['-A']['win32']
-
-            # Unitary decomposition can be disabled using an environment
-            # variable.
-            if 'OPENQL_DISABLE_UNITARY' in os.environ:
-                cmd = cmd['-DWITH_UNITARY_DECOMPOSITION=OFF']
-
-            # C++ tests can be enabled using an environment variable. They'll
-            # be run before the install.
-            if 'OPENQL_BUILD_TESTS' in os.environ:
-                cmd = cmd['-DOPENQL_BUILD_TESTS=ON']
-
-            # Run cmake configuration.
+            cmd = local['conan']['profile']['detect']['--force']
             cmd & FG
 
-            # Do the build with the given number of parallel threads.
-            build_cmd = local['cmake']['--build']['.']['--config'][build_type]
-            cmd = build_cmd
-            if nprocs != '1':
-                try:
-                    parallel_supported = tuple(local['cmake']('--version').split('\n')[0].split()[-1].split('.')) >= (3, 12)
-                except:
-                    parallel_supported = False
-                if parallel_supported:
-                    cmd = cmd['--parallel'][nprocs]
-                elif not sys.platform.startswith('win'):
-                    cmd = cmd['--']['-j'][nprocs]
+            cmd = (local['conan']['create']['.']
+                ['--version']['0.11.2']
+                ['-s:h']['compiler.cppstd=23']
+                ['-s:h']["openql/*:build_type=" + build_type]
 
-            # Run the C++ tests if requested.
-            if 'OPENQL_BUILD_TESTS' in os.environ:
-                cmd = build_cmd['--target']['test'] & FG
+                # C++ tests can be enabled using an environment variable. They'll be run before the install
+                ['-o']['openql/*:build_python=True']
+                ['-o']['openql/*:build_tests=' + build_tests]
+                # Do not include debug symbols in the wheels
+                ['-o']["openql/*:debug_symbols=False"]
+                # Unitary decomposition can be disabled using an environment variable
+                ['-o']['openql/*:disable_unitary=' + disable_unitary]
+                ['-o']['openql/*:python_dir=' + re.escape(os.path.dirname(target))]
+                ['-o']['openql/*:python_ext=' + re.escape(os.path.basename(target))]
+                # (Ab)use static libs for the intermediate libraries
+                # to avoid dealing with R(UN)PATH nonsense on Linux/OSX as much as possible
+                ['-o']["openql/*:shared=False"]
 
-            # Do the install.
-            try:
-                # install target for makefiles
-                build_cmd['--target']['install'] & FG
-            except ProcessExecutionError:
-                # install target for MSVC
-                build_cmd['--target']['INSTALL'] & FG
+                ['-b']['missing']
+                ['-tf']['']
+            )
+            if platform.system() == "Darwin":
+                cmd = cmd['-c']['tools.build:defines=["_LIBCPP_DISABLE_AVAILABILITY"]']
+            cmd & FG
+
 
 class build(_build):
     def initialize_options(self):
@@ -217,16 +140,19 @@ class build(_build):
         self.run_command('build_ext')
         _build.run(self)
 
+
 class install(_install):
     def run(self):
         # See https://stackoverflow.com/questions/12491328
         self.run_command('build_ext')
         _install.run(self)
 
+
 class bdist(_bdist):
     def finalize_options(self):
         _bdist.finalize_options(self)
         self.dist_dir = os.path.relpath(dist_dir)
+
 
 class bdist_wheel(_bdist_wheel):
     def run(self):
@@ -240,15 +166,18 @@ class bdist_wheel(_bdist_wheel):
             from delocate.delocating import delocate_wheel
             delocate_wheel(wheel_path)
 
+
 class sdist(_sdist):
     def finalize_options(self):
         _sdist.finalize_options(self)
         self.dist_dir = os.path.relpath(dist_dir)
 
+
 class egg_info(_egg_info):
     def initialize_options(self):
         _egg_info.initialize_options(self)
         self.egg_base = os.path.relpath(target_dir)
+
 
 setup(
     name='qutechopenql',
@@ -259,7 +188,7 @@ setup(
     author='QuTech, TU Delft',
     url='https://github.com/QuTech-Delft/OpenQL',
 
-    classifiers = [
+    classifiers=[
         'License :: OSI Approved :: Apache Software License',
 
         'Operating System :: POSIX :: Linux',
@@ -276,18 +205,18 @@ setup(
         'Topic :: Scientific/Engineering'
     ],
 
-    packages = ['openql'],
-    package_dir = {'': 'pybuild'},
+    packages=['openql'],
+    package_dir={'': 'pybuild'},
 
     # NOTE: the library build process is completely overridden to let CMake
     # handle it; setuptools' implementation is horribly broken. This is here
     # just to have the rest of setuptools understand that this is a Python
     # module with an extension in it.
-    ext_modules = [
+    ext_modules=[
         Extension('openql._openql', [])
     ],
 
-    cmdclass = {
+    cmdclass={
         'bdist': bdist,
         'bdist_wheel': bdist_wheel,
         'build_ext': build_ext,
@@ -298,14 +227,15 @@ setup(
         'sdist': sdist,
     },
 
-    setup_requires = [
+    setup_requires=[
+        'conan',
         'plumbum',
         'delocate; platform_system == "Darwin"',
     ],
-    install_requires = [
+    install_requires=[
         'msvc-runtime; platform_system == "Windows"',
     ],
-    tests_require = [
+    tests_require=[
         'pytest', 'numpy'
     ],
 

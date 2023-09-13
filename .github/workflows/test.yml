@@ -7,95 +7,45 @@ on:
   pull_request:
 
 jobs:
-  cpp-linux:
-    name: 'C++ tests (gcc-clang/Linux/x64)'
-    runs-on: ubuntu-latest
+  cpp-linux-macos-windows:
+    name: 'C++ tests (Linux-MacOS-Windows/x64)'
     strategy:
       fail-fast: false
       matrix:
-        build_type:
-          - Debug
-          - Release
-        compiler:
-          - clang++
-          - g++
+        # Building for {g++, clang++}/Linux, clang++/MacOS, and msvc/Windows
+        # both in Debug and Release
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        compiler: [g++, clang++, msvc]
+        build_type: [Debug, Release]
+        exclude:
+          - os: ubuntu-latest
+            compiler: msvc
+          - os: macos-latest
+            compiler: g++
+          - os: macos-latest
+            compiler: msvc
+          - os: windows-latest
+            compiler: g++
+          - os: windows-latest
+            compiler: clang++
+    runs-on: ${{ matrix.os }}
     steps:
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install conan
+        run: python -m pip install --upgrade pip conan
       - name: Get latest CMake
         uses: lukka/get-cmake@latest
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Create build directory
-        run: mkdir -p build-${{ matrix.compiler }}-${{ matrix.build_type }}
-      - name: Configure
-        env:
-          CXX: ${{ matrix.compiler }}
-        working-directory: build-${{ matrix.compiler }}-${{ matrix.build_type }}
-        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
-      - name: Build
-        working-directory: build-${{ matrix.compiler }}-${{ matrix.build_type }}
-        run: cmake --build . --parallel 10
-      - name: Test
-        working-directory: build-${{ matrix.compiler }}-${{ matrix.build_type }}
-        run: ctest -C ${{ matrix.build_type }} --output-on-failure
-
-  cpp-macos:
-    name: 'C++ tests (clang/MacOS/x64)'
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        build_type:
-          - Debug
-          - Release
-    steps:
-      - name: Install flex/bison
+      - name: Configure and build
         run: |
-          brew install flex bison
-          echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
-          echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
-      - name: Get latest CMake
-        uses: lukka/get-cmake@latest
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Create build directory
-        run: mkdir -p build-${{ matrix.build_type }}
-      - name: Configure
-        working-directory: build-${{ matrix.build_type }}
-        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
-      - name: Build
-        working-directory: build-${{ matrix.build_type }}
-        run: cmake --build . --parallel 10
+          conan profile detect
+          conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=${{ matrix.build_type }} -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
       - name: Test
-        working-directory: build-${{ matrix.build_type }}
-        run: ctest -C ${{ matrix.build_type }} --output-on-failure
-
-  cpp-windows:
-    name: 'C++ tests (msvc/Windows/x64)'
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        build_type:
-          - Debug
-          - Release
-    steps:
-      - name: Install Winflexbison3
-        shell: powershell
-        run: choco install winflexbison3 --version 2.5.24.20210105
-      - name: Get latest CMake
-        uses: lukka/get-cmake@latest
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Create build directory
-        run: mkdir -p build
-      - name: Configure
-        working-directory: build
-        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
-      - name: Build
-        working-directory: build
-        run: cmake --build . --parallel 10 --config ${{ matrix.build_type }}
-      - name: Test
-        working-directory: build
+        working-directory: build/${{ matrix.build_type }}
         run: ctest -C ${{ matrix.build_type }} --output-on-failure
 
   cpp-arm64:
@@ -109,33 +59,37 @@ jobs:
           - macOS
     steps:
       - if: matrix.os == 'Linux'
-        name: Install flex/bison, and gcc (Linux)
+        name: Install gcc and python (Linux)
         run: |
           sudo apt-get -y update
           sudo apt-get -y upgrade
-          sudo apt-get -y install flex bison gcc
+          sudo apt-get -y install gcc python3 python3-pip python3-venv
         shell: bash
       - if: matrix.os == 'macOS'
-        name: Install flex/bison, and gcc (MacOS)
+        # We are having problems when using the m4 and zulu-opendjk Conan packages on an armv8 architecture
+        # m4 is required by flex/bison and zulu-openjdk provides the Java JRE required by the ANTLR generator
+        # So, for the time being, we are installing flex/bison and java manually for this platform
+        name: Install bison, flex, gcc, java and python (MacOS)
         run: |
-          brew install flex bison gcc
-          echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
+          brew install bison flex gcc java python
           echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
+          echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
+          echo "$(brew --prefix java)/bin" >> $GITHUB_PATH
         shell: bash
       - name: Get latest CMake
         uses: lukka/get-cmake@latest
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Create build directory
-        run: mkdir -p build
-      - name: Configure
-        working-directory: build
-        run: cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DOPENQL_BUILD_TESTS=ON -DWITH_UNITARY_DECOMPOSITION=OFF
-      - name: Build
-        working-directory: build
-        run: cmake --build . --parallel 10
+      - name: Configure and build
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          python3 -m pip install --upgrade pip conan
+          conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=Release -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
       - name: Test
-        working-directory: build
+        working-directory: build/Release
         run: ctest -C Release --output-on-failure
 
   python:
@@ -149,41 +103,34 @@ jobs:
           - macos-latest
           - windows-latest
     steps:
-      - uses: actions/setup-python@v4
+      - name: Install Python
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
       - name: Install Python dependencies
-        run: python -m pip install --upgrade pip setuptools wheel pytest numpy qxelarator
-      - name: Install flex/bison, and SWIG
+        run: python -m pip install --upgrade pip conan numpy pytest setuptools wheel qxelarator
+      - name: Install SWIG, and set build type (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          sudo apt-get -y update
-          sudo apt-get -y upgrade
-          sudo apt-get -y install flex bison swig
+          sudo apt-get install -y swig
           echo "LIBQASM_BUILD_TYPE=Debug" >> $GITHUB_ENV
           echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
-      - name: Install flex/bison, and SWIG
+      - name: Install flex/bison and SWIG, and set build type (MacOS)
         if: matrix.os == 'macos-latest'
         run: |
-          brew install flex bison swig
-          echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
-          echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
+          brew install swig
           echo "LIBQASM_BUILD_TYPE=Debug" >> $GITHUB_ENV
           echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
-      - name: Install Winflexbison3
+      - name: Set build type (Windows)
         if: matrix.os == 'windows-latest'
         shell: powershell
         run: |
-          choco install winflexbison3 --version 2.5.24.20210105
+          echo "LIBQASM_BUILD_TYPE=Release" >> $env:GITHUB_ENV
           echo "OPENQL_BUILD_TYPE=Release" >> $env:GITHUB_ENV
           echo "OPENQL_DISABLE_UNITARY=true" >> $env:GITHUB_ENV
-      - name: Get latest CMake
-        uses: lukka/get-cmake@latest
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build
-        env:
-          NPROCS: 10
         run: python -m pip install --verbose .
       - name: Test
         run: python -m pytest

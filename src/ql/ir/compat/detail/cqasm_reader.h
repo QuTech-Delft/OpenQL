@@ -11,20 +11,17 @@
 #include "ql/ir/compat/compat.h"
 #include "cqasm.hpp"
 
-namespace ql {
-namespace ir {
-namespace compat {
-namespace cqasm_reader {
-namespace detail {
+namespace ql::ir::compat::cqasm_reader::detail {
 
 // Shorthands for namespaces.
-namespace lqt { using namespace ::cqasm::tree; }
-namespace lqs { using namespace ::cqasm::v1x::semantic; }
-namespace lqv { using namespace ::cqasm::v1x::values; }
-namespace lqtyp { using namespace ::cqasm::v1x::types; }
-namespace lqi { using namespace ::cqasm::v1x::instruction; }
-namespace lqa { using namespace ::cqasm::v1x::analyzer; }
-namespace lqp { using namespace ::cqasm::v1x::parser; }
+namespace lqt = cqasm::tree;
+
+namespace lqa = cqasm::v1x::analyzer;
+namespace lqi = cqasm::v1x::instruction;
+namespace lqp = cqasm::v1x::parser;
+namespace lqs = cqasm::v1x::semantic;
+namespace lqtyp = cqasm::v1x::types;
+namespace lqv = cqasm::v1x::values;
 
 using namespace utils;
 
@@ -396,8 +393,4 @@ public:
 
 };
 
-} // namespace detail
-} // namespace cqasm_reader
-} // namespace compat
-} // namespace ir
-} // namespace ql
+} // namespace ql::ir::compat::cqasm_reader::detail

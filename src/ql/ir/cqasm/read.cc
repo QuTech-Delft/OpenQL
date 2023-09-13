@@ -13,17 +13,21 @@
 #include "cqasm.hpp"
 #include "cqasm-version.hpp"
 
-namespace ql {
-namespace ir {
-namespace cqasm {
+#include <fmt/format.h>
+#include <stdexcept>
+
+namespace ql::ir::cqasm {
+
+namespace cqe = ::cqasm::error;
+namespace cqt = ::cqasm::tree;
+namespace cqver = ::cqasm::version;
 
 namespace cq1 = ::cqasm::v1x;
-namespace cqv1 = ::cqasm::v1x::values;
-namespace cqty1 = ::cqasm::v1x::types;
 namespace cqs = ::cqasm::v1x::semantic;
-namespace cqt = ::cqasm::tree;
-namespace cqe = ::cqasm::error;
-namespace cqver = ::cqasm::version;
+namespace cqty1 = ::cqasm::v1x::types;
+namespace cqv1 = ::cqasm::v1x::values;
+
+namespace cq3 = ::cqasm::v3x;
 
 /**
  * Marker used on cQASM nodes when they have been successfully used by
@@ -1516,6 +1520,15 @@ void read_v1(
 
 }
 
+void read_v3(
+    const Ref & /* ir */,
+    const utils::Str &data,
+    const utils::Str &fname,
+    const ReadOptions & /* options */
+) {
+    cq3::parser::parse_string(data, fname);
+}
+
 /**
  * Reads a cQASM file into the IR.
  * If reading is successful, ir->program is completely replaced.
@@ -1529,8 +1542,15 @@ void read(
     const ReadOptions &options
 ) {
     auto pres = cqver::parse_string(data, fname);
-    if (auto version = cqver::parse_string(data, fname); version <= cqver::Version("1.2")) {
+    auto version = cqver::parse_string(data, fname);
+    if (version <= cqver::Version("1.2")) {
         read_v1(ir, data, fname, options);
+    } else if (version == cqver::Version("3.0")) {
+        read_v3(ir, data, fname, options);
+    } else {
+        auto error = fmt::format("'{}' is an invalid cQASM version", fmt::join(version, "."));
+        QL_EOUT(error);
+        QL_USER_ERROR(error);
     }
 }
 
@@ -1581,6 +1601,4 @@ ir::compat::PlatformRef read_platform_from_file(const utils::Str &fname) {
     return read_platform(data, fname);
 }
 
-} // namespace cqasm
-} // namespace ir
-} // namespace ql
+} // namespace ql::ir::cqasm

@@ -23,12 +23,12 @@ class TestCondex(unittest.TestCase):
         ql.set_option('write_report_files', 'no')
 
     def test_condex_basic(self):
-        # parameters
+        # Parameters
         v = 'basic'
         num_qubits = 7
         num_bregs = num_qubits
 
-        # create and set platform
+        # Create and set platform
         prog_name = "test_condex_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", "cc_light.s7")
@@ -37,35 +37,35 @@ class TestCondex(unittest.TestCase):
 
         ql.set_option('use_default_gates', 'yes')
 
-        # measure q0 implicitly assigns b0, then x conditionally using condgate on b0 on q0
+        # Measure q0 implicitly assigns b0, then x conditionally using cond gate on b0 on q0
         k.gate("measure", [0])
         k.condgate("x", [0], 'COND_UNARY', [0])
 
-        # measure q1 implicitly assigns b1, then x conditionally using preset_condition on b1 on q1
+        # Measure q1 implicitly assigns b1, then x conditionally using preset_condition on b1 on q1
         k.gate("measure", [1])
         k.gate_preset_condition('COND_UNARY', [1])
         k.gate("x", [1])
         k.gate_clear_condition()
         k.gate("x", [1])
 
-        # measure q2 implicitly assigns b2, then x conditionally using explicit gate on b2 on q2
+        # Measure q2 implicitly assigns b2, then x conditionally using explicit gate on b2 on q2
         k.gate("measure", [2])
         k.gate("x", [2], 0, 0.0, [], 'COND_UNARY', [2])
 
-        # measure q3 and explicitly assign b1, then x conditionally on b1 on q3
+        # Measure q3 and explicitly assign b1, then x conditionally on b1 on q3
         k.gate("measure", [3], 0, 0.0, [1])
         k.condgate("x", [3], 'COND_UNARY', [1])
 
-        # measure q4 and then x conditionally on NOT b4 on q4
+        # Measure q4 and then x conditionally on NOT b4 on q4
         k.gate("measure", [4])
         k.condgate("x", [4], 'COND_NOT', [4])
 
-        # measure q5 and then x conditionally NEVER and ALWAYS on q5
+        # Measure q5 and then x conditionally NEVER and ALWAYS on q5
         k.gate("measure", [5])
         k.condgate("x", [5], 'COND_ALWAYS', [])
         k.condgate("x", [5], 'COND_NEVER', [])
 
-        # measure q0 and q1 and then x conditionally on b0 OP b1 on q0
+        # Measure q0 and q1 and then x conditionally on b0 OP b1 on q0
         k.gate("measure", [0])
         k.gate("measure", [1])
         k.condgate("x", [0], 'COND_AND', [0, 1])
@@ -85,19 +85,19 @@ class TestCondex(unittest.TestCase):
         ql.set_option('use_default_gates', 'no')
 
     def test_condex_measure(self):
-        # parameters
+        # Parameters
         v = 'measure'
         num_qubits = 7
         num_bregs = num_qubits
 
-        # create and set platform
+        # Create and set platform
         prog_name = "test_condex_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", "cc_light.s7")
         prog = ql.Program(prog_name, starmon, num_qubits, 0, num_bregs)
         k = ql.Kernel(kernel_name, starmon, num_qubits, 0, num_bregs)
 
-        # conditional measure
+        # Conditional measure
         k.gate("measure", [0], 0, 0.0, [0])
         k.gate("measure", [1], 0, 0.0, [1], 'COND_UNARY', [0])
         k.gate("measure", [2], 0, 0.0, [2], 'COND_NOT', [0])
@@ -112,8 +112,8 @@ class TestCondex(unittest.TestCase):
         self.assertTrue(file_compare(qasm_fn, gold_fn))
 
     def test_condex_cnot(self):
-        # check whether condex works with conditional cnot gate which is to be decomposed by mapper
-        # parameters
+        # Check whether condex works with conditional CNOT gate
+        # which is to be decomposed by mapper parameters
         v = 'cnot'
         num_qubits = 7
         num_bregs = num_qubits
@@ -155,8 +155,8 @@ class TestCondex(unittest.TestCase):
         ql.set_option('mapper', 'no')
 
     def test_condex_toffoli_compos_gate(self):
-        # check whether condex works with conditional toffoli gate which is to be decomposed by toffoli decomposition
-        # parameters
+        # Check whether condex works with conditional Toffoli gate
+        # which is to be decomposed by toffoli decomposition parameters
         v = 'toffoli_compos_gate'
         num_qubits = 7
         num_bregs = num_qubits

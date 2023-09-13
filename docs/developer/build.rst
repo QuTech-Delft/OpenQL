@@ -17,50 +17,52 @@ Dependencies
 
 The following packages are required to compile OpenQL from sources:
 
-- a C++ compiler with C++23 support (Linux: gcc, MacOS: LLVM/clang, Windows: Visual Studio 17 2022, MSVC 19.35.32217.1)
+- C++ compiler with C++23 support (Linux: gcc, MacOS: LLVM/clang, Windows: Visual Studio 17 2022, MSVC 19.35.32217.1)
+- CMake >= 3.12
+- conan 2.0
 - git
-- cmake >= 3.25
-- swig (Linux: >= 3.0.12, Windows: >= 4.0.0)
 - Python 3.x + pip, with the following packages:
-   - ``plumbum``
-   - ``wheel``
-   - [Optional] ``pytest`` (for testing)
-   - [Optional] ``numpy`` (for testing)
-   - [Optional] ``libqasm`` (for testing)
-   - [Optional] ``sphinx==3.5.4`` (for documentation generation)
-   - [Optional] ``sphinx-rtd-theme`` (for documentation generation)
-   - [Optional] ``m2r2`` (for documentation generation)
-- [Optional] Doxygen (for documentation generation)
-- [Optional] Graphviz Dot utility (to convert graphs from dot to pdf, png etc)
-- [Optional] XDot (to visualize generated graphs in dot format)
-- [Optional] make (required for documentation generation; other CMake backends can be used for everything else)
-- [Optional, MacOS only] XQuartz (only if you want to use the visualizer)
+
+  - ``plumbum``
+  - ``qxelarator``
+  - ``setuptools``
+  - ``wheel``
+  - And, optionally, these:
+
+    - Testing: ``libqasm``, ``make``, ``numpy``, and ``pytest``.
+    - Documentation generation: ``doxygen``, ``m2r2``, ``sphinx==7.0.0``, and ``sphinx-rtd-theme``.
+    - Convert graphs from `dot` to `pdf`, `png`, etc: ``Graphviz Dot utility``.
+    - Visualize generated graphs in `dot` format: ``XDot``.
+    - Use the visualizer in MacOS: ``XQuartz``.
+
+- SWIG (Linux: >= 3.0.12, Windows: >= 4.0.0)
 
 .. note::
-   The connection between Sphinx' and SWIG's autodoc functionalities is very iffy, but aside from tracking everything
-   manually or forking SWIG there is not much that can be done about it. Because of this, not all Sphinx versions will
-   build correctly, hence why the Sphinx version is pinned. Sphinx 4.x for example crashes on getting the function
-   signature of property getters/setters.
+   The connection between Sphinx and SWIG's autodoc functionalities is very iffy,
+   but aside from tracking everything manually or forking SWIG there is not much that can be done about it.
+   Because of this, not all Sphinx versions will build correctly,
+   hence why the Sphinx version is pinned.
+   Sphinx 4.x for example crashes on getting the function   signature of property getters/setters.
 
 Windows-specific instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
-   The current maintainers of OpenQL all use either Linux or MacOS. While we've checked that these instructions
-   should work on a clean Windows install, things may go out of date. Please let us know if you encounter
-   difficulties with these instructions.
+   The current maintainers of OpenQL all use either Linux or MacOS.
+   While we've checked that these instructions should work on a clean Windows install, things may go out of date.
+   Please let us know if you encounter difficulties with these instructions.
 
 Dependencies can be installed with:
 
-- `cmake 3.25.0 <https://github.com/Kitware/CMake/releases/download/v3.25.0/cmake-3.25.0-windows-x86_64.msi>`_
+- `cmake 3.12.0 <https://github.com/Kitware/CMake/releases/download/v3.12.0/cmake-3.12.0-windows-x86_64.msi>`_
 - `swigwin 4.0.0 <https://sourceforge.net/projects/swig/files/swigwin/swigwin-4.0.0/swigwin-4.0.0.zip/download>`_
 
 Make sure the above mentioned binaries are added to the system path.
 
 Alternatively, you can use Chocolatey to install packages.
 
-The actual build and install should be done with PowerShell, for which some modifications (may?) need to be made
-first.
+The actual build and install should be done with PowerShell,
+for which some modifications (may?) need to be made first.
 
 - Use Power Shell for installation.
 - Set execution policy by:
@@ -88,10 +90,10 @@ first.
     Invoke-BatchFile "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
 
 - To make your life easier, you can add this command to the profile you are using for power shell,
-avoiding the need to manually run this command every time you open a power shell.
-You can see the path of this profile by `echo $PROFILE`. Create/Edit this file to add the above command.
+  avoiding the need to manually run this command every time you open a power shell.
+  You can see the path of this profile by `echo $PROFILE`. Create/Edit this file to add the above command.
 
-- Python.exe and swig.exe should be in the path of power shell. To test if swig.exe is the path, run:
+- `Python.exe` and `swig.exe` should be in the path of power shell. To test if swig.exe is the path, run:
 
 ::
 
@@ -104,7 +106,6 @@ You can see the path of this profile by `echo $PROFILE`. Create/Edit this file t
     Gci env:
 
 - Make sure the following variables are defined:
-
     - PYTHON_INCLUDE (should point to the directory containing Python.h)
     - PYTHON_LIB (should point to the python library pythonXX.lib, where XX is for the python version number)
 
@@ -125,8 +126,8 @@ All dependencies can be installed using `Homebrew <https://brew.sh>`_ and pip:
 ::
 
     brew update
-    brew install llvm cmake swig python3 doxygen graphviz xquartz
-    pip3 install wheel plumbum pytest numpy sphinx==3.5.4 sphinx-rtd-theme m2r2
+    brew install cmake doxygen graphviz llvm python3 swig xquartz
+    pip3 install conan m2r2 numpy plumbum pytest setuptools qxelarator sphinx==3.5.4 sphinx-rtd-theme wheel
 
 Make sure the above mentioned binaries are added to the system path in front of ``/usr/bin``,
 otherwise CMake finds the default versions.
@@ -175,36 +176,42 @@ Or in editable mode by the command:
 
     pip install -v -e .
 
-Editable mode has the advantage that you'll get incremental compilation if you ever change OpenQL's C++ files, but it's
-a bit more fragile in that things will break if you move the OpenQL repository around later. Specifically, editable mode
-just installs an absolute path link to your clone of the OpenQL repository, so if you move it, the link breaks. You'd have
-to remember to uninstall if you ever end up moving it.
+Editable mode has the advantage that you'll get incremental compilation if you ever change OpenQL's C++ files,
+but it's a bit more fragile in that things will break if you move the OpenQL repository around later.
+Specifically, editable mode just installs an absolute path link to your clone of the OpenQL repository,
+so if you move it, the link breaks.
+You'd have to remember to uninstall if you ever end up moving it.
 
 .. note::
-   Depending on your system configuration, you may need to use ``pip3``, ``python -m pip`` or ``python3 -m pip`` instead
-   of ``pip``. You may also need to add ``--user`` to the flags or prefix ``sudo``. An exhaustive list of which is needed
-   when is out of scope here; instead, just look for pip usage instructions for your particular operating system online.
+   Depending on your system configuration,
+   you may need to use ``pip3``, ``python -m pip`` or ``python3 -m pip`` instead of ``pip``.
+   You may also need to add ``--user`` to the flags or prefix ``sudo``.
+   An exhaustive list of which is needed when is out of scope here;
+   instead, just look for pip usage instructions for your particular operating system online.
    This works the same for any other Python package.
 
 .. warning::
-   NEVER install with ``python3 setup.py install`` (or similar) directly! This always leads to all kinds of confusion,
+   NEVER install with ``python3 setup.py install`` (or similar) directly!
+   This always leads to all kinds of confusion,
    because ``setuptools`` does not inform ``pip`` that the package is installed, allowing ``pip`` to go out of sync.
 
 .. note::
-   The ``setup.py`` script (as invoked by pip in the above commands, again, do not invoke it directly!) listens to a number
-   of environment variables to configure the installation and the compilation process. The most important ones are:
+   The ``setup.py`` script (as invoked by pip in the above commands, again, do not invoke it directly!)
+   listens to a number of environment variables to configure the installation and the compilation process:
 
-   - ``OPENQL_DISABLE_UNITARY``: if defined (value doesn't matter), unitary decomposition is disabled. This speeds up
-     compile time if you don't need it.
-   - ``NPROCS``: sets the number of parallel processes to use when compiling (must be a number if defined). Without
-     this, it won't multithread, so it'll be much slower.
+   - ``OPENQL_BUILD_TYPE``: it can be ``Debug`` or ``Release``.
+   - ``OPENQL_BUILD_TESTS``: defaulted to ``OFF``, set to ``ON`` if you want to build tests.
+   - ``OPENQL_DISABLE_UNITARY``: defaulted to ``OFF``, set to ``ON`` if you want to disable unitary decomposition.
+     This speeds up compile time if you don't need it.
 
-   In bash-like terminals, you can just put them in front of the pip command like so: ``NPROCS=10 pip ...``. In
-   Powershell, you can use ``$env:NPROCS = '10'`` in a command preceding the ``pip`` command.
+   In bash-like terminals, you can just put them in front of the pip command like so:
+   ``OPENQL_BUILD_TESTS=ON pip ...``.
+   In Powershell, you can use ``$env:OPENQL_BUILD_TESTS = 'ON'`` in a command preceding the ``pip`` command.
 
 .. note::
-   You may find that CMake notes that some packages it's looking for are missing. This is fine: some things are only
-   needed for optional components (which will automatically disable themselves when dependencies are missing) and
+   You may find that CMake notes that some packages it's looking for are missing.
+   This is fine: some things are only needed for optional components
+   (which will automatically disable themselves when dependencies are missing) and
    some things are only quality-of-life things, for example for generating backtraces for the exception messages.
    As long as the tests pass, the core OpenQL components should all work.
 
@@ -219,74 +226,31 @@ from the root of the OpenQL repository) using
    If ``pytest`` is unrecognized, you should be able to use ``python -m pytest`` or ``python3 -m pytest`` instead
    (making sure to use the same Python version that the ``pip`` you installed the package with corresponds to).
 
-Conda vs pip
-^^^^^^^^^^^^
-
-A conda recipe also exists in the repository. However, it is in a state of disuse, as conda's ridiculous NP-complete
-dependency solver implementation is too heavy for CI (it can take literal hours), and none of the maintainers use it.
-Your mileage may vary.
-
 
 Building the C++ tests and programs
 -----------------------------------
 
-Existing tests and programs can be compiled by the following instructions. You
-can use any existing example as a starting point for your own programs, but
-refer to ``examples/cpp-standalone-example`` for the build system.
+Existing tests and programs can be compiled by the following instructions.
+You can use any existing example as a starting point for your own programs.
 
-The tests are run with the ``tests`` directory as the working directory, so
-they can find their JSON files. The results end up in ``tests/test_output``.
+The tests are run with the ``build/<build_type>`` directory as the working directory, so they can find their JSON files.
+The results end up in a ``test_output`` folder, at the same location from where the tests are run
+(``example_output`` if we are running an example instead of a test).
 
-
-Linux/MacOS
-^^^^^^^^^^^
-
-Existing tests and examples can be compiled and run using the following commands:
 
 ::
 
-    mkdir cbuild
-    cd cbuild
-    cmake .. -DOPENQL_BUILD_TESTS=ON    # configure the build
-    make                                # actually build OpenQL and the tests
-    make test                           # run the tests
-
-
-Windows
-^^^^^^^
-
-Existing tests and examples can be compiled and run using the following commands:
-
-::
-
-    mkdir cbuild
-    cd cbuild
-    cmake .. -DOPENQL_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF # configure the build
-    cmake --build .                     # actually build OpenQL and the tests
-    cmake --build . --target RUN_TESTS  # run the tests
+    conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=Debug -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
+    cd build/Debug
+    ctest -C Debug --output-on-failure
 
 .. note::
 
-    ``-DBUILD_SHARED_LIBS=OFF`` is needed on Windows only because the
-    executables can't find the OpenQL DLL in the build tree that MSVC
-    generates, and static linking works around that. It works just fine when
-    you manually place the DLL in the same directory as the test executables
-    though, so this is just a limitation of the current build system for the
-    tests.
-
-Other CMake flags
-^^^^^^^^^^^^^^^^^
-
-CMake accepts a number of flags in addition to the ``-DOPENQL_BUILD_TESTS=ON``
-flag used above:
-
- - ``-DWITH_UNITARY_DECOMPOSITION=OFF``: disables unitary composition (vastly
-   speeds up compile time if you don't need it).
- - ``-DCMAKE_BUILD_TYPE=Debug``: builds in debug rather than release mode
-   (less optimizations, more debug symbols).
- - ``-DBUILD_SHARED_LIBS=OFF``: build static libraries rather than dynamic
-   ones. Note that static libraries are not nearly as well tested, but they
-   should work if you need them.
+    The default option ``-o openql/*shared=False`` is mandatory on Windows
+    because the executables can't find the OpenQL DLL in the build tree that MSVC generates,
+    and static linking works around that.
+    It works just fine when you manually place the DLL in the same directory as the test executables though,
+    so this is just a limitation of the current build system for the tests.
 
 
 Building the documentation
@@ -306,5 +270,6 @@ Assuming you have installed the required dependencies to do so, the procedure is
 The main page for the documentation will be generated at ``docs/_build/html/index.html``.
 
 .. note::
-   The Doxygen pages are never automatically rebuilt, as there is no dependency analysis here. You will always need
-   to remove the doxygen output directory manually before calling ``make html`` to trigger a rebuild.
+   The Doxygen pages are never automatically rebuilt, as there is no dependency analysis here.
+   You will always need to remove the doxygen output directory manually
+   before calling ``make html`` to trigger a rebuild.

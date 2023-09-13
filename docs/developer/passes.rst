@@ -128,7 +128,9 @@ Passes self-register statically to the pass factory using the static `register_p
 function. This allows the pass factory to not have to depend on and include pass headers.
 To do that, the pass class needs to declare a static boolean member called (for example)
 `is_pass_registered` and defined in a similar way as:
+
 .. code-block:: c++
+
     bool ReadCQasmPass::is_pass_registered = pmgr::Factory::register_pass<ReadCQasmPass>("io.cqasm.Read");
 
 The template argument (typedefs to) the pass class, while the string argument
