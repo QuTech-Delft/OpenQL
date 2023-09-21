@@ -12,16 +12,25 @@ This page documents how OpenQL and its documentation pages can be built and inst
    difficulties with these instructions. If you're a new maintainer, update them accordingly via a PR, but
    be mindful that something that works on your machine might not work on everyone's machine!
 
+
 Dependencies
 ------------
 
-The following packages are required to compile OpenQL from sources:
+The following utilities are required to compile OpenQL from sources:
 
-- C++ compiler with C++23 support (Linux: gcc, MacOS: LLVM/clang, Windows: Visual Studio 17 2022, MSVC 19.35.32217.1)
-- CMake >= 3.12
-- conan 2.0
-- git
-- Python 3.x + pip, with the following packages:
+- C++ compiler with C++23 support (gcc 11, clang 14, msvc 17)
+- ``CMake`` >= 3.12
+- ``git``
+- ``Python`` 3.x plus ``pip``, with the following package:
+
+  - ``conan`` >= 2.0
+
+
+Python builds- specific dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- ``SWIG`` (Linux: >= 3.0.12, Windows: >= 4.0.0)
+- And the following Python packages:
 
   - ``plumbum``
   - ``qxelarator``
@@ -29,20 +38,31 @@ The following packages are required to compile OpenQL from sources:
   - ``wheel``
   - And, optionally, these:
 
-    - Testing: ``libqasm``, ``make``, ``numpy``, and ``pytest``.
-    - Documentation generation: ``doxygen``, ``m2r2``, ``sphinx==7.0.0``, and ``sphinx-rtd-theme``.
-    - Convert graphs from `dot` to `pdf`, `png`, etc: ``Graphviz Dot utility``.
-    - Visualize generated graphs in `dot` format: ``XDot``.
-    - Use the visualizer in MacOS: ``XQuartz``.
-
-- SWIG (Linux: >= 3.0.12, Windows: >= 4.0.0)
+    - Testing: ``libqasm``, ``make``, ``numpy``, and ``pytest``
+    - Documentation generation: ``doxygen``, ``m2r2``, ``sphinx==7.0.0``, and ``sphinx-rtd-theme``
+    - Convert graphs from `dot` to `pdf`, `png`, etc: ``Graphviz Dot`` utility
+    - Visualize generated graphs in `dot` format: ``XDot``
+    - Use the visualizer in MacOS: ``XQuartz``
 
 .. note::
    The connection between Sphinx and SWIG's autodoc functionalities is very iffy,
    but aside from tracking everything manually or forking SWIG there is not much that can be done about it.
    Because of this, not all Sphinx versions will build correctly,
    hence why the Sphinx version is pinned.
-   Sphinx 4.x for example crashes on getting the function   signature of property getters/setters.
+   Sphinx 4.x for example crashes on getting the function signature of property getters/setters.
+
+
+ARM-specific dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We are having problems when using the ``m4`` and ``zulu-opendjk`` Conan packages on an ARMv8 architecture.
+``m4`` is required by Flex/Bison and ``zulu-openjdk`` provides the Java JRE required by the ANTLR generator.
+So, for the time being, we are installing Flex/Bison and Java manually for this platform.
+
+* ``Flex`` >= 2.6.4
+* ``Bison`` >= 3.0
+* ``Java JRE`` >= 11
+
 
 Windows-specific instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -54,8 +74,8 @@ Windows-specific instructions
 
 Dependencies can be installed with:
 
-- `cmake 3.12.0 <https://github.com/Kitware/CMake/releases/download/v3.12.0/cmake-3.12.0-windows-x86_64.msi>`_
-- `swigwin 4.0.0 <https://sourceforge.net/projects/swig/files/swigwin/swigwin-4.0.0/swigwin-4.0.0.zip/download>`_
+- `CMake 3.12.0 <https://github.com/Kitware/CMake/releases/download/v3.12.0/cmake-3.12.0-windows-x86_64.msi>`_
+- `SWIG for Windows 4.0.0 <https://sourceforge.net/projects/swig/files/swigwin/swigwin-4.0.0/swigwin-4.0.0.zip/download>`_
 
 Make sure the above mentioned binaries are added to the system path.
 
@@ -115,6 +135,7 @@ for which some modifications (may?) need to be made first.
 
     $env:EnvVariableName = "new-value"
 
+
 MacOS-specific instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -131,6 +152,7 @@ All dependencies can be installed using `Homebrew <https://brew.sh>`_ and pip:
 
 Make sure the above mentioned binaries are added to the system path in front of ``/usr/bin``,
 otherwise CMake finds the default versions.
+
 
 Linux-specific instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -199,7 +221,7 @@ You'd have to remember to uninstall if you ever end up moving it.
    The ``setup.py`` script (as invoked by pip in the above commands, again, do not invoke it directly!)
    listens to a number of environment variables to configure the installation and the compilation process:
 
-   - ``OPENQL_BUILD_TYPE``: it can be ``Debug`` or ``Release``.
+   - ``OPENQL_BUILD_TYPE``: defaulted to ``Release``, set to ``Debug`` if you want debug builds.
    - ``OPENQL_BUILD_TESTS``: defaulted to ``OFF``, set to ``ON`` if you want to build tests.
    - ``OPENQL_DISABLE_UNITARY``: defaulted to ``OFF``, set to ``ON`` if you want to disable unitary decomposition.
      This speeds up compile time if you don't need it.
@@ -240,6 +262,8 @@ The results end up in a ``test_output`` folder, at the same location from where 
 
 ::
 
+    # This first line only has to be run once, not every time
+    conan profile detect
     conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=Debug -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
     cd build/Debug
     ctest -C Debug --output-on-failure
@@ -261,7 +285,7 @@ Assuming you have installed the required dependencies to do so, the procedure is
 
 ::
 
-    # first build/install the qutechopenql Python package!
+    # First build/install the qutechopenql Python package!
     cd docs
     rm -rf doxygen      # optional: ensures all doxygen pages are rebuilt
     make clean          # optional: ensures all Sphinx pages are rebuilt
