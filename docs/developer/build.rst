@@ -30,19 +30,23 @@ Python builds- specific dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - ``SWIG`` (Linux: >= 3.0.12, Windows: >= 4.0.0)
+  - Optionally:
+
+    - Documentation generation: ``doxygen``
+    - Convert graphs from `dot` to `pdf`, `png`, etc: ``Graphviz Dot`` utility
+    - Visualize generated graphs in `dot` format: ``XDot``
+    - Use the visualizer in MacOS: ``XQuartz``
+
 - And the following Python packages:
 
   - ``plumbum``
   - ``qxelarator``
   - ``setuptools``
   - ``wheel``
-  - And, optionally, these:
+  - Optionally:
 
-    - Testing: ``libqasm``, ``make``, ``numpy``, and ``pytest``
-    - Documentation generation: ``doxygen``, ``m2r2``, ``sphinx==7.0.0``, and ``sphinx-rtd-theme``
-    - Convert graphs from `dot` to `pdf`, `png`, etc: ``Graphviz Dot`` utility
-    - Visualize generated graphs in `dot` format: ``XDot``
-    - Use the visualizer in MacOS: ``XQuartz``
+    - Testing: ``numpy`` and ``pytest``
+    - Documentation generation: ``m2r2``, ``sphinx==7.0.0``, and ``sphinx-rtd-theme``
 
 .. note::
    The connection between Sphinx and SWIG's autodoc functionalities is very iffy,
@@ -59,9 +63,9 @@ We are having problems when using the ``m4`` and ``zulu-opendjk`` Conan packages
 ``m4`` is required by Flex/Bison and ``zulu-openjdk`` provides the Java JRE required by the ANTLR generator.
 So, for the time being, we are installing Flex/Bison and Java manually for this platform.
 
-* ``Flex`` >= 2.6.4
-* ``Bison`` >= 3.0
-* ``Java JRE`` >= 11
+- ``Flex`` >= 2.6.4
+- ``Bison`` >= 3.0
+- ``Java JRE`` >= 11
 
 
 Windows-specific instructions
@@ -190,13 +194,13 @@ Running the following command in a terminal/Power Shell from the root of the Ope
 
 ::
 
-    pip install -v .
+    python3 -pip install -v .
 
 Or in editable mode by the command:
 
 ::
 
-    pip install -v -e .
+    python3 -pip install -v -e .
 
 Editable mode has the advantage that you'll get incremental compilation if you ever change OpenQL's C++ files,
 but it's a bit more fragile in that things will break if you move the OpenQL repository around later.
@@ -242,12 +246,7 @@ from the root of the OpenQL repository) using
 
 ::
 
-    pytest -v
-
-.. note::
-   If ``pytest`` is unrecognized, you should be able to use ``python -m pytest`` or ``python3 -m pytest`` instead
-   (making sure to use the same Python version that the ``pip`` you installed the package with corresponds to).
-
+    python3 -m pytest -v
 
 Building the C++ tests and programs
 -----------------------------------
@@ -259,18 +258,50 @@ The tests are run with the ``build/<build_type>`` directory as the working direc
 The results end up in a ``test_output`` folder, at the same location from where the tests are run
 (``example_output`` if we are running an example instead of a test).
 
-
 ::
 
-    # This first line only has to be run once, not every time
+    git clone https://github.com/QuTech-Delft/OpenQL.git
+    cd OpenQL
     conan profile detect
-    conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=Debug -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
+    conan build . -pr=tests-debug -b missing
     cd build/Debug
     ctest -C Debug --output-on-failure
 
 .. note::
 
-    The default option ``-o openql/*shared=False`` is mandatory on Windows
+    - The ``conan profile`` command only has to be run only once, and not before every build.
+    - The ``conan build`` command is building ``OpenQL`` in Debug mode with tests using the ``tests-debug`` profile.
+    - The ``-b missing`` parameter asks ``conan`` to build packages from sources
+      in case it cannot find the binary packages for the current configuration (platform, OS, compiler, build type...).
+
+*Build profiles*
+
+A group of predefined profiles is provided under the ``conan/profiles`` folder.
+They follow the ``[tests-](debug|release)[-unitary]`` naming convention. For example:
+
+- ``release`` is a Release build without tests and unitary decomposition disabled.
+- ``tests-debug-unitary`` is a Debug build with tests and unitary decomposition enabled.
+
+All the profiles set the C++ standard to 23.
+
+*Build options*
+
+Profiles are a shorthand for command line options. The command above could be written as well as:
+
+````
+conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=Debug -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
+````
+
+These are the list of options that could be specified whether in a profile or in the command line:
+
+- ``openql/*:build_type``: defaulted to ``Release``, set to ``Debug`` if you want Debug builds.
+- ``openql/*:build_tests``: defaulted to ``False``, set to ``True`` if you want to build tests.
+- ``openql/*:disable_unitary``: defaulted to ``False``, set to ``True`` if you want to disable unitary decomposition.
+- ``openql/*:shared``: defaulted to ``False``, set to ``True`` if you want OpenQL to be built as a shared library.
+
+.. note::
+
+    The default option ``openql/*shared=False`` is mandatory on Windows
     because the executables can't find the OpenQL DLL in the build tree that MSVC generates,
     and static linking works around that.
     It works just fine when you manually place the DLL in the same directory as the test executables though,
