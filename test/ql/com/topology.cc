@@ -20,7 +20,7 @@ TEST(ql_com, topology__single_core_grid_2_x_3) {
 
 */
 
-    auto victim = ql::com::Topology(qubit_count, ql::utils::Json(R"({
+    auto victim = Topology(qubit_count, ql::utils::Json(R"({
 "form": "xy",
 "x_size": 2,
 "y_size": 3,
@@ -58,8 +58,8 @@ TEST(ql_com, topology__single_core_grid_2_x_3) {
     EXPECT_EQ(victim.get_grid_size().y, 3);
     EXPECT_EQ(victim.get_qubit_coordinate(2).x, 0);
     EXPECT_EQ(victim.get_qubit_coordinate(2).y, 2);
-    EXPECT_EQ(victim.get_neighbors(2), (ql::com::Topology::Neighbors{3, 1}));
-    EXPECT_EQ(victim.get_neighbors(4), (ql::com::Topology::Neighbors{3, 5, 1}));
+    EXPECT_EQ(victim.get_neighbors(2), (Topology::Neighbors{3, 1}));
+    EXPECT_EQ(victim.get_neighbors(4), (Topology::Neighbors{3, 5, 1}));
 }
 
 TEST(ql_com, topology__single_core_custom_connectivity) {
@@ -75,7 +75,7 @@ TEST(ql_com, topology__single_core_custom_connectivity) {
 
 */
 
-    auto victim = ql::com::Topology(qubit_count, ql::utils::Json(R"({
+    auto victim = Topology(qubit_count, ql::utils::Json(R"({
 "form": "irregular",
 "edges": [
     { "id": 0, "src": 1, "dst": 0},
@@ -108,7 +108,7 @@ TEST(ql_com, topology__single_core_custom_connectivity) {
 
 TEST(ql_com, topology__large_multicore__all_qubits_are_communication_qubits) {
     std::uint64_t qubit_count = 1024;
-    auto victim = ql::com::Topology(qubit_count, ql::utils::Json(R"({
+    auto victim = Topology(qubit_count, ql::utils::Json(R"({
 "number_of_cores": 64,
 "connectivity": "full",
 "form": "irregular",
@@ -133,7 +133,7 @@ TEST(ql_com, topology__large_multicore__all_qubits_are_communication_qubits) {
 
 TEST(ql_com, topology__multicore__2_communication_qubits_for_each_4_qubits_core) {
     std::uint64_t qubit_count = 8;
-    auto victim = ql::com::Topology(qubit_count, ql::utils::Json(R"({
+    auto victim = Topology(qubit_count, ql::utils::Json(R"({
 "number_of_cores": 2,
 "connectivity": "full",
 "form": "irregular",
@@ -152,7 +152,7 @@ TEST(ql_com, topology__multicore__2_communication_qubits_for_each_4_qubits_core)
 
 TEST(ql_com, topology__get_min_hops__single_core__1_comm_qubit_per_core) {
     std::uint64_t qubit_count = 8;
-    auto victim = ql::com::Topology(qubit_count, ql::utils::Json(R"({
+    auto victim = Topology(qubit_count, ql::utils::Json(R"({
         "number_of_cores": 1, "connectivity": "full", "form": "irregular", "comm_qubits_per_core": 1
     })"_json));
 
@@ -167,7 +167,7 @@ TEST(ql_com, topology__get_min_hops__single_core__1_comm_qubit_per_core) {
 
 TEST(ql_com, topology__get_min_hops__single_core__2_comm_qubit_per_core) {
     std::uint64_t qubit_count = 8;
-    auto victim = ql::com::Topology(qubit_count, ql::utils::Json(R"({
+    auto victim = Topology(qubit_count, ql::utils::Json(R"({
         "number_of_cores": 1, "connectivity": "full", "form": "irregular", "comm_qubits_per_core": 2
     })"_json));
 
@@ -183,7 +183,7 @@ TEST(ql_com, topology__get_min_hops__single_core__2_comm_qubit_per_core) {
 
 TEST(ql_com, topology__get_min_hops__single_core__all_qubits_are_comm_qubits) {
     std::uint64_t qubit_count = 8;
-    auto victim = ql::com::Topology(qubit_count, ql::utils::Json(R"({
+    auto victim = Topology(qubit_count, ql::utils::Json(R"({
         "number_of_cores": 1, "connectivity": "full", "form": "irregular", "comm_qubits_per_core": 8
     })"_json));
 
@@ -195,7 +195,7 @@ TEST(ql_com, topology__get_min_hops__single_core__all_qubits_are_comm_qubits) {
 
 TEST(ql_com, topology__get_min_hops__multi_core__1_comm_qubit_per_core) {
     std::uint64_t qubit_count = 8;
-    auto victim = ql::com::Topology(qubit_count, ql::utils::Json(R"({
+    auto victim = Topology(qubit_count, ql::utils::Json(R"({
         "number_of_cores": 2, "connectivity": "full", "form": "irregular", "comm_qubits_per_core": 1
     })"_json));
 
@@ -209,7 +209,7 @@ TEST(ql_com, topology__get_min_hops__multi_core__1_comm_qubit_per_core) {
 
 TEST(ql_com, topology__get_min_hops__multi_core__2_comm_qubits_per_core) {
     std::uint64_t qubit_count = 8;
-    auto victim = ql::com::Topology(qubit_count, ql::utils::Json(R"({
+    auto victim = Topology(qubit_count, ql::utils::Json(R"({
         "number_of_cores": 2, "connectivity": "full", "form": "irregular", "comm_qubits_per_core": 2
     })"_json));
 
@@ -223,7 +223,7 @@ TEST(ql_com, topology__get_min_hops__multi_core__2_comm_qubits_per_core) {
 
 TEST(ql_com, topology__get_min_hops__multi_core__all_qubits_are_comm_qubits) {
     std::uint64_t qubit_count = 8;
-    auto victim = ql::com::Topology(qubit_count, ql::utils::Json(R"({
+    auto victim = Topology(qubit_count, ql::utils::Json(R"({
         "number_of_cores": 2, "connectivity": "full", "form": "irregular", "comm_qubits_per_core": 4
     })"_json));
 
