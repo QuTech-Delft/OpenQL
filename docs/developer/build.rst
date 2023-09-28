@@ -274,7 +274,8 @@ The results end up in a ``test_output`` folder, at the same location from where 
     - The ``-b missing`` parameter asks ``conan`` to build packages from sources
       in case it cannot find the binary packages for the current configuration (platform, OS, compiler, build type...).
 
-*Build profiles*
+Build profiles
+^^^^^^^^^^^^^^
 
 A group of predefined profiles is provided under the ``conan/profiles`` folder.
 They follow the ``[tests-](debug|release)[-unitary]`` naming convention. For example:
@@ -284,13 +285,14 @@ They follow the ``[tests-](debug|release)[-unitary]`` naming convention. For exa
 
 All the profiles set the C++ standard to 23.
 
-*Build options*
+Build options
+^^^^^^^^^^^^^
 
 Profiles are a shorthand for command line options. The command above could be written as well as:
 
-````
-conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=Debug -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
-````
+::
+
+    conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=Debug -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
 
 These are the list of options that could be specified whether in a profile or in the command line:
 
