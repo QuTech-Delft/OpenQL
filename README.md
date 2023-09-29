@@ -67,7 +67,7 @@ The installation of `OpenQL` dependencies, as well as the compilation, can be do
 git clone https://github.com/QuTech-Delft/OpenQL.git
 cd OpenQL
 conan profile detect
-conan build . -pr=tests-debug -b missing
+conan build . -pr=conan/profiles/tests-debug -b missing
 ```
 
 Notice:

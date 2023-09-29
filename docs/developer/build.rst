@@ -263,7 +263,7 @@ The results end up in a ``test_output`` folder, at the same location from where 
     git clone https://github.com/QuTech-Delft/OpenQL.git
     cd OpenQL
     conan profile detect
-    conan build . -pr=tests-debug -b missing
+    conan build . -pr=conan/profiles/tests-debug -b missing
     cd build/Debug
     ctest -C Debug --output-on-failure
 
