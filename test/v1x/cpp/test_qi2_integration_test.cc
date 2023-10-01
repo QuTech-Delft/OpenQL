@@ -42,8 +42,8 @@ void test_x90_q12__cnot_q1_q0() {
     program.get_compiler().set_option("initialqasmwriter.with_metadata", "no");
     program.compile();
 
-    auto output_file_path = fs::path{ "output_dir" } / "test_x90_q12__cnot_q1_q0.qasm";
-    auto golden_file_path = fs::path{ "res" } / "v1x" / "golden" / "test_x90_q12__cnot_q1_q0.qasm";
+    auto output_file_path = fs::path{ "test_output" } / "test_x90_q12__cnot_q1_q0.qasm";
+    auto golden_file_path = fs::path{ "res" } / "v1x" / "qasm" / "golden" / "test_x90_q12__cnot_q1_q0.qasm";
     std::string output_file_contents{};
     std::string golden_file_contents{};
     EXPECT_TRUE(read_file(output_file_path, output_file_contents));

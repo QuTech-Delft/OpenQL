@@ -27,7 +27,8 @@ namespace ir {
 static utils::List<utils::Str> parse_instruction_name(utils::Str name) {
 
     // Sanitize according to the legacy rules.
-    name = utils::to_lower(name);
+    // QI2 integration test: temporarily removed this check
+    //name = utils::to_lower(name);
     static const std::regex TRIM("^(\\s+)|(\\s+)$");
     name = std::regex_replace(name, TRIM, "");
     static const std::regex SPACES("[\\s,]+");

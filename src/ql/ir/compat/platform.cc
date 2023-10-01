@@ -420,7 +420,8 @@ static const std::regex multiple_space_pattern("(\\s)+");
  * the unnecessary spaces.
  */
 static utils::Str sanitize_instruction_name(utils::Str name) {
-    name = utils::to_lower(name);
+    // QI2 integration test: temporarily removed this check
+    //name = utils::to_lower(name);
     name = std::regex_replace(name, trim_pattern, "");
     name = std::regex_replace(name, multiple_space_pattern, " ");
     return name;

@@ -1002,7 +1002,9 @@ Bool Kernel::gate_nonfatal(
 
     QL_DOUT("Gate_nonfatal:" <<" gname=" << gname <<" qubits=" << qubits <<" cregs=" << cregs <<" duration=" << duration <<" angle=" << angle <<" bregs=" << bregs <<" gcond=" << gcond <<" gcondregs=" << gcondregs);
 
-    auto gname_lower = to_lower(gname);
+    // QI2 integration test: temporarily removed this check
+    //auto gname_lower = to_lower(gname);
+    auto gname_lower = gname;
     QL_DOUT("Adding gate : " << gname_lower << " with qubits " << qubits);
 
     // specialized composite gate check
