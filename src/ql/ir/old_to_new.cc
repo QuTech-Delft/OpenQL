@@ -218,7 +218,7 @@ static void parse_decomposition_rule(
     // for the result. Obviously, we don't want that. So we make our own root
     // tree with the platform half shared, and nothing in the program node.
     auto rule_ir = utils::make<Root>(ir->platform);
-    cqasm::read_v1(rule_ir, cqasm.str(), "<" + description.str() + ">", read_options);
+    cqasm::read(rule_ir, cqasm.str(), "<" + description.str() + ">", read_options);
 
     // Copy the temporary variables declared in the cQASM program to the
     // decomposition rule.

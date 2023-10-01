@@ -46,8 +46,8 @@ class OpenQLConan(ConanFile):
                 self.tool_requires("bison/3.8.2")
         if self.settings.arch != "armv8":
             self.tool_requires("zulu-openjdk/11.0.19")
-        if self.options.build_tests:
-            self.requires("gtest/1.14.0")
+        #if self.options.build_tests:
+        self.requires("gtest/1.14.0")
 
     def requirements(self):
         self.requires("antlr4-cppruntime/4.13.0")
@@ -68,8 +68,8 @@ class OpenQLConan(ConanFile):
         self.cpp.build.libdirs = ["."]
 
     def generate(self):
-        deps = CMakeDeps(self)
-        deps.generate()
+        #deps = CMakeDeps(self)
+        #deps.generate()
         tc = CMakeToolchain(self)
         tc.variables["OPENQL_BUILD_PYTHON"] = self.options.build_python
         tc.variables["OPENQL_BUILD_TESTS"] = self.options.build_tests

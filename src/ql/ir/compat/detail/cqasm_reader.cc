@@ -562,14 +562,14 @@ lqa::Analyzer ReaderImpl::build_analyzer() {
         gateset.push_back(GateConversionRule::from_defaults("sdag", "Q"));
         gateset.push_back(GateConversionRule::from_defaults("t", "Q"));
         gateset.push_back(GateConversionRule::from_defaults("tdag", "Q"));
-        gateset.push_back(GateConversionRule::from_defaults("x90", "Q", "rx90"));
+        gateset.push_back(GateConversionRule::from_defaults("X90", "Q", "rx90"));
         gateset.push_back(GateConversionRule::from_defaults("y90", "Q", "ry90"));
         gateset.push_back(GateConversionRule::from_defaults("mx90", "Q", "xm90"));
         gateset.push_back(GateConversionRule::from_defaults("my90", "Q", "ym90"));
         gateset.push_back(GateConversionRule::from_defaults("rx", "Qr"));
         gateset.push_back(GateConversionRule::from_defaults("ry", "Qr"));
         gateset.push_back(GateConversionRule::from_defaults("rz", "Qr"));
-        gateset.push_back(GateConversionRule::from_defaults("cnot", "QQ"));
+        gateset.push_back(GateConversionRule::from_defaults("CNOT", "QQ"));
         gateset.push_back(GateConversionRule::from_defaults("cz", "QQ"));
         gateset.push_back(GateConversionRule::from_defaults("swap", "QQ"));
         gateset.push_back(GateConversionRule::from_defaults("cr", "QQr"));
@@ -593,7 +593,7 @@ lqa::Analyzer ReaderImpl::build_analyzer() {
     }
 
     // Construct the actual analyzer.
-    auto a = lqa::Analyzer("1.1");
+    auto a = lqa::Analyzer("3.0");
     a.register_default_functions_and_mappings();
     a.register_function("operator!", "b", op_linv_b);
     a.register_function("operator&&", "bb", op_land_bb);
