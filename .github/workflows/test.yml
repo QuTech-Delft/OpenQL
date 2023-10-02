@@ -43,7 +43,10 @@ jobs:
       - name: Configure and build
         run: |
           conan profile detect
-          conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=${{ matrix.build_type }} -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
+          build_type=${{ matrix.build_type }}
+          lowercase_build_type=$(echo ${build_type} | tr '[:upper:]' '[:lower:]')
+          conan build . -pr=conan/profiles/tests-${lowercase_build_type} -b missing
+        shell: bash
       - name: Test
         working-directory: build/${{ matrix.build_type }}
         run: ctest -C ${{ matrix.build_type }} --output-on-failure
@@ -87,7 +90,7 @@ jobs:
           python3 -m venv venv
           source venv/bin/activate
           python3 -m pip install --upgrade pip conan
-          conan build . -s:h compiler.cppstd=23 -s:h openql/*:build_type=Release -o openql/*:build_tests=True -o openql/*:disable_unitary=True -b missing
+          conan build . -pr=conan/profiles/tests-release -b missing
       - name: Test
         working-directory: build/Release
         run: ctest -C Release --output-on-failure
