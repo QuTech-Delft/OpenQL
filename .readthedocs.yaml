@@ -5,9 +5,6 @@
 # Required
 version: 2
 
-conda:
-  environment: docs/.conda.yml
-
 # Optionally build your docs in additional formats such as PDF
 formats:
   - pdf
@@ -16,7 +13,10 @@ formats:
 build:
   os: ubuntu-22.04
   tools:
-    python: "3.11"
+    python: "mambaforge-22.9"
+
+conda:
+  environment: docs/.conda.yml
 
 submodules:
   include: all
