@@ -1,0 +1,9 @@
+include(default)
+
+[settings]
+compiler.cppstd=23
+openql/*:build_type=Debug
+
+[options]
+openql/*:build_tests=True
+openql/*:disable_unitary=False
