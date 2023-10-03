@@ -4,7 +4,7 @@ find_package(GTest REQUIRED)
 add_executable(${PROJECT_NAME}_test)
 
 # Subdirectories
-#add_subdirectory(ql)
+add_subdirectory(ql)
 add_subdirectory(v1x)
 
 # Test sources
