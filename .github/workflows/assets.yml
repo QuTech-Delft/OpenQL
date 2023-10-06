@@ -72,7 +72,6 @@ jobs:
         include:
           - manylinux: _2_28
             swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
-
     steps:
     - name: Install dependencies
       run: |
@@ -88,6 +87,7 @@ jobs:
       env:
         NPROCS: 5
       run: |
+        source venv/bin/activate
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
         /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
     - name: Wheel path
@@ -129,7 +129,6 @@ jobs:
 #        include:
 #          - manylinux: _2_28
 #            swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
-#
 #    steps:
 #    - name: Install dependencies
 #      run: |
