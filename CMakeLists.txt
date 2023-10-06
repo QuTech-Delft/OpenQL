@@ -196,7 +196,7 @@ FetchContent_MakeAvailable(cqasm)
 message(STATUS "Fetching lemon")
 FetchContent_Declare(lemon
     GIT_REPOSITORY https://github.com/rturrado/lemon.git
-    GIT_TAG "300dda4d40d9531e66914d464c64746646bcbd8c"
+    GIT_TAG "98949a86b83572f66f79ac21516ff44dfd4c40db"
 )
 FetchContent_MakeAvailable(lemon)
 
