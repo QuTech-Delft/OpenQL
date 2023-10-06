@@ -87,8 +87,9 @@ jobs:
       run: |
         /opt/python/${{ matrix.cpython_version }}/bin/python -m venv venv
         source venv/bin/activate
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install conan
+        sudo /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install -v conan
         echo "$(which conan)"
+        echo "/opt/python/${{ matrix.cpython_version }}/bin/python -m conan"
         export PATH=$PATH:"$(which conan)"
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
         /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
