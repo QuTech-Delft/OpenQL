@@ -76,8 +76,10 @@ jobs:
     - name: Install dependencies
       run: |
         dnf install -y $SWIG_VERSION
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel conan
-        echo "/usr/.local/bin" >> $GITHUB_PATH
+        python_bin="/opt/python/${{ matrix.cpython_version }}/bin/python"
+        ${python_bin} -m pip install auditwheel conan
+        conan_installation_folder="${python_bin} -m pip show --files conan | grep -F /bin/)"
+        echo "${conan_installation_folder}" >> $GITHUB_PATH
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Checkout
