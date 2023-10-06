@@ -78,7 +78,8 @@ jobs:
         dnf install -y $SWIG_VERSION
         python_bin="/opt/python/${{ matrix.cpython_version }}/bin/python"
         ${python_bin} -m pip install auditwheel conan
-        conan_installation_folder="${python_bin} -m pip show --files conan | grep -F /bin/)"
+        conan_installation_folder=$(${python_bin} -m pip show --files conan | grep -F /bin/))
+        echo "Conan folder: ${conan_installation_folder}"
         echo "${conan_installation_folder}" >> $GITHUB_PATH
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
