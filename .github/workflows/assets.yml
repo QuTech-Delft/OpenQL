@@ -86,19 +86,19 @@ jobs:
         NPROCS: 5
       run: |
         python_version_minor=${matrix.cpython_version:(-2)}
-        python_root_dir=/opt/python/${{ matrix.cpython_version }}
-        python_site_packages_dir=${{ python_root_dir }}/lib/python3.${{ python_version_minor }}/site-packages
-        python_bin=${{ python_root_dir }}/bin/python3.${{ python_version_minor }}
-        ${{ python_bin }} -m venv venv
+        python_root_dir="/opt/python/${{ matrix.cpython_version }}"
+        python_site_packages_dir="${python_root_dir}/lib/python3.${python_version_minor}/site-packages"
+        python_bin="${python_root_dir}/bin/python3.${python_version_minor}"
+        ${python_bin} -m venv venv
         source venv/bin/activate
-        ${{ python_bin }} -m pip install -v conan
-        echo "$(${{ python_bin }} -m conan)"
-        echo "$(find ${{ python_site_packages_dir }} -name conan)"
-        export PATH=$PATH:"$(find ${{ python_site_packages_dir }} -name conan)"
+        ${python_bin} -m pip install -v conan
+        echo "$(${python_bin} -m conan)"
+        echo "$(find ${python_site_packages_dir} -name conan)"
+        export PATH=$PATH:"$(find ${python_site_packages_dir} -name conan)"
         echo "$(which conan)"
         export PATH=$PATH:"$(which conan)"
-        ${{ python_bin }} setup.py bdist_wheel
-        ${{ python_bin }} -m auditwheel repair pybuild/dist/*.whl
+        ${python_bin} setup.py bdist_wheel
+        ${python_bin} -m auditwheel repair pybuild/dist/*.whl
       shell: bash
     - name: Wheel path
       id: wheel
