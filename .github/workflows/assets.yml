@@ -8,53 +8,49 @@ on:
     branches:
     - 'release**'
 
-# Note: 'actions/upload-release-asset@v1' often fails with 'read ECONNRESET'
-# According to https://github.com/actions/upload-release-asset, it is no longer maintained
-# To increase the chances of obtaining all assets - potentially after manually retrying - we set
-# 'jobs.<job_id>.strategy.fail-fast: false' until a proper solution is implemented
 jobs:
-  macos-x64:
-    name: 'PyPI wheels for MacOS/x64'
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python:
-        - '3.8'
-        - '3.9'
-        - '3.10'
-        - '3.11'
-    steps:
-    - uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python }}
-    - name: Install dependencies
-      run: |
-        brew install swig xquartz
-        python -m pip install --upgrade pip conan setuptools wheel
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Build wheel
-      env:
-        NPROCS: 5
-      run: python setup.py bdist_wheel
-    - name: Wheel path
-      id: wheel
-      working-directory: pybuild/dist/
-      run: echo "##[set-output name=wheel;]$(ls *.whl)"
-    - uses: actions/upload-artifact@v3
-      with:
-        name: pypi-macos-py${{ matrix.python }}
-        path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
-    - uses: actions/upload-release-asset@v1
-      if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
-        asset_name: ${{ steps.wheel.outputs.wheel }}
-        asset_content_type: application/zip
+#  macos-x64:
+#    name: 'PyPI wheels for MacOS/x64'
+#    runs-on: macos-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        python:
+#        - '3.8'
+#        - '3.9'
+#        - '3.10'
+#        - '3.11'
+#    steps:
+#    - uses: actions/setup-python@v4
+#      with:
+#        python-version: ${{ matrix.python }}
+#    - name: Install dependencies
+#      run: |
+#        brew install swig xquartz
+#        python -m pip install --upgrade pip conan setuptools wheel
+#    - name: Checkout
+#      uses: actions/checkout@v3
+#    - name: Build wheel
+#      env:
+#        NPROCS: 5
+#      run: python setup.py bdist_wheel
+#    - name: Wheel path
+#      id: wheel
+#      working-directory: pybuild/dist/
+#      run: echo "##[set-output name=wheel;]$(ls *.whl)"
+#    - uses: actions/upload-artifact@v3
+#      with:
+#        name: pypi-macos-py${{ matrix.python }}
+#        path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
+#    - uses: actions/upload-release-asset@v1
+#      if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ github.event.release.upload_url }}
+#        asset_path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
+#        asset_name: ${{ steps.wheel.outputs.wheel }}
+#        asset_content_type: application/zip
 
   manylinux-x64:
     name: 'PyPI wheels for Manylinux/x64'
@@ -81,7 +77,7 @@ jobs:
     - name: Install dependencies
       run: |
         dnf install -y $SWIG_VERSION
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install conan auditwheel
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel python3-venv
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Checkout
@@ -90,6 +86,9 @@ jobs:
       env:
         NPROCS: 5
       run: |
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m venv venv
+        source venv/bin/activate
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install conan
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
         /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
     - name: Wheel path
@@ -111,118 +110,118 @@ jobs:
         asset_content_type: application/zip
 
 
-  manylinux-arm64:
-    name: 'PyPI wheels for Manylinux/ARM64'
-    runs-on: [self-hosted, ARM64, Linux]
-    container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
-    env:
-      SWIG_VERSION: ${{ matrix.swig_version }}
-      CMAKE_VERSION: '3.12'
-    strategy:
-      fail-fast: false
-      matrix:
-        manylinux:
-        - _2_28
-        cpython_version:
-        - 'cp38-cp38'
-        - 'cp39-cp39'
-        - 'cp310-cp310'
-        - 'cp311-cp311'
-        include:
-          - manylinux: _2_28
-            swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
-
-    steps:
-    - name: Install dependencies
-      run: |
-        dnf install -y $SWIG_VERSION
-        python${{ matrix.cpython_version }} -m pip install conan auditwheel
-    - name: Get latest CMake
-      uses: lukka/get-cmake@latest
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Build wheel
-      env:
-        NPROCS: 5
-      run: |
-        python${{ matrix.cpython_version }} setup.py bdist_wheel
-        python${{ matrix.cpython_version }} -m auditwheel repair pybuild/dist/*.whl
-    - name: Wheel path
-      id: wheel
-      working-directory: wheelhouse
-      run: echo "##[set-output name=wheel;]$(ls *.whl)"
-    - uses: actions/upload-artifact@v3
-      with:
-        name: pypi-linux-${{ matrix.cpython_version }}
-        path: wheelhouse/${{ steps.wheel.outputs.wheel }}
-    - uses: actions/upload-release-asset@v1
-      if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: wheelhouse/${{ steps.wheel.outputs.wheel }}
-        asset_name: ${{ steps.wheel.outputs.wheel }}
-        asset_content_type: application/zip
-
-  windows-x64:
-    name: 'PyPI wheels for Windows/x64'
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python:
-        - '3.8'
-        - '3.9'
-        - '3.10'
-        - '3.11'
-    steps:
-    - uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip conan setuptools wheel
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Build wheel
-      env:
-        NPROCS: 5
-      run: python setup.py bdist_wheel
-    - name: Wheel path
-      id: wheel
-      working-directory: pybuild/dist/
-      run: echo "##[set-output name=wheel;]$(Get-ChildItem -name *.whl)"
-    - uses: actions/upload-artifact@v3
-      with:
-        name: pypi-windows-py${{ matrix.python }}
-        path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
-    - uses: actions/upload-release-asset@v1
-      if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
-        asset_name: ${{ steps.wheel.outputs.wheel }}
-        asset_content_type: application/zip
-
-  publish:
-    name: Publish
-    if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
-    needs:
-    - macos-x64
-    - manylinux-x64
-    - manylinux-arm64
-    - windows-x64
-    runs-on: ubuntu-latest
-    steps:
-    - name: Download artifacts
-      uses: actions/download-artifact@v3
-      id: download
-    - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.3.1
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_TOKEN }}
-        packages_dir: ${{ steps.download.outputs.download-path }}/pypi-*
+#  manylinux-arm64:
+#    name: 'PyPI wheels for Manylinux/ARM64'
+#    runs-on: [self-hosted, ARM64, Linux]
+#    container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
+#    env:
+#      SWIG_VERSION: ${{ matrix.swig_version }}
+#      CMAKE_VERSION: '3.12'
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        manylinux:
+#        - _2_28
+#        cpython_version:
+#        - 'cp38-cp38'
+#        - 'cp39-cp39'
+#        - 'cp310-cp310'
+#        - 'cp311-cp311'
+#        include:
+#          - manylinux: _2_28
+#            swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
+#
+#    steps:
+#    - name: Install dependencies
+#      run: |
+#        dnf install -y $SWIG_VERSION
+#        python${{ matrix.cpython_version }} -m pip install conan auditwheel
+#    - name: Get latest CMake
+#      uses: lukka/get-cmake@latest
+#    - name: Checkout
+#      uses: actions/checkout@v3
+#    - name: Build wheel
+#      env:
+#        NPROCS: 5
+#      run: |
+#        python${{ matrix.cpython_version }} setup.py bdist_wheel
+#        python${{ matrix.cpython_version }} -m auditwheel repair pybuild/dist/*.whl
+#    - name: Wheel path
+#      id: wheel
+#      working-directory: wheelhouse
+#      run: echo "##[set-output name=wheel;]$(ls *.whl)"
+#    - uses: actions/upload-artifact@v3
+#      with:
+#        name: pypi-linux-${{ matrix.cpython_version }}
+#        path: wheelhouse/${{ steps.wheel.outputs.wheel }}
+#    - uses: actions/upload-release-asset@v1
+#      if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ github.event.release.upload_url }}
+#        asset_path: wheelhouse/${{ steps.wheel.outputs.wheel }}
+#        asset_name: ${{ steps.wheel.outputs.wheel }}
+#        asset_content_type: application/zip
+#
+#  windows-x64:
+#    name: 'PyPI wheels for Windows/x64'
+#    runs-on: windows-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        python:
+#        - '3.8'
+#        - '3.9'
+#        - '3.10'
+#        - '3.11'
+#    steps:
+#    - uses: actions/setup-python@v4
+#      with:
+#        python-version: ${{ matrix.python }}
+#    - name: Install dependencies
+#      run: |
+#        python -m pip install --upgrade pip conan setuptools wheel
+#    - name: Checkout
+#      uses: actions/checkout@v3
+#    - name: Build wheel
+#      env:
+#        NPROCS: 5
+#      run: python setup.py bdist_wheel
+#    - name: Wheel path
+#      id: wheel
+#      working-directory: pybuild/dist/
+#      run: echo "##[set-output name=wheel;]$(Get-ChildItem -name *.whl)"
+#    - uses: actions/upload-artifact@v3
+#      with:
+#        name: pypi-windows-py${{ matrix.python }}
+#        path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
+#    - uses: actions/upload-release-asset@v1
+#      if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ github.event.release.upload_url }}
+#        asset_path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
+#        asset_name: ${{ steps.wheel.outputs.wheel }}
+#        asset_content_type: application/zip
+#
+#  publish:
+#    name: Publish
+#    if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+#    needs:
+#    - macos-x64
+#    - manylinux-x64
+#    - manylinux-arm64
+#    - windows-x64
+#    runs-on: ubuntu-latest
+#    steps:
+#    - name: Download artifacts
+#      uses: actions/download-artifact@v3
+#      id: download
+#    - name: Publish to PyPI
+#      uses: pypa/gh-action-pypi-publish@v1.3.1
+#      with:
+#        user: __token__
+#        password: ${{ secrets.PYPI_TOKEN }}
+#        packages_dir: ${{ steps.download.outputs.download-path }}/pypi-*
