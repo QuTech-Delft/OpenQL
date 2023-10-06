@@ -85,11 +85,17 @@ jobs:
       env:
         NPROCS: 5
       run: |
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m venv venv
+        python_minor_version=${string: -3}
+        python_root_dir=/opt/python/${{ matrix.cpython_version }}
+        python_site_packages_dir=${python_root_dir}/lib/python3.${{ python_minor_version }}/site-packages
+        python_bin=${python_root_dir}/bin/python3.${{ python_minor_version }}
+        ${python_bin} -m venv venv
         source venv/bin/activate
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install -v conan
+        ${python_bin} -m pip install -v conan
+        echo "$(${python_bin} -m conan)"
+        echo "$(find ${python_site_packages_dir} -name conan)"
+        export PATH=$PATH:"$(find ${python_site_packages_dir} -name conan)"
         echo "$(which conan)"
-        echo "/opt/python/${{ matrix.cpython_version }}/bin/python -m conan"
         export PATH=$PATH:"$(which conan)"
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
         /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
