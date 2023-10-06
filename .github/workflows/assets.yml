@@ -77,7 +77,7 @@ jobs:
     - name: Install dependencies
       run: |
         dnf install -y $SWIG_VERSION
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel python3-venv
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel venv
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Checkout
