@@ -76,9 +76,7 @@ jobs:
     - name: Install dependencies
       run: |
         dnf install -y $SWIG_VERSION
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m venv venv
-        source venv/bin/activate
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel conan
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Checkout
@@ -87,7 +85,11 @@ jobs:
       env:
         NPROCS: 5
       run: |
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m venv venv
         source venv/bin/activate
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install conan
+        echo "$(which conan)"
+        export PATH=$PATH:"$(which conan)"
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
         /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
     - name: Wheel path
