@@ -11,7 +11,7 @@
 #include "ql/pass/ana/statistics/report.h"
 #include "ql/version.h"
 
-#include <algorithm>  // all_of, lexicographical_compare_three_way
+#include <algorithm>  // all_of, equal, lexicographical_compare
 #include <compare>  // strong_ordering
 
 
@@ -1185,22 +1185,24 @@ std::strong_ordering version_compare(const utils::Vec<utils::UInt> &lhs, const u
     const auto &lhs_size = static_cast<utils::Vec<utils::UInt>::difference_type>(lhs.size());
     const auto &rhs_size = static_cast<utils::Vec<utils::UInt>::difference_type>(rhs.size());
     if (lhs_size <= rhs_size) {
-        if (auto res = std::lexicographical_compare_three_way(lhs.begin(), lhs.end(), rhs.begin(), rhs.begin() + lhs_size);
-            res == std::strong_ordering::equal) {
+        if (std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.begin() + lhs_size)) {
             return std::all_of(rhs.begin() + lhs_size, rhs.end(), [](utils::UInt n) { return n == utils::UInt{ 0 }; })
                 ? std::strong_ordering::equal  // {1} compared to {1, 0}, or {1, 2} compared to {1, 2}
                 : std::strong_ordering::less;  // {1} compared to {1, 2}
         } else {
-            return res;  // {1, 2} compared to {3, 0}, or {3, 0} compared to {1, 2}
+            return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.begin() + lhs_size)
+                ? std::strong_ordering::less  // {1, 2} or {1} compared to {3, 0}
+                : std::strong_ordering::greater;  // {3, 0} or {3} compared to {1, 2}
         }
     } else {
-        if (auto res = std::lexicographical_compare_three_way(lhs.begin(), lhs.begin() + rhs_size, rhs.begin(), rhs.end());
-            res == std::strong_ordering::equal) {
+        if (std::equal(lhs.begin(), lhs.begin() + rhs_size, rhs.begin(), rhs.end())) {
             return std::all_of(lhs.begin() + rhs_size, lhs.end(), [](utils::UInt n) { return n == utils::UInt{ 0 }; })
                 ? std::strong_ordering::equal  // {1, 0} compared to {1}
                 : std::strong_ordering::greater;  // {1, 2} compared to {1}
         } else {
-            return res;  // {3, 0} compared to {1}
+            return std::lexicographical_compare(lhs.begin(), lhs.begin() + rhs_size, rhs.begin(), rhs.end())
+                ? std::strong_ordering::less  // {1, 2} compared to {3}
+                : std::strong_ordering::greater;  // {3, 0} compared to {1}
         }
     }
 }
