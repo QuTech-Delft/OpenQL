@@ -77,7 +77,7 @@ jobs:
       run: |
         dnf install -y $SWIG_VERSION
         /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel conan
-        export PATH="$PATH/:/root/.local/bin"
+        echo "/root/.local/bin" >> $GITHUB_PATH
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Checkout
