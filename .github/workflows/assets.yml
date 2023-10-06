@@ -131,7 +131,7 @@ jobs:
         - 'cp311-cp311'
         include:
           - manylinux: _2_28
-            swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
+            swig_version: 'swig-3.0.12-19.module+el8.4.0+385+82b6e804'
     steps:
     - name: Install dependencies
       run: |
