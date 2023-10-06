@@ -205,9 +205,10 @@ jobs:
     name: Publish
     if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
     needs:
-    - macos
-    - manylinux
-    - windows
+    - macos-x64
+    - manylinux-x64
+    - manylinux-arm64
+    - windows-x64
     runs-on: ubuntu-latest
     steps:
     - name: Download artifacts
