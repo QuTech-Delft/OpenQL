@@ -51,67 +51,67 @@ jobs:
 #        asset_path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
 #        asset_name: ${{ steps.wheel.outputs.wheel }}
 #        asset_content_type: application/zip
-
-  manylinux-x64:
-    name: 'PyPI wheels for Manylinux/x64'
-    runs-on: ubuntu-latest
-    container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
-    env:
-      SWIG_VERSION: ${{ matrix.swig_version }}
-      CMAKE_VERSION: '3.12'
-    strategy:
-      fail-fast: false
-      matrix:
-        manylinux:
-        - _2_28
-        cpython_version:
-        - 'cp38-cp38'
-        - 'cp39-cp39'
-        - 'cp310-cp310'
-        - 'cp311-cp311'
-        include:
-          - manylinux: _2_28
-            swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
-    steps:
-    - name: Install dependencies
-      run: |
-        dnf install -y $SWIG_VERSION
-        python_bin="/opt/python/${{ matrix.cpython_version }}/bin/python"
-        ${python_bin} -m pip install auditwheel conan
-        pip_installation_folder=$(${python_bin} -m pip show --files conan | grep 'Location:' | sed 's/Location: //')
-        conan_installation_folder_relative_path=$(${python_bin} -m pip show --files conan | grep '/bin/' | sed 's#\s\+\(.*\)/conan#\1#')
-        conan_installation_folder="${pip_installation_folder}/${conan_installation_folder_relative_path}"
-        echo "Conan installation folder: ${conan_installation_folder}"
-        echo "${conan_installation_folder}" >> $GITHUB_PATH
-    - name: Get latest CMake
-      uses: lukka/get-cmake@latest
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Build wheel
-      env:
-        NPROCS: 5
-      run: |
-        /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
-      shell: bash
-    - name: Wheel path
-      id: wheel
-      working-directory: wheelhouse
-      run: echo "##[set-output name=wheel;]$(ls *.whl)"
-    - uses: actions/upload-artifact@v3
-      with:
-        name: pypi-linux-${{ matrix.cpython_version }}
-        path: wheelhouse/${{ steps.wheel.outputs.wheel }}
-    - uses: actions/upload-release-asset@v1
-      if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: wheelhouse/${{ steps.wheel.outputs.wheel }}
-        asset_name: ${{ steps.wheel.outputs.wheel }}
-        asset_content_type: application/zip
-
+#
+#  manylinux-x64:
+#    name: 'PyPI wheels for Manylinux/x64'
+#    runs-on: ubuntu-latest
+#    container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
+#    env:
+#      SWIG_VERSION: ${{ matrix.swig_version }}
+#      CMAKE_VERSION: '3.12'
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        manylinux:
+#        - _2_28
+#        cpython_version:
+#        - 'cp38-cp38'
+#        - 'cp39-cp39'
+#        - 'cp310-cp310'
+#        - 'cp311-cp311'
+#        include:
+#          - manylinux: _2_28
+#            swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
+#    steps:
+#    - name: Install dependencies
+#      run: |
+#        dnf install -y $SWIG_VERSION
+#        python_bin="/opt/python/${{ matrix.cpython_version }}/bin/python"
+#        ${python_bin} -m pip install auditwheel conan
+#        pip_installation_folder=$(${python_bin} -m pip show --files conan | grep 'Location:' | sed 's/Location: //')
+#        conan_installation_folder_relative_path=$(${python_bin} -m pip show --files conan | grep '/bin/' | sed 's#\s\+\(.*\)/conan#\1#')
+#        conan_installation_folder="${pip_installation_folder}/${conan_installation_folder_relative_path}"
+#        echo "Conan installation folder: ${conan_installation_folder}"
+#        echo "${conan_installation_folder}" >> $GITHUB_PATH
+#    - name: Get latest CMake
+#      uses: lukka/get-cmake@latest
+#    - name: Checkout
+#      uses: actions/checkout@v3
+#    - name: Build wheel
+#      env:
+#        NPROCS: 5
+#      run: |
+#        /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
+#        /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
+#      shell: bash
+#    - name: Wheel path
+#      id: wheel
+#      working-directory: wheelhouse
+#      run: echo "##[set-output name=wheel;]$(ls *.whl)"
+#    - uses: actions/upload-artifact@v3
+#      with:
+#        name: pypi-linux-${{ matrix.cpython_version }}
+#        path: wheelhouse/${{ steps.wheel.outputs.wheel }}
+#    - uses: actions/upload-release-asset@v1
+#      if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ github.event.release.upload_url }}
+#        asset_path: wheelhouse/${{ steps.wheel.outputs.wheel }}
+#        asset_name: ${{ steps.wheel.outputs.wheel }}
+#        asset_content_type: application/zip
+#
   manylinux-arm64:
     name: 'PyPI wheels for Manylinux/ARM64'
     runs-on: [self-hosted, ARM64, Linux]
@@ -125,9 +125,9 @@ jobs:
         manylinux:
         - _2_28
         cpython_version:
-        - 'cp38-cp38'
-        - 'cp39-cp39'
-        - 'cp310-cp310'
+        #- 'cp38-cp38'
+        #- 'cp39-cp39'
+        #- 'cp310-cp310'
         - 'cp311-cp311'
         include:
           - manylinux: _2_28
