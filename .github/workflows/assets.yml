@@ -74,8 +74,6 @@ jobs:
         - 'cp310-cp310'
         - 'cp311-cp311'
         include:
-          - manylinux: 2014
-            swig_version: 'swig3-3.0.12-17.el7'
           - manylinux: _2_28
             swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
 
@@ -83,7 +81,7 @@ jobs:
     - name: Install dependencies
       run: |
         dnf install -y $SWIG_VERSION
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install conan auditwheel
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Checkout
@@ -92,7 +90,6 @@ jobs:
       env:
         NPROCS: 5
       run: |
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install conan
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
         /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
     - name: Wheel path
@@ -139,7 +136,7 @@ jobs:
     - name: Install dependencies
       run: |
         dnf install -y $SWIG_VERSION
-        python${{ matrix.cpython_version }} -m pip install auditwheel
+        python${{ matrix.cpython_version }} -m pip install conan auditwheel
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Checkout
@@ -148,7 +145,6 @@ jobs:
       env:
         NPROCS: 5
       run: |
-        python${{ matrix.cpython_version }} -m pip install conan
         python${{ matrix.cpython_version }} setup.py bdist_wheel
         python${{ matrix.cpython_version }} -m auditwheel repair pybuild/dist/*.whl
     - name: Wheel path
