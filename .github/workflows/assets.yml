@@ -115,7 +115,7 @@ jobs:
   manylinux-arm64:
     name: 'PyPI wheels for Manylinux/ARM64'
     runs-on: [self-hosted, ARM64, Linux]
-    container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
+    container: quay.io/pypa/manylinux${{ matrix.manylinux }}_aarch64:latest
     env:
       SWIG_VERSION: ${{ matrix.swig_version }}
       CMAKE_VERSION: '3.12'
