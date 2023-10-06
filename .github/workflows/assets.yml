@@ -65,9 +65,9 @@ jobs:
         manylinux:
         - _2_28
         cpython_version:
-        - 'cp38-cp38'
-        - 'cp39-cp39'
-        - 'cp310-cp310'
+        #- 'cp38-cp38'
+        #- 'cp39-cp39'
+        #- 'cp310-cp310'
         - 'cp311-cp311'
         include:
           - manylinux: _2_28
@@ -77,10 +77,9 @@ jobs:
     - name: Install dependencies
       run: |
         dnf install -y $SWIG_VERSION
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m venv venv
+        source venv/bin/activate
         /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel conan
-    - name: Add Conan to path
-      run: |
-        echo "$(which conan)" >> $GITHUB_PATH
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Checkout
