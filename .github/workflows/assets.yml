@@ -85,10 +85,10 @@ jobs:
       env:
         NPROCS: 5
       run: |
-        python_minor_version=${{ string: -3 }}
+        python_version_minor=${matrix.cpython_version:(-2)}
         python_root_dir=/opt/python/${{ matrix.cpython_version }}
-        python_site_packages_dir=${{ python_root_dir }}/lib/python3.${{ python_minor_version }}/site-packages
-        python_bin=${{ python_root_dir }}/bin/python3.${{ python_minor_version }}
+        python_site_packages_dir=${{ python_root_dir }}/lib/python3.${{ python_version_minor }}/site-packages
+        python_bin=${{ python_root_dir }}/bin/python3.${{ python_version_minor }}
         ${{ python_bin }} -m venv venv
         source venv/bin/activate
         ${{ python_bin }} -m pip install -v conan
