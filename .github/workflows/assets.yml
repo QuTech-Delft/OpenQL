@@ -117,6 +117,9 @@ jobs:
     runs-on: [self-hosted, ARM64, Linux]
     container: quay.io/pypa/manylinux${{ matrix.manylinux }}_aarch64:latest
     env:
+      BISON_VERSION: ${{ matrix.bison_version }}
+      FLEX_VERSION: ${{ matrix.flex_version }}
+      JAVA_VERSION: ${{ matrix.java_version }}
       SWIG_VERSION: ${{ matrix.swig_version }}
       CMAKE_VERSION: '3.12'
     strategy:
