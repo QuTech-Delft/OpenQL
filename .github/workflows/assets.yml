@@ -76,7 +76,8 @@ jobs:
     - name: Install dependencies
       run: |
         dnf install -y $SWIG_VERSION
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install auditwheel conan
+        export PATH="$PATH/:/root/.local/bin"
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Checkout
@@ -85,21 +86,8 @@ jobs:
       env:
         NPROCS: 5
       run: |
-        python_version=${{ matrix.cpython_version }}
-        python_version_minor=${python_version:(-2)}
-        python_root_dir="/opt/python/${{ matrix.cpython_version }}"
-        python_site_packages_dir="${python_root_dir}/lib/python3.${python_version_minor}/site-packages"
-        python_bin="${python_root_dir}/bin/python3.${python_version_minor}"
-        ${python_bin} -m venv venv
-        source venv/bin/activate
-        ${python_bin} -m pip install -v conan
-        echo "$(${python_bin} -m conan)"
-        echo "$(find ${python_site_packages_dir} -name conan)"
-        export PATH=$PATH:"$(find ${python_site_packages_dir} -name conan)"
-        echo "$(which conan)"
-        export PATH=$PATH:"$(which conan)"
-        ${python_bin} setup.py bdist_wheel
-        ${python_bin} -m auditwheel repair pybuild/dist/*.whl
+        /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
       shell: bash
     - name: Wheel path
       id: wheel
