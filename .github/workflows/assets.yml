@@ -58,9 +58,7 @@ jobs:
     name: 'PyPI wheels for Manylinux/x64'
     runs-on: ubuntu-latest
     platform: linux/amd64
-    container:
-      image: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
-      options: --platform=linux/amd64
+    container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
     env:
       SWIG_VERSION: ${{ matrix.swig_version }}
       CMAKE_VERSION: '3.12'
