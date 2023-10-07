@@ -57,7 +57,6 @@ jobs:
     if: ${{ false }}  # disable for now
     name: 'PyPI wheels for Manylinux/x64'
     runs-on: ubuntu-latest
-    platform: linux/amd64
     container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
     env:
       SWIG_VERSION: ${{ matrix.swig_version }}
