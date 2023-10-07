@@ -92,7 +92,6 @@ jobs:
         NPROCS: 5
       run: |
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
       shell: bash
     - name: Wheel path
       id: wheel
@@ -161,7 +160,6 @@ jobs:
         NPROCS: 5
       run: |
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
     - name: Wheel path
       id: wheel
       working-directory: wheelhouse
