@@ -120,8 +120,11 @@ jobs:
   manylinux-arm64:
     name: 'PyPI wheels for Manylinux/ARM64'
     runs-on: [self-hosted, ARM64, Linux]
-    container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
+    container: quay.io/pypa/manylinux${{ matrix.manylinux }}_aarch64:latest
     env:
+      BISON_VERSION: ${{ matrix.bison_version }}
+      FLEX_VERSION: ${{ matrix.flex_version }}
+      JAVA_VERSION: ${{ matrix.java_version }}
       SWIG_VERSION: ${{ matrix.swig_version }}
       CMAKE_VERSION: '3.12'
     strategy:
@@ -134,13 +137,19 @@ jobs:
         #- 'cp39-cp39'
         #- 'cp310-cp310'
         - 'cp311-cp311'
+        # We are having problems when using the m4 and zulu-opendjk Conan packages on an armv8 architecture
+        # m4 is required by flex/bison and zulu-openjdk provides the Java JRE required by the ANTLR generator
+        # So, for the time being, we are installing flex/bison and java manually for this platform
         include:
           - manylinux: _2_28
-            swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
+            bison_version: 'bison-3.0.4-10.el8'
+            flex_version: 'flex-2.6.1-9.el8'
+            java_version: 'java-11-openjdk-11.0.20.0.8-3.el8'
+            swig_version: 'swig-3.0.12-19.module_el8.4.0+2254+838326ab'
     steps:
     - name: Install dependencies
       run: |
-        dnf install -y $SWIG_VERSION
+        dnf install -y $BISON_VERSION $FLEX_VERSION $JAVA_VERSION $SWIG_VERSION
         python_bin="/opt/python/${{ matrix.cpython_version }}/bin/python"
         ${python_bin} -m pip install auditwheel conan
         pip_installation_folder=$(${python_bin} -m pip show --files conan | grep 'Location:' | sed 's/Location: //')
@@ -157,7 +166,6 @@ jobs:
         NPROCS: 5
       run: |
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
     - name: Wheel path
       id: wheel
       working-directory: wheelhouse
