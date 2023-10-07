@@ -10,6 +10,7 @@ on:
 
 jobs:
   macos-x64:
+    if: ${{ false }}  # disable for now
     name: 'PyPI wheels for MacOS/x64'
     runs-on: macos-latest
     strategy:
@@ -53,6 +54,7 @@ jobs:
         asset_content_type: application/zip
 
   manylinux-x64:
+    if: ${{ false }}  # disable for now
     name: 'PyPI wheels for Manylinux/x64'
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
@@ -161,7 +163,7 @@ jobs:
         NPROCS: 5
       run: |
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
-        /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
+        /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair --plat "manylinux${{ matrix.manylinux }}_aarch64" pybuild/dist/*.whl
     - name: Wheel path
       id: wheel
       working-directory: wheelhouse
@@ -181,6 +183,7 @@ jobs:
         asset_content_type: application/zip
 
   windows-x64:
+    if: ${{ false }}  # disable for now
     name: 'PyPI wheels for Windows/x64'
     runs-on: windows-latest
     strategy:
@@ -224,7 +227,8 @@ jobs:
 
   publish:
     name: Publish
-    if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+    if: ${{ false }}  # disable for now
+    #if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
     needs:
     - macos-x64
     - manylinux-x64
