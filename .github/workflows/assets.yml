@@ -60,7 +60,7 @@ jobs:
     platform: linux/amd64
     container:
       image: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
-      options: --platform linux/amd64
+      options: --platform=linux/amd64
     env:
       SWIG_VERSION: ${{ matrix.swig_version }}
       CMAKE_VERSION: '3.12'
