@@ -1,35 +1,37 @@
 #!/usr/bin/env python3
 
-import os, platform, shutil, sys, re
+import os
+import platform
+import shutil
+import re
 from setuptools import setup, Extension
 from distutils.dir_util import copy_tree
 
-from distutils.command.clean        import clean        as _clean
-from setuptools.command.build_ext   import build_ext    as _build_ext
-from distutils.command.build        import build        as _build
-from setuptools.command.install     import install      as _install
-from distutils.command.bdist        import bdist        as _bdist
-from wheel.bdist_wheel              import bdist_wheel  as _bdist_wheel
-from distutils.command.sdist        import sdist        as _sdist
-from setuptools.command.egg_info    import egg_info     as _egg_info
+from distutils.command.clean import clean as _clean
+from setuptools.command.build_ext import build_ext as _build_ext
+from distutils.command.build import build as _build
+from setuptools.command.install import install as _install
+from distutils.command.bdist import bdist as _bdist
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+from distutils.command.sdist import sdist as _sdist
+from setuptools.command.egg_info import egg_info as _egg_info
 
-root_dir   = os.getcwd()                        # root of the repository
-src_dir    = root_dir   + os.sep + 'src'        # C++ source directory
-inc_dir    = root_dir   + os.sep + 'include'    # C++ include directory
-pysrc_dir  = root_dir   + os.sep + 'python'     # Python source files
-target_dir = root_dir   + os.sep + 'pybuild'    # python-specific build directory
-build_dir  = target_dir + os.sep + 'build'      # directory for setuptools to dump various files into
-dist_dir   = target_dir + os.sep + 'dist'       # wheel output directory
-cbuild_dir = target_dir + os.sep + 'cbuild'     # cmake build directory
-prefix_dir = target_dir + os.sep + 'prefix'     # cmake install prefix
-srcmod_dir = pysrc_dir  + os.sep + 'openql'     # openql Python module directory, source files only
-module_dir = target_dir + os.sep + 'openql'     # openql Python module directory for editable install
+root_dir = os.getcwd()  # root of the repository
+src_dir = root_dir + os.sep + 'src'  # C++ source directory
+inc_dir = root_dir + os.sep + 'include'  # C++ include directory
+pysrc_dir = root_dir + os.sep + 'python'  # Python source files
+target_dir = root_dir + os.sep + 'pybuild'  # python-specific build directory
+build_dir = target_dir + os.sep + 'build'  # directory for setuptools to dump various files into
+dist_dir = target_dir + os.sep + 'dist'  # wheel output directory
+cbuild_dir = target_dir + os.sep + 'cbuild'  # cmake build directory
+prefix_dir = target_dir + os.sep + 'prefix'  # cmake install prefix
+srcmod_dir = pysrc_dir + os.sep + 'openql'  # openql Python module directory, source files only
+module_dir = target_dir + os.sep + 'openql'  # openql Python module directory for editable install
 
-# Copy the hand-written Python sources into the module directory that we're
-# telling setuptools is our source directory, because setuptools insists on
-# spamming output files into that directory. This is ugly, especially because
-# it has to run before setup() is invoked, but seems to be more-or-less
-# unavoidable to get editable installs to work.
+# Copy the handwritten Python sources into the module directory that we're telling setuptools is our source directory,
+# because setuptools insists on spamming output files into that directory.
+# This is ugly, especially because it has to run before setup() is invoked,
+# but seems to be more-or-less unavoidable to get editable installations to work.
 if not os.path.exists(target_dir):
     os.makedirs(target_dir)
 copy_tree(srcmod_dir, module_dir)
@@ -208,10 +210,10 @@ setup(
     packages=['openql'],
     package_dir={'': 'pybuild'},
 
-    # NOTE: the library build process is completely overridden to let CMake
-    # handle it; setuptools' implementation is horribly broken. This is here
-    # just to have the rest of setuptools understand that this is a Python
-    # module with an extension in it.
+    # NOTE: the library build process is completely overridden to let CMake handle it.
+    # setuptools implementation is horribly broken.
+    # This is here just to have the rest of setuptools understand that
+    # this is a Python module with an extension in it.
     ext_modules=[
         Extension('openql._openql', [])
     ],
