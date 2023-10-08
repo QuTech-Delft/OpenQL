@@ -54,7 +54,7 @@ jobs:
         asset_content_type: application/zip
 
   manylinux-x64:
-    if: ${{ false }}  # disable for now
+    #if: ${{ false }}  # disable for now
     name: 'PyPI wheels for Manylinux/x64'
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
@@ -67,9 +67,9 @@ jobs:
         manylinux:
         - _2_28
         cpython_version:
-        - 'cp38-cp38'
-        - 'cp39-cp39'
-        - 'cp310-cp310'
+        #- 'cp38-cp38'
+        #- 'cp39-cp39'
+        #- 'cp310-cp310'
         - 'cp311-cp311'
         include:
           - manylinux: _2_28
@@ -79,7 +79,7 @@ jobs:
       run: |
         dnf install -y $SWIG_VERSION
         python_bin="/opt/python/${{ matrix.cpython_version }}/bin/python"
-        ${python_bin} -m pip install auditwheel conan
+        ${python_bin} -m pip install auditwheel conan wheel-inspect
         pip_installation_folder=$(${python_bin} -m pip show --files conan | grep 'Location:' | sed 's/Location: //')
         conan_installation_folder_relative_path=$(${python_bin} -m pip show --files conan | grep '/bin/' | sed 's#\s\+\(.*\)/conan#\1#')
         conan_installation_folder="${pip_installation_folder}/${conan_installation_folder_relative_path}"
@@ -94,6 +94,7 @@ jobs:
         NPROCS: 5
       run: |
         /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
+        wheel2json pybuild/dist/*.whl
         /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
       shell: bash
     - name: Wheel path
