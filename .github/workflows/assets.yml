@@ -117,7 +117,7 @@ jobs:
   manylinux-arm64:
     name: 'PyPI wheels for Manylinux/ARM64'
     runs-on: [self-hosted, ARM64, Linux]
-    container: quay.io/pypa/manylinux_2_28_poc_aarch64:poc
+    container: quay.io/pypa/manylinux${{ matrix.manylinux }}_aarch64:latest
     env:
       BISON_VERSION: ${{ matrix.bison_version }}
       FLEX_VERSION: ${{ matrix.flex_version }}
