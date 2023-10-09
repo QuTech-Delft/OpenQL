@@ -116,8 +116,8 @@ class build_ext(_build_ext):
                 ['-o']["openql/*:debug_symbols=False"]
                 # Unitary decomposition can be disabled using an environment variable
                 ['-o']['openql/*:disable_unitary=' + disable_unitary]
-                ['-o']['openql/*:python_dir=' + re.escape(os.path.dirname(target))]
-                ['-o']['openql/*:python_ext=' + re.escape(os.path.basename(target))]
+                ['-o']['openql/*:python_dir=' + os.path.dirname(target)]
+                ['-o']['openql/*:python_ext=' + os.path.basename(target)]
                 # (Ab)use static libs for the intermediate libraries
                 # to avoid dealing with R(UN)PATH nonsense on Linux/OSX as much as possible
                 ['-o']["openql/*:shared=False"]

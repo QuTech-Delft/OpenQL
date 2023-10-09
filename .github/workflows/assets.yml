@@ -10,7 +10,7 @@ on:
 
 jobs:
   macos-x64:
-    if: ${{ false }}  # disable for now
+    #if: ${{ false }}  # disable for now
     name: 'PyPI wheels for MacOS/x64'
     runs-on: macos-latest
     strategy:
@@ -185,7 +185,7 @@ jobs:
         asset_content_type: application/zip
 
   windows-x64:
-    if: ${{ false }}  # disable for now
+    #if: ${{ false }}  # disable for now
     name: 'PyPI wheels for Windows/x64'
     runs-on: windows-latest
     strategy:
