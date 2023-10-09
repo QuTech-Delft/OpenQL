@@ -10,7 +10,7 @@ on:
 
 jobs:
   macos-x64:
-    #if: ${{ false }}  # disable for now
+    if: ${{ false }}  # disable for now
     name: 'PyPI wheels for MacOS/x64'
     runs-on: macos-latest
     strategy:
@@ -116,6 +116,7 @@ jobs:
         asset_content_type: application/zip
 
   manylinux-arm64:
+    if: ${{ false }}  # disable for now
     name: 'PyPI wheels for Manylinux/ARM64'
     runs-on: [self-hosted, ARM64, Linux]
     container: quay.io/pypa/manylinux${{ matrix.manylinux }}_aarch64:latest
@@ -185,7 +186,7 @@ jobs:
         asset_content_type: application/zip
 
   windows-x64:
-    #if: ${{ false }}  # disable for now
+    if: ${{ false }}  # disable for now
     name: 'PyPI wheels for Windows/x64'
     runs-on: windows-latest
     strategy:
@@ -229,13 +230,13 @@ jobs:
 
   publish:
     name: Publish
-    if: ${{ false }}  # disable for now
-    #if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+    #if: ${{ false }}  # disable for now
+    if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
     needs:
-    - macos-x64
+    #- macos-x64
     - manylinux-x64
-    - manylinux-arm64
-    - windows-x64
+    #- manylinux-arm64
+    #- windows-x64
     runs-on: ubuntu-latest
     steps:
     - name: Download artifacts
