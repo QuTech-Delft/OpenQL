@@ -4,6 +4,7 @@ import os
 import platform
 import shutil
 import re
+import sys
 from setuptools import setup, Extension
 from distutils.dir_util import copy_tree
 
@@ -117,6 +118,7 @@ class build_ext(_build_ext):
                 # Unitary decomposition can be disabled using an environment variable
                 ['-o']['openql/*:disable_unitary=' + disable_unitary]
                 ['-o']['openql/*:python_dir=' + os.path.dirname(target).replace("\\", "\\\\")]
+                ['-o']['openql/*:python_executable=' + sys.executable.replace("\\", "\\\\")]
                 ['-o']['openql/*:python_ext=' + os.path.basename(target).replace("\\", "\\\\")]
                 # (Ab)use static libs for the intermediate libraries
                 # to avoid dealing with R(UN)PATH nonsense on Linux/OSX as much as possible
