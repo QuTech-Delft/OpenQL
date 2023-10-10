@@ -38,7 +38,7 @@ void test_x90_q12__cnot_q1_q0() {
     });
     auto program = ql::Program{ "test_x90_q12__cnot_q1_q0", platform };
     program.get_compiler().insert_pass_after("input", "dec.Instructions", "decomposition");
-    program.get_compiler().set_option("initialqasmwriter.cqasm_version", "3.0");
+    program.get_compiler().set_option("initialqasmwriter.cqasm_version", "1.0");
     program.get_compiler().set_option("initialqasmwriter.with_metadata", "no");
     program.compile();
 
