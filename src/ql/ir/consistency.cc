@@ -93,6 +93,9 @@ private:
                 case prim::OperandMode::READ:
                     break;
 
+                // TODO: check, when we create this node, with prim::OperandMode::LITERAL
+                //       why we don't create a Literal, but an Expression, or a Node, or a DataType, not sure what we do
+
                 case prim::OperandMode::LITERAL:
                     if (!actual[i]->as_literal()) {
                         QL_ICE(

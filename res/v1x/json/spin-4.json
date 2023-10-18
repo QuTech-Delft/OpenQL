@@ -49,79 +49,19 @@
         ]
     },
     "instructions": {
-        "prep_x": {
+        "ry": {
             "prototype": [
-                "W:qubit"
-            ],
-            "duration": 4,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "prep_z op(0)",
-                    "y90 op(0)"
-                ]
-            }
-        },
-        "prep_y": {
-            "prototype": [
-                "W:qubit"
-            ],
-            "duration": 2,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "prep_z op(0)",
-                    "mx90 op(0)"
-                ]
-            }
-        },
-        "h": {
-            "prototype": [
-                "U:qubit"
+                "Y:qubit",
+                "L:real"
             ],
             "duration": 3,
+            "type": "mw",
             "decomposition": {
                 "name": "desugar",
                 "into": [
-                    "z90 op(0)",
-                    "X90 op(0)",
-                    "z90 op(0)"
-                ]
-            }
-        },
-        "t": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "z45 op(0)"
-                ]
-            }
-        },
-        "tdag": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mz45 op(0)"
-                ]
-            }
-        },
-        "s": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "z90 op(0)"
+                    "mx90 op(0)",
+                    "rz op(0), op(1)",
+                    "x90 op(0)"
                 ]
             }
         },
@@ -137,55 +77,7 @@
                 ]
             }
         },
-        "x45": {
-            "prototype": [
-                "X:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rx op(0), 0.7853981633974483"
-                ]
-            }
-        },
-        "rx45": {
-            "prototype": [
-                "X:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rx op(0), 0.7853981633974483"
-                ]
-            }
-        },
-        "mx45": {
-            "prototype": [
-                "X:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rx op(0), -0.7853981633974483"
-                ]
-            }
-        },
-        "mrx45": {
-            "prototype": [
-                "X:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rx op(0), -0.7853981633974483"
-                ]
-            }
-        },
-        "X90": {
+        "x90": {
             "prototype": [
                 "X:qubit"
             ],
@@ -194,58 +86,10 @@
                 "name": "desugar",
                 "into": [
                     "rx op(0), 1.5707963267948966"
-                ]
-            }
-        },
-        "rx90": {
-            "prototype": [
-                "X:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rx op(0), 1.5707963267948966"
-                ]
-            }
-        },
-        "mx90": {
-            "prototype": [
-                "X:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rx op(0), -1.5707963267948966"
-                ]
-            }
-        },
-        "mrx90": {
-            "prototype": [
-                "X:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rx op(0), -1.5707963267948966"
                 ]
             }
         },
         "x": {
-            "prototype": [
-                "X:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rx op(0), 3.141592653589793"
-                ]
-            }
-        },
-        "rx180": {
             "prototype": [
                 "X:qubit"
             ],
@@ -267,220 +111,19 @@
                 "into": [
                     "mx90 op(0)",
                     "rz op(0), 0.7853981633974483",
-                    "X90 op(0)"
+                    "x90 op(0)"
                 ]
             }
         },
-        "ry45": {
+        "mx90": {
             "prototype": [
-                "Y:qubit"
-            ],
-            "duration": 3,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mx90 op(0)",
-                    "rz op(0), 0.7853981633974483",
-                    "X90 op(0)"
-                ]
-            }
-        },
-        "my45": {
-            "prototype": [
-                "Y:qubit"
-            ],
-            "duration": 3,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mx90 op(0)",
-                    "rz op(0), -0.7853981633974483",
-                    "X90 op(0)"
-                ]
-            }
-        },
-        "mry45": {
-            "prototype": [
-                "Y:qubit"
-            ],
-            "duration": 3,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mx90 op(0)",
-                    "rz op(0), -0.7853981633974483",
-                    "X90 op(0)"
-                ]
-            }
-        },
-        "y90": {
-            "prototype": [
-                "Y:qubit"
-            ],
-            "duration": 3,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mx90 op(0)",
-                    "rz op(0), 1.5707963267948966",
-                    "X90 op(0)"
-                ]
-            }
-        },
-        "ry90": {
-            "prototype": [
-                "Y:qubit"
-            ],
-            "duration": 3,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mx90 op(0)",
-                    "rz op(0), 1.5707963267948966",
-                    "X90 op(0)"
-                ]
-            }
-        },
-        "my90": {
-            "prototype": [
-                "Y:qubit"
-            ],
-            "duration": 3,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mx90 op(0)",
-                    "rz op(0), -1.5707963267948966",
-                    "X90 op(0)"
-                ]
-            }
-        },
-        "mry90": {
-            "prototype": [
-                "Y:qubit"
-            ],
-            "duration": 3,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mx90 op(0)",
-                    "rz op(0), -1.5707963267948966",
-                    "X90 op(0)"
-                ]
-            }
-        },
-        "ry": {
-            "prototype": [
-                "Y:qubit"
-            ],
-            "duration": 3,
-            "type": "mw",
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mx90 op(0)",
-                    "rz op(0), 0.7853981633974483",
-                    "X90 op(0)"
-                ]
-            }
-        },
-        "y": {
-            "prototype": [
-                "Y:qubit"
-            ],
-            "duration": 3,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mx90 op(0)",
-                    "rz op(0), 3.141592653589793",
-                    "X90 op(0)"
-                ]
-            }
-        },
-        "ry180": {
-            "prototype": [
-                "Y:qubit"
-            ],
-            "duration": 3,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "mx90 op(0)",
-                    "rz op(0), 3.141592653589793",
-                    "X90 op(0)"
-                ]
-            }
-        },
-        "z45": {
-            "prototype": [
-                "Z:qubit"
+                "X:qubit"
             ],
             "duration": 1,
             "decomposition": {
                 "name": "desugar",
                 "into": [
-                    "rz op(0), 0.7853981633974483"
-                ]
-            }
-        },
-        "rz45": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rz op(0), 0.7853981633974483"
-                ]
-            }
-        },
-        "mz45": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rz op(0), -0.7853981633974483"
-                ]
-            }
-        },
-        "mrz45": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rz op(0), -0.7853981633974483"
-                ]
-            }
-        },
-        "z90": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rz op(0), 1.5707963267948966"
-                ]
-            }
-        },
-        "rz90": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rz op(0), 1.5707963267948966"
+                    "rx op(0), -1.5707963267948966"
                 ]
             }
         },
@@ -496,116 +139,6 @@
                 ]
             }
         },
-        "mrz90": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rz op(0), -1.5707963267948966"
-                ]
-            }
-        },
-        "z": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rz op(0), 3.141592653589793"
-                ]
-            }
-        },
-        "rz180": {
-            "prototype": [
-                "Z:qubit"
-            ],
-            "duration": 1,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "rz op(0), 3.141592653589793"
-                ]
-            }
-        },
-        "CNOT": {
-            "prototype": [
-                "Z:qubit",
-                "X:qubit"
-            ],
-            "duration": 7,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "my90 op(0)",
-                    "cz op(0), op(1)",
-                    "y90 op(0)"
-                ]
-            }
-        },
-        "dcnot": {
-            "prototype": [
-                "U:qubit",
-                "U:qubit"
-            ],
-            "duration": 14,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "CNOT op(1), op(0)",
-                    "CNOT op(0), op(1)"
-                ]
-            }
-        },
-        "swap": {
-            "prototype": [
-                "U:qubit",
-                "U:qubit"
-            ],
-            "duration": 21,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "CNOT op(0), op(1)",
-                    "CNOT op(1), op(0)",
-                    "CNOT op(0), op(1)"
-                ]
-            }
-        },
-        "measure_x": {
-            "prototype": [
-                "M:qubit"
-            ],
-            "duration": 7,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "my90 op(0)",
-                    "measure_z op(0)",
-                    "y90 op(0)"
-                ]
-            }
-        },
-        "measure_y": {
-            "prototype": [
-                "M:qubit"
-            ],
-            "duration": 9,
-            "decomposition": {
-                "name": "desugar",
-                "into": [
-                    "z90 op(0)",
-                    "y90 op(0)",
-                    "measure_z op(0)",
-                    "my90 op(0)",
-                    "mz90 op(0)"
-                ]
-            }
-        },
         "measure": {
             "prototype": [
                 "M:qubit"
@@ -618,19 +151,10 @@
                 ]
             }
         },
-        "prep_z": {
-            "duration": 1
-        },
-        "i": {
-            "duration": 1
-        },
         "rx": {
             "duration": 1
         },
         "rz": {
-            "duration": 1
-        },
-        "cz": {
             "duration": 1
         },
         "measure_z": {
