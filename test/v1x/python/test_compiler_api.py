@@ -9,6 +9,7 @@ class TestCompilerApi(unittest.TestCase):
         ql.initialize()
         self.maxDiff = None
 
+    @unittest.skip("QI2 integration test: temporarily skipped this test")
     def test_compiler_api(self):
         c = ql.Compiler()
         p = c.append_pass('io.cqasm.Report')

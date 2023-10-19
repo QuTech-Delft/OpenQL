@@ -131,7 +131,8 @@ TEST(read, version_3_0) {
     ir.emplace();
     ir->platform = ql::utils::make<PlatformFake>();
     ql::ir::cqasm::ReadOptions options{};
-    EXPECT_THROW(ql::ir::cqasm::read(ir, data, fname, options), std::runtime_error);
+    ql::ir::cqasm::read(ir, data, fname, options);
+    EXPECT_THAT(ir->program->name, "program");
 }
 TEST(read, no_version) {
     const ql::utils::Str data{};

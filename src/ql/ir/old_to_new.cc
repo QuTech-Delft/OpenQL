@@ -27,7 +27,8 @@ namespace ir {
 static utils::List<utils::Str> parse_instruction_name(utils::Str name) {
 
     // Sanitize according to the legacy rules.
-    name = utils::to_lower(name);
+    // QI2 integration test: temporarily removed this check
+    //name = utils::to_lower(name);
     static const std::regex TRIM("^(\\s+)|(\\s+)$");
     name = std::regex_replace(name, TRIM, "");
     static const std::regex SPACES("[\\s,]+");
@@ -218,7 +219,7 @@ static void parse_decomposition_rule(
     // for the result. Obviously, we don't want that. So we make our own root
     // tree with the platform half shared, and nothing in the program node.
     auto rule_ir = utils::make<Root>(ir->platform);
-    cqasm::read_v1(rule_ir, cqasm.str(), "<" + description.str() + ">", read_options);
+    cqasm::read(rule_ir, cqasm.str(), "<" + description.str() + ">", read_options);
 
     // Copy the temporary variables declared in the cQASM program to the
     // decomposition rule.

@@ -6,9 +6,10 @@
 
 #include "ql/ir/ir.h"
 
-namespace ql {
-namespace ir {
-namespace cqasm {
+#include <compare>  // strong_ordering
+
+
+namespace ql::ir::cqasm {
 
 /**
  * The manner in which wait instructions are printed.
@@ -135,6 +136,6 @@ utils::Str to_string(
     const WriteOptions &options = {}
 );
 
-} // namespace cqasm
-} // namespace ir
-} // namespace ql
+std::strong_ordering version_compare(const utils::Vec<utils::UInt> &lhs, const utils::Vec<utils::UInt> &rhs);
+
+} // namespace ql::ir::cqasm

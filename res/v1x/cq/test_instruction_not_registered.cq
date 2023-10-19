@@ -1,0 +1,15 @@
+version 3.0
+
+// This is a single line comment which ends on the newline.
+// The cQASM string must begin with the version instruction even before any comments.
+
+/* This is a multi-
+line comment block */
+
+
+qubit[3] q   //declaration
+
+//let us create a Bell state on 2 qubits and a |+> state on the third qubit
+
+x90 q[1,2]
+cnot q[1],q[0]

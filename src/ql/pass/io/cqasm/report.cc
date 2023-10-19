@@ -139,7 +139,7 @@ ReportCQasmPass::ReportCQasmPass(
         "cqasm_version",
         "The cQASM version to target.",
         "1.2",
-        {"1.0", "1.1", "1.2"}
+        {"1.0", "1.1", "1.2", "3.0"}
     );
     options.add_bool(
         "with_platform",
@@ -206,6 +206,8 @@ utils::Int ReportCQasmPass::run(
         write_options.version = {1, 1};
     } else if (options["cqasm_version"].as_str() == "1.2") {
         write_options.version = {1, 2};
+    } else if (options["cqasm_version"].as_str() == "3.0") {
+        write_options.version = {3, 0};
     } else {
         QL_ASSERT(false);
     }

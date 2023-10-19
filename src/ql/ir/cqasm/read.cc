@@ -12,6 +12,8 @@
 #include "ql/com/ddg/build.h"
 #include "cqasm.hpp"
 #include "cqasm-version.hpp"
+#include "v1x/cqasm-parse-helper.hpp"
+#include "v3x/cqasm-parse-helper.hpp"
 
 #include <fmt/format.h>
 #include <stdexcept>
@@ -1125,15 +1127,25 @@ static ir::compat::PlatformRef load_platform(const cq1::parser::ParseResult &pre
  * the filename if one exists for the purpose of generating better error
  * messages.
  */
-void read_v1(
+void read(
     const Ref &ir,
     const utils::Str &data,
     const utils::Str &fname,
     const ReadOptions &options
 ) {
-
+    auto pres = cq1::parser::ParseResult{};
+    auto version = cqver::parse_string(data, fname);
     // Start by parsing the file without analysis.
-    auto pres = cq1::parser::parse_string(data, fname);
+    if (version.compare("1.2") <= 0) {
+        pres = cq1::parser::parse_string(data, fname);
+    } else if (version.compare("3.0") == 0) {
+        pres = cq3::parser::parse_string(data, fname);
+    } else {
+        auto error = fmt::format("'{}' is an invalid cQASM version", fmt::join(version, "."));
+        QL_EOUT(error);
+        QL_USER_ERROR(error);
+    }
+
     if (!pres.errors.empty()) {
         utils::StrStrm errors;
         errors << "failed to parse '" << data << "' for the following reasons:";
@@ -1153,7 +1165,7 @@ void read_v1(
     }
 
     // Create an analyzer for files with a version up to cQASM 1.2.
-    cq1::analyzer::Analyzer a{"1.2"};
+    cq1::analyzer::Analyzer a{"3.0"};
 
     // Add the default constant-propagation functions and mappings such as true
     // and false.
@@ -1518,40 +1530,6 @@ void read_v1(
         check_consistency(ir);
     }
 
-}
-
-void read_v3(
-    const Ref & /* ir */,
-    const utils::Str &data,
-    const utils::Str &fname,
-    const ReadOptions & /* options */
-) {
-    cq3::parser::parse_string(data, fname);
-}
-
-/**
- * Reads a cQASM file into the IR.
- * If reading is successful, ir->program is completely replaced.
- * data represents the cQASM file contents,
- * fname specifies the filename if one exists for the purpose of generating better error messages.
- */
-void read(
-    const Ref &ir,
-    const utils::Str &data,
-    const utils::Str &fname,
-    const ReadOptions &options
-) {
-    auto pres = cqver::parse_string(data, fname);
-    auto version = cqver::parse_string(data, fname);
-    if (version <= cqver::Version("1.2")) {
-        read_v1(ir, data, fname, options);
-    } else if (version == cqver::Version("3.0")) {
-        read_v3(ir, data, fname, options);
-    } else {
-        auto error = fmt::format("'{}' is an invalid cQASM version", fmt::join(version, "."));
-        QL_EOUT(error);
-        QL_USER_ERROR(error);
-    }
 }
 
 /**

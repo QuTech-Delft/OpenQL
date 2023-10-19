@@ -16,6 +16,7 @@ class OpenQLConan(ConanFile):
         "debug_symbols": [True, False],
         "disable_unitary": [True, False],
         "python_dir": [None, "ANY"],
+        "python_executable": [None, "ANY"],
         "python_ext": [None, "ANY"]
     }
     default_options = {
@@ -25,6 +26,7 @@ class OpenQLConan(ConanFile):
         "debug_symbols": False,
         "disable_unitary": True,
         "python_dir": None,
+        "python_executable": None,
         "python_ext": None
     }
 
@@ -44,6 +46,7 @@ class OpenQLConan(ConanFile):
             if self.settings.arch != "armv8":
                 self.tool_requires("flex/2.6.4")
                 self.tool_requires("bison/3.8.2")
+        self.requires("range-v3/0.12.0")
         if self.settings.arch != "armv8":
             self.tool_requires("zulu-openjdk/11.0.19")
         if self.options.build_tests:
@@ -76,6 +79,7 @@ class OpenQLConan(ConanFile):
         tc.variables["OPENQL_DEBUG_SYMBOLS"] = self.options.debug_symbols
         tc.variables["OPENQL_PYTHON_DIR"] = self.options.python_dir
         tc.variables["OPENQL_PYTHON_EXT"] = self.options.python_ext
+        tc.variables["PYTHON_EXECUTABLE"] = not self.options.python_executable
         tc.variables["WITH_UNITARY_DECOMPOSITION"] = not self.options.disable_unitary
         tc.generate()
 

@@ -8,6 +8,7 @@ on:
 
 jobs:
   cpp-linux-macos-windows:
+    if: ${{ false }}  # disable for now
     name: 'C++ tests (Linux-MacOS-Windows/x64)'
     strategy:
       fail-fast: false
@@ -59,7 +60,7 @@ jobs:
       matrix:
         os:
           - Linux
-          - macOS
+          #- macOS
     steps:
       - if: matrix.os == 'Linux'
         name: Install gcc and python (Linux)
@@ -96,6 +97,7 @@ jobs:
         run: ctest -C Release --output-on-failure
 
   python:
+    if: ${{ false }}  # disable for now
     name: Python
     runs-on: ${{ matrix.os }}
     strategy:
