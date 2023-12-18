@@ -1,0 +1,9 @@
+include(tests-release)
+
+[settings]
+compiler=clang
+compiler.version=14
+
+[conf]
+tools.build:cxxflags=["-stdlib=libc++"]
+tools.build:compiler_executables={ 'c' : 'clang', 'cpp' : 'clang++' }
