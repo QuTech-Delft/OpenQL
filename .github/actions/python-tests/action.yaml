@@ -14,7 +14,7 @@ runs:
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Install Python dependencies
-      run: python -m pip install --upgrade pip conan pytest qxelarator setuptools wheel
+      run: python -m pip install --upgrade pip conan numpy pytest qxelarator setuptools wheel
       shell: ${{ inputs.shell }}
     - name: Build
       run: python -m pip install --verbose .

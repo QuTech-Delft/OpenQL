@@ -131,7 +131,7 @@ jobs:
         run: |
           sudo apt-get install -y swig
         shell: bash
-      - name: Export LIBQASM_BUILD_TYPE
+      - name: Export env vars
         run: |
           echo "LIBQASM_BUILD_TYPE=Debug" >> $GITHUB_ENV
           echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
@@ -150,7 +150,7 @@ jobs:
         run: |
           brew install swig
         shell: bash
-      - name: Export LIBQASM_BUILD_TYPE
+      - name: Export env vars
         run: |
           echo "LIBQASM_BUILD_TYPE=Debug" >> $GITHUB_ENV
           echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
@@ -165,7 +165,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Export LIBQASM_BUILD_TYPE
+      - name: Export env vars
         run: |
           echo "LIBQASM_BUILD_TYPE=Release" >> $env:GITHUB_ENV
           echo "OPENQL_BUILD_TYPE=Release" >> $env:GITHUB_ENV
@@ -174,20 +174,6 @@ jobs:
       - uses: ./.github/actions/python-tests
         with:
           shell: bash
-
-  docker:
-    name: Docker
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Build without pushing
-        uses: docker/build-push-action@v4
-        with:
-          push: false
-          tags: libqasm:latest
 
   complete:
     # see https://github.community/t/status-check-for-a-matrix-jobs/127354/7

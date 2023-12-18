@@ -36,13 +36,13 @@ jobs:
           brew install bison flex swig xquartz
           echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
           echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
-            python -m pip install --upgrade pip conan setuptools wheel
+          python -m pip install --upgrade pip conan setuptools wheel
       - name: Build wheel
         run: python setup.py bdist_wheel
       - name: Wheel path
         id: wheel
         working-directory: pybuild/dist/
-        run: echo "##[set-output name=wheel;]$(ls *.whl)"
+        run: echo "{wheel}={$(ls *.whl)}" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-macos-py${{ matrix.python }}
@@ -61,6 +61,8 @@ jobs:
     name: PyPI wheels for Manylinux (x64)
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux${{ matrix.manylinux }}_x86_64:latest
+    env:
+      SWIG_VERSION: ${{ matrix.swig_version }}
     strategy:
       fail-fast: false
       matrix:
@@ -72,12 +74,22 @@ jobs:
           - "cp310-cp310"
           - "cp311-cp311"
           - "cp312-cp312"
+        include:
+          - manylinux: _2_28
+            swig_version: 'swig-3.0.12-19.module_el8.3.0+6167+838326ab'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Install dependencies
         run: |
-          /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install --upgrade conan wheel auditwheel
+          dnf install -y $SWIG_VERSION
+          python_bin="/opt/python/${{ matrix.cpython_version }}/bin/python"
+          ${python_bin} -m pip install --upgrade conan wheel auditwheel
+          pip_installation_folder=$(${python_bin} -m pip show --files conan | grep 'Location:' | sed 's/Location: //')
+          conan_installation_folder_relative_path=$(${python_bin} -m pip show --files conan | grep '/bin/' | sed 's#\s\+\(.*\)/conan#\1#')
+          conan_installation_folder="${pip_installation_folder}/${conan_installation_folder_relative_path}"
+          echo "Conan installation folder: ${conan_installation_folder}"
+          echo "${conan_installation_folder}" >> $GITHUB_PATH
       - name: Build wheel
         run: |
           /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
@@ -85,7 +97,7 @@ jobs:
       - name: Wheel path
         id: wheel
         working-directory: wheelhouse
-        run: echo "##[set-output name=wheel;]$(ls *.whl)"
+        run: echo "{wheel}={$(ls *.whl)}" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-linux-${{ matrix.cpython_version }}
@@ -107,6 +119,11 @@ jobs:
       - "ARM64"
       - "Linux"
     container: quay.io/pypa/manylinux${{ matrix.manylinux }}_aarch64:latest
+    env:
+      BISON_VERSION: ${{ matrix.bison_version }}
+      FLEX_VERSION: ${{ matrix.flex_version }}
+      JAVA_VERSION: ${{ matrix.java_version }}
+      SWIG_VERSION: ${{ matrix.swig_version }}
     strategy:
       matrix:
         manylinux:
@@ -117,21 +134,37 @@ jobs:
           - "cp310-cp310"
           - "cp311-cp311"
           - "cp312-cp312"
+        # We are having problems when using the m4 and zulu-opendjk Conan packages on an armv8 architecture
+        # m4 is required by flex/bison and zulu-openjdk provides the Java JRE required by the ANTLR generator
+        # So, for the time being, we are installing flex/bison and java manually for this platform
+        include:
+          - manylinux: _2_28
+            bison_version: 'bison-3.0.4-10.el8'
+            flex_version: 'flex-2.6.1-9.el8'
+            java_version: 'java-11-openjdk-11.0.21.0.9-2.el8'
+            swig_version: 'swig-3.0.12-19.module_el8.4.0+2254+838326ab'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Install dependencies
         run: |
-          /opt/python/${{ matrix.cpython_version }}/bin/python -m pip install --upgrade pip conan wheel auditwheel
+          dnf install -y $BISON_VERSION $FLEX_VERSION $JAVA_VERSION $SWIG_VERSION
+          python_bin="/opt/python/${{ matrix.cpython_version }}/bin/python"
+          ${python_bin} -m pip install --upgrade pip conan wheel auditwheel
+          pip_installation_folder=$(${python_bin} -m pip show --files conan | grep 'Location:' | sed 's/Location: //')
+          conan_installation_folder_relative_path=$(${python_bin} -m pip show --files conan | grep '/bin/' | sed 's#\s\+\(.*\)/conan#\1#')
+          conan_installation_folder="${pip_installation_folder}/${conan_installation_folder_relative_path}"
+          echo "Conan installation folder: ${conan_installation_folder}"
+          echo "${conan_installation_folder}" >> $GITHUB_PATH
       - name: Build wheel
         run: |
-          conan remove -c "qx/*"
+          conan remove -c "libqasm/*"
           /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
           /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
       - name: Wheel path
         id: wheel
         working-directory: wheelhouse
-        run: echo "##[set-output name=wheel;]$(ls *.whl)"
+        run: echo "{wheel}={$(ls *.whl)}" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-linux-${{ matrix.cpython_version }}
@@ -171,7 +204,7 @@ jobs:
       - name: Wheel path
         id: wheel
         working-directory: pybuild/dist/
-        run: echo "##[set-output name=wheel;]$(Get-ChildItem -name *.whl)"
+        run: echo "{wheel}={$(Get-ChildItem -name *.whl)}" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-windows-py${{ matrix.python }}
