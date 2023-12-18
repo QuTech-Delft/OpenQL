@@ -43,7 +43,7 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          conan_profile: tests-${{ matrix.build_type }}-macos-x64
+          conan_profile: tests-${{ matrix.build_type }}-apple_clang-macos-x64
           shell: bash
 
   cpp-windows-x64:
@@ -61,11 +61,13 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          conan_profile: tests-${{ matrix.build_type }}-windows-x64
+          conan_profile: tests-${{ matrix.build_type }}-msvc-windows-x64
           shell: bash
 
+  # We are observing an internal compiler error when building with gcc
+  # So we are changing to clang for the Linux/ARM64 builds
   cpp-linux-arm64:
-    name: "C++ tests (gcc/Linux/ARM64)"
+    name: "C++ tests (clang/Linux/ARM64)"
     runs-on: [self-hosted, ARM64, Linux]
     container: python:3.11
     strategy:
@@ -90,7 +92,7 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          conan_profile: tests-${{ matrix.build_type }}-linux-arm64
+          conan_profile: tests-${{ matrix.build_type }}-clang-linux-arm64
           shell: bash
 
   cpp-macos-arm64:
@@ -118,7 +120,7 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          conan_profile: tests-${{ matrix.build_type }}-macos-arm64
+          conan_profile: tests-${{ matrix.build_type }}-apple_clang-macos-arm64
           shell: bash
 
   python-linux-x64:
