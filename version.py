@@ -6,7 +6,7 @@ def get_version(verbose=False):
     """Extract version information from source code"""
 
     root_dir = os.getcwd()  # root of the repository
-    inc_dir = root_dir + os.sep + "include"  # C++ include directory
+    inc_dir = os.path.join(root_dir, "include", "ql")  # C++ include directory
     matcher = re.compile('[\t ]*#define[\t ]+OPENQL_VERSION_STRING[\t ]+"(.*)"')
     version = None
     with open(os.path.join(inc_dir, "version.h"), "r") as f:
