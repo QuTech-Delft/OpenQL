@@ -60,7 +60,7 @@
                 "name": "desugar",
                 "into": [
                     "mx90 op(0)",
-                    "rz op(0), op(1)",
+                    "rz op(0), atan(1)",
                     "x90 op(0)"
                 ]
             }

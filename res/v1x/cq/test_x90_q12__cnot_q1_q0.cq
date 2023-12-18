@@ -11,7 +11,8 @@ qubits 3   #declaration
 
 #let us create a Bell state on 2 qubits and a |+> state on the third qubit
 
-sdag q[0]
+# sdag q[0]
+rz q[0], atan(1)
 x q[0]
 y45 q[0]
 measure q[1]
