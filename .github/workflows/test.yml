@@ -187,7 +187,6 @@ jobs:
       - python-linux-x64
       - python-macos-x64
       - python-windows-x64
-      - docker
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
