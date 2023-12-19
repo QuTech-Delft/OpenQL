@@ -92,6 +92,7 @@ jobs:
           echo "${conan_installation_folder}" >> $GITHUB_PATH
       - name: Build wheel
         run: |
+          conan remove -c "*/*"
           /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
           /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
       - name: Wheel path
@@ -158,7 +159,7 @@ jobs:
           echo "${conan_installation_folder}" >> $GITHUB_PATH
       - name: Build wheel
         run: |
-          conan remove -c "libqasm/*"
+          conan remove -c "*/*"
           /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
           /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
       - name: Wheel path

@@ -7,65 +7,63 @@ on:
   pull_request:
 
 jobs:
-#  cpp-linux-x64:
-#    name: "C++ tests (gcc-clang/Linux/x64)"
-#    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        build_type:
-#          - Debug
-#          - Release
-#        compiler:
-#          - clang
-#          - gcc
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#      - uses: ./.github/actions/cpp-tests
-#        with:
-#          build_type: ${{ matrix.build_type }}
-#          conan_profile: tests-${{ matrix.build_type }}-${{ matrix.compiler }}-linux-x64
-#          shell: bash
-#
-#  cpp-macos-x64:
-#    name: "C++ tests (clang/MacOS/x64)"
-#    runs-on: macos-latest
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        build_type:
-#          - Debug
-#          - Release
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#      - uses: ./.github/actions/cpp-tests
-#        with:
-#          build_type: ${{ matrix.build_type }}
-#          conan_profile: tests-${{ matrix.build_type }}-apple_clang-macos-x64
-#          shell: bash
-#
-#  cpp-windows-x64:
-#    name: "C++ tests (msvc/Windows/x64)"
-#    runs-on: windows-latest
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        build_type:
-#          - Debug
-#          - Release
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#      - uses: ./.github/actions/cpp-tests
-#        with:
-#          build_type: ${{ matrix.build_type }}
-#          conan_profile: tests-${{ matrix.build_type }}-msvc-windows-x64
-#          shell: bash
+  cpp-linux-x64:
+    name: "C++ tests (gcc-clang/Linux/x64)"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - Debug
+          - Release
+        compiler:
+          - clang
+          - gcc
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/cpp-tests
+        with:
+          build_type: ${{ matrix.build_type }}
+          conan_profile: tests-${{ matrix.build_type }}-${{ matrix.compiler }}-linux-x64
+          shell: bash
 
-  # We are observing an internal compiler error when building with gcc
-  # So we are changing to clang for the Linux/ARM64 builds
+  cpp-macos-x64:
+    name: "C++ tests (clang/MacOS/x64)"
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - Debug
+          - Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/cpp-tests
+        with:
+          build_type: ${{ matrix.build_type }}
+          conan_profile: tests-${{ matrix.build_type }}-apple_clang-macos-x64
+          shell: bash
+
+  cpp-windows-x64:
+    name: "C++ tests (msvc/Windows/x64)"
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - Debug
+          - Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/cpp-tests
+        with:
+          build_type: ${{ matrix.build_type }}
+          conan_profile: tests-${{ matrix.build_type }}-msvc-windows-x64
+          shell: bash
+
   cpp-linux-arm64:
     name: "C++ tests (gcc/Linux/ARM64)"
     runs-on: [self-hosted, ARM64, Linux]
@@ -74,7 +72,7 @@ jobs:
       fail-fast: false
       matrix:
         build_type:
-#          - Debug
+          - Debug
           - Release
     steps:
       - name: Checkout
@@ -88,12 +86,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y bison flex default-jre clang
-          python3 -m pip install --upgrade pip conan
-        shell: bash
-      - name: Clean Conan cache
-        run: |
-          conan remove -c "*/*"
+          apt-get install -y bison flex default-jre
         shell: bash
       - uses: ./.github/actions/cpp-tests
         with:
@@ -101,110 +94,110 @@ jobs:
           conan_profile: tests-${{ matrix.build_type }}-gcc-linux-arm64
           shell: bash
 
-#  cpp-macos-arm64:
-#    name: "C++ tests (clang/macos/ARM64)"
-#    runs-on: [self-hosted, ARM64, macOS]
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        build_type:
-#          - Debug
-#          - Release
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#        # We are having problems when using the m4 and zulu-opendjk Conan packages on an armv8 architecture
-#        # m4 is required by flex/bison and zulu-openjdk provides the Java JRE required by the ANTLR generator
-#        # So, for the time being, we are installing flex/bison and java manually for this platform
-#      - name: Install bison, flex and java
-#        run: |
-#          brew install bison flex java
-#          echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
-#          echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
-#          echo "$(brew --prefix java)/bin" >> $GITHUB_PATH
-#        shell: bash
-#      - uses: ./.github/actions/cpp-tests
-#        with:
-#          build_type: ${{ matrix.build_type }}
-#          conan_profile: tests-${{ matrix.build_type }}-apple_clang-macos-arm64
-#          shell: bash
-#
-#  python-linux-x64:
-#    name: "Python tests (Linux/x64)"
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#      - name: Install SWIG
-#        run: |
-#          sudo apt-get install -y swig
-#        shell: bash
-#      - name: Export env vars
-#        run: |
-#          echo "LIBQASM_BUILD_TYPE=Debug" >> $GITHUB_ENV
-#          echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
-#        shell: bash
-#      - uses: ./.github/actions/python-tests
-#        with:
-#          shell: bash
-#
-#  python-macos-x64:
-#    name: "Python tests (macOS/x64)"
-#    runs-on: macos-latest
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#      - name: Install SWIG
-#        run: |
-#          brew install swig
-#        shell: bash
-#      - name: Export env vars
-#        run: |
-#          echo "LIBQASM_BUILD_TYPE=Debug" >> $GITHUB_ENV
-#          echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
-#        shell: bash
-#      - uses: ./.github/actions/python-tests
-#        with:
-#          shell: bash
-#
-#  python-windows-x64:
-#    name: "Python tests (Windows/x64)"
-#    runs-on: windows-latest
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#      - name: Export env vars
-#        run: |
-#          echo "LIBQASM_BUILD_TYPE=Release" >> $env:GITHUB_ENV
-#          echo "OPENQL_BUILD_TYPE=Release" >> $env:GITHUB_ENV
-#          echo "OPENQL_DISABLE_UNITARY=true" >> $env:GITHUB_ENV
-#        shell: powershell
-#      - uses: ./.github/actions/python-tests
-#        with:
-#          shell: bash
-#
-#  complete:
-#    # see https://github.community/t/status-check-for-a-matrix-jobs/127354/7
-#    name: Report status
-#    needs:
-#      - cpp-linux-x64
-#      - cpp-macos-x64
-#      - cpp-windows-x64
-#      - cpp-linux-arm64
-#      - cpp-macos-arm64
-#      - python-linux-x64
-#      - python-macos-x64
-#      - python-windows-x64
-#    if: ${{ always() }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Check all job status
-#        # see https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#needs-context
-#        # see https://stackoverflow.com/a/67532120/4907315
-#        if: >-
-#          ${{
-#               contains(needs.*.result, 'failure')
-#            || contains(needs.*.result, 'cancelled')
-#            || contains(needs.*.result, 'skipped')
-#          }}
-#        run: exit 1
+  cpp-macos-arm64:
+    name: "C++ tests (clang/macos/ARM64)"
+    runs-on: [self-hosted, ARM64, macOS]
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - Debug
+          - Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # We are having problems when using the m4 and zulu-opendjk Conan packages on an armv8 architecture
+        # m4 is required by flex/bison and zulu-openjdk provides the Java JRE required by the ANTLR generator
+        # So, for the time being, we are installing flex/bison and java manually for this platform
+      - name: Install bison, flex and java
+        run: |
+          brew install bison flex java
+          echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
+          echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
+          echo "$(brew --prefix java)/bin" >> $GITHUB_PATH
+        shell: bash
+      - uses: ./.github/actions/cpp-tests
+        with:
+          build_type: ${{ matrix.build_type }}
+          conan_profile: tests-${{ matrix.build_type }}-apple_clang-macos-arm64
+          shell: bash
+
+  python-linux-x64:
+    name: "Python tests (Linux/x64)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install SWIG
+        run: |
+          sudo apt-get install -y swig
+        shell: bash
+      - name: Export env vars
+        run: |
+          echo "LIBQASM_BUILD_TYPE=Debug" >> $GITHUB_ENV
+          echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
+        shell: bash
+      - uses: ./.github/actions/python-tests
+        with:
+          shell: bash
+
+  python-macos-x64:
+    name: "Python tests (macOS/x64)"
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install SWIG
+        run: |
+          brew install swig
+        shell: bash
+      - name: Export env vars
+        run: |
+          echo "LIBQASM_BUILD_TYPE=Debug" >> $GITHUB_ENV
+          echo "OPENQL_DISABLE_UNITARY=true" >> $GITHUB_ENV
+        shell: bash
+      - uses: ./.github/actions/python-tests
+        with:
+          shell: bash
+
+  python-windows-x64:
+    name: "Python tests (Windows/x64)"
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Export env vars
+        run: |
+          echo "LIBQASM_BUILD_TYPE=Release" >> $env:GITHUB_ENV
+          echo "OPENQL_BUILD_TYPE=Release" >> $env:GITHUB_ENV
+          echo "OPENQL_DISABLE_UNITARY=true" >> $env:GITHUB_ENV
+        shell: powershell
+      - uses: ./.github/actions/python-tests
+        with:
+          shell: bash
+
+  complete:
+    # see https://github.community/t/status-check-for-a-matrix-jobs/127354/7
+    name: Report status
+    needs:
+      - cpp-linux-x64
+      - cpp-macos-x64
+      - cpp-windows-x64
+      - cpp-linux-arm64
+      - cpp-macos-arm64
+      - python-linux-x64
+      - python-macos-x64
+      - python-windows-x64
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all job status
+        # see https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#needs-context
+        # see https://stackoverflow.com/a/67532120/4907315
+        if: >-
+          ${{
+               contains(needs.*.result, 'failure')
+            || contains(needs.*.result, 'cancelled')
+            || contains(needs.*.result, 'skipped')
+          }}
+        run: exit 1

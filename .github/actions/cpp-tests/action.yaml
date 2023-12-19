@@ -19,9 +19,13 @@ runs:
       shell: ${{ inputs.shell }}
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
+      # We clean the Conan cache as a preventive measure for our runs in self-hosted runners
+      # Self-hosted runners use containers that cache Conan packages from previous runs,
+      # and that can cause different type of problems
     - name: Configure and build
       run: |
         conan profile detect --force
+        conan remove -c "*/*"
         conan_profile=${{ inputs.conan_profile }}
         lowercase_conan_profile=$(echo ${conan_profile} | tr '[:upper:]' '[:lower:]')
         conan build . -pr=conan/profiles/${lowercase_conan_profile} -b missing
