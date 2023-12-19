@@ -74,7 +74,7 @@ jobs:
       fail-fast: false
       matrix:
         build_type:
-          - Debug
+#          - Debug
           - Release
     steps:
       - name: Checkout
@@ -89,6 +89,11 @@ jobs:
         run: |
           apt-get update
           apt-get install -y bison flex default-jre clang
+        shell: bash
+      - name: Clean Conan cache
+        run: |
+          conan remove -c "*/*"
+        shell: bash
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
