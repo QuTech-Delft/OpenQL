@@ -67,7 +67,7 @@ jobs:
   # We are observing an internal compiler error when building with gcc
   # So we are changing to clang for the Linux/ARM64 builds
   cpp-linux-arm64:
-    name: "C++ tests (clang/Linux/ARM64)"
+    name: "C++ tests (gcc/Linux/ARM64)"
     runs-on: [self-hosted, ARM64, Linux]
     container: python:3.11
     strategy:
@@ -89,6 +89,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y bison flex default-jre clang
+          python3 -m pip install --upgrade pip conan
         shell: bash
       - name: Clean Conan cache
         run: |
@@ -97,7 +98,7 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          conan_profile: tests-${{ matrix.build_type }}-clang-linux-arm64
+          conan_profile: tests-${{ matrix.build_type }}-gcc-linux-arm64
           shell: bash
 
 #  cpp-macos-arm64:
