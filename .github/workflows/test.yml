@@ -3,7 +3,7 @@ name: Test
 on:
   push:
     branches:
-    - olafs_git_hub_pipeline
+    - develop
   pull_request:
 
 jobs:
