@@ -83,18 +83,14 @@ jobs:
       - name: Install dependencies
         run: |
           dnf install -y $SWIG_VERSION
-          python_bin="/opt/python/${{ matrix.cpython_version }}/bin/python"
-          ${python_bin} -m pip install --upgrade conan wheel auditwheel
-          pip_installation_folder=$(${python_bin} -m pip show --files conan | grep 'Location:' | sed 's/Location: //')
-          conan_installation_folder_relative_path=$(${python_bin} -m pip show --files conan | grep '/bin/' | sed 's#\s\+\(.*\)/conan#\1#')
-          conan_installation_folder="${pip_installation_folder}/${conan_installation_folder_relative_path}"
-          echo "Conan installation folder: ${conan_installation_folder}"
-          echo "${conan_installation_folder}" >> $GITHUB_PATH
+          export PATH="/opt/python/${{ matrix.cpython_version }}/bin:$PATH"
+          python -m pip install --upgrade conan wheel auditwheel
       - name: Build wheel
         run: |
+          export PATH="/opt/python/${{ matrix.cpython_version }}/bin:$PATH"
           conan remove -c "*/*"
-          /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
-          /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
+          python setup.py bdist_wheel
+          python -m auditwheel repair pybuild/dist/*.whl
       - name: Wheel path
         id: wheel
         working-directory: wheelhouse
@@ -150,18 +146,14 @@ jobs:
       - name: Install dependencies
         run: |
           dnf install -y $BISON_VERSION $FLEX_VERSION $JAVA_VERSION $SWIG_VERSION
-          python_bin="/opt/python/${{ matrix.cpython_version }}/bin/python"
-          ${python_bin} -m pip install --upgrade pip conan wheel auditwheel
-          pip_installation_folder=$(${python_bin} -m pip show --files conan | grep 'Location:' | sed 's/Location: //')
-          conan_installation_folder_relative_path=$(${python_bin} -m pip show --files conan | grep '/bin/' | sed 's#\s\+\(.*\)/conan#\1#')
-          conan_installation_folder="${pip_installation_folder}/${conan_installation_folder_relative_path}"
-          echo "Conan installation folder: ${conan_installation_folder}"
-          echo "${conan_installation_folder}" >> $GITHUB_PATH
+          export PATH="/opt/python/${{ matrix.cpython_version }}/bin:$PATH"
+          python -m pip install --upgrade pip conan wheel auditwheel
       - name: Build wheel
         run: |
+          export PATH="/opt/python/${{ matrix.cpython_version }}/bin:$PATH"
           conan remove -c "*/*"
-          /opt/python/${{ matrix.cpython_version }}/bin/python setup.py bdist_wheel
-          /opt/python/${{ matrix.cpython_version }}/bin/python -m auditwheel repair pybuild/dist/*.whl
+          python setup.py bdist_wheel
+          python -m auditwheel repair pybuild/dist/*.whl
       - name: Wheel path
         id: wheel
         working-directory: wheelhouse

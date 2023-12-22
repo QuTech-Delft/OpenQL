@@ -13,9 +13,10 @@ from wheel.bdist_wheel              import bdist_wheel  as _bdist_wheel
 from distutils.command.sdist        import sdist        as _sdist
 from setuptools.command.egg_info    import egg_info     as _egg_info
 
+from version import get_version
+
 root_dir   = os.getcwd()                        # root of the repository
 src_dir    = root_dir   + os.sep + 'src'        # C++ source directory
-inc_dir    = root_dir   + os.sep + 'include'    # C++ include directory
 pysrc_dir  = root_dir   + os.sep + 'python'     # Python source files
 target_dir = root_dir   + os.sep + 'pybuild'    # python-specific build directory
 build_dir  = target_dir + os.sep + 'build'      # directory for setuptools to dump various files into
@@ -33,24 +34,6 @@ module_dir = target_dir + os.sep + 'openql'     # openql Python module directory
 if not os.path.exists(target_dir):
     os.makedirs(target_dir)
 copy_tree(srcmod_dir, module_dir)
-
-
-def get_version(verbose=0):
-    """ Extract version information from source code """
-
-    matcher = re.compile('[\t ]*#define[\t ]+OPENQL_VERSION_STRING[\t ]+"(.*)"')
-    version = None
-    with open(os.path.join(inc_dir, 'ql', 'version.h'), 'r') as f:
-        for ln in f:
-            m = matcher.match(ln)
-            if m:
-                version = m.group(1)
-                break
-
-    if verbose:
-        print('get_version: %s' % version)
-
-    return version
 
 
 def read(fname):
@@ -196,11 +179,11 @@ setup(
         'Operating System :: Microsoft :: Windows',
 
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
 
         'Topic :: Scientific/Engineering'
     ],
