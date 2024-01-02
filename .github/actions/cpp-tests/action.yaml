@@ -1,0 +1,36 @@
+name: Compile OpenQL
+description: Install tools and compile OpenQL
+inputs:
+  build_type:
+    required: true
+    description: Is the build a debug or release version
+  conan_profile:
+    required: true
+    description: Which conan profile to use
+  shell:
+    required: true
+    description: Which shell to use for the `run` command
+
+runs:
+  using: composite
+  steps:
+    - name: Install conan
+      run: python3 -m pip install --upgrade pip conan
+      shell: ${{ inputs.shell }}
+    - name: Get latest CMake
+      uses: lukka/get-cmake@latest
+      # We clean the Conan cache as a preventive measure for our runs in self-hosted runners
+      # Self-hosted runners use containers that cache Conan packages from previous runs,
+      # and that can cause different type of problems
+    - name: Configure and build
+      run: |
+        conan profile detect --force
+        conan remove -c "*/*"
+        conan_profile=${{ inputs.conan_profile }}
+        lowercase_conan_profile=$(echo ${conan_profile} | tr '[:upper:]' '[:lower:]')
+        conan build . -pr=conan/profiles/${lowercase_conan_profile} -b missing
+      shell: ${{ inputs.shell }}
+    - name: Test
+      working-directory: build/${{ inputs.build_type }}
+      run: ctest -C ${{ inputs.build_type }} --output-on-failure --parallel 10
+      shell: ${{ inputs.shell }}

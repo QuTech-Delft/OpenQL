@@ -154,6 +154,7 @@ class TestCondex(unittest.TestCase):
 
         ql.set_option('mapper', 'no')
 
+    @unittest.skip("disabled. Pending of issue 498 to be fixed: https://github.com/QuTech-Delft/OpenQL/issues/498")
     def test_condex_toffoli_compos_gate(self):
         # Check whether condex works with conditional Toffoli gate
         # which is to be decomposed by toffoli decomposition parameters

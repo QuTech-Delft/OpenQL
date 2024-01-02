@@ -5,6 +5,6 @@
  *  - "0.8.0" = release
  *  - "0.8.0.dev1" = development, see https://www.python.org/dev/peps/pep-0440
  *
- * OPENQL_VERSION_STRING is also decoded by setup.py
+ * OPENQL_VERSION_STRING is also decoded by version.py
 */
-#define OPENQL_VERSION_STRING "0.11.1"
+#define OPENQL_VERSION_STRING "0.12.0"

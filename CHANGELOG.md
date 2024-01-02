@@ -3,15 +3,19 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [ next ] - [ TBD ]
+## [ 0.12.0 ] - [ 2023-12-18 ]
 ### Added
--
+- Conan as package manager
+- res folder for resources
 
 ### Changed
--
+- different upgrades: C++23, CMake 3.12, Python 3.8 to 3.12
+- GitHub workflows and jobs
+- file reorganization: docs, include, src, test
 
 ### Removed
--
+- Git submodules
+- CMake folder
 
 
 ## [ 0.11.1 ] - [ 2023-01-06 ]
@@ -45,28 +49,20 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - classification of gates as measurement - which is used for the resource constrained scheduler, and to output a map of measurements - now based on signal definition ("signal/type" equals "measure" and "signal/value" non-empty)
     - classification of gates as *real-time* measurement now based on signal definition ("signal/type" equals "measure" and "signal/value" empty)
   - absence of key "cc" now implies empty "signal", so `"cc": { "signal": [] }` is no longer necessary
-- passes and architectures self-register statically to their respective factories
-<<<<<<< HEAD
-- initial placer uses new IR and new MIP solver called HiGHS
-=======
+  - passes and architectures self-register statically to their respective factories
 - Mapper/Router:
   - uses new IR in place of old IR and com::ddg in place of Scheduler
   - no longer assigns cycle numbers to output circuit
   - no longer decomposes instructions into primitives in the output circuit (it still does internally for accurate scheduling)
->>>>>>> a3e93559 (Upgrade mapper/router to new IR)
 
 ### Removed
 - CC backend:
   - support for JSON key "pragma/break" for instruction definitions
   - macro expansion for JSON key instruction/signal/value (unused anyway)
 - support for sweep points in API and the WriteSweepPointsPass
-<<<<<<< HEAD
-- support for Python up to and including 3.6
-=======
 - Mapper/Router:
   - Deprecated maxfidelity route heuristic
   - 1qfirst lookahead mode
->>>>>>> a3e93559 (Upgrade mapper/router to new IR)
 
 ### Fixed
 - pass dec.Instructions
@@ -106,7 +102,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - improved reporting on JSON semantic errors
     - added check for dimension of "instruments/qubits" against "instruments/ref_control_mode/control_bits"
     - added check for dimension of "instructions/<key>/cc/[signals,ref_signal]/value" against "instruments/ref_control_mode/control_bits"
-    - added cross check of "instruments/ref_control_mode" against "instrument_definitions"
+    - added cross-check of "instruments/ref_control_mode" against "instrument_definitions"
     - added support for "pragma/break" in JSON definition to define 'gate' that breaks out of loop
     - added support to distribute measurement results via DSM
     - added support for conditional gates
@@ -135,7 +131,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - CC-light code generation, as the CC-light is being phased out in the lab, and its many passes were obstacles for pass management and refactoring
 - rotation optimization based on matrices; matrices in general were removed entirely because no one was using it
 - the commute variation pass, as it has been superseded by in-place commutations within the scheduler
-- the toffoli decomposition pass, as it wasn't really used; to decompose a toffoli gate, use generic platform-driven decomposition instead
+- the Toffoli decomposition pass, as it wasn't really used; to decompose a Toffoli gate, use generic platform-driven decomposition instead
 - the defunct fidelity estimation logic from metrics.cc; this may be added again later, but requires lots of cleanup and isn't currently in use
 - quantumsim and qsoverlay output; apparently this was no longer being used, and it was quite intertwined with the CC-light backend
 

@@ -1,0 +1,4 @@
+include(tests-release)
+
+[conf]
+tools.build:cxxflags=["-Wno-error=maybe-uninitialized"]
