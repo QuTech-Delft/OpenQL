@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## [ 0.12.1 ] - [ 2024-01-08 ]
+
+### Added
+
+### Changed
+
+- Fixed `upload-release-asset` steps in `.github/workflow/assets.yml`.
+- Updated `RELEASE.md`.
+
+
 ## [ 0.12.0 ] - [ 2023-12-18 ]
 ### Added
 - Conan as package manager
@@ -23,7 +33,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Option to enable/disable debug symbols, enabled by default
 
 ### Changed
--
 
 ### Removed
 - Debug symbols in Python wheels, because of size limitation on PyPI
