@@ -206,7 +206,6 @@ jobs:
         run: |
           echo "WHEEL_NAME=$(Get-ChildItem -name *.whl)" >> $env:GITHUB_OUTPUT
           echo "WHEEL_NAME=$(Get-ChildItem -name *.whl)" >> $env:GITHUB_ENV
-          echo ${{ env.GITHUB_ENV }}
         shell: powershell
       - uses: actions/upload-artifact@v3
         with:
