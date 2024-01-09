@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## [ 0.12.2 ] - [ 2024-01-09 ]
+
+### Added
+
+### Changed
+
+- Fixed `upload-release-asset` steps in `.github/workflow/assets.yml` for `windows-x64` job.
+
+### Removed
+
+
 ## [ 0.12.1 ] - [ 2024-01-08 ]
 
 ### Added
@@ -11,6 +22,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - Fixed `upload-release-asset` steps in `.github/workflow/assets.yml`.
 - Updated `RELEASE.md`.
+
+### Removed
 
 
 ## [ 0.12.0 ] - [ 2023-12-18 ]
