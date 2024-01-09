@@ -34,8 +34,8 @@ jobs:
       - name: Install dependencies
         run: |
           brew install bison flex swig xquartz
-          echo "/usr/local/opt/bison/bin" >> "$GITHUB_PATH"
-          echo "/usr/local/opt/flex/bin" >> "$GITHUB_PATH"
+          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+          echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
           python -m pip install --upgrade pip conan setuptools wheel
       - name: Build wheel
         run: python setup.py bdist_wheel
@@ -43,8 +43,8 @@ jobs:
         id: wheel
         working-directory: pybuild/dist/
         run: |
-          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_OUTPUT"
-          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_ENV"
+          echo "WHEEL_NAME=$(ls *.whl)" >> $GITHUB_OUTPUT
+          echo "WHEEL_NAME=$(ls *.whl)" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-macos-py${{ matrix.python }}
@@ -97,8 +97,8 @@ jobs:
         id: wheel
         working-directory: wheelhouse
         run: |
-          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_OUTPUT"
-          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_ENV"
+          echo "WHEEL_NAME=$(ls *.whl)" >> $GITHUB_OUTPUT
+          echo "WHEEL_NAME=$(ls *.whl)" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-linux-${{ matrix.cpython_version }}
@@ -162,8 +162,8 @@ jobs:
         id: wheel
         working-directory: wheelhouse
         run: |
-          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_OUTPUT"
-          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_ENV"
+          echo "WHEEL_NAME=$(ls *.whl)" >> $GITHUB_OUTPUT
+          echo "WHEEL_NAME=$(ls *.whl)" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-linux-${{ matrix.cpython_version }}
@@ -204,8 +204,10 @@ jobs:
         id: wheel
         working-directory: pybuild/dist/
         run: |
-          echo "WHEEL_NAME=$(Get-ChildItem -name *.whl)" >> "$GITHUB_OUTPUT"
-          echo "WHEEL_NAME=$(Get-ChildItem -name *.whl)" >> "$GITHUB_ENV"
+          echo "WHEEL_NAME=$(Get-ChildItem -name *.whl)" >> $env:GITHUB_OUTPUT
+          echo "WHEEL_NAME=$(Get-ChildItem -name *.whl)" >> $env:GITHUB_ENV
+          echo ${{ env.GITHUB_ENV }}
+        shell: powershell
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-windows-py${{ matrix.python }}
