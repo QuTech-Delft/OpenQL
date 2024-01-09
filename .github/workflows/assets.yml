@@ -34,27 +34,29 @@ jobs:
       - name: Install dependencies
         run: |
           brew install bison flex swig xquartz
-          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
-          echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
+          echo "/usr/local/opt/bison/bin" >> "$GITHUB_PATH"
+          echo "/usr/local/opt/flex/bin" >> "$GITHUB_PATH"
           python -m pip install --upgrade pip conan setuptools wheel
       - name: Build wheel
         run: python setup.py bdist_wheel
       - name: Wheel path
         id: wheel
         working-directory: pybuild/dist/
-        run: echo "{wheel}={$(ls *.whl)}" >> $GITHUB_OUTPUT
+        run: |
+          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_OUTPUT"
+          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-macos-py${{ matrix.python }}
-          path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
+          path: pybuild/dist/${{ env.WHEEL_NAME }}
       - uses: actions/upload-release-asset@v1
         if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
-          asset_name: ${{ steps.wheel.outputs.wheel }}
+          asset_path: pybuild/dist/${{ env.WHEEL_NAME }}
+          asset_name: ${{ env.WHEEL_NAME }}
           asset_content_type: application/zip
 
   manylinux-x64:
@@ -94,19 +96,21 @@ jobs:
       - name: Wheel path
         id: wheel
         working-directory: wheelhouse
-        run: echo "{wheel}={$(ls *.whl)}" >> $GITHUB_OUTPUT
+        run: |
+          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_OUTPUT"
+          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-linux-${{ matrix.cpython_version }}
-          path: wheelhouse/${{ steps.wheel.outputs.wheel }}
+          path: wheelhouse/${{ env.WHEEL_NAME }}
       - uses: actions/upload-release-asset@v1
         if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: wheelhouse/${{ steps.wheel.outputs.wheel }}
-          asset_name: ${{ steps.wheel.outputs.wheel }}
+          asset_path: wheelhouse/${{ env.WHEEL_NAME }}
+          asset_name: ${{ env.WHEEL_NAME }}
           asset_content_type: application/zip
 
   manylinux-arm64:
@@ -157,19 +161,21 @@ jobs:
       - name: Wheel path
         id: wheel
         working-directory: wheelhouse
-        run: echo "{wheel}={$(ls *.whl)}" >> $GITHUB_OUTPUT
+        run: |
+          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_OUTPUT"
+          echo "WHEEL_NAME=$(ls *.whl)" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-linux-${{ matrix.cpython_version }}
-          path: wheelhouse/${{ steps.wheel.outputs.wheel }}
+          path: wheelhouse/${{ env.WHEEL_NAME }}
       - uses: actions/upload-release-asset@v1
         if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: wheelhouse/${{ steps.wheel.outputs.wheel }}
-          asset_name: ${{ steps.wheel.outputs.wheel }}
+          asset_path: wheelhouse/${{ env.WHEEL_NAME }}
+          asset_name: ${{ env.WHEEL_NAME }}
           asset_content_type: application/zip
 
   windows-x64:
@@ -197,19 +203,21 @@ jobs:
       - name: Wheel path
         id: wheel
         working-directory: pybuild/dist/
-        run: echo "{wheel}={$(Get-ChildItem -name *.whl)}" >> $GITHUB_OUTPUT
+        run: |
+          echo "WHEEL_NAME=$(Get-ChildItem -name *.whl)" >> "$GITHUB_OUTPUT"
+          echo "WHEEL_NAME=$(Get-ChildItem -name *.whl)" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v3
         with:
           name: pypi-windows-py${{ matrix.python }}
-          path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
+          path: pybuild/dist/${{ env.WHEEL_NAME }}
       - uses: actions/upload-release-asset@v1
         if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
-          asset_name: ${{ steps.wheel.outputs.wheel }}
+          asset_path: pybuild/dist/${{ env.WHEEL_NAME }}
+          asset_name: ${{ env.WHEEL_NAME }}
           asset_content_type: application/zip
 
   publish:

@@ -7,4 +7,5 @@
  *
  * OPENQL_VERSION_STRING is also decoded by version.py
 */
-#define OPENQL_VERSION_STRING "0.12.0"
+
+#define OPENQL_VERSION_STRING "0.12.1"
