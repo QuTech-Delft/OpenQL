@@ -1,0 +1,2830 @@
+{
+    "eqasm_compiler": "cc_light_compiler",
+    "hardware_settings": {
+        "qubit_number": 7,
+        "cycle_time": 5,
+        "mw_mw_buffer": 0,
+        "mw_flux_buffer": 0,
+        "mw_readout_buffer": 0,
+        "flux_mw_buffer": 0,
+        "flux_flux_buffer": 0,
+        "flux_readout_buffer": 0,
+        "readout_mw_buffer": 0,
+        "readout_flux_buffer": 0,
+        "readout_readout_buffer": 0
+    },
+
+  "resources":
+   {
+    "qubits":
+    {
+      "count": 7
+    },
+    "qwgs" :
+    {
+      "count": 3,
+      "connection_map":
+      {
+        "0" : [0, 1],
+        "1" : [2, 3, 4],
+        "2" : [5, 6]
+      }
+    },
+    "meas_units" :
+    {
+      "count": 2,
+      "connection_map":
+      {
+        "0" : [0, 2, 3, 5, 6],
+        "1" : [1, 4]
+      }
+    },
+    "edges":
+    {
+      "count": 8,
+      "connection_map":
+      {
+        "0": [2], 
+        "1": [3],
+        "2": [0],
+        "3": [1],
+        "4": [6],
+        "5": [7],
+        "6": [4],
+        "7": [5]
+      }
+    }
+  },
+  "topology" : 
+  {
+    "x_size": 5,
+    "y_size": 3,
+    "qubits": 
+    [ 
+      { "id": 0,  "x": 1, "y": 2 },
+      { "id": 1,  "x": 3, "y": 2 },
+      { "id": 2,  "x": 0, "y": 1 },
+      { "id": 3,  "x": 2, "y": 1 },
+      { "id": 4,  "x": 4, "y": 1 },
+      { "id": 5,  "x": 1, "y": 0 },
+      { "id": 6,  "x": 3, "y": 0 }
+    ],
+    "edges": 
+    [
+      { "id": 0,  "src": 2, "dst": 0 },
+      { "id": 1,  "src": 0, "dst": 3 },
+      { "id": 2,  "src": 3, "dst": 1 },
+      { "id": 3,  "src": 1, "dst": 4 },
+      { "id": 4,  "src": 2, "dst": 5 },
+      { "id": 5,  "src": 5, "dst": 3 },
+      { "id": 6,  "src": 3, "dst": 6 },
+      { "id": 7,  "src": 6, "dst": 4 }
+    ]
+  },
+    
+    "instructions": {
+        "prepz q0": {
+            "duration": 200000,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "prepz"
+        },
+        "prepz q1": {
+            "duration": 200000,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "prepz"
+        },
+        "prepz q2": {
+            "duration": 200000,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "prepz"
+        },
+        "prepz q3": {
+            "duration": 200000,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "prepz"
+        },
+        "prepz q4": {
+            "duration": 200000,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "prepz"
+        },
+        "prepz q5": {
+            "duration": 200000,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "prepz"
+        },
+        "prepz q6": {
+            "duration": 200000,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "prepz"
+        },
+        "measure q0": {
+            "duration": 3500,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measure q1": {
+            "duration": 3500,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measure q2": {
+            "duration": 3500,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measure q3": {
+            "duration": 3500,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measure q4": {
+            "duration": 3500,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measure q5": {
+            "duration": 3500,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "measure q6": {
+            "duration": 3500,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "readout",
+            "cc_light_instr": "measz"
+        },
+        "i q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "i q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "i q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "i q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "i q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "i q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "i q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "rx180 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "rx180 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "rx180 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "rx180 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "rx180 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "rx180 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": ""
+        },
+        "rx180 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": ""
+        },
+        "ry180 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "ry180 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "ry180 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "ry180 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "ry180 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "ry180 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "ry180 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "rX90 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "rX90 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "rX90 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "rX90 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "rX90 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "rX90 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "rX90 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "rY90 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "rY90 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "rY90 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "rY90 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "rY90 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "rY90 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "rY90 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "rXm90 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "rXm90 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "rXm90 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "rXm90 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "rXm90 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "rXm90 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "rXm90 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "rYm90 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "rYm90 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "rYm90 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "rYm90 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "rYm90 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "rYm90 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "rYm90 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "CW_00 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "CW_00 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "CW_00 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "CW_00 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "CW_00 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "CW_00 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "CW_00 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_00"
+        },
+        "CW_01 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "CW_01 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "CW_01 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "CW_01 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "CW_01 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "CW_01 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "CW_01 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_01"
+        },
+        "CW_02 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "CW_02 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "CW_02 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "CW_02 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "CW_02 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "CW_02 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "CW_02 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_02"
+        },
+        "CW_03 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "CW_03 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "CW_03 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "CW_03 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "CW_03 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "CW_03 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "CW_03 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_03"
+        },
+        "CW_04 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "CW_04 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "CW_04 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "CW_04 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "CW_04 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "CW_04 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "CW_04 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_04"
+        },
+        "CW_05 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "CW_05 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "CW_05 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "CW_05 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "CW_05 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "CW_05 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "CW_05 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_05"
+        },
+        "CW_06 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "CW_06 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "CW_06 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "CW_06 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "CW_06 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "CW_06 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "CW_06 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_06"
+        },
+        "CW_07 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_07"
+        },
+        "CW_07 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_07"
+        },
+        "CW_07 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_07"
+        },
+        "CW_07 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_07"
+        },
+        "CW_07 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_07"
+        },
+        "CW_07 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_07"
+        },
+        "CW_07 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_07"
+        },
+        "CW_08 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_08"
+        },
+        "CW_08 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_08"
+        },
+        "CW_08 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_08"
+        },
+        "CW_08 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_08"
+        },
+        "CW_08 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_08"
+        },
+        "CW_08 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_08"
+        },
+        "CW_08 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_08"
+        },
+        "CW_09 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_09"
+        },
+        "CW_09 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_09"
+        },
+        "CW_09 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_09"
+        },
+        "CW_09 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_09"
+        },
+        "CW_09 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_09"
+        },
+        "CW_09 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_09"
+        },
+        "CW_09 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_09"
+        },
+        "CW_10 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_10"
+        },
+        "CW_10 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_10"
+        },
+        "CW_10 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_10"
+        },
+        "CW_10 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_10"
+        },
+        "CW_10 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_10"
+        },
+        "CW_10 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_10"
+        },
+        "CW_10 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_10"
+        },
+        "CW_11 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_11"
+        },
+        "CW_11 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_11"
+        },
+        "CW_11 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_11"
+        },
+        "CW_11 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_11"
+        },
+        "CW_11 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_11"
+        },
+        "CW_11 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_11"
+        },
+        "CW_11 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_11"
+        },
+        "CW_12 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_12"
+        },
+        "CW_12 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_12"
+        },
+        "CW_12 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_12"
+        },
+        "CW_12 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_12"
+        },
+        "CW_12 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_12"
+        },
+        "CW_12 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_12"
+        },
+        "CW_12 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_12"
+        },
+        "CW_13 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_13"
+        },
+        "CW_13 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_13"
+        },
+        "CW_13 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_13"
+        },
+        "CW_13 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_13"
+        },
+        "CW_13 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_13"
+        },
+        "CW_13 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_13"
+        },
+        "CW_13 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_13"
+        },
+        "CW_14 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_14"
+        },
+        "CW_14 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_14"
+        },
+        "CW_14 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_14"
+        },
+        "CW_14 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_14"
+        },
+        "CW_14 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_14"
+        },
+        "CW_14 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_14"
+        },
+        "CW_14 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_14"
+        },
+        "CW_15 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_15"
+        },
+        "CW_15 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_15"
+        },
+        "CW_15 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_15"
+        },
+        "CW_15 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_15"
+        },
+        "CW_15 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_15"
+        },
+        "CW_15 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_15"
+        },
+        "CW_15 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_15"
+        },
+        "CW_16 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_16"
+        },
+        "CW_16 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_16"
+        },
+        "CW_16 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_16"
+        },
+        "CW_16 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_16"
+        },
+        "CW_16 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_16"
+        },
+        "CW_16 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_16"
+        },
+        "CW_16 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_16"
+        },
+        "CW_17 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_17"
+        },
+        "CW_17 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_17"
+        },
+        "CW_17 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_17"
+        },
+        "CW_17 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_17"
+        },
+        "CW_17 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_17"
+        },
+        "CW_17 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_17"
+        },
+        "CW_17 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_17"
+        },
+        "CW_18 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_18"
+        },
+        "CW_18 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_18"
+        },
+        "CW_18 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_18"
+        },
+        "CW_18 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_18"
+        },
+        "CW_18 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_18"
+        },
+        "CW_18 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_18"
+        },
+        "CW_18 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_18"
+        },
+        "CW_19 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_19"
+        },
+        "CW_19 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_19"
+        },
+        "CW_19 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_19"
+        },
+        "CW_19 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_19"
+        },
+        "CW_19 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_19"
+        },
+        "CW_19 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_19"
+        },
+        "CW_19 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_19"
+        },
+        "CW_20 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_20"
+        },
+        "CW_20 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_20"
+        },
+        "CW_20 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_20"
+        },
+        "CW_20 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_20"
+        },
+        "CW_20 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_20"
+        },
+        "CW_20 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_20"
+        },
+        "CW_20 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_20"
+        },
+        "CW_21 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_21"
+        },
+        "CW_21 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_21"
+        },
+        "CW_21 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_21"
+        },
+        "CW_21 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_21"
+        },
+        "CW_21 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_21"
+        },
+        "CW_21 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_21"
+        },
+        "CW_21 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_21"
+        },
+        "CW_22 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_22"
+        },
+        "CW_22 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_22"
+        },
+        "CW_22 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_22"
+        },
+        "CW_22 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_22"
+        },
+        "CW_22 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_22"
+        },
+        "CW_22 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_22"
+        },
+        "CW_22 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_22"
+        },
+        "CW_23 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_23"
+        },
+        "CW_23 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_23"
+        },
+        "CW_23 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_23"
+        },
+        "CW_23 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_23"
+        },
+        "CW_23 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_23"
+        },
+        "CW_23 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_23"
+        },
+        "CW_23 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_23"
+        },
+        "CW_24 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_24"
+        },
+        "CW_24 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_24"
+        },
+        "CW_24 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_24"
+        },
+        "CW_24 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_24"
+        },
+        "CW_24 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_24"
+        },
+        "CW_24 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_24"
+        },
+        "CW_24 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_24"
+        },
+        "CW_25 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_25"
+        },
+        "CW_25 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_25"
+        },
+        "CW_25 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_25"
+        },
+        "CW_25 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_25"
+        },
+        "CW_25 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_25"
+        },
+        "CW_25 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_25"
+        },
+        "CW_25 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_25"
+        },
+        "CW_26 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_26"
+        },
+        "CW_26 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_26"
+        },
+        "CW_26 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_26"
+        },
+        "CW_26 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_26"
+        },
+        "CW_26 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_26"
+        },
+        "CW_26 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_26"
+        },
+        "CW_26 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_26"
+        },
+        "CW_27 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_27"
+        },
+        "CW_27 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_27"
+        },
+        "CW_27 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_27"
+        },
+        "CW_27 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_27"
+        },
+        "CW_27 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_27"
+        },
+        "CW_27 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_27"
+        },
+        "CW_27 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_27"
+        },
+        "CW_28 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_28"
+        },
+        "CW_28 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_28"
+        },
+        "CW_28 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_28"
+        },
+        "CW_28 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_28"
+        },
+        "CW_28 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_28"
+        },
+        "CW_28 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_28"
+        },
+        "CW_28 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_28"
+        },
+        "CW_29 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_29"
+        },
+        "CW_29 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_29"
+        },
+        "CW_29 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_29"
+        },
+        "CW_29 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_29"
+        },
+        "CW_29 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_29"
+        },
+        "CW_29 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_29"
+        },
+        "CW_29 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_29"
+        },
+        "CW_30 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_30"
+        },
+        "CW_30 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_30"
+        },
+        "CW_30 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_30"
+        },
+        "CW_30 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_30"
+        },
+        "CW_30 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_30"
+        },
+        "CW_30 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_30"
+        },
+        "CW_30 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_30"
+        },
+        "CW_31 q0": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q0"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_31"
+        },
+        "CW_31 q1": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q1"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_31"
+        },
+        "CW_31 q2": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q2"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_31"
+        },
+        "CW_31 q3": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q3"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_31"
+        },
+        "CW_31 q4": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q4"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_31"
+        },
+        "CW_31 q5": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q5"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_31"
+        },
+        "CW_31 q6": {
+            "duration": 20,
+            "latency": 0,
+            "qubits": [
+                "q6"
+            ],
+            "type": "mw",
+            "cc_light_instr": "CW_31"
+        },
+        "cz q2,q0": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q2",
+                "q0"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q0,q2": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q0",
+                "q2"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q0,q3": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q0",
+                "q3"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q3,q0": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q3",
+                "q0"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q3,q1": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q3",
+                "q1"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q1,q3": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q1",
+                "q3"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q1,q4": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q1",
+                "q4"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q4,q1": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q4",
+                "q1"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q2,q5": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q2",
+                "q5"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q5,q2": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q5",
+                "q2"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q5,q3": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q5",
+                "q3"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q3,q5": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q3",
+                "q5"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q3,q6": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q3",
+                "q6"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q6,q3": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q6",
+                "q3"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q6,q4": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q6",
+                "q4"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        },
+        "cz q4,q6": {
+            "duration": 80,
+            "latency": 0,
+            "qubits": [
+                "q4",
+                "q6"
+            ],
+            "type": "flux",
+            "cc_light_instr": "cz"
+        }
+    }
+}

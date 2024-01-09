@@ -1,0 +1,168 @@
+{ 
+
+   "hardware_settings":
+   {
+   "qubit_number": 2,
+   "cycle_time" : 5, 
+   "iterations" : 1, 
+   "mw_mw_buffer": 0,
+   "mw_flux_buffer": 10,
+   "mw_readout_buffer": 50,
+   "flux_mw_buffer": 10,
+   "flux_flux_buffer": 0,
+   "flux_readout_buffer": 50,
+   "readout_mw_buffer": 0,
+   "readout_flux_buffer": 0,
+   "readout_readout_buffer": 0
+   },
+
+   "instructions":
+   {
+
+      "rx90 q0" :
+      {
+         "duration": 145, 
+         "latency": 0,
+         "qubits": ["q0"], 
+         "type" : "mw"
+      },
+
+      "mrx90 q0" :
+      {
+         "duration": 145, 
+         "latency": 0,
+         "qubits": ["q0"], 
+         "type" : "mw"
+      },
+
+      "rx180 q0" :
+      {
+         "duration": 290, 
+         "latency": 0,
+         "qubits": ["q0"], 
+         "type" : "mw"
+      },
+
+      "ry90 q0" :
+      {
+         "duration": 145, 
+         "latency": 0,
+         "qubits": ["q0"], 
+         "type" : "mw"
+      },
+
+      "mry90 q0" :
+      {
+         "duration": 145, 
+         "latency": 0,
+         "qubits": ["q0"], 
+         "type" : "mw"
+      },
+
+      "ry180 q0" :
+      {
+         "duration": 290, 
+         "latency": 0,
+         "qubits": ["q0"], 
+         "type" : "mw"
+      },
+
+      "i q0" :
+      {
+         "duration": 125, 
+         "latency": 0,
+         "qubits": ["q0"], 
+         "type" : "mw"
+      },
+
+
+      "rx90 q1" :
+      {
+         "duration": 145, 
+         "latency": 0,
+         "qubits": ["q1"], 
+         "type" : "mw"
+      },
+
+
+      "mrx90 q1" :
+      {
+         "duration": 145, 
+         "latency": 0,
+         "qubits": ["q1"], 
+         "type" : "mw"
+      },
+
+
+      "rx180 q1" :
+      {
+         "duration": 290, 
+         "latency": 0,
+         "qubits": ["q1"],
+         "type" : "mw"
+      },
+
+      "ry90 q1" :
+      {
+         "duration": 145, 
+         "latency": 0,
+         "qubits": ["q1"], 
+         "type" : "mw"
+      },
+
+
+      "mry90 q1" :
+      {
+         "duration": 145, 
+         "latency": 0,
+         "qubits": ["q1"], 
+         "type" : "mw"
+      },
+
+      "ry180 q1" :
+      {
+         "duration": 290, 
+         "latency": 0,
+         "qubits": ["q1"],
+         "type" : "mw"
+      },
+
+      "i q1" :
+      {
+         "duration": 125, 
+         "latency": 0,
+         "qubits": ["q1"], 
+         "type" : "mw"
+      },
+
+
+
+      "prepz q0" :
+      {
+         "duration": 200,
+         "latency": 0,
+         "qubits": ["q0"],
+         "type" : "mw"
+      },
+
+      "measure q0" :
+      {
+         "duration": 200,
+         "latency": 0, 
+         "qubits": ["q0","q1"], 
+         "type" : "readout"
+      }
+
+   },
+
+
+   "gate_decomposition":
+   {
+      "x %0" : ["rx180 %0"],
+      "y %0" : ["ry180 %0"]
+   },
+
+   "resources" : {},
+   "topology" : {}
+
+}
