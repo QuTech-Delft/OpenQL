@@ -77,9 +77,9 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Install dependencies
         run: |
-          brew install bison flex swig xquartz
-          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
-          echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
+          brew install bison flex java swig xquartz
+          echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
+          echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
           echo "$(brew --prefix java)/bin" >> $GITHUB_PATH
           python -m pip install --upgrade pip conan setuptools wheel
       - name: Get latest CMake
