@@ -14,7 +14,7 @@ on:
 # 'jobs.<job_id>.strategy.fail-fast: false' until a proper solution is implemented
 jobs:
   macos-x64:
-    name: PyPI wheels for macOS
+    name: PyPI wheels for macOS (x64)
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -36,6 +36,53 @@ jobs:
           brew install bison flex swig xquartz
           echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
           echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
+          python -m pip install --upgrade pip conan setuptools wheel
+      - name: Build wheel
+        run: python setup.py bdist_wheel
+      - name: Wheel path
+        id: wheel
+        working-directory: pybuild/dist/
+        run: |
+          echo "WHEEL_NAME=$(ls *.whl)" >> $GITHUB_OUTPUT
+          echo "WHEEL_NAME=$(ls *.whl)" >> $GITHUB_ENV
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pypi-macos-py${{ matrix.python }}
+          path: pybuild/dist/${{ env.WHEEL_NAME }}
+      - uses: actions/upload-release-asset@v1
+        if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: pybuild/dist/${{ env.WHEEL_NAME }}
+          asset_name: ${{ env.WHEEL_NAME }}
+          asset_content_type: application/zip
+
+  macos-arm64:
+    name: PyPI wheels for macOS (arm64)
+    runs-on: [self-hosted, ARM64, macOS]
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install dependencies
+        run: |
+          brew install bison flex swig xquartz
+          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+          echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
+          echo "$(brew --prefix java)/bin" >> $GITHUB_PATH
           python -m pip install --upgrade pip conan setuptools wheel
       - name: Build wheel
         run: python setup.py bdist_wheel
@@ -115,10 +162,7 @@ jobs:
 
   manylinux-arm64:
     name: PyPI wheels for Manylinux (arm64)
-    runs-on:
-      - "self-hosted"
-      - "ARM64"
-      - "Linux"
+    runs-on: [self-hosted, ARM64, Linux]
     container: quay.io/pypa/manylinux${{ matrix.manylinux }}_aarch64:latest
     env:
       BISON_VERSION: ${{ matrix.bison_version }}
@@ -226,6 +270,7 @@ jobs:
     if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
     needs:
       - macos-x64
+      - macos-arm64
       - manylinux-x64
       - manylinux-arm64
       - windows-x64
