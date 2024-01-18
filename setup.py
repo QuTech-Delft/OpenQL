@@ -1,30 +1,33 @@
 #!/usr/bin/env python3
 
-import os, platform, shutil, sys, re
+import os
+import platform
+import shutil
+import re
 from setuptools import setup, Extension
 from distutils.dir_util import copy_tree
 
-from distutils.command.clean        import clean        as _clean
-from setuptools.command.build_ext   import build_ext    as _build_ext
-from distutils.command.build        import build        as _build
-from setuptools.command.install     import install      as _install
-from distutils.command.bdist        import bdist        as _bdist
-from wheel.bdist_wheel              import bdist_wheel  as _bdist_wheel
-from distutils.command.sdist        import sdist        as _sdist
-from setuptools.command.egg_info    import egg_info     as _egg_info
+from distutils.command.clean import clean as _clean
+from setuptools.command.build_ext import build_ext as _build_ext
+from distutils.command.build import build as _build
+from setuptools.command.install import install as _install
+from distutils.command.bdist import bdist as _bdist
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+from distutils.command.sdist import sdist as _sdist
+from setuptools.command.egg_info import egg_info as _egg_info
 
 from version import get_version
 
-root_dir   = os.getcwd()                        # root of the repository
-src_dir    = root_dir   + os.sep + 'src'        # C++ source directory
-pysrc_dir  = root_dir   + os.sep + 'python'     # Python source files
-target_dir = root_dir   + os.sep + 'pybuild'    # python-specific build directory
-build_dir  = target_dir + os.sep + 'build'      # directory for setuptools to dump various files into
-dist_dir   = target_dir + os.sep + 'dist'       # wheel output directory
-cbuild_dir = target_dir + os.sep + 'cbuild'     # cmake build directory
-prefix_dir = target_dir + os.sep + 'prefix'     # cmake install prefix
-srcmod_dir = pysrc_dir  + os.sep + 'openql'     # openql Python module directory, source files only
-module_dir = target_dir + os.sep + 'openql'     # openql Python module directory for editable install
+root_dir = os.getcwd()  # root of the repository
+src_dir = root_dir + os.sep + 'src'  # C++ source directory
+pysrc_dir = root_dir + os.sep + 'python'  # Python source files
+target_dir = root_dir + os.sep + 'pybuild'  # python-specific build directory
+build_dir = target_dir + os.sep + 'build'  # directory for setuptools to dump various files into
+dist_dir = target_dir + os.sep + 'dist'  # wheel output directory
+cbuild_dir = target_dir + os.sep + 'cbuild'  # cmake build directory
+prefix_dir = target_dir + os.sep + 'prefix'  # cmake install prefix
+srcmod_dir = pysrc_dir + os.sep + 'openql'  # openql Python module directory, source files only
+module_dir = target_dir + os.sep + 'openql'  # openql Python module directory for editable install
 
 # Copy the hand-written Python sources into the module directory that we're
 # telling setuptools is our source directory, because setuptools insists on
@@ -36,21 +39,21 @@ if not os.path.exists(target_dir):
 copy_tree(srcmod_dir, module_dir)
 
 
-def read(fname):
-    with open(os.path.join(os.path.dirname(__file__), fname)) as f:
+def read(file_name):
+    with open(os.path.join(os.path.dirname(__file__), file_name)) as f:
         return f.read()
 
 
-class clean(_clean):
+class Clean(_clean):
     def run(self):
         _clean.run(self)
         if os.path.exists(target_dir):
             shutil.rmtree(target_dir)
 
 
-class build_ext(_build_ext):
+class BuildExt(_build_ext):
     def run(self):
-        from plumbum import local, FG, ProcessExecutionError
+        from plumbum import local, FG
 
         # If we were previously built in a different directory,
         # nuke the cbuild dir to prevent inane CMake errors.
@@ -85,7 +88,8 @@ class build_ext(_build_ext):
             cmd = local['conan']['profile']['detect']['--force']
             cmd & FG
 
-            cmd = (local['conan']['create']['.']
+            cmd = (
+                local['conan']['create']['.']
                 ['--version']['0.11.2']
                 ['-s:h']['compiler.cppstd=23']
                 ['-s:h']["openql/*:build_type=" + build_type]
@@ -111,7 +115,7 @@ class build_ext(_build_ext):
             cmd & FG
 
 
-class build(_build):
+class Build(_build):
     def initialize_options(self):
         _build.initialize_options(self)
         self.build_base = os.path.relpath(build_dir)
@@ -124,20 +128,20 @@ class build(_build):
         _build.run(self)
 
 
-class install(_install):
+class Install(_install):
     def run(self):
         # See https://stackoverflow.com/questions/12491328
         self.run_command('build_ext')
         _install.run(self)
 
 
-class bdist(_bdist):
+class BDist(_bdist):
     def finalize_options(self):
         _bdist.finalize_options(self)
         self.dist_dir = os.path.relpath(dist_dir)
 
 
-class bdist_wheel(_bdist_wheel):
+class BDistWheel(_bdist_wheel):
     def run(self):
         if platform.system() == "Darwin":
             os.environ['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
@@ -150,13 +154,13 @@ class bdist_wheel(_bdist_wheel):
             delocate_wheel(wheel_path)
 
 
-class sdist(_sdist):
+class SDist(_sdist):
     def finalize_options(self):
         _sdist.finalize_options(self)
         self.dist_dir = os.path.relpath(dist_dir)
 
 
-class egg_info(_egg_info):
+class EggInfo(_egg_info):
     def initialize_options(self):
         _egg_info.initialize_options(self)
         self.egg_base = os.path.relpath(target_dir)
@@ -167,7 +171,7 @@ setup(
     version=get_version(),
     description='OpenQL Python Package',
     long_description=read('README.md'),
-    long_description_content_type = 'text/markdown',
+    long_description_content_type='text/markdown',
     author='QuTech, TU Delft',
     url='https://github.com/QuTech-Delft/OpenQL',
 
@@ -200,14 +204,14 @@ setup(
     ],
 
     cmdclass={
-        'bdist': bdist,
-        'bdist_wheel': bdist_wheel,
-        'build_ext': build_ext,
-        'build': build,
-        'install': install,
-        'clean': clean,
-        'egg_info': egg_info,
-        'sdist': sdist,
+        'bdist': BDist,
+        'bdist_wheel': BDistWheel,
+        'build_ext': BuildExt,
+        'build': Build,
+        'install': Install,
+        'clean': Clean,
+        'egg_info': EggInfo,
+        'sdist': SDist,
     },
 
     setup_requires=[
