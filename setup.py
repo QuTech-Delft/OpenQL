@@ -146,12 +146,6 @@ class BDistWheel(_bdist_wheel):
         if platform.system() == "Darwin":
             os.environ['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
         _bdist_wheel.run(self)
-        impl_tag, abi_tag, plat_tag = self.get_tag()
-        archive_basename = "{}-{}-{}-{}".format(self.wheel_dist_name, impl_tag, abi_tag, plat_tag)
-        wheel_path = os.path.join(self.dist_dir, archive_basename + '.whl')
-        if platform.system() == "Darwin":
-            from delocate.delocating import delocate_wheel
-            delocate_wheel(wheel_path)
 
 
 class SDist(_sdist):
