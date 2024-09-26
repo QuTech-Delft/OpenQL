@@ -1,0 +1,52 @@
+# File:         test_rus_elements.cq
+# Purpose:      test elements of Repeat Until Success
+# Notes:
+# - gate definitions require prototype, e.g. '"prototype": ["U:qubit"],'
+# - legacy gate decompositions (like 'measure_fb') are not recognized, use new instruction key "decomposition"
+# - make up mind about preferred gate names in cQASM versus API
+# - gates with upper case (e.g. rmX180) don't work
+
+version 1.2
+
+pragma @ql.name("test_rus_elements")
+pragma @ql.platform("config_cc_s17_direct_iq_cqasm1.2.json")
+
+
+var qInput1, qInput2, qAncilla3, qOutput4: qubit
+var mAncilla3: bool
+
+################################################
+# preparation
+################################################
+prepz qInput1
+prepz qInput2
+prepz qAncilla3
+prepz qOutput4
+
+################################################
+# repeatuntilsuccess
+################################################
+#for (;  ; ) {    # FIXME: cannot have empty condition
+#for (; creg(0)<10; ) {    # FIXME: RuntimeError: Unknown error: dereferencing empty Maybe/One object or type N2ql2ir9StatementE (from EventGatherer::add_statement)
+#for (creg(0)=0; creg(0)<10000; creg(0)=creg(0)+1) { # FIXME: RuntimeError: Assertion failure: assert !nc.get().commutes_with(incoming) failed
+###while(creg(0)<10000) {
+    cz qInput2, qAncilla3
+    rx180 qOutput4
+    i qOutput4
+    rx180 qOutput4
+    barrier
+
+    measure_fb qAncilla3, mAncilla3
+    rx180 qOutput4
+#    for _ in range(8):
+# FIXME: repeat as intended
+        i qOutput4
+    barrier
+
+###    if (!mAncilla3) {
+###        break
+###    }
+    barrier
+
+    rx180 qAncilla3
+###}
